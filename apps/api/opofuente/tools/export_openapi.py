@@ -50,7 +50,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 0
 
     target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_text(rendered, encoding="utf-8")
+    # newline="\n": el contrato es un artefacto y debe ser byte a byte igual en Windows y en
+    # Linux, para que `contracts:check` y el diff de git no dependan de la plataforma.
+    target.write_text(rendered, encoding="utf-8", newline="\n")
     print(f"OpenAPI escrito en {target.name}")
     return 0
 

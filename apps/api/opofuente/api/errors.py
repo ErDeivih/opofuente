@@ -8,8 +8,7 @@ contenido importado, prompts ni claves.
 from __future__ import annotations
 
 import logging
-from collections.abc import Mapping, Sequence
-from typing import Any
+from collections.abc import Sequence
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
@@ -77,7 +76,6 @@ def problem_response(
     code: str | None = None,
     title: str | None = None,
     field_errors: Sequence[FieldError] | None = None,
-    extra_body: Mapping[str, Any] | None = None,
 ) -> JSONResponse:
     """Construye la respuesta de error del contrato."""
     problem = ProblemDetail(
@@ -89,10 +87,26 @@ def problem_response(
         correlation_id=get_correlation_id() or "",
         field_errors=list(field_errors) if field_errors else None,
     )
-    body: dict[str, Any] = problem.model_dump(exclude_none=True)
-    if extra_body:
-        body.update(extra_body)
-    return JSONResponse(status_code=status_code, content=body, media_type=PROBLEM_MEDIA_TYPE)
+    return problem_response_from(problem)
+
+
+def problem_response_from(problem: ProblemDetail) -> JSONResponse:
+    """Serializa un problema ya construido, incluidas las extensiones de sus subclases.
+
+    Permite que el cuerpo servido sea exactamente el esquema documentado (por ejemplo
+    `ReadinessProblem` con `checks`), en lugar de añadir campos sueltos por fuera del modelo.
+    Si el problema no trae identificador de correlación, se toma el de la petición.
+    """
+    resolved = (
+        problem
+        if problem.correlation_id
+        else problem.model_copy(update={"correlation_id": get_correlation_id() or ""})
+    )
+    return JSONResponse(
+        status_code=resolved.status,
+        content=resolved.model_dump(exclude_none=True),
+        media_type=PROBLEM_MEDIA_TYPE,
+    )
 
 
 def register_exception_handlers(app: FastAPI) -> None:

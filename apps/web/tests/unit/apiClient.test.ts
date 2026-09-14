@@ -60,4 +60,27 @@ describe('cliente de la API', () => {
     const view = await fetchReadiness();
     expect(view.status).toBe('ready');
   });
+
+  it('no rompe la pantalla si un 503 no cumpliera el contrato y omitiera checks', async () => {
+    stubApi({
+      '/api/v1/health/ready': {
+        status: 503,
+        contentType: 'application/problem+json',
+        // Un servidor que incumpliera `ReadinessProblem`: `checks` es obligatorio en el contrato.
+        body: {
+          type: 'about:blank',
+          title: 'Service Unavailable',
+          status: 503,
+          detail: 'La aplicación no está lista.',
+          instance: '/api/v1/health/ready',
+          code: 'not_ready',
+          correlation_id: 'corr-sin-checks',
+        },
+      },
+    });
+
+    const view = await fetchReadiness();
+    expect(view.status).toBe('degraded');
+    expect(view.checks).toEqual([]);
+  });
 });

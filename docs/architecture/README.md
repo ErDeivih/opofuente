@@ -47,3 +47,14 @@ El dominio no conoce FastAPI, SQLAlchemy, Qdrant ni el sistema de archivos.
    no lo está.
 5. **Logs con lista blanca de campos.** El formateador descarta cualquier `extra` no declarado en
    `SAFE_EXTRA_KEYS`, de modo que un descuido al registrar no filtra contenido.
+6. **El esquema de los errores se publica con su media type real.** FastAPI documenta el modelo de
+   una respuesta adicional bajo el media type de la ruta (`application/json`), pero OpoFuente sirve
+   todos los errores como `application/problem+json` (RFC 9457). `api/openapi.py` mueve el `$ref`
+   ya generado por FastAPI al media type real, sin escribir nombres de componente a mano; la
+   prueba de contrato comprueba el esquema **y** el cuerpo servido. Como consecuencia, cada ruta
+   documenta también su 500 (`ProblemDetail`), que es el tipo base del problema que usa el cliente.
+
+## Deuda técnica
+
+La deuda obligatoria, con su slice y su criterio de cierre, está en
+[`docs/DEBT.md`](../DEBT.md). No se implementa fuera del slice indicado.

@@ -196,6 +196,38 @@ export interface components {
              */
             type: string;
         };
+        /**
+         * ReadinessProblem
+         * @description Cuerpo del 503 de `/health/ready`.
+         *
+         *     Es un problema RFC 9457 al que se añade el detalle de cada comprobación, de modo que la
+         *     interfaz pueda explicar **por qué** la aplicación no está lista sin abrir otra petición.
+         *     Se declara como esquema propio para que `application/problem+json` esté descrito de verdad
+         *     en OpenAPI y el frontend use el tipo generado (no una conversión escrita a mano).
+         */
+        ReadinessProblem: {
+            /** Checks */
+            checks: components["schemas"]["CheckSchema"][];
+            /** Code */
+            code: string;
+            /** Correlation Id */
+            correlation_id: string;
+            /** Detail */
+            detail: string;
+            /** Field Errors */
+            field_errors?: components["schemas"]["FieldError"][] | null;
+            /** Instance */
+            instance: string;
+            /** Status */
+            status: number;
+            /** Title */
+            title: string;
+            /**
+             * Type
+             * @default about:blank
+             */
+            type: string;
+        };
         /** ReadinessSchema */
         ReadinessSchema: {
             /** Checks */
@@ -262,6 +294,15 @@ export interface operations {
                     "application/json": components["schemas"]["CapabilitiesSchema"];
                 };
             };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
         };
     };
     live_api_v1_health_live_get: {
@@ -280,6 +321,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LiveSchema"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
                 };
             };
         };
@@ -302,14 +352,22 @@ export interface operations {
                     "application/json": components["schemas"]["ReadinessSchema"];
                 };
             };
-            /** @description Alguna dependencia no está lista; incluye `checks` como extensión. */
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Alguna dependencia no está lista. Cuerpo RFC 9457 (`ReadinessProblem`) con `checks`: el detalle de cada comprobación. */
             503: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProblemDetail"];
-                    "application/problem+json": unknown;
+                    "application/problem+json": components["schemas"]["ReadinessProblem"];
                 };
             };
         };
@@ -330,6 +388,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SettingsSchema"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
                 };
             };
         };

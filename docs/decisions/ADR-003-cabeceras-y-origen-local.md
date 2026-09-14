@@ -1,7 +1,7 @@
 # ADR-003 — Endurecimiento HTTP del backend local en el MVP
 
-- **Estado:** propuesta para revisión del propietario (no bloquea S00)
-- **Fecha:** 2026-09-14
+- **Estado:** aceptada — ratificada por el propietario el 14 de septiembre de 2026, tras revisar S00
+- **Fecha:** 14 de septiembre de 2026
 - **Ámbito:** seguridad del transporte local
 
 ## Contexto
@@ -11,7 +11,10 @@ Origin local, CSP estricta y no servir directorios estáticos desde rutas de usu
 `08_API-CONTRACT.md` añaden «protección CSRF/origin incluso sin login». El MVP no tiene
 autenticación porque es de un único usuario en loopback.
 
-## Decisión propuesta (implementada en S00)
+## Decisión ratificada (implementada en S00)
+
+El propietario ratificó el 14 de septiembre de 2026, tras reproducir las 15 puertas de S00, que
+loopback, control de Origin, CSP y ausencia de autenticación son correctos para este MVP local.
 
 1. `OPOFUENTE_HOST` debe ser loopback; cualquier otro valor provoca `ConfigurationError` al
    arrancar, con mensaje que remite a un proyecto de autenticación aparte.

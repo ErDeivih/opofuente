@@ -192,7 +192,14 @@ class Settings(BaseSettings):
 
     @property
     def sends_data_off_device(self) -> bool:
-        """True si la configuración actual puede enviar contenido a un tercero."""
+        """Indica si la configuración actual puede enviar contenido a un tercero.
+
+        Limitación conocida y registrada en `docs/DEBT.md` (DEBT-001): un endpoint local
+        declarado como `openai_compatible` u `ollama` devuelve `True` aunque no salga del
+        equipo, y un proveedor de embeddings externo se refleja dentro del bloque de LLM.
+        Antes de S09 debe sustituirse por una clasificación independiente por proveedor
+        (`disabled`/`local`/`remote`/`unknown`) calculada sobre el endpoint efectivo.
+        """
         return self.llm_provider != "disabled" or self.embedding_provider == "openai_compatible"
 
 

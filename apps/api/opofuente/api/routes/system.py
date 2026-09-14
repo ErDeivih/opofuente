@@ -6,13 +6,14 @@ No contienen reglas de negocio (02_ARCHITECTURE §3: la capa API no decide).
 from __future__ import annotations
 
 import shutil
+from typing import Any
 
 from fastapi import APIRouter, Response
 from fastapi.responses import JSONResponse
 
 from opofuente import __version__
 from opofuente.api.deps import AppSettingsDep, SystemServiceDep
-from opofuente.api.errors import PROBLEM_MEDIA_TYPE, ProblemDetail, problem_response
+from opofuente.api.errors import ProblemDetail, problem_response_from
 from opofuente.api.schemas import (
     CapabilitiesSchema,
     CapabilitySchema,
@@ -22,6 +23,7 @@ from opofuente.api.schemas import (
     LiveSchema,
     LlmSettingsSchema,
     OcrSettingsSchema,
+    ReadinessProblem,
     ReadinessSchema,
     SettingsSchema,
 )
@@ -29,8 +31,23 @@ from opofuente.config import project_root
 
 router = APIRouter()
 
+#: Cualquier ruta puede terminar en un error inesperado: el manejador global responde con
+#: `ProblemDetail` en `application/problem+json`. Documentarlo mantiene el contrato base del
+#: problema dentro del esquema, que es el tipo que el cliente usa para cualquier error.
+INTERNAL_ERROR_RESPONSE: dict[int | str, dict[str, Any]] = {
+    500: {
+        "model": ProblemDetail,
+        "description": "Error interno inesperado (RFC 9457).",
+    }
+}
 
-@router.get("/health/live", response_model=LiveSchema, summary="Proceso vivo")
+
+@router.get(
+    "/health/live",
+    response_model=LiveSchema,
+    responses=INTERNAL_ERROR_RESPONSE,
+    summary="Proceso vivo",
+)
 def live() -> LiveSchema:
     """No comprueba dependencias: solo que el proceso responde."""
     return LiveSchema(version=__version__)
@@ -40,11 +57,15 @@ def live() -> LiveSchema:
     "/health/ready",
     response_model=ReadinessSchema,
     responses={
+        **INTERNAL_ERROR_RESPONSE,
         503: {
-            "model": ProblemDetail,
-            "description": "Alguna dependencia no está lista; incluye `checks` como extensión.",
-            "content": {PROBLEM_MEDIA_TYPE: {}},
-        }
+            # El esquema se documenta bajo application/problem+json (api/openapi.py).
+            "model": ReadinessProblem,
+            "description": (
+                "Alguna dependencia no está lista. Cuerpo RFC 9457 (`ReadinessProblem`) con "
+                "`checks`: el detalle de cada comprobación."
+            ),
+        },
     },
     summary="Listo para servir (comprueba la base de datos)",
 )
@@ -57,18 +78,23 @@ def ready(service: SystemServiceDep) -> Response:
     if report.ready:
         payload = ReadinessSchema(status="ready", checks=checks)
         return JSONResponse(status_code=200, content=payload.model_dump(mode="json"))
-    return problem_response(
-        status_code=503,
-        detail="La aplicación no está lista.",
-        instance="/api/v1/health/ready",
-        code="not_ready",
-        extra_body={"checks": [check.model_dump(mode="json") for check in checks]},
+    return problem_response_from(
+        ReadinessProblem(
+            title="Service Unavailable",
+            status=503,
+            detail="La aplicación no está lista.",
+            instance="/api/v1/health/ready",
+            code="not_ready",
+            correlation_id="",
+            checks=checks,
+        )
     )
 
 
 @router.get(
     "/capabilities",
     response_model=CapabilitiesSchema,
+    responses=INTERNAL_ERROR_RESPONSE,
     summary="Capacidades reales y degradaciones",
 )
 def capabilities(service: SystemServiceDep) -> CapabilitiesSchema:
@@ -95,6 +121,7 @@ def capabilities(service: SystemServiceDep) -> CapabilitiesSchema:
 @router.get(
     "/settings",
     response_model=SettingsSchema,
+    responses=INTERNAL_ERROR_RESPONSE,
     summary="Configuración efectiva sanitizada (sin secretos)",
 )
 def read_settings(settings: AppSettingsDep) -> SettingsSchema:

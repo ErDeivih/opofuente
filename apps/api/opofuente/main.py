@@ -22,6 +22,7 @@ from opofuente.api.middleware import (
     OriginCheckMiddleware,
     SecurityHeadersMiddleware,
 )
+from opofuente.api.openapi import apply_problem_media_type
 from opofuente.application.system_service import SystemService
 from opofuente.config import Settings, get_settings
 from opofuente.infrastructure.capabilities import (
@@ -112,6 +113,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app.include_router(api_router, prefix=API_PREFIX)
     register_exception_handlers(app)
+    # El esquema se genera una vez y se ajusta: los errores se sirven como
+    # application/problem+json, no como application/json (api/openapi.py).
+    app.openapi_schema = apply_problem_media_type(app.openapi())
     return app
 
 

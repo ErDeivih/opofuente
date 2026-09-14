@@ -7,7 +7,10 @@ Formato: `ADR-NNN-titulo.md` con contexto, opciones, datos, decisión, consecuen
 |---|---|---|
 | [ADR-001](ADR-001-herramientas-y-lockfiles.md) | Herramientas y lockfiles de Python y Node | aceptada |
 | [ADR-002](ADR-002-contrato-openapi-y-tipos.md) | Generación del contrato OpenAPI y de los tipos TypeScript | aceptada |
-| [ADR-003](ADR-003-cabeceras-y-origen-local.md) | Endurecimiento HTTP del backend local en el MVP | pendiente de revisión del propietario |
+| [ADR-003](ADR-003-cabeceras-y-origen-local.md) | Endurecimiento HTTP del backend local en el MVP | aceptada y ratificada por el propietario (14/09/2026) |
 | [ADR-004](ADR-004-typescript-fijado.md) | Versión de TypeScript fijada a 5.9.x | aceptada |
+
+La deuda técnica obligatoria (con su slice y su criterio de cierre) se registra aparte en
+[`docs/DEBT.md`](../DEBT.md).
 
 Una decisión que afecte a arquitectura, privacidad o seguridad requiere ADR **antes** de codificar.

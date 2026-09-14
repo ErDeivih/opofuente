@@ -14,11 +14,11 @@ $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 
 Push-Location $repoRoot
 try {
-    Invoke-OpoFuenteStep -Name 'uv sync (entorno de Python y lockfile)' -Action {
-        uv sync
+    Invoke-OpoFuenteStep -Name 'uv sync --locked (entorno de Python desde uv.lock)' -Action {
+        uv sync --locked
     }
-    Invoke-OpoFuenteStep -Name 'npm install (workspaces de Node)' -Action {
-        npm install
+    Invoke-OpoFuenteStep -Name 'npm ci (workspaces de Node desde package-lock.json)' -Action {
+        npm ci
     }
     Invoke-OpoFuenteStep -Name 'migración de la base de datos' -Action {
         uv run alembic upgrade head
