@@ -4,6 +4,11 @@ La arquitectura **vigente** es
 [`docs/product-spec/02_ARCHITECTURE.md`](../product-spec/02_ARCHITECTURE.md). Este directorio
 contiene solo notas de cómo se ha materializado, sin contradecirla.
 
+> `docs/product-spec/` es una copia literal del paquete de especificación. Dos de sus enlaces
+> (`00_START-HERE.md` y `09_SECURITY-PRIVACY-AND-RIGHTS.md`) apuntan a documentos de investigación
+> que viven en el repositorio original (`../ideas/opposition-study-rag/…`), no en este. No se han
+> reescrito para no alterar la copia; los hechos y reglas de derechos que citan siguen aplicando.
+
 ## Forma del sistema
 
 ```text

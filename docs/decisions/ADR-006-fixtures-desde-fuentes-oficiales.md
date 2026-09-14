@@ -1,6 +1,8 @@
 # ADR-006 — Fixtures de perfil desde fuentes oficiales y condiciones de uso
 
-- **Estado:** propuesta (requiere ratificación del propietario en la revisión de S01)
+- **Estado:** aceptada y ratificada por el propietario el 14/09/2026, **exclusivamente para el
+  alcance actual**: aplicación local, personal y repositorio privado. DEBT-003 sigue abierta como
+  barrera previa a cualquier publicación, distribución, despliegue en nube o acceso de terceros.
 - **Fecha:** 14 de septiembre de 2026
 - **Ámbito:** procedencia de datos y derechos de S01
 - **Asunto:** cómo se construyen los perfiles TAI 2025 y Guardia Civil 2026, qué se versiona y con
@@ -54,15 +56,27 @@ Ambas citas, sus URL y sus hashes están en `fixtures/profiles/manifest.json` y 
 No incluir el temario de Guardia Civil en el repositorio y exigir su importación manual, como prevé
 `10_TEST-PLAN` §2 para fuentes sin copia permitida. Se descarta porque el producto existe para
 estudiar ese programa (J2), la licencia sí cubre el uso privado, y hacerlo a mano convertiría una
-tarea mecánica y verificable en trabajo del usuario. **Si el propietario no ratifica esta ADR, la
-alternativa es la importación manual**: el manifiesto y las reglas del BOE seguirían versionados y el
-programa de GC se cargaría desde la copia del usuario.
+tarea mecánica y verificable en trabajo del usuario. El propietario **ratificó esta alternativa** el
+14/09/2026 para el alcance actual: si en algún momento hay que publicar el repositorio, distribuir la
+aplicación o dar acceso a terceros, se aplica la importación manual del PDF del usuario (o se pide
+autorización expresa), tal como exige DEBT-003.
+
+## Comprobaciones de derechos hechas por el propietario (14/09/2026)
+
+- **BOE:** su aviso legal permite la reutilización comercial **y** no comercial con atribución y las
+  demás condiciones; la implementación las respeta (cita, enlace, sin carácter oficial).
+- **Guardia Civil:** el temario puede utilizarse privadamente, pero su aviso legal prohíbe
+  reproducirlo o distribuirlo sin autorización. De ahí el alcance ratificado.
+- **Temario de 2024 aplicado a la convocatoria de 2026:** la página oficial del procedimiento
+  mantiene los 25 temas y declara que el temario permanece entre convocatorias salvo modificación
+  publicada con antelación (nueve meses). Queda justificado su uso para 2026.
 
 ## Consecuencias
 
 - Cualquier cambio de una fuente oficial (nueva versión del temario, corrección de erratas) se
   detecta: el hash deja de coincidir y la puerta de fixtures falla.
-- El repositorio contiene texto oficial del temario de GC. Es un dato del que depende DEBT-003.
+- El repositorio contiene texto oficial del temario de GC. Es un dato del que depende DEBT-003, que
+  sigue abierta como barrera previa a publicar o distribuir.
 - Las cifras del examen y del programa son auditables: cada una apunta a su cita y su documento.
 
 ## Reversión

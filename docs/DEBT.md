@@ -14,8 +14,10 @@ Reglas:
 |---|---|---|---|
 | [DEBT-001](#debt-001--clasificación-del-destino-de-datos-por-proveedor) | S09 | Sustituir `Settings.sends_data_off_device` por clasificación por proveedor | abierta |
 | [DEBT-002](#debt-002--documentar-403-404-y-422-en-el-contrato) | S02 | Cerrar el caso real de validación fallida (422) con `field_errors` | parcialmente cerrada en S01 |
-| [DEBT-003](#debt-003--uso-privado-del-temario-de-la-guardia-civil) | antes de publicar | No publicar el repositorio ni distribuir la aplicación con el temario de GC | abierta |
+| [DEBT-003](#debt-003--uso-privado-del-temario-de-la-guardia-civil) | antes de publicar | No publicar el repositorio ni distribuir la aplicación con el temario de GC | abierta (condición previa) |
 | [DEBT-004](#debt-004--parseo-seguro-de-xmlhtml-no-confiable) | S03 | Los extractores deben defenderse de XML/HTML no confiable | abierta |
+| [DEBT-005](#debt-005--borrado-de-nodos-con-referencias-al-sincronizar-fixtures) | S05 | La siembra no puede borrar nodos con referencias | abierta |
+| [DEBT-006](#debt-006--representación-exacta-de-fracciones-y-redondeo-en-la-puntuación) | S07 | Decidir y probar la aritmética exacta antes de calcular puntuaciones | abierta |
 
 ---
 
@@ -105,14 +107,69 @@ para estudiar ese programa, y OpoFuente es local, de un solo usuario y no redist
 ámbito que la licencia cubre.
 
 **Obligación.** El repositorio y la aplicación deben seguir siendo privados. Antes de publicar el
-repositorio, distribuirlo o alojarlo en un servicio accesible a terceros, hay que **retirar el
-temario de GC de los fixtures y cargarlo desde la copia del usuario**, o contar con autorización
-expresa de la Dirección General de la Guardia Civil
-(`sugerencias-intranet@guardiacivil.org`).
+repositorio, distribuirlo, alojarlo en un servicio accesible a terceros o dar acceso a cualquier
+tercero, hay que **retirar el temario de GC de los fixtures y cargarlo desde la copia privada del
+usuario** (importación manual del PDF), o contar con autorización expresa de la Dirección General de
+la Guardia Civil (`sugerencias-intranet@guardiacivil.org`).
+
+La ratificación de ADR-006 (14/09/2026) **no cierra esta obligación**: autoriza el uso privado
+actual, no la publicación futura.
 
 **Criterio de cierre.** La decisión se cierra cuando el propietario confirma que el repositorio y la
 aplicación seguirán siendo privados (queda como decisión registrada), o cuando se sustituye el
 fixture por importación manual del PDF. La alternativa está descrita en ADR-006.
+
+## DEBT-005 — Borrado de nodos con referencias al sincronizar fixtures
+
+**Origen:** revisión de S01 (14/09/2026).
+
+**Problema.** `SqlAlchemyProfileRepository._sync_curriculum` borra los nodos que ya no aparecen en el
+fixture
+(`apps/api/opofuente/infrastructure/profile_repository.py`, bloque «Nodos que ya no están en el
+fixture: se eliminan»). Hoy es seguro porque nada los referencia, pero en S05 aparecerán
+`curriculum_mappings`: documentos, secciones, evidencias y preguntas asignadas a nodos del programa.
+A partir de ahí, sincronizar un fixture **podría borrar un nodo con material asignado**, y con
+`ON DELETE CASCADE` se llevaría por delante las asignaciones sin avisar.
+
+**Obligación.** Antes de crear `curriculum_mappings`, la sincronización de fixtures no podrá borrar
+en silencio un nodo que tenga referencias. Hay que diseñar y probar una de estas políticas (o una
+combinación): versionado del nodo, sustitución explícita con reasignación, o **bloqueo** de la
+sincronización con un informe de nodos imposibles de retirar.
+
+**Criterio de cierre.**
+
+1. Política escrita y decidida (ADR si afecta al modelo) sobre qué ocurre con un nodo con referencias
+   que desaparece del fixture.
+2. Integridad referencial real en la base (`ON DELETE RESTRICT` o equivalente) para que el borrado
+   silencioso sea imposible, y migración que la aplique.
+3. Prueba de regresión: un nodo con un mapeo asignado no se borra; la sincronización informa del
+   conflicto y deja el estado consistente.
+
+## DEBT-006 — Representación exacta de fracciones y redondeo en la puntuación
+
+**Origen:** revisión de S01 (14/09/2026).
+
+**Problema.** `exam_parts.wrong_penalty_fraction` y los umbrales se guardan como `float`
+(SQLite `REAL`). La penalización de TAI es **un tercio exacto** y la fórmula de GC es
+`Px = (Y/T)·(A − E/(N−1))`: calcularlas con aritmética binaria introduce errores de representación
+(0,3333333333 no es 1/3) que pueden cambiar un resultado oficial por una décima y, con umbrales
+enteros y redondeos publicados, decidir entre apto y no apto.
+
+**Obligación.** Antes de calcular puntuaciones (S07/S08), decidir y probar la representación exacta:
+`Decimal` con precisión y modo de redondeo declarados, fracción exacta (`Fraction`) o reglas
+parametrizadas versionadas por convocatoria. Los `float` almacenados sirven como **información**
+(qué dice la convocatoria), no como autoridad de cálculo.
+
+**Criterio de cierre.**
+
+1. Decisión registrada (ADR) con la representación elegida, la precisión y la regla de redondeo, y
+   con la cita de la convocatoria que la justifica cuando exista.
+2. Casos matemáticos de TAI y GC verificados con cálculo manual exacto (aciertos, errores, blancos,
+   reservas y anuladas) comparados con el motor real.
+3. Prueba que demuestre que un tercio no se calcula con `float`: por ejemplo, `3` errores en una
+   parte con penalización de un tercio no pueden dejar un residuo binario visible en el resultado.
+4. Si la convocatoria no publica el criterio de transformación, la interfaz sigue mostrando
+   «calificación oficial no disponible» (regla ya vigente desde S00/S01).
 
 ## DEBT-004 — Parseo seguro de XML/HTML no confiable
 

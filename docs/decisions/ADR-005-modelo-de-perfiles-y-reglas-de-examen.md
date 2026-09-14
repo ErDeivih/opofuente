@@ -1,6 +1,8 @@
 # ADR-005 — Modelo de perfiles: convocatorias, programa y reglas de examen
 
-- **Estado:** propuesta (requiere revisión del propietario en la revisión de S01)
+- **Estado:** aceptada y ratificada por el propietario el 14/09/2026 (se usa `exam_parts` y
+  `exam_rules`; el propietario prefiere tablas a un JSON validado porque S07/S08 necesitarán
+  consultar partes, umbrales y reglas)
 - **Fecha:** 14 de septiembre de 2026
 - **Ámbito:** modelo de datos de S01
 - **Motivo:** `03_DATA-MODEL.md` §2 define `oppositions`, `convocation_versions` y
@@ -61,10 +63,15 @@ exam_rules             (id, convocation_version_id, code, kind, value_text, desc
 - Cada parte y cada regla guardan `evidence_quote`: la cita literal de la fuente oficial. La
   herramienta que construye los fixtures **comprueba que esa cita existe** en el documento
   descargado (hash verificado); una cifra sin cita no puede entrar.
-- Restricciones reales: `UNIQUE(convocation_version_id, code)` en partes y reglas,
-  `UNIQUE(convocation_version_id, path)` y `UNIQUE(convocation_version_id, official_code)` en el
-  programa, e **índice único parcial** que impide más de una convocatoria `active` por oposición y
-  más de una oposición activa.
+- Restricciones reales: `UNIQUE(convocation_version_id, code)` en partes y reglas y
+  `UNIQUE(convocation_version_id, path)` en el programa, más **dos índices únicos parciales** que
+  impiden más de una convocatoria `active` por oposición y más de una oposición activa.
+- **`official_code` no es única** y la migración no lo pretende: guarda la numeración que publica la
+  convocatoria y, donde no publica ninguna (los subniveles del temario de Guardia Civil, donde cada
+  tema vuelve a empezar por «Bloque 1»), la secuencia dentro del padre. La identidad estable de un
+  nodo es `(convocation_version_id, path)`. Una restricción sobre `official_code` sería incorrecta y
+  haría imposible sembrar el temario real (se probó durante S01 y falló con
+  `UNIQUE constraint failed: curriculum_nodes.convocation_version_id, official_code, node_type`).
 
 ## Se decide también NO crear en S01
 
