@@ -1,0 +1,15 @@
+# Normalización de finales de línea: el repositorio guarda LF y las puertas se ejecutan
+# también en CI (Linux). Sin esto, `core.autocrlf` de Windows provoca avisos constantes.
+* text=auto eol=lf
+
+# Scripts de Windows: se conservan con LF porque están probados con PowerShell 7, y así el
+# contenido del repositorio es idéntico en las dos plataformas.
+*.ps1 text eol=lf
+
+# Binarios que no deben transformarse nunca.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.pdf binary
+*.docx binary
+*.zip binary
