@@ -48,6 +48,16 @@ _FORBIDDEN_ORIGIN: dict[int | str, dict[str, Any]] = {
     }
 }
 
+_INVALID_SOURCE: dict[int | str, dict[str, Any]] = {
+    400: {
+        "model": ProblemDetail,
+        "description": (
+            "La carpeta indicada no se puede usar (`invalid_source`): no existe, no es una "
+            "carpeta, es relativa, es el directorio de datos de OpoFuente o no se puede leer."
+        ),
+    }
+}
+
 #: Errores que puede devolver cualquier ruta.
 BASE_ERRORS: dict[int | str, dict[str, Any]] = {**_INTERNAL}
 
@@ -60,4 +70,10 @@ WRITE_ERRORS: dict[int | str, dict[str, Any]] = {
     **_NOT_FOUND,
     **_VALIDATION,
     **_FORBIDDEN_ORIGIN,
+}
+
+#: Errores de las rutas de ingestión que reciben una carpeta del usuario.
+INGESTION_WRITE_ERRORS: dict[int | str, dict[str, Any]] = {
+    **WRITE_ERRORS,
+    **_INVALID_SOURCE,
 }

@@ -87,3 +87,12 @@ def seeded_client(seeded_settings: Settings) -> Iterator[TestClient]:
     app = create_app(seeded_settings)
     with TestClient(app) as test_client:
         yield test_client
+
+
+@pytest.fixture
+def api_only_client(migrated_settings: Settings) -> Iterator[TestClient]:
+    """Aplicación migrada **sin worker**: los trabajos quedan en cola y los controla la prueba."""
+    settings = Settings(data_dir=migrated_settings.data_dir, worker_enabled=False, _env_file=None)
+    app = create_app(settings)
+    with TestClient(app) as test_client:
+        yield test_client

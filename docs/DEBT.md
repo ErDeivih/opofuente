@@ -13,11 +13,12 @@ Reglas:
 | ID | Slice | Obligación | Estado |
 |---|---|---|---|
 | [DEBT-001](#debt-001--clasificación-del-destino-de-datos-por-proveedor) | S09 | Sustituir `Settings.sends_data_off_device` por clasificación por proveedor | abierta |
-| [DEBT-002](#debt-002--documentar-403-404-y-422-en-el-contrato) | S02 | Cerrar el caso real de validación fallida (422) con `field_errors` | parcialmente cerrada en S01 |
+| [DEBT-002](#debt-002--documentar-403-404-y-422-en-el-contrato) | S02 | Cerrar el caso real de validación fallida (422) con `field_errors` | **cerrada en S02** |
 | [DEBT-003](#debt-003--uso-privado-del-temario-de-la-guardia-civil) | antes de publicar | No publicar el repositorio ni distribuir la aplicación con el temario de GC | abierta (condición previa) |
 | [DEBT-004](#debt-004--parseo-seguro-de-xmlhtml-no-confiable) | S03 | Los extractores deben defenderse de XML/HTML no confiable | abierta |
 | [DEBT-005](#debt-005--borrado-de-nodos-con-referencias-al-sincronizar-fixtures) | S05 | La siembra no puede borrar nodos con referencias | abierta |
 | [DEBT-006](#debt-006--representación-exacta-de-fracciones-y-redondeo-en-la-puntuación) | S07 | Decidir y probar la aritmética exacta antes de calcular puntuaciones | abierta |
+| [DEBT-007](#debt-007--higiene-del-almacén-artefactos-sin-origen-y-temporales) | S12 | Recolector de artefactos sin origen, temporales `.part` y purga de trabajos | abierta |
 
 ---
 
@@ -72,8 +73,8 @@ URLs sin nada que clasificar, y S09 es donde llegan los adaptadores y la prueba 
 ## DEBT-002 — Documentar 403, 404 y 422 en el contrato
 
 **Origen:** corrección del 503 de `/health/ready` (commit corrector de S00).
-**Estado:** parcialmente cerrada en S01 (403, 404 y el esquema del 422); queda abierto el caso real
-de validación fallida.
+**Estado: cerrada en S02.** S01 documentó 403, 404 y el esquema del 422; S02 añade las primeras
+rutas con cuerpo y parámetros validados, y con ellas la prueba del caso real que faltaba.
 
 **Problema.** El esquema OpenAPI documenta el 500 (`ProblemDetail`), el 503 de readiness
 (`ReadinessProblem`) y los esquemas de las respuestas correctas, pero había errores que se servían
@@ -84,16 +85,20 @@ se devuelve:
 |---|---|---|---|
 | `403` | middleware de comprobación de `Origin` (métodos no seguros) | `ProblemDetail` (`code: forbidden_origin`) | **documentado en S01** en la primera ruta de escritura (`POST /oppositions/{id}/activate`), y no en rutas de lectura, donde no puede ocurrir |
 | `404` | manejador global de `OpoFuenteError` / `StarletteHTTPException` | `ProblemDetail` | **documentado en S01** en todas las rutas que buscan un recurso por identificador |
-| `422` | manejador global de `RequestValidationError` | `ProblemDetail` con `field_errors` | **esquema corregido en S01**: al declararlo en cada ruta, FastAPI ya no publica `HTTPValidationError` y el contrato apunta a `ProblemDetail` bajo `application/problem+json` |
-| `405` | enrutador de Starlette | `ProblemDetail` | se sirve así, pero **no se documenta por ruta**: es un error de protocolo que no aporta información y añadirlo a cada operación sería ruido |
+| `422` | manejador global de `RequestValidationError` | `ProblemDetail` con `field_errors` | **esquema corregido en S01** al declararlo en cada ruta; **caso real probado en S02** |
+| `405` | enrutador de Starlette | `ProblemDetail` | se sirve así y **no se documenta por ruta**: es un error de protocolo que no aporta información y añadirlo a cada operación sería ruido. Decisión aceptada, no deuda pendiente |
 
-**Por qué no se cerró del todo.** El criterio 3 pedía «incluir un caso de validación fallida que
-compare `field_errors`». En S01 ninguna ruta tiene parámetros tipados ni cuerpo, así que no existe
-una petición que produzca un 422 real: probarlo exigiría inventar una ruta de prueba. Se cierra
-cuando S02 añada la primera ruta con cuerpo o parámetros validados.
+**Qué faltaba y cómo se cerró.** El criterio 3 pedía «un caso de validación fallida que compare
+`field_errors`», y en S01 ninguna ruta tenía parámetros tipados ni cuerpo, así que no existía una
+petición capaz de producir un 422 real. S02 añade `POST /api/v1/inventories` (cuerpo validado) y
+parámetros de consulta validados (`limit`, `offset`, `status`), y con ellos la prueba
+`test_el_422_servido_cumple_el_esquema_documentado` (`apps/api/tests/contract/test_openapi_contract.py`):
 
-**Lo que falta.** Una prueba de contrato que provoque un 422 de verdad y compare `field_errors` del
-cuerpo servido con el esquema documentado.
+1. provoca un 422 real con `{"source_path": ""}` y con `?limit=0`;
+2. comprueba que el cuerpo servido tiene todos los campos requeridos del `ProblemDetail` documentado;
+3. comprueba que cada entrada de `field_errors` tiene **exactamente** las propiedades del componente
+   `FieldError` documentado (`field`, `message`) y que el campo señalado es el que falla de verdad
+   (`body.source_path`, `query.limit`).
 
 ## DEBT-003 — Uso privado del temario de la Guardia Civil
 
@@ -188,3 +193,44 @@ límites de tamaño y profundidad, y con sus pruebas negativas correspondientes.
 **Criterio de cierre.** Extractores de S03 con pruebas negativas (entidades externas, XML con
 `DOCTYPE`, HTML con scripts, ZIP con traversal y con ratio de expansión abusivo) y sin `# noqa` de
 seguridad pendientes en el código de producción.
+
+## DEBT-007 — Higiene del almacén: artefactos sin origen y temporales
+
+**Origen:** revisión de S02 (14/09/2026).
+
+**Problema.** El almacén de S02 solo **añade**. No hay nada que retire:
+
+| Qué queda atrás | Cuándo | Consecuencia |
+|---|---|---|
+| Ficheros `data/tmp/ingest-<uuid>.part` | el proceso muere a mitad de una copia (corte de luz, `taskkill`, cuelgue). El código borra el temporal en `OSError` y en cancelación cooperativa, pero no ante una muerte del proceso | basura en `tmp/` que nadie vuelve a mirar |
+| Artefactos en `data/artifacts/sha256/` | cuando se borre material (hoy todavía no se puede borrar un lote por la API) | el contenido permanece aunque ningún origen lo referencie |
+| Filas de `jobs` | nunca se purgan los trabajos terminados | la tabla crece sin límite; con `--batch-max-entries` alto, cada importación añade trabajos |
+
+Hoy no hay pérdida de datos ni riesgo: el material del usuario es de solo lectura y el almacén es
+aditivo. El problema es que **el disco crece y no hay forma de saber qué sobra**, y eso importa en
+una aplicación pensada para acumular decenas de miles de documentos en el equipo del usuario.
+
+**Obligación.** Antes de dar por buena la pantalla de almacenamiento (S12), implementar:
+
+1. **Recolector de temporales**: al arrancar, borrar los `*.part` de `data/tmp/` con una antigüedad
+   mayor que el lease máximo, informando de cuántos se han retirado.
+2. **Recolector de artefactos sin origen**: un artefacto con **cero** filas en `artifact_origins` y
+   con antigüedad mayor que una ventana declarada puede retirarse. Nunca se retira un artefacto con
+   algún origen, y la operación es explícita (se pide, se informa de lo retirado), no automática.
+3. **Purga de trabajos**: política de retención escrita (por ejemplo, los trabajos terminados con
+   más de N días) y aplicada por el propio recolector.
+
+Y todo ello sin tocar jamás un fichero del usuario: el recolector solo mira dentro del directorio de
+datos.
+
+**Criterio de cierre.**
+
+1. Comando o endpoint explícito («liberar espacio») con informe de lo retirado, y ninguna purga
+   silenciosa en segundo plano.
+2. Prueba de que un artefacto **compartido** (dos orígenes) sobrevive al recolector aunque uno de
+   sus lotes se haya borrado.
+3. Prueba de que un `*.part` reciente (una copia en curso) **no** se borra, y uno antiguo sí.
+4. Prueba de que los originales del usuario no se tocan: instantánea de tamaños y fechas antes y
+   después del recolector, igual que en las pruebas de S02.
+5. La pantalla de almacenamiento muestra espacio usado, nº de artefactos y resultado de la última
+   limpieza (07_UI-UX §11).

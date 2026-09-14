@@ -102,16 +102,21 @@ export const capabilitiesFixture: CapabilitiesResponse = {
     {
       id: 'artifact_store',
       label: 'Almacén de originales por SHA-256',
-      status: 'planned',
-      detail: 'La copia inmutable y el inventario se implementan en S02.',
-      planned_slice: 'S02',
+      status: 'enabled',
+      detail: 'Copia inmutable por contenido. Los originales no se mueven ni se borran.',
     },
     {
       id: 'worker',
       label: 'Cola de trabajos local',
+      status: 'enabled',
+      detail: 'Cola persistida en SQLite con lease, trabajada por este proceso.',
+    },
+    {
+      id: 'vector_index',
+      label: 'Índice vectorial local',
       status: 'planned',
-      detail: 'Worker persistido en SQLite con lease.',
-      planned_slice: 'S02',
+      detail: 'Qdrant local, reconstruible desde SQLite. Llega en S09.',
+      planned_slice: 'S09',
     },
     {
       id: 'ocr',
@@ -130,8 +135,8 @@ export const capabilitiesFixture: CapabilitiesResponse = {
   ],
   degradations: [
     {
-      code: 'worker.planned',
-      message: 'Cola de trabajos local: todavía no implementado (previsto en S02).',
+      code: 'vector_index.planned',
+      message: 'Índice vectorial local: todavía no implementado (previsto en S09).',
     },
     { code: 'llm.disabled', message: 'Modelo de lenguaje: no configurado.' },
   ],

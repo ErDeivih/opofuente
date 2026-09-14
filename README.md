@@ -8,11 +8,18 @@ trazable, sin mover ni borrar ningún original y sin depender de servicios en la
 - Contrato de implementación para agentes: [`AGENTS.md`](AGENTS.md).
 - Estado de implementación: [`docs/slices/`](docs/slices/).
 
-> **Estado actual: S01 completado** (perfiles oficiales, programa y reglas de examen, además de
-> todo lo de S00: repositorio, puertas de calidad, esqueleto de backend y frontend, migración,
-> health/capabilities). Todavía **no** hay ingestión de material, OCR, IA, biblioteca ni sesiones
-> de estudio: cada ausencia se declara explícitamente en la API (`/api/v1/capabilities`, cobertura
-> `null`) y en la interfaz.
+> **Estado actual: S02 completado** (artefactos por SHA-256, inventario en lectura, importación de
+> una copia, lotes, incidencias e informe, con worker local persistido), además de todo lo de S01
+> (perfiles oficiales, programa y reglas de examen) y S00 (repositorio, puertas de calidad,
+> esqueleto de backend y frontend, migración, health/capabilities). Todavía **no** hay extracción de
+> texto, OCR, IA, biblioteca ni sesiones de estudio: cada ausencia se declara explícitamente en la
+> API (`/api/v1/capabilities`, cobertura `null`, rutas que no existen) y en la interfaz.
+>
+> Desde la pantalla **Bandeja** puedes inventariar una carpeta en modo lectura y, solo si lo
+> confirmas, importar una copia. OpoFuente **nunca** mueve, renombra ni borra tus originales: la
+> copia va a un almacén por contenido (`data/artifacts/sha256/ab/cd/<hash>`), así que dos ficheros
+> idénticos son un solo artefacto con dos orígenes. Ver
+> [`docs/slices/S02.md`](docs/slices/S02.md).
 >
 > Los perfiles TAI 2025 y Guardia Civil 2026 se siembran desde fuentes oficiales verificadas por
 > hash y por cita literal. Ver [`fixtures/profiles/manifest.json`](fixtures/profiles/manifest.json)
@@ -74,7 +81,7 @@ opofuente/
   pyproject.toml            backend + configuración de Ruff, mypy y pytest
   alembic.ini               migraciones (la URL se resuelve desde la app)
   package.json              workspaces npm (apps/web, packages/contracts)
-  apps/api/opofuente/       backend FastAPI por capas (api/domain/application/infrastructure)
+  apps/api/opofuente/       backend FastAPI por capas (api/domain/application/infrastructure + workers)
   apps/api/alembic/         migraciones
   apps/api/tests/           unitarias, integración y contrato
   apps/web/                 React + TypeScript + Vite (shell, páginas, componentes)
@@ -92,6 +99,9 @@ opofuente/
 - Todo vive en `OPOFUENTE_DATA_DIR` (por defecto `./data`, ignorado por git):
   `opofuente.sqlite3`, `artifacts/sha256/`, `extracted/`, `qdrant/`, `logs/`, `exports/`,
   `backups/`, `tmp/`, y `sources/` (documentos oficiales descargados para construir los fixtures).
+- **Tus originales no se tocan.** Inventariar una carpeta solo la lee; importar copia el contenido
+  al almacén por hash. OpoFuente nunca mueve, renombra ni borra nada del origen, y la ruta real de
+  la carpeta de origen no se publica por la API (solo una versión abreviada).
 - El servidor escucha **solo** en loopback. Configurar un host público provoca un error de arranque.
 - No hay telemetría. Los logs son JSON rotativos y no registran contenido importado, preguntas
   privadas, prompts ni claves.

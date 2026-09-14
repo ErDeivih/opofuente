@@ -39,14 +39,14 @@ describe('navegación', () => {
     ]);
   });
 
-  it('Inicio y Programa están implementadas; el resto declara su slice', () => {
+  it('Inicio, Bandeja y Programa están implementadas; el resto declara su slice', () => {
     const implementadas = NAV_ITEMS.filter((item) => item.slice === null).map((item) => item.label);
-    expect(implementadas).toEqual(['Inicio', 'Programa']);
+    expect(implementadas).toEqual(['Inicio', 'Bandeja', 'Programa']);
   });
 
   it('las secciones no implementadas declaran su slice', () => {
     const slices = new Map(NAV_ITEMS.map((item) => [item.label, item.slice]));
-    expect(slices.get('Bandeja')).toBe('S02');
+    expect(slices.get('Bandeja')).toBeNull();
     expect(slices.get('Programa')).toBeNull();
     expect(slices.get('Biblioteca')).toBe('S05');
     expect(slices.get('Estudiar')).toBe('S07');
@@ -95,11 +95,12 @@ describe('shell de la aplicación', () => {
     );
 
     expect(
-      await screen.findByText('Cola de trabajos local: todavía no implementado (previsto en S02).'),
+      await screen.findByText('Índice vectorial local: todavía no implementado (previsto en S09).'),
     ).toBeInTheDocument();
     // La tabla de capacidades declara el estado real: nada se muestra como operativo por error.
     const tabla = screen.getByRole('table', { name: 'Capacidades de esta instalación' });
-    expect(within(tabla).getAllByText('pendiente', { selector: '.badge__text' })).toHaveLength(2);
+    expect(within(tabla).getAllByText('operativo', { selector: '.badge__text' })).toHaveLength(2);
+    expect(within(tabla).getAllByText('pendiente', { selector: '.badge__text' })).toHaveLength(1);
     expect(within(tabla).getAllByText('desactivado', { selector: '.badge__text' })).toHaveLength(2);
     // El indicador de cabecera resume el estado del worker.
     expect(screen.getByLabelText('Estado de capacidades clave')).toBeInTheDocument();

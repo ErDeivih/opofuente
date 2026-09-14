@@ -598,6 +598,75 @@ button:focus-visible,
   font-weight: 600;
 }
 
+/* --- Formularios y listas de la Bandeja ----------------------------------- */
+
+.form {
+  margin-bottom: 0.75rem;
+}
+
+.form__label {
+  display: block;
+  margin-bottom: 0.25rem;
+  color: var(--color-texto-suave);
+  font-size: 0.85rem;
+}
+
+.form__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin-top: 0.5rem;
+}
+
+.form__input {
+  font: inherit;
+  flex: 1 1 22rem;
+  min-width: 0;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio);
+  background: var(--color-superficie);
+  color: var(--color-texto);
+}
+
+.button--link {
+  border: none;
+  background: none;
+  color: var(--color-acento);
+  padding: 0.1rem 0.2rem;
+  text-align: left;
+  text-decoration: underline;
+}
+
+.sample,
+.issues {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+}
+
+.sample li,
+.issues__item {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: baseline;
+  padding: 0.25rem 0;
+  border-bottom: 1px solid var(--color-borde);
+}
+
+.sample li:last-child,
+.issues__item:last-child {
+  border-bottom: none;
+}
+
+.sample__path {
+  font-family: "Cascadia Mono", Consolas, monospace;
+  font-size: 0.82rem;
+  overflow-wrap: anywhere;
+}
+
 /* --- Responsive (07_UI-UX §13 y §14: 1440, 1024 y 390) --------------------- */
 
 @media (max-width: 1024px) {

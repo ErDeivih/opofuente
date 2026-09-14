@@ -7,12 +7,14 @@ apuntando a un directorio temporal (nunca al directorio de datos real).
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import Engine
 
 from opofuente import __version__
 from opofuente.api import api_router
@@ -23,20 +25,30 @@ from opofuente.api.middleware import (
     SecurityHeadersMiddleware,
 )
 from opofuente.api.openapi import apply_problem_media_type
+from opofuente.application.ingestion_service import IngestionService
+from opofuente.application.job_service import JobService
 from opofuente.application.profiles_service import ProfilesService
 from opofuente.application.system_service import SystemService
 from opofuente.config import Settings, get_settings
+from opofuente.domain.jobs import JobType
+from opofuente.infrastructure.artifact_store import ArtifactStore
 from opofuente.infrastructure.capabilities import (
     ConfigurationCapabilityProvider,
+    IngestionCapabilityProvider,
     PlannedCapabilityProvider,
     SqliteCapabilityProvider,
 )
 from opofuente.infrastructure.clock import SystemClock
 from opofuente.infrastructure.db import build_engine, build_session_factory
-from opofuente.infrastructure.migrations import script_head
+from opofuente.infrastructure.filesystem_inventory import FilesystemInventory
+from opofuente.infrastructure.ingestion_repository import SqlAlchemyIngestionRepository
+from opofuente.infrastructure.job_repository import SqlAlchemyJobRepository
+from opofuente.infrastructure.migrations import database_revision, script_head
 from opofuente.infrastructure.observability import setup_logging
 from opofuente.infrastructure.probes import DatabaseProbe, DataDirectoryProbe
 from opofuente.infrastructure.profile_repository import SqlAlchemyProfileRepository
+from opofuente.infrastructure.worker_liveness import WorkerLiveness
+from opofuente.workers.job_worker import JobWorker
 
 logger = logging.getLogger(__name__)
 
@@ -49,12 +61,19 @@ DESCRIPTION = (
 )
 
 
+def _database_is_migrated(engine: Engine, settings: Settings) -> bool:
+    """¿Está la base de datos en la revisión de cabeza? Si no, el worker no arranca."""
+    expected = script_head(settings)
+    return expected is not None and database_revision(engine) == expected
+
+
 def create_app(settings: Settings | None = None) -> FastAPI:
     resolved = settings or get_settings()
     paths = resolved.data_paths
     engine = build_engine(paths.database)
     session_factory = build_session_factory(engine)
 
+    worker_liveness = WorkerLiveness()
     system_service = SystemService(
         version=__version__,
         probes=(
@@ -64,12 +83,42 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         capability_providers=(
             ConfigurationCapabilityProvider(resolved),
             SqliteCapabilityProvider(engine),
+            IngestionCapabilityProvider(
+                paths=paths,
+                settings=resolved,
+                liveness=worker_liveness,
+            ),
             PlannedCapabilityProvider(),
         ),
     )
+    clock = SystemClock()
     profiles_service = ProfilesService(
         SqlAlchemyProfileRepository(session_factory),
-        SystemClock(),
+        clock,
+    )
+    job_queue = SqlAlchemyJobRepository(session_factory)
+    ingestion_repository = SqlAlchemyIngestionRepository(session_factory)
+    ingestion_service = IngestionService(
+        repository=ingestion_repository,
+        jobs=job_queue,
+        store=ArtifactStore(paths),
+        scanner=FilesystemInventory(
+            max_file_bytes=resolved.max_file_bytes,
+            max_entries=resolved.max_batch_entries,
+            forbidden_roots=(paths.root,),
+        ),
+        clock=clock,
+        data_root=paths.root,
+        max_entries=resolved.max_batch_entries,
+    )
+    job_service = JobService(job_queue, clock)
+    worker = JobWorker(
+        queue=job_queue,
+        handlers={JobType.INGEST_BATCH: ingestion_service.run_import_job},
+        clock=clock,
+        lease_seconds=resolved.job_lease_seconds,
+        poll_seconds=resolved.worker_poll_seconds,
+        liveness=worker_liveness,
     )
 
     @asynccontextmanager
@@ -83,9 +132,25 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             resolved.log_level,
             extra={"event": "startup"},
         )
+        worker_task: asyncio.Task[None] | None = None
+        if resolved.worker_enabled and _database_is_migrated(engine, resolved):
+            # Un reinicio recupera los trabajos interrumpidos antes de aceptar trabajo nuevo.
+            worker_task = asyncio.create_task(worker.run_forever(), name="opofuente-worker")
+            # No se atiende ninguna petición hasta que el worker ha arrancado de verdad: así
+            # /capabilities no declara operativa una cola que todavía nadie está trabajando.
+            await worker.wait_started()
+        elif resolved.worker_enabled:
+            logger.warning(
+                "opofuente.worker_skipped reinicia después de migrar la base de datos",
+                extra={"event": "worker_skipped"},
+            )
         try:
             yield
         finally:
+            if worker_task is not None:
+                worker.stop()
+                with suppress(asyncio.CancelledError, TimeoutError):
+                    await asyncio.wait_for(worker_task, timeout=5)
             engine.dispose()
             logger.info("opofuente.shutdown", extra={"event": "shutdown"})
 
@@ -104,6 +169,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.session_factory = session_factory
     app.state.system_service = system_service
     app.state.profiles_service = profiles_service
+    app.state.ingestion_service = ingestion_service
+    app.state.job_service = job_service
 
     # El orden importa: el último añadido es el más externo, así que el identificador de
     # correlación envuelve también los rechazos por Origin.

@@ -1,0 +1,399 @@
+import { useState } from 'react';
+
+import type { Issue, Inventory } from '../api/ingestion';
+import { isActive } from '../api/ingestion';
+import {
+  useCancelBatch,
+  useConfirmImport,
+  useCreateInventory,
+  useBatch,
+  useBatchIssues,
+  useBatchItems,
+  useBatches,
+  useJob,
+  useRetryBatch,
+} from '../api/queries';
+import { EmptyState } from '../components/EmptyState';
+import { ErrorState } from '../components/ErrorState';
+import { LoadingState } from '../components/LoadingState';
+import { StatusBadge } from '../components/StatusBadge';
+import type { StatusTone } from '../components/StatusBadge';
+
+const STATUS_TONE: Record<string, StatusTone> = {
+  queued: 'info',
+  running: 'info',
+  cancel_requested: 'warning',
+  succeeded: 'ok',
+  failed: 'blocked',
+  cancelled: 'info',
+};
+
+const SEVERITY_TONE: Record<string, StatusTone> = {
+  info: 'info',
+  warning: 'warning',
+  error: 'blocked',
+};
+
+function formatBytes(value: number): string {
+  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  let size = value;
+  let unit = 0;
+  while (size >= 1024 && unit < units.length - 1) {
+    size /= 1024;
+    unit += 1;
+  }
+  return `${size.toFixed(unit === 0 ? 0 : 1)} ${units[unit] ?? 'B'}`;
+}
+
+function describeError(error: unknown): string {
+  return error instanceof Error ? error.message : 'Error desconocido';
+}
+
+/**
+ * Incidencias con su código, su severidad y la ruta relativa.
+ *
+ * Se muestran tanto en la vista previa (lo que se va a omitir y por qué) como en el lote ya
+ * importado: omitir material en silencio sería mentir por omisión.
+ */
+function IssueList({ issues }: { issues: Issue[] }) {
+  if (issues.length === 0) {
+    return <p className="hint">Sin incidencias.</p>;
+  }
+  return (
+    <ul className="issues">
+      {issues.map((issue, index) => (
+        <li key={`${issue.code}-${issue.relative_path ?? ''}-${index}`} className="issues__item">
+          <StatusBadge tone={SEVERITY_TONE[issue.severity] ?? 'info'}>{issue.code}</StatusBadge>
+          <span>{issue.safe_message}</span>
+          {issue.relative_path !== null && issue.relative_path !== undefined && (
+            <span className="hint sample__path">{issue.relative_path}</span>
+          )}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/**
+ * Bandeja (07_UI-UX §4): inventariar una carpeta en lectura y, solo si el usuario lo confirma,
+ * importar una copia.
+ *
+ * De las tres acciones de entrada del MVP solo existe la de carpeta: soltar archivos y pegar
+ * texto/URL necesitan extractores (S03) y protección SSRF, y la pantalla lo declara en lugar de
+ * mostrar botones que no hacen nada.
+ */
+export function TrayPage() {
+  const [sourcePath, setSourcePath] = useState('');
+  const [inventory, setInventory] = useState<Inventory | null>(null);
+  const [batchId, setBatchId] = useState<string | null>(null);
+
+  const createInventory = useCreateInventory();
+  const confirmImport = useConfirmImport();
+  const cancelBatch = useCancelBatch();
+  const retryBatch = useRetryBatch();
+
+  const batches = useBatches();
+  const batch = useBatch(batchId);
+  const items = useBatchItems(batchId);
+  const issues = useBatchIssues(batchId);
+  const job = useJob(batch.data?.batch.job_id);
+
+  const isWorking = isActive(batch.data?.batch);
+
+  return (
+    <>
+      <header className="page__header">
+        <h1>Bandeja</h1>
+        <p className="page__lead">
+          OpoFuente <strong>copia</strong>: nunca mueve, renombra ni borra tus originales. Primero
+          inventaría la carpeta en modo lectura y solo después copia lo que confirmes.
+        </p>
+      </header>
+
+      <section className="card" aria-labelledby="entrada">
+        <h2 id="entrada">Entrada</h2>
+        <form
+          className="form"
+          onSubmit={(event) => {
+            event.preventDefault();
+            createInventory.mutate(sourcePath, {
+              onSuccess: (result) => {
+                setInventory(result);
+                setBatchId(null);
+              },
+            });
+          }}
+        >
+          <label className="form__label" htmlFor="ruta">
+            Carpeta a inventariar (ruta absoluta)
+          </label>
+          <div className="form__row">
+            <input
+              id="ruta"
+              className="form__input"
+              type="text"
+              value={sourcePath}
+              placeholder="F:\EspacioCodigo\material-para-probar"
+              onChange={(event) => {
+                setSourcePath(event.target.value);
+              }}
+            />
+            <button className="button" type="submit" disabled={createInventory.isPending}>
+              {createInventory.isPending ? 'Inventariando…' : 'Inventariar (solo lectura)'}
+            </button>
+          </div>
+        </form>
+        {createInventory.isError && (
+          <ErrorState
+            title="No se pudo inventariar esa carpeta"
+            message={describeError(createInventory.error)}
+          />
+        )}
+
+        <p className="hint">
+          Otras dos formas de entrada están planificadas y todavía no existen: soltar archivos y
+          pegar texto o URL (slice S03). No se muestran botones falsos.
+        </p>
+      </section>
+
+      {inventory !== null && (
+        <section className="card" aria-labelledby="vista-previa">
+          <h2 id="vista-previa">Vista previa del inventario</h2>
+          <div className="status-summary">
+            <StatusBadge tone="info">{inventory.batch.source_path_display}</StatusBadge>
+            <span className="hint">{inventory.note}</span>
+          </div>
+
+          <dl className="facts">
+            <dt>Ficheros a copiar</dt>
+            <dd>{inventory.batch.counters.inventoried ?? 0}</dd>
+            <dt>Tamaño</dt>
+            <dd>{formatBytes(inventory.batch.counters.total_bytes ?? 0)}</dd>
+            <dt>Directorios recorridos</dt>
+            <dd>{inventory.batch.counters.directories ?? 0}</dd>
+            <dt>Omitidos</dt>
+            <dd>
+              {(inventory.batch.counters.omitted_hidden ?? 0) +
+                (inventory.batch.counters.omitted_temporary ?? 0) +
+                (inventory.batch.counters.omitted_executable ?? 0) +
+                (inventory.batch.counters.omitted_directory ?? 0) +
+                (inventory.batch.counters.omitted_unsupported ?? 0)}{' '}
+              <span className="hint">(ocultos, temporales, ejecutables, directorios y formatos sin extractor)</span>
+            </dd>
+            <dt>Enlaces fuera de la carpeta</dt>
+            <dd>
+              {inventory.batch.counters.linked_outside_root ?? 0}{' '}
+              <span className="hint">(no se siguen)</span>
+            </dd>
+            <dt>Formatos</dt>
+            <dd>
+              {Object.entries(inventory.batch.formats ?? {})
+                .map(([extension, count]) => `${extension} ×${count}`)
+                .join(', ') || 'ninguno'}
+            </dd>
+          </dl>
+
+          {inventory.sample.length > 0 && (
+            <>
+              <h3>Muestra</h3>
+              <ul className="sample">
+                {inventory.sample.map((entry) => (
+                  <li key={entry.id}>
+                    <span className="sample__path">{entry.relative_path}</span>
+                    <span className="hint"> {formatBytes(entry.size_bytes)}</span>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+
+          <h3>Qué se omite y por qué</h3>
+          <IssueList issues={inventory.issues} />
+
+          <div className="form__row">
+            <button
+              className="button"
+              type="button"
+              disabled={confirmImport.isPending || (inventory.batch.counters.inventoried ?? 0) === 0}
+              onClick={() => {
+                confirmImport.mutate(inventory.batch.id, {
+                  onSuccess: (created) => {
+                    setBatchId(created.id);
+                  },
+                });
+              }}
+            >
+              Importar una copia
+            </button>
+            <button
+              className="button"
+              type="button"
+              onClick={() => {
+                setInventory(null);
+              }}
+            >
+              Cancelar
+            </button>
+          </div>
+          {confirmImport.isError && (
+            <ErrorState
+              title="No se pudo confirmar la importación"
+              message={describeError(confirmImport.error)}
+            />
+          )}
+        </section>
+      )}
+
+      {batchId !== null && (
+        <section className="card" aria-labelledby="lote">
+          <h2 id="lote">Importación</h2>
+          {batch.isPending && <LoadingState label="Consultando el lote…" />}
+          {batch.isError && (
+            <ErrorState
+              title="No se pudo consultar el lote"
+              message={describeError(batch.error)}
+              onRetry={() => {
+                void batch.refetch();
+              }}
+            />
+          )}
+          {batch.isSuccess && (
+            <>
+              <div className="status-summary" aria-live="polite">
+                <StatusBadge tone={STATUS_TONE[batch.data.batch.status] ?? 'info'}>
+                  {batch.data.batch.status}
+                </StatusBadge>
+                <span className="hint">
+                  {job.data === undefined
+                    ? 'trabajo en cola'
+                    : `${Math.round(job.data.progress * 100)} % · ${job.data.step ?? 'en curso'}`}
+                </span>
+              </div>
+              <p className="hint">
+                El trabajo se ejecuta en el servidor local: cerrar esta pestaña no lo cancela.
+              </p>
+
+              <dl className="facts">
+                <dt>Copiados</dt>
+                <dd>
+                  {batch.data.batch.counters.copied ?? 0} de {batch.data.batch.counters.total ?? 0}
+                </dd>
+                <dt>Artefactos</dt>
+                <dd>{batch.data.report.artifacts_total}</dd>
+                <dt>Informe cuadra</dt>
+                <dd>{batch.data.report.balanced ? 'sí' : 'no'}</dd>
+              </dl>
+
+              <div className="form__row">
+                {isWorking && (
+                  <button
+                    className="button"
+                    type="button"
+                    disabled={cancelBatch.isPending}
+                    onClick={() => {
+                      cancelBatch.mutate(batch.data.batch.id);
+                    }}
+                  >
+                    Cancelar
+                  </button>
+                )}
+                {!isWorking && batch.data.batch.status !== 'succeeded' && (
+                  <button
+                    className="button"
+                    type="button"
+                    disabled={retryBatch.isPending}
+                    onClick={() => {
+                      retryBatch.mutate(batch.data.batch.id);
+                    }}
+                  >
+                    Reintentar
+                  </button>
+                )}
+              </div>
+            </>
+          )}
+        </section>
+      )}
+
+      {batchId !== null && items.data !== undefined && items.data.entries.length > 0 && (
+        <section className="card" aria-labelledby="entradas">
+          <h2 id="entradas">Entradas del lote</h2>
+          <table className="table">
+            <caption className="table__caption">{items.data.total} entradas</caption>
+            <thead>
+              <tr>
+                <th scope="col">Fichero</th>
+                <th scope="col">Estado</th>
+                <th scope="col">Tamaño</th>
+                <th scope="col">Detalle</th>
+              </tr>
+            </thead>
+            <tbody>
+              {items.data.entries.slice(0, 50).map((entry) => (
+                <tr key={entry.id}>
+                  <th scope="row" className="sample__path">
+                    {entry.relative_path}
+                  </th>
+                  <td>
+                    <StatusBadge tone={entry.status === 'hashed' ? 'ok' : entry.status === 'failed' ? 'blocked' : 'info'}>
+                      {entry.status}
+                    </StatusBadge>
+                  </td>
+                  <td>{formatBytes(entry.size_bytes)}</td>
+                  <td className="hint">{entry.detail ?? '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      )}
+
+      {batchId !== null && issues.data !== undefined && (
+        <section className="card" aria-labelledby="incidencias">
+          <h2 id="incidencias">Incidencias del lote</h2>
+          <IssueList issues={issues.data.issues} />
+        </section>
+      )}
+
+      <section className="card" aria-labelledby="historial">
+        <h2 id="historial">Lotes recientes</h2>
+        {batches.isPending && <LoadingState label="Cargando lotes…" />}
+        {batches.isError && (
+          <ErrorState
+            title="No se pudieron cargar los lotes"
+            message={describeError(batches.error)}
+            onRetry={() => {
+              void batches.refetch();
+            }}
+          />
+        )}
+        {batches.isSuccess && batches.data.length === 0 && (
+          <EmptyState
+            title="Todavía no hay lotes"
+            description="Cuando inventaríes una carpeta aparecerá aquí, con su informe."
+          />
+        )}
+        {batches.isSuccess && batches.data.length > 0 && (
+          <ul className="sample">
+            {batches.data.map((row) => (
+              <li key={row.id}>
+                <button
+                  className="button button--link"
+                  type="button"
+                  onClick={() => {
+                    setInventory(null);
+                    setBatchId(row.id);
+                  }}
+                >
+                  {row.kind} · {row.source_path_display}
+                </button>
+                <StatusBadge tone={STATUS_TONE[row.status] ?? 'info'}>{row.status}</StatusBadge>
+                <span className="hint"> {row.total_items} entradas</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+    </>
+  );
+}

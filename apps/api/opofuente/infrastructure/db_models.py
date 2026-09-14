@@ -190,3 +190,203 @@ class ExamRuleRecord(Base):
     evidence_quote: Mapped[str] = mapped_column(Text, nullable=False)
 
     convocation: Mapped[ConvocationVersionRecord] = relationship(back_populates="rules")
+
+
+# ---------------------------------------------------------------------------- S02: ingesta
+
+
+class SourceArtifactRecord(Base):
+    """Un artefacto es un contenido: su identidad es el sha256 de sus bytes (03_DATA-MODEL §3)."""
+
+    __tablename__ = "source_artifacts"
+    __table_args__ = (
+        CheckConstraint("size_bytes >= 0", name="ck_artifact_size"),
+        CheckConstraint("length(sha256) = 64", name="ck_artifact_sha256_length"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    sha256: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
+    size_bytes: Mapped[int] = mapped_column(Integer, nullable=False)
+    media_type: Mapped[str] = mapped_column(String(128), nullable=False)
+    storage_key: Mapped[str] = mapped_column(String(255), nullable=False)
+    first_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    quarantine_status: Mapped[str] = mapped_column(
+        String(16), nullable=False, server_default=text("'none'"), default="none"
+    )
+
+    origins: Mapped[list[ArtifactOriginRecord]] = relationship(
+        back_populates="artifact", cascade="all, delete-orphan", passive_deletes=True
+    )
+
+
+class ArtifactOriginRecord(Base):
+    """Dónde se ha visto ese contenido: el mismo artefacto puede llegar de varios sitios."""
+
+    __tablename__ = "artifact_origins"
+    __table_args__ = (
+        CheckConstraint(
+            "origin_type IN ('file', 'url', 'paste', 'generated')", name="ck_origin_type"
+        ),
+        # Un origen se identifica por su ubicación: volver a importar la misma carpeta no duplica
+        # orígenes, pero un fichero modificado produce otro artefacto (y por tanto otro origen).
+        UniqueConstraint("artifact_id", "display_location", name="uq_artifact_origin"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    artifact_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("source_artifacts.id", ondelete="RESTRICT"), nullable=False
+    )
+    origin_type: Mapped[str] = mapped_column(String(16), nullable=False)
+    display_location: Mapped[str] = mapped_column(Text, nullable=False)
+    source_path_display: Mapped[str | None] = mapped_column(Text, nullable=True)
+    original_name: Mapped[str | None] = mapped_column(Text, nullable=True)
+    accessed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    size_bytes: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    mtime: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    artifact: Mapped[SourceArtifactRecord] = relationship(back_populates="origins")
+
+
+class IngestionBatchRecord(Base):
+    __tablename__ = "ingestion_batches"
+    __table_args__ = (
+        CheckConstraint("kind IN ('inventory', 'import')", name="ck_batch_kind"),
+        CheckConstraint("mode IN ('read_only', 'copy')", name="ck_batch_mode"),
+        CheckConstraint(
+            "status IN ('queued', 'running', 'succeeded', 'failed', 'cancel_requested', "
+            "'cancelled')",
+            name="ck_batch_status",
+        ),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    kind: Mapped[str] = mapped_column(String(16), nullable=False)
+    mode: Mapped[str] = mapped_column(String(16), nullable=False)
+    status: Mapped[str] = mapped_column(String(20), nullable=False)
+    source_path_display: Mapped[str] = mapped_column(Text, nullable=False)
+    # Ruta real de la carpeta señalada por el usuario: la importación necesita releer el origen,
+    # pero **nunca** sale en la API ni en los logs (la interfaz recibe `source_path_display`).
+    source_root: Mapped[str | None] = mapped_column(Text, nullable=True)
+    counters_json: Mapped[str] = mapped_column(
+        Text, nullable=False, server_default=text("'{}'"), default="{}"
+    )
+    manifest_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    error_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    job_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    inventory_batch_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("ingestion_batches.id", ondelete="SET NULL"), nullable=True
+    )
+
+    items: Mapped[list[IngestionItemRecord]] = relationship(
+        back_populates="batch", cascade="all, delete-orphan", passive_deletes=True
+    )
+    issues: Mapped[list[ImportIssueRecord]] = relationship(
+        back_populates="batch", cascade="all, delete-orphan", passive_deletes=True
+    )
+
+
+class IngestionItemRecord(Base):
+    __tablename__ = "ingestion_items"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('discovered', 'inventoried', 'omitted', 'copied', 'hashed', 'failed', "
+            "'cancelled')",
+            name="ck_item_status",
+        ),
+        UniqueConstraint("batch_id", "relative_path", name="uq_item_path"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    batch_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("ingestion_batches.id", ondelete="CASCADE"), nullable=False
+    )
+    relative_path: Mapped[str] = mapped_column(Text, nullable=False)
+    original_name: Mapped[str] = mapped_column(Text, nullable=False)
+    size_bytes: Mapped[int] = mapped_column(Integer, nullable=False)
+    mtime: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    media_type: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    artifact_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("source_artifacts.id", ondelete="SET NULL"), nullable=True
+    )
+    status: Mapped[str] = mapped_column(String(20), nullable=False)
+    detail: Mapped[str | None] = mapped_column(Text, nullable=True)
+    position: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
+
+    batch: Mapped[IngestionBatchRecord] = relationship(back_populates="items")
+
+
+class ImportIssueRecord(Base):
+    __tablename__ = "import_issues"
+    __table_args__ = (
+        CheckConstraint("severity IN ('info', 'warning', 'error')", name="ck_issue_severity"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    batch_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("ingestion_batches.id", ondelete="CASCADE"), nullable=False
+    )
+    item_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("ingestion_items.id", ondelete="CASCADE"), nullable=True
+    )
+    code: Mapped[str] = mapped_column(String(48), nullable=False)
+    severity: Mapped[str] = mapped_column(String(16), nullable=False)
+    safe_message: Mapped[str] = mapped_column(Text, nullable=False)
+    #: Ruta relativa del elemento afectado. Los directorios omitidos y los enlaces que salen de la
+    #: carpeta no tienen entrada propia, así que la ruta no se puede recuperar por `item_id`.
+    relative_path: Mapped[str | None] = mapped_column(Text, nullable=True)
+    details_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    resolution: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    batch: Mapped[IngestionBatchRecord] = relationship(back_populates="issues")
+
+
+class JobRecord(Base):
+    """Cola persistida con lease. Sobrevive a un reinicio: los leases vencidos vuelven a la cola."""
+
+    __tablename__ = "jobs"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('queued', 'leased', 'running', 'succeeded', 'failed', "
+            "'cancel_requested', 'cancelled')",
+            name="ck_job_status",
+        ),
+        CheckConstraint(
+            "job_type IN ("
+            "'inventory_source', 'ingest_batch', 'extract_artifact', 'classify_document', "
+            "'parse_question_set', 'build_fts', 'embed_spans', 'diff_versions', "
+            "'invalidate_derivatives', 'export_backup')",
+            name="ck_job_type",
+        ),
+        CheckConstraint("progress >= 0 AND progress <= 1", name="ck_job_progress"),
+        CheckConstraint("attempts >= 0", name="ck_job_attempts"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    job_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    status: Mapped[str] = mapped_column(String(20), nullable=False)
+    payload_json: Mapped[str] = mapped_column(
+        Text, nullable=False, server_default=text("'{}'"), default="{}"
+    )
+    progress: Mapped[float] = mapped_column(Float, nullable=False, server_default=text("0"))
+    step: Mapped[str | None] = mapped_column(Text, nullable=True)
+    attempts: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
+    max_attempts: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("3"))
+    error_code: Mapped[str | None] = mapped_column(String(48), nullable=True)
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    idempotency_key: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    lease_owner: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    lease_expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    cancel_requested_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

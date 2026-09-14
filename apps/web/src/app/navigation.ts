@@ -22,8 +22,8 @@ export const NAV_ITEMS: readonly NavItem[] = [
   {
     path: '/bandeja',
     label: 'Bandeja',
-    slice: 'S02',
-    summary: 'Inventario, importación, incidencias y revisión en lote de material.',
+    slice: null,
+    summary: 'Inventario en lectura, importación de una copia, incidencias e informe.',
   },
   {
     path: '/programa',

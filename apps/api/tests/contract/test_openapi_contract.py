@@ -36,6 +36,19 @@ REQUIRED_PATHS = (
     "/api/v1/convocations/{convocation_id}",
     "/api/v1/convocations/{convocation_id}/curriculum",
     "/api/v1/curriculum-nodes/{node_id}",
+    "/api/v1/inventories",
+    "/api/v1/inventories/{inventory_id}",
+    "/api/v1/inventories/{inventory_id}/confirm-import",
+    "/api/v1/ingestion-batches",
+    "/api/v1/ingestion-batches/{batch_id}",
+    "/api/v1/ingestion-batches/{batch_id}/cancel",
+    "/api/v1/ingestion-batches/{batch_id}/retry",
+    "/api/v1/ingestion-batches/{batch_id}/items",
+    "/api/v1/ingestion-batches/{batch_id}/issues",
+    "/api/v1/ingestion-batches/{batch_id}/report",
+    "/api/v1/jobs",
+    "/api/v1/jobs/{job_id}",
+    "/api/v1/jobs/{job_id}/cancel",
 )
 
 PROBLEM_FIELDS = ("type", "title", "status", "detail", "instance", "code", "correlation_id")
@@ -265,6 +278,38 @@ def test_el_404_servido_cumple_el_esquema_documentado(
         assert field in response.json(), field
 
 
+def test_el_422_servido_cumple_el_esquema_documentado(
+    api_only_client: TestClient, schema: dict[str, Any]
+) -> None:
+    """DEBT-002: un 422 real (no inventado) comparado con el esquema documentado.
+
+    S02 trae las primeras rutas con cuerpo y parámetros validados, así que ya existe una petición
+    que produce un 422 de verdad: se comprueba el cuerpo servido campo a campo, incluido
+    `field_errors`, que es lo que hasta ahora solo estaba documentado.
+    """
+    problem = schema["components"]["schemas"]["ProblemDetail"]
+    field_error = schema["components"]["schemas"]["FieldError"]
+
+    cuerpo = api_only_client.post("/api/v1/inventories", json={"source_path": ""})
+    assert cuerpo.status_code == 422
+    assert cuerpo.headers["content-type"].startswith(PROBLEM_MEDIA_TYPE)
+    body = cuerpo.json()
+    for field in problem["required"]:
+        assert field in body, field
+    assert body["code"] == "validation_error"
+    assert body["instance"] == "/api/v1/inventories"
+    assert body["field_errors"], "un 422 debe decir qué campo falla"
+    for error in body["field_errors"]:
+        assert set(error) == set(field_error["properties"]), error
+        assert error["field"] == "body.source_path"
+
+    # El mismo manejador cubre los parámetros de consulta de una ruta de lectura.
+    lista = api_only_client.get("/api/v1/ingestion-batches?limit=0")
+    assert lista.status_code == 422
+    assert lista.json()["code"] == "validation_error"
+    assert {error["field"] for error in lista.json()["field_errors"]} == {"query.limit"}
+
+
 def test_la_respuesta_de_programa_cumple_el_esquema(seeded_client: TestClient) -> None:
     oppositions = seeded_client.get("/api/v1/oppositions").json()
     convocation_id = next(
@@ -276,3 +321,47 @@ def test_la_respuesta_de_programa_cumple_el_esquema(seeded_client: TestClient) -
     assert body["counts"] == {"block": 4, "topic": 33, "epigraph": 0}
     primer_nodo = body["nodes"][0]
     assert set(primer_nodo) >= {"id", "node_type", "official_code", "title", "path", "depth"}
+
+
+def test_las_rutas_de_ingestion_estan_documentadas(schema: dict[str, Any]) -> None:
+    """S02: inventario, lotes y trabajos con sus errores, y sin prometer lo que no existe."""
+    inventario = schema["paths"]["/api/v1/inventories"]["post"]
+    assert "400" in inventario["responses"], "una carpeta no utilizable debe documentar el 400"
+    assert "403" in inventario["responses"], "una escritura debe documentar el rechazo por Origin"
+    for status in ("400", "403", "422", "500"):
+        content = inventario["responses"][status]["content"]
+        assert set(content) == {PROBLEM_MEDIA_TYPE}
+        assert content[PROBLEM_MEDIA_TYPE]["schema"]["$ref"].endswith("/ProblemDetail")
+
+    # Lo que S02 no implementa no se documenta: un botón falso es peor que una ausencia.
+    for ausente in (
+        "/api/v1/ingestion-batches/files",
+        "/api/v1/ingestion-batches/paste",
+        "/api/v1/ingestion-batches/url",
+        "/api/v1/events",
+    ):
+        assert ausente not in schema["paths"], ausente
+
+
+def test_el_informe_del_lote_documenta_su_cuadre(schema: dict[str, Any]) -> None:
+    schema_informe = schema["components"]["schemas"]["ImportReportSchema"]
+    assert set(schema_informe["properties"]) >= {
+        "batch_id",
+        "kind",
+        "status",
+        "counters",
+        "issue_counts",
+        "balanced",
+        "artifacts_total",
+    }
+    assert "balanced" in schema_informe["required"]
+
+
+def test_el_inventario_declara_que_no_copia_nada(schema: dict[str, Any]) -> None:
+    propiedades = schema["components"]["schemas"]["InventorySchema"]["properties"]
+    assert "copied_anything" in propiedades
+    assert propiedades["copied_anything"]["type"] == "boolean"
+    # La ruta real de origen no se publica: solo la versión abreviada.
+    batch = schema["components"]["schemas"]["BatchSchema"]["properties"]
+    assert "source_path_display" in batch
+    assert "source_root" not in batch

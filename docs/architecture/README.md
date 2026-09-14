@@ -82,3 +82,30 @@ La deuda obligatoria, con su slice y su criterio de cierre, está en
   cuántas alternativas tiene cada pregunta. La cobertura documental se declara `null` hasta S05.
 - **Siembra idempotente por CLI** (`opofuente.tools.seed_profiles`), no en el arranque: crear datos
   como efecto secundario de arrancar el servidor esconde cambios.
+
+## Notas de S02 (artefactos, inventario y lotes)
+
+- **Almacén por contenido.** `data/artifacts/sha256/ab/cd/<hash>` (02_ARCHITECTURE §5). El
+  `storage_key` guardado en la base es `sha256/ab/cd/<hash>`, relativo a `DataPaths.artifacts`
+  (que es `data/artifacts`): la ruta final es la documentada, sin segmentos repetidos. La escritura
+  es `<uuid>.part` en `data/tmp` + `fsync` + `os.replace`, de modo que un artefacto nunca aparece a
+  medias.
+- **Un artefacto, varios orígenes.** `source_artifacts.sha256` es único y `artifact_origins` guarda
+  cada sitio donde se ha visto el contenido (`UNIQUE(artifact_id, display_location)`). Dos ficheros
+  idénticos con nombres distintos son **un** artefacto y **dos** orígenes.
+- **Dos fases.** El inventario (`kind=inventory`, `mode=read_only`) solo lee y describe; la
+  importación (`kind=import`, `mode=copy`) copia lo que el usuario confirma. `ingestion_batches.source_root`
+  guarda la ruta real **en local** y no se publica nunca por la API (solo `source_path_display`).
+- **Cola persistida con lease.** `jobs` (02_ARCHITECTURE §6) con `lease_owner`, `lease_expires_at`,
+  `attempts`, `max_attempts` e índice único **parcial** `uq_jobs_idempotency_alive`. El worker es una
+  tarea de asyncio del proceso (`workers/job_worker.py`), ejecuta los manejadores en un hilo y
+  recupera al arrancar los trabajos cuyo lease venció.
+- **Cancelación cooperativa.** El manejador comprueba `cancelled()` entre unidades y lanza
+  `JobCancelledError`; el worker lo cierra como `cancelled`. Un trabajo con cancelación pedida y sin
+  empezar **también** se reclama: tiene que pasar por el worker para cerrar el lote con su informe.
+- **Capacidades comprobadas de verdad.** `IngestionCapabilityProvider` escribe en el directorio de
+  artefactos y pregunta a `WorkerLiveness` si la tarea está corriendo; hasta que arranca de verdad,
+  la capacidad se declara `unavailable`, no `enabled`.
+- **Rutas seguras.** `infrastructure/safe_paths.py` concentra `is_within`, `resolve_within`,
+  `safe_display_name` y las rutas abreviadas: ni la copia ni el informe pueden salirse de la raíz
+  elegida ni publicar la ruta real del usuario.

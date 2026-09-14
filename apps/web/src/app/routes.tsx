@@ -4,6 +4,7 @@ import { HomePage } from '../pages/HomePage';
 import { NotFoundPage } from '../pages/NotFoundPage';
 import { PendingPage } from '../pages/PendingPage';
 import { ProgramPage } from '../pages/ProgramPage';
+import { TrayPage } from '../pages/TrayPage';
 import { NAV_ITEMS } from './navigation';
 
 export function AppRoutes() {
@@ -11,6 +12,7 @@ export function AppRoutes() {
     <Routes>
       <Route path="/" element={<HomePage />} />
       <Route path="/programa" element={<ProgramPage />} />
+      <Route path="/bandeja" element={<TrayPage />} />
       {NAV_ITEMS.filter((item) => item.slice !== null).map((item) => (
         <Route key={item.path} path={item.path} element={<PendingPage item={item} />} />
       ))}

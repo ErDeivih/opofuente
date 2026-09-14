@@ -7,11 +7,15 @@ declara `configured_unverified` (16_TRACEABILITY §4: prohibido el botón falso)
 
 from __future__ import annotations
 
+import os
+from uuid import uuid4
+
 from sqlalchemy import Engine, text
 from sqlalchemy.exc import SQLAlchemyError
 
-from opofuente.config import Settings
+from opofuente.config import DataPaths, Settings
 from opofuente.domain.system import Capability, CapabilityStatus
+from opofuente.infrastructure.worker_liveness import WorkerLiveness
 
 _OCR_SLICE = "S03"
 _SEARCH_SLICE = "S09"
@@ -104,25 +108,92 @@ class ConfigurationCapabilityProvider:
         )
 
 
+class IngestionCapabilityProvider:
+    """Almacén de originales y cola de trabajos (S02), comprobados de verdad.
+
+    El almacén se declara operativo solo si el directorio de artefactos admite una escritura real.
+    El worker se declara operativo solo si su tarea está corriendo en este proceso: la configuración
+    por sí sola no basta (lo mismo que `configured_unverified` no equivale a funcionar).
+    """
+
+    def __init__(
+        self,
+        *,
+        paths: DataPaths,
+        settings: Settings,
+        liveness: WorkerLiveness,
+    ) -> None:
+        self._paths = paths
+        self._settings = settings
+        self._liveness = liveness
+
+    def provide(self) -> tuple[Capability, ...]:
+        return (self._artifact_store(), self._worker())
+
+    def _artifact_store(self) -> Capability:
+        try:
+            self._paths.ensure_directories()
+            probe = self._paths.artifacts / f"write-probe-{os.getpid()}-{uuid4().hex}"
+            probe.write_text("ok", encoding="utf-8")
+            probe.unlink()
+        except OSError as exc:
+            return Capability(
+                id="artifact_store",
+                label="Almacén de originales por SHA-256",
+                status=CapabilityStatus.UNAVAILABLE,
+                detail=(
+                    "El directorio de artefactos no admite escritura "
+                    f"({type(exc).__name__}); no se puede importar nada."
+                ),
+            )
+        return Capability(
+            id="artifact_store",
+            label="Almacén de originales por SHA-256",
+            status=CapabilityStatus.ENABLED,
+            detail=(
+                "Copia inmutable por contenido en <datos>/artifacts/sha256/ab/cd/<hash>. "
+                "Dos ficheros idénticos comparten un artefacto y conservan dos orígenes."
+            ),
+        )
+
+    def _worker(self) -> Capability:
+        label = "Cola de trabajos local"
+        if not self._settings.worker_enabled:
+            return Capability(
+                id="worker",
+                label=label,
+                status=CapabilityStatus.DISABLED,
+                detail=(
+                    "OPOFUENTE_WORKER_ENABLED=false: los lotes se encolan y no avanzan hasta "
+                    "reactivarlo."
+                ),
+            )
+        if not self._liveness.running:
+            return Capability(
+                id="worker",
+                label=label,
+                status=CapabilityStatus.UNAVAILABLE,
+                detail=(
+                    "Ninguna tarea está trabajando la cola en este proceso. Si la base de datos "
+                    "no estaba migrada al arrancar, el worker arranca al reiniciar."
+                ),
+            )
+        return Capability(
+            id="worker",
+            label=label,
+            status=CapabilityStatus.ENABLED,
+            detail=(
+                "Cola persistida en SQLite con lease, trabajada por este proceso; sin Redis ni "
+                "Celery. Cerrar la pestaña no cancela el trabajo."
+            ),
+        )
+
+
 class PlannedCapabilityProvider:
     """Capacidades que todavía no existen en el código, declaradas sin ambigüedad."""
 
     def provide(self) -> tuple[Capability, ...]:
         return (
-            Capability(
-                id="artifact_store",
-                label="Almacén de originales por SHA-256",
-                status=CapabilityStatus.PLANNED,
-                detail="La copia inmutable y el inventario se implementan en S02.",
-                planned_slice="S02",
-            ),
-            Capability(
-                id="worker",
-                label="Cola de trabajos local",
-                status=CapabilityStatus.PLANNED,
-                detail="Worker persistido en SQLite con lease; sin Redis ni Celery.",
-                planned_slice="S02",
-            ),
             Capability(
                 id="vector_index",
                 label="Índice vectorial local",

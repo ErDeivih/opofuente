@@ -48,6 +48,8 @@ class DataPaths:
     """Árbol de datos local definido en 02_ARCHITECTURE §5."""
 
     root: Path
+    #: Raíz del almacén. `storage_key` de un artefacto empieza por `sha256/…`, de modo que la ruta
+    #: final es `data/artifacts/sha256/ab/cd/<hash>`, exactamente la documentada.
     artifacts: Path
     extracted: Path
     qdrant: Path
@@ -60,7 +62,7 @@ class DataPaths:
     def from_root(cls, root: Path) -> DataPaths:
         return cls(
             root=root,
-            artifacts=root / "artifacts" / "sha256",
+            artifacts=root / "artifacts",
             extracted=root / "extracted",
             qdrant=root / "qdrant",
             exports=root / "exports",
@@ -114,6 +116,16 @@ class Settings(BaseSettings):
     embedding_model: str | None = None
 
     tesseract_path: Path | None = None
+
+    # --- Ingestión y worker local (S02) ---------------------------------------
+    #: Worker en el propio proceso: consume la cola persistida sin Redis ni Celery.
+    worker_enabled: bool = True
+    worker_poll_seconds: float = Field(default=1.0, gt=0.05, le=60)
+    #: Duración del lease de un trabajo. Si el proceso muere, el trabajo vuelve a la cola.
+    job_lease_seconds: int = Field(default=60, ge=5, le=3600)
+    #: Límites de la ingesta: por fichero y por lote.
+    max_file_bytes: int = Field(default=512 * 1024 * 1024, ge=1024)
+    max_batch_entries: int = Field(default=50_000, ge=1, le=1_000_000)
 
     @field_validator("data_dir", mode="after")
     @classmethod

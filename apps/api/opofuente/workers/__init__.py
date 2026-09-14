@@ -1,6 +1,7 @@
-"""Worker local de trabajos persistidos.
+"""Worker local de trabajos persistidos (S02).
 
-Llega en S02 (`inventory_source`, `ingest_batch`, `extract_artifact`, ...). Este paquete
-existe porque la estructura del repositorio lo exige (02_ARCHITECTURE §2), pero no
-contiene ninguna implementación todavía: no hay trabajos que ejecutar.
+`job_worker.py` es el bucle que reclama trabajos de la cola de SQLite, los ejecuta sin bloquear
+el bucle de eventos y los cierra con lease, reintento y cancelación cooperativa. El estado de
+«está corriendo de verdad» que publica el informe de capacidades vive en
+`opofuente.infrastructure.worker_liveness`.
 """

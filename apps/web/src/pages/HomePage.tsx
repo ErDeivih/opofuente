@@ -38,8 +38,8 @@ export function HomePage() {
         <h2 id="acciones-necesarias">Acciones necesarias</h2>
         <EmptyState
           title="No hay material importado"
-          description="Tampoco hay clasificaciones pendientes ni fuentes cambiadas."
-          hint="La bandeja de inventario e importación llega en el slice S02."
+          description="Desde S02 puedes inventariar una carpeta y copiar lo que confirmes, pero esta pantalla todavía no resume esos avisos."
+          hint="El resumen de importaciones con errores llega en el slice S12."
         />
       </section>
 

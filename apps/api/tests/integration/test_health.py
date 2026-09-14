@@ -110,12 +110,17 @@ def test_capabilities_no_declara_operativo_lo_que_no_existe(client: TestClient) 
     capabilities = {item["id"]: item for item in body["capabilities"]}
     assert capabilities["ocr"]["status"] == "disabled"
     assert capabilities["llm"]["status"] == "disabled"
-    assert capabilities["artifact_store"]["status"] == "planned"
-    assert capabilities["artifact_store"]["planned_slice"] == "S02"
+    # S02 existe y se comprueba de verdad: almacén escribible y worker corriendo en este proceso.
+    assert capabilities["artifact_store"]["status"] == "enabled"
+    assert capabilities["worker"]["status"] == "enabled"
+    assert capabilities["vector_index"]["status"] == "planned"
     assert capabilities["vector_index"]["planned_slice"] == "S09"
     # El SQLite de este equipo se comprueba de verdad: si no tuviera FTS5 habría que decirlo.
     assert capabilities["fts5"]["status"] in {"planned", "unavailable"}
-    assert body["degradations"]
+    # Nada se declara operativo sin comprobarlo: lo pendiente genera su degradación explícita.
+    assert any(
+        degradation["code"] == "vector_index.planned" for degradation in body["degradations"]
+    )
     assert all(degradation["code"] for degradation in body["degradations"])
 
 

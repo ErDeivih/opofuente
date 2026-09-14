@@ -22,3 +22,11 @@ class NotFoundError(OpoFuenteError):
         super().__init__(f"no existe {resource} con identificador {identifier}")
         self.resource = resource
         self.identifier = identifier
+
+
+class InvalidSourceError(OpoFuenteError):
+    """La carpeta señalada no se puede inventariar. La API lo traduce a 400."""
+
+
+class JobCancelledError(OpoFuenteError):
+    """El trabajo se detuvo porque se pidió cancelarlo. No es un fallo."""
