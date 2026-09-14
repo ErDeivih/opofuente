@@ -57,25 +57,50 @@ URLs sin nada que clasificar, y S09 es donde llegan los adaptadores y la prueba 
 1. `Settings` expone la clasificación por proveedor en `/settings` y en `/capabilities`.
 2. Pruebas unitarias: endpoint `127.0.0.1`/`localhost`/`::1` → `local`; IP privada declarada →
    `local`; dominio público → `remote`; URL no resoluble o vacía → `unknown`.
-3. Prueba de contrato: el esquema del 500/`SettingsSchema` incluye los nuevos campos y no queda
-   ningún booleano llamado `sends_data_off_device`.
+3. Prueba de contrato: los esquemas documentados de `/settings` (`SettingsSchema`, con su bloque
+   `llm` y su bloque `embeddings` por separado) y de `/capabilities` (`CapabilitiesSchema`, en el
+   detalle de las capacidades `llm` y `embeddings`) incluyen la clasificación por proveedor, y no
+   queda ningún booleano llamado `sends_data_off_device` en ninguna de las dos respuestas.
 4. La pantalla de Ajustes muestra, por proveedor, si los datos salen del equipo (07_UI-UX §11).
 
 ---
 
-## DEBT-002 — Documentar 403 y 404 en el contrato
+## DEBT-002 — Documentar 403, 404 y 422 en el contrato
 
 **Origen:** corrección del 503 de `/health/ready` (commit corrector de S00).
 
-**Problema.** El esquema OpenAPI documenta el 500 (`ProblemDetail`) y el 503 de readiness
-(`ReadinessProblem`), pero el 403 `forbidden_origin` que produce el middleware de Origin y el 404/405
-que produce el manejador global se sirven como `ProblemDetail` sin aparecer en el contrato.
+**Problema.** El esquema OpenAPI documenta el 500 (`ProblemDetail`), el 503 de readiness
+(`ReadinessProblem`) y los esquemas de las respuestas correctas, pero hay errores que se sirven como
+`ProblemDetail` sin aparecer en el contrato, o con un esquema documentado que **no** es el que se
+devuelve:
 
-**Por qué no ahora.** En S00 no existe ningún endpoint de escritura, así que el 403 no puede
-ocurrir en una ruta concreta y documentarlo en rutas `GET` sería inexacto (la comprobación de Origin
-solo actúa sobre métodos no seguros).
+| Respuesta | Quién la produce | Cuerpo real | Documentado hoy |
+|---|---|---|---|
+| `403` | middleware de comprobación de `Origin` (métodos no seguros) | `ProblemDetail` (`code: forbidden_origin`) | no aparece |
+| `404` / `405` | manejador global de `StarletteHTTPException` | `ProblemDetail` | no aparece |
+| `422` | manejador global de `RequestValidationError` | `ProblemDetail` con `field_errors` | lo genera FastAPI como `HTTPValidationError` (`detail: [...]`), que **no** es nuestra forma |
 
-**Criterio de cierre.** Cuando exista la primera ruta de escritura (S02), documentar `403` con
-`ProblemDetail` en las rutas donde el middleware puede rechazarlas, y añadir una prueba de contrato
-que compruebe que el media type documentado es `application/problem+json` y que el `$ref` apunta a
-`ProblemDetail`.
+El caso del 422 es el más engañoso de los tres: en cuanto S02 añada la primera ruta con cuerpo,
+FastAPI documentará automáticamente un `HTTPValidationError` y `apply_problem_media_type` lo moverá a
+`application/problem+json`. El media type quedaría bien y el esquema, mal: un consumidor que genere
+tipos desde el contrato obtendría un tipo que el servidor nunca devuelve.
+
+**Por qué no ahora.** En S00 no existe ninguna ruta de escritura ni ninguna ruta con cuerpo, así que
+el 403 no puede ocurrir en una ruta concreta, y no hay ninguna 422 documentada que corregir.
+Documentarlos ahora en rutas `GET` sería inexacto.
+
+**Criterio de cierre.** Cuando exista la primera ruta de escritura (S02):
+
+1. Documentar `403` con `ProblemDetail` solo en las rutas donde el middleware puede rechazarlas, y
+   `404`/`405` donde correspondan; no añadir respuestas que no puedan ocurrir.
+2. **El 422 documentado debe coincidir con el cuerpo real**: `ProblemDetail` con `field_errors`
+   (o un esquema derivado que lo declare), no `HTTPValidationError`. Si FastAPI sigue generándolo
+   automáticamente, hay que sustituirlo en el esquema —con el mismo mecanismo determinista que
+   `apply_problem_media_type`, sin escribir nombres de componente a mano— o desactivar su generación
+   automática cuando no proceda.
+3. Prueba de contrato que compruebe, para cada error documentado: media type
+   `application/problem+json`, `$ref` al componente esperado, y que los campos del esquema son los
+   mismos que devuelve el cuerpo servido en una petición real (como ya se hace con el 503 de
+   readiness). Incluir un caso de validación fallida que compare `field_errors`.
+4. Nada de esto se cierra declarando «el 422 lo genera FastAPI»: si el esquema documentado no es el
+   que se sirve, la deuda sigue abierta.
