@@ -1,0 +1,1860 @@
+{
+  "code": "gc-cabos-guardias-2026",
+  "generated_from": {
+    "source_id": "gc-temario-oficial-pdf",
+    "sha256": "995a0e948e4beb8842b075626ad2c0714e82c049ff1c98c951c64fc4183ea2fb",
+    "location": "temario oficial completo",
+    "role": "programa oficial (25 temas con bloques y epígrafes)"
+  },
+  "transformations": [
+    "Los temas son los veinticinco «TEMA n.-» del PDF oficial del temario.",
+    "Dentro de cada tema, los «Bloque ...» del documento son nodos de tipo bloque.",
+    "Los epígrafes son las viñetas de primer nivel del PDF.",
+    "Las viñetas de segundo nivel se conservan dentro del epígrafe separadas por «; », porque el programa de OpoFuente solo distingue bloque, tema y epígrafe.",
+    "Se unen las líneas partidas por el salto de página del PDF; no se cambia ni se resume ninguna palabra del texto oficial."
+  ],
+  "counts": {
+    "blocks": 48,
+    "topics": 25,
+    "epigraphs": 125
+  },
+  "nodes": [
+    {
+      "node_type": "topic",
+      "official_code": "1",
+      "title": "DERECHOS HUMANOS",
+      "position": 1,
+      "path": "1",
+      "depth": 0,
+      "children": [
+        {
+          "node_type": "block",
+          "official_code": "1",
+          "title": "Bloque único.",
+          "position": 1,
+          "path": "1.1",
+          "depth": 1,
+          "children": [
+            {
+              "node_type": "epigraph",
+              "official_code": "1",
+              "title": "Carta de las Naciones Unidas. Órganos.",
+              "position": 1,
+              "path": "1.1.1",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "2",
+              "title": "Declaración Universal de Derechos Humanos.",
+              "position": 2,
+              "path": "1.1.2",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "3",
+              "title": "Convenio europeo para la protección de los Derechos Humanos y de las Libertades Fundamentales. Tribunal Europeo de Derechos Humanos.",
+              "position": 3,
+              "path": "1.1.3",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "4",
+              "title": "Carta Social Europea (revisada).",
+              "position": 4,
+              "path": "1.1.4",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "5",
+              "title": "Pacto Internacional de Derechos Económicos, Sociales y Culturales.",
+              "position": 5,
+              "path": "1.1.5",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "6",
+              "title": "Pacto Internacional de Derechos Civiles y Políticos.",
+              "position": 6,
+              "path": "1.1.6",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "7",
+              "title": "Consejo de Derechos Humanos de la ONU.",
+              "position": 7,
+              "path": "1.1.7",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "8",
+              "title": "Convención contra la tortura y otros tratos o penas crueles, inhumanas o degradantes, de la Asamblea General de Naciones Unidas.",
+              "position": 8,
+              "path": "1.1.8",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "9",
+              "title": "Protocolo facultativo de la Convención contra la tortura y otros tratos o penas crueles, inhumanas o degradantes, de la Asamblea General de Naciones Unidas.",
+              "position": 9,
+              "path": "1.1.9",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "10",
+              "title": "Carta de los Derechos Fundamentales de la UE.",
+              "position": 10,
+              "path": "1.1.10",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "11",
+              "title": "Estatuto de Roma de la Corte Penal Internacional.",
+              "position": 11,
+              "path": "1.1.11",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "12",
+              "title": "Ley Orgánica 18/2003, de 10 de diciembre, de Cooperación con la Corte Penal Internacional.",
+              "position": 12,
+              "path": "1.1.12",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "13",
+              "title": "Reglamento de Organización y Funcionamiento del Defensor del Pueblo, aprobado por las Mesas del Congreso y del Senado, a propuesta del Defensor del Pueblo, en su reunión conjunta de 6 de abril de 1983.; V. Consejo Asesor del Mecanismo Nacional de Prevención de Tortura.",
+              "position": 13,
+              "path": "1.1.13",
+              "depth": 2,
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "node_type": "topic",
+      "official_code": "2",
+      "title": "IGUALDAD EFECTIVA DE MUJERES Y HOMBRES",
+      "position": 2,
+      "path": "2",
+      "depth": 0,
+      "children": [
+        {
+          "node_type": "block",
+          "official_code": "1",
+          "title": "Bloque único. Ley Orgánica 3/2007, de 22 de marzo, para la igualdad efectiva de mujeres y hombres.",
+          "position": 1,
+          "path": "2.1",
+          "depth": 1,
+          "children": [
+            {
+              "node_type": "epigraph",
+              "official_code": "1",
+              "title": "TÍTULO I. El principio de igualdad y la tutela contra la discriminación.",
+              "position": 1,
+              "path": "2.1.1",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "2",
+              "title": "TÍTULO II. Políticas públicas para la igualdad.; CAPÍTULO I. Principios generales.",
+              "position": 2,
+              "path": "2.1.2",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "3",
+              "title": "TÍTULO III. Igualdad y medios de comunicación.",
+              "position": 3,
+              "path": "2.1.3",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "4",
+              "title": "TÍTULO IV. El derecho al trabajo en igualdad de oportunidades.",
+              "position": 4,
+              "path": "2.1.4",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "5",
+              "title": "TÍTULO V. El principio de igualdad en el empleo público.",
+              "position": 5,
+              "path": "2.1.5",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "6",
+              "title": "TÍTULO VI. Igualdad de trato en el acceso a bienes y servicios y su suministro.",
+              "position": 6,
+              "path": "2.1.6",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "7",
+              "title": "TÍTULO VII. La igualdad en la responsabilidad social de las empresas.",
+              "position": 7,
+              "path": "2.1.7",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "8",
+              "title": "TÍTULO VIII. Disposiciones organizativas.",
+              "position": 8,
+              "path": "2.1.8",
+              "depth": 2,
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "node_type": "topic",
+      "official_code": "3",
+      "title": "PREVENCIÓN DE RIESGOS LABORALES",
+      "position": 3,
+      "path": "3",
+      "depth": 0,
+      "children": [
+        {
+          "node_type": "block",
+          "official_code": "1",
+          "title": "Bloque único.",
+          "position": 1,
+          "path": "3.1",
+          "depth": 1,
+          "children": [
+            {
+              "node_type": "epigraph",
+              "official_code": "1",
+              "title": "Ley 31/1995, de 8 de noviembre, de Prevención de Riesgos Laborales.; CAPÍTULO I. Objeto, ámbito de aplicación y definiciones.; CAPÍTULO II. Política en materia de prevención de riesgos para proteger la seguridad y la salud en el trabajo.; CAPÍTULO III. Derechos y obligaciones.; CAPÍTULO VI. Obligaciones de los fabricantes, importadores y suministradores.; CAPÍTULO VII. Responsabilidades y sanciones.",
+              "position": 1,
+              "path": "3.1.1",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "2",
+              "title": "Real Decreto 67/2010, de adaptación de la legislación de prevención de riesgos laborales a la Administración General del Estado.",
+              "position": 2,
+              "path": "3.1.2",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "3",
+              "title": "Real Decreto 179/2005, sobre prevención de Riesgos Laborales en la Guardia Civil.",
+              "position": 3,
+              "path": "3.1.3",
+              "depth": 2,
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "node_type": "topic",
+      "official_code": "4",
+      "title": "DERECHO CONSTITUCIONAL",
+      "position": 4,
+      "path": "4",
+      "depth": 0,
+      "children": [
+        {
+          "node_type": "block",
+          "official_code": "1",
+          "title": "Bloque 1. La Constitución Española de 1978.",
+          "position": 1,
+          "path": "4.1",
+          "depth": 1,
+          "children": []
+        },
+        {
+          "node_type": "block",
+          "official_code": "2",
+          "title": "Bloque 2. Ley Orgánica 3/1981, de 6 de abril, del Defensor del Pueblo.",
+          "position": 2,
+          "path": "4.2",
+          "depth": 1,
+          "children": [
+            {
+              "node_type": "epigraph",
+              "official_code": "1",
+              "title": "TÍTULO I. Nombramiento, cese y condiciones.",
+              "position": 1,
+              "path": "4.2.1",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "2",
+              "title": "TÍTULO II. Del Procedimiento.",
+              "position": 2,
+              "path": "4.2.2",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "3",
+              "title": "TÍTULO III. De las resoluciones.",
+              "position": 3,
+              "path": "4.2.3",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "4",
+              "title": "Disposición Final Única. Mecanismo Nacional de Prevención de la Tortura.",
+              "position": 4,
+              "path": "4.2.4",
+              "depth": 2,
+              "children": []
+            }
+          ]
+        },
+        {
+          "node_type": "block",
+          "official_code": "3",
+          "title": "Bloque 3. Ley Orgánica 1/1982, de 5 de mayo, sobre protección civil del derecho al honor, a la intimidad personal",
+          "position": 3,
+          "path": "4.3",
+          "depth": 1,
+          "children": []
+        }
+      ]
+    },
+    {
+      "node_type": "topic",
+      "official_code": "5",
+      "title": "DERECHO DE LA UNIÓN EUROPEA",
+      "position": 5,
+      "path": "5",
+      "depth": 0,
+      "children": [
+        {
+          "node_type": "block",
+          "official_code": "1",
+          "title": "Bloque 1. Tratado de la Unión Europea.",
+          "position": 1,
+          "path": "5.1",
+          "depth": 1,
+          "children": [
+            {
+              "node_type": "epigraph",
+              "official_code": "1",
+              "title": "TÍTULO I. Disposiciones comunes.",
+              "position": 1,
+              "path": "5.1.1",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "2",
+              "title": "TÍTULO II. Disposiciones sobre los principios democráticos.",
+              "position": 2,
+              "path": "5.1.2",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "3",
+              "title": "TÍTULO III. Disposiciones sobre las instituciones.",
+              "position": 3,
+              "path": "5.1.3",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "4",
+              "title": "TÍTULO IV. Disposiciones sobre las cooperaciones reforzadas.",
+              "position": 4,
+              "path": "5.1.4",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "5",
+              "title": "TÍTULO V. Disposiciones generales relativas a la acción exterior de la unión y disposiciones específicas relativas a la política exterior y de seguridad común.; CAPÍTULO 2. Sección 2. Disposiciones sobre la política común de Seguridad y Defensa.",
+              "position": 5,
+              "path": "5.1.5",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "6",
+              "title": "TÍTULO VI. Disposiciones finales.",
+              "position": 6,
+              "path": "5.1.6",
+              "depth": 2,
+              "children": []
+            }
+          ]
+        },
+        {
+          "node_type": "block",
+          "official_code": "2",
+          "title": "Bloque 2. Tratado de Funcionamiento de la Unión Europea.",
+          "position": 2,
+          "path": "5.2",
+          "depth": 1,
+          "children": [
+            {
+              "node_type": "epigraph",
+              "official_code": "1",
+              "title": "PRIMERA PARTE. Principios.",
+              "position": 1,
+              "path": "5.2.1",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "2",
+              "title": "SEGUNDA PARTE. No discriminación y ciudadanía de la Unión.",
+              "position": 2,
+              "path": "5.2.2",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "3",
+              "title": "TERCERA PARTE. Políticas y acciones internas de la Unión.; TÍTULO I. Mercado interior.; TÍTULO II. Libre circulación de mercancías.; TÍTULO IV. Libre circulación de personas, servicios y capitales.; TÍTULO V. Espacio de libertad, seguridad y justicia.; TÍTULO XX. Medio ambiente.; TÍTULO XXIII. Protección Civil.",
+              "position": 3,
+              "path": "5.2.3",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "4",
+              "title": "CUARTA PARTE. Asociación de los países y territorios de ultramar.",
+              "position": 4,
+              "path": "5.2.4",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "5",
+              "title": "QUINTA PARTE. Acción Exterior de la Unión.; TÍTULO III. Cooperación con terceros países y ayuda humanitaria.; TÍTULO VII. Cláusula de solidaridad.",
+              "position": 5,
+              "path": "5.2.5",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "6",
+              "title": "SEXTA PARTE. Disposiciones institucionales y financieras.; TÍTULO I. Disposiciones institucionales. CAPÍTULO I. Instituciones.",
+              "position": 6,
+              "path": "5.2.6",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "7",
+              "title": "Sección 1ª. El Parlamento Europeo.",
+              "position": 7,
+              "path": "5.2.7",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "8",
+              "title": "Sección 2ª. El Consejo Europeo.",
+              "position": 8,
+              "path": "5.2.8",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "9",
+              "title": "Sección 3ª. El Consejo.",
+              "position": 9,
+              "path": "5.2.9",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "10",
+              "title": "Sección 4ª. La Comisión.",
+              "position": 10,
+              "path": "5.2.10",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "11",
+              "title": "Sección 5ª. El Tribunal de Justicia de la Unión Europea. CAPÍTULO II. Actos jurídicos de la Unión, procedimientos de adopción y otras disposiciones.",
+              "position": 11,
+              "path": "5.2.11",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "12",
+              "title": "Sección 1ª. Actos jurídicos de la Unión. CAPÍTULO III. Órganos consultivos de la Unión.",
+              "position": 12,
+              "path": "5.2.12",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "13",
+              "title": "SÉPTIMA PARTE. Disposiciones generales y finales.",
+              "position": 13,
+              "path": "5.2.13",
+              "depth": 2,
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "node_type": "topic",
+      "official_code": "6",
+      "title": "INSTITUCIONES INTERNACIONALES",
+      "position": 6,
+      "path": "6",
+      "depth": 0,
+      "children": [
+        {
+          "node_type": "block",
+          "official_code": "1",
+          "title": "Bloque único. Instituciones internacionales (evolución histórica, ámbito geográfico, estructura y funciones).",
+          "position": 1,
+          "path": "6.1",
+          "depth": 1,
+          "children": [
+            {
+              "node_type": "epigraph",
+              "official_code": "1",
+              "title": "Organización de las Naciones Unidas (ONU).",
+              "position": 1,
+              "path": "6.1.1",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "2",
+              "title": "El Consejo de Europa.",
+              "position": 2,
+              "path": "6.1.2",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "3",
+              "title": "Unión Europea.",
+              "position": 3,
+              "path": "6.1.3",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "4",
+              "title": "La Organización del Tratado del Atlántico Norte (OTAN o NATO).",
+              "position": 4,
+              "path": "6.1.4",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "5",
+              "title": "INTERPOL.",
+              "position": 5,
+              "path": "6.1.5",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "6",
+              "title": "EUROPOL.",
+              "position": 6,
+              "path": "6.1.6",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "7",
+              "title": "EUROJUST.",
+              "position": 7,
+              "path": "6.1.7",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "8",
+              "title": "FRONTEX.",
+              "position": 8,
+              "path": "6.1.8",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "9",
+              "title": "CEPOL.",
+              "position": 9,
+              "path": "6.1.9",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "10",
+              "title": "FAO.",
+              "position": 10,
+              "path": "6.1.10",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "11",
+              "title": "FMI.",
+              "position": 11,
+              "path": "6.1.11",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "12",
+              "title": "OMS.",
+              "position": 12,
+              "path": "6.1.12",
+              "depth": 2,
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "node_type": "topic",
+      "official_code": "7",
+      "title": "DERECHO CIVIL",
+      "position": 7,
+      "path": "7",
+      "depth": 0,
+      "children": [
+        {
+          "node_type": "block",
+          "official_code": "1",
+          "title": "Bloque único. Real Decreto de 24 de julio de 1889, por el que se publica el Código Civil.",
+          "position": 1,
+          "path": "7.1",
+          "depth": 1,
+          "children": [
+            {
+              "node_type": "epigraph",
+              "official_code": "1",
+              "title": "TÍTULO Preliminar.",
+              "position": 1,
+              "path": "7.1.1",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "2",
+              "title": "LIBRO I. De las Personas.; TÍTULOS del I al XII.",
+              "position": 2,
+              "path": "7.1.2",
+              "depth": 2,
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "node_type": "topic",
+      "official_code": "8",
+      "title": "DERECHO PENAL",
+      "position": 8,
+      "path": "8",
+      "depth": 0,
+      "children": [
+        {
+          "node_type": "block",
+          "official_code": "1",
+          "title": "Bloque único. Ley Orgánica 10/1995, de 23 de noviembre, del Código Penal.",
+          "position": 1,
+          "path": "8.1",
+          "depth": 1,
+          "children": [
+            {
+              "node_type": "epigraph",
+              "official_code": "1",
+              "title": "TÍTULO Preliminar.",
+              "position": 1,
+              "path": "8.1.1",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "2",
+              "title": "LIBRO I. Disposiciones generales sobre los delitos, las personas responsables, las penas, medidas de seguridad y demás consecuencias de la infracción penal.; TÍTULO I. De la infracción penal.; TÍTULO II. De las personas criminalmente responsables de los delitos.; TÍTULO III. De las penas. CAPÍTULO I. De las penas, sus clases y efectos.; TÍTULO IV. De las medidas de seguridad.; TÍTULO V. De la responsabilidad civil derivada de los delitos y de las costas procesales. CAPÍTULO I. De la responsabilidad civil y su extensión. CAPÍTULO II. De las personas civilmente responsables.; TÍTULO VII. De la extinción de la responsabilidad criminal y sus efectos.",
+              "position": 2,
+              "path": "8.1.2",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "3",
+              "title": "LIBRO II. Delitos y sus penas.; TÍTULO I. Del homicidio y sus formas.; TÍTULO III. De las lesiones.; TÍTULO VI. Delitos contra la libertad.; TÍTULO VII. De las torturas y otros delitos contra la integridad moral.; TÍTULO VII bis. De la trata de seres humanos.; TÍTULO VIII. Delitos contra la libertad sexual.; TÍTULO XII. Delitos contra las relaciones familiares. CAPÍTULO I. De los matrimonios ilegales. CAPÍTULO II. De la suposición de parto y de la alteración de la paternidad, estado o condición del menor.; TÍTULO XIX. Delitos contra la Administración Pública.; TÍTULO XXI. Delitos contra la Constitución.; TÍTULO XXIV. Delitos contra la Comunidad Internacional.",
+              "position": 3,
+              "path": "8.1.3",
+              "depth": 2,
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "node_type": "topic",
+      "official_code": "9",
+      "title": "DERECHO PROCESAL PENAL",
+      "position": 9,
+      "path": "9",
+      "depth": 0,
+      "children": [
+        {
+          "node_type": "block",
+          "official_code": "1",
+          "title": "Bloque 1. Real Decreto de 14 de septiembre de 1882, aprobatorio de la Ley de Enjuiciamiento Criminal.",
+          "position": 1,
+          "path": "9.1",
+          "depth": 1,
+          "children": [
+            {
+              "node_type": "epigraph",
+              "official_code": "1",
+              "title": "LIBRO I. Disposiciones generales.; TÍTULO II. De la competencia de los Jueces y Tribunales en lo criminal. CAPÍTULO I. De las reglas por donde se determina la competencia.; TÍTULO IV. De las personas a quienes corresponde el ejercicio de las acciones que nacen de los delitos y faltas.; TÍTULO V. Derecho a la defensa, a la asistencia jurídica gratuita y a la traducción e interpretación en los juicios criminales.",
+              "position": 1,
+              "path": "9.1.1",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "2",
+              "title": "LIBRO II. Del sumario.; TÍTULO I. De la denuncia.; TÍTULO II. De la querella.; TÍTULO III. De la Policía judicial; TÍTULO IV. De la instrucción.; TÍTULO V. De la comprobación del delito y averiguación del delincuente.; TÍTULO VI. De la citación, de la detención y de la prisión provisional. CAPÍTULO II. De la detención. CAPÍTULO IV. Del ejercicio del derecho de defensa, de la asistencia de abogado y del tratamiento de los detenidos y presos.; TÍTULO VIII. De las medidas de investigación limitativas de los derechos reconocidos en el artículo 18 de la Constitución. CAPÍTULO I. De la entrada y registro en lugar cerrado. CAPÍTULO II. Del registro de libros y papeles. CAPÍTULO III. De la detención y apertura de la correspondencia escrita y telegráfica.",
+              "position": 2,
+              "path": "9.1.2",
+              "depth": 2,
+              "children": []
+            }
+          ]
+        },
+        {
+          "node_type": "block",
+          "official_code": "2",
+          "title": "Bloque 2. Ley Orgánica 6/1984, de 24 de mayo, reguladora del procedimiento de “Habeas Corpus”.",
+          "position": 2,
+          "path": "9.2",
+          "depth": 1,
+          "children": []
+        },
+        {
+          "node_type": "block",
+          "official_code": "3",
+          "title": "Bloque 3. Ley Orgánica 6/1985, de 1 de julio, del Poder Judicial.",
+          "position": 3,
+          "path": "9.3",
+          "depth": 1,
+          "children": [
+            {
+              "node_type": "epigraph",
+              "official_code": "1",
+              "title": "LIBRO I. De la extensión y límites de la jurisdicción y de la planta y organización de los Juzgados y Tribunales.; TÍTULO IV. De la composición y atribuciones de los órganos jurisdiccionales.",
+              "position": 1,
+              "path": "9.3.1",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "2",
+              "title": "LIBRO VII. Del Ministerio Fiscal, Fiscalía Europea y demás personas e instituciones que cooperan con la Administración de Justicia.; TÍTULO I. Del Ministerio Fiscal y la Fiscalía Europea.; TÍTULO II. De los Abogados, Procuradores y Graduados Sociales.; TÍTULO III. De la Policía Judicial.",
+              "position": 2,
+              "path": "9.3.2",
+              "depth": 2,
+              "children": []
+            }
+          ]
+        },
+        {
+          "node_type": "block",
+          "official_code": "4",
+          "title": "Bloque 4. Real Decreto 769/1987, de 19 de junio, sobre regulación de la Policía Judicial.",
+          "position": 4,
+          "path": "9.4",
+          "depth": 1,
+          "children": [
+            {
+              "node_type": "epigraph",
+              "official_code": "1",
+              "title": "CAPÍTULO I. De la función de la Policía Judicial.",
+              "position": 1,
+              "path": "9.4.1",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "2",
+              "title": "CAPÍTULO II. De las Unidades de la Policía Judicial.",
+              "position": 2,
+              "path": "9.4.2",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "3",
+              "title": "CAPÍTULO III. De los criterios y normas de actuación de las Unidades Orgánicas de la Policía Judicial.",
+              "position": 3,
+              "path": "9.4.3",
+              "depth": 2,
+              "children": []
+            }
+          ]
+        },
+        {
+          "node_type": "block",
+          "official_code": "5",
+          "title": "Bloque 5. Ley 4/2015, de 27 de abril, del Estatuto de la víctima del delito.",
+          "position": 5,
+          "path": "9.5",
+          "depth": 1,
+          "children": []
+        }
+      ]
+    },
+    {
+      "node_type": "topic",
+      "official_code": "10",
+      "title": "DERECHO ADMINISTRATIVO",
+      "position": 10,
+      "path": "10",
+      "depth": 0,
+      "children": [
+        {
+          "node_type": "block",
+          "official_code": "1",
+          "title": "Bloque 1. Ley 39/2015, de 1 de octubre, del Procedimiento Administrativo Común de las Administraciones",
+          "position": 1,
+          "path": "10.1",
+          "depth": 1,
+          "children": [
+            {
+              "node_type": "epigraph",
+              "official_code": "1",
+              "title": "TÍTULO Preliminar. Disposiciones generales.",
+              "position": 1,
+              "path": "10.1.1",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "2",
+              "title": "TÍTULO I. De los interesados en el procedimiento.",
+              "position": 2,
+              "path": "10.1.2",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "3",
+              "title": "TÍTULO II. De la actividad de las Administraciones Públicas",
+              "position": 3,
+              "path": "10.1.3",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "4",
+              "title": "TÍTULO III. De los actos administrativos.",
+              "position": 4,
+              "path": "10.1.4",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "5",
+              "title": "TÍTULO IV. De las disposiciones del procedimiento administrativo común.",
+              "position": 5,
+              "path": "10.1.5",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "6",
+              "title": "TÍTULO V. De la revisión de los actos en vía administrativa.",
+              "position": 6,
+              "path": "10.1.6",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "7",
+              "title": "TÍTULO VI. De la iniciativa legislativa y de la potestad de dictar Reglas y otras disposiciones.",
+              "position": 7,
+              "path": "10.1.7",
+              "depth": 2,
+              "children": []
+            }
+          ]
+        },
+        {
+          "node_type": "block",
+          "official_code": "2",
+          "title": "Bloque 2. Ley 40/2015, de 1 de octubre, de Régimen Jurídico del Sector Público.",
+          "position": 2,
+          "path": "10.2",
+          "depth": 1,
+          "children": [
+            {
+              "node_type": "epigraph",
+              "official_code": "1",
+              "title": "TÍTULO Preliminar. De las disposiciones generales, principios de actuación y funcionamiento del sector público.",
+              "position": 1,
+              "path": "10.2.1",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "2",
+              "title": "TÍTULO I. Administración General del Estado.",
+              "position": 2,
+              "path": "10.2.2",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "3",
+              "title": "TÍTULO III. Relaciones interadministrativas.",
+              "position": 3,
+              "path": "10.2.3",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "4",
+              "title": "Disposición Final 3ª. Modificación de la Ley 50/97, de 27 de noviembre, del Gobierno.",
+              "position": 4,
+              "path": "10.2.4",
+              "depth": 2,
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "node_type": "topic",
+      "official_code": "11",
+      "title": "PROTECCIÓN DE DATOS",
+      "position": 11,
+      "path": "11",
+      "depth": 0,
+      "children": [
+        {
+          "node_type": "block",
+          "official_code": "1",
+          "title": "Bloque único. Ley Orgánica 3/2018, de Protección de Datos Personales y garantía de los derechos digitales.",
+          "position": 1,
+          "path": "11.1",
+          "depth": 1,
+          "children": [
+            {
+              "node_type": "epigraph",
+              "official_code": "1",
+              "title": "TÍTULOS del I al VIII.",
+              "position": 1,
+              "path": "11.1.1",
+              "depth": 2,
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "node_type": "topic",
+      "official_code": "12",
+      "title": "EXTRANJERÍA. INMIGRACIÓN",
+      "position": 12,
+      "path": "12",
+      "depth": 0,
+      "children": [
+        {
+          "node_type": "block",
+          "official_code": "1",
+          "title": "Bloque único.",
+          "position": 1,
+          "path": "12.1",
+          "depth": 1,
+          "children": [
+            {
+              "node_type": "epigraph",
+              "official_code": "1",
+              "title": "Ley Orgánica 4/2000, de 11 de enero, sobre derechos y libertades de los extranjeros en España y su integración social.",
+              "position": 1,
+              "path": "12.1.1",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "2",
+              "title": "Real Decreto 240/2007, de 16 de febrero, sobre entrada, libre circulación y residencia en España de ciudadanos de los Estados miembros de la Unión Europea y de otros Estados parte en el Acuerdo sobre el Espacio Económico Europeo.",
+              "position": 2,
+              "path": "12.1.2",
+              "depth": 2,
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "node_type": "topic",
+      "official_code": "13",
+      "title": "SEGURIDAD PÚBLICA Y SEGURIDAD PRIVADA",
+      "position": 13,
+      "path": "13",
+      "depth": 0,
+      "children": [
+        {
+          "node_type": "block",
+          "official_code": "1",
+          "title": "Bloque 1. Ley Orgánica 4/2015, de 30 de marzo, de protección de la seguridad ciudadana.",
+          "position": 1,
+          "path": "13.1",
+          "depth": 1,
+          "children": [
+            {
+              "node_type": "epigraph",
+              "official_code": "1",
+              "title": "CAPÍTULO I. Disposiciones generales.",
+              "position": 1,
+              "path": "13.1.1",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "2",
+              "title": "CAPÍTULO II. Documentación e identificación personal.",
+              "position": 2,
+              "path": "13.1.2",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "3",
+              "title": "CAPÍTULO III. Actuaciones para el mantenimiento y restablecimiento de la seguridad ciudadana.",
+              "position": 3,
+              "path": "13.1.3",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "4",
+              "title": "CAPÍTULO IV. Potestades especiales de policía administrativa de seguridad.",
+              "position": 4,
+              "path": "13.1.4",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "5",
+              "title": "CAPÍTULO V. Régimen sancionador.",
+              "position": 5,
+              "path": "13.1.5",
+              "depth": 2,
+              "children": []
+            }
+          ]
+        },
+        {
+          "node_type": "block",
+          "official_code": "2",
+          "title": "Bloque 2. Ley 5/2014, de 4 de abril, de Seguridad Privada.",
+          "position": 2,
+          "path": "13.2",
+          "depth": 1,
+          "children": [
+            {
+              "node_type": "epigraph",
+              "official_code": "1",
+              "title": "TÍTULO Preliminar. Disposiciones generales.",
+              "position": 1,
+              "path": "13.2.1",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "2",
+              "title": "TÍTULO I. Coordinación.",
+              "position": 2,
+              "path": "13.2.2",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "3",
+              "title": "TÍTULO II. Empresas de seguridad privada y despachos de detectives privados.",
+              "position": 3,
+              "path": "13.2.3",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "4",
+              "title": "TÍTULO III. Personal de seguridad privada.",
+              "position": 4,
+              "path": "13.2.4",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "5",
+              "title": "TÍTULO IV. Servicios y medidas de seguridad.",
+              "position": 5,
+              "path": "13.2.5",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "6",
+              "title": "TÍTULO V. Control administrativo.",
+              "position": 6,
+              "path": "13.2.6",
+              "depth": 2,
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "node_type": "topic",
+      "official_code": "14",
+      "title": "MINISTERIO DEL INTERIOR. MINISTERIO DE DEFENSA",
+      "position": 14,
+      "path": "14",
+      "depth": 0,
+      "children": [
+        {
+          "node_type": "block",
+          "official_code": "1",
+          "title": "Bloque 1. Estructura orgánica básica del Ministerio del Interior.",
+          "position": 1,
+          "path": "14.1",
+          "depth": 1,
+          "children": []
+        },
+        {
+          "node_type": "block",
+          "official_code": "2",
+          "title": "Bloque 2. Estructura orgánica básica del Ministerio de Defensa.",
+          "position": 2,
+          "path": "14.2",
+          "depth": 1,
+          "children": []
+        }
+      ]
+    },
+    {
+      "node_type": "topic",
+      "official_code": "15",
+      "title": "FUERZAS Y CUERPOS DE SEGURIDAD. GUARDIA CIVIL",
+      "position": 15,
+      "path": "15",
+      "depth": 0,
+      "children": [
+        {
+          "node_type": "block",
+          "official_code": "1",
+          "title": "Bloque 1.  Ley Orgánica 2/1986, de 13 de marzo, de Fuerzas y Cuerpos de Seguridad.",
+          "position": 1,
+          "path": "15.1",
+          "depth": 1,
+          "children": []
+        },
+        {
+          "node_type": "block",
+          "official_code": "2",
+          "title": "Bloque 2. Ley 29/2014, de 28 de noviembre, de Régimen del Personal del Cuerpo de la Guardia Civil.",
+          "position": 2,
+          "path": "15.2",
+          "depth": 1,
+          "children": [
+            {
+              "node_type": "epigraph",
+              "official_code": "1",
+              "title": "TÍTULO Preliminar. Disposiciones Generales.",
+              "position": 1,
+              "path": "15.2.1",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "2",
+              "title": "TÍTULO I. Competencias en materia de personal.",
+              "position": 2,
+              "path": "15.2.2",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "3",
+              "title": "TÍTULO II. Ordenación del personal.",
+              "position": 3,
+              "path": "15.2.3",
+              "depth": 2,
+              "children": []
+            }
+          ]
+        },
+        {
+          "node_type": "block",
+          "official_code": "3",
+          "title": "Bloque 3. Estructura orgánica de los Servicios Centrales de la Dirección General de la Guardia Civil.",
+          "position": 3,
+          "path": "15.3",
+          "depth": 1,
+          "children": []
+        },
+        {
+          "node_type": "block",
+          "official_code": "4",
+          "title": "Bloque 4. Historia de la Guardia Civil.",
+          "position": 4,
+          "path": "15.4",
+          "depth": 1,
+          "children": [
+            {
+              "node_type": "epigraph",
+              "official_code": "1",
+              "title": "Los inicios del siglo XIX, la fundación, la consolidación, sexenio revolucionario, la restauración monárquica.",
+              "position": 1,
+              "path": "15.4.1",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "2",
+              "title": "El reinado de Alfonso XIII, la segunda República, la Guerra Civil, el franquismo, la transición y la democracia.",
+              "position": 2,
+              "path": "15.4.2",
+              "depth": 2,
+              "children": []
+            }
+          ]
+        },
+        {
+          "node_type": "block",
+          "official_code": "5",
+          "title": "Bloque 5. Ley Orgánica 11/2007, de 22 de octubre, reguladora de los derechos y deberes de los miembros de",
+          "position": 5,
+          "path": "15.5",
+          "depth": 1,
+          "children": []
+        }
+      ]
+    },
+    {
+      "node_type": "topic",
+      "official_code": "16",
+      "title": "MATERIAS SOCIO-CULTURALES. PROTECCIÓN CIVIL. DESARROLLO SOSTENIBLE. EFICIENCIA",
+      "position": 16,
+      "path": "16",
+      "depth": 0,
+      "children": [
+        {
+          "node_type": "block",
+          "official_code": "1",
+          "title": "Bloque 1. Ley 17/2015, de 9 de julio, del Sistema Nacional de Protección Civil.",
+          "position": 1,
+          "path": "16.1",
+          "depth": 1,
+          "children": [
+            {
+              "node_type": "epigraph",
+              "official_code": "1",
+              "title": "TÍTULO I. Disposiciones generales.",
+              "position": 1,
+              "path": "16.1.1",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "2",
+              "title": "TÍTULO II. Actuaciones del SNPC.",
+              "position": 2,
+              "path": "16.1.2",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "3",
+              "title": "TÍTULO III. Los Recursos Humanos del SNPC.",
+              "position": 3,
+              "path": "16.1.3",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "4",
+              "title": "TÍTULO IV. Competencias de los órganos de la Administración General del Estado.",
+              "position": 4,
+              "path": "16.1.4",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "5",
+              "title": "TÍTULO V. Cooperación y coordinación.",
+              "position": 5,
+              "path": "16.1.5",
+              "depth": 2,
+              "children": []
+            }
+          ]
+        },
+        {
+          "node_type": "block",
+          "official_code": "2",
+          "title": "Bloque 2. Ley 42/2007, de 13 de diciembre, del Patrimonio Natural y de la Biodiversidad.",
+          "position": 2,
+          "path": "16.2",
+          "depth": 1,
+          "children": [
+            {
+              "node_type": "epigraph",
+              "official_code": "1",
+              "title": "TÍTULO Preliminar.",
+              "position": 1,
+              "path": "16.2.1",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "2",
+              "title": "TÍTULO II. Catalogación, conservación y restauración de hábitats y espacios del patrimonio natural",
+              "position": 2,
+              "path": "16.2.2",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "3",
+              "title": "TÍTULO III. Conservación de la biodiversidad.",
+              "position": 3,
+              "path": "16.2.3",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "4",
+              "title": "TÍTULO IV. Uso sostenible del patrimonio natural y de la biodiversidad.",
+              "position": 4,
+              "path": "16.2.4",
+              "depth": 2,
+              "children": []
+            }
+          ]
+        },
+        {
+          "node_type": "block",
+          "official_code": "3",
+          "title": "Bloque 3. Directiva 2012/27/UE del Parlamento Europeo y del Consejo de 25 de octubre de 2012, relativa a la",
+          "position": 3,
+          "path": "16.3",
+          "depth": 1,
+          "children": [
+            {
+              "node_type": "epigraph",
+              "official_code": "1",
+              "title": "CAPÍTULO I. Objeto, ámbito de aplicación, definiciones y objetivos de eficiencia energética.",
+              "position": 1,
+              "path": "16.3.1",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "2",
+              "title": "CAPÍTULO II. Eficiencia del uso de la energía.",
+              "position": 2,
+              "path": "16.3.2",
+              "depth": 2,
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "node_type": "topic",
+      "official_code": "17",
+      "title": "MATERIAS TÉCNICO-CIENTÍFICAS. TECNOLOGÍAS DE LA INFORMACIÓN Y LA COMUNICACIÓN",
+      "position": 17,
+      "path": "17",
+      "depth": 0,
+      "children": [
+        {
+          "node_type": "block",
+          "official_code": "1",
+          "title": "Bloque 1. Sistemas de Telecomunicaciones.",
+          "position": 1,
+          "path": "17.1",
+          "depth": 1,
+          "children": [
+            {
+              "node_type": "epigraph",
+              "official_code": "1",
+              "title": "Ley 11/2022, de 28 de junio, General de Telecomunicaciones.; TÍTULO I. Disposiciones generales.; TÍTULO III. CAPÍTULO III. Salvaguardia de derechos fundamentales, secreto de las comunicaciones y protección de los datos personales y derechos y obligaciones de carácter público vinculados con las redes y servicios de comunicaciones electrónicas.",
+              "position": 1,
+              "path": "17.1.1",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "2",
+              "title": "Real Decreto 806/2014, de 19 de septiembre, sobre organización e instrumentos operativos de las tecnologías de la información y las comunicaciones en la Administración General del Estado y sus Organismos Públicos.; CAPÍTULO I. Objeto y ámbito de aplicación.; CAPÍTULO III. Modelo de gobernanza en el ámbito de las tecnologías de la información y las comunicaciones.",
+              "position": 2,
+              "path": "17.1.2",
+              "depth": 2,
+              "children": []
+            }
+          ]
+        },
+        {
+          "node_type": "block",
+          "official_code": "2",
+          "title": "Bloque 2. Técnicas criptográficas y Mecanismos de firma digital.",
+          "position": 2,
+          "path": "17.2",
+          "depth": 1,
+          "children": [
+            {
+              "node_type": "epigraph",
+              "official_code": "1",
+              "title": "Ley 6/2020, de 11 de noviembre, reguladora de determinados aspectos de los servicios electrónicos de confianza.; TÍTULO I. Disposiciones Generales.; TÍTULO II. Certificados Electrónicos.; TÍTULO III. Obligaciones y responsabilidad de los prestadores de servicios electrónicos de confianza.; Disposición adicional tercera. Documento nacional de identidad y sus certificados electrónicos.",
+              "position": 1,
+              "path": "17.2.1",
+              "depth": 2,
+              "children": []
+            }
+          ]
+        },
+        {
+          "node_type": "block",
+          "official_code": "3",
+          "title": "Bloque 3. Principios y recomendaciones básicas en Ciberseguridad del CCN-CERT.",
+          "position": 3,
+          "path": "17.3",
+          "depth": 1,
+          "children": [
+            {
+              "node_type": "epigraph",
+              "official_code": "1",
+              "title": "Factores de amenaza. La Internet Profunda. Aplicaciones. Navegación Segura. Correo electrónico. Virtualización. Seguridad en Dispositivos móviles y redes inalámbricas. Mensajería Instantánea, Redes Sociales. Internet de las cosas (IoT).",
+              "position": 1,
+              "path": "17.3.1",
+              "depth": 2,
+              "children": []
+            }
+          ]
+        },
+        {
+          "node_type": "block",
+          "official_code": "4",
+          "title": "Bloque 4. Sistemas de Información.",
+          "position": 4,
+          "path": "17.4",
+          "depth": 1,
+          "children": [
+            {
+              "node_type": "epigraph",
+              "official_code": "1",
+              "title": "Real Decreto 4/2010, de 8 de enero, por el que se regula el Esquema Nacional de Interoperabilidad en el ámbito de la Administración Electrónica.",
+              "position": 1,
+              "path": "17.4.1",
+              "depth": 2,
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "node_type": "topic",
+      "official_code": "18",
+      "title": "TOPOGRAFÍA",
+      "position": 18,
+      "path": "18",
+      "depth": 0,
+      "children": [
+        {
+          "node_type": "block",
+          "official_code": "1",
+          "title": "Bloque único.",
+          "position": 1,
+          "path": "18.1",
+          "depth": 1,
+          "children": [
+            {
+              "node_type": "epigraph",
+              "official_code": "1",
+              "title": "Elementos geográficos. Eje terrestre, polos, meridiano, paralelo, ecuador, puntos cardinales, coordenadas geográficas, acimut y rumbo. Unidades geométricas de medida. Unidades lineales, escalas numérica y gráfica, unidades angulares. Representación del terreno. Planimetría y altimetría, clases de terreno, accidentes del terreno, sistema de planos acotados, pendiente entre dos puntos.",
+              "position": 1,
+              "path": "18.1.1",
+              "depth": 2,
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "node_type": "topic",
+      "official_code": "19",
+      "title": "DEONTOLOGÍA PROFESIONAL",
+      "position": 19,
+      "path": "19",
+      "depth": 0,
+      "children": [
+        {
+          "node_type": "block",
+          "official_code": "1",
+          "title": "Bloque 1. Principios Básicos sobre el Empleo de la Fuerza y de Armas de Fuego por los Funcionarios",
+          "position": 1,
+          "path": "19.1",
+          "depth": 1,
+          "children": []
+        },
+        {
+          "node_type": "block",
+          "official_code": "2",
+          "title": "Bloque 2. Real Decreto 176/2022, de 4 de marzo, por el que se aprueba el código de conducta del personal de",
+          "position": 2,
+          "path": "19.2",
+          "depth": 1,
+          "children": []
+        }
+      ]
+    },
+    {
+      "node_type": "topic",
+      "official_code": "20",
+      "title": "RESPONSABILIDAD PENAL DE LOS MENORES",
+      "position": 20,
+      "path": "20",
+      "depth": 0,
+      "children": [
+        {
+          "node_type": "block",
+          "official_code": "1",
+          "title": "Bloque único. Ley Orgánica 5/2000, de 12 de enero, reguladora de la responsabilidad penal de los menores.",
+          "position": 1,
+          "path": "20.1",
+          "depth": 1,
+          "children": []
+        }
+      ]
+    },
+    {
+      "node_type": "topic",
+      "official_code": "21",
+      "title": "PROTECCIÓN INTEGRAL CONTRA LA VIOLENCIA DE GÉNERO",
+      "position": 21,
+      "path": "21",
+      "depth": 0,
+      "children": [
+        {
+          "node_type": "block",
+          "official_code": "1",
+          "title": "Bloque único. Ley Orgánica 1/2004, de 28 de diciembre, de Mecanismos de protección integral contra la violencia",
+          "position": 1,
+          "path": "21.1",
+          "depth": 1,
+          "children": []
+        }
+      ]
+    },
+    {
+      "node_type": "topic",
+      "official_code": "22",
+      "title": "ARMAS Y EXPLOSIVOS",
+      "position": 22,
+      "path": "22",
+      "depth": 0,
+      "children": [
+        {
+          "node_type": "block",
+          "official_code": "1",
+          "title": "Bloque 1. Real Decreto 137/1993, de 29 de enero, por el que se aprueba el Reglamento de Armas.",
+          "position": 1,
+          "path": "22.1",
+          "depth": 1,
+          "children": []
+        },
+        {
+          "node_type": "block",
+          "official_code": "2",
+          "title": "Bloque 2. Real Decreto 130/2017, de 24 de febrero, por el que se aprueba el Reglamento de Explosivos.",
+          "position": 2,
+          "path": "22.2",
+          "depth": 1,
+          "children": []
+        }
+      ]
+    },
+    {
+      "node_type": "topic",
+      "official_code": "23",
+      "title": "DERECHO FISCAL",
+      "position": 23,
+      "path": "23",
+      "depth": 0,
+      "children": [
+        {
+          "node_type": "block",
+          "official_code": "1",
+          "title": "Bloque 1. Represión del contrabando.",
+          "position": 1,
+          "path": "23.1",
+          "depth": 1,
+          "children": [
+            {
+              "node_type": "epigraph",
+              "official_code": "1",
+              "title": "Ley Orgánica 12/1995, de 12 de diciembre, de represión del contrabando.",
+              "position": 1,
+              "path": "23.1.1",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "2",
+              "title": "Real Decreto 1649/1998, de 24 de julio, por la que se desarrolla el Título II de la Ley Orgánica 12/1995, de 12 de diciembre, de represión del contrabando, relativo a las infracciones administrativas de contrabando.",
+              "position": 2,
+              "path": "23.1.2",
+              "depth": 2,
+              "children": []
+            }
+          ]
+        },
+        {
+          "node_type": "block",
+          "official_code": "2",
+          "title": "Bloque 2. Reglamento (UE) nº 952/2013 del Parlamento Europeo y del Consejo, de 9 de octubre de 2013, por",
+          "position": 2,
+          "path": "23.2",
+          "depth": 1,
+          "children": [
+            {
+              "node_type": "epigraph",
+              "official_code": "1",
+              "title": "TÍTULO I. DISPOSICIONES GENERALES.; CAPÍTULO 1. Ámbito de aplicación de la legislación aduanera, misión de las aduanas y definiciones.; CAPÍTULO 2. Derechos y obligaciones de las personas en el marco de la legislación aduanera. Sección 1. Suministro de información. Sección 2. Representación aduanera.",
+              "position": 1,
+              "path": "23.2.1",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "2",
+              "title": "TÍTULO III. DEUDA ADUANERA Y GARANTÍAS.; CAPÍTULO 1. Origen de la deuda aduanera. Sección 1. Deuda aduanera de importación. Sección 2. Deuda aduanera de exportación.",
+              "position": 2,
+              "path": "23.2.2",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "3",
+              "title": "TÍTULO VI. DESPACHO A LIBRE PRÁCTICA Y EXENCIÓN DE DERECHOS DE IMPORTACIÓN.; CAPÍTULO 1. Despacho a libre práctica.; CAPÍTULO 2. Exención de derechos de importación.",
+              "position": 3,
+              "path": "23.2.3",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "4",
+              "title": "TÍTULO VII. REGÍMENES ESPECIALES.; CAPÍTULO 1. Disposiciones generales.; CAPÍTULO 2. Tránsito.",
+              "position": 4,
+              "path": "23.2.4",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "5",
+              "title": "TÍTULO VIII. SALIDA DE MERCANCÍAS DEL TERRITORIO ADUANERO DE LA UNIÓN.; CAPÍTULO 1. Formalidades previas a la salida de las mercancías.; CAPÍTULO 2. Formalidades de salida de las mercancías.; CAPÍTULO 3. Exportación y reexportación.; CAPÍTULO 4. Declaración sumaria de salida.",
+              "position": 5,
+              "path": "23.2.5",
+              "depth": 2,
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "node_type": "topic",
+      "official_code": "24",
+      "title": "INGLÉS",
+      "position": 24,
+      "path": "24",
+      "depth": 0,
+      "children": [
+        {
+          "node_type": "block",
+          "official_code": "1",
+          "title": "Bloque único. Prueba de comprensión escrita y ortografía sobre un texto en inglés, de conformidad con el Real Decreto",
+          "position": 1,
+          "path": "24.1",
+          "depth": 1,
+          "children": []
+        }
+      ]
+    },
+    {
+      "node_type": "topic",
+      "official_code": "25",
+      "title": "LENGUA ESPAÑOLA",
+      "position": 25,
+      "path": "25",
+      "depth": 0,
+      "children": [
+        {
+          "node_type": "block",
+          "official_code": "1",
+          "title": "Bloque 1. Prueba de ortografía, en la que el opositor debe discernir entre las formas correctas e incorrectas de las",
+          "position": 1,
+          "path": "25.1",
+          "depth": 1,
+          "children": []
+        },
+        {
+          "node_type": "block",
+          "official_code": "2",
+          "title": "Bloque 2. Prueba de gramática, sobre aspectos morfológicos y sintácticos, en la que el opositor debe discernir entre",
+          "position": 2,
+          "path": "25.2",
+          "depth": 1,
+          "children": []
+        }
+      ]
+    }
+  ]
+}

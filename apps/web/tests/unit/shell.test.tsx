@@ -8,6 +8,7 @@ import { NotFoundPage } from '../../src/pages/NotFoundPage';
 import { HomePage } from '../../src/pages/HomePage';
 import {
   capabilitiesFixture,
+  oppositionsFixture,
   readinessReady,
   renderWithProviders,
   settingsFixture,
@@ -19,6 +20,7 @@ function stubSystemApi() {
     '/api/v1/health/ready': { body: readinessReady },
     '/api/v1/capabilities': { body: capabilitiesFixture },
     '/api/v1/settings': { body: settingsFixture },
+    '/api/v1/oppositions': { body: oppositionsFixture },
   });
 }
 
@@ -37,15 +39,15 @@ describe('navegación', () => {
     ]);
   });
 
-  it('solo Inicio está implementada en S00', () => {
+  it('Inicio y Programa están implementadas; el resto declara su slice', () => {
     const implementadas = NAV_ITEMS.filter((item) => item.slice === null).map((item) => item.label);
-    expect(implementadas).toEqual(['Inicio']);
+    expect(implementadas).toEqual(['Inicio', 'Programa']);
   });
 
   it('las secciones no implementadas declaran su slice', () => {
     const slices = new Map(NAV_ITEMS.map((item) => [item.label, item.slice]));
     expect(slices.get('Bandeja')).toBe('S02');
-    expect(slices.get('Programa')).toBe('S01');
+    expect(slices.get('Programa')).toBeNull();
     expect(slices.get('Biblioteca')).toBe('S05');
     expect(slices.get('Estudiar')).toBe('S07');
   });

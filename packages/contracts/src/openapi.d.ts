@@ -22,6 +22,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/convocations/{convocation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Convocatoria con sus partes y sus reglas de examen */
+        get: operations["get_convocation_api_v1_convocations__convocation_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/convocations/{convocation_id}/curriculum": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Árbol del programa oficial */
+        get: operations["get_curriculum_api_v1_convocations__convocation_id__curriculum_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/curriculum-nodes/{node_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Nodo del programa con su procedencia */
+        get: operations["get_curriculum_node_api_v1_curriculum_nodes__node_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/health/live": {
         parameters: {
             query?: never;
@@ -59,6 +110,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/oppositions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Oposiciones disponibles y su convocatoria activa */
+        get: operations["list_oppositions_api_v1_oppositions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/oppositions/{opposition_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Detalle de una oposición con sus convocatorias */
+        get: operations["get_opposition_api_v1_oppositions__opposition_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/oppositions/{opposition_id}/activate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Activa una oposición (desactiva el resto) */
+        post: operations["activate_opposition_api_v1_oppositions__opposition_id__activate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/oppositions/{opposition_id}/convocations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Convocatorias de una oposición */
+        get: operations["list_convocations_api_v1_oppositions__opposition_id__convocations_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/settings": {
         parameters: {
             query?: never;
@@ -80,6 +199,22 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * ActiveConvocationSchema
+         * @description Convocatoria activa de una oposición, en la forma mínima que necesita el selector.
+         */
+        ActiveConvocationSchema: {
+            /** Code */
+            code: string;
+            /** Id */
+            id: string;
+            /**
+             * Published At
+             * Format: date
+             */
+            published_at: string;
+            status: components["schemas"]["ConvocationStatus"];
+        };
         /** CapabilitiesSchema */
         CapabilitiesSchema: {
             /** Capabilities */
@@ -119,6 +254,123 @@ export interface components {
              */
             status: "ok" | "failed";
         };
+        /** ConvocationDetailSchema */
+        ConvocationDetailSchema: {
+            /** Code */
+            code: string;
+            /** Exam Date */
+            exam_date?: string | null;
+            /** Id */
+            id: string;
+            /** Official Url */
+            official_url: string;
+            /** Opposition Code */
+            opposition_code: string;
+            /** Opposition Id */
+            opposition_id: string;
+            /** Opposition Name */
+            opposition_name: string;
+            /** Parts */
+            parts: components["schemas"]["ExamPartSchema"][];
+            /**
+             * Published At
+             * Format: date
+             */
+            published_at: string;
+            /** Rules */
+            rules: components["schemas"]["ExamRuleSchema"][];
+            /** Source Reference */
+            source_reference?: string | null;
+            status: components["schemas"]["ConvocationStatus"];
+            /** Title */
+            title: string;
+        };
+        /** ConvocationReferenceSchema */
+        ConvocationReferenceSchema: {
+            /** Code */
+            code: string;
+            /** Exam Date */
+            exam_date?: string | null;
+            /** Id */
+            id: string;
+            /** Official Url */
+            official_url: string;
+            /**
+             * Published At
+             * Format: date
+             */
+            published_at: string;
+            status: components["schemas"]["ConvocationStatus"];
+            /** Title */
+            title: string;
+        };
+        /**
+         * ConvocationStatus
+         * @enum {string}
+         */
+        ConvocationStatus: "draft" | "active" | "superseded" | "archived";
+        /** CurriculumNodeDetailSchema */
+        CurriculumNodeDetailSchema: {
+            /** Ancestors */
+            ancestors: components["schemas"]["CurriculumNodeSchema"][];
+            /** Convocation Code */
+            convocation_code: string;
+            /** Convocation Id */
+            convocation_id: string;
+            /** Convocation Title */
+            convocation_title: string;
+            /** Coverage */
+            coverage?: null;
+            node: components["schemas"]["CurriculumNodeSchema"];
+            /** Official Url */
+            official_url: string;
+            /** Opposition Code */
+            opposition_code: string;
+            /** Opposition Name */
+            opposition_name: string;
+            /**
+             * Published At
+             * Format: date
+             */
+            published_at: string;
+            /** Source Reference */
+            source_reference?: string | null;
+        };
+        /** CurriculumNodeSchema */
+        CurriculumNodeSchema: {
+            /** Children */
+            children: components["schemas"]["CurriculumNodeSchema"][];
+            /** Depth */
+            depth: number;
+            /** Description */
+            description?: string | null;
+            /** Id */
+            id: string;
+            node_type: components["schemas"]["NodeType"];
+            /** Official Code */
+            official_code: string;
+            /** Path */
+            path: string;
+            /** Position */
+            position: number;
+            /** Title */
+            title: string;
+        };
+        /** CurriculumSchema */
+        CurriculumSchema: {
+            /** Convocation Code */
+            convocation_code: string;
+            /** Convocation Id */
+            convocation_id: string;
+            /** Counts */
+            counts: {
+                [key: string]: number;
+            };
+            /** Nodes */
+            nodes: components["schemas"]["CurriculumNodeSchema"][];
+            /** Opposition Code */
+            opposition_code: string;
+        };
         /** DegradationSchema */
         DegradationSchema: {
             /** Code */
@@ -132,6 +384,55 @@ export interface components {
             model?: string | null;
             /** Provider */
             provider: string;
+        };
+        /** ExamPartSchema */
+        ExamPartSchema: {
+            /** Code */
+            code: string;
+            /** Evidence Quote */
+            evidence_quote: string;
+            /** Fail If Errors Gte */
+            fail_if_errors_gte?: number | null;
+            format?: components["schemas"]["PartFormat"] | null;
+            kind: components["schemas"]["PartKind"];
+            /** Name */
+            name: string;
+            /** Notes */
+            notes?: string | null;
+            /** Options Per Question */
+            options_per_question?: number | null;
+            /** Ordinary Items */
+            ordinary_items?: number | null;
+            /** Parent Code */
+            parent_code?: string | null;
+            /** Pass Score */
+            pass_score?: number | null;
+            /** Position */
+            position: number;
+            /** Reserve Items */
+            reserve_items?: number | null;
+            /** Score Max */
+            score_max?: number | null;
+            /** Score Min */
+            score_min?: number | null;
+            /** Structure Note */
+            structure_note?: string | null;
+            /** Time Minutes */
+            time_minutes?: number | null;
+            /** Wrong Penalty Fraction */
+            wrong_penalty_fraction?: number | null;
+        };
+        /** ExamRuleSchema */
+        ExamRuleSchema: {
+            /** Code */
+            code: string;
+            /** Description */
+            description: string;
+            /** Evidence Quote */
+            evidence_quote: string;
+            kind: components["schemas"]["RuleKind"];
+            /** Value Text */
+            value_text: string;
         };
         /** FieldError */
         FieldError: {
@@ -164,6 +465,16 @@ export interface components {
             /** Sends Data Off Device */
             sends_data_off_device: boolean;
         };
+        /**
+         * NodeType
+         * @description Nivel estructural del programa dentro de una convocatoria.
+         *
+         *     Los perfiles oficiales no tienen la misma forma: TAI publica cuatro bloques con temas, y
+         *     Guardia Civil publica veinticinco temas con bloques internos y epígrafes. El tipo describe el
+         *     nivel, y cada convocatoria define su jerarquía (ver ADR-005).
+         * @enum {string}
+         */
+        NodeType: "block" | "topic" | "epigraph";
         /** OcrSettingsSchema */
         OcrSettingsSchema: {
             /** Tesseract Available */
@@ -171,6 +482,36 @@ export interface components {
             /** Tesseract Configured */
             tesseract_configured: boolean;
         };
+        /** OppositionDetailSchema */
+        OppositionDetailSchema: {
+            /** Convocations */
+            convocations: components["schemas"]["ConvocationReferenceSchema"][];
+            opposition: components["schemas"]["OppositionSchema"];
+        };
+        /** OppositionSchema */
+        OppositionSchema: {
+            /** Active */
+            active: boolean;
+            active_convocation?: components["schemas"]["ActiveConvocationSchema"] | null;
+            /** Code */
+            code: string;
+            /** Description */
+            description?: string | null;
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+        };
+        /**
+         * PartFormat
+         * @enum {string}
+         */
+        PartFormat: "single_choice" | "multi_mark_error" | "psychotechnical";
+        /**
+         * PartKind
+         * @enum {string}
+         */
+        PartKind: "group" | "test";
         /**
          * ProblemDetail
          * @description Cuerpo de error del contrato.
@@ -239,6 +580,11 @@ export interface components {
             status: "ready" | "degraded";
         };
         /**
+         * RuleKind
+         * @enum {string}
+         */
+        RuleKind: "boolean" | "integer" | "fraction" | "text";
+        /**
          * SettingsSchema
          * @description Configuración efectiva sanitizada. Nunca incluye secretos.
          */
@@ -292,6 +638,153 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CapabilitiesSchema"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    get_convocation_api_v1_convocations__convocation_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                convocation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConvocationDetailSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    get_curriculum_api_v1_convocations__convocation_id__curriculum_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                convocation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CurriculumSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    get_curriculum_node_api_v1_curriculum_nodes__node_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                node_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CurriculumNodeDetailSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
                 };
             };
             /** @description Error interno inesperado (RFC 9457). */
@@ -368,6 +861,191 @@ export interface operations {
                 };
                 content: {
                     "application/problem+json": components["schemas"]["ReadinessProblem"];
+                };
+            };
+        };
+    };
+    list_oppositions_api_v1_oppositions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OppositionSchema"][];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    get_opposition_api_v1_oppositions__opposition_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                opposition_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OppositionDetailSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    activate_opposition_api_v1_oppositions__opposition_id__activate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                opposition_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OppositionSchema"];
+                };
+            };
+            /** @description Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    list_convocations_api_v1_oppositions__opposition_id__convocations_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                opposition_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConvocationReferenceSchema"][];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
                 };
             };
         };

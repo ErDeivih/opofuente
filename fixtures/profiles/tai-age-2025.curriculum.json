@@ -1,0 +1,357 @@
+{
+  "code": "tai-age-2025",
+  "generated_from": {
+    "source_id": "tai-boe-convocatoria-xml",
+    "sha256": "7529c91e6007cdd0d161efd0cc2ed99b1abee05ef57e79125e05fe9c3f0a07d2",
+    "location": "ANEXO V (apartado 3. Programa)",
+    "role": "convocatoria, programa y reglas de examen (ANEXO V)"
+  },
+  "transformations": [
+    "Solo se usa el ANEXO V del BOE; los demás anexos convocan otros cuerpos.",
+    "Los bloques son los encabezados «I.» a «IV.» del apartado «3. Programa.» y los temas son los párrafos numerados que cuelgan de cada bloque. El programa de TAI no publica epígrafes: el texto de cada tema se conserva íntegro como título del nodo."
+  ],
+  "counts": {
+    "blocks": 4,
+    "topics": 33,
+    "epigraphs": 0
+  },
+  "nodes": [
+    {
+      "node_type": "block",
+      "official_code": "I",
+      "title": "Organización del Estado y Administración electrónica",
+      "position": 1,
+      "path": "I",
+      "depth": 0,
+      "children": [
+        {
+          "node_type": "topic",
+          "official_code": "1",
+          "title": "La Constitución Española de 1978. Derechos y deberes fundamentales. Su garantía y suspensión. La Corona: funciones constitucionales del Rey.",
+          "position": 1,
+          "path": "I.1",
+          "depth": 1,
+          "children": []
+        },
+        {
+          "node_type": "topic",
+          "official_code": "2",
+          "title": "Las Cortes Generales: atribuciones del Congreso de los Diputados y del Senado. El Tribunal Constitucional: composición y atribuciones. El Defensor del Pueblo.",
+          "position": 2,
+          "path": "I.2",
+          "depth": 1,
+          "children": []
+        },
+        {
+          "node_type": "topic",
+          "official_code": "3",
+          "title": "El Gobierno: composición, nombramiento y cese. Las funciones del Gobierno. Relaciones entre el Gobierno y las Cortes Generales.",
+          "position": 3,
+          "path": "I.3",
+          "depth": 1,
+          "children": []
+        },
+        {
+          "node_type": "topic",
+          "official_code": "4",
+          "title": "El texto refundido del Estatuto Básico del Empleo Público y demás normativa de aplicación: derechos y deberes, formas de provisión de puestos, promoción interna y carrera profesional; situaciones administrativas, incompatibilidades y régimen sancionador. La Ley 19/2013, de 9 de diciembre, de transparencia, acceso a la información pública y buen gobierno. La Agenda 2030 y los Objetivos de Desarrollo Sostenible.",
+          "position": 4,
+          "path": "I.4",
+          "depth": 1,
+          "children": []
+        },
+        {
+          "node_type": "topic",
+          "official_code": "5",
+          "title": "Políticas de igualdad y contra la violencia de género. Políticas de igualdad de trato y no discriminación de las personas LGTBI. Discapacidad y dependencia: régimen jurídico.",
+          "position": 5,
+          "path": "I.5",
+          "depth": 1,
+          "children": []
+        },
+        {
+          "node_type": "topic",
+          "official_code": "6",
+          "title": "La sociedad de la información. Identidad y firma electrónica: régimen jurídico. El DNI electrónico. La Agenda Digital para España.",
+          "position": 6,
+          "path": "I.6",
+          "depth": 1,
+          "children": []
+        },
+        {
+          "node_type": "topic",
+          "official_code": "7",
+          "title": "La protección de datos personales y su régimen jurídico: principios, derechos y obligaciones. Derechos digitales.",
+          "position": 7,
+          "path": "I.7",
+          "depth": 1,
+          "children": []
+        },
+        {
+          "node_type": "topic",
+          "official_code": "8",
+          "title": "Acceso electrónico de los ciudadanos a los servicios públicos y normativa de desarrollo. La gestión electrónica de los procedimientos administrativos: registros, notificaciones y uso de medios electrónicos. Esquema Nacional de Seguridad y de Interoperabilidad. Normas técnicas de Interoperabilidad.",
+          "position": 8,
+          "path": "I.8",
+          "depth": 1,
+          "children": []
+        },
+        {
+          "node_type": "topic",
+          "official_code": "9",
+          "title": "Instrumentos para el acceso electrónico a las Administraciones públicas: sedes electrónicas, canales y puntos de acceso, identificación y autenticación. Infraestructuras y servicios comunes en materia de administración electrónica.",
+          "position": 9,
+          "path": "I.9",
+          "depth": 1,
+          "children": []
+        }
+      ]
+    },
+    {
+      "node_type": "block",
+      "official_code": "II",
+      "title": "Tecnología básica",
+      "position": 2,
+      "path": "II",
+      "depth": 0,
+      "children": [
+        {
+          "node_type": "topic",
+          "official_code": "1",
+          "title": "Informática básica. Representación y comunicación de la información: elementos constitutivos de un sistema de información. Características y funciones. Arquitectura de ordenadores. Componentes internos de los equipos microinformáticos.",
+          "position": 1,
+          "path": "II.1",
+          "depth": 1,
+          "children": []
+        },
+        {
+          "node_type": "topic",
+          "official_code": "2",
+          "title": "Periféricos: conectividad y administración. Elementos de impresión. Elementos de almacenamiento. Elementos de visualización y digitalización.",
+          "position": 2,
+          "path": "II.2",
+          "depth": 1,
+          "children": []
+        },
+        {
+          "node_type": "topic",
+          "official_code": "3",
+          "title": "Tipos abstractos y Estructuras de datos. Organizaciones de ficheros. Algoritmos. Formatos de información y ficheros.",
+          "position": 3,
+          "path": "II.3",
+          "depth": 1,
+          "children": []
+        },
+        {
+          "node_type": "topic",
+          "official_code": "4",
+          "title": "Sistemas operativos. Características y elementos constitutivos. Sistemas Windows. Sistemas Unix y Linux. Sistemas operativos para dispositivos móviles.",
+          "position": 4,
+          "path": "II.4",
+          "depth": 1,
+          "children": []
+        },
+        {
+          "node_type": "topic",
+          "official_code": "5",
+          "title": "Sistemas de gestión de bases de datos relacionales, orientados a objetos y NoSQL: características y componentes.",
+          "position": 5,
+          "path": "II.5",
+          "depth": 1,
+          "children": []
+        }
+      ]
+    },
+    {
+      "node_type": "block",
+      "official_code": "III",
+      "title": "Desarrollo de sistemas",
+      "position": 3,
+      "path": "III",
+      "depth": 0,
+      "children": [
+        {
+          "node_type": "topic",
+          "official_code": "1",
+          "title": "Modelado de datos, metodologías y reglas. Entidades, atributos y relaciones. Diseño de bases de datos. Diseño lógico y físico. El modelo lógico relacional. Normalización.",
+          "position": 1,
+          "path": "III.1",
+          "depth": 1,
+          "children": []
+        },
+        {
+          "node_type": "topic",
+          "official_code": "2",
+          "title": "Lenguajes de programación. Representación de tipos de datos. Operadores. Instrucciones condicionales. Bucles y recursividad. Procedimientos, funciones y parámetros. Vectores y registros. Estructura de un programa.",
+          "position": 2,
+          "path": "III.2",
+          "depth": 1,
+          "children": []
+        },
+        {
+          "node_type": "topic",
+          "official_code": "3",
+          "title": "Lenguajes de interrogación de bases de datos. Estándar ANSI SQL. Procedimientos almacenados. Eventos y disparadores.",
+          "position": 3,
+          "path": "III.3",
+          "depth": 1,
+          "children": []
+        },
+        {
+          "node_type": "topic",
+          "official_code": "4",
+          "title": "Diseño y programación orientada a objetos. Elementos y componentes software: objetos, clases, herencia, métodos, sobrecarga. Ventajas e inconvenientes. Patrones de diseño y lenguaje de modelado unificado (UML).",
+          "position": 4,
+          "path": "III.4",
+          "depth": 1,
+          "children": []
+        },
+        {
+          "node_type": "topic",
+          "official_code": "5",
+          "title": "Arquitectura Java EE/Jakarta EE y plataforma.NET: componentes, persistencia y seguridad. Características, elementos, lenguajes y funciones en ambos entornos. Desarrollo de interfaces.",
+          "position": 5,
+          "path": "III.5",
+          "depth": 1,
+          "children": []
+        },
+        {
+          "node_type": "topic",
+          "official_code": "6",
+          "title": "Arquitectura de sistemas cliente/servidor y multicapas: componentes y operación. Arquitecturas de servicios web y protocolos asociados.",
+          "position": 6,
+          "path": "III.6",
+          "depth": 1,
+          "children": []
+        },
+        {
+          "node_type": "topic",
+          "official_code": "7",
+          "title": "Aplicaciones web. Desarrollo web front-end y en servidor, multiplataforma y multidispositivo. Lenguajes: HTML, XML y sus derivaciones. Navegadores y lenguajes de programación web. Lenguajes de script.",
+          "position": 7,
+          "path": "III.7",
+          "depth": 1,
+          "children": []
+        },
+        {
+          "node_type": "topic",
+          "official_code": "8",
+          "title": "Accesibilidad, diseño universal y usabilidad. Acceso y usabilidad de las tecnologías, productos y servicios relacionados con la sociedad de la información. Confidencialidad y disponibilidad de la información en puestos de usuario final. Conceptos de seguridad en el desarrollo de los sistemas.",
+          "position": 8,
+          "path": "III.8",
+          "depth": 1,
+          "children": []
+        },
+        {
+          "node_type": "topic",
+          "official_code": "9",
+          "title": "Repositorios: estructura y actualización. Generación de código y documentación. Metodologías de desarrollo. Pruebas. Programas para control de versiones. Plataformas de desarrollo colaborativo de software.",
+          "position": 9,
+          "path": "III.9",
+          "depth": 1,
+          "children": []
+        }
+      ]
+    },
+    {
+      "node_type": "block",
+      "official_code": "IV",
+      "title": "Sistemas y comunicaciones",
+      "position": 4,
+      "path": "IV",
+      "depth": 0,
+      "children": [
+        {
+          "node_type": "topic",
+          "official_code": "1",
+          "title": "Administración del Sistema operativo y software de base. Actualización, mantenimiento y reparación del sistema operativo.",
+          "position": 1,
+          "path": "IV.1",
+          "depth": 1,
+          "children": []
+        },
+        {
+          "node_type": "topic",
+          "official_code": "2",
+          "title": "Administración de bases de datos. Sistemas de almacenamiento y su virtualización. Políticas, sistemas y procedimientos de backup y su recuperación. Backup de sistemas físicos y virtuales. Virtualización de sistemas y virtualización de puestos de usuario.",
+          "position": 2,
+          "path": "IV.2",
+          "depth": 1,
+          "children": []
+        },
+        {
+          "node_type": "topic",
+          "official_code": "3",
+          "title": "Administración de servidores de correo electrónico sus protocolos. Administración de contenedores y microservicios.",
+          "position": 3,
+          "path": "IV.3",
+          "depth": 1,
+          "children": []
+        },
+        {
+          "node_type": "topic",
+          "official_code": "4",
+          "title": "Administración de redes de área local. Gestión de usuarios. Gestión de dispositivos. Monitorización y control de tráfico.",
+          "position": 4,
+          "path": "IV.4",
+          "depth": 1,
+          "children": []
+        },
+        {
+          "node_type": "topic",
+          "official_code": "5",
+          "title": "Conceptos de seguridad de los sistemas de información. Seguridad física. Seguridad lógica. Amenazas y vulnerabilidades. Técnicas criptográficas y protocolos seguros. Mecanismos de firma digital. Infraestructura física de un CPD: acondicionamiento y equipamiento. Sistemas de gestión de incidencias. Control remoto de puestos de usuario.",
+          "position": 5,
+          "path": "IV.5",
+          "depth": 1,
+          "children": []
+        },
+        {
+          "node_type": "topic",
+          "official_code": "6",
+          "title": "Comunicaciones. Medios de transmisión. Modos de comunicación. Equipos terminales y equipos de interconexión y conmutación. Redes de comunicaciones. Redes de conmutación y redes de difusión. Comunicaciones móviles e inalámbricas.",
+          "position": 6,
+          "path": "IV.6",
+          "depth": 1,
+          "children": []
+        },
+        {
+          "node_type": "topic",
+          "official_code": "7",
+          "title": "El modelo TCP/IP y el modelo de referencia de interconexión de sistemas abiertos (OSI) de ISO. Protocolos TCP/IP.",
+          "position": 7,
+          "path": "IV.7",
+          "depth": 1,
+          "children": []
+        },
+        {
+          "node_type": "topic",
+          "official_code": "8",
+          "title": "Internet: arquitectura de red. Origen, evolución y estado actual. Principales servicios. Protocolos HTTP, HTTPS y SSL/TLS.",
+          "position": 8,
+          "path": "IV.8",
+          "depth": 1,
+          "children": []
+        },
+        {
+          "node_type": "topic",
+          "official_code": "9",
+          "title": "Seguridad y protección en redes de comunicaciones. Seguridad perimetral. Acceso remoto seguro a redes. Redes privadas virtuales (VPN). Seguridad en el puesto del usuario.",
+          "position": 9,
+          "path": "IV.9",
+          "depth": 1,
+          "children": []
+        },
+        {
+          "node_type": "topic",
+          "official_code": "10",
+          "title": "Redes locales. Tipología. Técnicas de transmisión. Métodos de acceso. Dispositivos de interconexión.",
+          "position": 10,
+          "path": "IV.10",
+          "depth": 1,
+          "children": []
+        }
+      ]
+    }
+  ]
+}

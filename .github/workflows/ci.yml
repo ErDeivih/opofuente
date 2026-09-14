@@ -46,6 +46,12 @@ jobs:
       - name: Contrato OpenAPI sincronizado
         run: uv run python -m opofuente.tools.export_openapi --check
 
+      - name: Fuentes oficiales y fixtures de perfil
+        shell: pwsh
+        run: |
+          ./scripts/fetch-sources.ps1
+          uv run python -m opofuente.tools.build_profile_fixtures --check
+
       - name: Build
         run: uv build
 

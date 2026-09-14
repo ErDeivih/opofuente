@@ -6,14 +6,14 @@ No contienen reglas de negocio (02_ARCHITECTURE §3: la capa API no decide).
 from __future__ import annotations
 
 import shutil
-from typing import Any
 
 from fastapi import APIRouter, Response
 from fastapi.responses import JSONResponse
 
 from opofuente import __version__
 from opofuente.api.deps import AppSettingsDep, SystemServiceDep
-from opofuente.api.errors import ProblemDetail, problem_response_from
+from opofuente.api.error_responses import BASE_ERRORS
+from opofuente.api.errors import problem_response_from
 from opofuente.api.schemas import (
     CapabilitiesSchema,
     CapabilitySchema,
@@ -31,15 +31,7 @@ from opofuente.config import project_root
 
 router = APIRouter()
 
-#: Cualquier ruta puede terminar en un error inesperado: el manejador global responde con
-#: `ProblemDetail` en `application/problem+json`. Documentarlo mantiene el contrato base del
-#: problema dentro del esquema, que es el tipo que el cliente usa para cualquier error.
-INTERNAL_ERROR_RESPONSE: dict[int | str, dict[str, Any]] = {
-    500: {
-        "model": ProblemDetail,
-        "description": "Error interno inesperado (RFC 9457).",
-    }
-}
+INTERNAL_ERROR_RESPONSE = BASE_ERRORS
 
 
 @router.get(

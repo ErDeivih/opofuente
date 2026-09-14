@@ -16,7 +16,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from opofuente.domain.errors import OpoFuenteError
+from opofuente.domain.errors import NotFoundError, OpoFuenteError
 from opofuente.infrastructure.correlation import get_correlation_id
 
 logger = logging.getLogger(__name__)
@@ -145,6 +145,13 @@ def register_exception_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(OpoFuenteError)
     async def _domain_exception_handler(request: Request, exc: OpoFuenteError) -> JSONResponse:
+        if isinstance(exc, NotFoundError):
+            return problem_response(
+                status_code=404,
+                detail=f"No existe {exc.resource} con ese identificador.",
+                instance=request.url.path,
+                code="not_found",
+            )
         logger.error(
             "request.domain_error",
             extra={"error_type": type(exc).__name__, "path": request.url.path},

@@ -29,6 +29,13 @@ REQUIRED_PATHS = (
     "/api/v1/health/ready",
     "/api/v1/capabilities",
     "/api/v1/settings",
+    "/api/v1/oppositions",
+    "/api/v1/oppositions/{opposition_id}",
+    "/api/v1/oppositions/{opposition_id}/activate",
+    "/api/v1/oppositions/{opposition_id}/convocations",
+    "/api/v1/convocations/{convocation_id}",
+    "/api/v1/convocations/{convocation_id}/curriculum",
+    "/api/v1/curriculum-nodes/{node_id}",
 )
 
 PROBLEM_FIELDS = ("type", "title", "status", "detail", "instance", "code", "correlation_id")
@@ -91,11 +98,14 @@ def test_todas_las_rutas_documentan_el_error_interno_con_el_mismo_esquema(
     schema: dict[str, Any],
 ) -> None:
     for path in REQUIRED_PATHS:
-        responses = schema["paths"][path]["get"]["responses"]
-        assert "500" in responses, f"{path} no documenta el 500"
-        content = responses["500"]["content"]
-        assert set(content) == {PROBLEM_MEDIA_TYPE}, f"{path} documenta el 500 con otro media type"
-        assert content[PROBLEM_MEDIA_TYPE]["schema"]["$ref"].endswith("/ProblemDetail")
+        for method, operation in schema["paths"][path].items():
+            responses = operation["responses"]
+            assert "500" in responses, f"{method.upper()} {path} no documenta el 500"
+            content = responses["500"]["content"]
+            assert set(content) == {PROBLEM_MEDIA_TYPE}, (
+                f"{method.upper()} {path} documenta el 500 con otro media type"
+            )
+            assert content[PROBLEM_MEDIA_TYPE]["schema"]["$ref"].endswith("/ProblemDetail")
 
 
 def test_ready_503_esta_documentado_como_problem_json(ready_503: dict[str, Any]) -> None:
@@ -171,3 +181,98 @@ def test_capabilities_documenta_estados_reales(schema: dict[str, Any]) -> None:
         "configured_unverified",
         "planned",
     ]
+
+
+def test_el_422_se_documenta_con_el_cuerpo_que_se_sirve(schema: dict[str, Any]) -> None:
+    """DEBT-002: FastAPI documentaría `HTTPValidationError`, que no es lo que devolvemos.
+
+    Al declarar el 422 en cada ruta, el contrato publica `ProblemDetail` (con `field_errors`) bajo
+    `application/problem+json`, que es exactamente el cuerpo del manejador de validación.
+    """
+    assert "HTTPValidationError" not in json.dumps(schema), (
+        "el contrato no debe documentar HTTPValidationError: el cuerpo real es ProblemDetail"
+    )
+    for path in ("/api/v1/oppositions/{opposition_id}", "/api/v1/curriculum-nodes/{node_id}"):
+        responses = schema["paths"][path]["get"]["responses"]
+        assert "422" in responses, f"{path} debería documentar el 422"
+        content = responses["422"]["content"]
+        assert set(content) == {PROBLEM_MEDIA_TYPE}
+        assert content[PROBLEM_MEDIA_TYPE]["schema"]["$ref"].endswith("/ProblemDetail")
+    assert "field_errors" in schema["components"]["schemas"]["ProblemDetail"]["properties"]
+
+
+def test_la_primera_ruta_de_escritura_documenta_el_403(schema: dict[str, Any]) -> None:
+    """El 403 lo produce el middleware de Origin y solo afecta a métodos de escritura."""
+    responses = schema["paths"]["/api/v1/oppositions/{opposition_id}/activate"]["post"]["responses"]
+    assert "403" in responses
+    content = responses["403"]["content"]
+    assert set(content) == {PROBLEM_MEDIA_TYPE}
+    assert content[PROBLEM_MEDIA_TYPE]["schema"]["$ref"].endswith("/ProblemDetail")
+
+    # Una ruta de solo lectura no documenta un 403 que no puede ocurrir.
+    read_responses = schema["paths"]["/api/v1/oppositions/{opposition_id}"]["get"]["responses"]
+    assert "403" not in read_responses
+
+
+def test_las_rutas_de_perfil_documentan_el_404(schema: dict[str, Any]) -> None:
+    for path in (
+        "/api/v1/oppositions/{opposition_id}",
+        "/api/v1/oppositions/{opposition_id}/convocations",
+        "/api/v1/convocations/{convocation_id}",
+        "/api/v1/convocations/{convocation_id}/curriculum",
+        "/api/v1/curriculum-nodes/{node_id}",
+    ):
+        responses = schema["paths"][path]["get"]["responses"]
+        assert "404" in responses, path
+        assert responses["404"]["content"][PROBLEM_MEDIA_TYPE]["schema"]["$ref"].endswith(
+            "/ProblemDetail"
+        )
+
+
+def test_el_programa_documenta_su_estructura(schema: dict[str, Any]) -> None:
+    node = schema["components"]["schemas"]["CurriculumNodeSchema"]
+    assert set(node["properties"]) >= {
+        "id",
+        "node_type",
+        "official_code",
+        "title",
+        "position",
+        "path",
+        "depth",
+        "children",
+    }
+    assert schema["components"]["schemas"]["NodeType"]["enum"] == ["block", "topic", "epigraph"]
+
+
+def test_el_nodo_declara_que_la_cobertura_no_existe_todavia(schema: dict[str, Any]) -> None:
+    """La cobertura llega en S05: el contrato no puede prometer un cálculo que no se hace."""
+    properties = schema["components"]["schemas"]["CurriculumNodeDetailSchema"]["properties"]
+    assert "coverage" in properties
+    # El contrato la declara nula, no como un número que la interfaz pudiera mostrar como cero.
+    assert properties["coverage"]["type"] == "null"
+
+
+def test_el_404_servido_cumple_el_esquema_documentado(
+    seeded_client: TestClient, schema: dict[str, Any]
+) -> None:
+    """El esquema y el cuerpo real tienen que coincidir también en los errores de S01."""
+    problem = schema["components"]["schemas"]["ProblemDetail"]
+    response = seeded_client.get("/api/v1/curriculum-nodes/no-existe")
+
+    assert response.status_code == 404
+    assert response.headers["content-type"].startswith(PROBLEM_MEDIA_TYPE)
+    for field in problem["required"]:
+        assert field in response.json(), field
+
+
+def test_la_respuesta_de_programa_cumple_el_esquema(seeded_client: TestClient) -> None:
+    oppositions = seeded_client.get("/api/v1/oppositions").json()
+    convocation_id = next(
+        item["active_convocation"]["id"] for item in oppositions if item["active"]
+    )
+    body = seeded_client.get(f"/api/v1/convocations/{convocation_id}/curriculum").json()
+
+    assert set(body) == {"convocation_id", "convocation_code", "opposition_code", "counts", "nodes"}
+    assert body["counts"] == {"block": 4, "topic": 33, "epigraph": 0}
+    primer_nodo = body["nodes"][0]
+    assert set(primer_nodo) >= {"id", "node_type", "official_code", "title", "path", "depth"}

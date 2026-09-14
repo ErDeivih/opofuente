@@ -9,6 +9,12 @@ import type {
   ReadinessResponse,
   SettingsResponse,
 } from '../../src/api/system';
+import type {
+  ConvocationDetail,
+  Curriculum,
+  CurriculumNodeDetail,
+  Opposition,
+} from '../../src/api/profiles';
 
 export function createTestQueryClient(): QueryClient {
   return new QueryClient({
@@ -32,26 +38,30 @@ export interface StubbedRoute {
 
 /** Sustituye `fetch` por respuestas fijas que imitan el contrato real de la API. */
 export function stubApi(routes: Record<string, StubbedRoute>) {
-  const fetchMock = vi.fn((input: RequestInfo | URL) => {
-    const url =
-      typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
-    const match = Object.entries(routes).find(([path]) => url.includes(path));
-    if (match === undefined) {
+  // El tipo de la función incluye `init` para que las pruebas puedan comprobar el método HTTP
+  // (por ejemplo, que activar una oposición es un POST), aunque la simulación no lo use.
+  const fetchMock = vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>(
+    (input) => {
+      const url =
+        typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+      const match = Object.entries(routes).find(([path]) => url.includes(path));
+      if (match === undefined) {
+        return Promise.resolve(
+          new Response(JSON.stringify({ code: 'not_found' }), {
+            status: 404,
+            headers: { 'content-type': 'application/problem+json' },
+          }),
+        );
+      }
+      const route = match[1];
       return Promise.resolve(
-        new Response(JSON.stringify({ code: 'not_found' }), {
-          status: 404,
-          headers: { 'content-type': 'application/problem+json' },
+        new Response(JSON.stringify(route.body), {
+          status: route.status ?? 200,
+          headers: { 'content-type': route.contentType ?? 'application/json' },
         }),
       );
-    }
-    const route = match[1];
-    return Promise.resolve(
-      new Response(JSON.stringify(route.body), {
-        status: route.status ?? 200,
-        headers: { 'content-type': route.contentType ?? 'application/json' },
-      }),
-    );
-  });
+    },
+  );
   vi.stubGlobal('fetch', fetchMock);
   return fetchMock;
 }
@@ -147,4 +157,161 @@ export const settingsFixture: SettingsResponse = {
   embeddings: { provider: 'disabled', model: null },
   ocr: { tesseract_configured: false, tesseract_available: false },
   editable: false,
+};
+
+export const TAI_ID = 'opp-tai';
+export const GC_ID = 'opp-gc';
+export const TAI_CONVOCATION_ID = 'conv-tai';
+export const GC_CONVOCATION_ID = 'conv-gc';
+
+export const oppositionsFixture: Opposition[] = [
+  {
+    id: TAI_ID,
+    code: 'tai-age',
+    name: 'Cuerpo de Técnicos Auxiliares de Informática de la Administración del Estado',
+    description: 'Programa de cuatro bloques y treinta y tres temas.',
+    active: true,
+    active_convocation: {
+      id: TAI_CONVOCATION_ID,
+      code: 'tai-age-2025',
+      published_at: '2025-12-22',
+      status: 'active',
+    },
+  },
+  {
+    id: GC_ID,
+    code: 'gc-cabos-guardias',
+    name: 'Escala de Cabos y Guardias de la Guardia Civil',
+    description: 'Programa de veinticinco temas.',
+    active: false,
+    active_convocation: {
+      id: GC_CONVOCATION_ID,
+      code: 'gc-cabos-guardias-2026',
+      published_at: '2026-05-08',
+      status: 'active',
+    },
+  },
+];
+
+export const convocationFixture: ConvocationDetail = {
+  id: TAI_CONVOCATION_ID,
+  code: 'tai-age-2025',
+  title:
+    'Resolución de 18 de diciembre de 2025, de la Secretaría de Estado de Función Pública, por la que se convocan procesos selectivos (código 1188)',
+  official_url: 'https://www.boe.es/diario_boe/txt.php?id=BOE-A-2025-26262',
+  published_at: '2025-12-22',
+  exam_date: null,
+  status: 'active',
+  source_reference: 'BOE-A-2025-26262 · ANEXO V',
+  opposition_id: TAI_ID,
+  opposition_code: 'tai-age',
+  opposition_name: 'Cuerpo de Técnicos Auxiliares de Informática',
+  parts: [
+    {
+      code: 'ejercicio_unico',
+      name: 'Ejercicio único',
+      kind: 'group',
+      format: null,
+      position: 1,
+      parent_code: null,
+      ordinary_items: null,
+      reserve_items: null,
+      options_per_question: null,
+      score_min: 0,
+      score_max: 100,
+      pass_score: null,
+      wrong_penalty_fraction: null,
+      fail_if_errors_gte: null,
+      time_minutes: 120,
+      structure_note: 'Dos partes conjuntas, obligatorias y eliminatorias.',
+      notes: null,
+      evidence_quote: 'El proceso de selección estará formado por un ejercicio único',
+    },
+    {
+      code: 'primera_parte',
+      name: 'Primera parte: cuestionario de conocimientos',
+      kind: 'test',
+      format: 'single_choice',
+      position: 1,
+      parent_code: 'ejercicio_unico',
+      ordinary_items: 80,
+      reserve_items: 5,
+      options_per_question: null,
+      score_min: 0,
+      score_max: 50,
+      pass_score: 25,
+      wrong_penalty_fraction: 0.3333333333,
+      fail_if_errors_gte: null,
+      time_minutes: null,
+      structure_note: 'Máximo de 80 preguntas.',
+      notes: null,
+      evidence_quote: 'Primera parte: consistirá en contestar por escrito un cuestionario',
+    },
+  ],
+  rules: [
+    {
+      code: 'blank_answer_penalty',
+      kind: 'integer',
+      value_text: '0',
+      description: 'Las respuestas en blanco no penalizan.',
+      evidence_quote: 'Las respuestas en blanco no penalizan.',
+    },
+  ],
+};
+
+export const curriculumFixture: Curriculum = {
+  convocation_id: TAI_CONVOCATION_ID,
+  convocation_code: 'tai-age-2025',
+  opposition_code: 'tai-age',
+  counts: { block: 4, topic: 33, epigraph: 0 },
+  nodes: [
+    {
+      id: 'node-i',
+      node_type: 'block',
+      official_code: 'I',
+      title: 'Organización del Estado y Administración electrónica',
+      description: null,
+      position: 1,
+      path: 'I',
+      depth: 0,
+      children: [
+        {
+          id: 'node-i-1',
+          node_type: 'topic',
+          official_code: '1',
+          title: 'La Constitución Española de 1978',
+          description: null,
+          position: 1,
+          path: 'I.1',
+          depth: 1,
+          children: [],
+        },
+        {
+          id: 'node-i-2',
+          node_type: 'topic',
+          official_code: '2',
+          title: 'Las Cortes Generales',
+          description: null,
+          position: 2,
+          path: 'I.2',
+          depth: 1,
+          children: [],
+        },
+      ],
+    },
+  ],
+};
+
+export const nodeDetailFixture: CurriculumNodeDetail = {
+  node: curriculumFixture.nodes[0]!.children[0]!,
+  convocation_id: TAI_CONVOCATION_ID,
+  convocation_code: 'tai-age-2025',
+  convocation_title: convocationFixture.title,
+  official_url: convocationFixture.official_url,
+  published_at: '2025-12-22',
+  opposition_code: 'tai-age',
+  opposition_name: convocationFixture.opposition_name,
+  source_reference: 'BOE-A-2025-26262 · ANEXO V',
+  ancestors: [curriculumFixture.nodes[0]!],
+  coverage: null,
 };

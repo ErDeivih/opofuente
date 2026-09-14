@@ -23,6 +23,9 @@ try {
     Invoke-OpoFuenteStep -Name 'migración de la base de datos' -Action {
         uv run alembic upgrade head
     }
+    Invoke-OpoFuenteStep -Name 'siembra de los perfiles oficiales' -Action {
+        uv run python -m opofuente.tools.seed_profiles
+    }
     Invoke-OpoFuenteStep -Name 'contrato OpenAPI y tipos TypeScript' -Action {
         uv run python -m opofuente.tools.export_openapi
         if ($LASTEXITCODE -ne 0) { return }

@@ -58,3 +58,22 @@ El dominio no conoce FastAPI, SQLAlchemy, Qdrant ni el sistema de archivos.
 
 La deuda obligatoria, con su slice y su criterio de cierre, está en
 [`docs/DEBT.md`](../DEBT.md). No se implementa fuera del slice indicado.
+
+## Notas de S01 (perfiles y programa)
+
+- **Tablas nuevas:** `oppositions`, `convocation_versions`, `curriculum_nodes`, `exam_parts` y
+  `exam_rules` (ver [ADR-005](../decisions/ADR-005-modelo-de-perfiles-y-reglas-de-examen.md)). La
+  restricción de «una sola convocatoria activa por oposición» y la de «una sola oposición activa»
+  son **índices únicos parciales de SQLite**, no validaciones del código.
+- **Identidad del programa:** `(convocation_version_id, path)`. `official_code` guarda la numeración
+  publicada y, donde la convocatoria no numera (los subniveles del temario de GC), la secuencia
+  dentro del padre; por eso no es único.
+- **Procedencia:** cada parte y cada regla guardan `evidence_quote`, la cita literal de la fuente
+  oficial; la herramienta que construye los fixtures comprueba que la cita existe en el documento
+  descargado (hash verificado) antes de escribir nada
+  ([ADR-006](../decisions/ADR-006-fixtures-desde-fuentes-oficiales.md)).
+- **Sin datos inventados:** lo que la convocatoria no publica se queda `NULL` en la base y se
+  devuelve `null` en la API. En TAI, `options_per_question` es nulo porque el anexo V no dice
+  cuántas alternativas tiene cada pregunta. La cobertura documental se declara `null` hasta S05.
+- **Siembra idempotente por CLI** (`opofuente.tools.seed_profiles`), no en el arranque: crear datos
+  como efecto secundario de arrancar el servidor esconde cambios.

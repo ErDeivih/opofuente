@@ -3,8 +3,11 @@
     Ejecuta TODAS las puertas de calidad en el orden de 10_TEST-PLAN §10.
 .DESCRIPTION
     Orden: formato/lint -> typecheck -> unitarias -> integración -> contrato -> build ->
-    migración desde cero -> E2E. Un código distinto de cero bloquea. No se relaja ninguna
-    configuración para que pase.
+    migración desde cero -> siembra idempotente -> fixtures frente a las fuentes -> E2E.
+    Un código distinto de cero bloquea. No se relaja ninguna configuración para que pase.
+
+    Las puertas 17 y 18 necesitan las fuentes oficiales descargadas (`scripts/fetch-sources.ps1`)
+    y el navegador de Playwright instalado (`npx playwright install chromium`).
 .PARAMETER SkipE2e
     Omite las pruebas end-to-end (útiles cuando no hay navegador de Playwright instalado).
 .EXAMPLE
@@ -53,10 +56,21 @@ try {
         Invoke-OpoFuenteStep -Name '14. esquema migrado verificado con sqlite3' -Action {
             uv run python -c "import sqlite3,sys; from opofuente.config import get_settings; p=get_settings().data_paths.database; c=sqlite3.connect(p); rev=c.execute('select version_num from alembic_version').fetchone()[0]; rows=c.execute('select count(*) from app_metadata').fetchone()[0]; print('revision', rev, 'app_metadata', rows); sys.exit(0 if rows > 0 else 1)"
         }
+        Invoke-OpoFuenteStep -Name '15. siembra de perfiles desde base vacía' -Action {
+            uv run python -m opofuente.tools.seed_profiles
+        }
+        # Segunda ejecución: si algo cambiara, la siembra no sería idempotente.
+        Invoke-OpoFuenteStep -Name '16. siembra idempotente (segunda ejecución sin cambios)' -Action {
+            uv run python -m opofuente.tools.seed_profiles --check
+        }
     }
     finally {
         Remove-Item Env:OPOFUENTE_DATA_DIR -ErrorAction SilentlyContinue
         if (Test-Path $gatesDataDir) { Remove-Item -Recurse -Force $gatesDataDir }
+    }
+
+    Invoke-OpoFuenteStep -Name '17. fixtures de perfil sincronizados con las fuentes oficiales' -Action {
+        uv run python -m opofuente.tools.build_profile_fixtures --check
     }
 
     if ($SkipE2e) {
@@ -64,7 +78,7 @@ try {
         Write-Host 'E2E omitido por -SkipE2e (no se declara ejecutado).' -ForegroundColor Yellow
     }
     else {
-        Invoke-OpoFuenteStep -Name '15. E2E (Playwright)' -Action { npm run e2e }
+        Invoke-OpoFuenteStep -Name '18. E2E (Playwright)' -Action { npm run e2e }
     }
 }
 finally {

@@ -28,8 +28,8 @@ export const NAV_ITEMS: readonly NavItem[] = [
   {
     path: '/programa',
     label: 'Programa',
-    slice: 'S01',
-    summary: 'Árbol oficial del temario con cobertura, preguntas y dominio.',
+    slice: null,
+    summary: 'Árbol oficial del temario con su procedencia y las reglas del examen.',
   },
   {
     path: '/biblioteca',

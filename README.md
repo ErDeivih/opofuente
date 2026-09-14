@@ -8,10 +8,15 @@ trazable, sin mover ni borrar ningún original y sin depender de servicios en la
 - Contrato de implementación para agentes: [`AGENTS.md`](AGENTS.md).
 - Estado de implementación: [`docs/slices/`](docs/slices/).
 
-> **Estado actual: S00 completado** (repositorio, puertas de calidad, esqueleto de backend y
-> frontend, migración inicial, health/capabilities). Todavía **no** hay entidades de negocio,
-> ingestión, OCR, IA ni pantallas de producto: cada ausencia se declara explícitamente en la API
-> (`/api/v1/capabilities`) y en la interfaz.
+> **Estado actual: S01 completado** (perfiles oficiales, programa y reglas de examen, además de
+> todo lo de S00: repositorio, puertas de calidad, esqueleto de backend y frontend, migración,
+> health/capabilities). Todavía **no** hay ingestión de material, OCR, IA, biblioteca ni sesiones
+> de estudio: cada ausencia se declara explícitamente en la API (`/api/v1/capabilities`, cobertura
+> `null`) y en la interfaz.
+>
+> Los perfiles TAI 2025 y Guardia Civil 2026 se siembran desde fuentes oficiales verificadas por
+> hash y por cita literal. Ver [`fixtures/profiles/manifest.json`](fixtures/profiles/manifest.json)
+> y [`docs/decisions/ADR-006`](docs/decisions/ADR-006-fixtures-desde-fuentes-oficiales.md).
 
 ## 1. Requisitos (Windows 11)
 
@@ -43,6 +48,8 @@ los scripts, usa `pwsh -ExecutionPolicy Bypass -File ./scripts/install.ps1`.
 |---|---|
 | Instalar todo | `./scripts/install.ps1` |
 | Migrar la base de datos | `./scripts/migrate.ps1` |
+| Sembrar los perfiles oficiales | `./scripts/seed.ps1` |
+| Descargar y verificar las fuentes oficiales | `./scripts/fetch-sources.ps1` |
 | Arrancar API + web en desarrollo | `./scripts/dev.ps1` |
 | API sola | `./scripts/api.ps1` |
 | Web sola | `./scripts/web.ps1` |
@@ -52,6 +59,9 @@ los scripts, usa `pwsh -ExecutionPolicy Bypass -File ./scripts/install.ps1`.
 | E2E (Playwright) | `./scripts/e2e.ps1` |
 | Build de producción local | `./scripts/build.ps1` |
 | Exportar OpenAPI y tipos | `./scripts/export-openapi.ps1` |
+
+Las puertas 17 y 18 necesitan las fuentes oficiales ya descargadas (`fetch-sources.ps1`) y el
+navegador de Playwright (`npx playwright install chromium`).
 
 Direcciones por defecto: API en `http://127.0.0.1:8765` (documentación en
 `http://127.0.0.1:8765/api/v1/docs`), web de desarrollo en `http://127.0.0.1:5173`.
@@ -81,13 +91,26 @@ opofuente/
 
 - Todo vive en `OPOFUENTE_DATA_DIR` (por defecto `./data`, ignorado por git):
   `opofuente.sqlite3`, `artifacts/sha256/`, `extracted/`, `qdrant/`, `logs/`, `exports/`,
-  `backups/`, `tmp/`.
+  `backups/`, `tmp/`, y `sources/` (documentos oficiales descargados para construir los fixtures).
 - El servidor escucha **solo** en loopback. Configurar un host público provoca un error de arranque.
 - No hay telemetría. Los logs son JSON rotativos y no registran contenido importado, preguntas
   privadas, prompts ni claves.
 - Las claves de proveedores de IA se leen del entorno (`.env`), nunca se devuelven por la API y
   nunca se escriben en el repositorio.
 - `.env.example` documenta todas las variables; copia a `.env` solo si necesitas cambiarlas.
+
+### Procedencia del programa oficial
+
+Los perfiles se construyen desde los documentos oficiales y cada cifra lleva su cita:
+
+- el texto del BOE se reutiliza con las condiciones de su
+  [aviso legal](https://www.boe.es/informacion/aviso_legal/index.php) (citar la fuente, no alterar
+  el sentido, no sugerir carácter oficial);
+- el temario de la Guardia Civil está limitado a **uso privado**: OpoFuente es local y no
+  redistribuye, y por eso el repositorio y la aplicación deben seguir siendo privados (DEBT-003 en
+  [`docs/DEBT.md`](docs/DEBT.md));
+- los documentos descargados **no** se versionan: se guardan en `data/sources/` y se verifican por
+  `sha256` contra `fixtures/profiles/manifest.json` con `scripts/fetch-sources.ps1`.
 
 ## 6. Licencia
 

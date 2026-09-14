@@ -13,3 +13,12 @@ class ConfigurationError(OpoFuenteError):
 
 class InvariantViolationError(OpoFuenteError):
     """Una regla de dominio se ha roto. Nunca debe silenciarse."""
+
+
+class NotFoundError(OpoFuenteError):
+    """Se ha pedido algo que no existe. La API lo traduce a 404."""
+
+    def __init__(self, resource: str, identifier: str) -> None:
+        super().__init__(f"no existe {resource} con identificador {identifier}")
+        self.resource = resource
+        self.identifier = identifier

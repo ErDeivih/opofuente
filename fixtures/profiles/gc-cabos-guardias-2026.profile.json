@@ -1,0 +1,298 @@
+{
+  "code": "gc-cabos-guardias-2026",
+  "source_manifest": "fixtures/profiles/manifest.json",
+  "opposition": {
+    "code": "gc-cabos-guardias",
+    "name": "Escala de Cabos y Guardias de la Guardia Civil",
+    "description": "Ingreso directo por concurso-oposición en la Escala de Cabos y Guardias de la Guardia Civil. Programa oficial de veinticinco temas con bloques y epígrafes."
+  },
+  "convocation": {
+    "code": "gc-cabos-guardias-2026",
+    "title": "Resolución 160/38243/2026, de 5 de mayo, de la Dirección General de la Guardia Civil, por la que se convocan pruebas selectivas para ingreso en los centros docentes de formación para la incorporación a la Escala de Cabos y Guardias de la Guardia Civil",
+    "official_url": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-9982",
+    "published_at": "2026-05-08",
+    "exam_date": null,
+    "exam_date_note": "La convocatoria no publica la fecha de las pruebas: se anuncia en la dirección de Internet de la base 4.11. No se estima ni se inventa.",
+    "status": "active",
+    "source_id": "gc-boe-convocatoria-xml",
+    "source_identifier": "BOE-A-2026-9982",
+    "source_location": "Bases de la convocatoria, apartados 6 y 7"
+  },
+  "exam": {
+    "parts": [
+      {
+        "code": "teorico_practico",
+        "name": "Prueba de conocimientos teórico-prácticos",
+        "kind": "group",
+        "format": null,
+        "position": 1,
+        "parent_code": null,
+        "ordinary_items": null,
+        "reserve_items": null,
+        "options_per_question": null,
+        "score_min": null,
+        "score_max": null,
+        "pass_score": null,
+        "wrong_penalty_fraction": null,
+        "fail_if_errors_gte": null,
+        "time_minutes": 140,
+        "structure_note": "Las cuatro pruebas se realizan sin solución de continuidad en 140 minutos.",
+        "notes": null,
+        "evidence": {
+          "source_id": "gc-boe-convocatoria-xml",
+          "quote": "6.1.1 Prueba de conocimientos teórico-prácticos: El tiempo de esta prueba será de ciento cuarenta (140) minutos, durante el que se realizarán, sin solución de continuidad, las siguientes pruebas:"
+        }
+      },
+      {
+        "code": "ortografia",
+        "name": "Prueba de ortografía",
+        "kind": "test",
+        "format": "multi_mark_error",
+        "position": 1,
+        "parent_code": "teorico_practico",
+        "ordinary_items": 20,
+        "reserve_items": 4,
+        "options_per_question": null,
+        "score_min": null,
+        "score_max": null,
+        "pass_score": null,
+        "wrong_penalty_fraction": null,
+        "fail_if_errors_gte": 6,
+        "time_minutes": null,
+        "structure_note": "Cinco frases con cuatro palabras o expresiones subrayadas cada una (20 marcas): hay que señalar las que presenten falta ortográfica. Además, una frase con cuatro palabras o expresiones de reserva.",
+        "notes": "Se evalúa como apto o no apto: no tiene puntuación. Es erróneo tanto dejar de marcar una falta como marcar una expresión correcta.",
+        "evidence": {
+          "source_id": "gc-boe-convocatoria-xml",
+          "quote": "Prueba de ortografía: Consistirá en la realización de un ejercicio con cinco (5) frases, en las que se han subrayado cuatro palabras o expresiones en cada frase, debiendo señalar las que presenten falta ortográfica; además se incluirá una frase con cuatro palabras o expresiones de reserva subrayadas del mismo modo."
+        }
+      },
+      {
+        "code": "gramatica",
+        "name": "Prueba de gramática",
+        "kind": "test",
+        "format": "multi_mark_error",
+        "position": 2,
+        "parent_code": "teorico_practico",
+        "ordinary_items": 20,
+        "reserve_items": 4,
+        "options_per_question": null,
+        "score_min": null,
+        "score_max": null,
+        "pass_score": null,
+        "wrong_penalty_fraction": null,
+        "fail_if_errors_gte": 6,
+        "time_minutes": null,
+        "structure_note": "Veinte frases o expresiones: hay que señalar las que no son correctas morfológica o sintácticamente, más cuatro frases o expresiones de reserva.",
+        "notes": "Se evalúa como apto o no apto: no tiene puntuación.",
+        "evidence": {
+          "source_id": "gc-boe-convocatoria-xml",
+          "quote": "Prueba de gramática: Consistirá en la realización de un ejercicio con veinte (20) frases o expresiones, debiendo señalar aquellas frases o expresiones que no son correctas desde los puntos de vista morfológico y/o sintáctico. Además, se incluirán cuatro frases o expresiones de reserva"
+        }
+      },
+      {
+        "code": "conocimientos_generales",
+        "name": "Prueba de conocimientos generales",
+        "kind": "test",
+        "format": "single_choice",
+        "position": 3,
+        "parent_code": "teorico_practico",
+        "ordinary_items": 100,
+        "reserve_items": 5,
+        "options_per_question": 4,
+        "score_min": 0,
+        "score_max": 100,
+        "pass_score": 50,
+        "wrong_penalty_fraction": 0.3333333333,
+        "fail_if_errors_gte": null,
+        "time_minutes": null,
+        "structure_note": "Cien preguntas tipo test extraídas del temario, con cinco de reserva que se valoran por orden si se anula alguna de las anteriores.",
+        "notes": "Las cuatro alternativas y la penalización de un tercio se deducen de la fórmula oficial de la base 7.3 con N = 4. La convocatoria no penaliza la pregunta no contestada.",
+        "evidence": {
+          "source_id": "gc-boe-convocatoria-xml",
+          "quote": "Prueba de conocimientos generales: Consistirá en la contestación a un cuestionario de cien (100) preguntas tipo test, extraídas del «temario» y cinco (5) preguntas de reserva que también figuran en el cuestionario."
+        }
+      },
+      {
+        "code": "lengua_inglesa",
+        "name": "Prueba de lengua inglesa",
+        "kind": "test",
+        "format": "single_choice",
+        "position": 4,
+        "parent_code": "teorico_practico",
+        "ordinary_items": 20,
+        "reserve_items": 1,
+        "options_per_question": 4,
+        "score_min": 0,
+        "score_max": 20,
+        "pass_score": 8,
+        "wrong_penalty_fraction": 0.3333333333,
+        "fail_if_errors_gte": null,
+        "time_minutes": null,
+        "structure_note": "Veinte preguntas tipo test de nivel de Educación Secundaria Obligatoria, con una pregunta de reserva.",
+        "notes": "Cuatro alternativas y penalización de un tercio, según la tabla oficial de valores de la base 7.3.",
+        "evidence": {
+          "source_id": "gc-boe-convocatoria-xml",
+          "quote": "Prueba de lengua inglesa: Consistirá en la contestación a un cuestionario de veinte (20) preguntas tipo test sobre el idioma inglés"
+        }
+      },
+      {
+        "code": "psicotecnica",
+        "name": "Prueba psicotécnica",
+        "kind": "group",
+        "format": null,
+        "position": 2,
+        "parent_code": null,
+        "ordinary_items": null,
+        "reserve_items": null,
+        "options_per_question": null,
+        "score_min": null,
+        "score_max": null,
+        "pass_score": null,
+        "wrong_penalty_fraction": null,
+        "fail_if_errors_gte": null,
+        "time_minutes": null,
+        "structure_note": "Consta de dos partes: aptitudes intelectuales y perfil de personalidad.",
+        "notes": null,
+        "evidence": {
+          "source_id": "gc-boe-convocatoria-xml",
+          "quote": "6.1.2 Prueba psicotécnica: Consistirá en la evaluación de habilidades cognitivas que reflejen la habilidad mental general y variables de personalidad"
+        }
+      },
+      {
+        "code": "aptitudes_intelectuales",
+        "name": "Aptitudes intelectuales",
+        "kind": "test",
+        "format": "psychotechnical",
+        "position": 1,
+        "parent_code": "psicotecnica",
+        "ordinary_items": 80,
+        "reserve_items": null,
+        "options_per_question": 4,
+        "score_min": 0,
+        "score_max": 30,
+        "pass_score": 12,
+        "wrong_penalty_fraction": 0.3333333333,
+        "fail_if_errors_gte": null,
+        "time_minutes": 55,
+        "structure_note": "Ochenta preguntas; el tiempo total de la prueba, incluida la lectura de instrucciones, es de 55 minutos.",
+        "notes": "Cuatro alternativas y penalización de un tercio, según la tabla oficial de valores de la base 7.3 (psicotécnica: Y = 30, T = 80, N = 4).",
+        "evidence": {
+          "source_id": "gc-boe-convocatoria-xml",
+          "quote": "La batería se compondrá de ochenta (80) preguntas y el tiempo total para la ejecución de la prueba, que incluye el dedicado a la lectura de instrucciones, será de cincuenta y cinco (55) minutos."
+        }
+      }
+    ],
+    "rules": [
+      {
+        "code": "scoring_formula",
+        "kind": "text",
+        "value_text": "Px = (Y / T) * (A - E / (N - 1)); Pf = suma de Px",
+        "description": "Puntuación de cada prueba y puntuación final de la fase de oposición. Y es la puntuación máxima de la prueba, T el total de preguntas, A los aciertos, E los errores y N el número de alternativas. El valor se normaliza en ASCII para poder calcularlo; la cita conserva el texto oficial.",
+        "evidence": {
+          "source_id": "gc-boe-convocatoria-pdf",
+          "quote": "Conocimientos generales (Pcg). 100 100 4 Lengua inglesa (Pli). 20 20 4 Psicotécnica (Pps). 30 80 4"
+        }
+      },
+      {
+        "code": "formula_variables",
+        "kind": "text",
+        "value_text": "Y: coeficiente de cada prueba (puntuación máxima alcanzable); T: número total de preguntas; A: aciertos; E: errores; N: número de alternativas por pregunta",
+        "description": "Definición oficial de las variables de la fórmula, incluida en la base 7.3.",
+        "evidence": {
+          "source_id": "gc-boe-convocatoria-pdf",
+          "quote": "Px, es la puntuación obtenida en una prueba X. Y, es el coeficiente aplicable a cada prueba, que se corresponde con la puntuación máxima alcanzable en cada una. T, es el número total de preguntas que tenga el cuestionario. A, es el número de aciertos o preguntas contestadas correctamente. E, es el número de errores o preguntas contestadas incorrectamente. N, es el número de alternativas de cada pregunta."
+        }
+      },
+      {
+        "code": "blank_answer_penalty",
+        "kind": "integer",
+        "value_text": "0",
+        "description": "No se penaliza la pregunta no contestada.",
+        "evidence": {
+          "source_id": "gc-boe-convocatoria-xml",
+          "quote": "No se penalizará la pregunta no contestada."
+        }
+      },
+      {
+        "code": "spelling_fail_threshold",
+        "kind": "integer",
+        "value_text": "6",
+        "description": "Ortografía: no apto con seis o más respuestas erróneas, con exclusión del proceso.",
+        "evidence": {
+          "source_id": "gc-boe-convocatoria-xml",
+          "quote": "7.4 La prueba de ortografía se evaluará como «apto» o «no apto». Serán declarados «no aptos» quienes tengan seis (6) o más respuestas erróneas, quedando excluidos del proceso selectivo."
+        }
+      },
+      {
+        "code": "grammar_fail_threshold",
+        "kind": "integer",
+        "value_text": "6",
+        "description": "Gramática: no apto con seis o más respuestas erróneas, con exclusión del proceso.",
+        "evidence": {
+          "source_id": "gc-boe-convocatoria-xml",
+          "quote": "7.5 La prueba de gramática se evaluará como «apto» o «no apto». Serán declarados «no aptos» quienes tengan seis (6) o más respuestas erróneas, quedando excluidos del proceso selectivo."
+        }
+      },
+      {
+        "code": "pass_score_conocimientos",
+        "kind": "integer",
+        "value_text": "50",
+        "description": "Conocimientos generales: 0 a 100 puntos, mínimo 50 para superar la prueba.",
+        "evidence": {
+          "source_id": "gc-boe-convocatoria-xml",
+          "quote": "7.6 La prueba de conocimientos generales se calificará de cero (0) a cien (100) puntos; para superarla será necesario alcanzar una puntuación mínima de cincuenta (50) puntos"
+        }
+      },
+      {
+        "code": "pass_score_ingles",
+        "kind": "integer",
+        "value_text": "8",
+        "description": "Lengua inglesa: 0 a 20 puntos, mínimo 8 para superar la prueba.",
+        "evidence": {
+          "source_id": "gc-boe-convocatoria-xml",
+          "quote": "7.7 La prueba de lengua inglesa se valorará de cero (0) a veinte (20) puntos; para superarla será necesario alcanzar una puntuación mínima de ocho (8) puntos"
+        }
+      },
+      {
+        "code": "pass_score_aptitudes",
+        "kind": "integer",
+        "value_text": "12",
+        "description": "Aptitudes intelectuales: 0 a 30 puntos, mínimo 12 para superar la prueba.",
+        "evidence": {
+          "source_id": "gc-boe-convocatoria-xml",
+          "quote": "7.8 La prueba de aptitudes intelectuales se valorará de cero (0) a treinta (30) puntos"
+        }
+      },
+      {
+        "code": "concurso_phase_max_score",
+        "kind": "integer",
+        "value_text": "45",
+        "description": "La fase de concurso se valora entre 0 y 45 puntos conforme al apéndice I. Se registra como información: el MVP no calcula baremos de méritos.",
+        "evidence": {
+          "source_id": "gc-boe-convocatoria-xml",
+          "quote": "7.1 La fase de concurso, calificada conforme al apéndice I, tendrá una valoración entre cero (0) y cuarenta y cinco (45) puntos."
+        }
+      },
+      {
+        "code": "personality_scoring_supported",
+        "kind": "boolean",
+        "value_text": "false",
+        "description": "El perfil de personalidad se evalúa pero no se puntúa: la convocatoria solo asigna puntuación a las aptitudes intelectuales. La aplicación no debe presentar ninguna valoración de personalidad.",
+        "evidence": {
+          "source_id": "gc-boe-convocatoria-xml",
+          "quote": "Perfil de personalidad: Se evaluará mediante test que exploren las características de personalidad, actitudinales y motivacionales."
+        }
+      },
+      {
+        "code": "psychophysical_not_prepared",
+        "kind": "boolean",
+        "value_text": "true",
+        "description": "Las pruebas de aptitud psicofísica (pruebas físicas, entrevista y reconocimiento médico) forman parte del proceso, pero OpoFuente no las prepara ni las evalúa: solo se registran como información.",
+        "evidence": {
+          "source_id": "gc-boe-convocatoria-xml",
+          "quote": "6.1.3 Prueba de aptitud psicofísica:"
+        }
+      }
+    ]
+  }
+}

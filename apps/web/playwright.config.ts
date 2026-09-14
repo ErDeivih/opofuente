@@ -29,9 +29,10 @@ export default defineConfig({
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: [
     {
-      // Migra el directorio de datos del E2E (nunca el real) y arranca la API en loopback.
+      // Migra el directorio de datos del E2E (nunca el real), siembra los perfiles oficiales
+      // (la siembra es idempotente) y arranca la API en loopback.
       command:
-        'uv run alembic upgrade head && uv run python -m uvicorn opofuente.main:app --host 127.0.0.1 --port 8765',
+        'uv run alembic upgrade head && uv run python -m opofuente.tools.seed_profiles && uv run python -m uvicorn opofuente.main:app --host 127.0.0.1 --port 8765',
       cwd: repoRoot,
       url: 'http://127.0.0.1:8765/api/v1/health/live',
       env: { ...inheritedEnv, OPOFUENTE_DATA_DIR: e2eDataDir, OPOFUENTE_LOG_LEVEL: 'WARNING' },

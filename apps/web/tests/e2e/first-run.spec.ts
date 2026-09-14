@@ -15,9 +15,12 @@ test('E2E-00 primera ejecución: la aplicación arranca y declara su estado real
   await expect(page.getByText('listo para trabajar')).toBeVisible();
   await expect(page.getByText('sqlite ok')).toBeVisible();
   await expect(page.getByText('directorio de datos escribible')).toBeVisible();
-  // Los estados vacíos explican qué falta y cuándo llega.
+  // Desde S01, el estado del programa es real: hay oposición activa con su convocatoria.
+  await expect(page.getByText('Oposición activa')).toBeVisible();
+  await expect(page.getByText('tai-age-2025')).toBeVisible();
+  // Los estados vacíos que siguen existiendo explican qué falta y cuándo llega.
   await expect(page.getByText('No hay material importado')).toBeVisible();
-  await expect(page.getByText('Sin oposiciones sembradas')).toBeVisible();
+  await expect(page.getByText('Sin sesiones de estudio')).toBeVisible();
 });
 
 test('E2E-00 navegación: cada sección pendiente anuncia su slice', async ({ page }) => {

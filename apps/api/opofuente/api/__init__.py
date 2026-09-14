@@ -7,9 +7,10 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
-from opofuente.api.routes import system
+from opofuente.api.routes import profiles, system
 
 api_router = APIRouter()
 api_router.include_router(system.router)
+api_router.include_router(profiles.router)
 
 __all__ = ["api_router"]

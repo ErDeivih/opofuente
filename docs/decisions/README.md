@@ -9,6 +9,8 @@ Formato: `ADR-NNN-titulo.md` con contexto, opciones, datos, decisión, consecuen
 | [ADR-002](ADR-002-contrato-openapi-y-tipos.md) | Generación del contrato OpenAPI y de los tipos TypeScript | aceptada |
 | [ADR-003](ADR-003-cabeceras-y-origen-local.md) | Endurecimiento HTTP del backend local en el MVP | aceptada y ratificada por el propietario (14/09/2026) |
 | [ADR-004](ADR-004-typescript-fijado.md) | Versión de TypeScript fijada a 5.9.x | aceptada |
+| [ADR-005](ADR-005-modelo-de-perfiles-y-reglas-de-examen.md) | Modelo de perfiles: convocatorias, programa y reglas de examen | propuesta (revisión de S01) |
+| [ADR-006](ADR-006-fixtures-desde-fuentes-oficiales.md) | Fixtures de perfil desde fuentes oficiales y condiciones de uso | propuesta (revisión de S01) |
 
 La deuda técnica obligatoria (con su slice y su criterio de cierre) se registra aparte en
 [`docs/DEBT.md`](../DEBT.md).

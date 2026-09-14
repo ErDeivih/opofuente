@@ -1,6 +1,35 @@
 {
   "components": {
     "schemas": {
+      "ActiveConvocationSchema": {
+        "description": "Convocatoria activa de una oposición, en la forma mínima que necesita el selector.",
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "published_at": {
+            "format": "date",
+            "title": "Published At",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ConvocationStatus"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "published_at",
+          "status"
+        ],
+        "title": "ActiveConvocationSchema",
+        "type": "object"
+      },
       "CapabilitiesSchema": {
         "properties": {
           "capabilities": {
@@ -107,6 +136,329 @@
         "title": "CheckSchema",
         "type": "object"
       },
+      "ConvocationDetailSchema": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "exam_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exam Date"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "official_url": {
+            "title": "Official Url",
+            "type": "string"
+          },
+          "opposition_code": {
+            "title": "Opposition Code",
+            "type": "string"
+          },
+          "opposition_id": {
+            "title": "Opposition Id",
+            "type": "string"
+          },
+          "opposition_name": {
+            "title": "Opposition Name",
+            "type": "string"
+          },
+          "parts": {
+            "items": {
+              "$ref": "#/components/schemas/ExamPartSchema"
+            },
+            "title": "Parts",
+            "type": "array"
+          },
+          "published_at": {
+            "format": "date",
+            "title": "Published At",
+            "type": "string"
+          },
+          "rules": {
+            "items": {
+              "$ref": "#/components/schemas/ExamRuleSchema"
+            },
+            "title": "Rules",
+            "type": "array"
+          },
+          "source_reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Reference"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ConvocationStatus"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "title",
+          "official_url",
+          "published_at",
+          "status",
+          "opposition_id",
+          "opposition_code",
+          "opposition_name",
+          "parts",
+          "rules"
+        ],
+        "title": "ConvocationDetailSchema",
+        "type": "object"
+      },
+      "ConvocationReferenceSchema": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "exam_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exam Date"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "official_url": {
+            "title": "Official Url",
+            "type": "string"
+          },
+          "published_at": {
+            "format": "date",
+            "title": "Published At",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ConvocationStatus"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "title",
+          "official_url",
+          "published_at",
+          "status"
+        ],
+        "title": "ConvocationReferenceSchema",
+        "type": "object"
+      },
+      "ConvocationStatus": {
+        "enum": [
+          "draft",
+          "active",
+          "superseded",
+          "archived"
+        ],
+        "title": "ConvocationStatus",
+        "type": "string"
+      },
+      "CurriculumNodeDetailSchema": {
+        "properties": {
+          "ancestors": {
+            "items": {
+              "$ref": "#/components/schemas/CurriculumNodeSchema"
+            },
+            "title": "Ancestors",
+            "type": "array"
+          },
+          "convocation_code": {
+            "title": "Convocation Code",
+            "type": "string"
+          },
+          "convocation_id": {
+            "title": "Convocation Id",
+            "type": "string"
+          },
+          "convocation_title": {
+            "title": "Convocation Title",
+            "type": "string"
+          },
+          "coverage": {
+            "title": "Coverage",
+            "type": "null"
+          },
+          "node": {
+            "$ref": "#/components/schemas/CurriculumNodeSchema"
+          },
+          "official_url": {
+            "title": "Official Url",
+            "type": "string"
+          },
+          "opposition_code": {
+            "title": "Opposition Code",
+            "type": "string"
+          },
+          "opposition_name": {
+            "title": "Opposition Name",
+            "type": "string"
+          },
+          "published_at": {
+            "format": "date",
+            "title": "Published At",
+            "type": "string"
+          },
+          "source_reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Reference"
+          }
+        },
+        "required": [
+          "node",
+          "convocation_id",
+          "convocation_code",
+          "convocation_title",
+          "official_url",
+          "published_at",
+          "opposition_code",
+          "opposition_name",
+          "ancestors"
+        ],
+        "title": "CurriculumNodeDetailSchema",
+        "type": "object"
+      },
+      "CurriculumNodeSchema": {
+        "properties": {
+          "children": {
+            "items": {
+              "$ref": "#/components/schemas/CurriculumNodeSchema"
+            },
+            "title": "Children",
+            "type": "array"
+          },
+          "depth": {
+            "title": "Depth",
+            "type": "integer"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "node_type": {
+            "$ref": "#/components/schemas/NodeType"
+          },
+          "official_code": {
+            "title": "Official Code",
+            "type": "string"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "position": {
+            "title": "Position",
+            "type": "integer"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "node_type",
+          "official_code",
+          "title",
+          "position",
+          "path",
+          "depth",
+          "children"
+        ],
+        "title": "CurriculumNodeSchema",
+        "type": "object"
+      },
+      "CurriculumSchema": {
+        "properties": {
+          "convocation_code": {
+            "title": "Convocation Code",
+            "type": "string"
+          },
+          "convocation_id": {
+            "title": "Convocation Id",
+            "type": "string"
+          },
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Counts",
+            "type": "object"
+          },
+          "nodes": {
+            "items": {
+              "$ref": "#/components/schemas/CurriculumNodeSchema"
+            },
+            "title": "Nodes",
+            "type": "array"
+          },
+          "opposition_code": {
+            "title": "Opposition Code",
+            "type": "string"
+          }
+        },
+        "required": [
+          "convocation_id",
+          "convocation_code",
+          "opposition_code",
+          "counts",
+          "nodes"
+        ],
+        "title": "CurriculumSchema",
+        "type": "object"
+      },
       "DegradationSchema": {
         "properties": {
           "code": {
@@ -147,6 +499,212 @@
           "provider"
         ],
         "title": "EmbeddingSettingsSchema",
+        "type": "object"
+      },
+      "ExamPartSchema": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "evidence_quote": {
+            "title": "Evidence Quote",
+            "type": "string"
+          },
+          "fail_if_errors_gte": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fail If Errors Gte"
+          },
+          "format": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PartFormat"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "kind": {
+            "$ref": "#/components/schemas/PartKind"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "options_per_question": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Options Per Question"
+          },
+          "ordinary_items": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ordinary Items"
+          },
+          "parent_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Code"
+          },
+          "pass_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pass Score"
+          },
+          "position": {
+            "title": "Position",
+            "type": "integer"
+          },
+          "reserve_items": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reserve Items"
+          },
+          "score_max": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score Max"
+          },
+          "score_min": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score Min"
+          },
+          "structure_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Structure Note"
+          },
+          "time_minutes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Minutes"
+          },
+          "wrong_penalty_fraction": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wrong Penalty Fraction"
+          }
+        },
+        "required": [
+          "code",
+          "name",
+          "kind",
+          "position",
+          "evidence_quote"
+        ],
+        "title": "ExamPartSchema",
+        "type": "object"
+      },
+      "ExamRuleSchema": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "evidence_quote": {
+            "title": "Evidence Quote",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/RuleKind"
+          },
+          "value_text": {
+            "title": "Value Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "kind",
+          "value_text",
+          "description",
+          "evidence_quote"
+        ],
+        "title": "ExamRuleSchema",
         "type": "object"
       },
       "FieldError": {
@@ -225,6 +783,16 @@
         "title": "LlmSettingsSchema",
         "type": "object"
       },
+      "NodeType": {
+        "description": "Nivel estructural del programa dentro de una convocatoria.\n\nLos perfiles oficiales no tienen la misma forma: TAI publica cuatro bloques con temas, y\nGuardia Civil publica veinticinco temas con bloques internos y epígrafes. El tipo describe el\nnivel, y cada convocatoria define su jerarquía (ver ADR-005).",
+        "enum": [
+          "block",
+          "topic",
+          "epigraph"
+        ],
+        "title": "NodeType",
+        "type": "string"
+      },
       "OcrSettingsSchema": {
         "properties": {
           "tesseract_available": {
@@ -242,6 +810,92 @@
         ],
         "title": "OcrSettingsSchema",
         "type": "object"
+      },
+      "OppositionDetailSchema": {
+        "properties": {
+          "convocations": {
+            "items": {
+              "$ref": "#/components/schemas/ConvocationReferenceSchema"
+            },
+            "title": "Convocations",
+            "type": "array"
+          },
+          "opposition": {
+            "$ref": "#/components/schemas/OppositionSchema"
+          }
+        },
+        "required": [
+          "opposition",
+          "convocations"
+        ],
+        "title": "OppositionDetailSchema",
+        "type": "object"
+      },
+      "OppositionSchema": {
+        "properties": {
+          "active": {
+            "title": "Active",
+            "type": "boolean"
+          },
+          "active_convocation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ActiveConvocationSchema"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "name",
+          "active"
+        ],
+        "title": "OppositionSchema",
+        "type": "object"
+      },
+      "PartFormat": {
+        "enum": [
+          "single_choice",
+          "multi_mark_error",
+          "psychotechnical"
+        ],
+        "title": "PartFormat",
+        "type": "string"
+      },
+      "PartKind": {
+        "enum": [
+          "group",
+          "test"
+        ],
+        "title": "PartKind",
+        "type": "string"
       },
       "ProblemDetail": {
         "description": "Cuerpo de error del contrato.",
@@ -396,6 +1050,16 @@
         "title": "ReadinessSchema",
         "type": "object"
       },
+      "RuleKind": {
+        "enum": [
+          "boolean",
+          "integer",
+          "fraction",
+          "text"
+        ],
+        "title": "RuleKind",
+        "type": "string"
+      },
       "SettingsSchema": {
         "description": "Configuración efectiva sanitizada. Nunca incluye secretos.",
         "properties": {
@@ -507,6 +1171,183 @@
         "summary": "Capacidades reales y degradaciones"
       }
     },
+    "/api/v1/convocations/{convocation_id}": {
+      "get": {
+        "operationId": "get_convocation_api_v1_convocations__convocation_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "convocation_id",
+            "required": true,
+            "schema": {
+              "title": "Convocation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConvocationDetailSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Convocatoria con sus partes y sus reglas de examen"
+      }
+    },
+    "/api/v1/convocations/{convocation_id}/curriculum": {
+      "get": {
+        "operationId": "get_curriculum_api_v1_convocations__convocation_id__curriculum_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "convocation_id",
+            "required": true,
+            "schema": {
+              "title": "Convocation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CurriculumSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Árbol del programa oficial"
+      }
+    },
+    "/api/v1/curriculum-nodes/{node_id}": {
+      "get": {
+        "operationId": "get_curriculum_node_api_v1_curriculum_nodes__node_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "node_id",
+            "required": true,
+            "schema": {
+              "title": "Node Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CurriculumNodeDetailSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Nodo del programa con su procedencia"
+      }
+    },
     "/api/v1/health/live": {
       "get": {
         "description": "No comprueba dependencias: solo que el proceso responde.",
@@ -572,6 +1413,229 @@
           }
         },
         "summary": "Listo para servir (comprueba la base de datos)"
+      }
+    },
+    "/api/v1/oppositions": {
+      "get": {
+        "operationId": "list_oppositions_api_v1_oppositions_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/OppositionSchema"
+                  },
+                  "title": "Response List Oppositions Api V1 Oppositions Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Oposiciones disponibles y su convocatoria activa"
+      }
+    },
+    "/api/v1/oppositions/{opposition_id}": {
+      "get": {
+        "operationId": "get_opposition_api_v1_oppositions__opposition_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "opposition_id",
+            "required": true,
+            "schema": {
+              "title": "Opposition Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OppositionDetailSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Detalle de una oposición con sus convocatorias"
+      }
+    },
+    "/api/v1/oppositions/{opposition_id}/activate": {
+      "post": {
+        "operationId": "activate_opposition_api_v1_oppositions__opposition_id__activate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "opposition_id",
+            "required": true,
+            "schema": {
+              "title": "Opposition Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OppositionSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Activa una oposición (desactiva el resto)"
+      }
+    },
+    "/api/v1/oppositions/{opposition_id}/convocations": {
+      "get": {
+        "operationId": "list_convocations_api_v1_oppositions__opposition_id__convocations_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "opposition_id",
+            "required": true,
+            "schema": {
+              "title": "Opposition Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ConvocationReferenceSchema"
+                  },
+                  "title": "Response List Convocations Api V1 Oppositions  Opposition Id  Convocations Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Convocatorias de una oposición"
       }
     },
     "/api/v1/settings": {

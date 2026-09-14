@@ -23,6 +23,7 @@ from opofuente.api.middleware import (
     SecurityHeadersMiddleware,
 )
 from opofuente.api.openapi import apply_problem_media_type
+from opofuente.application.profiles_service import ProfilesService
 from opofuente.application.system_service import SystemService
 from opofuente.config import Settings, get_settings
 from opofuente.infrastructure.capabilities import (
@@ -30,10 +31,12 @@ from opofuente.infrastructure.capabilities import (
     PlannedCapabilityProvider,
     SqliteCapabilityProvider,
 )
+from opofuente.infrastructure.clock import SystemClock
 from opofuente.infrastructure.db import build_engine, build_session_factory
 from opofuente.infrastructure.migrations import script_head
 from opofuente.infrastructure.observability import setup_logging
 from opofuente.infrastructure.probes import DatabaseProbe, DataDirectoryProbe
+from opofuente.infrastructure.profile_repository import SqlAlchemyProfileRepository
 
 logger = logging.getLogger(__name__)
 
@@ -63,6 +66,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             SqliteCapabilityProvider(engine),
             PlannedCapabilityProvider(),
         ),
+    )
+    profiles_service = ProfilesService(
+        SqlAlchemyProfileRepository(session_factory),
+        SystemClock(),
     )
 
     @asynccontextmanager
@@ -96,6 +103,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.engine = engine
     app.state.session_factory = session_factory
     app.state.system_service = system_service
+    app.state.profiles_service = profiles_service
 
     # El orden importa: el último añadido es el más externo, así que el identificador de
     # correlación envuelve también los rechazos por Origin.

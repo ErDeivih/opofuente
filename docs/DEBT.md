@@ -13,7 +13,9 @@ Reglas:
 | ID | Slice | Obligación | Estado |
 |---|---|---|---|
 | [DEBT-001](#debt-001--clasificación-del-destino-de-datos-por-proveedor) | S09 | Sustituir `Settings.sends_data_off_device` por clasificación por proveedor | abierta |
-| [DEBT-002](#debt-002--documentar-403-y-404-en-el-contrato) | S02 | Documentar en OpenAPI los errores 403/404 que ya se sirven como `ProblemDetail` | abierta |
+| [DEBT-002](#debt-002--documentar-403-404-y-422-en-el-contrato) | S02 | Cerrar el caso real de validación fallida (422) con `field_errors` | parcialmente cerrada en S01 |
+| [DEBT-003](#debt-003--uso-privado-del-temario-de-la-guardia-civil) | antes de publicar | No publicar el repositorio ni distribuir la aplicación con el temario de GC | abierta |
+| [DEBT-004](#debt-004--parseo-seguro-de-xmlhtml-no-confiable) | S03 | Los extractores deben defenderse de XML/HTML no confiable | abierta |
 
 ---
 
@@ -68,39 +70,64 @@ URLs sin nada que clasificar, y S09 es donde llegan los adaptadores y la prueba 
 ## DEBT-002 — Documentar 403, 404 y 422 en el contrato
 
 **Origen:** corrección del 503 de `/health/ready` (commit corrector de S00).
+**Estado:** parcialmente cerrada en S01 (403, 404 y el esquema del 422); queda abierto el caso real
+de validación fallida.
 
 **Problema.** El esquema OpenAPI documenta el 500 (`ProblemDetail`), el 503 de readiness
-(`ReadinessProblem`) y los esquemas de las respuestas correctas, pero hay errores que se sirven como
-`ProblemDetail` sin aparecer en el contrato, o con un esquema documentado que **no** es el que se
-devuelve:
+(`ReadinessProblem`) y los esquemas de las respuestas correctas, pero había errores que se servían
+como `ProblemDetail` sin aparecer en el contrato, o con un esquema documentado que **no** era el que
+se devuelve:
 
-| Respuesta | Quién la produce | Cuerpo real | Documentado hoy |
+| Respuesta | Quién la produce | Cuerpo real | Estado |
 |---|---|---|---|
-| `403` | middleware de comprobación de `Origin` (métodos no seguros) | `ProblemDetail` (`code: forbidden_origin`) | no aparece |
-| `404` / `405` | manejador global de `StarletteHTTPException` | `ProblemDetail` | no aparece |
-| `422` | manejador global de `RequestValidationError` | `ProblemDetail` con `field_errors` | lo genera FastAPI como `HTTPValidationError` (`detail: [...]`), que **no** es nuestra forma |
+| `403` | middleware de comprobación de `Origin` (métodos no seguros) | `ProblemDetail` (`code: forbidden_origin`) | **documentado en S01** en la primera ruta de escritura (`POST /oppositions/{id}/activate`), y no en rutas de lectura, donde no puede ocurrir |
+| `404` | manejador global de `OpoFuenteError` / `StarletteHTTPException` | `ProblemDetail` | **documentado en S01** en todas las rutas que buscan un recurso por identificador |
+| `422` | manejador global de `RequestValidationError` | `ProblemDetail` con `field_errors` | **esquema corregido en S01**: al declararlo en cada ruta, FastAPI ya no publica `HTTPValidationError` y el contrato apunta a `ProblemDetail` bajo `application/problem+json` |
+| `405` | enrutador de Starlette | `ProblemDetail` | se sirve así, pero **no se documenta por ruta**: es un error de protocolo que no aporta información y añadirlo a cada operación sería ruido |
 
-El caso del 422 es el más engañoso de los tres: en cuanto S02 añada la primera ruta con cuerpo,
-FastAPI documentará automáticamente un `HTTPValidationError` y `apply_problem_media_type` lo moverá a
-`application/problem+json`. El media type quedaría bien y el esquema, mal: un consumidor que genere
-tipos desde el contrato obtendría un tipo que el servidor nunca devuelve.
+**Por qué no se cerró del todo.** El criterio 3 pedía «incluir un caso de validación fallida que
+compare `field_errors`». En S01 ninguna ruta tiene parámetros tipados ni cuerpo, así que no existe
+una petición que produzca un 422 real: probarlo exigiría inventar una ruta de prueba. Se cierra
+cuando S02 añada la primera ruta con cuerpo o parámetros validados.
 
-**Por qué no ahora.** En S00 no existe ninguna ruta de escritura ni ninguna ruta con cuerpo, así que
-el 403 no puede ocurrir en una ruta concreta, y no hay ninguna 422 documentada que corregir.
-Documentarlos ahora en rutas `GET` sería inexacto.
+**Lo que falta.** Una prueba de contrato que provoque un 422 de verdad y compare `field_errors` del
+cuerpo servido con el esquema documentado.
 
-**Criterio de cierre.** Cuando exista la primera ruta de escritura (S02):
+## DEBT-003 — Uso privado del temario de la Guardia Civil
 
-1. Documentar `403` con `ProblemDetail` solo en las rutas donde el middleware puede rechazarlas, y
-   `404`/`405` donde correspondan; no añadir respuestas que no puedan ocurrir.
-2. **El 422 documentado debe coincidir con el cuerpo real**: `ProblemDetail` con `field_errors`
-   (o un esquema derivado que lo declare), no `HTTPValidationError`. Si FastAPI sigue generándolo
-   automáticamente, hay que sustituirlo en el esquema —con el mismo mecanismo determinista que
-   `apply_problem_media_type`, sin escribir nombres de componente a mano— o desactivar su generación
-   automática cuando no proceda.
-3. Prueba de contrato que compruebe, para cada error documentado: media type
-   `application/problem+json`, `$ref` al componente esperado, y que los campos del esquema son los
-   mismos que devuelve el cuerpo servido en una petición real (como ya se hace con el 503 de
-   readiness). Incluir un caso de validación fallida que compare `field_errors`.
-4. Nada de esto se cierra declarando «el 422 lo genera FastAPI»: si el esquema documentado no es el
-   que se sirve, la deuda sigue abierta.
+**Origen:** verificación de derechos al construir los fixtures de S01 (ADR-006).
+
+**Problema.** Las condiciones generales del portal de la Guardia Civil limitan la licencia de sus
+contenidos a la descarga y al uso privado, y prohíben la reproducción, distribución o comunicación
+pública sin autorización expresa de la Dirección General. El temario oficial de los 25 temas está
+versionado en `fixtures/profiles/gc-cabos-guardias-2026.curriculum.json` porque el producto existe
+para estudiar ese programa, y OpoFuente es local, de un solo usuario y no redistribuye: ese es el
+ámbito que la licencia cubre.
+
+**Obligación.** El repositorio y la aplicación deben seguir siendo privados. Antes de publicar el
+repositorio, distribuirlo o alojarlo en un servicio accesible a terceros, hay que **retirar el
+temario de GC de los fixtures y cargarlo desde la copia del usuario**, o contar con autorización
+expresa de la Dirección General de la Guardia Civil
+(`sugerencias-intranet@guardiacivil.org`).
+
+**Criterio de cierre.** La decisión se cierra cuando el propietario confirma que el repositorio y la
+aplicación seguirán siendo privados (queda como decisión registrada), o cuando se sustituye el
+fixture por importación manual del PDF. La alternativa está descrita en ADR-006.
+
+## DEBT-004 — Parseo seguro de XML/HTML no confiable
+
+**Origen:** `# noqa: S314` justificado en la herramienta de fixtures de S01.
+
+**Problema.** `apps/api/opofuente/tools/build_profile_fixtures.py` analiza XML y PDF descargados.
+Hoy es seguro porque el fichero se verifica por `sha256` contra el manifiesto antes de leerlo. Pero
+S03 añadirá extractores que leerán **contenido del usuario**, que sí es entrada no confiable:
+XML con entidades externas, HTML con scripts y ZIPs con traversal (09_SECURITY-PRIVACY-AND-RIGHTS
+§3 y §5).
+
+**Obligación.** En S03, cada extractor debe defenderse de entrada no confiable: sin resolución de
+entidades externas (`defusedxml` o configuración equivalente), sin ejecutar contenido activo, con
+límites de tamaño y profundidad, y con sus pruebas negativas correspondientes.
+
+**Criterio de cierre.** Extractores de S03 con pruebas negativas (entidades externas, XML con
+`DOCTYPE`, HTML con scripts, ZIP con traversal y con ratio de expansión abusivo) y sin `# noqa` de
+seguridad pendientes en el código de producción.

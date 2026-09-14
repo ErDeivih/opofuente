@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom';
 
+import { OppositionSelector } from '../features/profiles/OppositionSelector';
 import { SystemIndicators } from '../features/system/SystemIndicators';
 import { NAV_ITEMS } from './navigation';
 import type { ReactNode } from 'react';
@@ -19,6 +20,7 @@ export function AppShell({ children }: AppShellProps) {
           <span className="app__brand-name">OpoFuente</span>
           <span className="app__brand-note">biblioteca personal de oposiciones</span>
         </div>
+        <OppositionSelector />
         <SystemIndicators />
       </header>
       <div className="app__body">

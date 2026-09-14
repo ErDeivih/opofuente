@@ -431,6 +431,173 @@ button:focus-visible,
   background: var(--color-acento-suave);
 }
 
+/* --- Selector de oposición ------------------------------------------------- */
+
+.selector {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.selector__label {
+  color: var(--color-texto-suave);
+  font-size: 0.8rem;
+}
+
+.selector__select {
+  font: inherit;
+  font-size: 0.9rem;
+  padding: 0.25rem 0.4rem;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio);
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  /* `min-width: 0` + `flex-shrink` permiten que el selector se encoja en pantallas estrechas:
+     sin esto, el ancho intrínseco de las opciones desbordaba el viewport de 390 px. */
+  flex: 1 1 12rem;
+  min-width: 0;
+  max-width: 22rem;
+  text-overflow: ellipsis;
+}
+
+/* --- Árbol del programa ---------------------------------------------------- */
+
+.tree {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.tree .tree,
+.tree--nested {
+  margin-left: 1rem;
+  border-left: 1px solid var(--color-borde);
+  padding-left: 0.5rem;
+}
+
+.tree__item {
+  margin: 0.1rem 0;
+}
+
+.tree__caret {
+  color: var(--color-texto-suave);
+  font-size: 0.8rem;
+}
+
+.tree__label {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  border-radius: var(--radio);
+  padding: 0.25rem 0.4rem;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.tree__label:hover {
+  background: var(--color-acento-suave);
+}
+
+.tree__label--selected {
+  background: var(--color-acento-suave);
+  outline: 2px solid var(--color-acento);
+  outline-offset: -2px;
+}
+
+.tree__code {
+  font-variant-numeric: tabular-nums;
+  color: var(--color-texto-suave);
+  min-width: 3.2rem;
+  font-size: 0.85rem;
+}
+
+.tree__title {
+  flex: 1;
+}
+
+.tree__level {
+  color: var(--color-texto-suave);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+/* --- Detalle de nodo y examen --------------------------------------------- */
+
+.node__path {
+  margin: 0;
+  color: var(--color-texto-suave);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.85rem;
+}
+
+.node__title {
+  margin: 0.15rem 0 0.5rem;
+  font-weight: 600;
+}
+
+.exam-group {
+  margin-bottom: 1rem;
+}
+
+.exam-group h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.rules {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.rules__item {
+  border-bottom: 1px solid var(--color-borde);
+  padding: 0.5rem 0;
+}
+
+.rules__item:last-child {
+  border-bottom: none;
+}
+
+.rules__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.rules__value {
+  font-family: "Cascadia Mono", Consolas, monospace;
+  font-size: 0.88rem;
+}
+
+.rules__description {
+  margin: 0.25rem 0;
+}
+
+.quote {
+  margin: 0.25rem 0 0;
+  padding: 0.4rem 0.75rem;
+  border-left: 3px solid var(--color-borde);
+  color: var(--color-texto-suave);
+  font-size: 0.85rem;
+  background: var(--color-fondo);
+}
+
+.source__title {
+  margin: 0 0 0.5rem;
+  font-weight: 600;
+}
+
 /* --- Responsive (07_UI-UX §13 y §14: 1440, 1024 y 390) --------------------- */
 
 @media (max-width: 1024px) {

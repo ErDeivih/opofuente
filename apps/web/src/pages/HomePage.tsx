@@ -1,20 +1,27 @@
 import { EmptyState } from '../components/EmptyState';
+import { LoadingState } from '../components/LoadingState';
 import { SystemStatus } from '../features/system/SystemStatus';
+import { useOppositions } from '../api/queries';
 
 /**
  * Inicio (07_UI-UX §3).
  *
- * Las tres primeras tarjetas son estados vacíos honestos: todavía no hay sesiones, material ni
- * perfiles. La cuarta muestra el estado real del sistema, que sí existe en S00.
+ * «Estado del programa» muestra el perfil realmente sembrado (oposición activa, convocatoria,
+ * fecha de publicación y enlace oficial). Las demás tarjetas siguen siendo estados vacíos honestos:
+ * no hay sesiones ni material importado porque esos slices no existen todavía.
  */
 export function HomePage() {
+  const oppositions = useOppositions();
+  const active = oppositions.data?.find((opposition) => opposition.active) ?? null;
+  const total = oppositions.data?.length ?? 0;
+
   return (
     <>
       <header className="page__header">
         <h1>Inicio</h1>
         <p className="page__lead">
-          Aquí se mostrará la tarea recomendada. Mientras no existan perfiles, material ni sesiones,
-          esta pantalla dice exactamente qué falta y en qué slice llega.
+          Aquí se mostrará la tarea recomendada. Mientras no existan material ni sesiones, esta
+          pantalla dice exactamente qué falta y en qué slice llega.
         </p>
       </header>
 
@@ -38,11 +45,43 @@ export function HomePage() {
 
       <section className="card" aria-labelledby="estado-programa">
         <h2 id="estado-programa">Estado del programa</h2>
-        <EmptyState
-          title="Sin oposiciones sembradas"
-          description="Cobertura documental, preguntas y dominio se calculan sobre el árbol oficial del temario."
-          hint="Los perfiles TAI 2025 y Guardia Civil 2026 se siembran en el slice S01 desde fuentes oficiales versionadas."
-        />
+        {oppositions.isPending && <LoadingState label="Cargando perfiles…" />}
+        {oppositions.isError && (
+          <EmptyState
+            title="No se pudieron cargar los perfiles"
+            description="La API no responde o la base de datos no está migrada."
+            hint="Comprueba el estado del sistema, más abajo."
+          />
+        )}
+        {oppositions.isSuccess && active === null && (
+          <EmptyState
+            title={total === 0 ? 'Sin oposiciones sembradas' : 'Ninguna oposición activa'}
+            description="Los perfiles oficiales se siembran desde los fixtures versionados."
+            hint="Ejecuta scripts/seed.ps1 para sembrar TAI 2025 y Guardia Civil 2026."
+          />
+        )}
+        {oppositions.isSuccess && active !== null && (
+          <dl className="facts">
+            <dt>Oposición activa</dt>
+            <dd>
+              {active.name} <span className="tag">{active.code}</span>
+            </dd>
+            <dt>Convocatoria</dt>
+            <dd>
+              {active.active_convocation?.code ?? 'sin convocatoria activa'}
+              {active.active_convocation && (
+                <>
+                  {' · publicada el '}
+                  <time dateTime={active.active_convocation.published_at}>
+                    {active.active_convocation.published_at}
+                  </time>
+                </>
+              )}
+            </dd>
+            <dt>Perfiles disponibles</dt>
+            <dd>{total}</dd>
+          </dl>
+        )}
       </section>
 
       <SystemStatus />
