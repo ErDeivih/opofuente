@@ -1,0 +1,57 @@
+# --- Secretos y configuración local -----------------------------------------
+.env
+.env.*
+!.env.example
+
+# --- Datos locales: nunca en git ---------------------------------------------
+# DB SQLite, artefactos por hash, representaciones, Qdrant, logs, backups,
+# exportaciones y temporales. Ver docs/product-spec/02_ARCHITECTURE.md §5.
+/data/
+/.e2e-data/
+/.gates-data/
+
+# --- Modelos descargados ------------------------------------------------------
+**/models/
+*.onnx
+*.gguf
+*.safetensors
+*.bin
+!**/src/**/*.bin
+
+# --- Python -------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.pytest-tmp/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+.coverage
+.coverage.*
+htmlcov/
+
+# --- Node ---------------------------------------------------------------------
+node_modules/
+dist/
+.vite/
+*.tsbuildinfo
+
+# --- Playwright ---------------------------------------------------------------
+playwright-report/
+blob-report/
+test-results/
+.playwright/
+
+# --- Editores y sistema -------------------------------------------------------
+.vscode/
+.idea/
+Thumbs.db
+Desktop.ini
+*~
+
+# --- Bases de datos sueltas ---------------------------------------------------
+*.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm

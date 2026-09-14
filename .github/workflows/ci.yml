@@ -1,0 +1,121 @@
+name: CI
+
+# El despliegue es local, pero las puertas se ejecutan en CI igualmente (02_ARCHITECTURE §11).
+# Los pasos reproducen exactamente `scripts/gates.ps1`, que es la referencia en Windows.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  api:
+    name: Backend (lint, tipos, pruebas, contrato)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Instalar dependencias (lockfile)
+        run: uv sync --locked
+
+      - name: Formato
+        run: uv run ruff format --check .
+
+      - name: Lint
+        run: uv run ruff check .
+
+      - name: Tipos (mypy estricto)
+        run: uv run mypy
+
+      - name: Pruebas
+        run: uv run pytest
+
+      - name: Contrato OpenAPI sincronizado
+        run: uv run python -m opofuente.tools.export_openapi --check
+
+      - name: Build
+        run: uv build
+
+  web:
+    name: Frontend (lint, tipos, componentes, build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Instalar dependencias (lockfile)
+        run: npm ci
+
+      - name: Contrato y tipos derivados
+        run: npm run contracts:check
+
+      - name: Lint
+        run: npm run lint:web
+
+      - name: Tipos
+        run: npm run typecheck:web
+
+      - name: Pruebas de componentes
+        run: npm run test:web
+
+      - name: Build
+        run: npm run build:web
+
+  e2e:
+    name: E2E (Playwright)
+    runs-on: ubuntu-latest
+    needs: [api, web]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Instalar dependencias
+        run: |
+          uv sync --locked
+          npm ci
+
+      - name: Instalar navegador de Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Build del frontend
+        run: npm run build:web
+
+      - name: Pruebas end-to-end
+        run: npm run e2e
+
+      - name: Guardar informe si falla
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: apps/web/playwright-report/
+          retention-days: 7

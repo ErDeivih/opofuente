@@ -1,0 +1,21 @@
+{
+  "name": "@opofuente/contracts",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Contrato OpenAPI generado desde FastAPI y tipos TypeScript derivados",
+  "types": "./src/openapi.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/openapi.d.ts"
+    }
+  },
+  "scripts": {
+    "generate": "node ./scripts/generate.mjs",
+    "check": "node ./scripts/generate.mjs --check"
+  },
+  "devDependencies": {
+    "openapi-typescript": "^7.13.0",
+    "typescript": "^5.9.3"
+  }
+}

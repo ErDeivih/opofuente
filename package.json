@@ -1,0 +1,27 @@
+{
+  "name": "opofuente",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Monorepo local de OpoFuente: API FastAPI + web React/TypeScript",
+  "engines": {
+    "node": ">=20"
+  },
+  "workspaces": [
+    "apps/web",
+    "packages/contracts"
+  ],
+  "scripts": {
+    "dev:web": "npm run dev --workspace @opofuente/web",
+    "build:web": "npm run build --workspace @opofuente/web",
+    "lint:web": "npm run lint --workspace @opofuente/web",
+    "typecheck:web": "npm run typecheck --workspace @opofuente/web",
+    "test:web": "npm run test --workspace @opofuente/web",
+    "test:web:watch": "npm run test:watch --workspace @opofuente/web",
+    "e2e": "npm run e2e --workspace @opofuente/web",
+    "contracts:generate": "npm run generate --workspace @opofuente/contracts",
+    "contracts:check": "npm run check --workspace @opofuente/contracts"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}

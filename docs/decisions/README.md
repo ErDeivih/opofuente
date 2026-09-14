@@ -1,0 +1,13 @@
+# Registro de decisiones (ADR)
+
+Formato: `ADR-NNN-titulo.md` con contexto, opciones, datos, decisión, consecuencias y reversión
+(`docs/product-spec/13_DECISIONS-AND-OPEN-QUESTIONS.md` §Resolución).
+
+| ADR | Título | Estado |
+|---|---|---|
+| [ADR-001](ADR-001-herramientas-y-lockfiles.md) | Herramientas y lockfiles de Python y Node | aceptada |
+| [ADR-002](ADR-002-contrato-openapi-y-tipos.md) | Generación del contrato OpenAPI y de los tipos TypeScript | aceptada |
+| [ADR-003](ADR-003-cabeceras-y-origen-local.md) | Endurecimiento HTTP del backend local en el MVP | pendiente de revisión del propietario |
+| [ADR-004](ADR-004-typescript-fijado.md) | Versión de TypeScript fijada a 5.9.x | aceptada |
+
+Una decisión que afecte a arquitectura, privacidad o seguridad requiere ADR **antes** de codificar.
