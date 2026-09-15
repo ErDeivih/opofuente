@@ -19,6 +19,7 @@ Reglas:
 | [DEBT-005](#debt-005--borrado-de-nodos-con-referencias-al-sincronizar-fixtures) | S05 | La siembra no puede borrar nodos con referencias | abierta |
 | [DEBT-006](#debt-006--representación-exacta-de-fracciones-y-redondeo-en-la-puntuación) | S07 | Decidir y probar la aritmética exacta antes de calcular puntuaciones | abierta |
 | [DEBT-007](#debt-007--higiene-del-almacén-artefactos-sin-origen-y-temporales) | S12 | Recolector de artefactos sin origen, temporales `.part` y purga de trabajos | abierta |
+| [DEBT-008](#debt-008--conservar-los-formatos-sin-extractor-en-lugar-de-omitirlos) | S03 | Conservar PPTX/XLSX/EPUB y similares como `unsupported_preserved` | abierta |
 
 ---
 
@@ -212,8 +213,10 @@ una aplicación pensada para acumular decenas de miles de documentos en el equip
 
 **Obligación.** Antes de dar por buena la pantalla de almacenamiento (S12), implementar:
 
-1. **Recolector de temporales**: al arrancar, borrar los `*.part` de `data/tmp/` con una antigüedad
-   mayor que el lease máximo, informando de cuántos se han retirado.
+1. **Recolector de temporales**: borrar los `*.part` de `data/tmp/` con una antigüedad mayor que el
+   lease máximo, informando de cuántos se han retirado. **Dentro de la acción explícita de limpieza,
+   no en el arranque**: una purga automática al iniciar sería justo la purga silenciosa que prohíbe
+   el criterio 1. Al arrancar, como mucho se *avisa* de cuántos temporales hay y de su antigüedad.
 2. **Recolector de artefactos sin origen**: un artefacto con **cero** filas en `artifact_origins` y
    con antigüedad mayor que una ventana declarada puede retirarse. Nunca se retira un artefacto con
    algún origen, y la operación es explícita (se pide, se informa de lo retirado), no automática.
@@ -226,11 +229,48 @@ datos.
 **Criterio de cierre.**
 
 1. Comando o endpoint explícito («liberar espacio») con informe de lo retirado, y ninguna purga
-   silenciosa en segundo plano.
+   silenciosa en segundo plano ni al arrancar.
 2. Prueba de que un artefacto **compartido** (dos orígenes) sobrevive al recolector aunque uno de
    sus lotes se haya borrado.
-3. Prueba de que un `*.part` reciente (una copia en curso) **no** se borra, y uno antiguo sí.
+3. Prueba de que un `*.part` reciente (una copia en curso) **no** se borra, y uno antiguo sí, y de
+   que el resultado (cuántos y cuáles) se informa.
 4. Prueba de que los originales del usuario no se tocan: instantánea de tamaños y fechas antes y
    después del recolector, igual que en las pruebas de S02.
 5. La pantalla de almacenamiento muestra espacio usado, nº de artefactos y resultado de la última
    limpieza (07_UI-UX §11).
+
+## DEBT-008 — Conservar los formatos sin extractor en lugar de omitirlos
+
+**Origen:** revisión de S02 (15/09/2026).
+
+**Problema.** `FilesystemInventory` clasifica `.epub`, `.pptx`, `.ppt`, `.xlsx`, `.xls`, `.odt` y
+`.ods` como `omitted_unsupported` y **no los copia**. La especificación dice otra cosa:
+
+> «Archivos Office con macros, ejecutables, audio, vídeo, EPUB y PPTX quedan
+> `unsupported_preserved`.» — `04_INGESTION-AND-CLASSIFICATION §3`
+
+`unsupported_preserved` significa que el original **se conserva** en el almacén (con su hash y su
+origen) y que simplemente no se extrae todavía. Omitirlos tiene dos consecuencias: el usuario pierde
+material que sí quería guardar (un resumen en PPTX, un temario en EPUB) y OpoFuente no puede
+reconocerlo después cuando llegue el extractor, porque nunca lo copió.
+
+**Obligación.** En S03, al añadir los extractores:
+
+1. los formatos sin extractor del MVP se copian al almacén como cualquier otro fichero y quedan en
+   estado `unsupported_preserved` (conservado, sin extracción pendiente de un extractor);
+2. el informe del lote los cuenta en su propio contador (`preserved_unsupported`), separado de los
+   omitidos por política y de los fallidos;
+3. la interfaz explica que están guardados pero todavía no se pueden leer, en lugar de decir que se
+   han omitido;
+4. lo que sigue omitiéndose (ocultos, temporales de Office, ejecutables, enlaces que salen de la
+   carpeta, el propio directorio de datos) se mantiene exactamente igual.
+
+**Criterio de cierre.**
+
+1. Un lote con un `.pptx`, un `.epub` y un `.xlsx` los copia al almacén: hay artefacto y origen para
+   cada uno, con su `sha256` verificado.
+2. El contador `preserved_unsupported` aparece en el informe y el total sigue cuadrando
+   (`total = copiados + fallidos + cancelados + source_changed + preserved_unsupported`).
+3. Prueba de contrato y de interfaz: el estado se muestra como «conservado sin extractor», no como
+   omitido ni como fallido.
+4. Los ejecutables y los temporales de Office **siguen** sin copiarse (prueba de no regresión).

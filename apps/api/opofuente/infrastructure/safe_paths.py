@@ -73,8 +73,37 @@ def relative_display(root: Path, path: Path) -> str:
 
 
 def abbreviate(path: Path, *, keep: int = 2) -> str:
-    """Versión corta de una ruta para logs y para la interfaz («…/padre/hijo»)."""
-    parts = [part for part in path.parts if part not in {path.anchor}]
-    if len(parts) <= keep:
-        return str(path)
+    """Versión corta de una ruta para logs y para la interfaz («…/padre/hijo»).
+
+    **Nunca** devuelve la ruta completa: se descarta siempre la raíz (letra de unidad, UNC o `/`)
+    y se conservan como mucho los últimos `keep` componentes. Si no queda ningún componente
+    (una raíz suelta) se devuelve «…».
+    """
+    parts = [part for part in path.parts if part != path.anchor]
+    if not parts:
+        return "…"
     return "…/" + "/".join(parts[-keep:])
+
+
+#: Rutas con letra de unidad (`C:\…`, `C:/…`) o UNC (`\\servidor\recurso\…`).
+_WINDOWS_PATH = re.compile(
+    r"(?:[A-Za-z]:[\\/]|\\\\[^\\/\s]+[\\/])[^\s\"'<>|?*\r\n]*",
+)
+
+
+def redact_paths(text: str, *, keep: int = 1) -> str:
+    """Sustituye las rutas absolutas de un texto por su forma abreviada.
+
+    Los mensajes de error de terceros (un `PermissionError` de Python, un error de SQLite)
+    suelen incluir la ruta completa del fichero. Ese texto acaba en `jobs.error_message` y en la
+    interfaz, así que aquí se recorta antes: el nombre del fichero es metadato y puede verse, la
+    carpeta del usuario no.
+
+    Se cubren las formas que produce este producto (Windows 11): letra de unidad y UNC. En otras
+    formas de ruta el texto se deja tal cual; quien lo use no debe asumir que ya viene saneado.
+    """
+
+    def _replace(match: re.Match[str]) -> str:
+        return abbreviate(Path(match.group(0)), keep=keep)
+
+    return _WINDOWS_PATH.sub(_replace, text)

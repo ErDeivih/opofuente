@@ -176,6 +176,9 @@ class EntryView:
     status: str
     detail: str | None = None
     artifact_sha256: str | None = None
+    #: Fecha de modificación vista en el inventario. Viaja al lote de importación para poder
+    #: detectar que el fichero cambió antes de copiarlo (no solo por tamaño).
+    mtime: datetime | None = None
 
 
 @dataclass(frozen=True, slots=True)

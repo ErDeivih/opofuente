@@ -14,6 +14,7 @@ Reglas que aplica este servicio:
 from __future__ import annotations
 
 import logging
+import time
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -53,15 +54,19 @@ from opofuente.domain.ingestion import (
     manifest_hash,
 )
 from opofuente.domain.jobs import JobType
-from opofuente.infrastructure.safe_paths import abbreviate, is_within
+from opofuente.infrastructure.safe_paths import abbreviate, is_within, redact_paths
 
 logger = logging.getLogger(__name__)
 
 #: Entradas del lote que se muestran por defecto en la vista previa y en el detalle.
 PREVIEW_ENTRIES = 25
 PREVIEW_ISSUES = 50
-#: Cada cuántos ficheros se comprueba la cancelación y se renueva el lease.
-HEARTBEAT_EVERY = 10
+#: Cada cuánto, como mucho, se renueva el lease. Es tiempo y no número de ficheros: un solo fichero
+#: grande puede tardar más que un lease entero, así que la cuenta por ficheros no protege de nada.
+DEFAULT_HEARTBEAT_SECONDS = 15.0
+#: Tolerancia al comparar la fecha de modificación del inventario con la del origen. Evita rechazar
+#: una copia por redondeos de la base de datos, no por un cambio real.
+SOURCE_MTIME_TOLERANCE_SECONDS = 1.0
 
 
 @dataclass(frozen=True, slots=True)
@@ -70,6 +75,29 @@ class InventoryResult:
     sample: tuple[EntryView, ...]
     formats: dict[str, int]
     issues: tuple[IssueView, ...]
+
+
+class _ThrottledHeartbeat:
+    """Renueva el lease como mucho una vez cada `interval` segundos.
+
+    Se apoya en el reloj monótono: da igual cuántos ficheros haya ni cuánto tarde uno solo, lo que
+    importa es no dejar pasar más de `interval` segundos sin renovar. El almacén llama a
+    `on_chunk` mientras copia, así que un fichero enorme tampoco deja vencer el lease.
+    """
+
+    def __init__(self, execution: JobExecution, interval: float) -> None:
+        self._execution = execution
+        self._interval = interval
+        self._last = time.monotonic()
+
+    def maybe(self) -> None:
+        now = time.monotonic()
+        if now - self._last >= self._interval:
+            self._execution.heartbeat()
+            self._last = now
+
+    def on_chunk(self) -> None:
+        self.maybe()
 
 
 class IngestionService:
@@ -83,6 +111,7 @@ class IngestionService:
         clock: Clock,
         data_root: Path,
         max_entries: int,
+        heartbeat_seconds: float = DEFAULT_HEARTBEAT_SECONDS,
     ) -> None:
         self._repository = repository
         self.jobs = jobs
@@ -91,6 +120,7 @@ class IngestionService:
         self._clock = clock
         self._data_root = data_root
         self._max_entries = max_entries
+        self._heartbeat_seconds = max(heartbeat_seconds, 1.0)
 
     # ------------------------------------------------------------------ inventario
 
@@ -206,11 +236,18 @@ class IngestionService:
         return view
 
     def retry_batch(self, batch_id: str) -> BatchView:
-        """Reencola un lote fallido o cancelado. Los artefactos ya copiados se reutilizan."""
+        """Reencola un lote fallido o cancelado. Los artefactos ya copiados se reutilizan.
+
+        Reintentar incluye devolver las entradas canceladas o fallidas a `inventoried`: sin eso el
+        trabajo volvería a la cola y no encontraría nada que copiar. Los contadores se recalculan
+        del estado real, así que el informe del lote vuelve a cuadrar desde el primer momento.
+        """
         batch = self._repository.get_batch(batch_id)
         if batch is None or batch.kind != BatchKind.IMPORT.value:
             raise NotFoundError("lote de importación", batch_id)
         now = self._clock.now()
+        recovered = self._repository.reset_items_for_retry(batch_id)
+        self._repository.set_counters(batch_id, self._repository.summarize_import(batch_id))
         self._repository.set_status(batch_id, BatchStatus.QUEUED, now=now, error_summary="")
         job, _created = self.jobs.enqueue(
             job_type=JobType.INGEST_BATCH,
@@ -222,6 +259,10 @@ class IngestionService:
             idempotency_key=f"ingest_batch:{batch_id}",
         )
         self._repository.set_job(batch_id, job.id)
+        logger.info(
+            "ingestion.import_retried",
+            extra={"event": "import_retried", "job_id": job.id, "status_code": recovered},
+        )
         refreshed = self._repository.get_batch(batch_id)
         return refreshed if refreshed is not None else batch
 
@@ -272,7 +313,15 @@ class IngestionService:
     # ------------------------------------------------------------------ trabajo
 
     def run_import_job(self, execution: JobExecution) -> None:
-        """Manejador del trabajo `ingest_batch`: copia las entradas al almacén por hash."""
+        """Manejador del trabajo `ingest_batch`: copia las entradas al almacén por hash.
+
+        El lease se renueva **por tiempo**, no cada N ficheros: un solo fichero de 500 MiB puede
+        tardar más que el lease entero, así que la renovación también ocurre dentro de la copia de
+        cada fichero (el almacén avisa por trozos).
+
+        Si algo inesperado revienta, el lote no se queda diciendo que sigue trabajando: cuando ya no
+        quedan reintentos, se cierra como `failed` con sus contadores reales.
+        """
         batch_id = str(execution.payload.get("batch_id", ""))
         batch = self._repository.get_batch(batch_id)
         if batch is None:
@@ -288,16 +337,36 @@ class IngestionService:
         pending = self._repository.pending_entries(batch_id)
         counters = ImportCounters(total=len(pending))
         execution.progress(0.0, "copiando")
+        heartbeat = _ThrottledHeartbeat(execution, self._heartbeat_seconds)
 
-        for index, entry in enumerate(pending, start=1):
-            if execution.cancelled():
-                self._finish_cancelled(batch_id, counters, tuple(pending[index - 1 :]))
-                raise JobCancelledError("el lote de importación se canceló a petición del usuario")
+        try:
+            for index, entry in enumerate(pending, start=1):
+                if execution.cancelled():
+                    self._finish_cancelled(batch_id, counters, tuple(pending[index - 1 :]))
+                    raise JobCancelledError(
+                        "el lote de importación se canceló a petición del usuario"
+                    )
 
-            self._copy_entry(batch_id, root, entry, execution)
-            execution.progress(index / max(len(pending), 1), f"{index}/{len(pending)}")
-            if index % HEARTBEAT_EVERY == 0:
-                execution.heartbeat()
+                self._copy_entry(batch_id, root, entry, execution, heartbeat)
+                execution.progress(index / max(len(pending), 1), f"{index}/{len(pending)}")
+                heartbeat.maybe()
+        except JobCancelledError:
+            raise
+        except Exception as error:
+            if not execution.retry_pending:
+                # Sin más intentos no hay quien cierre el lote: se cierra aquí, con el estado real
+                # de sus entradas, para que no se quede en `running` para siempre.
+                self._finish_failed(batch_id, error)
+            else:
+                logger.warning(
+                    "ingestion.import_interrupted",
+                    extra={
+                        "event": "import_interrupted",
+                        "error_type": type(error).__name__,
+                        "revision": execution.job.attempts,
+                    },
+                )
+            raise
 
         counters = self._repository.summarize_import(batch_id)
         self._repository.set_counters(batch_id, counters)
@@ -307,12 +376,56 @@ class IngestionService:
         )
         self._repository.set_status(batch_id, status, now=self._clock.now(), error_summary=summary)
 
+    def on_job_failed(self, job: object) -> None:
+        """Cierra el lote cuando su trabajo se queda `failed` y ya no se va a reintentar.
+
+        Lo llama el worker (no el manejador) porque hay fallos que no pasan por el manejador: un
+        lease vencido tras varias caídas deja el trabajo `failed` sin haber llegado a ejecutarse.
+        """
+        payload = getattr(job, "payload", None)
+        if not isinstance(payload, dict):
+            return
+        batch_id = payload.get("batch_id")
+        if not isinstance(batch_id, str) or not batch_id:
+            return
+        batch = self._repository.get_batch(batch_id)
+        if batch is None or batch.status not in {
+            BatchStatus.QUEUED.value,
+            BatchStatus.RUNNING.value,
+        }:
+            # Ya está cerrado (o lo cerró el propio manejador): no se pisa un informe bueno.
+            return
+        job_error = getattr(job, "error_message", None)
+        self._finish_failed(
+            batch_id, RuntimeError(job_error or "el trabajo de importación terminó en fallo")
+        )
+
+    def _finish_failed(self, batch_id: str, error: Exception) -> None:
+        """Estado coherente para un lote que no puede continuar: contadores reales y motivo."""
+        counters = self._repository.summarize_import(batch_id)
+        self._repository.set_counters(batch_id, counters)
+        self._repository.set_status(
+            batch_id,
+            BatchStatus.FAILED,
+            now=self._clock.now(),
+            error_summary=_safe_error_summary(error),
+        )
+        logger.error(
+            "ingestion.import_failed",
+            extra={
+                "event": "import_failed",
+                "error_type": type(error).__name__,
+                "status_code": counters.failed,
+            },
+        )
+
     def _copy_entry(
         self,
         batch_id: str,
         root: Path,
         entry: EntryView,
         execution: JobExecution,
+        heartbeat: _ThrottledHeartbeat,
     ) -> None:
         now = self._clock.now()
         try:
@@ -365,7 +478,21 @@ class IngestionService:
                 entry,
                 IssueCode.SOURCE_CHANGED,
                 IssueSeverity.WARNING,
-                "El fichero cambió después del inventario: no se copia lo que no se revisó.",
+                "El fichero cambió de tamaño desde el inventario: no se copia lo que no se revisó.",
+                now,
+            )
+            self._repository.mark_item(
+                entry.id, ItemStatus.FAILED, detail="el fichero cambió después del inventario"
+            )
+            return
+
+        if _mtime_changed(entry.mtime, stat.st_mtime):
+            self._record_issue(
+                batch_id,
+                entry,
+                IssueCode.SOURCE_CHANGED,
+                IssueSeverity.WARNING,
+                "El fichero cambió de fecha desde el inventario: no se copia lo que no se revisó.",
                 now,
             )
             self._repository.mark_item(
@@ -374,7 +501,7 @@ class IngestionService:
             return
 
         try:
-            stored = self._store.store_file(source)
+            stored = self._store.store_file(source, on_chunk=heartbeat.on_chunk)
         except OSError:
             self._record_issue(
                 batch_id,
@@ -435,6 +562,13 @@ class IngestionService:
         message: str,
         now: datetime,
     ) -> None:
+        """Anota una incidencia del lote, una sola vez por entrada y motivo.
+
+        Un lote reintentado vuelve a pasar por las mismas entradas: repetir la incidencia inflaría
+        los contadores (y descuadraría el informe) sin aportar nada nuevo.
+        """
+        if self._repository.issue_exists(batch_id, code.value, entry.relative_path):
+            return
         self._repository.add_issues(
             batch_id,
             (
@@ -476,15 +610,36 @@ class IngestionService:
 def _to_discovered(entry: EntryView) -> DiscoveredEntry:
     """Convierte una entrada inventariada en la entrada que copiará el lote de importación.
 
-    Se conserva el tamaño del inventario para poder detectar que el fichero cambió antes de
-    copiarlo. El contenido se hashea igualmente al copiar, así que un cambio del mismo tamaño no
-    pasa inadvertido en el almacén: produce otro artefacto.
+    Se conservan el tamaño **y la fecha** que vio el inventario: son lo que permite detectar que el
+    fichero cambió entre la vista previa y la copia. El contenido se hashea igualmente al copiar,
+    así que un cambio que se cuele produce un artefacto distinto, nunca una copia silenciosa de algo
+    que el usuario no revisó.
     """
     return DiscoveredEntry(
         relative_path=entry.relative_path,
         original_name=entry.original_name,
         size_bytes=entry.size_bytes,
-        mtime=None,
+        mtime=entry.mtime,
         media_type=entry.media_type or "",
         status=ItemStatus.INVENTORIED,
     )
+
+
+def _mtime_changed(inventoried: datetime | None, current: float) -> bool:
+    """¿Cambió la fecha de modificación del fichero desde el inventario?
+
+    Se compara con una tolerancia de un segundo para no rechazar una copia legítima por redondeos
+    del viaje a la base de datos. Si el inventario no guardó fecha (lotes anteriores a esta
+    corrección), no se puede afirmar nada y no se bloquea la copia.
+    """
+    if inventoried is None:
+        return False
+    return abs(current - inventoried.timestamp()) > SOURCE_MTIME_TOLERANCE_SECONDS
+
+
+def _safe_error_summary(error: Exception) -> str:
+    """Motivo del fallo para el informe: sin trazas y sin rutas del usuario."""
+    detail = redact_paths(str(error).strip().replace("\n", " "))
+    if len(detail) > 160:
+        detail = detail[:160] + "…"
+    return f"{type(error).__name__}: {detail}" if detail else type(error).__name__

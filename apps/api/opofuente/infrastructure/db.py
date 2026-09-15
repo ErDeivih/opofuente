@@ -9,6 +9,7 @@ Invariantes exigidos por 02_ARCHITECTURE §5:
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -19,6 +20,19 @@ from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 class Base(DeclarativeBase):
     """Metadatos declarativos compartidos con Alembic."""
+
+
+def as_utc(value: datetime | None) -> datetime | None:
+    """Fecha leída de la base como UTC explícito.
+
+    SQLite guarda `DateTime(timezone=True)` sin desplazamiento, así que al leerlo vuelve
+    **ingenuo**: compararlo con un instante absoluto (`stat().st_mtime`) o con otro instante
+    consciente de la zona da una diferencia de horas o un `TypeError`. Todo lo que escribe OpoFuente
+    está en UTC, así que aquí se dice explícitamente al leer.
+    """
+    if value is None:
+        return None
+    return value.replace(tzinfo=UTC) if value.tzinfo is None else value.astimezone(UTC)
 
 
 def sqlite_url(database_path: Path) -> str:

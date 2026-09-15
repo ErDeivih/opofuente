@@ -383,6 +383,9 @@ class JobRecord(Base):
     lease_expires_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
+    #: Antes de esta fecha el trabajo no se puede reclamar: es la espera entre reintentos. Sin
+    #: ella, un `retry_delay_seconds` escrito en el mensaje no aplazaría nada de verdad.
+    not_before: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     cancel_requested_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )

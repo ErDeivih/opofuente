@@ -103,6 +103,8 @@ class Job:
     error_message: str | None = None
     lease_owner: str | None = None
     lease_expires_at: datetime | None = None
+    #: A partir de cuándo se puede reclamar el trabajo (espera entre reintentos).
+    not_before: datetime | None = None
     cancel_requested_at: datetime | None = None
     started_at: datetime | None = None
     finished_at: datetime | None = None

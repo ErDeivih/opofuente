@@ -110,11 +110,16 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         clock=clock,
         data_root=paths.root,
         max_entries=resolved.max_batch_entries,
+        # El lease se renueva a un tercio de su vida: margen de sobra para un fichero lento.
+        heartbeat_seconds=max(resolved.job_lease_seconds / 3, 2.0),
     )
     job_service = JobService(job_queue, clock)
     worker = JobWorker(
         queue=job_queue,
         handlers={JobType.INGEST_BATCH: ingestion_service.run_import_job},
+        # Un trabajo que se queda `failed` sin más reintentos tiene que cerrar el lote: si no, el
+        # lote seguiría diciendo que trabaja mientras su trabajo ya no va a ejecutarse.
+        on_failed={JobType.INGEST_BATCH: ingestion_service.on_job_failed},
         clock=clock,
         lease_seconds=resolved.job_lease_seconds,
         poll_seconds=resolved.worker_poll_seconds,

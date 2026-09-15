@@ -11,7 +11,7 @@ from collections.abc import Callable, Mapping, Sequence
 from opofuente.application.ports import Clock, JobQueue
 from opofuente.application.read_models import JobView, job_to_view
 from opofuente.domain.errors import JobCancelledError, NotFoundError
-from opofuente.domain.jobs import Job, JobStatus
+from opofuente.domain.jobs import Job, JobStatus, should_retry
 
 
 class JobExecution:
@@ -33,6 +33,16 @@ class JobExecution:
     @property
     def payload(self) -> Mapping[str, object]:
         return self.job.payload
+
+    @property
+    def retry_pending(self) -> bool:
+        """¿Quedará algún intento después de este fallo?
+
+        El contador del trabajo se incrementa al registrar el fallo, así que el intento en curso es
+        `attempts + 1`. Lo usa el manejador para saber si alguien volverá a intentarlo o si, por el
+        contrario, tiene que cerrar él mismo su estado (por ejemplo, el lote de una importación).
+        """
+        return should_retry(self.job.attempts + 1, self.job.max_attempts)
 
     def progress(self, value: float, step: str | None = None) -> None:
         self._report(value, step)

@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import hashlib
 import os
+from collections.abc import Callable
 from pathlib import Path
 from uuid import uuid4
 
@@ -39,8 +40,14 @@ class ArtifactStore:
     def exists(self, digest: Sha256) -> bool:
         return self.path_for(digest).is_file()
 
-    def store_file(self, source: Path) -> StoredArtifact:
-        """Copia un fichero al almacén por contenido. No toca el original."""
+    def store_file(
+        self, source: Path, *, on_chunk: Callable[[], None] | None = None
+    ) -> StoredArtifact:
+        """Copia un fichero al almacén por contenido. No toca el original.
+
+        `on_chunk` se llama después de escribir cada trozo: quien copia un fichero grande puede
+        renovar su lease sin esperar a terminar (un fichero de 500 MiB tarda más que un lease).
+        """
         if not source.is_file():
             raise InvariantViolationError("solo se pueden almacenar ficheros regulares")
 
@@ -57,6 +64,8 @@ class ArtifactStore:
                     digest.update(chunk)
                     size += len(chunk)
                     target.write(chunk)
+                    if on_chunk is not None:
+                        on_chunk()
                 target.flush()
                 os.fsync(target.fileno())
             sha = Sha256(digest.hexdigest())

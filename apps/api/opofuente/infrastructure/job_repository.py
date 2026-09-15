@@ -15,7 +15,7 @@ Reglas:
 from __future__ import annotations
 
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 from uuid import uuid4
 
 from sqlalchemy import select, update
@@ -33,6 +33,7 @@ from opofuente.domain.jobs import (
     retry_delay_seconds,
     should_retry,
 )
+from opofuente.infrastructure.db import as_utc
 from opofuente.infrastructure.db_models import JobRecord
 
 
@@ -98,18 +99,24 @@ class SqlAlchemyJobRepository:
             return tuple(self._job(row) for row in session.execute(query).scalars().all())
 
     def claim_next(self, *, owner: str, now: datetime, lease_seconds: int) -> Job | None:
-        """Toma el trabajo más antiguo pendiente. Nunca dos workers el mismo.
+        """Toma el trabajo pendiente más antiguo que ya se pueda reclamar.
 
-        Se reclaman también los trabajos con cancelación pedida y todavía sin empezar: tienen que
-        pasar por el worker para cerrarse en `cancelled` y dejar el lote coherente. Si no se
-        reclamaran, un lote cancelado antes de arrancar se quedaría en `cancel_requested` para
-        siempre, sin contadores ni informe.
+        Nunca dos workers el mismo. Se reclaman también los trabajos con cancelación pedida y
+        todavía sin empezar: tienen que pasar por el worker para cerrarse en `cancelled` y dejar el
+        lote coherente. Si no se reclamaran, un lote cancelado antes de arrancar se quedaría en
+        `cancel_requested` para siempre, sin contadores ni informe.
+
+        Un trabajo con `not_before` en el futuro (espera entre reintentos) **no** se reclama: la
+        espera es real, no un texto en el paso.
         """
         claimable = (JobStatus.QUEUED.value, JobStatus.CANCEL_REQUESTED.value)
         with self._session_factory() as session:
             candidate = session.execute(
                 select(JobRecord)
-                .where(JobRecord.status.in_(claimable))
+                .where(
+                    JobRecord.status.in_(claimable),
+                    (JobRecord.not_before.is_(None)) | (JobRecord.not_before <= now),
+                )
                 .order_by(JobRecord.created_at)
                 .limit(1)
             ).scalar_one_or_none()
@@ -125,6 +132,7 @@ class SqlAlchemyJobRepository:
                     status=JobStatus.LEASED.value,
                     lease_owner=owner,
                     lease_expires_at=lease_expiry(now, lease_seconds),
+                    not_before=None,
                     updated_at=now,
                     started_at=candidate.started_at or now,
                 )
@@ -221,7 +229,12 @@ class SqlAlchemyJobRepository:
         now: datetime,
         retry_at: datetime | None = None,
     ) -> JobStatus:
-        """Registra el fallo. Devuelve el estado en el que queda el trabajo."""
+        """Registra el fallo. Devuelve el estado en el que queda el trabajo.
+
+        Si quedan intentos, el trabajo vuelve a la cola **con espera**: `not_before` guarda cuándo
+        se podrá reclamar otra vez, y `claim_next` lo respeta. Un fallo que agota los intentos deja
+        el trabajo `failed` y `finished_at` puesto.
+        """
         with self._session_factory() as session:
             record = session.get(JobRecord, job_id)
             if record is None:
@@ -233,16 +246,26 @@ class SqlAlchemyJobRepository:
             record.lease_expires_at = None
             record.updated_at = now
             if should_retry(record.attempts, record.max_attempts):
+                delay = retry_delay_seconds(record.attempts)
                 record.status = JobStatus.QUEUED.value
-                record.step = f"reintento en {retry_delay_seconds(record.attempts)}s"
+                record.not_before = (
+                    retry_at if retry_at is not None else now + timedelta(seconds=delay)
+                )
+                record.step = f"reintento en {delay}s"
             else:
                 record.status = JobStatus.FAILED.value
+                record.not_before = None
                 record.finished_at = now
             session.commit()
             return JobStatus(record.status)
 
-    def requeue_expired_leases(self, *, now: datetime) -> int:
-        """Trabajos cuyo lease venció (proceso caído) vuelven a la cola."""
+    def requeue_expired_leases(self, *, now: datetime) -> tuple[Job, ...]:
+        """Trabajos cuyo lease venció (proceso caído) vuelven a la cola.
+
+        Devuelve los trabajos afectados con su estado nuevo, para que quien los recupere pueda
+        avisar de los que se quedaron `failed` (agotaron sus intentos). Los que vuelven a la cola
+        no esperan: los dejó otro proceso, no un fallo propio.
+        """
         with self._session_factory() as session:
             rows = (
                 session.execute(
@@ -263,13 +286,14 @@ class SqlAlchemyJobRepository:
                 record.step = "reanudado tras interrupción"
                 if should_retry(record.attempts, record.max_attempts):
                     record.status = JobStatus.QUEUED.value
+                    record.not_before = None
                 else:
                     record.status = JobStatus.FAILED.value
                     record.error_code = "lease_expired"
                     record.error_message = "El trabajo se interrumpió demasiadas veces."
                     record.finished_at = now
             session.commit()
-            return len(rows)
+            return tuple(self._job(row) for row in rows)
 
     # ------------------------------------------------------------------ conversión
 
@@ -298,8 +322,9 @@ class SqlAlchemyJobRepository:
             error_code=record.error_code,
             error_message=record.error_message,
             lease_owner=record.lease_owner,
-            lease_expires_at=record.lease_expires_at,
-            cancel_requested_at=record.cancel_requested_at,
+            lease_expires_at=as_utc(record.lease_expires_at),
+            not_before=as_utc(record.not_before),
+            cancel_requested_at=as_utc(record.cancel_requested_at),
             started_at=record.started_at,
             finished_at=record.finished_at,
         )

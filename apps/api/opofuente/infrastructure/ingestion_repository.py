@@ -13,7 +13,7 @@ from datetime import datetime
 from pathlib import Path
 from uuid import uuid4
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session, sessionmaker
 
 from opofuente.application.read_models import (
@@ -37,6 +37,7 @@ from opofuente.domain.ingestion import (
     IssueCode,
     ItemStatus,
 )
+from opofuente.infrastructure.db import as_utc
 from opofuente.infrastructure.db_models import (
     ArtifactOriginRecord,
     ImportIssueRecord,
@@ -227,6 +228,32 @@ class SqlAlchemyIngestionRepository:
             cancelled=counts.get(ItemStatus.CANCELLED.value, 0),
         )
 
+    def reset_items_for_retry(self, batch_id: str) -> int:
+        """Devuelve a `inventoried` las entradas canceladas o fallidas, para volver a intentarlas.
+
+        Reintentar un lote no puede depender de que alguien arregle la base a mano: si las entradas
+        siguen en `cancelled` o `failed`, el trabajo vuelve a la cola y no encuentra nada que
+        copiar. Las ya copiadas (`hashed`) no se tocan: su artefacto sigue siendo válido.
+        """
+        with self._session_factory() as session:
+            recoverable = (
+                IngestionItemRecord.batch_id == batch_id,
+                IngestionItemRecord.status.in_(
+                    [ItemStatus.CANCELLED.value, ItemStatus.FAILED.value]
+                ),
+            )
+            pending = session.execute(
+                select(func.count()).select_from(IngestionItemRecord).where(*recoverable)
+            ).scalar_one()
+            if pending:
+                session.execute(
+                    update(IngestionItemRecord)
+                    .where(*recoverable)
+                    .values(status=ItemStatus.INVENTORIED.value, detail=None)
+                )
+                session.commit()
+            return int(pending)
+
     def count_batch_artifacts(self, batch_id: str) -> int:
         with self._session_factory() as session:
             return session.execute(
@@ -235,6 +262,26 @@ class SqlAlchemyIngestionRepository:
                     IngestionItemRecord.artifact_id.is_not(None),
                 )
             ).scalar_one()
+
+    def issue_exists(self, batch_id: str, code: str, relative_path: str | None) -> bool:
+        """¿Ya está esa incidencia en el lote?
+
+        Reintentar un lote vuelve a intentar las mismas entradas: sin esta comprobación, cada
+        intento añadiría otra incidencia idéntica y el contador del informe crecería sin que haya
+        nada nuevo que contar (y el informe dejaría de cuadrar).
+        """
+        with self._session_factory() as session:
+            conditions = [
+                ImportIssueRecord.batch_id == batch_id,
+                ImportIssueRecord.code == code,
+                ImportIssueRecord.relative_path.is_(None)
+                if relative_path is None
+                else ImportIssueRecord.relative_path == relative_path,
+            ]
+            total = session.execute(
+                select(func.count()).select_from(ImportIssueRecord).where(*conditions)
+            ).scalar_one()
+            return int(total) > 0
 
     def set_status(
         self,
@@ -545,6 +592,7 @@ class SqlAlchemyIngestionRepository:
             status=record.status,
             detail=record.detail,
             artifact_sha256=None,
+            mtime=as_utc(record.mtime),
         )
 
     @staticmethod

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import time
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -13,11 +14,13 @@ from sqlalchemy import select
 from opofuente.api.errors import PROBLEM_MEDIA_TYPE
 from opofuente.config import Settings
 from opofuente.domain.ingestion import ItemStatus
-from opofuente.domain.jobs import JobStatus
+from opofuente.domain.jobs import JobStatus, JobType
+from opofuente.infrastructure.clock import SystemClock
 from opofuente.infrastructure.db import build_engine, build_session_factory
 from opofuente.infrastructure.db_models import JobRecord
 from opofuente.infrastructure.job_repository import SqlAlchemyJobRepository
 from opofuente.main import create_app
+from opofuente.workers.job_worker import JobWorker
 
 ALLOWED_ORIGIN = {"Origin": "http://127.0.0.1:5173"}
 FOREIGN_ORIGIN = {"Origin": "http://malicioso.example"}
@@ -196,19 +199,23 @@ def test_cancelar_un_lote_y_un_trabajo(api_only_client: TestClient, material: Pa
     assert job.json()["cancel_requested"] is True
 
 
-def test_cancelar_un_lote_que_no_ha_empezado_lo_cierra_el_worker(
-    seeded_settings: Settings, material: Path
+def test_un_lote_cancelado_antes_de_arrancar_lo_cierra_el_worker(
+    migrated_settings: Settings, material: Path
 ) -> None:
     """Regresión: un lote cancelado antes de arrancar se quedaba en `cancel_requested` para siempre.
 
     El trabajo se marcaba `cancel_requested` y `claim_next` solo reclamaba los `queued`, así que
-    nadie lo ejecutaba nunca: el lote quedaba sin contadores y con el informe descuadrado. Ahora el
-    worker reclama también los trabajos cancelados para cerrarlos en `cancelled`.
+    nadie lo ejecutaba nunca: el lote quedaba sin contadores, con el informe descuadrado y el
+    trabajo esperando para siempre.
+
+    La prueba es determinista a propósito: el worker de la aplicación **está apagado** cuando se
+    pide la cancelación, así que el estado no depende de quién llegue antes; después se arranca un
+    worker de verdad (el mismo repositorio y los mismos manejadores de la aplicación) y se comprueba
+    que reclama el trabajo cancelado y cierra el lote.
     """
     settings = Settings(
-        data_dir=seeded_settings.data_dir,
-        worker_enabled=True,
-        worker_poll_seconds=0.1,
+        data_dir=migrated_settings.data_dir,
+        worker_enabled=False,
         _env_file=None,
     )
     with TestClient(create_app(settings)) as client:
@@ -222,23 +229,136 @@ def test_cancelar_un_lote_que_no_ha_empezado_lo_cierra_el_worker(
             f"/api/v1/ingestion-batches/{batch['id']}/cancel", headers=ALLOWED_ORIGIN
         )
         assert cancelado.json()["status"] == "cancel_requested"
+        # Nadie ha ejecutado nada todavía: el lote sigue exactamente ahí.
+        assert client.get(f"/api/v1/jobs/{batch['job_id']}").json()["status"] == "cancel_requested"
 
-        deadline = time.monotonic() + 20
+        _run_one_job(client)
+
         detalle = client.get(f"/api/v1/ingestion-batches/{batch['id']}").json()
-        while detalle["batch"]["status"] != "cancelled" and time.monotonic() < deadline:
-            time.sleep(0.2)
-            detalle = client.get(f"/api/v1/ingestion-batches/{batch['id']}").json()
-
         assert detalle["batch"]["status"] == "cancelled"
-        # El informe de un lote cancelado cuadra: las entradas que no se copiaron quedan canceladas.
-        assert detalle["batch"]["counters"]["total"] == 2
-        assert detalle["batch"]["counters"]["cancelled"] == 2
+        counters = detalle["batch"]["counters"]
+        # El material tiene dos ficheros inventariados y uno oculto (que no entra en el lote).
+        assert counters["total"] == 2
+        assert counters["cancelled"] == 2
+        assert counters["copied"] == 0
         assert detalle["report"]["balanced"] is True
 
         trabajo = client.get(f"/api/v1/jobs/{batch['job_id']}").json()
         assert trabajo["status"] == "cancelled"
         # Y el material del usuario sigue intacto.
         assert snapshot(material)
+
+
+def _run_one_job(client: TestClient, *, attempts: int = 1) -> None:
+    """Ejecuta el worker real de la aplicación sobre los servicios de la app de prueba."""
+    service = client.app.state.ingestion_service
+    worker = JobWorker(
+        queue=service.jobs,
+        handlers={JobType.INGEST_BATCH: service.run_import_job},
+        on_failed={JobType.INGEST_BATCH: service.on_job_failed},
+        clock=SystemClock(),
+        lease_seconds=60,
+        poll_seconds=0.05,
+        owner="worker-de-prueba",
+    )
+    for _ in range(attempts):
+        asyncio.run(worker.run_once())
+
+
+def test_un_lote_cancelado_termina_siempre_en_un_estado_cerrado(
+    seeded_settings: Settings, tmp_path: Path
+) -> None:
+    """Invariante de cara al usuario: de `cancel_requested` se sale, tarde lo que tarde la copia.
+
+    Con el worker en marcha, quién gana la carrera (la cancelación o la copia) depende de la
+    máquina: lo que **no** puede pasar es que el lote se quede en `cancel_requested` sin contadores.
+    Se acepta cualquiera de los dos finales coherentes y se comprueba que el informe cuadra en
+    ambos.
+    """
+    lento = tmp_path / "material-lento"
+    lento.mkdir()
+    for index in range(400):
+        (lento / f"tema-{index:04d}.txt").write_bytes(b"x" * 65536)
+
+    settings = Settings(
+        data_dir=seeded_settings.data_dir,
+        worker_enabled=True,
+        worker_poll_seconds=0.1,
+        _env_file=None,
+    )
+    with TestClient(create_app(settings)) as client:
+        inventario = inventariar(client, lento)
+        batch = client.post(
+            f"/api/v1/inventories/{inventario['batch']['id']}/confirm-import",
+            headers=ALLOWED_ORIGIN,
+        ).json()
+        client.post(f"/api/v1/ingestion-batches/{batch['id']}/cancel", headers=ALLOWED_ORIGIN)
+
+        deadline = time.monotonic() + 60
+        detalle = client.get(f"/api/v1/ingestion-batches/{batch['id']}").json()
+        while (
+            detalle["batch"]["status"] in {"queued", "running", "cancel_requested"}
+            and time.monotonic() < deadline
+        ):
+            time.sleep(0.2)
+            detalle = client.get(f"/api/v1/ingestion-batches/{batch['id']}").json()
+
+        estado = detalle["batch"]["status"]
+        counters = detalle["batch"]["counters"]
+        assert estado in {"cancelled", "succeeded"}, estado
+        assert detalle["report"]["balanced"] is True
+        assert counters["total"] == 400
+        assert counters["copied"] + counters["cancelled"] == 400
+        if estado == "cancelled":
+            assert counters["cancelled"] > 0
+        # El trabajo acompaña al lote: nunca estados cruzados.
+        trabajo = client.get(f"/api/v1/jobs/{batch['job_id']}").json()
+        assert trabajo["status"] == estado
+        assert len(list(lento.iterdir())) == 400
+
+
+def test_una_cancelacion_que_llega_tarde_no_reescribe_el_lote_terminado(
+    seeded_settings: Settings, material: Path
+) -> None:
+    """Si el lote ya había terminado, gana el trabajo hecho: ni `cancelled` ni estados cruzados.
+
+    El trabajo y el lote acaban en el mismo estado (`succeeded`): el trabajo no puede quedar
+    `cancelled` con un lote ya copiado, y la petición de cancelación queda registrada en el trabajo
+    sin mentir sobre lo que pasó.
+    """
+    settings = Settings(
+        data_dir=seeded_settings.data_dir,
+        worker_enabled=True,
+        worker_poll_seconds=0.06,
+        _env_file=None,
+    )
+    with TestClient(create_app(settings)) as client:
+        inventario = inventariar(client, material)
+        batch = client.post(
+            f"/api/v1/inventories/{inventario['batch']['id']}/confirm-import",
+            headers=ALLOWED_ORIGIN,
+        ).json()
+
+        # Se espera a que el lote termine de verdad y solo entonces se pide cancelar.
+        deadline = time.monotonic() + 30
+        detalle = client.get(f"/api/v1/ingestion-batches/{batch['id']}").json()
+        while (
+            detalle["batch"]["status"] not in {"succeeded", "failed"}
+            and time.monotonic() < deadline
+        ):
+            time.sleep(0.1)
+            detalle = client.get(f"/api/v1/ingestion-batches/{batch['id']}").json()
+        assert detalle["batch"]["status"] == "succeeded"
+
+        respuesta = client.post(
+            f"/api/v1/ingestion-batches/{batch['id']}/cancel", headers=ALLOWED_ORIGIN
+        )
+        assert respuesta.status_code == 200
+
+        detalle = client.get(f"/api/v1/ingestion-batches/{batch['id']}").json()
+        assert detalle["batch"]["status"] == "succeeded"
+        trabajo = client.get(f"/api/v1/jobs/{batch['job_id']}").json()
+        assert trabajo["status"] == "succeeded"
 
 
 def test_reintentar_un_lote_en_cola_lo_deja_encolado(
@@ -320,7 +440,9 @@ def test_un_reinicio_recupera_el_trabajo_interrumpido(
             record.lease_expires_at = now - timedelta(seconds=1)
             session.commit()
 
-        assert repository.requeue_expired_leases(now=now) == 1
+        recuperados = repository.requeue_expired_leases(now=now)
+        assert [job.id for job in recuperados] == [claimed.id]
+        assert recuperados[0].status is JobStatus.QUEUED
         recuperado = repository.get(claimed.id)
         assert recuperado is not None
         assert recuperado.status is JobStatus.QUEUED

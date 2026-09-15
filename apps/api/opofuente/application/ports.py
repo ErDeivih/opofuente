@@ -7,7 +7,7 @@ conozca ninguna tecnología (02_ARCHITECTURE §7).
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from datetime import datetime
 from pathlib import Path
 from typing import Protocol, runtime_checkable
@@ -97,7 +97,11 @@ class ProfileRepository(Protocol):
 class ArtifactStorePort(Protocol):
     """Almacén de originales por contenido."""
 
-    def store_file(self, source: Path) -> StoredArtifact: ...
+    def store_file(
+        self, source: Path, *, on_chunk: Callable[[], None] | None = None
+    ) -> StoredArtifact:
+        """Copia el fichero al almacén. `on_chunk` permite renovar el lease durante la copia."""
+        ...
 
     def path_for(self, digest: Sha256) -> Path: ...
 
@@ -185,6 +189,14 @@ class IngestionRepository(Protocol):
 
     def count_batch_artifacts(self, batch_id: str) -> int: ...
 
+    def reset_items_for_retry(self, batch_id: str) -> int:
+        """Devuelve a `inventoried` las entradas canceladas o fallidas del lote."""
+        ...
+
+    def issue_exists(self, batch_id: str, code: str, relative_path: str | None) -> bool:
+        """¿Ya está anotada esa incidencia en el lote?"""
+        ...
+
     def mark_item(
         self,
         item_id: str,
@@ -258,4 +270,6 @@ class JobQueue(Protocol):
         retry_at: datetime | None = ...,
     ) -> JobStatus: ...
 
-    def requeue_expired_leases(self, *, now: datetime) -> int: ...
+    def requeue_expired_leases(self, *, now: datetime) -> tuple[Job, ...]:
+        """Trabajos cuyo lease venció, con su estado nuevo (para avisar de los que se pierden)."""
+        ...
