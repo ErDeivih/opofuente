@@ -9,11 +9,13 @@ contiene solo notas de cómo se ha materializado, sin contradecirla.
 > que viven en el repositorio original (`../ideas/opposition-study-rag/…`), no en este. No se han
 > reescrito para no alterar la copia; los hechos y reglas de derechos que citan siguen aplicando.
 >
-> **Única corrección de contenido** (15/09/2026, autorizada por el propietario): en
-> `04_INGESTION-AND-CLASSIFICATION.md §3` la frase sobre formatos no extraíbles metía los
-> ejecutables en `unsupported_preserved`, contradiciendo a §2, que pide omitirlos. Ahora dice lo que
-> se implementa: ejecutables omitidos por seguridad; Office con macros, audio, vídeo, EPUB y PPTX
-> conservados sin ejecutar. El resto del paquete sigue siendo copia literal.
+> **Corrección sincronizada con el documento maestro** (15/09/2026, autorizada por el propietario):
+> en `04_INGESTION-AND-CLASSIFICATION.md §3` la frase sobre formatos no extraíbles metía los
+> ejecutables en `unsupported_preserved`, contradiciendo a §2, que pide omitirlos. El texto se
+> corrigió aquí **y en el maestro** (`proptech-access-control/docs/opofuente/…`): ahora dice que los
+> ejecutables se omiten por seguridad y que Office con macros, audio, vídeo, EPUB y PPTX se conservan
+> sin ejecutar. Los dos ficheros son idénticos (mismo `sha256`), así que **no** es una desviación de
+> la copia: es una corrección en origen. El resto del paquete sigue siendo copia literal.
 
 ## Forma del sistema
 
