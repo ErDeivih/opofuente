@@ -356,6 +356,11 @@ def test_reintentar_documenta_el_409(schema: dict[str, Any]) -> None:
     assert set(content) == {PROBLEM_MEDIA_TYPE}
     assert content[PROBLEM_MEDIA_TYPE]["schema"]["$ref"].endswith("/ProblemDetail")
 
+    # Y el 409 es exclusivo de reintentar: cancelar un lote terminado no falla, devuelve su estado.
+    cancel = schema["paths"]["/api/v1/ingestion-batches/{batch_id}/cancel"]["post"]["responses"]
+    assert "409" not in cancel, "cancelar no rechaza por estado del lote"
+    assert "404" in cancel and "403" in cancel
+
 
 def test_el_409_servido_cumple_el_esquema_documentado(
     api_only_client: TestClient, schema: dict[str, Any], tmp_path: Path

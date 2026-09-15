@@ -2204,16 +2204,6 @@
             },
             "description": "El recurso no existe."
           },
-          "409": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "La operación no vale para el estado actual del recurso (`invalid_state`). Por ejemplo, reintentar un lote que no está fallido ni cancelado."
-          },
           "422": {
             "content": {
               "application/problem+json": {

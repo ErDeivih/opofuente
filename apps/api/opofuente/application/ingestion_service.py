@@ -221,6 +221,10 @@ class IngestionService:
             tuple(_to_discovered(entry) for entry in entries),
             status=ItemStatus.INVENTORIED,
         )
+        # Resumen inicial desde el estado real de las entradas: un lote recién confirmado tiene
+        # `total = pending`, no 0 de 0. Sin esto, entre la confirmación y la primera pasada del
+        # worker el informe decía «0 de 0» y `balanced: false` sin que hubiera nada roto.
+        self._repository.set_counters(batch_id, self._repository.summarize_import(batch_id))
         job, _created = self.jobs.enqueue(
             job_type=JobType.INGEST_BATCH,
             payload={"batch_id": batch_id, "inventory_batch_id": inventory_id},

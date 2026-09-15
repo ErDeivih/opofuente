@@ -241,29 +241,29 @@ datos.
 
 ## DEBT-008 — Conservar los formatos sin extractor en lugar de omitirlos
 
-**Origen:** revisión de S02 (15/09/2026).
+**Origen:** revisión de S02 (15/09/2026). La especificación se corrigió el mismo día (ver abajo).
 
 **Problema.** `FilesystemInventory` clasifica `.epub`, `.pptx`, `.ppt`, `.xlsx`, `.xls`, `.odt` y
 `.ods` como `omitted_unsupported` y **no los copia**. La especificación dice otra cosa:
 
-> «Archivos Office con macros, ejecutables, audio, vídeo, EPUB y PPTX quedan
-> `unsupported_preserved`.» — `04_INGESTION-AND-CLASSIFICATION §3`
+> «Archivos Office con macros, audio, vídeo, EPUB y PPTX quedan `unsupported_preserved`: se conservan
+> íntegros en el almacén, **sin ejecutar ni extraer** nada de ellos.» — `04_INGESTION-AND-CLASSIFICATION §3`
 
 `unsupported_preserved` significa que el original **se conserva** en el almacén (con su hash y su
 origen) y que simplemente no se extrae todavía. Omitirlos tiene dos consecuencias: el usuario pierde
 material que sí quería guardar (un resumen en PPTX, un temario en EPUB) y OpoFuente no puede
 reconocerlo después cuando llegue el extractor, porque nunca lo copió.
 
-**Contradicción aparente entre §2 y §3, resuelta.** §2 dice: «Ignorar por defecto archivos ocultos del
-sistema, temporales Office, **ejecutables** y directorios configurables», mientras §3 mete los
-ejecutables en la lista de `unsupported_preserved`. Las dos frases no pueden ganar a la vez, y la
-lectura correcta es:
+**Contradicción resuelta en la especificación (15/09/2026).** §2 pide omitir los ejecutables por
+defecto y §3 los metía en `unsupported_preserved`: las dos frases no podían ganar a la vez. El
+propietario autorizó corregir el texto canónico, y ahora §3 dice explícitamente que los ejecutables
+**no** se conservan, con el motivo. La regla queda así y es la que S03 implementará:
 
-| Qué | Regla que gana | Por qué |
+| Qué | Regla | Por qué |
 |---|---|---|
-| Ejecutables y bibliotecas (`.exe`, `.dll`, `.msi`, `.bat`, `.cmd`, `.com`, `.scr`, `.ps1`, `.jar`, `.so`, `.dylib`) | **§2: se omiten** | es una decisión de seguridad: OpoFuente no necesita el binario para estudiar y no lo va a ejecutar nunca; guardarlo solo añade superficie y ruido. Se registra como incidencia, no se copia |
-| Temporales de Office (`~$…`), ocultos del sistema y basura (`Thumbs.db`, `desktop.ini`) | **§2: se omiten** | no son material del usuario: son restos del sistema |
-| Office con macros (`.docm`, `.xlsm`, `.pptm`), audio, vídeo, `.epub`, `.pptx`, `.xlsx`, `.odt`, `.ods` | **§3: se conservan** como `unsupported_preserved` | sí son material del usuario y lo querrá después; se conservan **sin ejecutar ni extraer** nada de ellos |
+| Ejecutables y bibliotecas (`.exe`, `.dll`, `.msi`, `.bat`, `.cmd`, `.com`, `.scr`, `.ps1`, `.jar`, `.so`, `.dylib`) | **se omiten** (§2) | decisión de seguridad: OpoFuente no necesita el binario para estudiar y no lo va a ejecutar nunca; guardarlo solo añade superficie y ruido. Se registra como incidencia, no se copia |
+| Temporales de Office (`~$…`), ocultos del sistema y basura (`Thumbs.db`, `desktop.ini`) | **se omiten** (§2) | no son material del usuario: son restos del sistema |
+| Office con macros (`.docm`, `.xlsm`, `.pptm`), audio, vídeo, `.epub`, `.pptx`, `.xlsx`, `.odt`, `.ods` | **se conservan** como `unsupported_preserved` (§3) | sí son material del usuario y lo querrá después; se conservan **sin ejecutar ni extraer** nada de ellos |
 
 Es decir: `unsupported_preserved` es «lo conservo aunque todavía no sé leerlo», y no un permiso para
 guardar binarios ejecutables.

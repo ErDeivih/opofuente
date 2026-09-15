@@ -88,8 +88,10 @@ INGESTION_WRITE_ERRORS: dict[int | str, dict[str, Any]] = {
     **_INVALID_SOURCE,
 }
 
-#: Errores de las rutas que cambian el estado de un lote (reintentar, cancelar).
-BATCH_STATE_ERRORS: dict[int | str, dict[str, Any]] = {
+#: Errores **solo** de `POST /retry`, que es la única ruta que rechaza por estado del lote.
+#: Cancelar no produce 409: sobre un lote ya terminado es una operación sin efecto que devuelve el
+#: estado actual, así que documentarlo ahí sería documentar algo que no ocurre.
+RETRY_ERRORS: dict[int | str, dict[str, Any]] = {
     **WRITE_ERRORS,
     **_INVALID_STATE,
 }

@@ -20,9 +20,9 @@ from fastapi import APIRouter, Query
 
 from opofuente.api.deps import IngestionServiceDep, JobServiceDep
 from opofuente.api.error_responses import (
-    BATCH_STATE_ERRORS,
     INGESTION_WRITE_ERRORS,
     RESOURCE_ERRORS,
+    RETRY_ERRORS,
     WRITE_ERRORS,
 )
 from opofuente.api.ingestion_schemas import (
@@ -187,7 +187,7 @@ def get_batch(batch_id: str, service: IngestionServiceDep) -> BatchDetailSchema:
 @router.post(
     "/ingestion-batches/{batch_id}/cancel",
     response_model=BatchSchema,
-    responses=BATCH_STATE_ERRORS,
+    responses=WRITE_ERRORS,
     summary="Pide cancelar el lote (el worker se detiene entre ficheros)",
 )
 def cancel_batch(batch_id: str, service: IngestionServiceDep) -> BatchSchema:
@@ -197,7 +197,7 @@ def cancel_batch(batch_id: str, service: IngestionServiceDep) -> BatchSchema:
 @router.post(
     "/ingestion-batches/{batch_id}/retry",
     response_model=BatchSchema,
-    responses=BATCH_STATE_ERRORS,
+    responses=RETRY_ERRORS,
     summary="Reintenta un lote fallido o cancelado (409 si está en otro estado)",
 )
 def retry_batch(batch_id: str, service: IngestionServiceDep) -> BatchSchema:

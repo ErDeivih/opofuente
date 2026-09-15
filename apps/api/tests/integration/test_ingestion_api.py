@@ -170,6 +170,31 @@ def test_confirmar_importacion_crea_lote_y_trabajo_en_cola(
     assert len(api_only_client.get("/api/v1/jobs").json()) == 1
 
 
+def test_un_lote_recien_confirmado_declara_sus_pendientes(
+    api_only_client: TestClient, material: Path
+) -> None:
+    """Regresión: entre la confirmación y el worker, el informe decía «0 de 0» y no cuadraba.
+
+    Con el worker apagado no hay nadie que recalcule nada después, así que los contadores tienen que
+    estar bien desde el momento en que se crean las entradas: `total = pending`.
+    """
+    inventario = inventariar(api_only_client, material)
+    batch = api_only_client.post(
+        f"/api/v1/inventories/{inventario['batch']['id']}/confirm-import", headers=ALLOWED_ORIGIN
+    ).json()
+
+    assert batch["status"] == "queued"
+    counters = batch["counters"]
+    assert counters["total"] == 2
+    assert counters["pending"] == 2
+    assert counters["copied"] == 0
+    assert _suma_cuadra(counters)
+
+    informe = api_only_client.get(f"/api/v1/ingestion-batches/{batch['id']}/report").json()
+    assert informe["balanced"] is True
+    assert informe["counters"]["pending"] == 2
+
+
 def test_lote_inexistente_devuelve_404(api_only_client: TestClient) -> None:
     for ruta in (
         "/api/v1/ingestion-batches/no-existe",

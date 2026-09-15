@@ -48,7 +48,13 @@ a temporal aislado y tratar cada miembro como ítem.
 | JSON | esquema flexible guiado | límites de profundidad y tamaño |
 | PNG/JPEG | metadatos + OCR opcional | original siempre conservado |
 
-Archivos Office con macros, ejecutables, audio, vídeo, EPUB y PPTX quedan `unsupported_preserved`.
+Archivos Office con macros, audio, vídeo, EPUB y PPTX quedan `unsupported_preserved`: se conservan
+íntegros en el almacén, **sin ejecutar ni extraer** nada de ellos.
+
+Los ejecutables y bibliotecas (`.exe`, `.dll`, `.msi`, `.bat`, `.cmd`, `.com`, `.scr`, `.ps1`,
+`.jar`, `.so`, `.dylib`) **no** se conservan: se omiten por seguridad, como dice §2. OpoFuente no
+necesita el binario para estudiar y nunca lo va a ejecutar, así que guardarlo solo añade superficie
+y ruido. La omisión se registra como incidencia con su motivo, nunca en silencio.
 
 ## 4. Máquina de estados del ítem
 
