@@ -138,7 +138,7 @@ def xml_paragraphs(path: Path) -> list[tuple[str, str]]:
 def pdf_text(path: Path) -> str:
     # PyMuPDF no publica tipos: la llamada no se puede comprobar, pero el fichero ya está
     # verificado por sha256 contra el manifiesto antes de llegar aquí.
-    with pymupdf.open(path) as document:  # type: ignore[no-untyped-call]
+    with pymupdf.open(path) as document:
         return "\n".join(page.get_text() for page in document)
 
 

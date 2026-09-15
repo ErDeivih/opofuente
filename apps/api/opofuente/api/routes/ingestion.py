@@ -1,24 +1,29 @@
-"""Rutas de ingestión y trabajos (08_API-CONTRACT §4 y §5).
+"""Rutas de ingestión, extracción y trabajos (08_API-CONTRACT §4 y §5).
 
-Solo se implementa lo que S02 puede sostener:
+Implementado hasta S03:
 
 - inventario en lectura de una carpeta local y su confirmación para importar una copia;
+- las otras tres entradas del MVP: ficheros, texto pegado y URL descargada (con guarda SSRF);
 - consulta de lotes, entradas, incidencias e informe;
+- texto extraído: representaciones por artefacto, con su calidad y sus avisos, y lectura por trozos;
 - consulta de trabajos y cancelación.
 
-`POST /ingestion-batches/files` (multipart), `/paste` y `/url` **no** existen todavía: necesitan
-extractores (S03) y protección SSRF, y devolver un 501 sería un botón falso. La pantalla de Bandeja
-lo declara. `GET /events` (SSE) tampoco: el contrato lo marca como mejora P1 con polling
-obligatorio como respaldo, y S02 usa polling.
+`GET /events` (SSE) sigue sin existir: el contrato lo marca como mejora P1 con polling obligatorio
+como respaldo, y aquí se usa polling. Devolver un 501 sería un botón falso.
 """
 
 from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, File, Query, UploadFile
 
-from opofuente.api.deps import IngestionServiceDep, JobServiceDep
+from opofuente.api.deps import (
+    ExtractionServiceDep,
+    IngestionServiceDep,
+    IntakeServiceDep,
+    JobServiceDep,
+)
 from opofuente.api.error_responses import (
     INGESTION_WRITE_ERRORS,
     RESOURCE_ERRORS,
@@ -36,6 +41,10 @@ from opofuente.api.ingestion_schemas import (
     IssuePageSchema,
     IssueSchema,
     JobSchema,
+    PasteRequest,
+    RepresentationSchema,
+    RepresentationTextSchema,
+    UrlRequest,
 )
 from opofuente.application.ingestion_service import InventoryResult
 from opofuente.application.read_models import (
@@ -46,9 +55,11 @@ from opofuente.application.read_models import (
     IssuePage,
     IssueView,
     JobView,
+    RepresentationView,
 )
 from opofuente.domain.ingestion import ItemStatus, balanced_counters
 from opofuente.domain.jobs import JobStatus
+from opofuente.infrastructure.representation_store import TextSlice
 
 router = APIRouter()
 
@@ -114,12 +125,127 @@ def _report(detail: BatchDetail) -> ImportReportSchema:
     )
 
 
+def _representation(view: RepresentationView) -> RepresentationSchema:
+    return RepresentationSchema(
+        id=view.id,
+        artifact_id=view.artifact_id,
+        kind=view.kind,
+        status=view.status,
+        quality=view.quality,
+        extractor=f"{view.extractor_name}@{view.extractor_version}",
+        char_count=view.char_count,
+        page_count=view.page_count,
+        language=view.language,
+        ocr_candidate=view.ocr_candidate,
+        warnings=list(view.warnings),
+        has_text=view.has_text,
+        created_at=view.created_at,
+        source_paths=list(view.source_paths),
+    )
+
+
+def _representation_text(view: RepresentationView, trozo: TextSlice) -> RepresentationTextSchema:
+    """El lector devuelve el texto **con sus avisos**: quien lee sabe si el OCR no se ejecutó."""
+    return RepresentationTextSchema(
+        representation_id=view.id,
+        text=trozo.text,
+        offset=trozo.offset,
+        limit=trozo.limit,
+        total_chars=trozo.total_chars,
+        truncated=trozo.truncated,
+        quality=view.quality,
+        warnings=list(view.warnings),
+    )
+
+
 def _inventory(result: InventoryResult) -> InventorySchema:
     return InventorySchema(
         batch=_batch(result.batch),
         sample=[_entry(entry) for entry in result.sample],
         issues=[_issue(issue) for issue in result.issues],
     )
+
+
+@router.post(
+    "/ingestion-batches/files",
+    response_model=BatchSchema,
+    responses=INGESTION_WRITE_ERRORS,
+    summary="Copia los ficheros que el usuario selecciona o suelta (S03)",
+)
+def ingest_files(
+    intake: IntakeServiceDep,
+    files: Annotated[list[UploadFile], File(description="Uno o más ficheros")],
+) -> BatchSchema:
+    """Subida de ficheros: cada uno se copia al almacén y sigue el pipeline.
+
+    Un ZIP se copia aquí y se expande en la extracción, con los límites de seguridad del módulo de
+    ZIP (traversal, bombas y enlaces se rechazan).
+    """
+    temporales = intake.stage_uploads(
+        [(file.filename or "sin-nombre", file.file) for file in files]
+    )
+    return _batch(intake.ingest_files(temporales))
+
+
+@router.post(
+    "/ingestion-batches/paste",
+    response_model=BatchSchema,
+    responses=INGESTION_WRITE_ERRORS,
+    summary="Guarda el texto pegado como material propio (S03)",
+)
+def ingest_paste(request: PasteRequest, intake: IntakeServiceDep) -> BatchSchema:
+    return _batch(intake.ingest_paste(request.text, title=request.title))
+
+
+@router.post(
+    "/ingestion-batches/url",
+    response_model=BatchSchema,
+    responses=INGESTION_WRITE_ERRORS,
+    summary="Descarga una URL con la guarda de red y la guarda como material (S03)",
+)
+def ingest_url(request: UrlRequest, intake: IntakeServiceDep) -> BatchSchema:
+    return _batch(intake.ingest_url(request.url))
+
+
+@router.get(
+    "/ingestion-batches/{batch_id}/representations",
+    response_model=list[RepresentationSchema],
+    responses=RESOURCE_ERRORS,
+    summary="Texto extraído de las entradas del lote, con su calidad y sus avisos",
+)
+def list_representations(
+    batch_id: str, service: ExtractionServiceDep
+) -> list[RepresentationSchema]:
+    return [_representation(view) for view in service.representations_for_batch(batch_id)]
+
+
+@router.get(
+    "/representations/{representation_id}",
+    response_model=RepresentationSchema,
+    responses=RESOURCE_ERRORS,
+    summary="Una representación: extractor, calidad, páginas y avisos",
+)
+def get_representation(
+    representation_id: str, service: ExtractionServiceDep
+) -> RepresentationSchema:
+    return _representation(service.get_representation(representation_id))
+
+
+@router.get(
+    "/representations/{representation_id}/text",
+    response_model=RepresentationTextSchema,
+    responses=RESOURCE_ERRORS,
+    summary="Texto extraído, por trozos, con sus avisos a la vista",
+)
+def get_representation_text(
+    representation_id: str,
+    service: ExtractionServiceDep,
+    offset: Annotated[int, Query(ge=0)] = 0,
+    limit: Annotated[int, Query(ge=1, le=200_000)] = 20_000,
+) -> RepresentationTextSchema:
+    view = service.get_representation(representation_id)
+    trozo = service.read_text(representation_id, offset=offset, limit=limit)
+    return _representation_text(view, trozo)
 
 
 @router.post(

@@ -9,6 +9,8 @@ import type {
   Inventory,
   IssuePage,
   Job,
+  Representation,
+  RepresentationText,
 } from '../../src/api/ingestion';
 import { AppShell } from '../../src/app/AppShell';
 import { TrayPage } from '../../src/pages/TrayPage';
@@ -174,13 +176,76 @@ const incidenciasDelLote: IssuePage = {
   offset: 0,
 };
 
+/** Texto nativo de un PDF, y el candidato a OCR de un escaneo: los dos casos de 04_INGESTION §5. */
+const representacionesDelLote: Representation[] = [
+  {
+    id: 'rep-1',
+    artifact_id: 'artifact-1',
+    kind: 'native_text',
+    status: 'extracted',
+    quality: 'good',
+    extractor: 'pdf:pdf-native@1',
+    language: 'es',
+    char_count: 96,
+    page_count: 2,
+    has_text: true,
+    ocr_candidate: false,
+    warnings: [],
+    created_at: '2026-07-01T09:10:06Z',
+    source_paths: ['tema-01.pdf', 'tema-01-copia.pdf'],
+  },
+  {
+    id: 'rep-2',
+    artifact_id: 'artifact-2',
+    kind: 'ocr',
+    status: 'pending',
+    quality: 'ocr_unreviewed',
+    extractor: 'pdf:pdf-scanned@1',
+    language: null,
+    char_count: 0,
+    page_count: 1,
+    has_text: false,
+    ocr_candidate: true,
+    warnings: ['ocr_pending'],
+    created_at: '2026-07-01T09:10:06Z',
+    source_paths: ['escaneo.pdf'],
+  },
+];
+
+const textoNativo: RepresentationText = {
+  representation_id: 'rep-1',
+  offset: 0,
+  limit: 20_000,
+  total_chars: 96,
+  truncated: false,
+  quality: 'good',
+  warnings: [],
+  text: 'Tema 1. La Constitución Española de 1978: derechos y deberes fundamentales.',
+};
+
+const textoSinOcr: RepresentationText = {
+  representation_id: 'rep-2',
+  offset: 0,
+  limit: 20_000,
+  total_chars: 0,
+  truncated: false,
+  quality: 'ocr_unreviewed',
+  warnings: ['ocr_pending'],
+  text: '',
+};
+
 function stubTrayApi(overrides: Record<string, StubbedRoute> = {}) {
   return stubApi({
     '/api/v1/ingestion-batches/batch-importacion/items': { body: entradasDelLote },
     '/api/v1/ingestion-batches/batch-importacion/issues': { body: incidenciasDelLote },
+    '/api/v1/ingestion-batches/batch-importacion/representations': {
+      body: representacionesDelLote,
+    },
     '/api/v1/ingestion-batches/batch-importacion': { body: detalleDelLote },
     '/api/v1/ingestion-batches': { body: [loteImportado] },
     '/api/v1/jobs/job-import': { body: trabajoEnCurso },
+    '/api/v1/representations/rep-1/text': { body: textoNativo },
+    '/api/v1/representations/rep-2/text': { body: textoSinOcr },
     '/api/v1/inventories/batch-inventario/confirm-import': { body: loteImportado },
     '/api/v1/inventories': { body: inventoryResponse },
     ...overrides,
@@ -339,7 +404,7 @@ describe('pantalla Bandeja', () => {
     });
   });
 
-  it('declara las formas de entrada que todavía no existen en lugar de mostrar botones falsos', async () => {
+  it('muestra el texto extraído con su extractor, su calidad y sus avisos', async () => {
     stubTrayApi();
     renderWithProviders(
       <AppShell>
@@ -348,10 +413,86 @@ describe('pantalla Bandeja', () => {
       { route: '/bandeja' },
     );
 
+    await inventariar();
+    await screen.findByRole('heading', { name: 'Vista previa del inventario' });
+    await userEvent.click(screen.getByRole('button', { name: 'Importar una copia' }));
+
+    const lector = await screen.findByRole('region', { name: 'Texto extraído' });
+    // El texto va con la etiqueta de la representación, no como un bloque anónimo.
+    expect(await within(lector).findByLabelText('Texto extraído')).toHaveTextContent(
+      'La Constitución Española de 1978',
+    );
+    expect(within(lector).getByText('texto del documento')).toBeInTheDocument();
+    expect(within(lector).getByText('good')).toBeInTheDocument();
+    expect(within(lector).getByText(/96 caracteres/)).toBeInTheDocument();
+    // De qué fichero es el texto: dos entradas con el mismo contenido comparten representación.
+    expect(within(lector).getByText('tema-01.pdf · tema-01-copia.pdf')).toBeInTheDocument();
+    // Hay una segunda representación sin OCR: la pantalla no la esconde.
+    expect(within(lector).getByText('texto reconocido (OCR)')).toBeInTheDocument();
+    expect(within(lector).getByText('OCR pendiente')).toBeInTheDocument();
+  });
+
+  it('deja elegir otra representación y mantiene a la vista sus avisos', async () => {
+    stubTrayApi();
+    renderWithProviders(
+      <AppShell>
+        <TrayPage />
+      </AppShell>,
+      { route: '/bandeja' },
+    );
+
+    await inventariar();
+    await screen.findByRole('heading', { name: 'Vista previa del inventario' });
+    await userEvent.click(screen.getByRole('button', { name: 'Importar una copia' }));
+
+    const lector = await screen.findByRole('region', { name: 'Texto extraído' });
+    await userEvent.click(
+      await within(lector).findByRole('button', { name: 'texto reconocido (OCR)' }),
+    );
+
+    // Sin OCR el aviso tiene que estar donde se lee el texto, no en otra pantalla.
+    expect(await within(lector).findByText('ocr_pending')).toBeInTheDocument();
+    expect(within(lector).getByLabelText('Texto extraído')).toHaveTextContent('');
     expect(
-      await screen.findByText(/soltar archivos y pegar texto o URL \(slice S03\)/),
-    ).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /soltar|pegar/i })).not.toBeInTheDocument();
+      within(lector).getByRole('button', { name: 'texto reconocido (OCR)' }),
+    ).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('pide más texto solo cuando el usuario lo pide', async () => {
+    const fetchMock = stubTrayApi({
+      '/api/v1/representations/rep-1/text': {
+        body: { ...textoNativo, total_chars: 96_000, truncated: true },
+      },
+    });
+    renderWithProviders(
+      <AppShell>
+        <TrayPage />
+      </AppShell>,
+      { route: '/bandeja' },
+    );
+
+    await inventariar();
+    await screen.findByRole('heading', { name: 'Vista previa del inventario' });
+    await userEvent.click(screen.getByRole('button', { name: 'Importar una copia' }));
+
+    const lector = await screen.findByRole('region', { name: 'Texto extraído' });
+    const seguir = await within(lector).findByRole('button', { name: 'Seguir leyendo' });
+    // La primera lectura se queda en el primer tramo: no se trae 96 000 caracteres de golpe.
+    expect(
+      fetchMock.mock.calls.some(
+        (call) => typeof call[0] === 'string' && call[0].includes('limit=40000'),
+      ),
+    ).toBe(false);
+
+    await userEvent.click(seguir);
+
+    await waitFor(() => {
+      expect(
+        fetchMock.mock.calls.some(
+          (call) => typeof call[0] === 'string' && call[0].includes('limit=40000'),
+        ),
+      ).toBe(true);
+    });
   });
 
   it('muestra las entradas pendientes del informe', async () => {

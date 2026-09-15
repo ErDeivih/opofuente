@@ -15,11 +15,11 @@ Reglas:
 | [DEBT-001](#debt-001--clasificación-del-destino-de-datos-por-proveedor) | S09 | Sustituir `Settings.sends_data_off_device` por clasificación por proveedor | abierta |
 | [DEBT-002](#debt-002--documentar-403-404-y-422-en-el-contrato) | S02 | Cerrar el caso real de validación fallida (422) con `field_errors` | **cerrada en S02** |
 | [DEBT-003](#debt-003--uso-privado-del-temario-de-la-guardia-civil) | antes de publicar | No publicar el repositorio ni distribuir la aplicación con el temario de GC | abierta (condición previa) |
-| [DEBT-004](#debt-004--parseo-seguro-de-xmlhtml-no-confiable) | S03 | Los extractores deben defenderse de XML/HTML no confiable | abierta |
+| [DEBT-004](#debt-004--parseo-seguro-de-xmlhtml-no-confiable) | S03 | Los extractores deben defenderse de XML/HTML no confiable | **cerrada en S03** |
 | [DEBT-005](#debt-005--borrado-de-nodos-con-referencias-al-sincronizar-fixtures) | S05 | La siembra no puede borrar nodos con referencias | abierta |
 | [DEBT-006](#debt-006--representación-exacta-de-fracciones-y-redondeo-en-la-puntuación) | S07 | Decidir y probar la aritmética exacta antes de calcular puntuaciones | abierta |
 | [DEBT-007](#debt-007--higiene-del-almacén-artefactos-sin-origen-y-temporales) | S12 | Recolector de artefactos sin origen, temporales `.part` y purga de trabajos | abierta |
-| [DEBT-008](#debt-008--conservar-los-formatos-sin-extractor-en-lugar-de-omitirlos) | S03 | Conservar PPTX/XLSX/EPUB y similares como `unsupported_preserved` | abierta |
+| [DEBT-008](#debt-008--conservar-los-formatos-sin-extractor-en-lugar-de-omitirlos) | S03 | Conservar PPTX/XLSX/EPUB y similares como `unsupported_preserved` | **cerrada en S03** |
 
 ---
 
@@ -180,6 +180,7 @@ parametrizadas versionadas por convocatoria. Los `float` almacenados sirven como
 ## DEBT-004 — Parseo seguro de XML/HTML no confiable
 
 **Origen:** `# noqa: S314` justificado en la herramienta de fixtures de S01.
+**Estado: cerrada en S03.**
 
 **Problema.** `apps/api/opofuente/tools/build_profile_fixtures.py` analiza XML y PDF descargados.
 Hoy es seguro porque el fichero se verifica por `sha256` contra el manifiesto antes de leerlo. Pero
@@ -194,6 +195,18 @@ límites de tamaño y profundidad, y con sus pruebas negativas correspondientes.
 **Criterio de cierre.** Extractores de S03 con pruebas negativas (entidades externas, XML con
 `DOCTYPE`, HTML con scripts, ZIP con traversal y con ratio de expansión abusivo) y sin `# noqa` de
 seguridad pendientes en el código de producción.
+
+**Cómo se cerró (S03).**
+
+| Defensa | Dónde vive | Prueba negativa |
+|---|---|---|
+| XML/HTML sin resolver entidades ni DTD | `infrastructure/safe_xml.py`: `resolve_entities=False`, `load_dtd=False`, `no_network=True`, `huge_tree=False`, `DOCTYPE` rechazado antes de parsear y tope de bytes | `tests/unit/test_safe_inputs.py` (DOCX con `DOCTYPE` y entidad `file:///C:/Windows/win.ini`) |
+| Nada de contenido activo en HTML | `extractors/text_files.py` usa `html.parser` de la biblioteca estándar (no un motor de navegador), descarta `script`, `style`, `iframe`, `nav` y `footer`, y **nunca** ejecuta ni sigue nada; el texto con instrucciones para un modelo entra como texto literal | `test_el_html_no_ejecuta_nada_al_extraer_en_el_pipeline`, `tests/unit/test_extractors.py` |
+| ZIP sin traversal, sin enlaces, sin bombas | `infrastructure/safe_zip.py`: nombres validados (absolutos, `..`, separadores invertidos, unidades de Windows y enlaces), tope de entradas, de bytes y de ratio, y expansión acotada en profundidad | `tests/unit/test_safe_inputs.py` (traversal, bomba de ratio, bombas anidadas, enlace simbólico), `test_un_zip_con_traversal_se_rechaza_sin_expandir`, `test_un_zip_dentro_de_otro_no_se_expande` |
+| URL sin SSRF | `infrastructure/url_guard.py`: solo `http`/`https`, resolución DNS y bloqueo de loopback, privadas, link-local, metadatos y reservadas; **cada** redirección se revalida y la conexión se hace contra la IP ya comprobada (defensa ante rebinding) | `tests/unit/test_safe_inputs.py`, `test_una_url_interna_se_rechaza_sin_descargar`, `test_la_guarda_de_url_rechaza_y_no_crea_lote` |
+| Sin `# noqa` de seguridad pendientes | `uv run ruff check .` con las reglas de seguridad activas: sin `S314` ni equivalentes en el código de S03 | puerta 2 |
+
+---
 
 ## DEBT-007 — Higiene del almacén: artefactos sin origen y temporales
 
@@ -242,6 +255,7 @@ datos.
 ## DEBT-008 — Conservar los formatos sin extractor en lugar de omitirlos
 
 **Origen:** revisión de S02 (15/09/2026). La especificación se corrigió el mismo día (ver abajo).
+**Estado: cerrada en S03.**
 
 **Problema.** `FilesystemInventory` clasifica `.epub`, `.pptx`, `.ppt`, `.xlsx`, `.xls`, `.odt` y
 `.ods` como `omitted_unsupported` y **no los copia**. La especificación dice otra cosa:
@@ -290,3 +304,29 @@ guardar binarios ejecutables.
 4. Prueba de no regresión: un `.exe`, un `.ps1`, un `~$temporal.docx` y un enlace que sale de la
    carpeta **no** se copian y se declaran como omitidos, con los mismos códigos de incidencia que en
    S02.
+
+**Cómo se cerró (S03), criterio por criterio.**
+
+1. `FilesystemInventory` ya no omite `.pptx`, `.xlsx`, `.ods`, `.epub`, `.docm`, audio ni vídeo: los
+   copia como cualquier otro fichero (`PRESERVED_EXTENSIONS` en `filesystem_inventory.py`) y la
+   extracción los deja en `unsupported_preserved`. Un `.zip` que llega **dentro** de otro contenedor
+   tampoco se expande: se conserva igual de íntegro. Prueba:
+   `test_la_extraccion_clasifica_por_formato_y_conserva_lo_que_no_puede_leer`
+   (`resumen.xlsx` → `unsupported_preserved` con su incidencia `unsupported_preserved`),
+   `test_un_zip_dentro_de_otro_no_se_expande`, y en el E2E de la bandeja el `.xlsx` aparece copiado.
+2. `ImportCounters.preserved_unsupported` es un término propio de la ecuación
+   (`BALANCE_TERMS` en `domain/ingestion.py`) y `balanced_counters` lo comprueba; el informe lo sirve
+   la API y la interfaz lo muestra en los datos del lote. Pruebas:
+   `test_la_extraccion_clasifica_por_formato_y_conserva_lo_que_no_puede_leer`,
+   `test_la_extraccion_se_puede_cancelar_y_deja_el_lote_coherente` (el total sigue cuadrando con el
+   término nuevo) y las pruebas de contrato del informe.
+3. El estado se sirve con su propio nombre (`unsupported_preserved`) y su incidencia dice «Conservado
+   sin extraer: …» con el motivo del registro de extractores; la bandeja lista el estado y la
+   incidencia en la tabla de entradas del lote. Pruebas: contrato (`RepresentationSchema` y estados
+   documentados), `test_s02_domain.py` (transiciones válidas del estado nuevo) y las pruebas de
+   Vitest de la bandeja.
+4. No regresión: los ejecutables siguen en `OMITTED_EXTENSIONS`/`DANGEROUS_SUFFIXES` (no se copian ni
+   se conservan, ni siquiera dentro de un ZIP: `test_un_zip_se_expande_en_entradas_del_lote_y_se_extrae`
+   comprueba que `material.zip/basura.exe` **no** existe), los temporales de Office, los ocultos y los
+   enlaces que salen de la carpeta mantienen sus códigos de incidencia en
+   `tests/integration/test_inventory.py` y en el E2E.

@@ -667,6 +667,46 @@ button:focus-visible,
   overflow-wrap: anywhere;
 }
 
+/* --- Entradas directas y lector (S03) ------------------------------------- */
+
+.intake {
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--color-borde);
+}
+
+.intake:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.intake__drop {
+  padding: 0.5rem;
+  border: 1px dashed var(--color-borde);
+  border-radius: var(--radio);
+}
+
+.form__input--area {
+  width: 100%;
+  min-height: 6rem;
+  resize: vertical;
+}
+
+.reader {
+  margin: 0.5rem 0 0;
+  padding: 0.75rem;
+  max-height: 24rem;
+  overflow: auto;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio);
+  background: var(--color-superficie);
+  font-family: "Cascadia Mono", Consolas, monospace;
+  font-size: 0.82rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 /* --- Responsive (07_UI-UX §13 y §14: 1440, 1024 y 390) --------------------- */
 
 @media (max-width: 1024px) {

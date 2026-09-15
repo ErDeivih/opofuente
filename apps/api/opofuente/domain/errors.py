@@ -46,3 +46,29 @@ class InvalidBatchStateError(OpoFuenteError):
         )
         self.current = current
         self.allowed = allowed
+
+
+class UnsafeContentError(OpoFuenteError):
+    """El contenido se rechaza por seguridad. La API lo traduce a 400 `unsafe_content`.
+
+    Casos: ZIP con rutas que escapan, ZIP bomba, anidamiento excesivo, XML con entidades externas o
+    estructura que excede los límites del parser (DEBT-004).
+    """
+
+    def __init__(self, reason: str, *, code: str = "unsafe_content") -> None:
+        super().__init__(reason)
+        self.reason = reason
+        self.code = code
+
+
+class UrlRejectedError(OpoFuenteError):
+    """La URL no se puede descargar con seguridad. La API lo traduce a 400 `url_rejected`.
+
+    Casos: esquema que no es http/https, destino en red privada o loopback, redirección a un destino
+    bloqueado, demasiadas redirecciones o respuesta por encima del límite.
+    """
+
+    def __init__(self, reason: str, *, code: str = "url_rejected") -> None:
+        super().__init__(reason)
+        self.reason = reason
+        self.code = code

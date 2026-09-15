@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 
+import type { Batch } from './ingestion';
 import {
   cancelBatch,
   confirmImport,
@@ -10,6 +11,11 @@ import {
   fetchBatches,
   fetchBatchItems,
   fetchJob,
+  fetchRepresentationText,
+  fetchRepresentations,
+  ingestFiles,
+  ingestPaste,
+  ingestUrl,
   isActive,
   retryBatch,
 } from './ingestion';
@@ -35,6 +41,9 @@ export const queryKeys = {
   batchItems: (id: string) => ['ingestion', 'batch', id, 'items'] as const,
   batchIssues: (id: string) => ['ingestion', 'batch', id, 'issues'] as const,
   job: (id: string) => ['ingestion', 'job', id] as const,
+  representations: (id: string) => ['ingestion', 'batch', id, 'representations'] as const,
+  representationText: (id: string, offset: number, limit: number) =>
+    ['ingestion', 'representation', id, 'text', offset, limit] as const,
 };
 
 export function useReadiness() {
@@ -214,4 +223,55 @@ export function useRetryBatch() {
       void queryClient.invalidateQueries({ queryKey: queryKeys.batches });
     },
   });
+}
+
+export function useRepresentations(batchId: string | null) {
+  const batch = useBatch(batchId);
+  const active = isActive(batch.data?.batch);
+  const query = useQuery({
+    queryKey: queryKeys.representations(batchId ?? 'ninguno'),
+    queryFn: () => fetchRepresentations(batchId as string),
+    enabled: batchId !== null,
+    // Mientras el lote trabaja, el texto extraído va apareciendo: se refresca con él.
+    refetchInterval: active ? 2_000 : false,
+  });
+  useFinalRefetch(batchId !== null && batch.data !== undefined && !active, query.refetch);
+  return query;
+}
+
+export function useRepresentationText(
+  representationId: string | null,
+  offset: number,
+  limit: number,
+) {
+  return useQuery({
+    queryKey: queryKeys.representationText(representationId ?? 'ninguna', offset, limit),
+    queryFn: () => fetchRepresentationText(representationId as string, offset, limit),
+    enabled: representationId !== null,
+  });
+}
+
+/** Las tres entradas directas comparten el refresco: al crear lote, se recarga el historial. */
+function useIntakeMutation<TVariables>(mutationFn: (variables: TVariables) => Promise<Batch>) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.batches });
+    },
+  });
+}
+
+export function useIngestFiles() {
+  return useIntakeMutation(ingestFiles);
+}
+
+export function useIngestPaste() {
+  return useIntakeMutation((input: { text: string; title: string }) =>
+    ingestPaste(input.text, input.title),
+  );
+}
+
+export function useIngestUrl() {
+  return useIntakeMutation(ingestUrl);
 }

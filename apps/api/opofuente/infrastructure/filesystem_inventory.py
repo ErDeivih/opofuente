@@ -56,7 +56,31 @@ IGNORED_DIRECTORIES = frozenset(
     }
 )
 
-UNSUPPORTED_EXTENSIONS = frozenset({".epub", ".pptx", ".ppt", ".xlsx", ".xls", ".odt", ".ods"})
+#: Formatos que **no** se extraen todavía (PPTX, XLSX, EPUB…). Desde S03 no se omiten: se copian y
+#: se conservan sin extraer (`unsupported_preserved`, DEBT-008). Esta lista se mantiene porque sigue
+#: siendo la referencia de «formatos conocidos sin extractor» para informar en la vista previa.
+PRESERVED_EXTENSIONS = frozenset(
+    {
+        ".epub",
+        ".pptx",
+        ".ppt",
+        ".xlsx",
+        ".xls",
+        ".odt",
+        ".ods",
+        ".docm",
+        ".xlsm",
+        ".pptm",
+        ".mp3",
+        ".wav",
+        ".m4a",
+        ".ogg",
+        ".mp4",
+        ".mkv",
+        ".avi",
+        ".mov",
+    }
+)
 EXECUTABLE_EXTENSIONS = frozenset(
     {".exe", ".dll", ".msi", ".bat", ".cmd", ".com", ".scr", ".ps1", ".jar", ".so", ".dylib"}
 )
@@ -96,13 +120,13 @@ class FilesystemInventory:
         max_entries: int,
         forbidden_roots: tuple[Path, ...] = (),
         ignored_directories: frozenset[str] = IGNORED_DIRECTORIES,
-        ignored_extensions: frozenset[str] = UNSUPPORTED_EXTENSIONS,
+        preserved_extensions: frozenset[str] = PRESERVED_EXTENSIONS,
     ) -> None:
         self._max_file_bytes = max_file_bytes
         self._max_entries = max_entries
         self._forbidden_roots = tuple(root.resolve(strict=False) for root in forbidden_roots)
         self._ignored_directories = ignored_directories
-        self._ignored_extensions = ignored_extensions
+        self._preserved_extensions = preserved_extensions
 
     def scan(self, root: Path) -> ScanResult:
         resolved_root = root.resolve(strict=False)
@@ -248,8 +272,9 @@ class FilesystemInventory:
         suffix = path.suffix.lower()
         if suffix in EXECUTABLE_EXTENSIONS:
             return omitted(IssueCode.OMITTED_EXECUTABLE, IssueSeverity.WARNING, ItemStatus.OMITTED)
-        if suffix in self._ignored_extensions:
-            return omitted(IssueCode.OMITTED_UNSUPPORTED, IssueSeverity.INFO, ItemStatus.OMITTED)
+        # Los formatos sin extractor **no** se omiten desde S03: se incluyen para copiarlos y se
+        # conservan sin extraer (`unsupported_preserved`). La decisión de conservar se toma al
+        # extraer, que es quien sabe qué extractores existen (DEBT-008).
 
         try:
             stat = path.stat()

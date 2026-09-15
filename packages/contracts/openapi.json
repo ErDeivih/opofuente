@@ -215,6 +215,24 @@
         "title": "BatchStatus",
         "type": "string"
       },
+      "Body_ingest_files_api_v1_ingestion_batches_files_post": {
+        "properties": {
+          "files": {
+            "description": "Uno o más ficheros",
+            "items": {
+              "contentMediaType": "application/octet-stream",
+              "type": "string"
+            },
+            "title": "Files",
+            "type": "array"
+          }
+        },
+        "required": [
+          "files"
+        ],
+        "title": "Body_ingest_files_api_v1_ingestion_batches_files_post",
+        "type": "object"
+      },
       "CapabilitiesSchema": {
         "properties": {
           "capabilities": {
@@ -1202,6 +1220,10 @@
           "omitted",
           "copied",
           "hashed",
+          "extracted",
+          "unsupported_preserved",
+          "ocr_pending",
+          "expanded",
           "failed",
           "cancelled"
         ],
@@ -1505,6 +1527,34 @@
         "title": "PartKind",
         "type": "string"
       },
+      "PasteRequest": {
+        "description": "Texto pegado por el usuario (04_INGESTION §2).",
+        "properties": {
+          "text": {
+            "maxLength": 2000000,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "title": "PasteRequest",
+        "type": "object"
+      },
       "ProblemDetail": {
         "description": "Cuerpo de error del contrato.",
         "properties": {
@@ -1658,6 +1708,153 @@
         "title": "ReadinessSchema",
         "type": "object"
       },
+      "RepresentationSchema": {
+        "description": "Texto extraído de un artefacto, con quién lo extrajo, su calidad y sus avisos.\n\nEl texto **no** viaja aquí: se lee por trozos en `/representations/{id}/text`, para que un\ndocumento largo no bloquee la interfaz.",
+        "properties": {
+          "artifact_id": {
+            "title": "Artifact Id",
+            "type": "string"
+          },
+          "char_count": {
+            "title": "Char Count",
+            "type": "integer"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "extractor": {
+            "title": "Extractor",
+            "type": "string"
+          },
+          "has_text": {
+            "default": false,
+            "title": "Has Text",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "language": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Language"
+          },
+          "ocr_candidate": {
+            "default": false,
+            "title": "Ocr Candidate",
+            "type": "boolean"
+          },
+          "page_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Count"
+          },
+          "quality": {
+            "title": "Quality",
+            "type": "string"
+          },
+          "source_paths": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Source Paths",
+            "type": "array"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "artifact_id",
+          "kind",
+          "status",
+          "quality",
+          "extractor",
+          "char_count",
+          "created_at"
+        ],
+        "title": "RepresentationSchema",
+        "type": "object"
+      },
+      "RepresentationTextSchema": {
+        "description": "Trozo de texto pedido, con lo necesario para seguir leyendo y los avisos a la vista.",
+        "properties": {
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "quality": {
+            "title": "Quality",
+            "type": "string"
+          },
+          "representation_id": {
+            "title": "Representation Id",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "total_chars": {
+            "title": "Total Chars",
+            "type": "integer"
+          },
+          "truncated": {
+            "title": "Truncated",
+            "type": "boolean"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "representation_id",
+          "text",
+          "offset",
+          "limit",
+          "total_chars",
+          "truncated",
+          "quality"
+        ],
+        "title": "RepresentationTextSchema",
+        "type": "object"
+      },
       "RuleKind": {
         "enum": [
           "boolean",
@@ -1740,6 +1937,22 @@
           "editable"
         ],
         "title": "SettingsSchema",
+        "type": "object"
+      },
+      "UrlRequest": {
+        "description": "URL que se descargará con la guarda de red (09_SECURITY §4).",
+        "properties": {
+          "url": {
+            "maxLength": 2048,
+            "minLength": 1,
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "url"
+        ],
+        "title": "UrlRequest",
         "type": "object"
       }
     }
@@ -2098,6 +2311,241 @@
           }
         },
         "summary": "Lotes de inventario e importación"
+      }
+    },
+    "/api/v1/ingestion-batches/files": {
+      "post": {
+        "description": "Subida de ficheros: cada uno se copia al almacén y sigue el pipeline.\n\nUn ZIP se copia aquí y se expande en la extracción, con los límites de seguridad del módulo de\nZIP (traversal, bombas y enlaces se rechazan).",
+        "operationId": "ingest_files_api_v1_ingestion_batches_files_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_ingest_files_api_v1_ingestion_batches_files_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "La entrada no se puede usar: carpeta inválida (`invalid_source`), contenido rechazado por seguridad (`unsafe_content`) o URL no descargable (`url_rejected`)."
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Copia los ficheros que el usuario selecciona o suelta (S03)"
+      }
+    },
+    "/api/v1/ingestion-batches/paste": {
+      "post": {
+        "operationId": "ingest_paste_api_v1_ingestion_batches_paste_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "La entrada no se puede usar: carpeta inválida (`invalid_source`), contenido rechazado por seguridad (`unsafe_content`) o URL no descargable (`url_rejected`)."
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Guarda el texto pegado como material propio (S03)"
+      }
+    },
+    "/api/v1/ingestion-batches/url": {
+      "post": {
+        "operationId": "ingest_url_api_v1_ingestion_batches_url_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UrlRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "La entrada no se puede usar: carpeta inválida (`invalid_source`), contenido rechazado por seguridad (`unsafe_content`) o URL no descargable (`url_rejected`)."
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Descarga una URL con la guarda de red y la guarda como material (S03)"
       }
     },
     "/api/v1/ingestion-batches/{batch_id}": {
@@ -2467,6 +2915,69 @@
         "summary": "Informe del lote"
       }
     },
+    "/api/v1/ingestion-batches/{batch_id}/representations": {
+      "get": {
+        "operationId": "list_representations_api_v1_ingestion_batches__batch_id__representations_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "batch_id",
+            "required": true,
+            "schema": {
+              "title": "Batch Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RepresentationSchema"
+                  },
+                  "title": "Response List Representations Api V1 Ingestion Batches  Batch Id  Representations Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Texto extraído de las entradas del lote, con su calidad y sus avisos"
+      }
+    },
     "/api/v1/ingestion-batches/{batch_id}/retry": {
       "post": {
         "operationId": "retry_batch_api_v1_ingestion_batches__batch_id__retry_post",
@@ -2578,7 +3089,7 @@
                 }
               }
             },
-            "description": "La carpeta indicada no se puede usar (`invalid_source`): no existe, no es una carpeta, es relativa, es el directorio de datos de OpoFuente o no se puede leer."
+            "description": "La entrada no se puede usar: carpeta inválida (`invalid_source`), contenido rechazado por seguridad (`unsafe_content`) o URL no descargable (`url_rejected`)."
           },
           "403": {
             "content": {
@@ -2716,7 +3227,7 @@
                 }
               }
             },
-            "description": "La carpeta indicada no se puede usar (`invalid_source`): no existe, no es una carpeta, es relativa, es el directorio de datos de OpoFuente o no se puede leer."
+            "description": "La entrada no se puede usar: carpeta inválida (`invalid_source`), contenido rechazado por seguridad (`unsafe_content`) o URL no descargable (`url_rejected`)."
           },
           "403": {
             "content": {
@@ -3196,6 +3707,147 @@
           }
         },
         "summary": "Convocatorias de una oposición"
+      }
+    },
+    "/api/v1/representations/{representation_id}": {
+      "get": {
+        "operationId": "get_representation_api_v1_representations__representation_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "representation_id",
+            "required": true,
+            "schema": {
+              "title": "Representation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RepresentationSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Una representación: extractor, calidad, páginas y avisos"
+      }
+    },
+    "/api/v1/representations/{representation_id}/text": {
+      "get": {
+        "operationId": "get_representation_text_api_v1_representations__representation_id__text_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "representation_id",
+            "required": true,
+            "schema": {
+              "title": "Representation Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20000,
+              "maximum": 200000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RepresentationTextSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Texto extraído, por trozos, con sus avisos a la vista"
       }
     },
     "/api/v1/settings": {

@@ -1,0 +1,358 @@
+"""Entradas directas de S03: ficheros subidos, texto pegado y URL descargada (04_INGESTION §2).
+
+Las tres crean un lote de importación con sus entradas **ya copiadas** (`hashed`), porque aquí
+no hay nada que inventariar: el usuario ya eligió qué entra. A partir de ahí el lote sigue el
+mismo camino que una carpeta: se encola la extracción y el worker lo cierra.
+
+Reglas que se aplican en las tres:
+
+- nada se guarda con el nombre que traía: el destino sale del hash y el nombre original queda como
+  metadato saneado (`safe_display_name`);
+- el texto pegado y lo descargado se escriben primero en `data/tmp` y después al almacén, con el
+  mismo `store_file` (temporal + fsync + `os.replace`);
+- cada entrada deja su origen con su tipo (`paste`, `url`, `file`), y en la URL se guardan la
+  dirección final y la cadena de redirecciones que se siguieron;
+- un fallo de descarga o un contenido rechazado por seguridad **no** crea el lote a medias: se
+  propaga el error y el usuario ve el motivo.
+"""
+
+from __future__ import annotations
+
+import logging
+from collections.abc import Callable, Sequence
+from dataclasses import dataclass
+from pathlib import Path
+from typing import BinaryIO
+from uuid import uuid4
+
+from opofuente.application.ports import Clock, IngestionRepository, JobQueue
+from opofuente.application.read_models import BatchView
+from opofuente.domain.artifacts import OriginType, media_type_for
+from opofuente.domain.errors import (
+    InvalidSourceError,
+    NotFoundError,
+    UnsafeContentError,
+)
+from opofuente.domain.ingestion import (
+    BatchKind,
+    BatchMode,
+    BatchStatus,
+    DiscoveredEntry,
+    ItemStatus,
+)
+from opofuente.domain.jobs import JobType
+from opofuente.infrastructure.artifact_store import ArtifactStore
+from opofuente.infrastructure.safe_paths import resolve_within, safe_display_name
+from opofuente.infrastructure.url_guard import (
+    FetchResult,
+    UrlLimits,
+    fetch_url,
+    url_limits_from_settings,
+)
+
+logger = logging.getLogger(__name__)
+
+#: Cómo se descarga una URL. Se inyecta en las pruebas para no salir a la red.
+UrlFetcher = Callable[..., FetchResult]
+
+
+@dataclass(frozen=True, slots=True)
+class IntakeFile:
+    """Un fichero que entra subido: su nombre visible y los bytes ya escritos en un temporal."""
+
+    name: str
+    path: Path
+
+
+class IntakeService:
+    """Crea lotes a partir de ficheros subidos, texto pegado o una URL descargada."""
+
+    def __init__(
+        self,
+        *,
+        repository: IngestionRepository,
+        jobs: JobQueue,
+        store: ArtifactStore,
+        clock: Clock,
+        data_root: Path,
+        max_file_bytes: int,
+        max_paste_bytes: int | None = None,
+        url_limits: UrlLimits | None = None,
+        url_fetcher: UrlFetcher | None = None,
+    ) -> None:
+        self._repository = repository
+        self.jobs = jobs
+        self._store = store
+        self._clock = clock
+        self._data_root = data_root
+        self._max_file_bytes = max_file_bytes
+        # Un pegado no tiene por qué pasar por el límite de un fichero subido, pero tampoco puede
+        # ser ilimitado: sin tope, pegar media biblioteca crearía un lote gigante de una vez.
+        self._max_paste_bytes = max_paste_bytes or max_file_bytes
+        self._url_limits = url_limits
+        self._fetcher = url_fetcher or fetch_url
+
+    # ------------------------------------------------------------------ ficheros
+
+    def stage_uploads(self, uploads: Sequence[tuple[str, BinaryIO]]) -> tuple[IntakeFile, ...]:
+        """Escribe lo subido en temporales, con tope de tamaño, y devuelve lo que hay que copiar.
+
+        Se hace en dos pasos a propósito: así la API no tiene que conocer rutas y el almacén recibe
+        siempre un fichero del disco (que es como se calcula el hash por trozos). Un fichero por
+        encima del límite se rechaza antes de llenar el disco.
+        """
+        if not uploads:
+            raise InvalidSourceError("no has seleccionado ningún fichero")
+        preparados: list[IntakeFile] = []
+        try:
+            for nombre, flujo in uploads:
+                temporal = self._temp_path("subida")
+                escrito = 0
+                with temporal.open("wb") as destino:
+                    while True:
+                        trozo = flujo.read(1024 * 1024)
+                        if not trozo:
+                            break
+                        escrito += len(trozo)
+                        if escrito > self._max_file_bytes:
+                            raise UnsafeContentError(
+                                f"el fichero {safe_display_name(nombre)!r} supera el límite de "
+                                f"{self._max_file_bytes} bytes"
+                            )
+                        destino.write(trozo)
+                preparados.append(IntakeFile(name=nombre, path=temporal))
+        except Exception:
+            for item in preparados:
+                item.path.unlink(missing_ok=True)
+            raise
+        return tuple(preparados)
+
+    def ingest_files(self, files: Sequence[IntakeFile]) -> BatchView:
+        """Copia al almacén los ficheros que el usuario ha soltado o seleccionado."""
+        if not files:
+            raise InvalidSourceError("no has seleccionado ningún fichero")
+        now = self._clock.now()
+        batch_id = self._repository.create_batch(
+            kind=BatchKind.IMPORT,
+            mode=BatchMode.COPY,
+            source_path_display=f"{len(files)} fichero(s) seleccionados",
+            now=now,
+            status=BatchStatus.QUEUED,
+        )
+        try:
+            for item in files:
+                if not item.path.is_file():
+                    raise InvalidSourceError("uno de los ficheros ya no está disponible")
+                self._store_one(
+                    batch_id,
+                    display_location=safe_display_name(item.name),
+                    original_name=item.name,
+                    origin_type=OriginType.FILE,
+                    source_path_display=None,
+                    source=item.path,
+                )
+        finally:
+            # Los temporales de la subida solo viven hasta que el contenido está en el almacén: se
+            # borran siempre, también si la copia falla a mitad. Sin esto, cada subida dejaba su
+            # `.part` en `data/tmp` para siempre (lo encontró la prueba manual de S03).
+            for item in files:
+                item.path.unlink(missing_ok=True)
+        return self._close_intake(batch_id)
+
+    # ------------------------------------------------------------------ texto pegado
+
+    def ingest_paste(self, text: str, *, title: str | None = None) -> BatchView:
+        """Guarda el texto pegado como un artefacto propio, con su origen `paste`."""
+        contenido = text.strip()
+        if not contenido:
+            raise InvalidSourceError("no hay texto que guardar")
+        tamano = len(contenido.encode("utf-8"))
+        if tamano > self._max_paste_bytes:
+            raise InvalidSourceError(
+                f"el texto pegado ocupa {tamano} bytes y el límite es {self._max_paste_bytes}"
+            )
+        now = self._clock.now()
+        etiqueta = safe_display_name(title) if title else "texto pegado"
+        batch_id = self._repository.create_batch(
+            kind=BatchKind.IMPORT,
+            mode=BatchMode.COPY,
+            source_path_display=etiqueta,
+            now=now,
+            status=BatchStatus.QUEUED,
+        )
+        temporal = self._temp_path("paste")
+        temporal.write_text(contenido, encoding="utf-8", newline="\n")
+        try:
+            self._store_one(
+                batch_id,
+                display_location=etiqueta,
+                original_name=etiqueta,
+                origin_type=OriginType.PASTE,
+                source_path_display=None,
+                source=temporal,
+            )
+        finally:
+            temporal.unlink(missing_ok=True)
+        return self._close_intake(batch_id)
+
+    # ------------------------------------------------------------------ URL
+
+    def ingest_url(self, url: str) -> BatchView:
+        """Descarga una URL con la guarda de red y guarda lo descargado como artefacto."""
+        limits = self._url_limits or url_limits_from_settings(
+            timeout_seconds=20.0, max_bytes=64 * 1024 * 1024, max_redirects=5
+        )
+        temporal = self._temp_path("url")
+        try:
+            descarga: FetchResult = self._fetcher(url, destination=temporal, limits=limits)
+            now = self._clock.now()
+            batch_id = self._repository.create_batch(
+                kind=BatchKind.IMPORT,
+                mode=BatchMode.COPY,
+                # Se muestra la URL que pidió el usuario (la final queda en el origen): es lo que
+                # identifica el lote para quien lo pidió, y sin cadena de consulta.
+                source_path_display=_display_url(url),
+                now=now,
+                status=BatchStatus.QUEUED,
+            )
+            nombre = _name_from_url(descarga.final_url, descarga.content_type)
+            self._store_one(
+                batch_id,
+                display_location=descarga.final_url,
+                original_name=nombre,
+                origin_type=OriginType.URL,
+                source_path_display=descarga.final_url,
+                source=temporal,
+            )
+        finally:
+            temporal.unlink(missing_ok=True)
+        logger.info(
+            "intake.url_stored",
+            extra={
+                "event": "intake_url",
+                "status_code": len(descarga.redirects),
+            },
+        )
+        return self._close_intake(batch_id)
+
+    # ------------------------------------------------------------------ apoyo
+
+    def _temp_path(self, prefijo: str) -> Path:
+        """Fichero temporal dentro del directorio de datos (nunca fuera)."""
+        tmp = resolve_within(self._data_root, self._data_root / "tmp")
+        tmp.mkdir(parents=True, exist_ok=True)
+        return resolve_within(tmp, tmp / f"{prefijo}-{uuid4().hex}.part")
+
+    def _store_one(
+        self,
+        batch_id: str,
+        *,
+        display_location: str,
+        original_name: str,
+        origin_type: OriginType,
+        source_path_display: str | None,
+        source: Path,
+    ) -> None:
+        """Copia un fichero al almacén y le crea su entrada en el lote."""
+        stat = source.stat()
+        stored = self._store.store_file(source)
+        artifact_id, _created = self._repository.register_artifact(
+            digest=stored.sha256,
+            size_bytes=stored.size_bytes,
+            media_type=media_type_for(original_name),
+            storage_key=stored.storage_key,
+            origin_type=origin_type,
+            display_location=display_location,
+            original_name=safe_display_name(original_name),
+            source_path_display=source_path_display,
+            file_mtime=None,
+            now=self._clock.now(),
+        )
+        relativo = self._unique_path(batch_id, safe_display_name(original_name))
+        self._repository.add_entries(
+            batch_id,
+            (
+                DiscoveredEntry(
+                    relative_path=relativo,
+                    original_name=safe_display_name(original_name),
+                    size_bytes=stat.st_size,
+                    mtime=None,
+                    media_type=media_type_for(original_name),
+                    status=ItemStatus.HASHED,
+                ),
+            ),
+            status=ItemStatus.HASHED,
+        )
+        item_id = self._repository.item_id_for(batch_id, relativo)
+        if item_id is None:  # pragma: no cover - se acaba de añadir
+            raise NotFoundError("entrada del lote", relativo)
+        self._repository.mark_item(item_id, ItemStatus.HASHED, artifact_id=artifact_id)
+
+    def _unique_path(self, batch_id: str, base: str) -> str:
+        """Dos ficheros con el mismo nombre en un lote no pueden pisarse.
+
+        El nombre original es metadato y la identidad del contenido es el hash, así que aquí solo
+        hay que evitar que dos entradas del mismo lote compartan ruta: la segunda pasa a
+        `nombre (2)`.
+        """
+        if self._repository.item_id_for(batch_id, base) is None:
+            return base
+        sufijo = 2
+        while True:
+            candidate = _with_suffix(base, sufijo)
+            if self._repository.item_id_for(batch_id, candidate) is None:
+                return candidate
+            sufijo += 1
+
+    def _close_intake(self, batch_id: str) -> BatchView:
+        """Cuenta lo que ha entrado, deja el lote encolado y pide su extracción."""
+        self._repository.set_counters(batch_id, self._repository.summarize_import(batch_id))
+        pending = self._repository.pending_extraction_count(batch_id)
+        if pending:
+            self.jobs.enqueue(
+                job_type=JobType.EXTRACT_ARTIFACT,
+                payload={"batch_id": batch_id},
+                now=self._clock.now(),
+                idempotency_key=f"extract_batch:{batch_id}:0",
+            )
+        else:  # pragma: no cover - sin entradas copiadas no hay lote que cerrar
+            self._repository.set_status(batch_id, BatchStatus.SUCCEEDED, now=self._clock.now())
+        view = self._repository.get_batch(batch_id)
+        if view is None:  # pragma: no cover - se acaba de crear
+            raise NotFoundError("lote", batch_id)
+        return view
+
+
+def _with_suffix(name: str, index: int) -> str:
+    """`tema.pdf` + 2 → `tema (2).pdf`, conservando la extensión."""
+    sufijo = Path(name).suffix
+    if sufijo:
+        return f"{name[: -len(sufijo)]} ({index}){sufijo}"
+    return f"{name} ({index})"
+
+
+def _display_url(url: str) -> str:
+    """URL para mostrar: sin cadena de consulta, que puede llevar tokens."""
+    from urllib.parse import urlsplit
+
+    parts = urlsplit(url)
+    camino = parts.path or "/"
+    return f"{parts.scheme}://{parts.netloc}{camino}"
+
+
+def _name_from_url(url: str, content_type: str | None) -> str:
+    """Nombre para el artefacto: el último tramo de la URL o uno genérico por tipo."""
+    from urllib.parse import unquote, urlsplit
+
+    ultimo = unquote(urlsplit(url).path.rstrip("/").rsplit("/", 1)[-1])
+    if ultimo:
+        return ultimo
+    if content_type:
+        principal = content_type.split(";")[0].strip().lower()
+        if principal == "application/pdf":
+            return "descarga.pdf"
+        if principal.startswith("text/html"):
+            return "descarga.html"
+        if principal.startswith("text/"):
+            return "descarga.txt"
+    return "descarga.bin"

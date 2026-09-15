@@ -117,3 +117,41 @@ La deuda obligatoria, con su slice y su criterio de cierre, está en
 - **Rutas seguras.** `infrastructure/safe_paths.py` concentra `is_within`, `resolve_within`,
   `safe_display_name` y las rutas abreviadas: ni la copia ni el informe pueden salirse de la raíz
   elegida ni publicar la ruta real del usuario.
+
+## Notas de S03 (extractores, representaciones y entradas directas)
+
+- **El formato lo decide el contenido.** `infrastructure/extractors/base.py::detect_format` mira los
+  primeros bytes (magic bytes) y solo usa la extensión como señal secundaria: un `.pdf` que no es un
+  PDF se trata por lo que es. Consecuencia práctica: la lista de lo que no se extrae se decide por
+  familia detectada (`PRESERVED_FAMILIES`) **y** por sufijo (`PRESERVED_SUFFIXES`), porque un XLSX es
+  un ZIP y no se quiere confundir con un contenedor expandible.
+- **El ZIP no es un documento.** `plan()` devuelve `expand_zip` y el servicio lo expande en entradas
+  propias del lote (`expanded`), de modo que el informe sigue contando entradas y no archivos
+  internos. Un ZIP **dentro** de otro no se expande: se conserva (`unsupported_preserved`) según
+  `max_zip_depth`, medido sobre la ruta persistida (`paquete.zip/inner.zip` → 2).
+- **Representación = texto de un artefacto.** `extracted_representations` guarda metadatos (extractor
+  y versión, tipo, calidad, avisos, secciones, `ocr_candidate`, `format_version`) y apunta al texto,
+  que vive en `data/extracted/<id>/texto.txt` con su `estructura.json`. La clave lógica es
+  `(artefacto, extractor, versión, tipo)`: volver a extraer no duplica y **otra versión sí crea otra**
+  fila, que es lo que permitirá reprocesar cuando mejore un extractor.
+- **Estados de entrada nuevos.** `ingestion_items` gana `extracted`, `unsupported_preserved`,
+  `expanded` y `ocr_pending` (migración `0006`). «Terminado» significa siempre «no queda nada por
+  hacer»: al acabar la copia, si queda algo por extraer, el lote vuelve a `queued` con un trabajo
+  `extract_artifact` y solo entonces se cierra.
+- **`unsupported_preserved` tiene su propio término en la ecuación** (`BALANCE_TERMS`,
+  `preserved_unsupported`): conservar sin extraer no es copiar texto, y esconderlo dentro de `copied`
+  habría hecho que el informe contara como leído algo que no se ha leído (DEBT-008).
+- **Módulos de seguridad con una responsabilidad cada uno.**
+  `infrastructure/safe_xml.py` (lxml endurecido: sin DTD, sin entidades, sin red, con tope de bytes),
+  `infrastructure/safe_zip.py` (nombres, tamaños, ratio y profundidad **antes** de escribir nada) y
+  `infrastructure/url_guard.py` (esquema, resolución DNS, listas negras de redes y conexión fijada a
+  la IP comprobada). Los tres tienen pruebas negativas propias (`tests/unit/test_safe_inputs.py`).
+- **El texto se lee por trozos.** `GET /representations/{id}/text` sirve slices con `offset`/`limit` y
+  avisos; el modelo de lectura es `TextSlice` y el lector de la interfaz amplía solo si el usuario lo
+  pide. Un documento largo no bloquea la pantalla ni la API.
+- **Las representaciones se deduplican por artefacto y muestran sus rutas.** Si el lote trae el mismo
+  contenido dos veces (`tema.pdf` y su copia), hay **una** representación con sus dos rutas: el lector
+  no repite el mismo texto como si fueran documentos distintos.
+- **La configuración de límites es real, no decorativa.** Cada ajuste nuevo de S03
+  (`max_representation_chars`, `max_pdf_pages`, `max_zip_*`, `url_*`, `max_paste_bytes`) se usa en el
+  código y está documentado en `.env.example`; los que no tenían uso se retiraron antes del commit.

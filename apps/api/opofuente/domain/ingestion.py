@@ -41,6 +41,22 @@ class ItemStatus(StrEnum):
     OMITTED = "omitted"
     COPIED = "copied"
     HASHED = "hashed"
+    EXTRACTED = "extracted"
+    """El contenido está copiado **y** se le ha extraído texto utilizable (S03)."""
+
+    UNSUPPORTED_PRESERVED = "unsupported_preserved"
+    """Copiado y conservado sin extraer: no hay extractor para ese formato (DEBT-008)."""
+
+    OCR_PENDING = "ocr_pending"
+    """Copiada y sin texto nativo utilizable: pendiente de OCR, que no se ha ejecutado."""
+
+    EXPANDED = "expanded"
+    """Contenedor (ZIP) cuyo contenido se ha expandido en entradas propias del lote.
+
+    El contenedor se conserva tal cual y sus miembros se tratan como material aparte, así que no
+    tiene texto propio que extraer: la operación ya terminó.
+    """
+
     FAILED = "failed"
     CANCELLED = "cancelled"
 
@@ -69,6 +85,24 @@ class IssueCode(StrEnum):
     EMPTY_FILE = "empty_file"
     DUPLICATE_CONTENT = "duplicate_content"
     STORE_ERROR = "store_error"
+    # --- S03: extracción y conservación sin extraer (04_INGESTION §5, DEBT-008) ---
+    UNSUPPORTED_PRESERVED = "unsupported_preserved"
+    """Se conserva el original pero no se extrae: no hay extractor para ese formato."""
+
+    EXTRACTION_FAILED = "extraction_failed"
+    """El extractor no pudo con el documento (o el propio documento era ilegible)."""
+
+    OCR_PENDING = "ocr_pending"
+    """No hay texto nativo utilizable: queda pendiente de OCR, que no se ha ejecutado."""
+
+    EXTRACTION_POOR_QUALITY = "extraction_poor_quality"
+    """Se extrajo texto, pero la calidad no permite usarlo sin revisión."""
+
+    UNSAFE_CONTAINER = "unsafe_container"
+    """El contenedor (ZIP) se rechazó por seguridad: traversal, bomba o anidamiento excesivo."""
+
+    CONTAINER_EXPANDED = "container_expanded"
+    """El contenedor se expandió: sus miembros son entradas propias del lote."""
 
 
 #: Transiciones válidas de una entrada. Cualquier otra cosa es un error de programación.
@@ -79,8 +113,29 @@ _ITEM_TRANSITIONS: dict[ItemStatus, frozenset[ItemStatus]] = {
     ItemStatus.INVENTORIED: frozenset(
         {ItemStatus.COPIED, ItemStatus.FAILED, ItemStatus.CANCELLED, ItemStatus.OMITTED}
     ),
-    ItemStatus.COPIED: frozenset({ItemStatus.HASHED, ItemStatus.FAILED, ItemStatus.CANCELLED}),
-    ItemStatus.HASHED: frozenset(),
+    ItemStatus.COPIED: frozenset(
+        {
+            ItemStatus.HASHED,
+            ItemStatus.FAILED,
+            ItemStatus.CANCELLED,
+            ItemStatus.UNSUPPORTED_PRESERVED,
+        }
+    ),
+    # Desde S03, una entrada copiada puede extraerse, conservarse sin extraer o expandirse (ZIP).
+    # No puede volver atrás: si el fichero cambia, es otra entrada de otro lote.
+    ItemStatus.HASHED: frozenset(
+        {
+            ItemStatus.EXTRACTED,
+            ItemStatus.UNSUPPORTED_PRESERVED,
+            ItemStatus.EXPANDED,
+            ItemStatus.OCR_PENDING,
+            ItemStatus.FAILED,
+        }
+    ),
+    ItemStatus.EXTRACTED: frozenset(),
+    ItemStatus.UNSUPPORTED_PRESERVED: frozenset(),
+    ItemStatus.EXPANDED: frozenset(),
+    ItemStatus.OCR_PENDING: frozenset({ItemStatus.EXTRACTED, ItemStatus.FAILED}),
     ItemStatus.OMITTED: frozenset(),
     ItemStatus.FAILED: frozenset({ItemStatus.INVENTORIED, ItemStatus.CANCELLED}),
     ItemStatus.CANCELLED: frozenset(),
@@ -94,6 +149,10 @@ _BATCH_TRANSITIONS: dict[BatchStatus, frozenset[BatchStatus]] = {
             BatchStatus.FAILED,
             BatchStatus.CANCEL_REQUESTED,
             BatchStatus.CANCELLED,
+            # S03: copiar y extraer son dos trabajos seguidos. Si al terminar la copia queda
+            # extracción pendiente, el lote vuelve a la cola en lugar de darse por terminado: así
+            # «terminado» significa siempre «no queda nada por hacer».
+            BatchStatus.QUEUED,
         }
     ),
     BatchStatus.CANCEL_REQUESTED: frozenset({BatchStatus.CANCELLED, BatchStatus.FAILED}),
@@ -168,9 +227,30 @@ class ImportIssue:
     details: dict[str, object] = field(default_factory=dict)
 
 
+#: Estados de una entrada cuyo contenido está **copiado** en el almacén, tenga ya texto extraído o
+#: no. Es la lista única con la que el informe cuenta `copied` y `copied_bytes`: si viviera dos
+#: veces, los bytes copiados se quedarían a cero en cuanto la extracción cambiara el estado.
+COPIED_ITEM_STATUSES: tuple[ItemStatus, ...] = (
+    ItemStatus.COPIED,
+    ItemStatus.HASHED,
+    ItemStatus.EXTRACTED,
+    ItemStatus.EXPANDED,
+    ItemStatus.OCR_PENDING,
+)
+
+
 #: Términos que suman el total del informe de importación. La regla vive aquí, una sola vez: la
 #: usan el propio `ImportCounters` y la API al servir el informe, para que no puedan discrepar.
-BALANCE_TERMS = ("copied", "pending", "failed", "cancelled", "source_changed")
+BALANCE_TERMS = (
+    "copied",
+    "pending",
+    "failed",
+    "cancelled",
+    "source_changed",
+    # S03: lo conservado sin extraer también es material que el usuario tiene, así que entra en la
+    # ecuación en su propio término (DEBT-008) en lugar de esconderse dentro de `copied`.
+    "preserved_unsupported",
+)
 
 
 @dataclass(slots=True)
@@ -196,6 +276,8 @@ class ImportCounters:
     source_changed: int = 0
     failed: int = 0
     cancelled: int = 0
+    preserved_unsupported: int = 0
+    """Copiadas y conservadas **sin** extraer: no hay extractor para su formato (DEBT-008)."""
 
     @property
     def accounted(self) -> int:
@@ -214,6 +296,7 @@ class ImportCounters:
             "source_changed": self.source_changed,
             "failed": self.failed,
             "cancelled": self.cancelled,
+            "preserved_unsupported": self.preserved_unsupported,
         }
 
 

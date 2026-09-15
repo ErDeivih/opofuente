@@ -391,7 +391,51 @@ class IngestionService:
         summary = (
             None if counters.failed == 0 else f"{counters.failed} entradas no se pudieron copiar"
         )
+        if counters.copied and self._pending_extraction(batch_id):
+            # Queda texto por extraer, así que el lote **no** ha terminado: vuelve a la cola y el
+            # trabajo de extracción lo cierra. Si no, el lote diría «terminado» a mitad del
+            # pipeline.
+            self._repository.set_status(
+                batch_id, BatchStatus.QUEUED, now=self._clock.now(), error_summary=summary or ""
+            )
+            self.enqueue_extraction(batch_id)
+            return
         self._repository.set_status(batch_id, status, now=self._clock.now(), error_summary=summary)
+
+    def enqueue_extraction(self, batch_id: str) -> str | None:
+        """Encola la extracción del lote, si queda algo por extraer.
+
+        La clave de idempotencia lleva el número de veces que ya se ha encolado, para que volver a
+        extraer un lote (por ejemplo, tras añadir un extractor nuevo) sea posible sin crear dos
+        trabajos vivos a la vez.
+        """
+        pending = self._pending_extraction(batch_id)
+        if pending == 0:
+            return None
+        rounds = self._jobs_for_batch(batch_id, JobType.EXTRACT_ARTIFACT)
+        job, created = self.jobs.enqueue(
+            job_type=JobType.EXTRACT_ARTIFACT,
+            payload={"batch_id": batch_id},
+            now=self._clock.now(),
+            idempotency_key=f"extract_batch:{batch_id}:{rounds}",
+        )
+        if created:
+            logger.info(
+                "ingestion.extraction_queued",
+                extra={"event": "extraction_queued", "job_id": job.id, "status_code": pending},
+            )
+        return job.id
+
+    def _pending_extraction(self, batch_id: str) -> int:
+        """Entradas copiadas y todavía sin extraer."""
+        return self._repository.pending_extraction_count(batch_id)
+
+    def _jobs_for_batch(self, batch_id: str, job_type: JobType) -> int:
+        return sum(
+            1
+            for job in self.jobs.list(limit=500)
+            if job.job_type is job_type and job.payload.get("batch_id") == batch_id
+        )
 
     def on_job_failed(self, job: object) -> None:
         """Cierra el lote cuando su trabajo se queda `failed` y ya no se va a reintentar.

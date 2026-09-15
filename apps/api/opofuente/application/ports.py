@@ -197,6 +197,14 @@ class IngestionRepository(Protocol):
         """¿Ya está anotada esa incidencia en el lote?"""
         ...
 
+    def pending_extraction_count(self, batch_id: str) -> int:
+        """Entradas copiadas y todavía sin extraer."""
+        ...
+
+    def item_id_for(self, batch_id: str, relative_path: str) -> str | None:
+        """Identificador de una entrada del lote por su ruta relativa."""
+        ...
+
     def mark_item(
         self,
         item_id: str,

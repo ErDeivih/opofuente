@@ -69,6 +69,57 @@ class CreateInventoryRequest(BaseModel):
     source_path: str = Field(min_length=1, max_length=4096)
 
 
+class PasteRequest(BaseModel):
+    """Texto pegado por el usuario (04_INGESTION §2)."""
+
+    text: str = Field(min_length=1, max_length=2_000_000)
+    title: str | None = Field(default=None, max_length=200)
+
+
+class UrlRequest(BaseModel):
+    """URL que se descargará con la guarda de red (09_SECURITY §4)."""
+
+    url: str = Field(min_length=1, max_length=2048)
+
+
+class RepresentationSchema(BaseModel):
+    """Texto extraído de un artefacto, con quién lo extrajo, su calidad y sus avisos.
+
+    El texto **no** viaja aquí: se lee por trozos en `/representations/{id}/text`, para que un
+    documento largo no bloquee la interfaz.
+    """
+
+    id: str
+    artifact_id: str
+    kind: str
+    status: str
+    quality: str
+    extractor: str
+    char_count: int
+    page_count: int | None = None
+    language: str | None = None
+    ocr_candidate: bool = False
+    warnings: list[str] = Field(default_factory=list)
+    has_text: bool = False
+    created_at: datetime
+    #: Entradas de las que sale este texto, en orden de entrada. Un mismo contenido copiado dos
+    #: veces comparte representación y aparece aquí con sus dos rutas.
+    source_paths: list[str] = Field(default_factory=list)
+
+
+class RepresentationTextSchema(BaseModel):
+    """Trozo de texto pedido, con lo necesario para seguir leyendo y los avisos a la vista."""
+
+    representation_id: str
+    text: str
+    offset: int
+    limit: int
+    total_chars: int
+    truncated: bool
+    quality: str
+    warnings: list[str] = Field(default_factory=list)
+
+
 class BatchDetailSchema(BaseModel):
     batch: BatchSchema
     entries: list[EntrySchema]

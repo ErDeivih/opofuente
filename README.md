@@ -8,18 +8,24 @@ trazable, sin mover ni borrar ningún original y sin depender de servicios en la
 - Contrato de implementación para agentes: [`AGENTS.md`](AGENTS.md).
 - Estado de implementación: [`docs/slices/`](docs/slices/).
 
-> **Estado actual: S02 completado** (artefactos por SHA-256, inventario en lectura, importación de
-> una copia, lotes, incidencias e informe, con worker local persistido), además de todo lo de S01
-> (perfiles oficiales, programa y reglas de examen) y S00 (repositorio, puertas de calidad,
-> esqueleto de backend y frontend, migración, health/capabilities). Todavía **no** hay extracción de
-> texto, OCR, IA, biblioteca ni sesiones de estudio: cada ausencia se declara explícitamente en la
-> API (`/api/v1/capabilities`, cobertura `null`, rutas que no existen) y en la interfaz.
+> **Estado actual: S03 completado** (extractores seguros de PDF, DOCX, HTML, CSV, JSON, texto e
+> imágenes; representaciones con calidad y avisos; OCR declarado como pendiente; las tres formas de
+> entrada —carpeta, ficheros sueltos, texto pegado y URL—; ZIP expandido con límites; y los formatos
+> sin extractor conservados como `unsupported_preserved`), además de S02 (artefactos por SHA-256,
+> inventario en lectura, importación de una copia, lotes, incidencias e informe, con worker local
+> persistido), S01 (perfiles oficiales, programa y reglas de examen) y S00 (repositorio, puertas de
+> calidad, esqueleto de backend y frontend, migración, health/capabilities). Todavía **no** hay OCR
+> ejecutado, clasificación documental ni temática, IA, biblioteca ni sesiones de estudio: cada
+> ausencia se declara explícitamente en la API (`/api/v1/capabilities`, cobertura `null`, rutas que no
+> existen) y en la interfaz.
 >
-> Desde la pantalla **Bandeja** puedes inventariar una carpeta en modo lectura y, solo si lo
-> confirmas, importar una copia. OpoFuente **nunca** mueve, renombra ni borra tus originales: la
-> copia va a un almacén por contenido (`data/artifacts/sha256/ab/cd/<hash>`), así que dos ficheros
-> idénticos son un solo artefacto con dos orígenes. Ver
-> [`docs/slices/S02.md`](docs/slices/S02.md).
+> Desde la pantalla **Bandeja** puedes inventariar una carpeta en modo lectura, soltar ficheros, pegar
+> texto o traer una URL, y leer el texto extraído por trozos con su calidad y sus avisos a la vista.
+> OpoFuente **nunca** mueve, renombra ni borra tus originales: la copia va a un almacén por contenido
+> (`data/artifacts/sha256/ab/cd/<hash>`), así que dos ficheros idénticos son un solo artefacto con dos
+> orígenes. Una URL se descarga solo si es `http`/`https` pública (cada redirección se revalida) y un
+> ZIP se expande con límites de entradas, bytes, ratio y profundidad. Ver
+> [`docs/slices/S03.md`](docs/slices/S03.md).
 >
 > Los perfiles TAI 2025 y Guardia Civil 2026 se siembran desde fuentes oficiales verificadas por
 > hash y por cita literal. Ver [`fixtures/profiles/manifest.json`](fixtures/profiles/manifest.json)

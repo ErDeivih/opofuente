@@ -11,6 +11,7 @@ import {
   useBatchItems,
   useBatches,
   useJob,
+  useRepresentations,
   useRetryBatch,
 } from '../api/queries';
 import { EmptyState } from '../components/EmptyState';
@@ -18,6 +19,8 @@ import { ErrorState } from '../components/ErrorState';
 import { LoadingState } from '../components/LoadingState';
 import { StatusBadge } from '../components/StatusBadge';
 import type { StatusTone } from '../components/StatusBadge';
+import { IntakeActions } from '../features/ingestion/IntakeActions';
+import { TextViewer } from '../features/ingestion/TextViewer';
 
 const STATUS_TONE: Record<string, StatusTone> = {
   queued: 'info',
@@ -81,9 +84,9 @@ function IssueList({ issues }: { issues: Issue[] }) {
  * Bandeja (07_UI-UX §4): inventariar una carpeta en lectura y, solo si el usuario lo confirma,
  * importar una copia.
  *
- * De las tres acciones de entrada del MVP solo existe la de carpeta: soltar archivos y pegar
- * texto/URL necesitan extractores (S03) y protección SSRF, y la pantalla lo declara en lugar de
- * mostrar botones que no hacen nada.
+ * Las otras dos formas de entrada del MVP (ficheros sueltos, texto pegado y URL) viven en
+ * `IntakeActions`: crean su propio lote, que esta pantalla selecciona para seguir su progreso. El
+ * texto que deja la extracción se lee aquí mismo (`TextViewer`), con su calidad y sus avisos.
  */
 export function TrayPage() {
   const [sourcePath, setSourcePath] = useState('');
@@ -100,6 +103,7 @@ export function TrayPage() {
   const items = useBatchItems(batchId);
   const issues = useBatchIssues(batchId);
   const job = useJob(batch.data?.batch.job_id);
+  const representations = useRepresentations(batchId);
 
   const isWorking = isActive(batch.data?.batch);
 
@@ -154,9 +158,19 @@ export function TrayPage() {
         )}
 
         <p className="hint">
-          Otras dos formas de entrada están planificadas y todavía no existen: soltar archivos y
-          pegar texto o URL (slice S03). No se muestran botones falsos.
+          Las tres formas de entrada del MVP están aquí: inventariar una carpeta, copiar ficheros
+          sueltos, pegar texto y traer una URL. Ninguna mueve ni borra nada de su origen.
         </p>
+      </section>
+
+      <section className="card" aria-labelledby="entradas-directas">
+        <h2 id="entradas-directas">Otras formas de entrada</h2>
+        <IntakeActions
+          onBatchCreated={(created) => {
+            setInventory(null);
+            setBatchId(created.id);
+          }}
+        />
       </section>
 
       {inventory !== null && (
@@ -372,6 +386,16 @@ export function TrayPage() {
         <section className="card" aria-labelledby="incidencias">
           <h2 id="incidencias">Incidencias del lote</h2>
           <IssueList issues={issues.data.issues} />
+        </section>
+      )}
+
+      {batchId !== null && (
+        <section className="card" aria-labelledby="texto-extraido">
+          <h2 id="texto-extraido">Texto extraído</h2>
+          {representations.isPending && <LoadingState label="Consultando el texto extraído…" />}
+          {representations.isSuccess && (
+            <TextViewer representations={representations.data} />
+          )}
         </section>
       )}
 

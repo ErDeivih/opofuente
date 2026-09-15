@@ -27,6 +27,7 @@ from opofuente.application.read_models import (
 from opofuente.domain.artifacts import OriginType, Sha256
 from opofuente.domain.errors import InvariantViolationError
 from opofuente.domain.ingestion import (
+    COPIED_ITEM_STATUSES,
     BatchKind,
     BatchMode,
     BatchStatus,
@@ -45,6 +46,9 @@ from opofuente.infrastructure.db_models import (
     IngestionItemRecord,
     SourceArtifactRecord,
 )
+
+#: Los estados «copiados» en su forma persistida, para poder filtrar en SQL.
+_COPIED_VALUES = tuple(status.value for status in COPIED_ITEM_STATUSES)
 
 
 def _new_id() -> str:
@@ -205,7 +209,7 @@ class SqlAlchemyIngestionRepository:
             bytes_copied = session.execute(
                 select(func.coalesce(func.sum(IngestionItemRecord.size_bytes), 0)).where(
                     IngestionItemRecord.batch_id == batch_id,
-                    IngestionItemRecord.status == ItemStatus.HASHED.value,
+                    IngestionItemRecord.status.in_(_COPIED_VALUES),
                 )
             ).scalar_one()
             source_changed = session.execute(
@@ -219,15 +223,21 @@ class SqlAlchemyIngestionRepository:
 
         counts = {str(row[0]): int(row[1]) for row in status_rows}
         failed = counts.get(ItemStatus.FAILED.value, 0) - source_changed
+        # Desde S03 una entrada copiada puede estar `hashed` (sin extraer todavía), `extracted`
+        # (con texto), `expanded` (un ZIP cuyos miembros son entradas aparte) o `ocr_pending`. La
+        # lista la comparten el recuento y los bytes: lo conservado **sin** extraer se cuenta aparte
+        # (`preserved_unsupported`), porque no es texto (DEBT-008).
+        copied = sum(counts.get(value, 0) for value in _COPIED_VALUES)
         return ImportCounters(
             total=sum(counts.values()),
-            copied=counts.get(ItemStatus.HASHED.value, 0) + counts.get(ItemStatus.COPIED.value, 0),
+            copied=copied,
             copied_bytes=int(bytes_copied),
             pending=counts.get(ItemStatus.INVENTORIED.value, 0)
             + counts.get(ItemStatus.DISCOVERED.value, 0),
             source_changed=source_changed,
             failed=max(failed, 0),
             cancelled=counts.get(ItemStatus.CANCELLED.value, 0),
+            preserved_unsupported=counts.get(ItemStatus.UNSUPPORTED_PRESERVED.value, 0),
         )
 
     def reset_items_for_retry(self, batch_id: str) -> int:
@@ -262,6 +272,29 @@ class SqlAlchemyIngestionRepository:
                 )
                 session.commit()
             return int(pending)
+
+    def pending_extraction_count(self, batch_id: str) -> int:
+        """Entradas copiadas y todavía sin extraer (las que el trabajo de extracción procesará)."""
+        with self._session_factory() as session:
+            return session.execute(
+                select(func.count())
+                .select_from(IngestionItemRecord)
+                .where(
+                    IngestionItemRecord.batch_id == batch_id,
+                    IngestionItemRecord.status == ItemStatus.HASHED.value,
+                    IngestionItemRecord.artifact_id.is_not(None),
+                )
+            ).scalar_one()
+
+    def item_id_for(self, batch_id: str, relative_path: str) -> str | None:
+        """Identificador de una entrada del lote por su ruta relativa."""
+        with self._session_factory() as session:
+            return session.execute(
+                select(IngestionItemRecord.id).where(
+                    IngestionItemRecord.batch_id == batch_id,
+                    IngestionItemRecord.relative_path == relative_path,
+                )
+            ).scalar_one_or_none()
 
     def count_batch_artifacts(self, batch_id: str) -> int:
         with self._session_factory() as session:

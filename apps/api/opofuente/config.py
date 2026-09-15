@@ -127,6 +127,24 @@ class Settings(BaseSettings):
     max_file_bytes: int = Field(default=512 * 1024 * 1024, ge=1024)
     max_batch_entries: int = Field(default=50_000, ge=1, le=1_000_000)
 
+    # --- Extracción y entradas de S03 -----------------------------------------
+    #: Caracteres como máximo por representación: por encima se recorta y se avisa.
+    max_representation_chars: int = Field(default=2_000_000, ge=1_000)
+    #: Páginas como máximo por PDF.
+    max_pdf_pages: int = Field(default=2_000, ge=1, le=20_000)
+    #: Límites de un ZIP (propio o dentro de un DOCX/PPTX): entradas, bytes y expansión.
+    max_zip_entries: int = Field(default=2_000, ge=1, le=100_000)
+    max_zip_uncompressed_bytes: int = Field(default=1024 * 1024 * 1024, ge=1024)
+    max_zip_ratio: int = Field(default=200, ge=1, le=10_000)
+    #: Anidamiento de ZIP dentro de ZIP que se expande (0 = no expandir ninguno).
+    max_zip_depth: int = Field(default=1, ge=0, le=3)
+    #: Descarga segura por URL: tiempo, tamaño y redirecciones.
+    url_timeout_seconds: float = Field(default=20.0, gt=0.5, le=300)
+    max_url_bytes: int = Field(default=64 * 1024 * 1024, ge=1024)
+    max_url_redirects: int = Field(default=5, ge=0, le=20)
+    #: Texto pegado: tope de tamaño para no convertir un pegado en un lote gigante.
+    max_paste_bytes: int = Field(default=4 * 1024 * 1024, ge=1024)
+
     @field_validator("data_dir", mode="after")
     @classmethod
     def _resolve_data_dir(cls, value: Path) -> Path:

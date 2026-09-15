@@ -10,7 +10,9 @@ from typing import Annotated
 
 from fastapi import Depends, Request
 
+from opofuente.application.extraction_service import ExtractionService
 from opofuente.application.ingestion_service import IngestionService
+from opofuente.application.intake_service import IntakeService
 from opofuente.application.job_service import JobService
 from opofuente.application.profiles_service import ProfilesService
 from opofuente.application.system_service import SystemService
@@ -37,6 +39,16 @@ def get_ingestion_service(request: Request) -> IngestionService:
     return service
 
 
+def get_extraction_service(request: Request) -> ExtractionService:
+    service: ExtractionService = request.app.state.extraction_service
+    return service
+
+
+def get_intake_service(request: Request) -> IntakeService:
+    service: IntakeService = request.app.state.intake_service
+    return service
+
+
 def get_job_service(request: Request) -> JobService:
     service: JobService = request.app.state.job_service
     return service
@@ -47,4 +59,6 @@ AppSettingsDep = Annotated[Settings, Depends(get_app_settings)]
 SystemServiceDep = Annotated[SystemService, Depends(get_system_service)]
 ProfilesServiceDep = Annotated[ProfilesService, Depends(get_profiles_service)]
 IngestionServiceDep = Annotated[IngestionService, Depends(get_ingestion_service)]
+ExtractionServiceDep = Annotated[ExtractionService, Depends(get_extraction_service)]
+IntakeServiceDep = Annotated[IntakeService, Depends(get_intake_service)]
 JobServiceDep = Annotated[JobService, Depends(get_job_service)]

@@ -52,8 +52,8 @@ _INVALID_SOURCE: dict[int | str, dict[str, Any]] = {
     400: {
         "model": ProblemDetail,
         "description": (
-            "La carpeta indicada no se puede usar (`invalid_source`): no existe, no es una "
-            "carpeta, es relativa, es el directorio de datos de OpoFuente o no se puede leer."
+            "La entrada no se puede usar: carpeta inválida (`invalid_source`), contenido rechazado "
+            "por seguridad (`unsafe_content`) o URL no descargable (`url_rejected`)."
         ),
     }
 }

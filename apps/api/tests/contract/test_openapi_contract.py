@@ -334,13 +334,43 @@ def test_las_rutas_de_ingestion_estan_documentadas(schema: dict[str, Any]) -> No
         assert set(content) == {PROBLEM_MEDIA_TYPE}
         assert content[PROBLEM_MEDIA_TYPE]["schema"]["$ref"].endswith("/ProblemDetail")
 
-    # Lo que S02 no implementa no se documenta: un botón falso es peor que una ausencia.
-    for ausente in (
+    # S03 estrena las tres entradas del MVP: ficheros, texto pegado y URL. Cada una documenta sus
+    # errores reales, incluido el 400 de contenido rechazado por seguridad.
+    for ruta in (
         "/api/v1/ingestion-batches/files",
         "/api/v1/ingestion-batches/paste",
         "/api/v1/ingestion-batches/url",
-        "/api/v1/events",
     ):
+        operacion = schema["paths"][ruta]["post"]
+        assert "400" in operacion["responses"], f"{ruta} debe documentar el 400"
+        assert "403" in operacion["responses"], (
+            f"{ruta} es una escritura: documenta el rechazo por Origin"
+        )
+        for status in ("400", "403", "422", "500"):
+            content = operacion["responses"][status]["content"]
+            assert set(content) == {PROBLEM_MEDIA_TYPE}, ruta
+            assert content[PROBLEM_MEDIA_TYPE]["schema"]["$ref"].endswith("/ProblemDetail"), ruta
+
+    # El lector: representaciones del lote y texto por trozos, con la calidad y los avisos.
+    representaciones = schema["paths"]["/api/v1/ingestion-batches/{batch_id}/representations"][
+        "get"
+    ]
+    assert "404" in representaciones["responses"]
+    texto = schema["paths"]["/api/v1/representations/{representation_id}/text"]["get"]
+    assert "404" in texto["responses"]
+    esquema_texto = schema["components"]["schemas"]["RepresentationTextSchema"]
+    assert set(esquema_texto["required"]) >= {
+        "representation_id",
+        "text",
+        "offset",
+        "limit",
+        "total_chars",
+        "truncated",
+        "quality",
+    }
+
+    # Lo que S03 sigue sin implementar no se documenta: un botón falso es peor que una ausencia.
+    for ausente in ("/api/v1/events",):
         assert ausente not in schema["paths"], ausente
 
 

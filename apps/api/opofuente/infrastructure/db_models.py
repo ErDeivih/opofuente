@@ -292,8 +292,9 @@ class IngestionItemRecord(Base):
     __tablename__ = "ingestion_items"
     __table_args__ = (
         CheckConstraint(
-            "status IN ('discovered', 'inventoried', 'omitted', 'copied', 'hashed', 'failed', "
-            "'cancelled')",
+            "status IN ('discovered', 'inventoried', 'omitted', 'copied', 'hashed', "
+            "'extracted', 'unsupported_preserved', 'expanded', 'ocr_pending', "
+            "'failed', 'cancelled')",
             name="ck_item_status",
         ),
         UniqueConstraint("batch_id", "relative_path", name="uq_item_path"),
@@ -393,3 +394,67 @@ class JobRecord(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+# ------------------------------------------------------------------- S03: representaciones
+
+
+class ExtractedRepresentationRecord(Base):
+    """Texto extraído de un artefacto, con su extractor, su calidad y sus avisos.
+
+    Una fila por `(artefacto, extractor, versión, tipo)`: volver a ejecutar el mismo extractor no
+    duplica nada, y **otra versión crea otra representación** porque el texto puede ser distinto
+    (03_DATA-MODEL §3). El texto en sí no vive aquí: se guarda en `data/extracted/…` y esta fila
+    apunta a él con `text_storage_key`.
+    """
+
+    __tablename__ = "extracted_representations"
+    __table_args__ = (
+        CheckConstraint(
+            "kind IN ('native_text', 'ocr', 'plain_text', 'html_text', 'csv_preview', "
+            "'json_preview', 'image_metadata')",
+            name="ck_representation_kind",
+        ),
+        CheckConstraint(
+            "status IN ('extracted', 'pending', 'empty', 'failed')",
+            name="ck_representation_status",
+        ),
+        CheckConstraint(
+            "quality IN ('good', 'usable_with_warnings', 'ocr_unreviewed', 'poor', 'failed')",
+            name="ck_representation_quality",
+        ),
+        CheckConstraint("char_count >= 0", name="ck_representation_chars"),
+        UniqueConstraint(
+            "artifact_id",
+            "extractor_name",
+            "extractor_version",
+            "kind",
+            name="uq_representation_extractor",
+        ),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    artifact_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("source_artifacts.id", ondelete="CASCADE"), nullable=False
+    )
+    extractor_name: Mapped[str] = mapped_column(String(64), nullable=False)
+    extractor_version: Mapped[str] = mapped_column(String(32), nullable=False)
+    kind: Mapped[str] = mapped_column(String(24), nullable=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False)
+    quality: Mapped[str] = mapped_column(String(24), nullable=False)
+    language: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    text_storage_key: Mapped[str | None] = mapped_column(Text, nullable=True)
+    char_count: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
+    page_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    ocr_candidate: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default=text("0"), default=False
+    )
+    sections_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    warnings_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    metadata_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    format_version: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default=text("1"), default=1
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+    artifact: Mapped[SourceArtifactRecord] = relationship()

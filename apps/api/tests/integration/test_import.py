@@ -134,6 +134,12 @@ def _job_for(service: IngestionService, batch_id: str) -> Job:
 
 
 def import_all(service: IngestionService, inventory_id: str, *, cancel_after: int | None = None):
+    """Ejecuta **solo** la fase de copia del pipeline.
+
+    Desde S03 el lote tiene dos fases: copiar y extraer. Esta función corre la copia, así que el
+    lote queda en `queued` (con la extracción pendiente) salvo que se cancele. Los tests que
+    necesiten el lote cerrado tienen que ejecutar también la extracción.
+    """
     from opofuente.domain.errors import JobCancelledError
 
     batch = service.confirm_import(inventory_id)
@@ -154,7 +160,8 @@ def test_importacion_copia_por_hash_y_respeta_los_originales(
     batch_id = import_all(service, inventario.batch.id)
 
     detalle = service.get_batch(batch_id)
-    assert detalle.batch.status == BatchStatus.SUCCEEDED.value
+    # La copia terminó; queda la extracción, así que el lote sigue en cola (S03).
+    assert detalle.batch.status == BatchStatus.QUEUED.value
     assert detalle.batch.counters["total"] == 3
     assert detalle.batch.counters["copied"] == 3
     assert detalle.batch.counters["failed"] == 0
@@ -252,7 +259,8 @@ def test_reanudar_tras_una_caida_no_duplica_artefactos(
     service.run_import_job(FakeExecution(job))
 
     detalle = service.get_batch(batch_id)
-    assert detalle.batch.status == BatchStatus.SUCCEEDED.value
+    # La copia del reintento terminó (la extracción es la otra fase del pipeline).
+    assert detalle.batch.status == BatchStatus.QUEUED.value
     assert detalle.batch.counters["copied"] == 3
     assert detalle.batch.counters["cancelled"] == 0
     with session_factory() as session:
@@ -345,16 +353,16 @@ def test_un_lote_terminado_con_un_fichero_cambiado_no_se_reintenta(
     batch_id = import_all(service, inventario.batch.id)
 
     detalle = service.get_batch(batch_id)
-    assert detalle.batch.status == BatchStatus.SUCCEEDED.value
+    assert detalle.batch.status == BatchStatus.QUEUED.value
     assert detalle.batch.counters["source_changed"] == 1
     assert detalle.batch.counters["pending"] == 0
 
     with pytest.raises(InvalidBatchStateError) as error:
         service.retry_batch(batch_id)
-    assert "succeeded" in str(error.value)
+    assert "queued" in str(error.value)
 
     # Y el estado no se ha tocado: ni el lote ni sus contadores.
-    assert service.get_batch(batch_id).batch.status == BatchStatus.SUCCEEDED.value
+    assert service.get_batch(batch_id).batch.status == BatchStatus.QUEUED.value
 
 
 def test_un_fichero_que_cambia_tras_el_inventario_no_se_copia(
@@ -370,7 +378,8 @@ def test_un_fichero_que_cambia_tras_el_inventario_no_se_copia(
     assert detalle.batch.counters["copied"] == 2
     assert detalle.batch.counters["total"] == 3
     assert any(issue.code == IssueCode.SOURCE_CHANGED.value for issue in detalle.issues)
-    assert detalle.batch.status == BatchStatus.SUCCEEDED.value
+    # Lo que sí se copió sigue copiado; la extracción es la fase siguiente del pipeline.
+    assert detalle.batch.status == BatchStatus.QUEUED.value
 
 
 def test_un_fichero_que_cambia_de_fecha_sin_cambiar_de_tamano_no_se_copia(

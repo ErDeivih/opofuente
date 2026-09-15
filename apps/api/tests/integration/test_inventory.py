@@ -58,11 +58,13 @@ def test_inventario_cuenta_y_clasifica(inventory: FilesystemInventory, tmp_path:
 
     result = inventory.scan(root)
 
-    assert result.counters.inventoried == 5
+    assert result.counters.inventoried == 6
     assert result.counters.omitted_hidden == 1
     assert result.counters.omitted_temporary == 1
     assert result.counters.omitted_executable == 1
-    assert result.counters.omitted_unsupported == 1
+    # S03 (DEBT-008): un formato sin extractor (`.pptx`) **no** se omite: se incluye para copiarlo y
+    # se conservará sin extraer al procesar el lote.
+    assert result.counters.omitted_unsupported == 0
     assert result.counters.omitted_directory == 1
     # `directories` cuenta los directorios recorridos; el omitido se cuenta aparte.
     assert result.counters.directories == 2
@@ -76,7 +78,9 @@ def test_inventario_cuenta_y_clasifica(inventory: FilesystemInventory, tmp_path:
         "apuntes/ley.md",
         "preguntas/banco.csv",
         "preguntas/vacio.txt",
+        "presentacion.pptx",
     }
+    assert result.formats[".pptx"] == 1
     assert result.formats[".md"] == 3
     assert result.formats[".csv"] == 1
     assert snapshot(root) == antes

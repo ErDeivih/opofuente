@@ -25,7 +25,9 @@ from opofuente.api.middleware import (
     SecurityHeadersMiddleware,
 )
 from opofuente.api.openapi import apply_problem_media_type
+from opofuente.application.extraction_service import ExtractionService
 from opofuente.application.ingestion_service import IngestionService
+from opofuente.application.intake_service import IntakeService
 from opofuente.application.job_service import JobService
 from opofuente.application.profiles_service import ProfilesService
 from opofuente.application.system_service import SystemService
@@ -40,6 +42,8 @@ from opofuente.infrastructure.capabilities import (
 )
 from opofuente.infrastructure.clock import SystemClock
 from opofuente.infrastructure.db import build_engine, build_session_factory
+from opofuente.infrastructure.extraction_repository import SqlAlchemyExtractionRepository
+from opofuente.infrastructure.extractors import ExtractorRegistry
 from opofuente.infrastructure.filesystem_inventory import FilesystemInventory
 from opofuente.infrastructure.ingestion_repository import SqlAlchemyIngestionRepository
 from opofuente.infrastructure.job_repository import SqlAlchemyJobRepository
@@ -47,6 +51,8 @@ from opofuente.infrastructure.migrations import database_revision, script_head
 from opofuente.infrastructure.observability import setup_logging
 from opofuente.infrastructure.probes import DatabaseProbe, DataDirectoryProbe
 from opofuente.infrastructure.profile_repository import SqlAlchemyProfileRepository
+from opofuente.infrastructure.representation_store import RepresentationStore
+from opofuente.infrastructure.url_guard import url_limits_from_settings
 from opofuente.infrastructure.worker_liveness import WorkerLiveness
 from opofuente.workers.job_worker import JobWorker
 
@@ -98,10 +104,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     job_queue = SqlAlchemyJobRepository(session_factory)
     ingestion_repository = SqlAlchemyIngestionRepository(session_factory)
+    artifact_store = ArtifactStore(paths)
     ingestion_service = IngestionService(
         repository=ingestion_repository,
         jobs=job_queue,
-        store=ArtifactStore(paths),
+        store=artifact_store,
         scanner=FilesystemInventory(
             max_file_bytes=resolved.max_file_bytes,
             max_entries=resolved.max_batch_entries,
@@ -113,13 +120,43 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         # El lease se renueva a un tercio de su vida: margen de sobra para un fichero lento.
         heartbeat_seconds=max(resolved.job_lease_seconds / 3, 2.0),
     )
+    extraction_service = ExtractionService(
+        repository=SqlAlchemyExtractionRepository(session_factory),
+        ingestions=ingestion_repository,
+        store=artifact_store,
+        representations=RepresentationStore(paths),
+        registry=ExtractorRegistry(resolved),
+        clock=clock,
+        data_root=paths.root,
+        max_member_bytes=resolved.max_file_bytes,
+    )
+    intake_service = IntakeService(
+        repository=ingestion_repository,
+        jobs=job_queue,
+        store=artifact_store,
+        clock=clock,
+        data_root=paths.root,
+        max_file_bytes=resolved.max_file_bytes,
+        max_paste_bytes=resolved.max_paste_bytes,
+        url_limits=url_limits_from_settings(
+            timeout_seconds=resolved.url_timeout_seconds,
+            max_bytes=resolved.max_url_bytes,
+            max_redirects=resolved.max_url_redirects,
+        ),
+    )
     job_service = JobService(job_queue, clock)
     worker = JobWorker(
         queue=job_queue,
-        handlers={JobType.INGEST_BATCH: ingestion_service.run_import_job},
+        handlers={
+            JobType.INGEST_BATCH: ingestion_service.run_import_job,
+            JobType.EXTRACT_ARTIFACT: extraction_service.run_extraction_job,
+        },
         # Un trabajo que se queda `failed` sin más reintentos tiene que cerrar el lote: si no, el
         # lote seguiría diciendo que trabaja mientras su trabajo ya no va a ejecutarse.
-        on_failed={JobType.INGEST_BATCH: ingestion_service.on_job_failed},
+        on_failed={
+            JobType.INGEST_BATCH: ingestion_service.on_job_failed,
+            JobType.EXTRACT_ARTIFACT: ingestion_service.on_job_failed,
+        },
         clock=clock,
         lease_seconds=resolved.job_lease_seconds,
         poll_seconds=resolved.worker_poll_seconds,
@@ -175,6 +212,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.system_service = system_service
     app.state.profiles_service = profiles_service
     app.state.ingestion_service = ingestion_service
+    app.state.extraction_service = extraction_service
+    app.state.intake_service = intake_service
     app.state.job_service = job_service
 
     # El orden importa: el último añadido es el más externo, así que el identificador de

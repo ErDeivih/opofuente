@@ -131,10 +131,22 @@ def test_transiciones_de_entrada() -> None:
     assert can_transition_item(ItemStatus.COPIED, ItemStatus.HASHED)
     assert not can_transition_item(ItemStatus.HASHED, ItemStatus.INVENTORIED)
     assert not can_transition_item(ItemStatus.OMITTED, ItemStatus.COPIED)
-    assert is_terminal_item(ItemStatus.HASHED)
     assert is_terminal_item(ItemStatus.OMITTED)
     with pytest.raises(InvariantViolationError):
-        require_item_transition(ItemStatus.HASHED, ItemStatus.FAILED)
+        require_item_transition(ItemStatus.HASHED, ItemStatus.CANCELLED)
+
+
+def test_desde_s03_una_entrada_copiada_se_extrae_o_se_conserva_sin_extraer() -> None:
+    """`hashed` deja de ser terminal en S03: el pipeline sigue (04_INGESTION §4 y §5).
+
+    Lo copiado pasa a `extracted` (con texto) o a `unsupported_preserved` (sin extractor, DEBT-008).
+    Ninguna de las dos vuelve atrás: si el fichero cambia, es otra entrada de otro lote.
+    """
+    assert can_transition_item(ItemStatus.HASHED, ItemStatus.EXTRACTED)
+    assert can_transition_item(ItemStatus.HASHED, ItemStatus.UNSUPPORTED_PRESERVED)
+    assert not can_transition_item(ItemStatus.HASHED, ItemStatus.INVENTORIED)
+    assert is_terminal_item(ItemStatus.EXTRACTED)
+    assert is_terminal_item(ItemStatus.UNSUPPORTED_PRESERVED)
 
 
 def test_transiciones_de_lote() -> None:

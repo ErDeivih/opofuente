@@ -6,9 +6,17 @@ readme = "README.md"
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "alembic>=1.13",
+    "beautifulsoup4>=4.12",
     "fastapi>=0.115",
+    "lxml>=5.3",
     "pydantic>=2.9",
     "pydantic-settings>=2.5",
+    # PyMuPDF se usa en producción desde S03 (extractor de PDF) y en las herramientas que
+    # construyen fixtures desde el PDF oficial. Licencia AGPL-3.0: uso local y privado cubierto
+    # por DEBT-003; distribuir la aplicación obligaría a revisar la licencia.
+    "pymupdf>=1.24",
+    "python-docx>=1.1",
+    "python-multipart>=0.0.12",
     "sqlalchemy>=2.0.35",
     "uvicorn[standard]>=0.32",
 ]
@@ -16,11 +24,8 @@ dependencies = [
 [dependency-groups]
 dev = [
     "httpx>=0.27",
+    "lxml-stubs>=0.5.1",
     "mypy>=1.13",
-    # PyMuPDF solo lo usan las herramientas que construyen fixtures desde el PDF oficial del
-    # temario (apps/api/opofuente/tools/build_profile_fixtures.py). Pasará al grupo de
-    # producción en S03, cuando la aplicación extraiga PDF. Licencia AGPL-3.0 (ver ADR-005).
-    "pymupdf>=1.24",
     "pytest>=8.3",
     "ruff>=0.7",
 ]
@@ -35,7 +40,9 @@ packages = ["apps/api/opofuente"]
 
 [tool.pytest.ini_options]
 minversion = "8.0"
-pythonpath = ["apps/api"]
+# `apps/api/tests` entra en el path para que las pruebas de unitarias e integración compartan los
+# constructores de documentos sintéticos (`synthetic_documents.py`).
+pythonpath = ["apps/api", "apps/api/tests"]
 testpaths = ["apps/api/tests"]
 # La raíz de temporales del sistema en este equipo contiene un resto propiedad de SYSTEM
 # (creado por un proceso elevado) que impide a pytest limpiar su propio directorio raíz.
@@ -85,3 +92,20 @@ show_error_codes = true
 [[tool.mypy.overrides]]
 module = ["alembic.*"]
 ignore_missing_imports = false
+
+# lxml no publica stubs en el paquete; el proyecto declara los suyos como dependencia de desarrollo
+# (`lxml-stubs`) para no apagar la comprobación de tipos de todo el módulo.
+[[tool.mypy.overrides]]
+module = ["lxml.*"]
+follow_untyped_imports = true
+
+# PyMuPDF no publica tipos. Solo los extractores de PDF e imagen lo llaman directamente, así que la
+# excepción se limita a esos dos módulos (y a la herramienta de fixtures, que ya lo usaba) en lugar
+# de apagar la comprobación de llamadas sin tipos en todo el proyecto.
+[[tool.mypy.overrides]]
+module = [
+    "opofuente.infrastructure.extractors.pdf",
+    "opofuente.infrastructure.extractors.images",
+    "opofuente.tools.build_profile_fixtures",
+]
+disallow_untyped_calls = false

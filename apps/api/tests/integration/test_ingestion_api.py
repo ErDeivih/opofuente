@@ -275,12 +275,23 @@ def test_un_lote_cancelado_antes_de_arrancar_lo_cierra_el_worker(
 
 
 def _run_one_job(client: TestClient, *, attempts: int = 1) -> None:
-    """Ejecuta el worker real de la aplicación sobre los servicios de la app de prueba."""
-    service = client.app.state.ingestion_service
+    """Ejecuta el worker real de la aplicación sobre los servicios de la app de prueba.
+
+    Despacha **los dos** tipos de trabajo del pipeline (copiar y extraer), igual que el worker de
+    producción: si falta un manejador, el trabajo se marcaría fallido en lugar de ejecutarse.
+    """
+    ingestion = client.app.state.ingestion_service
+    extraction = client.app.state.extraction_service
     worker = JobWorker(
-        queue=service.jobs,
-        handlers={JobType.INGEST_BATCH: service.run_import_job},
-        on_failed={JobType.INGEST_BATCH: service.on_job_failed},
+        queue=ingestion.jobs,
+        handlers={
+            JobType.INGEST_BATCH: ingestion.run_import_job,
+            JobType.EXTRACT_ARTIFACT: extraction.run_extraction_job,
+        },
+        on_failed={
+            JobType.INGEST_BATCH: ingestion.on_job_failed,
+            JobType.EXTRACT_ARTIFACT: ingestion.on_job_failed,
+        },
         clock=SystemClock(),
         lease_seconds=60,
         poll_seconds=0.05,
@@ -455,7 +466,12 @@ def test_reintentar_un_lote_cancelado_cuadra_el_informe(
         assert en_curso["report"]["balanced"] is True
         assert _suma_cuadra(counters)
 
-        _run_one_job(client)
+        _run_one_job(client)  # la copia del reintento
+        copiado = client.get(f"/api/v1/ingestion-batches/{batch['id']}").json()
+        assert copiado["batch"]["counters"]["copied"] == 2
+        assert copiado["batch"]["status"] == "queued", "queda la extracción"
+        _run_one_job(client)  # la extracción, que cierra el lote
+
         final = client.get(f"/api/v1/ingestion-batches/{batch['id']}").json()
         assert final["batch"]["status"] == "succeeded"
         assert final["batch"]["counters"]["copied"] == 2
@@ -490,8 +506,10 @@ def test_el_ciclo_completo_lo_ejecuta_el_worker(seeded_settings: Settings, mater
             headers=ALLOWED_ORIGIN,
         ).json()
 
+        # El pipeline completo: la importación copia y, al terminar, se encola la extracción. Se
+        # espera a que el lote esté cerrado **y** sin entradas pendientes de extraer.
         finished = None
-        deadline = time.monotonic() + 30
+        deadline = time.monotonic() + 60
         while time.monotonic() < deadline:
             detalle = client.get(f"/api/v1/ingestion-batches/{batch['id']}").json()
             if detalle["batch"]["status"] in {"succeeded", "failed", "cancelled"}:
@@ -504,14 +522,14 @@ def test_el_ciclo_completo_lo_ejecuta_el_worker(seeded_settings: Settings, mater
         assert finished["report"]["counters"]["copied"] == 2
         assert finished["report"]["balanced"] is True
         assert finished["report"]["artifacts_total"] == 1
-        # El trabajo queda terminado y con progreso completo.
-        job = client.get(f"/api/v1/jobs/{batch['job_id']}").json()
-        assert job["status"] == JobStatus.SUCCEEDED.value
-        assert job["progress"] == 1.0
 
         entradas = client.get(f"/api/v1/ingestion-batches/{batch['id']}/items").json()
         assert entradas["total"] == 2
-        assert {entry["status"] for entry in entradas["entries"]} == {ItemStatus.HASHED.value}
+        # S03: lo copiado se extrae, así que las entradas ya no se quedan en `hashed`.
+        assert {entry["status"] for entry in entradas["entries"]} == {ItemStatus.EXTRACTED.value}
+        assert all(
+            entry["detail"] and "native_text" in entry["detail"] for entry in entradas["entries"]
+        )
 
 
 def test_un_reinicio_recupera_el_trabajo_interrumpido(

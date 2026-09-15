@@ -235,6 +235,32 @@ class IssuePage:
 
 
 @dataclass(frozen=True, slots=True)
+class RepresentationView:
+    """Una representación extraída, tal y como se muestra. El texto se lee aparte."""
+
+    id: str
+    artifact_id: str
+    kind: str
+    status: str
+    quality: str
+    extractor_name: str
+    extractor_version: str
+    char_count: int
+    ocr_candidate: bool
+    warnings: tuple[str, ...]
+    created_at: datetime
+    language: str | None = None
+    page_count: int | None = None
+    has_text: bool = False
+    storage_key: str | None = None
+    format_version: int = 1
+    #: Rutas de las entradas de las que sale este texto, en orden de entrada. Un mismo contenido
+    #: puede estar en el lote dos veces (`tema.pdf` y su copia): sin esto, quien lee no sabe de qué
+    #: fichero es el texto, y varias rutas comparten representación por compartir artefacto.
+    source_paths: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
 class JobView:
     id: str
     job_type: str

@@ -21,6 +21,8 @@ from opofuente.domain.errors import (
     InvalidSourceError,
     NotFoundError,
     OpoFuenteError,
+    UnsafeContentError,
+    UrlRejectedError,
 )
 from opofuente.infrastructure.correlation import get_correlation_id
 
@@ -170,6 +172,20 @@ def register_exception_handlers(app: FastAPI) -> None:
                 detail=str(exc),
                 instance=request.url.path,
                 code="invalid_state",
+            )
+        if isinstance(exc, UnsafeContentError):
+            return problem_response(
+                status_code=400,
+                detail=str(exc),
+                instance=request.url.path,
+                code=exc.code,
+            )
+        if isinstance(exc, UrlRejectedError):
+            return problem_response(
+                status_code=400,
+                detail=str(exc),
+                instance=request.url.path,
+                code=exc.code,
             )
         logger.error(
             "request.domain_error",
