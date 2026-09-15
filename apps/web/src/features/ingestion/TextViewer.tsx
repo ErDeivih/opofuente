@@ -28,6 +28,13 @@ const KIND_LABEL: Record<string, string> = {
   image_metadata: 'metadatos de la imagen',
 };
 
+/** De dónde llegó cada entrada. El origen de un fichero es lo normal y no se repite. */
+const ORIGIN_LABEL: Record<string, string> = {
+  file: 'fichero',
+  paste: 'texto pegado',
+  url: 'descargado de una URL',
+};
+
 /**
  * Texto extraído de las entradas de un lote (04_INGESTION §5).
  *
@@ -57,7 +64,11 @@ export function TextViewer({ representations }: { representations: Representatio
     <>
       <ul className="sample">
         {representations.map((representation) => {
-          const sourcePaths = representation.source_paths ?? [];
+          const sources = representation.sources ?? [];
+          // El origen solo se destaca cuando **no** es un fichero: lo normal no se repite en pantalla.
+          const procedencias = sources
+            .filter((source) => (source.origin_type ?? 'file') !== 'file')
+            .map((source) => ORIGIN_LABEL[source.origin_type ?? 'file'] ?? source.origin_type);
           return (
             <li key={representation.id}>
               <button
@@ -84,10 +95,15 @@ export function TextViewer({ representations }: { representations: Representatio
               {representation.ocr_candidate && (
                 <StatusBadge tone="warning">OCR pendiente</StatusBadge>
               )}
-              {/* De qué fichero es el texto. Un mismo contenido copiado dos veces comparte
-                  representación: se listan sus dos rutas en lugar de repetir el texto. */}
-              {sourcePaths.length > 0 && (
-                <span className="hint sample__path">{sourcePaths.join(' · ')}</span>
+              {/* De qué entrada sale el texto. Un mismo contenido copiado dos veces comparte
+                  representación: se listan sus dos procedencias en lugar de repetir el texto. */}
+              {sources.length > 0 && (
+                <span className="hint sample__path">
+                  {sources.map((source) => source.path).join(' · ')}
+                </span>
+              )}
+              {procedencias.length > 0 && (
+                <span className="hint">origen: {procedencias.join(', ')}</span>
               )}
             </li>
           );

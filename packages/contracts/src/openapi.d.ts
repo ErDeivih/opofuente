@@ -1197,12 +1197,31 @@ export interface components {
             page_count?: number | null;
             /** Quality */
             quality: string;
-            /** Source Paths */
-            source_paths?: string[];
+            /** Sources */
+            sources?: components["schemas"]["RepresentationSourceSchema"][];
             /** Status */
             status: string;
             /** Warnings */
             warnings?: string[];
+        };
+        /**
+         * RepresentationSourceSchema
+         * @description De qué entrada sale el texto, con **su** origen y su profundidad de contenedor.
+         *
+         *     El origen se toma de la entrada, no del artefacto: unos mismos bytes pueden haber entrado como
+         *     fichero, como texto pegado y como URL, y unirlos por artefacto atribuía a una entrada el origen
+         *     de otra.
+         */
+        RepresentationSourceSchema: {
+            /**
+             * Depth
+             * @default 0
+             */
+            depth: number;
+            /** Origin Type */
+            origin_type?: string | null;
+            /** Path */
+            path: string;
         };
         /**
          * RepresentationTextSchema

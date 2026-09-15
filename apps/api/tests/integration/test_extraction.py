@@ -14,15 +14,6 @@ from pathlib import Path
 
 import pytest
 from sqlalchemy import func, select
-from support import FakeExecution, FixedClock
-from synthetic_documents import (
-    build_csv,
-    build_html,
-    build_png,
-    build_spreadsheet_like,
-    build_text_pdf,
-    build_zip,
-)
 
 from opofuente.application.extraction_service import ExtractionService
 from opofuente.application.ingestion_service import IngestionService
@@ -40,6 +31,15 @@ from opofuente.infrastructure.filesystem_inventory import FilesystemInventory
 from opofuente.infrastructure.ingestion_repository import SqlAlchemyIngestionRepository
 from opofuente.infrastructure.job_repository import SqlAlchemyJobRepository
 from opofuente.infrastructure.representation_store import RepresentationStore
+from opofuente_testing.jobs import FakeExecution, FixedClock
+from opofuente_testing.synthetic_documents import (
+    build_csv,
+    build_html,
+    build_png,
+    build_spreadsheet_like,
+    build_text_pdf,
+    build_zip,
+)
 
 
 @pytest.fixture
@@ -303,12 +303,17 @@ def test_un_zip_se_expande_en_entradas_del_lote_y_se_extrae(services, tmp_path: 
     assert trozo.text.strip()
 
 
-def test_un_zip_dentro_de_otro_no_se_expande(services, tmp_path: Path) -> None:
+def test_un_zip_dentro_de_otro_no_se_expande_ni_con_nombre_enganoso(
+    services, tmp_path: Path
+) -> None:
     """El ZIP anidado se conserva íntegro y se declara: no se descomprime en cadena.
 
     Cada nivel de anidamiento multiplica lo que se escribe en disco, que es justo lo que aprovecha
     una bomba de archivos. El contenedor de fuera sí se expande (un nivel) y el de dentro queda
     `unsupported_preserved`, sin que sus miembros lleguen a ser entradas del lote.
+
+    El de dentro se llama `inner.bin`, no `inner.zip`: el límite se decide con la **profundidad
+    guardada en la entrada**, no contando sufijos, así que un contenedor con otro nombre no cuela.
     """
     ingestion, extraction, _jobs, _clock = services
     root = tmp_path / "anidado"
@@ -316,7 +321,7 @@ def test_un_zip_dentro_de_otro_no_se_expande(services, tmp_path: Path) -> None:
     interior = build_zip(tmp_path / "interior.zip", {"tema-02.txt": b"Contenido de dentro."})
     build_zip(
         root / "paquete.zip",
-        {"tema-01.txt": b"Contenido de fuera.", "inner.zip": interior.read_bytes()},
+        {"tema-01.txt": b"Contenido de fuera.", "inner.bin": interior.read_bytes()},
     )
     interior.unlink()
 
@@ -329,8 +334,15 @@ def test_un_zip_dentro_de_otro_no_se_expande(services, tmp_path: Path) -> None:
     estados = {entry.relative_path: entry.status for entry in detalle.entries}
     assert estados["paquete.zip"] == ItemStatus.EXPANDED.value
     assert estados["paquete.zip/tema-01.txt"] == ItemStatus.EXTRACTED.value
-    assert estados["paquete.zip/inner.zip"] == ItemStatus.UNSUPPORTED_PRESERVED.value
-    assert "paquete.zip/inner.zip/tema-02.txt" not in estados, "el anidado no se descomprime"
+    assert estados["paquete.zip/inner.bin"] == ItemStatus.UNSUPPORTED_PRESERVED.value
+    assert "paquete.zip/inner.bin/tema-02.txt" not in estados, "el anidado no se descomprime"
+
+    # La profundidad queda guardada como dato: el de fuera en 0 y su miembro (el contenedor de
+    # dentro) en 1, que es lo que impide expandirlo otra vez.
+    profundidades = {entry.relative_path: entry.container_depth for entry in detalle.entries}
+    assert profundidades["paquete.zip"] == 0
+    assert profundidades["paquete.zip/inner.bin"] == 1
+    assert profundidades["paquete.zip/tema-01.txt"] == 1
 
     codigos = {issue.code for issue in detalle.issues}
     assert IssueCode.UNSUPPORTED_PRESERVED.value in codigos
@@ -361,10 +373,10 @@ def test_un_zip_con_traversal_se_rechaza_sin_expandir(services, tmp_path: Path) 
 def test_dos_entradas_con_el_mismo_contenido_comparten_una_sola_representacion(
     services, tmp_path: Path
 ) -> None:
-    """Un contenido repetido en el lote deja **un** texto, con sus dos rutas.
+    """Un contenido repetido en el lote deja **un** texto, con sus dos procedencias.
 
-    La representación pertenece al artefacto, no a la entrada: si el lector devolviera una fila por
-    entrada, el usuario vería el mismo texto dos veces y creería que son dos documentos.
+    La representación se enlaza desde las entradas: si el lector devolviera una fila por entrada, el
+    usuario vería el mismo texto dos veces y creería que son dos documentos.
     """
     ingestion, extraction, _jobs, _clock = services
     root = tmp_path / "repetido"
@@ -380,6 +392,58 @@ def test_dos_entradas_con_el_mismo_contenido_comparten_una_sola_representacion(
     representaciones = extraction.representations_for_batch(batch_id)
     assert len(representaciones) == 1, "un artefacto, una representación"
     assert set(representaciones[0].source_paths) == {"tema-01.pdf", "tema-01-copia.pdf"}
+    assert {source.origin_type for source in representaciones[0].sources} == {"file"}
+
+
+def test_no_quedan_directorios_de_texto_huerfanos_al_deduplicar(services, tmp_path: Path) -> None:
+    """El texto se escribe **después** de saber si la representación ya existía.
+
+    Antes se creaba `data/extracted/<uuid>` y luego la base decía que esa representación ya estaba
+    (el mismo artefacto procesado por dos entradas): quedaba un directorio que ningún registro
+    referenciaba, ocupando disco para siempre.
+    """
+    ingestion, extraction, _jobs, _clock = services
+    root = tmp_path / "repetido"
+    root.mkdir()
+    original = build_text_pdf(root / "tema-01.pdf", pages=1)
+    shutil.copyfile(original, root / "tema-01-copia.pdf")
+
+    batch_id = _import(ingestion, root)
+    extraction.run_extraction_job(
+        FakeExecution(_job_for(ingestion, batch_id, JobType.EXTRACT_ARTIFACT))
+    )
+
+    representaciones = extraction.representations_for_batch(batch_id)
+    directorios = sorted(
+        path.name for path in (extraction._representations._paths.extracted).iterdir()
+    )
+    assert len(directorios) == len(representaciones), (
+        "un directorio por representación, ni uno más: "
+        f"{len(directorios)} directorios y {len(representaciones)} representaciones"
+    )
+    assert {view.id for view in representaciones} == set(directorios)
+
+
+def test_si_la_base_falla_no_queda_el_texto_escrito(services, tmp_path: Path, monkeypatch) -> None:
+    """Sin fila que lo referencie, el texto escrito se retira: no se deja basura a medias."""
+    ingestion, extraction, _jobs, _clock = services
+    root = tmp_path / "material"
+    root.mkdir()
+    build_text_pdf(root / "temario.pdf", pages=1)
+
+    batch_id = _import(ingestion, root)
+    job = _job_for(ingestion, batch_id, JobType.EXTRACT_ARTIFACT)
+
+    def falla(**kwargs: object) -> None:
+        raise RuntimeError("la base dijo que no")
+
+    monkeypatch.setattr(extraction._repository, "save", falla)
+
+    with pytest.raises(RuntimeError):
+        extraction.run_extraction_job(FakeExecution(job))
+
+    # El trabajo falla (y el worker se encargará del lote), pero no queda texto huérfano.
+    assert list(extraction._representations._paths.extracted.iterdir()) == []
 
 
 def test_los_bytes_del_informe_sobreviven_a_la_extraccion(services, material: Path) -> None:

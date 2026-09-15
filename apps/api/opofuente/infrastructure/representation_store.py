@@ -12,6 +12,7 @@ del fichero sale del identificador de la representación, nunca del nombre del o
 from __future__ import annotations
 
 import json
+import shutil
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -71,6 +72,15 @@ class RepresentationStore:
             newline="\n",
         )
         return f"{representation_id}/{TEXT_FILENAME}"
+
+    def remove(self, representation_id: str) -> None:
+        """Borra el texto de una representación que no llegó a guardarse en la base.
+
+        Se usa cuando la fila falla después de escribir el texto: sin esto quedaría un directorio en
+        `data/extracted` que ninguna representación referencia, ocupando disco para siempre. Nunca
+        toca nada que esté fuera de `data/extracted`.
+        """
+        shutil.rmtree(self.directory(representation_id), ignore_errors=True)
 
     def read(self, storage_key: str, *, offset: int = 0, limit: int = 20_000) -> TextSlice:
         """Lee un trozo de texto por **caracteres**.

@@ -20,12 +20,11 @@ from uuid import uuid4
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, sessionmaker
 
-from opofuente.application.read_models import RepresentationView
+from opofuente.application.read_models import RepresentationSource, RepresentationView
 from opofuente.domain.extraction import ExtractionResult
 from opofuente.domain.ingestion import ItemStatus
 from opofuente.infrastructure.db import as_utc
 from opofuente.infrastructure.db_models import (
-    ArtifactOriginRecord,
     ExtractedRepresentationRecord,
     IngestionItemRecord,
     SourceArtifactRecord,
@@ -34,6 +33,15 @@ from opofuente.infrastructure.db_models import (
 
 def _new_id() -> str:
     return str(uuid4())
+
+
+def _source_of(item: IngestionItemRecord) -> RepresentationSource:
+    """Procedencia de una entrada: su ruta, su propio tipo de origen y su profundidad."""
+    return RepresentationSource(
+        path=str(item.relative_path),
+        origin_type=item.origin_type,
+        depth=int(item.container_depth or 0),
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -50,7 +58,9 @@ class PendingExtraction:
     sha256: str
     storage_key: str
     origin_type: str | None = None
-    """De dónde vino el contenido (`file`, `url`, `paste`): el texto pegado se marca aparte."""
+    """De dónde vino **esta** entrada (`file`, `url`, `paste`): el texto pegado se marca aparte."""
+    container_depth: int = 0
+    """Niveles de contenedor recorridos: decide si un ZIP que está dentro de otro se expande."""
 
 
 class SqlAlchemyExtractionRepository:
@@ -127,47 +137,67 @@ class SqlAlchemyExtractionRepository:
             session.commit()
             return record.id, True
 
+    def find_id(
+        self,
+        *,
+        artifact_id: str,
+        extractor_name: str,
+        extractor_version: str,
+        kind: str,
+    ) -> str | None:
+        """Identificador de la representación que ya existe para esa clave, si la hay.
+
+        Se consulta **antes** de escribir el texto: el texto se guarda en un directorio propio y, si
+        la fila ya existía, ese directorio quedaba huérfano (basura física que nadie lee).
+        """
+        with self._session_factory() as session:
+            return session.execute(
+                select(ExtractedRepresentationRecord.id).where(
+                    ExtractedRepresentationRecord.artifact_id == artifact_id,
+                    ExtractedRepresentationRecord.extractor_name == extractor_name,
+                    ExtractedRepresentationRecord.extractor_version == extractor_version,
+                    ExtractedRepresentationRecord.kind == kind,
+                )
+            ).scalar_one_or_none()
+
     def get(self, representation_id: str) -> RepresentationView | None:
         with self._session_factory() as session:
             record = session.get(ExtractedRepresentationRecord, representation_id)
             if record is None:
                 return None
             return replace(
-                self._view(record), source_paths=self._origins(session, record.artifact_id)
+                self._view(record), sources=self._sources_of_representation(session, record.id)
             )
 
     def list_for_batch(self, batch_id: str) -> tuple[RepresentationView, ...]:
-        """Representaciones de los artefactos de un lote, en orden de entrada y sin repetir.
+        """Representaciones que salieron de las entradas de un lote, en orden de entrada.
 
-        Una representación pertenece al **artefacto**, no a la entrada: si el lote trae el mismo
-        contenido dos veces (un fichero y su copia), las dos entradas comparten representación y
-        aquí sale **una** fila, con las dos rutas. Devolverla dos veces llenaría el lector de textos
-        repetidos que parecen documentos distintos.
+        El enlace es la propia entrada (`representation_id`), no el artefacto: un artefacto puede
+        tener varias representaciones —el mismo contenido entrado como fichero deja `native_text` y
+        entrado como texto pegado deja `plain_text`— y unirlas por artefacto enseñaba en un lote el
+        texto producido en otro. Dos entradas del mismo lote con el mismo contenido sí comparten
+        representación: ahí sale **una** fila con las dos procedencias, que es lo correcto.
         """
         with self._session_factory() as session:
             rows = session.execute(
-                select(
-                    ExtractedRepresentationRecord,
-                    IngestionItemRecord.relative_path,
-                )
+                select(ExtractedRepresentationRecord, IngestionItemRecord)
                 .join(
                     IngestionItemRecord,
-                    IngestionItemRecord.artifact_id == ExtractedRepresentationRecord.artifact_id,
+                    IngestionItemRecord.representation_id == ExtractedRepresentationRecord.id,
                 )
                 .where(IngestionItemRecord.batch_id == batch_id)
-                .order_by(IngestionItemRecord.position, ExtractedRepresentationRecord.created_at)
+                .order_by(IngestionItemRecord.position)
             ).all()
             vistas: dict[str, RepresentationView] = {}
-            rutas: dict[str, list[str]] = {}
-            for record, relative_path in rows:
+            fuentes: dict[str, list[RepresentationSource]] = {}
+            for record, item in rows:
                 if record.id not in vistas:
                     vistas[record.id] = self._view(record)
-                    rutas[record.id] = []
-                if relative_path not in rutas[record.id]:
-                    rutas[record.id].append(str(relative_path))
-            return tuple(
-                replace(view, source_paths=tuple(rutas[view.id])) for view in vistas.values()
-            )
+                    fuentes[record.id] = []
+                source = _source_of(item)
+                if source not in fuentes[record.id]:
+                    fuentes[record.id].append(source)
+            return tuple(replace(view, sources=tuple(fuentes[view.id])) for view in vistas.values())
 
     # ------------------------------------------------------------------ entradas pendientes
 
@@ -175,19 +205,16 @@ class SqlAlchemyExtractionRepository:
         """Entradas copiadas y todavía sin extraer, con el artefacto del que sale su contenido.
 
         `unsupported_preserved` no aparece aquí: esas entradas ya están decididas y no se extraen.
-        El origen (`paste`, `url`, `file`) viaja con la entrada porque el texto pegado se marca con
-        un tipo de representación distinto.
+        El origen de la entrada (`paste`, `url`, `file`) y su profundidad de contenedor viajan con
+        ella: el texto pegado se marca con un tipo de representación distinto y el anidamiento de
+        ZIP se decide con un dato persistido, no con el nombre del fichero.
         """
         with self._session_factory() as session:
             rows = session.execute(
-                select(IngestionItemRecord, SourceArtifactRecord, ArtifactOriginRecord.origin_type)
+                select(IngestionItemRecord, SourceArtifactRecord)
                 .join(
                     SourceArtifactRecord,
                     SourceArtifactRecord.id == IngestionItemRecord.artifact_id,
-                )
-                .outerjoin(
-                    ArtifactOriginRecord,
-                    ArtifactOriginRecord.artifact_id == SourceArtifactRecord.id,
                 )
                 .where(
                     IngestionItemRecord.batch_id == batch_id,
@@ -208,9 +235,10 @@ class SqlAlchemyExtractionRepository:
                     artifact_id=artifact.id,
                     sha256=artifact.sha256,
                     storage_key=artifact.storage_key,
-                    origin_type=origin_type,
+                    origin_type=item.origin_type,
+                    container_depth=int(item.container_depth or 0),
                 )
-                for item, artifact, origin_type in rows
+                for item, artifact in rows
             )
 
     def pending_extraction_count(self, batch_id: str) -> int:
@@ -228,26 +256,29 @@ class SqlAlchemyExtractionRepository:
     # ------------------------------------------------------------------ conversión
 
     @staticmethod
-    def _origins(session: Session, artifact_id: str) -> tuple[str, ...]:
-        """De dónde vino el contenido, según los orígenes registrados del artefacto.
+    def _sources_of_representation(
+        session: Session, representation_id: str
+    ) -> tuple[RepresentationSource, ...]:
+        """Procedencia de un texto leído sin contexto de lote: las entradas que lo produjeron.
 
-        Es lo que usa `get`: al leer una representación suelta no hay lote que diga la ruta de la
-        entrada, pero el artefacto sí sabe con qué nombre entró.
+        Cada entrada aporta **su** origen y su profundidad, así que no se puede atribuir a unos
+        bytes el tipo de origen de otros bytes parecidos.
         """
-        rows = (
+        items = (
             session.execute(
-                select(ArtifactOriginRecord.display_location)
-                .where(ArtifactOriginRecord.artifact_id == artifact_id)
-                .order_by(ArtifactOriginRecord.accessed_at)
+                select(IngestionItemRecord)
+                .where(IngestionItemRecord.representation_id == representation_id)
+                .order_by(IngestionItemRecord.batch_id, IngestionItemRecord.position)
             )
             .scalars()
             .all()
         )
-        vistas: list[str] = []
-        for location in rows:
-            if location and location not in vistas:
-                vistas.append(str(location))
-        return tuple(vistas)
+        fuentes: list[RepresentationSource] = []
+        for item in items:
+            source = _source_of(item)
+            if source not in fuentes:
+                fuentes.append(source)
+        return tuple(fuentes)
 
     @staticmethod
     def _view(record: ExtractedRepresentationRecord) -> RepresentationView:

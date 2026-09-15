@@ -144,6 +144,13 @@ class Settings(BaseSettings):
     max_url_redirects: int = Field(default=5, ge=0, le=20)
     #: Texto pegado: tope de tamaño para no convertir un pegado en un lote gigante.
     max_paste_bytes: int = Field(default=4 * 1024 * 1024, ge=1024)
+    #: Cuánto puede leer cada extractor de un fichero. El texto, el HTML y el CSV se leen hasta este
+    #: tope (si hay más, se lee el principio y se avisa); el JSON hay que parsearlo entero, así que
+    #: si no cabe se declara en lugar de cargarlo en memoria; una imagen mayor que su tope se
+    #: conserva sin describirla. Sin estos límites, un fichero válido de 512 MiB agotaba la memoria.
+    max_text_bytes: int = Field(default=32 * 1024 * 1024, ge=1024)
+    max_json_bytes: int = Field(default=8 * 1024 * 1024, ge=1024)
+    max_image_bytes: int = Field(default=256 * 1024 * 1024, ge=1024)
 
     @field_validator("data_dir", mode="after")
     @classmethod

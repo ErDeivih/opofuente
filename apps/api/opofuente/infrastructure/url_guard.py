@@ -120,6 +120,23 @@ class FetchResult:
     headers: dict[str, str] = field(default_factory=dict)
 
 
+def display_url(url: str) -> str:
+    """URL para **mostrar**: esquema, servidor y camino; sin cadena de consulta ni fragmento.
+
+    Una descarga puede acabar en una dirección con un token (`?id=…&token=…`) y ese valor viaja a la
+    API y a la interfaz como procedencia del texto. Lo que se enseña es el sitio, no el secreto que
+    llevaba la petición. Si la URL no se puede partir, se devuelve un texto neutro en lugar de
+    arriesgarse a publicar algo.
+    """
+    try:
+        parts = urlsplit(url.strip())
+    except ValueError:
+        return "url no mostrable"
+    if not parts.scheme or not parts.netloc:
+        return "url no mostrable"
+    return f"{parts.scheme}://{parts.netloc}{parts.path or '/'}"
+
+
 def is_blocked_address(address: str) -> bool:
     """¿La dirección está en un rango que no se descarga nunca?"""
     try:

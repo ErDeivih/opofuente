@@ -37,6 +37,7 @@ from opofuente.domain.extraction import (
     Quality,
     RepresentationKind,
     RepresentationStatus,
+    WarningCode,
 )
 from opofuente.domain.ingestion import (
     BatchKind,
@@ -180,7 +181,9 @@ class ExtractionService:
             self._ingestions.mark_item(entry.item_id, ItemStatus.FAILED, detail="artefacto ausente")
             return ItemStatus.FAILED
 
-        plan = self._registry.plan(path)
+        # El nombre original viaja al registro: en el almacén el fichero se llama como su hash, así
+        # que la extensión con la que se decide la política sale de la entrada, no de la ruta.
+        plan = self._registry.plan(path, name=entry.original_name or entry.relative_path)
         if plan.action == "refuse":
             self._issue(
                 batch_id,
@@ -194,7 +197,7 @@ class ExtractionService:
             )
             return ItemStatus.FAILED
         if plan.action == "expand_zip":
-            anidado = self._registry.nested_container_reason(entry.relative_path)
+            anidado = self._registry.nested_container_refusal(container_depth=entry.container_depth)
             if anidado is not None:
                 # Un contenedor dentro de otro no se expande: se conserva íntegro y se dice.
                 # Expandir cada nivel multiplicaría el espacio de una bomba de archivos anidados.
@@ -255,27 +258,52 @@ class ExtractionService:
             # documento.
             result = replace(result, kind=RepresentationKind.PLAIN_TEXT)
 
-        representation_id = str(uuid4())
-        storage_key = self._representations.save(representation_id, result) if result.text else None
-        self._repository.save(
-            result=result,
+        # La clave natural se consulta **antes** de escribir el texto: el texto vive en un
+        # directorio propio, y escribirlo para descubrir después que la fila ya existía dejaba ese
+        # directorio huérfano en `data/extracted` (basura física que nadie lee y nadie limpia).
+        existente = self._repository.find_id(
             artifact_id=entry.artifact_id,
-            representation_id=representation_id,
-            text_storage_key=storage_key,
-            now=self._clock.now(),
-            format_version=REPRESENTATION_FORMAT_VERSION,
+            extractor_name=result.extractor.name,
+            extractor_version=result.extractor.version,
+            kind=result.kind.value,
         )
+        representation_id = existente
+        if existente is None:
+            representation_id = str(uuid4())
+            storage_key = (
+                self._representations.save(representation_id, result) if result.text else None
+            )
+            try:
+                self._repository.save(
+                    result=result,
+                    artifact_id=entry.artifact_id,
+                    representation_id=representation_id,
+                    text_storage_key=storage_key,
+                    now=self._clock.now(),
+                    format_version=REPRESENTATION_FORMAT_VERSION,
+                )
+            except Exception:
+                # Si la fila no se guarda, el texto escrito tampoco puede quedarse: una
+                # representación sin fila que la referencie es un fichero que nadie va a leer.
+                self._representations.remove(representation_id)
+                raise
 
         if result.status is RepresentationStatus.FAILED:
+            demasiado_grande = WarningCode.TOO_LARGE in result.warnings
             self._issue(
                 batch_id,
                 entry,
                 IssueCode.EXTRACTION_FAILED,
                 IssueSeverity.ERROR,
-                "El extractor no pudo leer el documento.",
+                "El documento supera el límite de lectura del extractor: se conserva sin leer."
+                if demasiado_grande
+                else "El extractor no pudo leer el documento.",
             )
             self._ingestions.mark_item(
-                entry.item_id, ItemStatus.FAILED, detail="documento ilegible"
+                entry.item_id,
+                ItemStatus.FAILED,
+                detail="supera el límite de lectura" if demasiado_grande else "documento ilegible",
+                representation_id=representation_id,
             )
             return ItemStatus.FAILED
 
@@ -290,7 +318,10 @@ class ExtractionService:
                 "Sin texto nativo: queda pendiente de OCR, que no se ha ejecutado.",
             )
             self._ingestions.mark_item(
-                entry.item_id, ItemStatus.OCR_PENDING, detail="pendiente de OCR"
+                entry.item_id,
+                ItemStatus.OCR_PENDING,
+                detail="pendiente de OCR",
+                representation_id=representation_id,
             )
             return ItemStatus.OCR_PENDING
 
@@ -305,7 +336,10 @@ class ExtractionService:
                 "El documento no contiene texto que extraer.",
             )
             self._ingestions.mark_item(
-                entry.item_id, ItemStatus.EXTRACTED, detail="extraído sin texto"
+                entry.item_id,
+                ItemStatus.EXTRACTED,
+                detail="extraído sin texto",
+                representation_id=representation_id,
             )
             return ItemStatus.EXTRACTED
 
@@ -321,6 +355,7 @@ class ExtractionService:
             entry.item_id,
             ItemStatus.EXTRACTED,
             detail=f"{result.kind.value}: {result.char_count} caracteres",
+            representation_id=representation_id,
         )
         return ItemStatus.EXTRACTED
 
@@ -362,6 +397,9 @@ class ExtractionService:
             for miembro in miembros:
                 if not miembro.is_file():
                     continue
+                # El miembro se reconoce por **su** nombre (está en el temporal con el suyo) y por
+                # su contenido: un `.exe` renombrado a `.txt` no se copia, y una cabecera `MZ`
+                # tampoco.
                 if self._registry.plan(miembro).action == "refuse":
                     self._issue(
                         batch_id,
@@ -428,6 +466,13 @@ class ExtractionService:
                     mtime=None,
                     media_type=media_type_for(miembro.name),
                     status=ItemStatus.HASHED,
+                    # El miembro está un nivel más adentro que su contenedor. Es un dato persistido:
+                    # el límite de anidamiento se decide con él y no con el nombre del fichero.
+                    container_depth=entry.container_depth + 1,
+                    # Dentro de un ZIP el origen es el propio contenedor: así la procedencia del
+                    # texto dice de qué paquete salió.
+                    origin_type=OriginType.FILE.value,
+                    origin_display=relativo,
                 ),
             ),
             status=ItemStatus.HASHED,

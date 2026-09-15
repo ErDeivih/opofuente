@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import re
 import unicodedata
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from enum import StrEnum
 
 #: Versión del formato de representación. Si cambia la forma en que se guarda el texto o las
@@ -107,6 +107,8 @@ class WarningCode(StrEnum):
     EXTRACTOR_FAILED = "extractor_failed"
     UNSUPPORTED_FORMAT = "unsupported_format"
     LANGUAGE_UNKNOWN = "language_unknown"
+    TOO_LARGE = "too_large"
+    """El fichero supera el límite de lectura del extractor: se conserva, pero no se ha leído."""
 
 
 class SectionType(StrEnum):
@@ -287,6 +289,37 @@ def truncate_text(text: str, *, max_chars: int) -> tuple[str, tuple[WarningCode,
     if len(text) <= max_chars:
         return text, ()
     return text[:max_chars], (WarningCode.TRUNCATED,)
+
+
+def clamp_sections(
+    sections: tuple[ExtractedSection, ...], *, char_count: int
+) -> tuple[ExtractedSection, ...]:
+    """Ajusta las secciones al texto **final**, que es la única regla que las hace utilizables.
+
+    Los extractores calculan los tramos mientras construyen el texto, y después el texto se
+    normaliza y se recorta: un offset calculado antes de eso apunta a otra cosa (o más allá del
+    final). Aquí se aplica la invariante y se cumple siempre:
+
+    `0 ≤ char_start ≤ char_end ≤ char_count`
+
+    Una sección que empieza más allá del final se descarta (no hay nada que señalar); una que
+    termina más allá se recorta hasta el final, que sigue siendo cierto: ese tramo existe y llega
+    hasta ahí.
+    """
+    ajustadas: list[ExtractedSection] = []
+    for section in sections:
+        if section.char_start >= char_count:
+            # Empieza en el final o más allá: no queda nada de esa sección que señalar.
+            continue
+        start = max(section.char_start, 0)
+        end = min(max(section.char_end, start), char_count)
+        ajustadas.append(replace(section, char_start=start, char_end=end))
+    return tuple(ajustadas)
+
+
+def sections_are_consistent(text: str, sections: tuple[ExtractedSection, ...]) -> bool:
+    """¿Cumplen las secciones la invariante sobre este texto? Lo comprueban las pruebas."""
+    return all(0 <= section.char_start <= section.char_end <= len(text) for section in sections)
 
 
 def repeated_line_ratio(text: str) -> float:

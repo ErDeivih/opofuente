@@ -192,7 +192,10 @@ const representacionesDelLote: Representation[] = [
     ocr_candidate: false,
     warnings: [],
     created_at: '2026-07-01T09:10:06Z',
-    source_paths: ['tema-01.pdf', 'tema-01-copia.pdf'],
+    sources: [
+      { path: 'tema-01.pdf', origin_type: 'file', depth: 0 },
+      { path: 'tema-01-copia.pdf', origin_type: 'file', depth: 0 },
+    ],
   },
   {
     id: 'rep-2',
@@ -208,7 +211,7 @@ const representacionesDelLote: Representation[] = [
     ocr_candidate: true,
     warnings: ['ocr_pending'],
     created_at: '2026-07-01T09:10:06Z',
-    source_paths: ['escaneo.pdf'],
+    sources: [{ path: 'escaneo.pdf', origin_type: 'file', depth: 0 }],
   },
 ];
 
@@ -458,8 +461,35 @@ describe('pantalla Bandeja', () => {
     ).toHaveAttribute('aria-pressed', 'true');
   });
 
-  it('pide más texto solo cuando el usuario lo pide', async () => {
-    const fetchMock = stubTrayApi({
+  it('dice de qué entrada sale el texto y con qué origen', async () => {
+    stubTrayApi({
+      '/api/v1/ingestion-batches/batch-importacion/representations': {
+        body: [
+          {
+            ...representacionesDelLote[0]!,
+            sources: [{ path: 'Apunte pegado del tema 1', origin_type: 'paste', depth: 0 }],
+          },
+        ],
+      },
+    });
+    renderWithProviders(
+      <AppShell>
+        <TrayPage />
+      </AppShell>,
+      { route: '/bandeja' },
+    );
+
+    await inventariar();
+    await screen.findByRole('heading', { name: 'Vista previa del inventario' });
+    await userEvent.click(screen.getByRole('button', { name: 'Importar una copia' }));
+
+    const lector = await screen.findByRole('region', { name: 'Texto extraído' });
+    // La entrada se nombra siempre, y el origen solo cuando no es un fichero.
+    expect(within(lector).getByText('Apunte pegado del tema 1')).toBeInTheDocument();
+    expect(within(lector).getByText('origen: texto pegado')).toBeInTheDocument();
+  });
+
+  it('pide más texto solo cuando el usuario lo pide', async () => {    const fetchMock = stubTrayApi({
       '/api/v1/representations/rep-1/text': {
         body: { ...textoNativo, total_chars: 96_000, truncated: true },
       },

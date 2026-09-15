@@ -40,9 +40,10 @@ packages = ["apps/api/opofuente"]
 
 [tool.pytest.ini_options]
 minversion = "8.0"
-# `apps/api/tests` entra en el path para que las pruebas de unitarias e integración compartan los
-# constructores de documentos sintéticos (`synthetic_documents.py`).
-pythonpath = ["apps/api", "apps/api/tests"]
+# Solo `apps/api` está en el path. Los constructores de documentos sintéticos y los dobles de prueba
+# viven en `opofuente_testing` (paquete normal, tipado y comprobado con mypy), no en una carpeta de
+# pruebas metida en `pythonpath`: incluir `apps/api/tests` tapaba importaciones mal escritas.
+pythonpath = ["apps/api"]
 testpaths = ["apps/api/tests"]
 # La raíz de temporales del sistema en este equipo contiene un resto propiedad de SYSTEM
 # (creado por un proceso elevado) que impide a pytest limpiar su propio directorio raíz.
@@ -77,6 +78,9 @@ select = [
 [tool.ruff.lint.per-file-ignores]
 # `assert` es la forma esperada de comprobar en pytest.
 "apps/api/tests/**" = ["S101"]
+# Los stubs de PyMuPDF declaran los nombres **reales** de la biblioteca (`csRGB`, `open`): no se
+# renombran, porque el stub tiene que coincidir exactamente con lo que existe en ejecución.
+"apps/api/typestubs/**" = ["N816"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["opofuente"]
@@ -84,8 +88,8 @@ known-first-party = ["opofuente"]
 [tool.mypy]
 python_version = "3.12"
 strict = true
-files = ["apps/api/opofuente", "apps/api/alembic/env.py"]
-mypy_path = "apps/api"
+files = ["apps/api/opofuente", "apps/api/alembic/env.py", "apps/api/opofuente_testing"]
+mypy_path = ["apps/api", "apps/api/typestubs"]
 warn_unreachable = true
 show_error_codes = true
 
@@ -98,14 +102,3 @@ ignore_missing_imports = false
 [[tool.mypy.overrides]]
 module = ["lxml.*"]
 follow_untyped_imports = true
-
-# PyMuPDF no publica tipos. Solo los extractores de PDF e imagen lo llaman directamente, así que la
-# excepción se limita a esos dos módulos (y a la herramienta de fixtures, que ya lo usaba) en lugar
-# de apagar la comprobación de llamadas sin tipos en todo el proyecto.
-[[tool.mypy.overrides]]
-module = [
-    "opofuente.infrastructure.extractors.pdf",
-    "opofuente.infrastructure.extractors.images",
-    "opofuente.tools.build_profile_fixtures",
-]
-disallow_untyped_calls = false

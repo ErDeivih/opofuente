@@ -106,6 +106,72 @@ def test_zip_con_letra_de_unidad_se_rechaza(tmp_path: Path) -> None:
         inspect_zip(archivo, limits=LIMITS)
 
 
+# --- nombres que Windows interpreta de forma especial (regresión S03) -----------------------------
+
+
+@pytest.mark.parametrize(
+    ("nombre", "esperado"),
+    [
+        ("apuntes/tema.txt:flujo_oculto", "flujo alternativo"),
+        ("tema.txt:Zona.Identifier", "flujo alternativo"),
+        ("CON", "dispositivo"),
+        ("nul", "dispositivo"),
+        ("NUL.txt", "dispositivo"),
+        ("apuntes/COM1.log", "dispositivo"),
+        ("LPT9", "dispositivo"),
+        ("apuntes/tema.txt.", "punto o espacio"),
+        # El espacio al final de **toda** la ruta lo caza antes la comprobación general de espacios.
+        ("apuntes/tema.txt ", "espacios raros"),
+        ("apuntes/carpeta. /tema.txt", "punto o espacio"),
+        ("apuntes/tema\x01.txt", "control"),
+    ],
+)
+def test_la_guarda_de_nombres_rechaza_lo_que_windows_interpreta_distinto(
+    nombre: str, esperado: str
+) -> None:
+    """Un nombre válido en POSIX puede ser un dispositivo, un flujo oculto o el mismo fichero.
+
+    En Windows, `archivo.txt:flujo` escribe en un flujo alternativo de datos, `CON`/`NUL` no crean
+    fichero, y `tema.txt.` acaba siendo `tema.txt`: un ZIP con esas entradas podía sobrescribir otra
+    o escribir donde no debía.
+    """
+    with pytest.raises(UnsafeContentError) as error:
+        check_member_name(nombre)
+    assert esperado in str(error.value)
+
+
+def test_los_nombres_normales_siguen_admitiendose() -> None:
+    """La guarda no rechaza material legítimo: acentos, guiones, espacios ni subcarpetas."""
+    for nombre in (
+        "apuntes/tema-01.pdf",
+        "Tema 1. La Constitución.txt",
+        "material/Tema_2 (resumen).md",
+        "a.b/c.d/e.txt",
+    ):
+        check_member_name(nombre)
+
+
+def test_un_zip_con_dos_entradas_que_solo_difieren_en_mayusculas_se_rechaza(tmp_path: Path) -> None:
+    """En Windows `Tema.txt` y `tema.txt` son el mismo fichero: expandirlo sería sobrescribir."""
+    archivo = build_zip(tmp_path / "mayusculas.zip", {"Tema.txt": b"uno", "tema.txt": b"dos"})
+
+    with pytest.raises(UnsafeContentError) as error:
+        inspect_zip(archivo, limits=LIMITS)
+
+    assert "mayúsculas" in str(error.value)
+
+
+def test_un_zip_con_nombres_repetidos_no_se_rechaza_por_mayusculas(tmp_path: Path) -> None:
+    """El caso normal sigue funcionando: dos rutas distintas no se tocan."""
+    archivo = build_zip(
+        tmp_path / "normal.zip", {"temas/Tema-01.txt": b"uno", "temas/tema-02.txt": b"dos"}
+    )
+
+    inspeccion = inspect_zip(archivo, limits=LIMITS)
+
+    assert inspeccion.file_count == 2
+
+
 def test_zip_con_demasiadas_entradas_se_rechaza(tmp_path: Path) -> None:
     archivo = build_zip(tmp_path / "muchas.zip", {f"tema-{index}.txt": b"x" for index in range(60)})
     with pytest.raises(UnsafeContentError) as error:

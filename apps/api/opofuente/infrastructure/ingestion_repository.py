@@ -125,6 +125,9 @@ class SqlAlchemyIngestionRepository:
                         status=(status or entry.status).value,
                         detail=entry.issue.safe_message if entry.issue else None,
                         position=position,
+                        container_depth=entry.container_depth,
+                        origin_type=entry.origin_type,
+                        origin_display=entry.origin_display or entry.relative_path,
                     )
                 )
                 created += 1
@@ -241,12 +244,20 @@ class SqlAlchemyIngestionRepository:
         )
 
     def reset_items_for_retry(self, batch_id: str) -> int:
-        """Devuelve a `inventoried` las entradas recuperables, para volver a intentarlas.
+        """Devuelve las entradas recuperables al estado de la fase que les toca. Cuenta las movidas.
 
-        Se recuperan las canceladas y los fallos transitorios (permisos, fichero bloqueado, fallo de
-        copia). **No** se recuperan las entradas cuyo fichero cambió desde el inventario: ese
-        inventario ya no describe lo que hay en el origen, así que insistir con él volvería a fallar
-        una y otra vez. Para esas hace falta un inventario nuevo, y el servicio lo explica.
+        Hay dos fases y cada una tiene su estado de partida:
+
+        - **sin artefacto**: no se llegó a copiar nada, así que vuelven a `inventoried` para volver
+          a copiarse;
+        - **con artefacto**: el contenido ya está en el almacén y lo que quedó a medias fue la
+          extracción, así que vuelven a `hashed` para reintentar solo la extracción. Devolverlas a
+          `inventoried` obligaba a recopiar (y en un lote sin carpeta de origen —texto pegado,
+          ficheros subidos o URL— hacía imposible el reintento).
+
+        **No** se recuperan las entradas cuyo fichero cambió desde el inventario: ese inventario ya
+        no describe lo que hay en el origen, así que insistir con él volvería a fallar una y otra
+        vez. Para esas hace falta un inventario nuevo, y el servicio lo explica.
         """
         with self._session_factory() as session:
             changed = select(ImportIssueRecord.item_id).where(
@@ -261,17 +272,39 @@ class SqlAlchemyIngestionRepository:
                 ),
                 IngestionItemRecord.id.not_in(changed),
             )
-            pending = session.execute(
-                select(func.count()).select_from(IngestionItemRecord).where(*recoverable)
-            ).scalar_one()
-            if pending:
-                session.execute(
-                    update(IngestionItemRecord)
-                    .where(*recoverable)
-                    .values(status=ItemStatus.INVENTORIED.value, detail=None)
-                )
+            sin_artefacto = (*recoverable, IngestionItemRecord.artifact_id.is_(None))
+            con_artefacto = (*recoverable, IngestionItemRecord.artifact_id.is_not(None))
+
+            total = 0
+            for conditions, status in (
+                (sin_artefacto, ItemStatus.INVENTORIED.value),
+                (con_artefacto, ItemStatus.HASHED.value),
+            ):
+                pending = session.execute(
+                    select(func.count()).select_from(IngestionItemRecord).where(*conditions)
+                ).scalar_one()
+                if pending:
+                    session.execute(
+                        update(IngestionItemRecord)
+                        .where(*conditions)
+                        .values(status=status, detail=None)
+                    )
+                    total += int(pending)
+            if total:
                 session.commit()
-            return int(pending)
+            return total
+
+    def count_items_in_status(self, batch_id: str, status: ItemStatus) -> int:
+        """Cuántas entradas del lote están en ese estado (lo usa el reintento por fases)."""
+        with self._session_factory() as session:
+            return session.execute(
+                select(func.count())
+                .select_from(IngestionItemRecord)
+                .where(
+                    IngestionItemRecord.batch_id == batch_id,
+                    IngestionItemRecord.status == status.value,
+                )
+            ).scalar_one()
 
     def pending_extraction_count(self, batch_id: str) -> int:
         """Entradas copiadas y todavía sin extraer (las que el trabajo de extracción procesará)."""
@@ -509,6 +542,7 @@ class SqlAlchemyIngestionRepository:
         *,
         artifact_id: str | None = None,
         detail: str | None = None,
+        representation_id: str | None = None,
     ) -> None:
         with self._session_factory() as session:
             record = session.get(IngestionItemRecord, item_id)
@@ -519,6 +553,10 @@ class SqlAlchemyIngestionRepository:
                 record.artifact_id = artifact_id
             if detail is not None:
                 record.detail = detail
+            if representation_id is not None:
+                # Enlace explícito entrada → representación: es lo que permite que la lista de un
+                # lote enseñe el texto que salió de **sus** entradas y no el de otro lote.
+                record.representation_id = representation_id
             session.commit()
 
     # ------------------------------------------------------------------ artefactos
@@ -635,6 +673,9 @@ class SqlAlchemyIngestionRepository:
             detail=record.detail,
             artifact_sha256=None,
             mtime=as_utc(record.mtime),
+            container_depth=int(record.container_depth or 0),
+            origin_type=record.origin_type,
+            origin_display=record.origin_display,
         )
 
     @staticmethod

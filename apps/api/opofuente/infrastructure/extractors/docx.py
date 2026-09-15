@@ -32,6 +32,7 @@ from opofuente.domain.extraction import (
     RepresentationStatus,
     SectionType,
     WarningCode,
+    clamp_sections,
     measure_quality,
     merge_warnings,
     truncate_text,
@@ -132,6 +133,8 @@ class DocxTextExtractor:
 
         body = "\n".join(chunks)
         trimmed, truncation = truncate_text(body, max_chars=self._max_chars)
+        # Los tramos se midieron sobre el texto completo: al recortarlo se ajustan al texto final.
+        secciones = clamp_sections(tuple(sections), char_count=len(trimmed))
         quality = measure_quality(trimmed, kind=RepresentationKind.NATIVE_TEXT)
         status = RepresentationStatus.EXTRACTED if trimmed.strip() else RepresentationStatus.EMPTY
         return ExtractionResult(
@@ -139,7 +142,7 @@ class DocxTextExtractor:
             status=status,
             text=trimmed,
             extractor=ExtractorRef(self.name, self.version),
-            sections=tuple(sections),
+            sections=secciones,
             quality=quality.quality,
             warnings=merge_warnings(tuple(warnings), truncation, quality.warnings),
             ocr_candidate=status is RepresentationStatus.EMPTY,

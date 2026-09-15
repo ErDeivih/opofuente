@@ -243,16 +243,25 @@ class IngestionService:
         return view
 
     def retry_batch(self, batch_id: str) -> BatchView:
-        """Reencola un lote fallido o cancelado. Los artefactos ya copiados se reutilizan.
+        """Reencola un lote fallido o cancelado, por la fase en la que se quedó.
 
         Solo se puede reintentar lo que está parado y a medias: un lote que sigue trabajando no se
         toca (devolver entradas a la cola mientras el worker las está copiando descuadraría el
         informe y podría copiar dos veces), y uno que terminó bien no tiene nada que reintentar. En
         esos casos se responde 409 (`invalid_state`).
 
-        Reintentar recupera las canceladas y los fallos transitorios. Las entradas cuyo fichero
-        cambió desde el inventario **no** se recuperan: ese inventario ya no describe el origen y
-        volverían a fallar; para esas hace falta un inventario nuevo, y el error lo dice.
+        Hay **dos fases** y cada una tiene su trabajo (esto antes era un solo camino y estaba mal):
+
+        - entradas **sin artefacto**: no llegó a copiarse nada, así que hay que volver a copiar
+          (vuelven a `inventoried` y se encola `ingest_batch`). Necesitan la carpeta de origen;
+        - entradas **con artefacto**: el contenido ya está en el almacén y lo que falló fue la
+          extracción, así que vuelven a `hashed` y se encola `extract_artifact`. Un lote que entró
+          por ficheros subidos, texto pegado o URL **no tiene** carpeta de origen, y antes el
+          reintento terminaba con «el lote no conserva la carpeta de origen».
+
+        Las entradas cuyo fichero cambió desde el inventario **no** se recuperan para copiar: ese
+        inventario ya no describe el origen y volverían a fallar; para esas hace falta un inventario
+        nuevo, y el error lo dice.
         """
         batch = self._repository.get_batch(batch_id)
         if batch is None or batch.kind != BatchKind.IMPORT.value:
@@ -266,21 +275,32 @@ class IngestionService:
         recovered = self._repository.reset_items_for_retry(batch_id)
         self._repository.set_counters(batch_id, self._repository.summarize_import(batch_id))
         self._repository.set_status(batch_id, BatchStatus.QUEUED, now=now, error_summary="")
-        job, _created = self.jobs.enqueue(
-            job_type=JobType.INGEST_BATCH,
-            payload={
-                "batch_id": batch_id,
-                "inventory_batch_id": batch.inventory_batch_id or "",
-            },
-            now=now,
-            idempotency_key=f"ingest_batch:{batch_id}",
-        )
-        self._repository.set_job(batch_id, job.id)
+        por_copiar = self._repository.count_items_in_status(batch_id, ItemStatus.INVENTORIED)
+        if por_copiar:
+            rondas = self._jobs_for_batch(batch_id, JobType.INGEST_BATCH)
+            job, _created = self.jobs.enqueue(
+                job_type=JobType.INGEST_BATCH,
+                payload={
+                    "batch_id": batch_id,
+                    "inventory_batch_id": batch.inventory_batch_id or "",
+                },
+                now=now,
+                idempotency_key=f"ingest_batch:{batch_id}:{rondas}",
+            )
+            self._repository.set_job(batch_id, job.id)
+        else:
+            job_id = self.enqueue_extraction(batch_id)
+            if job_id is not None:
+                self._repository.set_job(batch_id, job_id)
+        refreshed = self._repository.get_batch(batch_id)
         logger.info(
             "ingestion.import_retried",
-            extra={"event": "import_retried", "job_id": job.id, "status_code": recovered},
+            extra={
+                "event": "import_retried",
+                "job_id": (refreshed.job_id if refreshed is not None else None) or "",
+                "status_code": recovered,
+            },
         )
-        refreshed = self._repository.get_batch(batch_id)
         return refreshed if refreshed is not None else batch
 
     def cancel_batch(self, batch_id: str) -> BatchView:
@@ -344,14 +364,18 @@ class IngestionService:
         if batch is None:
             raise NotFoundError("lote", batch_id)
 
-        source_root = self._repository.source_root_of(batch_id)
-        if source_root is None:
-            raise InvalidSourceError("el lote no conserva la carpeta de origen")
-        root = Path(source_root)
-
         now = self._clock.now()
         self._repository.set_status(batch_id, BatchStatus.RUNNING, now=now)
         pending = self._repository.pending_entries(batch_id)
+
+        source_root = self._repository.source_root_of(batch_id)
+        if source_root is None and pending:
+            # Sin carpeta de origen no se puede copiar nada. Un lote que entró por ficheros subidos,
+            # texto pegado o URL no tiene origen, pero tampoco tiene entradas por copiar: si las
+            # tiene, es que algo lo ha devuelto a la fase de copia y eso sí es un error de verdad.
+            raise InvalidSourceError("el lote no conserva la carpeta de origen")
+        root = Path(source_root) if source_root is not None else None
+
         counters = ImportCounters(total=len(pending))
         execution.progress(0.0, "copiando")
         heartbeat = _ThrottledHeartbeat(execution, self._heartbeat_seconds)
@@ -364,7 +388,8 @@ class IngestionService:
                         "el lote de importación se canceló a petición del usuario"
                     )
 
-                self._copy_entry(batch_id, root, entry, execution, heartbeat)
+                if root is not None:
+                    self._copy_entry(batch_id, root, entry, execution, heartbeat)
                 execution.progress(index / max(len(pending), 1), f"{index}/{len(pending)}")
                 heartbeat.maybe()
         except JobCancelledError:
@@ -394,11 +419,14 @@ class IngestionService:
         if counters.copied and self._pending_extraction(batch_id):
             # Queda texto por extraer, así que el lote **no** ha terminado: vuelve a la cola y el
             # trabajo de extracción lo cierra. Si no, el lote diría «terminado» a mitad del
-            # pipeline.
+            # pipeline. El trabajo se guarda en el lote: es el que la interfaz sigue y el que se
+            # cancela.
             self._repository.set_status(
                 batch_id, BatchStatus.QUEUED, now=self._clock.now(), error_summary=summary or ""
             )
-            self.enqueue_extraction(batch_id)
+            job_id = self.enqueue_extraction(batch_id)
+            if job_id is not None:
+                self._repository.set_job(batch_id, job_id)
             return
         self._repository.set_status(batch_id, status, now=self._clock.now(), error_summary=summary)
 
@@ -683,6 +711,10 @@ def _to_discovered(entry: EntryView) -> DiscoveredEntry:
         mtime=entry.mtime,
         media_type=entry.media_type or "",
         status=ItemStatus.INVENTORIED,
+        # La procedencia viaja con la entrada: en un lote desde carpeta es el fichero y su ruta.
+        # Guardarla aquí permite que el lector diga de dónde salió cada texto sin deducirlo.
+        origin_type=OriginType.FILE.value,
+        origin_display=entry.relative_path,
     )
 
 

@@ -33,6 +33,7 @@ from opofuente.domain.errors import (
     NotFoundError,
     UnsafeContentError,
 )
+from opofuente.domain.formats import executable_refusal, is_dangerous_suffix
 from opofuente.domain.ingestion import (
     BatchKind,
     BatchMode,
@@ -42,10 +43,12 @@ from opofuente.domain.ingestion import (
 )
 from opofuente.domain.jobs import JobType
 from opofuente.infrastructure.artifact_store import ArtifactStore
+from opofuente.infrastructure.extractors.base import read_head, suffix_of
 from opofuente.infrastructure.safe_paths import resolve_within, safe_display_name
 from opofuente.infrastructure.url_guard import (
     FetchResult,
     UrlLimits,
+    display_url,
     fetch_url,
     url_limits_from_settings,
 )
@@ -95,11 +98,14 @@ class IntakeService:
     # ------------------------------------------------------------------ ficheros
 
     def stage_uploads(self, uploads: Sequence[tuple[str, BinaryIO]]) -> tuple[IntakeFile, ...]:
-        """Escribe lo subido en temporales, con tope de tamaño, y devuelve lo que hay que copiar.
+        """Escribe lo subido en temporales, con tope de tamaño, y descarta lo que no se admite.
 
         Se hace en dos pasos a propósito: así la API no tiene que conocer rutas y el almacén recibe
-        siempre un fichero del disco (que es como se calcula el hash por trozos). Un fichero por
-        encima del límite se rechaza antes de llenar el disco.
+        siempre un fichero del disco (que es como se calcula el hash por trozos).
+
+        Cada temporal se borra si su escritura falla (límite superado, disco lleno, error de
+        lectura): antes el temporal en curso no entraba en `preparados` hasta terminar de
+        escribirse, así que un fichero demasiado grande dejaba su `.part` en `data/tmp`.
         """
         if not uploads:
             raise InvalidSourceError("no has seleccionado ningún fichero")
@@ -107,25 +113,49 @@ class IntakeService:
         try:
             for nombre, flujo in uploads:
                 temporal = self._temp_path("subida")
-                escrito = 0
-                with temporal.open("wb") as destino:
-                    while True:
-                        trozo = flujo.read(1024 * 1024)
-                        if not trozo:
-                            break
-                        escrito += len(trozo)
-                        if escrito > self._max_file_bytes:
-                            raise UnsafeContentError(
-                                f"el fichero {safe_display_name(nombre)!r} supera el límite de "
-                                f"{self._max_file_bytes} bytes"
-                            )
-                        destino.write(trozo)
+                try:
+                    self._write_upload(nombre, flujo, temporal)
+                except Exception:
+                    temporal.unlink(missing_ok=True)
+                    raise
                 preparados.append(IntakeFile(name=nombre, path=temporal))
         except Exception:
             for item in preparados:
                 item.path.unlink(missing_ok=True)
             raise
         return tuple(preparados)
+
+    def _write_upload(self, nombre: str, flujo: BinaryIO, temporal: Path) -> None:
+        """Vuelca una subida al temporal y rechaza lo que no debe llegar al almacén.
+
+        El ejecutable se rechaza **aquí**, antes de copiarlo: si se copiara primero y se rechazara
+        después, el binario ya estaría en el almacén y el lote tendría una entrada fallida que no
+        debía existir. Se comprueba por sufijo (política de 04_INGESTION §2) y por firma (`MZ`/ELF),
+        porque un `.dat` con cabecera PE es un ejecutable con otro nombre.
+        """
+        if is_dangerous_suffix(suffix_of(Path(nombre), nombre)):
+            raise UnsafeContentError(
+                f"el fichero {safe_display_name(nombre)!r} es un ejecutable o una biblioteca: "
+                "OpoFuente no los admite"
+            )
+        escrito = 0
+        with temporal.open("wb") as destino:
+            while True:
+                trozo = flujo.read(1024 * 1024)
+                if not trozo:
+                    break
+                escrito += len(trozo)
+                if escrito > self._max_file_bytes:
+                    raise UnsafeContentError(
+                        f"el fichero {safe_display_name(nombre)!r} supera el límite de "
+                        f"{self._max_file_bytes} bytes"
+                    )
+                destino.write(trozo)
+        firma = executable_refusal(read_head(temporal))
+        if firma is not None:
+            raise UnsafeContentError(
+                f"el fichero {safe_display_name(nombre)!r} tiene {firma}: OpoFuente no lo admite"
+            )
 
     def ingest_files(self, files: Sequence[IntakeFile]) -> BatchView:
         """Copia al almacén los ficheros que el usuario ha soltado o seleccionado."""
@@ -143,9 +173,10 @@ class IntakeService:
             for item in files:
                 if not item.path.is_file():
                     raise InvalidSourceError("uno de los ficheros ya no está disponible")
+                nombre = safe_display_name(item.name)
                 self._store_one(
                     batch_id,
-                    display_location=safe_display_name(item.name),
+                    display_location=nombre,
                     original_name=item.name,
                     origin_type=OriginType.FILE,
                     source_path_display=None,
@@ -216,12 +247,16 @@ class IntakeService:
                 status=BatchStatus.QUEUED,
             )
             nombre = _name_from_url(descarga.final_url, descarga.content_type)
+            # La URL final se guarda **sin cadena de consulta ni fragmento**: una descarga puede
+            # acabar en una dirección con un token, y ese valor viaja a la API y a la interfaz como
+            # procedencia del texto. Lo que se muestra es el sitio, no el secreto que llevaba.
+            final_visible = display_url(descarga.final_url)
             self._store_one(
                 batch_id,
-                display_location=descarga.final_url,
+                display_location=final_visible,
                 original_name=nombre,
                 origin_type=OriginType.URL,
-                source_path_display=descarga.final_url,
+                source_path_display=final_visible,
                 source=temporal,
             )
         finally:
@@ -279,6 +314,13 @@ class IntakeService:
                     mtime=None,
                     media_type=media_type_for(original_name),
                     status=ItemStatus.HASHED,
+                    # La procedencia se guarda en la **entrada**, no solo en el artefacto: unos
+                    # mismos bytes pueden entrar como fichero, como texto pegado y como URL, y cada
+                    # entrada tiene la suya. `display_location` ya viene saneado por su vía (nombre
+                    # de fichero saneado, título saneado o URL sin cadena de consulta): volver a
+                    # sanearlo aquí destrozaría una URL (`https:__ejemplo.test_x`).
+                    origin_type=origin_type.value,
+                    origin_display=display_location,
                 ),
             ),
             status=ItemStatus.HASHED,
@@ -305,16 +347,23 @@ class IntakeService:
             sufijo += 1
 
     def _close_intake(self, batch_id: str) -> BatchView:
-        """Cuenta lo que ha entrado, deja el lote encolado y pide su extracción."""
+        """Cuenta lo que ha entrado, deja el lote encolado y pide su extracción.
+
+        El trabajo de extracción se guarda **en el lote** (`set_job`): es el que la interfaz
+        consulta para el progreso, y el que se cancela cuando el usuario cancela. Sin ese enlace, el
+        lote apuntaba a un trabajo viejo (o a ninguno) y la pantalla mostraba un progreso que no era
+        el de su trabajo.
+        """
         self._repository.set_counters(batch_id, self._repository.summarize_import(batch_id))
         pending = self._repository.pending_extraction_count(batch_id)
         if pending:
-            self.jobs.enqueue(
+            job, _created = self.jobs.enqueue(
                 job_type=JobType.EXTRACT_ARTIFACT,
                 payload={"batch_id": batch_id},
                 now=self._clock.now(),
                 idempotency_key=f"extract_batch:{batch_id}:0",
             )
+            self._repository.set_job(batch_id, job.id)
         else:  # pragma: no cover - sin entradas copiadas no hay lote que cerrar
             self._repository.set_status(batch_id, BatchStatus.SUCCEEDED, now=self._clock.now())
         view = self._repository.get_batch(batch_id)
@@ -332,12 +381,8 @@ def _with_suffix(name: str, index: int) -> str:
 
 
 def _display_url(url: str) -> str:
-    """URL para mostrar: sin cadena de consulta, que puede llevar tokens."""
-    from urllib.parse import urlsplit
-
-    parts = urlsplit(url)
-    camino = parts.path or "/"
-    return f"{parts.scheme}://{parts.netloc}{camino}"
+    """URL para mostrar en el lote, sin cadena de consulta (puede llevar tokens)."""
+    return display_url(url)
 
 
 def _name_from_url(url: str, content_type: str | None) -> str:

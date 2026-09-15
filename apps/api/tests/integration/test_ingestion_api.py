@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-import asyncio
 import time
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
@@ -15,12 +15,12 @@ from opofuente.api.errors import PROBLEM_MEDIA_TYPE
 from opofuente.config import Settings
 from opofuente.domain.ingestion import ItemStatus
 from opofuente.domain.jobs import JobStatus, JobType
-from opofuente.infrastructure.clock import SystemClock
 from opofuente.infrastructure.db import build_engine, build_session_factory
 from opofuente.infrastructure.db_models import JobRecord
 from opofuente.infrastructure.job_repository import SqlAlchemyJobRepository
 from opofuente.main import create_app
-from opofuente.workers.job_worker import JobWorker
+from opofuente_testing.jobs import failed_extraction, jobs_for_batch, run_one_job
+from opofuente_testing.synthetic_documents import build_bomb_docx
 
 ALLOWED_ORIGIN = {"Origin": "http://127.0.0.1:5173"}
 FOREIGN_ORIGIN = {"Origin": "http://malicioso.example"}
@@ -257,7 +257,7 @@ def test_un_lote_cancelado_antes_de_arrancar_lo_cierra_el_worker(
         # Nadie ha ejecutado nada todavía: el lote sigue exactamente ahí.
         assert client.get(f"/api/v1/jobs/{batch['job_id']}").json()["status"] == "cancel_requested"
 
-        _run_one_job(client)
+        run_one_job(client)
 
         detalle = client.get(f"/api/v1/ingestion-batches/{batch['id']}").json()
         assert detalle["batch"]["status"] == "cancelled"
@@ -272,33 +272,6 @@ def test_un_lote_cancelado_antes_de_arrancar_lo_cierra_el_worker(
         assert trabajo["status"] == "cancelled"
         # Y el material del usuario sigue intacto.
         assert snapshot(material)
-
-
-def _run_one_job(client: TestClient, *, attempts: int = 1) -> None:
-    """Ejecuta el worker real de la aplicación sobre los servicios de la app de prueba.
-
-    Despacha **los dos** tipos de trabajo del pipeline (copiar y extraer), igual que el worker de
-    producción: si falta un manejador, el trabajo se marcaría fallido en lugar de ejecutarse.
-    """
-    ingestion = client.app.state.ingestion_service
-    extraction = client.app.state.extraction_service
-    worker = JobWorker(
-        queue=ingestion.jobs,
-        handlers={
-            JobType.INGEST_BATCH: ingestion.run_import_job,
-            JobType.EXTRACT_ARTIFACT: extraction.run_extraction_job,
-        },
-        on_failed={
-            JobType.INGEST_BATCH: ingestion.on_job_failed,
-            JobType.EXTRACT_ARTIFACT: ingestion.on_job_failed,
-        },
-        clock=SystemClock(),
-        lease_seconds=60,
-        poll_seconds=0.05,
-        owner="worker-de-prueba",
-    )
-    for _ in range(attempts):
-        asyncio.run(worker.run_once())
 
 
 def test_un_lote_cancelado_termina_siempre_en_un_estado_cerrado(
@@ -445,7 +418,7 @@ def test_reintentar_un_lote_cancelado_cuadra_el_informe(
             headers=ALLOWED_ORIGIN,
         ).json()
         client.post(f"/api/v1/ingestion-batches/{batch['id']}/cancel", headers=ALLOWED_ORIGIN)
-        _run_one_job(client)  # el worker reclama el trabajo cancelado y cierra el lote
+        run_one_job(client)  # el worker reclama el trabajo cancelado y cierra el lote
 
         cancelado = client.get(f"/api/v1/ingestion-batches/{batch['id']}").json()
         assert cancelado["batch"]["status"] == "cancelled"
@@ -466,11 +439,11 @@ def test_reintentar_un_lote_cancelado_cuadra_el_informe(
         assert en_curso["report"]["balanced"] is True
         assert _suma_cuadra(counters)
 
-        _run_one_job(client)  # la copia del reintento
+        run_one_job(client)  # la copia del reintento
         copiado = client.get(f"/api/v1/ingestion-batches/{batch['id']}").json()
         assert copiado["batch"]["counters"]["copied"] == 2
         assert copiado["batch"]["status"] == "queued", "queda la extracción"
-        _run_one_job(client)  # la extracción, que cierra el lote
+        run_one_job(client)  # la extracción, que cierra el lote
 
         final = client.get(f"/api/v1/ingestion-batches/{batch['id']}").json()
         assert final["batch"]["status"] == "succeeded"
@@ -488,6 +461,108 @@ def _suma_cuadra(counters: dict[str, int]) -> bool:
         + counters["cancelled"]
         + counters["source_changed"]
     )
+
+
+def _trabajos_de(migrated_settings: Settings, batch_id: str, job_type: JobType) -> list[Any]:
+    """Trabajos de ese tipo encolados para el lote, leídos de la cola real."""
+    engine = build_engine(migrated_settings.data_paths.database)
+    try:
+        cola = SqlAlchemyJobRepository(build_session_factory(engine))
+        return jobs_for_batch(cola, batch_id, job_type)
+    finally:
+        engine.dispose()
+
+
+def test_reintentar_tras_un_fallo_de_extraccion_no_vuelve_a_copiar(
+    api_only_client: TestClient, migrated_settings: Settings, tmp_path: Path
+) -> None:
+    """Con el artefacto ya copiado, el reintento vuelve a **extraer**, no a copiar.
+
+    Antes toda entrada fallida volvía a `inventoried` y se encolaba `ingest_batch`: el contenido ya
+    estaba en el almacén, así que se copiaba otra vez (o, en un lote sin carpeta de origen, el
+    reintento terminaba con «el lote no conserva la carpeta de origen»).
+
+    El DOCX bomba falla en la extracción de verdad (el contenedor se rechaza por tamaño), no por
+    manipular la base.
+    """
+    bomba = build_bomb_docx(tmp_path / "trampa.docx")
+    batch = api_only_client.post(
+        "/api/v1/ingestion-batches/files",
+        files=[("files", ("trampa.docx", bomba.read_bytes(), "application/vnd.openxmlformats"))],
+        headers=ALLOWED_ORIGIN,
+    ).json()
+
+    run_one_job(api_only_client)
+
+    fallado = api_only_client.get(f"/api/v1/ingestion-batches/{batch['id']}").json()
+    assert fallado["batch"]["status"] == "failed"
+    assert fallado["batch"]["counters"]["failed"] == 1
+    assert fallado["entries"][0]["status"] == ItemStatus.FAILED.value
+
+    respuesta = api_only_client.post(
+        f"/api/v1/ingestion-batches/{batch['id']}/retry", headers=ALLOWED_ORIGIN
+    )
+
+    assert respuesta.status_code == 200, respuesta.text
+    # Este lote entró subido: nunca hubo trabajo de copia, y el reintento no lo inventa.
+    assert _trabajos_de(migrated_settings, batch["id"], JobType.INGEST_BATCH) == []
+    assert len(_trabajos_de(migrated_settings, batch["id"], JobType.EXTRACT_ARTIFACT)) == 2
+
+    # Y el lote apunta al trabajo del reintento.
+    en_curso = api_only_client.get(f"/api/v1/ingestion-batches/{batch['id']}").json()
+    assert en_curso["batch"]["status"] == "queued"
+    assert en_curso["batch"]["job_id"]
+
+    # El worker lo ejecuta sin quejarse de la carpeta de origen (que no existe) y cierra el lote.
+    run_one_job(api_only_client)
+    final = api_only_client.get(f"/api/v1/ingestion-batches/{batch['id']}").json()
+    assert final["batch"]["status"] == "failed", "sigue fallando, pero por la extracción"
+    # El artefacto ya estaba copiado y se reutiliza: no se copia una segunda vez.
+    assert final["report"]["artifacts_total"] == 1
+    # La entrada sigue contando como `failed` (la ecuación del informe admite un solo término por
+    # entrada), pero lo que falló fue la lectura, no la copia: el artefacto está en el almacén.
+    assert final["batch"]["counters"]["failed"] == 1
+    assert final["entries"][0]["status"] == ItemStatus.FAILED.value
+    assert final["entries"][0]["detail"] == "extracción fallida"
+
+
+def test_reintentar_un_lote_de_texto_pegado_funciona_sin_carpeta_de_origen(
+    api_only_client: TestClient,
+    migrated_settings: Settings,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Un lote que entró pegado no tiene carpeta de origen: el reintento no puede necesitarla."""
+    batch = api_only_client.post(
+        "/api/v1/ingestion-batches/paste",
+        json={"text": "Material sintetico pegado para probar el reintento."},
+        headers=ALLOWED_ORIGIN,
+    ).json()
+
+    app: Any = api_only_client.app
+    extraccion = app.state.extraction_service
+    registro = extraccion._registry
+    original = registro.extract
+    monkeypatch.setattr(registro, "extract", lambda *args, **kwargs: failed_extraction())
+
+    run_one_job(api_only_client)
+    fallado = api_only_client.get(f"/api/v1/ingestion-batches/{batch['id']}").json()
+    assert fallado["batch"]["status"] == "failed"
+
+    monkeypatch.setattr(registro, "extract", original)
+    respuesta = api_only_client.post(
+        f"/api/v1/ingestion-batches/{batch['id']}/retry", headers=ALLOWED_ORIGIN
+    )
+
+    assert respuesta.status_code == 200, (
+        f"el reintento de un lote pegado no puede pedir carpeta de origen: {respuesta.text}"
+    )
+    assert _trabajos_de(migrated_settings, batch["id"], JobType.INGEST_BATCH) == []
+    assert len(_trabajos_de(migrated_settings, batch["id"], JobType.EXTRACT_ARTIFACT)) == 2
+
+    run_one_job(api_only_client)
+    final = api_only_client.get(f"/api/v1/ingestion-batches/{batch['id']}").json()
+    assert final["batch"]["status"] == "succeeded"
+    assert final["entries"][0]["status"] == ItemStatus.EXTRACTED.value
 
 
 def test_el_ciclo_completo_lo_ejecuta_el_worker(seeded_settings: Settings, material: Path) -> None:

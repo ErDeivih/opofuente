@@ -1772,11 +1772,11 @@
             "title": "Quality",
             "type": "string"
           },
-          "source_paths": {
+          "sources": {
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/RepresentationSourceSchema"
             },
-            "title": "Source Paths",
+            "title": "Sources",
             "type": "array"
           },
           "status": {
@@ -1802,6 +1802,36 @@
           "created_at"
         ],
         "title": "RepresentationSchema",
+        "type": "object"
+      },
+      "RepresentationSourceSchema": {
+        "description": "De qué entrada sale el texto, con **su** origen y su profundidad de contenedor.\n\nEl origen se toma de la entrada, no del artefacto: unos mismos bytes pueden haber entrado como\nfichero, como texto pegado y como URL, y unirlos por artefacto atribuía a una entrada el origen\nde otra.",
+        "properties": {
+          "depth": {
+            "default": 0,
+            "title": "Depth",
+            "type": "integer"
+          },
+          "origin_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Origin Type"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "title": "RepresentationSourceSchema",
         "type": "object"
       },
       "RepresentationTextSchema": {

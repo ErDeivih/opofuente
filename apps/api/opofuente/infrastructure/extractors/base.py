@@ -4,21 +4,51 @@ Ningún extractor decide rutas ni escribe en el almacén: recibe la ruta de un a
 (que es de solo lectura) y devuelve un `ExtractionResult`. Así el mismo extractor se prueba sin base
 de datos y sin API.
 
-Dos reglas de seguridad que se aplican aquí (09_SECURITY §3, DEBT-004):
+Tres reglas que se aplican aquí (09_SECURITY §3, DEBT-004):
 
 - el **formato se decide por el contenido** (magic bytes y estructura); la extensión es solo una
   señal secundaria, nunca la que manda;
-- la decodificación de texto **no adivina en silencio**: si el fichero no es UTF-8 y se lee como
-  Windows-1252, se avisa.
+- **el nombre original viaja aparte**: en el almacén el fichero se llama como su hash, así que la
+  extensión se toma del nombre con el que entró (`name=`), no de la ruta interna. Sin eso, un
+  `.docm` o un `.json` guardados por hash dejaban de reconocerse por su extensión;
+- la lectura está **acotada**: ningún extractor lee un fichero entero sin límite, porque el material
+  admite ficheros de cientos de megabytes y la memoria no es infinita.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Protocol
 
 from opofuente.domain.extraction import ExtractionResult
+from opofuente.domain.formats import (
+    CSV_SUFFIXES,
+    DANGEROUS_SUFFIXES,
+    HTML_SUFFIXES,
+    IMAGE_SUFFIXES,
+    JSON_SUFFIXES,
+    TEXT_SUFFIXES,
+    FileSignature,
+    match_signature,
+)
+
+__all__ = [
+    "CSV_SUFFIXES",
+    "DANGEROUS_SUFFIXES",
+    "HTML_SUFFIXES",
+    "IMAGE_SUFFIXES",
+    "JSON_SUFFIXES",
+    "TEXT_SUFFIXES",
+    "DetectedFormat",
+    "Extractor",
+    "decode_with_warning",
+    "detect_format",
+    "read_bounded",
+    "read_head",
+    "suffix_of",
+    "try_decode_text",
+]
 
 #: Firma de un PDF, un ZIP (DOCX/PPTX/XLSX/EPUB) y las imágenes que se reconocen.
 PDF_MAGIC = b"%PDF-"
@@ -26,13 +56,6 @@ ZIP_MAGIC = b"PK\x03\x04"
 PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
 JPEG_MAGIC = b"\xff\xd8\xff"
 GIF_MAGIC = b"GIF8"
-
-#: Extensiones de texto plano que se decodifican como texto si el contenido lo parece.
-TEXT_SUFFIXES = frozenset({".txt", ".md", ".markdown", ".log", ".rst"})
-CSV_SUFFIXES = frozenset({".csv", ".tsv"})
-JSON_SUFFIXES = frozenset({".json"})
-HTML_SUFFIXES = frozenset({".html", ".htm", ".xhtml"})
-IMAGE_SUFFIXES = frozenset({".png", ".jpg", ".jpeg", ".gif", ".bmp", ".tif", ".tiff", ".webp"})
 
 #: Cuántos bytes se leen para decidir el formato.
 SNIFF_BYTES = 4096
@@ -43,7 +66,7 @@ class DetectedFormat:
     """Formato detectado por contenido, con la extensión como señal secundaria."""
 
     family: str
-    """`pdf`, `zip`, `docx`, `image`, `text`, `csv`, `json`, `html`, `binary` o `unknown`."""
+    """`pdf`, `zip`, `docx`, `image`, `text`, `csv`, `json`, `html`, `executable`, `binary`…"""
 
     suffix: str
     matches_extension: bool
@@ -59,17 +82,52 @@ class Extractor(Protocol):
     def extract(self, path: Path, *, detected: DetectedFormat) -> ExtractionResult: ...
 
 
+def suffix_of(path: Path, name: str | None = None) -> str:
+    """Extensión del fichero tal y como entró, no como se llama en el almacén.
+
+    `path` suele ser `data/artifacts/sha256/ab/cd/<hash>`: ahí no hay extensión que valga. El
+    nombre original llega por `name` y es el que manda para las decisiones por sufijo.
+    """
+    if name:
+        return PurePosixPath(name).suffix.lower()
+    return path.suffix.lower()
+
+
 def read_head(path: Path, *, size: int = SNIFF_BYTES) -> bytes:
     """Lee el principio del fichero. Solo lectura y con tamaño acotado."""
     with path.open("rb") as stream:
         return stream.read(size)
 
 
-def detect_format(path: Path, *, head: bytes | None = None) -> DetectedFormat:
-    """Decide el formato por contenido y compara con la extensión (señal secundaria)."""
-    data = head if head is not None else read_head(path)
-    suffix = path.suffix.lower()
+def read_bounded(path: Path, *, max_bytes: int) -> tuple[bytes, bool]:
+    """Lee como mucho `max_bytes` y dice si el fichero era más grande.
 
+    Se lee un byte de más a propósito: así se distingue «cabe justo» de «hay más» sin tener que
+    preguntar antes por el tamaño (que puede cambiar entre la pregunta y la lectura).
+    """
+    with path.open("rb") as stream:
+        data = stream.read(max_bytes + 1)
+    if len(data) > max_bytes:
+        return data[:max_bytes], True
+    return data, False
+
+
+def detect_format(
+    path: Path, *, head: bytes | None = None, name: str | None = None
+) -> DetectedFormat:
+    """Decide el formato por contenido y compara con la extensión (señal secundaria).
+
+    `name` es el nombre original del fichero: es de donde sale la extensión, porque en el almacén el
+    fichero se llama como su hash.
+    """
+    data = head if head is not None else read_head(path)
+    suffix = suffix_of(path, name)
+
+    firma = match_signature(data)
+    if firma.signature is FileSignature.EXECUTABLE:
+        # La firma manda sobre el nombre: un `.txt` con cabecera PE (`MZ`) no es material de
+        # estudio.
+        return DetectedFormat("executable", suffix, suffix in DANGEROUS_SUFFIXES)
     if data.startswith(PDF_MAGIC):
         return DetectedFormat("pdf", suffix, suffix == ".pdf")
     if data.startswith(PNG_MAGIC) or data.startswith(JPEG_MAGIC) or data.startswith(GIF_MAGIC):

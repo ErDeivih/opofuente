@@ -27,12 +27,17 @@ from opofuente.domain.extraction import (
     RepresentationStatus,
     SectionType,
     WarningCode,
+    clamp_sections,
     measure_quality,
     merge_warnings,
     normalise_text,
     truncate_text,
 )
-from opofuente.infrastructure.extractors.base import DetectedFormat, decode_with_warning
+from opofuente.infrastructure.extractors.base import (
+    DetectedFormat,
+    decode_with_warning,
+    read_bounded,
+)
 
 #: Filas y caracteres que se muestran en una vista previa de CSV/JSON.
 PREVIEW_ROWS = 40
@@ -61,9 +66,15 @@ def _finish(
     metadata: dict[str, object] | None = None,
     page_count: int | None = None,
 ) -> ExtractionResult:
-    """Cierra un resultado: normaliza, recorta, mide la calidad y une los avisos."""
+    """Cierra un resultado: normaliza, recorta, ajusta las secciones y mide la calidad.
+
+    El orden importa: las secciones se **ajustan al texto final** (`clamp_sections`), porque un
+    extractor las calcula mientras construye el texto y después el texto se normaliza y se recorta.
+    Sin ese ajuste, un offset podía señalar otra cosa o caerse fuera del texto.
+    """
     normalised = normalise_text(text)
     trimmed, truncation = truncate_text(normalised, max_chars=max_chars)
+    secciones = clamp_sections(sections, char_count=len(trimmed))
     quality = measure_quality(trimmed, kind=kind)
     status = RepresentationStatus.EXTRACTED if trimmed.strip() else RepresentationStatus.EMPTY
     return ExtractionResult(
@@ -71,12 +82,30 @@ def _finish(
         status=status,
         text=trimmed,
         extractor=extractor,
-        sections=sections,
+        sections=secciones,
         page_count=page_count,
         quality=quality.quality,
         warnings=merge_warnings(warnings, truncation, quality.warnings),
         metadata=metadata or {},
     )
+
+
+def _read_text_file(
+    path: Path, *, max_bytes: int
+) -> tuple[str, tuple[WarningCode, ...], bool, bool]:
+    """Lee un fichero de texto con tope de bytes.
+
+    Devuelve el texto decodificado, los avisos, si hubo que recodificar y si el fichero era más
+    grande que el límite (en cuyo caso se lee el principio y se dice, en lugar de cargarlo entero).
+    """
+    data, truncated = read_bounded(path, max_bytes=max_bytes)
+    text, recoded = decode_with_warning(data)
+    warnings: list[WarningCode] = []
+    if recoded:
+        warnings.append(WarningCode.LANGUAGE_UNKNOWN)
+    if truncated:
+        warnings.append(WarningCode.TRUNCATED)
+    return text, tuple(warnings), recoded, truncated
 
 
 class PlainTextExtractor:
@@ -85,22 +114,28 @@ class PlainTextExtractor:
     name = "plain_text"
     version = "1"
 
-    def __init__(self, *, max_chars: int) -> None:
+    def __init__(self, *, max_chars: int, max_bytes: int) -> None:
         self._max_chars = max_chars
+        self._max_bytes = max_bytes
 
     def extract(self, path: Path, *, detected: DetectedFormat) -> ExtractionResult:
-        data = path.read_bytes()
-        text, recoded = decode_with_warning(data)
-        sections = _markdown_sections(text) if path.suffix.lower() in {".md", ".markdown"} else ()
-        warnings = (WarningCode.LANGUAGE_UNKNOWN,) if recoded else ()
+        text, warnings, recoded, truncated = _read_text_file(path, max_bytes=self._max_bytes)
+        # Las secciones se calculan sobre el **texto normalizado**: es el que se guarda, así que es
+        # el único sobre el que un offset significa algo.
+        normalised = normalise_text(text)
+        sections = _markdown_sections(normalised) if detected.suffix in {".md", ".markdown"} else ()
         return _finish(
             kind=RepresentationKind.NATIVE_TEXT,
-            text=text,
+            text=normalised,
             sections=sections,
             extractor=ExtractorRef(self.name, self.version),
             warnings=warnings,
             max_chars=self._max_chars,
-            metadata={"encoding": "cp1252" if recoded else "utf-8", "sections": len(sections)},
+            metadata={
+                "encoding": "cp1252" if recoded else "utf-8",
+                "sections": len(sections),
+                "read_truncated": truncated,
+            },
         )
 
 
@@ -139,22 +174,20 @@ class CsvPreviewExtractor:
     name = "csv_preview"
     version = "1"
 
-    def __init__(self, *, max_chars: int, max_rows: int = PREVIEW_ROWS) -> None:
+    def __init__(self, *, max_chars: int, max_bytes: int, max_rows: int = PREVIEW_ROWS) -> None:
         self._max_chars = max_chars
+        self._max_bytes = max_bytes
         self._max_rows = max_rows
 
     def extract(self, path: Path, *, detected: DetectedFormat) -> ExtractionResult:
-        data = path.read_bytes()
-        text, recoded = decode_with_warning(data)
+        text, warnings, recoded, read_truncated = _read_text_file(path, max_bytes=self._max_bytes)
         delimiter = _detect_delimiter(text, detected.suffix)
         rows = list(csv.reader(io.StringIO(text), delimiter=delimiter))
         preview = rows[: self._max_rows]
         lines = [delimiter.join(cell.strip() for cell in row) for row in preview]
-        warnings: list[WarningCode] = []
-        if recoded:
-            warnings.append(WarningCode.LANGUAGE_UNKNOWN)
+        avisos = list(warnings)
         if len(rows) > len(preview):
-            warnings.append(WarningCode.TRUNCATED)
+            avisos.append(WarningCode.TRUNCATED)
             lines.append(f"… {len(rows) - len(preview)} filas más")
         body = "\n".join(lines)
         section = ExtractedSection(
@@ -170,13 +203,14 @@ class CsvPreviewExtractor:
             text=body,
             sections=(section,),
             extractor=ExtractorRef(self.name, self.version),
-            warnings=tuple(warnings),
+            warnings=tuple(avisos),
             max_chars=self._max_chars,
             metadata={
                 "delimiter": delimiter,
                 "rows": len(rows),
                 "columns": len(rows[0]) if rows else 0,
                 "encoding": "cp1252" if recoded else "utf-8",
+                "read_truncated": read_truncated,
             },
         )
 
@@ -205,12 +239,26 @@ class JsonPreviewExtractor:
     name = "json_preview"
     version = "1"
 
-    def __init__(self, *, max_chars: int, max_depth: int = MAX_JSON_DEPTH) -> None:
+    def __init__(self, *, max_chars: int, max_bytes: int, max_depth: int = MAX_JSON_DEPTH) -> None:
         self._max_chars = max_chars
+        self._max_bytes = max_bytes
         self._max_depth = max_depth
 
     def extract(self, path: Path, *, detected: DetectedFormat) -> ExtractionResult:
-        data = path.read_bytes()
+        data, truncated = read_bounded(path, max_bytes=self._max_bytes)
+        if truncated:
+            # Un JSON hay que parsearlo entero para describirlo: si no cabe en el límite, se dice y
+            # no se intenta. Antes se cargaba el fichero completo en memoria y un JSON enorme podía
+            # agotarla; el material admite ficheros de cientos de megabytes.
+            return ExtractionResult(
+                kind=RepresentationKind.JSON_PREVIEW,
+                status=RepresentationStatus.FAILED,
+                text="",
+                extractor=ExtractorRef(self.name, self.version),
+                quality=Quality.FAILED,
+                warnings=(WarningCode.TOO_LARGE,),
+                metadata={"limit_bytes": self._max_bytes},
+            )
         text, recoded = decode_with_warning(data)
         warnings: list[WarningCode] = []
         if recoded:
@@ -339,31 +387,29 @@ class HtmlTextExtractor:
     name = "html_text"
     version = "1"
 
-    def __init__(self, *, max_chars: int) -> None:
+    def __init__(self, *, max_chars: int, max_bytes: int) -> None:
         self._max_chars = max_chars
+        self._max_bytes = max_bytes
 
     def extract(self, path: Path, *, detected: DetectedFormat) -> ExtractionResult:
-        data = path.read_bytes()
-        text, recoded = decode_with_warning(data)
+        text, warnings, _recoded, read_truncated = _read_text_file(path, max_bytes=self._max_bytes)
         soup = BeautifulSoup(text, "html.parser")
 
-        warnings: list[WarningCode] = []
-        if recoded:
-            warnings.append(WarningCode.LANGUAGE_UNKNOWN)
+        avisos = list(warnings)
         if soup.find("script"):
-            warnings.append(WarningCode.SCRIPT_REMOVED)
+            avisos.append(WarningCode.SCRIPT_REMOVED)
         if soup.find(["iframe", "object", "embed", "form"]):
-            warnings.append(WarningCode.ACTIVE_CONTENT_REMOVED)
+            avisos.append(WarningCode.ACTIVE_CONTENT_REMOVED)
         for comment in soup.find_all(string=lambda value: isinstance(value, Comment)):
             comment.extract()
         for tag in soup.find_all(DROPPED_TAGS):
             tag.decompose()
 
         title = soup.title.get_text(strip=True) if soup.title else None
-        sections: list[ExtractedSection] = []
-        chunks: list[str] = []
-        offset = 0
-        position = 0
+        # El cuerpo se construye **antes** de calcular las secciones: el título se antepone como
+        # cabecera del texto, así que los offsets tienen que contar con él. Calcularlos antes y
+        # añadir el título después desplazaba todas las secciones.
+        pieces: list[tuple[str, SectionType, str | None, str | None]] = []
         for element in soup.find_all(list(BLOCK_TAGS)):
             if element.find_parent(["table", "li", "p", "h1", "h2", "h3", "h4", "h5", "h6"]):
                 # Se queda el bloque de más arriba: los hijos ya van dentro de su texto.
@@ -371,7 +417,6 @@ class HtmlTextExtractor:
             piece = " ".join(element.get_text(" ", strip=True).split())
             if not piece:
                 continue
-            position += 1
             section_type = BLOCK_TAGS[element.name]
             label = None
             if element.name == "table":
@@ -380,29 +425,38 @@ class HtmlTextExtractor:
                     label = " | ".join(
                         cell.get_text(" ", strip=True) for cell in first_row.find_all(["th", "td"])
                     )
+            titulo = (
+                piece[:120] if section_type in {SectionType.TITLE, SectionType.HEADING} else None
+            )
+            pieces.append((piece, section_type, titulo, label))
+
+        prefix = f"{title}\n\n" if title else ""
+        body = prefix + "\n".join(piece for piece, _type, _title, _label in pieces)
+        sections: list[ExtractedSection] = []
+        offset = len(prefix)
+        for position, (piece, section_type, titulo, label) in enumerate(pieces, start=1):
             sections.append(
                 ExtractedSection(
                     section_type=section_type,
                     position=position,
                     char_start=offset,
                     char_end=offset + len(piece),
-                    title=piece[:120]
-                    if section_type in {SectionType.TITLE, SectionType.HEADING}
-                    else None,
+                    title=titulo,
                     label=label,
                 )
             )
-            chunks.append(piece)
             offset += len(piece) + 1
 
-        body = f"{title}\n\n" if title else ""
-        body += "\n".join(chunks)
         return _finish(
             kind=RepresentationKind.HTML_TEXT,
             text=body,
             sections=tuple(sections),
             extractor=ExtractorRef(self.name, self.version),
-            warnings=tuple(warnings),
+            warnings=tuple(avisos),
             max_chars=self._max_chars,
-            metadata={"title": title, "blocks": len(sections)},
+            metadata={
+                "title": title,
+                "blocks": len(sections),
+                "read_truncated": read_truncated,
+            },
         )

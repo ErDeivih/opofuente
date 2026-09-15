@@ -201,6 +201,10 @@ class IngestionRepository(Protocol):
         """Entradas copiadas y todavía sin extraer."""
         ...
 
+    def count_items_in_status(self, batch_id: str, status: ItemStatus) -> int:
+        """Cuántas entradas del lote están en ese estado (lo usa el reintento por fases)."""
+        ...
+
     def item_id_for(self, batch_id: str, relative_path: str) -> str | None:
         """Identificador de una entrada del lote por su ruta relativa."""
         ...
@@ -212,6 +216,7 @@ class IngestionRepository(Protocol):
         *,
         artifact_id: str | None = ...,
         detail: str | None = ...,
+        representation_id: str | None = ...,
     ) -> None: ...
 
     def register_artifact(

@@ -82,6 +82,21 @@ class UrlRequest(BaseModel):
     url: str = Field(min_length=1, max_length=2048)
 
 
+class RepresentationSourceSchema(BaseModel):
+    """De qué entrada sale el texto, con **su** origen y su profundidad de contenedor.
+
+    El origen se toma de la entrada, no del artefacto: unos mismos bytes pueden haber entrado como
+    fichero, como texto pegado y como URL, y unirlos por artefacto atribuía a una entrada el origen
+    de otra.
+    """
+
+    path: str
+    origin_type: str | None = None
+    """`file`, `paste` o `url`. `null` en entradas anteriores a esta corrección."""
+    depth: int = 0
+    """Niveles de contenedor recorridos: 0 si vino del origen tal cual, 1 si salió de un ZIP."""
+
+
 class RepresentationSchema(BaseModel):
     """Texto extraído de un artefacto, con quién lo extrajo, su calidad y sus avisos.
 
@@ -102,9 +117,9 @@ class RepresentationSchema(BaseModel):
     warnings: list[str] = Field(default_factory=list)
     has_text: bool = False
     created_at: datetime
-    #: Entradas de las que sale este texto, en orden de entrada. Un mismo contenido copiado dos
-    #: veces comparte representación y aparece aquí con sus dos rutas.
-    source_paths: list[str] = Field(default_factory=list)
+    #: Entradas de las que sale este texto, en orden de entrada y sin repetir. Un mismo contenido
+    #: copiado dos veces comparte representación y aparece aquí con sus dos procedencias.
+    sources: list[RepresentationSourceSchema] = Field(default_factory=list)
 
 
 class RepresentationTextSchema(BaseModel):

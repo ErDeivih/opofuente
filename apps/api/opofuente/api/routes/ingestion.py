@@ -43,6 +43,7 @@ from opofuente.api.ingestion_schemas import (
     JobSchema,
     PasteRequest,
     RepresentationSchema,
+    RepresentationSourceSchema,
     RepresentationTextSchema,
     UrlRequest,
 )
@@ -140,7 +141,12 @@ def _representation(view: RepresentationView) -> RepresentationSchema:
         warnings=list(view.warnings),
         has_text=view.has_text,
         created_at=view.created_at,
-        source_paths=list(view.source_paths),
+        sources=[
+            RepresentationSourceSchema(
+                path=source.path, origin_type=source.origin_type, depth=source.depth
+            )
+            for source in view.sources
+        ],
     )
 
 

@@ -179,6 +179,13 @@ class EntryView:
     #: Fecha de modificación vista en el inventario. Viaja al lote de importación para poder
     #: detectar que el fichero cambió antes de copiarlo (no solo por tamaño).
     mtime: datetime | None = None
+    #: Niveles de contenedor recorridos hasta esta entrada (0 = tal cual del origen, 1 = dentro
+    #: de un ZIP). El límite de anidamiento se decide con este dato persistido, no con el nombre.
+    container_depth: int = 0
+    #: De dónde salió esta entrada en concreto: `file`, `paste` o `url`.
+    origin_type: str | None = None
+    #: Cómo se muestra ese origen, ya saneado (las URL, sin cadena de consulta).
+    origin_display: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -235,6 +242,20 @@ class IssuePage:
 
 
 @dataclass(frozen=True, slots=True)
+class RepresentationSource:
+    """Una entrada de la que sale el texto de una representación, con **su** origen.
+
+    Se toma de la entrada, no del artefacto: el mismo contenido puede haber entrado como fichero,
+    como texto pegado y como URL, y cada entrada sabe de dónde vino. Deducirlo del artefacto daba
+    tipos de origen equivocados.
+    """
+
+    path: str
+    origin_type: str | None = None
+    depth: int = 0
+
+
+@dataclass(frozen=True, slots=True)
 class RepresentationView:
     """Una representación extraída, tal y como se muestra. El texto se lee aparte."""
 
@@ -254,10 +275,13 @@ class RepresentationView:
     has_text: bool = False
     storage_key: str | None = None
     format_version: int = 1
-    #: Rutas de las entradas de las que sale este texto, en orden de entrada. Un mismo contenido
-    #: puede estar en el lote dos veces (`tema.pdf` y su copia): sin esto, quien lee no sabe de qué
-    #: fichero es el texto, y varias rutas comparten representación por compartir artefacto.
-    source_paths: tuple[str, ...] = ()
+    #: Entradas de las que sale este texto, en orden de entrada. Un mismo contenido copiado dos
+    #: veces comparte representación: sin esto, quien lee no sabe de qué fichero es el texto.
+    sources: tuple[RepresentationSource, ...] = ()
+
+    @property
+    def source_paths(self) -> tuple[str, ...]:
+        return tuple(source.path for source in self.sources)
 
 
 @dataclass(frozen=True, slots=True)

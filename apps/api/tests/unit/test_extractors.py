@@ -10,10 +10,24 @@ Las pruebas negativas de seguridad (ZIP traversal, bombas, entidades externas) e
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pytest
-from synthetic_documents import (
+
+from opofuente.config import Settings
+from opofuente.domain.errors import UnsafeContentError
+from opofuente.domain.extraction import (
+    Quality,
+    RepresentationKind,
+    RepresentationStatus,
+    SectionType,
+    WarningCode,
+    sections_are_consistent,
+)
+from opofuente.infrastructure.extractors import ExtractionPlan, ExtractorRegistry
+from opofuente.infrastructure.extractors.base import detect_format
+from opofuente_testing.synthetic_documents import (
     build_bomb_docx,
     build_cp1252_text,
     build_csv,
@@ -29,18 +43,6 @@ from synthetic_documents import (
     build_spreadsheet_like,
     build_text_pdf,
 )
-
-from opofuente.config import Settings
-from opofuente.domain.errors import UnsafeContentError
-from opofuente.domain.extraction import (
-    Quality,
-    RepresentationKind,
-    RepresentationStatus,
-    SectionType,
-    WarningCode,
-)
-from opofuente.infrastructure.extractors import ExtractorRegistry
-from opofuente.infrastructure.extractors.base import detect_format
 
 
 @pytest.fixture
@@ -313,7 +315,7 @@ def test_un_ejecutable_se_rechaza_y_no_se_conserva(tmp_path: Path) -> None:
 
 
 def test_un_zip_normal_se_expande(tmp_path: Path) -> None:
-    from synthetic_documents import build_zip
+    from opofuente_testing.synthetic_documents import build_zip
 
     archivo = build_zip(tmp_path / "paquete.zip", {"apuntes.txt": b"contenido sintetico"})
 
@@ -342,15 +344,253 @@ def test_el_registro_limita_los_caracteres_de_la_representacion(tmp_path: Path) 
 
 
 def test_un_zip_dentro_de_otro_zip_se_conserva_sin_expandir() -> None:
-    """El anidamiento se mide sobre la ruta de la entrada, con el límite de la configuración."""
+    """El anidamiento se decide con la profundidad persistida de la entrada, no con el nombre."""
     registro = ExtractorRegistry(Settings(max_zip_depth=1, _env_file=None))
 
-    assert registro.nested_container_reason("paquete.zip") is None, "el de fuera sí se expande"
-    motivo = registro.nested_container_reason("paquete.zip/inner.zip")
+    assert registro.nested_container_refusal(container_depth=0) is None, "el de fuera sí se expande"
+    motivo = registro.nested_container_refusal(container_depth=1)
     assert motivo is not None
     assert "profundidad máxima 1" in motivo
 
-    # Un nombre que solo se parece a un contenedor no cuenta, y subir el límite lo permite.
-    assert registro.nested_container_reason("paquete.zip/temas/tema-01.txt") is None
+    # Y con un límite mayor, el mismo contenedor anidado sí se expandiría.
     permisivo = ExtractorRegistry(Settings(max_zip_depth=2, _env_file=None))
-    assert permisivo.nested_container_reason("paquete.zip/inner.zip") is None
+    assert permisivo.nested_container_refusal(container_depth=1) is None
+
+
+# --- el nombre original manda cuando el fichero vive en el almacén por hash (regresión S03) -------
+
+
+#: Cada caso: cómo se llama el fichero de verdad, con qué contenido, y qué hay que decidir.
+#: La ruta que se le pasa a `plan` es la del almacén (`<hash>`, sin extensión), que es el caso real.
+@pytest.mark.parametrize(
+    ("nombre", "contenido", "accion"),
+    [
+        ("programa.docm", b"contenido sintetico de un docm", "preserve"),
+        ("notas.xlsm", b"contenido sintetico de un xlsm", "preserve"),
+        ("locucion.mp3", b"ID3contenido sintetico", "preserve"),
+        ("video.mp4", b"\x00\x00\x00\x18ftypmp42 sintetico", "preserve"),
+        ("instalador.exe", b"MZ" + b"\x00" * 64, "refuse"),
+        ("guion.ps1", b"Write-Output 'no se copia'", "refuse"),
+    ],
+)
+def test_el_nombre_original_decide_igual_con_el_fichero_en_el_almacen(
+    tmp_path: Path, nombre: str, contenido: bytes, accion: str
+) -> None:
+    """Un fichero guardado por hash no tiene extensión: la política sale del nombre de la entrada.
+
+    Antes el registro miraba `path.suffix` de la ruta del almacén (el hash), así que un `.docm`
+    acababa extrayéndose, un `.mp3` se trataba como binario y un `.exe` no se rechazaba por su
+    nombre. Esta es la reproducción exacta de aquel fallo: la misma ruta, con y sin nombre.
+
+    Se comprueba además que **sin** el nombre la decisión es otra, que es lo que demuestra que la
+    prueba mide el arreglo y no otra cosa.
+    """
+    almacen = tmp_path / "sha256" / "ab" / "cd" / ("a" * 64)
+    almacen.parent.mkdir(parents=True)
+    almacen.write_bytes(contenido)
+
+    registro = ExtractorRegistry(Settings(_env_file=None))
+    sin_nombre = registro.plan(almacen)
+    con_nombre = registro.plan(almacen, name=nombre)
+
+    assert con_nombre.action == accion, f"{nombre} debería decidir {accion}"
+    assert _decision(sin_nombre) != _decision(con_nombre), (
+        f"{nombre}: sin el nombre original la decisión cambia, y eso es lo que se está probando"
+    )
+
+
+def _decision(plan: ExtractionPlan) -> tuple[str, str, str]:
+    """Lo que identifica una decisión: qué se hace, por qué y con qué extractor."""
+    return (plan.action, plan.reason, plan.extractor.name if plan.extractor else "")
+
+
+def test_sin_el_nombre_original_un_markdown_pierde_secciones_y_un_json_su_vista_previa(
+    tmp_path: Path,
+) -> None:
+    """Los otros dos casos del mismo fallo, donde cambia el extractor elegido y no la acción.
+
+    Un `.md` guardado por hash se extrae igual (el contenido es texto), pero **sin secciones**: los
+    encabezados Markdown se detectan por la extensión. Un `.json` guardado por hash se trata como
+    texto plano en lugar de como estructura: la vista previa del JSON se pierde.
+    """
+    registro = ExtractorRegistry(Settings(_env_file=None))
+    almacen = tmp_path / "sha256" / "ab" / "cd" / ("b" * 64)
+    almacen.parent.mkdir(parents=True)
+
+    almacen.write_bytes(b"# Tema 1\n\nTexto sintetico del tema.")
+    con_nombre = registro.extract(almacen, plan=registro.plan(almacen, name="tema.md"))
+    sin_nombre = registro.extract(almacen, plan=registro.plan(almacen))
+    assert con_nombre.sections, "con el nombre original el Markdown deja sus encabezados"
+    assert not sin_nombre.sections, "sin él, el mismo fichero no tiene secciones"
+
+    almacen.write_bytes(b'{"temas": ["uno", "dos"]}')
+    con_nombre = registro.plan(almacen, name="apuntes.json")
+    sin_nombre = registro.plan(almacen)
+    assert con_nombre.extractor is not None
+    assert con_nombre.extractor.name == "json_preview"
+    assert sin_nombre.extractor is not None
+    assert sin_nombre.extractor.name == "plain_text", (
+        "sin el nombre se pierde la vista de estructura"
+    )
+
+
+def test_un_ejecutable_con_nombre_inocente_se_rechaza_por_su_firma(tmp_path: Path) -> None:
+    """Los bytes mandan: un `.txt` con cabecera `MZ` (PE) es un ejecutable y no se admite."""
+    registro = ExtractorRegistry(Settings(_env_file=None))
+    archivo = tmp_path / "apuntes.txt"
+    archivo.write_bytes(b"MZ" + b"\x00" * 128)
+
+    plan = registro.plan(archivo, name="apuntes.txt")
+
+    assert plan.action == "refuse"
+    assert "firma de ejecutable" in plan.reason
+    assert registro.refusal_by_signature(archivo) is not None
+
+
+def test_un_elf_se_reconoce_por_su_firma(tmp_path: Path) -> None:
+    """La otra firma habitual en Binutils/Linux: `\\x7fELF`."""
+    archivo = tmp_path / "binario.bin"
+    archivo.write_bytes(b"\x7fELF" + b"\x00" * 64)
+
+    plan = ExtractorRegistry(Settings(_env_file=None)).plan(archivo, name="binario.bin")
+
+    assert plan.action == "refuse"
+    assert "ELF" in plan.reason
+
+
+# --- las secciones señalan siempre el texto que se guarda (regresión S03) -------------------------
+
+
+#: Un documento sintético de cada familia que produce secciones, para comprobar la invariante.
+def _fixtures_con_secciones(root: Path) -> list[tuple[str, Path]]:
+    from opofuente_testing.synthetic_documents import build_zip
+
+    build_zip(root / "paquete.zip", {"leeme.txt": b"Contenido sintetico del paquete."})
+    return [
+        ("pdf", build_text_pdf(root / "temario.pdf", pages=3)),
+        ("pdf-cabecera-repetida", build_pdf_with_repeated_header(root / "repetido.pdf", pages=6)),
+        ("docx", build_docx(root / "tema.docx")),
+        ("html-con-titulo", build_html(root / "material.html")),
+        ("markdown", _write(root / "apuntes.md", "# Tema 1\n\n## Apartado\n\nTexto sintetico.")),
+        ("csv", build_csv(root / "preguntas.csv", rows=4)),
+        ("json", build_json(root / "datos.json")),
+        ("imagen", build_png(root / "escaneo.png")),
+    ]
+
+
+def _write(path: Path, content: str) -> Path:
+    path.write_text(content, encoding="utf-8")
+    return path
+
+
+def test_las_secciones_caen_siempre_dentro_del_texto_guardado(tmp_path: Path) -> None:
+    """Invariante de toda representación: `0 ≤ char_start ≤ char_end ≤ char_count`.
+
+    Los extractores miden los tramos mientras construyen el texto, y después el texto se normaliza y
+    se recorta. Antes, esos offsets se calculaban **antes** de normalizar y de truncar (y, en HTML,
+    antes de anteponer el título), así que una sección podía señalar texto que no estaba en la
+    representación: el fallo se reprodujo con una sección titulada «Encabezado real» cuyo rango
+    apuntaba a `Titulo meta\n\nEn`.
+    """
+    registro = ExtractorRegistry(Settings(_env_file=None))
+    for nombre, archivo in _fixtures_con_secciones(tmp_path):
+        resultado = registro.extract(archivo)
+        assert sections_are_consistent(resultado.text, resultado.sections), (
+            f"{nombre}: alguna sección se sale del texto ({resultado.char_count} caracteres)"
+        )
+        for section in resultado.sections:
+            # Y además el tramo tiene que ser el texto que dice ser: se compara con el corte real.
+            fragmento = resultado.text[section.char_start : section.char_end]
+            assert len(fragmento) == section.length, (
+                f"{nombre}: el tramo {section.position} no cuadra"
+            )
+
+
+def test_las_secciones_se_ajustan_cuando_el_texto_se_recorta(tmp_path: Path) -> None:
+    """Con el texto recortado por el límite, las secciones que ya no existen se descartan."""
+    ajustes = Settings(max_representation_chars=1000, max_text_bytes=10_000, _env_file=None)
+    largo = _write(
+        tmp_path / "apuntes.md",
+        "\n".join(
+            f"## Apartado {index}\n\nTexto sintetico del apartado {index}." for index in range(80)
+        ),
+    )
+
+    resultado = ExtractorRegistry(ajustes).extract(largo)
+
+    assert WarningCode.TRUNCATED in resultado.warnings
+    assert resultado.char_count == 1000
+    assert sections_are_consistent(resultado.text, resultado.sections)
+    assert resultado.sections, "quedan las secciones que sí entran en el texto recortado"
+    assert all(section.char_end <= 1000 for section in resultado.sections)
+
+
+def test_el_titulo_del_html_no_desplaza_las_secciones(tmp_path: Path) -> None:
+    """El título se antepone al texto: los tramos tienen que contar con él desde el principio."""
+    archivo = _write(
+        tmp_path / "material.html",
+        "<html><head><title>Titulo meta</title></head><body>"
+        "<h1>Encabezado real</h1><p>Parrafo sintetico del documento.</p></body></html>",
+    )
+
+    resultado = ExtractorRegistry(Settings(_env_file=None)).extract(archivo)
+
+    assert resultado.text.startswith("Titulo meta")
+    primera = resultado.sections[0]
+    assert primera.title == "Encabezado real"
+    assert resultado.text[primera.char_start : primera.char_end] == "Encabezado real"
+
+
+# --- lectura acotada por extractor (regresión S03) -----------------------------------------------
+
+
+def test_un_fichero_de_texto_mas_grande_que_el_tope_se_lee_acotado(tmp_path: Path) -> None:
+    """Un TXT enorme no se carga entero: se lee el principio, se avisa y el texto es utilizable."""
+    ajustes = Settings(max_text_bytes=2048, max_representation_chars=100_000, _env_file=None)
+    archivo = tmp_path / "apuntes.txt"
+    archivo.write_text("Material sintetico de prueba. " * 5000, encoding="utf-8")
+    assert archivo.stat().st_size > 2048
+
+    resultado = ExtractorRegistry(ajustes).extract(archivo)
+
+    assert WarningCode.TRUNCATED in resultado.warnings
+    assert resultado.metadata["read_truncated"] is True
+    assert len(resultado.text) <= 2048
+    assert resultado.status is RepresentationStatus.EXTRACTED
+
+
+def test_un_json_mas_grande_que_su_tope_se_declara_en_lugar_de_cargarse(
+    tmp_path: Path,
+) -> None:
+    """El JSON hay que parsearlo entero: si no cabe en el tope, se dice y no se intenta.
+
+    Antes se hacía `read_bytes()` y `json.loads` del fichero completo: un JSON válido de cientos de
+    megabytes (permitido por el límite de ingesta) podía agotar la memoria del equipo.
+    """
+    ajustes = Settings(max_json_bytes=4096, max_representation_chars=100_000, _env_file=None)
+    archivo = tmp_path / "datos.json"
+    archivo.write_text(
+        json.dumps({"temas": [f"Tema sintetico {index}" for index in range(2000)]}),
+        encoding="utf-8",
+    )
+    assert archivo.stat().st_size > 4096
+
+    resultado = ExtractorRegistry(ajustes).extract(archivo)
+
+    assert resultado.status is RepresentationStatus.FAILED
+    assert WarningCode.TOO_LARGE in resultado.warnings
+    assert resultado.text == ""
+    assert resultado.metadata["limit_bytes"] == 4096
+
+
+def test_una_imagen_mas_grande_que_su_tope_se_conserva_sin_describir(tmp_path: Path) -> None:
+    """Tampoco se decodifica una imagen enorme solo para saber cuánto mide."""
+    ajustes = Settings(max_image_bytes=1024, _env_file=None)
+    archivo = build_png(tmp_path / "grande.png", width=800, height=800)
+    assert archivo.stat().st_size > 1024
+
+    resultado = ExtractorRegistry(ajustes).extract(archivo)
+
+    assert WarningCode.TOO_LARGE in resultado.warnings
+    assert resultado.status is RepresentationStatus.PENDING, "se conserva y queda pendiente de OCR"
+    assert resultado.ocr_candidate is True

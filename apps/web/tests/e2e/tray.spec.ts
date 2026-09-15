@@ -310,8 +310,9 @@ test('E2E-03 bandeja: el texto pegado se copia, se extrae y se lee sin salir de 
   });
 
   const texto = page.getByRole('region', { name: 'Texto extraído' });
-  // El texto pegado no se disfraza de documento: se declara como tal.
-  await expect(texto.getByText('texto pegado')).toBeVisible();
+  // El texto pegado no se disfraza de documento: se declara como tal, y su procedencia también.
+  await expect(texto.getByRole('button', { name: 'texto pegado' })).toBeVisible();
+  await expect(texto.getByText('origen: texto pegado')).toBeVisible();
   await expect(texto.getByLabel('Texto extraído', { exact: true })).toContainText('Ley 39/2015');
 });
 

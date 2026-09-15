@@ -36,7 +36,7 @@ def build_text_pdf(path: Path, *, pages: int = 3, filler: str = FILLER) -> Path:
         for _ in range(6):
             page.insert_text((72, y), filler[:110], fontsize=10)
             y += 16
-    document.save(path)
+    document.save(str(path))
     document.close()
     return path
 
@@ -50,7 +50,7 @@ def build_scanned_pdf(path: Path, *, pages: int = 2) -> Path:
     for _ in range(pages):
         page = document.new_page()
         page.insert_image(pymupdf.Rect(50, 50, 350, 250), stream=image_bytes)
-    document.save(path)
+    document.save(str(path))
     document.close()
     return path
 
@@ -64,7 +64,7 @@ def build_pdf_with_repeated_header(path: Path, *, pages: int = 6) -> Path:
         page.insert_text((72, 90), f"Contenido de la página {number + 1}", fontsize=12)
         page.insert_text((72, 110), FILLER[:100], fontsize=10)
         page.insert_text((72, 800), "PIE DE PÁGINA REPETIDO", fontsize=9)
-    document.save(path)
+    document.save(str(path))
     document.close()
     return path
 
@@ -87,7 +87,7 @@ def build_docx(path: Path, *, with_table: bool = True) -> Path:
         table.cell(1, 0).text = "I"
         table.cell(1, 1).text = "1"
         table.cell(1, 2).text = "10"
-    document.save(path)
+    document.save(str(path))
     return path
 
 
@@ -194,7 +194,7 @@ def build_png(path: Path, *, width: int = 40, height: int = 24) -> Path:
     """PNG pequeño generado con PyMuPDF (sin dependencias nuevas)."""
     pixmap = pymupdf.Pixmap(pymupdf.csRGB, pymupdf.IRect(0, 0, width, height))
     pixmap.set_rect(pixmap.irect, (10, 120, 200))
-    pixmap.save(path)
+    pixmap.save(str(path))
     return path
 
 

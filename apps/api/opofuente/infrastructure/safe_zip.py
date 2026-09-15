@@ -29,6 +29,34 @@ CHUNK_BYTES = 1024 * 1024
 JUNK_PREFIXES = ("__MACOSX/",)
 JUNK_NAMES = frozenset({".DS_Store", "Thumbs.db", "desktop.ini"})
 
+#: Nombres de dispositivo reservados de Windows (sin extensión y con ella: `NUL.txt` también lo es).
+RESERVED_DEVICE_NAMES = frozenset(
+    {
+        "CON",
+        "PRN",
+        "AUX",
+        "NUL",
+        "COM1",
+        "COM2",
+        "COM3",
+        "COM4",
+        "COM5",
+        "COM6",
+        "COM7",
+        "COM8",
+        "COM9",
+        "LPT1",
+        "LPT2",
+        "LPT3",
+        "LPT4",
+        "LPT5",
+        "LPT6",
+        "LPT7",
+        "LPT8",
+        "LPT9",
+    }
+)
+
 
 @dataclass(frozen=True, slots=True)
 class ZipLimits:
@@ -74,10 +102,21 @@ def _is_junk(name: str) -> bool:
 
 
 def check_member_name(name: str) -> None:
-    """Rechaza nombres que escapan del destino o que no son rutas normales.
+    """Rechaza nombres que escapan del destino o que no son rutas normales **en Windows**.
 
     Es pública a propósito: es una de las defensas del módulo y las pruebas la ejercitan
     directamente, sin tener que construir un ZIP que burle la normalización de `zipfile`.
+
+    Además del traversal y de la ruta absoluta se rechazan los nombres que NTFS interpreta de forma
+    especial, porque un ZIP que se expande en Windows puede acabar escribiendo donde no debe:
+
+    - `archivo.txt:flujo` → flujo alternativo de datos (`ADS`): el fichero visible queda vacío y el
+      contenido va a un flujo oculto que se ejecuta o se lee por otra vía;
+    - `CON`, `NUL`, `COM1`… → nombres de dispositivo reservados: escribir en ellos no crea un
+      fichero, va al dispositivo (o falla de formas raras);
+    - segmentos que terminan en punto o espacio → Windows los recorta al crear el fichero, así que
+      dos miembros distintos pueden acabar siendo el mismo;
+    - caracteres de control → no son material y rompen herramientas.
     """
     if not name or name.strip() != name:
         raise UnsafeContentError("el ZIP trae un miembro con nombre vacío o con espacios raros")
@@ -85,13 +124,56 @@ def check_member_name(name: str) -> None:
         raise UnsafeContentError(
             "el ZIP trae un miembro con barra invertida: no se admiten rutas de Windows"
         )
+    if any(ord(character) < 32 or ord(character) == 127 for character in name):
+        raise UnsafeContentError("el ZIP trae un miembro con caracteres de control")
+    if ":" in name:
+        # Cubre la letra de unidad (`C:`) y el flujo alternativo de datos (`archivo.txt:flujo`).
+        raise UnsafeContentError(
+            "el ZIP trae un miembro con dos puntos: unidad o flujo alternativo de datos"
+        )
     pure = PurePosixPath(name)
     if pure.is_absolute():
         raise UnsafeContentError("el ZIP trae un miembro con ruta absoluta")
-    if any(part == ".." for part in pure.parts):
-        raise UnsafeContentError("el ZIP trae un miembro que sale de la carpeta (..)")
-    if any(part.endswith(":") for part in pure.parts):
-        raise UnsafeContentError("el ZIP trae un miembro con letra de unidad")
+    for part in pure.parts:
+        if part == "..":
+            raise UnsafeContentError("el ZIP trae un miembro que sale de la carpeta (..)")
+        if part != part.rstrip(". "):
+            raise UnsafeContentError(
+                f"el ZIP trae un miembro cuyo nombre acaba en punto o espacio ({part!r}): "
+                "Windows lo recortaría y dos entradas podrían acabar siendo la misma"
+            )
+        if _is_reserved_device_name(part):
+            raise UnsafeContentError(
+                f"el ZIP trae un miembro con nombre de dispositivo reservado ({part!r})"
+            )
+
+
+def _is_reserved_device_name(part: str) -> bool:
+    """¿Es un nombre de dispositivo de Windows (`CON`, `NUL`, `COM1`…), con o sin extensión?"""
+    base = part.split(".", 1)[0].strip().upper()
+    if base in RESERVED_DEVICE_NAMES:
+        return True
+    # `COM0` y `LPT0` no son dispositivos, pero no se gana nada admitiéndolos y sí se complica la
+    # regla: se rechazan igual que los numerados de verdad.
+    return len(base) == 4 and base[:3] in {"COM", "LPT"} and base[3].isdigit()
+
+
+def _check_unique_names(members: list[ZipMember]) -> None:
+    """Dos miembros no pueden diferir solo en mayúsculas: en Windows son el mismo fichero.
+
+    Un ZIP con `Tema.txt` y `tema.txt` se expandiría en una sola entrada escrita dos veces, y el
+    resultado dependería del orden: una sobrescritura silenciosa.
+    """
+    seen: dict[str, str] = {}
+    for member in members:
+        key = member.name.casefold()
+        previous = seen.get(key)
+        if previous is not None:
+            raise UnsafeContentError(
+                f"el ZIP trae dos entradas que solo difieren en mayúsculas ({previous!r} y "
+                f"{member.name!r}): en Windows son el mismo fichero"
+            )
+        seen[key] = member.name
 
 
 def _check_symlink(info: zipfile.ZipInfo) -> None:
@@ -140,6 +222,7 @@ def inspect_zip(path: Path, *, limits: ZipLimits, depth: int = 0) -> ZipInspecti
         raise UnsafeContentError(
             f"el ZIP trae {len(members)} entradas y el límite es {limits.max_entries}"
         )
+    _check_unique_names(members)
     if total_uncompressed > limits.max_uncompressed_bytes:
         raise UnsafeContentError(
             "el ZIP descomprime "

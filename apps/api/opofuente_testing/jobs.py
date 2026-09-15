@@ -3,6 +3,11 @@
 `FixedClock` da tiempo determinista, `FakeExecution` sustituye el trabajo real del worker cuando la
 prueba quiere controlar la cancelación, y `run_one_job` ejecuta el pipeline con el worker de verdad
 sobre la aplicación de prueba (despachando **los dos** tipos de trabajo: copiar y extraer).
+
+También viven aquí dos ayudantes que usan varias pruebas de integración: `jobs_for_batch` (consulta
+la cola real) y `failed_extraction` (un resultado de extracción fallido, del mismo tipo que devuelve
+un extractor que no puede leer el documento). Están en el paquete auxiliar, no en una carpeta de
+pruebas metida en `pythonpath`.
 """
 
 from __future__ import annotations
@@ -12,12 +17,41 @@ from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
 from opofuente.application.job_service import JobExecution
+from opofuente.domain.extraction import (
+    ExtractionResult,
+    ExtractorRef,
+    Quality,
+    RepresentationKind,
+    RepresentationStatus,
+    WarningCode,
+)
 from opofuente.domain.jobs import Job, JobType
 from opofuente.infrastructure.clock import SystemClock
 from opofuente.workers.job_worker import JobWorker
 
 if TYPE_CHECKING:  # pragma: no cover - solo para tipos
     from fastapi.testclient import TestClient
+
+
+def failed_extraction() -> ExtractionResult:
+    """Extracción fallida: lo mismo que devuelve un extractor que no puede leer el fichero."""
+    return ExtractionResult(
+        kind=RepresentationKind.NATIVE_TEXT,
+        status=RepresentationStatus.FAILED,
+        text="",
+        extractor=ExtractorRef("extractor-de-prueba", "1"),
+        quality=Quality.FAILED,
+        warnings=(WarningCode.EXTRACTOR_FAILED,),
+    )
+
+
+def jobs_for_batch(queue: Any, batch_id: str, job_type: JobType) -> list[Job]:
+    """Trabajos de ese tipo encolados para el lote, leídos de la cola real (no de la API)."""
+    return [
+        job
+        for job in queue.list(limit=200)
+        if job.job_type is job_type and job.payload.get("batch_id") == batch_id
+    ]
 
 
 class FixedClock:

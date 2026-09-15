@@ -9,16 +9,18 @@ Todo el material es sintético y vive en directorios temporales.
 
 from __future__ import annotations
 
+import io
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
-from support import run_one_job
-from synthetic_documents import build_csv, build_text_pdf, build_zip
 
-from opofuente.application.intake_service import IntakeService
+from opofuente.application.intake_service import IntakeFile, IntakeService
+from opofuente.application.read_models import RepresentationView
 from opofuente.config import Settings
-from opofuente.domain.errors import InvalidSourceError
+from opofuente.domain.errors import InvalidSourceError, UnsafeContentError
 from opofuente.domain.ingestion import ItemStatus
 from opofuente.infrastructure.artifact_store import ArtifactStore
 from opofuente.infrastructure.clock import SystemClock
@@ -26,6 +28,8 @@ from opofuente.infrastructure.db import build_engine, build_session_factory
 from opofuente.infrastructure.ingestion_repository import SqlAlchemyIngestionRepository
 from opofuente.infrastructure.job_repository import SqlAlchemyJobRepository
 from opofuente.infrastructure.url_guard import FetchResult, url_limits_from_settings
+from opofuente_testing.jobs import FakeExecution, run_one_job
+from opofuente_testing.synthetic_documents import build_csv, build_text_pdf, build_zip
 
 ALLOWED_ORIGIN = {"Origin": "http://127.0.0.1:5173"}
 
@@ -222,6 +226,426 @@ def test_subir_sin_ficheros_se_rechaza(api_only_client: TestClient) -> None:
         "/api/v1/ingestion-batches/files", files=[], headers=ALLOWED_ORIGIN
     )
     assert respuesta.status_code in {400, 422}
+
+
+def test_una_subida_rechazada_tampoco_deja_temporales(migrated_settings: Settings) -> None:
+    """Con el tope de tamaño superado, el temporal en curso se borra.
+
+    El temporal no entraba en la lista de «preparados» hasta terminar de escribirse, así que el
+    fichero que reventaba el límite dejaba su `.part` abandonado en `data/tmp` para siempre.
+    """
+    engine = build_engine(migrated_settings.data_paths.database)
+    try:
+        sesiones = build_session_factory(engine)
+        paths = migrated_settings.data_paths
+        servicio = IntakeService(
+            repository=SqlAlchemyIngestionRepository(sesiones),
+            jobs=SqlAlchemyJobRepository(sesiones),
+            store=ArtifactStore(paths),
+            clock=SystemClock(),
+            data_root=paths.root,
+            max_file_bytes=1024,
+        )
+
+        with pytest.raises(UnsafeContentError):
+            servicio.stage_uploads([("grande.bin", io.BytesIO(b"x" * 4096))])
+
+        assert list((paths.root / "tmp").glob("*.part")) == []
+    finally:
+        engine.dispose()
+
+
+def test_el_temporal_se_borra_tambien_si_falla_la_copia(
+    migrated_settings: Settings, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Si la copia al almacén falla a mitad, el temporal de la subida se retira igual."""
+    engine = build_engine(migrated_settings.data_paths.database)
+    try:
+        sesiones = build_session_factory(engine)
+        paths = migrated_settings.data_paths
+        servicio = IntakeService(
+            repository=SqlAlchemyIngestionRepository(sesiones),
+            jobs=SqlAlchemyJobRepository(sesiones),
+            store=ArtifactStore(paths),
+            clock=SystemClock(),
+            data_root=paths.root,
+            max_file_bytes=migrated_settings.max_file_bytes,
+        )
+        preparados = servicio.stage_uploads([("notas.txt", io.BytesIO(b"material sintetico"))])
+        assert list((paths.root / "tmp").glob("*.part")), "el temporal existe antes de copiar"
+
+        def falla(*args: object, **kwargs: object) -> None:
+            raise OSError("el disco dijo que no")
+
+        monkeypatch.setattr(servicio._store, "store_file", falla)
+
+        with pytest.raises(OSError):
+            servicio.ingest_files(preparados)
+
+        assert list((paths.root / "tmp").glob("*.part")) == []
+    finally:
+        engine.dispose()
+
+
+# --- ejecutables: se rechazan antes de copiarlos (regresión S03) ------------------------------
+
+
+@pytest.mark.parametrize(
+    ("nombre", "contenido"),
+    [
+        ("instalador.exe", b"MZ" + b"\x00" * 64),
+        ("script.ps1", b"Write-Output 'no se admite'"),
+        ("libreria.dll", b"MZ" + b"\x00" * 64),
+        # Nombre inocente con firma de ejecutable: los bytes mandan.
+        ("apuntes.dat", b"MZ" + b"\x00" * 64),
+        ("material.bin", b"\x7fELF" + b"\x00" * 64),
+    ],
+)
+def test_un_ejecutable_subido_se_rechaza_antes_de_guardarlo(
+    api_only_client: TestClient,
+    migrated_settings: Settings,
+    nombre: str,
+    contenido: bytes,
+) -> None:
+    """Un binario no llega al almacén: se rechaza con su motivo y no queda nada por el camino.
+
+    Antes se copiaba primero y se rechazaba después (al extraer), así que el ejecutable ya estaba en
+    el almacén y el lote tenía una entrada fallida que no debía existir. Además, al perderse la
+    extensión en la ruta del almacén, el rechazo por sufijo no funcionaba en absoluto.
+    """
+    antes_artefactos = len(list((migrated_settings.data_paths.artifacts / "sha256").rglob("*")))
+    antes_lotes = len(api_only_client.get("/api/v1/ingestion-batches").json())
+
+    respuesta = api_only_client.post(
+        "/api/v1/ingestion-batches/files",
+        files=[("files", (nombre, contenido, "application/octet-stream"))],
+        headers=ALLOWED_ORIGIN,
+    )
+
+    assert respuesta.status_code == 400, respuesta.text
+    cuerpo = respuesta.json()
+    assert cuerpo["code"] == "unsafe_content"
+    assert "ejecutable" in cuerpo["detail"] or "firma" in cuerpo["detail"]
+    # Ni copia, ni lote, ni temporal.
+    assert (
+        len(list((migrated_settings.data_paths.artifacts / "sha256").rglob("*")))
+        == antes_artefactos
+    )
+    assert list((migrated_settings.data_paths.root / "tmp").glob("*.part")) == []
+    assert len(api_only_client.get("/api/v1/ingestion-batches").json()) == antes_lotes, (
+        "un ejecutable rechazado no puede crear un lote"
+    )
+
+
+def test_un_ejecutable_dentro_de_un_zip_tampoco_se_copia(
+    api_only_client: TestClient, tmp_path: Path
+) -> None:
+    """El de dentro tampoco entra, y aunque se llame `.txt` (firma PE) sigue sin entrar."""
+    paquete = build_zip(
+        tmp_path / "material.zip",
+        {
+            "temas/tema-01.txt": b"Contenido sintetico del tema uno.",
+            "basura.exe": b"MZ" + b"\x00" * 64,
+            "disfrazado.txt": b"MZ" + b"\x00" * 64,
+        },
+    )
+    batch = api_only_client.post(
+        "/api/v1/ingestion-batches/files",
+        files=[("files", ("material.zip", paquete.read_bytes(), "application/zip"))],
+        headers=ALLOWED_ORIGIN,
+    ).json()
+
+    run_one_job(api_only_client)
+
+    detalle = api_only_client.get(f"/api/v1/ingestion-batches/{batch['id']}").json()
+    rutas = {entry["relative_path"] for entry in detalle["entries"]}
+    assert "material.zip/temas/tema-01.txt" in rutas
+    assert "material.zip/basura.exe" not in rutas
+    assert "material.zip/disfrazado.txt" not in rutas, (
+        "la firma PE se reconoce aunque el nombre mienta"
+    )
+
+
+# --- el trabajo de extracción queda enlazado con el lote (regresión S03) ----------------------
+
+
+def test_el_lote_de_una_entrada_directa_apunta_a_su_trabajo_de_extraccion(
+    api_only_client: TestClient,
+) -> None:
+    """El lote guarda el identificador del trabajo de extracción: el que se sigue y se cancela.
+
+    Antes el trabajo se encolaba pero no se guardaba en el lote (`set_job`), así que la interfaz
+    consultaba un trabajo viejo (o ninguno) y el progreso que mostraba no era el de su lote.
+    """
+    batch = api_only_client.post(
+        "/api/v1/ingestion-batches/paste",
+        json={"text": "Material sintetico pegado para la prueba del trabajo."},
+        headers=ALLOWED_ORIGIN,
+    ).json()
+
+    assert batch["job_id"], "una entrada directa deja su trabajo de extracción enlazado"
+    trabajo = api_only_client.get(f"/api/v1/jobs/{batch['job_id']}").json()
+    assert trabajo["job_type"] == "extract_artifact"
+    assert trabajo["status"] == "queued"
+
+    run_one_job(api_only_client)
+
+    # Y el progreso que se muestra es el de ese trabajo, no el de otro.
+    terminado = api_only_client.get(f"/api/v1/jobs/{batch['job_id']}").json()
+    assert terminado["status"] == "succeeded"
+    assert terminado["progress"] == 1.0
+    assert terminado["step"], "el trabajo informa del último paso dado"
+    detalle = api_only_client.get(f"/api/v1/ingestion-batches/{batch['id']}").json()
+    assert detalle["batch"]["status"] == "succeeded"
+    assert detalle["batch"]["job_id"] == batch["job_id"]
+
+
+def test_cancelar_un_lote_de_entrada_directa_cancela_su_extraccion(
+    api_only_client: TestClient,
+) -> None:
+    """Cancelar el lote cancela **su** trabajo: con el enlace roto no se cancelaba nada."""
+    batch = api_only_client.post(
+        "/api/v1/ingestion-batches/files",
+        files=[("files", ("notas.txt", b"material sintetico de la prueba", "text/plain"))],
+        headers=ALLOWED_ORIGIN,
+    ).json()
+
+    respuesta = api_only_client.post(
+        f"/api/v1/ingestion-batches/{batch['id']}/cancel", headers=ALLOWED_ORIGIN
+    )
+    assert respuesta.status_code == 200, respuesta.text
+
+    trabajo = api_only_client.get(f"/api/v1/jobs/{batch['job_id']}").json()
+    assert trabajo["status"] == "cancel_requested"
+    assert trabajo["cancel_requested"] is True
+
+    # El worker cierra el lote en `cancelled` en vez de dejarlo colgado.
+    run_one_job(api_only_client)
+    detalle = api_only_client.get(f"/api/v1/ingestion-batches/{batch['id']}").json()
+    assert detalle["batch"]["status"] in {"cancelled", "succeeded"}
+
+
+# --- procedencia por entrada y URL sin secretos (regresión S03) -------------------------------
+
+CONTENIDO_COMPARTIDO = b"Material sintetico que entra por tres vias distintas."
+
+
+def _descargador_con_token(url: str, *, destination: Path, limits: object) -> FetchResult:
+    """Descarga simulada que acaba en una URL con token en la cadena de consulta."""
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_bytes(CONTENIDO_COMPARTIDO)
+    return FetchResult(
+        initial_url=url,
+        final_url="https://ejemplo.test/material.txt?token=secreto-de-prueba&id=42",
+        redirects=(),
+        status=200,
+        content_type="text/plain",
+        size_bytes=destination.stat().st_size,
+        path=destination,
+    )
+
+
+def _servicio_de_entradas(migrated_settings: Settings) -> tuple[Any, Any, Any]:
+    """Servicio de entradas con descargador inyectado, sobre la base de datos de la prueba."""
+    engine = build_engine(migrated_settings.data_paths.database)
+    sesiones = build_session_factory(engine)
+    paths = migrated_settings.data_paths
+    repositorio = SqlAlchemyIngestionRepository(sesiones)
+    servicio = IntakeService(
+        repository=repositorio,
+        jobs=SqlAlchemyJobRepository(sesiones),
+        store=ArtifactStore(paths),
+        clock=SystemClock(),
+        data_root=paths.root,
+        max_file_bytes=migrated_settings.max_file_bytes,
+        url_limits=url_limits_from_settings(
+            timeout_seconds=5, max_bytes=1024 * 1024, max_redirects=3
+        ),
+        url_fetcher=_descargador_con_token,
+    )
+    return servicio, repositorio, engine
+
+
+@dataclass(frozen=True, slots=True)
+class ExtraccionDePrueba:
+    """Lo que devuelve una extracción de prueba, ya materializado (sin base de datos abierta)."""
+
+    por_lote: dict[str, tuple[RepresentationView, ...]]
+    origenes_por_lote: dict[str, tuple[str | None, ...]]
+
+
+def _extraer(migrated_settings: Settings, batch_ids: list[str]) -> ExtraccionDePrueba:
+    """Extrae esos lotes con los servicios reales (sin worker) y devuelve datos ya leídos."""
+    from opofuente.application.extraction_service import ExtractionService
+    from opofuente.domain.jobs import JobType
+    from opofuente.infrastructure.extraction_repository import SqlAlchemyExtractionRepository
+    from opofuente.infrastructure.extractors import ExtractorRegistry
+    from opofuente.infrastructure.representation_store import RepresentationStore
+
+    engine = build_engine(migrated_settings.data_paths.database)
+    try:
+        sesiones = build_session_factory(engine)
+        paths = migrated_settings.data_paths
+        extraccion = ExtractionService(
+            repository=SqlAlchemyExtractionRepository(sesiones),
+            ingestions=SqlAlchemyIngestionRepository(sesiones),
+            store=ArtifactStore(paths),
+            representations=RepresentationStore(paths),
+            registry=ExtractorRegistry(migrated_settings),
+            clock=SystemClock(),
+            data_root=paths.root,
+            max_member_bytes=migrated_settings.max_file_bytes,
+        )
+        jobs = SqlAlchemyJobRepository(sesiones)
+        for batch_id in batch_ids:
+            for job in jobs.list(limit=200):
+                if (
+                    job.job_type is JobType.EXTRACT_ARTIFACT
+                    and job.payload.get("batch_id") == batch_id
+                ):
+                    extraccion.run_extraction_job(FakeExecution(job))
+                    break
+
+        por_lote = {
+            batch_id: extraccion.representations_for_batch(batch_id) for batch_id in batch_ids
+        }
+        return ExtraccionDePrueba(
+            por_lote=por_lote,
+            origenes_por_lote={
+                batch_id: tuple(source.origin_type for view in vistas for source in view.sources)
+                for batch_id, vistas in por_lote.items()
+            },
+        )
+    finally:
+        engine.dispose()
+
+
+def test_los_mismos_bytes_por_tres_vias_conservan_la_procedencia_de_cada_entrada(
+    migrated_settings: Settings,
+) -> None:
+    """Un contenido que entra como fichero, como texto pegado y como URL guarda su procedencia.
+
+    Antes la procedencia de una representación se sacaba uniendo la entrada con todos los orígenes
+    del artefacto, así que podía atribuir a una entrada el origen de otra. Y como la lista de un
+    lote unía por artefacto, un lote enseñaba representaciones producidas en otro (el mismo
+    contenido entrado como fichero deja `native_text` y como texto pegado, `plain_text`).
+    """
+    servicio, repositorio, engine = _servicio_de_entradas(migrated_settings)
+    try:
+        temporal = migrated_settings.data_paths.root / "tmp" / "fichero.txt"
+        temporal.parent.mkdir(parents=True, exist_ok=True)
+        temporal.write_bytes(CONTENIDO_COMPARTIDO)
+
+        lote_fichero = servicio.ingest_files([IntakeFile(name="material.txt", path=temporal)])
+        lote_pegado = servicio.ingest_paste(CONTENIDO_COMPARTIDO.decode())
+        lote_url = servicio.ingest_url("https://ejemplo.test/material.txt?token=secreto-de-prueba")
+
+        # Los tres lotes comparten artefacto (mismo contenido) y cada entrada tiene su origen.
+        origenes = {}
+        for lote in (lote_fichero, lote_pegado, lote_url):
+            entrada = repositorio.list_entries(lote.id, limit=10, offset=0).entries[0]
+            origenes[lote.id] = (entrada.origin_type, entrada.origin_display)
+        assert {tipo for tipo, _ in origenes.values()} == {"file", "paste", "url"}
+        ids = (lote_fichero.id, lote_pegado.id, lote_url.id)
+    finally:
+        engine.dispose()
+
+    extraccion = _extraer(migrated_settings, list(ids))
+
+    # Cada lote enseña **su** procedencia: la del texto que salió de sus entradas.
+    assert extraccion.origenes_por_lote[lote_fichero.id] == ("file",)
+    assert extraccion.origenes_por_lote[lote_pegado.id] == ("paste",)
+    assert extraccion.origenes_por_lote[lote_url.id] == ("url",)
+    # Y hay una representación por lote, no una lista con el texto de los demás: el mismo contenido
+    # entrado como fichero y como texto pegado son representaciones distintas (`native_text` frente
+    # a `plain_text`) y cada lote ve solo la suya.
+    assert all(len(vistas) == 1 for vistas in extraccion.por_lote.values())
+    tipos = {
+        batch_id: {view.kind for view in vistas} for batch_id, vistas in extraccion.por_lote.items()
+    }
+    assert tipos[lote_fichero.id] == {"native_text"}
+    assert tipos[lote_pegado.id] == {"plain_text"}
+
+
+def test_reintentar_un_lote_de_url_funciona_sin_carpeta_de_origen(
+    api_only_client: TestClient,
+    migrated_settings: Settings,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """El tercer lote sin carpeta de origen: lo descargado de una URL también se reintenta.
+
+    La descarga se simula (nada de salir a la red en la suite) y la extracción se fuerza a fallar
+    para poder reintentar la fase correcta.
+    """
+    from opofuente.domain.jobs import JobType
+    from opofuente.infrastructure.job_repository import SqlAlchemyJobRepository
+    from opofuente_testing.jobs import failed_extraction, jobs_for_batch
+
+    app: Any = api_only_client.app
+    intake = app.state.intake_service
+    monkeypatch.setattr(intake, "_fetcher", _descargador_con_token)
+
+    batch = api_only_client.post(
+        "/api/v1/ingestion-batches/url",
+        json={"url": "https://ejemplo.test/material.txt"},
+        headers=ALLOWED_ORIGIN,
+    ).json()
+    assert batch["status"] == "queued"
+
+    extraccion = app.state.extraction_service
+    registro = extraccion._registry
+    original = registro.extract
+    monkeypatch.setattr(registro, "extract", lambda *args, **kwargs: failed_extraction())
+
+    run_one_job(api_only_client)
+    fallado = api_only_client.get(f"/api/v1/ingestion-batches/{batch['id']}").json()
+    assert fallado["batch"]["status"] == "failed"
+
+    monkeypatch.setattr(registro, "extract", original)
+    respuesta = api_only_client.post(
+        f"/api/v1/ingestion-batches/{batch['id']}/retry", headers=ALLOWED_ORIGIN
+    )
+    assert respuesta.status_code == 200, (
+        f"el reintento de un lote descargado no puede pedir carpeta de origen: {respuesta.text}"
+    )
+
+    engine = build_engine(migrated_settings.data_paths.database)
+    try:
+        cola = SqlAlchemyJobRepository(build_session_factory(engine))
+        # Se vuelve a extraer: ningún trabajo de copia y dos de extracción.
+        assert jobs_for_batch(cola, batch["id"], JobType.INGEST_BATCH) == []
+        assert len(jobs_for_batch(cola, batch["id"], JobType.EXTRACT_ARTIFACT)) == 2
+    finally:
+        engine.dispose()
+
+    run_one_job(api_only_client)
+    final = api_only_client.get(f"/api/v1/ingestion-batches/{batch['id']}").json()
+    assert final["batch"]["status"] == "succeeded"
+    assert final["entries"][0]["status"] == ItemStatus.EXTRACTED.value
+
+
+def test_una_url_con_token_no_publica_el_token(migrated_settings: Settings) -> None:
+    """La URL final se guarda y se muestra sin cadena de consulta: el token no sale de la app.
+
+    La cadena de consulta puede llevar tokens de sesión o identificadores privados. Se guardaba tal
+    cual como procedencia, y de ahí pasaba a la API y a la interfaz.
+    """
+    servicio, repositorio, engine = _servicio_de_entradas(migrated_settings)
+    try:
+        lote = servicio.ingest_url("https://ejemplo.test/material.txt?token=secreto-de-prueba")
+
+        assert lote.source_path_display == "https://ejemplo.test/material.txt"
+        entrada = repositorio.list_entries(lote.id, limit=10, offset=0).entries[0]
+        assert entrada.origin_display == "https://ejemplo.test/material.txt"
+        lote_id = lote.id
+    finally:
+        engine.dispose()
+
+    extraccion = _extraer(migrated_settings, [lote_id])
+    assert extraccion.origenes_por_lote[lote_id] == ("url",)
+    for source in extraccion.por_lote[lote_id][0].sources:
+        assert "secreto-de-prueba" not in source.path
+        assert "token" not in source.path
 
 
 # --- URL ------------------------------------------------------------------------------------

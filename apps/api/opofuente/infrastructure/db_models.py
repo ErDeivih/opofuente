@@ -315,6 +315,24 @@ class IngestionItemRecord(Base):
     status: Mapped[str] = mapped_column(String(20), nullable=False)
     detail: Mapped[str | None] = mapped_column(Text, nullable=True)
     position: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
+    #: Niveles de contenedor recorridos hasta esta entrada. Un ZIP de primer nivel deja a sus
+    #: miembros en 1; un ZIP que venía dentro de otro llega con 1 y expandirlo daría 2. El límite de
+    #: anidamiento se comprueba con este número, no con el nombre del fichero.
+    container_depth: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
+    #: De dónde salió **esta** entrada (`file`, `paste`, `url`), no de dónde salió su artefacto: el
+    #: mismo contenido puede entrar por tres vías distintas y cada entrada tiene la suya.
+    origin_type: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    #: Cómo se muestra ese origen. Nunca lleva cadena de consulta: una URL con token se guarda sin
+    #: ella, porque este valor viaja a la API y a la interfaz.
+    origin_display: Mapped[str | None] = mapped_column(Text, nullable=True)
+    #: Representación que salió de **esta** entrada. Un artefacto puede tener varias (el mismo
+    #: contenido como fichero deja `native_text` y como texto pegado deja `plain_text`), así que sin
+    #: este enlace la lista de un lote enseñaba representaciones producidas en otro lote.
+    representation_id: Mapped[str | None] = mapped_column(
+        String(36),
+        ForeignKey("extracted_representations.id", ondelete="SET NULL"),
+        nullable=True,
+    )
 
     batch: Mapped[IngestionBatchRecord] = relationship(back_populates="items")
 

@@ -342,6 +342,14 @@ class DiscoveredEntry:
     media_type: str
     status: ItemStatus
     issue: ImportIssue | None = None
+    #: Niveles de contenedor recorridos hasta esta entrada: 0 si viene del origen tal cual, 1 si
+    #: salió de un ZIP de primer nivel. El límite de anidamiento se decide con este número.
+    container_depth: int = 0
+    #: De dónde salió **esta** entrada (`file`, `paste`, `url`). Viaja con la entrada porque el
+    #: mismo contenido puede haber entrado por tres vías y cada una tiene su procedencia.
+    origin_type: str | None = None
+    #: Cómo se muestra ese origen (sin cadena de consulta en las URL). Es lo que lee el usuario.
+    origin_display: str | None = None
 
     @property
     def included(self) -> bool:

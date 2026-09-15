@@ -27,6 +27,7 @@ from opofuente.domain.extraction import (
     RepresentationStatus,
     SectionType,
     WarningCode,
+    clamp_sections,
     measure_quality,
     merge_warnings,
     normalise_text,
@@ -105,6 +106,9 @@ class PdfTextExtractor:
 
         body = "\n".join(chunks)
         trimmed, truncation = truncate_text(body, max_chars=self._max_chars)
+        # Las secciones se midieron sobre el texto completo: al recortarlo hay que ajustarlas, o un
+        # tramo señalaría texto que ya no está en la representación.
+        secciones = clamp_sections(tuple(sections), char_count=len(trimmed))
         quality = measure_quality(trimmed, kind=RepresentationKind.NATIVE_TEXT)
 
         # Cabeceras y pies: se detectan, se avisan y **no** se borran del original.
@@ -135,7 +139,7 @@ class PdfTextExtractor:
             status=status,
             text=trimmed,
             extractor=ExtractorRef(self.name, self.version),
-            sections=tuple(sections),
+            sections=secciones,
             page_count=total_pages,
             quality=quality.quality,
             warnings=merge_warnings(tuple(warnings), truncation, quality.warnings),

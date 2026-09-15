@@ -153,5 +153,35 @@ La deuda obligatoria, con su slice y su criterio de cierre, está en
   contenido dos veces (`tema.pdf` y su copia), hay **una** representación con sus dos rutas: el lector
   no repite el mismo texto como si fueran documentos distintos.
 - **La configuración de límites es real, no decorativa.** Cada ajuste nuevo de S03
-  (`max_representation_chars`, `max_pdf_pages`, `max_zip_*`, `url_*`, `max_paste_bytes`) se usa en el
-  código y está documentado en `.env.example`; los que no tenían uso se retiraron antes del commit.
+  (`max_representation_chars`, `max_pdf_pages`, `max_zip_*`, `url_*`, `max_paste_bytes` y, tras la
+  corrección, `max_text_bytes`, `max_json_bytes` y `max_image_bytes`) se usa en el código y está
+  documentado en `.env.example`; los que no tenían uso se retiraron.
+
+## Corrección de S03 (15/09/2026, tras la revisión del propietario)
+
+Trece bloqueos, todos con prueba de regresión. Los que cambian la forma del sistema:
+
+- **`domain/formats.py`**: la política de formatos (qué se rechaza, qué se conserva y qué firmas de
+  ejecutable se reconocen) sale del registro de extractores y pasa al dominio, para que la copia y
+  las entradas directas puedan rechazar un binario **antes** de guardarlo sin depender de
+  infraestructura.
+- **`ingestion_items` gana tres columnas** (migración `0007`): `container_depth` (profundidad de
+  contenedor, dato persistido con el que se decide si un ZIP anidado se expande),
+  `origin_type`/`origin_display` (procedencia **de esa entrada**, no del artefacto) y
+  `representation_id` (enlace explícito entrada → representación). Sin el enlace, la lista de un lote
+  unía por artefacto y enseñaba el texto producido en otro lote: el mismo contenido entrado como
+  fichero deja `native_text` y entrado como texto pegado, `plain_text`.
+- **El nombre original viaja a los extractores** (`plan(path, name=…)`): en el almacén el fichero se
+  llama como su hash, así que la extensión con la que se aplica la política sale de la entrada.
+- **La profundidad de contenedor sustituye al conteo de sufijos** (`nested_container_refusal`): un
+  `paquete.zip/inner.bin` reconocido por contenido ya no se expande otra vez.
+- **Lectura acotada por extractor** (`read_bounded`): el texto, el HTML y el CSV se leen hasta
+  `max_text_bytes` (y avisan si hay más), el JSON que no cabe en `max_json_bytes` se declara en lugar
+  de cargarse en memoria, y las imágenes se miden **leyendo su cabecera**, sin decodificarlas.
+- **Las secciones se ajustan al texto final** (`clamp_sections`): invariante
+  `0 ≤ char_start ≤ char_end ≤ char_count`, comprobada en `sections_are_consistent`.
+- **Stubs locales de PyMuPDF** (`apps/api/typestubs/pymupdf/__init__.pyi`, en `mypy_path`): mypy
+  estricto comprueba las llamadas a PyMuPDF **sin** apagar `disallow_untyped_calls` en ningún módulo
+  (el paquete publica `py.typed` pero sin anotaciones).
+- **`opofuente_testing`**: los constructores de documentos sintéticos y los dobles de prueba pasan a
+  un paquete tipado y comprobado con mypy; `apps/api/tests` sale del `pythonpath`.
