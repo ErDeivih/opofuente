@@ -37,6 +37,7 @@ from opofuente.application.read_models import (
 )
 from opofuente.domain.artifacts import OriginType
 from opofuente.domain.errors import (
+    InvalidBatchStateError,
     InvalidSourceError,
     JobCancelledError,
     NotFoundError,
@@ -67,6 +68,8 @@ DEFAULT_HEARTBEAT_SECONDS = 15.0
 #: Tolerancia al comparar la fecha de modificación del inventario con la del origen. Evita rechazar
 #: una copia por redondeos de la base de datos, no por un cambio real.
 SOURCE_MTIME_TOLERANCE_SECONDS = 1.0
+#: Estados del lote desde los que tiene sentido reintentar: parado y con trabajo por hacer.
+_RETRYABLE_BATCH_STATUSES = frozenset({BatchStatus.FAILED, BatchStatus.CANCELLED})
 
 
 @dataclass(frozen=True, slots=True)
@@ -238,13 +241,23 @@ class IngestionService:
     def retry_batch(self, batch_id: str) -> BatchView:
         """Reencola un lote fallido o cancelado. Los artefactos ya copiados se reutilizan.
 
-        Reintentar incluye devolver las entradas canceladas o fallidas a `inventoried`: sin eso el
-        trabajo volvería a la cola y no encontraría nada que copiar. Los contadores se recalculan
-        del estado real, así que el informe del lote vuelve a cuadrar desde el primer momento.
+        Solo se puede reintentar lo que está parado y a medias: un lote que sigue trabajando no se
+        toca (devolver entradas a la cola mientras el worker las está copiando descuadraría el
+        informe y podría copiar dos veces), y uno que terminó bien no tiene nada que reintentar. En
+        esos casos se responde 409 (`invalid_state`).
+
+        Reintentar recupera las canceladas y los fallos transitorios. Las entradas cuyo fichero
+        cambió desde el inventario **no** se recuperan: ese inventario ya no describe el origen y
+        volverían a fallar; para esas hace falta un inventario nuevo, y el error lo dice.
         """
         batch = self._repository.get_batch(batch_id)
         if batch is None or batch.kind != BatchKind.IMPORT.value:
             raise NotFoundError("lote de importación", batch_id)
+        if batch.status not in _RETRYABLE_BATCH_STATUSES:
+            raise InvalidBatchStateError(
+                batch.status,
+                tuple(status.value for status in _RETRYABLE_BATCH_STATUSES),
+            )
         now = self._clock.now()
         recovered = self._repository.reset_items_for_retry(batch_id)
         self._repository.set_counters(batch_id, self._repository.summarize_import(batch_id))

@@ -7,6 +7,7 @@ llegan con los extractores (S03) y la clasificación (S04) y se añadirán con s
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import StrEnum
@@ -167,26 +168,38 @@ class ImportIssue:
     details: dict[str, object] = field(default_factory=dict)
 
 
+#: Términos que suman el total del informe de importación. La regla vive aquí, una sola vez: la
+#: usan el propio `ImportCounters` y la API al servir el informe, para que no puedan discrepar.
+BALANCE_TERMS = ("copied", "pending", "failed", "cancelled", "source_changed")
+
+
 @dataclass(slots=True)
 class ImportCounters:
-    """Contadores del informe de importación. Deben cuadrar: total = copiadas + fallidas + omitidas.
+    """Contadores del informe de importación. Deben cuadrar:
+
+    `total = copied + pending + failed + cancelled + source_changed`
 
     Se calculan **a partir del estado de las entradas** al terminar cada ejecución, no acumulando en
     memoria: así el informe de un lote reintentado o reanudado refleja lo que hay de verdad y no
     solo lo que hizo la última pasada. `copied` incluye el contenido repetido (el artefacto ya
     estaba en el almacén): en los dos casos el material está a salvo.
+
+    `pending` son las entradas todavía por copiar (`inventoried`). Existe para que un lote que está
+    a medias —o que acaba de reintentarse— pueda cuadrar sin mentir: antes esas entradas no
+    aparecían en ninguna parte y la ecuación solo salía cuando el lote había terminado.
     """
 
     total: int = 0
     copied: int = 0
     copied_bytes: int = 0
+    pending: int = 0
     source_changed: int = 0
     failed: int = 0
     cancelled: int = 0
 
     @property
     def accounted(self) -> int:
-        return self.copied + self.source_changed + self.failed + self.cancelled
+        return sum(int(getattr(self, term)) for term in BALANCE_TERMS)
 
     @property
     def balanced(self) -> bool:
@@ -197,10 +210,23 @@ class ImportCounters:
             "total": self.total,
             "copied": self.copied,
             "copied_bytes": self.copied_bytes,
+            "pending": self.pending,
             "source_changed": self.source_changed,
             "failed": self.failed,
             "cancelled": self.cancelled,
         }
+
+
+def balanced_counters(counters: Mapping[str, int]) -> bool:
+    """¿Cuadra un informe servido como diccionario? Misma regla que `ImportCounters.balanced`.
+
+    Un lote sin ecuación (el inventario, que no copia nada) no se comprueba aquí: eso lo decide
+    quien conoce el tipo de lote.
+    """
+    total = counters.get("total")
+    if total is None:
+        return False
+    return int(total) == sum(int(counters.get(term, 0)) for term in BALANCE_TERMS)
 
 
 class CountersLike(Protocol):

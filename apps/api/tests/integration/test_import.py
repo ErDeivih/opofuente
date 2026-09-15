@@ -23,6 +23,7 @@ from opofuente.application.ingestion_service import IngestionService
 from opofuente.application.job_service import JobExecution
 from opofuente.config import DataPaths, Settings
 from opofuente.domain.artifacts import Sha256
+from opofuente.domain.errors import InvalidBatchStateError
 from opofuente.domain.ingestion import BatchStatus, IssueCode, ItemStatus
 from opofuente.domain.jobs import Job, JobStatus, JobType
 from opofuente.infrastructure.artifact_store import ArtifactStore
@@ -270,41 +271,90 @@ def _statuses(service: IngestionService, batch_id: str) -> dict[str, int]:
     return counts
 
 
-def test_reintentar_recupera_tambien_las_entradas_fallidas(
+def test_reintentar_recupera_las_canceladas_pero_no_las_que_cambiaron(
     service: IngestionService, material: Path
 ) -> None:
-    """Una entrada fallida vuelve a intentarse al reintentar, sin arreglar la base a mano."""
-    inventario = service.create_inventory(str(material))
-    (material / "preguntas.csv").write_text("p;o\n1;a\n2;b", encoding="utf-8")
-    batch_id = import_all(service, inventario.batch.id)
+    """Regresión: una entrada cuyo fichero cambió no se reintenta con el inventario viejo.
 
-    # El lote lo cuenta como «cambió en el origen» (no como fallo de copia) y la entrada queda
-    # fallida, así que tiene que volver a intentarse al reintentar.
-    assert service.get_batch(batch_id).batch.counters["source_changed"] == 1
-    assert _statuses(service, batch_id)[ItemStatus.FAILED.value] == 1
+    Se cambia el contenido del primer fichero por orden (y de tamaño distinto), se deja que se
+    intente y se cancela el lote a mitad. Al reintentar, las canceladas vuelven a la cola pero la
+    que cambió se queda fallida: ese inventario ya no describe el origen y volvería a fallar; para
+    esa hace falta un inventario nuevo.
+    """
+    inventario = service.create_inventory(str(material))
+    (material / "apuntes" / "ley-copia.md").write_text("otra cosa distinta", encoding="utf-8")
+
+    batch_id = import_all(service, inventario.batch.id, cancel_after=1)
+
+    detalle = service.get_batch(batch_id)
+    assert detalle.batch.status == BatchStatus.CANCELLED.value
+    assert detalle.batch.counters["source_changed"] == 1
+    antes = _statuses(service, batch_id)
+    # La que cambió se intentó y falló; las otras dos quedaron canceladas al cancelar el lote.
+    assert antes[ItemStatus.FAILED.value] == 1
+    assert antes[ItemStatus.CANCELLED.value] == 2
 
     batch = service.retry_batch(batch_id)
+    assert batch.status == BatchStatus.QUEUED.value
+
     estados = _statuses(service, batch_id)
-    assert estados.get(ItemStatus.FAILED.value, 0) == 0
-    # Solo vuelve a la cola lo que quedó pendiente: lo ya copiado sigue copiado.
-    assert estados[ItemStatus.INVENTORIED.value] == 1
-    assert estados[ItemStatus.HASHED.value] == 2
+    assert estados[ItemStatus.FAILED.value] == 1, "la que cambió no se reintenta"
+    assert estados[ItemStatus.INVENTORIED.value] == 2
+    counters = service.get_batch(batch_id).batch.counters
+    assert counters["source_changed"] == 1
+    assert counters["pending"] == 2
+    assert counters["total"] == (
+        counters["copied"]
+        + counters["pending"]
+        + counters["failed"]
+        + counters["cancelled"]
+        + counters["source_changed"]
+    )
 
     job = _job_for(service, batch.id)
     service.run_import_job(FakeExecution(job))
 
-    detalle = service.get_batch(batch_id)
-    # Reintentar no duplica la incidencia: sigue habiendo una sola y el informe cuadra.
-    assert detalle.batch.counters["source_changed"] == 1
-    assert sum(1 for issue in detalle.issues if issue.code == IssueCode.SOURCE_CHANGED.value) == 1
-    assert detalle.batch.counters["copied"] == 2
-    assert detalle.batch.counters["total"] == 3
-    assert detalle.batch.counters["total"] == (
-        detalle.batch.counters["copied"]
-        + detalle.batch.counters["failed"]
-        + detalle.batch.counters["cancelled"]
-        + detalle.batch.counters["source_changed"]
+    final = service.get_batch(batch_id)
+    # La copiada de antes sigue copiada, la recuperada se copia y la que cambió sigue pendiente de
+    # un inventario nuevo.
+    assert final.batch.counters["copied"] == 2
+    assert final.batch.counters["source_changed"] == 1
+    assert final.batch.counters["pending"] == 0
+    # Y reintentar no duplicó la incidencia: sigue habiendo una sola.
+    assert sum(1 for issue in final.issues if issue.code == IssueCode.SOURCE_CHANGED.value) == 1
+    assert final.batch.counters["total"] == (
+        final.batch.counters["copied"]
+        + final.batch.counters["pending"]
+        + final.batch.counters["failed"]
+        + final.batch.counters["cancelled"]
+        + final.batch.counters["source_changed"]
     )
+
+
+def test_un_lote_terminado_con_un_fichero_cambiado_no_se_reintenta(
+    service: IngestionService, material: Path
+) -> None:
+    """Ese inventario ya no describe el origen: hay que inventariar otra vez, no reintentar.
+
+    El lote terminó bien salvo una entrada cuyo fichero cambió, así que su estado es `succeeded` y
+    `retry_batch` lo rechaza (la API lo sirve como 409): insistir con el inventario viejo volvería a
+    fallar y el usuario no se enteraría de que su fichero ya no es el que revisó.
+    """
+    inventario = service.create_inventory(str(material))
+    (material / "preguntas.csv").write_text("p;o\n1;a\n2;b", encoding="utf-8")
+    batch_id = import_all(service, inventario.batch.id)
+
+    detalle = service.get_batch(batch_id)
+    assert detalle.batch.status == BatchStatus.SUCCEEDED.value
+    assert detalle.batch.counters["source_changed"] == 1
+    assert detalle.batch.counters["pending"] == 0
+
+    with pytest.raises(InvalidBatchStateError) as error:
+        service.retry_batch(batch_id)
+    assert "succeeded" in str(error.value)
+
+    # Y el estado no se ha tocado: ni el lote ni sus contadores.
+    assert service.get_batch(batch_id).batch.status == BatchStatus.SUCCEEDED.value
 
 
 def test_un_fichero_que_cambia_tras_el_inventario_no_se_copia(

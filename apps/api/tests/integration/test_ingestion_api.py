@@ -361,18 +361,92 @@ def test_una_cancelacion_que_llega_tarde_no_reescribe_el_lote_terminado(
         assert trabajo["status"] == "succeeded"
 
 
-def test_reintentar_un_lote_en_cola_lo_deja_encolado(
+def test_reintentar_un_lote_en_cola_devuelve_409(
     api_only_client: TestClient, material: Path
 ) -> None:
+    """Reintentar solo vale para un lote parado: en cola o trabajando responde 409.
+
+    Devolver entradas a `inventoried` mientras el worker sigue trabajando descuadraría los
+    contadores y podría copiar dos veces lo mismo, así que la API lo rechaza con el 409 documentado.
+    """
     inventario = inventariar(api_only_client, material)
     batch = api_only_client.post(
         f"/api/v1/inventories/{inventario['batch']['id']}/confirm-import", headers=ALLOWED_ORIGIN
     ).json()
+    assert batch["status"] == "queued"
+
     response = api_only_client.post(
         f"/api/v1/ingestion-batches/{batch['id']}/retry", headers=ALLOWED_ORIGIN
     )
-    assert response.status_code == 200
-    assert response.json()["status"] == "queued"
+
+    assert response.status_code == 409
+    assert response.headers["content-type"].startswith(PROBLEM_MEDIA_TYPE)
+    body = response.json()
+    assert body["code"] == "invalid_state"
+    assert "failed" in body["detail"] and "cancelled" in body["detail"]
+    assert body["correlation_id"]
+    # Y nada ha cambiado: el lote sigue en cola con su trabajo.
+    assert (
+        api_only_client.get(f"/api/v1/ingestion-batches/{batch['id']}").json()["batch"]["status"]
+        == "queued"
+    )
+
+
+def test_reintentar_un_lote_cancelado_cuadra_el_informe(
+    migrated_settings: Settings, material: Path
+) -> None:
+    """Reintentar un lote cancelado: el informe cuadra **en el momento**, con las pendientes.
+
+    Regresión: al reintentar, las entradas recuperadas volvían a `inventoried`, que no aparecía en
+    ninguna parte del informe, así que la API devolvía `balanced: false` (total=3, copiada=1) aunque
+    la documentación dijera que el informe cuadra. Ahora el informe declara `pending`.
+    """
+    settings = Settings(data_dir=migrated_settings.data_dir, worker_enabled=False, _env_file=None)
+    with TestClient(create_app(settings)) as client:
+        inventario = inventariar(client, material)
+        batch = client.post(
+            f"/api/v1/inventories/{inventario['batch']['id']}/confirm-import",
+            headers=ALLOWED_ORIGIN,
+        ).json()
+        client.post(f"/api/v1/ingestion-batches/{batch['id']}/cancel", headers=ALLOWED_ORIGIN)
+        _run_one_job(client)  # el worker reclama el trabajo cancelado y cierra el lote
+
+        cancelado = client.get(f"/api/v1/ingestion-batches/{batch['id']}").json()
+        assert cancelado["batch"]["status"] == "cancelled"
+        assert cancelado["report"]["balanced"] is True
+        assert cancelado["batch"]["counters"]["pending"] == 0
+
+        reintento = client.post(
+            f"/api/v1/ingestion-batches/{batch['id']}/retry", headers=ALLOWED_ORIGIN
+        )
+        assert reintento.status_code == 200
+        assert reintento.json()["status"] == "queued"
+
+        # Lo importante: ya cuadra, y las pendientes están declaradas.
+        en_curso = client.get(f"/api/v1/ingestion-batches/{batch['id']}").json()
+        counters = en_curso["batch"]["counters"]
+        assert counters["pending"] == 2
+        assert counters["cancelled"] == 0
+        assert en_curso["report"]["balanced"] is True
+        assert _suma_cuadra(counters)
+
+        _run_one_job(client)
+        final = client.get(f"/api/v1/ingestion-batches/{batch['id']}").json()
+        assert final["batch"]["status"] == "succeeded"
+        assert final["batch"]["counters"]["copied"] == 2
+        assert final["batch"]["counters"]["pending"] == 0
+        assert final["report"]["balanced"] is True
+
+
+def _suma_cuadra(counters: dict[str, int]) -> bool:
+    """`total = copied + pending + failed + cancelled + source_changed`."""
+    return counters["total"] == (
+        counters["copied"]
+        + counters["pending"]
+        + counters["failed"]
+        + counters["cancelled"]
+        + counters["source_changed"]
+    )
 
 
 def test_el_ciclo_completo_lo_ejecuta_el_worker(seeded_settings: Settings, material: Path) -> None:

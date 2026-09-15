@@ -14,6 +14,7 @@ from opofuente.domain.ingestion import (
     DiscoveredEntry,
     ImportCounters,
     ItemStatus,
+    balanced_counters,
     can_transition_batch,
     can_transition_item,
     is_terminal_item,
@@ -149,6 +150,30 @@ def test_los_contadores_del_informe_cuadran() -> None:
     assert counters.balanced is True
     counters.cancelled += 1
     assert counters.balanced is False
+
+
+def test_las_entradas_pendientes_cuentan_en_el_informe() -> None:
+    """Regresión: `pending` forma parte de la ecuación.
+
+    Un lote reintentado queda con entradas por copiar. Si no se declaran, el informe no cuadra y la
+    API devolvía `balanced: false` en un estado perfectamente normal.
+    """
+    counters = ImportCounters(total=3, copied=1, pending=2)
+    assert counters.accounted == 3
+    assert counters.balanced is True
+    assert counters.to_dict()["pending"] == 2
+
+    counters.pending -= 1
+    assert counters.balanced is False
+
+
+def test_la_regla_del_cuadre_es_la_misma_para_los_contadores_servidos() -> None:
+    """La API sirve diccionarios: la regla tiene que ser la misma que la del dominio."""
+    assert balanced_counters({"total": 3, "copied": 1, "pending": 2}) is True
+    assert balanced_counters({"total": 3, "copied": 1, "pending": 1, "failed": 1}) is True
+    assert balanced_counters({"total": 3, "copied": 1}) is False
+    # Un contador sin `total` no se puede dar por bueno.
+    assert balanced_counters({"copied": 0}) is False
 
 
 def test_la_huella_del_inventario_cambia_con_el_tamano() -> None:

@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 import re
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -341,6 +342,46 @@ def test_las_rutas_de_ingestion_estan_documentadas(schema: dict[str, Any]) -> No
         "/api/v1/events",
     ):
         assert ausente not in schema["paths"], ausente
+
+
+def test_reintentar_documenta_el_409(schema: dict[str, Any]) -> None:
+    """Reintentar solo vale para un lote fallido o cancelado, y eso se documenta.
+
+    Un lote en cola, trabajando o terminado responde 409 `invalid_state`: devolver entradas a la
+    cola mientras el worker trabaja sobre ellas descuadraría el informe y copiaría dos veces.
+    """
+    responses = schema["paths"]["/api/v1/ingestion-batches/{batch_id}/retry"]["post"]["responses"]
+    assert "409" in responses
+    content = responses["409"]["content"]
+    assert set(content) == {PROBLEM_MEDIA_TYPE}
+    assert content[PROBLEM_MEDIA_TYPE]["schema"]["$ref"].endswith("/ProblemDetail")
+
+
+def test_el_409_servido_cumple_el_esquema_documentado(
+    api_only_client: TestClient, schema: dict[str, Any], tmp_path: Path
+) -> None:
+    """El cuerpo real del 409 es el del contrato, con su código y su identificador."""
+    problem = schema["components"]["schemas"]["ProblemDetail"]
+    material = tmp_path / "material"
+    material.mkdir()
+    (material / "tema.txt").write_text("contenido", encoding="utf-8")
+
+    inventario = api_only_client.post(
+        "/api/v1/inventories", json={"source_path": str(material)}
+    ).json()
+    # Sin worker, el lote se queda en cola: reintentarlo no tiene sentido y debe rechazarse.
+    batch = api_only_client.post(
+        f"/api/v1/inventories/{inventario['batch']['id']}/confirm-import"
+    ).json()
+
+    response = api_only_client.post(f"/api/v1/ingestion-batches/{batch['id']}/retry")
+
+    assert response.status_code == 409
+    assert response.headers["content-type"].startswith(PROBLEM_MEDIA_TYPE)
+    body = response.json()
+    for field in problem["required"]:
+        assert field in body, field
+    assert body["code"] == "invalid_state"
 
 
 def test_el_informe_del_lote_documenta_su_cuadre(schema: dict[str, Any]) -> None:

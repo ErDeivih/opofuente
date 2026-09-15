@@ -19,7 +19,12 @@ from typing import Annotated
 from fastapi import APIRouter, Query
 
 from opofuente.api.deps import IngestionServiceDep, JobServiceDep
-from opofuente.api.error_responses import INGESTION_WRITE_ERRORS, RESOURCE_ERRORS, WRITE_ERRORS
+from opofuente.api.error_responses import (
+    BATCH_STATE_ERRORS,
+    INGESTION_WRITE_ERRORS,
+    RESOURCE_ERRORS,
+    WRITE_ERRORS,
+)
 from opofuente.api.ingestion_schemas import (
     BatchDetailSchema,
     BatchSchema,
@@ -42,7 +47,7 @@ from opofuente.application.read_models import (
     IssueView,
     JobView,
 )
-from opofuente.domain.ingestion import ItemStatus
+from opofuente.domain.ingestion import ItemStatus, balanced_counters
 from opofuente.domain.jobs import JobStatus
 
 router = APIRouter()
@@ -94,16 +99,9 @@ def _batch(batch: BatchView) -> BatchSchema:
 
 def _report(detail: BatchDetail) -> ImportReportSchema:
     counters = detail.batch.counters
-    total = counters.get("total")
-    accounted = (
-        counters.get("copied", 0)
-        + counters.get("source_changed", 0)
-        + counters.get("failed", 0)
-        + counters.get("cancelled", 0)
-    )
-    balanced = (
-        True if detail.batch.kind == "inventory" else (total is not None and total == accounted)
-    )
+    # La regla del cuadre vive en el dominio (una sola vez); el inventario no tiene ecuación porque
+    # no copia nada.
+    balanced = detail.batch.kind == "inventory" or balanced_counters(counters)
     return ImportReportSchema(
         batch_id=detail.batch.id,
         kind=detail.batch.kind,  # type: ignore[arg-type]
@@ -189,7 +187,7 @@ def get_batch(batch_id: str, service: IngestionServiceDep) -> BatchDetailSchema:
 @router.post(
     "/ingestion-batches/{batch_id}/cancel",
     response_model=BatchSchema,
-    responses=WRITE_ERRORS,
+    responses=BATCH_STATE_ERRORS,
     summary="Pide cancelar el lote (el worker se detiene entre ficheros)",
 )
 def cancel_batch(batch_id: str, service: IngestionServiceDep) -> BatchSchema:
@@ -199,8 +197,8 @@ def cancel_batch(batch_id: str, service: IngestionServiceDep) -> BatchSchema:
 @router.post(
     "/ingestion-batches/{batch_id}/retry",
     response_model=BatchSchema,
-    responses=WRITE_ERRORS,
-    summary="Reintenta un lote fallido o cancelado",
+    responses=BATCH_STATE_ERRORS,
+    summary="Reintenta un lote fallido o cancelado (409 si está en otro estado)",
 )
 def retry_batch(batch_id: str, service: IngestionServiceDep) -> BatchSchema:
     return _batch(service.retry_batch(batch_id))

@@ -58,6 +58,16 @@ _INVALID_SOURCE: dict[int | str, dict[str, Any]] = {
     }
 }
 
+_INVALID_STATE: dict[int | str, dict[str, Any]] = {
+    409: {
+        "model": ProblemDetail,
+        "description": (
+            "La operación no vale para el estado actual del recurso (`invalid_state`). "
+            "Por ejemplo, reintentar un lote que no está fallido ni cancelado."
+        ),
+    }
+}
+
 #: Errores que puede devolver cualquier ruta.
 BASE_ERRORS: dict[int | str, dict[str, Any]] = {**_INTERNAL}
 
@@ -76,4 +86,10 @@ WRITE_ERRORS: dict[int | str, dict[str, Any]] = {
 INGESTION_WRITE_ERRORS: dict[int | str, dict[str, Any]] = {
     **WRITE_ERRORS,
     **_INVALID_SOURCE,
+}
+
+#: Errores de las rutas que cambian el estado de un lote (reintentar, cancelar).
+BATCH_STATE_ERRORS: dict[int | str, dict[str, Any]] = {
+    **WRITE_ERRORS,
+    **_INVALID_STATE,
 }

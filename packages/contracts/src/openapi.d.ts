@@ -221,7 +221,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Reintenta un lote fallido o cancelado */
+        /** Reintenta un lote fallido o cancelado (409 si está en otro estado) */
         post: operations["retry_batch_api_v1_ingestion_batches__batch_id__retry_post"];
         delete?: never;
         options?: never;
@@ -1455,6 +1455,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetail"];
                 };
             };
+            /** @description La operación no vale para el estado actual del recurso (`invalid_state`). Por ejemplo, reintentar un lote que no está fallido ni cancelado. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
             /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
             422: {
                 headers: {
@@ -1660,6 +1669,15 @@ export interface operations {
             };
             /** @description El recurso no existe. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description La operación no vale para el estado actual del recurso (`invalid_state`). Por ejemplo, reintentar un lote que no está fallido ni cancelado. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

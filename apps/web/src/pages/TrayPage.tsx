@@ -34,6 +34,9 @@ const SEVERITY_TONE: Record<string, StatusTone> = {
   error: 'blocked',
 };
 
+/** Estados desde los que la API admite un reintento (los demás responden 409). */
+const CAN_RETRY: ReadonlySet<string> = new Set(['failed', 'cancelled']);
+
 function formatBytes(value: number): string {
   const units = ['B', 'KB', 'MB', 'GB', 'TB'];
   let size = value;
@@ -278,6 +281,8 @@ export function TrayPage() {
                 <dd>
                   {batch.data.batch.counters.copied ?? 0} de {batch.data.batch.counters.total ?? 0}
                 </dd>
+                <dt>Pendientes</dt>
+                <dd>{batch.data.batch.counters.pending ?? 0}</dd>
                 <dt>Artefactos</dt>
                 <dd>{batch.data.report.artifacts_total}</dd>
                 <dt>Informe cuadra</dt>
@@ -297,7 +302,9 @@ export function TrayPage() {
                     Cancelar
                   </button>
                 )}
-                {!isWorking && batch.data.batch.status !== 'succeeded' && (
+                {/* Solo se puede reintentar lo que está parado y a medias: la API responde 409 en
+                    cualquier otro estado, así que no se ofrece un botón que fallaría. */}
+                {CAN_RETRY.has(batch.data.batch.status) && (
                   <button
                     className="button"
                     type="button"
@@ -310,6 +317,19 @@ export function TrayPage() {
                   </button>
                 )}
               </div>
+              {(retryBatch.isError || cancelBatch.isError) && (
+                <ErrorState
+                  title="No se pudo cambiar el estado del lote"
+                  message={describeError(retryBatch.error ?? cancelBatch.error)}
+                />
+              )}
+              {(batch.data.batch.counters.source_changed ?? 0) > 0 && (
+                <p className="hint">
+                  Hay {batch.data.batch.counters.source_changed} fichero(s) que cambiaron desde el
+                  inventario: no se copian ni se reintentan con ese inventario. Inventaría la carpeta
+                  otra vez para revisarlos.
+                </p>
+              )}
             </>
           )}
         </section>

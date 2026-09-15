@@ -30,3 +30,19 @@ class InvalidSourceError(OpoFuenteError):
 
 class JobCancelledError(OpoFuenteError):
     """El trabajo se detuvo porque se pidió cancelarlo. No es un fallo."""
+
+
+class InvalidBatchStateError(OpoFuenteError):
+    """La operación no tiene sentido en el estado actual del lote. La API lo traduce a 409.
+
+    Ejemplo: reintentar un lote que ya terminó bien, o que todavía se está copiando. Reintentar
+    devolvería entradas a la cola mientras el worker trabaja sobre ellas.
+    """
+
+    def __init__(self, current: str, allowed: tuple[str, ...]) -> None:
+        allowed_text = " o ".join(allowed)
+        super().__init__(
+            f"el lote está en estado «{current}»: solo se puede reintentar si está {allowed_text}"
+        )
+        self.current = current
+        self.allowed = allowed

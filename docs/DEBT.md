@@ -254,23 +254,39 @@ origen) y que simplemente no se extrae todavía. Omitirlos tiene dos consecuenci
 material que sí quería guardar (un resumen en PPTX, un temario en EPUB) y OpoFuente no puede
 reconocerlo después cuando llegue el extractor, porque nunca lo copió.
 
+**Contradicción aparente entre §2 y §3, resuelta.** §2 dice: «Ignorar por defecto archivos ocultos del
+sistema, temporales Office, **ejecutables** y directorios configurables», mientras §3 mete los
+ejecutables en la lista de `unsupported_preserved`. Las dos frases no pueden ganar a la vez, y la
+lectura correcta es:
+
+| Qué | Regla que gana | Por qué |
+|---|---|---|
+| Ejecutables y bibliotecas (`.exe`, `.dll`, `.msi`, `.bat`, `.cmd`, `.com`, `.scr`, `.ps1`, `.jar`, `.so`, `.dylib`) | **§2: se omiten** | es una decisión de seguridad: OpoFuente no necesita el binario para estudiar y no lo va a ejecutar nunca; guardarlo solo añade superficie y ruido. Se registra como incidencia, no se copia |
+| Temporales de Office (`~$…`), ocultos del sistema y basura (`Thumbs.db`, `desktop.ini`) | **§2: se omiten** | no son material del usuario: son restos del sistema |
+| Office con macros (`.docm`, `.xlsm`, `.pptm`), audio, vídeo, `.epub`, `.pptx`, `.xlsx`, `.odt`, `.ods` | **§3: se conservan** como `unsupported_preserved` | sí son material del usuario y lo querrá después; se conservan **sin ejecutar ni extraer** nada de ellos |
+
+Es decir: `unsupported_preserved` es «lo conservo aunque todavía no sé leerlo», y no un permiso para
+guardar binarios ejecutables.
+
 **Obligación.** En S03, al añadir los extractores:
 
-1. los formatos sin extractor del MVP se copian al almacén como cualquier otro fichero y quedan en
-   estado `unsupported_preserved` (conservado, sin extracción pendiente de un extractor);
+1. los formatos de la tercera fila se copian al almacén como cualquier otro fichero y quedan en
+   estado `unsupported_preserved` (conservado, sin extracción y sin ejecución alguna);
 2. el informe del lote los cuenta en su propio contador (`preserved_unsupported`), separado de los
    omitidos por política y de los fallidos;
 3. la interfaz explica que están guardados pero todavía no se pueden leer, en lugar de decir que se
    han omitido;
-4. lo que sigue omitiéndose (ocultos, temporales de Office, ejecutables, enlaces que salen de la
-   carpeta, el propio directorio de datos) se mantiene exactamente igual.
+4. los ejecutables, los temporales de Office, los ocultos y los enlaces que salen de la carpeta
+   **siguen** omitiéndose, con su incidencia y su contador, exactamente como en S02.
 
 **Criterio de cierre.**
 
 1. Un lote con un `.pptx`, un `.epub` y un `.xlsx` los copia al almacén: hay artefacto y origen para
-   cada uno, con su `sha256` verificado.
+   cada uno, con su `sha256` verificado, y no se ejecuta ni se extrae nada.
 2. El contador `preserved_unsupported` aparece en el informe y el total sigue cuadrando
-   (`total = copiados + fallidos + cancelados + source_changed + preserved_unsupported`).
+   (`total = copied + pending + failed + cancelled + source_changed + preserved_unsupported`).
 3. Prueba de contrato y de interfaz: el estado se muestra como «conservado sin extractor», no como
    omitido ni como fallido.
-4. Los ejecutables y los temporales de Office **siguen** sin copiarse (prueba de no regresión).
+4. Prueba de no regresión: un `.exe`, un `.ps1`, un `~$temporal.docx` y un enlace que sale de la
+   carpeta **no** se copian y se declaran como omitidos, con los mismos códigos de incidencia que en
+   S02.

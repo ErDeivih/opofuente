@@ -16,7 +16,12 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from opofuente.domain.errors import InvalidSourceError, NotFoundError, OpoFuenteError
+from opofuente.domain.errors import (
+    InvalidBatchStateError,
+    InvalidSourceError,
+    NotFoundError,
+    OpoFuenteError,
+)
 from opofuente.infrastructure.correlation import get_correlation_id
 
 logger = logging.getLogger(__name__)
@@ -158,6 +163,13 @@ def register_exception_handlers(app: FastAPI) -> None:
                 detail=str(exc),
                 instance=request.url.path,
                 code="invalid_source",
+            )
+        if isinstance(exc, InvalidBatchStateError):
+            return problem_response(
+                status_code=409,
+                detail=str(exc),
+                instance=request.url.path,
+                code="invalid_state",
             )
         logger.error(
             "request.domain_error",

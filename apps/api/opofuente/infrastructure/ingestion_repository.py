@@ -223,24 +223,33 @@ class SqlAlchemyIngestionRepository:
             total=sum(counts.values()),
             copied=counts.get(ItemStatus.HASHED.value, 0) + counts.get(ItemStatus.COPIED.value, 0),
             copied_bytes=int(bytes_copied),
+            pending=counts.get(ItemStatus.INVENTORIED.value, 0)
+            + counts.get(ItemStatus.DISCOVERED.value, 0),
             source_changed=source_changed,
             failed=max(failed, 0),
             cancelled=counts.get(ItemStatus.CANCELLED.value, 0),
         )
 
     def reset_items_for_retry(self, batch_id: str) -> int:
-        """Devuelve a `inventoried` las entradas canceladas o fallidas, para volver a intentarlas.
+        """Devuelve a `inventoried` las entradas recuperables, para volver a intentarlas.
 
-        Reintentar un lote no puede depender de que alguien arregle la base a mano: si las entradas
-        siguen en `cancelled` o `failed`, el trabajo vuelve a la cola y no encuentra nada que
-        copiar. Las ya copiadas (`hashed`) no se tocan: su artefacto sigue siendo válido.
+        Se recuperan las canceladas y los fallos transitorios (permisos, fichero bloqueado, fallo de
+        copia). **No** se recuperan las entradas cuyo fichero cambió desde el inventario: ese
+        inventario ya no describe lo que hay en el origen, así que insistir con él volvería a fallar
+        una y otra vez. Para esas hace falta un inventario nuevo, y el servicio lo explica.
         """
         with self._session_factory() as session:
+            changed = select(ImportIssueRecord.item_id).where(
+                ImportIssueRecord.batch_id == batch_id,
+                ImportIssueRecord.code == IssueCode.SOURCE_CHANGED.value,
+                ImportIssueRecord.item_id.is_not(None),
+            )
             recoverable = (
                 IngestionItemRecord.batch_id == batch_id,
                 IngestionItemRecord.status.in_(
                     [ItemStatus.CANCELLED.value, ItemStatus.FAILED.value]
                 ),
+                IngestionItemRecord.id.not_in(changed),
             )
             pending = session.execute(
                 select(func.count()).select_from(IngestionItemRecord).where(*recoverable)

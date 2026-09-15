@@ -36,7 +36,12 @@ export interface StubbedRoute {
   contentType?: string;
 }
 
-/** Sustituye `fetch` por respuestas fijas que imitan el contrato real de la API. */
+/** Sustituye `fetch` por respuestas fijas que imitan el contrato real de la API.
+ *
+ * Cuando varias claves encajan con la URL gana la **más específica** (la más larga): así una ruta
+ * general (`/ingestion-batches/x`) no se come a otra más concreta (`…/x/retry`), y el orden en el
+ * que se declaran las respuestas deja de importar.
+ */
 export function stubApi(routes: Record<string, StubbedRoute>) {
   // El tipo de la función incluye `init` para que las pruebas puedan comprobar el método HTTP
   // (por ejemplo, que activar una oposición es un POST), aunque la simulación no lo use.
@@ -44,7 +49,9 @@ export function stubApi(routes: Record<string, StubbedRoute>) {
     (input) => {
       const url =
         typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
-      const match = Object.entries(routes).find(([path]) => url.includes(path));
+      const match = Object.keys(routes)
+        .filter((path) => url.includes(path))
+        .sort((left, right) => right.length - left.length)[0];
       if (match === undefined) {
         return Promise.resolve(
           new Response(JSON.stringify({ code: 'not_found' }), {
@@ -53,7 +60,7 @@ export function stubApi(routes: Record<string, StubbedRoute>) {
           }),
         );
       }
-      const route = match[1];
+      const route = routes[match] as StubbedRoute;
       return Promise.resolve(
         new Response(JSON.stringify(route.body), {
           status: route.status ?? 200,
