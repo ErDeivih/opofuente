@@ -714,6 +714,44 @@ def test_un_corte_que_parte_un_caracter_solo_retrocede_lo_necesario(
     assert data.decode("utf-8") == relleno
 
 
+@pytest.mark.parametrize(
+    ("nombre", "contenido", "esperado"),
+    [
+        # Byte 0xFF: nunca es válido en UTF-8. No se recorta nada: el contenido no es UTF-8 y
+        # recortar el final no lo arreglaría (quien decodifica decide, avisando de la codificación).
+        ("solo-0xff", b"\xff" + b"x" * 2048, 1024),
+        # 0xFF en medio del bloque: el error no está al final, así que no se toca.
+        ("0xff-en-medio", b"a" * 512 + b"\xff" + b"b" * 1024, 1024),
+        # Continuación inválida al principio de una secuencia (0xC3 sin continuación válida).
+        ("continuacion-invalida", b"a" * 1024 + b"\xc3\x28", 1024),
+        # Secuencia de 3 bytes partida exactamente por el tope: aquí sí se retrocede hasta la
+        # frontera (el bloque cortado acaba en `\xe2\x82`, que es una secuencia incompleta).
+        ("secuencia-truncada-al-final", b"a" * 1022 + b"\xe2\x82" + b"m", 1022),
+        # 0xFF como último byte del bloque: no es una secuencia truncada sino un byte inválido, así
+        # que no se recorta (quitarlo no arreglaría la decodificación y perdería un byte real).
+        ("0xff-al-final", b"a" * 1023 + b"\xff" + b"x", 1024),
+    ],
+)
+def test_los_bloques_que_no_son_utf8_no_se_recortan_por_el_final(
+    tmp_path: Path, nombre: str, contenido: bytes, esperado: int
+) -> None:
+    """Solo se retrocede ante una secuencia **incompleta** al final, no ante cualquier error.
+
+    Un 0xFF o una continuación inválida no son UTF-8 y recortar el final no lo arregla: lo honesto
+    es entregar el bloque tal cual y que el extractor avise de la codificación que ha usado. Si se
+    recortara a ciegas, además se perdería contenido que sí estaba.
+    """
+    from opofuente.infrastructure.extractors.base import read_bounded
+
+    archivo = tmp_path / f"{nombre}.bin"
+    archivo.write_bytes(contenido)
+
+    data, truncated = read_bounded(archivo, max_bytes=1024)
+
+    assert truncated is True
+    assert len(data) == esperado, f"{nombre}: se devolvieron {len(data)} bytes"
+
+
 def test_los_espacios_significativos_se_conservan_en_csv_y_json(tmp_path: Path) -> None:
     """CSV y JSON son datos: los espacios repetidos son contenido, no presentación.
 

@@ -125,15 +125,17 @@ def _trim_to_character_boundary(data: bytes) -> bytes:
     recortar. Antes se empezaba probando `len(data) - 1`, así que siempre se perdía un byte aunque
     el corte fuera válido (con un límite de 1024 y 1025 bytes ASCII se devolvían 1023).
 
-    Solo cuando el bloque no decodifica se retrocede, y solo por una **secuencia incompleta al
-    final**: si el error está en medio, el contenido no es UTF-8 y recortar no arreglaría nada
-    (se devuelve tal cual y quien decodifique decidirá, avisando de la codificación).
+    Solo cuando el bloque no decodifica se retrocede, y solo si el motivo es que **la secuencia del
+    final está incompleta** (`unexpected end of data`, que es lo que informa Python). Un byte `0xFF`
+    o una continuación inválida no son una secuencia truncada: recortar el final no arreglaría nada
+    y perdería contenido que sí estaba, así que el bloque se devuelve tal cual y quien decodifique
+    decidirá, avisando de la codificación que use.
     """
     try:
         data.decode("utf-8")
     except UnicodeDecodeError as error:
-        if error.start > len(data) - 4:
-            # El error está en los últimos bytes: era un carácter partido por el tope de lectura.
+        if error.reason == "unexpected end of data":
+            # El carácter del final quedó partido por el tope de lectura.
             return data[: error.start]
         return data
     return data

@@ -225,3 +225,14 @@ Cuatro defectos:
   `downgrade` no hace nada a propósito (no se reconstruye un dato inventado).
 - **El texto pegado escribe su temporal antes de crear el lote**, así que un fallo de disco no deja un
   lote en `queued` sin nada que lo cierre.
+
+## Cuarta corrección de S03 (16/09/2026)
+
+- **`0010_recover_item_origin`**: la 0009 limpiaba de más (borraba el tipo de origen de **todas** las
+  entradas de un artefacto con varios orígenes, incluidas las que constan). Como una migración ya
+  aplicada no se reejecuta, la reparación va en una migración posterior: recupera el tipo cuando la
+  procedencia visible de la entrada (`origin_display`) coincide exactamente con la de un origen del
+  artefacto (`display_location`), y deja «no consta» cuando no coincide. La 0009 **no** se reescribe.
+- **El recorte por bytes se decide por el motivo del error** (`unexpected end of data`), no por su
+  posición: solo se retrocede ante una secuencia UTF-8 truncada al final. Un `0xFF` o una continuación
+  inválida se entregan tal cual (recortar perdería contenido sin arreglar la decodificación).
