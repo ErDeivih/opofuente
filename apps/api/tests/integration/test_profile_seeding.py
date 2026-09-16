@@ -17,6 +17,7 @@ from opofuente.infrastructure.clock import SystemClock
 from opofuente.infrastructure.db import build_engine, build_session_factory
 from opofuente.infrastructure.db_models import (
     ConvocationVersionRecord,
+    CurriculumMappingRecord,
     CurriculumNodeRecord,
     ExamPartRecord,
     ExamRuleRecord,
@@ -240,6 +241,91 @@ def test_las_rutas_del_programa_sembrado_son_unicas(
         paths = [row.path for row in session.execute(select(CurriculumNodeRecord)).scalars().all()]
     assert len(paths) == len(set(paths))
     assert len(paths) == 37 + 198
+
+
+def test_un_nodo_con_material_asignado_no_se_retira_al_sembrar(
+    seeded_settings: Settings, session_factory, profiles
+) -> None:
+    """DEBT-005: la siembra no puede borrar un nodo que tiene material asignado.
+
+    Reproduce el caso real: el fixture reorganiza el temario y dos temas desaparecen. Uno tiene un
+    mapeo (material asignado) y el otro no. El que no tiene nada se retira como siempre; el que sí
+    tiene material **se conserva** y la siembra lo declara como conflicto en lugar de destruir la
+    clasificación del usuario (ADR-007). El resto del perfil se aplica con normalidad.
+    """
+    gc = next(
+        profile for profile in profiles if profile.convocation.code == "gc-cabos-guardias-2026"
+    )
+    anterior = gc.curriculum[-2]
+    ultimo = gc.curriculum[-1]
+
+    with session_factory() as session:
+        convocation = session.execute(
+            select(ConvocationVersionRecord).where(
+                ConvocationVersionRecord.code == "gc-cabos-guardias-2026"
+            )
+        ).scalar_one()
+        nodo_con_material = session.execute(
+            select(CurriculumNodeRecord).where(
+                CurriculumNodeRecord.convocation_version_id == convocation.id,
+                CurriculumNodeRecord.path == anterior.path,
+            )
+        ).scalar_one()
+        session.add(
+            CurriculumMappingRecord(
+                id="map-debt-005",
+                curriculum_node_id=nodo_con_material.id,
+                subject_type="artifact",
+                subject_id="art-1",
+                coverage_type="partial",
+                depth=nodo_con_material.depth,
+                confidence=0.7,
+                status="accepted",
+                source_proposal_id=None,
+                created_at=NOW,
+                approved_at=NOW,
+            )
+        )
+        session.commit()
+
+    # El fixture nuevo ya no trae los dos últimos temas.
+    perfil_sin_los_ultimos = replace(gc, curriculum=gc.curriculum[:-2])
+    otro = next(profile for profile in profiles if profile is not gc)
+
+    with session_factory() as session:
+        service = ProfilesService(SqlAlchemyProfileRepository(session_factory), SystemClock())
+        report = service.seed((perfil_sin_los_ultimos, otro))
+        convocation = session.execute(
+            select(ConvocationVersionRecord).where(
+                ConvocationVersionRecord.code == "gc-cabos-guardias-2026"
+            )
+        ).scalar_one()
+        paths = {
+            row.path
+            for row in session.execute(
+                select(CurriculumNodeRecord).where(
+                    CurriculumNodeRecord.convocation_version_id == convocation.id
+                )
+            )
+            .scalars()
+            .all()
+        }
+        mapeos = session.execute(
+            select(func.count()).select_from(CurriculumMappingRecord)
+        ).scalar_one()
+
+    assert report.blocked == 1, "un nodo con material: un conflicto declarado"
+    assert report.changed is True, (
+        "no converge con el fixture, y eso hay que decirlo, no esconderlo"
+    )
+    assert anterior.path in paths, "el nodo con material asignado sigue ahí"
+    assert ultimo.path not in paths, "el nodo sin material sí se retira"
+    assert mapeos == 1, "el mapeo no se ha perdido"
+
+    perfil = next(o for o in report.profiles if o.profile_code == "gc-cabos-guardias-2026")
+    bloqueado = [entity for entity in perfil.entities if entity.blocked]
+    assert [entity.code for entity in bloqueado] == [f"node:{anterior.path}"]
+    assert bloqueado[0].unchanged is False, "bloqueado no es «sin cambios»"
 
 
 def _count(session, model, convocation_id: str) -> int:

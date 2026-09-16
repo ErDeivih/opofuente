@@ -48,6 +48,15 @@ class InvalidBatchStateError(OpoFuenteError):
         self.allowed = allowed
 
 
+class ClassificationConflictError(OpoFuenteError):
+    """La decisión no se puede aplicar en el estado actual de la propuesta. La API lo traduce a 409.
+
+    Casos: aceptar algo ya rechazado, aceptar una propuesta de tema cuyo nodo no está en el programa
+    sembrado, o deshacer una decisión que no existe. Nunca se aplica «a medias»: o se aplica, o se
+    explica por qué no.
+    """
+
+
 class UnsafeContentError(OpoFuenteError):
     """El contenido se rechaza por seguridad. La API lo traduce a 400 `unsafe_content`.
 

@@ -13,20 +13,37 @@ from pathlib import Path
 from typing import Protocol, runtime_checkable
 
 from opofuente.application.read_models import (
+    AuditEventView,
     BatchDetail,
     BatchView,
     ConvocationDetail,
     ConvocationSummary,
+    CoverageView,
     CurriculumView,
+    DecisionOutcome,
+    DuplicateClusterDraft,
+    DuplicateClusterView,
     EntryPage,
     EntryView,
     IssuePage,
+    MappingView,
+    NodeCoverageView,
     NodeDetail,
     OppositionDetail,
     OppositionSummary,
+    ProposalPage,
+    ProposalView,
+    ReviewGroupView,
     SeedOutcome,
 )
 from opofuente.domain.artifacts import OriginType, Sha256, StoredArtifact
+from opofuente.domain.classification import (
+    ClassificationSubject,
+    CoverageType,
+    Proposal,
+    ProposalStatus,
+)
+from opofuente.domain.duplicates import TextDocument
 from opofuente.domain.ingestion import (
     BatchKind,
     BatchMode,
@@ -289,3 +306,112 @@ class JobQueue(Protocol):
     def requeue_expired_leases(self, *, now: datetime) -> tuple[Job, ...]:
         """Trabajos cuyo lease venció, con su estado nuevo (para avisar de los que se pierden)."""
         ...
+
+
+# ------------------------------------------------------------------- S04: clasificación y revisión
+
+
+@runtime_checkable
+class ClassifierPort(Protocol):
+    """Motor de clasificación: **propone**, no decide.
+
+    Un motor recibe un `ClassificationSubject` (texto acotado, nombre, procedencia y los nodos del
+    programa) y devuelve propuestas con su confianza, sus alternativas y su evidencia. No escribe
+    nada: guardar y decidir es del servicio. Así el motor determinista de hoy y un clasificador LLM
+    opcional de S09 son intercambiables, y el que no haya LLM configurado no cambia nada.
+    """
+
+    name: str
+    version: str
+
+    def propose(self, subject: ClassificationSubject) -> Sequence[Proposal]:
+        """Propuestas sostenidas por la evidencia. Sin señales, una tupla vacía."""
+        ...
+
+
+@runtime_checkable
+class ClassificationRepository(Protocol):
+    """Persistencia de propuestas, mapeos, cobertura, duplicados y auditoría."""
+
+    # --- insumos y propuestas
+
+    def classification_targets(self, *, limit: int) -> tuple[ClassificationSubject, ...]:
+        """Sujetos clasificables (artefactos y representaciones) con su extracto y los perfiles."""
+        ...
+
+    def save_proposals(self, proposals: Sequence[Proposal], *, now: datetime) -> tuple[int, int]:
+        """Guarda propuestas nuevas y devuelve `(creadas, ya existentes)`, sin duplicar."""
+        ...
+
+    def text_documents(self, *, limit: int) -> tuple[TextDocument, ...]:
+        """Textos de los sujetos comparables, para la detección de duplicados de texto."""
+        ...
+
+    def list_proposals(
+        self,
+        *,
+        subject_type: str | None = ...,
+        subject_id: str | None = ...,
+        axis: str | None = ...,
+        status: str | None = ...,
+        limit: int = ...,
+        offset: int = ...,
+    ) -> ProposalPage: ...
+
+    def get_proposal(self, proposal_id: str) -> ProposalView | None: ...
+
+    def pending_groups(self) -> tuple[ReviewGroupView, ...]:
+        """Propuestas pendientes agrupadas por sujeto, eje y valor: la unidad del lote."""
+        ...
+
+    # --- decisiones
+
+    def decide(
+        self,
+        proposal_id: str,
+        *,
+        status: ProposalStatus,
+        note: str | None,
+        now: datetime,
+        override_value: str | None = ...,
+        coverage_type: CoverageType = ...,
+        actor: str = ...,
+    ) -> DecisionOutcome:
+        """Aplica la decisión, su efecto (mapeo, cobertura) y la audita: un ítem por transacción."""
+        ...
+
+    def undo(self, proposal_id: str, *, now: datetime, actor: str = ...) -> DecisionOutcome:
+        """Deshace la última decisión de una propuesta: vuelve a la cola y retira su mapeo."""
+        ...
+
+    def last_decision_event(self, proposal_id: str) -> AuditEventView | None:
+        """Última decisión auditada de una propuesta, para poder deshacerla."""
+        ...
+
+    # --- mapeos y cobertura
+
+    def list_mappings(
+        self, *, subject_type: str | None = ..., subject_id: str | None = ...
+    ) -> tuple[MappingView, ...]: ...
+
+    def delete_mapping(self, mapping_id: str, *, now: datetime, actor: str = ...) -> bool: ...
+
+    def coverage(self, *, convocation_code: str) -> CoverageView: ...
+
+    def node_coverage(self, node_id: str) -> NodeCoverageView | None:
+        """Cobertura de un nodo y de su subárbol."""
+        ...
+
+    # --- duplicados
+
+    def record_text_duplicates(
+        self, clusters: Sequence[DuplicateClusterDraft], *, now: datetime
+    ) -> tuple[DuplicateClusterView, ...]: ...
+
+    def list_duplicate_clusters(
+        self, *, status: str | None = ...
+    ) -> tuple[DuplicateClusterView, ...]: ...
+
+    def resolve_duplicate_cluster(
+        self, cluster_id: str, *, relation: str, note: str | None, now: datetime, actor: str = ...
+    ) -> DuplicateClusterView | None: ...

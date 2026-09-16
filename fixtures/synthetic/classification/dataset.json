@@ -1,0 +1,378 @@
+{
+  "dataset_version": "1",
+  "description": "Conjunto de casos etiquetados a mano para medir la clasificación (10_TEST-PLAN §7). Todo el texto está inventado para este fichero: no reproduce material oficial, comercial ni del usuario. Las etiquetas dicen qué debería quedar en cada eje después de una revisión humana cuidadosa, no lo que propone el motor.",
+  "label_rules": [
+    "Una etiqueta null significa «en este material no hay nada que decir en ese eje»: el motor debe abstenerse, no inventar un valor.",
+    "La autoridad describe quién publica el material, no lo que el material cita.",
+    "Un caso puede estar mal a propósito: un dataset donde el motor acierta todo no mide nada."
+  ],
+  "profiles": [
+    {
+      "opposition_code": "demo-tai-2026",
+      "opposition_name": "Técnico Auxiliar de Muestra",
+      "convocation_code": "demo-tai-2026",
+      "topics": [
+        {
+          "node_id": "demo-i-1",
+          "path": "I.1",
+          "title": "La Constitución Española y los derechos fundamentales",
+          "depth": 1
+        },
+        {
+          "node_id": "demo-i-7",
+          "path": "I.7",
+          "title": "Protección de datos personales y derechos digitales",
+          "depth": 1
+        },
+        {
+          "node_id": "demo-iv-2",
+          "path": "IV.2",
+          "title": "Administración de bases de datos",
+          "depth": 1
+        },
+        {
+          "node_id": "demo-iv-4",
+          "path": "IV.4",
+          "title": "Administración de redes de área local",
+          "depth": 1
+        },
+        {
+          "node_id": "demo-iv-5",
+          "path": "IV.5",
+          "title": "Seguridad de los sistemas de información",
+          "depth": 1
+        }
+      ]
+    },
+    {
+      "opposition_code": "demo-gc-2026",
+      "opposition_name": "Agente de Prácticas",
+      "convocation_code": "demo-gc-2026",
+      "topics": [
+        {
+          "node_id": "demo-t-1",
+          "path": "T-1",
+          "title": "Ordenación del tráfico y seguridad vial",
+          "depth": 1
+        }
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "id": "facil-bases-convocatoria",
+      "intent": "facil",
+      "note": "Caso fácil: la convocatoria publicada en el BOE trae tres señales fuertes (bases de la convocatoria, programa oficial, anexo V) y la procedencia oficial.",
+      "subject": {
+        "subject_type": "artifact",
+        "subject_id": "syn-cls-001",
+        "text": "Bases de la convocatoria del proceso selectivo de ejemplo. Programa oficial y anexo V del temario. Publicado por el Ministerio de Ejemplo.",
+        "original_name": "bases-convocatoria-ejemplo.pdf",
+        "media_type": "application/pdf",
+        "origin_type": "file",
+        "origin_display": "https://www.boe.es/documento-sintetico?id=DEMO-2026-1"
+      },
+      "expected": {
+        "document_type": "convocation",
+        "opposition": null,
+        "topic": null,
+        "authority": "A",
+        "rights": null
+      }
+    },
+    {
+      "id": "facil-plantilla-respuestas",
+      "intent": "facil",
+      "note": "Caso fácil con dos candidatos en el mismo eje: «plantilla de respuestas» y «examen oficial» empatan en peso, y el humano sabe que lo que tiene delante es la plantilla.",
+      "subject": {
+        "subject_type": "artifact",
+        "subject_id": "syn-cls-002",
+        "text": "Examen oficial del proceso de ejemplo. Plantilla de respuestas: 1-A, 2-C, 3-B. Convocatoria de ejemplo.",
+        "original_name": "plantilla-respuestas-ejemplo.pdf",
+        "media_type": "application/pdf",
+        "origin_type": "file",
+        "origin_display": null
+      },
+      "expected": {
+        "document_type": "answer_key",
+        "opposition": null,
+        "topic": null,
+        "authority": null,
+        "rights": null
+      }
+    },
+    {
+      "id": "facil-pegado-apuntes-propios",
+      "intent": "facil",
+      "note": "Caso fácil de la entrada directa: un pegado lo escribió el usuario, así que es material propio y de nadie más.",
+      "subject": {
+        "subject_type": "representation",
+        "subject_id": "syn-cls-003",
+        "text": "Resumen personal de lo que llevo estudiado hoy sobre el bloque de ejemplo.",
+        "original_name": null,
+        "media_type": "text/plain",
+        "origin_type": "paste",
+        "origin_display": "Texto pegado por el usuario"
+      },
+      "expected": {
+        "document_type": "personal_notes",
+        "opposition": null,
+        "topic": null,
+        "authority": null,
+        "rights": null
+      }
+    },
+    {
+      "id": "facil-guia-tecnica-reutilizacion",
+      "intent": "facil",
+      "note": "Caso fácil en dos ejes: una guía técnica con condiciones de reutilización declaradas. Los derechos son un eje crítico, así que este acierto no se aplica solo.",
+      "subject": {
+        "subject_type": "artifact",
+        "subject_id": "syn-cls-004",
+        "text": "Guía técnica de ejemplo. Reutilización autorizada de los contenidos; condiciones de reutilización publicadas en el aviso legal.",
+        "original_name": "guia-tecnica-reutilizacion-ejemplo.pdf",
+        "media_type": "application/pdf",
+        "origin_type": "file",
+        "origin_display": null
+      },
+      "expected": {
+        "document_type": "official_technical",
+        "opposition": null,
+        "topic": null,
+        "authority": null,
+        "rights": "reuse_with_conditions"
+      }
+    },
+    {
+      "id": "facil-derechos-uso-privado",
+      "intent": "facil",
+      "note": "Caso fácil de derechos con cero señales documentales: el motor debe saber que un aviso de derechos no dice qué tipo de documento es.",
+      "subject": {
+        "subject_type": "artifact",
+        "subject_id": "syn-cls-005",
+        "text": "Todos los derechos reservados. Prohibida su reproducción total o parcial sin autorización escrita.",
+        "original_name": "capitulo-libro-ejemplo.pdf",
+        "media_type": "application/pdf",
+        "origin_type": "file",
+        "origin_display": null
+      },
+      "expected": {
+        "document_type": null,
+        "opposition": null,
+        "topic": null,
+        "authority": null,
+        "rights": "private_use_only"
+      }
+    },
+    {
+      "id": "facil-guia-autonomica",
+      "intent": "facil",
+      "note": "Caso fácil de autoridad B: publica otra administración, no el organismo convocante. Una guía técnica pública no es material de editorial.",
+      "subject": {
+        "subject_type": "artifact",
+        "subject_id": "syn-cls-006",
+        "text": "Comunidad Autónoma de Ejemplo. Guía técnica de accesibilidad de los portales públicos.",
+        "original_name": "guia-autonomica-ejemplo.pdf",
+        "media_type": "application/pdf",
+        "origin_type": "file",
+        "origin_display": null
+      },
+      "expected": {
+        "document_type": "official_technical",
+        "opposition": null,
+        "topic": null,
+        "authority": "B",
+        "rights": null
+      }
+    },
+    {
+      "id": "facil-temario-oposicion-muestra",
+      "intent": "facil",
+      "note": "Caso fácil de oposición: el código del proceso está en el nombre del fichero y en el texto, y el nombre completo del cuerpo también aparece.",
+      "subject": {
+        "subject_type": "artifact",
+        "subject_id": "syn-cls-007",
+        "text": "Temario del proceso selectivo demo-tai-2026. Programa oficial para Técnico Auxiliar de Muestra.",
+        "original_name": "temario-demo-tai-2026.pdf",
+        "media_type": "application/pdf",
+        "origin_type": "file",
+        "origin_display": null
+      },
+      "expected": {
+        "document_type": "curriculum",
+        "opposition": "demo-tai-2026",
+        "topic": null,
+        "authority": null,
+        "rights": null
+      }
+    },
+    {
+      "id": "ambiguo-anexo-oficial-copiado",
+      "intent": "ambiguo",
+      "note": "Caso ambiguo: es el anexo oficial del temario, pero la copia que tiene el usuario la hizo una academia. El humano dice oficial porque el contenido lo es; el motor empata y decide por orden alfabético.",
+      "subject": {
+        "subject_type": "artifact",
+        "subject_id": "syn-cls-008",
+        "text": "Anexo V. Programa oficial del temario. Copia del temario particular de la academia de ejemplo.",
+        "original_name": "anexo-v-copia-academia.pdf",
+        "media_type": "application/pdf",
+        "origin_type": "file",
+        "origin_display": null
+      },
+      "expected": {
+        "document_type": "curriculum",
+        "opposition": null,
+        "topic": null,
+        "authority": null,
+        "rights": null
+      }
+    },
+    {
+      "id": "ambiguo-apuntes-para-el-foro",
+      "intent": "ambiguo",
+      "note": "Caso ambiguo y fallo conocido: los apuntes son de una academia (material con derechos) y solo se menciona un foro como el sitio donde se compartieron. Aquí el motor se equivoca y además aplicaría la propuesta solo.",
+      "subject": {
+        "subject_type": "artifact",
+        "subject_id": "syn-cls-009",
+        "text": "Apuntes de la academia de ejemplo, compartidos en el foro de opositores.",
+        "original_name": "apuntes-academia-ejemplo.pdf",
+        "media_type": "application/pdf",
+        "origin_type": "file",
+        "origin_display": null
+      },
+      "expected": {
+        "document_type": "private_syllabus",
+        "opposition": null,
+        "topic": null,
+        "authority": "D",
+        "rights": null
+      }
+    },
+    {
+      "id": "ambiguo-dos-temas",
+      "intent": "ambiguo",
+      "note": "Caso ambiguo y fallo conocido en dos ejes: el resumen propio (el humano lo llama así por el nombre del fichero) trata a la vez de seguridad de sistemas y de bases de datos, y los dos títulos del programa coinciden igual.",
+      "subject": {
+        "subject_type": "artifact",
+        "subject_id": "syn-cls-010",
+        "text": "Seguridad de los sistemas de información y administración de bases de datos: repaso de los dos bloques.",
+        "original_name": "resumen-sistemas-ejemplo.pdf",
+        "media_type": "application/pdf",
+        "origin_type": "file",
+        "origin_display": null
+      },
+      "expected": {
+        "document_type": "personal_notes",
+        "opposition": null,
+        "topic": "IV.5",
+        "authority": null,
+        "rights": null
+      }
+    },
+    {
+      "id": "donde-falla-tema-sin-tipo",
+      "intent": "donde_falla",
+      "note": "Fallo conocido: el tema se reconoce por el título del programa, pero el tipo documental se queda sin propuesta. Una persona ve enseguida que es un tema del temario y el motor no tiene ninguna señal para decirlo.",
+      "subject": {
+        "subject_type": "artifact",
+        "subject_id": "syn-cls-011",
+        "text": "Tema 1. La Constitución Española de 1978. Derechos y deberes fundamentales. Su garantía y suspensión.",
+        "original_name": "tema-01-ejemplo.pdf",
+        "media_type": "application/pdf",
+        "origin_type": "file",
+        "origin_display": null
+      },
+      "expected": {
+        "document_type": "curriculum",
+        "opposition": null,
+        "topic": "I.1",
+        "authority": null,
+        "rights": null
+      }
+    },
+    {
+      "id": "donde-falla-cita-de-resolucion",
+      "intent": "donde_falla",
+      "note": "Fallo conocido en un eje crítico: el resumen personal cita una resolución y el motor le atribuye la autoridad de lo citado. Por suerte la banda de confianza no deja que un eje crítico se aplique solo.",
+      "subject": {
+        "subject_type": "artifact",
+        "subject_id": "syn-cls-012",
+        "text": "Resumen personal de las oposiciones de ejemplo. Resolución de 12 de enero de 2026: bases publicadas en el portal.",
+        "original_name": "resumen-personal-oposicion-ejemplo.pdf",
+        "media_type": "application/pdf",
+        "origin_type": "file",
+        "origin_display": null
+      },
+      "expected": {
+        "document_type": "personal_notes",
+        "opposition": null,
+        "topic": null,
+        "authority": null,
+        "rights": null
+      }
+    },
+    {
+      "id": "facil-tema-vial",
+      "intent": "facil",
+      "note": "Caso fácil del segundo perfil: el tema y el cuerpo se reconocen juntos y el código del proceso no aparece en ningún sitio, así que la propuesta de oposición se queda en confianza baja.",
+      "subject": {
+        "subject_type": "artifact",
+        "subject_id": "syn-cls-013",
+        "text": "Mis apuntes de ordenación del tráfico y seguridad vial. Agente de Prácticas.",
+        "original_name": "tema-vial-ejemplo.pdf",
+        "media_type": "application/pdf",
+        "origin_type": "file",
+        "origin_display": null
+      },
+      "expected": {
+        "document_type": "personal_notes",
+        "opposition": "demo-gc-2026",
+        "topic": "T-1",
+        "authority": null,
+        "rights": null
+      }
+    },
+    {
+      "id": "sin-senales-nota-cotidiana",
+      "intent": "sin_senales",
+      "note": "Sin señales a propósito: una nota cotidiana del usuario. No hay nada que clasificar, así que el motor debe abstenerse eje por eje en lugar de rellenar con un valor por defecto.",
+      "subject": {
+        "subject_type": "artifact",
+        "subject_id": "syn-cls-014",
+        "text": "Recordatorio: comprar café y repasar el tema de ayer por la tarde.",
+        "original_name": "nota.txt",
+        "media_type": "text/plain",
+        "origin_type": "file",
+        "origin_display": null
+      },
+      "expected": {
+        "document_type": null,
+        "opposition": null,
+        "topic": null,
+        "authority": null,
+        "rights": null
+      }
+    },
+    {
+      "id": "sin-senales-escaneo-sin-texto",
+      "intent": "sin_senales",
+      "note": "Sin señales a propósito: un escaneo del que todavía no hay texto (ni OCR). Con cero texto nadie puede clasificar nada, y este caso impide que el informe cuente como cubierto lo que no se ha mirado.",
+      "subject": {
+        "subject_type": "artifact",
+        "subject_id": "syn-cls-015",
+        "text": "",
+        "original_name": "escaneo-001.pdf",
+        "media_type": "application/pdf",
+        "origin_type": "file",
+        "origin_display": null
+      },
+      "expected": {
+        "document_type": null,
+        "opposition": null,
+        "topic": null,
+        "authority": null,
+        "rights": null
+      }
+    }
+  ]
+}

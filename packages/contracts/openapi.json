@@ -30,6 +30,24 @@
         "title": "ActiveConvocationSchema",
         "type": "object"
       },
+      "AlternativeSchema": {
+        "properties": {
+          "confidence": {
+            "title": "Confidence",
+            "type": "number"
+          },
+          "value": {
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "value",
+          "confidence"
+        ],
+        "title": "AlternativeSchema",
+        "type": "object"
+      },
       "BatchDetailSchema": {
         "properties": {
           "batch": {
@@ -233,6 +251,96 @@
         "title": "Body_ingest_files_api_v1_ingestion_batches_files_post",
         "type": "object"
       },
+      "BulkDecisionRequestSchema": {
+        "description": "Decisión en lote con excepciones explícitas (11_IMPLEMENTATION-SLICES S04).",
+        "properties": {
+          "decision": {
+            "enum": [
+              "accepted",
+              "rejected"
+            ],
+            "title": "Decision",
+            "type": "string"
+          },
+          "excluded": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Excluded",
+            "type": "array"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "overrides": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Overrides",
+            "type": "object"
+          },
+          "proposal_ids": {
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Proposal Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "proposal_ids",
+          "decision"
+        ],
+        "title": "BulkDecisionRequestSchema",
+        "type": "object"
+      },
+      "BulkDecisionResponseSchema": {
+        "properties": {
+          "applied": {
+            "title": "Applied",
+            "type": "integer"
+          },
+          "conflicts": {
+            "title": "Conflicts",
+            "type": "integer"
+          },
+          "excluded": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Excluded",
+            "type": "array"
+          },
+          "outcomes": {
+            "items": {
+              "$ref": "#/components/schemas/DecisionOutcomeSchema"
+            },
+            "title": "Outcomes",
+            "type": "array"
+          },
+          "requested": {
+            "title": "Requested",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "outcomes",
+          "applied",
+          "conflicts",
+          "requested"
+        ],
+        "title": "BulkDecisionResponseSchema",
+        "type": "object"
+      },
       "CapabilitiesSchema": {
         "properties": {
           "capabilities": {
@@ -337,6 +445,50 @@
           "detail"
         ],
         "title": "CheckSchema",
+        "type": "object"
+      },
+      "ClassificationReportSchema": {
+        "description": "Qué dejó la última pasada de clasificación: se sirve tal cual, sin redondear nada.",
+        "properties": {
+          "auto_applied": {
+            "title": "Auto Applied",
+            "type": "integer"
+          },
+          "duplicates_found": {
+            "title": "Duplicates Found",
+            "type": "integer"
+          },
+          "proposals_created": {
+            "title": "Proposals Created",
+            "type": "integer"
+          },
+          "proposals_unchanged": {
+            "title": "Proposals Unchanged",
+            "type": "integer"
+          },
+          "subjects": {
+            "title": "Subjects",
+            "type": "integer"
+          },
+          "subjects_without_signals": {
+            "title": "Subjects Without Signals",
+            "type": "integer"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          }
+        },
+        "required": [
+          "subjects",
+          "proposals_created",
+          "proposals_unchanged",
+          "subjects_without_signals",
+          "auto_applied",
+          "duplicates_found",
+          "summary"
+        ],
+        "title": "ClassificationReportSchema",
         "type": "object"
       },
       "ConvocationDetailSchema": {
@@ -490,6 +642,102 @@
         ],
         "title": "ConvocationStatus",
         "type": "string"
+      },
+      "CoverageNodeSchema": {
+        "properties": {
+          "accepted": {
+            "title": "Accepted",
+            "type": "integer"
+          },
+          "depth": {
+            "title": "Depth",
+            "type": "integer"
+          },
+          "materials": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Materials",
+            "type": "array"
+          },
+          "node_id": {
+            "title": "Node Id",
+            "type": "string"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "provisional": {
+            "title": "Provisional",
+            "type": "integer"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "node_id",
+          "path",
+          "title",
+          "depth",
+          "provisional",
+          "accepted"
+        ],
+        "title": "CoverageNodeSchema",
+        "type": "object"
+      },
+      "CoverageSchema": {
+        "description": "Cobertura de un nodo y de su subárbol: provisional y aceptada, nunca mezcladas.",
+        "properties": {
+          "accepted": {
+            "title": "Accepted",
+            "type": "integer"
+          },
+          "materials_total": {
+            "title": "Materials Total",
+            "type": "integer"
+          },
+          "node_id": {
+            "title": "Node Id",
+            "type": "string"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "provisional": {
+            "title": "Provisional",
+            "type": "integer"
+          },
+          "subtree": {
+            "items": {
+              "$ref": "#/components/schemas/CoverageNodeSchema"
+            },
+            "title": "Subtree",
+            "type": "array"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "unclassified_subjects": {
+            "title": "Unclassified Subjects",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "node_id",
+          "path",
+          "title",
+          "provisional",
+          "accepted",
+          "unclassified_subjects",
+          "materials_total"
+        ],
+        "title": "CoverageSchema",
+        "type": "object"
       },
       "CreateInventoryRequest": {
         "properties": {
@@ -677,6 +925,101 @@
         "title": "CurriculumSchema",
         "type": "object"
       },
+      "DecisionOutcomeSchema": {
+        "properties": {
+          "applied": {
+            "title": "Applied",
+            "type": "boolean"
+          },
+          "audit_event_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Audit Event Id"
+          },
+          "mapping_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mapping Id"
+          },
+          "proposal_id": {
+            "title": "Proposal Id",
+            "type": "string"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "proposal_id",
+          "status",
+          "applied"
+        ],
+        "title": "DecisionOutcomeSchema",
+        "type": "object"
+      },
+      "DecisionRequestSchema": {
+        "description": "Decisión explícita sobre una propuesta. `override_value` corrige el valor propuesto.",
+        "properties": {
+          "coverage_type": {
+            "default": "partial",
+            "enum": [
+              "mention",
+              "partial",
+              "complete"
+            ],
+            "title": "Coverage Type",
+            "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "override_value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Override Value"
+          }
+        },
+        "title": "DecisionRequestSchema",
+        "type": "object"
+      },
       "DegradationSchema": {
         "properties": {
           "code": {
@@ -693,6 +1036,135 @@
           "message"
         ],
         "title": "DegradationSchema",
+        "type": "object"
+      },
+      "DuplicateClusterSchema": {
+        "properties": {
+          "created_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "same_text",
+              "near_duplicate"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "members": {
+            "items": {
+              "$ref": "#/components/schemas/DuplicateMemberSchema"
+            },
+            "title": "Members",
+            "type": "array"
+          },
+          "relation": {
+            "enum": [
+              "revision_candidate",
+              "subset",
+              "superset",
+              "similar"
+            ],
+            "title": "Relation",
+            "type": "string"
+          },
+          "resolution_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolution Note"
+          },
+          "resolved_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolved At"
+          },
+          "signature": {
+            "title": "Signature",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "open",
+              "resolved",
+              "dismissed"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "relation",
+          "signature",
+          "status"
+        ],
+        "title": "DuplicateClusterSchema",
+        "type": "object"
+      },
+      "DuplicateMemberSchema": {
+        "properties": {
+          "is_representative": {
+            "title": "Is Representative",
+            "type": "boolean"
+          },
+          "similarity": {
+            "title": "Similarity",
+            "type": "number"
+          },
+          "subject_id": {
+            "title": "Subject Id",
+            "type": "string"
+          },
+          "subject_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subject Label"
+          },
+          "subject_type": {
+            "title": "Subject Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "subject_type",
+          "subject_id",
+          "similarity",
+          "is_representative"
+        ],
+        "title": "DuplicateMemberSchema",
         "type": "object"
       },
       "EmbeddingSettingsSchema": {
@@ -1413,6 +1885,113 @@
         "title": "LlmSettingsSchema",
         "type": "object"
       },
+      "MappingSchema": {
+        "properties": {
+          "approved_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved At"
+          },
+          "confidence": {
+            "title": "Confidence",
+            "type": "number"
+          },
+          "coverage_type": {
+            "enum": [
+              "mention",
+              "partial",
+              "complete"
+            ],
+            "title": "Coverage Type",
+            "type": "string"
+          },
+          "depth": {
+            "title": "Depth",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "node_depth": {
+            "title": "Node Depth",
+            "type": "integer"
+          },
+          "node_id": {
+            "title": "Node Id",
+            "type": "string"
+          },
+          "node_path": {
+            "title": "Node Path",
+            "type": "string"
+          },
+          "node_title": {
+            "title": "Node Title",
+            "type": "string"
+          },
+          "source_proposal_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Proposal Id"
+          },
+          "status": {
+            "enum": [
+              "provisional",
+              "accepted",
+              "rejected"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "subject_id": {
+            "title": "Subject Id",
+            "type": "string"
+          },
+          "subject_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subject Label"
+          },
+          "subject_type": {
+            "title": "Subject Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "node_id",
+          "node_path",
+          "node_title",
+          "node_depth",
+          "subject_type",
+          "subject_id",
+          "coverage_type",
+          "depth",
+          "confidence",
+          "status"
+        ],
+        "title": "MappingSchema",
+        "type": "object"
+      },
       "NodeType": {
         "description": "Nivel estructural del programa dentro de una convocatoria.\n\nLos perfiles oficiales no tienen la misma forma: TAI publica cuatro bloques con temas, y\nGuardia Civil publica veinticinco temas con bloques internos y epígrafes. El tipo describe el\nnivel, y cada convocatoria define su jerarquía (ver ADR-005).",
         "enum": [
@@ -1613,6 +2192,194 @@
           "correlation_id"
         ],
         "title": "ProblemDetail",
+        "type": "object"
+      },
+      "ProposalPageSchema": {
+        "properties": {
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "proposals": {
+            "items": {
+              "$ref": "#/components/schemas/ProposalSchema"
+            },
+            "title": "Proposals",
+            "type": "array"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "proposals",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "ProposalPageSchema",
+        "type": "object"
+      },
+      "ProposalSchema": {
+        "properties": {
+          "alternatives": {
+            "items": {
+              "$ref": "#/components/schemas/AlternativeSchema"
+            },
+            "title": "Alternatives",
+            "type": "array"
+          },
+          "axis": {
+            "enum": [
+              "document_type",
+              "opposition",
+              "topic",
+              "authority",
+              "rights"
+            ],
+            "title": "Axis",
+            "type": "string"
+          },
+          "band": {
+            "enum": [
+              "high",
+              "medium",
+              "low"
+            ],
+            "title": "Band",
+            "type": "string"
+          },
+          "confidence": {
+            "title": "Confidence",
+            "type": "number"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "decided_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decided At"
+          },
+          "decision_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decision Note"
+          },
+          "engine_name": {
+            "title": "Engine Name",
+            "type": "string"
+          },
+          "engine_version": {
+            "title": "Engine Version",
+            "type": "string"
+          },
+          "evidence": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Evidence",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "is_critical": {
+            "title": "Is Critical",
+            "type": "boolean"
+          },
+          "proposed_value": {
+            "title": "Proposed Value",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "pending",
+              "accepted",
+              "rejected",
+              "superseded",
+              "auto_applied_provisional"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "subject_id": {
+            "title": "Subject Id",
+            "type": "string"
+          },
+          "subject_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subject Label"
+          },
+          "subject_type": {
+            "enum": [
+              "artifact",
+              "representation"
+            ],
+            "title": "Subject Type",
+            "type": "string"
+          },
+          "value_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value Label"
+          }
+        },
+        "required": [
+          "id",
+          "subject_type",
+          "subject_id",
+          "axis",
+          "proposed_value",
+          "confidence",
+          "band",
+          "is_critical",
+          "status",
+          "engine_name",
+          "engine_version"
+        ],
+        "title": "ProposalSchema",
         "type": "object"
       },
       "ReadinessProblem": {
@@ -1885,6 +2652,97 @@
         "title": "RepresentationTextSchema",
         "type": "object"
       },
+      "ResolveDuplicateRequestSchema": {
+        "properties": {
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "relation": {
+            "enum": [
+              "revision_candidate",
+              "subset",
+              "superset",
+              "similar"
+            ],
+            "title": "Relation",
+            "type": "string"
+          }
+        },
+        "required": [
+          "relation"
+        ],
+        "title": "ResolveDuplicateRequestSchema",
+        "type": "object"
+      },
+      "ReviewGroupSchema": {
+        "properties": {
+          "axis": {
+            "title": "Axis",
+            "type": "string"
+          },
+          "is_critical": {
+            "title": "Is Critical",
+            "type": "boolean"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "max_confidence": {
+            "title": "Max Confidence",
+            "type": "number"
+          },
+          "min_confidence": {
+            "title": "Min Confidence",
+            "type": "number"
+          },
+          "proposal_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Proposal Ids",
+            "type": "array"
+          },
+          "proposed_value": {
+            "title": "Proposed Value",
+            "type": "string"
+          },
+          "size": {
+            "title": "Size",
+            "type": "integer"
+          },
+          "subject_type": {
+            "title": "Subject Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "subject_type",
+          "axis",
+          "proposed_value",
+          "label",
+          "proposal_ids",
+          "size",
+          "min_confidence",
+          "max_confidence",
+          "is_critical"
+        ],
+        "title": "ReviewGroupSchema",
+        "type": "object"
+      },
       "RuleKind": {
         "enum": [
           "boolean",
@@ -2022,6 +2880,627 @@
         "summary": "Capacidades reales y degradaciones"
       }
     },
+    "/api/v1/classification-decisions/{decision_id}/undo": {
+      "post": {
+        "description": "Deshace la última decisión de una propuesta.\n\n`{decision_id}` es el identificador de la decisión que devuelve la propia respuesta de decidir\n(`audit_event_id`). También se admite el identificador de la propuesta: la interfaz trabaja con\npropuestas y la API no le obliga a recordar la traza de auditoría para deshacer.",
+        "operationId": "undo_decision_api_v1_classification_decisions__decision_id__undo_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "decision_id",
+            "required": true,
+            "schema": {
+              "title": "Decision Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DecisionOutcomeSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "La entrada no se puede usar: carpeta inválida (`invalid_source`), contenido rechazado por seguridad (`unsafe_content`) o URL no descargable (`url_rejected`)."
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Deshace una decisión y devuelve la propuesta a la cola",
+        "tags": [
+          "clasificación"
+        ]
+      }
+    },
+    "/api/v1/classification-proposals": {
+      "get": {
+        "operationId": "list_proposals_api_v1_classification_proposals_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "subject_type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Subject Type"
+            }
+          },
+          {
+            "in": "query",
+            "name": "subject_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Subject Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "axis",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Axis"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProposalPageSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Propuestas de clasificación, con su banda y su evidencia",
+        "tags": [
+          "clasificación"
+        ]
+      }
+    },
+    "/api/v1/classification-proposals/bulk-decision": {
+      "post": {
+        "operationId": "bulk_decision_api_v1_classification_proposals_bulk_decision_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkDecisionRequestSchema"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkDecisionResponseSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "La entrada no se puede usar: carpeta inválida (`invalid_source`), contenido rechazado por seguridad (`unsafe_content`) o URL no descargable (`url_rejected`)."
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Decide en lote, con excepciones: nunca es todo-o-nada",
+        "tags": [
+          "clasificación"
+        ]
+      }
+    },
+    "/api/v1/classification-proposals/{proposal_id}": {
+      "get": {
+        "operationId": "get_proposal_api_v1_classification_proposals__proposal_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "proposal_id",
+            "required": true,
+            "schema": {
+              "title": "Proposal Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProposalSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Una propuesta concreta",
+        "tags": [
+          "clasificación"
+        ]
+      }
+    },
+    "/api/v1/classification-proposals/{proposal_id}/accept": {
+      "post": {
+        "operationId": "accept_proposal_api_v1_classification_proposals__proposal_id__accept_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "proposal_id",
+            "required": true,
+            "schema": {
+              "title": "Proposal Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DecisionRequestSchema"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DecisionOutcomeSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "La entrada no se puede usar: carpeta inválida (`invalid_source`), contenido rechazado por seguridad (`unsafe_content`) o URL no descargable (`url_rejected`)."
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Acepta una propuesta (y crea el mapeo si es de tema)",
+        "tags": [
+          "clasificación"
+        ]
+      }
+    },
+    "/api/v1/classification-proposals/{proposal_id}/reject": {
+      "post": {
+        "operationId": "reject_proposal_api_v1_classification_proposals__proposal_id__reject_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "proposal_id",
+            "required": true,
+            "schema": {
+              "title": "Proposal Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DecisionRequestSchema"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DecisionOutcomeSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "La entrada no se puede usar: carpeta inválida (`invalid_source`), contenido rechazado por seguridad (`unsafe_content`) o URL no descargable (`url_rejected`)."
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Rechaza una propuesta (y retira el mapeo que hubiera salido de ella)",
+        "tags": [
+          "clasificación"
+        ]
+      }
+    },
+    "/api/v1/classification-runs": {
+      "post": {
+        "operationId": "run_classification_api_v1_classification_runs_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClassificationReportSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "La entrada no se puede usar: carpeta inválida (`invalid_source`), contenido rechazado por seguridad (`unsafe_content`) o URL no descargable (`url_rejected`)."
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Ejecuta una pasada de clasificación ahora (idempotente)",
+        "tags": [
+          "clasificación"
+        ]
+      }
+    },
     "/api/v1/convocations/{convocation_id}": {
       "get": {
         "operationId": "get_convocation_api_v1_convocations__convocation_id__get",
@@ -2140,6 +3619,81 @@
         "summary": "Árbol del programa oficial"
       }
     },
+    "/api/v1/curriculum-mappings/{mapping_id}": {
+      "delete": {
+        "operationId": "delete_mapping_api_v1_curriculum_mappings__mapping_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mapping_id",
+            "required": true,
+            "schema": {
+              "title": "Mapping Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "La entrada no se puede usar: carpeta inválida (`invalid_source`), contenido rechazado por seguridad (`unsafe_content`) o URL no descargable (`url_rejected`)."
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Retira un mapeo (queda auditado)",
+        "tags": [
+          "clasificación"
+        ]
+      }
+    },
     "/api/v1/curriculum-nodes/{node_id}": {
       "get": {
         "operationId": "get_curriculum_node_api_v1_curriculum_nodes__node_id__get",
@@ -2197,6 +3751,233 @@
           }
         },
         "summary": "Nodo del programa con su procedencia"
+      }
+    },
+    "/api/v1/curriculum-nodes/{node_id}/coverage": {
+      "get": {
+        "operationId": "node_coverage_api_v1_curriculum_nodes__node_id__coverage_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "node_id",
+            "required": true,
+            "schema": {
+              "title": "Node Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CoverageSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Cobertura de un nodo y de su subárbol (provisional y aceptada, separadas)",
+        "tags": [
+          "clasificación"
+        ]
+      }
+    },
+    "/api/v1/duplicate-clusters": {
+      "get": {
+        "operationId": "list_duplicate_clusters_api_v1_duplicate_clusters_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DuplicateClusterSchema"
+                  },
+                  "title": "Response List Duplicate Clusters Api V1 Duplicate Clusters Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Grupos de material repetido o muy parecido",
+        "tags": [
+          "clasificación"
+        ]
+      }
+    },
+    "/api/v1/duplicate-clusters/{cluster_id}/resolve": {
+      "post": {
+        "operationId": "resolve_duplicate_cluster_api_v1_duplicate_clusters__cluster_id__resolve_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cluster_id",
+            "required": true,
+            "schema": {
+              "title": "Cluster Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolveDuplicateRequestSchema"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DuplicateClusterSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "La entrada no se puede usar: carpeta inválida (`invalid_source`), contenido rechazado por seguridad (`unsafe_content`) o URL no descargable (`url_rejected`)."
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Resuelve un grupo de duplicados (nunca borra nada por sí solo)",
+        "tags": [
+          "clasificación"
+        ]
       }
     },
     "/api/v1/health/live": {
@@ -3516,6 +5297,95 @@
         "summary": "Pide cancelar un trabajo"
       }
     },
+    "/api/v1/mappings": {
+      "get": {
+        "operationId": "list_mappings_api_v1_mappings_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "subject_type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Subject Type"
+            }
+          },
+          {
+            "in": "query",
+            "name": "subject_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Subject Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/MappingSchema"
+                  },
+                  "title": "Response List Mappings Api V1 Mappings Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Mapeos de programa de un sujeto",
+        "tags": [
+          "clasificación"
+        ]
+      }
+    },
     "/api/v1/oppositions": {
       "get": {
         "operationId": "list_oppositions_api_v1_oppositions_get",
@@ -3878,6 +5748,61 @@
           }
         },
         "summary": "Texto extraído, por trozos, con sus avisos a la vista"
+      }
+    },
+    "/api/v1/review-groups": {
+      "get": {
+        "operationId": "review_groups_api_v1_review_groups_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ReviewGroupSchema"
+                  },
+                  "title": "Response Review Groups Api V1 Review Groups Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Grupos de revisión: propuestas pendientes agrupadas por eje y valor",
+        "tags": [
+          "clasificación"
+        ]
       }
     },
     "/api/v1/settings": {

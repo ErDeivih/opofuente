@@ -25,6 +25,7 @@ from opofuente.api.middleware import (
     SecurityHeadersMiddleware,
 )
 from opofuente.api.openapi import apply_problem_media_type
+from opofuente.application.classification_service import ClassificationService
 from opofuente.application.extraction_service import ExtractionService
 from opofuente.application.ingestion_service import IngestionService
 from opofuente.application.intake_service import IntakeService
@@ -40,6 +41,8 @@ from opofuente.infrastructure.capabilities import (
     PlannedCapabilityProvider,
     SqliteCapabilityProvider,
 )
+from opofuente.infrastructure.classification_repository import SqlAlchemyClassificationRepository
+from opofuente.infrastructure.classifiers import DeterministicClassifier
 from opofuente.infrastructure.clock import SystemClock
 from opofuente.infrastructure.db import build_engine, build_session_factory
 from opofuente.infrastructure.extraction_repository import SqlAlchemyExtractionRepository
@@ -145,11 +148,17 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         ),
     )
     job_service = JobService(job_queue, clock)
+    classification_service = ClassificationService(
+        repository=SqlAlchemyClassificationRepository(session_factory, RepresentationStore(paths)),
+        engines=(DeterministicClassifier(),),
+        clock=clock,
+    )
     worker = JobWorker(
         queue=job_queue,
         handlers={
             JobType.INGEST_BATCH: ingestion_service.run_import_job,
             JobType.EXTRACT_ARTIFACT: extraction_service.run_extraction_job,
+            JobType.CLASSIFY_DOCUMENT: classification_service.run_classification_job,
         },
         # Un trabajo que se queda `failed` sin más reintentos tiene que cerrar el lote: si no, el
         # lote seguiría diciendo que trabaja mientras su trabajo ya no va a ejecutarse.
@@ -215,6 +224,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.extraction_service = extraction_service
     app.state.intake_service = intake_service
     app.state.job_service = job_service
+    app.state.classification_service = classification_service
 
     # El orden importa: el último añadido es el más externo, así que el identificador de
     # correlación envuelve también los rechazos por Origin.

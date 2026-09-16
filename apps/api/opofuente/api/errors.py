@@ -17,6 +17,7 @@ from pydantic import BaseModel, Field
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from opofuente.domain.errors import (
+    ClassificationConflictError,
     InvalidBatchStateError,
     InvalidSourceError,
     NotFoundError,
@@ -172,6 +173,13 @@ def register_exception_handlers(app: FastAPI) -> None:
                 detail=str(exc),
                 instance=request.url.path,
                 code="invalid_state",
+            )
+        if isinstance(exc, ClassificationConflictError):
+            return problem_response(
+                status_code=409,
+                detail=str(exc),
+                instance=request.url.path,
+                code="classification_conflict",
             )
         if isinstance(exc, UnsafeContentError):
             return problem_response(

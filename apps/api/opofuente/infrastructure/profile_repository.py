@@ -47,6 +47,7 @@ from opofuente.domain.profiles import (
 )
 from opofuente.infrastructure.db_models import (
     ConvocationVersionRecord,
+    CurriculumMappingRecord,
     CurriculumNodeRecord,
     ExamPartRecord,
     ExamRuleRecord,
@@ -386,21 +387,45 @@ class SqlAlchemyProfileRepository:
                     )
             ids_by_path[node.path] = row.id
 
-        # Nodos que ya no están en el fixture: se eliminan. Hoy nada los referencia; cuando existan
-        # mapeos de documentos (S05) habrá que decidir qué hacer antes de borrar, y esa decisión
-        # será una migración de datos, no un cambio silencioso aquí.
+        # Nodos que ya no están en el fixture: se retiran, **salvo** los que tienen material
+        # asignado. Un mapeo de programa apunta a un nodo concreto: borrarlo se llevaría por delante
+        # la clasificación y la cobertura del usuario. Por eso se conservan y se informan como
+        # conflicto (DEBT-005, ADR-007). La clave foránea `ON DELETE RESTRICT` de
+        # `curriculum_mappings` es la red de seguridad para cualquier otro camino que intente
+        # borrarlos.
         stale = [path for path in existing if path not in seen]
         if stale:
-            session.execute(
-                delete(CurriculumNodeRecord).where(
-                    CurriculumNodeRecord.convocation_version_id == convocation.id,
-                    CurriculumNodeRecord.path.in_(stale),
+            con_material = self._nodes_with_material(session, [existing[path].id for path in stale])
+            retirables = [path for path in stale if existing[path].id not in con_material]
+            if retirables:
+                session.execute(
+                    delete(CurriculumNodeRecord).where(
+                        CurriculumNodeRecord.convocation_version_id == convocation.id,
+                        CurriculumNodeRecord.path.in_(retirables),
+                    )
                 )
+            outcomes.extend(
+                EntityOutcome(code=f"node:{path}", created=False, updated=True)
+                for path in retirables
             )
             outcomes.extend(
-                EntityOutcome(code=f"node:{path}", created=False, updated=True) for path in stale
+                EntityOutcome(code=f"node:{path}", created=False, updated=False, blocked=True)
+                for path in stale
+                if path not in retirables
             )
         return outcomes
+
+    @staticmethod
+    def _nodes_with_material(session: Session, node_ids: Sequence[str]) -> set[str]:
+        """Nodos del programa que tienen algo asignado: no se pueden retirar sin decidir antes."""
+        if not node_ids:
+            return set()
+        filas = session.execute(
+            select(CurriculumMappingRecord.curriculum_node_id).where(
+                CurriculumMappingRecord.curriculum_node_id.in_(node_ids)
+            )
+        ).all()
+        return {str(fila[0]) for fila in filas}
 
     def _sync_parts(
         self, session: Session, parts: tuple[ExamPart, ...], convocation: ConvocationVersionRecord

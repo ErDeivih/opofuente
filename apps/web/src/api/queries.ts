@@ -1,6 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { QueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 
+import type { ProposalStatus } from './classification';
+import {
+  bulkDecision,
+  decideProposal,
+  fetchCoverage,
+  fetchProposals,
+  fetchReviewGroups,
+  runClassification,
+  undoDecision,
+} from './classification';
 import type { Batch } from './ingestion';
 import {
   cancelBatch,
@@ -44,6 +55,11 @@ export const queryKeys = {
   representations: (id: string) => ['ingestion', 'batch', id, 'representations'] as const,
   representationText: (id: string, offset: number, limit: number) =>
     ['ingestion', 'representation', id, 'text', offset, limit] as const,
+  /* S04: revisión de clasificación. Todas cuelgan de «classification» para poder invalidarlas
+     juntas: una decisión cambia la cola, los grupos y la cobertura a la vez. */
+  proposals: (status: string) => ['classification', 'proposals', status] as const,
+  reviewGroups: ['classification', 'review-groups'] as const,
+  coverage: (nodeId: string) => ['classification', 'coverage', nodeId] as const,
 };
 
 export function useReadiness() {
@@ -274,4 +290,83 @@ export function useIngestPaste() {
 
 export function useIngestUrl() {
   return useIntakeMutation(ingestUrl);
+}
+
+/* ------------------------------------------------------- S04: revisión de clasificación */
+
+/**
+ * Todo lo que cambia al decidir cuelga de la misma clave raíz, así que se invalida de una vez.
+ *
+ * Decidir una propuesta cambia la cola (deja de estar pendiente), los grupos (puede desaparecer su
+ * grupo) y la cobertura (si el eje era el tema). Refrescar solo una parte dejaría la pantalla
+ * contando dos verdades distintas a la vez.
+ */
+function invalidateClassification(queryClient: QueryClient) {
+  void queryClient.invalidateQueries({ queryKey: ['classification'] });
+}
+
+/** Propuestas de un estado concreto, tal y como las sirve el servidor. */
+export function useProposals(status: ProposalStatus) {
+  return useQuery({
+    queryKey: queryKeys.proposals(status),
+    queryFn: () => fetchProposals(status),
+    staleTime: 5_000,
+  });
+}
+
+export function useReviewGroups() {
+  return useQuery({
+    queryKey: queryKeys.reviewGroups,
+    queryFn: fetchReviewGroups,
+    staleTime: 5_000,
+  });
+}
+
+/** Cobertura de un nodo del programa. Sin nodo elegido no se pide nada. */
+export function useCoverage(nodeId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.coverage(nodeId ?? 'ninguno'),
+    queryFn: () => fetchCoverage(nodeId as string),
+    enabled: nodeId !== null,
+  });
+}
+
+export function useDecideProposal() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: decideProposal,
+    onSuccess: () => {
+      invalidateClassification(queryClient);
+    },
+  });
+}
+
+export function useBulkDecision() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: bulkDecision,
+    onSuccess: () => {
+      invalidateClassification(queryClient);
+    },
+  });
+}
+
+export function useUndoDecision() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: undoDecision,
+    onSuccess: () => {
+      invalidateClassification(queryClient);
+    },
+  });
+}
+
+export function useRunClassification() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: runClassification,
+    onSuccess: () => {
+      invalidateClassification(queryClient);
+    },
+  });
 }

@@ -96,17 +96,20 @@ class FakeExecution(JobExecution):
 def run_one_job(client: TestClient, *, attempts: int = 1) -> None:
     """Ejecuta el worker real de la aplicación sobre los servicios de la app de prueba.
 
-    Despacha los dos tipos de trabajo del pipeline (copiar y extraer), igual que el worker de
-    producción: si falta un manejador, el trabajo se marcaría fallido en lugar de ejecutarse.
+    Despacha los tres tipos de trabajo del pipeline (copiar, extraer y clasificar), igual que el
+    worker de producción: si falta un manejador, el trabajo se marcaría fallido en lugar de
+    ejecutarse, y la prueba daría por bueno un pipeline que no lo es.
     """
     app: Any = client.app
     ingestion = app.state.ingestion_service
     extraction = app.state.extraction_service
+    classification = app.state.classification_service
     worker = JobWorker(
         queue=ingestion.jobs,
         handlers={
             JobType.INGEST_BATCH: ingestion.run_import_job,
             JobType.EXTRACT_ARTIFACT: extraction.run_extraction_job,
+            JobType.CLASSIFY_DOCUMENT: classification.run_classification_job,
         },
         on_failed={
             JobType.INGEST_BATCH: ingestion.on_job_failed,

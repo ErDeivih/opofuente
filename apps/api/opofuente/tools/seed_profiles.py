@@ -36,10 +36,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         engine.dispose()
 
     for outcome in report.profiles:
-        print(
+        linea = (
             f"  {outcome.profile_code}: {outcome.created} nuevas, "
             f"{outcome.updated} actualizadas, {outcome.unchanged} sin cambios"
         )
+        if outcome.blocked:
+            linea += f", {outcome.blocked} nodos sin retirar (tienen material asignado)"
+        print(linea)
     print(report.summary())
 
     if check_only and report.changed:

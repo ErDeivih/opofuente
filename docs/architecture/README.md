@@ -266,3 +266,27 @@ Cuatro defectos:
   cuya procedencia no esté respaldada por un origen existente con el mismo artefacto, etiqueta y canal.
   Antes, la entrada que había llegado como texto pegado conservaba `origin_type = 'paste'` con su
   origen ya borrado.
+
+## S04 — clasificación, revisión y cobertura (16/09/2026)
+
+- **`classification_proposals`**: lo que un motor **propone** sobre un artefacto o una representación
+  (tipo documental, oposición, tema, autoridad, derechos) con su confianza, sus alternativas, su
+  evidencia y su motor versionado. Una propuesta no es un hecho: hasta que se acepta no cambia nada,
+  y en S04 no existen documentos lógicos, así que el valor aceptado se lee de la propuesta (S05 lo
+  materializará).
+- **Bandas configurables** (`ConfidenceBands`): la banda alta y no crítica se aplica
+  `auto_applied_provisional` (visible y reversible); **autoridad y derechos nunca se aplican solos**,
+  ni con confianza 0,99.
+- **`curriculum_mappings`** con `ON DELETE RESTRICT` hacia el nodo: cierra DEBT-005 (ADR-007). Un nodo
+  con material asignado no se retira al sembrar; la siembra lo declara como conflicto (`blocked`).
+- **Cobertura calculada**: provisional (sin confirmar) y aceptada (confirmada **y** con texto
+  utilizable), siempre separadas; una representación pobre o sin revisar no sostiene cobertura.
+- **Duplicados de texto**: mismo texto normalizado y casi duplicados por Jaccard de fragmentos, con
+  tope de comparaciones. Nada se borra ni se fusiona solo: se propone un cluster y lo resuelve el
+  usuario, con su evento de auditoría (`audit_events`).
+- **Motor determinista** (`infrastructure/classifiers/deterministic.py`) detrás de `ClassifierPort`:
+  reglas explícitas y citables; sin señales no hay propuesta. El adaptador LLM opcional de S09 se
+  enchufa sin tocar el servicio, y hoy la capacidad sigue `disabled`.
+- **Métricas reproducibles**: dataset sintético etiquetado (`fixtures/synthetic/classification/`) y
+  `opofuente.tools.classification_metrics`, que se ejecuta y devuelve 0 solo si la puerta de la spec §7
+  se cumple (cero promociones automáticas erróneas en ejes críticos).

@@ -16,7 +16,7 @@ Reglas:
 | [DEBT-002](#debt-002--documentar-403-404-y-422-en-el-contrato) | S02 | Cerrar el caso real de validación fallida (422) con `field_errors` | **cerrada en S02** |
 | [DEBT-003](#debt-003--uso-privado-del-temario-de-la-guardia-civil) | antes de publicar | No publicar el repositorio ni distribuir la aplicación con el temario de GC | abierta (condición previa) |
 | [DEBT-004](#debt-004--parseo-seguro-de-xmlhtml-no-confiable) | S03 | Los extractores deben defenderse de XML/HTML no confiable | **cerrada en S03** |
-| [DEBT-005](#debt-005--borrado-de-nodos-con-referencias-al-sincronizar-fixtures) | S05 | La siembra no puede borrar nodos con referencias | abierta |
+| [DEBT-005](#debt-005--borrado-de-nodos-con-referencias-al-sincronizar-fixtures) | S04 | La siembra no puede borrar nodos con referencias | **cerrada en S04** |
 | [DEBT-006](#debt-006--representación-exacta-de-fracciones-y-redondeo-en-la-puntuación) | S07 | Decidir y probar la aritmética exacta antes de calcular puntuaciones | abierta |
 | [DEBT-007](#debt-007--higiene-del-almacén-artefactos-sin-origen-y-temporales) | S12 | Recolector de artefactos sin origen, temporales `.part` y purga de trabajos | abierta |
 | [DEBT-008](#debt-008--conservar-los-formatos-sin-extractor-en-lugar-de-omitirlos) | S03 | Conservar PPTX/XLSX/EPUB y similares como `unsupported_preserved` | **cerrada en S03** |
@@ -128,6 +128,8 @@ fixture por importación manual del PDF. La alternativa está descrita en ADR-00
 ## DEBT-005 — Borrado de nodos con referencias al sincronizar fixtures
 
 **Origen:** revisión de S01 (14/09/2026).
+**Estado: cerrada en S04**, que es el slice que crea `curriculum_mappings` (el propietario lo autorizó
+así: «S04 crea `curriculum_mappings` y cierra DEBT-005 dentro de S04»).
 
 **Problema.** `SqlAlchemyProfileRepository._sync_curriculum` borra los nodos que ya no aparecen en el
 fixture
@@ -150,6 +152,27 @@ sincronización con un informe de nodos imposibles de retirar.
    silencioso sea imposible, y migración que la aplique.
 3. Prueba de regresión: un nodo con un mapeo asignado no se borra; la sincronización informa del
    conflicto y deja el estado consistente.
+
+**Cómo se cerró (S04), criterio por criterio.**
+
+1. **Política: bloquear la retirada y informarla** (`docs/decisions/ADR-007-nodos-con-material-asignado.md`).
+   Se descarta el borrado en cascada (destruye clasificación sin avisar), el versionado de nodos (decisión
+   de modelo mayor, propia de cuando el temario se reorganice de verdad) y la reasignación automática
+   (afirmaría una equivalencia que el usuario no ha confirmado). Un nodo bloqueado queda intacto y la
+   siembra lo declara; retirarlo exige una acción explícita que S04 no decide por el usuario.
+2. **Integridad real y migración**: `0012_classification_and_review` crea `curriculum_mappings` con
+   `FOREIGN KEY (curriculum_node_id) REFERENCES curriculum_nodes (id) ON DELETE RESTRICT`, y SQLite las
+   aplica (`PRAGMA foreign_keys=ON` desde S02). Prueba:
+   `test_un_nodo_con_material_asignado_no_se_puede_borrar` (un `DELETE` directo por SQL falla con
+   `IntegrityError` y el nodo y su mapeo siguen ahí) y `test_un_nodo_sin_material_si_se_puede_borrar`
+   (la restricción no bloquea lo que no tiene referencias).
+3. **Regresión de la siembra**: `test_un_nodo_con_material_asignado_no_se_retira_al_sembrar` parte de
+   los perfiles sembrados, asigna material a un tema, vuelve a sembrar con un fixture al que le faltan
+   los dos últimos temas y comprueba que el tema **sin** material se retira, el que **sí** tiene
+   material se conserva, el mapeo sigue existiendo y el informe declara un conflicto
+   (`SeedReport.blocked == 1`, con el nodo señalado). La siembra avisa además de que no converge con el
+   fixture: `changed` es `True` en ese caso a propósito, porque el estado de la base ya no puede
+   coincidir con el fixture mientras el nodo esté asignado.
 
 ## DEBT-006 — Representación exacta de fracciones y redondeo en la puntuación
 

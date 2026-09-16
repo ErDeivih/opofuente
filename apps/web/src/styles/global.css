@@ -707,6 +707,27 @@ button:focus-visible,
   overflow-wrap: anywhere;
 }
 
+/* --- Revisión de clasificación (S04) --------------------------------------- */
+
+/* Aviso de honestidad: las propuestas no son hechos y se lee antes que nada. */
+.notice {
+  border-left: 4px solid var(--color-aviso);
+  background: var(--color-aviso-fondo);
+}
+
+.notice h2 {
+  margin-bottom: 0.35rem;
+}
+
+.evidence {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.evidence li {
+  overflow-wrap: anywhere;
+}
+
 /* --- Responsive (07_UI-UX §13 y §14: 1440, 1024 y 390) --------------------- */
 
 @media (max-width: 1024px) {

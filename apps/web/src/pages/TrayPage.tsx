@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 import type { Issue, Inventory } from '../api/ingestion';
 import { isActive } from '../api/ingestion';
@@ -114,6 +115,16 @@ export function TrayPage() {
         <p className="page__lead">
           OpoFuente <strong>copia</strong>: nunca mueve, renombra ni borra tus originales. Primero
           inventaría la carpeta en modo lectura y solo después copia lo que confirmes.
+        </p>
+        {/* La revisión de la clasificación es la continuación natural de la bandeja (07_UI-UX §4):
+            aquí entra el material, allí se confirma lo que la aplicación propone sobre él. */}
+        <p className="form__row">
+          <Link className="button" to="/revision">
+            Revisar la clasificación del material
+          </Link>
+          <span className="hint">
+            Lo importado se clasifica en propuestas: se confirman (o se rechazan) en Revisión.
+          </span>
         </p>
       </header>
 

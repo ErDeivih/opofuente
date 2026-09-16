@@ -13,7 +13,20 @@ se añade en el slice que lo necesita:
 | HTML con scripts y texto que intenta inyectar instrucciones | S03 | seguridad |
 | ZIP seguro, ZIP con traversal y ZIP con ratio de expansión abusivo | S03 | seguridad |
 | Dos archivos idénticos con nombres distintos; dos revisiones casi iguales | S02/S04 | duplicados |
+| Dataset etiquetado de clasificación (15 casos sintéticos con etiqueta humana por eje) | S04 | métricas reproducibles |
 | Cuestionarios sintéticos modelo A/B y claves v1/v2 | S08 | claves versionadas |
+
+## Material de S04 (clasificación)
+
+Único fixture que **sí** se versiona aquí como texto, porque es un conjunto etiquetado: un JSON con
+una etiqueta humana por caso y eje que solo se puede leer si se versiona entero. Vive en
+`fixtures/synthetic/classification/` con su propio `README.md` (qué mide cada caso y de dónde sale su
+texto: inventado). El informe se obtiene con
+`uv run python -m opofuente.tools.classification_metrics` y los números están fijados en
+`apps/api/tests/unit/test_classification_metrics.py`.
+
+Nada de este material de S04 son ficheros de estudio: son textos cortos escritos para el fichero, sin
+rutas del disco del usuario y sin material de terceros.
 
 ## Material de S02 (inventario y copia)
 

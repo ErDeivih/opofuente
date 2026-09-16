@@ -501,3 +501,187 @@ class ExtractedRepresentationRecord(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
     artifact: Mapped[SourceArtifactRecord] = relationship()
+
+
+# ----------------------------------------- S04: clasificación, cobertura, duplicados y auditoría
+
+
+class ClassificationProposalRecord(Base):
+    """Lo que un motor **propone** sobre un artefacto o una representación.
+
+    No es un hecho: hasta que se acepta no cambia nada del material. La identidad incluye el motor
+    y su versión, así que volver a clasificar con el mismo motor no duplica propuestas y un motor
+    nuevo sí puede proponer otra cosa sobre el mismo eje.
+    """
+
+    __tablename__ = "classification_proposals"
+    __table_args__ = (
+        CheckConstraint(
+            "subject_type IN ('artifact', 'representation')", name="ck_proposal_subject"
+        ),
+        CheckConstraint(
+            "axis IN ('document_type', 'opposition', 'topic', 'authority', 'rights')",
+            name="ck_proposal_axis",
+        ),
+        CheckConstraint(
+            "status IN ('pending', 'accepted', 'rejected', 'superseded', "
+            "'auto_applied_provisional')",
+            name="ck_proposal_status",
+        ),
+        CheckConstraint("confidence >= 0 AND confidence <= 1", name="ck_proposal_confidence"),
+        # Sin fecha de decisión no hay decisión, y sin decisión no hay nada que deshacer.
+        CheckConstraint(
+            "(status = 'pending' AND decided_at IS NULL) "
+            "OR (status <> 'pending' AND decided_at IS NOT NULL)",
+            name="ck_proposal_decision",
+        ),
+        UniqueConstraint(
+            "subject_type",
+            "subject_id",
+            "axis",
+            "engine_name",
+            "engine_version",
+            "proposed_value",
+            name="uq_proposal_identity",
+        ),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    subject_type: Mapped[str] = mapped_column(String(24), nullable=False)
+    subject_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    axis: Mapped[str] = mapped_column(String(24), nullable=False)
+    proposed_value: Mapped[str] = mapped_column(Text, nullable=False)
+    confidence: Mapped[float] = mapped_column(Float, nullable=False)
+    alternatives_json: Mapped[str] = mapped_column(
+        Text, nullable=False, server_default=text("'[]'")
+    )
+    evidence_json: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("'[]'"))
+    engine_name: Mapped[str] = mapped_column(String(64), nullable=False)
+    engine_version: Mapped[str] = mapped_column(String(32), nullable=False)
+    status: Mapped[str] = mapped_column(String(32), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    decision_note: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+
+class CurriculumMappingRecord(Base):
+    """Material asignado a un nodo del programa: la base de la cobertura.
+
+    `curriculum_node_id` es `ON DELETE RESTRICT` a propósito (DEBT-005 y ADR-007): un nodo con
+    material asignado no se puede borrar, ni desde la siembra ni desde SQL directo.
+    """
+
+    __tablename__ = "curriculum_mappings"
+    __table_args__ = (
+        CheckConstraint(
+            "subject_type IN ('artifact', 'representation')", name="ck_mapping_subject"
+        ),
+        CheckConstraint(
+            "coverage_type IN ('mention', 'partial', 'complete')", name="ck_mapping_coverage"
+        ),
+        CheckConstraint(
+            "status IN ('provisional', 'accepted', 'rejected')", name="ck_mapping_status"
+        ),
+        CheckConstraint("depth >= 0", name="ck_mapping_depth"),
+        CheckConstraint("confidence >= 0 AND confidence <= 1", name="ck_mapping_confidence"),
+        CheckConstraint(
+            "status <> 'accepted' OR approved_at IS NOT NULL", name="ck_mapping_approved"
+        ),
+        UniqueConstraint(
+            "curriculum_node_id", "subject_type", "subject_id", name="uq_mapping_identity"
+        ),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    curriculum_node_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("curriculum_nodes.id", ondelete="RESTRICT"), nullable=False
+    )
+    subject_type: Mapped[str] = mapped_column(String(24), nullable=False)
+    subject_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    coverage_type: Mapped[str] = mapped_column(String(16), nullable=False)
+    depth: Mapped[int] = mapped_column(Integer, nullable=False)
+    confidence: Mapped[float] = mapped_column(Float, nullable=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False)
+    source_proposal_id: Mapped[str | None] = mapped_column(
+        String(36),
+        ForeignKey("classification_proposals.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    node: Mapped[CurriculumNodeRecord] = relationship()
+
+
+class DuplicateClusterRecord(Base):
+    """Grupo de material con el mismo texto o muy parecido.
+
+    Los duplicados **exactos** de bytes no llegan aquí: ya son un artefacto con varios orígenes.
+    Aquí viven el mismo texto con otra codificación o maquetación (`same_text`) y los casi
+    duplicados.
+    """
+
+    __tablename__ = "duplicate_clusters"
+    __table_args__ = (
+        CheckConstraint("kind IN ('same_text', 'near_duplicate')", name="ck_cluster_kind"),
+        CheckConstraint(
+            "relation IN ('revision_candidate', 'subset', 'superset', 'similar')",
+            name="ck_cluster_relation",
+        ),
+        CheckConstraint("status IN ('open', 'resolved', 'dismissed')", name="ck_cluster_status"),
+        CheckConstraint("status = 'open' OR resolved_at IS NOT NULL", name="ck_cluster_resolved"),
+        UniqueConstraint("kind", "signature", name="uq_cluster_signature"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    kind: Mapped[str] = mapped_column(String(24), nullable=False)
+    relation: Mapped[str] = mapped_column(String(24), nullable=False)
+    signature: Mapped[str] = mapped_column(Text, nullable=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    resolution_note: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+
+class DuplicateClusterMemberRecord(Base):
+    """Miembro de un cluster: artefacto o representación, con su similitud respecto al grupo."""
+
+    __tablename__ = "duplicate_cluster_members"
+    __table_args__ = (
+        CheckConstraint("subject_type IN ('artifact', 'representation')", name="ck_member_subject"),
+        CheckConstraint("similarity >= 0 AND similarity <= 1", name="ck_member_similarity"),
+        UniqueConstraint("cluster_id", "subject_type", "subject_id", name="uq_cluster_member"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    cluster_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("duplicate_clusters.id", ondelete="CASCADE"), nullable=False
+    )
+    subject_type: Mapped[str] = mapped_column(String(24), nullable=False)
+    subject_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    similarity: Mapped[float] = mapped_column(Float, nullable=False)
+    is_representative: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default=text("0"), default=False
+    )
+
+    cluster: Mapped[DuplicateClusterRecord] = relationship()
+
+
+class AuditEventRecord(Base):
+    """Acción que altera autoridad, clasificación, respuesta o versión.
+
+    Guarda el antes/después **sanitizado** (estados, identificadores y valores de clasificación),
+    nunca el contenido del material: es la traza que hace verificable el «deshacer».
+    """
+
+    __tablename__ = "audit_events"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    actor: Mapped[str] = mapped_column(String(32), nullable=False)
+    action: Mapped[str] = mapped_column(String(64), nullable=False)
+    object_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    object_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    before_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    after_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    correlation_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
