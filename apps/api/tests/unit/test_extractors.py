@@ -724,9 +724,15 @@ def test_un_corte_que_parte_un_caracter_solo_retrocede_lo_necesario(
         ("0xff-en-medio", b"a" * 512 + b"\xff" + b"b" * 1024, 1024),
         # Continuación inválida al principio de una secuencia (0xC3 sin continuación válida).
         ("continuacion-invalida", b"a" * 1024 + b"\xc3\x28", 1024),
-        # Secuencia de 3 bytes partida exactamente por el tope: aquí sí se retrocede hasta la
-        # frontera (el bloque cortado acaba en `\xe2\x82`, que es una secuencia incompleta).
-        ("secuencia-truncada-al-final", b"a" * 1022 + b"\xe2\x82" + b"m", 1022),
+        # Secuencia que **no** se completa con lo que viene después (`\xe2\x82m` no es UTF-8
+        # válido): el contenido no es UTF-8 en ninguna de sus interpretaciones, así que se conserva
+        # entero y el extractor declarará la codificación que use.
+        ("secuencia-invalida-al-final", b"a" * 1022 + b"\xe2\x82" + b"m", 1024),
+        # Aquí sí hay una secuencia UTF-8 partida de verdad: el bloque acaba en `\xe2\x82` y lo que
+        # viene después (`\xac`) la completa, así que el fichero es UTF-8 y se retira la parte
+        # incompleta. Es la misma situación que comprueba, ya con el extractor entero, el test
+        # `test_un_caracter_utf8_cortado_por_la_mitad_si_se_recorta`.
+        ("secuencia-truncada-al-final", b"a" * 1022 + "€".encode() + b"resto.", 1022),
         # 0xFF como último byte del bloque: no es una secuencia truncada sino un byte inválido, así
         # que no se recorta (quitarlo no arreglaría la decodificación y perdería un byte real).
         ("0xff-al-final", b"a" * 1023 + b"\xff" + b"x", 1024),
@@ -782,6 +788,45 @@ def test_los_espacios_significativos_se_conservan_en_csv_y_json(tmp_path: Path) 
     html_path.write_text("<html><body><p>Con  dos  espacios</p></body></html>", encoding="utf-8")
     html_result = registro.extract(html_path)
     assert "Con dos espacios" in html_result.text
+
+
+def test_una_letra_cp1252_en_el_limite_no_se_recorta(tmp_path: Path) -> None:
+    """Un `0xC3` en el límite es `Ã` en Windows-1252: no puede tratarse como UTF-8 partido.
+
+    El recorte mira lo que viene **después** del corte: si esos bytes no completan la secuencia, ese
+    byte no era UTF-8 y el bloque se conserva entero, de modo que el texto mantiene su `Ã` y la
+    codificación se declara como CP-1252 en lugar de perder un carácter en silencio.
+    """
+    relleno = "a" * 1023
+    archivo = tmp_path / "cp1252.txt"
+    archivo.write_bytes(relleno.encode("cp1252") + "Ã".encode("cp1252") + b"resto del material.")
+
+    resultado = ExtractorRegistry(
+        Settings(max_text_bytes=1024, max_representation_chars=100_000, _env_file=None)
+    ).extract(archivo)
+
+    assert WarningCode.TRUNCATED in resultado.warnings
+    assert resultado.metadata["encoding"] == "cp1252", "el byte 0xC3 no es UTF-8 partido"
+    assert resultado.text.endswith("Ã"), f"se perdió la Ã: {resultado.text[-5:]!r}"
+    assert len(resultado.text) == 1024
+
+
+def test_un_caracter_utf8_cortado_por_la_mitad_si_se_recorta(tmp_path: Path) -> None:
+    """Y si el corte parte una secuencia UTF-8 de verdad, sí se retira la parte incompleta.
+
+    Es la otra cara del mismo caso: el fichero es UTF-8 y los bytes que siguen al corte completan el
+    carácter, así que el bloque se recorta para no entregar una secuencia a medias.
+    """
+    archivo = tmp_path / "utf8.txt"
+    archivo.write_bytes(b"a" * 1023 + "á".encode() + b"resto.")
+
+    resultado = ExtractorRegistry(
+        Settings(max_text_bytes=1024, max_representation_chars=100_000, _env_file=None)
+    ).extract(archivo)
+
+    assert resultado.metadata["encoding"] == "utf-8"
+    assert len(resultado.text) == 1023, "el carácter partido no entra"
+    assert resultado.text == "a" * 1023
 
 
 # --- lectura acotada por extractor (regresión S03) -----------------------------------------------

@@ -621,6 +621,9 @@ class SqlAlchemyIngestionRepository:
             origin = session.execute(
                 select(ArtifactOriginRecord).where(
                     ArtifactOriginRecord.artifact_id == record.id,
+                    # El canal forma parte de la identidad: el mismo contenido y la misma etiqueta
+                    # pueden llegar como fichero y como texto pegado, y son dos orígenes distintos.
+                    ArtifactOriginRecord.origin_type == origin_type.value,
                     ArtifactOriginRecord.display_location == display_location,
                 )
             ).scalar_one_or_none()

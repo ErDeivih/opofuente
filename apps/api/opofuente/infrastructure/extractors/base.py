@@ -61,6 +61,10 @@ GIF_MAGIC = b"GIF8"
 #: Cuántos bytes se leen para decidir el formato.
 SNIFF_BYTES = 4096
 
+#: Bytes que se leen de más en una lectura acotada: con ellos se decide si el corte partió un
+#: carácter (una secuencia UTF-8 mide como mucho 4 bytes) y si el fichero continúa.
+LOOKAHEAD_BYTES = 4
+
 
 @dataclass(frozen=True, slots=True)
 class DetectedFormat:
@@ -103,42 +107,56 @@ def read_head(path: Path, *, size: int = SNIFF_BYTES) -> bytes:
 def read_bounded(path: Path, *, max_bytes: int) -> tuple[bytes, bool]:
     """Lee como mucho `max_bytes` y dice si el fichero era más grande.
 
-    Se lee un byte de más a propósito: así se distingue «cabe justo» de «hay más» sin tener que
-    preguntar antes por el tamaño (que puede cambiar entre la pregunta y la lectura).
-
-    Si el corte cae **dentro de un carácter UTF-8** (de 2, 3 o 4 bytes), se retrocede hasta la
-    frontera anterior del carácter: cortar por la mitad hacía que la decodificación fallara y el
-    fichero entero se reinterpretara como Windows-1252, con el texto corrupto. Solo se retroceden
-    los bytes imprescindibles (como mucho 3).
+    Se leen unos bytes de más a propósito: sirven para distinguir «cabe justo» de «hay más» sin
+    preguntar antes por el tamaño (que puede cambiar entre la pregunta y la lectura) **y** para
+    decidir si el corte ha partido un carácter (ver `_trim_to_character_boundary`).
     """
     with path.open("rb") as stream:
-        data = stream.read(max_bytes + 1)
+        data = stream.read(max_bytes + LOOKAHEAD_BYTES)
     if len(data) <= max_bytes:
         return data, False
-    return _trim_to_character_boundary(data[:max_bytes]), True
+    return _trim_to_character_boundary(data[:max_bytes], data[max_bytes:]), True
 
 
-def _trim_to_character_boundary(data: bytes) -> bytes:
-    """Devuelve el bloque tal cual si ya termina en un carácter completo; si no, retrocede lo justo.
+def _trim_to_character_boundary(data: bytes, tail: bytes) -> bytes:
+    """Devuelve el bloque tal cual si es texto completo; si el corte partió un carácter, lo retira.
 
-    Lo primero que se comprueba es el bloque **entero**: si decodifica como UTF-8, no hay nada que
-    recortar. Antes se empezaba probando `len(data) - 1`, así que siempre se perdía un byte aunque
-    el corte fuera válido (con un límite de 1024 y 1025 bytes ASCII se devolvían 1023).
+    La decisión se toma con **evidencia**, no por la posición del error:
 
-    Solo cuando el bloque no decodifica se retrocede, y solo si el motivo es que **la secuencia del
-    final está incompleta** (`unexpected end of data`, que es lo que informa Python). Un byte `0xFF`
-    o una continuación inválida no son una secuencia truncada: recortar el final no arreglaría nada
-    y perdería contenido que sí estaba, así que el bloque se devuelve tal cual y quien decodifique
-    decidirá, avisando de la codificación que use.
+    1. si el bloque decodifica como UTF-8, no hay nada que hacer;
+    2. si no decodifica, solo importa el caso de una **secuencia incompleta al final**
+       (`unexpected end of data`). Un byte `0xFF` o una continuación inválida no son una secuencia
+       truncada: recortar el final no arreglaría la decodificación y perdería contenido que sí
+       estaba, así que el bloque se devuelve tal cual y quien decodifique decidirá, avisando de la
+       codificación que use;
+    3. y si es una secuencia incompleta, se mira lo que viene **después del corte** (`tail`): si
+       esos bytes completan la secuencia, el fichero es UTF-8 y el corte partió un carácter, así
+       que se retira la parte incompleta. Si no la completan, ese byte no era UTF-8 —en Windows-1252
+       un `0xC3` suelto es `Ã`— y el bloque se conserva entero para que la decodificación lo declare
+       como CP-1252 sin perder nada.
     """
     try:
         data.decode("utf-8")
     except UnicodeDecodeError as error:
-        if error.reason == "unexpected end of data":
-            # El carácter del final quedó partido por el tope de lectura.
-            return data[: error.start]
-        return data
+        if error.reason != "unexpected end of data":
+            return data
+        parcial = data[error.start :]
+        if not _completes_with(parcial, tail):
+            # No era una secuencia UTF-8 partida: se conserva el bloque entero.
+            return data
+        return data[: error.start]
     return data
+
+
+def _completes_with(parcial: bytes, tail: bytes) -> bool:
+    """¿La secuencia incompleta del final se completa con los bytes que vienen después del corte?"""
+    if not tail:
+        return False
+    try:
+        (parcial + tail[: 4 - len(parcial)]).decode("utf-8")
+    except UnicodeDecodeError:
+        return False
+    return True
 
 
 def detect_format(

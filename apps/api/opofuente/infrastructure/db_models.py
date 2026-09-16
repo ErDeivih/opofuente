@@ -227,9 +227,13 @@ class ArtifactOriginRecord(Base):
         CheckConstraint(
             "origin_type IN ('file', 'url', 'paste', 'generated')", name="ck_origin_type"
         ),
-        # Un origen se identifica por su ubicación: volver a importar la misma carpeta no duplica
-        # orígenes, pero un fichero modificado produce otro artefacto (y por tanto otro origen).
-        UniqueConstraint("artifact_id", "display_location", name="uq_artifact_origin"),
+        # Un origen se identifica por su ubicación **y su canal**: el mismo contenido puede entrar
+        # como fichero y como texto pegado con la misma etiqueta (`tema.txt` los dos) y son dos
+        # orígenes distintos. Volver a importar la misma carpeta no duplica orígenes, pero un
+        # fichero modificado produce otro artefacto (y por tanto otro origen).
+        UniqueConstraint(
+            "artifact_id", "origin_type", "display_location", name="uq_artifact_origin"
+        ),
     )
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True)

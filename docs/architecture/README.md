@@ -236,3 +236,19 @@ Cuatro defectos:
 - **El recorte por bytes se decide por el motivo del error** (`unexpected end of data`), no por su
   posición: solo se retrocede ante una secuencia UTF-8 truncada al final. Un `0xFF` o una continuación
   inválida se entregan tal cual (recortar perdería contenido sin arreglar la decodificación).
+
+## Quinta corrección de S03 (16/09/2026)
+
+- **`0011_origin_identity_by_channel`**: la identidad de un origen es
+  `(artifact_id, origin_type, display_location)`, no `(artifact_id, display_location)`. El mismo
+  contenido que entra como fichero y como texto pegado con la **misma** etiqueta (`tema.txt` los dos)
+  son dos orígenes: con la restricción vieja el segundo reutilizaba la fila del primero y su canal se
+  perdía. `register_artifact` consulta el origen incluyendo el canal, y el `origin_type` pasa a `NULL`
+  («no consta») cuando varias entradas comparten artefacto y etiqueta y ya no hay forma de saber qué
+  canal trajo cada una: la recuperación de datos no adivina. La 0010 **no** se reescribe; el
+  `downgrade` de la 0011 retira los orígenes duplicados por etiqueta y restaura la restricción
+  anterior.
+- **El corte por bytes mira lo que viene después del límite** (`LOOKAHEAD_BYTES`): un `0xC3` final en
+  un fichero Windows-1252 no es una secuencia UTF-8 partida, es un `Ã`, y solo se retrocede cuando los
+  bytes siguientes **completan** la secuencia. Así el límite mide bytes del fichero y el extractor
+  declara `cp1252` en lugar de perder un carácter en silencio.
