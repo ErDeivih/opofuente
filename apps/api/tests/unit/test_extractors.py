@@ -736,6 +736,30 @@ def test_un_corte_que_parte_un_caracter_solo_retrocede_lo_necesario(
         # 0xFF como último byte del bloque: no es una secuencia truncada sino un byte inválido, así
         # que no se recorta (quitarlo no arreglaría la decodificación y perdería un byte real).
         ("0xff-al-final", b"a" * 1023 + b"\xff" + b"x", 1024),
+        # Secuencias partidas por el tope **seguidas inmediatamente de otro carácter multibyte**:
+        # solo cuenta la secuencia que cruza el límite, no lo que venga después. Si se miran bytes
+        # de más, la segunda secuencia (incompleta) hace fallar la comprobación y el bloque se queda
+        # con un byte suelto.
+        (
+            "corte-de-2-bytes-con-euro-despues",
+            b"a" * 1023 + "é".encode() + "€".encode() + b"resto.",
+            1023,
+        ),
+        (
+            "corte-de-2-bytes-con-emoji-despues",
+            b"a" * 1023 + "é".encode() + "😀".encode() + b"r.",
+            1023,
+        ),
+        (
+            "corte-de-3-bytes-con-euro-despues",
+            b"a" * 1023 + "€".encode() + "€".encode() + b"resto.",
+            1023,
+        ),
+        (
+            "corte-de-4-bytes-con-euro-despues",
+            b"a" * 1022 + "😀".encode() + "€".encode() + b"resto.",
+            1022,
+        ),
     ],
 )
 def test_los_bloques_que_no_son_utf8_no_se_recortan_por_el_final(
@@ -827,6 +851,29 @@ def test_un_caracter_utf8_cortado_por_la_mitad_si_se_recorta(tmp_path: Path) -> 
     assert resultado.metadata["encoding"] == "utf-8"
     assert len(resultado.text) == 1023, "el carácter partido no entra"
     assert resultado.text == "a" * 1023
+
+
+@pytest.mark.parametrize("siguiente", ["€", "😀"])
+def test_el_caracter_que_sigue_al_corte_no_estorba(tmp_path: Path, siguiente: str) -> None:
+    """Tras el carácter partido viene **otro** multibyte: se mira solo la primera secuencia.
+
+    Reproducción del fallo: la comprobación tomaba del `tail` los bytes que caben en una secuencia
+    (`4 - len(parcial)`) en vez de los que le faltan a **esa** secuencia, así que al incluir el
+    principio del `€` o del emoji la decodificación fallaba y el bloque se conservaba entero: el
+    fichero —que es UTF-8— se leía como CP-1252 y el texto acababa con una `Ã` inventada.
+    """
+    archivo = tmp_path / "utf8-seguido.txt"
+    archivo.write_bytes(b"a" * 1023 + "é".encode() + siguiente.encode() + b"resto del material.")
+
+    resultado = ExtractorRegistry(
+        Settings(max_text_bytes=1024, max_representation_chars=100_000, _env_file=None)
+    ).extract(archivo)
+
+    assert WarningCode.TRUNCATED in resultado.warnings
+    assert resultado.metadata["encoding"] == "utf-8", (
+        "el fichero es UTF-8: no hay que reinterpretarlo"
+    )
+    assert resultado.text == "a" * 1023, f"el carácter partido no entra: {resultado.text[-5:]!r}"
 
 
 # --- lectura acotada por extractor (regresión S03) -----------------------------------------------

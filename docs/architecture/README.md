@@ -252,3 +252,17 @@ Cuatro defectos:
   un fichero Windows-1252 no es una secuencia UTF-8 partida, es un `Ã`, y solo se retrocede cuando los
   bytes siguientes **completan** la secuencia. Así el límite mide bytes del fichero y el extractor
   declara `cp1252` en lugar de perder un carácter en silencio.
+
+## Sexta corrección de S03 (16/09/2026)
+
+- **La comprobación del corte pide solo los bytes que le faltan a la secuencia que cruza el límite**:
+  la longitud se deduce del byte inicial (`_utf8_length`) en vez de tomar lo que cabe en una secuencia
+  (`4 - len(parcial)`). Con `é` partido seguido inmediatamente de `€` o de un emoji, la versión
+  anterior incluía el byte inicial del siguiente carácter, fallaba la decodificación y leía como
+  CP-1252 un fichero UTF-8, con una `Ã` inventada al final.
+- **El `downgrade` de `0011` no deja canales huérfanos**: conserva un origen por pareja
+  `(artefacto, etiqueta)` —el de `id` menor en orden binario, criterio determinista y **no** temporal,
+  porque el esquema no guarda la fecha de creación del origen— y después deja sin canal toda entrada
+  cuya procedencia no esté respaldada por un origen existente con el mismo artefacto, etiqueta y canal.
+  Antes, la entrada que había llegado como texto pegado conservaba `origin_type = 'paste'` con su
+  origen ya borrado.

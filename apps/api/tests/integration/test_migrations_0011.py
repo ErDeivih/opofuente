@@ -25,6 +25,7 @@ from opofuente.infrastructure.ingestion_repository import SqlAlchemyIngestionRep
 from opofuente.infrastructure.migrations import alembic_config, run_migrations
 
 AHORA = datetime(2026, 9, 16, 12, 0, tzinfo=UTC)
+ANTES = datetime(2026, 9, 16, 9, 0, tzinfo=UTC)
 SHA = "c" * 64
 
 
@@ -159,13 +160,17 @@ def test_el_canal_no_se_pierde_al_registrar_el_mismo_nombre(tmp_path: Path) -> N
     assert [fila[0] for fila in origenes] == ["file", "paste"]
 
 
-def test_el_downgrade_conserva_un_origen_por_etiqueta(tmp_path: Path) -> None:
-    """La vuelta atrás pierde el segundo canal **a propósito**: con la restricción vieja no cabe.
+def test_el_downgrade_no_deja_canales_sin_origen(tmp_path: Path) -> None:
+    """La vuelta atrás pierde un canal **a propósito**, pero no deja ninguno colgando.
 
-    Queda por escrito qué se pierde y qué se conserva, y se comprueba ejecutándolo: sobrevive el
-    origen más antiguo de cada pareja, la restricción anterior vuelve a estar en vigor (un segundo
-    origen con la misma etiqueta se rechaza) y las entradas que se quedan sin ningún origen que las
-    explique vuelven a «no consta».
+    Con la restricción vieja no caben dos orígenes con la misma etiqueta, así que el `downgrade`
+    conserva uno y borra el otro. El criterio es **determinista y no temporal**: la tabla no guarda
+    cuándo se creó el origen (`accessed_at` es la última vez que se usó, y se actualiza), así que se
+    conserva el de `id` menor en orden binario. Aquí el `id` menor es justo el de fecha posterior, y
+    la prueba lo fija así a propósito para que nadie pueda leer el `id` como una fecha.
+
+    Además, ninguna entrada puede quedarse con un canal que ya no existe: la entrada que entró como
+    texto pegado se queda sin procedencia («no consta») en cuanto su origen se retira.
     """
     settings = _settings(tmp_path)
     run_migrations(settings, revision="head")
@@ -180,14 +185,19 @@ def test_el_downgrade_conserva_un_origen_por_etiqueta(tmp_path: Path) -> None:
                 ),
                 {"sha": SHA, "ahora": AHORA},
             )
-            for origen_id, tipo in (("org-a", "file"), ("org-b", "paste")):
+            # Los dos canales del mismo contenido y la misma etiqueta, con el orden de `id`
+            # invertido respecto al temporal: `org-z` es el más antiguo pero el que menos ordena.
+            for origen_id, tipo, cuando in (
+                ("org-z", "paste", ANTES),
+                ("org-a", "file", AHORA),
+            ):
                 conexion.execute(
                     text(
                         "INSERT INTO artifact_origins (id, artifact_id, origin_type, "
                         "display_location, accessed_at) VALUES "
-                        "(:id, 'art-1', :tipo, 'tema.txt', :ahora)"
+                        "(:id, 'art-1', :tipo, 'tema.txt', :cuando)"
                     ),
-                    {"id": origen_id, "tipo": tipo, "ahora": AHORA},
+                    {"id": origen_id, "tipo": tipo, "cuando": cuando},
                 )
             conexion.execute(
                 text(
@@ -197,19 +207,30 @@ def test_el_downgrade_conserva_un_origen_por_etiqueta(tmp_path: Path) -> None:
                 ),
                 {"ahora": AHORA},
             )
-            for item_id, posicion, etiqueta in (
-                ("item-con-origen", 1, "tema.txt"),
-                ("item-sin-origen", 2, "otro.txt"),
+            # Una entrada por canal, las dos con la misma etiqueta y su canal correcto. Van en lotes
+            # distintos, que es como llegan de verdad: un fichero por la carpeta y un pegado aparte
+            # (además, la ruta relativa es única dentro de un lote).
+            conexion.execute(
+                text(
+                    "INSERT INTO ingestion_batches (id, kind, mode, status, "
+                    "source_path_display, counters_json, created_at) VALUES "
+                    "('batch-2', 'import', 'copy', 'succeeded', 'pegado', '{}', :ahora)"
+                ),
+                {"ahora": AHORA},
+            )
+            for item_id, lote, posicion, tipo in (
+                ("item-file", "batch-1", 1, "file"),
+                ("item-paste", "batch-2", 1, "paste"),
             ):
                 conexion.execute(
                     text(
                         "INSERT INTO ingestion_items (id, batch_id, relative_path, original_name, "
                         "size_bytes, media_type, artifact_id, status, position, container_depth, "
                         "origin_type, origin_display) VALUES "
-                        "(:id, 'batch-1', :etiqueta, :etiqueta, 100, 'text/plain', 'art-1', "
-                        "'extracted', :pos, 0, 'file', :etiqueta)"
+                        "(:id, :lote, 'tema.txt', 'tema.txt', 100, 'text/plain', 'art-1', "
+                        "'extracted', :pos, 0, :tipo, 'tema.txt')"
                     ),
-                    {"id": item_id, "pos": posicion, "etiqueta": etiqueta},
+                    {"id": item_id, "lote": lote, "pos": posicion, "tipo": tipo},
                 )
     finally:
         engine.dispose()
@@ -233,10 +254,12 @@ def test_el_downgrade_conserva_un_origen_por_etiqueta(tmp_path: Path) -> None:
                 ).all()
             }
         assert revision == "0010_recover_item_origin", "el downgrade se ejecutó de verdad"
-        assert [fila[0] for fila in origenes] == ["org-a"], "se conserva el origen más antiguo"
-        assert origenes[0][1] == "file"
-        assert tipos["item-con-origen"] == "file", "el origen que sí consta se conserva"
-        assert tipos["item-sin-origen"] is None, "sin origen que lo explique, «no consta»"
+        assert [fila[0] for fila in origenes] == ["org-a"], "queda uno: el de `id` menor"
+        assert origenes[0][1] == "file", (
+            "y es el posterior en el tiempo: el criterio no es la fecha"
+        )
+        assert tipos["item-file"] == "file", "su canal sigue existiendo"
+        assert tipos["item-paste"] is None, "su canal se retiró: no puede conservarlo"
 
         with pytest.raises(IntegrityError), engine.begin() as conexion:
             conexion.execute(

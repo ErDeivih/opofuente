@@ -26,9 +26,11 @@ Qué hace esta migración:
    etiqueta (el dato consta).
 
 `downgrade`: la vuelta atrás no puede existir tal cual: con la restricción vieja, dos orígenes del
-mismo artefacto y la misma etiqueta no caben, así que se conserva el más antiguo de cada pareja y se
-documenta. Se vuelve a la restricción `(artifact_id, display_location)` y a la limpieza de los tipos
-que quedaran ambiguos.
+mismo artefacto y la misma etiqueta no caben, así que se conserva uno de cada pareja —el de `id`
+menor en orden binario, criterio determinista porque la tabla **no** guarda la fecha de creación del
+origen— y se documenta. Ni el `id` ni `accessed_at` dicen cuándo apareció un origen, así que aquí no
+se afirma nada sobre antigüedad. Se vuelve a la restricción `(artifact_id, display_location)` y las
+entradas cuyo canal ya no existe vuelven a «no consta».
 """
 
 from __future__ import annotations
@@ -76,9 +78,15 @@ def upgrade() -> None:
 def downgrade() -> None:
     """Vuelve a la restricción sin canal, conservando un origen por pareja.
 
-    La información que sobra no se puede guardar con la restricción vieja: si el mismo artefacto
-    tiene dos orígenes con la misma etiqueta y distinto canal, se conserva el más antiguo y el otro
-    se retira. Queda documentado aquí porque es una pérdida deliberada, no un descuido.
+    El criterio es **determinista y no temporal**: la tabla no guarda cuándo se registró cada origen
+    (`accessed_at` es la última vez que se usó, y se reescribe), así que no se puede afirmar cuál es
+    «el más antiguo». Se conserva el de `id` menor en orden binario —reproducible y sin depender de
+    ninguna fecha— y los demás se retiran. Es una pérdida deliberada, no un descuido: con la
+    restricción vieja esa información no cabe.
+
+    Y ninguna entrada conserva un canal que acaba de desaparecer: su procedencia se mantiene solo
+    si existe el origen que la respalda (mismo artefacto, etiqueta y canal); si no, vuelve a «no
+    consta».
     """
     op.execute(
         "DELETE FROM artifact_origins WHERE id NOT IN ("
@@ -87,10 +95,11 @@ def downgrade() -> None:
     with op.batch_alter_table("artifact_origins") as batch:
         batch.drop_constraint("uq_artifact_origin", type_="unique")
         batch.create_unique_constraint("uq_artifact_origin", ["artifact_id", "display_location"])
-    # Con la restricción vieja, las entradas ambiguas vuelven a quedarse sin canal.
     op.execute(
-        "UPDATE ingestion_items SET origin_type = NULL WHERE ("
-        "SELECT COUNT(*) FROM artifact_origins o "
+        "UPDATE ingestion_items SET origin_type = NULL "
+        "WHERE origin_type IS NOT NULL AND NOT EXISTS ("
+        "SELECT 1 FROM artifact_origins o "
         "WHERE o.artifact_id = ingestion_items.artifact_id "
-        "AND o.display_location = ingestion_items.origin_display) <> 1"
+        "AND o.display_location = ingestion_items.origin_display "
+        "AND o.origin_type = ingestion_items.origin_type)"
     )

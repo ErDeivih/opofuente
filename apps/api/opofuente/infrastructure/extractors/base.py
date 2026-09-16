@@ -129,11 +129,13 @@ def _trim_to_character_boundary(data: bytes, tail: bytes) -> bytes:
        truncada: recortar el final no arreglaría la decodificación y perdería contenido que sí
        estaba, así que el bloque se devuelve tal cual y quien decodifique decidirá, avisando de la
        codificación que use;
-    3. y si es una secuencia incompleta, se mira lo que viene **después del corte** (`tail`): si
-       esos bytes completan la secuencia, el fichero es UTF-8 y el corte partió un carácter, así
-       que se retira la parte incompleta. Si no la completan, ese byte no era UTF-8 —en Windows-1252
-       un `0xC3` suelto es `Ã`— y el bloque se conserva entero para que la decodificación lo declare
-       como CP-1252 sin perder nada.
+    3. y si es una secuencia incompleta, se mira lo que viene **después del corte** (`tail`): si los
+       bytes que le faltan a esa secuencia la completan, el fichero es UTF-8 y el corte partió un
+       carácter, así que se retira la parte incompleta. Se piden **solo** los bytes que le faltan a
+       la secuencia que cruza el límite: mirar más allá incluiría el principio del carácter
+       siguiente, y entonces un fichero UTF-8 sano se leería como CP-1252. Si no la completan, ese
+       byte no era UTF-8 —en Windows-1252 un `0xC3` suelto es `Ã`— y el bloque se conserva entero,
+       para que la decodificación lo declare como CP-1252 sin perder nada.
     """
     try:
         data.decode("utf-8")
@@ -149,14 +151,36 @@ def _trim_to_character_boundary(data: bytes, tail: bytes) -> bytes:
 
 
 def _completes_with(parcial: bytes, tail: bytes) -> bool:
-    """¿La secuencia incompleta del final se completa con los bytes que vienen después del corte?"""
-    if not tail:
+    """¿La secuencia incompleta del final se completa con los bytes que vienen tras el corte?
+
+    Se comprueba **solo la primera secuencia** que cruza el límite: se piden a `tail` los bytes que
+    le faltan a **esa** secuencia y ni uno más. Antes se tomaban los que caben en una secuencia
+    (`4 - len(parcial)`), así que si detrás venía otro carácter multibyte —un `€`, un emoji— entraba
+    su byte inicial, la decodificación fallaba por la secuencia incompleta *de ese otro* carácter y
+    se concluía que el corte no había partido nada: el fichero es UTF-8 y se leía como CP-1252.
+    """
+    if not parcial or not tail:
+        return False
+    faltan = _utf8_length(parcial[0]) - len(parcial)
+    if faltan <= 0 or len(tail) < faltan:
+        # No es un byte inicial válido, o no hay bytes suficientes para confirmarlo: no se recorta.
         return False
     try:
-        (parcial + tail[: 4 - len(parcial)]).decode("utf-8")
+        (parcial + tail[:faltan]).decode("utf-8")
     except UnicodeDecodeError:
         return False
     return True
+
+
+def _utf8_length(inicial: int) -> int:
+    """Cuántos bytes ocupa la secuencia UTF-8 que empieza en `inicial` (0 si no puede empezarla)."""
+    if 0xC2 <= inicial <= 0xDF:
+        return 2
+    if 0xE0 <= inicial <= 0xEF:
+        return 3
+    if 0xF0 <= inicial <= 0xF4:
+        return 4
+    return 0
 
 
 def detect_format(
