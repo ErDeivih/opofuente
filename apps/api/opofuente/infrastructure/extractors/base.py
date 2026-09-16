@@ -119,13 +119,23 @@ def read_bounded(path: Path, *, max_bytes: int) -> tuple[bytes, bool]:
 
 
 def _trim_to_character_boundary(data: bytes) -> bytes:
-    """Retrocede lo mínimo para que el bloque termine en un carácter UTF-8 completo."""
-    for cut in range(len(data) - 1, max(len(data) - 4, -1), -1):
-        try:
-            data[:cut].decode("utf-8")
-        except UnicodeDecodeError:
-            continue
-        return data[:cut]
+    """Devuelve el bloque tal cual si ya termina en un carácter completo; si no, retrocede lo justo.
+
+    Lo primero que se comprueba es el bloque **entero**: si decodifica como UTF-8, no hay nada que
+    recortar. Antes se empezaba probando `len(data) - 1`, así que siempre se perdía un byte aunque
+    el corte fuera válido (con un límite de 1024 y 1025 bytes ASCII se devolvían 1023).
+
+    Solo cuando el bloque no decodifica se retrocede, y solo por una **secuencia incompleta al
+    final**: si el error está en medio, el contenido no es UTF-8 y recortar no arreglaría nada
+    (se devuelve tal cual y quien decodifique decidirá, avisando de la codificación).
+    """
+    try:
+        data.decode("utf-8")
+    except UnicodeDecodeError as error:
+        if error.start > len(data) - 4:
+            # El error está en los últimos bytes: era un carácter partido por el tope de lectura.
+            return data[: error.start]
+        return data
     return data
 
 

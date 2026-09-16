@@ -670,6 +670,82 @@ def test_cada_tramo_señala_su_contenido_con_unicode_combinante(
         assert resultado.text.index(normalizado) < len(resultado.text)
 
 
+def test_un_corte_que_ya_es_valido_no_pierde_ningun_byte(tmp_path: Path) -> None:
+    """Si el bloque cortado ya decodifica como UTF-8, se conserva **entero**.
+
+    Reproducción del fallo: el recorte empezaba probando `len(data) - 1`, así que siempre perdía un
+    byte aunque el corte fuera perfectamente válido (1025 bytes ASCII con límite 1024 daban 1023).
+    """
+    from opofuente.infrastructure.extractors.base import read_bounded
+
+    ascii_file = tmp_path / "ascii.txt"
+    ascii_file.write_bytes(b"a" * 1025)
+
+    data, truncated = read_bounded(ascii_file, max_bytes=1024)
+
+    assert truncated is True
+    assert len(data) == 1024, f"se perdieron {1024 - len(data)} bytes sin motivo"
+    data.decode("utf-8")
+
+    # Y con un fichero que cabe justo, no hay nada que recortar.
+    justo = tmp_path / "justo.txt"
+    justo.write_bytes(b"b" * 1024)
+    completo, truncado = read_bounded(justo, max_bytes=1024)
+    assert len(completo) == 1024
+    assert truncado is False
+
+
+@pytest.mark.parametrize("caracter", ["á", "€", "😀"])
+def test_un_corte_que_parte_un_caracter_solo_retrocede_lo_necesario(
+    tmp_path: Path, caracter: str
+) -> None:
+    """Si el corte parte un carácter, solo se retroceden sus bytes, no más."""
+    from opofuente.infrastructure.extractors.base import read_bounded
+
+    relleno = "Texto sintetico. " * 80
+    base = len(relleno.encode("utf-8"))
+    archivo = tmp_path / f"corte-{len(caracter.encode('utf-8'))}.txt"
+    archivo.write_text(relleno + caracter + " resto del material.", encoding="utf-8")
+
+    data, truncated = read_bounded(archivo, max_bytes=base + 1)
+
+    assert truncated is True
+    assert len(data) == base, "se retrocedió de más: el relleno cabía entero"
+    assert data.decode("utf-8") == relleno
+
+
+def test_los_espacios_significativos_se_conservan_en_csv_y_json(tmp_path: Path) -> None:
+    """CSV y JSON son datos: los espacios repetidos son contenido, no presentación.
+
+    La regla del dominio lo dice expresamente (`normalise_text`: «no se colapsan espacios»). Con el
+    colapso aplicado a todo, `Con  dos  espacios;A  B` se guardaba como `Con dos espacios;A B`,
+    que es otro contenido.
+    """
+    registro = ExtractorRegistry(Settings(_env_file=None))
+
+    csv_path = tmp_path / "preguntas.csv"
+    csv_path.write_text("pregunta;opcion_a\nCon  dos  espacios;A  B\n", encoding="utf-8")
+    csv_result = registro.extract(csv_path)
+    assert "Con  dos  espacios;A  B" in csv_result.text, csv_result.text
+    assert "Con dos espacios" not in csv_result.text
+
+    json_path = tmp_path / "datos.json"
+    json_path.write_text(
+        json.dumps({"titulo": "Con  dos  espacios", "otro": "A  B"}, ensure_ascii=False),
+        encoding="utf-8",
+    )
+    json_result = registro.extract(json_path)
+    assert "Con  dos  espacios" in json_result.text, json_result.text
+    assert "A  B" in json_result.text
+
+    # HTML mantiene el colapso: ahí un bloque de espacios es presentación y el navegador lo muestra
+    # como uno solo.
+    html_path = tmp_path / "material.html"
+    html_path.write_text("<html><body><p>Con  dos  espacios</p></body></html>", encoding="utf-8")
+    html_result = registro.extract(html_path)
+    assert "Con dos espacios" in html_result.text
+
+
 # --- lectura acotada por extractor (regresión S03) -----------------------------------------------
 
 

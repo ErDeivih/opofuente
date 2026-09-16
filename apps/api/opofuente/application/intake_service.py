@@ -216,6 +216,17 @@ class IntakeService:
             )
         now = self._clock.now()
         etiqueta = safe_display_name(title) if title else "texto pegado"
+
+        # El temporal se escribe **antes** de crear el lote: si el disco falla aquí, no hay nada que
+        # cerrar y no queda un lote en `queued` sin entradas ni trabajo que lo cierre (el usuario
+        # veía un lote colgado para siempre).
+        temporal = self._temp_path("paste")
+        try:
+            temporal.write_text(contenido, encoding="utf-8", newline="\n")
+        except OSError:
+            temporal.unlink(missing_ok=True)
+            raise
+
         batch_id = self._repository.create_batch(
             kind=BatchKind.IMPORT,
             mode=BatchMode.COPY,
@@ -223,8 +234,6 @@ class IntakeService:
             now=now,
             status=BatchStatus.QUEUED,
         )
-        temporal = self._temp_path("paste")
-        temporal.write_text(contenido, encoding="utf-8", newline="\n")
         try:
             self._store_one(
                 batch_id,

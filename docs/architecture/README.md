@@ -210,3 +210,18 @@ Once defectos más, con dos cambios de forma:
 - **Sin exclusiones de Ruff nuevas**: los ayudantes de prueba generan sus PNG con `zlib`/`struct`, así
   que el stub de PyMuPDF no necesita constantes con nombre propio y el `per-file-ignore` de N816 se
   retiró.
+
+## Tercera corrección de S03 (16/09/2026)
+
+Cuatro defectos:
+
+- **`read_bounded` conserva el bloque entero** cuando ya decodifica como UTF-8 y solo retrocede ante
+  una secuencia incompleta **al final** (antes perdía un byte aunque el corte fuera válido).
+- **CSV y JSON no colapsan espacios** (`_piece_literal`: solo `normalise_text`); HTML y DOCX mantienen
+  el colapso, que ahí es presentación. Lo pide la regla del dominio: los datos no se reformatean.
+- **`0009_repair_item_origin`**: una migración ya aplicada no se vuelve a ejecutar, así que corregir
+  el fichero de `0007` no reparaba las bases que la habían ejecutado. La 0009 limpia la procedencia
+  inventada cuando el artefacto tiene varios orígenes y recupera el tipo cuando es inequívoco; su
+  `downgrade` no hace nada a propósito (no se reconstruye un dato inventado).
+- **El texto pegado escribe su temporal antes de crear el lote**, así que un fallo de disco no deja un
+  lote en `queued` sin nada que lo cierre.

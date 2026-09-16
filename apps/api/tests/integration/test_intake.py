@@ -715,6 +715,35 @@ def test_un_fallo_de_almacen_no_deja_un_lote_colgado(
         engine.dispose()
 
 
+def test_un_fallo_al_escribir_el_temporal_pegado_no_deja_lote(
+    migrated_settings: Settings, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """El temporal del texto pegado se escribe **antes** de crear el lote.
+
+    Antes se creaba el lote y después se escribía el temporal, así que un fallo de disco dejaba un
+    lote en `queued` sin entradas ni trabajo que lo cerrara: nadie lo iba a cerrar y el usuario lo
+    veía colgado. Ahora, si la escritura falla, no hay ni lote ni temporal.
+    """
+    servicio, repositorio, engine = _servicio_de_entradas(migrated_settings)
+    try:
+        original = Path.write_text
+
+        def rompe(self: Path, *args: object, **kwargs: object) -> int:
+            if self.suffix == ".part":
+                raise OSError("el disco dijo que no")
+            return original(self, *args, **kwargs)  # type: ignore[arg-type]
+
+        monkeypatch.setattr(Path, "write_text", rompe)
+
+        with pytest.raises(OSError):
+            servicio.ingest_paste("Material sintetico pegado para la prueba del fallo.")
+
+        assert repositorio.list_batches(limit=10, offset=0) == (), "no puede quedar ningún lote"
+        assert list((migrated_settings.data_paths.root / "tmp").glob("*.part")) == []
+    finally:
+        engine.dispose()
+
+
 def test_reintentar_un_lote_de_url_funciona_sin_carpeta_de_origen(
     api_only_client: TestClient,
     migrated_settings: Settings,

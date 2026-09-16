@@ -72,24 +72,107 @@ def _crear_datos_ambiguos(settings: Settings, *, origenes: tuple[str, ...]) -> N
         engine.dispose()
 
 
-#: Consultas fijas de la entrada de prueba: una por columna que interesa, escritas enteras para que
+#: Consultas fijas de las entradas de prueba: una por columna y entrada, escritas enteras para que
 #: no haya SQL construido con texto variable.
 _CONSULTAS = {
-    "origin_type": text("SELECT origin_type FROM ingestion_items WHERE id = 'item-1'"),
-    "origin_display": text("SELECT origin_display FROM ingestion_items WHERE id = 'item-1'"),
-    "container_depth": text("SELECT container_depth FROM ingestion_items WHERE id = 'item-1'"),
+    ("item-1", "origin_type"): text("SELECT origin_type FROM ingestion_items WHERE id = 'item-1'"),
+    ("item-1", "origin_display"): text(
+        "SELECT origin_display FROM ingestion_items WHERE id = 'item-1'"
+    ),
+    ("item-1", "container_depth"): text(
+        "SELECT container_depth FROM ingestion_items WHERE id = 'item-1'"
+    ),
+    ("item-2", "origin_type"): text("SELECT origin_type FROM ingestion_items WHERE id = 'item-2'"),
+    ("item-2", "origin_display"): text(
+        "SELECT origin_display FROM ingestion_items WHERE id = 'item-2'"
+    ),
 }
 
 
-def _leer_entrada(settings: Settings, columna: str) -> object:
-    """Lee una columna concreta de la entrada de prueba, de las declaradas arriba."""
-    consulta = _CONSULTAS[columna]
+def _leer_entrada(settings: Settings, columna: str, *, item: str = "item-1") -> object:
+    """Lee una columna concreta de una entrada de prueba, de las declaradas arriba."""
+    consulta = _CONSULTAS[(item, columna)]
     engine = build_engine(settings.data_paths.database)
     try:
         with engine.connect() as conexion:
             return conexion.execute(consulta).one()[0]
     finally:
         engine.dispose()
+
+
+def _entrada_extra(settings: Settings, item_id: str, ruta: str) -> None:
+    """Añade otra entrada del mismo artefacto, ya con la base migrada.
+
+    Es lo que pasaba en producción: la migración se había aplicado antes de que llegaran más
+    entradas, así que reproducir «la base marcada como 0007» exige insertarlas después.
+    """
+    engine = build_engine(settings.data_paths.database)
+    try:
+        with engine.begin() as conexion:
+            conexion.execute(
+                text(
+                    "INSERT INTO ingestion_items (id, batch_id, relative_path, original_name, "
+                    "size_bytes, media_type, artifact_id, status, position, origin_type, "
+                    "origin_display) VALUES "
+                    "(:id, 'batch-1', :ruta, :ruta, 100, 'text/plain', 'art-1', 'hashed', 2, "
+                    "'file', :ruta)"
+                ),
+                {"id": item_id, "ruta": ruta},
+            )
+    finally:
+        engine.dispose()
+
+
+def _escribir_tipo(settings: Settings, valores: dict[str, str]) -> None:
+    """Escribe a mano el tipo de origen, para reproducir el estado que dejó la 0007 antigua."""
+    engine = build_engine(settings.data_paths.database)
+    try:
+        with engine.begin() as conexion:
+            for item_id, tipo in valores.items():
+                conexion.execute(
+                    text("UPDATE ingestion_items SET origin_type = :tipo WHERE id = :id"),
+                    {"tipo": tipo or None, "id": item_id},
+                )
+    finally:
+        engine.dispose()
+
+
+def test_una_base_con_la_0007_antigua_se_repara(tmp_path: Path) -> None:
+    """La procedencia inventada por la 0007 antigua se limpia al actualizar, sin inventar otra.
+
+    Corregir el fichero de una migración **ya aplicada** no arregla las bases que la ejecutaron:
+    para eso está la 0009. Aquí se parte de una base marcada como `0007_item_depth_and_origin` y se
+    deja escrita la procedencia que aquella versión producía (`paste` en todas las entradas de un
+    artefacto con orígenes `file`, `paste` y `url`), que es justo lo que no consta.
+    """
+    settings = _settings(tmp_path)
+    _crear_datos_ambiguos(settings, origenes=("file", "paste", "url"))
+    run_migrations(settings, revision="0007_item_depth_and_origin")
+    _entrada_extra(settings, "item-2", "apuntes.txt")
+    _escribir_tipo(settings, {"item-1": "paste", "item-2": "paste"})
+    assert _leer_entrada(settings, "origin_type") == "paste", "estado de partida de la prueba"
+
+    run_migrations(settings, revision="head")
+
+    assert _leer_entrada(settings, "origin_type") is None, "la procedencia inventada se limpia"
+    assert _leer_entrada(settings, "origin_type", item="item-2") is None
+    # Lo que sí se sabe (el nombre de cada entrada) se conserva.
+    assert _leer_entrada(settings, "origin_display") == "notas.txt"
+    assert _leer_entrada(settings, "origin_display", item="item-2") == "apuntes.txt"
+
+
+def test_la_reparacion_recupera_el_tipo_cuando_es_inequivoco(tmp_path: Path) -> None:
+    """Si el artefacto tiene un único origen, la reparación escribe su tipo en lugar de borrarlo."""
+    settings = _settings(tmp_path)
+    _crear_datos_ambiguos(settings, origenes=("url",))
+    run_migrations(settings, revision="0007_item_depth_and_origin")
+    _entrada_extra(settings, "item-2", "apuntes.txt")
+    _escribir_tipo(settings, {"item-1": "", "item-2": ""})
+
+    run_migrations(settings, revision="head")
+
+    assert _leer_entrada(settings, "origin_type") == "url"
+    assert _leer_entrada(settings, "origin_type", item="item-2") == "url"
 
 
 def test_la_migracion_no_inventa_el_origen_cuando_es_ambiguo(tmp_path: Path) -> None:

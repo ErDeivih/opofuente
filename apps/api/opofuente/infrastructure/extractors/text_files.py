@@ -56,14 +56,24 @@ class _Preview:
 
 
 def _piece(text: str) -> str:
-    """Prepara un tramo **antes** de medirlo: normaliza y colapsa espacios.
+    """Tramo de HTML: normaliza y colapsa espacios **de presentación**.
 
-    El orden importa: las secciones se miden sobre el texto que se va a guardar. La normalización
-    Unicode (NFC) puede **cambiar la longitud** de un tramo —una `e` seguida de un acento combinante
-    pasa a ser una sola `é`—, así que medir antes de normalizar desplazaba todas las secciones
-    siguientes y una acababa señalando contenido de otra.
+    En HTML el colapso es parte del texto (el navegador muestra un bloque de espacios como uno),
+    así que se unen líneas y espacios repetidos. La normalización Unicode (NFC) va antes de medir,
+    porque puede **cambiar la longitud** de un tramo —una `e` seguida de un acento combinante pasa a
+    ser una sola `é`— y medir antes desplazaba todas las secciones siguientes.
     """
     return normalise_text(" ".join(text.split()))
+
+
+def _piece_literal(text: str) -> str:
+    """Tramo de CSV o JSON: **solo** se normaliza; los espacios se conservan tal cual.
+
+    Son datos, no presentación: `Con  dos  espacios` y `Con dos espacios` son contenidos
+    distintos, y colapsarlos cambiaría el material extraído. La regla del dominio lo dice
+    explícitamente (`normalise_text`: «no se colapsan espacios»).
+    """
+    return normalise_text(text)
 
 
 def _finish(
@@ -195,7 +205,7 @@ class CsvPreviewExtractor:
         delimiter = _detect_delimiter(text, detected.suffix)
         rows = list(csv.reader(io.StringIO(text), delimiter=delimiter))
         preview = rows[: self._max_rows]
-        lines = [_piece(delimiter.join(cell.strip() for cell in row)) for row in preview]
+        lines = [_piece_literal(delimiter.join(cell.strip() for cell in row)) for row in preview]
         avisos = list(warnings)
         if len(rows) > len(preview):
             avisos.append(WarningCode.TRUNCATED)
@@ -289,7 +299,7 @@ class JsonPreviewExtractor:
         if depth_cut:
             warnings.append(WarningCode.TRUNCATED)
         # Cada línea se normaliza antes de unirse: el tramo se mide sobre el texto final.
-        cuerpo = "\n".join(_piece(line) for line in lines)
+        cuerpo = "\n".join(_piece_literal(line) for line in lines)
         body, truncation = truncate_text(cuerpo, max_chars=PREVIEW_CHARS)
         section = ExtractedSection(
             section_type=SectionType.METADATA,
