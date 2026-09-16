@@ -35,6 +35,7 @@ from opofuente.domain.extraction import (
     clamp_sections,
     measure_quality,
     merge_warnings,
+    normalise_text,
     truncate_text,
 )
 from opofuente.infrastructure.extractors.base import DetectedFormat
@@ -103,7 +104,7 @@ class DocxTextExtractor:
                 title = None
                 label = _table_header(block)
             else:
-                piece = " ".join(block.text.split())
+                piece = _piece(block.text)
                 if not piece:
                     continue
                 style = (block.style.name or "").lower() if block.style is not None else ""
@@ -186,10 +187,19 @@ def _iter_blocks(document: DocxDocument) -> list[Paragraph | Table]:
     return blocks
 
 
+def _piece(text: str) -> str:
+    """Prepara un tramo antes de medirlo: normaliza y colapsa espacios.
+
+    Igual que en los extractores de texto: la normalización Unicode puede cambiar la longitud de un
+    tramo, así que medir antes de normalizar desplazaría las secciones siguientes.
+    """
+    return normalise_text(" ".join(text.split()))
+
+
 def _table_text(table: Table) -> str:
     rows = []
     for row in table.rows:
-        cells = [" ".join(cell.text.split()) for cell in row.cells]
+        cells = [_piece(cell.text) for cell in row.cells]
         rows.append(" | ".join(cells))
     return "\n".join(rows)
 
@@ -198,7 +208,7 @@ def _table_header(table: Table) -> str | None:
     if not table.rows:
         return None
     first = table.rows[0]
-    header = " | ".join(" ".join(cell.text.split()) for cell in first.cells)
+    header = " | ".join(_piece(cell.text) for cell in first.cells)
     return header or None
 
 

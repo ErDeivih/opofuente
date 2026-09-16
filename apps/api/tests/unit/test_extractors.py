@@ -541,6 +541,135 @@ def test_el_titulo_del_html_no_desplaza_las_secciones(tmp_path: Path) -> None:
     assert resultado.text[primera.char_start : primera.char_end] == "Encabezado real"
 
 
+def test_la_normalizacion_unicode_no_desplaza_las_secciones(tmp_path: Path) -> None:
+    """NFC puede **acortar** un tramo: medirlo antes de normalizar desplazaba los siguientes.
+
+    Reproducción del fallo: un encabezado escrito con `e` + acento combinante (U+0301) mide un
+    carácter más que su forma normalizada. Si el tramo se medía antes de normalizar, el título
+    apuntaba a `rimera` y todas las secciones siguientes quedaban desplazadas. Lo que se comprueba
+    aquí es que **el fragmento señalado es el que dice ser**, no solo que esté dentro del texto.
+    """
+    combinante = "Primera\u0301 parte"
+    archivo = _write(
+        tmp_path / "apuntes.md",
+        f"# {combinante}\n\nTexto de la primera parte.\n\n## Segunda parte\n\nTexto de la segunda.",
+    )
+
+    resultado = ExtractorRegistry(Settings(_env_file=None)).extract(archivo)
+
+    assert [section.title for section in resultado.sections] == [
+        "Primerá parte",
+        "Segunda parte",
+    ]
+    for section in resultado.sections:
+        # El tramo de Markdown abarca la línea entera (`# Título\n`), así que lo que se comprueba es
+        # que **contiene** su título tal cual: con el desplazamiento de un carácter, el tramo se
+        # quedaba en `# Primerá par` y el título ya no cabía dentro.
+        fragmento = resultado.text[section.char_start : section.char_end]
+        assert section.title in fragmento, (
+            f"la sección {section.position} apunta a {fragmento!r} y no contiene {section.title!r}"
+        )
+        assert resultado.text.index(section.title) == resultado.text.index(
+            section.title, section.char_start, section.char_end
+        ), "el título aparece antes del tramo que lo señala"
+
+
+@pytest.mark.parametrize(
+    ("caracter", "bytes_utf8"),
+    [("á", 2), ("€", 3), ("😀", 4)],
+)
+def test_un_corte_de_bytes_no_parte_caracteres_utf8(
+    tmp_path: Path, caracter: str, bytes_utf8: int
+) -> None:
+    """El tope de lectura cae donde caiga: nunca en mitad de un carácter.
+
+    Si el corte partía un carácter de 2, 3 o 4 bytes, la decodificación UTF-8 fallaba y el bloque
+    entero se reinterpretaba como Windows-1252: el texto salía corrupto y con una codificación
+    informada que no era la suya.
+    """
+    relleno = "Texto sintetico. " * 80
+    base = len(relleno.encode("utf-8"))
+    assert base >= 1024, "el tope de configuración exige al menos un kibibyte"
+    for desplazamiento in range(bytes_utf8):
+        # El corte se coloca dentro del carácter: en su primer byte, en el segundo o en el tercero.
+        ajustes = Settings(max_text_bytes=base + desplazamiento, _env_file=None)
+        archivo = tmp_path / f"corte-{bytes_utf8}-{desplazamiento}.txt"
+        archivo.write_text(relleno + caracter + " resto del material sintetico.", encoding="utf-8")
+
+        resultado = ExtractorRegistry(ajustes).extract(archivo)
+
+        assert WarningCode.TRUNCATED in resultado.warnings
+        assert resultado.metadata["encoding"] == "utf-8", (
+            f"el corte partió {caracter!r} y el texto se releyó como Windows-1252"
+        )
+        assert caracter not in resultado.text, "el carácter partido no se inventa a medias"
+        assert "Texto sintetico." in resultado.text, "lo que sí cabía se lee entero"
+
+
+@pytest.mark.parametrize("formato", ["html", "docx", "csv", "json"])
+def test_cada_tramo_señala_su_contenido_con_unicode_combinante(
+    tmp_path: Path, formato: str
+) -> None:
+    """Los tramos de HTML, DOCX, CSV y JSON también se miden sobre el texto normalizado.
+
+    Es la reproducción exacta del fallo del propietario, pero en los extractores que construyen el
+    texto por piezas: medir una pieza antes de normalizarla (NFC puede acortarla) desplazaba todo lo
+    que venía después, así que una sección señalaba un contenido que no era el suyo aunque sus
+    límites siguieran dentro del texto.
+    """
+    combinante = "Primera\u0301 parte"
+    normalizado = "Primerá parte"
+    siguiente = "Segunda parte"
+
+    if formato == "html":
+        archivo = _write(
+            tmp_path / "material.html",
+            f"<html><body><h1>{combinante}</h1><p>Texto de la primera parte.</p>"
+            f"<h2>{siguiente}</h2><p>Texto de la segunda.</p></body></html>",
+        )
+    elif formato == "docx":
+        import docx
+
+        archivo = tmp_path / "tema.docx"
+        documento = docx.Document()
+        documento.add_heading(combinante, level=1)
+        documento.add_paragraph("Texto de la primera parte.")
+        documento.add_heading(siguiente, level=2)
+        documento.add_paragraph("Texto de la segunda.")
+        documento.save(str(archivo))
+    elif formato == "csv":
+        archivo = _write(
+            tmp_path / "preguntas.csv",
+            f"pregunta;opcion\n{combinante};A\nPregunta dos;B\n",
+        )
+    else:
+        archivo = _write(
+            tmp_path / "datos.json",
+            json.dumps({"primera": combinante, "segunda": siguiente}, ensure_ascii=False),
+        )
+
+    resultado = ExtractorRegistry(Settings(_env_file=None)).extract(archivo)
+
+    assert resultado.sections, f"{formato}: debería dejar tramos"
+    for section in resultado.sections:
+        fragmento = resultado.text[section.char_start : section.char_end]
+        assert fragmento, f"{formato}: el tramo {section.position} señala texto vacío"
+    # En HTML y DOCX los tramos son las piezas exactas: ahí se puede exigir igualdad.
+    if formato in {"html", "docx"}:
+        fragmentos = [resultado.text[s.char_start : s.char_end] for s in resultado.sections]
+        assert fragmentos == [
+            normalizado,
+            "Texto de la primera parte.",
+            siguiente,
+            "Texto de la segunda.",
+        ], f"{formato}: los tramos no coinciden con su contenido"
+    else:
+        # En CSV y JSON el tramo es todo el texto, pero el combinante tiene que estar normalizado
+        # en el sitio que dice el tramo (no desplazado por haberlo medido antes).
+        assert normalizado in resultado.text
+        assert resultado.text.index(normalizado) < len(resultado.text)
+
+
 # --- lectura acotada por extractor (regresión S03) -----------------------------------------------
 
 

@@ -55,6 +55,17 @@ class _Preview:
     metadata: dict[str, object]
 
 
+def _piece(text: str) -> str:
+    """Prepara un tramo **antes** de medirlo: normaliza y colapsa espacios.
+
+    El orden importa: las secciones se miden sobre el texto que se va a guardar. La normalización
+    Unicode (NFC) puede **cambiar la longitud** de un tramo —una `e` seguida de un acento combinante
+    pasa a ser una sola `é`—, así que medir antes de normalizar desplazaba todas las secciones
+    siguientes y una acababa señalando contenido de otra.
+    """
+    return normalise_text(" ".join(text.split()))
+
+
 def _finish(
     *,
     kind: RepresentationKind,
@@ -68,9 +79,9 @@ def _finish(
 ) -> ExtractionResult:
     """Cierra un resultado: normaliza, recorta, ajusta las secciones y mide la calidad.
 
-    El orden importa: las secciones se **ajustan al texto final** (`clamp_sections`), porque un
-    extractor las calcula mientras construye el texto y después el texto se normaliza y se recorta.
-    Sin ese ajuste, un offset podía señalar otra cosa o caerse fuera del texto.
+    El orden importa: los extractores miden sus tramos sobre piezas **ya normalizadas** (`_piece`) y
+    aquí se ajustan al texto final con `clamp_sections`, porque además el texto se recorta. Sin lo
+    primero, un offset apuntaba a otro contenido; sin lo segundo, podía caerse fuera del texto.
     """
     normalised = normalise_text(text)
     trimmed, truncation = truncate_text(normalised, max_chars=max_chars)
@@ -184,7 +195,7 @@ class CsvPreviewExtractor:
         delimiter = _detect_delimiter(text, detected.suffix)
         rows = list(csv.reader(io.StringIO(text), delimiter=delimiter))
         preview = rows[: self._max_rows]
-        lines = [delimiter.join(cell.strip() for cell in row) for row in preview]
+        lines = [_piece(delimiter.join(cell.strip() for cell in row)) for row in preview]
         avisos = list(warnings)
         if len(rows) > len(preview):
             avisos.append(WarningCode.TRUNCATED)
@@ -277,7 +288,9 @@ class JsonPreviewExtractor:
         lines, depth_cut = _describe(parsed, depth=1, max_depth=self._max_depth)
         if depth_cut:
             warnings.append(WarningCode.TRUNCATED)
-        body, truncation = truncate_text("\n".join(lines), max_chars=PREVIEW_CHARS)
+        # Cada línea se normaliza antes de unirse: el tramo se mide sobre el texto final.
+        cuerpo = "\n".join(_piece(line) for line in lines)
+        body, truncation = truncate_text(cuerpo, max_chars=PREVIEW_CHARS)
         section = ExtractedSection(
             section_type=SectionType.METADATA,
             position=1,
@@ -405,7 +418,7 @@ class HtmlTextExtractor:
         for tag in soup.find_all(DROPPED_TAGS):
             tag.decompose()
 
-        title = soup.title.get_text(strip=True) if soup.title else None
+        title = _piece(soup.title.get_text(strip=True)) if soup.title else None
         # El cuerpo se construye **antes** de calcular las secciones: el título se antepone como
         # cabecera del texto, así que los offsets tienen que contar con él. Calcularlos antes y
         # añadir el título después desplazaba todas las secciones.
@@ -414,7 +427,7 @@ class HtmlTextExtractor:
             if element.find_parent(["table", "li", "p", "h1", "h2", "h3", "h4", "h5", "h6"]):
                 # Se queda el bloque de más arriba: los hijos ya van dentro de su texto.
                 continue
-            piece = " ".join(element.get_text(" ", strip=True).split())
+            piece = _piece(element.get_text(" ", strip=True))
             if not piece:
                 continue
             section_type = BLOCK_TAGS[element.name]
@@ -422,8 +435,11 @@ class HtmlTextExtractor:
             if element.name == "table":
                 first_row = element.find("tr")
                 if first_row is not None:
-                    label = " | ".join(
-                        cell.get_text(" ", strip=True) for cell in first_row.find_all(["th", "td"])
+                    label = _piece(
+                        " | ".join(
+                            cell.get_text(" ", strip=True)
+                            for cell in first_row.find_all(["th", "td"])
+                        )
                     )
             titulo = (
                 piece[:120] if section_type in {SectionType.TITLE, SectionType.HEADING} else None

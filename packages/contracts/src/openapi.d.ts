@@ -1218,10 +1218,10 @@ export interface components {
              * @default 0
              */
             depth: number;
+            /** Location */
+            location: string;
             /** Origin Type */
             origin_type?: string | null;
-            /** Path */
-            path: string;
         };
         /**
          * RepresentationTextSchema

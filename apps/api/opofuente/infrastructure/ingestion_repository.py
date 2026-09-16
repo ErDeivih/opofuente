@@ -44,6 +44,7 @@ from opofuente.infrastructure.db_models import (
     ImportIssueRecord,
     IngestionBatchRecord,
     IngestionItemRecord,
+    ItemRepresentationRecord,
     SourceArtifactRecord,
 )
 
@@ -209,10 +210,16 @@ class SqlAlchemyIngestionRepository:
                 .where(IngestionItemRecord.batch_id == batch_id)
                 .group_by(IngestionItemRecord.status)
             ).all()
+            # Los bytes copiados se miden por **presencia física**: lo que tiene artefacto en el
+            # almacén, sea cual sea el resultado de su procesamiento. Antes se calculaban por estado
+            # y una extracción fallida (o un formato conservado sin extraer) desaparecía de la
+            # cuenta, así que el informe decía que no se había guardado nada mientras el material
+            # estaba en el almacén. El resultado de procesamiento se declara aparte, con sus
+            # contadores.
             bytes_copied = session.execute(
                 select(func.coalesce(func.sum(IngestionItemRecord.size_bytes), 0)).where(
                     IngestionItemRecord.batch_id == batch_id,
-                    IngestionItemRecord.status.in_(_COPIED_VALUES),
+                    IngestionItemRecord.artifact_id.is_not(None),
                 )
             ).scalar_one()
             source_changed = session.execute(
@@ -226,10 +233,11 @@ class SqlAlchemyIngestionRepository:
 
         counts = {str(row[0]): int(row[1]) for row in status_rows}
         failed = counts.get(ItemStatus.FAILED.value, 0) - source_changed
-        # Desde S03 una entrada copiada puede estar `hashed` (sin extraer todavía), `extracted`
-        # (con texto), `expanded` (un ZIP cuyos miembros son entradas aparte) o `ocr_pending`. La
-        # lista la comparten el recuento y los bytes: lo conservado **sin** extraer se cuenta aparte
-        # (`preserved_unsupported`), porque no es texto (DEBT-008).
+        # El término `copied` del informe cuenta las entradas cuyo resultado es «material copiado»
+        # (`hashed`, `copied`, `extracted`, `expanded`, `ocr_pending`). Lo conservado **sin**
+        # extraer se cuenta aparte (`preserved_unsupported`, DEBT-008) y lo que falló, en `failed`;
+        # los bytes del almacén van por su cuenta, porque un fallo de extracción no borra lo
+        # copiado.
         copied = sum(counts.get(value, 0) for value in _COPIED_VALUES)
         return ImportCounters(
             total=sum(counts.values()),
@@ -542,7 +550,6 @@ class SqlAlchemyIngestionRepository:
         *,
         artifact_id: str | None = None,
         detail: str | None = None,
-        representation_id: str | None = None,
     ) -> None:
         with self._session_factory() as session:
             record = session.get(IngestionItemRecord, item_id)
@@ -553,10 +560,26 @@ class SqlAlchemyIngestionRepository:
                 record.artifact_id = artifact_id
             if detail is not None:
                 record.detail = detail
-            if representation_id is not None:
-                # Enlace explícito entrada → representación: es lo que permite que la lista de un
-                # lote enseñe el texto que salió de **sus** entradas y no el de otro lote.
-                record.representation_id = representation_id
+            session.commit()
+
+    def link_representation(self, item_id: str, representation_id: str, *, now: datetime) -> None:
+        """Asocia una representación con la entrada de la que salió.
+
+        Es idempotente por pareja (`item_id`, `representation_id`): volver a extraer no duplica el
+        enlace, y una entrada puede tener varias representaciones (texto nativo, OCR y las versiones
+        de extractor que vengan), que es justo lo que no cabía en una clave ajena singular.
+        """
+        with self._session_factory() as session:
+            existing = session.get(ItemRepresentationRecord, (item_id, representation_id))
+            if existing is not None:
+                return
+            session.add(
+                ItemRepresentationRecord(
+                    item_id=item_id,
+                    representation_id=representation_id,
+                    created_at=now,
+                )
+            )
             session.commit()
 
     # ------------------------------------------------------------------ artefactos

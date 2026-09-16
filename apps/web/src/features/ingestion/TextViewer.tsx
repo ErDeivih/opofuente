@@ -99,7 +99,7 @@ export function TextViewer({ representations }: { representations: Representatio
                   representación: se listan sus dos procedencias en lugar de repetir el texto. */}
               {sources.length > 0 && (
                 <span className="hint sample__path">
-                  {sources.map((source) => source.path).join(' · ')}
+                  {sources.map((source) => source.location).join(' · ')}
                 </span>
               )}
               {procedencias.length > 0 && (

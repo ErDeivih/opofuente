@@ -185,3 +185,28 @@ Trece bloqueos, todos con prueba de regresión. Los que cambian la forma del sis
   (el paquete publica `py.typed` pero sin anotaciones).
 - **`opofuente_testing`**: los constructores de documentos sintéticos y los dobles de prueba pasan a
   un paquete tipado y comprobado con mypy; `apps/api/tests` sale del `pythonpath`.
+
+## Segunda corrección de S03 (15/09/2026)
+
+Once defectos más, con dos cambios de forma:
+
+- **Una sola puerta antes del almacén**: `application/storage_policy.py` decide qué contenido se
+  admite (sufijo y firma) y la usan **todas** las vías de entrada —subida, descarga por URL, copia
+  desde carpeta y miembros de ZIP—, antes de crear el lote y de copiar. El texto pegado queda fuera:
+  lo escribe OpoFuente.
+- **`item_representations`** (migración `0008`): la relación entrada→representación pasa de una clave
+  ajena singular a una tabla de asociación con unicidad por pareja, para que el texto nativo, el OCR
+  y las versiones de extractor convivan enlazados a la misma entrada. `ingestion_items.representation_id`
+  desaparece.
+- **Procedencia honesta**: la migración `0007` solo rellena el tipo de origen cuando no hay ambigüedad
+  (un único origen registrado); con varios, queda `NULL` («no consta») en lugar de inventarse uno. La
+  procedencia que ve el usuario sale de `origin_display` (URL saneada, título pegado), no de la ruta.
+- **Escritura atómica** de `texto.txt` + `estructura.json` (temporal, `fsync`, `os.replace`) y
+  **corte de lectura en frontera de carácter** (nunca dentro de un carácter UTF-8).
+- **Los tramos se miden sobre texto normalizado**: cada extractor normaliza su pieza antes de
+  calcular offsets (`_piece`), porque NFC puede acortarla.
+- **`copied_bytes` mide presencia física** (`artifact_id IS NOT NULL`), no el resultado del
+  procesamiento.
+- **Sin exclusiones de Ruff nuevas**: los ayudantes de prueba generan sus PNG con `zlib`/`struct`, así
+  que el stub de PyMuPDF no necesita constantes con nombre propio y el `per-file-ignore` de N816 se
+  retiró.

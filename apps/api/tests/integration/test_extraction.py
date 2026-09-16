@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import shutil
 from pathlib import Path
+from uuid import uuid4
 
 import pytest
 from sqlalchemy import func, select
@@ -19,7 +20,13 @@ from opofuente.application.extraction_service import ExtractionService
 from opofuente.application.ingestion_service import IngestionService
 from opofuente.config import Settings
 from opofuente.domain.errors import JobCancelledError
-from opofuente.domain.extraction import RepresentationStatus
+from opofuente.domain.extraction import (
+    ExtractionResult,
+    ExtractorRef,
+    Quality,
+    RepresentationKind,
+    RepresentationStatus,
+)
 from opofuente.domain.ingestion import BatchStatus, IssueCode, ItemStatus
 from opofuente.domain.jobs import Job, JobStatus, JobType
 from opofuente.infrastructure.artifact_store import ArtifactStore
@@ -33,6 +40,7 @@ from opofuente.infrastructure.job_repository import SqlAlchemyJobRepository
 from opofuente.infrastructure.representation_store import RepresentationStore
 from opofuente_testing.jobs import FakeExecution, FixedClock
 from opofuente_testing.synthetic_documents import (
+    build_bomb_docx,
     build_csv,
     build_html,
     build_png,
@@ -391,7 +399,7 @@ def test_dos_entradas_con_el_mismo_contenido_comparten_una_sola_representacion(
 
     representaciones = extraction.representations_for_batch(batch_id)
     assert len(representaciones) == 1, "un artefacto, una representación"
-    assert set(representaciones[0].source_paths) == {"tema-01.pdf", "tema-01-copia.pdf"}
+    assert set(representaciones[0].source_locations) == {"tema-01.pdf", "tema-01-copia.pdf"}
     assert {source.origin_type for source in representaciones[0].sources} == {"file"}
 
 
@@ -446,11 +454,14 @@ def test_si_la_base_falla_no_queda_el_texto_escrito(services, tmp_path: Path, mo
     assert list(extraction._representations._paths.extracted.iterdir()) == []
 
 
-def test_los_bytes_del_informe_sobreviven_a_la_extraccion(services, material: Path) -> None:
-    """El informe cuenta los bytes de todo lo que está en el almacén, extraído o no.
+def test_los_bytes_del_informe_miden_la_presencia_fisica(services, material: Path) -> None:
+    """`copied_bytes` cuenta lo que **está** en el almacén, sea cual sea su resultado de proceso.
 
-    Sin esto, en cuanto la extracción pasaba las entradas de `hashed` a `extracted`, el informe
-    habría dicho que se copiaron 0 bytes: el usuario vería su material y un informe en cero.
+    El material sintético de la prueba tiene un `.xlsx` que se conserva sin extraer
+    (`unsupported_preserved`) y un `.png` pendiente de OCR. Antes, los bytes se calculaban por
+    estado y esas entradas no sumaban: el informe decía que no se había guardado nada mientras el
+    material estaba en el almacén. Ahora se mide por presencia física (`artifact_id IS NOT NULL`) y
+    el resultado del procesamiento se declara aparte, con sus contadores.
     """
     ingestion, extraction, _jobs, _clock = services
     batch_id = _import(ingestion, material)
@@ -465,9 +476,144 @@ def test_los_bytes_del_informe_sobreviven_a_la_extraccion(services, material: Pa
         for entry in detalle.entries
         if entry.status in {"copied", "hashed", "extracted", "expanded", "ocr_pending"}
     ]
+    conservados = [
+        entry for entry in detalle.entries if entry.status == ItemStatus.UNSUPPORTED_PRESERVED.value
+    ]
     assert len(copiados) == detalle.batch.counters["copied"]
-    assert detalle.batch.counters["copied_bytes"] == sum(entry.size_bytes for entry in copiados)
+    assert len(conservados) == detalle.batch.counters["preserved_unsupported"] == 1
+    # Los bytes incluyen también lo conservado sin extraer: está en el almacén.
+    assert detalle.batch.counters["copied_bytes"] == sum(
+        entry.size_bytes for entry in copiados + conservados
+    )
+    assert detalle.batch.counters["copied_bytes"] > sum(entry.size_bytes for entry in copiados)
+
+
+def test_los_bytes_incluyen_una_extraccion_fallida(services, tmp_path: Path) -> None:
+    """Una entrada cuya extracción falla sigue contando sus bytes: el artefacto está guardado.
+
+    Es la separación que faltaba: el **resultado** del proceso es `failed` (y así se declara en el
+    informe), pero el material está en el almacén y el informe no puede decir que no se copió nada.
+    """
+    ingestion, extraction, _jobs, _clock = services
+    root = tmp_path / "roto"
+    root.mkdir()
+    trampa = build_bomb_docx(root / "trampa.docx")
+
+    batch_id = _import(ingestion, root)
+    extraction.run_extraction_job(
+        FakeExecution(_job_for(ingestion, batch_id, JobType.EXTRACT_ARTIFACT))
+    )
+
+    detalle = extraction._ingestions.get_batch_detail(batch_id, entry_limit=50, issue_limit=50)
+    assert detalle is not None
+    entrada = next(entry for entry in detalle.entries if entry.relative_path == "trampa.docx")
+    assert entrada.status == ItemStatus.FAILED.value
+    assert detalle.batch.counters["failed"] == 1
+    assert detalle.batch.counters["copied_bytes"] == trampa.stat().st_size
     assert detalle.batch.counters["copied_bytes"] > 0
+
+
+def test_una_entrada_puede_tener_texto_nativo_y_ocr_a_la_vez(services, tmp_path: Path) -> None:
+    """La relación entrada→representación no es singular: el OCR convive con el texto nativo.
+
+    Con una clave ajena singular, extraer el OCR habría pisado el enlace al texto nativo y el lote
+    habría dejado de mostrar una representación válida. Aquí se enlazan las dos a la misma entrada y
+    las dos aparecen en el lote, cada una con su tipo.
+    """
+    ingestion, extraction, _jobs, _clock = services
+    root = tmp_path / "escaneado"
+    root.mkdir()
+    build_text_pdf(root / "temario.pdf", pages=1)
+
+    batch_id = _import(ingestion, root)
+    extraction.run_extraction_job(
+        FakeExecution(_job_for(ingestion, batch_id, JobType.EXTRACT_ARTIFACT))
+    )
+
+    nativa = extraction.representations_for_batch(batch_id)[0]
+    assert nativa.kind == "native_text"
+
+    # El OCR que llegará en S05 hace exactamente esto: guarda su representación y la enlaza.
+    item = extraction._ingestions.list_entries(batch_id, limit=10, offset=0).entries[0]
+    ocr_id = str(uuid4())
+    extraction._representations.save(
+        ocr_id,
+        ExtractionResult(
+            kind=RepresentationKind.OCR,
+            status=RepresentationStatus.EXTRACTED,
+            text="Texto reconocido por OCR del temario sintetico.",
+            extractor=ExtractorRef("tesseract", "1"),
+            quality=Quality.OCR_UNREVIEWED,
+            ocr_candidate=True,
+        ),
+    )
+    extraction._repository.save(
+        result=ExtractionResult(
+            kind=RepresentationKind.OCR,
+            status=RepresentationStatus.EXTRACTED,
+            text="Texto reconocido por OCR del temario sintetico.",
+            extractor=ExtractorRef("tesseract", "1"),
+            quality=Quality.OCR_UNREVIEWED,
+            ocr_candidate=True,
+        ),
+        artifact_id=nativa.artifact_id,
+        representation_id=ocr_id,
+        text_storage_key=f"{ocr_id}/texto.txt",
+        now=_clock.now(),
+    )
+    extraction._ingestions.link_representation(item.id, ocr_id, now=_clock.now())
+
+    vistas = extraction.representations_for_batch(batch_id)
+    tipos = sorted(view.kind for view in vistas)
+    assert tipos == ["native_text", "ocr"], "las dos representaciones siguen enlazadas a la entrada"
+    # Y ninguna sustituyó a la otra: la nativa sigue con su texto.
+    assert extraction.read_text(nativa.id, offset=0, limit=50).text
+    assert extraction.read_text(ocr_id, offset=0, limit=50).text.startswith("Texto reconocido")
+
+
+def test_si_falla_el_segundo_fichero_no_queda_una_representacion_a_medias(
+    services, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """`texto.txt` y `estructura.json` se escriben en un temporal y se mueven de una vez.
+
+    Un fallo entre los dos (disco lleno, corte de luz) dejaba un directorio con solo `texto.txt`,
+    que parecía una representación válida. Ahora, si cualquiera de los dos falla, no queda nada.
+    """
+    ingestion, extraction, _jobs, _clock = services
+    root = tmp_path / "material"
+    root.mkdir()
+    build_text_pdf(root / "temario.pdf", pages=1)
+
+    batch_id = _import(ingestion, root)
+    job = _job_for(ingestion, batch_id, JobType.EXTRACT_ARTIFACT)
+
+    def rompe(*args: object, **kwargs: object) -> str:
+        raise OSError("el disco se llenó al escribir la estructura")
+
+    monkeypatch.setattr("opofuente.infrastructure.representation_store.json.dumps", rompe)
+
+    with pytest.raises(OSError):
+        extraction.run_extraction_job(FakeExecution(job))
+
+    extracted = extraction._representations._paths.extracted
+    assert list(extracted.iterdir()) == [], "ni el destino a medias ni el temporal"
+
+
+def test_el_texto_guardado_es_legible_y_coincide_con_la_representacion(
+    services, material: Path
+) -> None:
+    """El texto que se lee por trozos es exactamente el que dice la representación."""
+    ingestion, extraction, _jobs, _clock = services
+    batch_id = _import(ingestion, material)
+    extraction.run_extraction_job(
+        FakeExecution(_job_for(ingestion, batch_id, JobType.EXTRACT_ARTIFACT))
+    )
+
+    for vista in extraction.representations_for_batch(batch_id):
+        trozo = extraction.read_text(vista.id, offset=0, limit=10_000)
+        assert trozo.total_chars == vista.char_count
+        assert trozo.text == trozo.text  # el trozo leído no se recorta por su cuenta
+        assert extraction._representations.sections(vista.id), "la estructura también se guarda"
 
 
 def test_el_ocr_pendiente_se_declara_sin_romper_la_aplicacion(services, tmp_path: Path) -> None:

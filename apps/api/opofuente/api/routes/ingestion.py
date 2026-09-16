@@ -143,7 +143,7 @@ def _representation(view: RepresentationView) -> RepresentationSchema:
         created_at=view.created_at,
         sources=[
             RepresentationSourceSchema(
-                path=source.path, origin_type=source.origin_type, depth=source.depth
+                location=source.location, origin_type=source.origin_type, depth=source.depth
             )
             for source in view.sources
         ],

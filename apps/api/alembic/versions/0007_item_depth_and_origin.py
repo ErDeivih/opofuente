@@ -22,11 +22,14 @@ Tres columnas nuevas en `ingestion_items`, cada una cierra un agujero real de S0
    (el mismo contenido entrado como fichero deja `native_text` y entrado como texto pegado deja
    `plain_text`): la lista de un lote enseñaba representaciones producidas en otro lote.
 
-Las entradas anteriores a esta migración quedan con `container_depth = 0` (todos los contenedores ya
-expandidos son de primer nivel), con `origin_type = 'file'` (el origen de todo lo que había salvo el
-texto pegado y las URL, que se corrigen a mano abajo por su nombre) y con su `representation_id`
-enlazado **solo** cuando ese artefacto tiene una única representación: cuando hay varias no se puede
-saber cuál era la de cada entrada, y adivinar sería peor que dejar el enlace vacío.
+Las entradas anteriores a esta migración quedan con `container_depth = 0` (todos los contenedores
+ya expandidos son de primer nivel), con `origin_display` igual a su ruta relativa y con su
+`origin_type` **solo cuando no hay ambigüedad**: se toma del artefacto únicamente si ese artefacto
+tiene un único origen registrado. Cuando tiene varios (los mismos bytes entraron como fichero, como
+texto pegado y como URL) no hay información para saber cuál correspondía a cada entrada, así que se
+queda `NULL` («no consta») en lugar de inventarse uno. El `representation_id` se enlaza **solo**
+cuando ese artefacto tiene una única representación: cuando hay varias no se puede saber cuál era la
+de cada entrada, y adivinar sería peor que dejar el enlace vacío.
 
 `downgrade` completo: quita las cuatro columnas.
 """
@@ -70,19 +73,23 @@ def upgrade() -> None:
             )
         )
 
-    op.execute("UPDATE ingestion_items SET origin_type = 'file' WHERE origin_type IS NULL")
+    # `origin_display` se rellena con la ruta relativa: es un dato que ya está en la fila, no una
+    # afirmación nueva. `origin_type` **no** se inventa: solo se rellena cuando no hay ambigüedad.
     op.execute(
         "UPDATE ingestion_items SET origin_display = relative_path WHERE origin_display IS NULL"
     )
-    # El texto pegado y lo descargado se reconocen por su origen, que sí está en la base.
+    # El tipo de origen histórico solo se rellena cuando **no hay ambigüedad**: si el artefacto de
+    # esa entrada tiene un único origen registrado, ese es el suyo. Con varios orígenes (los mismos
+    # bytes entraron como fichero, como texto pegado y como URL) no hay información para saber cuál
+    # correspondía a cada entrada, así que se queda en `NULL` («no consta») en lugar de inventarse
+    # uno: decir `paste` para todas cuando una pudo venir de una URL es peor que no afirmar nada.
     op.execute(
-        "UPDATE ingestion_items SET origin_type = 'paste' WHERE artifact_id IN ("
-        "SELECT artifact_id FROM artifact_origins WHERE origin_type = 'paste')"
-    )
-    op.execute(
-        "UPDATE ingestion_items SET origin_type = 'url' "
-        "WHERE origin_type = 'file' AND artifact_id IN ("
-        "SELECT artifact_id FROM artifact_origins WHERE origin_type = 'url')"
+        "UPDATE ingestion_items SET origin_type = ("
+        "SELECT o.origin_type FROM artifact_origins o "
+        "WHERE o.artifact_id = ingestion_items.artifact_id "
+        "GROUP BY o.artifact_id HAVING COUNT(*) = 1) "
+        "WHERE artifact_id IN ("
+        "SELECT artifact_id FROM artifact_origins GROUP BY artifact_id HAVING COUNT(*) = 1)"
     )
     # Enlace a la representación solo cuando el artefacto tiene exactamente una.
     op.execute(

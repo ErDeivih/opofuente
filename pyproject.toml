@@ -78,9 +78,6 @@ select = [
 [tool.ruff.lint.per-file-ignores]
 # `assert` es la forma esperada de comprobar en pytest.
 "apps/api/tests/**" = ["S101"]
-# Los stubs de PyMuPDF declaran los nombres **reales** de la biblioteca (`csRGB`, `open`): no se
-# renombran, porque el stub tiene que coincidir exactamente con lo que existe en ejecución.
-"apps/api/typestubs/**" = ["N816"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["opofuente"]

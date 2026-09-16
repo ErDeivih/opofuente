@@ -35,6 +35,7 @@ from opofuente.application.read_models import (
     IssuePage,
     IssueView,
 )
+from opofuente.application.storage_policy import refusal_message
 from opofuente.domain.artifacts import OriginType
 from opofuente.domain.errors import (
     InvalidBatchStateError,
@@ -561,6 +562,24 @@ class IngestionService:
             self._repository.mark_item(entry.id, ItemStatus.FAILED, detail="ilegible")
             return
 
+        # La política de contenido es la misma en todas las vías: un ejecutable renombrado en la
+        # carpeta del usuario no llega al almacén aunque el inventario no lo haya reconocido por su
+        # nombre. Se comprueba antes de copiar, así que no queda ni artefacto ni entrada copiada.
+        motivo = refusal_message(name=entry.original_name, path=source)
+        if motivo is not None:
+            self._record_issue(
+                batch_id,
+                entry,
+                IssueCode.OMITTED_EXECUTABLE,
+                IssueSeverity.WARNING,
+                f"No se copia: {motivo}.",
+                now,
+            )
+            self._repository.mark_item(
+                entry.id, ItemStatus.FAILED, detail="contenido no admitido: ejecutable"
+            )
+            return
+
         if stat.st_size != entry.size_bytes:
             self._record_issue(
                 batch_id,
@@ -602,7 +621,6 @@ class IngestionService:
             )
             self._repository.mark_item(entry.id, ItemStatus.FAILED, detail="fallo de copia")
             return
-
         artifact_id, _created = self._repository.register_artifact(
             digest=stored.sha256,
             size_bytes=stored.size_bytes,

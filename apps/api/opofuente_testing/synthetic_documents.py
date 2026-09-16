@@ -44,9 +44,7 @@ def build_text_pdf(path: Path, *, pages: int = 3, filler: str = FILLER) -> Path:
 def build_scanned_pdf(path: Path, *, pages: int = 2) -> Path:
     """PDF «escaneado»: páginas con una imagen y sin capa de texto. Debe quedar candidato a OCR."""
     document = pymupdf.open()
-    pixmap = pymupdf.Pixmap(pymupdf.csRGB, pymupdf.IRect(0, 0, 60, 40))
-    pixmap.set_rect(pixmap.irect, (200, 200, 200))
-    image_bytes = pixmap.tobytes("png")
+    image_bytes = png_bytes(60, 40, (200, 200, 200))
     for _ in range(pages):
         page = document.new_page()
         page.insert_image(pymupdf.Rect(50, 50, 350, 250), stream=image_bytes)
@@ -191,11 +189,39 @@ def build_json_broken(path: Path) -> Path:
 
 
 def build_png(path: Path, *, width: int = 40, height: int = 24) -> Path:
-    """PNG pequeño generado con PyMuPDF (sin dependencias nuevas)."""
-    pixmap = pymupdf.Pixmap(pymupdf.csRGB, pymupdf.IRect(0, 0, width, height))
-    pixmap.set_rect(pixmap.irect, (10, 120, 200))
-    pixmap.save(str(path))
+    """PNG pequeño generado con la biblioteca estándar: sin decodificadores ni dependencias."""
+    path.write_bytes(png_bytes(width, height, (10, 120, 200)))
     return path
+
+
+def png_bytes(width: int, height: int, color: tuple[int, int, int]) -> bytes:
+    """Bytes de un PNG RGB de un color plano, escritos a mano con `zlib` y `struct`.
+
+    Se genera así —y no con una biblioteca de imágenes— porque las pruebas no necesitan decodificar
+    nada: basta con un PNG válido y pequeño, que además sirve para los extractores de metadatos (que
+    leen la **cabecera**, sin decodificar la imagen).
+    """
+    import struct
+    import zlib
+
+    fila = b"\x00" + bytes(color) * width  # filtro 0 y los píxeles de la fila
+    crudo = fila * height
+
+    def chunk(kind: bytes, payload: bytes) -> bytes:
+        cuerpo = kind + payload
+        return (
+            struct.pack(">I", len(payload))
+            + cuerpo
+            + struct.pack(">I", zlib.crc32(cuerpo) & 0xFFFFFFFF)
+        )
+
+    cabecera = struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0)
+    return (
+        b"\x89PNG\r\n\x1a\n"
+        + chunk(b"IHDR", cabecera)
+        + chunk(b"IDAT", zlib.compress(crudo, 9))
+        + chunk(b"IEND", b"")
+    )
 
 
 def build_zip(path: Path, members: dict[str, bytes]) -> Path:

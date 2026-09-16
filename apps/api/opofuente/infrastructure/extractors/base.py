@@ -18,7 +18,7 @@ Tres reglas que se aplican aquí (09_SECURITY §3, DEBT-004):
 from __future__ import annotations
 
 from dataclasses import dataclass
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 from typing import Protocol
 
 from opofuente.domain.extraction import ExtractionResult
@@ -31,6 +31,7 @@ from opofuente.domain.formats import (
     TEXT_SUFFIXES,
     FileSignature,
     match_signature,
+    suffix_of_name,
 )
 
 __all__ = [
@@ -89,7 +90,7 @@ def suffix_of(path: Path, name: str | None = None) -> str:
     nombre original llega por `name` y es el que manda para las decisiones por sufijo.
     """
     if name:
-        return PurePosixPath(name).suffix.lower()
+        return suffix_of_name(name)
     return path.suffix.lower()
 
 
@@ -104,12 +105,28 @@ def read_bounded(path: Path, *, max_bytes: int) -> tuple[bytes, bool]:
 
     Se lee un byte de más a propósito: así se distingue «cabe justo» de «hay más» sin tener que
     preguntar antes por el tamaño (que puede cambiar entre la pregunta y la lectura).
+
+    Si el corte cae **dentro de un carácter UTF-8** (de 2, 3 o 4 bytes), se retrocede hasta la
+    frontera anterior del carácter: cortar por la mitad hacía que la decodificación fallara y el
+    fichero entero se reinterpretara como Windows-1252, con el texto corrupto. Solo se retroceden
+    los bytes imprescindibles (como mucho 3).
     """
     with path.open("rb") as stream:
         data = stream.read(max_bytes + 1)
-    if len(data) > max_bytes:
-        return data[:max_bytes], True
-    return data, False
+    if len(data) <= max_bytes:
+        return data, False
+    return _trim_to_character_boundary(data[:max_bytes]), True
+
+
+def _trim_to_character_boundary(data: bytes) -> bytes:
+    """Retrocede lo mínimo para que el bloque termine en un carácter UTF-8 completo."""
+    for cut in range(len(data) - 1, max(len(data) - 4, -1), -1):
+        try:
+            data[:cut].decode("utf-8")
+        except UnicodeDecodeError:
+            continue
+        return data[:cut]
+    return data
 
 
 def detect_format(

@@ -27,10 +27,6 @@ class Colorspace:
     name: str
     n: int
 
-csRGB: Colorspace
-csGRAY: Colorspace
-csCMYK: Colorspace
-
 class Rect:
     x0: float
     y0: float

@@ -325,16 +325,37 @@ class IngestionItemRecord(Base):
     #: Cómo se muestra ese origen. Nunca lleva cadena de consulta: una URL con token se guarda sin
     #: ella, porque este valor viaja a la API y a la interfaz.
     origin_display: Mapped[str | None] = mapped_column(Text, nullable=True)
-    #: Representación que salió de **esta** entrada. Un artefacto puede tener varias (el mismo
-    #: contenido como fichero deja `native_text` y como texto pegado deja `plain_text`), así que sin
-    #: este enlace la lista de un lote enseñaba representaciones producidas en otro lote.
-    representation_id: Mapped[str | None] = mapped_column(
-        String(36),
-        ForeignKey("extracted_representations.id", ondelete="SET NULL"),
-        nullable=True,
-    )
 
     batch: Mapped[IngestionBatchRecord] = relationship(back_populates="items")
+    #: Representaciones que salieron de esta entrada: pueden ser varias (texto nativo **y** OCR, y
+    #: una por versión de extractor), así que la relación es de muchos a muchos.
+    representations: Mapped[list[ExtractedRepresentationRecord]] = relationship(
+        secondary="item_representations", viewonly=True
+    )
+
+
+class ItemRepresentationRecord(Base):
+    """Qué representaciones salieron de qué entrada (relación de muchos a muchos).
+
+    Tabla explícita en lugar de una clave ajena singular: una entrada puede tener su texto nativo,
+    su OCR y las versiones de extractor que hagan falta, y un mismo texto (el fichero y su copia)
+    puede estar producido por varias entradas. La unicidad es por pareja.
+    """
+
+    __tablename__ = "item_representations"
+    __table_args__ = (
+        UniqueConstraint("item_id", "representation_id", name="uq_item_representation"),
+    )
+
+    item_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("ingestion_items.id", ondelete="CASCADE"), primary_key=True
+    )
+    representation_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("extracted_representations.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
 
 class ImportIssueRecord(Base):

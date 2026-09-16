@@ -18,6 +18,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import StrEnum
+from pathlib import PurePosixPath
 
 #: Sufijos que no se extraen **ni se conservan** por decisión de seguridad (04_INGESTION §2).
 DANGEROUS_SUFFIXES = frozenset(
@@ -126,6 +127,30 @@ def executable_refusal(head: bytes) -> str | None:
     return None
 
 
+def suffix_of_name(name: str) -> str:
+    """Extensión del nombre con el que entró el fichero, en minúsculas y con su punto.
+
+    En el almacén el fichero se llama como su hash, así que la política de sufijos se decide con el
+    nombre original de la entrada, no con la ruta interna. Acepta también rutas con `/` para poder
+    usarla con las rutas relativas de un lote.
+    """
+    return PurePosixPath(name.replace("\\", "/")).suffix.lower()
+
+
+def storage_refusal(*, name: str, head: bytes) -> str | None:
+    """Motivo por el que este contenido **no debe guardarse** en el almacén, o `None`.
+
+    Es la comprobación común a todas las vías de entrada (subida, URL, carpeta y miembros de ZIP):
+    un ejecutable o una biblioteca se rechazan antes de copiar nada, por su nombre **y** por su
+    firma, porque un `.txt` con cabecera PE sigue siendo un binario. El texto pegado no pasa por
+    aquí: es texto que escribe OpoFuente, no un fichero que llega de fuera.
+    """
+    suffix = suffix_of_name(name)
+    if is_dangerous_suffix(suffix):
+        return f"ejecutable o biblioteca por su extensión ({suffix})"
+    return executable_refusal(head)
+
+
 __all__ = [
     "CSV_SUFFIXES",
     "DANGEROUS_SUFFIXES",
@@ -142,4 +167,6 @@ __all__ = [
     "is_dangerous_suffix",
     "match_signature",
     "preserved_reason",
+    "storage_refusal",
+    "suffix_of_name",
 ]

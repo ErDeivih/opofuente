@@ -90,9 +90,11 @@ class RepresentationSourceSchema(BaseModel):
     de otra.
     """
 
-    path: str
+    location: str
+    """Procedencia mostrable: la ruta relativa del fichero, el título del texto pegado o la URL
+    descargada **sin** cadena de consulta."""
     origin_type: str | None = None
-    """`file`, `paste` o `url`. `null` en entradas anteriores a esta corrección."""
+    """`file`, `paste` o `url`. `null` en entradas anteriores a la corrección de S03."""
     depth: int = 0
     """Niveles de contenedor recorridos: 0 si vino del origen tal cual, 1 si salió de un ZIP."""
 

@@ -27,6 +27,7 @@ from opofuente.infrastructure.db import as_utc
 from opofuente.infrastructure.db_models import (
     ExtractedRepresentationRecord,
     IngestionItemRecord,
+    ItemRepresentationRecord,
     SourceArtifactRecord,
 )
 
@@ -36,9 +37,14 @@ def _new_id() -> str:
 
 
 def _source_of(item: IngestionItemRecord) -> RepresentationSource:
-    """Procedencia de una entrada: su ruta, su propio tipo de origen y su profundidad."""
+    """Procedencia de una entrada: cómo se muestra su origen, su tipo y su profundidad.
+
+    Se usa `origin_display` (la URL saneada, el título del texto pegado o la ruta relativa del
+    fichero) y no `relative_path`: si no, la procedencia que ve el usuario no era la saneada que se
+    había guardado, y una descarga aparecía con el nombre del artefacto en lugar de su dirección.
+    """
     return RepresentationSource(
-        path=str(item.relative_path),
+        location=str(item.origin_display or item.relative_path),
         origin_type=item.origin_type,
         depth=int(item.container_depth or 0),
     )
@@ -172,21 +178,24 @@ class SqlAlchemyExtractionRepository:
     def list_for_batch(self, batch_id: str) -> tuple[RepresentationView, ...]:
         """Representaciones que salieron de las entradas de un lote, en orden de entrada.
 
-        El enlace es la propia entrada (`representation_id`), no el artefacto: un artefacto puede
-        tener varias representaciones —el mismo contenido entrado como fichero deja `native_text` y
-        entrado como texto pegado deja `plain_text`— y unirlas por artefacto enseñaba en un lote el
-        texto producido en otro. Dos entradas del mismo lote con el mismo contenido sí comparten
-        representación: ahí sale **una** fila con las dos procedencias, que es lo correcto.
+        El enlace es la tabla `item_representations`, no el artefacto: un artefacto puede tener
+        varias representaciones (texto nativo, OCR y una por versión de extractor) y unirlas por
+        artefacto enseñaba en un lote el texto producido en otro. Dos entradas con el mismo
+        contenido sí comparten representación: ahí sale **una** fila con las dos procedencias.
         """
         with self._session_factory() as session:
             rows = session.execute(
                 select(ExtractedRepresentationRecord, IngestionItemRecord)
                 .join(
+                    ItemRepresentationRecord,
+                    ItemRepresentationRecord.representation_id == ExtractedRepresentationRecord.id,
+                )
+                .join(
                     IngestionItemRecord,
-                    IngestionItemRecord.representation_id == ExtractedRepresentationRecord.id,
+                    IngestionItemRecord.id == ItemRepresentationRecord.item_id,
                 )
                 .where(IngestionItemRecord.batch_id == batch_id)
-                .order_by(IngestionItemRecord.position)
+                .order_by(IngestionItemRecord.position, ExtractedRepresentationRecord.created_at)
             ).all()
             vistas: dict[str, RepresentationView] = {}
             fuentes: dict[str, list[RepresentationSource]] = {}
@@ -267,7 +276,11 @@ class SqlAlchemyExtractionRepository:
         items = (
             session.execute(
                 select(IngestionItemRecord)
-                .where(IngestionItemRecord.representation_id == representation_id)
+                .join(
+                    ItemRepresentationRecord,
+                    ItemRepresentationRecord.item_id == IngestionItemRecord.id,
+                )
+                .where(ItemRepresentationRecord.representation_id == representation_id)
                 .order_by(IngestionItemRecord.batch_id, IngestionItemRecord.position)
             )
             .scalars()

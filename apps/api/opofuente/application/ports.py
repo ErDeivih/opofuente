@@ -216,8 +216,11 @@ class IngestionRepository(Protocol):
         *,
         artifact_id: str | None = ...,
         detail: str | None = ...,
-        representation_id: str | None = ...,
     ) -> None: ...
+
+    def link_representation(self, item_id: str, representation_id: str, *, now: datetime) -> None:
+        """Asocia una representación con la entrada de la que salió (idempotente por pareja)."""
+        ...
 
     def register_artifact(
         self,

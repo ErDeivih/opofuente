@@ -27,13 +27,13 @@ from uuid import uuid4
 
 from opofuente.application.ports import Clock, IngestionRepository, JobQueue
 from opofuente.application.read_models import BatchView
+from opofuente.application.storage_policy import refusal_message
 from opofuente.domain.artifacts import OriginType, media_type_for
 from opofuente.domain.errors import (
     InvalidSourceError,
     NotFoundError,
     UnsafeContentError,
 )
-from opofuente.domain.formats import executable_refusal, is_dangerous_suffix
 from opofuente.domain.ingestion import (
     BatchKind,
     BatchMode,
@@ -43,7 +43,6 @@ from opofuente.domain.ingestion import (
 )
 from opofuente.domain.jobs import JobType
 from opofuente.infrastructure.artifact_store import ArtifactStore
-from opofuente.infrastructure.extractors.base import read_head, suffix_of
 from opofuente.infrastructure.safe_paths import resolve_within, safe_display_name
 from opofuente.infrastructure.url_guard import (
     FetchResult,
@@ -130,14 +129,12 @@ class IntakeService:
 
         El ejecutable se rechaza **aquí**, antes de copiarlo: si se copiara primero y se rechazara
         después, el binario ya estaría en el almacén y el lote tendría una entrada fallida que no
-        debía existir. Se comprueba por sufijo (política de 04_INGESTION §2) y por firma (`MZ`/ELF),
-        porque un `.dat` con cabecera PE es un ejecutable con otro nombre.
+        debía existir. La política es la común (`storage_policy`): primero por el nombre —para no
+        escribir nada— y después por la firma del fichero ya escrito.
         """
-        if is_dangerous_suffix(suffix_of(Path(nombre), nombre)):
-            raise UnsafeContentError(
-                f"el fichero {safe_display_name(nombre)!r} es un ejecutable o una biblioteca: "
-                "OpoFuente no los admite"
-            )
+        por_nombre = refusal_message(name=nombre)
+        if por_nombre is not None:
+            raise UnsafeContentError(por_nombre)
         escrito = 0
         with temporal.open("wb") as destino:
             while True:
@@ -151,16 +148,23 @@ class IntakeService:
                         f"{self._max_file_bytes} bytes"
                     )
                 destino.write(trozo)
-        firma = executable_refusal(read_head(temporal))
-        if firma is not None:
-            raise UnsafeContentError(
-                f"el fichero {safe_display_name(nombre)!r} tiene {firma}: OpoFuente no lo admite"
-            )
+        # La firma solo se puede mirar con el fichero ya escrito: un `.dat` con cabecera PE no pasa.
+        por_firma = refusal_message(name=nombre, path=temporal)
+        if por_firma is not None:
+            raise UnsafeContentError(por_firma)
 
     def ingest_files(self, files: Sequence[IntakeFile]) -> BatchView:
         """Copia al almacén los ficheros que el usuario ha soltado o seleccionado."""
         if not files:
             raise InvalidSourceError("no has seleccionado ningún fichero")
+        # Todo se comprueba **antes** de crear el lote: si algo no se admite, no queda ni lote ni
+        # artefacto por el camino.
+        for item in files:
+            if not item.path.is_file():
+                raise InvalidSourceError("uno de los ficheros ya no está disponible")
+            motivo = refusal_message(name=item.name, path=item.path)
+            if motivo is not None:
+                raise UnsafeContentError(motivo)
         now = self._clock.now()
         batch_id = self._repository.create_batch(
             kind=BatchKind.IMPORT,
@@ -171,8 +175,6 @@ class IntakeService:
         )
         try:
             for item in files:
-                if not item.path.is_file():
-                    raise InvalidSourceError("uno de los ficheros ya no está disponible")
                 nombre = safe_display_name(item.name)
                 self._store_one(
                     batch_id,
@@ -182,6 +184,12 @@ class IntakeService:
                     source_path_display=None,
                     source=item.path,
                 )
+        except Exception as error:
+            # Un fallo a mitad deja el lote cerrado y con su motivo: si se quedara en `queued`, no
+            # habría ni trabajo ni entrada que lo cerrara y el usuario vería un lote colgado para
+            # siempre (pasaba con un fallo de disco al copiar).
+            self._close_failed(batch_id, error)
+            raise
         finally:
             # Los temporales de la subida solo viven hasta que el contenido está en el almacén: se
             # borran siempre, también si la copia falla a mitad. Sin esto, cada subida dejaba su
@@ -193,7 +201,11 @@ class IntakeService:
     # ------------------------------------------------------------------ texto pegado
 
     def ingest_paste(self, text: str, *, title: str | None = None) -> BatchView:
-        """Guarda el texto pegado como un artefacto propio, con su origen `paste`."""
+        """Guarda el texto pegado como un artefacto propio, con su origen `paste`.
+
+        El texto pegado no pasa por la política de contenido: lo escribe OpoFuente y no trae firma
+        que inspeccionar. Lo que sí tiene es tope de tamaño y validación previa (vacío, límite).
+        """
         contenido = text.strip()
         if not contenido:
             raise InvalidSourceError("no hay texto que guardar")
@@ -222,6 +234,9 @@ class IntakeService:
                 source_path_display=None,
                 source=temporal,
             )
+        except Exception as error:
+            self._close_failed(batch_id, error)
+            raise
         finally:
             temporal.unlink(missing_ok=True)
         return self._close_intake(batch_id)
@@ -229,13 +244,22 @@ class IntakeService:
     # ------------------------------------------------------------------ URL
 
     def ingest_url(self, url: str) -> BatchView:
-        """Descarga una URL con la guarda de red y guarda lo descargado como artefacto."""
+        """Descarga una URL con la guarda de red y guarda lo descargado como artefacto.
+
+        Lo descargado pasa por la **misma** política de contenido que una subida o una carpeta: un
+        ejecutable servido por URL con nombre inocente se rechaza antes de crear el lote y antes de
+        copiarlo al almacén. Antes esta vía no lo comprobaba y el binario entraba.
+        """
         limits = self._url_limits or url_limits_from_settings(
             timeout_seconds=20.0, max_bytes=64 * 1024 * 1024, max_redirects=5
         )
         temporal = self._temp_path("url")
         try:
             descarga: FetchResult = self._fetcher(url, destination=temporal, limits=limits)
+            nombre = _name_from_url(descarga.final_url, descarga.content_type)
+            motivo = refusal_message(name=nombre, path=temporal)
+            if motivo is not None:
+                raise UnsafeContentError(motivo)
             now = self._clock.now()
             batch_id = self._repository.create_batch(
                 kind=BatchKind.IMPORT,
@@ -246,19 +270,22 @@ class IntakeService:
                 now=now,
                 status=BatchStatus.QUEUED,
             )
-            nombre = _name_from_url(descarga.final_url, descarga.content_type)
             # La URL final se guarda **sin cadena de consulta ni fragmento**: una descarga puede
             # acabar en una dirección con un token, y ese valor viaja a la API y a la interfaz como
             # procedencia del texto. Lo que se muestra es el sitio, no el secreto que llevaba.
             final_visible = display_url(descarga.final_url)
-            self._store_one(
-                batch_id,
-                display_location=final_visible,
-                original_name=nombre,
-                origin_type=OriginType.URL,
-                source_path_display=final_visible,
-                source=temporal,
-            )
+            try:
+                self._store_one(
+                    batch_id,
+                    display_location=final_visible,
+                    original_name=nombre,
+                    origin_type=OriginType.URL,
+                    source_path_display=final_visible,
+                    source=temporal,
+                )
+            except Exception as error:
+                self._close_failed(batch_id, error)
+                raise
         finally:
             temporal.unlink(missing_ok=True)
         logger.info(
@@ -370,6 +397,39 @@ class IntakeService:
         if view is None:  # pragma: no cover - se acaba de crear
             raise NotFoundError("lote", batch_id)
         return view
+
+    def _close_failed(self, batch_id: str, error: Exception) -> None:
+        """Cierra el lote como `failed` con su motivo, cuando falla la copia de lo que entra.
+
+        Un lote que se queda en `queued` sin entradas ni trabajos es un lote huérfano: nadie lo va a
+        cerrar y el usuario lo ve colgado. Se cuentan las entradas reales (las que sí entraron) y se
+        guarda un motivo saneado.
+        """
+        self._repository.set_counters(batch_id, self._repository.summarize_import(batch_id))
+        self._repository.set_status(
+            batch_id,
+            BatchStatus.FAILED,
+            now=self._clock.now(),
+            error_summary=_safe_error_summary(error),
+        )
+        logger.error(
+            "intake.store_failed",
+            extra={
+                "event": "intake_store_failed",
+                "error_type": type(error).__name__,
+                "job_id": batch_id,
+            },
+        )
+
+
+def _safe_error_summary(error: Exception) -> str:
+    """Motivo del fallo para el informe: sin trazas y sin rutas del usuario."""
+    from opofuente.infrastructure.safe_paths import redact_paths
+
+    detail = redact_paths(str(error).strip().replace("\n", " "))
+    if len(detail) > 160:
+        detail = detail[:160] + "…"
+    return f"{type(error).__name__}: {detail}" if detail else type(error).__name__
 
 
 def _with_suffix(name: str, index: int) -> str:

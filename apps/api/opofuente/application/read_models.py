@@ -248,9 +248,13 @@ class RepresentationSource:
     Se toma de la entrada, no del artefacto: el mismo contenido puede haber entrado como fichero,
     como texto pegado y como URL, y cada entrada sabe de dónde vino. Deducirlo del artefacto daba
     tipos de origen equivocados.
+
+    `location` es la procedencia **mostrable** de esa entrada: la ruta relativa de un fichero, el
+    título de un texto pegado o la URL descargada (ya sin cadena de consulta). No es la clave
+    interna del artefacto.
     """
 
-    path: str
+    location: str
     origin_type: str | None = None
     depth: int = 0
 
@@ -280,8 +284,8 @@ class RepresentationView:
     sources: tuple[RepresentationSource, ...] = ()
 
     @property
-    def source_paths(self) -> tuple[str, ...]:
-        return tuple(source.path for source in self.sources)
+    def source_locations(self) -> tuple[str, ...]:
+        return tuple(source.location for source in self.sources)
 
 
 @dataclass(frozen=True, slots=True)

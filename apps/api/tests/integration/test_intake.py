@@ -21,7 +21,7 @@ from opofuente.application.intake_service import IntakeFile, IntakeService
 from opofuente.application.read_models import RepresentationView
 from opofuente.config import Settings
 from opofuente.domain.errors import InvalidSourceError, UnsafeContentError
-from opofuente.domain.ingestion import ItemStatus
+from opofuente.domain.ingestion import BatchStatus, ItemStatus
 from opofuente.infrastructure.artifact_store import ArtifactStore
 from opofuente.infrastructure.clock import SystemClock
 from opofuente.infrastructure.db import build_engine, build_session_factory
@@ -419,10 +419,22 @@ def test_cancelar_un_lote_de_entrada_directa_cancela_su_extraccion(
     assert trabajo["status"] == "cancel_requested"
     assert trabajo["cancel_requested"] is True
 
-    # El worker cierra el lote en `cancelled` en vez de dejarlo colgado.
+    # El worker ejecuta el trabajo cancelado y lo cierra: el lote queda **cancelled**, no cerrado
+    # como si hubiera terminado. Aceptar «cancelled o succeeded» no demostraba nada: la extracción
+    # se comprueba antes de tocar el primer fichero, así que el resultado es determinista.
     run_one_job(api_only_client)
     detalle = api_only_client.get(f"/api/v1/ingestion-batches/{batch['id']}").json()
-    assert detalle["batch"]["status"] in {"cancelled", "succeeded"}
+    assert detalle["batch"]["status"] == "cancelled"
+    assert api_only_client.get(f"/api/v1/jobs/{batch['job_id']}").json()["status"] == "cancelled"
+    # Lo copiado sigue copiado y la entrada queda pendiente de extraer: la fase que se canceló fue
+    # la de lectura, no la de copia, así que su estado lo dice (`hashed`) y el informe cuadra.
+    assert detalle["entries"][0]["status"] == ItemStatus.HASHED.value
+    assert detalle["batch"]["counters"]["copied"] == 1
+    assert detalle["report"]["balanced"] is True
+    # Nada se extrajo: la cancelación corta antes de leer el primer documento.
+    assert (
+        api_only_client.get(f"/api/v1/ingestion-batches/{batch['id']}/representations").json() == []
+    )
 
 
 # --- procedencia por entrada y URL sin secretos (regresión S03) -------------------------------
@@ -443,6 +455,101 @@ def _descargador_con_token(url: str, *, destination: Path, limits: object) -> Fe
         size_bytes=destination.stat().st_size,
         path=destination,
     )
+
+
+def _descargador_con_ejecutable(contenido: bytes, content_type: str = "text/plain") -> Any:
+    """Descargador simulado que sirve un ejecutable con nombre y tipo inocentes."""
+
+    def descarga(url: str, *, destination: Path, limits: object) -> FetchResult:
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_bytes(contenido)
+        return FetchResult(
+            initial_url=url,
+            final_url="https://ejemplo.test/apuntes.txt",
+            redirects=(),
+            status=200,
+            content_type=content_type,
+            size_bytes=destination.stat().st_size,
+            path=destination,
+        )
+
+    return descarga
+
+
+@pytest.mark.parametrize(
+    ("contenido", "etiqueta"),
+    [
+        (b"MZ" + b"\x00" * 64, "PE"),
+        (b"\x7fELF" + b"\x00" * 64, "ELF"),
+    ],
+)
+def test_un_ejecutable_descargado_por_url_no_llega_al_almacen(
+    api_only_client: TestClient,
+    migrated_settings: Settings,
+    monkeypatch: pytest.MonkeyPatch,
+    contenido: bytes,
+    etiqueta: str,
+) -> None:
+    """Un PE o un ELF servido por URL con nombre inocente se rechaza antes de crear nada.
+
+    La comprobación de contenido solo estaba en la subida: por URL el binario se creaba como lote y
+    se copiaba al almacén. Ahora la política es común a todas las vías.
+    """
+    intake = api_only_client.app.state.intake_service
+    monkeypatch.setattr(intake, "_fetcher", _descargador_con_ejecutable(contenido))
+    antes_artefactos = len(list((migrated_settings.data_paths.artifacts / "sha256").rglob("*")))
+    antes_lotes = len(api_only_client.get("/api/v1/ingestion-batches").json())
+
+    respuesta = api_only_client.post(
+        "/api/v1/ingestion-batches/url",
+        json={"url": "https://ejemplo.test/apuntes.txt"},
+        headers=ALLOWED_ORIGIN,
+    )
+
+    assert respuesta.status_code == 400, f"{etiqueta}: {respuesta.text}"
+    assert respuesta.json()["code"] == "unsafe_content"
+    assert (
+        len(list((migrated_settings.data_paths.artifacts / "sha256").rglob("*")))
+        == antes_artefactos
+    )
+    assert len(api_only_client.get("/api/v1/ingestion-batches").json()) == antes_lotes
+    assert list((migrated_settings.data_paths.root / "tmp").glob("*.part")) == []
+
+
+def test_un_ejecutable_de_la_carpeta_no_llega_al_almacen(
+    api_only_client: TestClient, migrated_settings: Settings, tmp_path: Path
+) -> None:
+    """Un `.exe` renombrado a `.txt` en la carpeta de origen no se copia al almacén.
+
+    El inventario lo ve como texto (su nombre lo dice) y antes la copia lo guardaba: la política de
+    contenido se comprueba también al copiar desde carpeta, y el resultado queda declarado como
+    incidencia en el lote.
+    """
+    material = tmp_path / "material"
+    material.mkdir()
+    (material / "apuntes.txt").write_bytes(b"MZ" + b"\x00" * 64)
+    (material / "tema-01.txt").write_text("Material sintetico del tema uno.", encoding="utf-8")
+
+    inventario = api_only_client.post(
+        "/api/v1/inventories", json={"source_path": str(material)}, headers=ALLOWED_ORIGIN
+    ).json()
+    batch = api_only_client.post(
+        f"/api/v1/inventories/{inventario['batch']['id']}/confirm-import", headers=ALLOWED_ORIGIN
+    ).json()
+
+    # El pipeline son dos trabajos: copiar y, después, extraer.
+    run_one_job(api_only_client)
+    run_one_job(api_only_client)
+
+    detalle = api_only_client.get(f"/api/v1/ingestion-batches/{batch['id']}").json()
+    estados = {entry["relative_path"]: entry["status"] for entry in detalle["entries"]}
+    assert estados["tema-01.txt"] == ItemStatus.EXTRACTED.value
+    assert estados["apuntes.txt"] == ItemStatus.FAILED.value
+    incidencias = {issue["code"] for issue in detalle["issues"]}
+    assert "omitted_executable" in incidencias
+    # La incidencia dice por qué, y el binario no está en el almacén: solo se copió el de texto.
+    assert any("no se admite" in issue["safe_message"] for issue in detalle["issues"])
+    assert detalle["report"]["artifacts_total"] == 1
 
 
 def _servicio_de_entradas(migrated_settings: Settings) -> tuple[Any, Any, Any]:
@@ -567,6 +674,47 @@ def test_los_mismos_bytes_por_tres_vias_conservan_la_procedencia_de_cada_entrada
     assert tipos[lote_pegado.id] == {"plain_text"}
 
 
+@pytest.mark.parametrize("via", ["ficheros", "pegado", "url"])
+def test_un_fallo_de_almacen_no_deja_un_lote_colgado(
+    migrated_settings: Settings, monkeypatch: pytest.MonkeyPatch, via: str
+) -> None:
+    """Si falla la copia al almacén, el lote queda `failed` con su motivo, nunca en `queued`.
+
+    Un lote en `queued` sin entradas ni trabajos es un lote huérfano: nadie lo va a cerrar y el
+    usuario lo ve colgado para siempre. La comprobación se hace en las tres vías de entrada.
+    """
+    servicio, repositorio, engine = _servicio_de_entradas(migrated_settings)
+    try:
+
+        def falla(*args: object, **kwargs: object) -> None:
+            raise OSError("el disco dijo que no")
+
+        monkeypatch.setattr(servicio._store, "store_file", falla)
+
+        if via == "ficheros":
+            preparados = servicio.stage_uploads(
+                [("notas.txt", io.BytesIO(b"material sintetico de la prueba"))]
+            )
+            with pytest.raises(OSError):
+                servicio.ingest_files(preparados)
+        elif via == "pegado":
+            with pytest.raises(OSError):
+                servicio.ingest_paste("Material sintetico pegado para la prueba del fallo.")
+        else:
+            monkeypatch.setattr(servicio, "_fetcher", _descargador_con_token)
+            with pytest.raises(OSError):
+                servicio.ingest_url("https://ejemplo.test/material.txt")
+
+        lotes = repositorio.list_batches(limit=10, offset=0)
+        assert len(lotes) == 1, "solo el lote que falló"
+        assert lotes[0].status == BatchStatus.FAILED.value, "nunca se queda en queued"
+        assert lotes[0].error_summary, "el motivo queda declarado"
+        assert lotes[0].counters["total"] == 0, "no hay entradas a medias"
+        assert list((migrated_settings.data_paths.root / "tmp").glob("*.part")) == []
+    finally:
+        engine.dispose()
+
+
 def test_reintentar_un_lote_de_url_funciona_sin_carpeta_de_origen(
     api_only_client: TestClient,
     migrated_settings: Settings,
@@ -644,8 +792,8 @@ def test_una_url_con_token_no_publica_el_token(migrated_settings: Settings) -> N
     extraccion = _extraer(migrated_settings, [lote_id])
     assert extraccion.origenes_por_lote[lote_id] == ("url",)
     for source in extraccion.por_lote[lote_id][0].sources:
-        assert "secreto-de-prueba" not in source.path
-        assert "token" not in source.path
+        assert "secreto-de-prueba" not in source.location
+        assert "token" not in source.location
 
 
 # --- URL ------------------------------------------------------------------------------------

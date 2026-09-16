@@ -12,10 +12,12 @@ del fichero sale del identificador de la representación, nunca del nombre del o
 from __future__ import annotations
 
 import json
+import os
 import shutil
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+from uuid import uuid4
 
 from opofuente.config import DataPaths
 from opofuente.domain.errors import InvariantViolationError
@@ -51,26 +53,41 @@ class RepresentationStore:
         return resolve_within(self._paths.root, self._paths.extracted / representation_id)
 
     def save(self, representation_id: str, result: ExtractionResult) -> str:
-        """Guarda el texto y la estructura. Devuelve la clave relativa que se guarda en la base."""
-        directory = self.directory(representation_id)
-        directory.mkdir(parents=True, exist_ok=True)
-        text_path = resolve_within(self._paths.root, directory / TEXT_FILENAME)
-        text_path.write_text(result.text, encoding="utf-8", newline="\n")
-        structure_path = resolve_within(self._paths.root, directory / STRUCTURE_FILENAME)
-        structure_path.write_text(
-            json.dumps(
-                {
-                    "format_version": REPRESENTATION_FORMAT_VERSION,
-                    "kind": result.kind.value,
-                    "page_count": result.page_count,
-                    "sections": [_section_to_dict(section) for section in result.sections],
-                },
-                ensure_ascii=False,
-                indent=2,
-            ),
-            encoding="utf-8",
-            newline="\n",
-        )
+        """Guarda el texto y la estructura **de una vez o nada**.
+
+        Se escriben los dos ficheros en un directorio temporal hermano y, solo cuando están los dos
+        completos y volcados a disco (`fsync`), se mueve el directorio a su sitio con `os.replace`,
+        que es atómico. Antes se escribían directamente en el destino: un fallo entre `texto.txt` y
+        `estructura.json` (disco lleno, corte de luz) dejaba un directorio a medias que parecía una
+        representación válida. Cualquier excepción limpia el temporal.
+
+        Devuelve la clave relativa que se guarda en la base.
+        """
+        destino = self.directory(representation_id)
+        temporal = resolve_within(self._paths.root, self._paths.extracted / f".tmp-{uuid4().hex}")
+        temporal.mkdir(parents=True, exist_ok=False)
+        try:
+            _write_text(
+                resolve_within(self._paths.root, temporal / TEXT_FILENAME),
+                result.text,
+            )
+            _write_text(
+                resolve_within(self._paths.root, temporal / STRUCTURE_FILENAME),
+                json.dumps(
+                    {
+                        "format_version": REPRESENTATION_FORMAT_VERSION,
+                        "kind": result.kind.value,
+                        "page_count": result.page_count,
+                        "sections": [_section_to_dict(section) for section in result.sections],
+                    },
+                    ensure_ascii=False,
+                    indent=2,
+                ),
+            )
+            os.replace(temporal, destino)
+        except BaseException:
+            shutil.rmtree(temporal, ignore_errors=True)
+            raise
         return f"{representation_id}/{TEXT_FILENAME}"
 
     def remove(self, representation_id: str) -> None:
@@ -113,6 +130,19 @@ class RepresentationStore:
             return ()
         payload = json.loads(path.read_text(encoding="utf-8"))
         return tuple(_section_from_dict(item) for item in payload.get("sections", []))
+
+
+def _write_text(path: Path, content: str) -> None:
+    """Escribe un fichero de texto y **fuerza** el volcado a disco antes de seguir.
+
+    Sin el `fsync`, el sistema podría reordenar la escritura y el `os.replace` del directorio dejar
+    el nombre en su sitio con el contenido todavía en la caché: un corte de luz justo después
+    dejaría un directorio vacío que parece una representación válida.
+    """
+    with path.open("w", encoding="utf-8", newline="\n") as stream:
+        stream.write(content)
+        stream.flush()
+        os.fsync(stream.fileno())
 
 
 def _section_to_dict(section: ExtractedSection) -> dict[str, object]:

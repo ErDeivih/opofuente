@@ -1812,6 +1812,10 @@
             "title": "Depth",
             "type": "integer"
           },
+          "location": {
+            "title": "Location",
+            "type": "string"
+          },
           "origin_type": {
             "anyOf": [
               {
@@ -1822,14 +1826,10 @@
               }
             ],
             "title": "Origin Type"
-          },
-          "path": {
-            "title": "Path",
-            "type": "string"
           }
         },
         "required": [
-          "path"
+          "location"
         ],
         "title": "RepresentationSourceSchema",
         "type": "object"

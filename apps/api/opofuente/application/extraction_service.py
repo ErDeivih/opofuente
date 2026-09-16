@@ -268,6 +268,11 @@ class ExtractionService:
             kind=result.kind.value,
         )
         representation_id = existente
+        if existente is not None:
+            # La representación ya existía (el mismo contenido extraído antes): la entrada se enlaza
+            # igualmente, porque el enlace es de la entrada a la representación, y dos entradas con
+            # el mismo contenido comparten el texto.
+            self._ingestions.link_representation(entry.item_id, existente, now=self._clock.now())
         if existente is None:
             representation_id = str(uuid4())
             storage_key = (
@@ -287,6 +292,9 @@ class ExtractionService:
                 # representación sin fila que la referencie es un fichero que nadie va a leer.
                 self._representations.remove(representation_id)
                 raise
+            self._ingestions.link_representation(
+                entry.item_id, representation_id, now=self._clock.now()
+            )
 
         if result.status is RepresentationStatus.FAILED:
             demasiado_grande = WarningCode.TOO_LARGE in result.warnings
@@ -303,7 +311,6 @@ class ExtractionService:
                 entry.item_id,
                 ItemStatus.FAILED,
                 detail="supera el límite de lectura" if demasiado_grande else "documento ilegible",
-                representation_id=representation_id,
             )
             return ItemStatus.FAILED
 
@@ -321,7 +328,6 @@ class ExtractionService:
                 entry.item_id,
                 ItemStatus.OCR_PENDING,
                 detail="pendiente de OCR",
-                representation_id=representation_id,
             )
             return ItemStatus.OCR_PENDING
 
@@ -339,7 +345,6 @@ class ExtractionService:
                 entry.item_id,
                 ItemStatus.EXTRACTED,
                 detail="extraído sin texto",
-                representation_id=representation_id,
             )
             return ItemStatus.EXTRACTED
 
@@ -355,7 +360,6 @@ class ExtractionService:
             entry.item_id,
             ItemStatus.EXTRACTED,
             detail=f"{result.kind.value}: {result.char_count} caracteres",
-            representation_id=representation_id,
         )
         return ItemStatus.EXTRACTED
 

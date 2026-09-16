@@ -193,8 +193,8 @@ const representacionesDelLote: Representation[] = [
     warnings: [],
     created_at: '2026-07-01T09:10:06Z',
     sources: [
-      { path: 'tema-01.pdf', origin_type: 'file', depth: 0 },
-      { path: 'tema-01-copia.pdf', origin_type: 'file', depth: 0 },
+      { location: 'tema-01.pdf', origin_type: 'file', depth: 0 },
+      { location: 'tema-01-copia.pdf', origin_type: 'file', depth: 0 },
     ],
   },
   {
@@ -211,7 +211,7 @@ const representacionesDelLote: Representation[] = [
     ocr_candidate: true,
     warnings: ['ocr_pending'],
     created_at: '2026-07-01T09:10:06Z',
-    sources: [{ path: 'escaneo.pdf', origin_type: 'file', depth: 0 }],
+    sources: [{ location: 'escaneo.pdf', origin_type: 'file', depth: 0 }],
   },
 ];
 
@@ -467,7 +467,7 @@ describe('pantalla Bandeja', () => {
         body: [
           {
             ...representacionesDelLote[0]!,
-            sources: [{ path: 'Apunte pegado del tema 1', origin_type: 'paste', depth: 0 }],
+            sources: [{ location: 'Apunte pegado del tema 1', origin_type: 'paste', depth: 0 }],
           },
         ],
       },
