@@ -1230,3 +1230,178 @@ class QuestionIssueReportRecord(Base):
     )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+# ---------------------------------------------------------------------------- S07: estudio
+
+
+class StudySessionRecord(Base):
+    """Una sesión de estudio con su configuración congelada (03_DATA-MODEL §7).
+
+    `answer_key_version_id` es **la clave con la que se corrige**: se fija al iniciar y no cambia
+    aunque después se active otra (invariante 7). `result_json` guarda el cálculo agregado tal como
+    se hizo, con la composición efectiva que se usó.
+    """
+
+    __tablename__ = "study_sessions"
+    __table_args__ = (
+        CheckConstraint(
+            "mode IN ('practice', 'error_review', 'official_exam', 'mock_exam', 'diagnostic')",
+            name="ck_session_mode",
+        ),
+        CheckConstraint(
+            "status IN ('draft', 'running', 'finished', 'abandoned')", name="ck_session_status"
+        ),
+        CheckConstraint("feedback IN ('immediate', 'at_end')", name="ck_session_feedback"),
+        CheckConstraint("total_questions >= 0", name="ck_session_total"),
+        CheckConstraint(
+            "status <> 'running' OR started_at IS NOT NULL", name="ck_session_running_started"
+        ),
+        CheckConstraint(
+            "status <> 'finished' OR finished_at IS NOT NULL", name="ck_session_finished_at"
+        ),
+        Index("ix_study_sessions_opposition", "opposition_id", "status"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    opposition_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("oppositions.id", ondelete="RESTRICT"), nullable=False
+    )
+    convocation_version_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("convocation_versions.id", ondelete="RESTRICT"), nullable=True
+    )
+    question_set_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("question_sets.id", ondelete="RESTRICT"), nullable=True
+    )
+    answer_key_version_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("answer_key_versions.id", ondelete="RESTRICT"), nullable=True
+    )
+    mode: Mapped[str] = mapped_column(String(16), nullable=False)
+    status: Mapped[str] = mapped_column(
+        String(16), nullable=False, server_default=text("'draft'"), default="draft"
+    )
+    feedback: Mapped[str] = mapped_column(String(16), nullable=False)
+    configuration_json: Mapped[str] = mapped_column(Text, nullable=False)
+    result_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    time_limit_minutes: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    total_questions: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default=text("0"), default=0
+    )
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class SessionQuestionRecord(Base):
+    """Una pregunta tal como se presentó, con la clave **congelada** en ese momento.
+
+    Congelar la clave es lo que hace que activar una plantilla nueva no cambie lo que alguien ya
+    vio: la reevaluación (S08) es una evaluación nueva, no un cambio de esta foto.
+    """
+
+    __tablename__ = "session_questions"
+    __table_args__ = (
+        CheckConstraint("position > 0", name="ck_session_question_position"),
+        CheckConstraint(
+            "key_outcome IS NULL OR key_outcome IN "
+            "('keyed', 'annulled', 'unanswered', 'conflicting')",
+            name="ck_session_question_key_outcome",
+        ),
+        CheckConstraint(
+            "is_reserve = 0 OR reserve_order IS NOT NULL",
+            name="ck_session_question_reserve_order",
+        ),
+        UniqueConstraint("session_id", "position", name="uq_session_question_position"),
+        UniqueConstraint("session_id", "question_version_id", name="uq_session_question_version"),
+        Index("ix_session_questions_session", "session_id", "position"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    session_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("study_sessions.id", ondelete="CASCADE"), nullable=False
+    )
+    question_version_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("question_versions.id", ondelete="RESTRICT"), nullable=False
+    )
+    stable_key: Mapped[str] = mapped_column(String(64), nullable=False)
+    position: Mapped[int] = mapped_column(Integer, nullable=False)
+    part_code: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    is_reserve: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default=text("0"), default=False
+    )
+    reserve_order: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    key_outcome: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    correct_option_keys_json: Mapped[str] = mapped_column(
+        Text, nullable=False, server_default=text("'[]'"), default="[]"
+    )
+
+
+class AttemptRecord(Base):
+    """Lo que hizo una persona: su respuesta, su tiempo y su confianza.
+
+    El acierto **no** se guarda aquí: se deduce de la evaluación, y así no hay dos verdades que
+    puedan separarse. Un intento por pregunta: el intento se congela al registrarlo.
+    """
+
+    __tablename__ = "attempts"
+    __table_args__ = (
+        CheckConstraint("elapsed_ms >= 0", name="ck_attempt_elapsed"),
+        CheckConstraint(
+            "confidence IS NULL OR confidence IN ('low', 'medium', 'high')",
+            name="ck_attempt_confidence",
+        ),
+        UniqueConstraint("session_question_id", name="uq_attempt_per_question"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    session_question_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("session_questions.id", ondelete="CASCADE"), nullable=False
+    )
+    chosen_option_keys_json: Mapped[str] = mapped_column(
+        Text, nullable=False, server_default=text("'[]'"), default="[]"
+    )
+    elapsed_ms: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default=text("0"), default=0
+    )
+    confidence: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    client_sequence: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    answered_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class AttemptEvaluationRecord(Base):
+    """La corrección de un intento con una clave concreta, con su puntuación **exacta**.
+
+    Un tercio no es un decimal: se guarda como numerador y denominador (DEBT-006, ADR-010).
+    Recalcular con otra clave añade una evaluación nueva que sustituye a la anterior, en lugar de
+    borrar la que había (invariante 7).
+    """
+
+    __tablename__ = "attempt_evaluations"
+    __table_args__ = (
+        CheckConstraint(
+            "outcome IN ('correct', 'wrong', 'blank', 'annulled', 'excluded', 'conflicting', "
+            "'unused_reserve')",
+            name="ck_evaluation_outcome",
+        ),
+        CheckConstraint("score_denominator > 0", name="ck_evaluation_denominator"),
+        UniqueConstraint("attempt_id", "answer_key_version_id", name="uq_evaluation_per_key"),
+        Index("ix_evaluations_attempt", "attempt_id", "evaluated_at"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    attempt_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("attempts.id", ondelete="CASCADE"), nullable=False
+    )
+    answer_key_version_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("answer_key_versions.id", ondelete="RESTRICT"), nullable=True
+    )
+    outcome: Mapped[str] = mapped_column(String(16), nullable=False)
+    score_numerator: Mapped[int] = mapped_column(Integer, nullable=False)
+    score_denominator: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default=text("1"), default=1
+    )
+    reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    supersedes_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("attempt_evaluations.id", ondelete="SET NULL"), nullable=True
+    )
+    evaluated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

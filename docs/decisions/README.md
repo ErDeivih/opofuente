@@ -14,6 +14,7 @@ Formato: `ADR-NNN-titulo.md` con contexto, opciones, datos, decisión, consecuen
 | [ADR-007](ADR-007-nodos-con-material-asignado.md) | Nodos de programa con material asignado: bloquear la retirada, no borrarla | aceptada (S04), cierra DEBT-005 |
 | [ADR-008](ADR-008-tramos-del-texto-plano.md) | Tramos del texto plano: un bloque por línea en blanco, sin adivinar jerarquía | aceptada (S06), cierra DEBT-009 |
 | [ADR-009](ADR-009-activar-es-aprobar.md) | Activar una plantilla es aprobarla | aceptada (S06) |
+| [ADR-010](ADR-010-aritmetica-exacta-y-calificacion-oficial.md) | La puntuación se calcula con fracciones exactas, y la calificación oficial no se inventa | aceptada (S07), cierra DEBT-006 |
 
 La deuda técnica obligatoria (con su slice y su criterio de cierre) se registra aparte en
 [`docs/DEBT.md`](../DEBT.md).

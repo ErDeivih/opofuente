@@ -17,7 +17,7 @@ Reglas:
 | [DEBT-003](#debt-003--uso-privado-del-temario-de-la-guardia-civil) | antes de publicar | No publicar el repositorio ni distribuir la aplicación con el temario de GC | abierta (condición previa) |
 | [DEBT-004](#debt-004--parseo-seguro-de-xmlhtml-no-confiable) | S03 | Los extractores deben defenderse de XML/HTML no confiable | **cerrada en S03** |
 | [DEBT-005](#debt-005--borrado-de-nodos-con-referencias-al-sincronizar-fixtures) | S04 | La siembra no puede borrar nodos con referencias | **cerrada en S04** |
-| [DEBT-006](#debt-006--representación-exacta-de-fracciones-y-redondeo-en-la-puntuación) | S07 | Decidir y probar la aritmética exacta antes de calcular puntuaciones | abierta |
+| [DEBT-006](#debt-006--representación-exacta-de-fracciones-y-redondeo-en-la-puntuación) | S07 | Decidir y probar la aritmética exacta antes de calcular puntuaciones | **cerrada en S07** |
 | [DEBT-007](#debt-007--higiene-del-almacén-artefactos-sin-origen-y-temporales) | S12 | Recolector de artefactos sin origen, temporales `.part` y purga de trabajos | abierta |
 | [DEBT-008](#debt-008--conservar-los-formatos-sin-extractor-en-lugar-de-omitirlos) | S03 | Conservar PPTX/XLSX/EPUB y similares como `unsupported_preserved` | **cerrada en S03** |
 | [DEBT-009](#debt-009--el-texto-plano-no-produce-secciones-y-sin-secciones-no-hay-citas) | S06 | El texto plano y el texto pegado no producen secciones: sin ellas no hay citas ni diff | **cerrada en S06** |
@@ -180,6 +180,7 @@ sincronización con un informe de nodos imposibles de retirar.
 ## DEBT-006 — Representación exacta de fracciones y redondeo en la puntuación
 
 **Origen:** revisión de S01 (14/09/2026).
+**Estado: cerrada en S07.**
 
 **Problema.** `exam_parts.wrong_penalty_fraction` y los umbrales se guardan como `float`
 (SQLite `REAL`). La penalización de TAI es **un tercio exacto** y la fórmula de GC es
@@ -202,6 +203,22 @@ parametrizadas versionadas por convocatoria. Los `float` almacenados sirven como
    parte con penalización de un tercio no pueden dejar un residuo binario visible en el resultado.
 4. Si la convocatoria no publica el criterio de transformación, la interfaz sigue mostrando
    «calificación oficial no disponible» (regla ya vigente desde S00/S01).
+
+**Cómo se cerró (S07), criterio por criterio.**
+
+1. **Decisión: `docs/decisions/ADR-010-aritmetica-exacta-y-calificacion-oficial.md`.** Aritmética con
+   `Fraction`; el decimal almacenado es información y la fracción exacta es la más simple que coincide
+   con él (tolerancia media unidad de su última cifra, denominador ≤ 100), o el cálculo **falla**;
+   el decimal se calcula solo al mostrar, con `ROUND_HALF_UP` a cuatro decimales; y la calificación
+   oficial 0-50 no se calcula sin el baremo publicado.
+2. **Casos verificados con cálculo manual exacto**: `tests/unit/test_study_domain.py` calcula a mano
+   aciertos, errores, blancos, anuladas y reservas (68 aciertos y 10 errores dan `68 − 10/3`), y las
+   pruebas de integración del slice repiten el caso por la API real, parte a parte.
+3. **Un tercio no se calcula con `float`**:
+   `test_tres_errores_descuentan_exactamente_un_punto` exige `exact_score(0, 3, 1/3) == Fraction(-1)` y
+   que no quede residuo; la evaluación se guarda como `-1/3`, no como `-0.3333333333`.
+4. **Sin baremo no hay calificación oficial**: `SessionResult.official_available` es falso con su nota
+   escrita, `pass_score` viaja como dato declarado y ni la API ni la interfaz dicen «apto».
 
 ## DEBT-004 — Parseo seguro de XML/HTML no confiable
 
