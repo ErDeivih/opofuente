@@ -5,6 +5,23 @@
  */
 
 export interface paths {
+    "/api/v1/answer-keys/{key_id}/mark-supersedes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Confirma que una plantilla sustituye a otra */
+        post: operations["mark_answer_key_supersedes_api_v1_answer_keys__key_id__mark_supersedes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/capabilities": {
         parameters: {
             query?: never;
@@ -1003,6 +1020,213 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/question-sets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Conjuntos de preguntas con sus recuentos */
+        get: operations["list_question_sets_api_v1_question_sets_get"];
+        put?: never;
+        /** Crea un conjunto de preguntas */
+        post: operations["create_question_set_api_v1_question_sets_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/question-sets/{set_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Un conjunto con sus recuentos */
+        get: operations["get_question_set_api_v1_question_sets__set_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/question-sets/{set_id}/answer-keys": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Plantillas de un conjunto, con sus desenlaces */
+        get: operations["list_answer_keys_api_v1_question_sets__set_id__answer_keys_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/question-sets/{set_id}/answer-keys/{key_id}/activate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Activa una plantilla (activar es aprobar)
+         * @description Activar una plantilla **es** aprobarla: lo decide una persona y queda en la auditoría.
+         *
+         *     Si el conjunto es oficial y la plantilla no tiene enlazada la plantilla oficial, responde 409
+         *     con el motivo: una aprobación no convierte en oficial un documento que no lo es.
+         */
+        post: operations["activate_answer_key_api_v1_question_sets__set_id__answer_keys__key_id__activate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/question-sets/{set_id}/parse": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Importa preguntas, un CSV o una plantilla a un conjunto
+         * @description Las tres formas de llenar un conjunto: texto, CSV con mapeo y plantilla suelta.
+         *
+         *     Lo que no se entiende se informa (fila a fila, con su causa) y el resto entra: una fila mala no
+         *     aborta el lote.
+         */
+        post: operations["parse_into_set_api_v1_question_sets__set_id__parse_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/question-sets/{set_id}/questions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Preguntas de un conjunto (banco: con su clave) */
+        get: operations["list_set_questions_api_v1_question_sets__set_id__questions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/questions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Preguntas del banco, con filtros
+         * @description El banco enseña la clave: aquí se revisa, no se examina a nadie.
+         */
+        get: operations["list_questions_api_v1_questions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/questions/{question_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Una pregunta con sus opciones y su clave */
+        get: operations["get_question_api_v1_questions__question_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Cambia la composición de una pregunta
+         * @description Tipo, posición y reserva. El **texto** de una oficial se corrige con corrección local.
+         */
+        patch: operations["patch_question_api_v1_questions__question_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/questions/{question_id}/evidence": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Evidencia que sostiene una pregunta */
+        get: operations["list_question_evidence_api_v1_questions__question_id__evidence_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/questions/{question_id}/local-corrections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Corrige una transcripción con su motivo, sin tocar el original */
+        post: operations["correct_question_api_v1_questions__question_id__local_corrections_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/questions/{question_id}/report-issue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reporta que una pregunta es ambigua, está mal keyada o tiene una errata */
+        post: operations["report_question_issue_api_v1_questions__question_id__report_issue_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/representations/{representation_id}": {
         parameters: {
             query?: never;
@@ -1136,6 +1360,32 @@ export interface components {
             confidence: number;
             /** Value */
             value: string;
+        };
+        /** AnswerKeySchema */
+        AnswerKeySchema: {
+            /** Approved At */
+            approved_at?: string | null;
+            /** Created At */
+            created_at?: string | null;
+            /** Entries */
+            entries?: components["schemas"]["KeyEntrySchema"][];
+            /** Id */
+            id: string;
+            /** Published At */
+            published_at?: string | null;
+            /** Question Set Id */
+            question_set_id: string;
+            /** Source Document Version Id */
+            source_document_version_id?: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "draft" | "active" | "superseded" | "rejected";
+            /** Supersedes Id */
+            supersedes_id?: string | null;
+            /** Version No */
+            version_no: number;
         };
         /** BatchDetailSchema */
         BatchDetailSchema: {
@@ -1387,6 +1637,15 @@ export interface components {
          * @enum {string}
          */
         ConvocationStatus: "draft" | "active" | "superseded" | "archived";
+        /**
+         * CorrectionOutcomeSchema
+         * @description La versión corregida y, si la tenía, la plantilla nueva que apunta a ella.
+         */
+        CorrectionOutcomeSchema: {
+            /** Key Id */
+            key_id?: string | null;
+            question: components["schemas"]["QuestionSchema"];
+        };
         /** CoverageNodeSchema */
         CoverageNodeSchema: {
             /** Accepted */
@@ -1437,6 +1696,65 @@ export interface components {
         CreateInventoryRequest: {
             /** Source Path */
             source_path: string;
+        };
+        /** CreateQuestionSetSchema */
+        CreateQuestionSetSchema: {
+            /** Convocation Version Id */
+            convocation_version_id?: string | null;
+            /** Held At */
+            held_at?: string | null;
+            /** Model Code */
+            model_code?: string | null;
+            /** Opposition Id */
+            opposition_id: string;
+            /**
+             * Set Type
+             * @enum {string}
+             */
+            set_type: "official_exam" | "private_bank" | "practice" | "generated_batch";
+            /** Source Document Version Id */
+            source_document_version_id?: string | null;
+            /** Title */
+            title: string;
+        };
+        /** CsvMappingSchema */
+        CsvMappingSchema: {
+            /**
+             * Correct
+             * @default correct
+             */
+            correct: string | null;
+            /**
+             * Explanation
+             * @default explanation
+             */
+            explanation: string | null;
+            /** Options */
+            options?: string[];
+            /** Position */
+            position?: string | null;
+            /** Reserve */
+            reserve?: string | null;
+            /**
+             * Source
+             * @default source
+             */
+            source: string | null;
+            /**
+             * Stem
+             * @default stem
+             */
+            stem: string;
+            /**
+             * Tags
+             * @default tags
+             */
+            tags: string | null;
+            /**
+             * Topic
+             * @default topic
+             */
+            topic: string | null;
         };
         /** CurriculumNodeDetailSchema */
         CurriculumNodeDetailSchema: {
@@ -1617,6 +1935,28 @@ export interface components {
              * @enum {string}
              */
             status: "open" | "resolved" | "dismissed";
+        };
+        /** DuplicateGroupSchema */
+        DuplicateGroupSchema: {
+            /**
+             * Can Merge
+             * @default false
+             */
+            can_merge: boolean;
+            /**
+             * Conflicting Keys
+             * @default false
+             */
+            conflicting_keys: boolean;
+            /** Keys Seen */
+            keys_seen?: string[];
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "same_question" | "reordered_options" | "similar";
+            /** Members */
+            members: string[];
         };
         /** DuplicateMemberSchema */
         DuplicateMemberSchema: {
@@ -1827,6 +2167,37 @@ export interface components {
             /** Total */
             total: number;
         };
+        /** IssueReportRequestSchema */
+        IssueReportRequestSchema: {
+            /** Detail */
+            detail: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "ambiguous" | "wrong_key" | "typo" | "outdated" | "other";
+        };
+        /** IssueReportSchema */
+        IssueReportSchema: {
+            /** Created At */
+            created_at?: string | null;
+            /** Detail */
+            detail: string;
+            /** Id */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "ambiguous" | "wrong_key" | "typo" | "outdated" | "other";
+            /** Question Version Id */
+            question_version_id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "open" | "reviewed" | "dismissed";
+        };
         /** IssueSchema */
         IssueSchema: {
             /** Code */
@@ -1895,6 +2266,20 @@ export interface components {
          * @enum {string}
          */
         JobStatus: "queued" | "leased" | "running" | "succeeded" | "failed" | "cancel_requested" | "cancelled";
+        /** KeyEntrySchema */
+        KeyEntrySchema: {
+            /** Correct Option Keys */
+            correct_option_keys?: string[];
+            /** Notes */
+            notes?: string | null;
+            /**
+             * Outcome
+             * @enum {string}
+             */
+            outcome: "keyed" | "annulled" | "unanswered" | "conflicting";
+            /** Question Version Id */
+            question_version_id: string;
+        };
         /** LiveSchema */
         LiveSchema: {
             /**
@@ -1918,6 +2303,18 @@ export interface components {
             provider: string;
             /** Sends Data Off Device */
             sends_data_off_device: boolean;
+        };
+        /**
+         * LocalCorrectionSchema
+         * @description Corrección local de una transcripción: **con motivo** y sin tocar el original importado.
+         */
+        LocalCorrectionSchema: {
+            /** Note */
+            note: string;
+            /** Options */
+            options?: string[] | null;
+            /** Stem */
+            stem?: string | null;
         };
         /**
          * MappingRequestSchema
@@ -1973,6 +2370,11 @@ export interface components {
             /** Subject Type */
             subject_type: string;
         };
+        /** MarkKeySupersedesRequestSchema */
+        MarkKeySupersedesRequestSchema: {
+            /** Superseded Id */
+            superseded_id: string;
+        };
         /** MarkSupersedesRequestSchema */
         MarkSupersedesRequestSchema: {
             /** Superseded Id */
@@ -2015,6 +2417,45 @@ export interface components {
             /** Name */
             name: string;
         };
+        /** OptionSchema */
+        OptionSchema: {
+            /** Id */
+            id: string;
+            /** Label */
+            label?: string | null;
+            /** Position */
+            position: number;
+            /** Stable Key */
+            stable_key: string;
+            /** Text */
+            text: string;
+        };
+        /** ParseIssueSchema */
+        ParseIssueSchema: {
+            /** Code */
+            code: string;
+            /** Detail */
+            detail: string;
+            /** Line */
+            line: number;
+        };
+        /**
+         * ParseQuestionSetSchema
+         * @description Lo que se pide al importar: preguntas de un texto, un CSV o una plantilla suelta.
+         */
+        ParseQuestionSetSchema: {
+            /**
+             * Kind
+             * @default questions
+             * @enum {string}
+             */
+            kind: "questions" | "answer_key" | "csv";
+            mapping?: components["schemas"]["CsvMappingSchema"] | null;
+            /** Source Document Version Id */
+            source_document_version_id?: string | null;
+            /** Text */
+            text: string;
+        };
         /**
          * PartFormat
          * @enum {string}
@@ -2054,6 +2495,22 @@ export interface components {
             document_type?: string | null;
             /** Owner Scope */
             owner_scope?: ("public" | "private_user") | null;
+        };
+        /**
+         * PatchQuestionSchema
+         * @description Cambia lo que se puede cambiar sin tocar el texto importado: una corrección es otra cosa.
+         */
+        PatchQuestionSchema: {
+            /** Is Reserve */
+            is_reserve?: boolean | null;
+            /** Position */
+            position?: number | null;
+            /** Question Type */
+            question_type?: ("single_choice" | "multi_mark_error" | "true_false" | "free_text_reference") | null;
+            /** Reserve Order */
+            reserve_order?: number | null;
+            /** Stem */
+            stem?: string | null;
         };
         /**
          * ProblemDetail
@@ -2182,6 +2639,225 @@ export interface components {
             /** Value Label */
             value_label?: string | null;
         };
+        /** QuestionEvidenceSchema */
+        QuestionEvidenceSchema: {
+            /** Citation Label */
+            citation_label?: string | null;
+            /** Claim */
+            claim?: string | null;
+            /** Document Version Id */
+            document_version_id: string;
+            /** Page */
+            page?: number | null;
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "stem" | "correct" | "distractor" | "explanation";
+            /** Section Id */
+            section_id?: string | null;
+            /** Span Id */
+            span_id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "proposed" | "accepted" | "rejected";
+            /** Text */
+            text: string;
+        };
+        /**
+         * QuestionImportReportSchema
+         * @description Lo que ha pasado al importar: ni una fila se pierde, ni un conflicto se esconde.
+         *
+         *     Se llama `QuestionImportReport` y no `ImportReport` porque la ingestión ya tiene su propio
+         *     `ImportReportSchema` (el cuadre del lote): dos modelos con el mismo nombre obligan a FastAPI a
+         *     inventar nombres cualificados en el OpenAPI y rompen los tipos derivados del contrato.
+         */
+        QuestionImportReportSchema: {
+            /**
+             * Created
+             * @default 0
+             */
+            created: number;
+            /** Duplicates */
+            duplicates?: components["schemas"]["DuplicateGroupSchema"][];
+            /**
+             * Existing
+             * @default 0
+             */
+            existing: number;
+            /** Ignored Columns */
+            ignored_columns?: string[];
+            /**
+             * Incomplete
+             * @default 0
+             */
+            incomplete: number;
+            /** Issues */
+            issues?: components["schemas"]["ParseIssueSchema"][];
+            /**
+             * Key Entries
+             * @default 0
+             */
+            key_entries: number;
+            /** Key Id */
+            key_id?: string | null;
+            /**
+             * Keys In Conflict
+             * @default 0
+             */
+            keys_in_conflict: number;
+            /** Missing Columns */
+            missing_columns?: string[];
+            /** Model Code Detected */
+            model_code_detected?: string | null;
+            /** Rejected */
+            rejected?: components["schemas"]["RejectedRowSchema"][];
+            /** Set Id */
+            set_id: string;
+            /** Unmatched Positions */
+            unmatched_positions?: number[];
+            /**
+             * With Key
+             * @default 0
+             */
+            with_key: number;
+        };
+        /** QuestionPageSchema */
+        QuestionPageSchema: {
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+            /** Questions */
+            questions: components["schemas"]["QuestionSchema"][];
+            /** Total */
+            total: number;
+        };
+        /** QuestionSchema */
+        QuestionSchema: {
+            /** Correct Option Keys */
+            correct_option_keys?: string[];
+            /** Created At */
+            created_at?: string | null;
+            /**
+             * Explanation Count
+             * @default 0
+             */
+            explanation_count: number;
+            /** Id */
+            id: string;
+            /**
+             * Is Reserve
+             * @default false
+             */
+            is_reserve: boolean;
+            /** Key Outcome */
+            key_outcome?: ("keyed" | "annulled" | "unanswered" | "conflicting") | null;
+            /** Note */
+            note?: string | null;
+            /** Options */
+            options?: components["schemas"]["OptionSchema"][];
+            /**
+             * Origin Type
+             * @enum {string}
+             */
+            origin_type: "official" | "private" | "generated";
+            /** Position */
+            position: number;
+            /** Question Set Id */
+            question_set_id: string;
+            /**
+             * Question Type
+             * @enum {string}
+             */
+            question_type: "single_choice" | "multi_mark_error" | "true_false" | "free_text_reference";
+            /** Reserve Order */
+            reserve_order?: number | null;
+            /** Source Section Id */
+            source_section_id?: string | null;
+            /** Stable Key */
+            stable_key: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "incomplete" | "complete" | "verified" | "conflicting" | "annulled" | "superseded";
+            /** Stem */
+            stem: string;
+            /** Supersedes Id */
+            supersedes_id?: string | null;
+            /** Version No */
+            version_no: number;
+        };
+        /** QuestionSetPageSchema */
+        QuestionSetPageSchema: {
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+            /** Sets */
+            sets: components["schemas"]["QuestionSetSchema"][];
+            /** Total */
+            total: number;
+        };
+        /** QuestionSetSchema */
+        QuestionSetSchema: {
+            /** Active Key Id */
+            active_key_id?: string | null;
+            /** Convocation Version Id */
+            convocation_version_id?: string | null;
+            /** Created At */
+            created_at?: string | null;
+            /** Held At */
+            held_at?: string | null;
+            /** Id */
+            id: string;
+            /**
+             * Incomplete Count
+             * @default 0
+             */
+            incomplete_count: number;
+            /**
+             * Is Official
+             * @default false
+             */
+            is_official: boolean;
+            /**
+             * Key Count
+             * @default 0
+             */
+            key_count: number;
+            /** Model Code */
+            model_code?: string | null;
+            /** Opposition Id */
+            opposition_id: string;
+            /**
+             * Question Count
+             * @default 0
+             */
+            question_count: number;
+            /**
+             * Reserve Count
+             * @default 0
+             */
+            reserve_count: number;
+            /**
+             * Set Type
+             * @enum {string}
+             */
+            set_type: "official_exam" | "private_bank" | "practice" | "generated_batch";
+            /** Source Document Version Id */
+            source_document_version_id?: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "draft" | "confirmed" | "archived";
+            /** Title */
+            title: string;
+        };
         /**
          * ReadinessProblem
          * @description Cuerpo del 503 de `/health/ready`.
@@ -2223,6 +2899,15 @@ export interface components {
              * @enum {string}
              */
             status: "ready" | "degraded";
+        };
+        /** RejectedRowSchema */
+        RejectedRowSchema: {
+            /** Cause */
+            cause: string;
+            /** Detail */
+            detail: string;
+            /** Row Number */
+            row_number: number;
         };
         /**
          * RepresentationSchema
@@ -2610,6 +3295,77 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    mark_answer_key_supersedes_api_v1_answer_keys__key_id__mark_supersedes_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MarkKeySupersedesRequestSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnswerKeySchema"];
+                };
+            };
+            /** @description La entrada no se puede usar: carpeta inválida (`invalid_source`), contenido rechazado por seguridad (`unsafe_content`) o URL no descargable (`url_rejected`). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
     capabilities_api_v1_capabilities_get: {
         parameters: {
             query?: never;
@@ -5847,6 +6603,785 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ConvocationReferenceSchema"][];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    list_question_sets_api_v1_question_sets_get: {
+        parameters: {
+            query?: {
+                opposition_id?: string | null;
+                set_type?: string | null;
+                include_archived?: boolean;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuestionSetPageSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    create_question_set_api_v1_question_sets_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateQuestionSetSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuestionSetSchema"];
+                };
+            };
+            /** @description La entrada no se puede usar: carpeta inválida (`invalid_source`), contenido rechazado por seguridad (`unsafe_content`) o URL no descargable (`url_rejected`). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    get_question_set_api_v1_question_sets__set_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                set_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuestionSetSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    list_answer_keys_api_v1_question_sets__set_id__answer_keys_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                set_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnswerKeySchema"][];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    activate_answer_key_api_v1_question_sets__set_id__answer_keys__key_id__activate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                set_id: string;
+                key_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnswerKeySchema"];
+                };
+            };
+            /** @description La entrada no se puede usar: carpeta inválida (`invalid_source`), contenido rechazado por seguridad (`unsafe_content`) o URL no descargable (`url_rejected`). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    parse_into_set_api_v1_question_sets__set_id__parse_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                set_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ParseQuestionSetSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuestionImportReportSchema"];
+                };
+            };
+            /** @description La entrada no se puede usar: carpeta inválida (`invalid_source`), contenido rechazado por seguridad (`unsafe_content`) o URL no descargable (`url_rejected`). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    list_set_questions_api_v1_question_sets__set_id__questions_get: {
+        parameters: {
+            query?: {
+                status?: string | null;
+                origin_type?: string | null;
+                only_reserves?: boolean;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                set_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuestionPageSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    list_questions_api_v1_questions_get: {
+        parameters: {
+            query?: {
+                set_id?: string | null;
+                status?: string | null;
+                origin_type?: string | null;
+                only_reserves?: boolean;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuestionPageSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    get_question_api_v1_questions__question_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                question_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuestionSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    patch_question_api_v1_questions__question_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                question_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatchQuestionSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuestionSchema"];
+                };
+            };
+            /** @description La entrada no se puede usar: carpeta inválida (`invalid_source`), contenido rechazado por seguridad (`unsafe_content`) o URL no descargable (`url_rejected`). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    list_question_evidence_api_v1_questions__question_id__evidence_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                question_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuestionEvidenceSchema"][];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    correct_question_api_v1_questions__question_id__local_corrections_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                question_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LocalCorrectionSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CorrectionOutcomeSchema"];
+                };
+            };
+            /** @description La entrada no se puede usar: carpeta inválida (`invalid_source`), contenido rechazado por seguridad (`unsafe_content`) o URL no descargable (`url_rejected`). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    report_question_issue_api_v1_questions__question_id__report_issue_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                question_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IssueReportRequestSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssueReportSchema"];
+                };
+            };
+            /** @description La entrada no se puede usar: carpeta inválida (`invalid_source`), contenido rechazado por seguridad (`unsafe_content`) o URL no descargable (`url_rejected`). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
                 };
             };
             /** @description El recurso no existe. */

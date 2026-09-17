@@ -12,6 +12,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import date, datetime
 
+from opofuente.domain.questions import ParseIssue, QuestionDuplicateGroup
+
 
 @dataclass(frozen=True, slots=True)
 class OptionView:
@@ -40,6 +42,8 @@ class QuestionView:
     source_section_id: str | None = None
     supersedes_id: str | None = None
     created_at: datetime | None = None
+    #: Motivo de la corrección local, cuando esta versión es una corrección.
+    note: str | None = None
     options: tuple[OptionView, ...] = ()
     correct_option_keys: tuple[str, ...] = ()
     key_outcome: str | None = None
@@ -190,8 +194,8 @@ class QuestionImportReport:
     incomplete: int = 0
     with_key: int = 0
     key_entries: int = 0
-    duplicates: tuple[object, ...] = ()
-    issues: tuple[object, ...] = ()
+    duplicates: tuple[QuestionDuplicateGroup, ...] = ()
+    issues: tuple[ParseIssue, ...] = ()
     rejected: tuple[RejectedRow, ...] = ()
     ignored_columns: tuple[str, ...] = ()
     missing_columns: tuple[str, ...] = ()
@@ -213,6 +217,33 @@ class QuestionImportReport:
 
 
 @dataclass(frozen=True, slots=True)
+class QuestionEvidenceView:
+    """Qué evidencia sostiene una parte de la pregunta, con el texto de la cita."""
+
+    span_id: str
+    role: str
+    status: str
+    text: str
+    document_version_id: str
+    claim: str | None = None
+    page: int | None = None
+    citation_label: str | None = None
+    section_id: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class IssueReportView:
+    """Lo que reportó quien estudia sobre una pregunta."""
+
+    id: str
+    question_version_id: str
+    kind: str
+    detail: str
+    status: str
+    created_at: datetime | None = None
+
+
+@dataclass(frozen=True, slots=True)
 class KeyImportReport:
     """Resultado de alinear una plantilla suelta con las preguntas del conjunto."""
 
@@ -220,7 +251,7 @@ class KeyImportReport:
     version_no: int | None
     entries: int = 0
     unmatched: tuple[int, ...] = ()
-    issues: tuple[object, ...] = ()
+    issues: tuple[ParseIssue, ...] = ()
 
     @property
     def applied(self) -> bool:
@@ -230,9 +261,11 @@ class KeyImportReport:
 __all__ = [
     "AnswerKeyView",
     "CsvColumnMapping",
+    "IssueReportView",
     "KeyEntryView",
     "KeyImportReport",
     "OptionView",
+    "QuestionEvidenceView",
     "QuestionImportReport",
     "QuestionPage",
     "QuestionSetPage",

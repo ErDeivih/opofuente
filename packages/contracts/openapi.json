@@ -151,6 +151,105 @@
         "title": "AlternativeSchema",
         "type": "object"
       },
+      "AnswerKeySchema": {
+        "properties": {
+          "approved_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved At"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "entries": {
+            "items": {
+              "$ref": "#/components/schemas/KeyEntrySchema"
+            },
+            "title": "Entries",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "published_at": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published At"
+          },
+          "question_set_id": {
+            "title": "Question Set Id",
+            "type": "string"
+          },
+          "source_document_version_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Document Version Id"
+          },
+          "status": {
+            "enum": [
+              "draft",
+              "active",
+              "superseded",
+              "rejected"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "supersedes_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supersedes Id"
+          },
+          "version_no": {
+            "title": "Version No",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "question_set_id",
+          "version_no",
+          "status"
+        ],
+        "title": "AnswerKeySchema",
+        "type": "object"
+      },
       "BatchDetailSchema": {
         "properties": {
           "batch": {
@@ -825,6 +924,30 @@
         "title": "ConvocationStatus",
         "type": "string"
       },
+      "CorrectionOutcomeSchema": {
+        "description": "La versión corregida y, si la tenía, la plantilla nueva que apunta a ella.",
+        "properties": {
+          "key_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key Id"
+          },
+          "question": {
+            "$ref": "#/components/schemas/QuestionSchema"
+          }
+        },
+        "required": [
+          "question"
+        ],
+        "title": "CorrectionOutcomeSchema",
+        "type": "object"
+      },
       "CoverageNodeSchema": {
         "properties": {
           "accepted": {
@@ -961,6 +1084,185 @@
           "source_path"
         ],
         "title": "CreateInventoryRequest",
+        "type": "object"
+      },
+      "CreateQuestionSetSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "convocation_version_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Convocation Version Id"
+          },
+          "held_at": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Held At"
+          },
+          "model_code": {
+            "anyOf": [
+              {
+                "maxLength": 8,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Code"
+          },
+          "opposition_id": {
+            "minLength": 1,
+            "title": "Opposition Id",
+            "type": "string"
+          },
+          "set_type": {
+            "enum": [
+              "official_exam",
+              "private_bank",
+              "practice",
+              "generated_batch"
+            ],
+            "title": "Set Type",
+            "type": "string"
+          },
+          "source_document_version_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Document Version Id"
+          },
+          "title": {
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "opposition_id",
+          "set_type"
+        ],
+        "title": "CreateQuestionSetSchema",
+        "type": "object"
+      },
+      "CsvMappingSchema": {
+        "properties": {
+          "correct": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "correct",
+            "title": "Correct"
+          },
+          "explanation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "explanation",
+            "title": "Explanation"
+          },
+          "options": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Options",
+            "type": "array"
+          },
+          "position": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Position"
+          },
+          "reserve": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reserve"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "source",
+            "title": "Source"
+          },
+          "stem": {
+            "default": "stem",
+            "title": "Stem",
+            "type": "string"
+          },
+          "tags": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "tags",
+            "title": "Tags"
+          },
+          "topic": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "topic",
+            "title": "Topic"
+          }
+        },
+        "title": "CsvMappingSchema",
         "type": "object"
       },
       "CurriculumNodeDetailSchema": {
@@ -1477,6 +1779,49 @@
           "status"
         ],
         "title": "DuplicateClusterSchema",
+        "type": "object"
+      },
+      "DuplicateGroupSchema": {
+        "properties": {
+          "can_merge": {
+            "default": false,
+            "title": "Can Merge",
+            "type": "boolean"
+          },
+          "conflicting_keys": {
+            "default": false,
+            "title": "Conflicting Keys",
+            "type": "boolean"
+          },
+          "keys_seen": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Keys Seen",
+            "type": "array"
+          },
+          "kind": {
+            "enum": [
+              "same_question",
+              "reordered_options",
+              "similar"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "members": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Members",
+            "type": "array"
+          }
+        },
+        "required": [
+          "kind",
+          "members"
+        ],
+        "title": "DuplicateGroupSchema",
         "type": "object"
       },
       "DuplicateMemberSchema": {
@@ -2091,6 +2436,91 @@
         "title": "IssuePageSchema",
         "type": "object"
       },
+      "IssueReportRequestSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "detail": {
+            "maxLength": 2000,
+            "minLength": 3,
+            "title": "Detail",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "ambiguous",
+              "wrong_key",
+              "typo",
+              "outdated",
+              "other"
+            ],
+            "title": "Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "detail"
+        ],
+        "title": "IssueReportRequestSchema",
+        "type": "object"
+      },
+      "IssueReportSchema": {
+        "properties": {
+          "created_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "ambiguous",
+              "wrong_key",
+              "typo",
+              "outdated",
+              "other"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "question_version_id": {
+            "title": "Question Version Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "open",
+              "reviewed",
+              "dismissed"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "question_version_id",
+          "kind",
+          "detail",
+          "status"
+        ],
+        "title": "IssueReportSchema",
+        "type": "object"
+      },
       "IssueSchema": {
         "properties": {
           "code": {
@@ -2277,6 +2707,48 @@
         "title": "JobStatus",
         "type": "string"
       },
+      "KeyEntrySchema": {
+        "properties": {
+          "correct_option_keys": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Correct Option Keys",
+            "type": "array"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "outcome": {
+            "enum": [
+              "keyed",
+              "annulled",
+              "unanswered",
+              "conflicting"
+            ],
+            "title": "Outcome",
+            "type": "string"
+          },
+          "question_version_id": {
+            "title": "Question Version Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "question_version_id",
+          "outcome"
+        ],
+        "title": "KeyEntrySchema",
+        "type": "object"
+      },
       "LiveSchema": {
         "properties": {
           "status": {
@@ -2333,6 +2805,49 @@
           "sends_data_off_device"
         ],
         "title": "LlmSettingsSchema",
+        "type": "object"
+      },
+      "LocalCorrectionSchema": {
+        "additionalProperties": false,
+        "description": "Corrección local de una transcripción: **con motivo** y sin tocar el original importado.",
+        "properties": {
+          "note": {
+            "maxLength": 1000,
+            "minLength": 3,
+            "title": "Note",
+            "type": "string"
+          },
+          "options": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Options"
+          },
+          "stem": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stem"
+          }
+        },
+        "required": [
+          "note"
+        ],
+        "title": "LocalCorrectionSchema",
         "type": "object"
       },
       "MappingRequestSchema": {
@@ -2467,6 +2982,21 @@
         "title": "MappingSchema",
         "type": "object"
       },
+      "MarkKeySupersedesRequestSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "superseded_id": {
+            "minLength": 1,
+            "title": "Superseded Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "superseded_id"
+        ],
+        "title": "MarkKeySupersedesRequestSchema",
+        "type": "object"
+      },
       "MarkSupersedesRequestSchema": {
         "properties": {
           "superseded_id": {
@@ -2576,6 +3106,115 @@
           "active"
         ],
         "title": "OppositionSchema",
+        "type": "object"
+      },
+      "OptionSchema": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
+          "position": {
+            "title": "Position",
+            "type": "integer"
+          },
+          "stable_key": {
+            "title": "Stable Key",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "stable_key",
+          "text",
+          "position"
+        ],
+        "title": "OptionSchema",
+        "type": "object"
+      },
+      "ParseIssueSchema": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "line": {
+            "title": "Line",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "line",
+          "code",
+          "detail"
+        ],
+        "title": "ParseIssueSchema",
+        "type": "object"
+      },
+      "ParseQuestionSetSchema": {
+        "additionalProperties": false,
+        "description": "Lo que se pide al importar: preguntas de un texto, un CSV o una plantilla suelta.",
+        "properties": {
+          "kind": {
+            "default": "questions",
+            "enum": [
+              "questions",
+              "answer_key",
+              "csv"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "mapping": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CsvMappingSchema"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "source_document_version_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Document Version Id"
+          },
+          "text": {
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "title": "ParseQuestionSetSchema",
         "type": "object"
       },
       "PartFormat": {
@@ -2694,6 +3333,78 @@
           }
         },
         "title": "PatchDocumentRequestSchema",
+        "type": "object"
+      },
+      "PatchQuestionSchema": {
+        "additionalProperties": false,
+        "description": "Cambia lo que se puede cambiar sin tocar el texto importado: una corrección es otra cosa.",
+        "properties": {
+          "is_reserve": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Reserve"
+          },
+          "position": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Position"
+          },
+          "question_type": {
+            "anyOf": [
+              {
+                "enum": [
+                  "single_choice",
+                  "multi_mark_error",
+                  "true_false",
+                  "free_text_reference"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Question Type"
+          },
+          "reserve_order": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reserve Order"
+          },
+          "stem": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stem"
+          }
+        },
+        "title": "PatchQuestionSchema",
         "type": "object"
       },
       "ProblemDetail": {
@@ -3091,6 +3802,570 @@
         "title": "ProposalSchema",
         "type": "object"
       },
+      "QuestionEvidenceSchema": {
+        "properties": {
+          "citation_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Citation Label"
+          },
+          "claim": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Claim"
+          },
+          "document_version_id": {
+            "title": "Document Version Id",
+            "type": "string"
+          },
+          "page": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page"
+          },
+          "role": {
+            "enum": [
+              "stem",
+              "correct",
+              "distractor",
+              "explanation"
+            ],
+            "title": "Role",
+            "type": "string"
+          },
+          "section_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Section Id"
+          },
+          "span_id": {
+            "title": "Span Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "proposed",
+              "accepted",
+              "rejected"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "span_id",
+          "role",
+          "status",
+          "text",
+          "document_version_id"
+        ],
+        "title": "QuestionEvidenceSchema",
+        "type": "object"
+      },
+      "QuestionImportReportSchema": {
+        "description": "Lo que ha pasado al importar: ni una fila se pierde, ni un conflicto se esconde.\n\nSe llama `QuestionImportReport` y no `ImportReport` porque la ingestión ya tiene su propio\n`ImportReportSchema` (el cuadre del lote): dos modelos con el mismo nombre obligan a FastAPI a\ninventar nombres cualificados en el OpenAPI y rompen los tipos derivados del contrato.",
+        "properties": {
+          "created": {
+            "default": 0,
+            "title": "Created",
+            "type": "integer"
+          },
+          "duplicates": {
+            "items": {
+              "$ref": "#/components/schemas/DuplicateGroupSchema"
+            },
+            "title": "Duplicates",
+            "type": "array"
+          },
+          "existing": {
+            "default": 0,
+            "title": "Existing",
+            "type": "integer"
+          },
+          "ignored_columns": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Ignored Columns",
+            "type": "array"
+          },
+          "incomplete": {
+            "default": 0,
+            "title": "Incomplete",
+            "type": "integer"
+          },
+          "issues": {
+            "items": {
+              "$ref": "#/components/schemas/ParseIssueSchema"
+            },
+            "title": "Issues",
+            "type": "array"
+          },
+          "key_entries": {
+            "default": 0,
+            "title": "Key Entries",
+            "type": "integer"
+          },
+          "key_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key Id"
+          },
+          "keys_in_conflict": {
+            "default": 0,
+            "title": "Keys In Conflict",
+            "type": "integer"
+          },
+          "missing_columns": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Missing Columns",
+            "type": "array"
+          },
+          "model_code_detected": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Code Detected"
+          },
+          "rejected": {
+            "items": {
+              "$ref": "#/components/schemas/RejectedRowSchema"
+            },
+            "title": "Rejected",
+            "type": "array"
+          },
+          "set_id": {
+            "title": "Set Id",
+            "type": "string"
+          },
+          "unmatched_positions": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Unmatched Positions",
+            "type": "array"
+          },
+          "with_key": {
+            "default": 0,
+            "title": "With Key",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "set_id"
+        ],
+        "title": "QuestionImportReportSchema",
+        "type": "object"
+      },
+      "QuestionPageSchema": {
+        "properties": {
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "questions": {
+            "items": {
+              "$ref": "#/components/schemas/QuestionSchema"
+            },
+            "title": "Questions",
+            "type": "array"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "questions",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "QuestionPageSchema",
+        "type": "object"
+      },
+      "QuestionSchema": {
+        "properties": {
+          "correct_option_keys": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Correct Option Keys",
+            "type": "array"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "explanation_count": {
+            "default": 0,
+            "title": "Explanation Count",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "is_reserve": {
+            "default": false,
+            "title": "Is Reserve",
+            "type": "boolean"
+          },
+          "key_outcome": {
+            "anyOf": [
+              {
+                "enum": [
+                  "keyed",
+                  "annulled",
+                  "unanswered",
+                  "conflicting"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key Outcome"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "options": {
+            "items": {
+              "$ref": "#/components/schemas/OptionSchema"
+            },
+            "title": "Options",
+            "type": "array"
+          },
+          "origin_type": {
+            "enum": [
+              "official",
+              "private",
+              "generated"
+            ],
+            "title": "Origin Type",
+            "type": "string"
+          },
+          "position": {
+            "title": "Position",
+            "type": "integer"
+          },
+          "question_set_id": {
+            "title": "Question Set Id",
+            "type": "string"
+          },
+          "question_type": {
+            "enum": [
+              "single_choice",
+              "multi_mark_error",
+              "true_false",
+              "free_text_reference"
+            ],
+            "title": "Question Type",
+            "type": "string"
+          },
+          "reserve_order": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reserve Order"
+          },
+          "source_section_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Section Id"
+          },
+          "stable_key": {
+            "title": "Stable Key",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "incomplete",
+              "complete",
+              "verified",
+              "conflicting",
+              "annulled",
+              "superseded"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "stem": {
+            "title": "Stem",
+            "type": "string"
+          },
+          "supersedes_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supersedes Id"
+          },
+          "version_no": {
+            "title": "Version No",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "question_set_id",
+          "stable_key",
+          "version_no",
+          "stem",
+          "question_type",
+          "position",
+          "status",
+          "origin_type"
+        ],
+        "title": "QuestionSchema",
+        "type": "object"
+      },
+      "QuestionSetPageSchema": {
+        "properties": {
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "sets": {
+            "items": {
+              "$ref": "#/components/schemas/QuestionSetSchema"
+            },
+            "title": "Sets",
+            "type": "array"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "sets",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "QuestionSetPageSchema",
+        "type": "object"
+      },
+      "QuestionSetSchema": {
+        "properties": {
+          "active_key_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Key Id"
+          },
+          "convocation_version_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Convocation Version Id"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "held_at": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Held At"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "incomplete_count": {
+            "default": 0,
+            "title": "Incomplete Count",
+            "type": "integer"
+          },
+          "is_official": {
+            "default": false,
+            "title": "Is Official",
+            "type": "boolean"
+          },
+          "key_count": {
+            "default": 0,
+            "title": "Key Count",
+            "type": "integer"
+          },
+          "model_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Code"
+          },
+          "opposition_id": {
+            "title": "Opposition Id",
+            "type": "string"
+          },
+          "question_count": {
+            "default": 0,
+            "title": "Question Count",
+            "type": "integer"
+          },
+          "reserve_count": {
+            "default": 0,
+            "title": "Reserve Count",
+            "type": "integer"
+          },
+          "set_type": {
+            "enum": [
+              "official_exam",
+              "private_bank",
+              "practice",
+              "generated_batch"
+            ],
+            "title": "Set Type",
+            "type": "string"
+          },
+          "source_document_version_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Document Version Id"
+          },
+          "status": {
+            "enum": [
+              "draft",
+              "confirmed",
+              "archived"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "set_type",
+          "status",
+          "opposition_id"
+        ],
+        "title": "QuestionSetSchema",
+        "type": "object"
+      },
       "ReadinessProblem": {
         "description": "Cuerpo del 503 de `/health/ready`.\n\nEs un problema RFC 9457 al que se añade el detalle de cada comprobación, de modo que la\ninterfaz pueda explicar **por qué** la aplicación no está lista sin abrir otra petición.\nSe declara como esquema propio para que `application/problem+json` esté descrito de verdad\nen OpenAPI y el frontend use el tipo generado (no una conversión escrita a mano).",
         "properties": {
@@ -3182,6 +4457,29 @@
           "checks"
         ],
         "title": "ReadinessSchema",
+        "type": "object"
+      },
+      "RejectedRowSchema": {
+        "properties": {
+          "cause": {
+            "title": "Cause",
+            "type": "string"
+          },
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "row_number": {
+            "title": "Row Number",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "row_number",
+          "cause",
+          "detail"
+        ],
+        "title": "RejectedRowSchema",
         "type": "object"
       },
       "RepresentationSchema": {
@@ -4164,6 +5462,98 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/answer-keys/{key_id}/mark-supersedes": {
+      "post": {
+        "operationId": "mark_answer_key_supersedes_api_v1_answer_keys__key_id__mark_supersedes_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "key_id",
+            "required": true,
+            "schema": {
+              "title": "Key Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MarkKeySupersedesRequestSchema"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnswerKeySchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "La entrada no se puede usar: carpeta inválida (`invalid_source`), contenido rechazado por seguridad (`unsafe_content`) o URL no descargable (`url_rejected`)."
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Confirma que una plantilla sustituye a otra",
+        "tags": [
+          "preguntas"
+        ]
+      }
+    },
     "/api/v1/capabilities": {
       "get": {
         "operationId": "capabilities_api_v1_capabilities_get",
@@ -8455,6 +9845,1181 @@
           }
         },
         "summary": "Convocatorias de una oposición"
+      }
+    },
+    "/api/v1/question-sets": {
+      "get": {
+        "operationId": "list_question_sets_api_v1_question_sets_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "opposition_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Opposition Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "set_type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Set Type"
+            }
+          },
+          {
+            "in": "query",
+            "name": "include_archived",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Include Archived",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuestionSetPageSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Conjuntos de preguntas con sus recuentos",
+        "tags": [
+          "preguntas"
+        ]
+      },
+      "post": {
+        "operationId": "create_question_set_api_v1_question_sets_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateQuestionSetSchema"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuestionSetSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "La entrada no se puede usar: carpeta inválida (`invalid_source`), contenido rechazado por seguridad (`unsafe_content`) o URL no descargable (`url_rejected`)."
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Crea un conjunto de preguntas",
+        "tags": [
+          "preguntas"
+        ]
+      }
+    },
+    "/api/v1/question-sets/{set_id}": {
+      "get": {
+        "operationId": "get_question_set_api_v1_question_sets__set_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "set_id",
+            "required": true,
+            "schema": {
+              "title": "Set Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuestionSetSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Un conjunto con sus recuentos",
+        "tags": [
+          "preguntas"
+        ]
+      }
+    },
+    "/api/v1/question-sets/{set_id}/answer-keys": {
+      "get": {
+        "operationId": "list_answer_keys_api_v1_question_sets__set_id__answer_keys_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "set_id",
+            "required": true,
+            "schema": {
+              "title": "Set Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AnswerKeySchema"
+                  },
+                  "title": "Response List Answer Keys Api V1 Question Sets  Set Id  Answer Keys Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Plantillas de un conjunto, con sus desenlaces",
+        "tags": [
+          "preguntas"
+        ]
+      }
+    },
+    "/api/v1/question-sets/{set_id}/answer-keys/{key_id}/activate": {
+      "post": {
+        "description": "Activar una plantilla **es** aprobarla: lo decide una persona y queda en la auditoría.\n\nSi el conjunto es oficial y la plantilla no tiene enlazada la plantilla oficial, responde 409\ncon el motivo: una aprobación no convierte en oficial un documento que no lo es.",
+        "operationId": "activate_answer_key_api_v1_question_sets__set_id__answer_keys__key_id__activate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "set_id",
+            "required": true,
+            "schema": {
+              "title": "Set Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "key_id",
+            "required": true,
+            "schema": {
+              "title": "Key Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnswerKeySchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "La entrada no se puede usar: carpeta inválida (`invalid_source`), contenido rechazado por seguridad (`unsafe_content`) o URL no descargable (`url_rejected`)."
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Activa una plantilla (activar es aprobar)",
+        "tags": [
+          "preguntas"
+        ]
+      }
+    },
+    "/api/v1/question-sets/{set_id}/parse": {
+      "post": {
+        "description": "Las tres formas de llenar un conjunto: texto, CSV con mapeo y plantilla suelta.\n\nLo que no se entiende se informa (fila a fila, con su causa) y el resto entra: una fila mala no\naborta el lote.",
+        "operationId": "parse_into_set_api_v1_question_sets__set_id__parse_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "set_id",
+            "required": true,
+            "schema": {
+              "title": "Set Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ParseQuestionSetSchema"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuestionImportReportSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "La entrada no se puede usar: carpeta inválida (`invalid_source`), contenido rechazado por seguridad (`unsafe_content`) o URL no descargable (`url_rejected`)."
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Importa preguntas, un CSV o una plantilla a un conjunto",
+        "tags": [
+          "preguntas"
+        ]
+      }
+    },
+    "/api/v1/question-sets/{set_id}/questions": {
+      "get": {
+        "operationId": "list_set_questions_api_v1_question_sets__set_id__questions_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "set_id",
+            "required": true,
+            "schema": {
+              "title": "Set Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "origin_type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Origin Type"
+            }
+          },
+          {
+            "in": "query",
+            "name": "only_reserves",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Only Reserves",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuestionPageSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Preguntas de un conjunto (banco: con su clave)",
+        "tags": [
+          "preguntas"
+        ]
+      }
+    },
+    "/api/v1/questions": {
+      "get": {
+        "description": "El banco enseña la clave: aquí se revisa, no se examina a nadie.",
+        "operationId": "list_questions_api_v1_questions_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "set_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Set Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "origin_type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Origin Type"
+            }
+          },
+          {
+            "in": "query",
+            "name": "only_reserves",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Only Reserves",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuestionPageSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Preguntas del banco, con filtros",
+        "tags": [
+          "preguntas"
+        ]
+      }
+    },
+    "/api/v1/questions/{question_id}": {
+      "get": {
+        "operationId": "get_question_api_v1_questions__question_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "question_id",
+            "required": true,
+            "schema": {
+              "title": "Question Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuestionSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Una pregunta con sus opciones y su clave",
+        "tags": [
+          "preguntas"
+        ]
+      },
+      "patch": {
+        "description": "Tipo, posición y reserva. El **texto** de una oficial se corrige con corrección local.",
+        "operationId": "patch_question_api_v1_questions__question_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "question_id",
+            "required": true,
+            "schema": {
+              "title": "Question Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchQuestionSchema"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuestionSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "La entrada no se puede usar: carpeta inválida (`invalid_source`), contenido rechazado por seguridad (`unsafe_content`) o URL no descargable (`url_rejected`)."
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Cambia la composición de una pregunta",
+        "tags": [
+          "preguntas"
+        ]
+      }
+    },
+    "/api/v1/questions/{question_id}/evidence": {
+      "get": {
+        "operationId": "list_question_evidence_api_v1_questions__question_id__evidence_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "question_id",
+            "required": true,
+            "schema": {
+              "title": "Question Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/QuestionEvidenceSchema"
+                  },
+                  "title": "Response List Question Evidence Api V1 Questions  Question Id  Evidence Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Evidencia que sostiene una pregunta",
+        "tags": [
+          "preguntas"
+        ]
+      }
+    },
+    "/api/v1/questions/{question_id}/local-corrections": {
+      "post": {
+        "operationId": "correct_question_api_v1_questions__question_id__local_corrections_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "question_id",
+            "required": true,
+            "schema": {
+              "title": "Question Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LocalCorrectionSchema"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CorrectionOutcomeSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "La entrada no se puede usar: carpeta inválida (`invalid_source`), contenido rechazado por seguridad (`unsafe_content`) o URL no descargable (`url_rejected`)."
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Corrige una transcripción con su motivo, sin tocar el original",
+        "tags": [
+          "preguntas"
+        ]
+      }
+    },
+    "/api/v1/questions/{question_id}/report-issue": {
+      "post": {
+        "operationId": "report_question_issue_api_v1_questions__question_id__report_issue_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "question_id",
+            "required": true,
+            "schema": {
+              "title": "Question Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IssueReportRequestSchema"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IssueReportSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "La entrada no se puede usar: carpeta inválida (`invalid_source`), contenido rechazado por seguridad (`unsafe_content`) o URL no descargable (`url_rejected`)."
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Reporta que una pregunta es ambigua, está mal keyada o tiene una errata",
+        "tags": [
+          "preguntas"
+        ]
       }
     },
     "/api/v1/representations/{representation_id}": {

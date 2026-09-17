@@ -23,7 +23,9 @@ from opofuente.application.ports import Clock
 from opofuente.application.question_models import (
     AnswerKeyView,
     CsvColumnMapping,
+    IssueReportView,
     KeyImportReport,
+    QuestionEvidenceView,
     QuestionImportReport,
     QuestionPage,
     QuestionSetPage,
@@ -38,6 +40,7 @@ from opofuente.domain.questions import (
     Origin,
     ParsedOption,
     ParsedQuestion,
+    ParseIssue,
     QuestionDuplicateGroup,
     QuestionStatus,
     QuestionType,
@@ -393,6 +396,9 @@ class QuestionService:
     def keys(self, set_id: str) -> tuple[AnswerKeyView, ...]:
         return self._questions.list_keys(set_id)
 
+    def key(self, key_id: str) -> AnswerKeyView | None:
+        return self._questions.get_key(key_id)
+
     def activate_key(self, key_id: str, *, actor: str = "local") -> tuple[bool, str | None]:
         """Activa una plantilla. **Activar es aprobar**: lo decide una persona y queda auditado.
 
@@ -414,6 +420,128 @@ class QuestionService:
         return self._questions.mark_key_supersedes(
             key_id, superseded_id=superseded_id, now=self._clock.now(), actor=actor
         )
+
+    # ------------------------------------------------------------------ edición y correcciones
+
+    def update_question(
+        self,
+        question_id: str,
+        *,
+        stem: str | None = None,
+        question_type: str | None = None,
+        position: int | None = None,
+        is_reserve: bool | None = None,
+        reserve_order: int | None = None,
+        actor: str = "local",
+    ) -> QuestionView | None:
+        """Cambia la composición de una pregunta (tipo, posición, reserva) o su enunciado."""
+        if question_type is not None:
+            try:
+                QuestionType(question_type)
+            except ValueError as error:
+                raise InvariantViolationError(
+                    f"«{question_type}» no es un tipo de pregunta"
+                ) from error
+        return self._questions.update_question(
+            question_id,
+            stem=stem,
+            question_type=question_type,
+            position=position,
+            is_reserve=is_reserve,
+            reserve_order=reserve_order,
+            now=self._clock.now(),
+            actor=actor,
+        )
+
+    def correct_question(
+        self,
+        question_id: str,
+        *,
+        note: str,
+        stem: str | None = None,
+        options: Sequence[str] | None = None,
+        actor: str = "local",
+    ) -> tuple[QuestionView | None, str | None]:
+        """Corrige una transcripción **sin tocar el original**: crea versión nueva con su motivo.
+
+        Si la pregunta tenía clave, la corrección **no la pierde**: se crea una plantilla nueva (en
+        borrador) igual que la anterior pero apuntando a la versión corregida. La plantilla de
+        antes no se toca, porque corregir una clave no reescribe lo que ya se corrigió con ella.
+        """
+        if not note.strip():
+            raise InvariantViolationError("una corrección local necesita motivo")
+        anterior = self._questions.get_question(question_id, include_key=True)
+        if anterior is None:
+            return None, None
+        nueva_id = self._questions.create_corrected_version(
+            question_id,
+            stem=stem,
+            options=options,
+            note=note,
+            now=self._clock.now(),
+            actor=actor,
+        )
+        if nueva_id is None:
+            return None, None
+        clave_nueva: str | None = None
+        claves = self._questions.list_keys(anterior.question_set_id)
+        if claves:
+            ultima = claves[-1]
+            entradas = []
+            for entrada in ultima.entries:
+                if entrada.question_version_id == question_id:
+                    entradas.append(
+                        AnswerKeyEntry(
+                            question_version_id=nueva_id,
+                            outcome=KeyOutcome(entrada.outcome),
+                            correct_option_keys=tuple(entrada.correct_option_keys),
+                            notes=entrada.notes,
+                        )
+                    )
+                else:
+                    entradas.append(
+                        AnswerKeyEntry(
+                            question_version_id=entrada.question_version_id,
+                            outcome=KeyOutcome(entrada.outcome),
+                            correct_option_keys=tuple(entrada.correct_option_keys),
+                            notes=entrada.notes,
+                        )
+                    )
+            if any(entrada.question_version_id == nueva_id for entrada in entradas):
+                guardada = self._questions.save_key(
+                    anterior.question_set_id,
+                    entries=tuple(entradas),
+                    source_document_version_id=ultima.source_document_version_id,
+                    now=self._clock.now(),
+                    actor=actor,
+                )
+                clave_nueva = guardada.id if guardada is not None else None
+        return self._questions.get_question(nueva_id, include_key=True), clave_nueva
+
+    def report_issue(
+        self, question_id: str, *, kind: str, detail: str, actor: str = "local"
+    ) -> IssueReportView | None:
+        """Guarda lo que reporta quien estudia sobre una pregunta."""
+        identificador = self._questions.add_issue_report(
+            question_id, kind=kind, detail=detail, now=self._clock.now(), actor=actor
+        )
+        if identificador is None:
+            return None
+        return next(
+            (
+                informe
+                for informe in self._questions.issue_reports(question_id)
+                if informe.id == identificador
+            ),
+            None,
+        )
+
+    def issues(self, question_id: str) -> tuple[IssueReportView, ...]:
+        return self._questions.issue_reports(question_id)
+
+    def evidence(self, question_id: str) -> tuple[QuestionEvidenceView, ...]:
+        """Lo que sostiene la pregunta, con su cita: es lo que hace abrible una explicación."""
+        return self._questions.question_evidence(question_id)
 
     # ------------------------------------------------------------------ auxiliares
 
@@ -475,7 +603,7 @@ class QuestionService:
         *,
         extras: Sequence[tuple[tuple[str, ...], str | None, str | None]],
         origin_type: Origin,
-        issues: Sequence[object],
+        issues: Sequence[ParseIssue],
         model_code: str | None,
         actor: str,
         ignored: tuple[str, ...] = (),

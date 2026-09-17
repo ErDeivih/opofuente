@@ -24,8 +24,10 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from opofuente.application.question_models import (
     AnswerKeyView,
+    IssueReportView,
     KeyEntryView,
     OptionView,
+    QuestionEvidenceView,
     QuestionPage,
     QuestionSetPage,
     QuestionSetView,
@@ -50,8 +52,12 @@ from opofuente.infrastructure.db_models import (
     AuditEventRecord,
     CurriculumMappingRecord,
     CurriculumNodeRecord,
+    EvidenceSpanRecord,
+    OppositionRecord,
     OptionVersionRecord,
+    QuestionEvidenceRecord,
     QuestionExplanationRecord,
+    QuestionIssueReportRecord,
     QuestionSetRecord,
     QuestionVersionRecord,
 )
@@ -105,6 +111,8 @@ class SqlAlchemyQuestionRepository:
         if not title.strip():
             raise InvariantViolationError("Un conjunto de preguntas necesita título")
         with self._session_factory() as session:
+            if session.get(OppositionRecord, opposition_id) is None:
+                raise InvariantViolationError(f"la oposición «{opposition_id}» no existe")
             fila = QuestionSetRecord(
                 id=_new_id(),
                 title=title.strip(),
@@ -832,6 +840,175 @@ class SqlAlchemyQuestionRepository:
             session.commit()
             return True
 
+    # ------------------------------------------------------------------ correcciones e incidencias
+
+    def create_corrected_version(
+        self,
+        question_id: str,
+        *,
+        stem: str | None,
+        options: Sequence[str] | None,
+        note: str,
+        now: datetime,
+        actor: str = "local",
+    ) -> str | None:
+        """Crea la versión corregida de una pregunta y deja la anterior como `superseded`.
+
+        El texto importado no se toca: se añade una versión nueva que sustituye a la anterior, con
+        el motivo en su `note`. Así se puede ver qué decía el original y por qué se cambió.
+        """
+        with self._session_factory() as session:
+            anterior = session.get(QuestionVersionRecord, question_id)
+            if anterior is None:
+                return None
+            version = (
+                int(
+                    session.execute(
+                        select(func.coalesce(func.max(QuestionVersionRecord.version_no), 0)).where(
+                            QuestionVersionRecord.question_set_id == anterior.question_set_id,
+                            QuestionVersionRecord.stable_key == anterior.stable_key,
+                        )
+                    ).scalar_one()
+                )
+                + 1
+            )
+            nueva_id = _new_id()
+            session.add(
+                QuestionVersionRecord(
+                    id=nueva_id,
+                    question_set_id=anterior.question_set_id,
+                    stable_key=anterior.stable_key,
+                    version_no=version,
+                    stem=(stem or anterior.stem).strip(),
+                    question_type=anterior.question_type,
+                    position=anterior.position,
+                    is_reserve=anterior.is_reserve,
+                    reserve_order=anterior.reserve_order,
+                    status="complete" if (options or stem) else anterior.status,
+                    origin_type=anterior.origin_type,
+                    source_section_id=anterior.source_section_id,
+                    supersedes_id=anterior.id,
+                    created_at=now,
+                    note=note.strip(),
+                )
+            )
+            session.flush()
+            textos = (
+                list(options)
+                if options is not None
+                else [
+                    str(opcion.text)
+                    for opcion in self._options_by_question(session, [question_id]).get(
+                        question_id, ()
+                    )
+                ]
+            )
+            for orden, texto in enumerate(textos, start=1):
+                session.add(
+                    OptionVersionRecord(
+                        id=_new_id(),
+                        question_version_id=nueva_id,
+                        stable_key=chr(ord("a") + orden - 1),
+                        label=chr(ord("A") + orden - 1),
+                        text=texto.strip(),
+                        position=orden,
+                    )
+                )
+            antes = anterior.status
+            anterior.status = "superseded"
+            self._audit(
+                session,
+                actor=actor,
+                action="question.corrected",
+                object_type="question_version",
+                object_id=nueva_id,
+                before={"supersedes_id": question_id, "status": antes},
+                after={"version_no": version, "note": note.strip()},
+                now=now,
+            )
+            session.commit()
+            return nueva_id
+
+    def add_issue_report(
+        self, question_id: str, *, kind: str, detail: str, now: datetime, actor: str = "local"
+    ) -> str | None:
+        """Guarda lo que reporta quien estudia: es información suya, no una clasificación."""
+        with self._session_factory() as session:
+            if session.get(QuestionVersionRecord, question_id) is None:
+                return None
+            fila = QuestionIssueReportRecord(
+                id=_new_id(),
+                question_version_id=question_id,
+                kind=kind,
+                detail=detail.strip(),
+                status="open",
+                created_at=now,
+                reviewed_at=None,
+            )
+            session.add(fila)
+            self._audit(
+                session,
+                actor=actor,
+                action="question.issue_reported",
+                object_type="question_version",
+                object_id=question_id,
+                before={},
+                after={"kind": kind, "report_id": fila.id},
+                now=now,
+            )
+            session.commit()
+            return fila.id
+
+    def issue_reports(self, question_id: str) -> tuple[IssueReportView, ...]:
+        with self._session_factory() as session:
+            filas = (
+                session.execute(
+                    select(QuestionIssueReportRecord)
+                    .where(QuestionIssueReportRecord.question_version_id == question_id)
+                    .order_by(QuestionIssueReportRecord.created_at)
+                )
+                .scalars()
+                .all()
+            )
+            return tuple(
+                IssueReportView(
+                    id=fila.id,
+                    question_version_id=fila.question_version_id,
+                    kind=str(fila.kind),
+                    detail=str(fila.detail),
+                    status=str(fila.status),
+                    created_at=fila.created_at,
+                )
+                for fila in filas
+            )
+
+    def question_evidence(self, question_id: str) -> tuple[QuestionEvidenceView, ...]:
+        """Evidencia que sostiene la pregunta, con el texto de la cita ya recortado."""
+        with self._session_factory() as session:
+            filas = session.execute(
+                select(QuestionEvidenceRecord, EvidenceSpanRecord)
+                .join(
+                    EvidenceSpanRecord,
+                    EvidenceSpanRecord.id == QuestionEvidenceRecord.evidence_span_id,
+                )
+                .where(QuestionEvidenceRecord.question_version_id == question_id)
+                .order_by(QuestionEvidenceRecord.role, EvidenceSpanRecord.ordinal)
+            ).all()
+        return tuple(
+            QuestionEvidenceView(
+                span_id=span.id,
+                role=str(enlace.role),
+                status=str(enlace.status),
+                claim=enlace.claim,
+                text=str(span.text),
+                page=span.page,
+                citation_label=span.citation_label,
+                document_version_id=span.document_version_id,
+                section_id=span.section_id,
+            )
+            for enlace, span in filas
+        )
+
     # ------------------------------------------------------------------ auxiliares
 
     @staticmethod
@@ -1050,6 +1227,7 @@ class SqlAlchemyQuestionRepository:
             source_section_id=fila.source_section_id,
             supersedes_id=fila.supersedes_id,
             created_at=fila.created_at,
+            note=fila.note,
             options=tuple(
                 OptionView(
                     id=opcion.id,
