@@ -41,9 +41,15 @@ describe('navegación', () => {
     ]);
   });
 
-  it('Inicio, Bandeja, Programa y Biblioteca están implementadas', () => {
+  it('Inicio, Bandeja, Programa, Biblioteca y Preguntas están implementadas', () => {
     const implementadas = NAV_ITEMS.filter((item) => item.slice === null).map((item) => item.label);
-    expect(implementadas).toEqual(['Inicio', 'Bandeja', 'Programa', 'Biblioteca']);
+    expect(implementadas).toEqual([
+      'Inicio',
+      'Bandeja',
+      'Programa',
+      'Biblioteca',
+      'Preguntas',
+    ]);
   });
 
   it('las secciones no implementadas declaran su slice', () => {
@@ -51,7 +57,7 @@ describe('navegación', () => {
     expect(slices.get('Bandeja')).toBeNull();
     expect(slices.get('Programa')).toBeNull();
     expect(slices.get('Biblioteca')).toBeNull();
-    expect(slices.get('Preguntas')).toBe('S06');
+    expect(slices.get('Preguntas')).toBeNull();
     expect(slices.get('Estudiar')).toBe('S07');
   });
 });
@@ -63,11 +69,11 @@ describe('shell de la aplicación', () => {
       <AppShell>
         <AppRoutes />
       </AppShell>,
-      { route: '/preguntas' },
+      { route: '/estudiar' },
     );
 
-    expect(await screen.findByRole('heading', { level: 1, name: 'Preguntas' })).toBeInTheDocument();
-    expect(screen.getByText(/slice S06/)).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 1, name: 'Estudiar' })).toBeInTheDocument();
+    expect(screen.getByText(/slice S07/)).toBeInTheDocument();
     expect(screen.getByText('pendiente')).toBeInTheDocument();
   });
 

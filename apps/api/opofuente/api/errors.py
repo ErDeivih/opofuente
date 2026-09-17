@@ -20,6 +20,7 @@ from opofuente.domain.errors import (
     ClassificationConflictError,
     InvalidBatchStateError,
     InvalidSourceError,
+    MappingMismatchError,
     NotFoundError,
     OpoFuenteError,
     UnsafeContentError,
@@ -159,6 +160,17 @@ def register_exception_handlers(app: FastAPI) -> None:
                 detail=f"No existe {exc.resource} con ese identificador.",
                 instance=request.url.path,
                 code="not_found",
+            )
+        if isinstance(exc, MappingMismatchError):
+            # El 422 de esta aplicación siempre lleva `field_errors`, así que el mapeo que hay que
+            # corregir se dice igual que el de una validación de esquema. Va antes que el resto de
+            # invariantes porque sí es culpa de la entrada, no del programa.
+            return problem_response(
+                status_code=422,
+                detail=str(exc),
+                instance=request.url.path,
+                code=exc.code,
+                field_errors=[FieldError(field=exc.field, message=exc.reason)],
             )
         if isinstance(exc, InvalidSourceError):
             return problem_response(

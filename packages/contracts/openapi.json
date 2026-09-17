@@ -245,7 +245,8 @@
           "id",
           "question_set_id",
           "version_no",
-          "status"
+          "status",
+          "entries"
         ],
         "title": "AnswerKeySchema",
         "type": "object"
@@ -1819,7 +1820,8 @@
         },
         "required": [
           "kind",
-          "members"
+          "members",
+          "keys_seen"
         ],
         "title": "DuplicateGroupSchema",
         "type": "object"
@@ -3993,7 +3995,13 @@
           }
         },
         "required": [
-          "set_id"
+          "set_id",
+          "rejected",
+          "issues",
+          "duplicates",
+          "missing_columns",
+          "ignored_columns",
+          "unmatched_positions"
         ],
         "title": "QuestionImportReportSchema",
         "type": "object"
@@ -4193,7 +4201,9 @@
           "question_type",
           "position",
           "status",
-          "origin_type"
+          "origin_type",
+          "options",
+          "correct_option_keys"
         ],
         "title": "QuestionSchema",
         "type": "object"

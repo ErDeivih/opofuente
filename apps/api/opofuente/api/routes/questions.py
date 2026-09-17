@@ -187,6 +187,7 @@ def _report(
         duplicates=[_group(grupo) for grupo in informe.duplicates],
         missing_columns=list(informe.missing_columns),
         ignored_columns=list(informe.ignored_columns),
+        unmatched_positions=[],
         model_code_detected=informe.model_code_detected,
         key_id=key_id,
     )
@@ -347,6 +348,11 @@ def parse_into_set(
             set_id=set_id,
             key_entries=informe.entries,
             key_id=informe.key_id,
+            # Una importación de plantilla no mete ni rechaza preguntas: se dice con listas vacías.
+            rejected=[],
+            duplicates=[],
+            missing_columns=[],
+            ignored_columns=[],
             unmatched_positions=list(informe.unmatched),
             issues=[
                 ParseIssueSchema(line=aviso.line, code=aviso.code, detail=aviso.detail)

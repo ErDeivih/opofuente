@@ -19,7 +19,7 @@ from sqlalchemy import text
 from opofuente.application.question_models import CsvColumnMapping
 from opofuente.application.question_service import QuestionService
 from opofuente.config import Settings
-from opofuente.domain.errors import InvariantViolationError
+from opofuente.domain.errors import InvariantViolationError, MappingMismatchError
 from opofuente.infrastructure.db import build_engine, build_session_factory
 from opofuente.infrastructure.migrations import run_migrations
 from opofuente.infrastructure.question_repository import SqlAlchemyQuestionRepository
@@ -234,6 +234,28 @@ def test_un_mapeo_que_no_esta_en_la_cabecera_se_dice_antes_de_tocar_nada(tmp_pat
             mapping=CsvColumnMapping(stem="stem", options=("option_a", "option_b")),
         )
     assert servicio.questions(set_id=set_id).total == 0
+
+
+def test_el_mapeo_dice_que_campo_hay_que_corregir(tmp_path: Path) -> None:
+    """El error viaja con el campo, para que la API pueda responder un 422 señalándolo."""
+    servicio, _ = _servicio(tmp_path)
+    set_id = _conjunto(servicio)
+
+    with pytest.raises(MappingMismatchError) as sin_enunciado:
+        servicio.import_from_csv(
+            set_id,
+            "enunciado;opcion_1;opcion_2\nuno;dos;tres\n",
+            mapping=CsvColumnMapping(stem="stem", options=("opcion_1", "opcion_2")),
+        )
+    assert sin_enunciado.value.field == "mapping.stem"
+
+    with pytest.raises(MappingMismatchError) as sin_opciones:
+        servicio.import_from_csv(
+            set_id,
+            "enunciado;opcion_1;opcion_2\nuno;dos;tres\n",
+            mapping=CsvColumnMapping(stem="enunciado", options=("option_a", "option_b")),
+        )
+    assert sin_opciones.value.field == "mapping.options"
 
 
 def test_el_csv_acepta_otras_cabeceras_y_declara_lo_que_no_guarda(tmp_path: Path) -> None:

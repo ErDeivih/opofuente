@@ -51,6 +51,26 @@ import {
   fetchCurriculumNode,
   fetchOppositions,
 } from './profiles';
+import {
+  activateAnswerKey,
+  correctQuestion,
+  createQuestionSet,
+  fetchAnswerKeys,
+  fetchQuestion,
+  fetchQuestionEvidence,
+  fetchQuestionSet,
+  fetchQuestionSets,
+  fetchSetQuestions,
+  markKeySupersedes,
+  parseIntoSet,
+  patchQuestion,
+  reportQuestionIssue,
+  type CreateQuestionSet,
+  type CsvMapping,
+  type ImportKind,
+  type IssueKind,
+  type PatchQuestion,
+} from './questions';
 import { fetchCapabilities, fetchReadiness, fetchSettings } from './system';
 export const queryKeys = {
   readiness: ['system', 'readiness'] as const,
@@ -85,6 +105,16 @@ export const queryKeys = {
   libraryMappings: (versionId: string) => ['library', 'version', versionId, 'mappings'] as const,
   libraryDiff: (documentId: string, fromVersionId: string, toVersionId: string) =>
     ['library', 'document', documentId, 'diff', fromVersionId, toVersionId] as const,
+  /* S06: banco de preguntas. Cuelgan de «questions» para poder invalidarlas juntas: importar cambia
+     las preguntas, sus claves, los conflictos y los recuentos del conjunto a la vez. */
+  questionSets: (oppositionId: string) => ['questions', 'sets', oppositionId] as const,
+  questionSet: (setId: string) => ['questions', 'set', setId] as const,
+  setQuestions: (setId: string, filtros: string) =>
+    ['questions', 'set', setId, 'list', filtros] as const,
+  question: (questionId: string) => ['questions', 'question', questionId] as const,
+  questionEvidence: (questionId: string) =>
+    ['questions', 'question', questionId, 'evidence'] as const,
+  answerKeys: (setId: string) => ['questions', 'set', setId, 'keys'] as const,
 };
 
 export function useReadiness() {
@@ -553,6 +583,186 @@ export function useMarkSupersedes() {
       markSupersedes(input.documentId, input.versionId, input.supersededId),
     onSuccess: () => {
       invalidateLibrary(queryClient);
+    },
+  });
+}
+
+/* ------------------------------------------------------------------ S06: banco de preguntas */
+
+/** Invalida todo lo del banco: importar o decidir cambia preguntas, claves, conflictos y recuentos. */
+function invalidateQuestions(queryClient: QueryClient): void {
+  void queryClient.invalidateQueries({ queryKey: ['questions'] });
+}
+
+export function useQuestionSets(oppositionId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.questionSets(oppositionId ?? 'todas'),
+    queryFn: () => fetchQuestionSets(oppositionId),
+  });
+}
+
+export function useQuestionSet(setId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.questionSet(setId ?? 'ninguno'),
+    queryFn: () => fetchQuestionSet(setId as string),
+    enabled: setId !== null,
+  });
+}
+
+export function useSetQuestions(
+  setId: string | null,
+  filtros: { status: string; originType: string; onlyReserves: boolean },
+) {
+  const clave = `${filtros.status}|${filtros.originType}|${String(filtros.onlyReserves)}`;
+  return useQuery({
+    queryKey: queryKeys.setQuestions(setId ?? 'ninguno', clave),
+    queryFn: () => fetchSetQuestions(setId as string, filtros),
+    enabled: setId !== null,
+  });
+}
+
+export function useQuestion(questionId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.question(questionId ?? 'ninguna'),
+    queryFn: () => fetchQuestion(questionId as string),
+    enabled: questionId !== null,
+  });
+}
+
+/** Evidencia que sostiene la pregunta. Vacío es una respuesta, no un error. */
+export function useQuestionEvidence(questionId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.questionEvidence(questionId ?? 'ninguna'),
+    queryFn: () => fetchQuestionEvidence(questionId as string),
+    enabled: questionId !== null,
+  });
+}
+
+export function useAnswerKeys(setId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.answerKeys(setId ?? 'ninguno'),
+    queryFn: () => fetchAnswerKeys(setId as string),
+    enabled: setId !== null,
+  });
+}
+
+export function useCreateQuestionSet() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: CreateQuestionSet) => createQuestionSet(input),
+    onSuccess: () => {
+      invalidateQuestions(queryClient);
+    },
+  });
+}
+
+export interface ParseIntoSetInput {
+  setId: string;
+  kind: ImportKind;
+  text: string;
+  mapping?: CsvMapping | null;
+}
+
+export function useParseIntoSet() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    // El mapeo solo se manda cuando existe: con `exactOptionalPropertyTypes`, pasar un `undefined`
+    // explícito no es lo mismo que no pasar la propiedad, y el contrato distingue las dos cosas.
+    mutationFn: (input: ParseIntoSetInput) =>
+      input.mapping === undefined || input.mapping === null
+        ? parseIntoSet(input.setId, { kind: input.kind, text: input.text })
+        : parseIntoSet(input.setId, {
+            kind: input.kind,
+            text: input.text,
+            mapping: input.mapping,
+          }),
+    onSuccess: () => {
+      invalidateQuestions(queryClient);
+    },
+  });
+}
+
+export interface PatchQuestionInput {
+  questionId: string;
+  changes: PatchQuestion;
+}
+
+export function usePatchQuestion() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: PatchQuestionInput) => patchQuestion(input.questionId, input.changes),
+    onSuccess: () => {
+      invalidateQuestions(queryClient);
+    },
+  });
+}
+
+export interface CorrectQuestionInput {
+  questionId: string;
+  note: string;
+  stem?: string | null;
+  options?: string[] | null;
+}
+
+export function useCorrectQuestion() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: CorrectQuestionInput) =>
+      correctQuestion(input.questionId, {
+        note: input.note,
+        stem: input.stem ?? null,
+        options: input.options ?? null,
+      }),
+    onSuccess: () => {
+      invalidateQuestions(queryClient);
+    },
+  });
+}
+
+export interface ReportIssueInput {
+  questionId: string;
+  kind: IssueKind;
+  detail: string;
+}
+
+export function useReportIssue() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: ReportIssueInput) =>
+      reportQuestionIssue(input.questionId, { kind: input.kind, detail: input.detail }),
+    onSuccess: () => {
+      invalidateQuestions(queryClient);
+    },
+  });
+}
+
+export interface ActivateKeyInput {
+  setId: string;
+  keyId: string;
+}
+
+export function useActivateAnswerKey() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: ActivateKeyInput) => activateAnswerKey(input.setId, input.keyId),
+    onSuccess: () => {
+      invalidateQuestions(queryClient);
+    },
+  });
+}
+
+export interface MarkKeySupersedesInput {
+  keyId: string;
+  supersededId: string;
+}
+
+export function useMarkKeySupersedes() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: MarkKeySupersedesInput) =>
+      markKeySupersedes(input.keyId, input.supersededId),
+    onSuccess: () => {
+      invalidateQuestions(queryClient);
     },
   });
 }

@@ -13,6 +13,7 @@ Formato: `ADR-NNN-titulo.md` con contexto, opciones, datos, decisión, consecuen
 | [ADR-006](ADR-006-fixtures-desde-fuentes-oficiales.md) | Fixtures de perfil desde fuentes oficiales y condiciones de uso | aceptada y ratificada por el propietario (14/09/2026), solo para uso local y privado |
 | [ADR-007](ADR-007-nodos-con-material-asignado.md) | Nodos de programa con material asignado: bloquear la retirada, no borrarla | aceptada (S04), cierra DEBT-005 |
 | [ADR-008](ADR-008-tramos-del-texto-plano.md) | Tramos del texto plano: un bloque por línea en blanco, sin adivinar jerarquía | aceptada (S06), cierra DEBT-009 |
+| [ADR-009](ADR-009-activar-es-aprobar.md) | Activar una plantilla es aprobarla | aceptada (S06) |
 
 La deuda técnica obligatoria (con su slice y su criterio de cierre) se registra aparte en
 [`docs/DEBT.md`](../DEBT.md).

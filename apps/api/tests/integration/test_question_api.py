@@ -107,6 +107,10 @@ def test_importar_texto_y_leer_las_preguntas_con_su_clave(
     ficha = seeded_client.get(f"/api/v1/questions/{primera['id']}")
     assert ficha.status_code == 200
     assert ficha.json()["correct_option_keys"] == ["b"]
+    # Criterio del slice: lo importado por aquí es privado; nadie lo declara oficial al importarlo.
+    assert all(pregunta["origin_type"] == "private" for pregunta in preguntas["questions"]), (
+        "una respuesta privada no se convierte en oficial"
+    )
 
 
 def test_un_csv_con_filas_malas_las_informa_y_mete_las_buenas(
@@ -122,6 +126,34 @@ def test_un_csv_con_filas_malas_las_informa_y_mete_las_buenas(
     assert [fila["cause"] for fila in datos["rejected"]] == ["no_stem"]
     assert datos["rejected"][0]["row_number"] == 2
     assert datos["missing_columns"], "lo que el mapeo pedía y el fichero no trae se declara"
+
+
+def test_un_mapeo_que_no_encaja_con_el_fichero_es_un_422_y_no_un_500(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """Equivocarse de columna es un error de quien importa: se dice con el campo a corregir.
+
+    Antes esto salía como 500 «error interno», que culpaba al programa de una entrada equivocada y
+    dejaba la pantalla sin nada que arreglar.
+    """
+    conjunto = _conjunto(seeded_client)
+
+    respuesta = _importar(
+        seeded_client,
+        conjunto["id"],
+        kind="csv",
+        text="enunciado;opcion_1;opcion_2\nuno;dos;tres\n",
+        mapping={"stem": "stem", "options": ["option_a", "option_b"]},
+    )
+
+    assert respuesta.status_code == 422, respuesta.text
+    problema = respuesta.json()
+    assert problema["code"] == "mapping_mismatch"
+    assert problema["field_errors"][0]["field"] == "mapping.stem"
+    assert "stem" in problema["detail"]
+    assert (
+        seeded_client.get(f"/api/v1/question-sets/{conjunto['id']}/questions").json()["total"] == 0
+    )
 
 
 def test_importar_una_plantilla_suelta_avisa_de_lo_que_no_empareja(

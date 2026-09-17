@@ -79,8 +79,10 @@ class QuestionSchema(BaseModel):
     created_at: datetime | None = None
     #: Motivo de la corrección local: quien lee la pregunta tiene que ver por qué cambió.
     note: str | None = None
-    options: list[OptionSchema] = Field(default_factory=list)
-    correct_option_keys: list[str] = Field(default_factory=list)
+    #: Las listas son **obligatorias** aunque puedan estar vacías: el servidor siempre las calcula,
+    #: y declararlas opcionales obligaría a cada cliente a defenderse de un caso que no ocurre.
+    options: list[OptionSchema]
+    correct_option_keys: list[str]
     key_outcome: Literal["keyed", "annulled", "unanswered", "conflicting"] | None = None
     explanation_count: int = 0
 
@@ -157,7 +159,7 @@ class DuplicateGroupSchema(BaseModel):
     kind: Literal["same_question", "reordered_options", "similar"]
     members: list[str]
     conflicting_keys: bool = False
-    keys_seen: list[str] = Field(default_factory=list)
+    keys_seen: list[str]
     can_merge: bool = False
 
 
@@ -176,14 +178,15 @@ class QuestionImportReportSchema(BaseModel):
     with_key: int = 0
     key_entries: int = 0
     keys_in_conflict: int = 0
-    rejected: list[RejectedRowSchema] = Field(default_factory=list)
-    issues: list[ParseIssueSchema] = Field(default_factory=list)
-    duplicates: list[DuplicateGroupSchema] = Field(default_factory=list)
-    missing_columns: list[str] = Field(default_factory=list)
-    ignored_columns: list[str] = Field(default_factory=list)
+    #: Listas obligatorias: «sin filas rechazadas» se dice con una lista vacía, no con un ausente.
+    rejected: list[RejectedRowSchema]
+    issues: list[ParseIssueSchema]
+    duplicates: list[DuplicateGroupSchema]
+    missing_columns: list[str]
+    ignored_columns: list[str]
+    unmatched_positions: list[int]
     model_code_detected: str | None = None
     key_id: str | None = None
-    unmatched_positions: list[int] = Field(default_factory=list)
 
 
 class KeyEntrySchema(BaseModel):
@@ -203,7 +206,7 @@ class AnswerKeySchema(BaseModel):
     published_at: date | None = None
     approved_at: datetime | None = None
     created_at: datetime | None = None
-    entries: list[KeyEntrySchema] = Field(default_factory=list)
+    entries: list[KeyEntrySchema]
 
 
 class MarkKeySupersedesRequestSchema(BaseModel):

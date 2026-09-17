@@ -40,7 +40,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
   {
     path: '/preguntas',
     label: 'Preguntas',
-    slice: 'S06',
+    slice: null,
     summary: 'Banco de preguntas, claves versionadas, conflictos y procedencia.',
   },
   {

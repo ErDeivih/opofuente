@@ -23,7 +23,7 @@ test('E2E-00 primera ejecución: la aplicación arranca y declara su estado real
   await expect(page.getByText('Sin sesiones de estudio')).toBeVisible();
 });
 
-test('E2E-00 navegación: la Biblioteca ya está construida y el resto anuncia su slice', async ({
+test('E2E-00 navegación: las secciones construidas llevan a su pantalla y el resto anuncia su slice', async ({
   page,
 }) => {
   await page.goto('/');
@@ -33,11 +33,16 @@ test('E2E-00 navegación: la Biblioteca ya está construida y el resto anuncia s
   await expect(page.getByRole('heading', { level: 1, name: 'Biblioteca' })).toBeVisible();
   await expect(page.getByText('Esta sección todavía no está construida')).toHaveCount(0);
 
-  // Las secciones que siguen sin construirse declaran su slice en lugar de quedarse en blanco.
+  // Preguntas se entregó en S06.
   await page.getByRole('link', { name: /^Preguntas/ }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Preguntas' })).toBeVisible();
+  await expect(page.getByText('Esta sección todavía no está construida')).toHaveCount(0);
+
+  // Las secciones que siguen sin construirse declaran su slice en lugar de quedarse en blanco.
+  await page.getByRole('link', { name: /^Estudiar/ }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Estudiar' })).toBeVisible();
   await expect(page.getByText('Esta sección todavía no está construida')).toBeVisible();
-  await expect(page.getByText(/slice S06/)).toBeVisible();
+  await expect(page.getByText(/slice S07/)).toBeVisible();
 
   await page.getByRole('link', { name: /^Inicio/ }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Inicio' })).toBeVisible();

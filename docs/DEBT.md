@@ -21,6 +21,8 @@ Reglas:
 | [DEBT-007](#debt-007--higiene-del-almacén-artefactos-sin-origen-y-temporales) | S12 | Recolector de artefactos sin origen, temporales `.part` y purga de trabajos | abierta |
 | [DEBT-008](#debt-008--conservar-los-formatos-sin-extractor-en-lugar-de-omitirlos) | S03 | Conservar PPTX/XLSX/EPUB y similares como `unsupported_preserved` | **cerrada en S03** |
 | [DEBT-009](#debt-009--el-texto-plano-no-produce-secciones-y-sin-secciones-no-hay-citas) | S06 | El texto plano y el texto pegado no producen secciones: sin ellas no hay citas ni diff | **cerrada en S06** |
+| [DEBT-010](#debt-010--una-pregunta-importada-no-queda-enlazada-a-su-sección) | S06/S11 | Importar preguntas no las enlaza a la sección que las sostiene, y `tags`/`source`/`parte` se leen pero no se guardan | abierta |
+| [DEBT-011](#debt-011--la-pantalla-del-banco-solo-enseña-las-primeras-100-preguntas) | S09 | La pantalla del banco pide 100 preguntas y no permite recorrer el resto de un conjunto grande | abierta |
 
 ---
 
@@ -410,3 +412,62 @@ etiqueta**. Lo que no vale es inventar jerarquía.
    pinta de temario se presenta como si tuviera capítulos. El caso del Markdown sin nombre original
    —donde sí podría colarse una adivinación— se cubre en
    `test_sin_el_nombre_original_un_markdown_pierde_los_encabezados_y_un_json_su_vista_previa`.
+
+## DEBT-010 — Una pregunta importada no queda enlazada a su sección
+
+**Origen:** cierre del importador de S06 (17 de septiembre de 2026).
+
+**Problema.** El parser de preguntas lee **texto** (pegado, de un fichero o de una hoja CSV) y guarda
+cada pregunta con sus opciones, su clave y —cuando el CSV trae la columna `topic`— su nodo del programa.
+Lo que **no** hace todavía:
+
+| Qué falta | Consecuencia |
+|---|---|
+| Enlazar la pregunta con la **sección** del documento del que salió | `GET /questions/{id}/evidence` devuelve vacío y la ficha no puede abrir la cita que sostiene el enunciado |
+| Guardar la **parte** del examen que el parser detecta («Parte 2», «Primera parte») | `parsed.parts_detected` se informa y se pierde: no hay dónde guardarla, porque el modelo no liga preguntas a `exam_parts` |
+| Guardar las columnas `tags` y `source` del CSV | el asistente las lee y el informe declara que **no** se guardan (`ignored_columns`), en lugar de fingir que sí |
+
+El importador desde un **documento** de la biblioteca (con su versión, su sección y su evidencia) es la
+mitad que falta de «parser desde texto/documento»: hoy el camino es texto y CSV.
+
+**Obligación.** Antes de que la ficha de pregunta pueda enseñar el original al lado con su cita (07_UI-UX
+§7) y antes de S11 (cambios e invalidación, que necesita saber qué preguntas dependen de qué evidencia):
+
+1. decidir dónde vive la parte del examen (¿`question_sets.part_code`? ¿una tabla de relación con
+   `exam_parts`?) y registrarlo en un ADR si toca al modelo;
+2. importar preguntas **desde una versión de documento**: trocear por secciones, crear la evidencia de
+   cada pregunta (`question_evidence`) con su `role` y su `claim`, y dejar la cita abrible;
+3. dar sitio a `tags` y `source` (etiquetas propias por pregunta) o quitarlos del mapeo del asistente si
+   se decide que no se guardan nunca.
+
+**Criterio de cierre.**
+
+1. Una pregunta importada de un documento tiene al menos una evidencia `accepted` con su span, su página
+   y su etiqueta de cita, y `GET /questions/{id}/evidence` la devuelve.
+2. La ficha muestra esa cita junto al enunciado y se puede abrir el original en su página.
+3. Prueba de que la parte detectada no se pierde en silencio: o se guarda, o el informe dice que no se
+   guarda (hoy hace lo segundo solo para `tags` y `source`).
+
+## DEBT-011 — La pantalla del banco solo enseña las primeras 100 preguntas
+
+**Origen:** cierre de la interfaz de S06 (17 de septiembre de 2026).
+
+**Problema.** `apps/web/src/api/questions.ts` pide las preguntas del conjunto con
+`limit=100&offset=0` y la pantalla no tiene forma de pedir la página siguiente. El servidor página de
+verdad (`limit`/`offset`, con el total en la respuesta) y la tabla **lo declara** en su leyenda («100 de
+350 preguntas del conjunto»), así que no engaña; pero con un banco real —cientos de preguntas
+importadas de un temario— lo que se ve es la primera centena, y las demás solo existen para la API.
+Lo mismo vale para la lista de conjuntos y su selector.
+
+**Obligación antes de S09** (búsqueda y listados): que la pantalla permita recorrer el conjunto completo
+—paginación explícita o carga incremental— y que el recuento de la leyenda corresponda a lo que se
+puede llegar a ver, sin truncar en silencio ni depender de que alguien lea la leyenda.
+
+**Criterio de cierre.**
+
+1. Un conjunto con más de 100 preguntas se puede recorrer entero desde la pantalla, y el recuento que
+   muestra coincide con `total` del servidor.
+2. Prueba de interfaz con un conjunto de más de una página: se llega a la última pregunta y se ve la
+   última página, no solo la primera.
+3. La paginación se conserva al cambiar de filtro (estado, origen, reservas) sin mezclar páginas de
+   filtros distintos.

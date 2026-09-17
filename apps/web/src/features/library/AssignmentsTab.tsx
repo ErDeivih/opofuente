@@ -124,8 +124,8 @@ export function AssignmentsTab({
       {!isPending && !isError && mappings.length === 0 && (
         <p className="hint">
           Esta versión no está asignada a ningún nodo del programa. Se le puede dar una asignación
-          aquí debajo: la crea el servidor sobre la **versión** (no sobre el fichero), con su traza de
-          auditoría.
+          aquí debajo: la crea el servidor sobre la <strong>versión</strong> (no sobre el fichero),
+          con su traza de auditoría.
         </p>
       )}
 

@@ -1368,7 +1368,7 @@ export interface components {
             /** Created At */
             created_at?: string | null;
             /** Entries */
-            entries?: components["schemas"]["KeyEntrySchema"][];
+            entries: components["schemas"]["KeyEntrySchema"][];
             /** Id */
             id: string;
             /** Published At */
@@ -1949,7 +1949,7 @@ export interface components {
              */
             conflicting_keys: boolean;
             /** Keys Seen */
-            keys_seen?: string[];
+            keys_seen: string[];
             /**
              * Kind
              * @enum {string}
@@ -2681,21 +2681,21 @@ export interface components {
              */
             created: number;
             /** Duplicates */
-            duplicates?: components["schemas"]["DuplicateGroupSchema"][];
+            duplicates: components["schemas"]["DuplicateGroupSchema"][];
             /**
              * Existing
              * @default 0
              */
             existing: number;
             /** Ignored Columns */
-            ignored_columns?: string[];
+            ignored_columns: string[];
             /**
              * Incomplete
              * @default 0
              */
             incomplete: number;
             /** Issues */
-            issues?: components["schemas"]["ParseIssueSchema"][];
+            issues: components["schemas"]["ParseIssueSchema"][];
             /**
              * Key Entries
              * @default 0
@@ -2709,15 +2709,15 @@ export interface components {
              */
             keys_in_conflict: number;
             /** Missing Columns */
-            missing_columns?: string[];
+            missing_columns: string[];
             /** Model Code Detected */
             model_code_detected?: string | null;
             /** Rejected */
-            rejected?: components["schemas"]["RejectedRowSchema"][];
+            rejected: components["schemas"]["RejectedRowSchema"][];
             /** Set Id */
             set_id: string;
             /** Unmatched Positions */
-            unmatched_positions?: number[];
+            unmatched_positions: number[];
             /**
              * With Key
              * @default 0
@@ -2738,7 +2738,7 @@ export interface components {
         /** QuestionSchema */
         QuestionSchema: {
             /** Correct Option Keys */
-            correct_option_keys?: string[];
+            correct_option_keys: string[];
             /** Created At */
             created_at?: string | null;
             /**
@@ -2758,7 +2758,7 @@ export interface components {
             /** Note */
             note?: string | null;
             /** Options */
-            options?: components["schemas"]["OptionSchema"][];
+            options: components["schemas"]["OptionSchema"][];
             /**
              * Origin Type
              * @enum {string}

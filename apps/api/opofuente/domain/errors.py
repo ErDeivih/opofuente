@@ -15,6 +15,21 @@ class InvariantViolationError(OpoFuenteError):
     """Una regla de dominio se ha roto. Nunca debe silenciarse."""
 
 
+class MappingMismatchError(InvariantViolationError):
+    """El mapeo pedido no encaja con el fichero que se ha subido. La API lo traduce a 422.
+
+    No es un fallo interno: quien importa ha elegido unas columnas que el fichero no trae, así que
+    se dice **antes** de tocar la base y con el campo que hay que corregir (`field_errors`), en
+    lugar de devolver un 500 por una regla que en realidad rompió la entrada.
+    """
+
+    def __init__(self, reason: str, *, field: str, code: str = "mapping_mismatch") -> None:
+        super().__init__(reason)
+        self.reason = reason
+        self.field = field
+        self.code = code
+
+
 class NotFoundError(OpoFuenteError):
     """Se ha pedido algo que no existe. La API lo traduce a 404."""
 

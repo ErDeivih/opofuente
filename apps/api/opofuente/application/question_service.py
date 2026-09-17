@@ -33,7 +33,7 @@ from opofuente.application.question_models import (
     QuestionView,
     RejectedRow,
 )
-from opofuente.domain.errors import InvariantViolationError
+from opofuente.domain.errors import InvariantViolationError, MappingMismatchError
 from opofuente.domain.questions import (
     AnswerKeyEntry,
     KeyOutcome,
@@ -232,15 +232,17 @@ class QuestionService:
         lector = csv.DictReader(io.StringIO(text), delimiter=_delimiter(text))
         cabecera = tuple((nombre or "").strip().lower() for nombre in (lector.fieldnames or ()))
         if mapeo.stem.strip().lower() not in cabecera:
-            raise InvariantViolationError(
-                f"el fichero no trae la columna del enunciado «{mapeo.stem}»"
+            raise MappingMismatchError(
+                f"el fichero no trae la columna del enunciado «{mapeo.stem}»",
+                field="mapping.stem",
             )
         columnas_opcion = tuple(
             columna for columna in mapeo.options if columna.strip().lower() in cabecera
         )
         if len(columnas_opcion) < 2:
-            raise InvariantViolationError(
-                "el fichero no trae al menos dos columnas de opciones del mapeo"
+            raise MappingMismatchError(
+                "el fichero no trae al menos dos columnas de opciones del mapeo",
+                field="mapping.options",
             )
         faltan = tuple(
             columna
