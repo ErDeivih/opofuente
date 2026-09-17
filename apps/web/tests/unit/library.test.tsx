@@ -569,6 +569,11 @@ describe('biblioteca: las cinco partes de la ficha', () => {
     expect(screen.getByText(/página 1 del original/)).toBeInTheDocument();
     expect(screen.getAllByText(/Convocatoria y bases, pág\. 1/).length).toBeGreaterThan(0);
     expect(screen.getByText(/calidad good/)).toBeInTheDocument();
+    // El original que se copió se puede abrir: es la ruta §7 que sirve el fichero, no una ruta del
+    // disco, así que el enlace apunta a la API de la versión.
+    expect(
+      screen.getByRole('link', { name: 'abrir el fichero original que se copió' }),
+    ).toHaveAttribute('href', expect.stringContaining('/api/v1/document-versions/ver-1/original'));
   });
 
   it('la estructura enseña el árbol de secciones con su página', async () => {

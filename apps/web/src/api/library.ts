@@ -1,6 +1,6 @@
 import type { components } from '@opofuente/contracts';
 
-import { apiFetch } from './client';
+import { apiBaseUrl, apiFetch } from './client';
 
 /**
  * Tipos de la biblioteca (S05), leídos del contrato generado.
@@ -144,6 +144,16 @@ export function removeMapping(mappingId: string): Promise<void> {
   return apiFetch<void>(`/api/v1/curriculum-mappings/${encodeURIComponent(mappingId)}`, {
     method: 'DELETE',
   });
+}
+
+/**
+ * Dirección del **fichero original** de una versión (contrato §7: `GET /document-versions/{id}/original`).
+ *
+ * Se sirve desde la API, no desde una ruta del disco: el servidor decide el `Content-Disposition`
+ * (`inline` solo para tipos seguros) y responde 409 si el material está en cuarentena.
+ */
+export function versionOriginalUrl(versionId: string): string {
+  return `${apiBaseUrl()}/api/v1/document-versions/${encodeURIComponent(versionId)}/original`;
 }
 
 /**

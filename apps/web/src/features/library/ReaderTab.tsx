@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 import type { Evidence, Section, Version } from '../../api/library';
-import { versionName } from '../../api/library';
+import { versionName, versionOriginalUrl } from '../../api/library';
 import { ErrorState } from '../../components/ErrorState';
 import { CopyCitationButton } from './CopyCitationButton';
 import { evidencePlace } from './citation';
@@ -43,6 +43,10 @@ function evidenceOfSection(section: Section, evidence: Evidence[]): Evidence[] {
  * Lo que se lee es el texto **extraído**, no el original: por eso la página va siempre al lado, y
  * cuando la versión no tiene URL oficial se dice que no se puede abrir en su sitio en lugar de
  * ofrecer un enlace que no lleva a ninguna parte. Cada fragmento se puede citar.
+ *
+ * El **fichero original** sí está: es el que se copió al almacén y lo sirve la API
+ * (`GET /document-versions/{id}/original`), así que se ofrece abrirlo tal cual, sin depender de que la
+ * fuente tenga una URL pública.
  */
 export function ReaderTab({
   documentTitle,
@@ -140,6 +144,14 @@ export function ReaderTab({
                 </>
               )}
               {url === null && ' · sin URL oficial: la página del original no se puede abrir'}
+              {version !== null && (
+                <>
+                  {' · '}
+                  <a href={versionOriginalUrl(version.id)} target="_blank" rel="noreferrer noopener">
+                    abrir el fichero original que se copió
+                  </a>
+                </>
+              )}
             </p>
 
             {fragmentos.length === 0 ? (

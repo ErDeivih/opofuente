@@ -397,6 +397,16 @@ test('E2E-04 documento compartido: un artefacto, sus asignaciones y la versión 
   await expect(page.getByText(/página 1 del original/)).toBeVisible();
   await expect(page.getByText(/sin URL oficial/)).toBeVisible();
 
+  // El original **copiado** sí se puede abrir: lo sirve la API de la versión (contrato §7).
+  const enlaceOriginal = page.getByRole('link', {
+    name: 'abrir el fichero original que se copió',
+  });
+  await expect(enlaceOriginal).toBeVisible();
+  await expect(enlaceOriginal).toHaveAttribute(
+    'href',
+    new RegExp(`/api/v1/document-versions/${promocion.version_id}/original$`),
+  );
+
   // Copiar cita: título, versión y página del fragmento.
   await page
     .getByRole('button', {
