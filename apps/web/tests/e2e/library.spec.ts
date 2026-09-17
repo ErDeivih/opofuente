@@ -238,6 +238,12 @@ test('E2E-04 documento compartido: un artefacto, sus asignaciones y la versión 
   page,
   request,
 }) => {
+  // Esta prueba hace más trabajo que las demás y su presupuesto tiene que decirlo: dos ingestas que
+  // pasan por el worker de verdad (copiar, extraer y clasificar), la promoción, la comparación de
+  // versiones, el alta de una asignación y el análisis de accesibilidad de la ficha. Con el
+  // presupuesto por defecto (30 s) se queda a segundos del límite y falla por reloj, no por producto.
+  test.slow();
+
   // El portapapeles se usa en la prueba para comprobar la cita copiada.
   await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
 

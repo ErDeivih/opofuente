@@ -27,6 +27,7 @@ from opofuente.domain.extraction import (
 )
 from opofuente.infrastructure.extractors import ExtractionPlan, ExtractorRegistry
 from opofuente.infrastructure.extractors.base import detect_format
+from opofuente.infrastructure.extractors.text_files import MAX_BLOCK_SECTIONS
 from opofuente_testing.synthetic_documents import (
     build_bomb_docx,
     build_cp1252_text,
@@ -404,14 +405,16 @@ def _decision(plan: ExtractionPlan) -> tuple[str, str, str]:
     return (plan.action, plan.reason, plan.extractor.name if plan.extractor else "")
 
 
-def test_sin_el_nombre_original_un_markdown_pierde_secciones_y_un_json_su_vista_previa(
+def test_sin_el_nombre_original_un_markdown_pierde_los_encabezados_y_un_json_su_vista_previa(
     tmp_path: Path,
 ) -> None:
     """Los otros dos casos del mismo fallo, donde cambia el extractor elegido y no la acción.
 
-    Un `.md` guardado por hash se extrae igual (el contenido es texto), pero **sin secciones**: los
-    encabezados Markdown se detectan por la extensión. Un `.json` guardado por hash se trata como
-    texto plano en lugar de como estructura: la vista previa del JSON se pierde.
+    Un `.md` guardado por hash se extrae igual (el contenido es texto), pero **sin encabezados**:
+    los encabezados Markdown se detectan por la extensión, y nadie adivina Markdown por el
+    contenido. Los tramos por bloque sí se conservan, porque valen igual para citar un fragmento.
+    Un `.json` guardado por hash se trata como texto plano en lugar de como estructura: la vista
+    previa del JSON se pierde.
     """
     registro = ExtractorRegistry(Settings(_env_file=None))
     almacen = tmp_path / "sha256" / "ab" / "cd" / ("b" * 64)
@@ -420,8 +423,15 @@ def test_sin_el_nombre_original_un_markdown_pierde_secciones_y_un_json_su_vista_
     almacen.write_bytes(b"# Tema 1\n\nTexto sintetico del tema.")
     con_nombre = registro.extract(almacen, plan=registro.plan(almacen, name="tema.md"))
     sin_nombre = registro.extract(almacen, plan=registro.plan(almacen))
-    assert con_nombre.sections, "con el nombre original el Markdown deja sus encabezados"
-    assert not sin_nombre.sections, "sin él, el mismo fichero no tiene secciones"
+    assert [seccion.title for seccion in con_nombre.sections] == ["Tema 1"]
+    assert sin_nombre.sections, "sin el nombre sigue habiendo tramos: son bloques del texto"
+    assert all(seccion.title is None for seccion in sin_nombre.sections), (
+        "sin el nombre no se inventa ningún encabezado"
+    )
+    assert [seccion.section_type for seccion in sin_nombre.sections] == [
+        SectionType.PARAGRAPH,
+        SectionType.PARAGRAPH,
+    ]
 
     almacen.write_bytes(b'{"temas": ["uno", "dos"]}')
     con_nombre = registro.plan(almacen, name="apuntes.json")
@@ -929,3 +939,79 @@ def test_una_imagen_mas_grande_que_su_tope_se_conserva_sin_describir(tmp_path: P
     assert WarningCode.TOO_LARGE in resultado.warnings
     assert resultado.status is RepresentationStatus.PENDING, "se conserva y queda pendiente de OCR"
     assert resultado.ocr_candidate is True
+
+
+# --- tramos del texto plano (DEBT-009) ---------------------------------------------------------
+
+
+def test_un_texto_plano_deja_un_tramo_por_bloque_con_sus_offsets(tmp_path: Path) -> None:
+    """Un `.txt` no se queda sin secciones: cada bloque separado por una línea en blanco es un
+    tramo.
+
+    Es lo que permite citar un fragmento de unos apuntes y comparar dos versiones del mismo texto.
+    Los offsets tienen que trocear el texto **exacto**: si no, la evidencia diría otra cosa.
+    """
+    texto = (
+        "Tema 1. La Constitucion espanola.\n"
+        "El plazo es de diez dias habiles.\n"
+        "\n"
+        "Tema 2. Documentacion clinica.\n"
+        "\n"
+        "\n"
+        "Suelto al final.\n"
+    )
+    archivo = tmp_path / "apuntes.txt"
+    archivo.write_text(texto, encoding="utf-8")
+
+    resultado = ExtractorRegistry(Settings(_env_file=None)).extract(archivo)
+
+    assert [seccion.section_type for seccion in resultado.sections] == [
+        SectionType.PARAGRAPH,
+        SectionType.PARAGRAPH,
+        SectionType.PARAGRAPH,
+    ]
+    assert [seccion.position for seccion in resultado.sections] == [1, 2, 3]
+    recortes = [
+        resultado.text[seccion.char_start : seccion.char_end] for seccion in resultado.sections
+    ]
+    assert recortes[0] == "Tema 1. La Constitucion espanola.\nEl plazo es de diez dias habiles."
+    assert recortes[1] == "Tema 2. Documentacion clinica."
+    assert recortes[2] == "Suelto al final."
+    # Ningún tramo se llama título: en un texto plano no se adivina cuál es un encabezado.
+    assert all(seccion.title is None for seccion in resultado.sections)
+
+
+def test_un_texto_sin_lineas_en_blanco_es_un_solo_tramo(tmp_path: Path) -> None:
+    archivo = tmp_path / "seguido.txt"
+    archivo.write_text("Una sola tirada de texto sin cortes.", encoding="utf-8")
+
+    resultado = ExtractorRegistry(Settings(_env_file=None)).extract(archivo)
+
+    assert len(resultado.sections) == 1
+    unica = resultado.sections[0]
+    assert (
+        resultado.text[unica.char_start : unica.char_end] == "Una sola tirada de texto sin cortes."
+    )
+
+
+def test_un_texto_vacio_no_inventa_ningun_tramo(tmp_path: Path) -> None:
+    archivo = tmp_path / "vacio.txt"
+    archivo.write_text("\n   \n\n", encoding="utf-8")
+
+    resultado = ExtractorRegistry(Settings(_env_file=None)).extract(archivo)
+
+    assert resultado.sections == ()
+    assert resultado.status is RepresentationStatus.EMPTY
+
+
+def test_los_tramos_de_un_texto_enorme_se_acotan(tmp_path: Path) -> None:
+    """Miles de bloques no pueden llenar la base de secciones: se corta y el texto sigue entero."""
+    archivo = tmp_path / "enorme.txt"
+    archivo.write_text("\n\n".join(f"Bloque {index}" for index in range(1200)), encoding="utf-8")
+
+    resultado = ExtractorRegistry(
+        Settings(max_representation_chars=200_000, _env_file=None)
+    ).extract(archivo)
+
+    assert len(resultado.sections) == MAX_BLOCK_SECTIONS
+    assert "Bloque 1199" in resultado.text, "el texto no se recorta: solo se dejan de partir tramos"

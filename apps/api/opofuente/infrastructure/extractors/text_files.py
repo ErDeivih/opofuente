@@ -45,6 +45,10 @@ PREVIEW_CHARS = 4000
 #: Profundidad máxima del recorrido de un JSON. Más allá se avisa y se corta: no es un parser de
 #: datos, es una vista previa para decidir si el fichero sirve.
 MAX_JSON_DEPTH = 6
+#: Tope de tramos que se sacan de un texto plano. Un fichero con miles de bloques no puede llenar
+#: la base de secciones: a partir de ahí se deja de partir y el texto sigue entero en la
+#: representación.
+MAX_BLOCK_SECTIONS = 500
 
 
 @dataclass(frozen=True, slots=True)
@@ -144,7 +148,11 @@ class PlainTextExtractor:
         # Las secciones se calculan sobre el **texto normalizado**: es el que se guarda, así que es
         # el único sobre el que un offset significa algo.
         normalised = normalise_text(text)
-        sections = _markdown_sections(normalised) if detected.suffix in {".md", ".markdown"} else ()
+        sections = (
+            _markdown_sections(normalised)
+            if detected.suffix in {".md", ".markdown"}
+            else _block_sections(normalised)
+        )
         return _finish(
             kind=RepresentationKind.NATIVE_TEXT,
             text=normalised,
@@ -158,6 +166,50 @@ class PlainTextExtractor:
                 "read_truncated": truncated,
             },
         )
+
+
+def _block_sections(text: str) -> tuple[ExtractedSection, ...]:
+    """Tramos de un texto plano: **uno por bloque separado por una línea en blanco**.
+
+    A nada se le llama «título»: en un texto plano no hay forma de saber qué línea es un encabezado
+    sin adivinar, y adivinar jerarquía está prohibido en este proyecto. Cada bloque es un tramo con
+    sus offsets, que es lo que permite citar un fragmento concreto y comparar dos versiones del
+    mismo texto.
+
+    Un fichero sin líneas en blanco produce **un** tramo con todo el texto, y uno vacío no produce
+    ninguno: mejor una sección que ninguna, nunca una inventada de más.
+    """
+    sections: list[ExtractedSection] = []
+    inicio: int | None = None
+    fin = 0
+    offset = 0
+    position = 0
+    for line in text.splitlines(keepends=True):
+        if line.strip() == "":
+            if inicio is not None:
+                position += 1
+                sections.append(_tramo(position, inicio, fin))
+                inicio = None
+        else:
+            if inicio is None:
+                inicio = offset
+            fin = offset + len(line.rstrip("\r\n"))
+        offset += len(line)
+        if len(sections) >= MAX_BLOCK_SECTIONS:
+            return tuple(sections)
+    if inicio is not None:
+        position += 1
+        sections.append(_tramo(position, inicio, fin))
+    return tuple(sections)
+
+
+def _tramo(position: int, char_start: int, char_end: int) -> ExtractedSection:
+    return ExtractedSection(
+        section_type=SectionType.PARAGRAPH,
+        position=position,
+        char_start=char_start,
+        char_end=char_end,
+    )
 
 
 def _markdown_sections(text: str) -> tuple[ExtractedSection, ...]:

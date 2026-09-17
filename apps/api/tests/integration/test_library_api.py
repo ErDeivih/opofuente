@@ -514,12 +514,20 @@ def test_editar_un_documento_por_la_api_y_lo_que_no_se_puede_aplicar(
 def test_el_diff_compara_dos_versiones_del_mismo_documento(
     seeded_settings: Settings, seeded_client: TestClient
 ) -> None:
-    """Ruta añadida al contrato: compara secciones por etiqueta y no fusiona nada."""
+    """Ruta añadida al contrato: compara secciones por etiqueta y no fusiona nada.
+
+    El texto pegado ya produce tramos (un bloque por línea en blanco, DEBT-009 cerrada), así que
+    esto compara de verdad: un bloque cambia y otro se añade.
+    """
     _pegar(seeded_client, "Tema 1. Primera redaccion del tema.", "primera.txt")
     primero = _promocionar(
         seeded_client, _artefacto_de(seeded_settings, "primera.txt"), "Temario versionado"
     )
-    _pegar(seeded_client, "Tema 1. Segunda redaccion, mas larga, del tema.", "segunda.txt")
+    _pegar(
+        seeded_client,
+        "Tema 1. Segunda redaccion, mas larga, del tema.\n\nTema 2. Bloque que antes no estaba.",
+        "segunda.txt",
+    )
     segunda = seeded_client.post(
         "/api/v1/documents",
         json={
@@ -544,14 +552,16 @@ def test_el_diff_compara_dos_versiones_del_mismo_documento(
     assert diff["document_id"] == primero["document_id"]
     assert diff["from_version_id"] == primero["version_id"]
     assert diff["to_version_id"] == segunda_version
-    assert diff["has_changes"] is False, (
-        "sin secciones que comparar no hay cambios que anunciar: el recuento manda, y aquí es cero"
-    )
-    assert diff["sections"] == [], (
-        "el texto pegado entra como texto plano y el extractor de texto plano todavía no parte "
-        "secciones (DEBT-009), así que aquí no hay nada que comparar; el diff **con** secciones "
-        "está probado en test_library.py sobre representaciones reales con secciones"
-    )
+    assert diff["has_changes"] is True, "el texto cambió de una versión a otra y el diff lo dice"
+    assert len(diff["sections"]) == 2, diff["sections"]
+    assert diff["changed"] == 1
+    assert diff["added"] == 1, "el bloque que solo está en la segunda versión se informa como nuevo"
+    assert diff["removed"] == 0
+    por_etiqueta = {seccion["label"]: seccion for seccion in diff["sections"]}
+    assert por_etiqueta["sección 1"]["kind"] == "changed"
+    assert "Segunda redaccion" in por_etiqueta["sección 1"]["right"]
+    assert "Primera redaccion" in por_etiqueta["sección 1"]["left"]
+    assert por_etiqueta["sección 2"]["kind"] == "added"
     assert diff["added"] + diff["removed"] + diff["changed"] + diff["unchanged"] == len(
         diff["sections"]
     )

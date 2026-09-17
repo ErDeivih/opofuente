@@ -20,7 +20,7 @@ Reglas:
 | [DEBT-006](#debt-006--representación-exacta-de-fracciones-y-redondeo-en-la-puntuación) | S07 | Decidir y probar la aritmética exacta antes de calcular puntuaciones | abierta |
 | [DEBT-007](#debt-007--higiene-del-almacén-artefactos-sin-origen-y-temporales) | S12 | Recolector de artefactos sin origen, temporales `.part` y purga de trabajos | abierta |
 | [DEBT-008](#debt-008--conservar-los-formatos-sin-extractor-en-lugar-de-omitirlos) | S03 | Conservar PPTX/XLSX/EPUB y similares como `unsupported_preserved` | **cerrada en S03** |
-| [DEBT-009](#debt-009--el-texto-plano-no-produce-secciones-y-sin-secciones-no-hay-citas) | S06 | El texto plano y el texto pegado no producen secciones: sin ellas no hay citas ni diff | abierta |
+| [DEBT-009](#debt-009--el-texto-plano-no-produce-secciones-y-sin-secciones-no-hay-citas) | S06 | El texto plano y el texto pegado no producen secciones: sin ellas no hay citas ni diff | **cerrada en S06** |
 
 ---
 
@@ -387,3 +387,26 @@ etiqueta**. Lo que no vale es inventar jerarquía.
 3. Prueba de que el diff de dos versiones de texto plano informa de lo que cambió (hoy está probado
    con secciones inyectadas y con la ausencia declarada).
 4. Prueba negativa: un texto sin estructura reconocible no se presenta como si tuviera capítulos.
+
+**Cómo se cerró (S06), criterio por criterio.**
+
+1. **Decisión: `docs/decisions/ADR-008-tramos-del-texto-plano.md`.** Un tramo (`paragraph`) por bloque
+   separado por una línea en blanco, con offsets exactos sobre el texto normalizado, **sin llamar
+   «título» a nada** (adivinar encabezados estaba descartado por el propio proyecto), con tope de 500
+   tramos y sin cambiar lo que ya hacía Markdown.
+2. **Secciones y evidencias de verdad**: `PlainTextExtractor` calcula los tramos con
+   `_block_sections` y, al promocionar, S05 los traduce a `technical` y recorta cada evidencia con sus
+   offsets. Pruebas: `test_un_texto_plano_deja_un_tramo_por_bloque_con_sus_offsets`,
+   `test_un_texto_sin_lineas_en_blanco_es_un_solo_tramo` y
+   `test_los_tramos_de_un_texto_enorme_se_acotan` (`tests/unit/test_extractors.py`). El camino
+   completo —pegar, extraer, promocionar, citar— está en S05, que ya usaba el texto real de la
+   representación.
+3. **Diff de dos versiones de texto pegado**: `test_el_diff_compara_dos_versiones_del_mismo_documento`
+   (`tests/integration/test_library_api.py`) comprueba sobre el camino real que el servidor informa de
+   un bloque cambiado y otro añadido, con el texto de cada lado. Antes esta prueba **declaraba** que no
+   había nada que comparar; ahora compara.
+4. **Prueba negativa**: `test_un_texto_vacio_no_inventa_ningun_tramo` (un texto en blanco no produce
+   secciones y queda `empty`) y, en el mismo fichero, el tramo no lleva `title` nunca: ni un texto con
+   pinta de temario se presenta como si tuviera capítulos. El caso del Markdown sin nombre original
+   —donde sí podría colarse una adivinación— se cubre en
+   `test_sin_el_nombre_original_un_markdown_pierde_los_encabezados_y_un_json_su_vista_previa`.
