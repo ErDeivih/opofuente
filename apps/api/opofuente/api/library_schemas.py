@@ -14,7 +14,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class RightsSchema(BaseModel):
@@ -166,37 +166,72 @@ class MappingRequestSchema(BaseModel):
     coverage_type: Literal["mention", "partial", "complete"] = "partial"
 
 
-class DocumentMappingSchema(BaseModel):
-    """Un mapeo creado desde la biblioteca.
+class VersionDetailSchema(BaseModel):
+    """Una versión con su documento (contrato §7: `GET /document-versions/{id}`)."""
 
-    Se llama `DocumentMapping` y no `Mapping` a propósito: la clasificación ya tiene su propio
-    `MappingSchema` (el del material) y dos modelos con el mismo nombre obligan a FastAPI a inventar
-    nombres cualificados en el OpenAPI, lo que rompe los tipos derivados del contrato.
+    document_id: str
+    document_title: str
+    document_type: str
+    owner_scope: Literal["public", "private_user", "generated"]
+    version: VersionSchema
+    mapping_count: int = 0
+
+
+class VersionContentSchema(BaseModel):
+    """Texto extraído de una versión, por trozos, con la calidad de la extracción a la vista."""
+
+    document_version_id: str
+    representation_id: str | None = None
+    text: str
+    offset: int
+    limit: int
+    total_chars: int
+    truncated: bool
+    quality: str | None = None
+    warnings: list[str] = Field(default_factory=list)
+
+
+class PatchDocumentRequestSchema(BaseModel):
+    """Edición de los metadatos de la obra (contrato §7: `PATCH /documents/{id}`).
+
+    Un campo ausente no se toca; un campo presente con `null` se **vacía** (autoridad e
+    identificador). `owner_scope` solo admite lo que puede pedir una persona: `generated` es para
+    material derivado y no se concede desde aquí.
     """
 
-    id: str
-    document_version_id: str
-    curriculum_node_id: str
-    coverage_type: Literal["mention", "partial", "complete"]
-    status: Literal["provisional", "accepted", "rejected"]
+    model_config = ConfigDict(extra="forbid")
+
+    canonical_title: str | None = Field(default=None, min_length=1, max_length=500)
+    document_type: str | None = Field(default=None, min_length=1, max_length=32)
+    owner_scope: Literal["public", "private_user"] | None = None
+    authority_tier: str | None = Field(default=None, max_length=8)
+    canonical_identifier: str | None = Field(default=None, max_length=200)
 
 
 class SectionDiffSchema(BaseModel):
+    """Cambio de una sección. El texto se recorta a un tope y **se dice** cuándo se recortó."""
+
     label: str
     kind: Literal["added", "removed", "changed", "unchanged"]
     left: str | None = None
     right: str | None = None
+    left_truncated: bool = False
+    right_truncated: bool = False
 
 
 class VersionDiffSchema(BaseModel):
-    """Comparación de dos versiones: informa de los cambios y no fusiona nada."""
+    """Comparación de dos versiones: informa de los cambios y no fusiona nada.
+
+    Todos los campos son obligatorios a propósito: quien lea el contrato no tiene que suponer que
+    «sin recuento» significa cero, y el servidor siempre los calcula.
+    """
 
     document_id: str
     from_version_id: str
     to_version_id: str
-    sections: list[SectionDiffSchema] = Field(default_factory=list)
-    added: int = 0
-    removed: int = 0
-    changed: int = 0
-    unchanged: int = 0
-    has_changes: bool = False
+    sections: list[SectionDiffSchema]
+    added: int
+    removed: int
+    changed: int
+    unchanged: int
+    has_changes: bool

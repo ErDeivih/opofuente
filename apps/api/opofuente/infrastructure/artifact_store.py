@@ -37,6 +37,14 @@ class ArtifactStore:
         """Ruta absoluta del artefacto, validada dentro del directorio de datos."""
         return resolve_within(self._paths.root, self._paths.artifacts / digest.storage_key)
 
+    def path_for_key(self, storage_key: str) -> Path:
+        """Ruta absoluta de un artefacto ya guardado, a partir de su clave.
+
+        Es lo que permite abrir el original de una versión sin que la API componga rutas a mano: la
+        resolución se valida aquí, dentro del directorio de datos.
+        """
+        return resolve_within(self._paths.root, self._paths.artifacts / storage_key)
+
     def exists(self, digest: Sha256) -> bool:
         return self.path_for(digest).is_file()
 

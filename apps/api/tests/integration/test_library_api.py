@@ -195,6 +195,27 @@ def test_las_colecciones_agrupan_sin_duplicar(
     assert seeded_client.get("/api/v1/collections").json()[0]["name"] == "Oposicion 2026"
 
 
+def _auditoria_de(settings: Settings, object_id: str) -> list[str]:
+    """Acciones auditadas sobre un objeto, en orden: la API no publica la auditoría, la base sí."""
+    engine = build_engine(settings.data_paths.database)
+    try:
+        with engine.connect() as conexion:
+            filas = (
+                conexion.execute(
+                    text(
+                        "SELECT action FROM audit_events WHERE object_id = :object_id "
+                        "ORDER BY created_at, id"
+                    ),
+                    {"object_id": object_id},
+                )
+                .scalars()
+                .all()
+            )
+    finally:
+        engine.dispose()
+    return [str(fila) for fila in filas]
+
+
 def _dos_nodos_del_programa(settings: Settings) -> list[str]:
     """Dos nodos del programa sembrado.
 
@@ -299,3 +320,262 @@ def test_una_fuente_se_guarda_una_vez_y_se_asigna_a_dos_nodos(
         )
         == 2
     ), "un 404 no deja mapeo a medias"
+
+
+def test_una_version_suelta_se_sirve_con_su_documento(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """Contrato §7: `GET /document-versions/{id}`, sin pedir la ficha entera."""
+    _pegar(seeded_client, "Tema 1. Texto para la version suelta.", "suelta.txt")
+    artifact_id = _artefacto_de(seeded_settings, "suelta.txt")
+    promocion = _promocionar(seeded_client, artifact_id, "Documento suelto")
+
+    respuesta = seeded_client.get(f"/api/v1/document-versions/{promocion['version_id']}")
+
+    assert respuesta.status_code == 200, respuesta.text
+    detalle = respuesta.json()
+    assert detalle["document_id"] == promocion["document_id"]
+    assert detalle["document_title"] == "Documento suelto"
+    assert detalle["document_type"] == "curriculum"
+    assert detalle["owner_scope"] == "private_user"
+    assert detalle["version"]["id"] == promocion["version_id"]
+    assert detalle["mapping_count"] == 0
+    assert seeded_client.get("/api/v1/document-versions/no-existe").status_code == 404
+
+
+def test_el_contenido_de_la_version_se_lee_del_texto_extraido(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """Contrato §7: `GET /document-versions/{id}/content`, por trozos y con su calidad."""
+    _pegar(
+        seeded_client,
+        "Tema 1. Plazos del procedimiento administrativo comun.",
+        "contenido.txt",
+    )
+    artifact_id = _artefacto_de(seeded_settings, "contenido.txt")
+    promocion = _promocionar(seeded_client, artifact_id, "Documento con contenido")
+
+    respuesta = seeded_client.get(f"/api/v1/document-versions/{promocion['version_id']}/content")
+
+    assert respuesta.status_code == 200, respuesta.text
+    cuerpo = respuesta.json()
+    assert cuerpo["document_version_id"] == promocion["version_id"]
+    assert "Plazos del procedimiento" in cuerpo["text"]
+    assert cuerpo["total_chars"] >= len("Plazos del procedimiento")
+    assert cuerpo["quality"] in {"good", "usable_with_warnings", "ocr_unreviewed", "poor"}
+    assert cuerpo["representation_id"], "el texto sale de una representación de verdad"
+
+    trozo = seeded_client.get(
+        f"/api/v1/document-versions/{promocion['version_id']}/content",
+        params={"offset": 0, "limit": 5},
+    ).json()
+    assert trozo["text"] == cuerpo["text"][:5]
+    assert trozo["truncated"] is True
+    assert seeded_client.get("/api/v1/document-versions/no-existe/content").status_code == 404
+
+
+def test_el_original_de_la_version_se_sirve_con_su_tipo_y_su_rango(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """Contrato §7: `GET /document-versions/{id}/original`, con `inline` solo si es seguro."""
+    texto = "Tema 1. Original que se sirve tal cual."
+    _pegar(seeded_client, texto, "original.txt")
+    artifact_id = _artefacto_de(seeded_settings, "original.txt")
+    promocion = _promocionar(seeded_client, artifact_id, "Documento original")
+
+    respuesta = seeded_client.get(f"/api/v1/document-versions/{promocion['version_id']}/original")
+
+    assert respuesta.status_code == 200, respuesta.text
+    assert respuesta.content.decode("utf-8") == texto, "el original se sirve sin tocar"
+    assert respuesta.headers["content-type"].startswith("text/plain")
+    assert "inline" in respuesta.headers["content-disposition"]
+
+    # `Range` soportado: los diez primeros bytes, con su total declarado.
+    parcial = seeded_client.get(
+        f"/api/v1/document-versions/{promocion['version_id']}/original",
+        headers={"Range": "bytes=0-9"},
+    )
+    assert parcial.status_code == 206, parcial.text
+    assert parcial.content.decode("utf-8") == texto[:10]
+    assert parcial.headers["content-range"] == f"bytes 0-9/{len(texto.encode('utf-8'))}"
+
+    assert seeded_client.get("/api/v1/document-versions/no-existe/original").status_code == 404
+
+
+def test_las_asignaciones_de_una_version_se_sirven_por_su_ruta(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """Contrato §7: `GET /document-versions/{id}/mappings`, mismo formato que la clasificación."""
+    _pegar(seeded_client, "Tema 1. Material para asignar por su ruta.", "asignado.txt")
+    artifact_id = _artefacto_de(seeded_settings, "asignado.txt")
+    promocion = _promocionar(seeded_client, artifact_id, "Documento asignado")
+    nodo = _dos_nodos_del_programa(seeded_settings)[0]
+
+    vacias = seeded_client.get(f"/api/v1/document-versions/{promocion['version_id']}/mappings")
+    assert vacias.status_code == 200
+    assert vacias.json() == []
+
+    creada = seeded_client.post(
+        f"/api/v1/document-versions/{promocion['version_id']}/mappings",
+        json={"curriculum_node_id": nodo, "coverage_type": "complete"},
+        headers=ALLOWED_ORIGIN,
+    )
+    assert creada.status_code == 201, creada.text
+    # La respuesta trae el mapeo entero —con su nodo—, no solo el identificador.
+    assert creada.json()["node_id"] == nodo
+    assert creada.json()["node_path"]
+    assert creada.json()["coverage_type"] == "complete"
+    assert creada.json()["status"] == "accepted"
+
+    listado = seeded_client.get(
+        f"/api/v1/document-versions/{promocion['version_id']}/mappings"
+    ).json()
+    assert [mapeo["id"] for mapeo in listado] == [creada.json()["id"]]
+    assert seeded_client.get("/api/v1/document-versions/no-existe/mappings").status_code == 404
+
+
+def test_editar_un_documento_por_la_api_y_lo_que_no_se_puede_aplicar(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """Contrato §7: `PATCH /documents/{id}`. Publicar exige derechos revisados: si no, 409."""
+    _pegar(seeded_client, "Tema 1. Material para editar metadatos.", "metadatos.txt")
+    artifact_id = _artefacto_de(seeded_settings, "metadatos.txt")
+    promocion = _promocionar(seeded_client, artifact_id, "Titulo provisional")
+
+    renombrado = seeded_client.patch(
+        f"/api/v1/documents/{promocion['document_id']}",
+        json={"canonical_title": "  Titulo definitivo  ", "authority_tier": "A"},
+        headers=ALLOWED_ORIGIN,
+    )
+
+    assert renombrado.status_code == 200, renombrado.text
+    assert renombrado.json()["canonical_title"] == "Titulo definitivo"
+    assert renombrado.json()["authority_tier"] == "A"
+    # La ficha lo refleja: no es una respuesta de cortesía.
+    ficha = seeded_client.get(f"/api/v1/documents/{promocion['document_id']}").json()
+    assert ficha["document"]["canonical_title"] == "Titulo definitivo"
+    assert ficha["document"]["authority_tier"] == "A"
+    assert _auditoria_de(seeded_settings, promocion["document_id"]).count("document.updated") == 1
+
+    # Una petición sin ningún campo que cambiar no escribe ni audita un cambio que no ha ocurrido.
+    sin_cambios = seeded_client.patch(
+        f"/api/v1/documents/{promocion['document_id']}",
+        json={},
+        headers=ALLOWED_ORIGIN,
+    )
+    assert sin_cambios.status_code == 200, sin_cambios.text
+    assert sin_cambios.json()["canonical_title"] == "Titulo definitivo"
+    assert _auditoria_de(seeded_settings, promocion["document_id"]).count("document.updated") == 1
+
+    publico = seeded_client.patch(
+        f"/api/v1/documents/{promocion['document_id']}",
+        json={"owner_scope": "public"},
+        headers=ALLOWED_ORIGIN,
+    )
+    assert publico.status_code == 409, publico.text
+    assert publico.json()["code"] == "classification_conflict"
+    assert "derechos" in publico.json()["detail"]
+    assert (
+        seeded_client.get(f"/api/v1/documents/{promocion['document_id']}").json()["document"][
+            "owner_scope"
+        ]
+        == "private_user"
+    ), "un conflicto no cambia nada"
+
+    vacio = seeded_client.patch(
+        f"/api/v1/documents/{promocion['document_id']}",
+        json={"canonical_title": "   "},
+        headers=ALLOWED_ORIGIN,
+    )
+    assert vacio.status_code in {409, 422}, vacio.text
+
+    desconocido = seeded_client.patch(
+        f"/api/v1/documents/{promocion['document_id']}",
+        json={"document_type": "tipo-que-no-existe"},
+        headers=ALLOWED_ORIGIN,
+    )
+    assert desconocido.status_code == 409, desconocido.text
+    assert (
+        seeded_client.patch(
+            f"/api/v1/documents/{promocion['document_id']}",
+            json={"owner_scope": "generated"},
+            headers=ALLOWED_ORIGIN,
+        ).status_code
+        == 422
+    ), "«generated» no se concede desde la API"
+    assert (
+        seeded_client.patch(
+            "/api/v1/documents/no-existe", json={"canonical_title": "X"}, headers=ALLOWED_ORIGIN
+        ).status_code
+        == 404
+    )
+
+
+def test_el_diff_compara_dos_versiones_del_mismo_documento(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """Ruta añadida al contrato: compara secciones por etiqueta y no fusiona nada."""
+    _pegar(seeded_client, "Tema 1. Primera redaccion del tema.", "primera.txt")
+    primero = _promocionar(
+        seeded_client, _artefacto_de(seeded_settings, "primera.txt"), "Temario versionado"
+    )
+    _pegar(seeded_client, "Tema 1. Segunda redaccion, mas larga, del tema.", "segunda.txt")
+    segunda = seeded_client.post(
+        "/api/v1/documents",
+        json={
+            "artifact_id": _artefacto_de(seeded_settings, "segunda.txt"),
+            "title": "Temario versionado",
+            "document_type": "curriculum",
+            "document_id": primero["document_id"],
+        },
+        headers=ALLOWED_ORIGIN,
+    )
+    assert segunda.status_code == 200, segunda.text
+    segunda_version = segunda.json()["version_id"]
+    assert segunda_version != primero["version_id"]
+
+    comparacion = seeded_client.get(
+        f"/api/v1/documents/{primero['document_id']}/diff",
+        params={"from_version_id": primero["version_id"], "to_version_id": segunda_version},
+    )
+
+    assert comparacion.status_code == 200, comparacion.text
+    diff = comparacion.json()
+    assert diff["document_id"] == primero["document_id"]
+    assert diff["from_version_id"] == primero["version_id"]
+    assert diff["to_version_id"] == segunda_version
+    assert diff["has_changes"] is False, (
+        "sin secciones que comparar no hay cambios que anunciar: el recuento manda, y aquí es cero"
+    )
+    assert diff["sections"] == [], (
+        "el texto pegado entra como texto plano y el extractor de texto plano todavía no parte "
+        "secciones (DEBT-009), así que aquí no hay nada que comparar; el diff **con** secciones "
+        "está probado en test_library.py sobre representaciones reales con secciones"
+    )
+    assert diff["added"] + diff["removed"] + diff["changed"] + diff["unchanged"] == len(
+        diff["sections"]
+    )
+    assert all(
+        seccion["kind"] in {"added", "removed", "changed", "unchanged"}
+        for seccion in diff["sections"]
+    )
+
+    # Una versión de otro documento no es un diff: es un 404, no una comparación inventada.
+    _pegar(seeded_client, "Tema 1. Otro documento distinto.", "ajeno.txt")
+    ajeno = _promocionar(
+        seeded_client, _artefacto_de(seeded_settings, "ajeno.txt"), "Documento ajeno"
+    )
+    assert (
+        seeded_client.get(
+            f"/api/v1/documents/{primero['document_id']}/diff",
+            params={"from_version_id": primero["version_id"], "to_version_id": ajeno["version_id"]},
+        ).status_code
+        == 404
+    )
+    assert (
+        seeded_client.get(
+            f"/api/v1/documents/{primero['document_id']}/diff",
+            params={"from_version_id": "no-existe", "to_version_id": segunda_version},
+        ).status_code
+        == 404
+    )

@@ -26,6 +26,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session, sessionmaker
 
 from opofuente.application.library_models import (
+    ArtifactFile,
     CollectionView,
     DocumentDetail,
     DocumentPage,
@@ -33,10 +34,14 @@ from opofuente.application.library_models import (
     EvidenceView,
     PromotionOutcome,
     RightsView,
+    SectionDiff,
     SectionView,
+    VersionDetail,
+    VersionDiff,
+    VersionText,
     VersionView,
 )
-from opofuente.domain.documents import VersionStatus, document_section_type
+from opofuente.domain.documents import VersionStatus, diff_versions, document_section_type
 from opofuente.infrastructure.db_models import (
     ArtifactOriginRecord,
     AuditEventRecord,
@@ -66,6 +71,19 @@ MAX_EVIDENCE_TEXT_CHARS = 400_000
 
 def _new_id() -> str:
     return str(uuid4())
+
+
+def _warnings(representacion: ExtractedRepresentationRecord) -> tuple[str, ...]:
+    """Avisos de la extracción, tal y como se guardaron. Un JSON ilegible no rompe la lectura."""
+    if not representacion.warnings_json:
+        return ()
+    try:
+        bruto = json.loads(representacion.warnings_json)
+    except json.JSONDecodeError:
+        return ()
+    if not isinstance(bruto, list):
+        return ()
+    return tuple(str(aviso) for aviso in bruto)
 
 
 def _quality_rank(valor: str | None) -> int:
@@ -486,6 +504,208 @@ class SqlAlchemyDocumentRepository:
             if fila is None:
                 return None
             return self._evidence_view(fila)
+
+    # ------------------------------------------------------------------ versiones sueltas
+
+    def version_detail(self, version_id: str) -> VersionDetail | None:
+        """Una versión con su documento: es lo que responde `GET /document-versions/{id}`."""
+        with self._session_factory() as session:
+            fila = session.get(DocumentVersionRecord, version_id)
+            if fila is None:
+                return None
+            documento = session.get(LogicalDocumentRecord, fila.logical_document_id)
+            if documento is None:
+                return None
+            mapeos = int(
+                session.execute(
+                    select(func.count())
+                    .select_from(CurriculumMappingRecord)
+                    .where(
+                        CurriculumMappingRecord.subject_type == "document_version",
+                        CurriculumMappingRecord.subject_id == version_id,
+                    )
+                ).scalar_one()
+            )
+            return VersionDetail(
+                document_id=documento.id,
+                document_title=documento.canonical_title,
+                document_type=documento.document_type,
+                owner_scope=documento.owner_scope,
+                version=self._version_view(session, fila),
+                mapping_count=mapeos,
+            )
+
+    def version_text(
+        self, version_id: str, *, offset: int = 0, limit: int = 20_000
+    ) -> VersionText | None:
+        """Texto extraído de la versión, por trozos, leído del almacén (nunca de la base).
+
+        Si la extracción no dejó texto —un escaneo sin OCR— se devuelve vacío con su calidad: la
+        versión existe, lo que no hay es texto, y eso se dice en lugar de inventarlo.
+        """
+        with self._session_factory() as session:
+            fila = session.get(DocumentVersionRecord, version_id)
+            if fila is None:
+                return None
+            representacion = self._best_representation(session, fila.artifact_id)
+            if representacion is None or not representacion.text_storage_key:
+                return VersionText(
+                    document_version_id=version_id,
+                    text="",
+                    offset=offset,
+                    limit=limit,
+                    total_chars=0,
+                    truncated=False,
+                    representation_id=representacion.id if representacion is not None else None,
+                    quality=representacion.quality if representacion is not None else None,
+                    warnings=_warnings(representacion) if representacion is not None else (),
+                )
+            trozo = self._store.read(representacion.text_storage_key, offset=offset, limit=limit)
+            return VersionText(
+                document_version_id=version_id,
+                text=trozo.text,
+                offset=trozo.offset,
+                limit=trozo.limit,
+                total_chars=trozo.total_chars,
+                truncated=trozo.truncated,
+                representation_id=representacion.id,
+                quality=representacion.quality,
+                warnings=_warnings(representacion),
+            )
+
+    def version_artifact(self, version_id: str) -> ArtifactFile | None:
+        """El fichero original de la versión: clave en el almacén, tipo y nombre visible."""
+        with self._session_factory() as session:
+            fila = session.get(DocumentVersionRecord, version_id)
+            if fila is None:
+                return None
+            artefacto = session.get(SourceArtifactRecord, fila.artifact_id)
+            if artefacto is None:
+                return None
+            return ArtifactFile(
+                storage_key=artefacto.storage_key,
+                media_type=artefacto.media_type,
+                size_bytes=artefacto.size_bytes,
+                sha256=artefacto.sha256,
+                original_name=self._label_of(session, fila.artifact_id),
+                quarantine_status=str(artefacto.quarantine_status),
+            )
+
+    def document_diff(
+        self, document_id: str, *, from_version_id: str, to_version_id: str
+    ) -> VersionDiff | None:
+        """Compara dos versiones **del mismo documento**: las de otro documento no son un diff.
+
+        Compara el texto real de cada sección (leído del almacén por sus offsets), emparejando por
+        etiqueta. No fusiona nada, no decide cuál es mejor y no escribe nada.
+        """
+        with self._session_factory() as session:
+            antes = session.get(DocumentVersionRecord, from_version_id)
+            despues = session.get(DocumentVersionRecord, to_version_id)
+            if antes is None or despues is None:
+                return None
+            if (
+                antes.logical_document_id != document_id
+                or despues.logical_document_id != document_id
+            ):
+                return None
+            dominio = diff_versions(
+                from_version_id,
+                to_version_id,
+                before=self._section_texts(session, antes),
+                after=self._section_texts(session, despues),
+            )
+            return VersionDiff(
+                document_id=document_id,
+                from_version_id=from_version_id,
+                to_version_id=to_version_id,
+                sections=tuple(
+                    SectionDiff(
+                        label=seccion.label,
+                        kind=seccion.kind,
+                        left=seccion.left,
+                        right=seccion.right,
+                    )
+                    for seccion in dominio.sections
+                ),
+                added=dominio.added,
+                removed=dominio.removed,
+                changed=dominio.changed,
+                unchanged=dominio.unchanged,
+            )
+
+    def _section_texts(
+        self, session: Session, version: DocumentVersionRecord
+    ) -> tuple[tuple[str | None, str], ...]:
+        """`(título, texto)` de cada sección en orden: lo que compara `diff_versions`."""
+        filas = (
+            session.execute(
+                select(DocumentSectionRecord)
+                .where(DocumentSectionRecord.document_version_id == version.id)
+                .order_by(DocumentSectionRecord.position, DocumentSectionRecord.id)
+            )
+            .scalars()
+            .all()
+        )
+        representacion = self._best_representation(session, version.artifact_id)
+        texto = self._read_text(representacion) if representacion is not None else ""
+        return tuple(
+            (
+                fila.title,
+                self._slice(texto, {"char_start": fila.char_start, "char_end": fila.char_end}),
+            )
+            for fila in filas
+        )
+
+    def update_document(
+        self,
+        document_id: str,
+        *,
+        canonical_title: str,
+        document_type: str,
+        owner_scope: str,
+        authority_tier: str | None,
+        canonical_identifier: str | None,
+        now: datetime,
+        actor: str = "local",
+    ) -> DocumentView | None:
+        """Cambia los metadatos de la obra. El cambio queda auditado con su antes y su después."""
+        with self._session_factory() as session:
+            fila = session.get(LogicalDocumentRecord, document_id)
+            if fila is None:
+                return None
+            antes: dict[str, object] = {
+                "canonical_title": fila.canonical_title,
+                "document_type": fila.document_type,
+                "owner_scope": fila.owner_scope,
+                "authority_tier": fila.authority_tier,
+                "canonical_identifier": fila.canonical_identifier,
+            }
+            fila.canonical_title = canonical_title
+            fila.document_type = document_type
+            fila.owner_scope = owner_scope
+            fila.authority_tier = authority_tier
+            fila.canonical_identifier = canonical_identifier
+            fila.updated_at = now
+            despues: dict[str, object] = {
+                "canonical_title": canonical_title,
+                "document_type": document_type,
+                "owner_scope": owner_scope,
+                "authority_tier": authority_tier,
+                "canonical_identifier": canonical_identifier,
+            }
+            self._audit(
+                session,
+                actor=actor,
+                action="document.updated",
+                object_type="logical_document",
+                object_id=document_id,
+                before=antes,
+                after=despues,
+                now=now,
+            )
+            session.commit()
+            return self._document_view(session, fila)
 
     # ------------------------------------------------------------------ colecciones
 

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import type { Version } from '../../api/library';
+import type { Version, VersionDiff } from '../../api/library';
 import {
   ACCEPTABLE_VERSION_STATUSES,
   SUPERSEDING_VERSION_STATUSES,
@@ -10,7 +10,7 @@ import {
 import { ErrorState } from '../../components/ErrorState';
 import { LoadingState } from '../../components/LoadingState';
 import { StatusBadge } from '../../components/StatusBadge';
-import { versionStatusLabel, versionStatusTone } from './labels';
+import { sectionDiffLabel, sectionDiffTone, versionStatusLabel, versionStatusTone } from './labels';
 
 export interface VersionsTabProps {
   documentId: string;
@@ -25,6 +25,15 @@ export interface VersionsTabProps {
   onRetry: () => void;
   onAccept: (versionId: string) => void;
   onSupersede: (versionId: string, supersededId: string) => void;
+  /** Comparación elegida: la versión anterior y la nueva. */
+  fromVersionId: string | null;
+  toVersionId: string | null;
+  onSelectFrom: (versionId: string) => void;
+  onSelectTo: (versionId: string) => void;
+  diff: VersionDiff | null;
+  diffIsPending: boolean;
+  diffIsError: boolean;
+  onRetryDiff: () => void;
 }
 
 function fecha(value: string | null | undefined): string {
@@ -39,9 +48,10 @@ function fecha(value: string | null | undefined): string {
  * la versión buena, y el servidor las audita como promociones críticas. Un conflicto (409) se
  * muestra con el motivo del servidor y se dice que **nada cambió**.
  *
- * La comparación entre versiones (`diff`) todavía no la expone la API: la pestaña está preparada
- * para mostrarla y, mientras no haya datos, se dice —no se inventa una comparación con el texto de
- * cada versión leído por separado, porque dos textos sueltos no son un diff.
+ * La comparación entre versiones la sirve la API (`GET /documents/{id}/diff`): aquí se eligen las dos
+ * versiones y se muestra **lo que el servidor comparó**, sección a sección, sin fusionar nada. Si el
+ * servidor no encuentra secciones que comparar, se dice por qué en lugar de enseñar una tabla vacía
+ * como si no hubiera cambios.
  */
 export function VersionsTab({
   documentId,
@@ -54,6 +64,14 @@ export function VersionsTab({
   onRetry,
   onAccept,
   onSupersede,
+  fromVersionId,
+  toVersionId,
+  onSelectFrom,
+  onSelectTo,
+  diff,
+  diffIsPending,
+  diffIsError,
+  onRetryDiff,
 }: VersionsTabProps) {
   const [confirmandoAceptar, setConfirmandoAceptar] = useState<string | null>(null);
   const [sustituir, setSustituir] = useState<string | null>(null);
@@ -270,16 +288,133 @@ export function VersionsTab({
       </table>
 
       <h3>Comparar dos versiones (diff)</h3>
-      <p className="hint">
-        La comparación entre versiones todavía no la expone la API: no hay ruta que devuelva qué
-        cambió de una versión a otra. Esta pestaña está preparada para mostrarla y, mientras no
-        exista, no se rellena con nada: comparar aquí dos textos leídos por separado sería inventar
-        un diff.
-      </p>
-      <p className="hint">
-        Documento consultado: <span className="sample__path">{documentId}</span>. Mientras tanto, se
-        pueden ver los estados y las fechas de cada versión, y aceptar la que corresponda.
-      </p>
+      {versions.length < 2 ? (
+        <p className="hint">
+          Comparar necesita al menos dos versiones del documento, y ahora mismo hay{' '}
+          {versions.length}. Cuando entre una segunda edición del mismo material, aquí se verá qué
+          cambió sección a sección. Documento consultado:{' '}
+          <span className="sample__path">{documentId}</span>.
+        </p>
+      ) : (
+        <>
+          <div className="form__row">
+            <label className="form__label" htmlFor="diff-desde">
+              Versión anterior
+            </label>
+            <select
+              id="diff-desde"
+              className="selector__select"
+              value={fromVersionId ?? ''}
+              onChange={(event) => {
+                onSelectFrom(event.target.value);
+              }}
+            >
+              {versions.map((version) => (
+                <option key={version.id} value={version.id}>
+                  {versionName(version)} · {versionStatusLabel(version.status)}
+                </option>
+              ))}
+            </select>
+            <label className="form__label" htmlFor="diff-hasta">
+              Versión nueva
+            </label>
+            <select
+              id="diff-hasta"
+              className="selector__select"
+              value={toVersionId ?? ''}
+              onChange={(event) => {
+                onSelectTo(event.target.value);
+              }}
+            >
+              {versions.map((version) => (
+                <option key={version.id} value={version.id}>
+                  {versionName(version)} · {versionStatusLabel(version.status)}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {diffIsPending && <LoadingState label="Comparando las versiones…" />}
+          {diffIsError && (
+            <ErrorState
+              title="No se pudo comparar las versiones"
+              message="El servidor no devolvió la comparación de estas dos versiones."
+              onRetry={onRetryDiff}
+            />
+          )}
+
+          {!diffIsPending && !diffIsError && diff !== null && diff.sections.length === 0 && (
+            <p className="hint">
+              El servidor compara <strong>secciones</strong>, y estas dos versiones no tienen ninguna
+              con la que comparar. Le pasa al material que entró como texto plano o pegado: el
+              extractor de texto plano todavía no parte secciones (deuda registrada, DEBT-009). No
+              significa que los textos sean iguales: significa que no hay nada que enfrentar sección
+              a sección, y la comparación no se rellena con suposiciones.
+            </p>
+          )}
+
+          {!diffIsPending && !diffIsError && diff !== null && diff.sections.length > 0 && (
+            <>
+              <p className="hint">
+                Nuevas: {diff.added} · quitadas: {diff.removed} · con el texto cambiado:{' '}
+                {diff.changed} · sin cambios: {diff.unchanged} (sobre {diff.sections.length}{' '}
+                secciones comparadas, de la más antigua a la más nueva). Comparar no fusiona nada: no
+                se ha modificado ninguna versión.
+              </p>
+              <table className="table">
+                <caption className="table__caption">
+                  Comparación de «{etiquetaDe(versions, fromVersionId)}» con «
+                  {etiquetaDe(versions, toVersionId)}», sección a sección
+                </caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Sección</th>
+                    <th scope="col">Qué pasó</th>
+                    <th scope="col">Antes</th>
+                    <th scope="col">Después</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {diff.sections.map((seccion) => (
+                    <tr key={seccion.label}>
+                      <th scope="row">
+                        <span className="sample__path">{seccion.label}</span>
+                      </th>
+                      <td>
+                        <StatusBadge tone={sectionDiffTone(seccion.kind)}>
+                          {sectionDiffLabel(seccion.kind)}
+                        </StatusBadge>
+                      </td>
+                      <td className="hint">
+                        {seccion.left ?? '— (no estaba)'}
+                        {seccion.left_truncated && ' … recortado'}
+                      </td>
+                      <td className="hint">
+                        {seccion.right ?? '— (no está)'}
+                        {seccion.right_truncated && ' … recortado'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {diff.sections.some(
+                (seccion) => seccion.left_truncated || seccion.right_truncated,
+              ) && (
+                <p className="hint">
+                  Los textos largos se recortan al mostrarlos (el servidor recorta a 4.000 caracteres
+                  por lado y lo marca con «recortado»): la comparación se hizo con el texto completo.
+                </p>
+              )}
+            </>
+          )}
+        </>
+      )}
     </>
   );
+}
+
+/** Nombre legible de una versión por su identificador, para el título de la comparación. */
+function etiquetaDe(versions: Version[], versionId: string | null): string {
+  const encontrada = versions.find((version) => version.id === versionId);
+  return encontrada === undefined ? 'sin elegir' : versionName(encontrada);
 }

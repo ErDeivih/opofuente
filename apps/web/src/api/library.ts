@@ -18,11 +18,17 @@ export type Section = components['schemas']['SectionSchema'];
 export type Evidence = components['schemas']['EvidenceSchema'];
 export type PromotionOutcome = components['schemas']['PromotionOutcomeSchema'];
 export type Mapping = components['schemas']['MappingSchema'];
+export type VersionDiff = components['schemas']['VersionDiffSchema'];
+export type SectionDiff = components['schemas']['SectionDiffSchema'];
 
 export type VersionStatus = Version['status'];
 export type RightsReview = Rights['review_status'];
 export type OwnerScope = DocumentSummary['owner_scope'];
 export type MappingStatus = Mapping['status'];
+export type CoverageType = Mapping['coverage_type'];
+
+/** Tipos de cobertura que admite el servidor al asignar una versión a un nodo del programa. */
+export const COVERAGE_TYPES: readonly CoverageType[] = ['mention', 'partial', 'complete'];
 
 /**
  * Cuántos documentos se piden de una vez.
@@ -89,14 +95,75 @@ export function fetchEvidence(versionId: string): Promise<Evidence[]> {
 }
 
 /**
- * Asignaciones de programa de un sujeto.
+ * Asignaciones de programa de un sujeto, en general (clasificación).
  *
- * Las de un documento se leen por **versión** (`subject_type=document_version`), que es lo que el
- * servidor sabe relacionar con un nodo del programa.
+ * Para las asignaciones de un **documento** la ruta del contrato §7 es la de su versión
+ * (`fetchVersionMappings`): es la que relaciona el material con un nodo del programa.
  */
 export function fetchMappings(subjectType: string, subjectId: string): Promise<Mapping[]> {
   const params = new URLSearchParams({ subject_type: subjectType, subject_id: subjectId });
   return apiFetch<Mapping[]>(`/api/v1/mappings?${params.toString()}`);
+}
+
+/** Asignaciones de una versión concreta (contrato §7: `GET /document-versions/{id}/mappings`). */
+export function fetchVersionMappings(versionId: string): Promise<Mapping[]> {
+  return apiFetch<Mapping[]>(
+    `/api/v1/document-versions/${encodeURIComponent(versionId)}/mappings`,
+  );
+}
+
+/**
+ * Asigna una versión a un nodo del programa.
+ *
+ * El mapeo apunta a la **versión**, no al fichero: la misma fuente se guarda una vez y se asigna a
+ * varias oposiciones. Nace aceptado y auditado, porque lo pide una persona y no el motor.
+ */
+export function assignVersionToNode(
+  versionId: string,
+  input: { curriculumNodeId: string; coverageType: CoverageType },
+): Promise<Mapping> {
+  return apiFetch<Mapping>(
+    `/api/v1/document-versions/${encodeURIComponent(versionId)}/mappings`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        curriculum_node_id: input.curriculumNodeId,
+        coverage_type: input.coverageType,
+      }),
+    },
+  );
+}
+
+/**
+ * Retira una asignación de programa.
+ *
+ * El servidor responde 204 sin cuerpo y deja la retirada auditada; el material no se borra.
+ */
+export function removeMapping(mappingId: string): Promise<void> {
+  return apiFetch<void>(`/api/v1/curriculum-mappings/${encodeURIComponent(mappingId)}`, {
+    method: 'DELETE',
+  });
+}
+
+/**
+ * Compara dos versiones del **mismo** documento, sección a sección.
+ *
+ * Lo hace el servidor: aquí no se comparan dos textos leídos por separado, porque eso no sería un
+ * diff. El texto de cada lado viene recortado si es largo, y `*_truncated` dice cuándo.
+ */
+export function fetchVersionDiff(
+  documentId: string,
+  fromVersionId: string,
+  toVersionId: string,
+): Promise<VersionDiff> {
+  const params = new URLSearchParams({
+    from_version_id: fromVersionId,
+    to_version_id: toVersionId,
+  });
+  return apiFetch<VersionDiff>(
+    `/api/v1/documents/${encodeURIComponent(documentId)}/diff?${params.toString()}`,
+  );
 }
 
 /**

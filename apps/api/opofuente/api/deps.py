@@ -19,6 +19,7 @@ from opofuente.application.library_service import LibraryService
 from opofuente.application.profiles_service import ProfilesService
 from opofuente.application.system_service import SystemService
 from opofuente.config import Settings
+from opofuente.infrastructure.artifact_store import ArtifactStore
 
 
 def get_app_settings(request: Request) -> Settings:
@@ -66,6 +67,11 @@ def get_library_service(request: Request) -> LibraryService:
     return service
 
 
+def get_artifact_store(request: Request) -> ArtifactStore:
+    store: ArtifactStore = request.app.state.artifact_store
+    return store
+
+
 #: Dependencias anotadas (estilo moderno de FastAPI: sin llamadas en valores por defecto).
 AppSettingsDep = Annotated[Settings, Depends(get_app_settings)]
 SystemServiceDep = Annotated[SystemService, Depends(get_system_service)]
@@ -76,3 +82,4 @@ IntakeServiceDep = Annotated[IntakeService, Depends(get_intake_service)]
 JobServiceDep = Annotated[JobService, Depends(get_job_service)]
 ClassificationServiceDep = Annotated[ClassificationService, Depends(get_classification_service)]
 LibraryServiceDep = Annotated[LibraryService, Depends(get_library_service)]
+ArtifactStoreDep = Annotated[ArtifactStore, Depends(get_artifact_store)]

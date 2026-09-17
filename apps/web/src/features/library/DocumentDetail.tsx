@@ -1,14 +1,20 @@
 import { useRef, useState, type KeyboardEvent } from 'react';
 
 import { isApiError } from '../../api/client';
+import type { CoverageType, Version } from '../../api/library';
 import { isCandidate, isRestricted, versionName } from '../../api/library';
 import {
   useAcceptVersion,
+  useAssignMapping,
+  useCurriculum,
   useDocumentDetail,
   useDocumentMappings,
   useEvidence,
   useMarkSupersedes,
+  useOppositions,
+  useRemoveMapping,
   useSections,
+  useVersionDiff,
   useVersions,
 } from '../../api/queries';
 import { ErrorState } from '../../components/ErrorState';
@@ -71,6 +77,46 @@ export function DocumentDetail({ documentId, onClose }: DocumentDetailProps) {
 
   const accept = useAcceptVersion();
   const supersede = useMarkSupersedes();
+
+  /**
+   * Comparación de versiones: se eligen dos y el servidor las compara (no se compara aquí nada).
+   *
+   * Por defecto se comparan la penúltima con la última, que es la pregunta habitual («¿qué ha
+   * cambiado respecto a lo que había?»). Con una sola versión **no se pide nada**: no hay nada que
+   * comparar, y la pestaña lo explica.
+   */
+  const [parElegido, setParElegido] = useState<{ from: string | null; to: string | null }>({
+    from: null,
+    to: null,
+  });
+  const listaVersiones: Version[] = versions.data ?? [];
+  const hayComparacion = listaVersiones.length > 1;
+  const anterior = hayComparacion ? listaVersiones[listaVersiones.length - 2] : null;
+  const ultima = listaVersiones[listaVersiones.length - 1] ?? null;
+  const diffFrom = parElegido.from ?? anterior?.id ?? null;
+  const diffTo = parElegido.to ?? ultima?.id ?? null;
+  const diff = useVersionDiff(
+    hayComparacion ? documentId : null,
+    hayComparacion ? diffFrom : null,
+    hayComparacion ? diffTo : null,
+  );
+
+  /**
+   * Programa al que se asignan las versiones. Sale de la convocatoria activa de una oposición: sin
+   * convocatoria no hay nodos, y la pestaña lo dice en lugar de ofrecer una lista vacía.
+   */
+  const oppositions = useOppositions();
+  const [convocatoriaElegida, setConvocatoriaElegida] = useState<string | null>(null);
+  const convocatoriaActiva =
+    oppositions.data?.find((opposition) => opposition.active)?.active_convocation?.id ?? null;
+  const convocatoria = convocatoriaElegida ?? convocatoriaActiva;
+  const curriculum = useCurriculum(convocatoria);
+
+  const assignMapping = useAssignMapping();
+  const removeMapping = useRemoveMapping();
+  const falloAsignacion = assignMapping.error ?? removeMapping.error ?? null;
+  const avisoAsignacion = falloAsignacion === null ? null : describeError(falloAsignacion);
+  const asignando = assignMapping.isPending || removeMapping.isPending;
 
   const fallo = accept.error ?? supersede.error ?? null;
   const conflict = isApiError(fallo, 409) ? describeError(fallo) : null;
@@ -300,6 +346,27 @@ export function DocumentDetail({ documentId, onClose }: DocumentDetailProps) {
               onRetry={() => {
                 void mappings.refetch();
               }}
+              oppositions={oppositions.data ?? []}
+              convocationId={convocatoria}
+              onConvocationChange={(id) => {
+                setConvocatoriaElegida(id);
+              }}
+              curriculum={curriculum.data ?? null}
+              curriculumIsPending={curriculum.isPending}
+              onAssign={(nodeId, coverage: CoverageType) => {
+                if (versionId !== null) {
+                  assignMapping.mutate({
+                    versionId,
+                    curriculumNodeId: nodeId,
+                    coverageType: coverage,
+                  });
+                }
+              }}
+              onRemove={(mappingId) => {
+                removeMapping.mutate({ mappingId });
+              }}
+              busy={asignando}
+              actionError={avisoAsignacion}
             />
           )}
 
@@ -320,6 +387,20 @@ export function DocumentDetail({ documentId, onClose }: DocumentDetailProps) {
               }}
               onSupersede={(versionId, supersededId) => {
                 supersede.mutate({ documentId, versionId, supersededId });
+              }}
+              fromVersionId={diffFrom}
+              toVersionId={diffTo}
+              onSelectFrom={(id) => {
+                setParElegido({ from: id, to: diffTo });
+              }}
+              onSelectTo={(id) => {
+                setParElegido({ from: diffFrom, to: id });
+              }}
+              diff={diff.data ?? null}
+              diffIsPending={diff.isPending}
+              diffIsError={diff.isError}
+              onRetryDiff={() => {
+                void diff.refetch();
               }}
             />
           )}

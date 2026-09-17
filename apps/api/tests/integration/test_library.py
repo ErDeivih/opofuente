@@ -61,14 +61,75 @@ SECCIONES = (
 )
 
 
-def _resultado(calidad: Quality = Quality.GOOD) -> ExtractionResult:
+#: Dos redacciones del mismo temario, para comparar versiones de verdad:
+#: el título sigue igual, el plazo cambia y aparece un tema nuevo.
+_TEXTO_V1 = (
+    "Tema 1. La Constitucion espanola.\n"
+    "El plazo para solicitar la cita previa es de diez dias habiles.\n"
+)
+_TEXTO_V2 = (
+    "Tema 1. La Constitucion espanola.\n"
+    "El plazo para solicitar la cita previa es de veinte dias habiles.\n"
+    "Tema 3. Nuevo tema anadido.\n"
+)
+_SECCIONES_V1 = (
+    ExtractedSection(
+        section_type=SectionType.TITLE,
+        position=1,
+        char_start=0,
+        char_end=33,
+        title="Tema 1. La Constitucion espanola.",
+        label="Tema 1",
+        page_start=1,
+        page_end=1,
+    ),
+    ExtractedSection(
+        section_type=SectionType.PARAGRAPH,
+        position=2,
+        char_start=34,
+        char_end=98,
+        label="Plazos",
+        page_start=1,
+        page_end=1,
+    ),
+)
+_SECCIONES_V2 = (
+    _SECCIONES_V1[0],
+    ExtractedSection(
+        section_type=SectionType.PARAGRAPH,
+        position=2,
+        char_start=34,
+        char_end=100,
+        label="Plazos",
+        page_start=1,
+        page_end=1,
+    ),
+    ExtractedSection(
+        section_type=SectionType.TITLE,
+        position=3,
+        char_start=100,
+        char_end=127,
+        title="Tema 3. Nuevo tema anadido.",
+        label="Tema 3",
+        page_start=1,
+        page_end=1,
+    ),
+)
+
+
+def _resultado(
+    calidad: Quality = Quality.GOOD,
+    *,
+    texto: str = TEXTO,
+    secciones: tuple[ExtractedSection, ...] = SECCIONES,
+) -> ExtractionResult:
     return ExtractionResult(
         kind=RepresentationKind.NATIVE_TEXT,
         status=RepresentationStatus.EXTRACTED,
-        text=TEXTO,
+        text=texto,
         extractor=ExtractorRef("extractor-de-prueba", "1"),
         quality=calidad,
-        sections=SECCIONES,
+        sections=secciones,
     )
 
 
@@ -108,8 +169,9 @@ def _guardar_representacion(
     artifact_id: str,
     representacion_id: str,
     calidad: Quality = Quality.GOOD,
+    resultado: ExtractionResult | None = None,
 ) -> str:
-    resultado = _resultado(calidad)
+    resultado = resultado if resultado is not None else _resultado(calidad)
     clave = RepresentationStore(settings.data_paths).save(representacion_id, resultado)
     extraccion.save(
         result=resultado,
@@ -533,3 +595,111 @@ def test_una_version_aceptada_con_texto_pobre_no_es_cobertura_aceptada(tmp_path:
 
     assert cobertura.accepted_total == 0
     assert cobertura.provisional_total == 1
+
+
+# --- diff entre versiones ---------------------------------------------------------------------
+
+
+def test_el_diff_dice_que_seccion_cambio_y_cual_es_nueva(tmp_path: Path) -> None:
+    """Dos versiones del mismo documento: lo que cambió, lo que se añadió y lo que sigue igual.
+
+    El diff compara el **texto real** de cada sección (leído del almacén por sus offsets) y empareja
+    por etiqueta: el título se reconoce en las dos versiones, el tramo sin título se empareja por su
+    posición (`sección 2`) y la sección nueva se informa como añadida.
+    """
+    biblioteca, extraccion, settings = _biblioteca(tmp_path)
+    _artefacto(settings, "art-1", "a" * 64)
+    _artefacto(settings, "art-2", "b" * 64)
+    _guardar_representacion(
+        extraccion,
+        settings,
+        artifact_id="art-1",
+        representacion_id="rep-1",
+        resultado=_resultado(texto=_TEXTO_V1, secciones=_SECCIONES_V1),
+    )
+    _guardar_representacion(
+        extraccion,
+        settings,
+        artifact_id="art-2",
+        representacion_id="rep-2",
+        resultado=_resultado(texto=_TEXTO_V2, secciones=_SECCIONES_V2),
+    )
+
+    primera = biblioteca.promote_artifact(
+        "art-1", now=AHORA, title="Temario versionado", document_type="curriculum"
+    )
+    segunda = biblioteca.promote_artifact(
+        "art-2",
+        now=AHORA,
+        document_id=primera.document_id,
+        title="Temario versionado",
+        document_type="curriculum",
+    )
+
+    comparacion = biblioteca.document_diff(
+        primera.document_id or "",
+        from_version_id=primera.version_id or "",
+        to_version_id=segunda.version_id or "",
+    )
+
+    assert comparacion is not None
+    por_etiqueta = {seccion.label: seccion for seccion in comparacion.sections}
+    assert por_etiqueta["Tema 1. La Constitucion espanola."].kind == "unchanged"
+    assert por_etiqueta["sección 2"].kind == "changed"
+    assert "veinte" in (por_etiqueta["sección 2"].right or "")
+    assert "diez" in (por_etiqueta["sección 2"].left or "")
+    assert por_etiqueta["Tema 3. Nuevo tema anadido."].kind == "added"
+    assert comparacion.added == 1
+    assert comparacion.changed == 1
+    assert comparacion.removed == 0
+    assert comparacion.unchanged == 1
+    assert comparacion.has_changes is True
+
+    # Volver a promocionar el mismo artefacto en el mismo documento es idempotente: no crea otra
+    # versión, y compararla consigo misma da todo igual.
+    repetida = biblioteca.promote_artifact(
+        "art-1",
+        now=AHORA,
+        document_id=primera.document_id,
+        title="Temario versionado",
+        document_type="curriculum",
+    )
+    assert repetida.version_id == primera.version_id
+    consigo_misma = biblioteca.document_diff(
+        primera.document_id or "",
+        from_version_id=primera.version_id or "",
+        to_version_id=repetida.version_id or "",
+    )
+    assert consigo_misma is not None
+    assert consigo_misma.changed == 0
+    assert consigo_misma.unchanged == 2
+
+    # Una versión de **otro** documento no se compara: el diff es del mismo documento, o no es.
+    _artefacto(settings, "art-3", "c" * 64)
+    _guardar_representacion(
+        extraccion,
+        settings,
+        artifact_id="art-3",
+        representacion_id="rep-3",
+        resultado=_resultado(texto=_TEXTO_V1, secciones=_SECCIONES_V1),
+    )
+    otro = biblioteca.promote_artifact(
+        "art-3", now=AHORA, title="Otro temario", document_type="curriculum"
+    )
+    assert otro.document_id != primera.document_id
+    assert (
+        biblioteca.document_diff(
+            primera.document_id or "",
+            from_version_id=primera.version_id or "",
+            to_version_id=otro.version_id or "",
+        )
+        is None
+    )
+    assert (
+        biblioteca.document_diff(
+            primera.document_id or "",
+            from_version_id="no-existe",
+            to_version_id=segunda.version_id or "",
+        )
+        is None
+    )

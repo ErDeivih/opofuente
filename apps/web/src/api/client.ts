@@ -70,6 +70,12 @@ export async function apiFetch<T, TProblem = ProblemDetail>(
     });
   }
 
+  // Una respuesta puede no traer cuerpo: `DELETE /curriculum-mappings/{id}` responde 204 a propósito
+  // (no hay nada que devolver). Leerlo como JSON reventaría en una operación correcta.
+  if (response.status === 204 || response.headers.get('content-length') === '0') {
+    return undefined as T;
+  }
+
   return (await response.json()) as T;
 }
 

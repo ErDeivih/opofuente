@@ -12,6 +12,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from opofuente.application.read_models import MappingView
+
 
 class AlternativeSchema(BaseModel):
     value: str
@@ -109,6 +111,30 @@ class MappingSchema(BaseModel):
     status: Literal["provisional", "accepted", "rejected"]
     source_proposal_id: str | None = None
     approved_at: datetime | None = None
+
+
+def mapping_schema(view: MappingView) -> MappingSchema:
+    """Vista de un mapeo a su esquema.
+
+    Vive aquí y no en las rutas para que la biblioteca sirva **el mismo formato** de mapeo que la
+    clasificación: un mapeo es un mapeo, lo pida quien lo pida.
+    """
+    return MappingSchema(
+        id=view.id,
+        node_id=view.node_id,
+        node_path=view.node_path,
+        node_title=view.node_title,
+        node_depth=view.node_depth,
+        subject_type=view.subject_type,
+        subject_id=view.subject_id,
+        subject_label=view.subject_label,
+        coverage_type=view.coverage_type,  # type: ignore[arg-type]
+        depth=view.depth,
+        confidence=view.confidence,
+        status=view.status,  # type: ignore[arg-type]
+        source_proposal_id=view.source_proposal_id,
+        approved_at=view.approved_at,
+    )
 
 
 class CoverageNodeSchema(BaseModel):

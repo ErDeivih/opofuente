@@ -32,13 +32,17 @@ import {
 } from './ingestion';
 import {
   acceptVersion,
+  assignVersionToNode,
   fetchDocument,
   fetchDocuments,
   fetchEvidence,
-  fetchMappings,
   fetchSections,
+  fetchVersionDiff,
+  fetchVersionMappings,
   fetchVersions,
   markSupersedes,
+  removeMapping,
+  type CoverageType,
 } from './library';
 import {
   activateOpposition,
@@ -79,6 +83,8 @@ export const queryKeys = {
   librarySections: (versionId: string) => ['library', 'version', versionId, 'sections'] as const,
   libraryEvidence: (versionId: string) => ['library', 'version', versionId, 'evidence'] as const,
   libraryMappings: (versionId: string) => ['library', 'version', versionId, 'mappings'] as const,
+  libraryDiff: (documentId: string, fromVersionId: string, toVersionId: string) =>
+    ['library', 'document', documentId, 'diff', fromVersionId, toVersionId] as const,
 };
 
 export function useReadiness() {
@@ -450,14 +456,72 @@ export function useEvidence(versionId: string | null) {
 /**
  * Asignaciones de programa de una versión de documento.
  *
- * Se leen por versión porque es lo que el servidor sabe relacionar con un nodo del programa
- * (`subject_type=document_version`).
+ * Se leen con la ruta del contrato §7 (`GET /document-versions/{id}/mappings`), que es la que
+ * relaciona una **versión** con un nodo del programa.
  */
 export function useDocumentMappings(versionId: string | null) {
   return useQuery({
     queryKey: queryKeys.libraryMappings(versionId ?? 'ninguna'),
-    queryFn: () => fetchMappings('document_version', versionId as string),
+    queryFn: () => fetchVersionMappings(versionId as string),
     enabled: versionId !== null,
+  });
+}
+
+/**
+ * Comparación de dos versiones del mismo documento.
+ *
+ * Solo se pide con las dos versiones elegidas: sin par no hay nada que comparar, y el servidor
+ * responde 404 si alguna versión no es de ese documento.
+ */
+export function useVersionDiff(
+  documentId: string | null,
+  fromVersionId: string | null,
+  toVersionId: string | null,
+) {
+  return useQuery({
+    queryKey: queryKeys.libraryDiff(
+      documentId ?? 'ninguno',
+      fromVersionId ?? 'ninguna',
+      toVersionId ?? 'ninguna',
+    ),
+    queryFn: () => fetchVersionDiff(documentId as string, fromVersionId as string, toVersionId as string),
+    enabled: documentId !== null && fromVersionId !== null && toVersionId !== null,
+  });
+}
+
+export interface AssignMappingInput {
+  versionId: string;
+  curriculumNodeId: string;
+  coverageType: CoverageType;
+}
+
+/** Asigna una versión a un nodo del programa. El recuento de asignaciones del documento cambia. */
+export function useAssignMapping() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: AssignMappingInput) =>
+      assignVersionToNode(input.versionId, {
+        curriculumNodeId: input.curriculumNodeId,
+        coverageType: input.coverageType,
+      }),
+    onSuccess: () => {
+      invalidateLibrary(queryClient);
+    },
+  });
+}
+
+export interface RemoveMappingInput {
+  mappingId: string;
+}
+
+/** Retira una asignación de programa. No borra material: solo deja de estar asignada. */
+export function useRemoveMapping() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: RemoveMappingInput) => removeMapping(input.mappingId),
+    onSuccess: () => {
+      invalidateLibrary(queryClient);
+    },
   });
 }
 

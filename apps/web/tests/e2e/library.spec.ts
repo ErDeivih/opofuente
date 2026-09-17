@@ -20,10 +20,12 @@ import { expect, test, type APIRequestContext } from '@playwright/test';
  *
  * 1. Asignar el documento a **dos oposiciones** se hace con la ruta del contrato §7
  *    (`POST /document-versions/{id}/mappings`), que apunta a la **versión**: un artefacto, una
- *    versión y dos mapeos —TAI y Guardia Civil—. Los mapeos que crea el motor al aceptar una
- *    propuesta de tema siguen colgando del material (`artifact`/`representation`), que es otra cosa.
- * 2. La comparación de versiones **no la expone ninguna ruta**: la pestaña «Versiones y diff» lo
- *    declara y la prueba comprueba ese estado real, no uno inventado.
+ *    versión y dos mapeos —TAI y Guardia Civil—. Al final se comprueba además el alta desde la
+ *    propia ficha (el formulario de la pestaña de asignaciones).
+ * 2. La comparación de versiones la sirve `GET /documents/{id}/diff` (ruta añadida al contrato §7):
+ *    la prueba sube una **segunda edición** del mismo documento y comprueba, en la pestaña, que el
+ *    servidor dice qué sección cambió. Con una sola versión la pestaña explica que hacen falta dos,
+ *    en lugar de simular una comparación.
  */
 
 const API_BASE = process.env.OPOFUENTE_API_URL ?? 'http://127.0.0.1:8765';
@@ -173,6 +175,26 @@ function primero<T>(items: T[], mensaje: string): T {
 /** El programa llega como árbol; para buscar un tema se aplana sin perder el orden. */
 function aplanar(nodos: NodoPrograma[]): NodoPrograma[] {
   return nodos.flatMap((nodo) => [nodo, ...aplanar(nodo.children)]);
+}
+
+/**
+ * El lote que trae ese fichero.
+ *
+ * Otros guiones comparten servidor y base, así que «el último lote» no sirve: se busca el que
+ * contiene la entrada con ese nombre.
+ */
+async function loteCon(request: APIRequestContext, nombre: string): Promise<FilaDeLote> {
+  const lotes = await json<FilaDeLote[]>(request, '/ingestion-batches?limit=25');
+  for (const candidato of lotes) {
+    const detalle = await json<{ entries: Entrada[] }>(
+      request,
+      `/ingestion-batches/${candidato.id}`,
+    );
+    if (detalle.entries.some((entrada) => entrada.original_name === nombre)) {
+      return candidato;
+    }
+  }
+  throw new Error(`ningún lote trae ${nombre}`);
 }
 
 /** Primer tema del programa de una oposición: la asignación tiene que apuntar a un nodo real. */
@@ -397,15 +419,17 @@ test('E2E-04 documento compartido: un artefacto, sus asignaciones y la versión 
   // Las asignaciones de la versión son las dos que se acaban de crear, cada una con su nodo.
   await page.getByRole('tab', { name: 'Asignaciones' }).click();
   const panelAsignaciones = page.getByRole('tabpanel');
-  await expect(
-    panelAsignaciones.getByRole('table', { name: /2 asignaciones de programa de la versión/ }),
-  ).toBeVisible();
-  await expect(panelAsignaciones.getByText(temaTai.title)).toBeVisible();
-  await expect(panelAsignaciones.getByText(temaGc.title)).toBeVisible();
+  const tablaAsignaciones = panelAsignaciones.getByRole('table', {
+    name: /2 asignaciones de programa de la versión/,
+  });
+  await expect(tablaAsignaciones).toBeVisible();
+  // El título se busca **en la tabla**: el mismo nodo aparece también en el selector del formulario.
+  await expect(tablaAsignaciones.getByText(temaTai.title)).toBeVisible();
+  await expect(tablaAsignaciones.getByText(temaGc.title)).toBeVisible();
 
-  // La comparación de versiones todavía no la expone la API: se dice en pantalla.
+  // La comparación de versiones la sirve la API; con una sola versión se explica qué falta.
   await page.getByRole('tab', { name: 'Versiones y diff' }).click();
-  await expect(page.getByText(/todavía no la expone la API/)).toBeVisible();
+  await expect(page.getByText(/Comparar necesita al menos dos versiones/)).toBeVisible();
 
   // --- 7. Aceptar la versión desde la ficha ----------------------------------
   await page.getByRole('button', { name: `Aceptar la versión: ${promocion.version_id}` }).click();
@@ -425,6 +449,72 @@ test('E2E-04 documento compartido: un artefacto, sus asignaciones y la versión 
   await page.getByRole('button', { name: 'Volver a la lista' }).click();
   await expect(fila.getByText('aceptada')).toBeVisible();
   await expect(fila.getByText('propuesta de cambio, sin aceptar')).toHaveCount(0);
+
+  // --- 9. Segunda edición del mismo documento y comparación real --------------
+  const originalV2 = path.join(temporal, `e2e-04-${sufijo}-tema-v2.pdf`);
+  fs.writeFileSync(
+    originalV2,
+    construirPdf([
+      [
+        'Temario oficial E2E-04 ' + sufijo + ' (segunda edicion)',
+        'El proceso de seleccion estara formado por dos ejercicios.',
+      ],
+      [
+        'Boletin Oficial del Estado. Resolucion de 18 de diciembre.',
+        'La Ley 39/2015 regula el procedimiento administrativo comun.',
+      ],
+    ]),
+  );
+  await page.goto('/bandeja');
+  await page.getByLabel(/Suelta aquí o elige ficheros/).setInputFiles([originalV2]);
+  await expect(importacion.getByText('succeeded', { exact: true }).first()).toBeVisible({
+    timeout: 60_000,
+  });
+
+  const loteV2 = await loteCon(request, path.basename(originalV2));
+  const representacionesV2 = await json<Representacion[]>(
+    request,
+    `/ingestion-batches/${loteV2.id}/representations`,
+  );
+  const artifactV2 = primero(
+    representacionesV2,
+    'la segunda edición no dejó ninguna representación',
+  ).artifact_id;
+  // Segunda versión del **mismo** documento: el fichero es otro, la obra es la misma.
+  const promocionV2 = await enviar<Promocion>(request, '/documents', {
+    artifact_id: artifactV2,
+    title: titulo,
+    document_type: 'curriculum',
+    document_id: promocion.document_id,
+  });
+  expect(promocionV2.created_version).toBe(true);
+  expect(promocionV2.version_id).not.toBe(promocion.version_id);
+
+  // La ficha compara por defecto la penúltima con la última: aquí, la primera con la segunda.
+  await page.goto('/biblioteca');
+  await page.getByLabel('Tipo documental').selectOption('curriculum');
+  await fila.getByRole('button', { name: `Abrir la ficha: ${titulo}` }).click();
+  await page.getByRole('tab', { name: 'Versiones y diff' }).click();
+
+  await expect(page.getByText(/con el texto cambiado: 1/)).toBeVisible();
+  await expect(page.getByText(/Nuevas: 0/)).toBeVisible();
+  const tablaDiff = page.getByRole('table', { name: /Comparación de/ });
+  await expect(tablaDiff.getByText('texto cambiado').first()).toBeVisible();
+  await expect(tablaDiff.getByText(/dos ejercicios/)).toBeVisible();
+  await expect(tablaDiff.getByText(/sin cambios/).first()).toBeVisible();
+
+  // --- 10. Asignar un nodo del programa desde la propia ficha -----------------
+  await page.getByRole('tab', { name: 'Asignaciones' }).click();
+  await expect(
+    page.getByRole('table', { name: /2 asignaciones de programa de la versión/ }),
+  ).toBeVisible();
+  const selectorNodo = page.getByLabel('Nodo del programa');
+  await expect(selectorNodo).toBeEnabled();
+  await selectorNodo.selectOption({ index: 1 });
+  await page.getByRole('button', { name: 'Asignar el nodo elegido a esta versión' }).click();
+  await expect(
+    page.getByRole('table', { name: /3 asignaciones de programa de la versión/ }),
+  ).toBeVisible();
 
   const sinViolaciones = await new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])

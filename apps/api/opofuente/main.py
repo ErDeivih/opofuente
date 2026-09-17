@@ -236,6 +236,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.job_service = job_service
     app.state.classification_service = classification_service
     app.state.library_service = library_service
+    app.state.artifact_store = artifact_store
 
     # El orden importa: el último añadido es el más externo, así que el identificador de
     # correlación envuelve también los rechazos por Origin.

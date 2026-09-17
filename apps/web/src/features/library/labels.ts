@@ -139,6 +139,33 @@ export function coverageTypeLabel(coverage: string): string {
 }
 
 /**
+ * Qué le pasó a una sección entre dos versiones (contrato: `SectionDiffSchema`).
+ *
+ * «Sin cambios» es un resultado, no un hueco: dice que la sección se comparó y su texto es el mismo.
+ */
+export const SECTION_DIFF_LABEL: Record<string, string> = {
+  added: 'sección nueva',
+  removed: 'sección quitada',
+  changed: 'texto cambiado',
+  unchanged: 'sin cambios',
+};
+
+export const SECTION_DIFF_TONE: Record<string, StatusTone> = {
+  added: 'info',
+  removed: 'warning',
+  changed: 'warning',
+  unchanged: 'ok',
+};
+
+export function sectionDiffLabel(kind: string): string {
+  return SECTION_DIFF_LABEL[kind] ?? kind;
+}
+
+export function sectionDiffTone(kind: string): StatusTone {
+  return SECTION_DIFF_TONE[kind] ?? 'info';
+}
+
+/**
  * Autoridad declarada del documento.
  *
  * El nivel es un código del servidor (A, B, C, D): aquí solo se muestra y se dice si falta, en

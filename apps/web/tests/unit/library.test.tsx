@@ -10,8 +10,12 @@ import type {
   Mapping,
   Section,
   Version,
+  VersionDiff,
 } from '../../src/api/library';
+import type { Curriculum, Opposition } from '../../src/api/profiles';
 import { AppShell } from '../../src/app/AppShell';
+import { AssignmentsTab } from '../../src/features/library/AssignmentsTab';
+import { VersionsTab } from '../../src/features/library/VersionsTab';
 import { LibraryPage } from '../../src/pages/LibraryPage';
 import { renderWithProviders, stubApi, type StubbedRoute } from './testUtils';
 
@@ -259,6 +263,92 @@ const DETALLE: DocumentDetail = {
 
 const DETALLE_DOS: DocumentDetail = { document: DOC_ACEPTADO, versions: [REUTILIZABLE] };
 
+/** Comparación servida por el servidor para las dos versiones del documento candidato. */
+const DIFF: VersionDiff = {
+  document_id: 'doc-1',
+  from_version_id: 'ver-1',
+  to_version_id: 'ver-0',
+  sections: [
+    {
+      label: 'Convocatoria y bases',
+      kind: 'changed',
+      left: 'El plazo es de diez días.',
+      right: 'El plazo es de veinte días.',
+      left_truncated: false,
+      right_truncated: false,
+    },
+    {
+      label: 'Anexo I',
+      kind: 'added',
+      left: null,
+      right: 'Anexo nuevo del temario.',
+      left_truncated: false,
+      right_truncated: false,
+    },
+  ],
+  added: 1,
+  removed: 0,
+  changed: 1,
+  unchanged: 0,
+  has_changes: true,
+};
+
+const OPOSICIONES: Opposition[] = [
+  {
+    id: 'op-1',
+    code: 'tai-age',
+    name: 'Técnico Auxiliar de Informática',
+    description: null,
+    active: true,
+    active_convocation: {
+      id: 'conv-1',
+      code: 'tai-age-2025',
+      published_at: '2025-12-22',
+      status: 'active',
+    },
+  },
+  {
+    id: 'op-2',
+    code: 'gc-cabos-guardias',
+    name: 'Guardia Civil (cabos y guardias)',
+    description: null,
+    active: false,
+    active_convocation: null,
+  },
+];
+
+const CURRICULO: Curriculum = {
+  convocation_id: 'conv-1',
+  convocation_code: 'tai-age-2025',
+  opposition_code: 'tai-age',
+  counts: { block: 1, topic: 1 },
+  nodes: [
+    {
+      id: 'node-bloque',
+      node_type: 'block',
+      official_code: 'I',
+      title: 'Organización del Estado',
+      description: null,
+      position: 1,
+      path: 'I',
+      depth: 0,
+      children: [
+        {
+          id: 'node-tema',
+          node_type: 'topic',
+          official_code: 'I.1',
+          title: 'La Constitución Española de 1978',
+          description: null,
+          position: 1,
+          path: 'I.1',
+          depth: 1,
+          children: [],
+        },
+      ],
+    },
+  ],
+};
+
 const PROMOCION = {
   document_id: 'doc-1',
   version_id: 'ver-1',
@@ -282,6 +372,9 @@ function stubLibraryApi(overrides: Record<string, StubbedRoute> = {}) {
     '/api/v1/documents?limit=50&offset=0': { body: PAGINA },
     '/api/v1/documents/doc-1/versions/ver-1/accept': { body: PROMOCION },
     '/api/v1/documents/doc-1/versions/ver-1/mark-supersedes': { body: PROMOCION },
+    // La comparación se pide por ruta, sin parámetros en la clave: el `stubApi` empareja por
+    // fragmento de URL y así da igual el orden de `from_version_id` y `to_version_id`.
+    '/api/v1/documents/doc-1/diff': { body: DIFF },
     '/api/v1/documents/doc-1/versions': { body: DETALLE.versions },
     '/api/v1/documents/doc-1': { body: DETALLE },
     '/api/v1/documents/doc-2/versions': { body: DETALLE_DOS.versions },
@@ -290,8 +383,12 @@ function stubLibraryApi(overrides: Record<string, StubbedRoute> = {}) {
     '/api/v1/document-versions/ver-1/evidence': { body: EVIDENCIA },
     '/api/v1/document-versions/ver-2/sections': { body: SECCIONES_DOS },
     '/api/v1/document-versions/ver-2/evidence': { body: EVIDENCIA_DOS },
-    '/api/v1/mappings?subject_type=document_version&subject_id=ver-1': { body: MAPEOS },
-    '/api/v1/mappings?subject_type=document_version&subject_id=ver-2': { body: [] },
+    // Asignaciones: la ruta del contrato §7 es la de la **versión**, no la de mapeos por sujeto.
+    '/api/v1/document-versions/ver-1/mappings': { body: MAPEOS },
+    '/api/v1/document-versions/ver-2/mappings': { body: [] },
+    // El programa del que salen los nodos a los que se asigna.
+    '/api/v1/oppositions': { body: OPOSICIONES },
+    '/api/v1/convocations/conv-1/curriculum': { body: CURRICULO },
     ...overrides,
   });
 }
@@ -501,9 +598,9 @@ describe('biblioteca: las cinco partes de la ficha', () => {
     expect(within(fila).getByText('70 %')).toBeInTheDocument();
   });
 
-  it('las asignaciones vacías se explican, sin inventar mapeos', async () => {
+  it('las asignaciones vacías se explican, y se pueden dar de alta desde aquí', async () => {
     stubLibraryApi({
-      '/api/v1/mappings?subject_type=document_version&subject_id=ver-1': { body: [] },
+      '/api/v1/document-versions/ver-1/mappings': { body: [] },
     });
     renderLibrary();
     const tabs = await abrirFicha('Convocatoria TAI 2025');
@@ -512,9 +609,8 @@ describe('biblioteca: las cinco partes de la ficha', () => {
     expect(
       await screen.findByText(/no está asignada a ningún nodo del programa/),
     ).toBeInTheDocument();
-    expect(
-      screen.getByText(/esta pantalla todavía no\s+ofrece ese alta/),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Se le puede dar una asignación\s+aquí debajo/)).toBeInTheDocument();
+    expect(screen.getByLabelText('Nodo del programa')).toBeInTheDocument();
   });
 
   it('los metadatos enseñan procedencia, autoridad, ámbito y derechos con sus avisos', async () => {
@@ -685,7 +781,7 @@ describe('biblioteca: versiones', () => {
     expect(screen.getByText(/Un conflicto no cambia nada/)).toBeInTheDocument();
   });
 
-  it('deja la comparación de versiones preparada y dice que la API no la expone', async () => {
+  it('compara las versiones con lo que devuelve el servidor, sin inventar nada', async () => {
     stubLibraryApi();
     renderLibrary();
     const tabs = await abrirFicha('Convocatoria TAI 2025');
@@ -694,10 +790,10 @@ describe('biblioteca: versiones', () => {
     expect(
       screen.getByRole('heading', { name: 'Comparar dos versiones (diff)' }),
     ).toBeInTheDocument();
-    expect(
-      screen.getByText(/todavía no la expone la API: no hay ruta que devuelva qué cambió/),
-    ).toBeInTheDocument();
-    // Las versiones reales están listadas con su estado, sin diff inventado.
+    // La comparación es la del servidor: se ve el resumen y la sección que cambió.
+    expect(await screen.findByText(/con el texto cambiado: 1/)).toBeInTheDocument();
+    expect(screen.getByText('El plazo es de veinte días.')).toBeInTheDocument();
+    // Las versiones reales están listadas con su estado.
     expect(screen.getByText('rechazada')).toBeInTheDocument();
     expect(screen.getAllByText('candidata, sin aceptar').length).toBeGreaterThan(0);
   });
@@ -743,5 +839,217 @@ describe('biblioteca: copiar cita', () => {
     expect(copiado).toContain('Versión: edición propia');
     expect(copiado).toContain('Lugar: página 1');
     expect(copiado).toContain('URL: no consta');
+  });
+});
+
+/** Las dos pestañas que trabajan con datos del servidor, con sus respuestas tal cual llegan. */
+const VERSIONES: Version[] = [
+  CANDIDATA,
+  { ...CANDIDATA, id: 'ver-0', version_label: 'borrador', status: 'rejected', is_accepted: false },
+];
+
+const DIFF_SIN_SECCIONES: VersionDiff = {
+  document_id: 'doc-1',
+  from_version_id: 'ver-1',
+  to_version_id: 'ver-0',
+  sections: [],
+  added: 0,
+  removed: 0,
+  changed: 0,
+  unchanged: 0,
+  has_changes: false,
+};
+
+function nada(): void {
+  // Manejador vacío para las pruebas que no comprueban esa acción.
+}
+
+describe('biblioteca: comparación de versiones', () => {
+  function renderVersiones(
+    props: Partial<Parameters<typeof VersionsTab>[0]> = {},
+  ): ReturnType<typeof renderWithProviders> {
+    return renderWithProviders(
+      <VersionsTab
+        documentId="doc-1"
+        versions={VERSIONES}
+        busy={false}
+        conflict={null}
+        error={null}
+        isPending={false}
+        isError={false}
+        onRetry={nada}
+        onAccept={nada}
+        onSupersede={nada}
+        fromVersionId="ver-1"
+        toVersionId="ver-0"
+        onSelectFrom={nada}
+        onSelectTo={nada}
+        diff={DIFF}
+        diffIsPending={false}
+        diffIsError={false}
+        onRetryDiff={nada}
+        {...props}
+      />,
+    );
+  }
+
+  it('enseña la comparación que sirve el servidor, sección a sección', () => {
+    renderVersiones();
+
+    expect(screen.getByText(/con el texto cambiado: 1/)).toBeInTheDocument();
+    expect(screen.getByText(/Nuevas: 1/)).toBeInTheDocument();
+    expect(screen.getByText('texto cambiado')).toBeInTheDocument();
+    expect(screen.getByText('sección nueva')).toBeInTheDocument();
+    expect(screen.getByText('El plazo es de veinte días.')).toBeInTheDocument();
+    expect(screen.getByText('El plazo es de diez días.')).toBeInTheDocument();
+    // Lo que no estaba en una de las dos versiones se dice con palabras, no con un hueco.
+    expect(screen.getAllByText(/no estaba|no está/).length).toBeGreaterThan(0);
+  });
+
+  it('avisa de que hay texto recortado cuando el servidor lo marca así', () => {
+    renderVersiones({
+      diff: {
+        ...DIFF,
+        sections: [
+          {
+            label: 'Convocatoria y bases',
+            kind: 'changed',
+            left: 'viejo',
+            right: 'nuevo',
+            left_truncated: true,
+            right_truncated: false,
+          },
+        ],
+      },
+    });
+
+    expect(screen.getByText(/recortan al mostrarlos/)).toBeInTheDocument();
+    expect(screen.getByText(/viejo … recortado/)).toBeInTheDocument();
+  });
+
+  it('explica por qué una comparación sin secciones está vacía, sin decir que no hay cambios', () => {
+    renderVersiones({ diff: DIFF_SIN_SECCIONES });
+
+    expect(screen.getByText(/no tienen ninguna\s+con la que comparar/)).toBeInTheDocument();
+    expect(screen.getByText(/DEBT-009/)).toBeInTheDocument();
+    expect(screen.queryByRole('table', { name: /Comparación de/ })).not.toBeInTheDocument();
+  });
+
+  it('con una sola versión dice que hacen falta dos, en lugar de comparar consigo misma', () => {
+    renderVersiones({ versions: [CANDIDATA] });
+
+    expect(screen.getByText(/Comparar necesita al menos dos versiones/)).toBeInTheDocument();
+    expect(screen.queryByRole('table', { name: /Comparación de/ })).not.toBeInTheDocument();
+  });
+
+  it('si el servidor no devuelve la comparación, lo dice y ofrece reintentar', () => {
+    renderVersiones({ diff: null, diffIsError: true });
+
+    expect(screen.getByText('No se pudo comparar las versiones')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Reintentar/ })).toBeInTheDocument();
+  });
+});
+
+describe('biblioteca: asignaciones de programa', () => {
+  function renderAsignaciones(
+    props: Partial<Parameters<typeof AssignmentsTab>[0]> = {},
+  ): ReturnType<typeof renderWithProviders> {
+    return renderWithProviders(
+      <AssignmentsTab
+        version={CANDIDATA}
+        versionCount={2}
+        mappings={[]}
+        isPending={false}
+        isError={false}
+        onRetry={nada}
+        oppositions={OPOSICIONES}
+        convocationId="conv-1"
+        onConvocationChange={nada}
+        curriculum={CURRICULO}
+        curriculumIsPending={false}
+        onAssign={nada}
+        onRemove={nada}
+        busy={false}
+        actionError={null}
+        {...props}
+      />,
+    );
+  }
+
+  it('explica que no hay asignaciones y ofrece darlas de alta aquí mismo', () => {
+    renderAsignaciones();
+
+    expect(
+      screen.getByText(/no está asignada a ningún nodo del programa/),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Se le puede dar una asignación\s+aquí debajo/)).toBeInTheDocument();
+    expect(screen.getByLabelText('Nodo del programa')).toBeInTheDocument();
+  });
+
+  it('da de alta la asignación con el nodo y la cobertura elegidos', async () => {
+    const asignadas: { nodeId: string; cobertura: string }[] = [];
+    renderAsignaciones({
+      onAssign: (nodeId, coverage) => {
+        asignadas.push({ nodeId, cobertura: coverage });
+      },
+    });
+
+    // El árbol del programa llega aplanado, con sus dos niveles: bloque y tema.
+    const selector = screen.getByLabelText('Nodo del programa');
+    expect(within(selector).getByRole('option', { name: /I · Organización del Estado/ })).toBeInTheDocument();
+    expect(within(selector).getByRole('option', { name: /— I\.1 · La Constitución/ })).toBeInTheDocument();
+
+    await userEvent.selectOptions(selector, 'node-tema');
+    await userEvent.selectOptions(screen.getByLabelText('Cobertura'), 'complete');
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Asignar el nodo elegido a esta versión' }),
+    );
+
+    expect(asignadas).toEqual([{ nodeId: 'node-tema', cobertura: 'complete' }]);
+  });
+
+  it('no deja asignar mientras no se elige nodo', () => {
+    renderAsignaciones();
+
+    expect(
+      screen.getByRole('button', { name: 'Asignar el nodo elegido a esta versión' }),
+    ).toBeDisabled();
+  });
+
+  it('quita una asignación solo después de confirmarlo, y no por accidente', async () => {
+    const quitadas: string[] = [];
+    renderAsignaciones({
+      mappings: MAPEOS,
+      onRemove: (mappingId) => {
+        quitadas.push(mappingId);
+      },
+    });
+
+    await userEvent.click(screen.getByRole('button', { name: 'Quitar la asignación: I.1' }));
+    expect(quitadas).toEqual([]);
+    expect(screen.getByText(/¿Quitar la asignación de/)).toBeInTheDocument();
+
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Confirmar quitar la asignación: I.1' }),
+    );
+    expect(quitadas).toEqual(['map-1']);
+  });
+
+  it('muestra el motivo del servidor cuando rechaza la operación', () => {
+    renderAsignaciones({
+      actionError: 'El nodo indicado no existe en el programa de esta convocatoria.',
+    });
+
+    expect(screen.getByText('El servidor no aplicó la operación')).toBeInTheDocument();
+    expect(
+      screen.getByText('El nodo indicado no existe en el programa de esta convocatoria.'),
+    ).toBeInTheDocument();
+  });
+
+  it('sin convocatoria activa dice de dónde sale el programa en lugar de ofrecer una lista vacía', () => {
+    renderAsignaciones({ oppositions: [], convocationId: null, curriculum: null });
+
+    expect(screen.getByText(/No hay ninguna convocatoria activa/)).toBeInTheDocument();
+    expect(screen.queryByLabelText('Nodo del programa')).not.toBeInTheDocument();
   });
 });

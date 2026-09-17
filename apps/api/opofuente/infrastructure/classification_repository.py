@@ -26,6 +26,7 @@ from datetime import datetime
 from uuid import uuid4
 
 from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, sessionmaker
 
 from opofuente.application.read_models import (
@@ -361,66 +362,90 @@ class SqlAlchemyClassificationRepository:
     # ------------------------------------------------------------------ propuestas
 
     def save_proposals(self, proposals: Sequence[Proposal], *, now: datetime) -> tuple[int, int]:
+        """Guarda las propuestas de una pasada, tolerando que otro escritor se adelante.
+
+        El worker clasifica el material en cuanto se extrae (`JobType.CLASSIFY_DOCUMENT`) y una
+        pasada explícita puede coincidir con él: las dos guardan las **mismas** propuestas. Cuando
+        eso pasa, la propuesta ya existe y eso **no** es un fallo de quien la pidió, así que el
+        choque de unicidad se reintenta una vez (en el segundo intento la deduplicación ya la ve y
+        solo entra lo que faltaba) en lugar de devolver un 500. Si el segundo intento también choca,
+        el problema es real y se propaga en vez de esconderse.
+        """
+        intentos = 0
+        while True:
+            intentos += 1
+            with self._session_factory() as session:
+                creadas, existentes = self._guardar_propuestas(session, proposals, now=now)
+                try:
+                    session.commit()
+                except IntegrityError:
+                    session.rollback()
+                    if intentos >= 2:
+                        raise
+                    continue
+            return creadas, existentes
+
+    def _guardar_propuestas(
+        self, session: Session, proposals: Sequence[Proposal], *, now: datetime
+    ) -> tuple[int, int]:
+        """Deduplica, retira las pendientes que sustituye y añade lo nuevo. No confirma nada."""
         creadas = 0
         existentes = 0
-        with self._session_factory() as session:
-            for propuesta in proposals:
-                ya = session.execute(
-                    select(ClassificationProposalRecord.id).where(
+        for propuesta in proposals:
+            ya = session.execute(
+                select(ClassificationProposalRecord.id).where(
+                    ClassificationProposalRecord.subject_type == propuesta.subject_type.value,
+                    ClassificationProposalRecord.subject_id == propuesta.subject_id,
+                    ClassificationProposalRecord.axis == propuesta.axis.value,
+                    ClassificationProposalRecord.engine_name == propuesta.engine_name,
+                    ClassificationProposalRecord.engine_version == propuesta.engine_version,
+                    ClassificationProposalRecord.proposed_value == propuesta.proposed_value,
+                )
+            ).first()
+            if ya is not None:
+                existentes += 1
+                continue
+            pendientes = (
+                session.execute(
+                    select(ClassificationProposalRecord).where(
                         ClassificationProposalRecord.subject_type == propuesta.subject_type.value,
                         ClassificationProposalRecord.subject_id == propuesta.subject_id,
                         ClassificationProposalRecord.axis == propuesta.axis.value,
-                        ClassificationProposalRecord.engine_name == propuesta.engine_name,
-                        ClassificationProposalRecord.engine_version == propuesta.engine_version,
-                        ClassificationProposalRecord.proposed_value == propuesta.proposed_value,
-                    )
-                ).first()
-                if ya is not None:
-                    existentes += 1
-                    continue
-                pendientes = (
-                    session.execute(
-                        select(ClassificationProposalRecord).where(
-                            ClassificationProposalRecord.subject_type
-                            == propuesta.subject_type.value,
-                            ClassificationProposalRecord.subject_id == propuesta.subject_id,
-                            ClassificationProposalRecord.axis == propuesta.axis.value,
-                            ClassificationProposalRecord.status == ProposalStatus.PENDING.value,
-                        )
-                    )
-                    .scalars()
-                    .all()
-                )
-                for anterior in pendientes:
-                    anterior.status = ProposalStatus.SUPERSEDED.value
-                    anterior.decided_at = now
-                    anterior.decision_note = "Sustituida por una propuesta nueva del mismo motor"
-                session.add(
-                    ClassificationProposalRecord(
-                        id=_new_id(),
-                        subject_type=propuesta.subject_type.value,
-                        subject_id=propuesta.subject_id,
-                        axis=propuesta.axis.value,
-                        proposed_value=propuesta.proposed_value,
-                        confidence=propuesta.confidence,
-                        alternatives_json=json.dumps(
-                            [
-                                {"value": alternativa.value, "confidence": alternativa.confidence}
-                                for alternativa in propuesta.alternatives
-                            ],
-                            ensure_ascii=False,
-                        ),
-                        evidence_json=_json_list(propuesta.evidence),
-                        engine_name=propuesta.engine_name,
-                        engine_version=propuesta.engine_version,
-                        status=ProposalStatus.PENDING.value,
-                        created_at=now,
-                        decided_at=None,
-                        decision_note=None,
+                        ClassificationProposalRecord.status == ProposalStatus.PENDING.value,
                     )
                 )
-                creadas += 1
-            session.commit()
+                .scalars()
+                .all()
+            )
+            for anterior in pendientes:
+                anterior.status = ProposalStatus.SUPERSEDED.value
+                anterior.decided_at = now
+                anterior.decision_note = "Sustituida por una propuesta nueva del mismo motor"
+            session.add(
+                ClassificationProposalRecord(
+                    id=_new_id(),
+                    subject_type=propuesta.subject_type.value,
+                    subject_id=propuesta.subject_id,
+                    axis=propuesta.axis.value,
+                    proposed_value=propuesta.proposed_value,
+                    confidence=propuesta.confidence,
+                    alternatives_json=json.dumps(
+                        [
+                            {"value": alternativa.value, "confidence": alternativa.confidence}
+                            for alternativa in propuesta.alternatives
+                        ],
+                        ensure_ascii=False,
+                    ),
+                    evidence_json=_json_list(propuesta.evidence),
+                    engine_name=propuesta.engine_name,
+                    engine_version=propuesta.engine_version,
+                    status=ProposalStatus.PENDING.value,
+                    created_at=now,
+                    decided_at=None,
+                    decision_note=None,
+                )
+            )
+            creadas += 1
         return creadas, existentes
 
     def list_proposals(

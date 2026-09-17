@@ -8,13 +8,12 @@ efecto);
 candidata**,
   para que nadie tenga que suponerlo.
 
-Dos rutas **no están en el contrato §7** y se declaran aquí en lugar de esconderse: la de
-**colecciones** (la spec pide colecciones en el slice pero no fija la ruta) y la de
-**evidencia**, que es
-lo que hace abrible una cita.
-
-La ruta de **mapeos** de §7 sí está (`POST /document-versions/{id}/mappings`): es la que permite que
-una misma fuente se guarde una vez y se asigne a dos oposiciones sin duplicar el fichero.
+Cuatro rutas **no están en el contrato §7** y se declaran aquí en lugar de esconderse: la de
+**colecciones** (la spec pide colecciones en el slice pero no fija la ruta), las dos de
+**evidencia**, que es lo que hace abrible una cita, y la de **diff**, que la spec pide («confirmar
+diff») y el contrato no sitúa. El resto de §7 está servido, incluida la ruta de **mapeos**
+(`POST /document-versions/{id}/mappings`), que es la que permite que una misma fuente se guarde una
+vez y se asigne a dos oposiciones sin duplicar el fichero.
 """
 
 from __future__ import annotations
@@ -22,24 +21,30 @@ from __future__ import annotations
 from typing import Annotated
 
 from fastapi import APIRouter, Query
+from fastapi.responses import FileResponse
 
-from opofuente.api.deps import LibraryServiceDep
+from opofuente.api.classification_schemas import MappingSchema, mapping_schema
+from opofuente.api.deps import ArtifactStoreDep, LibraryServiceDep
 from opofuente.api.error_responses import INGESTION_WRITE_ERRORS, RESOURCE_ERRORS
 from opofuente.api.library_schemas import (
     CollectionItemRequestSchema,
     CollectionSchema,
     CreateCollectionRequestSchema,
     DocumentDetailSchema,
-    DocumentMappingSchema,
     DocumentPageSchema,
     DocumentSchema,
     EvidenceSchema,
     MappingRequestSchema,
     MarkSupersedesRequestSchema,
+    PatchDocumentRequestSchema,
     PromoteRequestSchema,
     PromotionOutcomeSchema,
     RightsSchema,
+    SectionDiffSchema,
     SectionSchema,
+    VersionContentSchema,
+    VersionDetailSchema,
+    VersionDiffSchema,
     VersionSchema,
 )
 from opofuente.application.library_models import (
@@ -50,7 +55,11 @@ from opofuente.application.library_models import (
     EvidenceView,
     PromotionOutcome,
     RightsView,
+    SectionDiff,
     SectionView,
+    VersionDetail,
+    VersionDiff,
+    VersionText,
     VersionView,
 )
 from opofuente.domain.errors import ClassificationConflictError, NotFoundError
@@ -186,6 +195,82 @@ def _outcome(result: PromotionOutcome) -> PromotionOutcomeSchema:
         created_version=result.created_version,
         applied=result.applied,
         reason=result.reason,
+    )
+
+
+#: Tope de texto por lado en una comparación: un diff se lee, no se vuelca entero. Cuando se recorta
+#: se dice (`*_truncated`), porque un texto cortado sin avisar se lee como si fuera todo el texto.
+DIFF_TEXT_LIMIT = 4_000
+
+#: Tipos que se pueden ver **en el navegador**. El resto se descarga: no se abre a ciegas lo que no
+#: se sabe interpretar (contrato §7).
+SAFE_INLINE_TYPES = frozenset(
+    {
+        "application/pdf",
+        "image/png",
+        "image/jpeg",
+        "image/webp",
+        "image/gif",
+        "text/plain",
+    }
+)
+
+
+def _recorte(texto: str | None) -> tuple[str | None, bool]:
+    if texto is None or len(texto) <= DIFF_TEXT_LIMIT:
+        return texto, False
+    return texto[:DIFF_TEXT_LIMIT], True
+
+
+def _diff_section(view: SectionDiff) -> SectionDiffSchema:
+    izquierda, recortada_izquierda = _recorte(view.left)
+    derecha, recortada_derecha = _recorte(view.right)
+    return SectionDiffSchema(
+        label=view.label,
+        kind=view.kind,  # type: ignore[arg-type]
+        left=izquierda,
+        right=derecha,
+        left_truncated=recortada_izquierda,
+        right_truncated=recortada_derecha,
+    )
+
+
+def _diff(view: VersionDiff) -> VersionDiffSchema:
+    return VersionDiffSchema(
+        document_id=view.document_id,
+        from_version_id=view.from_version_id,
+        to_version_id=view.to_version_id,
+        sections=[_diff_section(seccion) for seccion in view.sections],
+        added=view.added,
+        removed=view.removed,
+        changed=view.changed,
+        unchanged=view.unchanged,
+        has_changes=view.has_changes,
+    )
+
+
+def _version_detail(view: VersionDetail) -> VersionDetailSchema:
+    return VersionDetailSchema(
+        document_id=view.document_id,
+        document_title=view.document_title,
+        document_type=view.document_type,
+        owner_scope=view.owner_scope,  # type: ignore[arg-type]
+        version=_version(view.version),
+        mapping_count=view.mapping_count,
+    )
+
+
+def _version_content(view: VersionText) -> VersionContentSchema:
+    return VersionContentSchema(
+        document_version_id=view.document_version_id,
+        representation_id=view.representation_id,
+        text=view.text,
+        offset=view.offset,
+        limit=view.limit,
+        total_chars=view.total_chars,
+        truncated=view.truncated,
+        quality=view.quality,
+        warnings=list(view.warnings),
     )
 
 
@@ -363,18 +448,19 @@ def add_collection_item(
 
 @router.post(
     "/document-versions/{version_id}/mappings",
-    response_model=DocumentMappingSchema,
+    response_model=MappingSchema,
     status_code=201,
     responses=INGESTION_WRITE_ERRORS,
     summary="Asigna una versión de documento a un nodo del programa",
 )
 def add_mapping(
     version_id: str, request: MappingRequestSchema, service: LibraryServiceDep
-) -> DocumentMappingSchema:
+) -> MappingSchema:
     """Contrato §7: una fuente compartida se guarda una vez y se asigna a varias oposiciones.
 
     El mapeo apunta a la **versión**, no al artefacto: así una versión retirada deja de contar como
-    cobertura sin tocar el material que ya se había asignado con ella.
+    cobertura sin tocar el material que ya se había asignado con ella. Se devuelve el mapeo tal y
+    como queda (con su nodo), no solo su identificador: quien lo pide quiere verlo.
     """
     mapeo_id = service.add_mapping(
         version_id,
@@ -383,10 +469,142 @@ def add_mapping(
     )
     if mapeo_id is None:
         raise NotFoundError("versión de documento", version_id)
-    return DocumentMappingSchema(
-        id=mapeo_id,
-        document_version_id=version_id,
-        curriculum_node_id=request.curriculum_node_id,
-        coverage_type=request.coverage_type,
-        status="accepted",
+    mapeo = next(
+        (candidato for candidato in service.mappings_of(version_id) if candidato.id == mapeo_id),
+        None,
     )
+    if mapeo is None:
+        raise NotFoundError("mapeo", mapeo_id)
+    return mapping_schema(mapeo)
+
+
+@router.patch(
+    "/documents/{document_id}",
+    response_model=DocumentSchema,
+    responses=INGESTION_WRITE_ERRORS,
+    summary="Edita los metadatos de un documento",
+)
+def patch_document(
+    document_id: str, request: PatchDocumentRequestSchema, service: LibraryServiceDep
+) -> DocumentSchema:
+    """Contrato §7. Lo que no se puede aplicar responde **409 con el motivo**, nunca a medias.
+
+    Marcar un documento como público es una decisión con consecuencias: exige que los derechos de su
+    versión activa consten revisados y permitan reutilizar el material.
+    """
+    if service.document(document_id) is None:
+        raise NotFoundError("documento", document_id)
+    resultado = service.update_document(document_id, changes=request.model_dump(exclude_unset=True))
+    if resultado.document is None:
+        raise ClassificationConflictError(
+            resultado.reason or "El cambio de metadatos no se pudo aplicar"
+        )
+    return _document(resultado.document)
+
+
+@router.get(
+    "/document-versions/{version_id}",
+    response_model=VersionDetailSchema,
+    responses=RESOURCE_ERRORS,
+    summary="Una versión con su documento",
+)
+def get_version(version_id: str, service: LibraryServiceDep) -> VersionDetailSchema:
+    """Contrato §7: una versión sola, sin pedir la ficha entera del documento."""
+    vista = service.version_detail(version_id)
+    if vista is None:
+        raise NotFoundError("versión de documento", version_id)
+    return _version_detail(vista)
+
+
+@router.get(
+    "/document-versions/{version_id}/content",
+    response_model=VersionContentSchema,
+    responses=RESOURCE_ERRORS,
+    summary="Texto extraído de la versión, por trozos",
+)
+def get_version_content(
+    version_id: str,
+    service: LibraryServiceDep,
+    offset: Annotated[int, Query(ge=0)] = 0,
+    limit: Annotated[int, Query(ge=1, le=200_000)] = 20_000,
+) -> VersionContentSchema:
+    """Contrato §7. Si la extracción no dejó texto, se dice con su calidad: no se inventa nada."""
+    trozo = service.version_text(version_id, offset=offset, limit=limit)
+    if trozo is None:
+        raise NotFoundError("versión de documento", version_id)
+    return _version_content(trozo)
+
+
+@router.get(
+    "/document-versions/{version_id}/original",
+    response_class=FileResponse,
+    responses=RESOURCE_ERRORS,
+    summary="El fichero original de una versión",
+)
+def get_version_original(
+    version_id: str, service: LibraryServiceDep, artifacts: ArtifactStoreDep
+) -> FileResponse:
+    """Contrato §7: el original tal y como entró.
+
+    `inline` solo para los tipos que se pueden ver con seguridad; el resto se descarga. El fichero
+    se sirve desde el almacén (nunca desde una ruta de fuera) y un material en cuarentena **no se
+    sirve**: está retenido a propósito y eso se dice con un 409, no con un 404 que parecería un
+    fallo.
+    """
+    archivo = service.version_artifact(version_id)
+    if archivo is None:
+        raise NotFoundError("versión de documento", version_id)
+    if archivo.is_quarantined:
+        raise ClassificationConflictError(
+            "El original está en cuarentena y no se sirve hasta que se revise"
+        )
+    ruta = artifacts.path_for_key(archivo.storage_key)
+    if not ruta.is_file():
+        raise NotFoundError("fichero original", version_id)
+    return FileResponse(
+        path=ruta,
+        media_type=archivo.media_type,
+        filename=archivo.original_name or version_id,
+        content_disposition_type=(
+            "inline" if archivo.media_type in SAFE_INLINE_TYPES else "attachment"
+        ),
+    )
+
+
+@router.get(
+    "/document-versions/{version_id}/mappings",
+    response_model=list[MappingSchema],
+    responses=RESOURCE_ERRORS,
+    summary="Asignaciones de programa de una versión",
+)
+def list_version_mappings(version_id: str, service: LibraryServiceDep) -> list[MappingSchema]:
+    """Contrato §7. Mismo formato de mapeo que sirve la clasificación: un mapeo es un mapeo."""
+    if service.version_detail(version_id) is None:
+        raise NotFoundError("versión de documento", version_id)
+    return [mapping_schema(mapeo) for mapeo in service.mappings_of(version_id)]
+
+
+@router.get(
+    "/documents/{document_id}/diff",
+    response_model=VersionDiffSchema,
+    responses=RESOURCE_ERRORS,
+    summary="Compara dos versiones del mismo documento",
+)
+def get_document_diff(
+    document_id: str,
+    service: LibraryServiceDep,
+    from_version_id: Annotated[str, Query(min_length=1)],
+    to_version_id: Annotated[str, Query(min_length=1)],
+) -> VersionDiffSchema:
+    """**Ruta no listada en el contrato §7**: se declara aquí en lugar de esconderse.
+
+    El diff existe desde el primer día en el dominio y la spec lo pide («confirmar diff»), pero el
+    contrato no fija su ruta. Compara el texto real de las secciones del mismo documento y **no
+    fusiona nada**: informa y deja decidir.
+    """
+    comparacion = service.diff(
+        document_id, from_version_id=from_version_id, to_version_id=to_version_id
+    )
+    if comparacion is None:
+        raise NotFoundError("versión del documento", f"{from_version_id} / {to_version_id}")
+    return _diff(comparacion)

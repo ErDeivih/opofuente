@@ -18,18 +18,26 @@ devuelve nada
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from datetime import datetime
 
 from opofuente.application.library_models import (
+    ArtifactFile,
     CollectionView,
     DocumentDetail,
     DocumentPage,
+    DocumentUpdateOutcome,
     EvidenceView,
     PromotionOutcome,
     SectionView,
+    VersionDetail,
+    VersionDiff,
+    VersionText,
     VersionView,
 )
 from opofuente.application.ports import Clock
+from opofuente.application.read_models import MappingView
+from opofuente.domain.classification import DocumentType  # el vocabulario es el de la clasificación
 from opofuente.domain.documents import (
     LogicalDocument,
     OwnerScope,
@@ -107,6 +115,108 @@ class LibraryService:
             version_id, superseded_id=superseded_id, now=self._clock.now(), actor=actor
         )
 
+    def update_document(
+        self, document_id: str, *, changes: Mapping[str, object], actor: str = "local"
+    ) -> DocumentUpdateOutcome:
+        """Edita los metadatos de la obra (contrato §7: `PATCH /documents/{id}`).
+
+        Dos reglas que no se saltan desde fuera: el título no puede quedar vacío y **marcar un
+        documento como público exige que los derechos de su versión activa permitan reutilizarlo**.
+        Lo que no se puede aplicar se devuelve con su motivo —la API responde 409— en lugar de
+        aceptarse a medias. El cambio queda auditado con su antes y su después; una petición sin
+        ningún campo que cambiar devuelve el documento tal cual y **no escribe nada**, porque un
+        apunte de auditoría de un cambio que no ocurrió es peor que no tenerlo.
+        """
+        detalle = self._documents.get_document(document_id)
+        if detalle is None:
+            return DocumentUpdateOutcome(
+                document=None, reason=f"no existe el documento {document_id}"
+            )
+        actual = detalle.document
+        if not changes:
+            return DocumentUpdateOutcome(document=actual)
+        titulo = actual.canonical_title
+        tipo = actual.document_type
+        ambito = actual.owner_scope
+        autoridad = actual.authority_tier
+        identificador = actual.canonical_identifier
+
+        for clave, valor in changes.items():
+            if clave == "canonical_title":
+                if not isinstance(valor, str) or not valor.strip():
+                    return DocumentUpdateOutcome(
+                        document=None, reason="un documento necesita título"
+                    )
+                titulo = valor.strip()
+            elif clave == "document_type":
+                if not isinstance(valor, str):
+                    return DocumentUpdateOutcome(document=None, reason="tipo documental inválido")
+                try:
+                    tipo = DocumentType(valor).value
+                except ValueError:
+                    return DocumentUpdateOutcome(
+                        document=None, reason=f"«{valor}» no es un tipo documental"
+                    )
+            elif clave == "owner_scope":
+                if not isinstance(valor, str):
+                    return DocumentUpdateOutcome(document=None, reason="ámbito inválido")
+                try:
+                    ambito = OwnerScope(valor).value
+                except ValueError:
+                    return DocumentUpdateOutcome(
+                        document=None, reason=f"«{valor}» no es un ámbito válido"
+                    )
+            elif clave == "authority_tier":
+                autoridad = None if valor is None else str(valor)
+            elif clave == "canonical_identifier":
+                identificador = None if valor is None else str(valor)
+            else:
+                return DocumentUpdateOutcome(
+                    document=None, reason=f"«{clave}» no es un campo editable"
+                )
+
+        if ambito == OwnerScope.PUBLIC.value and actual.owner_scope != OwnerScope.PUBLIC.value:
+            derechos = actual.active_version.rights if actual.active_version else None
+            perfil = (
+                RightsProfile(
+                    code=derechos.code,
+                    review_status=RightsReview(derechos.review_status),
+                    sharing=derechos.sharing,
+                )
+                if derechos is not None
+                else None
+            )
+            destino = LogicalDocument(
+                id=actual.id,
+                canonical_title=titulo,
+                document_type=tipo,
+                owner_scope=OwnerScope.PUBLIC,
+            )
+            if not can_promote_to_public(destino, perfil):
+                return DocumentUpdateOutcome(
+                    document=None,
+                    reason=(
+                        "no se puede marcar público: los derechos de la versión activa no constan "
+                        "revisados o no permiten reutilizar el material"
+                    ),
+                )
+
+        actualizado = self._documents.update_document(
+            document_id,
+            canonical_title=titulo,
+            document_type=tipo,
+            owner_scope=ambito,
+            authority_tier=autoridad,
+            canonical_identifier=identificador,
+            now=self._clock.now(),
+            actor=actor,
+        )
+        if actualizado is None:
+            return DocumentUpdateOutcome(
+                document=None, reason=f"no existe el documento {document_id}"
+            )
+        return DocumentUpdateOutcome(document=actualizado)
+
     def add_mapping(
         self,
         version_id: str,
@@ -154,6 +264,38 @@ class LibraryService:
         return next(
             (version for version in detalle.versions if version.id == version_id),
             None,
+        )
+
+    def version_detail(self, version_id: str) -> VersionDetail | None:
+        """Una versión con su documento (contrato §7: `GET /document-versions/{id}`)."""
+        return self._documents.version_detail(version_id)
+
+    def version_text(
+        self, version_id: str, *, offset: int = 0, limit: int = 20_000
+    ) -> VersionText | None:
+        """Texto extraído de la versión, por trozos, con la calidad de la extracción a la vista."""
+        return self._documents.version_text(version_id, offset=offset, limit=limit)
+
+    def version_artifact(self, version_id: str) -> ArtifactFile | None:
+        """El fichero original de la versión, para poder abrirlo o descargarlo."""
+        return self._documents.version_artifact(version_id)
+
+    def mappings_of(self, version_id: str) -> tuple[MappingView, ...]:
+        """Asignaciones de programa de una versión (contrato §7).
+
+        Se leen de la clasificación, que es quien guarda los mapeos: la biblioteca no mantiene una
+        segunda copia de lo mismo.
+        """
+        return self._classifications.list_mappings(
+            subject_type="document_version", subject_id=version_id
+        )
+
+    def diff(
+        self, document_id: str, *, from_version_id: str, to_version_id: str
+    ) -> VersionDiff | None:
+        """Compara dos versiones **del mismo documento**. No fusiona nada ni escribe nada."""
+        return self._documents.document_diff(
+            document_id, from_version_id=from_version_id, to_version_id=to_version_id
         )
 
     def sections(self, version_id: str) -> tuple[SectionView, ...]:

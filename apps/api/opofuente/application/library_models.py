@@ -149,6 +149,71 @@ class VersionDiff:
     changed: int = 0
     unchanged: int = 0
 
+    @property
+    def has_changes(self) -> bool:
+        """¿Hay algo que revisar? Igual que en el dominio: lo que solo cambió de sitio no cuenta.
+
+        Se calcula a partir de los recuentos y no se guarda: así no puede decir una cosa mientras
+        los recuentos dicen otra.
+        """
+        return self.added + self.removed + self.changed > 0
+
+
+@dataclass(frozen=True, slots=True)
+class ArtifactFile:
+    """El fichero original de una versión, tal y como entró: es lo que sirve `/original`."""
+
+    storage_key: str
+    media_type: str
+    size_bytes: int
+    sha256: str
+    original_name: str | None = None
+    quarantine_status: str = "none"
+
+    @property
+    def is_quarantined(self) -> bool:
+        """En cuarentena no se sirve: el contenido está retenido a propósito, no es un fallo."""
+        return self.quarantine_status != "none"
+
+
+@dataclass(frozen=True, slots=True)
+class VersionDetail:
+    """Una versión con su documento: lo que responde `GET /document-versions/{id}`."""
+
+    document_id: str
+    document_title: str
+    document_type: str
+    owner_scope: str
+    version: VersionView
+    mapping_count: int = 0
+
+
+@dataclass(frozen=True, slots=True)
+class VersionText:
+    """Trozo del texto extraído de una versión, con la calidad de la extracción a la vista."""
+
+    document_version_id: str
+    text: str
+    offset: int
+    limit: int
+    total_chars: int
+    truncated: bool
+    representation_id: str | None = None
+    quality: str | None = None
+    warnings: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class DocumentUpdateOutcome:
+    """Resultado de editar un documento: el documento actualizado, o por qué no se pudo."""
+
+    document: DocumentView | None
+    reason: str | None = None
+
+    @property
+    def applied(self) -> bool:
+        return self.reason is None
+
 
 @dataclass(frozen=True, slots=True)
 class CollectionView:
@@ -178,15 +243,19 @@ class PromotionOutcome:
 
 
 __all__ = [
+    "ArtifactFile",
     "CollectionView",
     "DocumentDetail",
     "DocumentPage",
+    "DocumentUpdateOutcome",
     "DocumentView",
     "EvidenceView",
     "PromotionOutcome",
     "RightsView",
     "SectionDiff",
     "SectionView",
+    "VersionDetail",
     "VersionDiff",
+    "VersionText",
     "VersionView",
 ]

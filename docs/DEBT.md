@@ -20,6 +20,7 @@ Reglas:
 | [DEBT-006](#debt-006--representación-exacta-de-fracciones-y-redondeo-en-la-puntuación) | S07 | Decidir y probar la aritmética exacta antes de calcular puntuaciones | abierta |
 | [DEBT-007](#debt-007--higiene-del-almacén-artefactos-sin-origen-y-temporales) | S12 | Recolector de artefactos sin origen, temporales `.part` y purga de trabajos | abierta |
 | [DEBT-008](#debt-008--conservar-los-formatos-sin-extractor-en-lugar-de-omitirlos) | S03 | Conservar PPTX/XLSX/EPUB y similares como `unsupported_preserved` | **cerrada en S03** |
+| [DEBT-009](#debt-009--el-texto-plano-no-produce-secciones-y-sin-secciones-no-hay-citas) | S06 | El texto plano y el texto pegado no producen secciones: sin ellas no hay citas ni diff | abierta |
 
 ---
 
@@ -353,3 +354,36 @@ guardar binarios ejecutables.
    comprueba que `material.zip/basura.exe` **no** existe), los temporales de Office, los ocultos y los
    enlaces que salen de la carpeta mantienen sus códigos de incidencia en
    `tests/integration/test_inventory.py` y en el E2E.
+
+## DEBT-009 — El texto plano no produce secciones (y sin secciones no hay citas)
+
+**Origen:** cierre de S05 (17 de septiembre de 2026), al probar el diff entre versiones.
+
+**Problema.** `PlainTextExtractor` (`apps/api/opofuente/infrastructure/extractors/text_files.py`) solo
+calcula secciones para Markdown (`_markdown_sections`) y devuelve `sections=()` para `.txt`; el texto
+**pegado** entra por ese mismo camino. Sin secciones no se crean `document_sections`, y con eso:
+
+| Consecuencia | Dónde se nota |
+|---|---|
+| Cero `evidence_spans` | la pestaña de la ficha se queda sin citas y «copiar cita» no tiene sección que citar |
+| `diff_versions` sin nada que comparar | `GET /documents/{id}/diff` responde vacío aunque el texto haya cambiado |
+| Estructura vacía | la pestaña «Estructura» no lista nada |
+
+No es un fallo de S05: S05 traduce y guarda lo que el extractor produce y **no inventa estructura**
+(`document_section_type` documenta que un párrafo no es un artículo porque lo parezca). Pero el
+material más probable de quien estudia —sus propios apuntes en texto— es justo el que queda sin citas.
+
+**Obligación antes de S06** (el banco de preguntas exige citar documento y sección): decidir y
+registrar (ADR) cómo se estructura el texto plano. Opciones: que el extractor emita **tramos técnicos**
+por bloque de párrafos (respetando líneas en blanco y encabezados `Tema N`), o que la sección se
+derive al promocionar con una sección `technical` que cubra el texto completo **y lo diga en su
+etiqueta**. Lo que no vale es inventar jerarquía.
+
+**Criterio de cierre.**
+
+1. Decisión registrada, con su cita y su porqué.
+2. Un `.txt` y un texto pegado producen al menos una sección marcada como tal, y de ella sale una
+   evidencia con su etiqueta de cita.
+3. Prueba de que el diff de dos versiones de texto plano informa de lo que cambió (hoy está probado
+   con secciones inyectadas y con la ausencia declarada).
+4. Prueba negativa: un texto sin estructura reconocible no se presenta como si tuviera capítulos.
