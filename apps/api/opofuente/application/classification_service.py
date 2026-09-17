@@ -21,6 +21,8 @@ from collections.abc import Mapping, Sequence
 from opofuente.application.job_service import JobExecution
 from opofuente.application.ports import ClassificationRepository, ClassifierPort, Clock
 from opofuente.application.read_models import (
+    AcceptedClassificationView,
+    AcceptedValueView,
     BulkDecisionResult,
     ClassificationRunReport,
     CoverageView,
@@ -166,6 +168,50 @@ class ClassificationService:
 
     def get_proposal(self, proposal_id: str) -> ProposalView | None:
         return self._repository.get_proposal(proposal_id)
+
+    def accepted_classification(
+        self, *, subject_type: str, subject_id: str
+    ) -> AcceptedClassificationView:
+        """Clasificación vigente de un material: lo aceptado y lo aplicado provisionalmente.
+
+        Se lee de las propuestas porque en S04 no hay documentos lógicos: el valor aceptado vive
+        ahí y S05 lo materializará sin reescribir historia. Un eje puede tener varias propuestas
+        decididas
+        (una aceptada y otra provisional, por ejemplo): manda la aceptada, que es la que decidió el
+        usuario.
+        """
+        pagina = self._repository.list_proposals(
+            subject_type=subject_type, subject_id=subject_id, limit=200
+        )
+        vigentes: dict[str, ProposalView] = {}
+        etiqueta: str | None = None
+        for propuesta in pagina.proposals:
+            if propuesta.status not in {"accepted", "auto_applied_provisional"}:
+                continue
+            etiqueta = etiqueta or propuesta.subject_label
+            actual = vigentes.get(propuesta.axis)
+            if actual is None or (
+                actual.status != ProposalStatus.ACCEPTED.value
+                and propuesta.status == ProposalStatus.ACCEPTED.value
+            ):
+                vigentes[propuesta.axis] = propuesta
+        return AcceptedClassificationView(
+            subject_type=subject_type,
+            subject_id=subject_id,
+            subject_label=etiqueta,
+            values=tuple(
+                AcceptedValueView(
+                    axis=propuesta.axis,
+                    value=propuesta.proposed_value,
+                    value_label=propuesta.value_label,
+                    status=propuesta.status,
+                    confidence=propuesta.confidence,
+                    is_critical=propuesta.is_critical,
+                    decided_at=propuesta.decided_at,
+                )
+                for _, propuesta in sorted(vigentes.items())
+            ),
+        )
 
     def review_groups(self) -> tuple[ReviewGroupView, ...]:
         return self._repository.pending_groups()

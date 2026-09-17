@@ -148,6 +148,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/classification/{subject_type}/{subject_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Clasificación vigente de un material (lo aceptado y lo provisional)
+         * @description Lo que consta de un material: hace que aceptar una propuesta **se note** en el producto.
+         *
+         *     Devuelve solo lo decidido —lo aceptado por el usuario y lo aplicado provisionalmente por banda
+         *     alta— con su etiqueta legible y separado, porque «provisional» significa «revisable».
+         */
+        get: operations["accepted_classification_api_v1_classification__subject_type___subject_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/convocations/{convocation_id}": {
         parameters: {
             query?: never;
@@ -756,6 +779,45 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * AcceptedClassificationSchema
+         * @description Lo que consta de un material: lo aceptado y lo que quedó provisional (revisable).
+         */
+        AcceptedClassificationSchema: {
+            /** Pending Review */
+            pending_review: boolean;
+            /** Subject Id */
+            subject_id: string;
+            /** Subject Label */
+            subject_label?: string | null;
+            /** Subject Type */
+            subject_type: string;
+            /** Values */
+            values?: components["schemas"]["AcceptedValueSchema"][];
+        };
+        /**
+         * AcceptedValueSchema
+         * @description Un eje de la clasificación vigente de un material, con su etiqueta legible.
+         */
+        AcceptedValueSchema: {
+            /** Axis */
+            axis: string;
+            /** Confidence */
+            confidence: number;
+            /** Decided At */
+            decided_at?: string | null;
+            /** Is Critical */
+            is_critical: boolean;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "accepted" | "auto_applied_provisional";
+            /** Value */
+            value: string;
+            /** Value Label */
+            value_label?: string | null;
+        };
         /**
          * ActiveConvocationSchema
          * @description Convocatoria activa de una oposición, en la forma mínima que necesita el selector.
@@ -2274,6 +2336,56 @@ export interface operations {
                 };
                 content: {
                     "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    accepted_classification_api_v1_classification__subject_type___subject_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                subject_type: string;
+                subject_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AcceptedClassificationSchema"];
                 };
             };
             /** @description El recurso no existe. */

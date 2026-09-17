@@ -96,6 +96,7 @@ def services(migrated_settings: Settings, session_factory, tmp_path: Path):
         store=store,
         representations=RepresentationStore(paths),
         registry=ExtractorRegistry(migrated_settings),
+        jobs=jobs,
         clock=clock,
         data_root=paths.root,
         max_member_bytes=migrated_settings.max_file_bytes,

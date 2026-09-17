@@ -599,6 +599,7 @@ def _extraer(migrated_settings: Settings, batch_ids: list[str]) -> ExtraccionDeP
             store=ArtifactStore(paths),
             representations=RepresentationStore(paths),
             registry=ExtractorRegistry(migrated_settings),
+            jobs=SqlAlchemyJobRepository(sesiones),
             clock=SystemClock(),
             data_root=paths.root,
             max_member_bytes=migrated_settings.max_file_bytes,

@@ -174,6 +174,15 @@ _CUES_RIGHTS: tuple[tuple[RightsStatus, str, float, str], ...] = (
     (RightsStatus.RIGHTS_DOCUMENT, r"\bcondiciones de uso\b", 0.6, "«condiciones de uso»"),
 )
 
+#: Peso a partir del cual una señal se considera fuerte (una publicación oficial, una plantilla de
+#: respuestas, un temario oficial). Por debajo son señales débiles y no bastan para decidir solas.
+_STRONG_WEIGHT = 0.6
+
+#: Techo de la confianza cuando **solo** coinciden señales débiles: por debajo del umbral de
+#: la banda alta a propósito: «apuntes de» + «foro» no pueden autoaplicar una etiqueta equivocada
+#: sobre material con derechos; se quedan en la cola de revisión.
+_WEAK_ONLY_CEILING = 0.6
+
 #: Un pegado lo escribió el usuario: es una señal floja de apuntes propios, nunca una certeza.
 _PASTE_CUE = (DocumentType.PERSONAL_NOTES, 0.4, "origen: texto pegado por el usuario")
 
@@ -210,16 +219,29 @@ def _score_cues(
     """Suma los pesos de las señales que coinciden, agrupadas por valor."""
     acumulado: dict[str, float] = {}
     evidencias: dict[str, list[str]] = {}
+    fuertes: set[str] = set()
     for value, patron, peso, etiqueta in cues:
         if re.search(patron, texto_normalizado) or re.search(patron, nombre_normalizado):
             if etiqueta in evidencias.get(value, []):
                 continue
             acumulado[value] = acumulado.get(value, 0.0) + peso
             evidencias.setdefault(value, []).append(etiqueta)
+            if peso >= _STRONG_WEIGHT:
+                fuertes.add(value)
     return [
-        _Match(value=value, score=round(min(cap, score), 2), evidence=tuple(evidencias[value]))
+        _Match(
+            value=value,
+            score=round(_techo(score, cap=cap, fuerte=value in fuertes), 2),
+            evidence=tuple(evidencias[value]),
+        )
         for value, score in acumulado.items()
     ]
+
+
+def _techo(score: float, *, cap: float, fuerte: bool) -> float:
+    """Confianza final: sin ninguna señal fuerte, no se pasa del techo de las señales débiles."""
+    limite = cap if fuerte else min(cap, _WEAK_ONLY_CEILING)
+    return min(limite, score)
 
 
 class DeterministicClassifier:

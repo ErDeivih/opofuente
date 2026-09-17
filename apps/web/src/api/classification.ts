@@ -12,6 +12,8 @@ export type BulkDecisionResponse = components['schemas']['BulkDecisionResponseSc
 export type DecisionRequest = components['schemas']['DecisionRequestSchema'];
 export type BulkDecisionRequest = components['schemas']['BulkDecisionRequestSchema'];
 export type ClassificationReport = components['schemas']['ClassificationReportSchema'];
+export type AcceptedClassification = components['schemas']['AcceptedClassificationSchema'];
+export type AcceptedValue = components['schemas']['AcceptedValueSchema'];
 
 export type ProposalAxis = Proposal['axis'];
 export type ProposalBand = Proposal['band'];
@@ -58,6 +60,22 @@ export function fetchCoverage(nodeId: string): Promise<Coverage> {
 /** Ejecuta una pasada de clasificación ahora. Es idempotente y no aplica nada definitivo. */
 export function runClassification(): Promise<ClassificationReport> {
   return apiFetch<ClassificationReport>('/api/v1/classification-runs', { method: 'POST' });
+}
+
+/**
+ * Clasificación **vigente** de un material: lo aceptado y lo aplicado provisionalmente.
+ *
+ * Es lo que hace que aceptar una propuesta se note: sin esto, el valor aceptado de tipo documental,
+ * oposición, autoridad o derechos no se podía ver en ninguna parte del producto.
+ */
+export function fetchAcceptedClassification(
+  subjectType: SubjectType,
+  subjectId: string,
+): Promise<AcceptedClassification> {
+  const params = new URLSearchParams({ subject_type: subjectType, subject_id: subjectId });
+  return apiFetch<AcceptedClassification>(
+    `/api/v1/classification/${encodeURIComponent(subjectType)}/${encodeURIComponent(subjectId)}?${params.toString()}`,
+  );
 }
 
 export interface DecideInput {

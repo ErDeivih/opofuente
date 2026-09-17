@@ -377,10 +377,8 @@ test('E2E-03 revisión en lote: aceptar un grupo, excluir una fila, corregir un 
   await expect(fact(cobertura, 'Cobertura provisional')).toBeVisible();
 
   // --- 6. Deshacer: la propuesta vuelve a la cola y la cobertura baja -----------------------
-  // PENDIENTE (documentado): el mismo material genera dos decisiones (artefacto y representación)
-  // con la misma etiqueta accesible, así que deshacer por etiqueta es ambiguo. La corrección va en el
-  // componente —`DecisionHistory` debe incluir el tipo de sujeto en el nombre del botón, que es lo
-  // correcto también para un lector de pantalla— y después aquí se elige la fila del artefacto.
+  // El mismo material genera dos decisiones (artefacto y representación): el historial las distingue
+  // por el tipo de sujeto en el nombre accesible del botón, así que se deshace la del artefacto.
   const historialTabla = page.getByRole('table', { name: /decisiones de esta sesión/ });
   await historialTabla
     .getByRole('button', {

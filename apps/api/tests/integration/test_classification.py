@@ -102,10 +102,15 @@ def test_una_pasada_de_clasificacion_propone_con_evidencia_y_sin_inventar(
     """Clasificar deja propuestas con su evidencia; el material sin señales no genera relleno."""
     _, tema = _material_clasificable(seeded_client)
 
+    # El pipeline se encadena solo: al terminar la extracción se encola la clasificación, así que el
+    # material recién pegado ya tiene propuestas **sin** haber pedido una pasada a mano.
+    assert _propuestas(seeded_client), "clasificar no puede depender de que alguien lo pida"
+
     informe = _clasificar(seeded_client)
 
     assert informe["subjects"] >= 2, "se clasifican la representación y su artefacto"
-    assert informe["proposals_created"] >= 1
+    assert informe["proposals_created"] == 0, "volver a clasificar no duplica propuestas"
+    assert informe["proposals_unchanged"] >= 1
     propuestas = _propuestas(seeded_client)
     temas = [propuesta for propuesta in propuestas if propuesta["axis"] == "topic"]
     assert temas, f"debería haberse propuesto el tema pegado: {propuestas}"
@@ -196,9 +201,9 @@ def test_aceptar_un_tema_crea_mapeo_cobertura_y_deshacer_lo_revierte(
     nodo_propio = next(nodo for nodo in cobertura["subtree"] if nodo["node_id"] == mapeo["node_id"])
     assert nodo_propio["accepted"] == 1
     assert nodo_propio["materials"], "la cobertura dice con qué material está cubierto el nodo"
-    # El artefacto y su representación son dos sujetos: el hermano puede conservar su propio mapeo
-    # provisional (aplicado por banda alta). Se guarda para comprobar que deshacer no lo toca.
-    provisional_hermano = nodo_propio["provisional"]
+    # El artefacto y su representación son el **mismo material**: la cobertura lo cuenta una vez,
+    # así que aquí ya no hay provisional (el material está aceptado).
+    assert nodo_propio["provisional"] == 0
 
     deshecha = seeded_client.post(
         f"/api/v1/classification-decisions/{resultado['audit_event_id']}/undo",
@@ -207,25 +212,26 @@ def test_aceptar_un_tema_crea_mapeo_cobertura_y_deshacer_lo_revierte(
 
     assert deshecha.status_code == 200, deshecha.text
     assert deshecha.json()["applied"] is True
+    # Deshacer restaura el estado **anterior**, no siempre «pendiente»: si la propuesta venía de una
+    # aplicación provisional, vuelve ahí: «deshacer restaura mappings/estados».
     vuelta = seeded_client.get(f"/api/v1/classification-proposals/{propuesta['id']}").json()
-    assert vuelta["status"] == "pending"
-    assert vuelta["decided_at"] is None
-    assert (
-        seeded_client.get(
-            "/api/v1/mappings",
-            params={
-                "subject_type": propuesta["subject_type"],
-                "subject_id": propuesta["subject_id"],
-            },
-        ).json()
-        == []
-    ), "el mapeo se retira al deshacer"
+    assert vuelta["status"] == propuesta["status"]
+    assert vuelta["decided_at"] == propuesta["decided_at"]
+    # Y el mapeo que había antes de la decisión se recupera en su estado provisional, no se pierde.
+    mapeos_despues = seeded_client.get(
+        "/api/v1/mappings",
+        params={
+            "subject_type": propuesta["subject_type"],
+            "subject_id": propuesta["subject_id"],
+        },
+    ).json()
+    assert [mapeo["status"] for mapeo in mapeos_despues] == ["provisional"]
     cobertura_final = seeded_client.get(
         f"/api/v1/curriculum-nodes/{mapeo['node_id']}/coverage"
     ).json()
     assert cobertura_final["accepted"] == 0, "el mapeo aceptado se retira al deshacer"
-    assert cobertura_final["provisional"] == provisional_hermano, (
-        "deshacer retira lo que hizo esa decisión, no lo de los demás sujetos"
+    assert cobertura_final["provisional"] == 1, (
+        "el material vuelve a contar una sola vez, como provisional"
     )
 
 
@@ -359,3 +365,56 @@ def test_resolver_un_duplicado_queda_auditado_y_no_borra_nada(seeded_client: Tes
     assert {miembro["subject_id"] for miembro in resuelto["members"]} == ids_antes
     listado = seeded_client.get("/api/v1/duplicate-clusters?status=resolved").json()
     assert [cluster["id"] for cluster in listado] == [cluster["id"]]
+
+
+# --- deshacer: regresiones del corrector ------------------------------------------------------
+
+
+def test_deshacer_una_aceptacion_sin_estado_previo_vuelve_a_pendiente(
+    seeded_client: TestClient,
+) -> None:
+    """Si la propuesta no venía de ninguna aplicación automática, deshacer la deja pendiente."""
+    _material_clasificable(seeded_client)
+    _clasificar(seeded_client)
+    # Una propuesta de banda media no se aplica sola: está pendiente de verdad y sin efecto previo.
+    propuesta = next(
+        p
+        for p in _propuestas(seeded_client)
+        if p["axis"] == "document_type" and p["status"] == "pending"
+    )
+    assert propuesta["status"] == "pending"
+    aceptada = seeded_client.post(
+        f"/api/v1/classification-proposals/{propuesta['id']}/accept",
+        json={},
+        headers=ALLOWED_ORIGIN,
+    )
+    assert aceptada.status_code == 200, aceptada.text
+
+    deshecha = seeded_client.post(
+        f"/api/v1/classification-decisions/{aceptada.json()['audit_event_id']}/undo",
+        headers=ALLOWED_ORIGIN,
+    )
+
+    assert deshecha.status_code == 200, deshecha.text
+    vuelta = seeded_client.get(f"/api/v1/classification-proposals/{propuesta['id']}").json()
+    assert vuelta["status"] == "pending"
+    assert vuelta["decided_at"] is None
+    assert vuelta["decision_note"] is None
+
+
+def test_deshacer_sin_decisiones_es_un_conflicto(seeded_client: TestClient) -> None:
+    """Sin decisión que deshacer se responde 409 con el motivo, sin inventar una reversión."""
+    _material_clasificable(seeded_client)
+    _clasificar(seeded_client)
+    pendiente = _propuestas(seeded_client, status="pending")[0]
+    antes = seeded_client.get(f"/api/v1/classification-proposals/{pendiente['id']}").json()
+
+    respuesta = seeded_client.post(
+        f"/api/v1/classification-decisions/{pendiente['id']}/undo",
+        headers=ALLOWED_ORIGIN,
+    )
+
+    assert respuesta.status_code == 409, respuesta.text
+    assert respuesta.json()["code"] == "classification_conflict"
+    despues = seeded_client.get(f"/api/v1/classification-proposals/{pendiente['id']}").json()
+    assert despues["status"] == antes["status"], "un conflicto no cambia nada"

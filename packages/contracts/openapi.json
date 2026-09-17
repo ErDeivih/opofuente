@@ -1,6 +1,109 @@
 {
   "components": {
     "schemas": {
+      "AcceptedClassificationSchema": {
+        "description": "Lo que consta de un material: lo aceptado y lo que quedó provisional (revisable).",
+        "properties": {
+          "pending_review": {
+            "title": "Pending Review",
+            "type": "boolean"
+          },
+          "subject_id": {
+            "title": "Subject Id",
+            "type": "string"
+          },
+          "subject_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subject Label"
+          },
+          "subject_type": {
+            "title": "Subject Type",
+            "type": "string"
+          },
+          "values": {
+            "items": {
+              "$ref": "#/components/schemas/AcceptedValueSchema"
+            },
+            "title": "Values",
+            "type": "array"
+          }
+        },
+        "required": [
+          "subject_type",
+          "subject_id",
+          "pending_review"
+        ],
+        "title": "AcceptedClassificationSchema",
+        "type": "object"
+      },
+      "AcceptedValueSchema": {
+        "description": "Un eje de la clasificación vigente de un material, con su etiqueta legible.",
+        "properties": {
+          "axis": {
+            "title": "Axis",
+            "type": "string"
+          },
+          "confidence": {
+            "title": "Confidence",
+            "type": "number"
+          },
+          "decided_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decided At"
+          },
+          "is_critical": {
+            "title": "Is Critical",
+            "type": "boolean"
+          },
+          "status": {
+            "enum": [
+              "accepted",
+              "auto_applied_provisional"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value",
+            "type": "string"
+          },
+          "value_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value Label"
+          }
+        },
+        "required": [
+          "axis",
+          "value",
+          "status",
+          "confidence",
+          "is_critical"
+        ],
+        "title": "AcceptedValueSchema",
+        "type": "object"
+      },
       "ActiveConvocationSchema": {
         "description": "Convocatoria activa de una oposición, en la forma mínima que necesita el selector.",
         "properties": {
@@ -3496,6 +3599,78 @@
           }
         },
         "summary": "Ejecuta una pasada de clasificación ahora (idempotente)",
+        "tags": [
+          "clasificación"
+        ]
+      }
+    },
+    "/api/v1/classification/{subject_type}/{subject_id}": {
+      "get": {
+        "description": "Lo que consta de un material: hace que aceptar una propuesta **se note** en el producto.\n\nDevuelve solo lo decidido —lo aceptado por el usuario y lo aplicado provisionalmente por banda\nalta— con su etiqueta legible y separado, porque «provisional» significa «revisable».",
+        "operationId": "accepted_classification_api_v1_classification__subject_type___subject_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "subject_type",
+            "required": true,
+            "schema": {
+              "title": "Subject Type",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "subject_id",
+            "required": true,
+            "schema": {
+              "title": "Subject Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AcceptedClassificationSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Clasificación vigente de un material (lo aceptado y lo provisional)",
         "tags": [
           "clasificación"
         ]

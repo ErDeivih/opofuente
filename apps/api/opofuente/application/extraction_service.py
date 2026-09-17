@@ -23,7 +23,7 @@ from pathlib import Path
 from uuid import uuid4
 
 from opofuente.application.job_service import JobExecution
-from opofuente.application.ports import Clock, IngestionRepository
+from opofuente.application.ports import Clock, IngestionRepository, JobQueue
 from opofuente.application.read_models import RepresentationView
 from opofuente.domain.artifacts import OriginType, media_type_for
 from opofuente.domain.errors import (
@@ -48,6 +48,7 @@ from opofuente.domain.ingestion import (
     IssueSeverity,
     ItemStatus,
 )
+from opofuente.domain.jobs import JobType
 from opofuente.infrastructure.artifact_store import ArtifactStore
 from opofuente.infrastructure.extraction_repository import (
     PendingExtraction,
@@ -92,6 +93,7 @@ class ExtractionService:
         store: ArtifactStore,
         representations: RepresentationStore,
         registry: ExtractorRegistry,
+        jobs: JobQueue,
         clock: Clock,
         data_root: Path,
         max_member_bytes: int,
@@ -101,6 +103,7 @@ class ExtractionService:
         self._store = store
         self._representations = representations
         self._registry = registry
+        self._jobs = jobs
         self._clock = clock
         self._data_root = data_root
         self._max_member_bytes = max_member_bytes
@@ -135,6 +138,23 @@ class ExtractionService:
             raise
         self._finish(batch_id, report)
         tick.report(report)
+        self._enqueue_classification(batch_id, report)
+
+    def _enqueue_classification(self, batch_id: str, report: ExtractionReport) -> None:
+        """Encola la clasificación de lo extraído: el pipeline sigue solo, sin pedirlo a mano.
+
+        La clasificación es idempotente, así que encolarla al terminar la extracción no duplica
+        propuestas; y como se encola **después** de cerrar el lote, un fallo al encolarla no deja el
+        informe del lote a medias. Si no se extrajo nada, no hay nada que clasificar.
+        """
+        if report.extracted <= 0:
+            return
+        self._jobs.enqueue(
+            job_type=JobType.CLASSIFY_DOCUMENT,
+            payload={"batch_id": batch_id, "limit": max(report.extracted * 2, 50)},
+            now=self._clock.now(),
+            idempotency_key=f"classify_document:{batch_id}",
+        )
 
     def _extract_pending(
         self, batch_id: str, execution: JobExecution, tick: _Ticker

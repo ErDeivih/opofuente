@@ -581,7 +581,7 @@ class SqlAlchemyClassificationRepository:
                         reason=f"El nodo «{valor}» no está en el programa sembrado",
                     )
 
-            anterior = {"status": fila.status, "proposed_value": fila.proposed_value}
+            anterior = self._estado_previo(session, fila, nodo)
             fila.proposed_value = valor
             fila.status = status.value
             fila.decided_at = now
@@ -658,13 +658,16 @@ class SqlAlchemyClassificationRepository:
                     applied=False,
                     reason="No hay ninguna decisión que deshacer",
                 )
-            anterior = {"status": fila.status, "proposed_value": fila.proposed_value}
-            valor_previo = _valor_previo(ultimo.before_json) or fila.proposed_value
-            fila.status = ProposalStatus.PENDING.value
-            fila.decided_at = None
-            fila.decision_note = None
-            fila.proposed_value = valor_previo
-            retirados = self._remove_mappings(session, fila.id)
+            anterior = self._estado_previo(session, fila, None)
+            previo = _estado_auditado(ultimo.before_json)
+            fila.status = str(previo.get("status") or ProposalStatus.PENDING.value)
+            fila.proposed_value = str(previo.get("proposed_value") or fila.proposed_value)
+            fila.decided_at = _fecha(previo.get("decided_at"))
+            fila.decision_note = _texto(previo.get("decision_note"))
+            # El efecto se devuelve igual que el estado: el mapeo que había antes se restaura (o se
+            # retira si antes no había ninguno). Deshacer no puede dejar cobertura de algo deshecho
+            # ni borrar la cobertura provisional que ya existía.
+            retirados = self._restaurar_efecto(session, fila, previo)
             evento = self._audit(
                 session,
                 actor=actor,
@@ -758,6 +761,70 @@ class SqlAlchemyClassificationRepository:
         existente.source_proposal_id = fila.id
         existente.approved_at = now if estado is MappingStatus.ACCEPTED else None
         return existente
+
+    @staticmethod
+    def _estado_previo(
+        session: Session,
+        fila: ClassificationProposalRecord,
+        nodo: CurriculumNodeRecord | None,
+    ) -> dict[str, object]:
+        """Estado **y efecto** antes de decidir: lo que hay que devolver al deshacer.
+
+        Se guarda en el evento de auditoría porque deshacer tiene que restaurar lo que había, no
+        adivinar: sin esto, deshacer una aceptación que venía de una aplicación provisional dejaba
+        propuesta en «pendiente» y borraba el mapeo provisional que ya existía.
+        """
+        mapeo = None
+        if nodo is not None:
+            mapeo = session.execute(
+                select(CurriculumMappingRecord).where(
+                    CurriculumMappingRecord.curriculum_node_id == nodo.id,
+                    CurriculumMappingRecord.subject_type == fila.subject_type,
+                    CurriculumMappingRecord.subject_id == fila.subject_id,
+                )
+            ).scalar_one_or_none()
+        return {
+            "status": fila.status,
+            "proposed_value": fila.proposed_value,
+            "decided_at": fila.decided_at.isoformat() if fila.decided_at is not None else None,
+            "decision_note": fila.decision_note,
+            "mapping_id": mapeo.id if mapeo is not None else None,
+            "mapping_status": mapeo.status if mapeo is not None else None,
+            "mapping_coverage": mapeo.coverage_type if mapeo is not None else None,
+            "mapping_approved_at": (
+                mapeo.approved_at.isoformat()
+                if mapeo is not None and mapeo.approved_at is not None
+                else None
+            ),
+        }
+
+    @staticmethod
+    def _restaurar_efecto(
+        session: Session, fila: ClassificationProposalRecord, previo: Mapping[str, object]
+    ) -> int:
+        """Devuelve los mapeos al estado anterior y retira los que creó la decisión deshecha."""
+        previo_id = previo.get("mapping_id")
+        filas = (
+            session.execute(
+                select(CurriculumMappingRecord).where(
+                    CurriculumMappingRecord.source_proposal_id == fila.id
+                )
+            )
+            .scalars()
+            .all()
+        )
+        retirados = 0
+        for mapeo in filas:
+            if previo_id is not None and mapeo.id == str(previo_id):
+                mapeo.status = str(previo.get("mapping_status") or mapeo.status)
+                cobertura = previo.get("mapping_coverage")
+                if cobertura is not None:
+                    mapeo.coverage_type = str(cobertura)
+                mapeo.approved_at = _fecha(previo.get("mapping_approved_at"))
+                continue
+            session.delete(mapeo)
+            retirados += 1
+        return retirados
 
     @staticmethod
     def _remove_mappings(session: Session, proposal_id: str) -> int:
@@ -872,6 +939,9 @@ class SqlAlchemyClassificationRepository:
             pares = [(mapeo.subject_type, mapeo.subject_id) for mapeo in mapeos]
             etiquetas = self._subject_labels(session, pares)
             calidades = self._subject_qualities(session, pares)
+            # Un mismo material puede estar clasificado como artefacto y como representación: la
+            # cobertura cuenta **materiales**, no mapeos, para no contar dos veces el mismo fichero.
+            claves = self._material_keys(session, pares)
             propuestas = session.execute(
                 select(
                     ClassificationProposalRecord.subject_type,
@@ -884,19 +954,29 @@ class SqlAlchemyClassificationRepository:
                 ).scalar_one()
             )
 
-        provisional: dict[str, int] = defaultdict(int)
-        aceptada: dict[str, int] = defaultdict(int)
+        provisional: dict[str, set[str]] = defaultdict(set)
+        aceptada: dict[str, set[str]] = defaultdict(set)
         materiales: dict[str, list[str]] = defaultdict(list)
+        ya_listados: dict[str, set[str]] = defaultdict(set)
         for mapeo in mapeos:
-            etiqueta = etiquetas.get((mapeo.subject_type, mapeo.subject_id)) or mapeo.subject_id
+            clave = claves.get((mapeo.subject_type, mapeo.subject_id), mapeo.subject_id)
+            etiqueta = etiquetas.get((mapeo.subject_type, mapeo.subject_id)) or clave
             if mapeo.status == MappingStatus.PROVISIONAL.value:
-                provisional[mapeo.curriculum_node_id] += 1
+                provisional[mapeo.curriculum_node_id].add(clave)
             elif coverage_counts_as_accepted(
                 calidades.get((mapeo.subject_type, mapeo.subject_id)), MappingStatus(mapeo.status)
             ):
-                aceptada[mapeo.curriculum_node_id] += 1
-            if len(materiales[mapeo.curriculum_node_id]) < 3:
+                aceptada[mapeo.curriculum_node_id].add(clave)
+            if (
+                clave not in ya_listados[mapeo.curriculum_node_id]
+                and len(materiales[mapeo.curriculum_node_id]) < 3
+            ):
                 materiales[mapeo.curriculum_node_id].append(etiqueta)
+                ya_listados[mapeo.curriculum_node_id].add(clave)
+
+        # Lo aceptado manda: un material no se cuenta como provisional y aceptado a la vez.
+        for nodo_id, claves_aceptadas in aceptada.items():
+            provisional[nodo_id] -= claves_aceptadas
 
         vistas = tuple(
             CoverageNodeView(
@@ -904,8 +984,8 @@ class SqlAlchemyClassificationRepository:
                 path=nodo.path,
                 title=nodo.title,
                 depth=nodo.depth,
-                provisional=provisional.get(nodo.id, 0),
-                accepted=aceptada.get(nodo.id, 0),
+                provisional=len(provisional.get(nodo.id, ())),
+                accepted=len(aceptada.get(nodo.id, ())),
                 materials=tuple(materiales.get(nodo.id, ())),
             )
             for nodo in nodos
@@ -917,8 +997,8 @@ class SqlAlchemyClassificationRepository:
         return CoverageView(
             convocation_code=convocation_code,
             nodes=vistas,
-            provisional_total=sum(provisional.values()),
-            accepted_total=sum(aceptada.values()),
+            provisional_total=sum(len(valor) for valor in provisional.values()),
+            accepted_total=sum(len(valor) for valor in aceptada.values()),
             classified_subjects=len(artefactos_con_propuesta) if clasificados else 0,
             unclassified_subjects=max(0, artefactos - len(artefactos_con_propuesta)),
             materials_total=artefactos,
@@ -1187,6 +1267,33 @@ class SqlAlchemyClassificationRepository:
         return etiquetas
 
     @staticmethod
+    def _material_keys(
+        session: Session, pares: Sequence[tuple[str, str]]
+    ) -> dict[tuple[str, str], str]:
+        """Clave del **material** de cada sujeto: una representación pertenece a su artefacto.
+
+        Sirve para que la cobertura cuente materiales y no mapeos: el mismo fichero clasificado como
+        artefacto y como representación es un solo material, y sumarlo dos veces inflaría la
+        cobertura que ve el usuario.
+        """
+        claves: dict[tuple[str, str], str] = {}
+        representaciones = [
+            sujeto for tipo, sujeto in pares if tipo == SubjectType.REPRESENTATION.value
+        ]
+        if representaciones:
+            filas = session.execute(
+                select(
+                    ExtractedRepresentationRecord.id,
+                    ExtractedRepresentationRecord.artifact_id,
+                ).where(ExtractedRepresentationRecord.id.in_(representaciones))
+            ).all()
+            for representation_id, artifact_id in filas:
+                claves[(SubjectType.REPRESENTATION.value, str(representation_id))] = str(
+                    artifact_id
+                )
+        return claves
+
+    @staticmethod
     def _subject_qualities(
         session: Session, pares: Sequence[tuple[str, str]]
     ) -> dict[tuple[str, str], Quality | None]:
@@ -1254,15 +1361,26 @@ class SqlAlchemyClassificationRepository:
         )
 
 
-def _valor_previo(before_json: str | None) -> str | None:
-    """Valor que tenía la propuesta antes de la decisión que se está deshaciendo."""
+def _estado_auditado(before_json: str | None) -> dict[str, object]:
+    """Estado anterior tal como se guardó en la auditoría (vacío si no se puede leer)."""
     if not before_json:
-        return None
+        return {}
     try:
         datos = json.loads(before_json)
     except json.JSONDecodeError:
-        return None
-    if not isinstance(datos, dict):
-        return None
-    valor = datos.get("proposed_value")
+        return {}
+    return datos if isinstance(datos, dict) else {}
+
+
+def _fecha(valor: object) -> datetime | None:
+    """Fecha ISO del evento auditado, o `None` si no hay o no se puede leer."""
+    if isinstance(valor, str) and valor:
+        try:
+            return datetime.fromisoformat(valor)
+        except ValueError:
+            return None
+    return None
+
+
+def _texto(valor: object) -> str | None:
     return valor if isinstance(valor, str) else None

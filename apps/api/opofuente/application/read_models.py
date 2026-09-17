@@ -554,6 +554,39 @@ class DuplicateClusterView:
 
 
 @dataclass(frozen=True, slots=True)
+class AcceptedValueView:
+    """Lo que consta de un eje para un material: lo aceptado o lo aplicado provisionalmente."""
+
+    axis: str
+    value: str
+    value_label: str | None
+    status: str
+    confidence: float
+    is_critical: bool = False
+    decided_at: datetime | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class AcceptedClassificationView:
+    """Clasificación vigente de un material, eje por eje.
+
+    Es lo que hace que aceptar una propuesta **se note** en el producto: hasta ahora el valor
+    aceptado solo se podía reconstruir consultando la lista de propuestas, así que en cuatro de los
+    cinco ejes la revisión no tenía efecto visible.
+    """
+
+    subject_type: str
+    subject_id: str
+    subject_label: str | None
+    values: tuple[AcceptedValueView, ...] = ()
+
+    @property
+    def pending_review(self) -> bool:
+        """¿Queda algo aplicado provisionalmente, es decir, revisable?"""
+        return any(valor.status == "auto_applied_provisional" for valor in self.values)
+
+
+@dataclass(frozen=True, slots=True)
 class ClassificationRunReport:
     """Qué ha dejado una pasada: propuestas nuevas, repetidas y sujetos sin señales."""
 
@@ -575,6 +608,8 @@ class ClassificationRunReport:
 
 
 __all__ = [
+    "AcceptedClassificationView",
+    "AcceptedValueView",
     "AlternativeView",
     "AuditEventView",
     "BulkDecisionResult",

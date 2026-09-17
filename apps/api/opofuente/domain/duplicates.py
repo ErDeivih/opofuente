@@ -163,7 +163,7 @@ def find_duplicates(
                 comparisons_exhausted=agotado,
             )
         )
-    return tuple(grupos)
+    return _merge_components(grupos)
 
 
 def _clave(documento: TextDocument) -> str:
@@ -176,3 +176,57 @@ def groups_by_kind(groups: Iterable[DuplicateGroup]) -> dict[str, int]:
     for grupo in groups:
         conteo[grupo.kind] += 1
     return dict(conteo)
+
+
+def _merge_components(grupos: Sequence[DuplicateGroup]) -> tuple[DuplicateGroup, ...]:
+    """Une los grupos de casi duplicados que comparten algún miembro.
+
+    Comparar por pares deja cadenas: si A se parece a B y B a C, salían dos clusters para el mismo
+    material. Aquí se unen por componentes conexas, así que un grupo de textos parecidos es **un**
+    cluster, con una firma determinista (el hash de sus miembros ordenados) que no depende del orden
+    en que se hayan comparado.
+    """
+    mismo_texto = [grupo for grupo in grupos if grupo.kind != "near_duplicate"]
+    casi = [grupo for grupo in grupos if grupo.kind == "near_duplicate"]
+    if not casi:
+        return tuple(mismo_texto)
+
+    padre: dict[str, str] = {}
+
+    def _raiz(clave: str) -> str:
+        padre.setdefault(clave, clave)
+        while padre[clave] != clave:
+            padre[clave] = padre[padre[clave]]
+            clave = padre[clave]
+        return clave
+
+    miembros: dict[str, tuple[str, str, str | None, float]] = {}
+    for grupo in casi:
+        for miembro in grupo.members:
+            clave = f"{miembro[0]}:{miembro[1]}"
+            miembros[clave] = miembro
+            _raiz(clave)
+        claves = [f"{miembro[0]}:{miembro[1]}" for miembro in grupo.members]
+        for otra in claves[1:]:
+            padre[_raiz(otra)] = _raiz(claves[0])
+
+    componentes: dict[str, list[str]] = {}
+    for clave in sorted(miembros):
+        componentes.setdefault(_raiz(clave), []).append(clave)
+
+    agotado = any(grupo.comparisons_exhausted for grupo in casi)
+    unidos: list[DuplicateGroup] = []
+    for claves in componentes.values():
+        if len(claves) < 2:
+            continue
+        firma = hashlib.sha256("|".join(claves).encode("utf-8")).hexdigest()
+        unidos.append(
+            DuplicateGroup(
+                kind="near_duplicate",
+                relation="similar",
+                signature=firma,
+                members=tuple(miembros[clave] for clave in claves),
+                comparisons_exhausted=agotado,
+            )
+        )
+    return tuple(mismo_texto + unidos)

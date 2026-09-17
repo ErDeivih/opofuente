@@ -129,6 +129,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         store=artifact_store,
         representations=RepresentationStore(paths),
         registry=ExtractorRegistry(resolved),
+        jobs=job_queue,
         clock=clock,
         data_root=paths.root,
         max_member_bytes=resolved.max_file_bytes,

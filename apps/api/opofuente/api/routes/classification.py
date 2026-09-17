@@ -12,6 +12,8 @@ from typing import Annotated
 from fastapi import APIRouter, Query
 
 from opofuente.api.classification_schemas import (
+    AcceptedClassificationSchema,
+    AcceptedValueSchema,
     AlternativeSchema,
     BulkDecisionRequestSchema,
     BulkDecisionResponseSchema,
@@ -376,6 +378,41 @@ def resolve_duplicate_cluster(
     if view is None:
         raise NotFoundError("grupo de duplicados", cluster_id)
     return _cluster(view)
+
+
+@router.get(
+    "/classification/{subject_type}/{subject_id}",
+    response_model=AcceptedClassificationSchema,
+    responses=RESOURCE_ERRORS,
+    summary="Clasificación vigente de un material (lo aceptado y lo provisional)",
+)
+def accepted_classification(
+    subject_type: str, subject_id: str, service: ClassificationServiceDep
+) -> AcceptedClassificationSchema:
+    """Lo que consta de un material: hace que aceptar una propuesta **se note** en el producto.
+
+    Devuelve solo lo decidido —lo aceptado por el usuario y lo aplicado provisionalmente por banda
+    alta— con su etiqueta legible y separado, porque «provisional» significa «revisable».
+    """
+    view = service.accepted_classification(subject_type=subject_type, subject_id=subject_id)
+    return AcceptedClassificationSchema(
+        subject_type=view.subject_type,
+        subject_id=view.subject_id,
+        subject_label=view.subject_label,
+        pending_review=view.pending_review,
+        values=[
+            AcceptedValueSchema(
+                axis=valor.axis,
+                value=valor.value,
+                value_label=valor.value_label,
+                status=valor.status,  # type: ignore[arg-type]
+                confidence=valor.confidence,
+                is_critical=valor.is_critical,
+                decided_at=valor.decided_at,
+            )
+            for valor in view.values
+        ],
+    )
 
 
 @router.post(

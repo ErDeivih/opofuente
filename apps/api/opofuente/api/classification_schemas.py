@@ -159,6 +159,28 @@ class ResolveDuplicateRequestSchema(BaseModel):
     note: str | None = None
 
 
+class AcceptedValueSchema(BaseModel):
+    """Un eje de la clasificación vigente de un material, con su etiqueta legible."""
+
+    axis: str
+    value: str
+    value_label: str | None = None
+    status: Literal["accepted", "auto_applied_provisional"]
+    confidence: float
+    is_critical: bool
+    decided_at: datetime | None = None
+
+
+class AcceptedClassificationSchema(BaseModel):
+    """Lo que consta de un material: lo aceptado y lo que quedó provisional (revisable)."""
+
+    subject_type: str
+    subject_id: str
+    subject_label: str | None = None
+    pending_review: bool
+    values: list[AcceptedValueSchema] = Field(default_factory=list)
+
+
 class ClassificationReportSchema(BaseModel):
     """Qué dejó la última pasada de clasificación: se sirve tal cual, sin redondear nada."""
 

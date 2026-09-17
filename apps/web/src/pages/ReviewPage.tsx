@@ -24,6 +24,7 @@ import { LoadingState } from '../components/LoadingState';
 import { CoveragePanel } from '../features/review/CoveragePanel';
 import type { SessionDecision } from '../features/review/DecisionHistory';
 import { DecisionHistory } from '../features/review/DecisionHistory';
+import { AcceptedClassificationPanel } from '../features/review/AcceptedClassificationPanel';
 import { ProposalList } from '../features/review/ProposalList';
 import { ReviewGroups } from '../features/review/ReviewGroups';
 import { subjectLabel, valueLabel } from '../features/review/labels';
@@ -71,6 +72,9 @@ export function ReviewPage() {
     () => [...(pending.data?.proposals ?? []), ...(provisional.data?.proposals ?? [])],
     [pending.data, provisional.data],
   );
+  // El panel de clasificación vigente muestra el material de la primera propuesta abierta: es el
+  // que el usuario tiene delante en la cola.
+  const primerSujeto = proposals[0];
   const byId = useMemo(
     () => new Map(proposals.map((proposal) => [proposal.id, proposal])),
     [proposals],
@@ -238,6 +242,14 @@ export function ReviewPage() {
           <ErrorState title="El lote no se pudo aplicar" message={describeError(bulk.error)} />
         )}
       </section>
+
+      {primerSujeto !== undefined && (
+        <AcceptedClassificationPanel
+          subjectType={primerSujeto.subject_type}
+          subjectId={primerSujeto.subject_id}
+          subjectLabel={primerSujeto.subject_label}
+        />
+      )}
 
       <section className="card" aria-labelledby="propuestas">
         <h2 id="propuestas">Propuestas</h2>

@@ -163,13 +163,16 @@ def test_la_puerta_de_promociones_criticas_erroneas_esta_en_cero() -> None:
 
 
 def test_las_promociones_automaticas_erroneas_fuera_de_los_ejes_criticos_se_cuentan() -> None:
-    """El otro lado de la puerta: dos propuestas equivocadas con banda alta sí se aplicarían."""
-    assert REPORT.wrong_automatic_promotions == 2
-    assert REPORT.metrics_for(Axis.DOCUMENT_TYPE).wrong_automatic_promotions == 1
+    """El otro lado de la puerta: una promoción equivocada con banda alta sí se aplicaría."""
+    # La señal débil sola ya no cruza la banda alta (corrector de S04): la etiqueta equivocada de
+    # «apuntes de foro» se queda en revisión, así que el documental ya no promociona nada erróneo.
+    assert REPORT.wrong_automatic_promotions == 1
     assert REPORT.metrics_for(Axis.TOPIC).wrong_automatic_promotions == 1
     documental = REPORT.metrics_for(Axis.DOCUMENT_TYPE)
-    assert (documental.auto_applied, documental.auto_applied_hits) == (3, 2)
-    assert documental.auto_applied_precision == 0.6667
+    assert documental.wrong_automatic_promotions == 0
+    assert (documental.auto_applied, documental.auto_applied_hits) == (2, 2)
+    assert documental.auto_applied_precision == 1.0
+    # Lo que se aplica solo en el documental acierta siempre ahora: la etiqueta equivocada que
 
 
 def test_la_calibracion_enfrenta_confianza_declarada_con_acierto_real() -> None:
@@ -179,8 +182,8 @@ def test_la_calibracion_enfrenta_confianza_declarada_con_acierto_real() -> None:
     autoridad = REPORT.metrics_for(Axis.AUTHORITY).calibration
 
     assert [(cubo.lower, cubo.proposals, cubo.hits) for cubo in documental] == [
-        (0.6, 7, 7),
-        (0.8, 3, 2),
+        (0.6, 8, 7),
+        (0.8, 2, 2),
     ]
     assert [(cubo.lower, cubo.upper) for cubo in tema] == [(0.8, 1.0)]
     assert tema[0].accuracy == 0.6667
