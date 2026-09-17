@@ -18,6 +18,7 @@ from sqlalchemy import (
     DateTime,
     Float,
     ForeignKey,
+    Index,
     Integer,
     String,
     Text,
@@ -926,3 +927,279 @@ class CollectionItemRecord(Base):
     subject_id: Mapped[str] = mapped_column(String(36), nullable=False)
     position: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("1"))
     added_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+# ----------------------------------------- S06: preguntas, claves, evidencias y explicaciones
+
+
+class QuestionSetRecord(Base):
+    """Un conjunto de preguntas: examen oficial, banco privado, practica o lote generado.
+
+    El **modelo** (A/B) es del conjunto, no de cada pregunta: un examen modelo A es un conjunto con
+    su propia plantilla, y por eso `answer_key_versions` no necesita repetir el modelo.
+    """
+
+    __tablename__ = "question_sets"
+    __table_args__ = (
+        CheckConstraint(
+            "set_type IN ('official_exam', 'private_bank', 'practice', 'generated_batch')",
+            name="ck_question_set_type",
+        ),
+        CheckConstraint(
+            "status IN ('draft', 'confirmed', 'archived')", name="ck_question_set_status"
+        ),
+        CheckConstraint("length(trim(title)) > 0", name="ck_question_set_title"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    title: Mapped[str] = mapped_column(Text, nullable=False)
+    opposition_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("oppositions.id", ondelete="RESTRICT"), nullable=False
+    )
+    convocation_version_id: Mapped[str | None] = mapped_column(
+        String(36),
+        ForeignKey("convocation_versions.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    set_type: Mapped[str] = mapped_column(String(24), nullable=False)
+    model_code: Mapped[str | None] = mapped_column(String(8), nullable=True)
+    held_at: Mapped[date | None] = mapped_column(Date, nullable=True)
+    source_document_version_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("document_versions.id", ondelete="SET NULL"), nullable=True
+    )
+    status: Mapped[str] = mapped_column(
+        String(16), nullable=False, server_default=text("'draft'"), default="draft"
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class QuestionVersionRecord(Base):
+    """Una version concreta de una pregunta, con su cita y su procedencia.
+
+    `stable_key` es la identidad de la pregunta entre versiones y `version_no` distingue las
+    correcciones: corregir una pregunta **no** borra la anterior, la sustituye.
+    """
+
+    __tablename__ = "question_versions"
+    __table_args__ = (
+        CheckConstraint(
+            "question_type IN ('single_choice', 'multi_mark_error', 'true_false', "
+            "'free_text_reference')",
+            name="ck_question_type",
+        ),
+        CheckConstraint(
+            "status IN ('incomplete', 'complete', 'verified', 'conflicting', 'annulled', "
+            "'superseded')",
+            name="ck_question_status",
+        ),
+        CheckConstraint(
+            "origin_type IN ('official', 'private', 'generated')", name="ck_question_origin"
+        ),
+        CheckConstraint("length(trim(stem)) > 0", name="ck_question_stem"),
+        CheckConstraint("version_no >= 1", name="ck_question_version_no"),
+        CheckConstraint("position >= 1", name="ck_question_position"),
+        CheckConstraint(
+            "reserve_order IS NULL OR reserve_order >= 1", name="ck_question_reserve_order"
+        ),
+        CheckConstraint("is_reserve OR reserve_order IS NULL", name="ck_question_reserve_flag"),
+        CheckConstraint(
+            "supersedes_id IS NULL OR supersedes_id <> id", name="ck_question_not_self"
+        ),
+        UniqueConstraint("question_set_id", "stable_key", "version_no", name="uq_question_version"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    question_set_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("question_sets.id", ondelete="CASCADE"), nullable=False
+    )
+    stable_key: Mapped[str] = mapped_column(String(64), nullable=False)
+    version_no: Mapped[int] = mapped_column(Integer, nullable=False)
+    stem: Mapped[str] = mapped_column(Text, nullable=False)
+    question_type: Mapped[str] = mapped_column(String(24), nullable=False)
+    position: Mapped[int] = mapped_column(Integer, nullable=False)
+    is_reserve: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default=text("0"), default=False
+    )
+    reserve_order: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    status: Mapped[str] = mapped_column(
+        String(16), nullable=False, server_default=text("'incomplete'"), default="incomplete"
+    )
+    origin_type: Mapped[str] = mapped_column(String(16), nullable=False)
+    source_section_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("document_sections.id", ondelete="SET NULL"), nullable=True
+    )
+    supersedes_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("question_versions.id", ondelete="SET NULL"), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class OptionVersionRecord(Base):
+    """Una opcion de una version de pregunta.
+
+    La clave estable y la posicion son distintas a proposito: el mismo conjunto de opciones
+    reordenado en el modelo B tiene las mismas claves y otras posiciones.
+    """
+
+    __tablename__ = "option_versions"
+    __table_args__ = (
+        CheckConstraint("position >= 1", name="ck_option_position"),
+        CheckConstraint("length(trim(text)) > 0", name="ck_option_text"),
+        UniqueConstraint("question_version_id", "stable_key", name="uq_option_key"),
+        UniqueConstraint("question_version_id", "position", name="uq_option_position"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    question_version_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("question_versions.id", ondelete="CASCADE"), nullable=False
+    )
+    stable_key: Mapped[str] = mapped_column(String(16), nullable=False)
+    label: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    position: Mapped[int] = mapped_column(Integer, nullable=False)
+    text: Mapped[str] = mapped_column(Text, nullable=False)
+
+
+class AnswerKeyVersionRecord(Base):
+    """Una version de la plantilla de un conjunto, con su aprobacion.
+
+    Una clave activa esta aprobada, y solo puede haber **una activa por conjunto** (invariante 5):
+    el indice unico parcial lo impone en la base, no solo en el codigo. Que una clave **oficial**
+    tenga ademas plantilla oficial enlazada depende del tipo del conjunto y se comprueba en el
+    servicio.
+    """
+
+    __tablename__ = "answer_key_versions"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('draft', 'active', 'superseded', 'rejected')", name="ck_key_status"
+        ),
+        CheckConstraint("version_no >= 1", name="ck_key_version_no"),
+        CheckConstraint("status <> 'active' OR approved_at IS NOT NULL", name="ck_key_approved"),
+        CheckConstraint("supersedes_id IS NULL OR supersedes_id <> id", name="ck_key_not_self"),
+        UniqueConstraint("question_set_id", "version_no", name="uq_key_version"),
+        Index(
+            "uq_answer_key_active",
+            "question_set_id",
+            unique=True,
+            sqlite_where=text("status = 'active'"),
+        ),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    question_set_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("question_sets.id", ondelete="CASCADE"), nullable=False
+    )
+    source_document_version_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("document_versions.id", ondelete="SET NULL"), nullable=True
+    )
+    version_no: Mapped[int] = mapped_column(Integer, nullable=False)
+    status: Mapped[str] = mapped_column(
+        String(16), nullable=False, server_default=text("'draft'"), default="draft"
+    )
+    supersedes_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("answer_key_versions.id", ondelete="SET NULL"), nullable=True
+    )
+    published_at: Mapped[date | None] = mapped_column(Date, nullable=True)
+    approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class AnswerKeyEntryRecord(Base):
+    """Que le pasa a una pregunta en una plantilla: con clave, anulada, sin responder o en
+    conflicto."""
+
+    __tablename__ = "answer_key_entries"
+    __table_args__ = (
+        CheckConstraint(
+            "outcome IN ('keyed', 'annulled', 'unanswered', 'conflicting')",
+            name="ck_key_entry_outcome",
+        ),
+        CheckConstraint(
+            "outcome <> 'keyed' OR (correct_option_keys_json IS NOT NULL "
+            "AND correct_option_keys_json <> '[]')",
+            name="ck_key_entry_has_key",
+        ),
+    )
+
+    answer_key_version_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("answer_key_versions.id", ondelete="CASCADE"), primary_key=True
+    )
+    question_version_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("question_versions.id", ondelete="CASCADE"), primary_key=True
+    )
+    outcome: Mapped[str] = mapped_column(String(16), nullable=False)
+    correct_option_keys_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+
+class QuestionEvidenceRecord(Base):
+    """Que evidencia sostiene que parte de una pregunta, con su claim y su estado de revision."""
+
+    __tablename__ = "question_evidence"
+    __table_args__ = (
+        CheckConstraint(
+            "role IN ('stem', 'correct', 'distractor', 'explanation')",
+            name="ck_question_evidence_role",
+        ),
+        CheckConstraint(
+            "status IN ('proposed', 'accepted', 'rejected')", name="ck_question_evidence_status"
+        ),
+    )
+
+    question_version_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("question_versions.id", ondelete="CASCADE"), primary_key=True
+    )
+    # La cita de una pregunta no se queda sin su span: el material citado no se borra por debajo.
+    evidence_span_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("evidence_spans.id", ondelete="RESTRICT"), primary_key=True
+    )
+    role: Mapped[str] = mapped_column(String(16), primary_key=True)
+    claim: Mapped[str | None] = mapped_column(Text, nullable=True)
+    status: Mapped[str] = mapped_column(
+        String(16), nullable=False, server_default=text("'proposed'"), default="proposed"
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class QuestionExplanationRecord(Base):
+    """Explicacion de la pregunta entera (`option_stable_key` nulo) o de una opcion.
+
+    Si la escribio un modelo, se guarda **cual** y con que version de plantilla: una explicacion
+    generada sin eso no es trazable, y la base lo exige.
+    """
+
+    __tablename__ = "question_explanations"
+    __table_args__ = (
+        CheckConstraint(
+            "origin IN ('official', 'private', 'generated')", name="ck_explanation_origin"
+        ),
+        CheckConstraint(
+            "status IN ('draft', 'reviewed', 'rejected')", name="ck_explanation_status"
+        ),
+        CheckConstraint("length(trim(text)) > 0", name="ck_explanation_text"),
+        CheckConstraint(
+            "origin <> 'generated' OR model_name IS NOT NULL", name="ck_explanation_generated"
+        ),
+        UniqueConstraint("question_version_id", "option_stable_key", name="uq_explanation_option"),
+        Index(
+            "uq_explanation_question",
+            "question_version_id",
+            unique=True,
+            sqlite_where=text("option_stable_key IS NULL"),
+        ),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    question_version_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("question_versions.id", ondelete="CASCADE"), nullable=False
+    )
+    option_stable_key: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    origin: Mapped[str] = mapped_column(String(16), nullable=False)
+    status: Mapped[str] = mapped_column(
+        String(16), nullable=False, server_default=text("'draft'"), default="draft"
+    )
+    model_name: Mapped[str | None] = mapped_column(Text, nullable=True)
+    prompt_template_version: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    text: Mapped[str] = mapped_column(Text, nullable=False)
