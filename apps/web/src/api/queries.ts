@@ -31,6 +31,16 @@ import {
   retryBatch,
 } from './ingestion';
 import {
+  acceptVersion,
+  fetchDocument,
+  fetchDocuments,
+  fetchEvidence,
+  fetchMappings,
+  fetchSections,
+  fetchVersions,
+  markSupersedes,
+} from './library';
+import {
   activateOpposition,
   fetchConvocation,
   fetchCurriculum,
@@ -38,7 +48,6 @@ import {
   fetchOppositions,
 } from './profiles';
 import { fetchCapabilities, fetchReadiness, fetchSettings } from './system';
-
 export const queryKeys = {
   readiness: ['system', 'readiness'] as const,
   capabilities: ['system', 'capabilities'] as const,
@@ -60,6 +69,16 @@ export const queryKeys = {
   proposals: (status: string) => ['classification', 'proposals', status] as const,
   reviewGroups: ['classification', 'review-groups'] as const,
   coverage: (nodeId: string) => ['classification', 'coverage', nodeId] as const,
+  /* S05: biblioteca. Cuelgan de «library» por lo mismo: aceptar una versión cambia el listado (su
+     versión activa y su estado) y la propia ficha, y las dos deben contar lo mismo. */
+  libraryDocuments: (documentType: string, ownerScope: string) =>
+    ['library', 'documents', documentType, ownerScope] as const,
+  libraryDocument: (documentId: string) => ['library', 'document', documentId] as const,
+  libraryVersions: (documentId: string) =>
+    ['library', 'document', documentId, 'versions'] as const,
+  librarySections: (versionId: string) => ['library', 'version', versionId, 'sections'] as const,
+  libraryEvidence: (versionId: string) => ['library', 'version', versionId, 'evidence'] as const,
+  libraryMappings: (versionId: string) => ['library', 'version', versionId, 'mappings'] as const,
 };
 
 export function useReadiness() {
@@ -367,6 +386,109 @@ export function useRunClassification() {
     mutationFn: runClassification,
     onSuccess: () => {
       invalidateClassification(queryClient);
+    },
+  });
+}
+
+/* ------------------------------------------------------------------- S05: biblioteca */
+
+/**
+ * Aceptar una versión o marcar una sustitución cambia **todo** lo que la biblioteca enseña: la
+ * versión activa del listado, el estado de las versiones de la ficha y, con ellas, qué se puede
+ * citar como aceptado. Por eso se invalida la biblioteca entera, no una consulta concreta.
+ */
+function invalidateLibrary(queryClient: QueryClient) {
+  void queryClient.invalidateQueries({ queryKey: ['library'] });
+}
+
+/** Documentos de la biblioteca con los filtros que admite el servidor. */
+export function useDocuments(documentType: string, ownerScope: string) {
+  return useQuery({
+    queryKey: queryKeys.libraryDocuments(documentType, ownerScope),
+    queryFn: () =>
+      fetchDocuments({
+        documentType: documentType === '' ? null : documentType,
+        ownerScope: ownerScope === '' ? null : ownerScope,
+      }),
+    staleTime: 5_000,
+  });
+}
+
+export function useDocumentDetail(documentId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.libraryDocument(documentId ?? 'ninguno'),
+    queryFn: () => fetchDocument(documentId as string),
+    enabled: documentId !== null,
+  });
+}
+
+export function useVersions(documentId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.libraryVersions(documentId ?? 'ninguno'),
+    queryFn: () => fetchVersions(documentId as string),
+    enabled: documentId !== null,
+  });
+}
+
+/** Estructura de una versión. Sin versión (documento sin promover) no se pide nada. */
+export function useSections(versionId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.librarySections(versionId ?? 'ninguna'),
+    queryFn: () => fetchSections(versionId as string),
+    enabled: versionId !== null,
+  });
+}
+
+export function useEvidence(versionId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.libraryEvidence(versionId ?? 'ninguna'),
+    queryFn: () => fetchEvidence(versionId as string),
+    enabled: versionId !== null,
+  });
+}
+
+/**
+ * Asignaciones de programa de una versión de documento.
+ *
+ * Se leen por versión porque es lo que el servidor sabe relacionar con un nodo del programa
+ * (`subject_type=document_version`).
+ */
+export function useDocumentMappings(versionId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.libraryMappings(versionId ?? 'ninguna'),
+    queryFn: () => fetchMappings('document_version', versionId as string),
+    enabled: versionId !== null,
+  });
+}
+
+export interface AcceptVersionInput {
+  documentId: string;
+  versionId: string;
+}
+
+export function useAcceptVersion() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: AcceptVersionInput) => acceptVersion(input.documentId, input.versionId),
+    onSuccess: () => {
+      invalidateLibrary(queryClient);
+    },
+  });
+}
+
+export interface MarkSupersedesInput {
+  documentId: string;
+  versionId: string;
+  supersededId: string;
+}
+
+export function useMarkSupersedes() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: MarkSupersedesInput) =>
+      markSupersedes(input.documentId, input.versionId, input.supersededId),
+    onSuccess: () => {
+      invalidateLibrary(queryClient);
     },
   });
 }

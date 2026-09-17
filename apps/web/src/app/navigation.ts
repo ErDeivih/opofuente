@@ -34,7 +34,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
   {
     path: '/biblioteca',
     label: 'Biblioteca',
-    slice: 'S05',
+    slice: null,
     summary: 'Documentos lógicos, versiones, derechos, lector y asignaciones.',
   },
   {

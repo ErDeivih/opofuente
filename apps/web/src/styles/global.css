@@ -728,6 +728,56 @@ button:focus-visible,
   overflow-wrap: anywhere;
 }
 
+/* --- Biblioteca (S05) ------------------------------------------------------ */
+
+/* Pestañas de la ficha: el estado activo no depende solo del color (07_UI-UX §1). */
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-bottom: 0.75rem;
+  border-bottom: 1px solid var(--color-borde);
+}
+
+.tabs__tab {
+  font: inherit;
+  padding: 0.35rem 0.7rem;
+  border: 1px solid transparent;
+  border-bottom: 3px solid transparent;
+  border-radius: var(--radio) var(--radio) 0 0;
+  background: none;
+  color: var(--color-acento);
+  cursor: pointer;
+}
+
+.tabs__tab--active {
+  border-color: var(--color-borde) var(--color-borde) var(--color-acento);
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  font-weight: 600;
+}
+
+.tabs__panel:focus-visible {
+  outline: 2px solid var(--color-acento);
+  outline-offset: 2px;
+}
+
+/* Lector: la estructura a la izquierda y el texto extraído con su página a la derecha. */
+.reader-split {
+  display: grid;
+  grid-template-columns: minmax(14rem, 1fr) minmax(0, 2fr);
+  gap: 1rem;
+  align-items: start;
+  margin-top: 0.5rem;
+}
+
+.citation {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
+
 /* --- Responsive (07_UI-UX §13 y §14: 1440, 1024 y 390) --------------------- */
 
 @media (max-width: 1024px) {
@@ -791,5 +841,9 @@ button:focus-visible,
   .table th {
     border: none;
     padding: 0.2rem 0;
+  }
+
+  .reader-split {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

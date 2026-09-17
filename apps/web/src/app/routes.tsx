@@ -1,6 +1,7 @@
 import { Route, Routes } from 'react-router-dom';
 
 import { HomePage } from '../pages/HomePage';
+import { LibraryPage } from '../pages/LibraryPage';
 import { NotFoundPage } from '../pages/NotFoundPage';
 import { PendingPage } from '../pages/PendingPage';
 import { ProgramPage } from '../pages/ProgramPage';
@@ -14,6 +15,7 @@ export function AppRoutes() {
       <Route path="/" element={<HomePage />} />
       <Route path="/programa" element={<ProgramPage />} />
       <Route path="/bandeja" element={<TrayPage />} />
+      <Route path="/biblioteca" element={<LibraryPage />} />
       {/* La revisión es la continuación de la bandeja (07_UI-UX §4), no una sección de la barra
           lateral: la navegación del producto la fija y no incluye «Revisión» entre sus secciones. */}
       <Route path="/revision" element={<ReviewPage />} />

@@ -15,6 +15,7 @@ from opofuente.application.extraction_service import ExtractionService
 from opofuente.application.ingestion_service import IngestionService
 from opofuente.application.intake_service import IntakeService
 from opofuente.application.job_service import JobService
+from opofuente.application.library_service import LibraryService
 from opofuente.application.profiles_service import ProfilesService
 from opofuente.application.system_service import SystemService
 from opofuente.config import Settings
@@ -60,6 +61,11 @@ def get_classification_service(request: Request) -> ClassificationService:
     return service
 
 
+def get_library_service(request: Request) -> LibraryService:
+    service: LibraryService = request.app.state.library_service
+    return service
+
+
 #: Dependencias anotadas (estilo moderno de FastAPI: sin llamadas en valores por defecto).
 AppSettingsDep = Annotated[Settings, Depends(get_app_settings)]
 SystemServiceDep = Annotated[SystemService, Depends(get_system_service)]
@@ -69,3 +75,4 @@ ExtractionServiceDep = Annotated[ExtractionService, Depends(get_extraction_servi
 IntakeServiceDep = Annotated[IntakeService, Depends(get_intake_service)]
 JobServiceDep = Annotated[JobService, Depends(get_job_service)]
 ClassificationServiceDep = Annotated[ClassificationService, Depends(get_classification_service)]
+LibraryServiceDep = Annotated[LibraryService, Depends(get_library_service)]

@@ -13,14 +13,16 @@ import {
   renderWithProviders,
   settingsFixture,
   stubApi,
+  type StubbedRoute,
 } from './testUtils';
 
-function stubSystemApi() {
+function stubSystemApi(extra: Record<string, StubbedRoute> = {}) {
   return stubApi({
     '/api/v1/health/ready': { body: readinessReady },
     '/api/v1/capabilities': { body: capabilitiesFixture },
     '/api/v1/settings': { body: settingsFixture },
     '/api/v1/oppositions': { body: oppositionsFixture },
+    ...extra,
   });
 }
 
@@ -39,16 +41,17 @@ describe('navegación', () => {
     ]);
   });
 
-  it('Inicio, Bandeja y Programa están implementadas; el resto declara su slice', () => {
+  it('Inicio, Bandeja, Programa y Biblioteca están implementadas', () => {
     const implementadas = NAV_ITEMS.filter((item) => item.slice === null).map((item) => item.label);
-    expect(implementadas).toEqual(['Inicio', 'Bandeja', 'Programa']);
+    expect(implementadas).toEqual(['Inicio', 'Bandeja', 'Programa', 'Biblioteca']);
   });
 
   it('las secciones no implementadas declaran su slice', () => {
     const slices = new Map(NAV_ITEMS.map((item) => [item.label, item.slice]));
     expect(slices.get('Bandeja')).toBeNull();
     expect(slices.get('Programa')).toBeNull();
-    expect(slices.get('Biblioteca')).toBe('S05');
+    expect(slices.get('Biblioteca')).toBeNull();
+    expect(slices.get('Preguntas')).toBe('S06');
     expect(slices.get('Estudiar')).toBe('S07');
   });
 });
@@ -60,12 +63,32 @@ describe('shell de la aplicación', () => {
       <AppShell>
         <AppRoutes />
       </AppShell>,
+      { route: '/preguntas' },
+    );
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Preguntas' })).toBeInTheDocument();
+    expect(screen.getByText(/slice S06/)).toBeInTheDocument();
+    expect(screen.getByText('pendiente')).toBeInTheDocument();
+  });
+
+  it('la Biblioteca ya está construida: su ruta no anuncia un slice pendiente', async () => {
+    stubSystemApi({
+      '/api/v1/documents?limit=50&offset=0': {
+        body: { documents: [], total: 0, limit: 50, offset: 0 },
+      },
+    });
+    renderWithProviders(
+      <AppShell>
+        <AppRoutes />
+      </AppShell>,
       { route: '/biblioteca' },
     );
 
-    expect(await screen.findByRole('heading', { level: 1, name: 'Biblioteca' })).toBeInTheDocument();
-    expect(screen.getByText(/slice S05/)).toBeInTheDocument();
-    expect(screen.getByText('pendiente')).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Biblioteca' }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/slice S05/)).toBeNull();
+    expect(screen.queryByText('pendiente')).toBeNull();
   });
 
   it('muestra el estado real del sistema en Inicio', async () => {

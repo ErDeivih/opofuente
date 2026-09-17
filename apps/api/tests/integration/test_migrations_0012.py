@@ -22,7 +22,7 @@ from sqlalchemy.exc import IntegrityError
 from alembic import command
 from opofuente.config import Settings
 from opofuente.infrastructure.db import build_engine
-from opofuente.infrastructure.migrations import alembic_config, run_migrations
+from opofuente.infrastructure.migrations import alembic_config, run_migrations, script_head
 
 AHORA = datetime(2026, 9, 16, 12, 0, tzinfo=UTC)
 
@@ -118,7 +118,7 @@ def test_el_esquema_de_clasificacion_queda_creado(tmp_path: Path) -> None:
 
     tablas = _tablas(settings)
 
-    assert _revision(settings) == "0012_classification_and_review"
+    assert _revision(settings) == script_head(settings)
     for tabla in TABLAS_DE_S04:
         assert tabla in tablas, f"falta la tabla {tabla}"
 
@@ -182,7 +182,7 @@ def test_la_migracion_se_puede_revertir(tmp_path: Path) -> None:
 
     run_migrations(settings, revision="head")
 
-    assert _revision(settings) == "0012_classification_and_review"
+    assert _revision(settings) == script_head(settings)
     tablas = _tablas(settings)
     for tabla in TABLAS_DE_S04:
         assert tabla in tablas

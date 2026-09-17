@@ -30,6 +30,7 @@ from opofuente.application.extraction_service import ExtractionService
 from opofuente.application.ingestion_service import IngestionService
 from opofuente.application.intake_service import IntakeService
 from opofuente.application.job_service import JobService
+from opofuente.application.library_service import LibraryService
 from opofuente.application.profiles_service import ProfilesService
 from opofuente.application.system_service import SystemService
 from opofuente.config import Settings, get_settings
@@ -45,6 +46,7 @@ from opofuente.infrastructure.classification_repository import SqlAlchemyClassif
 from opofuente.infrastructure.classifiers import DeterministicClassifier
 from opofuente.infrastructure.clock import SystemClock
 from opofuente.infrastructure.db import build_engine, build_session_factory
+from opofuente.infrastructure.document_repository import SqlAlchemyDocumentRepository
 from opofuente.infrastructure.extraction_repository import SqlAlchemyExtractionRepository
 from opofuente.infrastructure.extractors import ExtractorRegistry
 from opofuente.infrastructure.filesystem_inventory import FilesystemInventory
@@ -149,9 +151,16 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         ),
     )
     job_service = JobService(job_queue, clock)
+    representations = RepresentationStore(paths)
+    classification_repository = SqlAlchemyClassificationRepository(session_factory, representations)
     classification_service = ClassificationService(
-        repository=SqlAlchemyClassificationRepository(session_factory, RepresentationStore(paths)),
+        repository=classification_repository,
         engines=(DeterministicClassifier(),),
+        clock=clock,
+    )
+    library_service = LibraryService(
+        documents=SqlAlchemyDocumentRepository(session_factory, representations),
+        classifications=classification_repository,
         clock=clock,
     )
     worker = JobWorker(
@@ -226,6 +235,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.intake_service = intake_service
     app.state.job_service = job_service
     app.state.classification_service = classification_service
+    app.state.library_service = library_service
 
     # El orden importa: el último añadido es el más externo, así que el identificador de
     # correlación envuelve también los rechazos por Origin.

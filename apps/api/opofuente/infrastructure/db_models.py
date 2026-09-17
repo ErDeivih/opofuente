@@ -573,8 +573,12 @@ class CurriculumMappingRecord(Base):
 
     __tablename__ = "curriculum_mappings"
     __table_args__ = (
+        # 0013 amplía el vocabulario: un mapeo puede apuntar también a una versión de documento, a
+        # una sección o a una cita textual. El modelo refleja el esquema migrado, no el de 0012.
         CheckConstraint(
-            "subject_type IN ('artifact', 'representation')", name="ck_mapping_subject"
+            "subject_type IN ('artifact', 'representation', 'document_version', "
+            "'section', 'evidence')",
+            name="ck_mapping_subject",
         ),
         CheckConstraint(
             "coverage_type IN ('mention', 'partial', 'complete')", name="ck_mapping_coverage"
@@ -685,3 +689,240 @@ class AuditEventRecord(Base):
     after_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     correlation_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+# ------------------------------------------------- S05: documentos, versiones y derechos
+
+
+class RightsStatusRecord(Base):
+    """Condiciones de uso de una fuente. `unknown` significa restringido, no permiso."""
+
+    __tablename__ = "rights_statuses"
+    __table_args__ = (
+        CheckConstraint(
+            "review_status IN ('unknown', 'reviewed', 'restricted')", name="ck_rights_review"
+        ),
+        UniqueConstraint("code", name="uq_rights_code"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    code: Mapped[str] = mapped_column(String(48), nullable=False)
+    license_name: Mapped[str | None] = mapped_column(Text, nullable=True)
+    license_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    attribution: Mapped[str | None] = mapped_column(Text, nullable=True)
+    commercial_reuse: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default=text("0"), default=False
+    )
+    sharing: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default=text("0"), default=False
+    )
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    review_status: Mapped[str] = mapped_column(
+        String(16), nullable=False, server_default=text("'unknown'"), default="unknown"
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class LogicalDocumentRecord(Base):
+    """La obra: titulo canonico, tipo documental y a quien pertenece."""
+
+    __tablename__ = "logical_documents"
+    __table_args__ = (
+        CheckConstraint(
+            "document_type IN ('convocation', 'curriculum', 'law_or_regulation', "
+            "'official_technical', 'private_syllabus', 'personal_notes', 'official_exam', "
+            "'answer_key', 'private_question_bank', 'practical_case', 'flashcards', "
+            "'community_material', 'unknown')",
+            name="ck_document_type",
+        ),
+        CheckConstraint(
+            "owner_scope IN ('public', 'private_user', 'generated')", name="ck_document_scope"
+        ),
+        CheckConstraint("length(trim(canonical_title)) > 0", name="ck_document_title"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    canonical_title: Mapped[str] = mapped_column(Text, nullable=False)
+    document_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    authority_tier: Mapped[str | None] = mapped_column(String(8), nullable=True)
+    owner_scope: Mapped[str] = mapped_column(
+        String(16), nullable=False, server_default=text("'private_user'"), default="private_user"
+    )
+    canonical_identifier: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+    versions: Mapped[list[DocumentVersionRecord]] = relationship(
+        back_populates="document", cascade="all, delete-orphan", passive_deletes=True
+    )
+
+
+class DocumentVersionRecord(Base):
+    """Un fichero concreto que representa la obra, con su vigencia y sus derechos."""
+
+    __tablename__ = "document_versions"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('candidate', 'accepted', 'outdated', 'superseded', "
+            "'withdrawn', 'rejected')",
+            name="ck_version_status",
+        ),
+        CheckConstraint(
+            "status <> 'accepted' OR approved_at IS NOT NULL", name="ck_version_approved"
+        ),
+        CheckConstraint(
+            "valid_from IS NULL OR valid_to IS NULL OR valid_to >= valid_from",
+            name="ck_version_validity",
+        ),
+        CheckConstraint("supersedes_id IS NULL OR supersedes_id <> id", name="ck_version_not_self"),
+        UniqueConstraint("logical_document_id", "artifact_id", name="uq_version_artifact"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    logical_document_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("logical_documents.id", ondelete="CASCADE"), nullable=False
+    )
+    artifact_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("source_artifacts.id", ondelete="RESTRICT"), nullable=False
+    )
+    representation_id: Mapped[str | None] = mapped_column(
+        String(36),
+        ForeignKey("extracted_representations.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    version_label: Mapped[str | None] = mapped_column(Text, nullable=True)
+    published_at: Mapped[date | None] = mapped_column(Date, nullable=True)
+    valid_from: Mapped[date | None] = mapped_column(Date, nullable=True)
+    valid_to: Mapped[date | None] = mapped_column(Date, nullable=True)
+    retrieved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    language: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    status: Mapped[str] = mapped_column(
+        String(16), nullable=False, server_default=text("'candidate'"), default="candidate"
+    )
+    supersedes_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("document_versions.id", ondelete="SET NULL"), nullable=True
+    )
+    rights_status_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("rights_statuses.id", ondelete="SET NULL"), nullable=True
+    )
+    official_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    content_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    approved_by: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+    document: Mapped[LogicalDocumentRecord] = relationship(back_populates="versions")
+    rights: Mapped[RightsStatusRecord | None] = relationship()
+    sections: Mapped[list[DocumentSectionRecord]] = relationship(
+        back_populates="version", cascade="all, delete-orphan", passive_deletes=True
+    )
+
+
+class DocumentSectionRecord(Base):
+    """Estructura del documento: donde empieza y acaba cada parte, con su pagina."""
+
+    __tablename__ = "document_sections"
+    __table_args__ = (
+        CheckConstraint(
+            "section_type IN ('page', 'title', 'chapter', 'article', 'provision', "
+            "'technical', 'topic')",
+            name="ck_section_type",
+        ),
+        CheckConstraint("position >= 1", name="ck_section_position"),
+        CheckConstraint("char_start >= 0 AND char_end >= char_start", name="ck_section_offsets"),
+        CheckConstraint(
+            "page_start IS NULL OR page_end IS NULL OR page_end >= page_start",
+            name="ck_section_pages",
+        ),
+        UniqueConstraint("document_version_id", "ordinal", name="uq_section_ordinal"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    document_version_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("document_versions.id", ondelete="CASCADE"), nullable=False
+    )
+    parent_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("document_sections.id", ondelete="CASCADE"), nullable=True
+    )
+    section_type: Mapped[str] = mapped_column(String(16), nullable=False)
+    label: Mapped[str | None] = mapped_column(Text, nullable=True)
+    title: Mapped[str | None] = mapped_column(Text, nullable=True)
+    position: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("1"))
+    page_start: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    page_end: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    char_start: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
+    char_end: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
+    ordinal: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("1"))
+
+    version: Mapped[DocumentVersionRecord] = relationship(back_populates="sections")
+
+
+class EvidenceSpanRecord(Base):
+    """Unidad citable: el texto exacto con su seccion, su pagina y su etiqueta de cita."""
+
+    __tablename__ = "evidence_spans"
+    __table_args__ = (
+        CheckConstraint(
+            "index_status IN ('pending', 'indexed', 'failed', 'stale')", name="ck_evidence_index"
+        ),
+        CheckConstraint("char_start >= 0 AND char_end >= char_start", name="ck_evidence_offsets"),
+        CheckConstraint("ordinal >= 1", name="ck_evidence_ordinal"),
+        UniqueConstraint("document_version_id", "ordinal", name="uq_evidence_ordinal"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    document_version_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("document_versions.id", ondelete="CASCADE"), nullable=False
+    )
+    section_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("document_sections.id", ondelete="SET NULL"), nullable=True
+    )
+    ordinal: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("1"))
+    char_start: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
+    char_end: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
+    page: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    citation_label: Mapped[str | None] = mapped_column(Text, nullable=True)
+    quality: Mapped[str | None] = mapped_column(String(24), nullable=True)
+    index_status: Mapped[str] = mapped_column(
+        String(16), nullable=False, server_default=text("'pending'"), default="pending"
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    text: Mapped[str] = mapped_column(Text, nullable=False)
+    normalized_text: Mapped[str] = mapped_column(Text, nullable=False)
+
+
+class CollectionRecord(Base):
+    """Coleccion personal: agrupa material sin duplicar bytes."""
+
+    __tablename__ = "collections"
+    __table_args__ = (CheckConstraint("length(trim(name)) > 0", name="ck_collection_name"),)
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    name: Mapped[str] = mapped_column(Text, nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class CollectionItemRecord(Base):
+    """Membresia de un sujeto en una coleccion, con su posicion."""
+
+    __tablename__ = "collection_items"
+    __table_args__ = (
+        CheckConstraint(
+            "subject_type IN ('artifact', 'representation', 'document_version', "
+            "'section', 'evidence')",
+            name="ck_collection_subject",
+        ),
+        UniqueConstraint("collection_id", "subject_type", "subject_id", name="uq_collection_item"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    collection_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("collections.id", ondelete="CASCADE"), nullable=False
+    )
+    subject_type: Mapped[str] = mapped_column(String(24), nullable=False)
+    subject_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    position: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("1"))
+    added_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
