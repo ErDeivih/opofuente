@@ -578,7 +578,7 @@ class CurriculumMappingRecord(Base):
         # una sección o a una cita textual. El modelo refleja el esquema migrado, no el de 0012.
         CheckConstraint(
             "subject_type IN ('artifact', 'representation', 'document_version', "
-            "'section', 'evidence')",
+            "'section', 'evidence', 'question_version')",
             name="ck_mapping_subject",
         ),
         CheckConstraint(
@@ -913,7 +913,7 @@ class CollectionItemRecord(Base):
     __table_args__ = (
         CheckConstraint(
             "subject_type IN ('artifact', 'representation', 'document_version', "
-            "'section', 'evidence')",
+            "'section', 'evidence', 'question_version')",
             name="ck_collection_subject",
         ),
         UniqueConstraint("collection_id", "subject_type", "subject_id", name="uq_collection_item"),
@@ -1033,6 +1033,8 @@ class QuestionVersionRecord(Base):
         String(36), ForeignKey("question_versions.id", ondelete="SET NULL"), nullable=True
     )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    #: Motivo de una corrección local: quien lea la pregunta después tiene que ver por qué cambió.
+    note: Mapped[str | None] = mapped_column(Text, nullable=True)
 
 
 class OptionVersionRecord(Base):
@@ -1203,3 +1205,28 @@ class QuestionExplanationRecord(Base):
     prompt_template_version: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     text: Mapped[str] = mapped_column(Text, nullable=False)
+
+
+class QuestionIssueReportRecord(Base):
+    """Lo que reporta quien estudia sobre una pregunta: ambigua, mal keyada, con errata…"""
+
+    __tablename__ = "question_issue_reports"
+    __table_args__ = (
+        CheckConstraint(
+            "kind IN ('ambiguous', 'wrong_key', 'typo', 'outdated', 'other')", name="ck_issue_kind"
+        ),
+        CheckConstraint("status IN ('open', 'reviewed', 'dismissed')", name="ck_issue_status"),
+        CheckConstraint("length(trim(detail)) > 0", name="ck_issue_detail"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    question_version_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("question_versions.id", ondelete="CASCADE"), nullable=False
+    )
+    kind: Mapped[str] = mapped_column(String(16), nullable=False)
+    detail: Mapped[str] = mapped_column(Text, nullable=False)
+    status: Mapped[str] = mapped_column(
+        String(16), nullable=False, server_default=text("'open'"), default="open"
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

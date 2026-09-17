@@ -139,13 +139,105 @@ class SaveQuestionsOutcome:
         return self.created + self.existing
 
 
+@dataclass(frozen=True, slots=True)
+class CsvColumnMapping:
+    """Qué columna del CSV es cada cosa (04_INGESTION §10: «el importador permite mapear columnas»).
+
+    Los nombres por defecto son los que propone la spec (`stem`, `option_a`.., `correct`,
+    `explanation`, `topic`, `source`, `tags`), pero el asistente acepta los que traiga el fichero:
+    una hoja real casi nunca se llama así.
+    """
+
+    stem: str = "stem"
+    options: tuple[str, ...] = ("option_a", "option_b", "option_c", "option_d")
+    correct: str | None = "correct"
+    explanation: str | None = "explanation"
+    topic: str | None = "topic"
+    source: str | None = "source"
+    tags: str | None = "tags"
+    position: str | None = None
+    reserve: str | None = None
+
+    @property
+    def columns(self) -> tuple[str, ...]:
+        """Columnas que el mapeo usa: es lo que tiene que traer la cabecera."""
+        nombres = [self.stem, *self.options]
+        for opcional in (self.correct, self.explanation, self.topic, self.source, self.tags):
+            if opcional is not None and opcional not in nombres:
+                nombres.append(opcional)
+        for extra in (self.position, self.reserve):
+            if extra is not None and extra not in nombres:
+                nombres.append(extra)
+        return tuple(nombres)
+
+
+@dataclass(frozen=True, slots=True)
+class RejectedRow:
+    """Una fila que no se pudo importar, con su causa: se exporta tal cual, no se tira."""
+
+    row_number: int
+    cause: str
+    detail: str
+
+
+@dataclass(frozen=True, slots=True)
+class QuestionImportReport:
+    """Resultado de una importación: lo que entró, lo que ya estaba y lo que no pudo entrar."""
+
+    set_id: str
+    created: int = 0
+    existing: int = 0
+    incomplete: int = 0
+    with_key: int = 0
+    key_entries: int = 0
+    duplicates: tuple[object, ...] = ()
+    issues: tuple[object, ...] = ()
+    rejected: tuple[RejectedRow, ...] = ()
+    ignored_columns: tuple[str, ...] = ()
+    missing_columns: tuple[str, ...] = ()
+    conflicts: tuple[str, ...] = ()
+    model_code_detected: str | None = None
+
+    @property
+    def imported(self) -> int:
+        return self.created + self.existing
+
+    @property
+    def rows_rejected(self) -> int:
+        return len(self.rejected)
+
+    @property
+    def keys_in_conflict(self) -> int:
+        """Preguntas que ya estaban con otra clave: se informan y **no** se fusionan."""
+        return len(self.conflicts)
+
+
+@dataclass(frozen=True, slots=True)
+class KeyImportReport:
+    """Resultado de alinear una plantilla suelta con las preguntas del conjunto."""
+
+    key_id: str | None
+    version_no: int | None
+    entries: int = 0
+    unmatched: tuple[int, ...] = ()
+    issues: tuple[object, ...] = ()
+
+    @property
+    def applied(self) -> bool:
+        return self.key_id is not None
+
+
 __all__ = [
     "AnswerKeyView",
+    "CsvColumnMapping",
     "KeyEntryView",
+    "KeyImportReport",
     "OptionView",
+    "QuestionImportReport",
     "QuestionPage",
     "QuestionSetPage",
     "QuestionSetView",
     "QuestionView",
+    "RejectedRow",
     "SaveQuestionsOutcome",
 ]

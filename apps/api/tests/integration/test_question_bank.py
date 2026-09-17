@@ -369,8 +369,8 @@ def test_los_desenlaces_de_la_clave_activa_se_pueden_leer_para_duplicados(tmp_pa
     )
     assert clave is not None
 
-    # Sin clave activa no hay desenlaces que leer: la plantilla está en borrador.
-    assert repositorio.keys_of_set(set_id) == {}
+    # Una plantilla en borrador ya dice lo que propone: en el banco es justo lo que se revisa.
+    assert repositorio.keys_of_set(set_id)[preguntas[0].id].correct_option_keys == ("b",)
 
     repositorio.approve_key(clave.id, now=AHORA)
     repositorio.activate_key(clave.id, now=AHORA)

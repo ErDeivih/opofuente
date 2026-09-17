@@ -48,6 +48,8 @@ from opofuente.infrastructure.db_models import (
     AnswerKeyEntryRecord,
     AnswerKeyVersionRecord,
     AuditEventRecord,
+    CurriculumMappingRecord,
+    CurriculumNodeRecord,
     OptionVersionRecord,
     QuestionExplanationRecord,
     QuestionSetRecord,
@@ -616,6 +618,220 @@ class SqlAlchemyQuestionRepository:
                 return None
             return self._key_view(session, fila)
 
+    # ------------------------------------------------------------------ explicaciones y mapeos
+
+    def add_explanation(
+        self,
+        question_version_id: str,
+        *,
+        text: str,
+        origin: Origin,
+        now: datetime,
+        option_stable_key: str | None = None,
+        model_name: str | None = None,
+        prompt_template_version: str | None = None,
+        actor: str = "local",
+    ) -> str | None:
+        """Guarda (o reemplaza) la explicación de la pregunta entera o de una opción.
+
+        La identidad es `(pregunta, opción)`: la segunda explicación de la misma opción sustituye a
+        la primera en lugar de acumularse, porque dos explicaciones distintas de lo mismo es una
+        decisión editorial, no un dato más.
+        """
+        if not text.strip():
+            return None
+        with self._session_factory() as session:
+            pregunta = session.get(QuestionVersionRecord, question_version_id)
+            if pregunta is None:
+                return None
+            existente = session.execute(
+                select(QuestionExplanationRecord).where(
+                    QuestionExplanationRecord.question_version_id == question_version_id,
+                    QuestionExplanationRecord.option_stable_key.is_(None)
+                    if option_stable_key is None
+                    else QuestionExplanationRecord.option_stable_key == option_stable_key,
+                )
+            ).scalar_one_or_none()
+            if existente is not None:
+                existente.text = text.strip()
+                existente.origin = origin.value
+                existente.model_name = model_name
+                existente.prompt_template_version = prompt_template_version
+                session.commit()
+                return existente.id
+            fila = QuestionExplanationRecord(
+                id=_new_id(),
+                question_version_id=question_version_id,
+                option_stable_key=option_stable_key,
+                origin=origin.value,
+                status="draft",
+                model_name=model_name,
+                prompt_template_version=prompt_template_version,
+                created_at=now,
+                text=text.strip(),
+            )
+            session.add(fila)
+            self._audit(
+                session,
+                actor=actor,
+                action="question_explanation.saved",
+                object_type="question_version",
+                object_id=question_version_id,
+                before={},
+                after={"option_stable_key": option_stable_key, "origin": origin.value},
+                now=now,
+            )
+            session.commit()
+            return fila.id
+
+    def questions_by_position(self, set_id: str) -> dict[int, str]:
+        """Identificador de cada pregunta por su posición: es lo que alinea una plantilla suelta."""
+        with self._session_factory() as session:
+            filas = session.execute(
+                select(QuestionVersionRecord.position, QuestionVersionRecord.id).where(
+                    QuestionVersionRecord.question_set_id == set_id
+                )
+            ).all()
+        return {int(posicion): str(pregunta_id) for posicion, pregunta_id in filas}
+
+    def node_by_reference(
+        self, *, convocation_version_id: str, reference: str
+    ) -> tuple[str, int] | None:
+        """Nodo del programa por su ruta o su código oficial: lo que trae una columna `topic`."""
+        limpio = reference.strip()
+        if not limpio:
+            return None
+        with self._session_factory() as session:
+            fila = session.execute(
+                select(CurriculumNodeRecord)
+                .where(
+                    CurriculumNodeRecord.convocation_version_id == convocation_version_id,
+                    (CurriculumNodeRecord.path == limpio)
+                    | (CurriculumNodeRecord.official_code == limpio),
+                )
+                .order_by(CurriculumNodeRecord.depth)
+                .limit(1)
+            ).scalar_one_or_none()
+        if fila is None:
+            return None
+        return str(fila.id), int(fila.depth)
+
+    def map_question_to_node(
+        self,
+        question_version_id: str,
+        *,
+        node_id: str,
+        now: datetime,
+        coverage_type: str = "partial",
+        actor: str = "local",
+    ) -> str | None:
+        """Asigna una pregunta a un nodo del programa. Idempotente por `(nodo, pregunta)`."""
+        with self._session_factory() as session:
+            pregunta = session.get(QuestionVersionRecord, question_version_id)
+            if pregunta is None:
+                return None
+            nodo = session.get(CurriculumNodeRecord, node_id)
+            if nodo is None:
+                return None
+            existente = session.execute(
+                select(CurriculumMappingRecord.id).where(
+                    CurriculumMappingRecord.curriculum_node_id == node_id,
+                    CurriculumMappingRecord.subject_type == "question_version",
+                    CurriculumMappingRecord.subject_id == question_version_id,
+                )
+            ).scalar_one_or_none()
+            if existente is not None:
+                return str(existente)
+            mapeo = CurriculumMappingRecord(
+                id=_new_id(),
+                curriculum_node_id=node_id,
+                subject_type="question_version",
+                subject_id=question_version_id,
+                coverage_type=coverage_type,
+                depth=int(nodo.depth),
+                confidence=1.0,
+                status="accepted",
+                source_proposal_id=None,
+                created_at=now,
+                approved_at=now,
+            )
+            session.add(mapeo)
+            self._audit(
+                session,
+                actor=actor,
+                action="question.mapped",
+                object_type="curriculum_mapping",
+                object_id=mapeo.id,
+                before={},
+                after={"node_id": node_id, "question_version_id": question_version_id},
+                now=now,
+            )
+            session.commit()
+            return mapeo.id
+
+    def entry_map(self, set_id: str) -> dict[str, AnswerKeyEntry]:
+        """Desenlaces conocidos de cada pregunta, de **todas** las plantillas del conjunto.
+
+        Se miran todas y no solo la activa porque lo que se está comprobando es si una clave nueva
+        **contradice** algo que ya se sabía, aunque la plantilla anterior esté en borrador. Manda
+        la versión más alta.
+        """
+        resultado: dict[str, AnswerKeyEntry] = {}
+        with self._session_factory() as session:
+            filas = (
+                session.execute(
+                    select(AnswerKeyVersionRecord)
+                    .where(AnswerKeyVersionRecord.question_set_id == set_id)
+                    .order_by(AnswerKeyVersionRecord.version_no)
+                )
+                .scalars()
+                .all()
+            )
+            for clave in filas:
+                entradas = (
+                    session.execute(
+                        select(AnswerKeyEntryRecord).where(
+                            AnswerKeyEntryRecord.answer_key_version_id == clave.id
+                        )
+                    )
+                    .scalars()
+                    .all()
+                )
+                for entrada in entradas:
+                    resultado[entrada.question_version_id] = AnswerKeyEntry(
+                        question_version_id=entrada.question_version_id,
+                        outcome=KeyOutcome(entrada.outcome),
+                        correct_option_keys=tuple(
+                            str(clave_opcion)
+                            for clave_opcion in json.loads(entrada.correct_option_keys_json or "[]")
+                        ),
+                        notes=entrada.notes,
+                    )
+        return resultado
+
+    def set_question_status(
+        self, question_id: str, status: str, *, now: datetime, actor: str = "local"
+    ) -> bool:
+        """Cambia el estado de una pregunta: `conflicting` cuando dos claves chocan, por ejemplo."""
+        with self._session_factory() as session:
+            fila = session.get(QuestionVersionRecord, question_id)
+            if fila is None:
+                return False
+            antes = fila.status
+            fila.status = status
+            self._audit(
+                session,
+                actor=actor,
+                action="question.status_changed",
+                object_type="question_version",
+                object_id=question_id,
+                before={"status": antes},
+                after={"status": status},
+                now=now,
+            )
+            session.commit()
+            return True
+
     # ------------------------------------------------------------------ auxiliares
 
     @staticmethod
@@ -689,19 +905,30 @@ class SqlAlchemyQuestionRepository:
     def _active_entries(
         session: Session, set_ids: Sequence[str]
     ) -> dict[str, dict[str, AnswerKeyEntry]]:
-        """Desenlaces de la clave activa de cada conjunto, por identificador de pregunta."""
+        """Desenlaces que **mandan** en cada conjunto, por identificador de pregunta.
+
+        Manda la clave activa y, si no hay ninguna activa todavía, la última plantilla que exista:
+        en el banco de preguntas, una plantilla en borrador es justo lo que se está revisando, y
+        esconder su clave dejaría la pantalla sin lo único que hay que mirar. Activar sigue siendo
+        lo que decide qué clave corrige un examen (eso lo usa S07), no lo que decide qué se lee.
+        """
         if not set_ids:
             return {}
         claves = (
             session.execute(
                 select(AnswerKeyVersionRecord).where(
-                    AnswerKeyVersionRecord.question_set_id.in_(list(set_ids)),
-                    AnswerKeyVersionRecord.status == "active",
+                    AnswerKeyVersionRecord.question_set_id.in_(list(set_ids))
                 )
             )
             .scalars()
             .all()
         )
+        elegidas: dict[str, AnswerKeyVersionRecord] = {}
+        for clave in sorted(
+            claves, key=lambda fila: (fila.status == "active", int(fila.version_no))
+        ):
+            elegidas[clave.question_set_id] = clave
+        claves = list(elegidas.values())
         resultado: dict[str, dict[str, AnswerKeyEntry]] = {}
         for clave in claves:
             entradas = (
