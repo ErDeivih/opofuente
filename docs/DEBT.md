@@ -23,7 +23,7 @@ Reglas:
 | [DEBT-009](#debt-009--el-texto-plano-no-produce-secciones-y-sin-secciones-no-hay-citas) | S06 | El texto plano y el texto pegado no producen secciones: sin ellas no hay citas ni diff | **cerrada en S06** |
 | [DEBT-010](#debt-010--una-pregunta-importada-no-queda-enlazada-a-su-sección) | S06/S11 | Importar preguntas no las enlaza a la sección que las sostiene, y `tags`/`source`/`parte` se leen pero no se guardan | abierta |
 | [DEBT-011](#debt-011--la-pantalla-del-banco-solo-enseña-las-primeras-100-preguntas) | S09 | La pantalla del banco pide 100 preguntas y no permite recorrer el resto de un conjunto grande | abierta |
-| [DEBT-012](#debt-012--modos-de-sesión-declarados-y-sin-implementar) | S08+ | Simulacro, diagnóstico y repaso de errores están en el vocabulario del modelo y no implementados | parcial (S08 implementó los modos de corrección de GC; siguen sin implementar los tres modos de sesión) |
+| [DEBT-012](#debt-012--modos-de-sesión-declarados-y-sin-implementar) | S08+ | Simulacro, diagnóstico y repaso de errores están en el vocabulario del modelo y no implementados | abierta (S08 añadió los modos de **corrección** de GC, no los modos de sesión) |
 | [DEBT-013](#debt-013--el-recálculo-no-se-puede-hacer-en-bloque) | S09+ | Recalcular una clave corregida es sesión a sesión, y solo se conserva un resultado anterior | abierta |
 
 ---
