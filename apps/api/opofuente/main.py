@@ -33,6 +33,7 @@ from opofuente.application.job_service import JobService
 from opofuente.application.library_service import LibraryService
 from opofuente.application.profiles_service import ProfilesService
 from opofuente.application.question_service import QuestionService
+from opofuente.application.study_service import StudyService
 from opofuente.application.system_service import SystemService
 from opofuente.config import Settings, get_settings
 from opofuente.domain.jobs import JobType
@@ -59,6 +60,7 @@ from opofuente.infrastructure.probes import DatabaseProbe, DataDirectoryProbe
 from opofuente.infrastructure.profile_repository import SqlAlchemyProfileRepository
 from opofuente.infrastructure.question_repository import SqlAlchemyQuestionRepository
 from opofuente.infrastructure.representation_store import RepresentationStore
+from opofuente.infrastructure.study_repository import SqlAlchemyStudyRepository
 from opofuente.infrastructure.url_guard import url_limits_from_settings
 from opofuente.infrastructure.worker_liveness import WorkerLiveness
 from opofuente.workers.job_worker import JobWorker
@@ -169,6 +171,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         questions=SqlAlchemyQuestionRepository(session_factory),
         clock=clock,
     )
+    study_service = StudyService(
+        study=SqlAlchemyStudyRepository(session_factory),
+        questions=SqlAlchemyQuestionRepository(session_factory),
+        profiles=SqlAlchemyProfileRepository(session_factory),
+        clock=clock,
+    )
     worker = JobWorker(
         queue=job_queue,
         handlers={
@@ -244,6 +252,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.library_service = library_service
     app.state.artifact_store = artifact_store
     app.state.question_service = question_service
+    app.state.study_service = study_service
 
     # El orden importa: el último añadido es el más externo, así que el identificador de
     # correlación envuelve también los rechazos por Origin.

@@ -1295,6 +1295,171 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/study-sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Sesiones de estudio de una oposición (ruta añadida a §10)
+         * @description Ruta **añadida** al contrato §10: Inicio necesita saber qué hay para continuar.
+         *
+         *     Sin ella, «Continuar estudiando» no tendría de dónde leer, y el producto promete esa tarjeta.
+         */
+        get: operations["list_study_sessions_api_v1_study_sessions_get"];
+        put?: never;
+        /**
+         * Crea una sesión de estudio con su composición congelada
+         * @description Monta la sesión. Si falta material, clave activa o la parte no se corrige aquí, lo dice.
+         */
+        post: operations["create_study_session_api_v1_study_sessions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/study-sessions/{session_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Una sesión con su configuración y su progreso */
+        get: operations["get_study_session_api_v1_study_sessions__session_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/study-sessions/{session_id}/answers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Registra una respuesta y la corrige con la clave congelada
+         * @description Registra el intento **una sola vez**: reenviar lo mismo no crea otro y cambiarlo es 409.
+         */
+        post: operations["answer_api_v1_study_sessions__session_id__answers_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/study-sessions/{session_id}/current-question": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** La pregunta que toca ahora, sin solución */
+        get: operations["current_question_api_v1_study_sessions__session_id__current_question_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/study-sessions/{session_id}/finish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Termina la sesión y calcula el resultado */
+        post: operations["finish_study_session_api_v1_study_sessions__session_id__finish_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/study-sessions/{session_id}/navigate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mueve el puntero: a una posición o al siguiente/anterior */
+        post: operations["navigate_api_v1_study_sessions__session_id__navigate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/study-sessions/{session_id}/result": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** El resultado de una sesión terminada */
+        get: operations["study_result_api_v1_study_sessions__session_id__result_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/study-sessions/{session_id}/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** La revisión: cada pregunta con lo que se marcó y su corrección */
+        get: operations["study_review_api_v1_study_sessions__session_id__review_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/study-sessions/{session_id}/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Inicia la sesión (congela el reloj) */
+        post: operations["start_study_session_api_v1_study_sessions__session_id__start_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1386,6 +1551,68 @@ export interface components {
             supersedes_id?: string | null;
             /** Version No */
             version_no: number;
+        };
+        /**
+         * AnswerOutcomeSchema
+         * @description Qué ha pasado al registrar una respuesta, con la corrección si se puede enseñar.
+         */
+        AnswerOutcomeSchema: {
+            /** Already Answered */
+            already_answered: boolean;
+            attempt: components["schemas"]["AttemptSchema"];
+            correction?: components["schemas"]["CorrectionSchema"] | null;
+            /** Saved */
+            saved: boolean;
+            session: components["schemas"]["SessionSchema"];
+        };
+        /**
+         * AnswerRequestSchema
+         * @description La respuesta a una pregunta: qué se marcó, cuánto se tardó y con qué confianza.
+         */
+        AnswerRequestSchema: {
+            /** Chosen Option Keys */
+            chosen_option_keys?: string[];
+            /** Client Sequence */
+            client_sequence?: number | null;
+            /** Confidence */
+            confidence?: ("low" | "medium" | "high") | null;
+            /**
+             * Elapsed Ms
+             * @default 0
+             */
+            elapsed_ms: number;
+            /** Question Version Id */
+            question_version_id: string;
+        };
+        /**
+         * AttemptSchema
+         * @description Un intento: lo que se marcó y, si ya se corrigió, su desenlace.
+         */
+        AttemptSchema: {
+            /**
+             * Answered At
+             * Format: date-time
+             */
+            answered_at: string;
+            /** Chosen Option Keys */
+            chosen_option_keys: string[];
+            /** Client Sequence */
+            client_sequence?: number | null;
+            /** Confidence */
+            confidence?: ("low" | "medium" | "high") | null;
+            /** Elapsed Ms */
+            elapsed_ms: number;
+            /** Id */
+            id: string;
+            /** Outcome */
+            outcome?: ("correct" | "wrong" | "blank" | "annulled" | "excluded" | "conflicting" | "unused_reserve") | null;
+            /** Question Version Id */
+            question_version_id: string;
+            /** Reason */
+            reason?: string | null;
+            score?: components["schemas"]["ScoreSchema"] | null;
+            /** Session Question Id */
+            session_question_id: string;
         };
         /** BatchDetailSchema */
         BatchDetailSchema: {
@@ -1646,6 +1873,26 @@ export interface components {
             key_id?: string | null;
             question: components["schemas"]["QuestionSchema"];
         };
+        /**
+         * CorrectionSchema
+         * @description La corrección de una pregunta. **Aquí y solo aquí** viaja la solución.
+         */
+        CorrectionSchema: {
+            /** Correct Option Keys */
+            correct_option_keys: string[];
+            /** Evidence */
+            evidence: components["schemas"]["QuestionEvidenceSchema"][];
+            /** Explanation */
+            explanation?: string | null;
+            /**
+             * Outcome
+             * @enum {string}
+             */
+            outcome: "correct" | "wrong" | "blank" | "annulled" | "excluded" | "conflicting" | "unused_reserve";
+            /** Reason */
+            reason?: string | null;
+            score: components["schemas"]["ScoreSchema"];
+        };
         /** CoverageNodeSchema */
         CoverageNodeSchema: {
             /** Accepted */
@@ -1717,6 +1964,32 @@ export interface components {
             /** Title */
             title: string;
         };
+        /**
+         * CreateSessionSchema
+         * @description Lo que se manda para montar una sesión.
+         */
+        CreateSessionSchema: {
+            /** Convocation Version Id */
+            convocation_version_id?: string | null;
+            /** Feedback */
+            feedback?: ("immediate" | "at_end") | null;
+            /**
+             * Mode
+             * @enum {string}
+             */
+            mode: "practice" | "official_exam";
+            /** Opposition Id */
+            opposition_id: string;
+            /**
+             * Shuffle
+             * @default false
+             */
+            shuffle: boolean;
+            /** Sources */
+            sources: components["schemas"]["SessionSourceSchema"][];
+            /** Time Limit Minutes */
+            time_limit_minutes?: number | null;
+        };
         /** CsvMappingSchema */
         CsvMappingSchema: {
             /**
@@ -1755,6 +2028,22 @@ export interface components {
              * @default topic
              */
             topic: string | null;
+        };
+        /**
+         * CurrentQuestionSchema
+         * @description Qué pregunta toca y cómo va la sesión.
+         */
+        CurrentQuestionSchema: {
+            /** Answered */
+            answered: number;
+            /** Finished */
+            finished: boolean;
+            /** Pending */
+            pending: number;
+            question?: components["schemas"]["SessionQuestionSchema"] | null;
+            session: components["schemas"]["SessionSchema"];
+            /** Total */
+            total: number;
         };
         /** CurriculumNodeDetailSchema */
         CurriculumNodeDetailSchema: {
@@ -2381,6 +2670,16 @@ export interface components {
             superseded_id: string;
         };
         /**
+         * NavigateRequestSchema
+         * @description A dónde se navega: a una posición o al siguiente/anterior.
+         */
+        NavigateRequestSchema: {
+            /** Direction */
+            direction?: ("next" | "previous") | null;
+            /** Position */
+            position?: number | null;
+        };
+        /**
          * NodeType
          * @description Nivel estructural del programa dentro de una convocatoria.
          *
@@ -2466,6 +2765,44 @@ export interface components {
          * @enum {string}
          */
         PartKind: "group" | "test";
+        /**
+         * PartScoreSchema
+         * @description Puntuación directa de una parte, con los umbrales oficiales como datos declarados.
+         */
+        PartScoreSchema: {
+            /** Annulled */
+            annulled: number;
+            /** Blank */
+            blank: number;
+            /** Conflicting */
+            conflicting: number;
+            /** Correct */
+            correct: number;
+            /** Excluded */
+            excluded: number;
+            /** Official Available */
+            official_available: boolean;
+            /** Ordinary Items */
+            ordinary_items?: number | null;
+            /** Part Code */
+            part_code?: string | null;
+            /** Part Name */
+            part_name?: string | null;
+            /** Pass Score */
+            pass_score?: number | null;
+            penalty?: components["schemas"]["ScoreSchema"] | null;
+            /** Reserves Used */
+            reserves_used: number;
+            score: components["schemas"]["ScoreSchema"];
+            /** Score Max */
+            score_max?: number | null;
+            /** Score Min */
+            score_min?: number | null;
+            /** Unused Reserves */
+            unused_reserves: number;
+            /** Wrong */
+            wrong: number;
+        };
         /**
          * PasteRequest
          * @description Texto pegado por el usuario (04_INGESTION §2).
@@ -3029,6 +3366,23 @@ export interface components {
             /** Subject Type */
             subject_type: string;
         };
+        /**
+         * ReviewSchema
+         * @description La revisión: cada pregunta con lo que se marcó y su corrección cuando se puede ver.
+         */
+        ReviewSchema: {
+            /** Entries */
+            entries: components["schemas"]["SessionQuestionSchema"][];
+            /** Note */
+            note?: string | null;
+            /** Partial */
+            partial: boolean;
+            /** Pending */
+            pending: number;
+            session: components["schemas"]["SessionSchema"];
+            /** Unanswered */
+            unanswered: number;
+        };
         /** RightsSchema */
         RightsSchema: {
             /** Attribution */
@@ -3064,6 +3418,20 @@ export interface components {
          * @enum {string}
          */
         RuleKind: "boolean" | "integer" | "fraction" | "text";
+        /**
+         * ScoreSchema
+         * @description Una puntuación: la fracción exacta y su decimal, que es solo para leerla.
+         */
+        ScoreSchema: {
+            /** Decimal */
+            decimal: string;
+            /** Denominator */
+            denominator: number;
+            /** Fraction */
+            fraction: string;
+            /** Numerator */
+            numerator: number;
+        };
         /**
          * SectionDiffSchema
          * @description Cambio de una sección. El texto se recorta a un tope y **se dice** cuándo se recortó.
@@ -3125,6 +3493,179 @@ export interface components {
             title?: string | null;
         };
         /**
+         * SessionConfigurationSchema
+         * @description La configuración congelada al crear la sesión.
+         */
+        SessionConfigurationSchema: {
+            /**
+             * Feedback
+             * @enum {string}
+             */
+            feedback: "immediate" | "at_end";
+            /**
+             * Mode
+             * @enum {string}
+             */
+            mode: "practice" | "official_exam";
+            /** Shuffle */
+            shuffle: boolean;
+            /** Sources */
+            sources: components["schemas"]["SessionSourceSchema"][];
+            /** Time Limit Minutes */
+            time_limit_minutes?: number | null;
+        };
+        /** SessionPageSchema */
+        SessionPageSchema: {
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+            /** Sessions */
+            sessions: components["schemas"]["SessionSchema"][];
+            /** Total */
+            total: number;
+        };
+        /**
+         * SessionQuestionSchema
+         * @description Una pregunta de la sesión, sin solución: enunciado, opciones y lo que se marcó.
+         */
+        SessionQuestionSchema: {
+            /** Answered */
+            answered: boolean;
+            /** Chosen Option Keys */
+            chosen_option_keys: string[];
+            /** Confidence */
+            confidence?: ("low" | "medium" | "high") | null;
+            correction?: components["schemas"]["CorrectionSchema"] | null;
+            /** Elapsed Ms */
+            elapsed_ms?: number | null;
+            /** Is Reserve */
+            is_reserve: boolean;
+            /** Options */
+            options: components["schemas"]["OptionSchema"][];
+            /** Origin Type */
+            origin_type: string;
+            /** Part Code */
+            part_code?: string | null;
+            /** Position */
+            position: number;
+            /** Question Type */
+            question_type: string;
+            /** Question Version Id */
+            question_version_id: string;
+            /** Reserve Order */
+            reserve_order?: number | null;
+            /** Session Question Id */
+            session_question_id: string;
+            /** Stable Key */
+            stable_key: string;
+            /** Stem */
+            stem: string;
+        };
+        /**
+         * SessionResultSchema
+         * @description El resultado de una sesión, tal como se calculó y se guardó.
+         */
+        SessionResultSchema: {
+            /** Answer Key Version Id */
+            answer_key_version_id?: string | null;
+            /** Calculated At */
+            calculated_at?: string | null;
+            /** Key Label */
+            key_label?: string | null;
+            /**
+             * Mode
+             * @enum {string}
+             */
+            mode: "practice" | "official_exam";
+            /** Official Available */
+            official_available: boolean;
+            /** Official Note */
+            official_note?: string | null;
+            /** Parts */
+            parts: components["schemas"]["PartScoreSchema"][];
+            /** Session Id */
+            session_id: string;
+            /** Substitutions */
+            substitutions: components["schemas"]["SubstitutionSchema"][];
+            total: components["schemas"]["PartScoreSchema"];
+            /** Unfinished */
+            unfinished: number;
+        };
+        /**
+         * SessionSchema
+         * @description Una sesión con su configuración congelada y su progreso.
+         */
+        SessionSchema: {
+            /** Answer Key Version Id */
+            answer_key_version_id?: string | null;
+            /** Answered Questions */
+            answered_questions: number;
+            configuration: components["schemas"]["SessionConfigurationSchema"];
+            /** Convocation Version Id */
+            convocation_version_id?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Feedback
+             * @enum {string}
+             */
+            feedback: "immediate" | "at_end";
+            /** Finished At */
+            finished_at?: string | null;
+            /** Id */
+            id: string;
+            /** Key Label */
+            key_label?: string | null;
+            /**
+             * Mode
+             * @enum {string}
+             */
+            mode: "practice" | "official_exam";
+            /** Opposition Id */
+            opposition_id: string;
+            /** Question Set Id */
+            question_set_id?: string | null;
+            result?: components["schemas"]["SessionResultSchema"] | null;
+            /** Started At */
+            started_at?: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "draft" | "running" | "finished" | "abandoned";
+            /** Time Limit Minutes */
+            time_limit_minutes?: number | null;
+            /** Total Questions */
+            total_questions: number;
+        };
+        /**
+         * SessionSourceSchema
+         * @description De dónde salen las preguntas y qué parte del examen representan.
+         */
+        SessionSourceSchema: {
+            /**
+             * Count
+             * @description Cuántas preguntas ordinarias se quieren (solo en práctica).
+             */
+            count?: number | null;
+            /**
+             * Include Reserves
+             * @default true
+             */
+            include_reserves: boolean;
+            /**
+             * Part Code
+             * @description Parte de la convocatoria con la que se corrige. Es obligatoria: la penalización y los umbrales los publica la convocatoria, no el cliente.
+             */
+            part_code: string;
+            /** Question Set Id */
+            question_set_id: string;
+        };
+        /**
          * SettingsSchema
          * @description Configuración efectiva sanitizada. Nunca incluye secretos.
          */
@@ -3152,6 +3693,16 @@ export interface components {
             port: number;
             /** Version */
             version: string;
+        };
+        /**
+         * SubstitutionSchema
+         * @description Una pregunta anulada y la reserva que la sustituyó.
+         */
+        SubstitutionSchema: {
+            /** Annulled Question Version Id */
+            annulled_question_version_id: string;
+            /** Reserve Question Version Id */
+            reserve_question_version_id?: string | null;
         };
         /**
          * UrlRequest
@@ -7577,6 +8128,545 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SettingsSchema"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    list_study_sessions_api_v1_study_sessions_get: {
+        parameters: {
+            query?: {
+                opposition_id?: string | null;
+                status?: string | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionPageSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    create_study_session_api_v1_study_sessions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateSessionSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionSchema"];
+                };
+            };
+            /** @description La entrada no se puede usar: carpeta inválida (`invalid_source`), contenido rechazado por seguridad (`unsafe_content`) o URL no descargable (`url_rejected`). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    get_study_session_api_v1_study_sessions__session_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    answer_api_v1_study_sessions__session_id__answers_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnswerRequestSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnswerOutcomeSchema"];
+                };
+            };
+            /** @description La entrada no se puede usar: carpeta inválida (`invalid_source`), contenido rechazado por seguridad (`unsafe_content`) o URL no descargable (`url_rejected`). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    current_question_api_v1_study_sessions__session_id__current_question_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CurrentQuestionSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    finish_study_session_api_v1_study_sessions__session_id__finish_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionResultSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    navigate_api_v1_study_sessions__session_id__navigate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NavigateRequestSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CurrentQuestionSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    study_result_api_v1_study_sessions__session_id__result_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionResultSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    study_review_api_v1_study_sessions__session_id__review_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    start_study_session_api_v1_study_sessions__session_id__start_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
                 };
             };
             /** @description Error interno inesperado (RFC 9457). */
