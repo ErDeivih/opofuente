@@ -400,6 +400,14 @@ def compose_extractive_answer(
                 "no vigente."
             ),
             missing_terms=terminos,
+            uncertainties=(
+                (
+                    "no se ha recuperado nada del corpus sobre: " + ", ".join(terminos),
+                    "no se responde con conocimiento externo ni con el de un modelo",
+                )
+                if terminos
+                else ("no se ha recuperado nada del corpus para esta pregunta",)
+            ),
             suggested_followups=(
                 "Importar material sobre el tema y volver a preguntar",
                 "Comprobar si la pregunta usa el vocabulario del programa",

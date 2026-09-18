@@ -57,6 +57,7 @@ from opofuente.domain.ingestion import (
 )
 from opofuente.domain.jobs import Job, JobStatus, JobType
 from opofuente.domain.profiles import Profile
+from opofuente.domain.rag import CandidateSpan
 from opofuente.domain.system import Capability, CheckResult
 
 
@@ -415,3 +416,24 @@ class ClassificationRepository(Protocol):
     def resolve_duplicate_cluster(
         self, cluster_id: str, *, relation: str, note: str | None, now: datetime, actor: str = ...
     ) -> DuplicateClusterView | None: ...
+
+
+@runtime_checkable
+class VectorSearch(Protocol):
+    """Búsqueda vectorial, opcional por diseño (`05_RAG §5`: FTS funciona sin ella).
+
+    `available` y `reason` son parte del puerto a propósito: la aplicación tiene que poder decir «no
+    hay proveedor de embeddings» en lugar de devolver cero resultados sin explicación. Un proveedor
+    local o externo se enchufa aquí sin tocar el servicio.
+    """
+
+    @property
+    def available(self) -> bool: ...
+
+    @property
+    def reason(self) -> str | None: ...
+
+    @property
+    def model(self) -> str | None: ...
+
+    def search(self, question: str, *, limit: int) -> tuple[CandidateSpan, ...]: ...
