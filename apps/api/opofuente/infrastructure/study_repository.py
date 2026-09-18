@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Mapping, Sequence
+from dataclasses import replace
 from datetime import datetime
 from fractions import Fraction
 from uuid import uuid4
@@ -25,6 +26,7 @@ from opofuente.application.question_models import OptionView
 from opofuente.application.study_models import (
     AttemptView,
     PartScoreView,
+    RecalculationView,
     ScoreView,
     SessionPage,
     SessionQuestionView,
@@ -237,13 +239,32 @@ class SqlAlchemyStudyRepository:
                 session.commit()
             return self._session_view(session, fila)
 
-    def store_result(self, session_id: str, *, result_json: str, now: datetime) -> None:
-        """Guarda el resultado sin cambiar el estado: se usa al recalcular (S08)."""
+    def result_json(self, session_id: str) -> str | None:
+        """El resultado guardado, como texto: es lo que el recálculo conserva como anterior."""
+        with self._session_factory() as session:
+            fila = session.get(StudySessionRecord, session_id)
+            return None if fila is None else fila.result_json
+
+    def store_result(
+        self,
+        session_id: str,
+        *,
+        result_json: str,
+        now: datetime,
+        previous_result_json: str | None = None,
+    ) -> None:
+        """Guarda el resultado sin cambiar el estado: se usa al recalcular (S08).
+
+        `previous_result_json` es el resultado que había: se conserva para poder explicar qué cambió
+        en lugar de que la cifra cambie sola.
+        """
         with self._session_factory() as session:
             fila = session.get(StudySessionRecord, session_id)
             if fila is None:
                 return
+            fila.previous_result_json = previous_result_json
             fila.result_json = result_json
+            fila.recalculated_at = now if previous_result_json is not None else fila.recalculated_at
             session.commit()
 
     # ------------------------------------------------------------------ composición
@@ -561,19 +582,60 @@ class SqlAlchemyStudyRepository:
             finished_at=fila.finished_at,
             created_at=fila.created_at,
             result=(
-                self._result_from_json(fila.result_json, fila.finished_at)
+                self._result_from_json(
+                    fila.result_json,
+                    fila.finished_at,
+                    previous_json=fila.previous_result_json,
+                    recalculated_at=fila.recalculated_at,
+                )
                 if fila.result_json
                 else None
             ),
         )
 
     @staticmethod
-    def _result_from_json(datos_json: str, terminada: datetime | None) -> SessionResultView:
+    def _result_from_json(
+        datos_json: str,
+        terminada: datetime | None,
+        *,
+        previous_json: str | None = None,
+        recalculated_at: datetime | None = None,
+    ) -> SessionResultView:
         """El resultado guardado, tal como se calculó: no se recalcula al leerlo.
 
         Se guarda en el cierre para que lo que se enseña sea **la composición efectiva del cálculo**
-        (06_QUESTIONS §7), y no una cifra recalculada con las claves de hoy.
+        (06_QUESTIONS §7), y no una cifra recalculada con las claves de hoy. Si la sesión se
+        recalculó con una clave nueva, el resultado anterior viaja con él para explicar el cambio.
         """
+        resultado = SqlAlchemyStudyRepository._resultado_desde_json(datos_json, terminada)
+        if previous_json is None:
+            return resultado
+        anterior = SqlAlchemyStudyRepository._resultado_desde_json(previous_json, recalculated_at)
+        cambio = anterior.total.score.value != resultado.total.score.value
+        return replace(
+            resultado,
+            recalculation=RecalculationView(
+                previous_total=anterior.total.score,
+                previous_parts=anterior.parts,
+                previous_key_label=anterior.key_label,
+                recalculated_at=recalculated_at,
+                changed=cambio,
+                note=(
+                    f"La puntuación cambió de {anterior.total.score.fraction} a "
+                    f"{resultado.total.score.fraction} al recalcular con "
+                    f"«{resultado.key_label or 'la clave nueva'}»."
+                    if cambio
+                    else (
+                        "Se recalculó con la clave nueva y la puntuación no cambió: la corrección "
+                        "es la misma."
+                    )
+                ),
+            ),
+        )
+
+    @staticmethod
+    def _resultado_desde_json(datos_json: str, terminada: datetime | None) -> SessionResultView:
+        """Un resultado guardado, campo a campo, sin interpretar nada de más."""
         datos = json.loads(datos_json)
 
         def score(crudo: Mapping[str, object]) -> ScoreView:
@@ -601,6 +663,7 @@ class SqlAlchemyStudyRepository:
                 penalty=(
                     ScoreView(Fraction(str(penalizacion))) if penalizacion is not None else None
                 ),
+                kind=str(cruda.get("kind", "direct")),
                 correct=int(str(cruda["correct"])),
                 wrong=int(str(cruda["wrong"])),
                 blank=int(str(cruda["blank"])),
@@ -610,6 +673,10 @@ class SqlAlchemyStudyRepository:
                 reserves_used=int(str(cruda["reserves_used"])),
                 unused_reserves=int(str(cruda["unused_reserves"])),
                 score=score(cruda["score"]),  # type: ignore[arg-type]
+                passed=(None if cruda.get("passed") is None else bool(cruda.get("passed"))),
+                verdict_note=(
+                    None if cruda.get("verdict_note") is None else str(cruda["verdict_note"])
+                ),
                 official_available=bool(cruda.get("official_available", False)),
             )
 

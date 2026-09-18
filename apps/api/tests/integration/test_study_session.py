@@ -297,13 +297,11 @@ def test_un_modo_sin_implementar_se_rechaza_diciendo_que_falta(seeded_settings: 
             )
 
 
-def test_las_partes_que_este_slice_no_corrige_se_rechazan(seeded_settings: Settings) -> None:
-    """Un grupo de partes no es una parte, y una parte de marcar errores llega en S08."""
+def test_las_partes_que_no_son_una_parte_se_rechazan(seeded_settings: Settings) -> None:
+    """Un grupo de partes no es una parte: la sesión se monta sobre partes con preguntas."""
     set_id = _conjunto_con_clave(seeded_settings, preguntas=5)
     servicio = _servicio(seeded_settings)
     opposition_id, _ = _ids_de_oposicion(seeded_settings)
-    gc_id, gc_convocation = _ids_de_oposicion(seeded_settings, code="gc-cabos-guardias")
-    assert gc_convocation is not None
 
     with pytest.raises(NotFoundError):
         servicio.create_session(
@@ -319,17 +317,6 @@ def test_las_partes_que_este_slice_no_corrige_se_rechazan(seeded_settings: Setti
                 opposition_id=opposition_id,
                 mode=SessionMode.PRACTICE,
                 sources=(SourceInput(question_set_id=set_id, part_code="ejercicio_unico"),),
-            )
-        )
-    # La ortografía de Guardia Civil es de marcar errores: se corrige de otra forma, y se dice.
-    conjunto_gc = _conjunto_con_clave(seeded_settings, preguntas=5, set_type="private_bank")
-    with pytest.raises(UnsupportedError, match="S08"):
-        servicio.create_session(
-            CreateSessionInput(
-                opposition_id=gc_id,
-                mode=SessionMode.PRACTICE,
-                sources=(SourceInput(question_set_id=conjunto_gc, part_code="ortografia"),),
-                convocation_version_id=gc_convocation,
             )
         )
 

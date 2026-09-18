@@ -160,6 +160,8 @@ class AttemptView:
     outcome: str | None = None
     score: ScoreView | None = None
     reason: str | None = None
+    #: La evaluación vigente de este intento: es lo que `supersedes_id` enlaza al recalcular.
+    evaluation_id: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -192,6 +194,8 @@ class PartScoreView:
     #: `None` solo en el total, cuando las partes no comparten penalización: no hay una sola que lo
     #: describa, y decir una sería inventarla.
     penalty: ScoreView | None
+    #: Cómo se corrigió la parte: `direct`, `scaled` o `pass_fail`.
+    kind: str
     correct: int
     wrong: int
     blank: int
@@ -201,6 +205,10 @@ class PartScoreView:
     reserves_used: int
     unused_reserves: int
     score: ScoreView
+    #: Veredicto publicado de la parte: `True`/`False` cuando la convocatoria lo dice, `None` cuando
+    #: no se puede afirmar (una parte de TAI, cuyo 0-50 depende de los baremos).
+    passed: bool | None = None
+    verdict_note: str | None = None
     official_available: bool = False
 
     @property
@@ -214,6 +222,23 @@ class SubstitutionView:
 
     annulled_question_version_id: str
     reserve_question_version_id: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class RecalculationView:
+    """El resultado anterior, conservado para poder explicar qué cambió y por qué (S08).
+
+    Recalcular no borra lo que se dijo antes: la puntuación anterior sigue siendo legible y la
+    interfaz puede contar «tu puntuación cambió de X a Y por la plantilla oficial v2» en lugar
+    de que la cifra cambie sola.
+    """
+
+    previous_total: ScoreView
+    previous_parts: tuple[PartScoreView, ...]
+    previous_key_label: str | None
+    recalculated_at: datetime | None
+    changed: bool
+    note: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -231,6 +256,8 @@ class SessionResultView:
     official_available: bool
     official_note: str | None
     calculated_at: datetime | None = None
+    #: Presente solo si la sesión se recalculó con una clave nueva.
+    recalculation: RecalculationView | None = None
 
     @property
     def score(self) -> ScoreView:

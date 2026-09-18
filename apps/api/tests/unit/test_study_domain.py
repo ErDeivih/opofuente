@@ -25,9 +25,11 @@ from opofuente.domain.study import (
     FrozenQuestion,
     GradedAttempt,
     PartRule,
+    ScoringKind,
     SessionConfiguration,
     SessionMode,
     SessionSource,
+    SessionStatus,
     Substitution,
     aggregate,
     assign_positions,
@@ -36,6 +38,8 @@ from opofuente.domain.study import (
     exact_fraction,
     exact_score,
     grade_attempt,
+    score_part,
+    verdict_for,
 )
 
 TERCIO = Fraction(1, 3)
@@ -205,7 +209,6 @@ def test_solo_se_corrige_en_una_sesion_en_marcha() -> None:
 
     from opofuente.domain.study import (
         SessionState,
-        SessionStatus,
         assert_can_answer,
         assert_can_finish,
     )
@@ -498,3 +501,149 @@ def test_confianza_y_secuencia_son_datos_del_intento() -> None:
     assert respuesta.confidence is Confidence.LOW
     assert respuesta.client_sequence is None
     assert respuesta.elapsed_ms == 4321
+
+
+# --- S08: corrección de Guardia Civil y partes de apto/no apto ------------------------------------
+
+
+def _gc(codigo: str, **campos: object) -> PartRule:
+    """Las partes de Guardia Civil, tal como las publica su convocatoria."""
+    base: dict[str, object] = {
+        "primera_parte": {
+            "name": "Conocimientos generales",
+            "ordinary_items": 100,
+            "score_max": 100.0,
+            "pass_score": 50.0,
+            "options_per_question": 4,
+            "kind": ScoringKind.SCALED,
+            "format": "single_choice",
+        },
+        "lengua_inglesa": {
+            "name": "Lengua inglesa",
+            "ordinary_items": 20,
+            "score_max": 20.0,
+            "pass_score": 8.0,
+            "options_per_question": 4,
+            "kind": ScoringKind.SCALED,
+            "format": "single_choice",
+        },
+        "aptitudes_intelectuales": {
+            "name": "Aptitudes intelectuales",
+            "ordinary_items": 80,
+            "score_max": 30.0,
+            "pass_score": 12.0,
+            "options_per_question": 4,
+            "kind": ScoringKind.SCALED,
+            "format": "psychotechnical",
+        },
+        "ortografia": {
+            "name": "Ortografía",
+            "ordinary_items": 20,
+            "fail_if_errors_gte": 6,
+            "kind": ScoringKind.PASS_FAIL,
+            "format": "multi_mark_error",
+        },
+    }[codigo]
+    base.update(campos)
+    return PartRule(code=codigo, **base)  # type: ignore[arg-type]
+
+
+def test_la_formula_de_guardia_civil_se_calcula_exacta() -> None:
+    """`Px = (Y/T)·(A - E/(N-1))`, con un caso a mano: 60 aciertos y 12 errores sobre 100."""
+    regla = _gc("primera_parte")
+
+    assert score_part(regla, correct=60, wrong=12) == Fraction(56)
+    assert verdict_for(regla, Fraction(56), wrong=12).passed is True
+
+    # Y con la lengua inglesa: (20/20)·(15 - 3/3) = 14, por encima del mínimo de 8.
+    ingles = _gc("lengua_inglesa")
+    assert score_part(ingles, correct=15, wrong=3) == Fraction(14)
+    assert verdict_for(ingles, Fraction(14), wrong=3).passed is True
+
+    # Por debajo del mínimo: (20/20)·(10 - 12/3) = 6 < 8.
+    assert score_part(ingles, correct=10, wrong=12) == Fraction(6)
+    assert verdict_for(ingles, Fraction(6), wrong=12).passed is False
+
+
+def test_la_psicotecnica_se_escala_con_la_misma_formula() -> None:
+    """(30/80)·(60 - 6/3) = 21,75 exacto, y su mínimo publicado es 12."""
+    regla = _gc("aptitudes_intelectuales")
+
+    puntuacion = score_part(regla, correct=60, wrong=6)
+
+    assert puntuacion == Fraction(87, 4)
+    assert decimal_text(puntuacion) == "21.7500"
+    assert verdict_for(regla, puntuacion, wrong=6).passed is True
+
+
+def test_la_regla_de_seis_errores_es_exacta() -> None:
+    """Ortografía se evalúa como apto o no apto: con cinco errores se pasa y con seis, no."""
+    regla = _gc("ortografia")
+
+    assert score_part(regla, correct=18, wrong=5) == 0, "una parte de apto/no apto no da puntos"
+    assert verdict_for(regla, Fraction(0), wrong=5).passed is True
+    assert verdict_for(regla, Fraction(0), wrong=6).passed is False
+    assert "apto o no apto" in (verdict_for(regla, Fraction(0), wrong=6).reason or "")
+
+
+def test_una_parte_escalada_necesita_sus_datos_publicados() -> None:
+    with pytest.raises(InvariantViolationError):
+        PartRule(code="x", kind=ScoringKind.SCALED, ordinary_items=20, score_max=20.0)
+    with pytest.raises(InvariantViolationError):
+        PartRule(code="x", kind=ScoringKind.SCALED, ordinary_items=20, options_per_question=4)
+    with pytest.raises(InvariantViolationError):
+        PartRule(code="x", kind=ScoringKind.PASS_FAIL, ordinary_items=20)
+
+
+def test_una_parte_de_tai_no_declara_superada() -> None:
+    """Su umbral es de la calificación oficial: aplicarlo a la puntuación directa sería inventar."""
+    regla = PartRule(code="primera_parte", name="Primera parte", pass_score=25.0, penalty=TERCIO)
+
+    veredicto = verdict_for(regla, Fraction(30), wrong=2)
+
+    assert veredicto.passed is None
+    assert "baremos" in (veredicto.reason or "")
+
+
+def test_los_veredictos_no_se_reparten_entre_partes_del_total() -> None:
+    """El total no declara superado nada: el proceso depende del concurso y de las plazas."""
+    resultado = _resultado(
+        {"q1": GradedAttempt(AttemptOutcome.CORRECT, Fraction(1))},
+    )
+
+    assert resultado.total.passed is None
+    assert resultado.total.kind is ScoringKind.DIRECT
+
+
+def test_una_parte_de_apto_no_apto_queda_fuera_de_la_suma() -> None:
+    preguntas = [
+        _pregunta("q1", part_code="primera_parte", position=1),
+        _pregunta("q2", part_code="primera_parte", position=2),
+        _pregunta("q3", part_code="ortografia", position=3),
+    ]
+    intentos = {
+        "q1": GradedAttempt(AttemptOutcome.CORRECT, Fraction(1)),
+        "q2": GradedAttempt(AttemptOutcome.WRONG, -Fraction(1, 3)),
+        "q3": GradedAttempt(AttemptOutcome.WRONG, Fraction(0)),
+    }
+    efectivas, sustituciones = effective_composition(preguntas, intentos)
+
+    resultado = aggregate(
+        session_id="s-1",
+        mode=SessionMode.OFFICIAL_EXAM,
+        answer_key_version_id="k-1",
+        items=efectivas,
+        substitutions=sustituciones,
+        part_rules={"primera_parte": _gc("primera_parte"), "ortografia": _gc("ortografia")},
+    )
+
+    partes = {parte.part_code: parte for parte in resultado.parts}
+    assert partes["primera_parte"].score == Fraction(100, 100) * (Fraction(1) - Fraction(1, 3)), (
+        "un acierto menos un tercio, escalado a la puntuación máxima de la prueba"
+    )
+    assert partes["ortografia"].kind is ScoringKind.PASS_FAIL
+    assert partes["ortografia"].penalty is None, "no hay penalización que enseñar en apto/no apto"
+    assert partes["ortografia"].passed is True, "un solo error no llega a los seis"
+    assert resultado.total.score == partes["primera_parte"].score, (
+        "la parte de apto/no apto no suma puntos"
+    )

@@ -621,6 +621,11 @@ class QuestionService:
         ya_conocidas = self._questions.entry_map(set_id)
         guardadas = self._questions.get_set(set_id)
         convocatoria = guardadas.convocation_version_id if guardadas is not None else None
+        # Las entradas de la clave se agrupan por pregunta: un cuestionario que repite una pregunta
+        # (una fila duplicada, por ejemplo) devuelve dos veces el mismo identificador, y una clave
+        # no puede tener dos entradas para la misma pregunta. Con la misma respuesta se queda una;
+        # con otra distinta, el conflicto se marca como siempre.
+        por_pregunta: dict[str, AnswerKeyEntry] = {}
         for (claves, explicacion, tema), pregunta_id in zip(
             extras, resultado.question_ids, strict=False
         ):
@@ -628,15 +633,31 @@ class QuestionService:
                 anterior = ya_conocidas.get(pregunta_id)
                 # Dos claves distintas de la misma pregunta no se fusionan: se dicen y se marcan.
                 if anterior is not None and set(anterior.correct_option_keys) != set(claves):
-                    conflictos.append(pregunta_id)
+                    if pregunta_id not in conflictos:
+                        conflictos.append(pregunta_id)
                     self._questions.set_question_status(
                         pregunta_id, "conflicting", now=ahora, actor=actor
                     )
-                    entradas.append(
-                        AnswerKeyEntry(pregunta_id, KeyOutcome.CONFLICTING, tuple(claves))
+                    por_pregunta[pregunta_id] = AnswerKeyEntry(
+                        pregunta_id, KeyOutcome.CONFLICTING, tuple(claves)
                     )
                 else:
-                    entradas.append(AnswerKeyEntry(pregunta_id, KeyOutcome.KEYED, tuple(claves)))
+                    previa = por_pregunta.get(pregunta_id)
+                    if previa is None:
+                        por_pregunta[pregunta_id] = AnswerKeyEntry(
+                            pregunta_id, KeyOutcome.KEYED, tuple(claves)
+                        )
+                    elif set(previa.correct_option_keys) != set(claves):
+                        # La misma pregunta, dos respuestas distintas en el mismo lote: es el mismo
+                        # conflicto y se dice, en lugar de romper la clave.
+                        if pregunta_id not in conflictos:
+                            conflictos.append(pregunta_id)
+                        self._questions.set_question_status(
+                            pregunta_id, "conflicting", now=ahora, actor=actor
+                        )
+                        por_pregunta[pregunta_id] = AnswerKeyEntry(
+                            pregunta_id, KeyOutcome.CONFLICTING, tuple(claves)
+                        )
             if explicacion:
                 self._questions.add_explanation(
                     pregunta_id,
@@ -653,6 +674,7 @@ class QuestionService:
                     self._questions.map_question_to_node(
                         pregunta_id, node_id=nodo[0], now=ahora, actor=actor
                     )
+        entradas = list(por_pregunta.values())
         if entradas:
             self._save_key_if_new(set_id, tuple(entradas), actor=actor)
         return QuestionImportReport(

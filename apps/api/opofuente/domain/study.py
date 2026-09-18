@@ -68,6 +68,27 @@ class Confidence(StrEnum):
     HIGH = "high"
 
 
+class ScoringKind(StrEnum):
+    """Cómo se corrige una parte, según lo que publica su convocatoria.
+
+    No es una preferencia de la aplicación: TAI publica la penalización de un tercio y deja la
+    calificación a unos baremos que fija la Comisión; Guardia Civil publica la fórmula completa
+    `Px = (Y/T)·(A - E/(N-1))`; y sus pruebas de ortografía y gramática se evalúan como apto o no
+    apto por número de errores. Las tres formas se corrigen aquí tal como están publicadas.
+    """
+
+    DIRECT = "direct"
+    SCALED = "scaled"
+    #: La parte se evalúa como apto o no apto por número de errores. El valor del vocabulario es el
+    #: que se guarda y se sirve; no hay ninguna credencial aquí (`S105` lo lee por el nombre).
+    PASS_FAIL = "pass_fail"  # noqa: S105
+
+    @property
+    def numeric(self) -> bool:
+        """¿Da esta forma de corregir una puntuación numérica que se suma al total?"""
+        return self in (ScoringKind.DIRECT, ScoringKind.SCALED)
+
+
 class AttemptOutcome(StrEnum):
     """Qué ha pasado con un intento, con el vocabulario de la clave.
 
@@ -385,9 +406,11 @@ class PartScore:
     score_min: float | None
     score_max: float | None
     pass_score: float | None
-    #: La penalización de la parte. En el total es `None` cuando las partes no comparten una: no
-    #: hay una sola penalización que describa la sesión, y decir una sería inventarla.
+    #: La penalización de la parte. Es `None` en las partes que no se puntúan con penalización
+    #: (apto/no apto) y en el total cuando las partes no comparten una.
     penalty: Fraction | None
+    #: Cómo se corrigió esta parte: directa, escalada con la fórmula publicada o apto/no apto.
+    kind: ScoringKind
     correct: int
     wrong: int
     blank: int
@@ -397,6 +420,9 @@ class PartScore:
     reserves_used: int
     unused_reserves: int
     score: Fraction
+    #: Veredicto publicado: `True`/`False` si la convocatoria lo dice, `None` si no se puede.
+    passed: bool | None = None
+    verdict_note: str | None = None
     official_available: bool = False
 
     @property
@@ -515,11 +541,19 @@ def effective_composition(
 
 @dataclass(frozen=True, slots=True)
 class PartRule:
-    """Lo que la convocatoria dice de una parte: su nombre, su tamaño y sus umbrales.
+    """Lo que la convocatoria dice de una parte: cómo se corrige, su tamaño y sus umbrales.
 
-    `penalty` es la fracción **exacta** con la que se corrige esa parte: dos partes del mismo examen
-    pueden penalizar distinto, así que la penalización viaja con la parte, no con la sesión.
-    `score_max` y `pass_score` son de la calificación oficial y se enseñan como datos declarados.
+    `kind` decide la corrección, y las tres formas son las que publican las dos convocatorias:
+
+    - `direct`: la convocatoria publica la penalización pero **no** la transformación a la escala
+      oficial (TAI: se calcula `A - E·p` y la calificación 0-50 queda declarada como no disponible);
+    - `scaled`: la convocatoria publica la fórmula completa `Px = (Y/T)·(A - E/(N-1))` (Guardia
+      Civil), así que la puntuación de la prueba **es** la publicada y su umbral se puede aplicar;
+    - `pass_fail`: la parte se evalúa como apto o no apto por el número de errores (ortografía y
+      gramática), sin puntuación numérica.
+
+    `penalty` viaja con la parte porque dos partes del mismo examen pueden penalizar distinto;
+    `score_max` es la `Y` de la fórmula, `ordinary_items` la `T` y `options_per_question` la `N`.
     """
 
     code: str | None
@@ -529,6 +563,110 @@ class PartRule:
     score_max: float | None = None
     pass_score: float | None = None
     penalty: Fraction = Fraction(0)
+    kind: ScoringKind = ScoringKind.DIRECT
+    options_per_question: int | None = None
+    fail_if_errors_gte: int | None = None
+    format: str | None = None
+    #: Nota de la parte que explica cómo se corrigió aquí (por ejemplo, una práctica parcial de una
+    #: prueba cuya fórmula se aplica al cuestionario completo).
+    note: str | None = None
+
+    def __post_init__(self) -> None:
+        if self.kind is ScoringKind.SCALED:
+            if self.score_max is None or not self.ordinary_items:
+                raise InvariantViolationError(
+                    f"la parte «{self.code}» se puntúa con la fórmula publicada y necesita su "
+                    "puntuación máxima y su número de preguntas"
+                )
+            if self.options_per_question is None or self.options_per_question < 2:
+                raise InvariantViolationError(
+                    f"la parte «{self.code}» necesita el número de alternativas por pregunta: sin "
+                    "él no se puede descontar `E/(N-1)`"
+                )
+        if self.kind is ScoringKind.PASS_FAIL and self.fail_if_errors_gte is None:
+            raise InvariantViolationError(
+                f"la parte «{self.code}» se evalúa como apto o no apto y necesita su número de "
+                "errores a partir del cual no se supera"
+            )
+
+    @property
+    def numeric(self) -> bool:
+        """¿Esta parte da una puntuación numérica que se suma al total?"""
+        return self.kind.numeric
+
+
+def score_part(rule: PartRule, *, correct: int, wrong: int) -> Fraction:
+    """Puntuación **exacta** de una parte según lo que publica su convocatoria.
+
+    - `direct`: `A - E·p`, con la penalización exacta de la parte;
+    - `scaled`: `(Y/T)·(A - E/(N-1))`, la fórmula oficial de Guardia Civil;
+    - `pass_fail`: cero, porque una parte que se evalúa como apto o no apto no da puntos (y quien
+      decide si se supera es `passed_part`).
+    """
+    if rule.kind is ScoringKind.PASS_FAIL:
+        return Fraction(0)
+    if rule.kind is ScoringKind.DIRECT:
+        return exact_score(correct, wrong, rule.penalty)
+
+    # `scaled`: `PartRule` ya ha comprobado que están Y, T y N.
+    assert rule.score_max is not None  # noqa: S101 - lo garantiza PartRule.__post_init__
+    assert rule.ordinary_items  # noqa: S101
+    assert rule.options_per_question is not None  # noqa: S101
+    bruto = Fraction(correct) - Fraction(wrong, rule.options_per_question - 1)
+    return Fraction(str(rule.score_max)) * bruto / Fraction(rule.ordinary_items)
+
+
+@dataclass(frozen=True, slots=True)
+class PartVerdict:
+    """El veredicto de una parte cuando la convocatoria lo publica.
+
+    `passed` es `None` cuando la parte no declara umbral (una parte de TAI, cuyo 0-50 depende de
+    unos baremos que no están): ahí no se puede decir si se supera, y no se dice.
+    """
+
+    passed: bool | None
+    reason: str | None = None
+
+
+def verdict_for(rule: PartRule, score: Fraction, *, wrong: int) -> PartVerdict:
+    """¿Se supera esta parte? Solo se responde si la convocatoria lo dice."""
+    if rule.note is not None:
+        # La parte trae su propia explicación (una práctica parcial, por ejemplo): manda esa.
+        return PartVerdict(passed=None, reason=rule.note)
+    if rule.kind is ScoringKind.PASS_FAIL:
+        assert rule.fail_if_errors_gte is not None  # noqa: S101 - lo garantiza PartRule
+        superada = wrong < rule.fail_if_errors_gte
+        return PartVerdict(
+            passed=superada,
+            reason=(
+                f"«{rule.name or rule.code}» se evalúa como apto o no apto: "
+                f"{wrong} respuestas erróneas frente al límite de {rule.fail_if_errors_gte}"
+            ),
+        )
+    if rule.pass_score is None:
+        return PartVerdict(
+            passed=None,
+            reason=(
+                f"la convocatoria no publica el umbral de «{rule.name or rule.code}»: "
+                "no se declara superada ni no superada"
+            ),
+        )
+    if rule.kind is ScoringKind.SCALED:
+        return PartVerdict(
+            passed=score >= Fraction(str(rule.pass_score)),
+            reason=(
+                f"la puntuación de la prueba se calcula con la fórmula publicada y su mínimo es "
+                f"{rule.pass_score}"
+            ),
+        )
+    # `direct`: el umbral publicado es de la calificación oficial, no de la puntuación directa.
+    return PartVerdict(
+        passed=None,
+        reason=(
+            f"el mínimo de {rule.pass_score} es de la calificación oficial, que necesita los "
+            "baremos de la convocatoria: no se aplica a la puntuación directa"
+        ),
+    )
 
 
 def aggregate(
@@ -546,9 +684,10 @@ def aggregate(
     informan como pendientes. Lo que decide si una pregunta cuenta es
     `AttemptOutcome.counts_in_score`, no un recuento a mano.
 
-    La puntuación **total es la suma de las partes**, no un recálculo con los totales: si dos partes
-    penalizan distinto, `aciertos - errores·p` con una sola `p` daría otra cosa. La penalización
-    del total solo se declara cuando todas las partes comparten la misma.
+    La puntuación **total es la suma de las partes numéricas**, no un recálculo con los totales: si
+    dos partes penalizan distinto (o una se escala con la fórmula de Guardia Civil y otra no),
+    `aciertos - errores·p` con una sola `p` daría otra cosa. Las partes de apto/no apto y las que no
+    se evalúan quedan fuera de la suma y se informan aparte.
     """
     partes: dict[str | None, list[EffectiveItem]] = {}
     for item in items:
@@ -579,6 +718,8 @@ def aggregate(
                 conflictivas += 1
             elif intento.outcome is AttemptOutcome.EXCLUDED:
                 excluidas += 1
+        puntuacion = score_part(regla, correct=aciertos, wrong=errores)
+        veredicto = verdict_for(regla, puntuacion, wrong=errores)
         return PartScore(
             part_code=clave,
             part_name=regla.name,
@@ -586,7 +727,8 @@ def aggregate(
             score_min=regla.score_min,
             score_max=regla.score_max,
             pass_score=regla.pass_score,
-            penalty=regla.penalty,
+            penalty=regla.penalty if regla.kind.numeric else None,
+            kind=regla.kind,
             correct=aciertos,
             wrong=errores,
             blank=blancos,
@@ -595,11 +737,14 @@ def aggregate(
             conflicting=conflictivas,
             reserves_used=reservas,
             unused_reserves=sin_usar,
-            score=exact_score(aciertos, errores, regla.penalty),
+            score=puntuacion,
+            passed=veredicto.passed,
+            verdict_note=veredicto.reason,
         )
 
     detalle = tuple(suma(clave, entradas) for clave, entradas in partes.items())
-    penalizaciones = {parte.penalty for parte in detalle}
+    numericas = tuple(parte for parte in detalle if parte.kind.numeric)
+    penalizaciones = {parte.penalty for parte in numericas}
     penalizacion = penalizaciones.pop() if len(penalizaciones) == 1 else None
 
     total = PartScore(
@@ -610,6 +755,7 @@ def aggregate(
         score_max=None,
         pass_score=None,
         penalty=penalizacion,
+        kind=ScoringKind.DIRECT if numericas else ScoringKind.PASS_FAIL,
         correct=sum(parte.correct for parte in detalle),
         wrong=sum(parte.wrong for parte in detalle),
         blank=sum(parte.blank for parte in detalle),
@@ -618,9 +764,10 @@ def aggregate(
         conflicting=sum(parte.conflicting for parte in detalle),
         reserves_used=sum(parte.reserves_used for parte in detalle),
         unused_reserves=sum(parte.unused_reserves for parte in detalle),
-        # La suma de las partes, que es exacta por definición y no depende de que compartan
-        # penalización.
-        score=sum((parte.score for parte in detalle), Fraction(0)),
+        # La suma de las partes **numéricas**: es exacta por definición y no depende de que
+        # compartan penalización ni forma de cálculo.
+        score=sum((parte.score for parte in numericas), Fraction(0)),
+        passed=None,
     )
 
     return SessionResult(

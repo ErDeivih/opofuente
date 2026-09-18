@@ -22,7 +22,7 @@ from dataclasses import dataclass, replace
 from fractions import Fraction
 
 from opofuente.application.ports import Clock
-from opofuente.application.question_models import AnswerKeyView, QuestionView
+from opofuente.application.question_models import AnswerKeyView, KeyEntryView, QuestionView
 from opofuente.application.read_models import ConvocationDetail, OppositionDetail
 from opofuente.application.study_models import (
     AnswerOutcomeView,
@@ -54,6 +54,7 @@ from opofuente.domain.study import (
     GradedAttempt,
     PartRule,
     PartScore,
+    ScoringKind,
     SessionConfiguration,
     SessionMode,
     SessionSource,
@@ -72,12 +73,13 @@ from opofuente.infrastructure.profile_repository import SqlAlchemyProfileReposit
 from opofuente.infrastructure.question_repository import SqlAlchemyQuestionRepository
 from opofuente.infrastructure.study_repository import SqlAlchemyStudyRepository
 
-#: Formatos de parte que este slice corrige. Los demás (`multi_mark_error`, psicotécnicos) se
-#: rechazan diciendo que llegan en S08, en lugar de corregirlos como si fueran de respuesta única.
-_SUPPORTED_PART_FORMATS = (None, "single_choice")
+#: Formatos de parte que este slice corrige. Son las tres formas que publican las convocatorias
+#: sembradas: respuesta única (TAI y GC), marcar errores (ortografía y gramática de GC) y
+#: psicotécnicas (aptitudes intelectuales de GC), cada una con la regla de su parte.
+_SUPPORTED_PART_FORMATS = (None, "single_choice", "multi_mark_error", "psychotechnical")
 
 #: Tipos de pregunta que este slice corrige. Una pregunta de otro tipo no entra en la composición.
-_SUPPORTED_QUESTION_TYPES = ("single_choice", "true_false")
+_SUPPORTED_QUESTION_TYPES = ("single_choice", "true_false", "multi_mark_error")
 
 
 @dataclass(frozen=True, slots=True)
@@ -458,6 +460,77 @@ class StudyService:
             raise SessionStateError("la sesión terminó sin resultado guardado")
         return session.result
 
+    def recalculate(self, session_id: str) -> SessionResultView:
+        """Recalcula una sesión terminada con la clave **que esté activa ahora**.
+
+        Es lo que hace S08 con una clave corregida: la sesión no se reescribe —lo que se presentó y
+        lo que se contestó siguen donde estaban— pero sus intentos se corrigen otra vez con la
+        plantilla nueva, y esa corrección es una **evaluación nueva** que sustituye a la anterior
+        (invariante 7). El resultado de antes se conserva para poder explicar el cambio.
+
+        Si la clave activa no dice nada de una pregunta (la plantilla nueva no la cubre), esa
+        pregunta queda fuera del cálculo con su motivo: no se hereda la corrección anterior como si
+        la clave nueva la respaldara.
+        """
+        session = self._session_or_404(session_id)
+        if not session.is_finished:
+            raise SessionStateError(
+                "solo se recalcula una sesión terminada: su resultado se calcula al terminarla"
+            )
+        ahora = self._clock.now()
+        entradas: dict[str, tuple[str | None, KeyEntryView]] = {}
+        etiquetas: list[str] = []
+        claves: set[str] = set()
+        for fuente in session.configuration.sources:
+            clave = self._clave_activa(fuente.question_set_id)
+            claves.add(clave.id)
+            etiquetas.append(f"{fuente.part_code}: plantilla v{clave.version_no}")
+            for entrada_clave in clave.entries:
+                entradas[entrada_clave.question_version_id] = (clave.id, entrada_clave)
+
+        preguntas = self._study.session_questions(session_id)
+        intentos = self._indice_intentos(session_id)
+        overrides: dict[str, GradedAttempt] = {}
+        for vista in preguntas:
+            intento = intentos.get(vista.question_version_id)
+            if intento is None:
+                continue
+            encontrada = entradas.get(vista.question_version_id)
+            clave_id = None if encontrada is None else encontrada[0]
+            entrada = None if encontrada is None else encontrada[1]
+            calificado = grade_attempt(
+                chosen_option_keys=intento.chosen_option_keys,
+                frozen_outcome=entrada.outcome if entrada is not None else None,
+                frozen_correct_keys=(entrada.correct_option_keys if entrada is not None else ()),
+                penalty=self._penalizacion(session, vista),
+            )
+            overrides[vista.question_version_id] = calificado
+            self._study.save_evaluation(
+                attempt_id=intento.id,
+                outcome=calificado.outcome.value,
+                score=calificado.score,
+                reason=calificado.reason,
+                answer_key_version_id=clave_id,
+                supersedes_id=intento.evaluation_id,
+                now=ahora,
+            )
+
+        anterior = self._study.result_json(session_id)
+        resultado = self._calcular(
+            session_id,
+            session,
+            overrides=overrides,
+            key_version_id=next(iter(claves)) if len(claves) == 1 else None,
+            key_label=" · ".join(etiquetas),
+        )
+        self._study.store_result(
+            session_id,
+            result_json=self._resultado_json(resultado),
+            previous_result_json=anterior,
+            now=ahora,
+        )
+        return self.result(session_id)
+
     def review(self, session_id: str) -> ReviewView:
         """La revisión: cada pregunta con lo que se marcó y, si se puede, su corrección.
 
@@ -515,31 +588,82 @@ class StudyService:
             )
         if parte.format not in _SUPPORTED_PART_FORMATS:
             raise UnsupportedError(
-                f"la parte «{parte.code}» se corrige como «{parte.format}», que llega en S08: "
-                "este slice corrige partes de respuesta única"
-            )
-        if parte.wrong_penalty_fraction is None:
-            raise UnsupportedError(
-                f"la convocatoria no publica la penalización de la parte «{parte.code}»: "
-                "sin ella no se puede calcular la puntuación directa"
+                f"la parte «{parte.code}» se corrige como «{parte.format}», que no es una forma "
+                "conocida: este slice corrige respuesta única, marcar errores y psicotécnicas"
             )
         return _PartContext(
             code=parte.code,
             name=parte.name,
-            rule=PartRule(
+            rule=StudyService._regla(parte),
+            ordinary_items=parte.ordinary_items,
+            reserve_items=parte.reserve_items,
+            # El tiempo es de la parte y, si ella no lo dice, del grupo que la contiene: en TAI el
+            # límite de 120 minutos está en el ejercicio único, no en cada parte.
+            time_minutes=StudyService._tiempo(convocatoria, parte),
+            format=parte.format,
+        )
+
+    @staticmethod
+    def _regla(parte: ExamPart) -> PartRule:
+        """Con qué regla se corrige una parte, según **lo que su convocatoria publica**.
+
+        Tres formas, y ninguna se elige por gusto (ADR-011):
+
+        1. la parte se evalúa como apto o no apto por número de errores (`fail_if_errors_gte`);
+        2. la convocatoria publica la fórmula completa —`Y`, `T` y `N`— y entonces la puntuación de
+           la prueba **es** la publicada (`Px = (Y/T)·(A - E/(N-1))`, Guardia Civil);
+        3. la convocatoria solo publica la penalización (TAI): se calcula la puntuación directa y su
+           calificación oficial queda declarada como no disponible.
+
+        Si una parte no publica ni umbral de errores ni penalización ni la fórmula completa, no hay
+        forma de corregirla y se dice, en lugar de calcular con un valor inventado.
+        """
+        if parte.fail_if_errors_gte is not None:
+            return PartRule(
                 code=parte.code,
                 name=parte.name,
                 ordinary_items=parte.ordinary_items,
                 score_min=parte.score_min,
                 score_max=parte.score_max,
                 pass_score=parte.pass_score,
-                penalty=exact_fraction(parte.wrong_penalty_fraction),
-            ),
+                kind=ScoringKind.PASS_FAIL,
+                fail_if_errors_gte=parte.fail_if_errors_gte,
+                format=parte.format,
+            )
+        if (
+            parte.options_per_question is not None
+            and parte.score_max is not None
+            and parte.ordinary_items
+        ):
+            return PartRule(
+                code=parte.code,
+                name=parte.name,
+                ordinary_items=parte.ordinary_items,
+                score_min=parte.score_min,
+                score_max=parte.score_max,
+                pass_score=parte.pass_score,
+                kind=ScoringKind.SCALED,
+                options_per_question=parte.options_per_question,
+                penalty=(
+                    exact_fraction(parte.wrong_penalty_fraction)
+                    if parte.wrong_penalty_fraction is not None
+                    else Fraction(1, parte.options_per_question - 1)
+                ),
+                format=parte.format,
+            )
+        if parte.wrong_penalty_fraction is None:
+            raise UnsupportedError(
+                f"la convocatoria no publica cómo se corrige la parte «{parte.code}»: ni su umbral "
+                "de errores, ni su fórmula, ni su penalización"
+            )
+        return PartRule(
+            code=parte.code,
+            name=parte.name,
             ordinary_items=parte.ordinary_items,
-            reserve_items=parte.reserve_items,
-            # El tiempo es de la parte y, si ella no lo dice, del grupo que la contiene: en TAI el
-            # límite de 120 minutos está en el ejercicio único, no en cada parte.
-            time_minutes=StudyService._tiempo(convocatoria, parte),
+            score_min=parte.score_min,
+            score_max=parte.score_max,
+            pass_score=parte.pass_score,
+            penalty=exact_fraction(parte.wrong_penalty_fraction),
             format=parte.format,
         )
 
@@ -737,8 +861,20 @@ class StudyService:
             evidence=self._questions.question_evidence(pregunta.question_version_id),
         )
 
-    def _calcular(self, session_id: str, session: SessionView) -> SessionResultView:
-        """El cálculo del resultado: composición efectiva, partes y total, con aritmética exacta."""
+    def _calcular(
+        self,
+        session_id: str,
+        session: SessionView,
+        *,
+        overrides: Mapping[str, GradedAttempt] | None = None,
+        key_version_id: str | None = None,
+        key_label: str | None = None,
+    ) -> SessionResultView:
+        """El cálculo del resultado: composición efectiva, partes y total, con aritmética exacta.
+
+        `overrides` es lo que usa el recálculo: los intentos ya corregidos con la clave **nueva**,
+        que sustituyen a los de la clave congelada sin tocar lo que se presentó.
+        """
         preguntas = self._study.session_questions(session_id)
         intentos = self._indice_intentos(session_id)
         congeladas = [
@@ -760,6 +896,9 @@ class StudyService:
             if intento is None:
                 calificados[vista.question_version_id] = None
                 continue
+            if overrides is not None and vista.question_version_id in overrides:
+                calificados[vista.question_version_id] = overrides[vista.question_version_id]
+                continue
             calificados[vista.question_version_id] = self._calificar(
                 session, vista, intento.chosen_option_keys
             )
@@ -769,7 +908,9 @@ class StudyService:
         resultado = aggregate(
             session_id=session_id,
             mode=session.mode,
-            answer_key_version_id=session.answer_key_version_id,
+            answer_key_version_id=(
+                session.answer_key_version_id if key_version_id is None else key_version_id
+            ),
             items=items,
             substitutions=sustituciones,
             part_rules=reglas,
@@ -778,7 +919,7 @@ class StudyService:
             session_id=resultado.session_id,
             mode=resultado.mode,
             answer_key_version_id=resultado.answer_key_version_id,
-            key_label=session.key_label,
+            key_label=session.key_label if key_label is None else key_label,
             parts=tuple(self._parte_view(parte) for parte in resultado.parts),
             total=self._parte_view(resultado.total),
             substitutions=tuple(
@@ -796,6 +937,14 @@ class StudyService:
     def _reglas_de_partes(
         self, session: SessionView, preguntas: Sequence[FrozenQuestion]
     ) -> dict[str | None, PartRule]:
+        """La regla con la que se corrige cada parte de esta sesión.
+
+        Una parte que se puntúa con la fórmula publicada (`Px = (Y/T)·(A - E/(N-1))`) solo se puede
+        escalar cuando la sesión lleva **el cuestionario completo**: `T` es el número de preguntas
+        de la prueba. Si se practica con una parte de ellas, se muestra la puntuación directa y se
+        dice, porque escalar cuatro preguntas a la puntuación máxima de cien sería inventar una
+        nota.
+        """
         convocatoria = self._profiles.get_convocation(session.convocation_version_id or "")
         if convocatoria is None:
             raise NotFoundError("convocatoria", session.convocation_version_id or "")
@@ -803,7 +952,31 @@ class StudyService:
         for codigo in {pregunta.part_code for pregunta in preguntas}:
             if codigo is None:
                 continue
-            reglas[codigo] = self._parte(convocatoria, codigo).rule
+            regla = self._parte(convocatoria, codigo).rule
+            presentadas = sum(
+                1
+                for pregunta in preguntas
+                if pregunta.part_code == codigo and not pregunta.is_reserve
+            )
+            if (
+                regla.kind is ScoringKind.SCALED
+                and regla.ordinary_items is not None
+                and presentadas < regla.ordinary_items
+            ):
+                regla = replace(
+                    regla,
+                    kind=ScoringKind.DIRECT,
+                    # Sin la `N` publicada no habría penalización: se usa la de la fórmula, que es
+                    # `1/(N-1)`, y con ella la puntuación directa es la misma que la del bruto.
+                    penalty=Fraction(1, (regla.options_per_question or 4) - 1),
+                    note=(
+                        f"Práctica parcial de «{regla.name}»: la fórmula de la convocatoria "
+                        f"({regla.ordinary_items} preguntas) se aplica al cuestionario "
+                        "completo, así que aquí se muestra la puntuación directa y no se "
+                        "declara superada."
+                    ),
+                )
+            reglas[codigo] = regla
         return reglas
 
     @staticmethod
@@ -816,6 +989,7 @@ class StudyService:
             score_max=parte.score_max,
             pass_score=parte.pass_score,
             penalty=ScoreView(parte.penalty) if parte.penalty is not None else None,
+            kind=parte.kind.value,
             correct=parte.correct,
             wrong=parte.wrong,
             blank=parte.blank,
@@ -825,12 +999,14 @@ class StudyService:
             reserves_used=parte.reserves_used,
             unused_reserves=parte.unused_reserves,
             score=ScoreView(parte.score),
+            passed=parte.passed,
+            verdict_note=parte.verdict_note,
             official_available=parte.official_available,
         )
 
     @staticmethod
     def _parte_json(parte: PartScoreView) -> dict[str, object]:
-        """Una parte del resultado, con sus recuentos y su puntuación exacta."""
+        """Una parte del resultado: recuentos, forma de cálculo y puntuación exacta."""
         return {
             "part_code": parte.part_code,
             "part_name": parte.part_name,
@@ -839,6 +1015,7 @@ class StudyService:
             "score_max": parte.score_max,
             "pass_score": parte.pass_score,
             "penalty": parte.penalty.fraction if parte.penalty is not None else None,
+            "kind": parte.kind,
             "correct": parte.correct,
             "wrong": parte.wrong,
             "blank": parte.blank,
@@ -851,6 +1028,8 @@ class StudyService:
                 "numerator": parte.score.numerator,
                 "denominator": parte.score.denominator,
             },
+            "passed": parte.passed,
+            "verdict_note": parte.verdict_note,
             "official_available": parte.official_available,
         }
 

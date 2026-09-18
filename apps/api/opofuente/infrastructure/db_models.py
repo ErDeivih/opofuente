@@ -1283,6 +1283,10 @@ class StudySessionRecord(Base):
     feedback: Mapped[str] = mapped_column(String(16), nullable=False)
     configuration_json: Mapped[str] = mapped_column(Text, nullable=False)
     result_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    #: El resultado que había antes de recalcular con una clave nueva (S08): sirve para explicar el
+    #: cambio en lugar de que la puntuación cambie sola.
+    previous_result_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    recalculated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     time_limit_minutes: Mapped[int | None] = mapped_column(Integer, nullable=True)
     total_questions: Mapped[int] = mapped_column(
         Integer, nullable=False, server_default=text("0"), default=0

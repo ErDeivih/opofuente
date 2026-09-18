@@ -236,6 +236,35 @@ def test_un_mapeo_que_no_esta_en_la_cabecera_se_dice_antes_de_tocar_nada(tmp_pat
     assert servicio.questions(set_id=set_id).total == 0
 
 
+def test_una_pregunta_repetida_con_su_clave_no_rompe_el_lote(tmp_path: Path) -> None:
+    """Un cuestionario que repite una pregunta no puede tumbar la importación de su clave.
+
+    Antes esto fallaba con `IntegrityError`: la huella reconoce la pregunta repetida y devuelve dos
+    veces el mismo identificador, y una clave no admite dos entradas para la misma pregunta. Ahora
+    se queda una y el informe cuenta la pregunta una sola vez.
+    """
+    servicio, _ = _servicio(tmp_path)
+    set_id = _conjunto(servicio)
+    repetida = (
+        "1. El plazo es de diez dias:\n"
+        "a) Verdadero\n"
+        "b) Falso\n"
+        "Respuesta correcta: a\n"
+        "\n"
+        "2. El plazo es de diez dias:\n"
+        "a) Verdadero\n"
+        "b) Falso\n"
+        "Respuesta correcta: a\n"
+    )
+
+    informe = servicio.import_from_text(set_id, repetida)
+
+    assert informe.created == 1, "la segunda es la misma pregunta: no se duplica"
+    assert informe.existing == 1
+    assert informe.key_entries == 1, "y su clave tiene una sola entrada"
+    assert servicio.questions(set_id=set_id).total == 1
+
+
 def test_el_mapeo_dice_que_campo_hay_que_corregir(tmp_path: Path) -> None:
     """El error viaja con el campo, para que la API pueda responder un 422 señalándolo."""
     servicio, _ = _servicio(tmp_path)
