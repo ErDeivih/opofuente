@@ -18,7 +18,6 @@ from opofuente.domain.system import Capability, CapabilityStatus
 from opofuente.infrastructure.worker_liveness import WorkerLiveness
 
 _OCR_SLICE = "S03"
-_SEARCH_SLICE = "S09"
 
 
 class ConfigurationCapabilityProvider:
@@ -66,8 +65,10 @@ class ConfigurationCapabilityProvider:
                 id="llm",
                 label="Modelo de lenguaje",
                 status=CapabilityStatus.DISABLED,
-                detail="Ninguna función básica depende de IA. Proveedor desactivado por defecto.",
-                planned_slice="S09",
+                detail=(
+                    "Sin proveedor: las respuestas se componen del propio corpus (extractivas) y "
+                    "citan cada afirmación. Un modelo de lenguaje llegaría con la deuda DEBT-014."
+                ),
             )
         extra = (
             " Los fragmentos enviados saldrían del equipo."
@@ -80,10 +81,9 @@ class ConfigurationCapabilityProvider:
             status=CapabilityStatus.CONFIGURED_UNVERIFIED,
             detail=(
                 f"Proveedor {provider} configurado con modelo "
-                f"{self._settings.llm_model or 'sin especificar'}. La verificación real "
-                f"llega en S09; hasta entonces no se usa para responder.{extra}"
+                f"{self._settings.llm_model or 'sin especificar'}, pero OpoFuente no lo usa para "
+                f"responder: hoy responde con el corpus (extractivo).{extra}"
             ),
-            planned_slice="S09",
         )
 
     def _embeddings(self) -> Capability:
@@ -93,18 +93,19 @@ class ConfigurationCapabilityProvider:
                 id="embeddings",
                 label="Embeddings",
                 status=CapabilityStatus.DISABLED,
-                detail="Sin proveedor configurado. La búsqueda literal no depende de embeddings.",
-                planned_slice=_SEARCH_SLICE,
+                detail=(
+                    "Sin proveedor de embeddings decidido: la búsqueda es literal (FTS5) y cada "
+                    "respuesta lo declara como degradación (DEBT-014)."
+                ),
             )
         return Capability(
             id="embeddings",
             label="Embeddings",
             status=CapabilityStatus.CONFIGURED_UNVERIFIED,
             detail=(
-                f"Proveedor {provider} configurado. El benchmark en español y la indexación "
-                "llegan en S09."
+                f"Proveedor {provider} configurado, pero sin índice vectorial construido ni "
+                "benchmark en español: la búsqueda sigue siendo literal (DEBT-014)."
             ),
-            planned_slice=_SEARCH_SLICE,
         )
 
 
@@ -189,23 +190,36 @@ class IngestionCapabilityProvider:
         )
 
 
-class PlannedCapabilityProvider:
-    """Capacidades que todavía no existen en el código, declaradas sin ambigüedad."""
+class VectorIndexCapabilityProvider:
+    """El índice vectorial: no existe, y se dice por qué en lugar de prometer un slice.
+
+    S09 construyó la búsqueda **literal**: sin proveedor de embeddings decidido (el modelo se fija
+    por ADR tras un benchmark en español) no hay vectores que indexar, y descargar un modelo al
+    arrancar sin avisar está prohibido. Declararlo `planned` con un slice sería prometer una fecha
+    que nadie ha decidido.
+    """
 
     def provide(self) -> tuple[Capability, ...]:
         return (
             Capability(
                 id="vector_index",
                 label="Índice vectorial local",
-                status=CapabilityStatus.PLANNED,
-                detail="Qdrant local, reconstruible desde SQLite. Llega en S09.",
-                planned_slice="S09",
+                status=CapabilityStatus.UNAVAILABLE,
+                detail=(
+                    "Sin proveedor de embeddings no hay vectores que indexar: la búsqueda del "
+                    "corpus es literal (FTS5) sobre el texto extraído (DEBT-014)."
+                ),
             ),
         )
 
 
 class SqliteCapabilityProvider:
-    """Comprueba de verdad si el SQLite de este equipo soporta FTS5."""
+    """Comprueba de verdad si el SQLite de este equipo soporta FTS5 y si el índice existe.
+
+    La capacidad no se declara operativa por soportar FTS5: hace falta que el índice léxico de S09
+    esté creado en esta base. Un SQLite con FTS5 y sin migrar no puede buscar nada, y eso hay que
+    decirlo antes de que alguien busque y no encuentre.
+    """
 
     def __init__(self, engine: Engine) -> None:
         self._engine = engine
@@ -215,6 +229,12 @@ class SqliteCapabilityProvider:
             with self._engine.connect() as connection:
                 connection.execute(text("CREATE VIRTUAL TABLE temp.fts5_probe USING fts5(sample)"))
                 connection.execute(text("DROP TABLE temp.fts5_probe"))
+                creado = connection.execute(
+                    text(
+                        "SELECT count(*) FROM sqlite_master "
+                        "WHERE name = 'evidence_fts' AND type = 'table'"
+                    )
+                ).scalar_one()
         except SQLAlchemyError as exc:
             return (
                 Capability(
@@ -223,20 +243,31 @@ class SqliteCapabilityProvider:
                     status=CapabilityStatus.UNAVAILABLE,
                     detail=(
                         "El SQLite de este equipo no soporta FTS5 "
-                        f"({type(exc).__name__}); la búsqueda literal no podrá construirse."
+                        f"({type(exc).__name__}); la búsqueda literal no puede funcionar."
                     ),
-                    planned_slice=_SEARCH_SLICE,
+                ),
+            )
+        if not creado:
+            return (
+                Capability(
+                    id="fts5",
+                    label="Búsqueda literal (FTS5)",
+                    status=CapabilityStatus.UNAVAILABLE,
+                    detail=(
+                        "Este equipo soporta FTS5, pero el índice léxico no está creado en esta "
+                        "base: la migración 0018 no se ha aplicado, así que no se puede buscar."
+                    ),
                 ),
             )
         return (
             Capability(
                 id="fts5",
                 label="Búsqueda literal (FTS5)",
-                status=CapabilityStatus.PLANNED,
+                status=CapabilityStatus.ENABLED,
                 detail=(
-                    "El SQLite de este equipo soporta FTS5 (comprobado). El índice y las "
-                    "consultas se implementan en S09."
+                    "Índice léxico comprobado: tabla externa sobre evidence_spans, ordenada por "
+                    "bm25, con los disparadores que la mantienen al día; se rehace cuando haga "
+                    "falta sin salir de SQLite."
                 ),
-                planned_slice=_SEARCH_SLICE,
             ),
         )

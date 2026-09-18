@@ -16,6 +16,7 @@ Formato: `ADR-NNN-titulo.md` con contexto, opciones, datos, decisión, consecuen
 | [ADR-009](ADR-009-activar-es-aprobar.md) | Activar una plantilla es aprobarla | aceptada (S06) |
 | [ADR-010](ADR-010-aritmetica-exacta-y-calificacion-oficial.md) | La puntuación se calcula con fracciones exactas, y la calificación oficial no se inventa | aceptada (S07), cierra DEBT-006 |
 | [ADR-011](ADR-011-forma-de-corregir-una-parte.md) | La forma de corregir una parte la fija su convocatoria | aceptada (S08) |
+| [ADR-012](ADR-012-busqueda-lexica-sin-embeddings.md) | La búsqueda del corpus es léxica (FTS5) hasta que exista un proveedor de embeddings | aceptada (S09), pendiente de ratificación |
 
 La deuda técnica obligatoria (con su slice y su criterio de cierre) se registra aparte en
 [`docs/DEBT.md`](../DEBT.md).

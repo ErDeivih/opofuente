@@ -113,13 +113,16 @@ def test_capabilities_no_declara_operativo_lo_que_no_existe(client: TestClient) 
     # S02 existe y se comprueba de verdad: almacén escribible y worker corriendo en este proceso.
     assert capabilities["artifact_store"]["status"] == "enabled"
     assert capabilities["worker"]["status"] == "enabled"
-    assert capabilities["vector_index"]["status"] == "planned"
-    assert capabilities["vector_index"]["planned_slice"] == "S09"
-    # El SQLite de este equipo se comprueba de verdad: si no tuviera FTS5 habría que decirlo.
-    assert capabilities["fts5"]["status"] in {"planned", "unavailable"}
-    # Nada se declara operativo sin comprobarlo: lo pendiente genera su degradación explícita.
+    # S09 construyó la búsqueda literal y **no** el índice vectorial: sin embeddings no hay vectores
+    # que indexar, así que no se promete un slice futuro.
+    assert capabilities["vector_index"]["status"] == "unavailable"
+    assert capabilities["vector_index"]["planned_slice"] is None
+    # El SQLite de este equipo se comprueba de verdad: FTS5 disponible **y** índice creado en esta
+    # base (migración 0018 aplicada, que es lo que comprueba la sonda de arranque).
+    assert capabilities["fts5"]["status"] == "enabled"
+    # Nada se declara operativo sin comprobarlo: lo ausente genera su degradación explícita.
     assert any(
-        degradation["code"] == "vector_index.planned" for degradation in body["degradations"]
+        degradation["code"] == "vector_index.unavailable" for degradation in body["degradations"]
     )
     assert all(degradation["code"] for degradation in body["degradations"])
 

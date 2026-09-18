@@ -42,8 +42,8 @@ from opofuente.infrastructure.artifact_store import ArtifactStore
 from opofuente.infrastructure.capabilities import (
     ConfigurationCapabilityProvider,
     IngestionCapabilityProvider,
-    PlannedCapabilityProvider,
     SqliteCapabilityProvider,
+    VectorIndexCapabilityProvider,
 )
 from opofuente.infrastructure.classification_repository import SqlAlchemyClassificationRepository
 from opofuente.infrastructure.classifiers import DeterministicClassifier
@@ -105,7 +105,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 settings=resolved,
                 liveness=worker_liveness,
             ),
-            PlannedCapabilityProvider(),
+            VectorIndexCapabilityProvider(),
         ),
     )
     clock = SystemClock()

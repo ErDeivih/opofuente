@@ -107,6 +107,35 @@ export const capabilitiesFixture: CapabilitiesResponse = {
   version: '0.0.0-test',
   capabilities: [
     {
+      id: 'ocr',
+      label: 'OCR (Tesseract)',
+      status: 'disabled',
+      detail:
+        'Sin ruta configurada. Las imágenes y los PDF escaneados quedan pendientes sin bloquear la aplicación.',
+      planned_slice: 'S03',
+    },
+    {
+      id: 'llm',
+      label: 'Modelo de lenguaje',
+      status: 'disabled',
+      detail:
+        'Sin proveedor: las respuestas se componen del propio corpus (extractivas) y citan cada afirmación. Un modelo de lenguaje llegaría con la deuda DEBT-014.',
+    },
+    {
+      id: 'embeddings',
+      label: 'Embeddings',
+      status: 'disabled',
+      detail:
+        'Sin proveedor de embeddings decidido: la búsqueda es literal (FTS5) y cada respuesta lo declara como degradación (DEBT-014).',
+    },
+    {
+      id: 'fts5',
+      label: 'Búsqueda literal (FTS5)',
+      status: 'enabled',
+      detail:
+        'Índice léxico comprobado: tabla externa sobre evidence_spans, ordenada por bm25, con los disparadores que la mantienen al día; se rehace cuando haga falta sin salir de SQLite.',
+    },
+    {
       id: 'artifact_store',
       label: 'Almacén de originales por SHA-256',
       status: 'enabled',
@@ -121,31 +150,32 @@ export const capabilitiesFixture: CapabilitiesResponse = {
     {
       id: 'vector_index',
       label: 'Índice vectorial local',
-      status: 'planned',
-      detail: 'Qdrant local, reconstruible desde SQLite. Llega en S09.',
-      planned_slice: 'S09',
-    },
-    {
-      id: 'ocr',
-      label: 'OCR (Tesseract)',
-      status: 'disabled',
-      detail: 'Sin ruta configurada.',
-      planned_slice: 'S03',
-    },
-    {
-      id: 'llm',
-      label: 'Modelo de lenguaje',
-      status: 'disabled',
-      detail: 'Ninguna función básica depende de IA.',
-      planned_slice: 'S09',
+      status: 'unavailable',
+      detail:
+        'Sin proveedor de embeddings no hay vectores que indexar: la búsqueda del corpus es literal (FTS5) sobre el texto extraído (DEBT-014).',
     },
   ],
   degradations: [
     {
-      code: 'vector_index.planned',
-      message: 'Índice vectorial local: todavía no implementado (previsto en S09).',
+      code: 'ocr.disabled',
+      message:
+        'OCR (Tesseract): no configurado. Sin ruta configurada. Las imágenes y los PDF escaneados quedan pendientes sin bloquear la aplicación.',
     },
-    { code: 'llm.disabled', message: 'Modelo de lenguaje: no configurado.' },
+    {
+      code: 'llm.disabled',
+      message:
+        'Modelo de lenguaje: no configurado. Sin proveedor: las respuestas se componen del propio corpus (extractivas) y citan cada afirmación. Un modelo de lenguaje llegaría con la deuda DEBT-014.',
+    },
+    {
+      code: 'embeddings.disabled',
+      message:
+        'Embeddings: no configurado. Sin proveedor de embeddings decidido: la búsqueda es literal (FTS5) y cada respuesta lo declara como degradación (DEBT-014).',
+    },
+    {
+      code: 'vector_index.unavailable',
+      message:
+        'Índice vectorial local: no disponible. Sin proveedor de embeddings no hay vectores que indexar: la búsqueda del corpus es literal (FTS5) sobre el texto extraído (DEBT-014).',
+    },
   ],
 };
 

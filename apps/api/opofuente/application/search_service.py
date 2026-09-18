@@ -230,15 +230,14 @@ class SearchService:
         return fragmento
 
     def rebuild(self) -> int:
-        """Rehace el índice léxico desde SQLite (§4: los índices son reconstruibles)."""
-        return self._search.rebuild_index()
+        """Rehace el índice léxico desde SQLite (§4: los índices son reconstruibles).
 
-    def capabilities(self) -> tuple[str, ...]:
-        """Lo que la recuperación **no** puede hacer hoy, con su motivo, para declararlo."""
-        motivos: list[str] = []
-        if not self._vector.available:
-            motivos.append(self._vector.reason or "búsqueda vectorial no disponible")
-        return tuple(motivos)
+        Se queda sin ruta HTTP a propósito: el índice lo mantienen los disparadores de
+        `evidence_spans`, así que rehacerlo es una reparación, y la acción de Ajustes que la expone
+        está registrada en DEBT-015 (S12). Lo que hoy se declara al usuario es la degradación
+        léxica, que viaja en cada respuesta de búsqueda y en `/capabilities`.
+        """
+        return self._search.rebuild_index()
 
     # ------------------------------------------------------------------ ayudas
 

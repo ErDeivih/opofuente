@@ -778,6 +778,45 @@ button:focus-visible,
   align-items: center;
 }
 
+/* --- Búsqueda y RAG (S09) -------------------------------------------------- */
+
+/* Buscador de la cabecera (07_UI-UX §2): lleva a su sección, no busca aquí. */
+.app__search {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.app__search .form__label {
+  margin: 0;
+}
+
+.app__search-input {
+  font: inherit;
+  min-width: 12rem;
+  padding: 0.3rem 0.5rem;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio);
+  background: var(--color-superficie);
+  color: inherit;
+}
+
+/* Resultados y afirmaciones: numerados, porque el orden de la recuperación es información. */
+.results {
+  margin: 0;
+  padding-left: 1.4rem;
+}
+
+.results > li {
+  margin-bottom: 0.75rem;
+  overflow-wrap: anywhere;
+}
+
+.results > li > p {
+  margin-bottom: 0.25rem;
+}
+
 /* --- Responsive (07_UI-UX §13 y §14: 1440, 1024 y 390) --------------------- */
 
 @media (max-width: 1024px) {

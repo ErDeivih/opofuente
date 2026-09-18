@@ -372,7 +372,9 @@ def test_la_busqueda_hibrida_sin_proveedor_sigue_siendo_lexica(tmp_path: Path) -
 
     assert resultado.hits, "FTS sigue funcionando sin vectores"
     assert resultado.strategy is SearchStrategy.LEXICAL
-    assert servicio.capabilities(), "la capacidad que falta se declara con su motivo"
+    # Y se declara **en la propia respuesta** que la recuperación fue solo léxica: la capacidad que
+    # falta no se calla (la declara además `/capabilities`, con el mismo motivo).
+    assert any("solo léxica" in aviso for aviso in resultado.degradations)
 
 
 def test_una_busqueda_sin_texto_no_se_acepta(tmp_path: Path) -> None:

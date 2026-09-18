@@ -147,13 +147,15 @@ describe('shell de la aplicación', () => {
     );
 
     expect(
-      await screen.findByText('Índice vectorial local: todavía no implementado (previsto en S09).'),
+      await screen.findByText(
+        /Índice vectorial local: no disponible\. Sin proveedor de embeddings no hay vectores/,
+      ),
     ).toBeInTheDocument();
     // La tabla de capacidades declara el estado real: nada se muestra como operativo por error.
     const tabla = screen.getByRole('table', { name: 'Capacidades de esta instalación' });
-    expect(within(tabla).getAllByText('operativo', { selector: '.badge__text' })).toHaveLength(2);
-    expect(within(tabla).getAllByText('pendiente', { selector: '.badge__text' })).toHaveLength(1);
-    expect(within(tabla).getAllByText('desactivado', { selector: '.badge__text' })).toHaveLength(2);
+    expect(within(tabla).getAllByText('operativo', { selector: '.badge__text' })).toHaveLength(3);
+    expect(within(tabla).getAllByText('no disponible', { selector: '.badge__text' })).toHaveLength(1);
+    expect(within(tabla).getAllByText('desactivado', { selector: '.badge__text' })).toHaveLength(3);
     // El indicador de cabecera resume el estado del worker.
     expect(screen.getByLabelText('Estado de capacidades clave')).toBeInTheDocument();
   });

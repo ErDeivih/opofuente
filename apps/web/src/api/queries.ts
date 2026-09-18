@@ -52,6 +52,14 @@ import {
   fetchOppositions,
 } from './profiles';
 import {
+  askCorpus,
+  fetchRagQuery,
+  fetchRetrieval,
+  searchCorpus,
+  type AskRequest,
+  type SearchRequest,
+} from './search';
+import {
   answerQuestion,
   createSession,
   fetchCurrentQuestion,
@@ -138,6 +146,12 @@ export const queryKeys = {
   studyCurrent: (sessionId: string) => ['study', 'session', sessionId, 'current'] as const,
   studyReview: (sessionId: string) => ['study', 'session', sessionId, 'review'] as const,
   studyResult: (sessionId: string) => ['study', 'session', sessionId, 'result'] as const,
+  /* S09: búsqueda y RAG. Cuelgan de «search» porque una consulta guarda su recuperación y su
+     respuesta, y las tres cosas cambian juntas. */
+  searchResults: (query: string, versionMode: string) =>
+    ['search', 'results', query, versionMode] as const,
+  ragQuery: (queryId: string) => ['search', 'rag', queryId] as const,
+  retrieval: (queryId: string) => ['search', 'rag', queryId, 'retrieval'] as const,
 };
 
 export function useReadiness() {
@@ -904,5 +918,41 @@ export function useRecalculateStudySession() {
     onSuccess: (resultado) => {
       invalidateStudy(queryClient, resultado.session_id);
     },
+  });
+}
+
+/* ------------------------------------------------------------------ S09: búsqueda y RAG */
+
+export function useSearchResults(input: SearchRequest | null) {
+  return useQuery({
+    queryKey: queryKeys.searchResults(input?.query ?? '', input?.version_mode ?? 'current'),
+    queryFn: () => searchCorpus(input as SearchRequest),
+    enabled: input !== null && input.query.trim() !== '',
+  });
+}
+
+export function useAskCorpus() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: AskRequest) => askCorpus(input),
+    onSuccess: (consulta) => {
+      queryClient.setQueryData(queryKeys.ragQuery(consulta.id), consulta);
+    },
+  });
+}
+
+export function useRagQuery(queryId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.ragQuery(queryId ?? 'ninguna'),
+    queryFn: () => fetchRagQuery(queryId as string),
+    enabled: queryId !== null,
+  });
+}
+
+export function useRetrieval(queryId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.retrieval(queryId ?? 'ninguna'),
+    queryFn: () => fetchRetrieval(queryId as string),
+    enabled: queryId !== null,
   });
 }

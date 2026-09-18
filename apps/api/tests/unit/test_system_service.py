@@ -10,7 +10,7 @@ from opofuente.domain.system import Capability, CapabilityStatus, CheckResult, C
 from opofuente.infrastructure.capabilities import (
     ConfigurationCapabilityProvider,
     IngestionCapabilityProvider,
-    PlannedCapabilityProvider,
+    VectorIndexCapabilityProvider,
 )
 from opofuente.infrastructure.worker_liveness import WorkerLiveness
 
@@ -21,7 +21,7 @@ def _report(settings: Settings) -> dict[str, Capability]:
         probes=(),
         capability_providers=(
             ConfigurationCapabilityProvider(settings),
-            PlannedCapabilityProvider(),
+            VectorIndexCapabilityProvider(),
         ),
     )
     return {capability.id: capability for capability in service.capabilities().capabilities}
@@ -67,12 +67,19 @@ def test_llm_configurado_no_se_declara_operativo() -> None:
     llm = _report(settings)["llm"]
     assert llm.status is CapabilityStatus.CONFIGURED_UNVERIFIED
     assert llm.status is not CapabilityStatus.ENABLED
+    # S09 no promete un modelo: las respuestas se componen del corpus y se dice.
+    assert "extractivo" in llm.detail
 
 
-def test_capacidades_futuras_declaran_su_slice() -> None:
+def test_el_indice_vectorial_no_promete_un_slice() -> None:
+    """Sin proveedor de embeddings no hay vectores: se declara no disponible, no «previsto»."""
     capabilities = _report(Settings(_env_file=None))
-    assert capabilities["vector_index"].status is CapabilityStatus.PLANNED
-    assert capabilities["vector_index"].planned_slice == "S09"
+    vectorial = capabilities["vector_index"]
+    assert vectorial.status is CapabilityStatus.UNAVAILABLE
+    assert vectorial.planned_slice is None
+    assert "DEBT-014" in vectorial.detail
+    assert capabilities["embeddings"].status is CapabilityStatus.DISABLED
+    assert capabilities["embeddings"].planned_slice is None
 
 
 def test_almacen_de_artefactos_se_comprueba_escribiendo(tmp_path: Path) -> None:

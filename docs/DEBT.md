@@ -12,7 +12,7 @@ Reglas:
 
 | ID | Slice | Obligación | Estado |
 |---|---|---|---|
-| [DEBT-001](#debt-001--clasificación-del-destino-de-datos-por-proveedor) | S09 | Sustituir `Settings.sends_data_off_device` por clasificación por proveedor | abierta |
+| [DEBT-001](#debt-001--clasificación-del-destino-de-datos-por-proveedor) | S12 | Sustituir `Settings.sends_data_off_device` por clasificación por proveedor | abierta (reasignada de S09 a S12: los proveedores no llegan en S09, ver DEBT-014) |
 | [DEBT-002](#debt-002--documentar-403-404-y-422-en-el-contrato) | S02 | Cerrar el caso real de validación fallida (422) con `field_errors` | **cerrada en S02** |
 | [DEBT-003](#debt-003--uso-privado-del-temario-de-la-guardia-civil) | antes de publicar | No publicar el repositorio ni distribuir la aplicación con el temario de GC | abierta (condición previa) |
 | [DEBT-004](#debt-004--parseo-seguro-de-xmlhtml-no-confiable) | S03 | Los extractores deben defenderse de XML/HTML no confiable | **cerrada en S03** |
@@ -25,6 +25,8 @@ Reglas:
 | [DEBT-011](#debt-011--la-pantalla-del-banco-solo-enseña-las-primeras-100-preguntas) | S09 | La pantalla del banco pide 100 preguntas y no permite recorrer el resto de un conjunto grande | abierta |
 | [DEBT-012](#debt-012--modos-de-sesión-declarados-y-sin-implementar) | S08+ | Simulacro, diagnóstico y repaso de errores están en el vocabulario del modelo y no implementados | abierta (S08 añadió los modos de **corrección** de GC, no los modos de sesión) |
 | [DEBT-013](#debt-013--el-recálculo-no-se-puede-hacer-en-bloque) | S09+ | Recalcular una clave corregida es sesión a sesión, y solo se conserva un resultado anterior | abierta |
+| [DEBT-014](#debt-014--sin-proveedor-de-embeddings-ni-de-lenguaje-el-rag-es-extractivo) | S10+ | No hay embeddings, ni índice vectorial, ni proveedor de lenguaje: la búsqueda es léxica y la respuesta extractiva | abierta |
+| [DEBT-015](#debt-015--el-índice-léxico-se-puede-rehacer-pero-no-desde-la-interfaz) | S12 | El índice léxico se rehace desde el servicio y no hay acción en Ajustes que lo haga | abierta |
 
 ---
 
@@ -45,7 +47,8 @@ Hoy no hay fuga: ambos proveedores están `disabled` por defecto y la aplicació
 llamada saliente. El riesgo es de **información al usuario**: la pantalla de Ajustes debe poder decir
 si los datos salen del equipo y por qué proveedor.
 
-**Cambio exigido antes de S09.** Sustituir el booleano por un estado independiente por proveedor:
+**Cambio exigido antes de S12** (Ajustes: proveedores y capacidades). Sustituir el booleano por un
+estado independiente por proveedor:
 
 ```text
 disabled | local | remote | unknown
@@ -61,7 +64,12 @@ La clasificación se calcula sobre el **endpoint efectivo** (URL resuelta, no so
 expone por separado para `llm` y para `embeddings`, y `unknown` es el valor conservador por defecto.
 
 **Por qué no ahora.** Implementarlo sin proveedor activo significaría escribir una clasificación de
-URLs sin nada que clasificar, y S09 es donde llegan los adaptadores y la prueba real de conexión.
+URLs sin nada que clasificar. S09 iba a ser el slice donde llegaran los adaptadores, y **finalmente no
+llegaron** (ADR-012: sin modelo de embeddings decidido no se descarga nada, y el proveedor de lenguaje
+tampoco se enchufa), así que la obligación se traslada a S12, que es donde vive la pantalla de Ajustes
+que el criterio 4 exige. Hoy la aplicación no hace ninguna llamada saliente y ambas capacidades se
+declaran `disabled`/`unavailable` con su motivo, así que el booleano no engaña a nadie; sigue siendo un
+booleano global y por eso no se cierra.
 
 **Criterio de cierre.**
 
@@ -547,3 +555,60 @@ es el histórico y el resultado agregado es solo el vigente).
    (idempotencia) y que el resultado de la clave intermedia sigue siendo legible.
 3. La interfaz dice cuántas sesiones quedan desactualizadas después de activar una clave nueva, en
    lugar de dejar que se descubra sesión a sesión.
+
+## DEBT-014 — Sin proveedor de embeddings ni de lenguaje, el RAG es extractivo
+
+**Origen:** apertura de S09 (18 de septiembre de 2026), con la decisión ADR-012.
+
+**Problema.** `05_RAG` §4 pide índice vectorial con embeddings y §6 pide que un modelo redacte la
+respuesta con esquema JSON validado. En S09 no hay ni lo uno ni lo otro, y a propósito:
+
+| Qué falta | Qué hay en su lugar | Qué se pierde |
+|---|---|---|
+| Modelo de embeddings (se fija por ADR tras benchmark en español) | búsqueda léxica FTS5 con `bm25` | recall: otra forma de decir lo mismo puede no encontrarse |
+| Índice vectorial local (Qdrant con payload de identificadores) | el puerto `VectorSearch` con una implementación que declara no estar disponible | recuperación híbrida y RRF real |
+| Proveedor de lenguaje | composición **extractiva**: la respuesta son fragmentos citados del corpus | redacción, estilo didáctico y comparación en prosa |
+| Rerank y verificador de entailment (§6) | la invariante de citas (`assert_grounded`) y el estado `insufficient` | comprobación independiente de la fidelidad |
+
+No es una simulación: la búsqueda funciona de verdad, responde de verdad y **declara** en cada
+respuesta que la recuperación fue solo léxica y quién la redactó (`extractive`, sin modelo). El
+conjunto patrón de §9 (50 consultas TAI, 30 GC, 20 de rechazo) tampoco existe, así que las métricas de
+§10 no se han medido y no se declaran.
+
+**Obligación.** Decidir el modelo de embeddings con un benchmark en español y su ADR, implementar el
+adaptador vectorial y el proveedor de lenguaje (local o remoto, con la clasificación de destino de
+DEBT-001), construir el conjunto patrón de §9 y medir §10 antes de declarar el RAG en uso normal
+(§11: Recall@10 ≥ 0,90 y ninguna respuesta `supported` con afirmación central sin evidencia).
+
+**Criterio de cierre.**
+
+1. Existe un ADR con el benchmark en español y el modelo elegido, y ninguna descarga ocurre al iniciar
+   sin aviso.
+2. `strategy: hybrid` recupera de verdad por dos vías y la respuesta declara `strategies` con ambas.
+3. El conjunto patrón de §9 está versionado y las métricas de §10 se calculan con él; una prueba falla
+   si Recall@10 baja de 0,90 o si una respuesta `supported` cita un fragmento no entregado.
+4. La pantalla de búsqueda deja de declarar la degradación léxica porque ya no la hay.
+
+## DEBT-015 — El índice léxico se puede rehacer, pero no desde la interfaz
+
+**Origen:** cierre de S09 (18 de septiembre de 2026).
+
+**Problema.** `SearchService.rebuild()` rehace el índice léxico desde SQLite (`05_RAG` §4: los índices
+son reconstruibles) y está probado (`tests/integration/test_search_rag.py`), pero **ninguna ruta HTTP lo
+expone** y la pantalla de Ajustes no ofrece nada parecido. Hoy el índice se mantiene por disparadores
+en `evidence_spans`, así que solo hace falta rehacerlo si algo se desincroniza; cuando eso pase, hará
+falta abrir una consola de Python contra la aplicación, que es exactamente lo que un producto local no
+debe exigir.
+
+**Obligación antes de S12** (Ajustes: almacenamiento, capacidades instaladas y copias): una acción
+«rehacer índices» con su confirmación, el recuento de fragmentos indexados y la fecha del último
+rehecho, y su prueba de interfaz.
+
+**Criterio de cierre.**
+
+1. La acción existe en Ajustes, dice cuántos fragmentos ha indexado y no toca el texto de las
+   evidencias (el índice es derivado).
+2. Una prueba comprueba que, tras borrar el índice a mano, la acción lo reconstruye y la búsqueda
+   vuelve a encontrar el mismo fragmento.
+3. La interfaz no permite lanzarla dos veces a la vez ni la presenta como una operación instantánea si
+   el corpus es grande.
