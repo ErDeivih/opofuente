@@ -225,12 +225,17 @@ class AttemptSchema(BaseModel):
 
 
 class AnswerOutcomeSchema(BaseModel):
-    """Qué ha pasado al registrar una respuesta, con la corrección si se puede enseñar."""
+    """Qué ha pasado al registrar una respuesta, con la corrección si se puede enseñar.
+
+    Lleva la **pregunta respondida**: la pantalla enseña el resultado de lo que se acaba de
+    contestar antes de pasar a la siguiente, y esa pregunta es la que trae su corrección.
+    """
 
     saved: bool
     already_answered: bool
     attempt: AttemptSchema
     session: SessionSchema
+    question: SessionQuestionSchema
     correction: CorrectionSchema | None = None
 
 

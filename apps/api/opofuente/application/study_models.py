@@ -164,12 +164,18 @@ class AttemptView:
 
 @dataclass(frozen=True, slots=True)
 class AnswerOutcomeView:
-    """Resultado de registrar una respuesta: si se guardó, si ya estaba y qué se puede enseñar."""
+    """Resultado de registrar una respuesta: si se guardó, si ya estaba y qué se puede enseñar.
+
+    Incluye la **pregunta respondida** con su corrección (cuando se puede ver) porque la pantalla
+    tiene que enseñar el resultado de lo que se acaba de contestar antes de pasar a la siguiente: el
+    ciclo de 06_QUESTIONS §6 es responder, corregir y ver el resultado, no saltar de pregunta.
+    """
 
     saved: bool
     already_answered: bool
     attempt: AttemptView
     session: SessionView
+    question: SessionQuestionView
     correction: CorrectionView | None = None
 
 

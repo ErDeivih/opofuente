@@ -41,7 +41,7 @@ describe('navegación', () => {
     ]);
   });
 
-  it('Inicio, Bandeja, Programa, Biblioteca y Preguntas están implementadas', () => {
+  it('Inicio, Bandeja, Programa, Biblioteca, Preguntas y Estudiar están implementadas', () => {
     const implementadas = NAV_ITEMS.filter((item) => item.slice === null).map((item) => item.label);
     expect(implementadas).toEqual([
       'Inicio',
@@ -49,6 +49,7 @@ describe('navegación', () => {
       'Programa',
       'Biblioteca',
       'Preguntas',
+      'Estudiar',
     ]);
   });
 
@@ -58,7 +59,8 @@ describe('navegación', () => {
     expect(slices.get('Programa')).toBeNull();
     expect(slices.get('Biblioteca')).toBeNull();
     expect(slices.get('Preguntas')).toBeNull();
-    expect(slices.get('Estudiar')).toBe('S07');
+    expect(slices.get('Estudiar')).toBeNull();
+    expect(slices.get('Errores')).toBe('S10');
   });
 });
 
@@ -69,12 +71,33 @@ describe('shell de la aplicación', () => {
       <AppShell>
         <AppRoutes />
       </AppShell>,
+      { route: '/errores' },
+    );
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Errores' })).toBeInTheDocument();
+    expect(screen.getByText(/slice S10/)).toBeInTheDocument();
+    expect(screen.getByText('pendiente')).toBeInTheDocument();
+  });
+
+  it('Estudiar ya está construida: su ruta no anuncia un slice pendiente', async () => {
+    stubSystemApi({
+      '/api/v1/study-sessions?limit=50&offset=0&opposition_id=opp-tai': {
+        body: { sessions: [], total: 0, limit: 50, offset: 0 },
+      },
+      '/api/v1/question-sets?limit=100&offset=0&opposition_id=opp-tai': {
+        body: { sets: [], total: 0, limit: 100, offset: 0 },
+      },
+    });
+    renderWithProviders(
+      <AppShell>
+        <AppRoutes />
+      </AppShell>,
       { route: '/estudiar' },
     );
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Estudiar' })).toBeInTheDocument();
-    expect(screen.getByText(/slice S07/)).toBeInTheDocument();
-    expect(screen.getByText('pendiente')).toBeInTheDocument();
+    expect(screen.queryByText(/slice S07/)).toBeNull();
+    expect(screen.queryByText('pendiente')).toBeNull();
   });
 
   it('la Biblioteca ya está construida: su ruta no anuncia un slice pendiente', async () => {

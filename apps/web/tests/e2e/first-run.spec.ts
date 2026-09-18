@@ -19,8 +19,16 @@ test('E2E-00 primera ejecución: la aplicación arranca y declara su estado real
   await expect(page.getByText('Oposición activa')).toBeVisible();
   await expect(page.getByText('tai-age-2025')).toBeVisible();
   // Los estados vacíos que siguen existiendo explican qué falta y cuándo llega.
+  // Desde S07 la tarjeta de estudio lee las sesiones de verdad: o dice que no hay ninguna, o enseña
+  // la última (una sesión a medias se retoma y una terminada se puede reabrir). El directorio de datos
+  // del E2E se reutiliza entre ejecuciones, así que la prueba acepta los dos estados reales.
+  await expect(
+    page
+      .getByText('Sin sesiones de estudio')
+      .or(page.getByText('Última sesión'))
+      .or(page.getByText('Sesión en marcha')),
+  ).toBeVisible();
   await expect(page.getByText('No hay material importado')).toBeVisible();
-  await expect(page.getByText('Sin sesiones de estudio')).toBeVisible();
 });
 
 test('E2E-00 navegación: las secciones construidas llevan a su pantalla y el resto anuncia su slice', async ({
@@ -38,11 +46,16 @@ test('E2E-00 navegación: las secciones construidas llevan a su pantalla y el re
   await expect(page.getByRole('heading', { level: 1, name: 'Preguntas' })).toBeVisible();
   await expect(page.getByText('Esta sección todavía no está construida')).toHaveCount(0);
 
-  // Las secciones que siguen sin construirse declaran su slice en lugar de quedarse en blanco.
+  // Estudiar se entregó en S07.
   await page.getByRole('link', { name: /^Estudiar/ }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Estudiar' })).toBeVisible();
+  await expect(page.getByText('Esta sección todavía no está construida')).toHaveCount(0);
+
+  // Las secciones que siguen sin construirse declaran su slice en lugar de quedarse en blanco.
+  await page.getByRole('link', { name: /^Errores/ }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Errores' })).toBeVisible();
   await expect(page.getByText('Esta sección todavía no está construida')).toBeVisible();
-  await expect(page.getByText(/slice S07/)).toBeVisible();
+  await expect(page.getByText(/slice S10/)).toBeVisible();
 
   await page.getByRole('link', { name: /^Inicio/ }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Inicio' })).toBeVisible();

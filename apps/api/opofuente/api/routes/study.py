@@ -303,9 +303,7 @@ def list_study_sessions(
     responses=INGESTION_WRITE_ERRORS,
     summary="Crea una sesión de estudio con su composición congelada",
 )
-def create_study_session(
-    request: CreateSessionSchema, service: StudyServiceDep
-) -> SessionSchema:
+def create_study_session(request: CreateSessionSchema, service: StudyServiceDep) -> SessionSchema:
     """Monta la sesión. Si falta material, clave activa o la parte no se corrige aquí, lo dice."""
     return _session(service.create_session(_create_input(request)))
 
@@ -380,6 +378,7 @@ def answer(
         already_answered=resultado.already_answered,
         attempt=_attempt(resultado.attempt),
         session=_session(resultado.session),
+        question=_question(resultado.question),
         correction=None if resultado.correction is None else _correction(resultado.correction),
     )
 

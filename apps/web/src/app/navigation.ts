@@ -46,7 +46,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
   {
     path: '/estudiar',
     label: 'Estudiar',
-    slice: 'S07',
+    slice: null,
     summary: 'Práctica, examen y corrección con puntuación calculada en servidor.',
   },
   {

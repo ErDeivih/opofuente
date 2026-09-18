@@ -378,6 +378,9 @@ class StudyService:
                 already_answered=True,
                 attempt=existente,
                 session=session,
+                question=self._componer(
+                    session, [pregunta], {pregunta.question_version_id: existente}
+                )[0],
                 correction=self._correccion(session, pregunta, existente),
             )
 
@@ -404,6 +407,9 @@ class StudyService:
             already_answered=False,
             attempt=evaluado or intento,
             session=session,
+            question=self._componer(
+                session, [pregunta], {pregunta.question_version_id: evaluado or intento}
+            )[0],
             correction=self._correccion(session, pregunta, evaluado or intento),
         )
 

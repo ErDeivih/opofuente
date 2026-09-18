@@ -1,9 +1,9 @@
 """Pruebas de integración de las rutas de estudio (08_API-CONTRACT §10) por la API real.
 
 Además del recorrido completo, aquí vive la prueba que sostiene el criterio de aceptación más
-delicado del slice: **el payload de una sesión sin corregir no contiene la solución**. No se comprueba
-solo que el campo venga vacío, sino que la respuesta entera —el JSON tal cual se sirve— no lleve la
-clave por ninguna parte mientras no se pueda enseñar.
+delicado del slice: **el payload de una sesión sin corregir no contiene la solución**. No se
+comprueba solo que el campo venga vacío, sino que la respuesta entera —el JSON tal cual se sirve— no
+lleve la clave por ninguna parte mientras no se pueda enseñar.
 """
 
 from __future__ import annotations
@@ -39,7 +39,9 @@ def _texto(preguntas: int, *, reservas: int = 0) -> str:
     return "\n".join(lineas)
 
 
-def _conjunto(client: TestClient, *, preguntas: int, reservas: int = 0, activar: bool = True) -> str:
+def _conjunto(
+    client: TestClient, *, preguntas: int, reservas: int = 0, activar: bool = True
+) -> str:
     oposiciones = client.get("/api/v1/oppositions").json()
     activa = next(oposicion for oposicion in oposiciones if oposicion["active"])
     creado = client.post(
@@ -113,7 +115,9 @@ def _texto_de(payload: object) -> str:
 # --- crear y leer -------------------------------------------------------------------------------
 
 
-def test_crear_arrancar_y_leer_una_sesion(seeded_settings: Settings, seeded_client: TestClient) -> None:
+def test_crear_arrancar_y_leer_una_sesion(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
     set_id = _conjunto(seeded_client, preguntas=6)
 
     creada = _crear_sesion(seeded_client, set_id, cantidad=4)
@@ -359,7 +363,7 @@ def test_navegar_recorre_la_sesion(seeded_settings: Settings, seeded_client: Tes
 def test_terminar_da_el_resultado_por_partes_y_sin_calificacion_oficial(
     seeded_settings: Settings, seeded_client: TestClient
 ) -> None:
-    """Caso calculado a mano por la API: 2 aciertos, 1 fallo y 1 blanco con un tercio de descuento."""
+    """Caso calculado a mano por la API: 2 aciertos, 1 fallo y 1 blanco, con tercio de castigo."""
     set_id = _conjunto(seeded_client, preguntas=4)
     sesion = _arrancar(seeded_client, _crear_sesion(seeded_client, set_id)["id"])
 

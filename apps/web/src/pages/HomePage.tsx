@@ -1,19 +1,25 @@
 import { EmptyState } from '../components/EmptyState';
 import { LoadingState } from '../components/LoadingState';
 import { SystemStatus } from '../features/system/SystemStatus';
-import { useOppositions } from '../api/queries';
+import { useOppositions, useStudySessions } from '../api/queries';
+import { modeLabel, statusLabel } from '../features/study/labels';
 
 /**
  * Inicio (07_UI-UX §3).
  *
- * «Estado del programa» muestra el perfil realmente sembrado (oposición activa, convocatoria,
- * fecha de publicación y enlace oficial). Las demás tarjetas siguen siendo estados vacíos honestos:
- * no hay sesiones ni material importado porque esos slices no existen todavía.
+ * «Estado del programa» muestra el perfil realmente sembrado, y «Continuar estudiando» lee las
+ * sesiones de verdad: desde S07 hay motor de práctica y examen, así que la tarjeta ya no puede decir
+ * que no existe. Si no hay ninguna sesión, lo dice —y explica cómo empezar— en lugar de fingir un
+ * resumen.
  */
 export function HomePage() {
   const oppositions = useOppositions();
   const active = oppositions.data?.find((opposition) => opposition.active) ?? null;
   const total = oppositions.data?.length ?? 0;
+  const sessions = useStudySessions(active?.id ?? null);
+
+  const enMarcha = sessions.data?.sessions.find((sesion) => sesion.status === 'running') ?? null;
+  const ultima = sessions.data?.sessions[0] ?? null;
 
   return (
     <>
@@ -27,11 +33,52 @@ export function HomePage() {
 
       <section className="card" aria-labelledby="continuar-estudiando">
         <h2 id="continuar-estudiando">Continuar estudiando</h2>
-        <EmptyState
-          title="Sin sesiones de estudio"
-          description="No hay repasos vencidos ni sesiones previas que continuar."
-          hint="El motor de práctica, examen y repaso llega en el slice S07."
-        />
+        {sessions.isPending && <LoadingState label="Cargando las sesiones…" />}
+        {sessions.isError && (
+          <EmptyState
+            title="No se pudieron cargar las sesiones"
+            description="La API no responde o la base de datos no está migrada."
+          />
+        )}
+        {sessions.isSuccess && enMarcha === null && ultima === null && (
+          <EmptyState
+            title="Sin sesiones de estudio"
+            description="No hay ninguna sesión previa que continuar. Se empieza desde la sección Estudiar, con el banco de preguntas de la oposición."
+            hint="Hace falta un conjunto de preguntas con su clave activa: sin clave no hay corrección."
+          />
+        )}
+        {sessions.isSuccess && enMarcha === null && ultima !== null && (
+          <dl className="facts">
+            <dt>Última sesión</dt>
+            <dd>
+              {modeLabel(ultima.mode)} · {statusLabel(ultima.status)} ·{' '}
+              {ultima.answered_questions} de {ultima.total_questions} preguntas
+            </dd>
+            <dt>Empezó</dt>
+            <dd>{ultima.started_at ?? 'sin empezar'}</dd>
+            <dt>Sesiones</dt>
+            <dd>{sessions.data?.total ?? 0}</dd>
+          </dl>
+        )}
+        {sessions.isSuccess && enMarcha !== null && (
+          <dl className="facts">
+            <dt>Sesión en marcha</dt>
+            <dd>
+              {modeLabel(enMarcha.mode)} · {enMarcha.answered_questions} de{' '}
+              {enMarcha.total_questions} preguntas
+            </dd>
+            <dt>Empezó</dt>
+            <dd>
+              {enMarcha.started_at !== null && enMarcha.started_at !== undefined ? (
+                <time dateTime={enMarcha.started_at}>{enMarcha.started_at}</time>
+              ) : (
+                'sin empezar'
+              )}
+            </dd>
+            <dt>Se retoma en</dt>
+            <dd>Estudiar, donde estaba: la sesión vive en el servidor y su cronómetro también.</dd>
+          </dl>
+        )}
       </section>
 
       <section className="card" aria-labelledby="acciones-necesarias">

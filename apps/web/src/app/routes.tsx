@@ -7,6 +7,7 @@ import { PendingPage } from '../pages/PendingPage';
 import { ProgramPage } from '../pages/ProgramPage';
 import { QuestionsPage } from '../pages/QuestionsPage';
 import { ReviewPage } from '../pages/ReviewPage';
+import { StudyPage } from '../pages/StudyPage';
 import { TrayPage } from '../pages/TrayPage';
 import { NAV_ITEMS } from './navigation';
 
@@ -18,6 +19,7 @@ export function AppRoutes() {
       <Route path="/bandeja" element={<TrayPage />} />
       <Route path="/biblioteca" element={<LibraryPage />} />
       <Route path="/preguntas" element={<QuestionsPage />} />
+      <Route path="/estudiar" element={<StudyPage />} />
       {/* La revisión es la continuación de la bandeja (07_UI-UX §4), no una sección de la barra
           lateral: la navegación del producto la fija y no incluye «Revisión» entre sus secciones. */}
       <Route path="/revision" element={<ReviewPage />} />

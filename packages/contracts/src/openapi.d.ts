@@ -1555,12 +1555,16 @@ export interface components {
         /**
          * AnswerOutcomeSchema
          * @description Qué ha pasado al registrar una respuesta, con la corrección si se puede enseñar.
+         *
+         *     Lleva la **pregunta respondida**: la pantalla enseña el resultado de lo que se acaba de
+         *     contestar antes de pasar a la siguiente, y esa pregunta es la que trae su corrección.
          */
         AnswerOutcomeSchema: {
             /** Already Answered */
             already_answered: boolean;
             attempt: components["schemas"]["AttemptSchema"];
             correction?: components["schemas"]["CorrectionSchema"] | null;
+            question: components["schemas"]["SessionQuestionSchema"];
             /** Saved */
             saved: boolean;
             session: components["schemas"]["SessionSchema"];

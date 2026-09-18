@@ -252,7 +252,7 @@
         "type": "object"
       },
       "AnswerOutcomeSchema": {
-        "description": "Qué ha pasado al registrar una respuesta, con la corrección si se puede enseñar.",
+        "description": "Qué ha pasado al registrar una respuesta, con la corrección si se puede enseñar.\n\nLleva la **pregunta respondida**: la pantalla enseña el resultado de lo que se acaba de\ncontestar antes de pasar a la siguiente, y esa pregunta es la que trae su corrección.",
         "properties": {
           "already_answered": {
             "title": "Already Answered",
@@ -271,6 +271,9 @@
               }
             ]
           },
+          "question": {
+            "$ref": "#/components/schemas/SessionQuestionSchema"
+          },
           "saved": {
             "title": "Saved",
             "type": "boolean"
@@ -283,7 +286,8 @@
           "saved",
           "already_answered",
           "attempt",
-          "session"
+          "session",
+          "question"
         ],
         "title": "AnswerOutcomeSchema",
         "type": "object"

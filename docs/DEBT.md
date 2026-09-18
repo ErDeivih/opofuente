@@ -23,6 +23,7 @@ Reglas:
 | [DEBT-009](#debt-009--el-texto-plano-no-produce-secciones-y-sin-secciones-no-hay-citas) | S06 | El texto plano y el texto pegado no producen secciones: sin ellas no hay citas ni diff | **cerrada en S06** |
 | [DEBT-010](#debt-010--una-pregunta-importada-no-queda-enlazada-a-su-sección) | S06/S11 | Importar preguntas no las enlaza a la sección que las sostiene, y `tags`/`source`/`parte` se leen pero no se guardan | abierta |
 | [DEBT-011](#debt-011--la-pantalla-del-banco-solo-enseña-las-primeras-100-preguntas) | S09 | La pantalla del banco pide 100 preguntas y no permite recorrer el resto de un conjunto grande | abierta |
+| [DEBT-012](#debt-012--modos-de-sesión-declarados-y-sin-implementar) | S08+ | Simulacro, diagnóstico y repaso de errores están en el vocabulario del modelo y no implementados | abierta |
 
 ---
 
@@ -488,3 +489,33 @@ puede llegar a ver, sin truncar en silencio ni depender de que alguien lea la le
    última página, no solo la primera.
 3. La paginación se conserva al cambiar de filtro (estado, origen, reservas) sin mezclar páginas de
    filtros distintos.
+
+## DEBT-012 — Modos de sesión declarados y sin implementar
+
+**Origen:** cierre de S07 (17 de septiembre de 2026).
+
+**Problema.** 06_QUESTIONS §5 define cinco modos de sesión y 03_DATA-MODEL §7 los nombra en el
+vocabulario de `study_sessions` (`practice`, `error_review`, `official_exam`, `mock_exam`,
+`diagnostic`). S07 implementa **dos**: práctica y examen oficial. Pedir cualquiera de los otros tres
+responde 409 `unsupported` con el motivo, así que no se simula nada; pero el producto promete esos
+modos y hoy no existen:
+
+| Modo | Qué le falta |
+|---|---|
+| `error_review` (repaso de errores) | la cola determinista de repaso (`review_items`) y la clasificación de la causa del fallo, que son de S10 |
+| `mock_exam` (simulacro) | la composición que evita preguntas vistas recientemente y la etiqueta de «no oficial» |
+| `diagnostic` (diagnóstico) | la muestra estratificada por tema y la estimación con incertidumbre (no un porcentaje de dominio con dos preguntas) |
+
+**Obligación.** Implementar cada modo **con lo que promete la especificación**, o retirarlo del
+vocabulario si el producto decide no ofrecerlo. Mientras no exista, el vocabulario del modelo y el del
+contrato no coinciden a propósito: el contrato solo declara los modos que se corrigen de verdad
+(`SessionModeName` en `api/study_schemas.py`).
+
+**Criterio de cierre.**
+
+1. Cada modo pendiente o bien está implementado de punta a punta (crear, componer, corregir y
+   resultado) con su prueba de API y de interfaz, o bien ha desaparecido del vocabulario del modelo con
+   su migración.
+2. El contrato declara exactamente los modos que existen, y el vocabulario del modelo y el del contrato
+   vuelven a coincidir.
+3. Una prueba comprueba que un modo declarado en el contrato no responde 409 `unsupported`.

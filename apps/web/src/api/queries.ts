@@ -52,6 +52,21 @@ import {
   fetchOppositions,
 } from './profiles';
 import {
+  answerQuestion,
+  createSession,
+  fetchCurrentQuestion,
+  fetchSession,
+  fetchSessionResult,
+  fetchSessionReview,
+  fetchSessions,
+  finishSession,
+  navigateSession,
+  startSession,
+  type AnswerRequest,
+  type CreateSession,
+  type NavigateRequest,
+} from './study';
+import {
   activateAnswerKey,
   correctQuestion,
   createQuestionSet,
@@ -115,6 +130,13 @@ export const queryKeys = {
   questionEvidence: (questionId: string) =>
     ['questions', 'question', questionId, 'evidence'] as const,
   answerKeys: (setId: string) => ['questions', 'set', setId, 'keys'] as const,
+  /* S07: sesiones de estudio. Cuelgan de «study» porque responder cambia a la vez el progreso de la
+     sesión, el intento y su corrección. */
+  studySessions: (oppositionId: string) => ['study', 'sessions', oppositionId] as const,
+  studySession: (sessionId: string) => ['study', 'session', sessionId] as const,
+  studyCurrent: (sessionId: string) => ['study', 'session', sessionId, 'current'] as const,
+  studyReview: (sessionId: string) => ['study', 'session', sessionId, 'review'] as const,
+  studyResult: (sessionId: string) => ['study', 'session', sessionId, 'result'] as const,
 };
 
 export function useReadiness() {
@@ -763,6 +785,113 @@ export function useMarkKeySupersedes() {
       markKeySupersedes(input.keyId, input.supersededId),
     onSuccess: () => {
       invalidateQuestions(queryClient);
+    },
+  });
+}
+
+/* ------------------------------------------------------------------ S07: sesiones de estudio */
+
+/** Invalida todo lo de estudio: crear, responder o terminar cambia sesión, progreso y resultado. */
+function invalidateStudy(queryClient: QueryClient, sessionId: string): void {
+  void queryClient.invalidateQueries({ queryKey: ['study'] });
+  void queryClient.invalidateQueries({ queryKey: queryKeys.studySession(sessionId) });
+}
+
+export function useStudySessions(oppositionId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.studySessions(oppositionId ?? 'todas'),
+    queryFn: () => fetchSessions(oppositionId),
+  });
+}
+
+export function useStudySession(sessionId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.studySession(sessionId ?? 'ninguna'),
+    queryFn: () => fetchSession(sessionId as string),
+    enabled: sessionId !== null,
+  });
+}
+
+export function useCurrentQuestion(sessionId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.studyCurrent(sessionId ?? 'ninguna'),
+    queryFn: () => fetchCurrentQuestion(sessionId as string),
+    enabled: sessionId !== null,
+  });
+}
+
+export function useStudyReview(sessionId: string | null, enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.studyReview(sessionId ?? 'ninguna'),
+    queryFn: () => fetchSessionReview(sessionId as string),
+    enabled: sessionId !== null && enabled,
+  });
+}
+
+export function useStudyResult(sessionId: string | null, enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.studyResult(sessionId ?? 'ninguna'),
+    queryFn: () => fetchSessionResult(sessionId as string),
+    enabled: sessionId !== null && enabled,
+  });
+}
+
+export function useCreateStudySession() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: CreateSession) => createSession(input),
+    onSuccess: (session) => {
+      invalidateStudy(queryClient, session.id);
+    },
+  });
+}
+
+export function useStartStudySession() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (sessionId: string) => startSession(sessionId),
+    onSuccess: (session) => {
+      invalidateStudy(queryClient, session.id);
+    },
+  });
+}
+
+export interface NavigateStudyInput {
+  sessionId: string;
+  navigation: NavigateRequest;
+}
+
+export function useNavigateStudy() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: NavigateStudyInput) => navigateSession(input.sessionId, input.navigation),
+    onSuccess: (_datos, input) => {
+      invalidateStudy(queryClient, input.sessionId);
+    },
+  });
+}
+
+export interface AnswerStudyInput {
+  sessionId: string;
+  answer: AnswerRequest;
+}
+
+export function useAnswerQuestion() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: AnswerStudyInput) => answerQuestion(input.sessionId, input.answer),
+    onSuccess: (_datos, input) => {
+      invalidateStudy(queryClient, input.sessionId);
+    },
+  });
+}
+
+export function useFinishStudySession() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (sessionId: string) => finishSession(sessionId),
+    onSuccess: (resultado) => {
+      invalidateStudy(queryClient, resultado.session_id);
     },
   });
 }
