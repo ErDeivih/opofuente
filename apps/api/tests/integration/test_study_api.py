@@ -437,3 +437,78 @@ def test_la_revision_sin_responder_dice_que_falta_por_contestar(
     assert revision["unanswered"] == 3
     assert len(revision["entries"]) == 3
     assert all(entrada["correction"] is None for entrada in revision["entries"])
+
+
+def test_recalcular_con_una_clave_nueva_por_la_api(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """La ruta del recálculo (añadida a §10): puntuación exacta y comparación antes/después."""
+    set_id = _conjunto(seeded_client, preguntas=3)
+    sesion = _arrancar(seeded_client, _crear_sesion(seeded_client, set_id, cantidad=3)["id"])
+    for posicion in (1, 2, 3):
+        actual = seeded_client.post(
+            f"/api/v1/study-sessions/{sesion['id']}/navigate",
+            json={"position": posicion},
+            headers=ALLOWED_ORIGIN,
+        ).json()
+        seeded_client.post(
+            f"/api/v1/study-sessions/{sesion['id']}/answers",
+            json={
+                "question_version_id": actual["question"]["question_version_id"],
+                "chosen_option_keys": ["a"],
+                "elapsed_ms": 500,
+            },
+            headers=ALLOWED_ORIGIN,
+        )
+    antes = seeded_client.post(
+        f"/api/v1/study-sessions/{sesion['id']}/finish", headers=ALLOWED_ORIGIN
+    ).json()
+    assert antes["total"]["correct"] == 3
+    assert antes["recalculation"] is None
+
+    # Una plantilla nueva corrige la clave: la buena pasa a ser la «b».
+    plantilla = seeded_client.post(
+        f"/api/v1/question-sets/{set_id}/parse",
+        json={"kind": "answer_key", "text": "1. b\n2. b\n3. b\n"},
+        headers=ALLOWED_ORIGIN,
+    )
+    assert plantilla.status_code == 200, plantilla.text
+    claves = seeded_client.get(f"/api/v1/question-sets/{set_id}/answer-keys").json()
+    activada = seeded_client.post(
+        f"/api/v1/question-sets/{set_id}/answer-keys/{claves[-1]['id']}/activate",
+        headers=ALLOWED_ORIGIN,
+    )
+    assert activada.status_code == 200, activada.text
+
+    despues = seeded_client.post(
+        f"/api/v1/study-sessions/{sesion['id']}/recalculate", headers=ALLOWED_ORIGIN
+    )
+
+    assert despues.status_code == 200, despues.text
+    cuerpo = despues.json()
+    assert cuerpo["total"]["correct"] == 0
+    assert cuerpo["total"]["wrong"] == 3
+    assert cuerpo["total"]["score"]["fraction"] == "-1", "tres errores con un tercio de castigo"
+    comparacion = cuerpo["recalculation"]
+    assert comparacion["changed"] is True
+    assert comparacion["previous_total"]["fraction"] == "3"
+    assert "plantilla v2" in (cuerpo["key_label"] or "")
+    assert comparacion["previous_parts"][0]["correct"] == 3
+
+    # Y la comparación sobrevive a una recarga: viaja con el resultado guardado.
+    releído = seeded_client.get(f"/api/v1/study-sessions/{sesion['id']}/result").json()
+    assert releído["recalculation"]["previous_total"]["fraction"] == "3"
+
+
+def test_recalcular_una_sesion_que_no_ha_terminado_es_un_conflicto(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    set_id = _conjunto(seeded_client, preguntas=3)
+    sesion = _arrancar(seeded_client, _crear_sesion(seeded_client, set_id, cantidad=2)["id"])
+
+    respuesta = seeded_client.post(
+        f"/api/v1/study-sessions/{sesion['id']}/recalculate", headers=ALLOWED_ORIGIN
+    )
+
+    assert respuesta.status_code == 409
+    assert respuesta.json()["code"] == "invalid_session_state"

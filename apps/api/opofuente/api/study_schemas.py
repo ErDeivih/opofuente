@@ -114,7 +114,7 @@ class SessionConfigurationSchema(BaseModel):
 
 
 class PartScoreSchema(BaseModel):
-    """Puntuación directa de una parte, con los umbrales oficiales como datos declarados."""
+    """Puntuación de una parte, con su forma de cálculo y los umbrales como datos declarados."""
 
     part_code: str | None = None
     part_name: str | None = None
@@ -123,6 +123,7 @@ class PartScoreSchema(BaseModel):
     score_max: float | None = None
     pass_score: float | None = None
     penalty: ScoreSchema | None = None
+    kind: Literal["direct", "scaled", "pass_fail"]
     correct: int
     wrong: int
     blank: int
@@ -132,6 +133,8 @@ class PartScoreSchema(BaseModel):
     reserves_used: int
     unused_reserves: int
     score: ScoreSchema
+    passed: bool | None = None
+    verdict_note: str | None = None
     official_available: bool
 
 
@@ -140,6 +143,21 @@ class SubstitutionSchema(BaseModel):
 
     annulled_question_version_id: str
     reserve_question_version_id: str | None = None
+
+
+class RecalculationSchema(BaseModel):
+    """Qué se dijo antes de recalcular con una clave nueva, y qué cambió (S08).
+
+    Recalcular no borra el resultado anterior: la interfaz puede explicar «tu puntuación cambió de X
+    a Y por la plantilla oficial v2» en lugar de que la cifra cambie sola.
+    """
+
+    previous_total: ScoreSchema
+    previous_parts: list[PartScoreSchema]
+    previous_key_label: str | None = None
+    recalculated_at: datetime | None = None
+    changed: bool
+    note: str
 
 
 class SessionResultSchema(BaseModel):
@@ -156,6 +174,7 @@ class SessionResultSchema(BaseModel):
     official_available: bool
     official_note: str | None = None
     calculated_at: datetime | None = None
+    recalculation: RecalculationSchema | None = None
 
 
 class SessionSchema(BaseModel):

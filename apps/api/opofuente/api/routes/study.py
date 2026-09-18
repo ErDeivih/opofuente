@@ -27,6 +27,7 @@ from opofuente.api.study_schemas import (
     CurrentQuestionSchema,
     NavigateRequestSchema,
     PartScoreSchema,
+    RecalculationSchema,
     ReviewSchema,
     ScoreSchema,
     SessionConfigurationSchema,
@@ -41,6 +42,7 @@ from opofuente.application.study_models import (
     AttemptView,
     CorrectionView,
     PartScoreView,
+    RecalculationView,
     ReviewView,
     ScoreView,
     SessionPage,
@@ -150,6 +152,7 @@ def _part(view: PartScoreView) -> PartScoreSchema:
         score_max=view.score_max,
         pass_score=view.pass_score,
         penalty=None if view.penalty is None else _score(view.penalty),
+        kind=view.kind,  # type: ignore[arg-type]
         correct=view.correct,
         wrong=view.wrong,
         blank=view.blank,
@@ -159,6 +162,8 @@ def _part(view: PartScoreView) -> PartScoreSchema:
         reserves_used=view.reserves_used,
         unused_reserves=view.unused_reserves,
         score=_score(view.score),
+        passed=view.passed,
+        verdict_note=view.verdict_note,
         official_available=view.official_available,
     )
 
@@ -182,6 +187,18 @@ def _result(view: SessionResultView) -> SessionResultSchema:
         official_available=view.official_available,
         official_note=view.official_note,
         calculated_at=view.calculated_at,
+        recalculation=(None if view.recalculation is None else _recalculation(view.recalculation)),
+    )
+
+
+def _recalculation(view: RecalculationView) -> RecalculationSchema:
+    return RecalculationSchema(
+        previous_total=_score(view.previous_total),
+        previous_parts=[_part(parte) for parte in view.previous_parts],
+        previous_key_label=view.previous_key_label,
+        recalculated_at=view.recalculated_at,
+        changed=view.changed,
+        note=view.note,
     )
 
 
@@ -411,3 +428,18 @@ def study_result(session_id: str, service: StudyServiceDep) -> SessionResultSche
 )
 def study_review(session_id: str, service: StudyServiceDep) -> ReviewSchema:
     return _review(service.review(session_id))
+
+
+@router.post(
+    "/study-sessions/{session_id}/recalculate",
+    response_model=SessionResultSchema,
+    responses=RESOURCE_ERRORS,
+    summary="Recalcula la sesión con la clave activa ahora (ruta añadida a §10)",
+)
+def recalculate_study_session(session_id: str, service: StudyServiceDep) -> SessionResultSchema:
+    """Ruta **añadida** al contrato §10 para S08.
+
+    Una clave corregida no cambia sola lo que ya se corrigió: recalcular es una acción explícita que
+    crea evaluaciones nuevas, conserva el resultado anterior y explica de dónde a dónde cambió.
+    """
+    return _result(service.recalculate(session_id))

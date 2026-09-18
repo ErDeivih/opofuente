@@ -1409,6 +1409,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/study-sessions/{session_id}/recalculate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Recalcula la sesión con la clave activa ahora (ruta añadida a §10)
+         * @description Ruta **añadida** al contrato §10 para S08.
+         *
+         *     Una clave corregida no cambia sola lo que ya se corrigió: recalcular es una acción explícita que
+         *     crea evaluaciones nuevas, conserva el resultado anterior y explica de dónde a dónde cambió.
+         */
+        post: operations["recalculate_study_session_api_v1_study_sessions__session_id__recalculate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/study-sessions/{session_id}/result": {
         parameters: {
             query?: never;
@@ -2771,7 +2794,7 @@ export interface components {
         PartKind: "group" | "test";
         /**
          * PartScoreSchema
-         * @description Puntuación directa de una parte, con los umbrales oficiales como datos declarados.
+         * @description Puntuación de una parte, con su forma de cálculo y los umbrales como datos declarados.
          */
         PartScoreSchema: {
             /** Annulled */
@@ -2784,6 +2807,11 @@ export interface components {
             correct: number;
             /** Excluded */
             excluded: number;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "direct" | "scaled" | "pass_fail";
             /** Official Available */
             official_available: boolean;
             /** Ordinary Items */
@@ -2794,6 +2822,8 @@ export interface components {
             part_name?: string | null;
             /** Pass Score */
             pass_score?: number | null;
+            /** Passed */
+            passed?: boolean | null;
             penalty?: components["schemas"]["ScoreSchema"] | null;
             /** Reserves Used */
             reserves_used: number;
@@ -2804,6 +2834,8 @@ export interface components {
             score_min?: number | null;
             /** Unused Reserves */
             unused_reserves: number;
+            /** Verdict Note */
+            verdict_note?: string | null;
             /** Wrong */
             wrong: number;
         };
@@ -3241,6 +3273,26 @@ export interface components {
              */
             status: "ready" | "degraded";
         };
+        /**
+         * RecalculationSchema
+         * @description Qué se dijo antes de recalcular con una clave nueva, y qué cambió (S08).
+         *
+         *     Recalcular no borra el resultado anterior: la interfaz puede explicar «tu puntuación cambió de X
+         *     a Y por la plantilla oficial v2» en lugar de que la cifra cambie sola.
+         */
+        RecalculationSchema: {
+            /** Changed */
+            changed: boolean;
+            /** Note */
+            note: string;
+            /** Previous Key Label */
+            previous_key_label?: string | null;
+            /** Previous Parts */
+            previous_parts: components["schemas"]["PartScoreSchema"][];
+            previous_total: components["schemas"]["ScoreSchema"];
+            /** Recalculated At */
+            recalculated_at?: string | null;
+        };
         /** RejectedRowSchema */
         RejectedRowSchema: {
             /** Cause */
@@ -3588,6 +3640,7 @@ export interface components {
             official_note?: string | null;
             /** Parts */
             parts: components["schemas"]["PartScoreSchema"][];
+            recalculation?: components["schemas"]["RecalculationSchema"] | null;
             /** Session Id */
             session_id: string;
             /** Substitutions */
@@ -8506,6 +8559,55 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CurrentQuestionSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    recalculate_study_session_api_v1_study_sessions__session_id__recalculate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionResultSchema"];
                 };
             };
             /** @description El recurso no existe. */

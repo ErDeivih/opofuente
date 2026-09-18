@@ -3661,7 +3661,7 @@
         "type": "string"
       },
       "PartScoreSchema": {
-        "description": "Puntuación directa de una parte, con los umbrales oficiales como datos declarados.",
+        "description": "Puntuación de una parte, con su forma de cálculo y los umbrales como datos declarados.",
         "properties": {
           "annulled": {
             "title": "Annulled",
@@ -3682,6 +3682,15 @@
           "excluded": {
             "title": "Excluded",
             "type": "integer"
+          },
+          "kind": {
+            "enum": [
+              "direct",
+              "scaled",
+              "pass_fail"
+            ],
+            "title": "Kind",
+            "type": "string"
           },
           "official_available": {
             "title": "Official Available",
@@ -3731,6 +3740,17 @@
             ],
             "title": "Pass Score"
           },
+          "passed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passed"
+          },
           "penalty": {
             "anyOf": [
               {
@@ -3774,12 +3794,24 @@
             "title": "Unused Reserves",
             "type": "integer"
           },
+          "verdict_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verdict Note"
+          },
           "wrong": {
             "title": "Wrong",
             "type": "integer"
           }
         },
         "required": [
+          "kind",
           "correct",
           "wrong",
           "blank",
@@ -5027,6 +5059,60 @@
         "title": "ReadinessSchema",
         "type": "object"
       },
+      "RecalculationSchema": {
+        "description": "Qué se dijo antes de recalcular con una clave nueva, y qué cambió (S08).\n\nRecalcular no borra el resultado anterior: la interfaz puede explicar «tu puntuación cambió de X\na Y por la plantilla oficial v2» en lugar de que la cifra cambie sola.",
+        "properties": {
+          "changed": {
+            "title": "Changed",
+            "type": "boolean"
+          },
+          "note": {
+            "title": "Note",
+            "type": "string"
+          },
+          "previous_key_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous Key Label"
+          },
+          "previous_parts": {
+            "items": {
+              "$ref": "#/components/schemas/PartScoreSchema"
+            },
+            "title": "Previous Parts",
+            "type": "array"
+          },
+          "previous_total": {
+            "$ref": "#/components/schemas/ScoreSchema"
+          },
+          "recalculated_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recalculated At"
+          }
+        },
+        "required": [
+          "previous_total",
+          "previous_parts",
+          "changed",
+          "note"
+        ],
+        "title": "RecalculationSchema",
+        "type": "object"
+      },
       "RejectedRowSchema": {
         "properties": {
           "cause": {
@@ -5919,6 +6005,16 @@
             },
             "title": "Parts",
             "type": "array"
+          },
+          "recalculation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RecalculationSchema"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "session_id": {
             "title": "Session Id",
@@ -12956,6 +13052,69 @@
           }
         },
         "summary": "Mueve el puntero: a una posición o al siguiente/anterior",
+        "tags": [
+          "estudio"
+        ]
+      }
+    },
+    "/api/v1/study-sessions/{session_id}/recalculate": {
+      "post": {
+        "description": "Ruta **añadida** al contrato §10 para S08.\n\nUna clave corregida no cambia sola lo que ya se corrigió: recalcular es una acción explícita que\ncrea evaluaciones nuevas, conserva el resultado anterior y explica de dónde a dónde cambió.",
+        "operationId": "recalculate_study_session_api_v1_study_sessions__session_id__recalculate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResultSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Recalcula la sesión con la clave activa ahora (ruta añadida a §10)",
         "tags": [
           "estudio"
         ]
