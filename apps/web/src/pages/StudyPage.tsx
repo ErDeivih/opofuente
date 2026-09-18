@@ -3,6 +3,7 @@ import { useState } from 'react';
 import {
   useAnswerKeys,
   useAnswerQuestion,
+  useClassifyError,
   useConvocation,
   useCreateStudySession,
   useCurrentQuestion,
@@ -17,6 +18,7 @@ import {
   useStudySessions,
 } from '../api/queries';
 import { isApiError } from '../api/client';
+import { CAUSE_LABEL } from '../api/reviews';
 import type { CreateSession, SessionQuestion } from '../api/study';
 import { ErrorState } from '../components/ErrorState';
 import { LoadingState } from '../components/LoadingState';
@@ -84,6 +86,13 @@ export function StudyPage() {
   const navegar = useNavigateStudy();
   const terminar = useFinishStudySession();
   const recalcular = useRecalculateStudySession();
+  // S10: declarar por qué se ha fallado, desde la propia corrección (06_QUESTIONS §8, paso 8). El
+  // intento corregido es el que devolvió el servidor al guardar la respuesta; su causa se declara una
+  // vez y se puede corregir después desde Errores.
+  const clasificar = useClassifyError(activa?.id ?? null);
+  const [intentoCorregidoId, setIntentoCorregidoId] = useState<string | null>(null);
+  const errorDeclarado =
+    clasificar.data !== undefined && clasificar.data.attempt_id === intentoCorregidoId;
 
   const busy =
     crear.isPending ||
@@ -242,12 +251,36 @@ export function StudyPage() {
           busy={busy}
           conflict={conflictoResponder}
           error={errorResponder}
+          attemptId={intentoCorregidoId}
+          errorDeclared={errorDeclarado}
+          onClassify={(input) => {
+            if (intentoCorregidoId === null) {
+              return;
+            }
+            clasificar.mutate(
+              {
+                attemptId: intentoCorregidoId,
+                cause: input.cause,
+                conceptLabel: input.conceptLabel,
+                curriculumNodeId: null,
+                note: input.note,
+              },
+              {
+                onSuccess: (error) => {
+                  setAviso(
+                    `Causa declarada: ${CAUSE_LABEL[error.cause]}. El fallo queda en la cola de repaso.`,
+                  );
+                },
+              },
+            );
+          }}
           onAnswer={(answer) => {
             responder.mutate(
               { sessionId: sessionId as string, answer },
               {
                 onSuccess: (resultado) => {
                   setRespondida(resultado.question ?? null);
+                  setIntentoCorregidoId(resultado.attempt.id);
                   setAviso(
                     resultado.saved
                       ? 'Respuesta guardada.'
@@ -259,6 +292,7 @@ export function StudyPage() {
           }}
           onNavigate={(position) => {
             setRespondida(null);
+            setIntentoCorregidoId(null);
             navegar.mutate({
               sessionId: sessionId as string,
               navigation: typeof position === 'number' ? { position } : { direction: position },

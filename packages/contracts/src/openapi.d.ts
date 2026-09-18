@@ -1474,6 +1474,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/reviews/mastery": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * El dominio estimado de cada nodo del programa (ruta añadida a §10)
+         * @description Lo que la aplicación puede decir del dominio de cada tema, sin inventar un porcentaje.
+         *
+         *     Los nodos sin intentos se declaran «sin datos» y los que tienen pocos, «evidencia insuficiente»:
+         *     07_UI-UX §5 pide enseñar esa columna, y aquí se calcula con la misma regla para todos.
+         */
+        get: operations["program_mastery_api_v1_reviews_mastery_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/reviews/{review_id}": {
         parameters: {
             query?: never;
@@ -3350,6 +3373,28 @@ export interface components {
             superseded_id: string;
         };
         /**
+         * MasteryProgramSchema
+         * @description El dominio de todos los nodos del programa, con el resumen de lo que se puede decir.
+         */
+        MasteryProgramSchema: {
+            /** Convocation Id */
+            convocation_id: string;
+            /** Nodes */
+            nodes: components["schemas"]["NodeMasterySchema"][];
+            /** Nodes Insufficient */
+            nodes_insufficient: number;
+            /** Nodes Total */
+            nodes_total: number;
+            /** Nodes With Estimate */
+            nodes_with_estimate: number;
+            /** Nodes Without Data */
+            nodes_without_data: number;
+            /** Note */
+            note: string;
+            /** Opposition Id */
+            opposition_id: string;
+        };
+        /**
          * NavigateRequestSchema
          * @description A dónde se navega: a una posición o al siguiente/anterior.
          */
@@ -3358,6 +3403,31 @@ export interface components {
             direction?: ("next" | "previous") | null;
             /** Position */
             position?: number | null;
+        };
+        /**
+         * NodeMasterySchema
+         * @description El dominio de un nodo concreto del programa.
+         */
+        NodeMasterySchema: {
+            /** Accuracy */
+            accuracy?: number | null;
+            /** Attempts */
+            attempts: number;
+            /** Correct */
+            correct: number;
+            /** Curriculum Node Id */
+            curriculum_node_id: string;
+            /** Explanation */
+            explanation: string;
+            /** Has Estimate */
+            has_estimate: boolean;
+            /**
+             * Level
+             * @enum {string}
+             */
+            level: "no_data" | "insufficient_evidence" | "low" | "medium" | "high";
+            /** Recent Attempts */
+            recent_attempts: number;
         };
         /**
          * NodeType
@@ -9705,6 +9775,55 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReviewQueueSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    program_mastery_api_v1_reviews_mastery_get: {
+        parameters: {
+            query?: {
+                opposition_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MasteryProgramSchema"];
                 };
             };
             /** @description El recurso no existe. */

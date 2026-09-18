@@ -60,6 +60,20 @@ import {
   type SearchRequest,
 } from './search';
 import {
+  classifyError,
+  completeReview,
+  exportBank,
+  fetchLearningError,
+  fetchLearningErrors,
+  fetchMastery,
+  fetchReviewHistory,
+  fetchReviewQueue,
+  resolveError,
+  snoozeReview,
+  type ErrorCause,
+  type ExportRequest,
+} from './reviews';
+import {
   answerQuestion,
   createSession,
   fetchCurrentQuestion,
@@ -152,6 +166,13 @@ export const queryKeys = {
     ['search', 'results', query, versionMode] as const,
   ragQuery: (queryId: string) => ['search', 'rag', queryId] as const,
   retrieval: (queryId: string) => ['search', 'rag', queryId, 'retrieval'] as const,
+  /* S10: errores y repaso. Cuelgan de «review» porque clasificar un fallo, repasar y aplazar cambian
+     a la vez la cola, el concepto al que pertenece el error y su historial. */
+  reviewQueue: (oppositionId: string) => ['review', 'queue', oppositionId] as const,
+  learningErrors: (oppositionId: string) => ['review', 'errors', oppositionId] as const,
+  learningError: (errorId: string) => ['review', 'error', errorId] as const,
+  reviewHistory: (reviewId: string) => ['review', 'item', reviewId, 'history'] as const,
+  mastery: (oppositionId: string) => ['review', 'mastery', oppositionId] as const,
 };
 
 export function useReadiness() {
@@ -954,5 +975,130 @@ export function useRetrieval(queryId: string | null) {
     queryKey: queryKeys.retrieval(queryId ?? 'ninguna'),
     queryFn: () => fetchRetrieval(queryId as string),
     enabled: queryId !== null,
+  });
+}
+
+/* ------------------------------------------------------------------ S10: errores y repaso */
+
+/** Invalida todo lo que cambia al repasar o al clasificar un fallo: cola, conceptos e historial. */
+function invalidateReview(queryClient: QueryClient, oppositionId: string | null): void {
+  void queryClient.invalidateQueries({
+    queryKey: queryKeys.reviewQueue(oppositionId ?? 'todas'),
+  });
+  void queryClient.invalidateQueries({
+    queryKey: queryKeys.learningErrors(oppositionId ?? 'todas'),
+  });
+  void queryClient.invalidateQueries({ queryKey: ['review', 'error'] });
+  void queryClient.invalidateQueries({ queryKey: ['review', 'item'] });
+  void queryClient.invalidateQueries({ queryKey: queryKeys.mastery(oppositionId ?? 'todas') });
+}
+
+export function useReviewQueue(oppositionId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.reviewQueue(oppositionId ?? 'todas'),
+    queryFn: () => fetchReviewQueue(oppositionId),
+  });
+}
+
+export function useLearningErrors(oppositionId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.learningErrors(oppositionId ?? 'todas'),
+    queryFn: () => fetchLearningErrors(oppositionId),
+  });
+}
+
+export function useLearningError(errorId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.learningError(errorId ?? 'ninguno'),
+    queryFn: () => fetchLearningError(errorId as string),
+    enabled: errorId !== null,
+  });
+}
+
+export function useReviewHistory(reviewId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.reviewHistory(reviewId ?? 'ninguno'),
+    queryFn: () => fetchReviewHistory(reviewId as string),
+    enabled: reviewId !== null,
+  });
+}
+
+export function useMastery(oppositionId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.mastery(oppositionId ?? 'todas'),
+    queryFn: () => fetchMastery(oppositionId),
+  });
+}
+
+export function useClassifyError(oppositionId: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: {
+      attemptId: string;
+      cause: ErrorCause;
+      conceptLabel: string | null;
+      curriculumNodeId: string | null;
+      note: string | null;
+    }) =>
+      classifyError(input.attemptId, {
+        cause: input.cause,
+        concept_label: input.conceptLabel,
+        curriculum_node_id: input.curriculumNodeId,
+        note: input.note,
+      }),
+    onSuccess: () => {
+      invalidateReview(queryClient, oppositionId);
+    },
+  });
+}
+
+export function useCompleteReview(oppositionId: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: {
+      reviewId: string;
+      outcome: 'correct' | 'wrong';
+      confidence: 'low' | 'medium' | 'high' | null;
+      cause: ErrorCause | null;
+      note: string | null;
+    }) =>
+      completeReview(input.reviewId, {
+        outcome: input.outcome,
+        confidence: input.confidence,
+        cause: input.cause,
+        note: input.note,
+      }),
+    onSuccess: () => {
+      invalidateReview(queryClient, oppositionId);
+    },
+  });
+}
+
+export function useSnoozeReview(oppositionId: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { reviewId: string; days: number }) =>
+      snoozeReview(input.reviewId, input.days),
+    onSuccess: () => {
+      invalidateReview(queryClient, oppositionId);
+    },
+  });
+}
+
+export function useResolveError(oppositionId: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { errorId: string; resolved: boolean; note: string | null }) =>
+      resolveError(input.errorId, { resolved: input.resolved, note: input.note }),
+    onSuccess: () => {
+      invalidateReview(queryClient, oppositionId);
+    },
+  });
+}
+
+export function useExportBank() {
+  return useMutation({
+    mutationFn: (input: { format: 'anki-csv' | 'markdown'; request: ExportRequest }) =>
+      exportBank(input.format, input.request),
   });
 }

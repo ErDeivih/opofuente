@@ -52,7 +52,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
   {
     path: '/errores',
     label: 'Errores',
-    slice: 'S10',
+    slice: null,
     summary: 'Cuaderno de errores y cola de repaso determinista.',
   },
   {

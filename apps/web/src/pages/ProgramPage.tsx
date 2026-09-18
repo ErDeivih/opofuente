@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 import type { CurriculumNode } from '../api/profiles';
-import { useConvocation, useCurriculum, useCurriculumNode, useOppositions } from '../api/queries';
+import { useConvocation, useCurriculum, useCurriculumNode, useMastery, useOppositions } from '../api/queries';
 import { EmptyState } from '../components/EmptyState';
 import { ErrorState } from '../components/ErrorState';
 import { LoadingState } from '../components/LoadingState';
@@ -12,9 +12,9 @@ import { ExamSummary } from '../features/profiles/ExamSummary';
 /**
  * Programa (07_UI-UX §5): árbol oficial del temario de la convocatoria activa.
  *
- * Se muestra la estructura y las reglas tal y como las publica la convocatoria. La cobertura
- * documental, las preguntas y el dominio **no** se muestran como ceros: se declara que todavía no
- * se calculan, porque hacerlo requiere la biblioteca (S05) y las sesiones (S07).
+ * Se muestra la estructura y las reglas tal y como las publica la convocatoria. La cobertura documental
+ * y las preguntas **no** se muestran como ceros; el **dominio** sí, desde S10, con la regla honesta:
+ * sin intentos «sin datos» y con pocos, «evidencia insuficiente» (nunca un porcentaje).
  */
 export function ProgramPage() {
   const oppositions = useOppositions();
@@ -26,6 +26,10 @@ export function ProgramPage() {
   const convocation = useConvocation(convocationId);
   const curriculum = useCurriculum(convocationId);
   const node = useCurriculumNode(selectedId);
+  const mastery = useMastery(active?.id ?? null);
+  const dominioPorNodo = Object.fromEntries(
+    (mastery.data?.nodes ?? []).map((ficha) => [ficha.curriculum_node_id, ficha]),
+  );
 
   if (oppositions.isPending) {
     return <LoadingState label="Cargando oposiciones…" />;
@@ -97,10 +101,18 @@ export function ProgramPage() {
           <CurriculumTree
             nodes={curriculum.data.nodes}
             selectedId={selectedId}
+            mastery={dominioPorNodo}
             onSelect={(selected: CurriculumNode) => {
               setSelectedId(selected.id);
             }}
           />
+        )}
+        {mastery.data !== undefined && (
+          <p className="hint">
+            Dominio estimado por tema: {mastery.data.nodes_with_estimate} de {mastery.data.nodes_total}{' '}
+            con datos suficientes · {mastery.data.nodes_insufficient} con evidencia insuficiente ·{' '}
+            {mastery.data.nodes_without_data} sin datos. {mastery.data.note}
+          </p>
         )}
       </section>
 

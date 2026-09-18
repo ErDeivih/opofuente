@@ -124,6 +124,7 @@ class ExportService:
 
         filas: list[ExportRow] = []
         excluidas = 0
+        cortada = False
         for conjunto in conjuntos:
             clave_activa = next(
                 (clave for clave in self._questions.list_keys(conjunto.id) if clave.is_active),
@@ -168,8 +169,9 @@ class ExportService:
                     )
                 )
                 if len(filas) >= MAX_EXPORT_ITEMS:
+                    cortada = True
                     break
-            if len(filas) >= MAX_EXPORT_ITEMS:
+            if cortada:
                 break
         if not filas:
             raise UnsupportedError(
@@ -177,15 +179,20 @@ class ExportService:
                 "sus preguntas no están asignadas al tema pedido, o todas citan material "
                 "restringido que se ha pedido dejar fuera"
             )
-        avisos = (
-            ()
-            if excluidas == 0
-            else (
+        avisos: list[str] = []
+        if excluidas:
+            avisos.append(
                 f"{excluidas} pregunta(s) se han quedado fuera por citar material con derechos "
-                "restringidos o sin determinar",
+                "restringidos o sin determinar"
             )
-        )
-        return tuple(filas), avisos
+        if cortada:
+            # El tope existe para no llenar el disco, pero **no** puede recortar en silencio: un
+            # fichero con la mitad del banco que nadie sabe que está a medias es peor que un error.
+            avisos.append(
+                f"la exportación se ha cortado en {MAX_EXPORT_ITEMS} preguntas: exporta por "
+                "conjunto o por tema para llevarte el resto"
+            )
+        return tuple(filas), tuple(avisos)
 
     def _conjuntos(self, request: ExportRequest) -> tuple[QuestionSetView, ...]:
         if request.question_set_id is not None:

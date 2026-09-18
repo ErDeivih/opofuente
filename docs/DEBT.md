@@ -23,10 +23,11 @@ Reglas:
 | [DEBT-009](#debt-009--el-texto-plano-no-produce-secciones-y-sin-secciones-no-hay-citas) | S06 | El texto plano y el texto pegado no producen secciones: sin ellas no hay citas ni diff | **cerrada en S06** |
 | [DEBT-010](#debt-010--una-pregunta-importada-no-queda-enlazada-a-su-sección) | S06/S11 | Importar preguntas no las enlaza a la sección que las sostiene, y `tags`/`source`/`parte` se leen pero no se guardan | abierta |
 | [DEBT-011](#debt-011--la-pantalla-del-banco-solo-enseña-las-primeras-100-preguntas) | S09 | La pantalla del banco pide 100 preguntas y no permite recorrer el resto de un conjunto grande | abierta |
-| [DEBT-012](#debt-012--modos-de-sesión-declarados-y-sin-implementar) | S08+ | Simulacro, diagnóstico y repaso de errores están en el vocabulario del modelo y no implementados | abierta (S08 añadió los modos de **corrección** de GC, no los modos de sesión) |
+| [DEBT-012](#debt-012--modos-de-sesión-declarados-y-sin-implementar) | S11+ | Simulacro y diagnóstico están en el vocabulario del modelo y no implementados | abierta (S10 implementó el **repaso de errores**; siguen fuera el simulacro y el diagnóstico) |
 | [DEBT-013](#debt-013--el-recálculo-no-se-puede-hacer-en-bloque) | S09+ | Recalcular una clave corregida es sesión a sesión, y solo se conserva un resultado anterior | abierta |
 | [DEBT-014](#debt-014--sin-proveedor-de-embeddings-ni-de-lenguaje-el-rag-es-extractivo) | S10+ | No hay embeddings, ni índice vectorial, ni proveedor de lenguaje: la búsqueda es léxica y la respuesta extractiva | abierta |
 | [DEBT-015](#debt-015--el-índice-léxico-se-puede-rehacer-pero-no-desde-la-interfaz) | S12 | El índice léxico se rehace desde el servicio y no hay acción en Ajustes que lo haga | abierta |
+| [DEBT-016](#debt-016--la-dificultad-observada-no-existe-y-los-umbrales-de-dominio-son-provisionales) | S11+ | El dominio se estima sin dificultad observada, con umbrales provisionales | abierta |
 
 ---
 
@@ -505,20 +506,20 @@ puede llegar a ver, sin truncar en silencio ni depender de que alguien lea la le
 
 **Problema.** 06_QUESTIONS §5 define cinco modos de sesión y 03_DATA-MODEL §7 los nombra en el
 vocabulario de `study_sessions` (`practice`, `error_review`, `official_exam`, `mock_exam`,
-`diagnostic`). S07 implementa **dos**: práctica y examen oficial. Pedir cualquiera de los otros tres
+`diagnostic`). S07 implementó **dos** (práctica y examen oficial) y **S10 añadió el repaso de
+errores**, que compone la sesión con lo vencido de la cola. Pedir cualquiera de los otros dos
 responde 409 `unsupported` con el motivo, así que no se simula nada; pero el producto promete esos
 modos y hoy no existen:
 
 | Modo | Qué le falta |
 |---|---|
-| `error_review` (repaso de errores) | la cola determinista de repaso (`review_items`) y la clasificación de la causa del fallo, que son de S10 |
 | `mock_exam` (simulacro) | la composición que evita preguntas vistas recientemente y la etiqueta de «no oficial» |
 | `diagnostic` (diagnóstico) | la muestra estratificada por tema y la estimación con incertidumbre (no un porcentaje de dominio con dos preguntas) |
 
 **Obligación.** Implementar cada modo **con lo que promete la especificación**, o retirarlo del
 vocabulario si el producto decide no ofrecerlo. Mientras no exista, el vocabulario del modelo y el del
 contrato no coinciden a propósito: el contrato solo declara los modos que se corrigen de verdad
-(`SessionModeName` en `api/study_schemas.py`).
+(`SessionModeName` en `api/study_schemas.py`, que desde S10 incluye `error_review`).
 
 **Criterio de cierre.**
 
@@ -612,3 +613,32 @@ rehecho, y su prueba de interfaz.
    vuelve a encontrar el mismo fragmento.
 3. La interfaz no permite lanzarla dos veces a la vez ni la presenta como una operación instantánea si
    el corpus es grande.
+
+## DEBT-016 — La dificultad observada no existe y los umbrales de dominio son provisionales
+
+**Origen:** cierre de S10 (18 de septiembre de 2026).
+
+**Problema.** 06_QUESTIONS §9 pide estimar el dominio «basada en intentos recientes, **dificultad** y
+repetición», y §4 lista «dificultad observada» entre los filtros del banco. S10 construyó la
+estimación con lo que existe —acierto en una ventana reciente, con recuento— y lo declara en cada
+respuesta, pero:
+
+| Qué falta | Consecuencia |
+|---|---|
+| La dificultad de cada pregunta (no hay campo en `question_versions` ni estimación por intentos) | dos temas con el mismo acierto se ven igual aunque uno tenga preguntas mucho más difíciles |
+| Umbrales de dominio calibrados | los actuales (`0,6` y `0,8` de acierto reciente) son provisionales y están escritos en un solo sitio con su aviso: nadie los ha validado con datos reales de estudio |
+| El filtro «dificultad observada» en el banco | 06_QUESTIONS §4 promete un filtro que no existe |
+
+**Obligación.** Con datos reales de estudio (el propietario empieza la prueba personal al cerrar S12),
+decidir si la dificultad se estima desde los intentos (proporción de aciertos por pregunta) o se declara
+en el material, incorporarla a la estimación de dominio y al filtro del banco, y **fijar los umbrales en
+un ADR** con los datos que los sostienen.
+
+**Criterio de cierre.**
+
+1. Existe una medida de dificultad por pregunta, con su origen declarado (estimada o importada).
+2. La estimación de dominio la usa, y su explicación dice de dónde sale cada término.
+3. Los umbrales están respaldados por un ADR con datos de la prueba personal, y el banco puede filtrar
+   por dificultad observada.
+4. Una prueba comprueba que dos preguntas con los mismos intentos y distinta dificultad no dan el mismo
+   dominio.

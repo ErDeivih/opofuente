@@ -191,6 +191,25 @@ class MasterySchema(BaseModel):
     has_estimate: bool
 
 
+class NodeMasterySchema(MasterySchema):
+    """El dominio de un nodo concreto del programa."""
+
+    curriculum_node_id: str
+
+
+class MasteryProgramSchema(BaseModel):
+    """El dominio de todos los nodos del programa, con el resumen de lo que se puede decir."""
+
+    opposition_id: str
+    convocation_id: str
+    nodes: list[NodeMasterySchema]
+    nodes_total: int
+    nodes_with_estimate: int
+    nodes_insufficient: int
+    nodes_without_data: int
+    note: str
+
+
 class ResolveErrorSchema(BaseModel):
     """Resolver un error: `resolved` o volver a abrirlo, con la nota de por qué."""
 

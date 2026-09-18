@@ -29,7 +29,7 @@ from opofuente.application.review_models import (
     ReviewQueueView,
     ReviewStatsView,
 )
-from opofuente.domain.errors import InvariantViolationError, MappingMismatchError, NotFoundError
+from opofuente.domain.errors import InvariantViolationError, NotFoundError
 from opofuente.domain.review import (
     AttemptStat,
     ErrorCause,
@@ -243,13 +243,13 @@ class ReviewService:
         curriculum_node_id: str | None = None,
         note: str | None = None,
     ) -> ErrorView:
-        """Declara por qué se ha fallado. Sin causa no hay error: hay un fallo sin explicar."""
-        if concept_label is None and curriculum_node_id is None:
-            raise MappingMismatchError(
-                "un error necesita un concepto: el nodo del programa o una etiqueta propia",
-                field="concept_label",
-                code="error_without_concept",
-            )
+        """Declara por qué se ha fallado.
+
+        La causa es obligatoria; el concepto **no**: el modelo de datos lo admite vacío y forzarlo
+        obligaría a inventar una etiqueta para poder anotar un fallo. Un error sin concepto aparece
+        agrupado como «sin concepto declarado», y se puede poner después (volver a clasificarlo
+        actualiza el mismo error en lugar de crear otro).
+        """
         momento = self._clock.now()
         guardado = self._reviews.save_error(
             attempt_id=attempt_id,

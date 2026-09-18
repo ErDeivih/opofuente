@@ -4465,6 +4465,58 @@
         "title": "MarkSupersedesRequestSchema",
         "type": "object"
       },
+      "MasteryProgramSchema": {
+        "description": "El dominio de todos los nodos del programa, con el resumen de lo que se puede decir.",
+        "properties": {
+          "convocation_id": {
+            "title": "Convocation Id",
+            "type": "string"
+          },
+          "nodes": {
+            "items": {
+              "$ref": "#/components/schemas/NodeMasterySchema"
+            },
+            "title": "Nodes",
+            "type": "array"
+          },
+          "nodes_insufficient": {
+            "title": "Nodes Insufficient",
+            "type": "integer"
+          },
+          "nodes_total": {
+            "title": "Nodes Total",
+            "type": "integer"
+          },
+          "nodes_with_estimate": {
+            "title": "Nodes With Estimate",
+            "type": "integer"
+          },
+          "nodes_without_data": {
+            "title": "Nodes Without Data",
+            "type": "integer"
+          },
+          "note": {
+            "title": "Note",
+            "type": "string"
+          },
+          "opposition_id": {
+            "title": "Opposition Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "opposition_id",
+          "convocation_id",
+          "nodes",
+          "nodes_total",
+          "nodes_with_estimate",
+          "nodes_insufficient",
+          "nodes_without_data",
+          "note"
+        ],
+        "title": "MasteryProgramSchema",
+        "type": "object"
+      },
       "NavigateRequestSchema": {
         "description": "A dónde se navega: a una posición o al siguiente/anterior.",
         "properties": {
@@ -4497,6 +4549,68 @@
           }
         },
         "title": "NavigateRequestSchema",
+        "type": "object"
+      },
+      "NodeMasterySchema": {
+        "description": "El dominio de un nodo concreto del programa.",
+        "properties": {
+          "accuracy": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accuracy"
+          },
+          "attempts": {
+            "title": "Attempts",
+            "type": "integer"
+          },
+          "correct": {
+            "title": "Correct",
+            "type": "integer"
+          },
+          "curriculum_node_id": {
+            "title": "Curriculum Node Id",
+            "type": "string"
+          },
+          "explanation": {
+            "title": "Explanation",
+            "type": "string"
+          },
+          "has_estimate": {
+            "title": "Has Estimate",
+            "type": "boolean"
+          },
+          "level": {
+            "enum": [
+              "no_data",
+              "insufficient_evidence",
+              "low",
+              "medium",
+              "high"
+            ],
+            "title": "Level",
+            "type": "string"
+          },
+          "recent_attempts": {
+            "title": "Recent Attempts",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "level",
+          "attempts",
+          "correct",
+          "recent_attempts",
+          "explanation",
+          "has_estimate",
+          "curriculum_node_id"
+        ],
+        "title": "NodeMasterySchema",
         "type": "object"
       },
       "NodeType": {
@@ -15098,6 +15212,76 @@
           }
         },
         "summary": "Lo que toca repasar hoy, con su motivo",
+        "tags": [
+          "errores y repaso"
+        ]
+      }
+    },
+    "/api/v1/reviews/mastery": {
+      "get": {
+        "description": "Lo que la aplicación puede decir del dominio de cada tema, sin inventar un porcentaje.\n\nLos nodos sin intentos se declaran «sin datos» y los que tienen pocos, «evidencia insuficiente»:\n07_UI-UX §5 pide enseñar esa columna, y aquí se calcula con la misma regla para todos.",
+        "operationId": "program_mastery_api_v1_reviews_mastery_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "opposition_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Opposition Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MasteryProgramSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "El dominio estimado de cada nodo del programa (ruta añadida a §10)",
         "tags": [
           "errores y repaso"
         ]

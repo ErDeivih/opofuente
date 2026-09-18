@@ -224,18 +224,31 @@ def test_aplazar_un_repaso_no_lo_cuenta_como_repasado(
 # --- la causa la declara la persona -------------------------------------------------------------
 
 
-def test_el_error_necesita_causa_y_concepto_y_se_puede_corregir(
+def test_el_error_se_declara_con_su_causa_y_se_puede_corregir(
     seeded_settings: Settings, seeded_client: TestClient
 ) -> None:
     _, attempt_id = _fallar_una(seeded_client)
 
+    # Sin causa no hay error: se rechaza la petición con el campo que falta.
+    sin_causa = seeded_client.post(
+        f"/api/v1/attempts/{attempt_id}/error-classification",
+        json={"concept_label": "Plazos"},
+        headers=ALLOWED_ORIGIN,
+    )
+    assert sin_causa.status_code == 422, sin_causa.text
+    assert sin_causa.json()["field_errors"][0]["field"].endswith("cause")
+
+    # Sin concepto sí: el modelo lo admite vacío y aparece agrupado como «sin concepto declarado».
     sin_concepto = seeded_client.post(
         f"/api/v1/attempts/{attempt_id}/error-classification",
         json={"cause": "knowledge"},
         headers=ALLOWED_ORIGIN,
     )
-    assert sin_concepto.status_code == 422, sin_concepto.text
-    assert sin_concepto.json()["field_errors"][0]["field"] == "concept_label"
+    assert sin_concepto.status_code == 200, sin_concepto.text
+    assert sin_concepto.json()["concept_label"] is None
+    grupos = seeded_client.get("/api/v1/learning-errors").json()
+    assert grupos["groups"][0]["key"] == "sin-concepto"
+    assert grupos["groups"][0]["label"] == "sin concepto declarado"
 
     declarado = seeded_client.post(
         f"/api/v1/attempts/{attempt_id}/error-classification",

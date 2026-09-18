@@ -13,11 +13,12 @@ ratificación, como las demás rutas añadidas de los slices anteriores.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from typing import Annotated
 
 from fastapi import APIRouter, Query
 
-from opofuente.api.deps import ReviewServiceDep
+from opofuente.api.deps import ProfilesServiceDep, ReviewServiceDep
 from opofuente.api.error_responses import INGESTION_WRITE_ERRORS, RESOURCE_ERRORS
 from opofuente.api.review_schemas import (
     CompleteReviewSchema,
@@ -28,6 +29,8 @@ from opofuente.api.review_schemas import (
     ErrorClassificationSchema,
     ErrorDetailSchema,
     ErrorSchema,
+    MasteryProgramSchema,
+    NodeMasterySchema,
     ResolveErrorSchema,
     ReviewEventSchema,
     ReviewItemSchema,
@@ -35,6 +38,8 @@ from opofuente.api.review_schemas import (
     ReviewStatsSchema,
     SnoozeReviewSchema,
 )
+from opofuente.application.profiles_service import ProfilesService
+from opofuente.application.read_models import NodeView, OppositionDetail
 from opofuente.application.review_models import (
     ConceptGroupView,
     ConceptSummaryView,
@@ -46,7 +51,8 @@ from opofuente.application.review_models import (
     ReviewQueueView,
     ReviewStatsView,
 )
-from opofuente.domain.review import ErrorCause, ReviewOutcome
+from opofuente.domain.errors import NotFoundError
+from opofuente.domain.review import MIN_INTENTOS_DOMINIO, ErrorCause, Mastery, ReviewOutcome
 from opofuente.domain.study import Confidence
 
 router = APIRouter(tags=["errores y repaso"])
@@ -285,6 +291,75 @@ def list_learning_errors(
 )
 def get_learning_error(error_id: str, service: ReviewServiceDep) -> ErrorDetailSchema:
     return _detail(service.error(error_id))
+
+
+@router.get(
+    "/reviews/mastery",
+    response_model=MasteryProgramSchema,
+    responses=RESOURCE_ERRORS,
+    summary="El dominio estimado de cada nodo del programa (ruta añadida a §10)",
+)
+def program_mastery(
+    service: ReviewServiceDep,
+    profiles: ProfilesServiceDep,
+    opposition_id: Annotated[str | None, Query()] = None,
+) -> MasteryProgramSchema:
+    """Lo que la aplicación puede decir del dominio de cada tema, sin inventar un porcentaje.
+
+    Los nodos sin intentos se declaran «sin datos» y los que tienen pocos, «evidencia insuficiente»:
+    07_UI-UX §5 pide enseñar esa columna, y aquí se calcula con la misma regla para todos.
+    """
+    oposicion = _oposicion(profiles, opposition_id)
+    convocatoria_id = oposicion.opposition.convocation_id
+    if convocatoria_id is None:
+        raise NotFoundError("convocatoria activa", oposicion.opposition.code)
+    curriculum = profiles.get_curriculum(convocatoria_id)
+    nodos = _aplanar(curriculum.nodes)
+    estimaciones = service.mastery([nodo.id for nodo in nodos])
+    fichas = [_mastery(nodo.id, estimaciones[nodo.id]) for nodo in nodos]
+    con_estimacion = sum(1 for ficha in fichas if ficha.has_estimate)
+    sin_datos = sum(1 for ficha in fichas if ficha.attempts == 0)
+    return MasteryProgramSchema(
+        opposition_id=oposicion.opposition.id,
+        convocation_id=convocatoria_id,
+        nodes=fichas,
+        nodes_total=len(fichas),
+        nodes_with_estimate=con_estimacion,
+        nodes_insufficient=len(fichas) - con_estimacion - sin_datos,
+        nodes_without_data=sin_datos,
+        note=(
+            "El dominio se estima por tema con los intentos de las preguntas **asignadas** a ese "
+            "tema. Un tema sin preguntas asignadas no tiene datos, y con menos de "
+            f"{MIN_INTENTOS_DOMINIO} intentos recientes se dice «evidencia insuficiente» en lugar "
+            "de un porcentaje."
+        ),
+    )
+
+
+def _oposicion(profiles: ProfilesService, opposition_id: str | None) -> OppositionDetail:
+    if opposition_id is not None:
+        return profiles.get_opposition(opposition_id)
+    for candidata in profiles.list_oppositions():
+        if candidata.active:
+            return profiles.get_opposition(candidata.id)
+    raise NotFoundError("oposición activa", "(ninguna)")
+
+
+def _aplanar(nodos: Sequence[NodeView]) -> list[NodeView]:
+    return [nodo for raiz in nodos for nodo in (raiz, *_aplanar(raiz.children))]
+
+
+def _mastery(node_id: str, mastery: Mastery) -> NodeMasterySchema:
+    return NodeMasterySchema(
+        curriculum_node_id=node_id,
+        level=mastery.level.value,
+        attempts=mastery.attempts,
+        correct=mastery.correct,
+        recent_attempts=mastery.recent_attempts,
+        accuracy=mastery.accuracy,
+        explanation=mastery.explanation,
+        has_estimate=mastery.has_estimate,
+    )
 
 
 @router.post(

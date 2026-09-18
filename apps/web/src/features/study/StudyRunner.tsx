@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 
+import type { ErrorCause } from '../../api/reviews';
+import { CAUSE_LABEL, ERROR_CAUSES } from '../../api/reviews';
 import type {
   AnswerRequest,
   CurrentQuestion,
@@ -28,13 +30,115 @@ export interface StudyRunnerProps {
   busy: boolean;
   conflict: string | null;
   error: string | null;
+  /** El intento ya corregido, para poder declarar por qué se ha fallado (S10). */
+  attemptId: string | null;
+  /** Si ese intento ya tiene la causa declarada, no se vuelve a preguntar por ella. */
+  errorDeclared: boolean;
+  onClassify: (input: {
+    cause: ErrorCause;
+    conceptLabel: string | null;
+    note: string | null;
+  }) => void;
   onAnswer: (answer: AnswerRequest) => void;
   onNavigate: (position: number | 'next' | 'previous') => void;
   onFinish: () => void;
 }
 
+/**
+ * Declarar por qué se ha fallado (06_QUESTIONS §8, paso 8 del ciclo de respuesta).
+ *
+ * La causa la elige quien estudia, no la aplicación: aquí no se deduce nada. El concepto es
+ * opcional —el modelo lo admite vacío— pero se pide porque es lo que agrupa los fallos en la vista
+ * de conceptos; un fallo sin concepto aparece como «sin concepto declarado».
+ */
+function CauseForm({
+  busy,
+  onClassify,
+}: {
+  busy: boolean;
+  onClassify: StudyRunnerProps['onClassify'];
+}) {
+  const [causa, setCausa] = useState<ErrorCause>('knowledge');
+  const [concepto, setConcepto] = useState('');
+  const [nota, setNota] = useState('');
+
+  return (
+    <div className="form__row">
+      <label className="form__label" htmlFor="causa-fallo">
+        ¿Por qué has fallado?
+      </label>
+      <select
+        id="causa-fallo"
+        className="selector__select"
+        value={causa}
+        onChange={(event) => {
+          setCausa(event.target.value as ErrorCause);
+        }}
+      >
+        {ERROR_CAUSES.map((valor) => (
+          <option key={valor} value={valor}>
+            {CAUSE_LABEL[valor]}
+          </option>
+        ))}
+      </select>
+      <label className="form__label" htmlFor="concepto-fallo">
+        Sobre qué era
+      </label>
+      <input
+        id="concepto-fallo"
+        className="selector__select"
+        value={concepto}
+        onChange={(event) => {
+          setConcepto(event.target.value);
+        }}
+      />
+      <label className="form__label" htmlFor="nota-fallo">
+        Nota propia
+      </label>
+      <input
+        id="nota-fallo"
+        className="selector__select"
+        value={nota}
+        onChange={(event) => {
+          setNota(event.target.value);
+        }}
+      />
+      <button
+        className="button"
+        type="button"
+        disabled={busy}
+        onClick={() => {
+          onClassify({
+            cause: causa,
+            conceptLabel: concepto.trim() === '' ? null : concepto.trim(),
+            note: nota.trim() === '' ? null : nota,
+          });
+        }}
+      >
+        Guardar la causa
+      </button>
+      <span className="hint">
+        El fallo ya está en la cola de repaso; la causa y la nota son tuyas y se pueden corregir
+        después.
+      </span>
+    </div>
+  );
+}
+
 /** Corrección de la pregunta: solo existe cuando el servidor la ha mandado (nunca antes). */
-function Correction({ correction }: { correction: SessionQuestionCorrection }) {
+function Correction({
+  correction,
+  busy,
+  attemptId,
+  errorDeclared,
+  onClassify,
+}: {
+  correction: SessionQuestionCorrection;
+  busy: boolean;
+  attemptId: string | null;
+  errorDeclared: boolean;
+  onClassify: StudyRunnerProps['onClassify'];
+}) {
   return (
     <section className="card notice" aria-labelledby="correccion-pregunta">
       <h3 id="correccion-pregunta">Corrección</h3>
@@ -77,6 +181,17 @@ function Correction({ correction }: { correction: SessionQuestionCorrection }) {
         <p className="hint">
           Esta pregunta no tiene documento de origen adjunto, así que no hay cita que abrir: la
           evidencia se crea al importar preguntas desde un documento (DEBT-010).
+        </p>
+      )}
+      {correction.outcome === 'wrong' && attemptId !== null && !errorDeclared && (
+        <>
+          <h4>Por qué ha fallado</h4>
+          <CauseForm busy={busy} onClassify={onClassify} />
+        </>
+      )}
+      {correction.outcome === 'wrong' && errorDeclared && (
+        <p className="hint">
+          Este fallo ya tiene su causa declarada: se puede corregir desde Errores, en su concepto.
         </p>
       )}
     </section>
@@ -128,6 +243,9 @@ export function StudyRunner({
   busy,
   conflict,
   error,
+  attemptId,
+  errorDeclared,
+  onClassify,
   onAnswer,
   onNavigate,
   onFinish,
@@ -294,7 +412,13 @@ export function StudyRunner({
           )}
 
           {question.correction !== null && question.correction !== undefined && (
-            <Correction correction={question.correction} />
+            <Correction
+              correction={question.correction}
+              busy={busy}
+              attemptId={attemptId}
+              errorDeclared={errorDeclared}
+              onClassify={onClassify}
+            />
           )}
 
           {yaRespondida && question.correction === null && (

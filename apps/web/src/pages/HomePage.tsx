@@ -1,35 +1,87 @@
+import { Link } from 'react-router-dom';
+
 import { EmptyState } from '../components/EmptyState';
 import { LoadingState } from '../components/LoadingState';
 import { SystemStatus } from '../features/system/SystemStatus';
-import { useOppositions, useStudySessions } from '../api/queries';
+import { useOppositions, useReviewQueue, useStudySessions } from '../api/queries';
+import { queueSummary } from '../api/reviews';
 import { modeLabel, statusLabel } from '../features/study/labels';
 
 /**
  * Inicio (07_UI-UX §3).
  *
  * «Estado del programa» muestra el perfil realmente sembrado, y «Continuar estudiando» lee las
- * sesiones de verdad: desde S07 hay motor de práctica y examen, así que la tarjeta ya no puede decir
- * que no existe. Si no hay ninguna sesión, lo dice —y explica cómo empezar— en lugar de fingir un
- * resumen.
+ * sesiones de verdad. Desde S10 la tarjeta también mira el **repaso vencido**: §3 pide recomendar la
+ * siguiente tarea, y lo que toca hoy manda sobre lo último que se hizo.
  */
 export function HomePage() {
   const oppositions = useOppositions();
   const active = oppositions.data?.find((opposition) => opposition.active) ?? null;
   const total = oppositions.data?.length ?? 0;
   const sessions = useStudySessions(active?.id ?? null);
+  const repaso = useReviewQueue(active?.id ?? null);
 
   const enMarcha = sessions.data?.sessions.find((sesion) => sesion.status === 'running') ?? null;
   const ultima = sessions.data?.sessions[0] ?? null;
+  const vencidos = repaso.data?.stats.due ?? 0;
 
   return (
     <>
       <header className="page__header">
         <h1>Inicio</h1>
         <p className="page__lead">
-          Aquí se mostrará la tarea recomendada. Mientras no existan material ni sesiones, esta
-          pantalla dice exactamente qué falta y en qué slice llega.
+          La siguiente tarea de hoy: el repaso vencido manda; si no hay nada vencido, se continúa la
+          sesión que quedó a medias.
         </p>
       </header>
+
+      <section className="card" aria-labelledby="siguiente-tarea">
+        <h2 id="siguiente-tarea">Siguiente tarea</h2>
+        {repaso.isPending && <LoadingState label="Mirando lo que toca hoy…" />}
+        {repaso.isError && (
+          <EmptyState
+            title="No se pudo leer la cola de repaso"
+            description="La API no responde o la base de datos no está migrada."
+          />
+        )}
+        {repaso.isSuccess && vencidos > 0 && (
+          <>
+            <p>
+              <strong>
+                {vencidos} pregunta(s) vencida(s) de repaso
+              </strong>{' '}
+              <span className="hint">{queueSummary(repaso.data)}</span>
+            </p>
+            <p className="hint">
+              Se repasan en una sesión compuesta con lo vencido: la solución no se enseña antes de
+              contestar.
+            </p>
+            <Link className="button" to="/errores">
+              Ir al repaso de errores
+            </Link>
+          </>
+        )}
+        {repaso.isSuccess && vencidos === 0 && enMarcha !== null && (
+          <>
+            <p>
+              <strong>Tienes una sesión sin terminar</strong>{' '}
+              <span className="hint">
+                {modeLabel(enMarcha.mode)} · {enMarcha.answered_questions} de{' '}
+                {enMarcha.total_questions} preguntas
+              </span>
+            </p>
+            <Link className="button" to="/estudiar">
+              Continuar la sesión
+            </Link>
+          </>
+        )}
+        {repaso.isSuccess && vencidos === 0 && enMarcha === null && (
+          <p className="hint">
+            Nada vencido y ninguna sesión a medias. Lo siguiente es practicar: una sesión de práctica
+            sobre el banco que tengas, o un examen oficial si el material está completo.
+          </p>
+        )}
+      </section>
 
       <section className="card" aria-labelledby="continuar-estudiando">
         <h2 id="continuar-estudiando">Continuar estudiando</h2>
