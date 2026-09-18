@@ -17,7 +17,7 @@ Lo que vive aquí y no en el repositorio:
 from __future__ import annotations
 
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from opofuente.application.ports import Clock, VectorSearch
 from opofuente.application.search_models import (
@@ -30,6 +30,7 @@ from opofuente.application.search_models import (
 )
 from opofuente.domain.errors import InvariantViolationError, NotFoundError
 from opofuente.domain.rag import (
+    AnswerStyle,
     CandidateSpan,
     SearchFilters,
     SearchStrategy,
@@ -95,7 +96,7 @@ class AskRequest:
 
     query: str
     filters: SearchFilters | None = None
-    style: str = "brief"
+    style: AnswerStyle = AnswerStyle.BRIEF
     allow_private_sources: bool = True
 
     @property
@@ -164,13 +165,13 @@ class SearchService:
         ahora = self._clock.now()
         revision = self._search.corpus_revision()
         expresion = match_expression(request.query)
-        filtros = request.effective_filters
+        filtros = replace(request.effective_filters, include_private=request.allow_private_sources)
         candidatos, _ = self._search.search(expresion, filtros, limit=filtros.limit)
         vectoriales = self._vector_candidates(request, filtros)
         paquete = fuse_candidates(candidatos, vectoriales, limit=PACK_LIMIT)
 
         entregados = paquete.hits
-        borrador = compose_extractive_answer(request.query, entregados)
+        borrador = compose_extractive_answer(request.query, entregados, style=request.style)
         assert_grounded(borrador, paquete.ids)
 
         query_id = self._search.save_query(
@@ -181,7 +182,7 @@ class SearchService:
             corpus_revision=revision,
             provider="extractive",
             model=None,
-            prompt_template_version="extractive-v1",
+            prompt_template_version=f"extractive-v1-{request.style.value}",
             now=ahora,
         )
         usados = set(borrador.evidence_ids)

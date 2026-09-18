@@ -13,6 +13,7 @@ from opofuente.api.routes import (
     library,
     profiles,
     questions,
+    search,
     study,
     system,
 )
@@ -25,5 +26,6 @@ api_router.include_router(classification.router)
 api_router.include_router(library.router)
 api_router.include_router(questions.router)
 api_router.include_router(study.router)
+api_router.include_router(search.router)
 
 __all__ = ["api_router"]

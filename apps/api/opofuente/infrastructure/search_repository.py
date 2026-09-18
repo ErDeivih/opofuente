@@ -139,11 +139,16 @@ class SqlAlchemySearchRepository:
                     LEFT JOIN document_sections sec ON sec.id = s.section_id
                     LEFT JOIN extracted_representations r ON r.id = v.representation_id
                     WHERE evidence_fts MATCH :expresion
+                      AND (:solo_publico = 0 OR d.owner_scope <> 'private_user')
                     ORDER BY score
                     LIMIT :limite
                     """
                 ),
-                {"expresion": expression, "limite": max(1, limit * 4)},
+                {
+                    "expresion": expression,
+                    "limite": max(1, limit * 4),
+                    "solo_publico": 0 if filters.include_private else 1,
+                },
             ).mappings()
 
             candidatos: list[CandidateSpan] = []

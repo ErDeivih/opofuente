@@ -347,6 +347,229 @@
         "title": "AnswerRequestSchema",
         "type": "object"
       },
+      "AnswerSchema": {
+        "description": "La respuesta con sus afirmaciones citadas y sus incertidumbres.",
+        "properties": {
+          "claims": {
+            "items": {
+              "$ref": "#/components/schemas/ClaimSchema"
+            },
+            "title": "Claims",
+            "type": "array"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "explanation": {
+            "title": "Explanation",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "prompt_template_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prompt Template Version"
+          },
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          },
+          "query_id": {
+            "title": "Query Id",
+            "type": "string"
+          },
+          "short_answer": {
+            "title": "Short Answer",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "supported",
+              "partial",
+              "insufficient"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "suggested_followups": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Suggested Followups",
+            "type": "array"
+          },
+          "uncertainties": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Uncertainties",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "query_id",
+          "status",
+          "short_answer",
+          "explanation",
+          "claims",
+          "uncertainties",
+          "suggested_followups",
+          "provider"
+        ],
+        "title": "AnswerSchema",
+        "type": "object"
+      },
+      "AskRequestSchema": {
+        "description": "La consulta de RAG añade el estilo y si se admite material privado.",
+        "properties": {
+          "allow_private_sources": {
+            "default": true,
+            "title": "Allow Private Sources",
+            "type": "boolean"
+          },
+          "authority_tier": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Authority Tier"
+          },
+          "convocation_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Convocation Id"
+          },
+          "curriculum_node_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Curriculum Node Ids",
+            "type": "array"
+          },
+          "document_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Document Ids",
+            "type": "array"
+          },
+          "languages": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Languages",
+            "type": "array"
+          },
+          "limit": {
+            "default": 10,
+            "maximum": 50.0,
+            "minimum": 1.0,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "opposition_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Opposition Id"
+          },
+          "query": {
+            "minLength": 1,
+            "title": "Query",
+            "type": "string"
+          },
+          "reference_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference Date"
+          },
+          "strategy": {
+            "default": "lexical",
+            "enum": [
+              "lexical",
+              "hybrid"
+            ],
+            "title": "Strategy",
+            "type": "string"
+          },
+          "style": {
+            "default": "brief",
+            "enum": [
+              "brief",
+              "teach",
+              "compare"
+            ],
+            "title": "Style",
+            "type": "string"
+          },
+          "version_mode": {
+            "default": "current",
+            "enum": [
+              "current",
+              "explicit_historical"
+            ],
+            "title": "Version Mode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "AskRequestSchema",
+        "type": "object"
+      },
       "AttemptSchema": {
         "description": "Un intento: lo que se marcó y, si ya se corrigió, su desenlace.",
         "properties": {
@@ -855,6 +1078,37 @@
           "detail"
         ],
         "title": "CheckSchema",
+        "type": "object"
+      },
+      "ClaimSchema": {
+        "description": "Una afirmación con las citas que la sostienen.",
+        "properties": {
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceSpanSchema"
+            },
+            "title": "Evidence",
+            "type": "array"
+          },
+          "support": {
+            "enum": [
+              "direct",
+              "inferred"
+            ],
+            "title": "Support",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text",
+          "support",
+          "evidence"
+        ],
+        "title": "ClaimSchema",
         "type": "object"
       },
       "ClassificationReportSchema": {
@@ -2472,6 +2726,132 @@
           "ordinal"
         ],
         "title": "EvidenceSchema",
+        "type": "object"
+      },
+      "EvidenceSpanSchema": {
+        "description": "Un fragmento de evidencia con lo necesario para abrirlo.",
+        "properties": {
+          "authority_tier": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Authority Tier"
+          },
+          "citation_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Citation Label"
+          },
+          "document_id": {
+            "title": "Document Id",
+            "type": "string"
+          },
+          "document_title": {
+            "title": "Document Title",
+            "type": "string"
+          },
+          "document_type": {
+            "title": "Document Type",
+            "type": "string"
+          },
+          "document_version_id": {
+            "title": "Document Version Id",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "ordinal": {
+            "title": "Ordinal",
+            "type": "integer"
+          },
+          "page": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page"
+          },
+          "page_end": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page End"
+          },
+          "page_start": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Start"
+          },
+          "section_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Section Id"
+          },
+          "section_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Section Title"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "version_status": {
+            "title": "Version Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "document_id",
+          "document_version_id",
+          "document_title",
+          "document_type",
+          "version_status",
+          "ordinal",
+          "text"
+        ],
+        "title": "EvidenceSpanSchema",
         "type": "object"
       },
       "ExamPartSchema": {
@@ -4966,6 +5346,97 @@
         "title": "QuestionSetSchema",
         "type": "object"
       },
+      "RagQuerySchema": {
+        "description": "Una consulta de RAG guardada, con su respuesta y la revisión del corpus que usó.",
+        "properties": {
+          "answer": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AnswerSchema"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "corpus_revision": {
+            "title": "Corpus Revision",
+            "type": "string"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "prompt_template_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prompt Template Version"
+          },
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          },
+          "question": {
+            "title": "Question",
+            "type": "string"
+          },
+          "strategy": {
+            "enum": [
+              "lexical",
+              "hybrid"
+            ],
+            "title": "Strategy",
+            "type": "string"
+          },
+          "version_mode": {
+            "enum": [
+              "current",
+              "explicit_historical"
+            ],
+            "title": "Version Mode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "question",
+          "strategy",
+          "version_mode",
+          "corpus_revision",
+          "provider"
+        ],
+        "title": "RagQuerySchema",
+        "type": "object"
+      },
       "ReadinessProblem": {
         "description": "Cuerpo del 503 de `/health/ready`.\n\nEs un problema RFC 9457 al que se añade el detalle de cada comprobación, de modo que la\ninterfaz pueda explicar **por qué** la aplicación no está lista sin abrir otra petición.\nSe declara como esquema propio para que `application/problem+json` esté descrito de verdad\nen OpenAPI y el frontend use el tipo generado (no una conversión escrita a mano).",
         "properties": {
@@ -5343,6 +5814,77 @@
         "title": "ResolveDuplicateRequestSchema",
         "type": "object"
       },
+      "RetrievalHitSchema": {
+        "properties": {
+          "rank": {
+            "title": "Rank",
+            "type": "integer"
+          },
+          "score": {
+            "title": "Score",
+            "type": "number"
+          },
+          "span": {
+            "$ref": "#/components/schemas/EvidenceSpanSchema"
+          },
+          "strategy": {
+            "enum": [
+              "lexical",
+              "hybrid"
+            ],
+            "title": "Strategy",
+            "type": "string"
+          },
+          "used": {
+            "title": "Used",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "span",
+          "rank",
+          "score",
+          "strategy",
+          "used"
+        ],
+        "title": "RetrievalHitSchema",
+        "type": "object"
+      },
+      "RetrievalSchema": {
+        "description": "La recuperación completa: todo lo que se encontró, se usara o no (§5, paso 9).",
+        "properties": {
+          "corpus_revision": {
+            "title": "Corpus Revision",
+            "type": "string"
+          },
+          "hits": {
+            "items": {
+              "$ref": "#/components/schemas/RetrievalHitSchema"
+            },
+            "title": "Hits",
+            "type": "array"
+          },
+          "query_id": {
+            "title": "Query Id",
+            "type": "string"
+          },
+          "used_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Used Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "query_id",
+          "corpus_revision",
+          "hits",
+          "used_ids"
+        ],
+        "title": "RetrievalSchema",
+        "type": "object"
+      },
       "ReviewGroupSchema": {
         "properties": {
           "axis": {
@@ -5571,6 +6113,224 @@
           "decimal"
         ],
         "title": "ScoreSchema",
+        "type": "object"
+      },
+      "SearchHitSchema": {
+        "properties": {
+          "matched_terms": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Matched Terms",
+            "type": "array"
+          },
+          "rank": {
+            "title": "Rank",
+            "type": "integer"
+          },
+          "score": {
+            "title": "Score",
+            "type": "number"
+          },
+          "span": {
+            "$ref": "#/components/schemas/EvidenceSpanSchema"
+          },
+          "strategy": {
+            "enum": [
+              "lexical",
+              "hybrid"
+            ],
+            "title": "Strategy",
+            "type": "string"
+          }
+        },
+        "required": [
+          "span",
+          "rank",
+          "score",
+          "strategy",
+          "matched_terms"
+        ],
+        "title": "SearchHitSchema",
+        "type": "object"
+      },
+      "SearchRequestSchema": {
+        "description": "Lo que se manda para buscar (o para preguntar).",
+        "properties": {
+          "authority_tier": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Authority Tier"
+          },
+          "convocation_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Convocation Id"
+          },
+          "curriculum_node_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Curriculum Node Ids",
+            "type": "array"
+          },
+          "document_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Document Ids",
+            "type": "array"
+          },
+          "languages": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Languages",
+            "type": "array"
+          },
+          "limit": {
+            "default": 10,
+            "maximum": 50.0,
+            "minimum": 1.0,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "opposition_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Opposition Id"
+          },
+          "query": {
+            "minLength": 1,
+            "title": "Query",
+            "type": "string"
+          },
+          "reference_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference Date"
+          },
+          "strategy": {
+            "default": "lexical",
+            "enum": [
+              "lexical",
+              "hybrid"
+            ],
+            "title": "Strategy",
+            "type": "string"
+          },
+          "version_mode": {
+            "default": "current",
+            "enum": [
+              "current",
+              "explicit_historical"
+            ],
+            "title": "Version Mode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "SearchRequestSchema",
+        "type": "object"
+      },
+      "SearchResultSchema": {
+        "description": "Lo que devuelve una búsqueda: resultados, estrategia y lo que no se pudo hacer.",
+        "properties": {
+          "corpus_revision": {
+            "title": "Corpus Revision",
+            "type": "string"
+          },
+          "degradations": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Degradations",
+            "type": "array"
+          },
+          "excluded": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Excluded",
+            "type": "array"
+          },
+          "hits": {
+            "items": {
+              "$ref": "#/components/schemas/SearchHitSchema"
+            },
+            "title": "Hits",
+            "type": "array"
+          },
+          "strategies": {
+            "items": {
+              "enum": [
+                "lexical",
+                "hybrid"
+              ],
+              "type": "string"
+            },
+            "title": "Strategies",
+            "type": "array"
+          },
+          "strategy": {
+            "enum": [
+              "lexical",
+              "hybrid"
+            ],
+            "title": "Strategy",
+            "type": "string"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          },
+          "version_mode": {
+            "enum": [
+              "current",
+              "explicit_historical"
+            ],
+            "title": "Version Mode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "hits",
+          "total",
+          "strategy",
+          "strategies",
+          "corpus_revision",
+          "version_mode",
+          "degradations",
+          "excluded"
+        ],
+        "title": "SearchResultSchema",
         "type": "object"
       },
       "SectionDiffSchema": {
@@ -9427,6 +10187,68 @@
         ]
       }
     },
+    "/api/v1/evidence-spans/{span_id}": {
+      "get": {
+        "operationId": "get_evidence_span_api_v1_evidence_spans__span_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "span_id",
+            "required": true,
+            "schema": {
+              "title": "Span Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvidenceSpanSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Un fragmento de evidencia con lo necesario para abrirlo",
+        "tags": [
+          "búsqueda"
+        ]
+      }
+    },
     "/api/v1/evidence/{evidence_id}": {
       "get": {
         "operationId": "get_evidence_api_v1_evidence__evidence_id__get",
@@ -12293,6 +13115,212 @@
         ]
       }
     },
+    "/api/v1/rag/queries": {
+      "post": {
+        "description": "La respuesta puede ser `insufficient`: es un resultado, no un error.",
+        "operationId": "ask_api_v1_rag_queries_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AskRequestSchema"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RagQuerySchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "La entrada no se puede usar: carpeta inválida (`invalid_source`), contenido rechazado por seguridad (`unsafe_content`) o URL no descargable (`url_rejected`)."
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Pregunta al corpus y devuelve una respuesta con citas",
+        "tags": [
+          "búsqueda"
+        ]
+      }
+    },
+    "/api/v1/rag/queries/{query_id}": {
+      "get": {
+        "operationId": "get_rag_query_api_v1_rag_queries__query_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "query_id",
+            "required": true,
+            "schema": {
+              "title": "Query Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RagQuerySchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Una consulta guardada con su respuesta",
+        "tags": [
+          "búsqueda"
+        ]
+      }
+    },
+    "/api/v1/rag/queries/{query_id}/retrieval": {
+      "get": {
+        "operationId": "get_rag_retrieval_api_v1_rag_queries__query_id__retrieval_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "query_id",
+            "required": true,
+            "schema": {
+              "title": "Query Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetrievalSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Todo lo que se recuperó en una consulta, se usara o no",
+        "tags": [
+          "búsqueda"
+        ]
+      }
+    },
     "/api/v1/representations/{representation_id}": {
       "get": {
         "operationId": "get_representation_api_v1_representations__representation_id__get",
@@ -12486,6 +13514,87 @@
         "summary": "Grupos de revisión: propuestas pendientes agrupadas por eje y valor",
         "tags": [
           "clasificación"
+        ]
+      }
+    },
+    "/api/v1/search": {
+      "post": {
+        "operationId": "search_api_v1_search_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SearchRequestSchema"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResultSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "La entrada no se puede usar: carpeta inválida (`invalid_source`), contenido rechazado por seguridad (`unsafe_content`) o URL no descargable (`url_rejected`)."
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Busca en el corpus publicado (sin generar respuesta)",
+        "tags": [
+          "búsqueda"
         ]
       }
     },

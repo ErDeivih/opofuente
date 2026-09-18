@@ -22,6 +22,7 @@ import pytest
 from opofuente.domain.errors import InvariantViolationError
 from opofuente.domain.rag import (
     AnswerStatus,
+    AnswerStyle,
     CandidateSpan,
     Claim,
     ClaimSupport,
@@ -191,7 +192,9 @@ def test_una_respuesta_respaldada_cita_los_fragmentos_entregados() -> None:
         _span("s2", "El plazo se cuenta desde la notificación."),
     ]
 
-    borrador = compose_extractive_answer("¿Cuál es el plazo de alegaciones?", entregados)
+    borrador = compose_extractive_answer(
+        "¿Cuál es el plazo de alegaciones?", entregados, style=AnswerStyle.TEACH
+    )
 
     assert borrador.status is AnswerStatus.SUPPORTED
     assert borrador.claims, "una respuesta respaldada lleva afirmaciones"
@@ -327,3 +330,24 @@ def test_el_soporte_de_una_afirmacion_por_defecto_es_directo() -> None:
 def test_la_decision_de_corpus_se_puede_leer_como_booleano() -> None:
     assert CorpusDecision(True).eligible is True
     assert CorpusDecision(True).reason is None
+
+
+def test_el_estilo_breve_cita_sin_explicacion_ni_sugerencias() -> None:
+    entregados = [_span("s1", "El plazo de alegaciones es de diez días hábiles.")]
+
+    borrador = compose_extractive_answer("¿plazo?", entregados, style=AnswerStyle.BRIEF)
+
+    assert "Cita literal" in borrador.explanation
+    assert borrador.suggested_followups == ()
+
+
+def test_el_estilo_comparar_ensena_un_fragmento_por_documento() -> None:
+    entregados = [
+        _span("a1", "El plazo es de diez días.", documento="doc-1"),
+        _span("a2", "El plazo también es de diez días.", documento="doc-1"),
+        _span("b1", "El plazo es de quince días.", documento="doc-2"),
+    ]
+
+    borrador = compose_extractive_answer("¿plazo?", entregados, style=AnswerStyle.COMPARE)
+
+    assert [claim.evidence_ids for claim in borrador.claims] == [("a1",), ("b1",)]

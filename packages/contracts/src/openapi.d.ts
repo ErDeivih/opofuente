@@ -586,6 +586,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/evidence-spans/{span_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Un fragmento de evidencia con lo necesario para abrirlo */
+        get: operations["get_evidence_span_api_v1_evidence_spans__span_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/evidence/{evidence_id}": {
         parameters: {
             query?: never;
@@ -1227,6 +1244,60 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/rag/queries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Pregunta al corpus y devuelve una respuesta con citas
+         * @description La respuesta puede ser `insufficient`: es un resultado, no un error.
+         */
+        post: operations["ask_api_v1_rag_queries_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/rag/queries/{query_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Una consulta guardada con su respuesta */
+        get: operations["get_rag_query_api_v1_rag_queries__query_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/rag/queries/{query_id}/retrieval": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Todo lo que se recuperó en una consulta, se usara o no */
+        get: operations["get_rag_retrieval_api_v1_rag_queries__query_id__retrieval_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/representations/{representation_id}": {
         parameters: {
             query?: never;
@@ -1272,6 +1343,23 @@ export interface paths {
         get: operations["review_groups_api_v1_review_groups_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Busca en el corpus publicado (sin generar respuesta) */
+        post: operations["search_api_v1_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1612,6 +1700,89 @@ export interface components {
             question_version_id: string;
         };
         /**
+         * AnswerSchema
+         * @description La respuesta con sus afirmaciones citadas y sus incertidumbres.
+         */
+        AnswerSchema: {
+            /** Claims */
+            claims: components["schemas"]["ClaimSchema"][];
+            /** Created At */
+            created_at?: string | null;
+            /** Explanation */
+            explanation: string;
+            /** Id */
+            id: string;
+            /** Model */
+            model?: string | null;
+            /** Prompt Template Version */
+            prompt_template_version?: string | null;
+            /** Provider */
+            provider: string;
+            /** Query Id */
+            query_id: string;
+            /** Short Answer */
+            short_answer: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "supported" | "partial" | "insufficient";
+            /** Suggested Followups */
+            suggested_followups: string[];
+            /** Uncertainties */
+            uncertainties: string[];
+        };
+        /**
+         * AskRequestSchema
+         * @description La consulta de RAG añade el estilo y si se admite material privado.
+         */
+        AskRequestSchema: {
+            /**
+             * Allow Private Sources
+             * @default true
+             */
+            allow_private_sources: boolean;
+            /** Authority Tier */
+            authority_tier?: string | null;
+            /** Convocation Id */
+            convocation_id?: string | null;
+            /** Curriculum Node Ids */
+            curriculum_node_ids?: string[];
+            /** Document Ids */
+            document_ids?: string[];
+            /** Languages */
+            languages?: string[];
+            /**
+             * Limit
+             * @default 10
+             */
+            limit: number;
+            /** Opposition Id */
+            opposition_id?: string | null;
+            /** Query */
+            query: string;
+            /** Reference Date */
+            reference_date?: string | null;
+            /**
+             * Strategy
+             * @default lexical
+             * @enum {string}
+             */
+            strategy: "lexical" | "hybrid";
+            /**
+             * Style
+             * @default brief
+             * @enum {string}
+             */
+            style: "brief" | "teach" | "compare";
+            /**
+             * Version Mode
+             * @default current
+             * @enum {string}
+             */
+            version_mode: "current" | "explicit_historical";
+        };
+        /**
          * AttemptSchema
          * @description Un intento: lo que se marcó y, si ya se corrigió, su desenlace.
          */
@@ -1787,6 +1958,21 @@ export interface components {
              * @enum {string}
              */
             status: "ok" | "failed";
+        };
+        /**
+         * ClaimSchema
+         * @description Una afirmación con las citas que la sostienen.
+         */
+        ClaimSchema: {
+            /** Evidence */
+            evidence: components["schemas"]["EvidenceSpanSchema"][];
+            /**
+             * Support
+             * @enum {string}
+             */
+            support: "direct" | "inferred";
+            /** Text */
+            text: string;
         };
         /**
          * ClassificationReportSchema
@@ -2362,6 +2548,42 @@ export interface components {
             section_id?: string | null;
             /** Text */
             text: string;
+        };
+        /**
+         * EvidenceSpanSchema
+         * @description Un fragmento de evidencia con lo necesario para abrirlo.
+         */
+        EvidenceSpanSchema: {
+            /** Authority Tier */
+            authority_tier?: string | null;
+            /** Citation Label */
+            citation_label?: string | null;
+            /** Document Id */
+            document_id: string;
+            /** Document Title */
+            document_title: string;
+            /** Document Type */
+            document_type: string;
+            /** Document Version Id */
+            document_version_id: string;
+            /** Id */
+            id: string;
+            /** Ordinal */
+            ordinal: number;
+            /** Page */
+            page?: number | null;
+            /** Page End */
+            page_end?: number | null;
+            /** Page Start */
+            page_start?: number | null;
+            /** Section Id */
+            section_id?: string | null;
+            /** Section Title */
+            section_title?: string | null;
+            /** Text */
+            text: string;
+            /** Version Status */
+            version_status: string;
         };
         /** ExamPartSchema */
         ExamPartSchema: {
@@ -3232,6 +3454,37 @@ export interface components {
             title: string;
         };
         /**
+         * RagQuerySchema
+         * @description Una consulta de RAG guardada, con su respuesta y la revisión del corpus que usó.
+         */
+        RagQuerySchema: {
+            answer?: components["schemas"]["AnswerSchema"] | null;
+            /** Corpus Revision */
+            corpus_revision: string;
+            /** Created At */
+            created_at?: string | null;
+            /** Id */
+            id: string;
+            /** Model */
+            model?: string | null;
+            /** Prompt Template Version */
+            prompt_template_version?: string | null;
+            /** Provider */
+            provider: string;
+            /** Question */
+            question: string;
+            /**
+             * Strategy
+             * @enum {string}
+             */
+            strategy: "lexical" | "hybrid";
+            /**
+             * Version Mode
+             * @enum {string}
+             */
+            version_mode: "current" | "explicit_historical";
+        };
+        /**
          * ReadinessProblem
          * @description Cuerpo del 503 de `/health/ready`.
          *
@@ -3399,6 +3652,35 @@ export interface components {
              */
             relation: "revision_candidate" | "subset" | "superset" | "similar";
         };
+        /** RetrievalHitSchema */
+        RetrievalHitSchema: {
+            /** Rank */
+            rank: number;
+            /** Score */
+            score: number;
+            span: components["schemas"]["EvidenceSpanSchema"];
+            /**
+             * Strategy
+             * @enum {string}
+             */
+            strategy: "lexical" | "hybrid";
+            /** Used */
+            used: boolean;
+        };
+        /**
+         * RetrievalSchema
+         * @description La recuperación completa: todo lo que se encontró, se usara o no (§5, paso 9).
+         */
+        RetrievalSchema: {
+            /** Corpus Revision */
+            corpus_revision: string;
+            /** Hits */
+            hits: components["schemas"]["RetrievalHitSchema"][];
+            /** Query Id */
+            query_id: string;
+            /** Used Ids */
+            used_ids: string[];
+        };
         /** ReviewGroupSchema */
         ReviewGroupSchema: {
             /** Axis */
@@ -3487,6 +3769,88 @@ export interface components {
             fraction: string;
             /** Numerator */
             numerator: number;
+        };
+        /** SearchHitSchema */
+        SearchHitSchema: {
+            /** Matched Terms */
+            matched_terms: string[];
+            /** Rank */
+            rank: number;
+            /** Score */
+            score: number;
+            span: components["schemas"]["EvidenceSpanSchema"];
+            /**
+             * Strategy
+             * @enum {string}
+             */
+            strategy: "lexical" | "hybrid";
+        };
+        /**
+         * SearchRequestSchema
+         * @description Lo que se manda para buscar (o para preguntar).
+         */
+        SearchRequestSchema: {
+            /** Authority Tier */
+            authority_tier?: string | null;
+            /** Convocation Id */
+            convocation_id?: string | null;
+            /** Curriculum Node Ids */
+            curriculum_node_ids?: string[];
+            /** Document Ids */
+            document_ids?: string[];
+            /** Languages */
+            languages?: string[];
+            /**
+             * Limit
+             * @default 10
+             */
+            limit: number;
+            /** Opposition Id */
+            opposition_id?: string | null;
+            /** Query */
+            query: string;
+            /** Reference Date */
+            reference_date?: string | null;
+            /**
+             * Strategy
+             * @default lexical
+             * @enum {string}
+             */
+            strategy: "lexical" | "hybrid";
+            /**
+             * Version Mode
+             * @default current
+             * @enum {string}
+             */
+            version_mode: "current" | "explicit_historical";
+        };
+        /**
+         * SearchResultSchema
+         * @description Lo que devuelve una búsqueda: resultados, estrategia y lo que no se pudo hacer.
+         */
+        SearchResultSchema: {
+            /** Corpus Revision */
+            corpus_revision: string;
+            /** Degradations */
+            degradations: string[];
+            /** Excluded */
+            excluded: string[];
+            /** Hits */
+            hits: components["schemas"]["SearchHitSchema"][];
+            /** Strategies */
+            strategies: ("lexical" | "hybrid")[];
+            /**
+             * Strategy
+             * @enum {string}
+             */
+            strategy: "lexical" | "hybrid";
+            /** Total */
+            total: number;
+            /**
+             * Version Mode
+             * @enum {string}
+             */
+            version_mode: "current" | "explicit_historical";
         };
         /**
          * SectionDiffSchema
@@ -5915,6 +6279,55 @@ export interface operations {
             };
         };
     };
+    get_evidence_span_api_v1_evidence_spans__span_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                span_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EvidenceSpanSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
     get_evidence_api_v1_evidence__evidence_id__get: {
         parameters: {
             query?: never;
@@ -8021,6 +8434,173 @@ export interface operations {
             };
         };
     };
+    ask_api_v1_rag_queries_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AskRequestSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RagQuerySchema"];
+                };
+            };
+            /** @description La entrada no se puede usar: carpeta inválida (`invalid_source`), contenido rechazado por seguridad (`unsafe_content`) o URL no descargable (`url_rejected`). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    get_rag_query_api_v1_rag_queries__query_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                query_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RagQuerySchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    get_rag_retrieval_api_v1_rag_queries__query_id__retrieval_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                query_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RetrievalSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
     get_representation_api_v1_representations__representation_id__get: {
         parameters: {
             query?: never;
@@ -8138,6 +8718,75 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReviewGroupSchema"][];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    search_api_v1_search_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchRequestSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchResultSchema"];
+                };
+            };
+            /** @description La entrada no se puede usar: carpeta inválida (`invalid_source`), contenido rechazado por seguridad (`unsafe_content`) o URL no descargable (`url_rejected`). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
                 };
             };
             /** @description El recurso no existe. */

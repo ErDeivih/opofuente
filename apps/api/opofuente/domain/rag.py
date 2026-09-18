@@ -53,6 +53,19 @@ class SearchStrategy(StrEnum):
     HYBRID = "hybrid"
 
 
+class AnswerStyle(StrEnum):
+    """Estilo de la respuesta (08_API-CONTRACT §8). Cambia **qué se enseña**, no lo que se afirma.
+
+    - `brief`: la cita que sostiene la pregunta, sin más;
+    - `teach`: además, por qué se sostiene y qué se puede mirar después;
+    - `compare`: un fragmento por documento, para poder contrastar fuentes distintas.
+    """
+
+    BRIEF = "brief"
+    TEACH = "teach"
+    COMPARE = "compare"
+
+
 class VersionMode(StrEnum):
     """Vigente por defecto; una versión histórica hay que pedirla (§2)."""
 
@@ -216,6 +229,9 @@ class SearchFilters:
     reference_date: date | None = None
     version_mode: VersionMode = VersionMode.CURRENT
     languages: tuple[str, ...] = ()
+    #: El material privado del usuario es la mayoría de este corpus; `allow_private_sources=False`
+    #: lo deja fuera, que es lo que el contrato §8 pide poder hacer.
+    include_private: bool = True
     limit: int = 10
 
     @property
@@ -376,6 +392,7 @@ def compose_extractive_answer(
     delivered: Sequence[CandidateSpan],
     *,
     max_claims: int = 3,
+    style: AnswerStyle = AnswerStyle.BRIEF,
 ) -> RagDraft:
     """Respuesta **extractiva**, sin modelo de lenguaje (§5: «FTS sigue funcionando sin LLM»).
 
@@ -422,7 +439,7 @@ def compose_extractive_answer(
                 cubiertos[termino].append(span)
     faltan = tuple(termino for termino, spans in cubiertos.items() if not spans)
 
-    usados = tuple(delivered[:max_claims])
+    usados = _elegidos_por_estilo(delivered, style=style, max_claims=max_claims)
     claims = tuple(
         Claim(
             text=_extract(span.text),
@@ -456,14 +473,46 @@ def compose_extractive_answer(
     return RagDraft(
         status=estado,
         short_answer=respuesta_corta,
-        explanation=explicacion,
+        explanation=(
+            explicacion
+            if style is not AnswerStyle.BRIEF
+            else "Cita literal del corpus; sin redacción añadida."
+        ),
         claims=claims,
         uncertainties=((f"no se ha encontrado nada sobre: {', '.join(faltan)}",) if faltan else ()),
-        suggested_followups=tuple(
-            dict.fromkeys(f"buscar «{span.section_title}»" for span in usados if span.section_title)
+        suggested_followups=(
+            tuple(
+                dict.fromkeys(
+                    f"buscar «{span.section_title}»" for span in usados if span.section_title
+                )
+            )
+            if style is AnswerStyle.TEACH
+            else ()
         ),
         missing_terms=faltan,
     )
+
+
+def _elegidos_por_estilo(
+    delivered: Sequence[CandidateSpan], *, style: AnswerStyle, max_claims: int
+) -> tuple[CandidateSpan, ...]:
+    """Qué fragmentos se citan según el estilo: `compare` enseña **uno por documento**.
+
+    Es la diferencia entre «dame la respuesta» y «enséñame qué dicen las fuentes»: comparar dos
+    fragmentos del mismo documento no compara nada.
+    """
+    if style is not AnswerStyle.COMPARE:
+        return tuple(delivered[:max_claims])
+    vistos: set[str] = set()
+    elegidos: list[CandidateSpan] = []
+    for span in delivered:
+        if span.document_id in vistos:
+            continue
+        vistos.add(span.document_id)
+        elegidos.append(span)
+        if len(elegidos) >= max_claims:
+            break
+    return tuple(elegidos)
 
 
 @dataclass

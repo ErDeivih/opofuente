@@ -33,6 +33,7 @@ from opofuente.application.job_service import JobService
 from opofuente.application.library_service import LibraryService
 from opofuente.application.profiles_service import ProfilesService
 from opofuente.application.question_service import QuestionService
+from opofuente.application.search_service import SearchService
 from opofuente.application.study_service import StudyService
 from opofuente.application.system_service import SystemService
 from opofuente.config import Settings, get_settings
@@ -60,6 +61,7 @@ from opofuente.infrastructure.probes import DatabaseProbe, DataDirectoryProbe
 from opofuente.infrastructure.profile_repository import SqlAlchemyProfileRepository
 from opofuente.infrastructure.question_repository import SqlAlchemyQuestionRepository
 from opofuente.infrastructure.representation_store import RepresentationStore
+from opofuente.infrastructure.search_repository import SqlAlchemySearchRepository
 from opofuente.infrastructure.study_repository import SqlAlchemyStudyRepository
 from opofuente.infrastructure.url_guard import url_limits_from_settings
 from opofuente.infrastructure.worker_liveness import WorkerLiveness
@@ -171,6 +173,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         questions=SqlAlchemyQuestionRepository(session_factory),
         clock=clock,
     )
+    search_service = SearchService(
+        search=SqlAlchemySearchRepository(session_factory),
+        clock=clock,
+    )
     study_service = StudyService(
         study=SqlAlchemyStudyRepository(session_factory),
         questions=SqlAlchemyQuestionRepository(session_factory),
@@ -253,6 +259,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.artifact_store = artifact_store
     app.state.question_service = question_service
     app.state.study_service = study_service
+    app.state.search_service = search_service
 
     # El orden importa: el último añadido es el más externo, así que el identificador de
     # correlación envuelve también los rechazos por Origin.
