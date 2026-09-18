@@ -1008,6 +1008,22 @@ class SqlAlchemyQuestionRepository:
                 for fila in filas
             )
 
+    def node_ids_of_question(self, question_version_id: str) -> tuple[str, ...]:
+        """Los nodos del programa a los que está asignada una pregunta.
+
+        Se lee solo lo aceptado: una asignación propuesta y sin revisar no es un hecho, y usarla
+        para filtrar una exportación sacaría preguntas de un tema en el que nadie las ha puesto.
+        """
+        with self._session_factory() as session:
+            filas = session.execute(
+                select(CurriculumMappingRecord.curriculum_node_id).where(
+                    CurriculumMappingRecord.subject_type == "question_version",
+                    CurriculumMappingRecord.subject_id == question_version_id,
+                    CurriculumMappingRecord.status == "accepted",
+                )
+            ).scalars()
+            return tuple(str(node_id) for node_id in filas)
+
     def question_evidence(self, question_id: str) -> tuple[QuestionEvidenceView, ...]:
         """Evidencia que sostiene la pregunta, con el texto de la cita ya recortado."""
         with self._session_factory() as session:

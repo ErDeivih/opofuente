@@ -26,6 +26,7 @@ from opofuente.api.middleware import (
 )
 from opofuente.api.openapi import apply_problem_media_type
 from opofuente.application.classification_service import ClassificationService
+from opofuente.application.export_service import ExportService
 from opofuente.application.extraction_service import ExtractionService
 from opofuente.application.ingestion_service import IngestionService
 from opofuente.application.intake_service import IntakeService
@@ -183,6 +184,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         reviews=SqlAlchemyReviewRepository(session_factory),
         clock=clock,
     )
+    export_service = ExportService(
+        questions=SqlAlchemyQuestionRepository(session_factory),
+        documents=SqlAlchemyDocumentRepository(session_factory, representations),
+        profiles=SqlAlchemyProfileRepository(session_factory),
+        exports_dir=paths.exports,
+        clock=clock,
+        version=__version__,
+    )
     study_service = StudyService(
         study=SqlAlchemyStudyRepository(session_factory),
         questions=SqlAlchemyQuestionRepository(session_factory),
@@ -268,6 +277,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.study_service = study_service
     app.state.search_service = search_service
     app.state.review_service = review_service
+    app.state.export_service = export_service
 
     # El orden importa: el último añadido es el más externo, así que el identificador de
     # correlación envuelve también los rechazos por Origin.

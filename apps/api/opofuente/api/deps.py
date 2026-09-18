@@ -11,6 +11,7 @@ from typing import Annotated
 from fastapi import Depends, Request
 
 from opofuente.application.classification_service import ClassificationService
+from opofuente.application.export_service import ExportService
 from opofuente.application.extraction_service import ExtractionService
 from opofuente.application.ingestion_service import IngestionService
 from opofuente.application.intake_service import IntakeService
@@ -96,6 +97,11 @@ def get_review_service(request: Request) -> ReviewService:
     return service
 
 
+def get_export_service(request: Request) -> ExportService:
+    service: ExportService = request.app.state.export_service
+    return service
+
+
 #: Dependencias anotadas (estilo moderno de FastAPI: sin llamadas en valores por defecto).
 AppSettingsDep = Annotated[Settings, Depends(get_app_settings)]
 SystemServiceDep = Annotated[SystemService, Depends(get_system_service)]
@@ -111,3 +117,4 @@ QuestionServiceDep = Annotated[QuestionService, Depends(get_question_service)]
 StudyServiceDep = Annotated[StudyService, Depends(get_study_service)]
 SearchServiceDep = Annotated[SearchService, Depends(get_search_service)]
 ReviewServiceDep = Annotated[ReviewService, Depends(get_review_service)]
+ExportServiceDep = Annotated[ExportService, Depends(get_export_service)]

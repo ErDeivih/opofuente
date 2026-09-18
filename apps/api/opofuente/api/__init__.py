@@ -9,6 +9,7 @@ from fastapi import APIRouter
 
 from opofuente.api.routes import (
     classification,
+    exports,
     ingestion,
     library,
     profiles,
@@ -29,5 +30,6 @@ api_router.include_router(questions.router)
 api_router.include_router(study.router)
 api_router.include_router(search.router)
 api_router.include_router(reviews.router)
+api_router.include_router(exports.router)
 
 __all__ = ["api_router"]
