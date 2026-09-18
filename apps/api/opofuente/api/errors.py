@@ -17,13 +17,17 @@ from pydantic import BaseModel, Field
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from opofuente.domain.errors import (
+    AttemptFrozenError,
     ClassificationConflictError,
+    InvalidAnswerError,
     InvalidBatchStateError,
     InvalidSourceError,
     MappingMismatchError,
     NotFoundError,
     OpoFuenteError,
+    SessionStateError,
     UnsafeContentError,
+    UnsupportedError,
     UrlRejectedError,
 )
 from opofuente.infrastructure.correlation import get_correlation_id
@@ -160,6 +164,37 @@ def register_exception_handlers(app: FastAPI) -> None:
                 detail=f"No existe {exc.resource} con ese identificador.",
                 instance=request.url.path,
                 code="not_found",
+            )
+        if isinstance(exc, AttemptFrozenError):
+            # El intento ya está registrado: el contrato lo dice con su propio código, porque no es
+            # lo mismo que un conflicto de clasificación y la pantalla reacciona distinto.
+            return problem_response(
+                status_code=409,
+                detail=str(exc),
+                instance=request.url.path,
+                code="attempt_frozen",
+            )
+        if isinstance(exc, SessionStateError):
+            return problem_response(
+                status_code=409,
+                detail=str(exc),
+                instance=request.url.path,
+                code="invalid_session_state",
+            )
+        if isinstance(exc, UnsupportedError):
+            return problem_response(
+                status_code=409,
+                detail=str(exc),
+                instance=request.url.path,
+                code="unsupported",
+            )
+        if isinstance(exc, InvalidAnswerError):
+            return problem_response(
+                status_code=422,
+                detail=str(exc),
+                instance=request.url.path,
+                code=exc.code,
+                field_errors=[FieldError(field=exc.field, message=exc.reason)],
             )
         if isinstance(exc, MappingMismatchError):
             # El 422 de esta aplicación siempre lleva `field_errors`, así que el mapeo que hay que

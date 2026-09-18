@@ -16,7 +16,7 @@ from fractions import Fraction
 
 import pytest
 
-from opofuente.domain.errors import InvariantViolationError
+from opofuente.domain.errors import InvariantViolationError, SessionStateError
 from opofuente.domain.study import (
     OFFICIAL_UNAVAILABLE_NOTE,
     AttemptOutcome,
@@ -24,6 +24,7 @@ from opofuente.domain.study import (
     Feedback,
     FrozenQuestion,
     GradedAttempt,
+    PartRule,
     SessionConfiguration,
     SessionMode,
     SessionSource,
@@ -200,12 +201,16 @@ def test_marcar_varias_opciones_solo_acierta_si_son_exactamente_las_correctas() 
 
 
 def test_solo_se_corrige_en_una_sesion_en_marcha() -> None:
+    from datetime import UTC, datetime
+
     from opofuente.domain.study import (
         SessionState,
         SessionStatus,
         assert_can_answer,
         assert_can_finish,
     )
+
+    ahora = datetime(2026, 9, 17, 12, 0, tzinfo=UTC)
 
     borrador = SessionState(
         session_id="s-1",
@@ -219,10 +224,42 @@ def test_solo_se_corrige_en_una_sesion_en_marcha() -> None:
         finished_at=None,
         time_limit_minutes=None,
     )
-    with pytest.raises(InvariantViolationError):
+    # Un estado que no admite la operación es un 409, no un invariante roto: la API lo explica.
+    with pytest.raises(SessionStateError):
         assert_can_answer(borrador)
-    with pytest.raises(InvariantViolationError):
+    with pytest.raises(SessionStateError):
         assert_can_finish(borrador)
+
+    en_marcha = SessionState(
+        session_id="s-1",
+        mode=SessionMode.PRACTICE,
+        status=SessionStatus.RUNNING,
+        feedback=Feedback.IMMEDIATE,
+        answer_key_version_id="k-1",
+        total_questions=10,
+        answered_questions=3,
+        started_at=ahora,
+        finished_at=None,
+        time_limit_minutes=None,
+    )
+    assert_can_answer(en_marcha)
+    assert_can_finish(en_marcha)
+
+    terminada = SessionState(
+        session_id="s-1",
+        mode=SessionMode.PRACTICE,
+        status=SessionStatus.FINISHED,
+        feedback=Feedback.IMMEDIATE,
+        answer_key_version_id="k-1",
+        total_questions=10,
+        answered_questions=10,
+        started_at=ahora,
+        finished_at=ahora,
+        time_limit_minutes=None,
+    )
+    with pytest.raises(SessionStateError):
+        assert_can_answer(terminada)
+    assert_can_finish(terminada), "terminar lo ya terminado devuelve el resultado, no falla"
 
 
 # --- composición efectiva y reservas -------------------------------------------------------------
@@ -304,9 +341,16 @@ def _resultado(
         items=efectivas,
         substitutions=sustituciones,
         part_rules={
-            "primera_parte": ("Primera parte", 80, 0.0, 50.0, 25.0),
+            "primera_parte": PartRule(
+                code="primera_parte",
+                name="Primera parte",
+                ordinary_items=80,
+                score_min=0.0,
+                score_max=50.0,
+                pass_score=25.0,
+                penalty=penalty,
+            )
         },
-        penalty=penalty,
     )
 
 
@@ -353,6 +397,43 @@ def test_una_sesion_sin_responder_tiene_puntuacion_cero_y_lo_dice() -> None:
     assert resultado.total.score == 0
     assert resultado.total.graded == 0
     assert resultado.unfinished == 8
+
+
+def test_el_total_es_la_suma_de_las_partes_aunque_penalicen_distinto() -> None:
+    """Con dos penalizaciones distintas, recalcular el total con una sola daría otra cifra."""
+    preguntas = [
+        _pregunta("a1", part_code="primera_parte", position=1),
+        _pregunta("a2", part_code="primera_parte", position=2),
+        _pregunta("b1", part_code="segunda_parte", position=3),
+        _pregunta("b2", part_code="segunda_parte", position=4),
+    ]
+    intentos = {
+        "a1": GradedAttempt(AttemptOutcome.CORRECT, Fraction(1)),
+        "a2": GradedAttempt(AttemptOutcome.WRONG, -TERCIO),
+        "b1": GradedAttempt(AttemptOutcome.CORRECT, Fraction(1)),
+        "b2": GradedAttempt(AttemptOutcome.WRONG, Fraction(-1, 4)),
+    }
+    efectivas, sustituciones = effective_composition(preguntas, intentos)
+
+    resultado = aggregate(
+        session_id="s-1",
+        mode=SessionMode.PRACTICE,
+        answer_key_version_id="k-1",
+        items=efectivas,
+        substitutions=sustituciones,
+        part_rules={
+            "primera_parte": PartRule(code="primera_parte", penalty=TERCIO),
+            "segunda_parte": PartRule(code="segunda_parte", penalty=Fraction(1, 4)),
+        },
+    )
+
+    assert [(parte.part_code, parte.score) for parte in resultado.parts] == [
+        ("primera_parte", Fraction(2, 3)),
+        ("segunda_parte", Fraction(3, 4)),
+    ]
+    assert resultado.total.score == Fraction(2, 3) + Fraction(3, 4)
+    assert resultado.total.penalty is None, "no hay una sola penalización que describa la sesión"
+    assert resultado.score_decimal == "1.4167"
 
 
 # --- configuración -------------------------------------------------------------------------------

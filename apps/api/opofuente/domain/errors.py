@@ -30,6 +30,41 @@ class MappingMismatchError(InvariantViolationError):
         self.code = code
 
 
+class SessionStateError(OpoFuenteError):
+    """La operación no vale para el estado actual de la sesión. La API lo traduce a 409.
+
+    Casos: responder en una sesión que no está en marcha, terminar una que nadie ha iniciado. No es
+    un fallo del programa: es una petición que no encaja con el estado, y se explica.
+    """
+
+
+class AttemptFrozenError(SessionStateError):
+    """El intento de esa pregunta ya está congelado. La API lo traduce a 409 `attempt_frozen`."""
+
+
+class InvalidAnswerError(OpoFuenteError):
+    """La respuesta no vale para esa pregunta. La API lo traduce a 422 `invalid_answer`.
+
+    Casos: una opción que no existe en la pregunta, o más de una marca en una pregunta de respuesta
+    única. Se dice con `field_errors`, como cualquier otra entrada inválida.
+    """
+
+    def __init__(self, reason: str, *, field: str, code: str = "invalid_answer") -> None:
+        super().__init__(reason)
+        self.reason = reason
+        self.field = field
+        self.code = code
+
+
+class UnsupportedError(OpoFuenteError):
+    """Se ha pedido algo que esta aplicación todavía no hace. La API lo traduce a 409.
+
+    Sirve para no improvisar: un modo de sesión sin implementar, una parte que se corrige de otra
+    forma (S08) o una parte cuya penalización no está publicada se rechazan **diciendo qué falta**,
+    en lugar de calcular con un valor inventado.
+    """
+
+
 class NotFoundError(OpoFuenteError):
     """Se ha pedido algo que no existe. La API lo traduce a 404."""
 

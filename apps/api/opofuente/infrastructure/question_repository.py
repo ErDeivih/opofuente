@@ -702,6 +702,32 @@ class SqlAlchemyQuestionRepository:
             ).all()
         return {int(posicion): str(pregunta_id) for posicion, pregunta_id in filas}
 
+    def all_questions(self, set_id: str) -> tuple[QuestionView, ...]:
+        """Todas las preguntas de un conjunto en su orden, sin clave.
+
+        Es la lista de la que una sesión elige su composición: no lleva la solución porque una
+        sesión se corrige con la clave **activa** congelada, no con lo que devuelva esta consulta.
+        Sin tope de página a propósito: recortar aquí dejaría una sesión oficial sin las últimas
+        preguntas.
+        """
+        with self._session_factory() as session:
+            filas = (
+                session.execute(
+                    select(QuestionVersionRecord)
+                    .where(QuestionVersionRecord.question_set_id == set_id)
+                    .order_by(
+                        QuestionVersionRecord.position,
+                        QuestionVersionRecord.stable_key,
+                        QuestionVersionRecord.id,
+                    )
+                )
+                .scalars()
+                .all()
+            )
+            return tuple(
+                self._question_view(session, fila, {}, include_key=False) for fila in filas
+            )
+
     def node_by_reference(
         self, *, convocation_version_id: str, reference: str
     ) -> tuple[str, int] | None:

@@ -22,7 +22,7 @@ from decimal import ROUND_HALF_UP, Decimal
 from enum import StrEnum
 from fractions import Fraction
 
-from opofuente.domain.errors import InvariantViolationError
+from opofuente.domain.errors import InvariantViolationError, SessionStateError
 
 # --- vocabularios (los mismos que la migración 0016) --------------------------------------------
 
@@ -385,7 +385,9 @@ class PartScore:
     score_min: float | None
     score_max: float | None
     pass_score: float | None
-    penalty: Fraction
+    #: La penalización de la parte. En el total es `None` cuando las partes no comparten una: no
+    #: hay una sola penalización que describa la sesión, y decir una sería inventarla.
+    penalty: Fraction | None
     correct: int
     wrong: int
     blank: int
@@ -511,6 +513,24 @@ def effective_composition(
     return tuple(efectivas), tuple(sustituciones)
 
 
+@dataclass(frozen=True, slots=True)
+class PartRule:
+    """Lo que la convocatoria dice de una parte: su nombre, su tamaño y sus umbrales.
+
+    `penalty` es la fracción **exacta** con la que se corrige esa parte: dos partes del mismo examen
+    pueden penalizar distinto, así que la penalización viaja con la parte, no con la sesión.
+    `score_max` y `pass_score` son de la calificación oficial y se enseñan como datos declarados.
+    """
+
+    code: str | None
+    name: str | None = None
+    ordinary_items: int | None = None
+    score_min: float | None = None
+    score_max: float | None = None
+    pass_score: float | None = None
+    penalty: Fraction = Fraction(0)
+
+
 def aggregate(
     *,
     session_id: str,
@@ -518,25 +538,24 @@ def aggregate(
     answer_key_version_id: str | None,
     items: Sequence[EffectiveItem],
     substitutions: Sequence[Substitution],
-    part_rules: Mapping[
-        str | None, tuple[str | None, int | None, float | None, float | None, float | None]
-    ],
-    penalty: Fraction,
+    part_rules: Mapping[str | None, PartRule],
 ) -> SessionResult:
     """Agrupa los intentos por parte y suma la puntuación directa, con aritmética exacta.
 
     Los intentos sin responder no entran en el cálculo —la sesión puede estar a medias— y se
     informan como pendientes. Lo que decide si una pregunta cuenta es
     `AttemptOutcome.counts_in_score`, no un recuento a mano.
+
+    La puntuación **total es la suma de las partes**, no un recálculo con los totales: si dos partes
+    penalizan distinto, `aciertos - errores·p` con una sola `p` daría otra cosa. La penalización
+    del total solo se declara cuando todas las partes comparten la misma.
     """
     partes: dict[str | None, list[EffectiveItem]] = {}
     for item in items:
         partes.setdefault(item.question.part_code, []).append(item)
 
     def suma(clave: str | None, entradas: Sequence[EffectiveItem]) -> PartScore:
-        nombre, ordinarias, minimo, maximo, aprueba = part_rules.get(
-            clave, (None, None, None, None, None)
-        )
+        regla = part_rules.get(clave, PartRule(code=clave))
         aciertos = errores = blancos = anuladas = excluidas = conflictivas = 0
         reservas = sin_usar = 0
         for item in entradas:
@@ -562,12 +581,12 @@ def aggregate(
                 excluidas += 1
         return PartScore(
             part_code=clave,
-            part_name=nombre,
-            ordinary_items=ordinarias,
-            score_min=minimo,
-            score_max=maximo,
-            pass_score=aprueba,
-            penalty=penalty,
+            part_name=regla.name,
+            ordinary_items=regla.ordinary_items,
+            score_min=regla.score_min,
+            score_max=regla.score_max,
+            pass_score=regla.pass_score,
+            penalty=regla.penalty,
             correct=aciertos,
             wrong=errores,
             blank=blancos,
@@ -576,12 +595,12 @@ def aggregate(
             conflicting=conflictivas,
             reserves_used=reservas,
             unused_reserves=sin_usar,
-            score=exact_score(aciertos, errores, penalty),
+            score=exact_score(aciertos, errores, regla.penalty),
         )
 
     detalle = tuple(suma(clave, entradas) for clave, entradas in partes.items())
     penalizaciones = {parte.penalty for parte in detalle}
-    penalizacion = penalizaciones.pop() if len(penalizaciones) == 1 else penalty
+    penalizacion = penalizaciones.pop() if len(penalizaciones) == 1 else None
 
     total = PartScore(
         part_code=None,
@@ -599,11 +618,9 @@ def aggregate(
         conflicting=sum(parte.conflicting for parte in detalle),
         reserves_used=sum(parte.reserves_used for parte in detalle),
         unused_reserves=sum(parte.unused_reserves for parte in detalle),
-        score=exact_score(
-            sum(parte.correct for parte in detalle),
-            sum(parte.wrong for parte in detalle),
-            penalizacion,
-        ),
+        # La suma de las partes, que es exacta por definición y no depende de que compartan
+        # penalización.
+        score=sum((parte.score for parte in detalle), Fraction(0)),
     )
 
     return SessionResult(
@@ -665,17 +682,20 @@ def can_show_correction(state: SessionState, *, question_answered: bool) -> bool
 def assert_can_answer(state: SessionState) -> None:
     """Solo se responde en una sesión en marcha."""
     if state.status is not SessionStatus.RUNNING:
-        raise InvariantViolationError(
+        raise SessionStateError(
             f"la sesión está en estado «{state.status.value}»: no admite respuestas"
         )
 
 
 def assert_can_finish(state: SessionState) -> None:
-    """Terminar dos veces no es terminar: la segunda vez se dice que ya estaba terminada."""
-    if state.status is SessionStatus.FINISHED:
-        raise InvariantViolationError("la sesión ya está terminada")
+    """Terminar es un acto de una sesión en marcha.
+
+    Terminar una sesión ya terminada **no** es un error: devolver el resultado que ya está
+    calculado es lo correcto (recargar y volver a pulsar no puede fallar), y el servicio lo hace
+    así. Lo que no se puede es terminar lo que nunca se inició.
+    """
     if state.status is SessionStatus.DRAFT:
-        raise InvariantViolationError("la sesión no se ha iniciado: no hay nada que terminar")
+        raise SessionStateError("la sesión no se ha iniciado: no hay nada que terminar")
 
 
 def can_start(status: SessionStatus) -> bool:
