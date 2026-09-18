@@ -123,6 +123,19 @@ export function fetchSessionReview(sessionId: string): Promise<SessionReview> {
   );
 }
 
+/**
+ * Recalcula la sesión con la clave **activa ahora** (ruta añadida a §10 en S08).
+ *
+ * No cambia nada por su cuenta: se pide, y devuelve el resultado con la comparación de antes y
+ * después para poder explicarla.
+ */
+export function recalculateSession(sessionId: string): Promise<SessionResult> {
+  return apiFetch<SessionResult>(
+    `/api/v1/study-sessions/${encodeURIComponent(sessionId)}/recalculate`,
+    { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) },
+  );
+}
+
 /** La puntuación, con su fracción exacta delante: el decimal es para leerlo (ADR-010). */
 export function formatScore(score: Score): string {
   return score.denominator === 1 ? score.fraction : `${score.decimal} (${score.fraction})`;

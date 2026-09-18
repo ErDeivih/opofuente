@@ -61,6 +61,7 @@ import {
   fetchSessions,
   finishSession,
   navigateSession,
+  recalculateSession,
   startSession,
   type AnswerRequest,
   type CreateSession,
@@ -890,6 +891,16 @@ export function useFinishStudySession() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (sessionId: string) => finishSession(sessionId),
+    onSuccess: (resultado) => {
+      invalidateStudy(queryClient, resultado.session_id);
+    },
+  });
+}
+
+export function useRecalculateStudySession() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (sessionId: string) => recalculateSession(sessionId),
     onSuccess: (resultado) => {
       invalidateStudy(queryClient, resultado.session_id);
     },

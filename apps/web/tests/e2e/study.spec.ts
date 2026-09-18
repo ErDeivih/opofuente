@@ -129,7 +129,7 @@ test('E2E-06 sesión: acertar, fallar, dejar en blanco y ver la puntuación por 
   await expect(page.getByText(/1 aciertos · 1 fallos · 1 en blanco/).first()).toBeVisible();
   await expect(page.getByText('calificación oficial no disponible')).toBeVisible();
   await expect(page.getByText(/no se declara aprobado ni suspenso/)).toBeVisible();
-  await expect(page.getByText(/mínimo oficial 25, que no se aplica/)).toBeVisible();
+  await expect(page.getByText(/el mínimo de 25.0 es de la calificación oficial/)).toBeVisible();
 
   // La revisión queda a la vista, pregunta a pregunta.
   await expect(page.getByRole('heading', { name: 'Revisión, pregunta a pregunta' })).toBeVisible();

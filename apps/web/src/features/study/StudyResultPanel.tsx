@@ -4,7 +4,14 @@ import { StatusBadge } from '../../components/StatusBadge';
 import { LoadingState } from '../../components/LoadingState';
 import { ErrorState } from '../../components/ErrorState';
 import type { SessionReview } from '../../api/study';
-import { feedbackLabel, outcomeLabel, outcomeTone, scoreText } from './labels';
+import {
+  feedbackLabel,
+  outcomeLabel,
+  outcomeTone,
+  scoreText,
+  scoringLabel,
+  verdictLabel,
+} from './labels';
 
 export interface StudyResultPanelProps {
   session: StudySession;
@@ -13,6 +20,13 @@ export interface StudyResultPanelProps {
   isPending: boolean;
   isError: boolean;
   onRetry: () => void;
+  /** Poner al día la corrección con la plantilla activa ahora (S08). */
+  onRecalculate: () => void;
+  recalculating: boolean;
+  /** Hay una plantilla activa distinta de la que corrigió esta sesión. */
+  newerKeyActive: boolean;
+  /** Partes del examen que la aplicación **no** evalúa, dichas con sus palabras. */
+  notEvaluated: readonly string[];
 }
 
 /** Recuentos de una parte: es lo que el resultado tiene que separar (criterio de aceptación). */
@@ -35,12 +49,25 @@ function PartRow({ part }: { part: PartScore }) {
       <th scope="row">{part.part_name ?? 'total'}</th>
       <td>
         {scoreText(part.score)} <Counts part={part} />
+        <p className="hint">
+          {scoringLabel(part.kind)}
+          {part.penalty !== null && part.penalty !== undefined && (
+            <> · penalización {scoreText(part.penalty)}</>
+          )}
+        </p>
       </td>
       <td className="hint">
-        {part.score_max === null ? 'sin máximo publicado' : `${String(part.score_max)} máx.`}
-        {part.pass_score === null
-          ? ''
-          : ` · mínimo oficial ${String(part.pass_score)}, que no se aplica a la puntuación directa`}
+        {part.passed !== null && part.passed !== undefined ? (
+          <StatusBadge tone={part.passed ? 'ok' : 'blocked'}>{verdictLabel(part.passed)}</StatusBadge>
+        ) : (
+          'sin veredicto publicado'
+        )}
+        {part.verdict_note !== null && part.verdict_note !== undefined && (
+          <p className="hint">{part.verdict_note}</p>
+        )}
+        {part.score_max !== null && part.score_max !== undefined && (
+          <p className="hint">máximo de la prueba: {String(part.score_max)}</p>
+        )}
       </td>
     </tr>
   );
@@ -60,6 +87,10 @@ export function StudyResultPanel({
   isPending,
   isError,
   onRetry,
+  onRecalculate,
+  recalculating,
+  newerKeyActive,
+  notEvaluated,
 }: StudyResultPanelProps) {
   if (isPending) {
     return <LoadingState label="Cargando el resultado…" />;
@@ -134,6 +165,71 @@ export function StudyResultPanel({
                 : `${String(result.substitutions.length)} preguntas anuladas se sustituyeron por reservas.`}
             </p>
           </>
+        )}
+
+        {result.recalculation !== null && result.recalculation !== undefined && (
+          <>
+            <h3>Recálculo con una plantilla nueva</h3>
+            <p>
+              <StatusBadge tone={result.recalculation.changed ? 'warning' : 'ok'}>
+                {result.recalculation.changed ? 'la puntuación cambió' : 'la puntuación no cambió'}
+              </StatusBadge>{' '}
+              {result.recalculation.note}
+            </p>
+            <dl className="facts">
+              <dt>Antes</dt>
+              <dd>
+                {scoreText(result.recalculation.previous_total)}
+                {result.recalculation.previous_key_label !== null &&
+                  result.recalculation.previous_key_label !== undefined && (
+                    <> · {result.recalculation.previous_key_label}</>
+                  )}
+              </dd>
+              <dt>Ahora</dt>
+              <dd>
+                {scoreText(result.total.score)}
+                {result.key_label !== null && result.key_label !== undefined && (
+                  <> · {result.key_label}</>
+                )}
+              </dd>
+              {result.recalculation.recalculated_at !== null &&
+                result.recalculation.recalculated_at !== undefined && (
+                  <>
+                    <dt>Recalculado</dt>
+                    <dd>
+                      <time dateTime={result.recalculation.recalculated_at}>
+                        {result.recalculation.recalculated_at}
+                      </time>
+                    </dd>
+                  </>
+                )}
+            </dl>
+          </>
+        )}
+
+        {newerKeyActive && (
+          <div className="form__row">
+            <button
+              className="button"
+              type="button"
+              disabled={recalculating}
+              aria-label="Recalcular con la plantilla activa"
+              onClick={onRecalculate}
+            >
+              Recalcular con la plantilla activa
+            </button>
+            <span className="hint">
+              Hay una plantilla activa distinta de la que corrigió esta sesión. Recalcular no borra
+              lo anterior: se añade la corrección nueva y se dice de dónde a dónde cambió.
+            </span>
+          </div>
+        )}
+
+        {notEvaluated.length > 0 && (
+          <p className="hint">
+            No se evalúan aquí: {notEvaluated.join(', ')}. La aplicación no las presenta como
+            evaluadas porque no forman parte de lo que sabe calcular.
+          </p>
         )}
       </section>
 

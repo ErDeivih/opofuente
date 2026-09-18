@@ -63,6 +63,25 @@ export const CONFIDENCE_LABEL: Record<Confidence, string> = {
   high: 'segura',
 };
 
+/** Cómo se corrigió una parte, tal como lo declara la convocatoria. */
+export const SCORING_LABEL: Record<string, string> = {
+  direct: 'puntuación directa (la calificación oficial no está publicada)',
+  scaled: 'fórmula publicada de la convocatoria',
+  pass_fail: 'apto o no apto, por número de errores',
+};
+
+export function scoringLabel(kind: string): string {
+  return SCORING_LABEL[kind] ?? kind;
+}
+
+/** Veredicto publicado de una parte: `null` significa que no se puede afirmar. */
+export function verdictLabel(passed: boolean | null | undefined): string {
+  if (passed === null || passed === undefined) {
+    return 'no se puede afirmar si se supera';
+  }
+  return passed ? 'superada' : 'no superada';
+}
+
 export function modeLabel(mode: string): string {
   return MODE_LABEL[mode as StudySession['mode']] ?? mode;
 }

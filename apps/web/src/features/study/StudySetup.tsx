@@ -17,12 +17,24 @@ export interface StudySetupProps {
   onCreate: (input: CreateSession) => void;
 }
 
-/** Una parte se puede practicar si el servidor sabe corregirla: respuesta única y con penalización. */
+/**
+ * ¿Se puede practicar esta parte? Depende de que su convocatoria publique **cómo se corrige**:
+ * el umbral de errores (apto o no apto), la fórmula completa (Y, T y N) o la penalización.
+ */
 function isPracticeable(part: ConvocationDetail['parts'][number]): boolean {
+  if (part.kind === 'group') {
+    return false;
+  }
+  if (part.fail_if_errors_gte !== null) {
+    return true;
+  }
+  if (part.wrong_penalty_fraction !== null) {
+    return true;
+  }
   return (
-    part.kind === 'test' &&
-    (part.format === 'single_choice' || part.format === null) &&
-    part.wrong_penalty_fraction !== null
+    part.options_per_question !== null &&
+    part.score_max !== null &&
+    (part.ordinary_items ?? 0) > 0
   );
 }
 
@@ -30,13 +42,7 @@ function whyNotPracticeable(part: ConvocationDetail['parts'][number]): string {
   if (part.kind === 'group') {
     return 'agrupa partes: se practica sobre cada parte, no sobre el grupo';
   }
-  if (part.format !== 'single_choice' && part.format !== null) {
-    return `se corrige como «${part.format}», que llega en S08`;
-  }
-  if (part.wrong_penalty_fraction === null) {
-    return 'la convocatoria no publica su penalización';
-  }
-  return 'no se puede practicar todavía';
+  return 'la convocatoria no publica ni su umbral de errores, ni su fórmula, ni su penalización';
 }
 
 /**
@@ -146,8 +152,8 @@ export function StudySetup({ convocation, sets, busy, conflict, error, onCreate 
         </select>
         {practicables.length === 0 && (
           <p className="hint">
-            Ninguna parte de esta convocatoria se puede practicar todavía: se corrige con una fórmula
-            que llega en S08.
+            Ninguna parte de esta convocatoria se puede practicar todavía: su corrección no consta en
+            el perfil.
           </p>
         )}
       </div>
@@ -165,6 +171,14 @@ export function StudySetup({ convocation, sets, busy, conflict, error, onCreate 
               ))}
           </ul>
         </details>
+      )}
+
+      {parts.some((candidata) => candidata.format === 'psychotechnical') && (
+        <p className="hint">
+          Las aptitudes intelectuales se corrigen con la fórmula publicada. El cuestionario de
+          personalidad y las pruebas físicas <strong>no se evalúan aquí</strong>: la aplicación no
+          las presenta como evaluadas porque no forman parte de lo que sabe calcular.
+        </p>
       )}
 
       <div className="form__row">

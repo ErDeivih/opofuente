@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
 import {
+  useAnswerKeys,
   useAnswerQuestion,
   useConvocation,
   useCreateStudySession,
@@ -9,6 +10,7 @@ import {
   useNavigateStudy,
   useOppositions,
   useQuestionSets,
+  useRecalculateStudySession,
   useStartStudySession,
   useStudyResult,
   useStudyReview,
@@ -72,19 +74,39 @@ export function StudyPage() {
   const current = useCurrentQuestion(enCurso ? sessionId : null);
   const result = useStudyResult(terminada ? sessionId : null);
   const review = useStudyReview(terminada ? sessionId : null);
+  // Las plantillas del conjunto de la sesión: con ellas se sabe si hay una activa distinta de la que
+  // corrigió, y solo entonces tiene sentido ofrecer recalcular (S08).
+  const claves = useAnswerKeys(terminada ? (session?.question_set_id ?? null) : null);
 
   const crear = useCreateStudySession();
   const arrancar = useStartStudySession();
   const responder = useAnswerQuestion();
   const navegar = useNavigateStudy();
   const terminar = useFinishStudySession();
+  const recalcular = useRecalculateStudySession();
 
   const busy =
     crear.isPending ||
     arrancar.isPending ||
     responder.isPending ||
     navegar.isPending ||
-    terminar.isPending;
+    terminar.isPending ||
+    recalcular.isPending;
+
+  const claveActiva = claves.data?.find((clave) => clave.status === 'active') ?? null;
+  const hayClaveNueva =
+    claveActiva !== null && claveActiva.id !== (session?.answer_key_version_id ?? null);
+
+  // Lo que la aplicación **no** evalúa se dice con las palabras de la convocatoria, no se calla.
+  const noEvaluadas: string[] = [];
+  for (const regla of convocatoria.data?.rules ?? []) {
+    if (regla.code === 'personality_scoring_supported' && regla.value_text === 'false') {
+      noEvaluadas.push('el cuestionario de personalidad');
+    }
+    if (regla.code === 'psychophysical_not_prepared' && regla.value_text === 'true') {
+      noEvaluadas.push('las pruebas físicas y el reconocimiento médico');
+    }
+  }
 
   const falloCrear = crear.error ?? arrancar.error ?? null;
   const conflictoCrear = isApiError(falloCrear, 409) ? describeError(falloCrear) : null;
@@ -272,6 +294,20 @@ export function StudyPage() {
           isError={result.isError}
           onRetry={() => {
             void result.refetch();
+          }}
+          recalculating={recalcular.isPending}
+          newerKeyActive={hayClaveNueva}
+          notEvaluated={noEvaluadas}
+          onRecalculate={() => {
+            recalcular.mutate(session.id, {
+              onSuccess: (nuevo) => {
+                setAviso(
+                  nuevo.recalculation?.changed === true
+                    ? 'Sesión recalculada: la puntuación cambió con la plantilla nueva.'
+                    : 'Sesión recalculada: la puntuación no cambió.',
+                );
+              },
+            });
           }}
         />
       )}

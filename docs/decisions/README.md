@@ -15,6 +15,7 @@ Formato: `ADR-NNN-titulo.md` con contexto, opciones, datos, decisión, consecuen
 | [ADR-008](ADR-008-tramos-del-texto-plano.md) | Tramos del texto plano: un bloque por línea en blanco, sin adivinar jerarquía | aceptada (S06), cierra DEBT-009 |
 | [ADR-009](ADR-009-activar-es-aprobar.md) | Activar una plantilla es aprobarla | aceptada (S06) |
 | [ADR-010](ADR-010-aritmetica-exacta-y-calificacion-oficial.md) | La puntuación se calcula con fracciones exactas, y la calificación oficial no se inventa | aceptada (S07), cierra DEBT-006 |
+| [ADR-011](ADR-011-forma-de-corregir-una-parte.md) | La forma de corregir una parte la fija su convocatoria | aceptada (S08) |
 
 La deuda técnica obligatoria (con su slice y su criterio de cierre) se registra aparte en
 [`docs/DEBT.md`](../DEBT.md).

@@ -23,7 +23,8 @@ Reglas:
 | [DEBT-009](#debt-009--el-texto-plano-no-produce-secciones-y-sin-secciones-no-hay-citas) | S06 | El texto plano y el texto pegado no producen secciones: sin ellas no hay citas ni diff | **cerrada en S06** |
 | [DEBT-010](#debt-010--una-pregunta-importada-no-queda-enlazada-a-su-sección) | S06/S11 | Importar preguntas no las enlaza a la sección que las sostiene, y `tags`/`source`/`parte` se leen pero no se guardan | abierta |
 | [DEBT-011](#debt-011--la-pantalla-del-banco-solo-enseña-las-primeras-100-preguntas) | S09 | La pantalla del banco pide 100 preguntas y no permite recorrer el resto de un conjunto grande | abierta |
-| [DEBT-012](#debt-012--modos-de-sesión-declarados-y-sin-implementar) | S08+ | Simulacro, diagnóstico y repaso de errores están en el vocabulario del modelo y no implementados | abierta |
+| [DEBT-012](#debt-012--modos-de-sesión-declarados-y-sin-implementar) | S08+ | Simulacro, diagnóstico y repaso de errores están en el vocabulario del modelo y no implementados | parcial (S08 implementó los modos de corrección de GC; siguen sin implementar los tres modos de sesión) |
+| [DEBT-013](#debt-013--el-recálculo-no-se-puede-hacer-en-bloque) | S09+ | Recalcular una clave corregida es sesión a sesión, y solo se conserva un resultado anterior | abierta |
 
 ---
 
@@ -519,3 +520,30 @@ contrato no coinciden a propósito: el contrato solo declara los modos que se co
 2. El contrato declara exactamente los modos que existen, y el vocabulario del modelo y el del contrato
    vuelven a coincidir.
 3. Una prueba comprueba que un modo declarado en el contrato no responde 409 `unsupported`.
+
+## DEBT-013 — El recálculo no se puede hacer en bloque
+
+**Origen:** cierre de S08 (17 de septiembre de 2026).
+
+**Problema.** Recalcular con una clave corregida es una acción **de una sesión**
+(`POST /study-sessions/{id}/recalculate`), y solo se conserva el resultado **anterior** inmediato
+(`study_sessions.previous_result_json`). Dos consecuencias reales:
+
+| Qué pasa | Consecuencia |
+|---|---|
+| Una clave mal importada se corrige después de veinte sesiones | hay que recalcular veinte veces, una por una; las que nadie recuerde quedan con la puntuación vieja |
+| Se recalcula dos veces (una clave v2 y luego una v3) | el resultado de la v1 se pierde: solo queda el de la v2, aunque las evaluaciones de todas sí se conservan |
+
+**Obligación antes de S09/S11** (cambios e invalidación, que ya sabe qué depende de qué): poder
+recalcular **el conjunto** de sesiones afectadas por una clave nueva, con un informe de cuántas
+cambiaron y cuánto, y conservar el histórico de resultados (o dejar claro que la evaluación por clave
+es el histórico y el resultado agregado es solo el vigente).
+
+**Criterio de cierre.**
+
+1. Existe una acción que recalcula todas las sesiones terminadas que usaron una clave concreta, con
+   un informe por sesión (antes, después y si cambió).
+2. Una prueba comprueba que una sesión ya recalculada no se recalcula dos veces con la misma clave
+   (idempotencia) y que el resultado de la clave intermedia sigue siendo legible.
+3. La interfaz dice cuántas sesiones quedan desactualizadas después de activar una clave nueva, en
+   lugar de dejar que se descubra sesión a sesión.

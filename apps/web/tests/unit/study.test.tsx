@@ -109,6 +109,7 @@ const RESULTADO: SessionResult = {
       score_max: 50,
       pass_score: 25,
       penalty: { numerator: 1, denominator: 3, fraction: '1/3', decimal: '0.3333' },
+      kind: 'direct' as const,
       correct: 2,
       wrong: 1,
       blank: 1,
@@ -129,6 +130,7 @@ const RESULTADO: SessionResult = {
     score_max: null,
     pass_score: null,
     penalty: { numerator: 1, denominator: 3, fraction: '1/3', decimal: '0.3333' },
+    kind: 'direct' as const,
     correct: 2,
     wrong: 1,
     blank: 1,
@@ -139,6 +141,8 @@ const RESULTADO: SessionResult = {
     unused_reserves: 0,
     score: { numerator: 5, denominator: 3, fraction: '5/3', decimal: '1.6667' },
     official_available: false,
+    verdict_note:
+      'el mínimo de 25.0 es de la calificación oficial, que necesita los baremos de la convocatoria: no se aplica a la puntuación directa',
   },
   substitutions: [],
   unfinished: 1,
@@ -332,11 +336,12 @@ describe('estudiar: configuración', () => {
     // La lista de partes llega con la convocatoria: se espera a que esté, no a que exista el select.
     await within(select).findByRole('option', { name: /Primera parte/ });
     expect(within(select).getByRole('option', { name: /Primera parte/ })).toBeInTheDocument();
-    expect(within(select).queryByRole('option', { name: /Ortografía/ })).not.toBeInTheDocument();
+    // Desde S08 la ortografía (apto o no apto por número de errores) también se puede practicar.
+    expect(within(select).getByRole('option', { name: /Ortografía/ })).toBeInTheDocument();
+    // El grupo de partes no: la sesión se monta sobre partes con preguntas.
     expect(within(select).queryByRole('option', { name: /Ejercicio único/ })).not.toBeInTheDocument();
 
     await userEvent.click(screen.getByText('Partes que todavía no se pueden practicar'));
-    expect(screen.getByText(/Ortografía: se corrige como «multi_mark_error»/)).toBeInTheDocument();
     expect(screen.getByText(/Ejercicio único: agrupa partes/)).toBeInTheDocument();
   });
 
@@ -597,12 +602,79 @@ describe('estudiar: el resultado', () => {
     expect(screen.getByText(/no se declara aprobado ni suspenso/)).toBeInTheDocument();
     // Los recuentos salen dos veces: los de la parte y los del total (que aquí coinciden).
     expect(screen.getAllByText(/2 aciertos · 1 fallos · 1 en blanco/)).toHaveLength(2);
-    expect(screen.getByText(/mínimo oficial 25, que no se aplica/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/el mínimo de 25.0 es de la calificación oficial/),
+    ).toBeInTheDocument();
+    // Cómo se corrigió, en la parte y en el total (los dos son puntuación directa aquí).
+    expect(
+      screen.getAllByText(/puntuación directa \(la calificación oficial no está publicada\)/),
+    ).toHaveLength(2);
     expect(screen.getByText(/1 \(no puntúan, ni a favor ni en contra\)/)).toBeInTheDocument();
 
     // Y la revisión pregunta a pregunta, con lo que se marcó y la respuesta correcta.
     expect(screen.getByRole('heading', { name: 'Revisión, pregunta a pregunta' })).toBeInTheDocument();
     expect(screen.getByText(/Marcaste:/)).toBeInTheDocument();
     expect(screen.getByText('fallada')).toBeInTheDocument();
+  });
+  it('explica el recálculo con una plantilla nueva y ofrece hacerlo', async () => {
+    const conRecalculo: SessionResult = {
+      ...RESULTADO,
+      key_label: 'Primera parte: plantilla v2',
+      recalculation: {
+        previous_total: { numerator: 3, denominator: 1, fraction: '3', decimal: '3.0000' },
+        previous_parts: RESULTADO.parts,
+        previous_key_label: 'Primera parte: plantilla v1',
+        recalculated_at: '2026-09-17T13:00:00Z',
+        changed: true,
+        note: 'La puntuación cambió de 3 a 5/3 al recalcular con «Primera parte: plantilla v2».',
+      },
+    };
+    const fetchMock = stubEstudio({
+      '/api/v1/study-sessions?limit=50&offset=0&opposition_id=op-1': conSesion({
+        ...SESION,
+        status: 'finished',
+        finished_at: '2026-09-17T12:30:00Z',
+        question_set_id: 'set-1',
+        answer_key_version_id: 'key-1',
+      }),
+      '/api/v1/study-sessions/ses-1/result': { body: conRecalculo },
+      '/api/v1/study-sessions/ses-1/review': { body: REVISION },
+      '/api/v1/question-sets/set-1/answer-keys': {
+        body: [
+          {
+            id: 'key-2',
+            question_set_id: 'set-1',
+            version_no: 2,
+            status: 'active',
+            source_document_version_id: null,
+            supersedes_id: 'key-1',
+            published_at: null,
+            approved_at: '2026-09-17T13:00:00Z',
+            created_at: '2026-09-17T12:45:00Z',
+            entries: [],
+          },
+        ],
+      },
+      '/api/v1/study-sessions/ses-1/recalculate': { body: conRecalculo },
+    });
+    renderEstudiar();
+
+    expect(await screen.findByRole('heading', { name: /Recálculo con una plantilla nueva/ })).toBeVisible();
+    expect(screen.getByText('la puntuación cambió')).toBeInTheDocument();
+    expect(
+      screen.getByText(/La puntuación cambió de 3 a 5\/3 al recalcular/),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/plantilla v1/)).toBeInTheDocument();
+
+    // Hay una plantilla activa distinta de la que corrigió: se puede poner al día.
+    await userEvent.click(screen.getByRole('button', { name: 'Recalcular con la plantilla activa' }));
+    await waitFor(() => {
+      expect(
+        fetchMock.mock.calls.some(
+          (call) => typeof call[0] === 'string' && call[0].includes('/recalculate'),
+        ),
+      ).toBe(true);
+    });
+    expect(await screen.findByText(/Sesión recalculada/)).toBeInTheDocument();
   });
 });
