@@ -1409,3 +1409,151 @@ class AttemptEvaluationRecord(Base):
         String(36), ForeignKey("attempt_evaluations.id", ondelete="SET NULL"), nullable=True
     )
     evaluated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+# ---------------------------------------------------------------------------- S09: búsqueda y RAG
+#
+# El índice léxico (`evidence_fts`, FTS5 con contenido externo) **no** se mapea aquí a propósito: es
+# una tabla virtual que se consulta con SQL propio, con sus disparadores y su `rebuild`, y
+# meterla en el ORM no aportaría nada (no tiene columnas que el dominio use).
+
+
+class RagQueryRecord(Base):
+    """Una consulta de búsqueda o de RAG, con los filtros y la revisión del corpus que usó.
+
+    Guardar la revisión del corpus (`corpus_revision`) es lo que permite decir «esta respuesta
+    se dio con este material»: si el corpus cambia, la respuesta no se reutiliza como si fuera
+    de hoy.
+    """
+
+    __tablename__ = "rag_queries"
+    __table_args__ = (
+        CheckConstraint("strategy IN ('lexical', 'hybrid')", name="ck_rag_strategy"),
+        CheckConstraint(
+            "version_mode IN ('current', 'explicit_historical')", name="ck_rag_version_mode"
+        ),
+        CheckConstraint("length(trim(question)) > 0", name="ck_rag_question"),
+        Index("ix_rag_queries_created", "created_at"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    opposition_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("oppositions.id", ondelete="RESTRICT"), nullable=True
+    )
+    convocation_version_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("convocation_versions.id", ondelete="RESTRICT"), nullable=True
+    )
+    question: Mapped[str] = mapped_column(Text, nullable=False)
+    filters_json: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("'{}'"))
+    strategy: Mapped[str] = mapped_column(
+        String(16), nullable=False, server_default=text("'lexical'")
+    )
+    version_mode: Mapped[str] = mapped_column(
+        String(24), nullable=False, server_default=text("'current'")
+    )
+    corpus_revision: Mapped[str] = mapped_column(String(64), nullable=False)
+    provider: Mapped[str] = mapped_column(
+        String(32), nullable=False, server_default=text("'extractive'")
+    )
+    model: Mapped[str | None] = mapped_column(Text, nullable=True)
+    prompt_template_version: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class RetrievalHitRecord(Base):
+    """Un fragmento recuperado en una consulta, con su posición y si llegó a usarse.
+
+    Se guardan **todos** los recuperados, no solo los usados (`05_RAG §5`, paso 9): poder ver lo que
+    se descartó es la mitad de auditar una respuesta.
+    """
+
+    __tablename__ = "retrieval_hits"
+    __table_args__ = (
+        CheckConstraint("rank > 0", name="ck_hit_rank"),
+        CheckConstraint("strategy IN ('lexical', 'hybrid')", name="ck_hit_strategy"),
+        UniqueConstraint("query_id", "span_id", name="uq_hit_span"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    query_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("rag_queries.id", ondelete="CASCADE"), nullable=False
+    )
+    span_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("evidence_spans.id", ondelete="RESTRICT"), nullable=False
+    )
+    rank: Mapped[int] = mapped_column(Integer, nullable=False)
+    score: Mapped[float] = mapped_column(Float, nullable=False, server_default=text("0"))
+    strategy: Mapped[str] = mapped_column(
+        String(16), nullable=False, server_default=text("'lexical'")
+    )
+    used: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default=text("0"), default=False
+    )
+
+
+class GeneratedAnswerRecord(Base):
+    """La respuesta de una consulta, con su estado y con qué proveedor se compuso."""
+
+    __tablename__ = "generated_answers"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('supported', 'partial', 'insufficient')", name="ck_answer_status"
+        ),
+        UniqueConstraint("query_id", name="uq_answer_per_query"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    query_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("rag_queries.id", ondelete="CASCADE"), nullable=False
+    )
+    status: Mapped[str] = mapped_column(String(16), nullable=False)
+    short_answer: Mapped[str] = mapped_column(Text, nullable=False)
+    explanation: Mapped[str] = mapped_column(Text, nullable=False)
+    uncertainties_json: Mapped[str] = mapped_column(
+        Text, nullable=False, server_default=text("'[]'")
+    )
+    suggested_followups_json: Mapped[str] = mapped_column(
+        Text, nullable=False, server_default=text("'[]'")
+    )
+    provider: Mapped[str] = mapped_column(
+        String(32), nullable=False, server_default=text("'extractive'")
+    )
+    model: Mapped[str | None] = mapped_column(Text, nullable=True)
+    prompt_template_version: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class AnswerClaimRecord(Base):
+    """Una afirmación de una respuesta: sin evidencia no se guarda (lo comprueba el dominio)."""
+
+    __tablename__ = "answer_claims"
+    __table_args__ = (
+        CheckConstraint("position > 0", name="ck_claim_position"),
+        CheckConstraint("support IN ('direct', 'inferred')", name="ck_claim_support"),
+        CheckConstraint("length(trim(text)) > 0", name="ck_claim_text"),
+        UniqueConstraint("answer_id", "position", name="uq_claim_position"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    answer_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("generated_answers.id", ondelete="CASCADE"), nullable=False
+    )
+    position: Mapped[int] = mapped_column(Integer, nullable=False)
+    text: Mapped[str] = mapped_column(Text, nullable=False)
+    # El nombre de la columna es `text`, así que aquí no se puede llamar a `text()`: el valor por
+    # defecto va como cadena literal, que SQLAlchemy acepta igual.
+    support: Mapped[str] = mapped_column(String(16), nullable=False, server_default="'direct'")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class AnswerClaimEvidenceRecord(Base):
+    """La evidencia de una afirmación: `RESTRICT` para que la cita no se quede sin su texto."""
+
+    __tablename__ = "answer_claim_evidence"
+
+    claim_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("answer_claims.id", ondelete="CASCADE"), primary_key=True
+    )
+    span_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("evidence_spans.id", ondelete="RESTRICT"), primary_key=True
+    )
