@@ -10,11 +10,13 @@ import type { StatusTone } from '../../components/StatusBadge';
 /** Nombres de la pantalla para el vocabulario del servidor: la interfaz no lo traduce a otro. */
 export const MODE_LABEL: Record<StudySession['mode'], string> = {
   practice: 'práctica',
+  error_review: 'repaso de errores',
   official_exam: 'examen oficial',
 };
 
 export const MODE_TONE: Record<StudySession['mode'], StatusTone> = {
   practice: 'info',
+  error_review: 'info',
   official_exam: 'warning',
 };
 

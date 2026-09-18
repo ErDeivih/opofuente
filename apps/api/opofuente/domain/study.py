@@ -30,9 +30,10 @@ from opofuente.domain.errors import InvariantViolationError, SessionStateError
 class SessionMode(StrEnum):
     """Modos de sesión de 06_QUESTIONS §5.
 
-    S07 implementa `practice` y `official_exam`. Los otros tres están declarados porque el
-    vocabulario del modelo los nombra, y quien los pida recibe un error que lo dice: no se simula un
-    simulacro ni un diagnóstico que nadie ha construido (DEBT-012).
+    S07 implementó `practice` y `official_exam`; S10 añade `error_review`, que compone la sesión con
+    lo que la cola de repaso tiene vencido. Los otros dos están declarados porque el vocabulario del
+    modelo los nombra, y quien los pida recibe un error que lo dice: no se simula un simulacro ni un
+    diagnóstico que nadie ha construido (DEBT-012).
     """
 
     PRACTICE = "practice"
@@ -43,7 +44,11 @@ class SessionMode(StrEnum):
 
 
 #: Modos que este slice sabe construir y corregir de verdad.
-SUPPORTED_MODES: tuple[SessionMode, ...] = (SessionMode.PRACTICE, SessionMode.OFFICIAL_EXAM)
+SUPPORTED_MODES: tuple[SessionMode, ...] = (
+    SessionMode.PRACTICE,
+    SessionMode.ERROR_REVIEW,
+    SessionMode.OFFICIAL_EXAM,
+)
 
 
 class SessionStatus(StrEnum):

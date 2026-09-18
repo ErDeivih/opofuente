@@ -54,11 +54,19 @@ class ReviewOutcome(StrEnum):
     WRONG = "wrong"
 
 
-class ReviewStatus(StrEnum):
-    """Un elemento de repaso está vivo o apartado a mano (no se borra: se aparta)."""
+class ReviewEventKind(StrEnum):
+    """Qué ha movido la fecha de un repaso. Se guarda para poder explicarlo después.
 
-    ACTIVE = "active"
-    SUSPENDED = "suspended"
+    - `created`: el elemento nació de un fallo en una sesión;
+    - `attempt`: un intento posterior (normalmente dentro de una sesión de repaso) lo reprogramó;
+    - `reviewed`: se declaró el resultado desde la cola, sin sesión de por medio;
+    - `snoozed`: se aplazó a mano.
+    """
+
+    CREATED = "created"
+    ATTEMPT = "attempt"
+    REVIEWED = "reviewed"
+    SNOOZED = "snoozed"
 
 
 # --- la escalera de intervalos (§8) --------------------------------------------------------------
@@ -67,8 +75,10 @@ class ReviewStatus(StrEnum):
 #: repite: 8 → 16 → 30 → 30…, porque el MVP no pretende estimar más allá de un mes.
 INTERVALOS = (8, 16, 30)
 INTERVALO_MAXIMO = 30
-#: Un fallo vuelve a empezar: se repasa «hoy/mañana». Se elige mañana (1 día) y se dice.
-INTERVALO_TRAS_FALLO = 1
+#: Un fallo entra **hoy mismo** en la cola (intervalo 0). §8 dice «hoy/mañana» y se elige hoy: lo
+#: que se acaba de fallar es lo que más conviene repasar, y una cola de repaso que no enseña nada
+#: el día en que se falla no sirve para decidir qué hacer ahora.
+INTERVALO_TRAS_FALLO = 0
 #: Acierto con baja confianza: lo has acertado dudando.
 INTERVALO_BAJA_CONFIANZA = 2
 #: Acierto justo después de un fallo: ya no falla, pero todavía no está firme.
@@ -87,15 +97,14 @@ class Schedule:
 def review_outcome_for(outcome: AttemptOutcome) -> ReviewOutcome | None:
     """Traduce el desenlace de un intento al de un repaso, o `None` si no dice nada del saber.
 
-    Un acierto y un fallo son información. Un blanco **no** es un acierto: cuenta como fallo con su
-    motivo, porque dejar una pregunta sin contestar no demuestra que se sepa. Las preguntas
-    anuladas, excluidas o conflictivas no dicen nada de nadie y no entran en el repaso.
+    Un acierto y un fallo son información. Un blanco **no**: no demuestra que no se sepa, demuestra
+    que no se contestó, y darle el mismo tratamiento convertiría un examen a medias en veinte
+    repasos que nadie ha pedido (un blanco se puede clasificar a mano como error si se quiere). Las
+    preguntas anuladas, excluidas o conflictivas tampoco dicen nada de nadie.
     """
     if outcome is AttemptOutcome.CORRECT:
         return ReviewOutcome.CORRECT
     if outcome is AttemptOutcome.WRONG:
-        return ReviewOutcome.WRONG
-    if outcome is AttemptOutcome.BLANK:
         return ReviewOutcome.WRONG
     return None
 
@@ -111,8 +120,8 @@ def schedule(
 
     La escalera de §8, literal:
 
-    - **fallo** → 1 día, y las repeticiones vuelven a cero (un fallo reduce el intervalo, aunque
-      viniera de treinta días);
+    - **fallo** → 0 días (entra en la cola de hoy), y las repeticiones vuelven a cero: un fallo
+      reduce el intervalo, aunque viniera de treinta días;
     - **acierto con baja confianza** → 2 días: lo has acertado dudando;
     - **acierto tras un fallo** → 4 días;
     - **acierto seguro repetido** → 8, 16 y 30 días.
@@ -121,11 +130,11 @@ def schedule(
     """
     if outcome is ReviewOutcome.WRONG:
         motivo = (
-            "un fallo vuelve a empezar: se repasa mañana"
+            "un fallo entra en la cola de hoy mismo"
             if previous_interval_days <= INTERVALO_TRAS_FALLO
             else (
                 f"un fallo reduce el intervalo de {previous_interval_days} días a "
-                f"{INTERVALO_TRAS_FALLO}"
+                f"{INTERVALO_TRAS_FALLO}: vuelve a la cola de hoy"
             )
         )
         return Schedule(interval_days=INTERVALO_TRAS_FALLO, repetitions=0, reason=motivo)

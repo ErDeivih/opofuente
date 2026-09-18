@@ -286,6 +286,7 @@ def _create_input(request: CreateSessionSchema) -> CreateSessionInput:
         feedback=None if request.feedback is None else Feedback(request.feedback),
         shuffle=request.shuffle,
         time_limit_minutes=request.time_limit_minutes,
+        review_limit=request.review_limit,
     )
 
 

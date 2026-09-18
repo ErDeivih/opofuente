@@ -16,7 +16,10 @@ from pydantic import BaseModel, Field
 
 from opofuente.api.question_schemas import OptionSchema, QuestionEvidenceSchema
 
-SessionModeName = Literal["practice", "official_exam"]
+#: Modos que el contrato acepta: los que la aplicación **sabe construir y corregir** de verdad. Los
+#: otros dos del vocabulario del modelo (`mock_exam`, `diagnostic`) siguen fuera a propósito, y su
+#: deuda está registrada (DEBT-012).
+SessionModeName = Literal["practice", "error_review", "official_exam"]
 SessionStatusName = Literal["draft", "running", "finished", "abandoned"]
 FeedbackName = Literal["immediate", "at_end"]
 ConfidenceName = Literal["low", "medium", "high"]
@@ -55,11 +58,19 @@ class CreateSessionSchema(BaseModel):
 
     opposition_id: str
     mode: SessionModeName
-    sources: list[SessionSourceSchema] = Field(min_length=1)
+    #: En el repaso de errores la composición la pone la cola de repaso (S10), así que no se eligen
+    #: conjuntos a mano: por eso la lista puede ir vacía.
+    sources: list[SessionSourceSchema] = Field(default_factory=list)
     convocation_version_id: str | None = None
     feedback: FeedbackName | None = None
     shuffle: bool = False
     time_limit_minutes: int | None = Field(default=None, ge=1)
+    review_limit: int | None = Field(
+        default=None,
+        ge=1,
+        le=50,
+        description="Solo en `error_review`: cuántas preguntas vencidas entran como mucho.",
+    )
 
 
 class ScoreSchema(BaseModel):

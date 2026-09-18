@@ -22,6 +22,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/attempts/{attempt_id}/error-classification": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Declara por qué se ha fallado (causa, concepto y nota)
+         * @description Sin causa no hay error: lo que se declara aquí es lo que la persona dice de su fallo.
+         */
+        post: operations["classify_error_api_v1_attempts__attempt_id__error_classification_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/capabilities": {
         parameters: {
             query?: never;
@@ -952,6 +972,60 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/learning-errors": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Los fallos agrupados por concepto (ruta añadida a §10) */
+        get: operations["list_learning_errors_api_v1_learning_errors_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/learning-errors/{error_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Un fallo con su intento, su repaso y su historial (ruta añadida a §10) */
+        get: operations["get_learning_error_api_v1_learning_errors__error_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/learning-errors/{error_id}/resolution": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resuelve un error o lo vuelve a abrir (ruta añadida a §10)
+         * @description Resolver un error es una decisión de quien estudia, y **no** detiene su repaso.
+         */
+        post: operations["resolve_learning_error_api_v1_learning_errors__error_id__resolution_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/mappings": {
         parameters: {
             query?: never;
@@ -1343,6 +1417,94 @@ export interface paths {
         get: operations["review_groups_api_v1_review_groups_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reviews/due": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lo que toca repasar hoy, con su motivo */
+        get: operations["due_reviews_api_v1_reviews_due_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reviews/{review_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** El estado de un repaso (ruta añadida a §10) */
+        get: operations["get_review_api_v1_reviews__review_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reviews/{review_id}/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Declara el resultado de un repaso hecho y lo reprograma */
+        post: operations["complete_review_api_v1_reviews__review_id__complete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reviews/{review_id}/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * El historial de un repaso, del cambio más reciente al más antiguo (añadida a §10)
+         * @description Lo que ha movido la fecha de un repaso: sin esto, una fecha no se puede explicar.
+         */
+        get: operations["get_review_history_api_v1_reviews__review_id__history_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reviews/{review_id}/snooze": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Aplaza un repaso sin contarlo como repasado */
+        post: operations["snooze_review_api_v1_reviews__review_id__snooze_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2022,6 +2184,60 @@ export interface components {
             /** Name */
             name: string;
         };
+        /**
+         * CompleteReviewSchema
+         * @description El resultado **declarado** de un repaso hecho fuera de una sesión.
+         */
+        CompleteReviewSchema: {
+            /** Cause */
+            cause?: ("knowledge" | "confusion" | "reading" | "time" | "calculation" | "ambiguous" | "other") | null;
+            /** Confidence */
+            confidence?: ("low" | "medium" | "high") | null;
+            /** Note */
+            note?: string | null;
+            /**
+             * Outcome
+             * @enum {string}
+             */
+            outcome: "correct" | "wrong";
+        };
+        /**
+         * ConceptGroupSchema
+         * @description La vista `Conceptos`: los grupos y sus totales.
+         */
+        ConceptGroupSchema: {
+            /** Groups */
+            groups: components["schemas"]["ConceptSchema"][];
+            /** Open Errors */
+            open_errors: number;
+            /** Total Errors */
+            total_errors: number;
+        };
+        /**
+         * ConceptSchema
+         * @description Un concepto con los fallos que agrupa.
+         */
+        ConceptSchema: {
+            /** Errors */
+            errors: components["schemas"]["ErrorSchema"][];
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /**
+             * Last Seen At
+             * Format: date-time
+             */
+            last_seen_at: string;
+            /** Node Id */
+            node_id?: string | null;
+            /** Occurrences */
+            occurrences: number;
+            /** Open Count */
+            open_count: number;
+            /** Resolved Count */
+            resolved_count: number;
+        };
         /** ConvocationDetailSchema */
         ConvocationDetailSchema: {
             /** Code */
@@ -2190,16 +2406,21 @@ export interface components {
              * Mode
              * @enum {string}
              */
-            mode: "practice" | "official_exam";
+            mode: "practice" | "error_review" | "official_exam";
             /** Opposition Id */
             opposition_id: string;
+            /**
+             * Review Limit
+             * @description Solo en `error_review`: cuántas preguntas vencidas entran como mucho.
+             */
+            review_limit?: number | null;
             /**
              * Shuffle
              * @default false
              */
             shuffle: boolean;
             /** Sources */
-            sources: components["schemas"]["SessionSourceSchema"][];
+            sources?: components["schemas"]["SessionSourceSchema"][];
             /** Time Limit Minutes */
             time_limit_minutes?: number | null;
         };
@@ -2408,6 +2629,45 @@ export interface components {
              */
             version_count: number;
         };
+        /**
+         * DueItemSchema
+         * @description Una pregunta vencida, con su motivo y sus opciones para poder repasarla.
+         */
+        DueItemSchema: {
+            /** Explanation */
+            explanation: string;
+            /** Is Reserve */
+            is_reserve: boolean;
+            /** Options */
+            options: components["schemas"]["DueOptionSchema"][];
+            /** Origin Type */
+            origin_type: string;
+            /** Overdue Days */
+            overdue_days: number;
+            /** Part Code */
+            part_code?: string | null;
+            /** Question Set Id */
+            question_set_id: string;
+            /** Question Version Id */
+            question_version_id: string;
+            review: components["schemas"]["ReviewItemSchema"];
+            /** Session Id */
+            session_id: string;
+            /** Stable Key */
+            stable_key: string;
+            /** Stem */
+            stem: string;
+        };
+        /**
+         * DueOptionSchema
+         * @description Una opción de la pregunta que toca repasar (sin decir cuál es la correcta).
+         */
+        DueOptionSchema: {
+            /** Stable Key */
+            stable_key: string;
+            /** Text */
+            text: string;
+        };
         /** DuplicateClusterSchema */
         DuplicateClusterSchema: {
             /** Created At */
@@ -2508,6 +2768,91 @@ export interface components {
             /** Size Bytes */
             size_bytes: number;
             status: components["schemas"]["ItemStatus"];
+        };
+        /**
+         * ErrorClassificationSchema
+         * @description Lo que se declara de un fallo: por qué, sobre qué concepto y con qué nota.
+         */
+        ErrorClassificationSchema: {
+            /**
+             * Cause
+             * @enum {string}
+             */
+            cause: "knowledge" | "confusion" | "reading" | "time" | "calculation" | "ambiguous" | "other";
+            /** Concept Label */
+            concept_label?: string | null;
+            /** Curriculum Node Id */
+            curriculum_node_id?: string | null;
+            /** Note */
+            note?: string | null;
+        };
+        /**
+         * ErrorDetailSchema
+         * @description Un error con su intento, su repaso y el historial de ese repaso.
+         */
+        ErrorDetailSchema: {
+            /** Answered At */
+            answered_at?: string | null;
+            /** Chosen Option Keys */
+            chosen_option_keys: string[];
+            /** Confidence */
+            confidence?: ("low" | "medium" | "high") | null;
+            error: components["schemas"]["ErrorSchema"];
+            /** Events */
+            events: components["schemas"]["ReviewEventSchema"][];
+            review?: components["schemas"]["ReviewItemSchema"] | null;
+        };
+        /**
+         * ErrorSchema
+         * @description Un fallo con la causa declarada y su procedencia (pregunta, sesión y parte).
+         */
+        ErrorSchema: {
+            /** Attempt Id */
+            attempt_id: string;
+            /**
+             * Cause
+             * @enum {string}
+             */
+            cause: "knowledge" | "confusion" | "reading" | "time" | "calculation" | "ambiguous" | "other";
+            /** Concept Label */
+            concept_label?: string | null;
+            /** Curriculum Node Id */
+            curriculum_node_id?: string | null;
+            /**
+             * First Seen At
+             * Format: date-time
+             */
+            first_seen_at: string;
+            /** Id */
+            id: string;
+            /**
+             * Last Seen At
+             * Format: date-time
+             */
+            last_seen_at: string;
+            /** Node Title */
+            node_title?: string | null;
+            /** Occurrences */
+            occurrences: number;
+            /** Part Code */
+            part_code?: string | null;
+            /** Question Version Id */
+            question_version_id?: string | null;
+            /** Resolved At */
+            resolved_at?: string | null;
+            /** Session Id */
+            session_id?: string | null;
+            /** Stable Key */
+            stable_key?: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "open" | "resolved";
+            /** Stem */
+            stem?: string | null;
+            /** User Note */
+            user_note?: string | null;
         };
         /**
          * EvidenceSchema
@@ -3652,6 +3997,19 @@ export interface components {
              */
             relation: "revision_candidate" | "subset" | "superset" | "similar";
         };
+        /**
+         * ResolveErrorSchema
+         * @description Resolver un error: `resolved` o volver a abrirlo, con la nota de por qué.
+         */
+        ResolveErrorSchema: {
+            /** Note */
+            note?: string | null;
+            /**
+             * Resolved
+             * @default true
+             */
+            resolved: boolean;
+        };
         /** RetrievalHitSchema */
         RetrievalHitSchema: {
             /** Rank */
@@ -3681,6 +4039,47 @@ export interface components {
             /** Used Ids */
             used_ids: string[];
         };
+        /**
+         * ReviewEventSchema
+         * @description Un paso del historial: de qué fecha a qué fecha, con qué resultado y por qué.
+         */
+        ReviewEventSchema: {
+            /** Cause */
+            cause?: ("knowledge" | "confusion" | "reading" | "time" | "calculation" | "ambiguous" | "other") | null;
+            /** Confidence */
+            confidence?: ("low" | "medium" | "high") | null;
+            /**
+             * Due At
+             * Format: date-time
+             */
+            due_at: string;
+            /** Id */
+            id: string;
+            /** Interval Days */
+            interval_days: number;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "created" | "attempt" | "reviewed" | "snoozed";
+            /** Note */
+            note?: string | null;
+            /**
+             * Occurred At
+             * Format: date-time
+             */
+            occurred_at: string;
+            /** Outcome */
+            outcome?: ("correct" | "wrong") | null;
+            /** Previous Due At */
+            previous_due_at?: string | null;
+            /** Previous Interval Days */
+            previous_interval_days?: number | null;
+            /** Reason */
+            reason: string;
+            /** Repetitions */
+            repetitions: number;
+        };
         /** ReviewGroupSchema */
         ReviewGroupSchema: {
             /** Axis */
@@ -3705,6 +4104,58 @@ export interface components {
             subject_type: string;
         };
         /**
+         * ReviewItemSchema
+         * @description El estado de repaso de una pregunta.
+         */
+        ReviewItemSchema: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Due At
+             * Format: date-time
+             */
+            due_at: string;
+            /** Id */
+            id: string;
+            /** Interval Days */
+            interval_days: number;
+            /** Lapses */
+            lapses: number;
+            /** Last Reason */
+            last_reason?: string | null;
+            /** Last Reviewed At */
+            last_reviewed_at?: string | null;
+            /** Learning Error Id */
+            learning_error_id?: string | null;
+            /** Opposition Id */
+            opposition_id: string;
+            /** Question Version Id */
+            question_version_id: string;
+            /** Repetitions */
+            repetitions: number;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /**
+         * ReviewQueueSchema
+         * @description La vista `Hoy`: la cola ordenada, sus cifras, los conceptos y lo que no se puede decir.
+         */
+        ReviewQueueSchema: {
+            /** Concepts */
+            concepts: components["schemas"]["ConceptSchema"][];
+            /** Items */
+            items: components["schemas"]["DueItemSchema"][];
+            /** Notes */
+            notes: string[];
+            stats: components["schemas"]["ReviewStatsSchema"];
+        };
+        /**
          * ReviewSchema
          * @description La revisión: cada pregunta con lo que se marcó y su corrección cuando se puede ver.
          */
@@ -3720,6 +4171,20 @@ export interface components {
             session: components["schemas"]["SessionSchema"];
             /** Unanswered */
             unanswered: number;
+        };
+        /**
+         * ReviewStatsSchema
+         * @description Cuánto queda por repasar.
+         */
+        ReviewStatsSchema: {
+            /** Active */
+            active: number;
+            /** Due */
+            due: number;
+            /** Lapses */
+            lapses: number;
+            /** Next Due At */
+            next_due_at?: string | null;
         };
         /** RightsSchema */
         RightsSchema: {
@@ -3926,7 +4391,7 @@ export interface components {
              * Mode
              * @enum {string}
              */
-            mode: "practice" | "official_exam";
+            mode: "practice" | "error_review" | "official_exam";
             /** Shuffle */
             shuffle: boolean;
             /** Sources */
@@ -3997,7 +4462,7 @@ export interface components {
              * Mode
              * @enum {string}
              */
-            mode: "practice" | "official_exam";
+            mode: "practice" | "error_review" | "official_exam";
             /** Official Available */
             official_available: boolean;
             /** Official Note */
@@ -4045,7 +4510,7 @@ export interface components {
              * Mode
              * @enum {string}
              */
-            mode: "practice" | "official_exam";
+            mode: "practice" | "error_review" | "official_exam";
             /** Opposition Id */
             opposition_id: string;
             /** Question Set Id */
@@ -4114,6 +4579,14 @@ export interface components {
             port: number;
             /** Version */
             version: string;
+        };
+        /**
+         * SnoozeReviewSchema
+         * @description Aplazar un repaso sin contarlo como repasado.
+         */
+        SnoozeReviewSchema: {
+            /** Days */
+            days: number;
         };
         /**
          * SubstitutionSchema
@@ -4289,6 +4762,77 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AnswerKeySchema"];
+                };
+            };
+            /** @description La entrada no se puede usar: carpeta inválida (`invalid_source`), contenido rechazado por seguridad (`unsafe_content`) o URL no descargable (`url_rejected`). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    classify_error_api_v1_attempts__attempt_id__error_classification_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                attempt_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ErrorClassificationSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorSchema"];
                 };
             };
             /** @description La entrada no se puede usar: carpeta inválida (`invalid_source`), contenido rechazado por seguridad (`unsafe_content`) o URL no descargable (`url_rejected`). */
@@ -7420,6 +7964,175 @@ export interface operations {
             };
         };
     };
+    list_learning_errors_api_v1_learning_errors_get: {
+        parameters: {
+            query?: {
+                opposition_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConceptGroupSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    get_learning_error_api_v1_learning_errors__error_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                error_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetailSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    resolve_learning_error_api_v1_learning_errors__error_id__resolution_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                error_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResolveErrorSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorSchema"];
+                };
+            };
+            /** @description La entrada no se puede usar: carpeta inválida (`invalid_source`), contenido rechazado por seguridad (`unsafe_content`) o URL no descargable (`url_rejected`). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
     list_mappings_api_v1_mappings_get: {
         parameters: {
             query?: {
@@ -8718,6 +9431,296 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReviewGroupSchema"][];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    due_reviews_api_v1_reviews_due_get: {
+        parameters: {
+            query?: {
+                opposition_id?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewQueueSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    get_review_api_v1_reviews__review_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                review_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewItemSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    complete_review_api_v1_reviews__review_id__complete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                review_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompleteReviewSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewItemSchema"];
+                };
+            };
+            /** @description La entrada no se puede usar: carpeta inválida (`invalid_source`), contenido rechazado por seguridad (`unsafe_content`) o URL no descargable (`url_rejected`). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    get_review_history_api_v1_reviews__review_id__history_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                review_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewEventSchema"][];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    snooze_review_api_v1_reviews__review_id__snooze_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                review_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SnoozeReviewSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewItemSchema"];
+                };
+            };
+            /** @description La entrada no se puede usar: carpeta inválida (`invalid_source`), contenido rechazado por seguridad (`unsafe_content`) o URL no descargable (`url_rejected`). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
                 };
             };
             /** @description El recurso no existe. */

@@ -33,6 +33,7 @@ from opofuente.application.job_service import JobService
 from opofuente.application.library_service import LibraryService
 from opofuente.application.profiles_service import ProfilesService
 from opofuente.application.question_service import QuestionService
+from opofuente.application.review_service import ReviewService
 from opofuente.application.search_service import SearchService
 from opofuente.application.study_service import StudyService
 from opofuente.application.system_service import SystemService
@@ -61,6 +62,7 @@ from opofuente.infrastructure.probes import DatabaseProbe, DataDirectoryProbe
 from opofuente.infrastructure.profile_repository import SqlAlchemyProfileRepository
 from opofuente.infrastructure.question_repository import SqlAlchemyQuestionRepository
 from opofuente.infrastructure.representation_store import RepresentationStore
+from opofuente.infrastructure.review_repository import SqlAlchemyReviewRepository
 from opofuente.infrastructure.search_repository import SqlAlchemySearchRepository
 from opofuente.infrastructure.study_repository import SqlAlchemyStudyRepository
 from opofuente.infrastructure.url_guard import url_limits_from_settings
@@ -177,11 +179,16 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         search=SqlAlchemySearchRepository(session_factory),
         clock=clock,
     )
+    review_service = ReviewService(
+        reviews=SqlAlchemyReviewRepository(session_factory),
+        clock=clock,
+    )
     study_service = StudyService(
         study=SqlAlchemyStudyRepository(session_factory),
         questions=SqlAlchemyQuestionRepository(session_factory),
         profiles=SqlAlchemyProfileRepository(session_factory),
         clock=clock,
+        review=review_service,
     )
     worker = JobWorker(
         queue=job_queue,
@@ -260,6 +267,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.question_service = question_service
     app.state.study_service = study_service
     app.state.search_service = search_service
+    app.state.review_service = review_service
 
     # El orden importa: el último añadido es el más externo, así que el identificador de
     # correlación envuelve también los rechazos por Origin.

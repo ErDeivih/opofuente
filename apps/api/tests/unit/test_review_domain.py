@@ -22,8 +22,8 @@ from opofuente.domain.review import (
     ErrorCause,
     ErrorStatus,
     MasteryLevel,
+    ReviewEventKind,
     ReviewOutcome,
-    ReviewStatus,
     concept_key,
     mastery_from,
     next_due_at,
@@ -53,7 +53,8 @@ def test_las_causas_son_las_del_modelo_de_datos() -> None:
         "other",
     ]
     assert [estado.value for estado in ErrorStatus] == ["open", "resolved"]
-    assert [estado.value for estado in ReviewStatus] == ["active", "suspended"]
+    # Los tipos de evento del historial: lo que ha movido la fecha de un repaso.
+    assert [tipo.value for tipo in ReviewEventKind] == ["created", "attempt", "reviewed", "snoozed"]
 
 
 @pytest.mark.parametrize(
@@ -61,8 +62,9 @@ def test_las_causas_son_las_del_modelo_de_datos() -> None:
     [
         (AttemptOutcome.CORRECT, ReviewOutcome.CORRECT),
         (AttemptOutcome.WRONG, ReviewOutcome.WRONG),
-        # Un blanco no demuestra que se sepa: cuenta como fallo del repaso.
-        (AttemptOutcome.BLANK, ReviewOutcome.WRONG),
+        # Un blanco no demuestra que no se sepa: no entra solo en el repaso (se puede clasificar a
+        # mano como error), porque un examen a medias no puede generar veinte repasos.
+        (AttemptOutcome.BLANK, None),
         # Lo que la clave anuló (o no se pudo corregir) no dice nada de nadie.
         (AttemptOutcome.ANNULLED, None),
         (AttemptOutcome.EXCLUDED, None),
@@ -79,18 +81,18 @@ def test_el_desenlace_del_intento_se_traduce_al_del_repaso(
 # --- la escalera de intervalos (§8) -------------------------------------------------------------
 
 
-def test_un_fallo_repasa_manana_y_vuelve_a_empezar() -> None:
+def test_un_fallo_entra_en_la_cola_de_hoy_y_vuelve_a_empezar() -> None:
     plan = schedule(outcome=ReviewOutcome.WRONG, previous_interval_days=0, repetitions=0)
-    assert plan.interval_days == INTERVALO_TRAS_FALLO
+    assert plan.interval_days == INTERVALO_TRAS_FALLO == 0
     assert plan.repetitions == 0
-    assert "mañana" in plan.reason
+    assert "hoy" in plan.reason
 
 
 def test_un_fallo_reduce_el_intervalo_y_lo_dice() -> None:
     plan = schedule(outcome=ReviewOutcome.WRONG, previous_interval_days=30, repetitions=6)
     assert plan.interval_days == INTERVALO_TRAS_FALLO
     assert plan.repetitions == 0
-    assert "de 30 días a 1" in plan.reason, "el motivo dice de dónde a dónde, no solo el resultado"
+    assert "de 30 días a 0" in plan.reason, "el motivo dice de dónde a dónde, no solo el resultado"
 
 
 def test_un_acierto_con_baja_confianza_repasa_en_dos_dias() -> None:

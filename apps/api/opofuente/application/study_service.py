@@ -19,11 +19,13 @@ from __future__ import annotations
 import json
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, replace
+from datetime import datetime
 from fractions import Fraction
 
 from opofuente.application.ports import Clock
 from opofuente.application.question_models import AnswerKeyView, KeyEntryView, QuestionView
 from opofuente.application.read_models import ConvocationDetail, OppositionDetail
+from opofuente.application.review_service import ReviewService
 from opofuente.application.study_models import (
     AnswerOutcomeView,
     AttemptView,
@@ -48,6 +50,7 @@ from opofuente.domain.errors import (
 from opofuente.domain.profiles import ExamPart
 from opofuente.domain.study import (
     SUPPORTED_MODES,
+    AttemptOutcome,
     Confidence,
     Feedback,
     FrozenQuestion,
@@ -81,6 +84,12 @@ _SUPPORTED_PART_FORMATS = (None, "single_choice", "multi_mark_error", "psychotec
 #: Tipos de pregunta que este slice corrige. Una pregunta de otro tipo no entra en la composición.
 _SUPPORTED_QUESTION_TYPES = ("single_choice", "true_false", "multi_mark_error")
 
+#: Preguntas que entran por defecto en una sesión de repaso, y su tope. Una sesión de repaso es lo
+#: que toca hoy: con doscientos elementos vencidos, lo honesto es empezar por veinte y volver
+#: mañana, no montar un examen de doscientos.
+REVIEW_SESSION_LIMIT = 20
+MAX_REVIEW_SESSION_LIMIT = 50
+
 
 @dataclass(frozen=True, slots=True)
 class SourceInput:
@@ -103,6 +112,9 @@ class CreateSessionInput:
     feedback: Feedback | None = None
     shuffle: bool = False
     time_limit_minutes: int | None = None
+    #: Solo para el repaso de errores: cuántas preguntas vencidas entran como mucho (el material lo
+    #: pone la cola de repaso, no quien pide la sesión).
+    review_limit: int | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -149,11 +161,15 @@ class StudyService:
         questions: SqlAlchemyQuestionRepository,
         profiles: SqlAlchemyProfileRepository,
         clock: Clock,
+        review: ReviewService | None = None,
     ) -> None:
         self._study = study
         self._questions = questions
         self._profiles = profiles
         self._clock = clock
+        #: El repaso es opcional para que las pruebas de sesiones sigan siendo de sesiones: si no
+        #: está, no se registra ningún repaso, pero nada de lo demás cambia.
+        self._review = review
 
     # ------------------------------------------------------------------ crear y leer
 
@@ -162,15 +178,16 @@ class StudyService:
         if request.mode not in SUPPORTED_MODES:
             raise UnsupportedError(
                 f"el modo «{request.mode.value}» todavía no está implementado: "
-                "este slice construye práctica y examen oficial"
+                "este slice construye práctica, repaso de errores y examen oficial"
             )
-        if not request.sources:
-            raise UnsupportedError("una sesión necesita al menos un conjunto de preguntas")
-
         oposicion: OppositionDetail | None = self._profiles.get_opposition(request.opposition_id)
         if oposicion is None:
             raise NotFoundError("oposición", request.opposition_id)
         convocatoria = self._convocatoria(request, oposicion.opposition.convocation_id)
+        if request.mode is SessionMode.ERROR_REVIEW:
+            return self._create_review_session(request, convocatoria)
+        if not request.sources:
+            raise UnsupportedError("una sesión necesita al menos un conjunto de preguntas")
 
         #: Las partes que la sesión usa: se resuelven una vez y viajan con la composición.
         contexto: dict[str, _PartContext] = {}
@@ -257,6 +274,102 @@ class StudyService:
             now=self._clock.now(),
             convocation_version_id=convocatoria.summary.id,
             question_set_id=conjunto_unico,
+            answer_key_version_id=next(iter(claves)) if len(claves) == 1 else None,
+            time_limit_minutes=limite_tiempo,
+            key_label=" · ".join(etiquetas),
+        )
+
+    def _create_review_session(
+        self, request: CreateSessionInput, convocatoria: ConvocationDetail
+    ) -> SessionView:
+        """Monta una sesión con lo que la cola de repaso tiene vencido (06 §5, modo repaso).
+
+        La composición **no** la elige quien estudia: la pone la cola, que es la que sabe qué está
+        vencido y por qué. Si no hay nada vencido, no se crea una sesión vacía: se dice con un 409 y
+        el motivo, porque una sesión de repaso sin repasos no es un repaso.
+        """
+        if request.sources:
+            raise UnsupportedError(
+                "una sesión de repaso la compone la cola de repaso: no se elige el conjunto a mano"
+            )
+        if self._review is None:
+            raise UnsupportedError("este proceso no tiene el repaso de errores disponible")
+        limite = request.review_limit or REVIEW_SESSION_LIMIT
+        vencidas = self._review.due_for_session(
+            opposition_id=request.opposition_id, limit=min(limite, MAX_REVIEW_SESSION_LIMIT)
+        )
+        if not vencidas:
+            raise UnsupportedError(
+                "no hay nada vencido que repasar: la cola de repaso está vacía "
+                "(los repasos se crean al fallar una pregunta en una sesión)"
+            )
+
+        congeladas: list[FrozenQuestion] = []
+        contexto: dict[str, _PartContext] = {}
+        claves: set[str] = set()
+        etiquetas: list[str] = []
+        conjuntos: set[str] = set()
+        limite_tiempo: int | None = None
+        for posicion, vencida in enumerate(vencidas, start=1):
+            if vencida.part_code is None:
+                raise UnsupportedError(
+                    f"el repaso de «{vencida.stable_key}» no sabe a qué parte del examen "
+                    "pertenece: la sesión en la que se falló no lo registró, así que no se puede "
+                    "componer la sesión de repaso"
+                )
+            parte = self._parte(convocatoria, vencida.part_code)
+            contexto[parte.code] = parte
+            clave = self._clave_activa(vencida.question_set_id)
+            claves.add(clave.id)
+            conjuntos.add(vencida.question_set_id)
+            etiqueta = f"{parte.name}: plantilla v{clave.version_no}"
+            if etiqueta not in etiquetas:
+                etiquetas.append(etiqueta)
+            entrada = next(
+                (
+                    candidata
+                    for candidata in clave.entries
+                    if candidata.question_version_id == vencida.question_version_id
+                ),
+                None,
+            )
+            congeladas.append(
+                FrozenQuestion(
+                    question_version_id=vencida.question_version_id,
+                    stable_key=vencida.stable_key,
+                    position=posicion,
+                    part_code=parte.code,
+                    is_reserve=False,
+                    reserve_order=None,
+                    key_outcome=entrada.outcome if entrada is not None else None,
+                    correct_option_keys=(
+                        entrada.correct_option_keys if entrada is not None else ()
+                    ),
+                )
+            )
+            if parte.time_minutes is not None:
+                limite_tiempo = (
+                    parte.time_minutes
+                    if limite_tiempo is None
+                    else max(limite_tiempo, parte.time_minutes)
+                )
+
+        configuracion = SessionConfiguration(
+            mode=request.mode,
+            # El repaso corrije al momento: §5 dice que no se enseña la respuesta **antes** del
+            # intento, y después sí, que es justo lo que se viene a hacer aquí.
+            feedback=request.feedback or Feedback.IMMEDIATE,
+            sources=(),
+            time_limit_minutes=limite_tiempo,
+            shuffle=request.shuffle,
+        )
+        return self._study.create_session(
+            opposition_id=request.opposition_id,
+            configuration=configuracion,
+            questions=assign_positions(congeladas, shuffle=request.shuffle),
+            now=self._clock.now(),
+            convocation_version_id=convocatoria.summary.id,
+            question_set_id=next(iter(conjuntos)) if len(conjuntos) == 1 else None,
             answer_key_version_id=next(iter(claves)) if len(claves) == 1 else None,
             time_limit_minutes=limite_tiempo,
             key_label=" · ".join(etiquetas),
@@ -404,6 +517,7 @@ class StudyService:
             answer_key_version_id=session.answer_key_version_id,
             now=ahora,
         )
+        self._registrar_repaso(session, pregunta, intento.id, calificado.outcome, entrada, ahora)
         return AnswerOutcomeView(
             saved=True,
             already_answered=False,
@@ -416,6 +530,31 @@ class StudyService:
         )
 
     # ------------------------------------------------------------------ cerrar y leer el resultado
+
+    def _registrar_repaso(
+        self,
+        session: SessionView,
+        pregunta: SessionQuestionView,
+        attempt_id: str,
+        outcome: AttemptOutcome,
+        entrada: AnswerInput,
+        now: datetime,
+    ) -> None:
+        """Un fallo entra en el repaso solo, y un acierto lo reprograma (06_QUESTIONS §8).
+
+        Si el repaso no está disponible en este proceso (pruebas de sesiones), no se hace nada: la
+        corrección de la sesión no depende de él.
+        """
+        if self._review is None:
+            return
+        self._review.record_attempt(
+            attempt_id=attempt_id,
+            question_version_id=pregunta.question_version_id,
+            opposition_id=session.opposition_id,
+            outcome=outcome,
+            confidence=entrada.confidence,
+            now=now,
+        )
 
     def finish(self, session_id: str) -> SessionResultView:
         """Cierra la sesión: corrige lo que falte, calcula el resultado y lo guarda."""

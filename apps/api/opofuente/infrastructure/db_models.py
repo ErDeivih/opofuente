@@ -1557,3 +1557,145 @@ class AnswerClaimEvidenceRecord(Base):
     span_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("evidence_spans.id", ondelete="RESTRICT"), primary_key=True
     )
+
+
+class LearningErrorRecord(Base):
+    """Lo que la persona **declara** de un fallo: su causa, su concepto y su nota.
+
+    No se crea sola. Un fallo sin causa declarada no es un fallo «de conocimiento»: es un fallo del
+    que todavía no se sabe por qué. El repaso, en cambio, sí nace solo (`ReviewItemRecord`).
+    """
+
+    __tablename__ = "learning_errors"
+    __table_args__ = (
+        CheckConstraint(
+            "cause IN ('knowledge', 'confusion', 'reading', 'time', 'calculation', 'ambiguous', "
+            "'other')",
+            name="ck_error_cause",
+        ),
+        CheckConstraint("status IN ('open', 'resolved')", name="ck_error_status"),
+        CheckConstraint("occurrences >= 1", name="ck_error_occurrences"),
+        CheckConstraint(
+            "concept_label IS NULL OR length(trim(concept_label)) > 0", name="ck_error_concept"
+        ),
+        CheckConstraint(
+            "(status = 'resolved' AND resolved_at IS NOT NULL) OR "
+            "(status = 'open' AND resolved_at IS NULL)",
+            name="ck_error_resolution",
+        ),
+        Index("ix_learning_errors_attempt", "attempt_id"),
+        Index("ix_learning_errors_status", "status", "last_seen_at"),
+        Index("ix_learning_errors_node", "curriculum_node_id"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    attempt_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("attempts.id", ondelete="CASCADE"), nullable=False
+    )
+    curriculum_node_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("curriculum_nodes.id", ondelete="RESTRICT"), nullable=True
+    )
+    concept_label: Mapped[str | None] = mapped_column(Text, nullable=True)
+    cause: Mapped[str] = mapped_column(String(16), nullable=False)
+    user_note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    status: Mapped[str] = mapped_column(
+        String(16), nullable=False, server_default=text("'open'"), default="open"
+    )
+    occurrences: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default=text("1"), default=1
+    )
+    first_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    last_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class ReviewItemRecord(Base):
+    """El estado de repaso de una pregunta: cuándo toca, con qué intervalo y cuántos fallos lleva.
+
+    Una fila por pregunta (índice único): dos repasos de lo mismo serían una cola que miente sobre
+    lo que queda por hacer.
+    """
+
+    __tablename__ = "review_items"
+    __table_args__ = (
+        CheckConstraint("interval_days >= 0", name="ck_review_interval"),
+        CheckConstraint("repetitions >= 0", name="ck_review_repetitions"),
+        CheckConstraint("lapses >= 0", name="ck_review_lapses"),
+        UniqueConstraint("question_version_id", name="uq_review_per_question"),
+        Index("ix_review_items_due", "due_at"),
+        Index("ix_review_items_opposition", "opposition_id", "due_at"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    question_version_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("question_versions.id", ondelete="CASCADE"), nullable=False
+    )
+    opposition_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("oppositions.id", ondelete="RESTRICT"), nullable=False
+    )
+    learning_error_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("learning_errors.id", ondelete="SET NULL"), nullable=True
+    )
+    due_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    interval_days: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default=text("0"), default=0
+    )
+    repetitions: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default=text("0"), default=0
+    )
+    lapses: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default=text("0"), default=0
+    )
+    last_reviewed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    last_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class ReviewEventRecord(Base):
+    """El historial de un repaso: no se sobrescribe, cada cambio de fecha queda con su motivo."""
+
+    __tablename__ = "review_events"
+    __table_args__ = (
+        CheckConstraint(
+            "kind IN ('created', 'attempt', 'reviewed', 'snoozed')",
+            name="ck_review_event_kind",
+        ),
+        CheckConstraint(
+            "outcome IS NULL OR outcome IN ('correct', 'wrong')", name="ck_review_event_outcome"
+        ),
+        CheckConstraint(
+            "confidence IS NULL OR confidence IN ('low', 'medium', 'high')",
+            name="ck_review_event_confidence",
+        ),
+        CheckConstraint(
+            "cause IS NULL OR cause IN ('knowledge', 'confusion', 'reading', 'time', "
+            "'calculation', 'ambiguous', 'other')",
+            name="ck_review_event_cause",
+        ),
+        CheckConstraint(
+            "(kind IN ('created', 'attempt', 'reviewed') AND outcome IS NOT NULL) OR "
+            "(kind = 'snoozed' AND outcome IS NULL)",
+            name="ck_review_event_outcome_required",
+        ),
+        Index("ix_review_events_item", "review_item_id", "occurred_at"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    review_item_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("review_items.id", ondelete="CASCADE"), nullable=False
+    )
+    kind: Mapped[str] = mapped_column(String(16), nullable=False)
+    outcome: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    confidence: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    cause: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    previous_due_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    due_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    previous_interval_days: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    interval_days: Mapped[int] = mapped_column(Integer, nullable=False)
+    repetitions: Mapped[int] = mapped_column(Integer, nullable=False)
+    reason: Mapped[str] = mapped_column(Text, nullable=False)
+    occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

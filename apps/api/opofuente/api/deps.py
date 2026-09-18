@@ -18,6 +18,7 @@ from opofuente.application.job_service import JobService
 from opofuente.application.library_service import LibraryService
 from opofuente.application.profiles_service import ProfilesService
 from opofuente.application.question_service import QuestionService
+from opofuente.application.review_service import ReviewService
 from opofuente.application.search_service import SearchService
 from opofuente.application.study_service import StudyService
 from opofuente.application.system_service import SystemService
@@ -90,6 +91,11 @@ def get_search_service(request: Request) -> SearchService:
     return service
 
 
+def get_review_service(request: Request) -> ReviewService:
+    service: ReviewService = request.app.state.review_service
+    return service
+
+
 #: Dependencias anotadas (estilo moderno de FastAPI: sin llamadas en valores por defecto).
 AppSettingsDep = Annotated[Settings, Depends(get_app_settings)]
 SystemServiceDep = Annotated[SystemService, Depends(get_system_service)]
@@ -104,3 +110,4 @@ ArtifactStoreDep = Annotated[ArtifactStore, Depends(get_artifact_store)]
 QuestionServiceDep = Annotated[QuestionService, Depends(get_question_service)]
 StudyServiceDep = Annotated[StudyService, Depends(get_study_service)]
 SearchServiceDep = Annotated[SearchService, Depends(get_search_service)]
+ReviewServiceDep = Annotated[ReviewService, Depends(get_review_service)]

@@ -285,7 +285,9 @@ def test_un_modo_sin_implementar_se_rechaza_diciendo_que_falta(seeded_settings: 
     opposition_id, convocation_id = _ids_de_oposicion(seeded_settings)
     assert convocation_id is not None
 
-    for modo in (SessionMode.MOCK_EXAM, SessionMode.DIAGNOSTIC, SessionMode.ERROR_REVIEW):
+    # El repaso de errores ya está construido (S10); el simulacro y el diagnóstico no, y quien los
+    # pida recibe el motivo en lugar de una sesión a medias.
+    for modo in (SessionMode.MOCK_EXAM, SessionMode.DIAGNOSTIC):
         with pytest.raises(UnsupportedError, match="todavía no está implementado"):
             servicio.create_session(
                 CreateSessionInput(
