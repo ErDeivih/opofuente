@@ -1699,3 +1699,135 @@ class ReviewEventRecord(Base):
     repetitions: Mapped[int] = mapped_column(Integer, nullable=False)
     reason: Mapped[str] = mapped_column(Text, nullable=False)
     occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class DerivedArtifactRecord(Base):
+    """Lo que se generó a partir del material (hoy, resúmenes extractivos) y si sigue valiendo.
+
+    Guarda su generador y su plantilla porque un derivado sin procedencia no se puede reproducir ni
+    comparar; y un derivado marcado para revisar **tiene** que decir por qué (lo comprueba un
+    `CHECK`).
+    """
+
+    __tablename__ = "derived_artifacts"
+    __table_args__ = (
+        CheckConstraint("kind IN ('summary')", name="ck_artifact_kind"),
+        CheckConstraint(
+            "review_status IN ('pending', 'reviewed', 'discarded')", name="ck_artifact_review"
+        ),
+        CheckConstraint("length(trim(title)) > 0", name="ck_artifact_title"),
+        CheckConstraint("length(trim(content)) > 0", name="ck_artifact_content"),
+        CheckConstraint(
+            "needs_review = 0 OR needs_review_reason IS NOT NULL", name="ck_artifact_reason"
+        ),
+        CheckConstraint(
+            "needs_review_at IS NULL OR needs_review = 1", name="ck_artifact_reviewed_at"
+        ),
+        Index("ix_derived_artifacts_version", "document_version_id"),
+        Index("ix_derived_artifacts_pending", "needs_review", "created_at"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    kind: Mapped[str] = mapped_column(String(24), nullable=False)
+    title: Mapped[str] = mapped_column(Text, nullable=False)
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    document_version_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("document_versions.id", ondelete="RESTRICT"), nullable=False
+    )
+    generator: Mapped[str] = mapped_column(String(48), nullable=False)
+    prompt_template_version: Mapped[str | None] = mapped_column(Text, nullable=True)
+    model: Mapped[str | None] = mapped_column(Text, nullable=True)
+    review_status: Mapped[str] = mapped_column(
+        String(16), nullable=False, server_default=text("'pending'"), default="pending"
+    )
+    needs_review: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default=text("0"), default=False
+    )
+    needs_review_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    needs_review_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class DependencyEdgeRecord(Base):
+    """De qué depende cada cosa, escrita al crearla: permite invalidar solo lo afectado."""
+
+    __tablename__ = "dependency_edges"
+    __table_args__ = (
+        CheckConstraint(
+            "from_type IN ('document_version', 'document_section', 'evidence_span')",
+            name="ck_edge_from",
+        ),
+        CheckConstraint(
+            "to_type IN ('derived_artifact', 'question_version', 'rag_answer')", name="ck_edge_to"
+        ),
+        UniqueConstraint("from_type", "from_id", "to_type", "to_id", name="uq_edge"),
+        Index("ix_dependency_edges_from", "from_type", "from_id"),
+        Index("ix_dependency_edges_to", "to_type", "to_id"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    from_type: Mapped[str] = mapped_column(String(24), nullable=False)
+    from_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    to_type: Mapped[str] = mapped_column(String(24), nullable=False)
+    to_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    role: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class ChangeSetRecord(Base):
+    """La propuesta de cambio entre dos versiones: qué se tocó y qué queda por revisar.
+
+    El diff y los derivados afectados se guardan **como se calcularon**: si el material cambia
+    después, la propuesta sigue diciendo lo que decía cuando alguien la revisó.
+    """
+
+    __tablename__ = "change_sets"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('proposed', 'confirmed', 'discarded')", name="ck_change_status"
+        ),
+        CheckConstraint("previous_version_id <> new_version_id", name="ck_change_versions"),
+        CheckConstraint(
+            "(status = 'confirmed' AND confirmed_at IS NOT NULL AND discarded_at IS NULL) OR "
+            "(status = 'discarded' AND discarded_at IS NOT NULL AND confirmed_at IS NULL) OR "
+            "(status = 'proposed' AND confirmed_at IS NULL AND discarded_at IS NULL)",
+            name="ck_change_timestamps",
+        ),
+        Index("ix_change_sets_document", "document_id", "created_at"),
+        Index("ix_change_sets_status", "status", "created_at"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    document_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("logical_documents.id", ondelete="RESTRICT"), nullable=False
+    )
+    previous_version_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("document_versions.id", ondelete="RESTRICT"), nullable=False
+    )
+    new_version_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("document_versions.id", ondelete="RESTRICT"), nullable=False
+    )
+    status: Mapped[str] = mapped_column(
+        String(16), nullable=False, server_default=text("'proposed'"), default="proposed"
+    )
+    sections_json: Mapped[str] = mapped_column(Text, nullable=False)
+    affected_json: Mapped[str] = mapped_column(Text, nullable=False)
+    sections_changed: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default=text("0"), default=0
+    )
+    sections_added: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default=text("0"), default=0
+    )
+    sections_removed: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default=text("0"), default=0
+    )
+    sections_unchanged: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default=text("0"), default=0
+    )
+    effect_note: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    discarded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    reviewed_by: Mapped[str | None] = mapped_column(String(64), nullable=True)
