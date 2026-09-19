@@ -16,6 +16,7 @@ Lo que vive aquí y no en el repositorio:
 
 from __future__ import annotations
 
+import time
 from collections.abc import Sequence
 from dataclasses import dataclass, replace
 
@@ -73,6 +74,17 @@ class DisabledVectorSearch:
 
     def search(self, question: str, *, limit: int) -> tuple[CandidateSpan, ...]:
         return ()
+
+
+@dataclass(frozen=True, slots=True)
+class ReindexReport:
+    """Lo que ha pasado al rehacer el índice (DEBT-015): cuántos fragmentos y cuánto ha tardado."""
+
+    indexed: int
+    before: int
+    after: int
+    took_seconds: float
+    detail: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -230,14 +242,52 @@ class SearchService:
         return fragmento
 
     def rebuild(self) -> int:
-        """Rehace el índice léxico desde SQLite (§4: los índices son reconstruibles).
-
-        Se queda sin ruta HTTP a propósito: el índice lo mantienen los disparadores de
-        `evidence_spans`, así que rehacerlo es una reparación, y la acción de Ajustes que la expone
-        está registrada en DEBT-015 (S12). Lo que hoy se declara al usuario es la degradación
-        léxica, que viaja en cada respuesta de búsqueda y en `/capabilities`.
-        """
+        """Rehace el índice léxico desde SQLite (§4: los índices son reconstruibles)."""
         return self._search.rebuild_index()
+
+    def reindex(self) -> ReindexReport:
+        """Rehace el índice léxico y **dice lo que ha hecho**: fragmentos y tiempo.
+
+        DEBT-015 pedía una acción en Ajustes para rehacer el índice. Lo que no podía ser es un botón
+        que no informe: rehacer el índice es derivado (el texto es la verdad), así que no puede
+        perder nada, pero quien lo pulsa tiene derecho a saber qué ha pasado. Se cuentan el antes y
+        el después para poder decir si había algo que arreglar.
+        """
+        antes = self._search.indexed_count()
+        inicio = time.perf_counter()
+        indexados = self._search.rebuild_index()
+        tardanza = time.perf_counter() - inicio
+        return ReindexReport(
+            indexed=indexados,
+            before=antes,
+            after=self._search.indexed_count(),
+            took_seconds=round(tardanza, 3),
+            detail=(
+                f"índice rehecho: {indexados} fragmentos indexados desde el texto de las evidencias"
+                if indexados
+                else "no hay fragmentos que indexar: el corpus está vacío"
+            ),
+        )
+
+    def index_health(self) -> tuple[bool, str, int]:
+        """¿El índice está completo? Se compara con lo que dice la tabla de evidencias.
+
+        Devuelve `(sano, motivo, cuántos faltan)`. No se puede saber **cuáles** faltan sin recorrer
+        las dos tablas, pero saber si falta alguno es lo que hace falta para ofrecer rehacerlo.
+        """
+        en_indice = self._search.indexed_count()
+        esperados = self._search.indexed_spans()
+        faltan = max(0, esperados - en_indice)
+        if faltan == 0:
+            return True, f"el índice está completo ({en_indice} fragmentos)", 0
+        return (
+            False,
+            (
+                f"al índice le faltan {faltan} fragmento(s): tiene {en_indice} de {esperados}. "
+                "Se arregla rehaciéndolo, que se puede pedir desde Ajustes."
+            ),
+            faltan,
+        )
 
     # ------------------------------------------------------------------ ayudas
 

@@ -512,6 +512,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/diagnostics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Diagnóstico sanitizado para pegar en una incidencia (sin secretos ni contenido)
+         * @description Versiones, capacidades, salud, recuentos, límites y el final del registro, todo saneado.
+         *
+         *     No es un volcado: es lo que hace falta para juzgar el estado sin publicar nada del usuario. Las
+         *     rutas van abreviadas y cada línea del registro pasa por el saneado de secretos y rutas.
+         */
+        get: operations["diagnostics_api_v1_diagnostics_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/diagnostics/text": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** El mismo diagnóstico en texto plano, para copiar y pegar */
+        get: operations["diagnostics_text_api_v1_diagnostics_text_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/document-versions/{version_id}": {
         parameters: {
             query?: never;
@@ -889,6 +929,74 @@ export interface paths {
         get: operations["ready_api_v1_health_ready_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/housekeeping": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Qué ocupa el almacén y qué se puede retirar (no escribe nada) */
+        get: operations["housekeeping_report_api_v1_housekeeping_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/housekeeping/old-jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Retira del historial los trabajos terminados y antiguos */
+        post: operations["purge_old_jobs_api_v1_housekeeping_old_jobs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/housekeeping/orphan-artifacts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Retira artefactos sin origen ni documento que los use */
+        post: operations["purge_orphan_artifacts_api_v1_housekeeping_orphan_artifacts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/housekeeping/temps": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Retira temporales de operaciones interrumpidas */
+        post: operations["purge_temps_api_v1_housekeeping_temps_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1803,6 +1911,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/search/index": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Estado del índice léxico: completo o con fragmentos por indexar */
+        get: operations["index_health_api_v1_search_index_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/search/reindex": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Rehace el índice léxico desde el texto de las evidencias (DEBT-015) */
+        post: operations["reindex_api_v1_search_reindex_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/settings": {
         parameters: {
             query?: never;
@@ -2196,6 +2338,25 @@ export interface components {
             suggested_followups: string[];
             /** Uncertainties */
             uncertainties: string[];
+        };
+        /**
+         * AreaUsageSchema
+         * @description Lo que ocupa un área del árbol de datos. `readable=False` significa «no se ha podido medir»,
+         *     que no es lo mismo que cero.
+         */
+        AreaUsageSchema: {
+            /** Area */
+            area: string;
+            /** File Count */
+            file_count: number;
+            /** Note */
+            note?: string | null;
+            /** Path Display */
+            path_display: string;
+            /** Readable */
+            readable: boolean;
+            /** Size Bytes */
+            size_bytes: number;
         };
         /**
          * AskRequestSchema
@@ -3051,6 +3212,54 @@ export interface components {
              */
             updated_at: string;
         };
+        /**
+         * DiagnosticSchema
+         * @description Diagnóstico sanitizado (09_SECURITY §12): sin secretos, sin contenido y sin rutas completas.
+         *
+         *     Es lo que se puede pegar en una incidencia. Lleva **lo que hace falta para juzgar el estado** y
+         *     nada de lo que el usuario tiene dentro: ni una ruta absoluta, ni un enunciado, ni una clave.
+         */
+        DiagnosticSchema: {
+            /** Capabilities */
+            capabilities: components["schemas"]["CapabilitySchema"][];
+            /** Checks */
+            checks: components["schemas"]["CheckSchema"][];
+            /** Counts */
+            counts: {
+                [key: string]: number;
+            };
+            /** Data Dir Display */
+            data_dir_display: string;
+            /** Database File Display */
+            database_file_display: string;
+            /** Degradations */
+            degradations: components["schemas"]["DegradationSchema"][];
+            /** Disk Free Bytes */
+            disk_free_bytes: number;
+            /** Disk Total Bytes */
+            disk_total_bytes: number;
+            /** Generated At */
+            generated_at: string;
+            /** Host */
+            host: string;
+            limits: components["schemas"]["LimitsSchema"];
+            /** Log Level */
+            log_level: string;
+            /** Log Tail */
+            log_tail: string[];
+            /** Note */
+            note: string;
+            /** Platform */
+            platform: string;
+            /** Port */
+            port: number;
+            /** Python Version */
+            python_version: string;
+            /** Schema Revision */
+            schema_revision: string;
+            /** Version */
+            version: string;
+        };
         /** DocumentDetailSchema */
         DocumentDetailSchema: {
             document: components["schemas"]["DocumentSchema"];
@@ -3527,6 +3736,35 @@ export interface components {
             message: string;
         };
         /**
+         * HousekeepingCandidateSchema
+         * @description Algo que se puede retirar, con su motivo y su tamaño. La pantalla lo enseña **antes**.
+         */
+        HousekeepingCandidateSchema: {
+            /** Action */
+            action: string;
+            /** Detail */
+            detail: string;
+            /** Display */
+            display: string;
+            /** Reference */
+            reference: string;
+            /** Size Bytes */
+            size_bytes: number;
+        };
+        /** HousekeepingReportSchema */
+        HousekeepingReportSchema: {
+            /** Candidates */
+            candidates: components["schemas"]["HousekeepingCandidateSchema"][];
+            /** Reclaimable Bytes */
+            reclaimable_bytes: number;
+            /** Retention Days */
+            retention_days: number;
+            /** Total Bytes */
+            total_bytes: number;
+            /** Usage */
+            usage: components["schemas"]["AreaUsageSchema"][];
+        };
+        /**
          * ImportReportSchema
          * @description Informe del lote. Los contadores deben cuadrar (total = copiadas + fallidas + omitidas).
          */
@@ -3556,6 +3794,18 @@ export interface components {
              */
             kind: "inventory" | "import";
             status: components["schemas"]["BatchStatus"];
+        };
+        /**
+         * IndexHealthSchema
+         * @description Si el índice léxico está completo. Cuando faltan fragmentos, se dice cuántos.
+         */
+        IndexHealthSchema: {
+            /** Detail */
+            detail: string;
+            /** Healthy */
+            healthy: boolean;
+            /** Missing Entries */
+            missing_entries: number;
         };
         /**
          * InventorySchema
@@ -4208,6 +4458,36 @@ export interface components {
             /** Value Label */
             value_label?: string | null;
         };
+        /**
+         * PurgeRequestSchema
+         * @description Qué retirar y con qué confirmación.
+         *
+         *     `confirm` es obligatorio y tiene que ser `true`: retirar material es una decisión, y el contrato
+         *     pide que no pueda ocurrir por accidente. Se exige en el **mismo** cuerpo que las referencias,
+         *     no en un segundo parámetro, para que no haya dos formas de pedir lo mismo.
+         */
+        PurgeRequestSchema: {
+            /**
+             * Confirm
+             * @description debe ser `true`: retirar material no se hace por accidente
+             */
+            confirm: boolean;
+            /** References */
+            references?: string[] | null;
+        };
+        /** PurgeResultSchema */
+        PurgeResultSchema: {
+            /** Action */
+            action: string;
+            /** Detail */
+            detail: string;
+            /** Freed Bytes */
+            freed_bytes: number;
+            /** Removed */
+            removed: number;
+            /** Skipped */
+            skipped: string[];
+        };
         /** QuestionEvidenceSchema */
         QuestionEvidenceSchema: {
             /** Citation Label */
@@ -4519,6 +4799,22 @@ export interface components {
             previous_total: components["schemas"]["ScoreSchema"];
             /** Recalculated At */
             recalculated_at?: string | null;
+        };
+        /**
+         * ReindexSchema
+         * @description Resultado de rehacer el índice léxico (DEBT-015).
+         */
+        ReindexSchema: {
+            /** After */
+            after: number;
+            /** Before */
+            before: number;
+            /** Detail */
+            detail: string;
+            /** Indexed */
+            indexed: number;
+            /** Took Seconds */
+            took_seconds: number;
         };
         /** RejectedRowSchema */
         RejectedRowSchema: {
@@ -7257,6 +7553,64 @@ export interface operations {
             };
         };
     };
+    diagnostics_api_v1_diagnostics_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiagnosticSchema"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    diagnostics_text_api_v1_diagnostics_text_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/plain": string;
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/plain": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
     get_version_api_v1_document_versions__version_id__get: {
         parameters: {
             query?: never;
@@ -8524,6 +8878,260 @@ export interface operations {
                 };
                 content: {
                     "application/problem+json": components["schemas"]["ReadinessProblem"];
+                };
+            };
+        };
+    };
+    housekeeping_report_api_v1_housekeeping_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HousekeepingReportSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    purge_old_jobs_api_v1_housekeeping_old_jobs_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PurgeRequestSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurgeResultSchema"];
+                };
+            };
+            /** @description La entrada no se puede usar: carpeta inválida (`invalid_source`), contenido rechazado por seguridad (`unsafe_content`) o URL no descargable (`url_rejected`). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    purge_orphan_artifacts_api_v1_housekeeping_orphan_artifacts_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PurgeRequestSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurgeResultSchema"];
+                };
+            };
+            /** @description La entrada no se puede usar: carpeta inválida (`invalid_source`), contenido rechazado por seguridad (`unsafe_content`) o URL no descargable (`url_rejected`). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    purge_temps_api_v1_housekeeping_temps_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PurgeRequestSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurgeResultSchema"];
+                };
+            };
+            /** @description La entrada no se puede usar: carpeta inválida (`invalid_source`), contenido rechazado por seguridad (`unsafe_content`) o URL no descargable (`url_rejected`). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
                 };
             };
         };
@@ -11481,6 +12089,118 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchResultSchema"];
+                };
+            };
+            /** @description La entrada no se puede usar: carpeta inválida (`invalid_source`), contenido rechazado por seguridad (`unsafe_content`) o URL no descargable (`url_rejected`). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    index_health_api_v1_search_index_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IndexHealthSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    reindex_api_v1_search_reindex_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReindexSchema"];
                 };
             };
             /** @description La entrada no se puede usar: carpeta inválida (`invalid_source`), contenido rechazado por seguridad (`unsafe_content`) o URL no descargable (`url_rejected`). */

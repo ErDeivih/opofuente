@@ -166,7 +166,12 @@ class SqlAlchemySearchRepository:
     # ------------------------------------------------------------------ índice
 
     def rebuild_index(self) -> int:
-        """Rehace el índice léxico desde SQLite y devuelve cuántos fragmentos ha indexado (§4)."""
+        """Rehace el índice léxico completamente y devuelve cuántos fragmentos ha indexado.
+
+        `REBUILD` reconstruye la tabla externa leyendo `evidence_spans`: es la operación honesta
+        cuando el índice y los datos se han separado (un borrado a mano, una restauración, un
+        `UPDATE` en crudo). Si el índice estaba bien, el resultado es el mismo y no se pierde nada.
+        """
         with self._session_factory() as session:
             session.execute(text("INSERT INTO evidence_fts(evidence_fts) VALUES('rebuild')"))
             total = session.execute(
@@ -174,6 +179,28 @@ class SqlAlchemySearchRepository:
             ).scalar_one()
             session.commit()
             return int(total)
+
+    def indexed_count(self) -> int:
+        """Cuántos fragmentos hay **en el índice** ahora mismo, no cuántos debería haber.
+
+        La diferencia con el recuento de `evidence_spans` es la comprobación que Ajustes
+        necesita: si
+        el índice perdió entradas (un borrado a mano, una restauración), los dos números no
+        coinciden y
+        eso se puede decir. No se puede saber de forma barata cuáles faltan, pero saber **si**
+        faltan
+        es suficiente para ofrecer la reparación.
+        """
+        with self._session_factory() as session:
+            filas = session.execute(text("SELECT COUNT(*) FROM evidence_fts")).scalar_one()
+            return int(filas)
+
+    def indexed_spans(self) -> int:
+        """Fragmentos que deberían estar en el índice: la verdad está en `evidence_spans`."""
+        with self._session_factory() as session:
+            return int(
+                session.execute(select(func.count()).select_from(EvidenceSpanRecord)).scalar_one()
+            )
 
     def corpus_revision(self) -> str:
         """Identificador de la revisión del corpus, **derivado** de los fragmentos que hay.

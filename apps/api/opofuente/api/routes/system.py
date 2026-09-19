@@ -8,10 +8,10 @@ from __future__ import annotations
 import shutil
 
 from fastapi import APIRouter, Response
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, PlainTextResponse
 
 from opofuente import __version__
-from opofuente.api.deps import AppSettingsDep, SystemServiceDep
+from opofuente.api.deps import AppSettingsDep, DiagnosticServiceDep, SystemServiceDep
 from opofuente.api.error_responses import BASE_ERRORS
 from opofuente.api.errors import problem_response_from
 from opofuente.api.schemas import (
@@ -19,6 +19,7 @@ from opofuente.api.schemas import (
     CapabilitySchema,
     CheckSchema,
     DegradationSchema,
+    DiagnosticSchema,
     EmbeddingSettingsSchema,
     LimitsSchema,
     LiveSchema,
@@ -28,6 +29,7 @@ from opofuente.api.schemas import (
     ReadinessSchema,
     SettingsSchema,
 )
+from opofuente.config import Settings as AppSettings
 from opofuente.config import project_root
 from opofuente.domain.providers import classify_provider, sends_content_off_device
 
@@ -170,20 +172,86 @@ def read_settings(settings: AppSettingsDep) -> SettingsSchema:
             tesseract_configured=tesseract_path is not None,
             tesseract_available=tesseract_path is not None and tesseract_path.is_file(),
         ),
-        limits=LimitsSchema(
-            max_file_bytes=settings.max_file_bytes,
-            max_batch_entries=settings.max_batch_entries,
-            max_url_bytes=settings.max_url_bytes,
-            max_url_redirects=settings.max_url_redirects,
-            max_paste_bytes=settings.max_paste_bytes,
-            max_zip_entries=settings.max_zip_entries,
-            max_zip_uncompressed_bytes=settings.max_zip_uncompressed_bytes,
-            max_zip_ratio=settings.max_zip_ratio,
-            max_zip_depth=settings.max_zip_depth,
-            max_pdf_pages=settings.max_pdf_pages,
-            max_representation_chars=settings.max_representation_chars,
-            worker_poll_seconds=settings.worker_poll_seconds,
-            job_lease_seconds=settings.job_lease_seconds,
-        ),
+        limits=_limits(settings),
         editable=False,
     )
+
+
+@router.get(
+    "/diagnostics",
+    response_model=DiagnosticSchema,
+    responses=INTERNAL_ERROR_RESPONSE,
+    summary="Diagnóstico sanitizado para pegar en una incidencia (sin secretos ni contenido)",
+)
+def diagnostics(service: DiagnosticServiceDep, settings: AppSettingsDep) -> DiagnosticSchema:
+    """Versiones, capacidades, salud, recuentos, límites y el final del registro, todo saneado.
+
+    No es un volcado: es lo que hace falta para juzgar el estado sin publicar nada del usuario. Las
+    rutas van abreviadas y cada línea del registro pasa por el saneado de secretos y rutas.
+    """
+    informe = service.report()
+    return DiagnosticSchema(
+        generated_at=informe.generated_at,
+        version=informe.version,
+        schema_revision=informe.schema_revision,
+        python_version=informe.python_version,
+        platform=informe.platform,
+        host=informe.host,
+        port=informe.port,
+        log_level=informe.log_level,
+        data_dir_display=informe.data_dir_display,
+        database_file_display=informe.database_file_display,
+        disk_total_bytes=informe.disk_total_bytes,
+        disk_free_bytes=informe.disk_free_bytes,
+        counts=informe.counts,
+        capabilities=[
+            CapabilitySchema(
+                id=capability.id,
+                label=capability.label,
+                status=capability.status,
+                detail=capability.detail,
+                planned_slice=capability.planned_slice,
+            )
+            for capability in informe.capabilities.capabilities
+        ],
+        degradations=[
+            DegradationSchema(code=degradation.code, message=degradation.message)
+            for degradation in informe.capabilities.degradations
+        ],
+        checks=[
+            CheckSchema(name=check.name, status=check.status.value, detail=check.detail)
+            for check in informe.readiness.checks
+        ],
+        limits=_limits(settings),
+        log_tail=list(informe.log_tail),
+        note=informe.note,
+    )
+
+
+def _limits(settings: AppSettings) -> LimitsSchema:
+    """Límites efectivos. Una sola función para `/settings` y `/diagnostics`: los mismos números."""
+    return LimitsSchema(
+        max_file_bytes=settings.max_file_bytes,
+        max_batch_entries=settings.max_batch_entries,
+        max_url_bytes=settings.max_url_bytes,
+        max_url_redirects=settings.max_url_redirects,
+        max_paste_bytes=settings.max_paste_bytes,
+        max_zip_entries=settings.max_zip_entries,
+        max_zip_uncompressed_bytes=settings.max_zip_uncompressed_bytes,
+        max_zip_ratio=settings.max_zip_ratio,
+        max_zip_depth=settings.max_zip_depth,
+        max_pdf_pages=settings.max_pdf_pages,
+        max_representation_chars=settings.max_representation_chars,
+        worker_poll_seconds=settings.worker_poll_seconds,
+        job_lease_seconds=settings.job_lease_seconds,
+    )
+
+
+@router.get(
+    "/diagnostics/text",
+    response_class=PlainTextResponse,
+    responses=INTERNAL_ERROR_RESPONSE,
+    summary="El mismo diagnóstico en texto plano, para copiar y pegar",
+)
+def diagnostics_text(service: DiagnosticServiceDep) -> PlainTextResponse:
+    return PlainTextResponse(service.as_text(), media_type="text/plain; charset=utf-8")

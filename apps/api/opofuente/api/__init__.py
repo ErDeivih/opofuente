@@ -12,6 +12,7 @@ from opofuente.api.routes import (
     changes,
     classification,
     exports,
+    housekeeping,
     ingestion,
     library,
     profiles,
@@ -35,5 +36,6 @@ api_router.include_router(reviews.router)
 api_router.include_router(exports.router)
 api_router.include_router(changes.router)
 api_router.include_router(backups.router)
+api_router.include_router(housekeeping.router)
 
 __all__ = ["api_router"]

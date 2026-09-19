@@ -496,6 +496,51 @@
         "title": "AnswerSchema",
         "type": "object"
       },
+      "AreaUsageSchema": {
+        "description": "Lo que ocupa un área del árbol de datos. `readable=False` significa «no se ha podido medir»,\nque no es lo mismo que cero.",
+        "properties": {
+          "area": {
+            "title": "Area",
+            "type": "string"
+          },
+          "file_count": {
+            "title": "File Count",
+            "type": "integer"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "path_display": {
+            "title": "Path Display",
+            "type": "string"
+          },
+          "readable": {
+            "title": "Readable",
+            "type": "boolean"
+          },
+          "size_bytes": {
+            "title": "Size Bytes",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "area",
+          "path_display",
+          "size_bytes",
+          "file_count",
+          "readable"
+        ],
+        "title": "AreaUsageSchema",
+        "type": "object"
+      },
       "AskRequestSchema": {
         "description": "La consulta de RAG añade el estilo y si se admite material privado.",
         "properties": {
@@ -2891,6 +2936,124 @@
         "title": "DerivedArtifactSchema",
         "type": "object"
       },
+      "DiagnosticSchema": {
+        "description": "Diagnóstico sanitizado (09_SECURITY §12): sin secretos, sin contenido y sin rutas completas.\n\nEs lo que se puede pegar en una incidencia. Lleva **lo que hace falta para juzgar el estado** y\nnada de lo que el usuario tiene dentro: ni una ruta absoluta, ni un enunciado, ni una clave.",
+        "properties": {
+          "capabilities": {
+            "items": {
+              "$ref": "#/components/schemas/CapabilitySchema"
+            },
+            "title": "Capabilities",
+            "type": "array"
+          },
+          "checks": {
+            "items": {
+              "$ref": "#/components/schemas/CheckSchema"
+            },
+            "title": "Checks",
+            "type": "array"
+          },
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Counts",
+            "type": "object"
+          },
+          "data_dir_display": {
+            "title": "Data Dir Display",
+            "type": "string"
+          },
+          "database_file_display": {
+            "title": "Database File Display",
+            "type": "string"
+          },
+          "degradations": {
+            "items": {
+              "$ref": "#/components/schemas/DegradationSchema"
+            },
+            "title": "Degradations",
+            "type": "array"
+          },
+          "disk_free_bytes": {
+            "title": "Disk Free Bytes",
+            "type": "integer"
+          },
+          "disk_total_bytes": {
+            "title": "Disk Total Bytes",
+            "type": "integer"
+          },
+          "generated_at": {
+            "title": "Generated At",
+            "type": "string"
+          },
+          "host": {
+            "title": "Host",
+            "type": "string"
+          },
+          "limits": {
+            "$ref": "#/components/schemas/LimitsSchema"
+          },
+          "log_level": {
+            "title": "Log Level",
+            "type": "string"
+          },
+          "log_tail": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Log Tail",
+            "type": "array"
+          },
+          "note": {
+            "title": "Note",
+            "type": "string"
+          },
+          "platform": {
+            "title": "Platform",
+            "type": "string"
+          },
+          "port": {
+            "title": "Port",
+            "type": "integer"
+          },
+          "python_version": {
+            "title": "Python Version",
+            "type": "string"
+          },
+          "schema_revision": {
+            "title": "Schema Revision",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "generated_at",
+          "version",
+          "schema_revision",
+          "python_version",
+          "platform",
+          "host",
+          "port",
+          "log_level",
+          "data_dir_display",
+          "database_file_display",
+          "disk_total_bytes",
+          "disk_free_bytes",
+          "counts",
+          "capabilities",
+          "degradations",
+          "checks",
+          "limits",
+          "log_tail",
+          "note"
+        ],
+        "title": "DiagnosticSchema",
+        "type": "object"
+      },
       "DocumentDetailSchema": {
         "properties": {
           "document": {
@@ -4313,6 +4476,79 @@
         "title": "FieldError",
         "type": "object"
       },
+      "HousekeepingCandidateSchema": {
+        "description": "Algo que se puede retirar, con su motivo y su tamaño. La pantalla lo enseña **antes**.",
+        "properties": {
+          "action": {
+            "title": "Action",
+            "type": "string"
+          },
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "display": {
+            "title": "Display",
+            "type": "string"
+          },
+          "reference": {
+            "title": "Reference",
+            "type": "string"
+          },
+          "size_bytes": {
+            "title": "Size Bytes",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "action",
+          "reference",
+          "detail",
+          "size_bytes",
+          "display"
+        ],
+        "title": "HousekeepingCandidateSchema",
+        "type": "object"
+      },
+      "HousekeepingReportSchema": {
+        "properties": {
+          "candidates": {
+            "items": {
+              "$ref": "#/components/schemas/HousekeepingCandidateSchema"
+            },
+            "title": "Candidates",
+            "type": "array"
+          },
+          "reclaimable_bytes": {
+            "title": "Reclaimable Bytes",
+            "type": "integer"
+          },
+          "retention_days": {
+            "title": "Retention Days",
+            "type": "integer"
+          },
+          "total_bytes": {
+            "title": "Total Bytes",
+            "type": "integer"
+          },
+          "usage": {
+            "items": {
+              "$ref": "#/components/schemas/AreaUsageSchema"
+            },
+            "title": "Usage",
+            "type": "array"
+          }
+        },
+        "required": [
+          "usage",
+          "candidates",
+          "retention_days",
+          "total_bytes",
+          "reclaimable_bytes"
+        ],
+        "title": "HousekeepingReportSchema",
+        "type": "object"
+      },
       "ImportReportSchema": {
         "description": "Informe del lote. Los contadores deben cuadrar (total = copiadas + fallidas + omitidas).",
         "properties": {
@@ -4370,6 +4606,30 @@
           "generated_at"
         ],
         "title": "ImportReportSchema",
+        "type": "object"
+      },
+      "IndexHealthSchema": {
+        "description": "Si el índice léxico está completo. Cuando faltan fragmentos, se dice cuántos.",
+        "properties": {
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "healthy": {
+            "title": "Healthy",
+            "type": "boolean"
+          },
+          "missing_entries": {
+            "title": "Missing Entries",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "healthy",
+          "detail",
+          "missing_entries"
+        ],
+        "title": "IndexHealthSchema",
         "type": "object"
       },
       "InventorySchema": {
@@ -6214,6 +6474,72 @@
         "title": "ProposalSchema",
         "type": "object"
       },
+      "PurgeRequestSchema": {
+        "additionalProperties": false,
+        "description": "Qué retirar y con qué confirmación.\n\n`confirm` es obligatorio y tiene que ser `true`: retirar material es una decisión, y el contrato\npide que no pueda ocurrir por accidente. Se exige en el **mismo** cuerpo que las referencias,\nno en un segundo parámetro, para que no haya dos formas de pedir lo mismo.",
+        "properties": {
+          "confirm": {
+            "description": "debe ser `true`: retirar material no se hace por accidente",
+            "title": "Confirm",
+            "type": "boolean"
+          },
+          "references": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "References"
+          }
+        },
+        "required": [
+          "confirm"
+        ],
+        "title": "PurgeRequestSchema",
+        "type": "object"
+      },
+      "PurgeResultSchema": {
+        "properties": {
+          "action": {
+            "title": "Action",
+            "type": "string"
+          },
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "freed_bytes": {
+            "title": "Freed Bytes",
+            "type": "integer"
+          },
+          "removed": {
+            "title": "Removed",
+            "type": "integer"
+          },
+          "skipped": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Skipped",
+            "type": "array"
+          }
+        },
+        "required": [
+          "action",
+          "removed",
+          "freed_bytes",
+          "skipped",
+          "detail"
+        ],
+        "title": "PurgeResultSchema",
+        "type": "object"
+      },
       "QuestionEvidenceSchema": {
         "properties": {
           "citation_label": {
@@ -7022,6 +7348,40 @@
           "note"
         ],
         "title": "RecalculationSchema",
+        "type": "object"
+      },
+      "ReindexSchema": {
+        "description": "Resultado de rehacer el índice léxico (DEBT-015).",
+        "properties": {
+          "after": {
+            "title": "After",
+            "type": "integer"
+          },
+          "before": {
+            "title": "Before",
+            "type": "integer"
+          },
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "indexed": {
+            "title": "Indexed",
+            "type": "integer"
+          },
+          "took_seconds": {
+            "title": "Took Seconds",
+            "type": "number"
+          }
+        },
+        "required": [
+          "indexed",
+          "before",
+          "after",
+          "took_seconds",
+          "detail"
+        ],
+        "title": "ReindexSchema",
         "type": "object"
       },
       "RejectedRowSchema": {
@@ -11863,6 +12223,63 @@
         ]
       }
     },
+    "/api/v1/diagnostics": {
+      "get": {
+        "description": "Versiones, capacidades, salud, recuentos, límites y el final del registro, todo saneado.\n\nNo es un volcado: es lo que hace falta para juzgar el estado sin publicar nada del usuario. Las\nrutas van abreviadas y cada línea del registro pasa por el saneado de secretos y rutas.",
+        "operationId": "diagnostics_api_v1_diagnostics_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiagnosticSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Diagnóstico sanitizado para pegar en una incidencia (sin secretos ni contenido)"
+      }
+    },
+    "/api/v1/diagnostics/text": {
+      "get": {
+        "operationId": "diagnostics_text_api_v1_diagnostics_text_get",
+        "responses": {
+          "200": {
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "500": {
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "El mismo diagnóstico en texto plano, para copiar y pegar"
+      }
+    },
     "/api/v1/document-versions/{version_id}": {
       "get": {
         "description": "Contrato §7: una versión sola, sin pedir la ficha entera del documento.",
@@ -13555,6 +13972,300 @@
           }
         },
         "summary": "Listo para servir (comprueba la base de datos)"
+      }
+    },
+    "/api/v1/housekeeping": {
+      "get": {
+        "operationId": "housekeeping_report_api_v1_housekeeping_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HousekeepingReportSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Qué ocupa el almacén y qué se puede retirar (no escribe nada)",
+        "tags": [
+          "almacén"
+        ]
+      }
+    },
+    "/api/v1/housekeeping/old-jobs": {
+      "post": {
+        "operationId": "purge_old_jobs_api_v1_housekeeping_old_jobs_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PurgeRequestSchema"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurgeResultSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "La entrada no se puede usar: carpeta inválida (`invalid_source`), contenido rechazado por seguridad (`unsafe_content`) o URL no descargable (`url_rejected`)."
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Retira del historial los trabajos terminados y antiguos",
+        "tags": [
+          "almacén"
+        ]
+      }
+    },
+    "/api/v1/housekeeping/orphan-artifacts": {
+      "post": {
+        "operationId": "purge_orphan_artifacts_api_v1_housekeeping_orphan_artifacts_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PurgeRequestSchema"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurgeResultSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "La entrada no se puede usar: carpeta inválida (`invalid_source`), contenido rechazado por seguridad (`unsafe_content`) o URL no descargable (`url_rejected`)."
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Retira artefactos sin origen ni documento que los use",
+        "tags": [
+          "almacén"
+        ]
+      }
+    },
+    "/api/v1/housekeeping/temps": {
+      "post": {
+        "operationId": "purge_temps_api_v1_housekeeping_temps_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PurgeRequestSchema"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurgeResultSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "La entrada no se puede usar: carpeta inválida (`invalid_source`), contenido rechazado por seguridad (`unsafe_content`) o URL no descargable (`url_rejected`)."
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Retira temporales de operaciones interrumpidas",
+        "tags": [
+          "almacén"
+        ]
       }
     },
     "/api/v1/ingestion-batches": {
@@ -17604,6 +18315,128 @@
         "summary": "Busca en el corpus publicado (sin generar respuesta)",
         "tags": [
           "búsqueda"
+        ]
+      }
+    },
+    "/api/v1/search/index": {
+      "get": {
+        "operationId": "index_health_api_v1_search_index_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IndexHealthSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Estado del índice léxico: completo o con fragmentos por indexar",
+        "tags": [
+          "almacén"
+        ]
+      }
+    },
+    "/api/v1/search/reindex": {
+      "post": {
+        "operationId": "reindex_api_v1_search_reindex_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReindexSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "La entrada no se puede usar: carpeta inválida (`invalid_source`), contenido rechazado por seguridad (`unsafe_content`) o URL no descargable (`url_rejected`)."
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Rehace el índice léxico desde el texto de las evidencias (DEBT-015)",
+        "tags": [
+          "almacén"
         ]
       }
     },

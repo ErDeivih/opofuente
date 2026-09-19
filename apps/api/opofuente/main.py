@@ -9,9 +9,11 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import shutil
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager, suppress
 from datetime import UTC, datetime
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -29,8 +31,10 @@ from opofuente.api.openapi import apply_problem_media_type
 from opofuente.application.backup_service import BackupService
 from opofuente.application.change_service import ChangeService
 from opofuente.application.classification_service import ClassificationService
+from opofuente.application.diagnostic_service import DiagnosticService
 from opofuente.application.export_service import ExportService
 from opofuente.application.extraction_service import ExtractionService
+from opofuente.application.housekeeping_service import HousekeepingService
 from opofuente.application.ingestion_service import IngestionService
 from opofuente.application.intake_service import IntakeService
 from opofuente.application.job_service import JobService
@@ -59,6 +63,7 @@ from opofuente.infrastructure.document_repository import SqlAlchemyDocumentRepos
 from opofuente.infrastructure.extraction_repository import SqlAlchemyExtractionRepository
 from opofuente.infrastructure.extractors import ExtractorRegistry
 from opofuente.infrastructure.filesystem_inventory import FilesystemInventory
+from opofuente.infrastructure.housekeeping_repository import SqlAlchemyHousekeepingRepository
 from opofuente.infrastructure.ingestion_repository import SqlAlchemyIngestionRepository
 from opofuente.infrastructure.job_repository import SqlAlchemyJobRepository
 from opofuente.infrastructure.migrations import database_revision, run_migrations, script_head
@@ -89,6 +94,19 @@ def _database_is_migrated(engine: Engine, settings: Settings) -> bool:
     """¿Está la base de datos en la revisión de cabeza? Si no, el worker no arranca."""
     expected = script_head(settings)
     return expected is not None and database_revision(engine) == expected
+
+
+def _disk_usage(root: Path) -> tuple[int, int]:
+    """Espacio total y libre de la unidad donde vive el árbol de datos.
+
+    Si el directorio no existe todavía se mide su ancestro más cercano: un cero porque «aún no hay
+    carpeta» sería un dato falso sobre el disco.
+    """
+    candidato = root
+    while not candidato.exists() and candidato.parent != candidato:
+        candidato = candidato.parent
+    uso = shutil.disk_usage(candidato)
+    return uso.total, uso.free
 
 
 def _restored_database_health(settings: Settings) -> tuple[bool, str]:
@@ -243,6 +261,30 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         migrate=lambda: run_migrations(resolved, revision="head"),
         health=lambda: _restored_database_health(resolved),
     )
+    # S12: higiene del almacén (DEBT-007) y diagnóstico sanitizado (09_SECURITY §12). El diagnóstico
+    # se compone con lo que ya saben los demás servicios, no con una segunda versión de la verdad.
+    housekeeping_repository = SqlAlchemyHousekeepingRepository(session_factory)
+    housekeeping_service = HousekeepingService(
+        paths=paths,
+        artifacts=artifact_store,
+        repository=housekeeping_repository,
+        clock=lambda: datetime.now(UTC),
+    )
+    diagnostic_service = DiagnosticService(
+        version=__version__,
+        host=resolved.host,
+        port=resolved.port,
+        log_level=resolved.log_level,
+        data_dir=paths.root,
+        database_file=paths.database,
+        disk_usage=lambda: _disk_usage(paths.root),
+        schema_revision=lambda: script_head(resolved) or "desconocida",
+        counts=housekeeping_repository.counts,
+        capabilities=system_service.capabilities,
+        readiness=system_service.readiness,
+        clock=lambda: datetime.now(UTC),
+        log_file=paths.logs / "opofuente.log",
+    )
     worker = JobWorker(
         queue=job_queue,
         handlers={
@@ -324,6 +366,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.export_service = export_service
     app.state.change_service = change_service
     app.state.backup_service = backup_service
+    app.state.housekeeping_service = housekeeping_service
+    app.state.diagnostic_service = diagnostic_service
 
     # El orden importa: el último añadido es el más externo, así que el identificador de
     # correlación envuelve también los rechazos por Origin.

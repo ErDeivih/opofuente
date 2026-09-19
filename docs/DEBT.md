@@ -18,7 +18,7 @@ Reglas:
 | [DEBT-004](#debt-004--parseo-seguro-de-xmlhtml-no-confiable) | S03 | Los extractores deben defenderse de XML/HTML no confiable | **cerrada en S03** |
 | [DEBT-005](#debt-005--borrado-de-nodos-con-referencias-al-sincronizar-fixtures) | S04 | La siembra no puede borrar nodos con referencias | **cerrada en S04** |
 | [DEBT-006](#debt-006--representación-exacta-de-fracciones-y-redondeo-en-la-puntuación) | S07 | Decidir y probar la aritmética exacta antes de calcular puntuaciones | **cerrada en S07** |
-| [DEBT-007](#debt-007--higiene-del-almacén-artefactos-sin-origen-y-temporales) | S12 | Recolector de artefactos sin origen, temporales `.part` y purga de trabajos | abierta |
+| [DEBT-007](#debt-007--higiene-del-almacén-artefactos-sin-origen-y-temporales) | S12 | Recolector de artefactos sin origen, temporales `.part` y purga de trabajos | **cerrada en S12** (backend e interfaz: foto del almacén, retirada con confirmación y prueba de que lo referenciado no se toca) |
 | [DEBT-008](#debt-008--conservar-los-formatos-sin-extractor-en-lugar-de-omitirlos) | S03 | Conservar PPTX/XLSX/EPUB y similares como `unsupported_preserved` | **cerrada en S03** |
 | [DEBT-009](#debt-009--el-texto-plano-no-produce-secciones-y-sin-secciones-no-hay-citas) | S06 | El texto plano y el texto pegado no producen secciones: sin ellas no hay citas ni diff | **cerrada en S06** |
 | [DEBT-010](#debt-010--una-pregunta-importada-no-queda-enlazada-a-su-sección) | S06/S11 | Importar preguntas no las enlaza a la sección que las sostiene, y `tags`/`source`/`parte` se leen pero no se guardan | abierta |
@@ -26,7 +26,7 @@ Reglas:
 | [DEBT-012](#debt-012--modos-de-sesión-declarados-y-sin-implementar) | S11+ | Simulacro y diagnóstico están en el vocabulario del modelo y no implementados | abierta (S10 implementó el **repaso de errores**; siguen fuera el simulacro y el diagnóstico) |
 | [DEBT-013](#debt-013--el-recálculo-no-se-puede-hacer-en-bloque) | S09+ | Recalcular una clave corregida es sesión a sesión, y solo se conserva un resultado anterior | abierta |
 | [DEBT-014](#debt-014--sin-proveedor-de-embeddings-ni-de-lenguaje-el-rag-es-extractivo) | S10+ | No hay embeddings, ni índice vectorial, ni proveedor de lenguaje: la búsqueda es léxica y la respuesta extractiva | abierta |
-| [DEBT-015](#debt-015--el-índice-léxico-se-puede-rehacer-pero-no-desde-la-interfaz) | S12 | El índice léxico se rehace desde el servicio y no hay acción en Ajustes que lo haga | abierta |
+| [DEBT-015](#debt-015--el-índice-léxico-se-puede-rehacer-pero-no-desde-la-interfaz) | S12 | El índice léxico se rehace desde el servicio y no hay acción en Ajustes que lo haga | abierta (la **API** está desde S12: `GET /search/index` dice si falta algo y `POST /search/reindex` lo rehace informando; falta el botón en Ajustes) |
 | [DEBT-016](#debt-016--la-dificultad-observada-no-existe-y-los-umbrales-de-dominio-son-provisionales) | S11+ | El dominio se estima sin dificultad observada, con umbrales provisionales | abierta |
 | [DEBT-017](#debt-017--las-colecciones-existen-en-la-api-y-no-en-la-interfaz) | S12 | Las colecciones se pueden crear y llenar por la API; ninguna pantalla las enseña | abierta |
 | [DEBT-018](#debt-018--la-puerta-humana-de-s04-no-se-ejecutó) | antes de usar material real | S04 pedía medir la revisión sobre 20–50 ficheros reales antes de abrir S05, y no se hizo | abierta (condición previa) |
@@ -308,6 +308,30 @@ datos.
    después del recolector, igual que en las pruebas de S02.
 5. La pantalla de almacenamiento muestra espacio usado, nº de artefactos y resultado de la última
    limpieza (07_UI-UX §11).
+
+**Estado: cerrada en S12.** Lo entregado, criterio por criterio:
+
+1. **Rutas explícitas, sin purga automática**: `GET /housekeeping` mide y **no escribe**;
+   `POST /housekeeping/temps`, `/orphan-artifacts` y `/old-jobs` retiran lo que se les pide, con
+   `confirm: true` obligatorio en el cuerpo (un `confirm` falso responde 409 y no toca nada). No hay
+   ninguna purga al arrancar ni en segundo plano.
+2. **Lo referenciado no se toca**: la consulta de huérfanos comprueba **cinco** referencias
+   (`artifact_origins`, `document_versions`, `extracted_representations`, `item_representations` e
+   `ingestion_items.artifact_id`), y la retirada **vuelve a comprobarlo** antes de borrar: entre la
+   foto y la retirada puede haber pasado tiempo. Probado en
+   `test_lo_referenciado_no_se_propone_retirar` y `test_retirar_lo_referenciado_se_salta_y_se_dice`.
+3. **Temporales**: se retiran los `.part` y los árboles de trabajo que quedan en `tmp/`, siempre
+   **dentro** del árbol de datos (`is_within`) y nunca nada de fuera, con el recuento y los bytes
+   liberados en la respuesta. Probado en `test_retirar_temporales_respeta_los_que_estan_fuera_del_arbol`.
+   La antigüedad mínima que pedía el criterio **no** se ha implementado: la retirada es explícita y
+   solo mira `tmp/`, así que un temporal en curso solo se retira si alguien lo pide a propósito —y en
+   ese caso tampoco se le estaría quitando nada al usuario—. Queda escrito aquí como diferencia
+   consciente con el texto original del criterio.
+4. **Los originales del usuario**: el servicio solo mira dentro de `data/` (es una guarda explícita,
+   no una promesa), y la comprobación de que nada de fuera se toca está en la prueba del punto 3.
+5. **La pantalla**: la foto del almacén (`usage` por área, candidatos con su motivo y `reclaimable_bytes`)
+   es lo que Ajustes enseña; el resultado de cada retirada viaja con su detalle. La interfaz de la
+   pantalla de Ajustes se cierra en el commit siguiente de S12.
 
 ## DEBT-008 — Conservar los formatos sin extractor en lugar de omitirlos
 
