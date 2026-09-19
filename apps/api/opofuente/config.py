@@ -18,6 +18,7 @@ from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from opofuente.domain.errors import ConfigurationError
+from opofuente.domain.providers import classify_provider, sends_content_off_device
 
 LogLevel = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
 LlmProvider = Literal["disabled", "openai_compatible", "ollama"]
@@ -114,6 +115,10 @@ class Settings(BaseSettings):
 
     embedding_provider: EmbeddingProvider = "disabled"
     embedding_model: str | None = None
+    #: Endpoint del proveedor de embeddings. Es un campo propio porque su destino se informa
+    #: **aparte** del de lenguaje (DEBT-001): con un solo `llm_base_url` no se podía decir a dónde
+    #: van los embeddings aunque el proveedor estuviera configurado.
+    embedding_base_url: str | None = None
 
     tesseract_path: Path | None = None
 
@@ -178,6 +183,7 @@ class Settings(BaseSettings):
     @field_validator(
         "llm_base_url",
         "llm_model",
+        "embedding_base_url",
         "embedding_model",
         "tesseract_path",
         mode="before",
@@ -231,13 +237,22 @@ class Settings(BaseSettings):
     def sends_data_off_device(self) -> bool:
         """Indica si la configuración actual puede enviar contenido a un tercero.
 
-        Limitación conocida y registrada en `docs/DEBT.md` (DEBT-001): un endpoint local
-        declarado como `openai_compatible` u `ollama` devuelve `True` aunque no salga del
-        equipo, y un proveedor de embeddings externo se refleja dentro del bloque de LLM.
-        Antes de S09 debe sustituirse por una clasificación independiente por proveedor
-        (`disabled`/`local`/`remote`/`unknown`) calculada sobre el endpoint efectivo.
+        Se mantiene porque el contrato lo publica, pero **ya no es la respuesta buena**: desde S12
+        el destino de cada proveedor se clasifica por separado y con su motivo
+        (`GET /settings` → `llm.destination`, `embeddings.destination`), y un endpoint sin
+        determinar cuenta como que sí sale. Esta propiedad es el resumen conservador de las dos.
         """
-        return self.llm_provider != "disabled" or self.embedding_provider == "openai_compatible"
+        llm = classify_provider(
+            name="el modelo de lenguaje",
+            provider=self.llm_provider,
+            endpoint=self.llm_base_url,
+        )
+        embeddings = classify_provider(
+            name="el proveedor de embeddings",
+            provider=self.embedding_provider,
+            endpoint=self.embedding_base_url,
+        )
+        return sends_content_off_device(llm) or sends_content_off_device(embeddings)
 
 
 @lru_cache(maxsize=1)

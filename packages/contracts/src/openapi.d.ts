@@ -42,6 +42,44 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/backups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Copia de seguridad: listado, alta e identidad de cada copia */
+        get: operations["list_backups_api_v1_backups_get"];
+        put?: never;
+        /**
+         * Hace una copia de seguridad del árbol de datos
+         * @description Copia consistente de DB, artefactos, representaciones y fixtures, con manifiesto y hashes.
+         */
+        post: operations["create_backup_api_v1_backups_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/backups/{backup_id}/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Verifica una copia entrada por entrada, sin escribir nada */
+        post: operations["verify_backup_api_v1_backups__backup_id__verify_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/capabilities": {
         parameters: {
             query?: never;
@@ -1586,6 +1624,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/restore/execute": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Restaura una copia validada, con copia previa automática y deshacer si falla */
+        post: operations["execute_restore_api_v1_restore_execute_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/restore/validate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Previsualiza una restauración: valida, comprueba espacio y versión, y no escribe */
+        post: operations["validate_restore_api_v1_restore_validate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/review-groups": {
         parameters: {
             query?: never;
@@ -1738,7 +1810,14 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Configuración efectiva sanitizada (sin secretos) */
+        /**
+         * Configuración efectiva sanitizada (sin secretos)
+         * @description Configuración efectiva, **con el destino real de cada proveedor** (DEBT-001).
+         *
+         *     Cada proveedor se clasifica por separado sobre su endpoint efectivo: antes el proveedor de
+         *     embeddings se informaba dentro del bloque de LLM, y un endpoint local contaba como que salía del
+         *     equipo. Un destino `unknown` viaja como tal y cuenta como que sí sale.
+         */
         get: operations["read_settings_api_v1_settings_get"];
         put?: never;
         post?: never;
@@ -2198,6 +2277,37 @@ export interface components {
             /** Session Question Id */
             session_question_id: string;
         };
+        /** BackupListSchema */
+        BackupListSchema: {
+            /** Backups */
+            backups: components["schemas"]["BackupSchema"][];
+        };
+        /**
+         * BackupSchema
+         * @description Una copia tal como se enseña: identidad, tamaño y si se puede restaurar aquí y ahora.
+         */
+        BackupSchema: {
+            /** App Version */
+            app_version: string;
+            /** Created At */
+            created_at: string;
+            /** File Count */
+            file_count: number;
+            /** Id */
+            id: string;
+            /** Note */
+            note?: string | null;
+            /** Restorable */
+            restorable: boolean;
+            /** Restorable Reason */
+            restorable_reason: string;
+            /** Schema Revision */
+            schema_revision: string;
+            /** Scope */
+            scope: string[];
+            /** Size Bytes */
+            size_bytes: number;
+        };
         /** BatchDetailSchema */
         BatchDetailSchema: {
             batch: components["schemas"]["BatchSchema"];
@@ -2652,6 +2762,11 @@ export interface components {
             /** Unclassified Subjects */
             unclassified_subjects: number;
         };
+        /** CreateBackupSchema */
+        CreateBackupSchema: {
+            /** Note */
+            note?: string | null;
+        };
         /** CreateCollectionRequestSchema */
         CreateCollectionRequestSchema: {
             /** Description */
@@ -3092,6 +3207,22 @@ export interface components {
         };
         /** EmbeddingSettingsSchema */
         EmbeddingSettingsSchema: {
+            /**
+             * Base Url Configured
+             * @default false
+             */
+            base_url_configured: boolean;
+            /**
+             * Destination
+             * @default disabled
+             * @enum {string}
+             */
+            destination: "disabled" | "local" | "remote" | "unknown";
+            /**
+             * Destination Reason
+             * @default sin proveedor de embeddings configurado
+             */
+            destination_reason: string;
             /** Model */
             model?: string | null;
             /** Provider */
@@ -3572,6 +3703,41 @@ export interface components {
             /** Question Version Id */
             question_version_id: string;
         };
+        /**
+         * LimitsSchema
+         * @description Límites efectivos de la configuración (07_UI-UX §11: «límites» en Ajustes).
+         *
+         *     Se publican para que la pantalla pueda decir con qué topes trabaja el programa sin que nadie
+         *     tenga que leer el código, y para que un fallo por tamaño tenga una cifra que enseñar.
+         */
+        LimitsSchema: {
+            /** Job Lease Seconds */
+            job_lease_seconds: number;
+            /** Max Batch Entries */
+            max_batch_entries: number;
+            /** Max File Bytes */
+            max_file_bytes: number;
+            /** Max Paste Bytes */
+            max_paste_bytes: number;
+            /** Max Pdf Pages */
+            max_pdf_pages: number;
+            /** Max Representation Chars */
+            max_representation_chars: number;
+            /** Max Url Bytes */
+            max_url_bytes: number;
+            /** Max Url Redirects */
+            max_url_redirects: number;
+            /** Max Zip Depth */
+            max_zip_depth: number;
+            /** Max Zip Entries */
+            max_zip_entries: number;
+            /** Max Zip Ratio */
+            max_zip_ratio: number;
+            /** Max Zip Uncompressed Bytes */
+            max_zip_uncompressed_bytes: number;
+            /** Worker Poll Seconds */
+            worker_poll_seconds: number;
+        };
         /** LiveSchema */
         LiveSchema: {
             /**
@@ -3589,6 +3755,13 @@ export interface components {
             api_key_configured: boolean;
             /** Base Url Configured */
             base_url_configured: boolean;
+            /**
+             * Destination
+             * @enum {string}
+             */
+            destination: "disabled" | "local" | "remote" | "unknown";
+            /** Destination Reason */
+            destination_reason: string;
             /** Model */
             model?: string | null;
             /** Provider */
@@ -4466,6 +4639,54 @@ export interface components {
              */
             resolved: boolean;
         };
+        /**
+         * RestorePreviewSchema
+         * @description Lo que una restauración haría **antes** de hacerlo: es el paso 1 y 2 del contrato.
+         */
+        RestorePreviewSchema: {
+            backup: components["schemas"]["BackupSchema"];
+            /** Blockers */
+            blockers: string[];
+            /** Can Restore */
+            can_restore: boolean;
+            /** Free Bytes */
+            free_bytes: number;
+            /** Missing Scope */
+            missing_scope: string[];
+            /** Needed Bytes */
+            needed_bytes: number;
+            /** Previous Backup Note */
+            previous_backup_note: string;
+            /** Targets */
+            targets: string[];
+        };
+        /** RestoreRequestSchema */
+        RestoreRequestSchema: {
+            /** Backup Id */
+            backup_id: string;
+            /**
+             * Keep Rollback
+             * @default false
+             */
+            keep_rollback: boolean;
+        };
+        /** RestoreResultSchema */
+        RestoreResultSchema: {
+            /** Backup Id */
+            backup_id: string;
+            /** Health Detail */
+            health_detail: string;
+            /** Health Ok */
+            health_ok: boolean;
+            /** Previous Backup Id */
+            previous_backup_id: string;
+            /** Restored */
+            restored: string[];
+            /** Rollback Paths */
+            rollback_paths: string[];
+            /** Schema Revision */
+            schema_revision: string;
+        };
         /** RetrievalHitSchema */
         RetrievalHitSchema: {
             /** Rank */
@@ -5055,6 +5276,7 @@ export interface components {
             embeddings: components["schemas"]["EmbeddingSettingsSchema"];
             /** Host */
             host: string;
+            limits: components["schemas"]["LimitsSchema"];
             llm: components["schemas"]["LlmSettingsSchema"];
             /** Log Level */
             log_level: string;
@@ -5089,6 +5311,14 @@ export interface components {
         UrlRequest: {
             /** Url */
             url: string;
+        };
+        /** VerificationSchema */
+        VerificationSchema: {
+            backup: components["schemas"]["BackupSchema"];
+            /** Problems */
+            problems: string[];
+            /** Verified */
+            verified: boolean;
         };
         /**
          * VersionContentSchema
@@ -5335,6 +5565,171 @@ export interface operations {
                 };
                 content: {
                     "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    list_backups_api_v1_backups_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BackupListSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    create_backup_api_v1_backups_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateBackupSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BackupSchema"];
+                };
+            };
+            /** @description La entrada no se puede usar: carpeta inválida (`invalid_source`), contenido rechazado por seguridad (`unsafe_content`) o URL no descargable (`url_rejected`). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    verify_backup_api_v1_backups__backup_id__verify_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                backup_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VerificationSchema"];
                 };
             };
             /** @description El recurso no existe. */
@@ -10529,6 +10924,126 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RepresentationTextSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    execute_restore_api_v1_restore_execute_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RestoreRequestSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RestoreResultSchema"];
+                };
+            };
+            /** @description La entrada no se puede usar: carpeta inválida (`invalid_source`), contenido rechazado por seguridad (`unsafe_content`) o URL no descargable (`url_rejected`). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    validate_restore_api_v1_restore_validate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RestoreRequestSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RestorePreviewSchema"];
                 };
             };
             /** @description El recurso no existe. */

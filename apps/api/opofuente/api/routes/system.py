@@ -20,6 +20,7 @@ from opofuente.api.schemas import (
     CheckSchema,
     DegradationSchema,
     EmbeddingSettingsSchema,
+    LimitsSchema,
     LiveSchema,
     LlmSettingsSchema,
     OcrSettingsSchema,
@@ -28,6 +29,7 @@ from opofuente.api.schemas import (
     SettingsSchema,
 )
 from opofuente.config import project_root
+from opofuente.domain.providers import classify_provider, sends_content_off_device
 
 router = APIRouter()
 
@@ -117,10 +119,26 @@ def capabilities(service: SystemServiceDep) -> CapabilitiesSchema:
     summary="Configuración efectiva sanitizada (sin secretos)",
 )
 def read_settings(settings: AppSettingsDep) -> SettingsSchema:
+    """Configuración efectiva, **con el destino real de cada proveedor** (DEBT-001).
+
+    Cada proveedor se clasifica por separado sobre su endpoint efectivo: antes el proveedor de
+    embeddings se informaba dentro del bloque de LLM, y un endpoint local contaba como que salía del
+    equipo. Un destino `unknown` viaja como tal y cuenta como que sí sale.
+    """
     paths = settings.data_paths
     base = paths.root if paths.root.exists() else project_root()
     usage = shutil.disk_usage(base)
     tesseract_path = settings.tesseract_path
+    llm_destino = classify_provider(
+        name="el modelo de lenguaje",
+        provider=settings.llm_provider,
+        endpoint=settings.llm_base_url,
+    )
+    embeddings_destino = classify_provider(
+        name="el proveedor de embeddings",
+        provider=settings.embedding_provider,
+        endpoint=settings.embedding_base_url,
+    )
     return SettingsSchema(
         version=__version__,
         host=settings.host,
@@ -137,15 +155,35 @@ def read_settings(settings: AppSettingsDep) -> SettingsSchema:
             model=settings.llm_model,
             base_url_configured=bool(settings.llm_base_url),
             api_key_configured=settings.llm_api_key_configured,
-            sends_data_off_device=settings.sends_data_off_device,
+            sends_data_off_device=sends_content_off_device(llm_destino),
+            destination=llm_destino.destination.value,
+            destination_reason=llm_destino.reason,
         ),
         embeddings=EmbeddingSettingsSchema(
             provider=settings.embedding_provider,
             model=settings.embedding_model,
+            base_url_configured=bool(settings.embedding_base_url),
+            destination=embeddings_destino.destination.value,
+            destination_reason=embeddings_destino.reason,
         ),
         ocr=OcrSettingsSchema(
             tesseract_configured=tesseract_path is not None,
             tesseract_available=tesseract_path is not None and tesseract_path.is_file(),
+        ),
+        limits=LimitsSchema(
+            max_file_bytes=settings.max_file_bytes,
+            max_batch_entries=settings.max_batch_entries,
+            max_url_bytes=settings.max_url_bytes,
+            max_url_redirects=settings.max_url_redirects,
+            max_paste_bytes=settings.max_paste_bytes,
+            max_zip_entries=settings.max_zip_entries,
+            max_zip_uncompressed_bytes=settings.max_zip_uncompressed_bytes,
+            max_zip_ratio=settings.max_zip_ratio,
+            max_zip_depth=settings.max_zip_depth,
+            max_pdf_pages=settings.max_pdf_pages,
+            max_representation_chars=settings.max_representation_chars,
+            worker_poll_seconds=settings.worker_poll_seconds,
+            job_lease_seconds=settings.job_lease_seconds,
         ),
         editable=False,
     )

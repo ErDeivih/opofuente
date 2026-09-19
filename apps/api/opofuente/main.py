@@ -11,6 +11,7 @@ import asyncio
 import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager, suppress
+from datetime import UTC, datetime
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -25,6 +26,7 @@ from opofuente.api.middleware import (
     SecurityHeadersMiddleware,
 )
 from opofuente.api.openapi import apply_problem_media_type
+from opofuente.application.backup_service import BackupService
 from opofuente.application.change_service import ChangeService
 from opofuente.application.classification_service import ClassificationService
 from opofuente.application.export_service import ExportService
@@ -59,7 +61,7 @@ from opofuente.infrastructure.extractors import ExtractorRegistry
 from opofuente.infrastructure.filesystem_inventory import FilesystemInventory
 from opofuente.infrastructure.ingestion_repository import SqlAlchemyIngestionRepository
 from opofuente.infrastructure.job_repository import SqlAlchemyJobRepository
-from opofuente.infrastructure.migrations import database_revision, script_head
+from opofuente.infrastructure.migrations import database_revision, run_migrations, script_head
 from opofuente.infrastructure.observability import setup_logging
 from opofuente.infrastructure.probes import DatabaseProbe, DataDirectoryProbe
 from opofuente.infrastructure.profile_repository import SqlAlchemyProfileRepository
@@ -87,6 +89,29 @@ def _database_is_migrated(engine: Engine, settings: Settings) -> bool:
     """¿Está la base de datos en la revisión de cabeza? Si no, el worker no arranca."""
     expected = script_head(settings)
     return expected is not None and database_revision(engine) == expected
+
+
+def _restored_database_health(settings: Settings) -> tuple[bool, str]:
+    """Comprobación posterior a una restauración: la base colocada está migrada y se puede abrir.
+
+    No arranca la aplicación entera (sería construir otra vez el proceso desde dentro de una
+    petición): comprueba lo que de verdad puede quedar mal después de un intercambio de ficheros,
+    que es que la base restaurada no esté en la revisión del código o no se pueda leer.
+    """
+    engine = build_engine(settings.data_paths.database)
+    try:
+        esperada = script_head(settings)
+        actual = database_revision(engine)
+        if esperada is None:
+            return False, "no se pudo determinar la revisión de cabeza del programa"
+        if actual != esperada:
+            return False, f"la base restaurada está en {actual} y el programa espera {esperada}"
+        return True, f"la base restaurada se abre y está en la revisión {actual}"
+    except Exception as error:
+        # Se informa del fallo en lugar de propagarlo a media restauración.
+        return False, f"la base restaurada no se pudo comprobar ({type(error).__name__})"
+    finally:
+        engine.dispose()
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -208,6 +233,16 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         clock=clock,
         review=review_service,
     )
+    # S12: copia, verificación y restauración. La migración y la comprobación van como funciones: al
+    # restaurar hay que migrar la base recién colocada y comprobar que quedó sana.
+    backup_service = BackupService(
+        paths=paths,
+        app_version=__version__,
+        clock=lambda: datetime.now(UTC),
+        schema_revision=lambda: script_head(resolved) or "desconocida",
+        migrate=lambda: run_migrations(resolved, revision="head"),
+        health=lambda: _restored_database_health(resolved),
+    )
     worker = JobWorker(
         queue=job_queue,
         handlers={
@@ -288,6 +323,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.review_service = review_service
     app.state.export_service = export_service
     app.state.change_service = change_service
+    app.state.backup_service = backup_service
 
     # El orden importa: el último añadido es el más externo, así que el identificador de
     # correlación envuelve también los rechazos por Origin.

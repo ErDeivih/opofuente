@@ -728,6 +728,90 @@
         "title": "AttemptSchema",
         "type": "object"
       },
+      "BackupListSchema": {
+        "properties": {
+          "backups": {
+            "items": {
+              "$ref": "#/components/schemas/BackupSchema"
+            },
+            "title": "Backups",
+            "type": "array"
+          }
+        },
+        "required": [
+          "backups"
+        ],
+        "title": "BackupListSchema",
+        "type": "object"
+      },
+      "BackupSchema": {
+        "description": "Una copia tal como se enseña: identidad, tamaño y si se puede restaurar aquí y ahora.",
+        "properties": {
+          "app_version": {
+            "title": "App Version",
+            "type": "string"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "file_count": {
+            "title": "File Count",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "restorable": {
+            "title": "Restorable",
+            "type": "boolean"
+          },
+          "restorable_reason": {
+            "title": "Restorable Reason",
+            "type": "string"
+          },
+          "schema_revision": {
+            "title": "Schema Revision",
+            "type": "string"
+          },
+          "scope": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Scope",
+            "type": "array"
+          },
+          "size_bytes": {
+            "title": "Size Bytes",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "created_at",
+          "app_version",
+          "schema_revision",
+          "scope",
+          "size_bytes",
+          "file_count",
+          "restorable",
+          "restorable_reason"
+        ],
+        "title": "BackupSchema",
+        "type": "object"
+      },
       "BatchDetailSchema": {
         "properties": {
           "batch": {
@@ -1974,6 +2058,25 @@
         "title": "CoverageSchema",
         "type": "object"
       },
+      "CreateBackupSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "title": "CreateBackupSchema",
+        "type": "object"
+      },
       "CreateCollectionRequestSchema": {
         "properties": {
           "description": {
@@ -3201,6 +3304,27 @@
       },
       "EmbeddingSettingsSchema": {
         "properties": {
+          "base_url_configured": {
+            "default": false,
+            "title": "Base Url Configured",
+            "type": "boolean"
+          },
+          "destination": {
+            "default": "disabled",
+            "enum": [
+              "disabled",
+              "local",
+              "remote",
+              "unknown"
+            ],
+            "title": "Destination",
+            "type": "string"
+          },
+          "destination_reason": {
+            "default": "sin proveedor de embeddings configurado",
+            "title": "Destination Reason",
+            "type": "string"
+          },
           "model": {
             "anyOf": [
               {
@@ -4632,6 +4756,80 @@
         "title": "KeyEntrySchema",
         "type": "object"
       },
+      "LimitsSchema": {
+        "description": "Límites efectivos de la configuración (07_UI-UX §11: «límites» en Ajustes).\n\nSe publican para que la pantalla pueda decir con qué topes trabaja el programa sin que nadie\ntenga que leer el código, y para que un fallo por tamaño tenga una cifra que enseñar.",
+        "properties": {
+          "job_lease_seconds": {
+            "title": "Job Lease Seconds",
+            "type": "integer"
+          },
+          "max_batch_entries": {
+            "title": "Max Batch Entries",
+            "type": "integer"
+          },
+          "max_file_bytes": {
+            "title": "Max File Bytes",
+            "type": "integer"
+          },
+          "max_paste_bytes": {
+            "title": "Max Paste Bytes",
+            "type": "integer"
+          },
+          "max_pdf_pages": {
+            "title": "Max Pdf Pages",
+            "type": "integer"
+          },
+          "max_representation_chars": {
+            "title": "Max Representation Chars",
+            "type": "integer"
+          },
+          "max_url_bytes": {
+            "title": "Max Url Bytes",
+            "type": "integer"
+          },
+          "max_url_redirects": {
+            "title": "Max Url Redirects",
+            "type": "integer"
+          },
+          "max_zip_depth": {
+            "title": "Max Zip Depth",
+            "type": "integer"
+          },
+          "max_zip_entries": {
+            "title": "Max Zip Entries",
+            "type": "integer"
+          },
+          "max_zip_ratio": {
+            "title": "Max Zip Ratio",
+            "type": "integer"
+          },
+          "max_zip_uncompressed_bytes": {
+            "title": "Max Zip Uncompressed Bytes",
+            "type": "integer"
+          },
+          "worker_poll_seconds": {
+            "title": "Worker Poll Seconds",
+            "type": "number"
+          }
+        },
+        "required": [
+          "max_file_bytes",
+          "max_batch_entries",
+          "max_url_bytes",
+          "max_url_redirects",
+          "max_paste_bytes",
+          "max_zip_entries",
+          "max_zip_uncompressed_bytes",
+          "max_zip_ratio",
+          "max_zip_depth",
+          "max_pdf_pages",
+          "max_representation_chars",
+          "worker_poll_seconds",
+          "job_lease_seconds"
+        ],
+        "title": "LimitsSchema",
+        "type": "object"
+      },
       "LiveSchema": {
         "properties": {
           "status": {
@@ -4661,6 +4859,20 @@
             "title": "Base Url Configured",
             "type": "boolean"
           },
+          "destination": {
+            "enum": [
+              "disabled",
+              "local",
+              "remote",
+              "unknown"
+            ],
+            "title": "Destination",
+            "type": "string"
+          },
+          "destination_reason": {
+            "title": "Destination Reason",
+            "type": "string"
+          },
           "model": {
             "anyOf": [
               {
@@ -4685,7 +4897,9 @@
           "provider",
           "base_url_configured",
           "api_key_configured",
-          "sends_data_off_device"
+          "sends_data_off_device",
+          "destination",
+          "destination_reason"
         ],
         "title": "LlmSettingsSchema",
         "type": "object"
@@ -7064,6 +7278,133 @@
         "title": "ResolveErrorSchema",
         "type": "object"
       },
+      "RestorePreviewSchema": {
+        "description": "Lo que una restauración haría **antes** de hacerlo: es el paso 1 y 2 del contrato.",
+        "properties": {
+          "backup": {
+            "$ref": "#/components/schemas/BackupSchema"
+          },
+          "blockers": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Blockers",
+            "type": "array"
+          },
+          "can_restore": {
+            "title": "Can Restore",
+            "type": "boolean"
+          },
+          "free_bytes": {
+            "title": "Free Bytes",
+            "type": "integer"
+          },
+          "missing_scope": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Missing Scope",
+            "type": "array"
+          },
+          "needed_bytes": {
+            "title": "Needed Bytes",
+            "type": "integer"
+          },
+          "previous_backup_note": {
+            "title": "Previous Backup Note",
+            "type": "string"
+          },
+          "targets": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Targets",
+            "type": "array"
+          }
+        },
+        "required": [
+          "backup",
+          "can_restore",
+          "blockers",
+          "missing_scope",
+          "free_bytes",
+          "needed_bytes",
+          "targets",
+          "previous_backup_note"
+        ],
+        "title": "RestorePreviewSchema",
+        "type": "object"
+      },
+      "RestoreRequestSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "backup_id": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Backup Id",
+            "type": "string"
+          },
+          "keep_rollback": {
+            "default": false,
+            "title": "Keep Rollback",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "backup_id"
+        ],
+        "title": "RestoreRequestSchema",
+        "type": "object"
+      },
+      "RestoreResultSchema": {
+        "properties": {
+          "backup_id": {
+            "title": "Backup Id",
+            "type": "string"
+          },
+          "health_detail": {
+            "title": "Health Detail",
+            "type": "string"
+          },
+          "health_ok": {
+            "title": "Health Ok",
+            "type": "boolean"
+          },
+          "previous_backup_id": {
+            "title": "Previous Backup Id",
+            "type": "string"
+          },
+          "restored": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Restored",
+            "type": "array"
+          },
+          "rollback_paths": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Rollback Paths",
+            "type": "array"
+          },
+          "schema_revision": {
+            "title": "Schema Revision",
+            "type": "string"
+          }
+        },
+        "required": [
+          "backup_id",
+          "previous_backup_id",
+          "restored",
+          "rollback_paths",
+          "schema_revision",
+          "health_ok",
+          "health_detail"
+        ],
+        "title": "RestoreResultSchema",
+        "type": "object"
+      },
       "RetrievalHitSchema": {
         "properties": {
           "rank": {
@@ -8659,6 +9000,9 @@
             "title": "Host",
             "type": "string"
           },
+          "limits": {
+            "$ref": "#/components/schemas/LimitsSchema"
+          },
           "llm": {
             "$ref": "#/components/schemas/LlmSettingsSchema"
           },
@@ -8691,6 +9035,7 @@
           "llm",
           "embeddings",
           "ocr",
+          "limits",
           "editable"
         ],
         "title": "SettingsSchema",
@@ -8751,6 +9096,31 @@
           "url"
         ],
         "title": "UrlRequest",
+        "type": "object"
+      },
+      "VerificationSchema": {
+        "properties": {
+          "backup": {
+            "$ref": "#/components/schemas/BackupSchema"
+          },
+          "problems": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Problems",
+            "type": "array"
+          },
+          "verified": {
+            "title": "Verified",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "backup",
+          "verified",
+          "problems"
+        ],
+        "title": "VerificationSchema",
         "type": "object"
       },
       "VersionContentSchema": {
@@ -9310,6 +9680,199 @@
         "summary": "Declara por qué se ha fallado (causa, concepto y nota)",
         "tags": [
           "errores y repaso"
+        ]
+      }
+    },
+    "/api/v1/backups": {
+      "get": {
+        "operationId": "list_backups_api_v1_backups_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BackupListSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Copia de seguridad: listado, alta e identidad de cada copia",
+        "tags": [
+          "copias"
+        ]
+      },
+      "post": {
+        "description": "Copia consistente de DB, artefactos, representaciones y fixtures, con manifiesto y hashes.",
+        "operationId": "create_backup_api_v1_backups_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBackupSchema"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BackupSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "La entrada no se puede usar: carpeta inválida (`invalid_source`), contenido rechazado por seguridad (`unsafe_content`) o URL no descargable (`url_rejected`)."
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Hace una copia de seguridad del árbol de datos",
+        "tags": [
+          "copias"
+        ]
+      }
+    },
+    "/api/v1/backups/{backup_id}/verify": {
+      "post": {
+        "operationId": "verify_backup_api_v1_backups__backup_id__verify_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "backup_id",
+            "required": true,
+            "schema": {
+              "title": "Backup Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerificationSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Verifica una copia entrada por entrada, sin escribir nada",
+        "tags": [
+          "copias"
         ]
       }
     },
@@ -16302,6 +16865,148 @@
         "summary": "Texto extraído, por trozos, con sus avisos a la vista"
       }
     },
+    "/api/v1/restore/execute": {
+      "post": {
+        "operationId": "execute_restore_api_v1_restore_execute_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RestoreRequestSchema"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RestoreResultSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "La entrada no se puede usar: carpeta inválida (`invalid_source`), contenido rechazado por seguridad (`unsafe_content`) o URL no descargable (`url_rejected`)."
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Restaura una copia validada, con copia previa automática y deshacer si falla",
+        "tags": [
+          "copias"
+        ]
+      }
+    },
+    "/api/v1/restore/validate": {
+      "post": {
+        "operationId": "validate_restore_api_v1_restore_validate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RestoreRequestSchema"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RestorePreviewSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Previsualiza una restauración: valida, comprueba espacio y versión, y no escribe",
+        "tags": [
+          "copias"
+        ]
+      }
+    },
     "/api/v1/review-groups": {
       "get": {
         "operationId": "review_groups_api_v1_review_groups_get",
@@ -16904,6 +17609,7 @@
     },
     "/api/v1/settings": {
       "get": {
+        "description": "Configuración efectiva, **con el destino real de cada proveedor** (DEBT-001).\n\nCada proveedor se clasifica por separado sobre su endpoint efectivo: antes el proveedor de\nembeddings se informaba dentro del bloque de LLM, y un endpoint local contaba como que salía del\nequipo. Un destino `unknown` viaja como tal y cuenta como que sí sale.",
         "operationId": "read_settings_api_v1_settings_get",
         "responses": {
           "200": {

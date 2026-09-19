@@ -10,6 +10,7 @@ from typing import Annotated
 
 from fastapi import Depends, Request
 
+from opofuente.application.backup_service import BackupService
 from opofuente.application.change_service import ChangeService
 from opofuente.application.classification_service import ClassificationService
 from opofuente.application.export_service import ExportService
@@ -108,6 +109,11 @@ def get_export_service(request: Request) -> ExportService:
     return service
 
 
+def get_backup_service(request: Request) -> BackupService:
+    service: BackupService = request.app.state.backup_service
+    return service
+
+
 #: Dependencias anotadas (estilo moderno de FastAPI: sin llamadas en valores por defecto).
 AppSettingsDep = Annotated[Settings, Depends(get_app_settings)]
 SystemServiceDep = Annotated[SystemService, Depends(get_system_service)]
@@ -125,3 +131,4 @@ SearchServiceDep = Annotated[SearchService, Depends(get_search_service)]
 ReviewServiceDep = Annotated[ReviewService, Depends(get_review_service)]
 ExportServiceDep = Annotated[ExportService, Depends(get_export_service)]
 ChangeServiceDep = Annotated[ChangeService, Depends(get_change_service)]
+BackupServiceDep = Annotated[BackupService, Depends(get_backup_service)]

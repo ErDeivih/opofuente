@@ -144,10 +144,20 @@ def test_settings_no_expone_la_clave(tmp_path: Path) -> None:
     body = response.json()
     assert body["llm"]["api_key_configured"] is True
     assert body["llm"]["provider"] == "openai_compatible"
-    assert body["llm"]["sends_data_off_device"] is True
+    # DEBT-001 (S12): el destino se calcula sobre el endpoint efectivo. Este es loopback, así que
+    # **no** sale del equipo, y la respuesta trae el motivo. Antes esta prueba esperaba `True`, que
+    # era el defecto: el booleano no miraba a dónde apuntaba el endpoint.
+    assert body["llm"]["sends_data_off_device"] is False
+    assert body["llm"]["destination"] == "local"
+    assert "loopback" in body["llm"]["destination_reason"]
+    # Y el proveedor de embeddings se informa aparte, con su propio destino.
+    assert body["embeddings"]["destination"] == "disabled"
     assert body["editable"] is False
     assert "clave-secreta-de-prueba" not in json.dumps(body)
     assert body["disk_total_bytes"] > 0
+    # Los límites efectivos se publican: la pantalla de Ajustes tiene que poder decirlos.
+    assert body["limits"]["max_file_bytes"] > 0
+    assert body["limits"]["max_zip_entries"] > 0
 
 
 def test_openapi_y_docs_disponibles(client: TestClient) -> None:

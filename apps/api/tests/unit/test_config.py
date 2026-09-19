@@ -55,7 +55,55 @@ def test_proveedor_llm_completo_es_valido() -> None:
         _env_file=None,
     )
     assert settings.llm_provider == "openai_compatible"
-    assert settings.sends_data_off_device is True
+    # DEBT-001, corregido en S12: un endpoint en loopback **no** saca los datos del equipo. Antes
+    # esta prueba afirmaba lo contrario porque el booleano no miraba el endpoint: ese era el fallo.
+    assert settings.sends_data_off_device is False
+
+
+def test_un_endpoint_remoto_si_saca_los_datos_del_equipo() -> None:
+    """La clasificación mira el endpoint efectivo: el nombre del proveedor no decide nada."""
+    remoto = Settings(
+        llm_provider="ollama",
+        llm_base_url="https://modelos.ejemplo.test/v1",
+        llm_model="modelo",
+        _env_file=None,
+    )
+    local = Settings(
+        llm_provider="ollama",
+        llm_base_url="http://192.168.1.50:11434",
+        llm_model="modelo",
+        _env_file=None,
+    )
+
+    assert remoto.sends_data_off_device is True
+    assert local.sends_data_off_device is False
+
+
+def test_embedding_local_sin_endpoint_no_se_presenta_como_local() -> None:
+    """Un proveedor configurado sin endpoint es `unknown`, y `unknown` cuenta como que sí sale."""
+    settings = Settings(
+        embedding_provider="openai_compatible",
+        embedding_model="modelo",
+        _env_file=None,
+    )
+
+    assert settings.sends_data_off_device is True, "sin endpoint no se puede afirmar que sea local"
+
+
+def test_el_destino_de_cada_proveedor_se_clasifica_aparte() -> None:
+    """DEBT-001: el destino de los embeddings no se informa dentro del bloque del lenguaje."""
+    from opofuente.domain.providers import DataDestination, classify_provider
+
+    llm = classify_provider(name="el modelo de lenguaje", provider="disabled", endpoint=None)
+    embeddings = classify_provider(
+        name="el proveedor de embeddings",
+        provider="openai_compatible",
+        endpoint="https://embeddings.ejemplo.test/v1",
+    )
+
+    assert llm.destination is DataDestination.DISABLED
+    assert embeddings.destination is DataDestination.REMOTE
+    assert "tercero" in embeddings.reason
 
 
 def test_por_defecto_no_sale_datos_del_equipo() -> None:
