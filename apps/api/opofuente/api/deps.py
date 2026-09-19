@@ -10,6 +10,7 @@ from typing import Annotated
 
 from fastapi import Depends, Request
 
+from opofuente.application.change_service import ChangeService
 from opofuente.application.classification_service import ClassificationService
 from opofuente.application.export_service import ExportService
 from opofuente.application.extraction_service import ExtractionService
@@ -97,6 +98,11 @@ def get_review_service(request: Request) -> ReviewService:
     return service
 
 
+def get_change_service(request: Request) -> ChangeService:
+    service: ChangeService = request.app.state.change_service
+    return service
+
+
 def get_export_service(request: Request) -> ExportService:
     service: ExportService = request.app.state.export_service
     return service
@@ -118,3 +124,4 @@ StudyServiceDep = Annotated[StudyService, Depends(get_study_service)]
 SearchServiceDep = Annotated[SearchService, Depends(get_search_service)]
 ReviewServiceDep = Annotated[ReviewService, Depends(get_review_service)]
 ExportServiceDep = Annotated[ExportService, Depends(get_export_service)]
+ChangeServiceDep = Annotated[ChangeService, Depends(get_change_service)]

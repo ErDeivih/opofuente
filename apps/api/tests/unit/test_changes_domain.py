@@ -27,7 +27,7 @@ from opofuente.domain.changes import (
     assert_can_review,
     assess_change,
 )
-from opofuente.domain.errors import InvariantViolationError
+from opofuente.domain.errors import InvalidStateError
 
 RESUMEN_A = Dependent(kind=EdgeTarget.DERIVED_ARTIFACT, id="art-1", title="Resumen del tema 1")
 RESUMEN_B = Dependent(kind=EdgeTarget.DERIVED_ARTIFACT, id="art-2", title="Resumen del tema 2")
@@ -148,7 +148,7 @@ def test_la_aplicacion_no_interpreta_el_efecto_juridico() -> None:
     ],
 )
 def test_un_cambio_no_se_confirma_dos_veces(estado: ChangeStatus, mensaje: str) -> None:
-    with pytest.raises(InvariantViolationError, match=mensaje):
+    with pytest.raises(InvalidStateError, match=mensaje):
         assert_can_confirm(estado)
 
 
@@ -158,5 +158,5 @@ def test_un_cambio_propuesto_se_puede_confirmar() -> None:
 
 def test_solo_se_revisa_lo_que_esta_pendiente() -> None:
     assert_can_review(needs_review=True)
-    with pytest.raises(InvariantViolationError, match="no está pendiente"):
+    with pytest.raises(InvalidStateError, match="no está pendiente"):
         assert_can_review(needs_review=False)

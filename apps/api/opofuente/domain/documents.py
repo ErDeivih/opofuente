@@ -326,7 +326,13 @@ class VersionDiff:
         return self.added + self.removed + self.changed > 0
 
 
-def _etiqueta(titulo: str | None, ordinal: int) -> str:
+def section_label(titulo: str | None, ordinal: int) -> str:
+    """Cómo se llama una sección en una comparación: su título o «sección N».
+
+    Es la **misma** regla que usa la biblioteca para citar y la que usa S11 para emparejar
+    secciones entre versiones: si cada sitio inventara la suya, una sección «cambiada» en un listado
+    no sería la misma que en el otro.
+    """
     return titulo.strip() if titulo and titulo.strip() else f"sección {ordinal}"
 
 
@@ -343,10 +349,10 @@ def diff_versions(
     se ordena por el orden de la versión nueva y, al final, lo que solo estaba en la vieja.
     """
     por_titulo_antes = {
-        _etiqueta(titulo, indice): texto for indice, (titulo, texto) in enumerate(before, 1)
+        section_label(titulo, indice): texto for indice, (titulo, texto) in enumerate(before, 1)
     }
     por_titulo_despues = {
-        _etiqueta(titulo, indice): texto for indice, (titulo, texto) in enumerate(after, 1)
+        section_label(titulo, indice): texto for indice, (titulo, texto) in enumerate(after, 1)
     }
 
     diffs: list[SectionDiff] = []

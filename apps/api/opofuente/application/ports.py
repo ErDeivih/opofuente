@@ -437,3 +437,15 @@ class VectorSearch(Protocol):
     def model(self) -> str | None: ...
 
     def search(self, question: str, *, limit: int) -> tuple[CandidateSpan, ...]: ...
+
+
+@runtime_checkable
+class ChangeRecorder(Protocol):
+    """Quien se entera de que ha aparecido una versión nueva (S11).
+
+    La biblioteca promociona —es su trabajo— y **avisa**; lo que se haga con el aviso (proponer un
+    cambio, calcular el diff y los derivados afectados) no es cosa suya. Así una prueba de la
+    biblioteca sigue pudiendo promocionar sin montar el servicio de cambios.
+    """
+
+    def record_version_change(self, *, document_id: str, new_version_id: str) -> object | None: ...

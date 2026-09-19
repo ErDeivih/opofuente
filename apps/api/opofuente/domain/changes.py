@@ -21,7 +21,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from enum import StrEnum
 
-from opofuente.domain.errors import InvariantViolationError
+from opofuente.domain.errors import InvalidStateError
 
 # --- vocabularios (los mismos que la migración 0020) ---------------------------------------------
 
@@ -238,11 +238,11 @@ def assess_change(
 def assert_can_confirm(status: ChangeStatus) -> None:
     """Un conjunto de cambios solo se confirma una vez, y solo mientras está propuesto."""
     if status is ChangeStatus.CONFIRMED:
-        raise InvariantViolationError(
+        raise InvalidStateError(
             "este cambio ya está confirmado: confirmarlo otra vez volvería a marcar los derivados"
         )
     if status is ChangeStatus.DISCARDED:
-        raise InvariantViolationError(
+        raise InvalidStateError(
             "este cambio se descartó: para volver a proponerlo hay que promover otra versión"
         )
 
@@ -250,7 +250,7 @@ def assert_can_confirm(status: ChangeStatus) -> None:
 def assert_can_review(*, needs_review: bool) -> None:
     """Solo se revisa lo que está pendiente: revisar lo que no lo está no dice nada."""
     if not needs_review:
-        raise InvariantViolationError("este derivado no está pendiente de revisión")
+        raise InvalidStateError("este derivado no está pendiente de revisión")
 
 
 __all__ = [

@@ -42,6 +42,15 @@ class AttemptFrozenError(SessionStateError):
     """El intento de esa pregunta ya está congelado. La API lo traduce a 409 `attempt_frozen`."""
 
 
+class InvalidStateError(OpoFuenteError):
+    """La operación no vale para el estado actual del objeto. La API lo traduce a 409.
+
+    Casos de S11: confirmar un cambio ya confirmado, descartar uno descartado o revisar un derivado
+    que no está pendiente. No es un fallo del programa: es una petición que no encaja con el estado,
+    y se explica con el motivo en lugar de con un 500.
+    """
+
+
 class InvalidAnswerError(OpoFuenteError):
     """La respuesta no vale para esa pregunta. La API lo traduce a 422 `invalid_answer`.
 

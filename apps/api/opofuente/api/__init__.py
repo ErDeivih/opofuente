@@ -8,6 +8,7 @@ from __future__ import annotations
 from fastapi import APIRouter
 
 from opofuente.api.routes import (
+    changes,
     classification,
     exports,
     ingestion,
@@ -31,5 +32,6 @@ api_router.include_router(study.router)
 api_router.include_router(search.router)
 api_router.include_router(reviews.router)
 api_router.include_router(exports.router)
+api_router.include_router(changes.router)
 
 __all__ = ["api_router"]

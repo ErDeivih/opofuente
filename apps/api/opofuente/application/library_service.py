@@ -35,7 +35,7 @@ from opofuente.application.library_models import (
     VersionText,
     VersionView,
 )
-from opofuente.application.ports import Clock
+from opofuente.application.ports import ChangeRecorder, Clock
 from opofuente.application.read_models import MappingView
 from opofuente.domain.classification import DocumentType  # el vocabulario es el de la clasificación
 from opofuente.domain.documents import (
@@ -59,10 +59,15 @@ class LibraryService:
         documents: SqlAlchemyDocumentRepository,
         classifications: SqlAlchemyClassificationRepository,
         clock: Clock,
+        changes: ChangeRecorder | None = None,
     ) -> None:
         self._documents = documents
         self._classifications = classifications
         self._clock = clock
+        #: Quien se entera de una versión nueva (S11). Es opcional: la biblioteca promociona igual,
+        #: y sin él no se propone ningún cambio, que es lo correcto cuando no hay servicio de
+        #: cambios.
+        self._changes = changes
 
     # ------------------------------------------------------------------ promoción
 
@@ -90,7 +95,7 @@ class LibraryService:
                 False,
                 reason="Promocionar no hace público un documento: eso se decide aparte",
             )
-        return self._documents.promote_artifact(
+        outcome = self._documents.promote_artifact(
             artifact_id,
             now=self._clock.now(),
             document_id=document_id,
@@ -102,6 +107,20 @@ class LibraryService:
             rights_code=rights_code,
             official_url=official_url,
         )
+        # S11: una versión nueva de un documento que ya tenía una aceptada es un **cambio**, y se
+        # propone (con su diff y sus derivados afectados) sin aplicar nada. La biblioteca solo
+        # avisa.
+        if (
+            outcome.created_version
+            and not outcome.created_document
+            and self._changes is not None
+            and outcome.document_id is not None
+            and outcome.version_id is not None
+        ):
+            self._changes.record_version_change(
+                document_id=outcome.document_id, new_version_id=outcome.version_id
+            )
+        return outcome
 
     def accept_version(self, version_id: str, *, actor: str = "local") -> PromotionOutcome:
         """Acepta una versión: promoción crítica, confirmada por una persona y auditada."""

@@ -25,6 +25,7 @@ from opofuente.api.middleware import (
     SecurityHeadersMiddleware,
 )
 from opofuente.api.openapi import apply_problem_media_type
+from opofuente.application.change_service import ChangeService
 from opofuente.application.classification_service import ClassificationService
 from opofuente.application.export_service import ExportService
 from opofuente.application.extraction_service import ExtractionService
@@ -47,6 +48,7 @@ from opofuente.infrastructure.capabilities import (
     SqliteCapabilityProvider,
     VectorIndexCapabilityProvider,
 )
+from opofuente.infrastructure.change_repository import SqlAlchemyChangeRepository
 from opofuente.infrastructure.classification_repository import SqlAlchemyClassificationRepository
 from opofuente.infrastructure.classifiers import DeterministicClassifier
 from opofuente.infrastructure.clock import SystemClock
@@ -167,10 +169,17 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         engines=(DeterministicClassifier(),),
         clock=clock,
     )
+    change_service = ChangeService(
+        changes=SqlAlchemyChangeRepository(session_factory),
+        documents=SqlAlchemyDocumentRepository(session_factory, representations),
+        clock=clock,
+    )
     library_service = LibraryService(
         documents=SqlAlchemyDocumentRepository(session_factory, representations),
         classifications=classification_repository,
         clock=clock,
+        # La biblioteca avisa de una versión nueva; el cambio lo propone el servicio de cambios.
+        changes=change_service,
     )
     question_service = QuestionService(
         questions=SqlAlchemyQuestionRepository(session_factory),
@@ -278,6 +287,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.search_service = search_service
     app.state.review_service = review_service
     app.state.export_service = export_service
+    app.state.change_service = change_service
 
     # El orden importa: el último añadido es el más externo, así que el identificador de
     # correlación envuelve también los rechazos por Origin.

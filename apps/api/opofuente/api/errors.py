@@ -22,6 +22,7 @@ from opofuente.domain.errors import (
     InvalidAnswerError,
     InvalidBatchStateError,
     InvalidSourceError,
+    InvalidStateError,
     MappingMismatchError,
     NotFoundError,
     OpoFuenteError,
@@ -215,6 +216,13 @@ def register_exception_handlers(app: FastAPI) -> None:
                 code="invalid_source",
             )
         if isinstance(exc, InvalidBatchStateError):
+            return problem_response(
+                status_code=409,
+                detail=str(exc),
+                instance=request.url.path,
+                code="invalid_state",
+            )
+        if isinstance(exc, InvalidStateError):
             return problem_response(
                 status_code=409,
                 detail=str(exc),
