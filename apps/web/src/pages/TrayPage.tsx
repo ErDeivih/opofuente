@@ -206,7 +206,7 @@ export function TrayPage() {
                 (inventory.batch.counters.omitted_executable ?? 0) +
                 (inventory.batch.counters.omitted_directory ?? 0) +
                 (inventory.batch.counters.omitted_unsupported ?? 0)}{' '}
-              <span className="hint">(ocultos, temporales, ejecutables, directorios y formatos sin extractor)</span>
+              <span className="hint">(ocultos, temporales, ejecutables, directorios y ficheros no soportados)</span>
             </dd>
             <dt>Enlaces fuera de la carpeta</dt>
             <dd>

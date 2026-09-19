@@ -14,6 +14,7 @@ Dos reglas gobiernan todo lo de aquí:
 
 from __future__ import annotations
 
+import json
 import re
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
@@ -501,6 +502,8 @@ class ParsedSet:
     issues: tuple[ParseIssue, ...] = field(default_factory=tuple)
     model_code: str | None = None
     parts_detected: tuple[str, ...] = ()
+    #: Campos que venían en el origen y este asistente no guarda: se informan, no se esconden.
+    ignored_fields: tuple[str, ...] = ()
 
     @property
     def with_key(self) -> int:
@@ -717,6 +720,305 @@ def parse_questions(text: str) -> ParsedSet:
     )
 
 
+# --- importación desde JSON (11_IMPLEMENTATION-SLICES §S06: «asistente CSV/JSON») ---------------
+
+#: Campos que el asistente JSON entiende en cada pregunta. Lo que no esté aquí se **declara** como
+#: ignorado en lugar de fingir que se ha importado (misma regla que las columnas del CSV).
+JSON_QUESTION_FIELDS = (
+    "stem",
+    "options",
+    "correct",
+    "explanation",
+    "topic",
+    "number",
+    "reserve",
+    "reserve_order",
+    "type",
+)
+
+#: Campos que el asistente JSON **lee y todavía no guarda**: se declaran en el informe, no se
+#: tiran en silencio. `explanation` y `topic` sí se guardan (van a la explicación y al mapeo).
+JSON_UNSTORED_FIELDS = ("tags", "source", "section", "reference", "image", "id")
+
+#: Nombres de tipo que el asistente acepta, con el vocabulario del dominio.
+_JSON_TYPES = {tipo.value: tipo for tipo in QuestionType}
+
+
+def _json_rows(payload: object, issues: list[ParseIssue]) -> tuple[Mapping[str, object], ...]:
+    """Las preguntas del sobre JSON, sea una lista o un objeto con `questions`/`items`.
+
+    Un JSON que no es ni una cosa ni la otra no se puede importar: se dice con una incidencia y no
+    se inventa nada.
+    """
+    if isinstance(payload, Mapping):
+        for clave in ("questions", "items", "preguntas"):
+            valor = payload.get(clave)
+            if isinstance(valor, list):
+                return tuple(fila for fila in valor if isinstance(fila, Mapping))
+            if valor is not None:
+                issues.append(
+                    ParseIssue(
+                        line=0,
+                        code="bad_json_shape",
+                        detail=f"«{clave}» no es una lista de preguntas",
+                    )
+                )
+                return ()
+        issues.append(
+            ParseIssue(
+                line=0,
+                code="bad_json_shape",
+                detail="el objeto no trae ninguna lista de preguntas (`questions`, `items`)",
+            )
+        )
+        return ()
+    if isinstance(payload, list):
+        return tuple(fila for fila in payload if isinstance(fila, Mapping))
+    issues.append(
+        ParseIssue(
+            line=0,
+            code="bad_json_shape",
+            detail="se esperaba una lista de preguntas o un objeto con «questions»",
+        )
+    )
+    return ()
+
+
+def _json_key_value(
+    bruto: object, *, opciones: Sequence[ParsedOption]
+) -> tuple[str, ...] | str | None:
+    """Clave de una pregunta JSON: letras/índices/números, o los enunciados exactos de las opciones.
+
+    Devolver el texto de la opción —y no solo la letra— es lo que hace útil el asistente: un JSON
+    exportado de otra herramienta trae la respuesta escrita, no su letra. Lo que no se reconoce
+    devuelve una cadena con el motivo, que es lo que se le enseña a quien importa.
+    """
+    textos = [opcion.text.strip() for opcion in opciones]
+    if isinstance(bruto, bool):
+        return "la respuesta no puede ser un booleano"
+    if isinstance(bruto, int):
+        indice = bruto - 1
+        if 0 <= indice < len(opciones):
+            return (opciones[indice].stable_key,)
+        return f"la posición {bruto} no corresponde a ninguna opción"
+    if isinstance(bruto, str):
+        limpio = bruto.strip()
+        if not limpio:
+            return ()
+        if limpio.lower() in {texto.lower() for texto in textos}:
+            return tuple(
+                opcion.stable_key
+                for opcion, texto in zip(opciones, textos, strict=True)
+                if texto.lower() == limpio.lower()
+            )
+        claves: list[str] = []
+        for trozo in limpio.lower().replace(",", " ").replace(";", " ").split():
+            letra = trozo.strip("()[].").strip()
+            if len(letra) == 1 and "a" <= letra <= "h":
+                if ord(letra) - ord("a") >= len(opciones):
+                    return f"«{bruto.strip()}» no corresponde a ninguna opción"
+                claves.append(letra)
+            elif letra.isdigit():
+                indice = int(letra) - 1
+                if indice < 0 or indice >= len(opciones):
+                    return f"«{bruto.strip()}» no corresponde a ninguna opción"
+                claves.append(opciones[indice].stable_key)
+            else:
+                return f"«{bruto.strip()}» no corresponde a ninguna opción"
+        return tuple(dict.fromkeys(claves))
+    if isinstance(bruto, Sequence):
+        acumulado: list[str] = []
+        for pieza in bruto:
+            leida = _json_key_value(pieza, opciones=opciones)
+            if isinstance(leida, str):
+                return leida
+            acumulado.extend(leida or ())
+        return tuple(dict.fromkeys(acumulado))
+    return f"«{bruto}» no corresponde a ninguna opción"
+
+
+def parse_questions_json(text: str) -> ParsedSet:
+    """Parsea el mismo cuestionario en JSON, para el asistente del slice S06.
+
+    Entiende una lista de objetos —o un objeto con `questions`/`items`— donde cada pregunta trae al
+    menos `stem` y dos `options`. Todo lo demás (`correct`, `explanation`, `topic`, `number`,
+    `reserve`, `reserve_order`, `type`) es opcional y, cuando falta, se deja vacío: el asistente
+    **no** inventa una clave que el fichero no trae.
+
+    Dos reglas que vienen de los criterios de aceptación del slice: una pregunta mala **no** aborta
+    el lote (se informa con su motivo) y un campo desconocido se **declara** (`json_fields_ignored`
+    lo recoge quien llama) en lugar de desaparecer en silencio.
+    """
+    preguntas: list[ParsedQuestion] = []
+    incidencias: list[ParseIssue] = []
+    modelo: str | None = None
+    try:
+        payload = json.loads(text)
+    except (json.JSONDecodeError, ValueError) as error:
+        return ParsedSet(
+            issues=(
+                ParseIssue(line=0, code="not_json", detail=f"el texto no es JSON válido: {error}"),
+            )
+        )
+
+    if isinstance(payload, Mapping):
+        bruto_modelo = payload.get("model_code")
+        if isinstance(bruto_modelo, str) and bruto_modelo.strip():
+            modelo = bruto_modelo.strip().upper()[:1]
+        elif bruto_modelo is not None:
+            incidencias.append(
+                ParseIssue(line=0, code="bad_model", detail="«model_code» no es un texto")
+            )
+
+    for indice, fila in enumerate(_json_rows(payload, incidencias)):
+        numero_fila = indice + 1
+        stem = fila.get("stem")
+        if not isinstance(stem, str) or not stem.strip():
+            incidencias.append(
+                ParseIssue(line=numero_fila, code="no_stem", detail="la pregunta no trae enunciado")
+            )
+            continue
+        bruto_opciones = fila.get("options")
+        if not isinstance(bruto_opciones, list):
+            incidencias.append(
+                ParseIssue(
+                    line=numero_fila,
+                    code="no_options",
+                    detail="la pregunta no trae una lista de opciones",
+                )
+            )
+            continue
+        textos: list[str] = []
+        for opcion in bruto_opciones:
+            # Un texto sin etiqueta también vale: se quita la etiqueta **solo si la trae**.
+            limpio = strip_option_label(opcion).strip() if isinstance(opcion, str) else ""
+            if not limpio:
+                textos = []
+                break
+            textos.append(limpio)
+        if len(textos) < 2:
+            incidencias.append(
+                ParseIssue(
+                    line=numero_fila,
+                    code="few_options",
+                    detail=f"la pregunta trae {len(textos)} opción(es) legibles: hacen falta dos",
+                )
+            )
+            continue
+        opciones = tuple(
+            ParsedOption(
+                stable_key=_option_key(orden),
+                text=texto,
+                position=orden + 1,
+            )
+            for orden, texto in enumerate(textos)
+        )
+
+        claves: tuple[str, ...] = ()
+        if "correct" in fila:
+            leida = _json_key_value(fila.get("correct"), opciones=opciones)
+            if isinstance(leida, str):
+                incidencias.append(
+                    ParseIssue(line=numero_fila, code="key_without_option", detail=leida)
+                )
+                continue
+            claves = leida or ()
+
+        tipo: QuestionType | None = None
+        motivo: str | None = None
+        bruto_tipo = fila.get("type")
+        if isinstance(bruto_tipo, str) and bruto_tipo.strip():
+            tipo = _JSON_TYPES.get(bruto_tipo.strip().lower())
+            if tipo is None:
+                incidencias.append(
+                    ParseIssue(
+                        line=numero_fila,
+                        code="unknown_type",
+                        detail=(
+                            f"«{bruto_tipo.strip()}» no es un tipo de pregunta conocido: "
+                            f"{', '.join(sorted(_JSON_TYPES))}"
+                        ),
+                    )
+                )
+                continue
+            motivo = "el fichero declara el tipo"
+        if tipo is None:
+            tipo, motivo = _infer_type(stem.strip(), opciones)
+
+        bruto_numero = fila.get("number")
+        numero: int | None = None
+        if isinstance(bruto_numero, int) and not isinstance(bruto_numero, bool):
+            numero = bruto_numero
+        elif isinstance(bruto_numero, str) and bruto_numero.strip().isdigit():
+            numero = int(bruto_numero.strip())
+        elif bruto_numero is not None:
+            incidencias.append(
+                ParseIssue(
+                    line=numero_fila,
+                    code="bad_number",
+                    detail="«number» no es un número entero",
+                )
+            )
+
+        bruto_reserva = fila.get("reserve")
+        if isinstance(bruto_reserva, bool):
+            reserva = bruto_reserva
+        elif isinstance(bruto_reserva, str):
+            reserva = _is_truthy(bruto_reserva)
+        elif isinstance(bruto_reserva, int):
+            reserva = bruto_reserva != 0
+        else:
+            reserva = False
+        bruto_orden = fila.get("reserve_order")
+        orden_reserva = (
+            bruto_orden
+            if isinstance(bruto_orden, int) and not isinstance(bruto_orden, bool)
+            else None
+        )
+        if orden_reserva is not None:
+            reserva = True
+
+        preguntas.append(
+            ParsedQuestion(
+                number=numero,
+                stem=stem.strip(),
+                options=opciones,
+                question_type=tipo,
+                line=numero_fila,
+                is_reserve=reserva,
+                reserve_order=orden_reserva,
+                correct_option_keys=claves,
+                type_reason=motivo,
+            )
+        )
+
+    return ParsedSet(
+        questions=tuple(preguntas),
+        issues=tuple(incidencias),
+        model_code=modelo,
+        ignored_fields=_json_ignored_fields(payload),
+    )
+
+
+def _json_ignored_fields(payload: object) -> tuple[str, ...]:
+    """Campos que el JSON trae y el asistente no guarda, en orden y sin repetir.
+
+    Se declaran para que el informe pueda decir «esto lo he leído y no lo he guardado», que es lo
+    contrario de perderlo por el camino sin decirlo.
+    """
+    vistas: list[str] = []
+    for fila in _json_rows(payload, []):
+        for clave in fila:
+            if clave in JSON_UNSTORED_FIELDS and clave not in vistas:
+                vistas.append(clave)
+    return tuple(vistas)
+
+
+def _is_truthy(value: str) -> bool:
+    """Síes de un campo JSON que viene como texto. Lo demás es «no», sin inventar."""
+    return value.strip().lower() in {"1", "s", "si", "sí", "r", "reserva", "true", "x", "yes"}
+
+
 @dataclass(frozen=True, slots=True)
 class ParsedKeyLine:
     """Una línea de una plantilla: número de pregunta y opción, u otro desenlace."""
@@ -792,6 +1094,7 @@ def parse_answer_key(text: str) -> tuple[tuple[ParsedKeyLine, ...], tuple[ParseI
 
 
 __all__ = [
+    "JSON_QUESTION_FIELDS",
     "REORDERED_OPTIONS",
     "SAME_QUESTION",
     "SIMILAR_QUESTION",
@@ -822,6 +1125,7 @@ __all__ = [
     "numbering_match",
     "parse_answer_key",
     "parse_questions",
+    "parse_questions_json",
     "question_fingerprint",
     "same_options_in_other_order",
     "strip_numbering",

@@ -15,11 +15,12 @@ import {
 export interface QuestionTableProps {
   questions: Question[];
   total: number;
-  filters: { status: string; originType: string; onlyReserves: boolean };
+  filters: { status: string; originType: string; onlyReserves: boolean; offset: number; limit: number };
   onFiltersChange: (filters: {
     status: string;
     originType: string;
     onlyReserves: boolean;
+    offset: number;
   }) => void;
   selectedId: string | null;
   onSelect: (questionId: string) => void;
@@ -35,6 +36,10 @@ export interface QuestionTableProps {
  * 07_UI-UX §7 lo dice así: «conflictos arriba, no escondidos en filtros». Un conflicto de claves es
  * justo lo que hay que mirar antes de estudiar con este banco, así que no puede depender de que
  * alguien se acuerde de filtrar por «en conflicto».
+ *
+ * La lista está **paginada** (DEBT-011): el servidor devuelve una página y la tabla dice en qué
+ * tramo está y deja moverse. Antes se pedían cien preguntas y no había forma de ver la 101, así que
+ * un banco grande tenía material que la pantalla no enseñaba nunca.
  */
 export function QuestionTable({
   questions,
@@ -52,6 +57,11 @@ export function QuestionTable({
   const gruposEnConflicto = duplicates.filter((grupo) => grupo.conflicting_keys);
   const gruposReordenados = duplicates.filter((grupo) => grupo.kind === 'reordered_options');
   const hayConflictos = conflictivas.length > 0 || gruposEnConflicto.length > 0;
+
+  const desde = total === 0 ? 0 : filters.offset + 1;
+  const hasta = filters.offset + questions.length;
+  const hayAnterior = filters.offset > 0;
+  const haySiguiente = hasta < total;
 
   if (isPending) {
     return <LoadingState label="Cargando las preguntas…" />;
@@ -101,7 +111,7 @@ export function QuestionTable({
           className="selector__select"
           value={filters.status}
           onChange={(event) => {
-            onFiltersChange({ ...filters, status: event.target.value });
+            onFiltersChange({ ...filters, status: event.target.value, offset: 0 });
           }}
         >
           <option value="">todos</option>
@@ -120,7 +130,7 @@ export function QuestionTable({
           className="selector__select"
           value={filters.originType}
           onChange={(event) => {
-            onFiltersChange({ ...filters, originType: event.target.value });
+            onFiltersChange({ ...filters, originType: event.target.value, offset: 0 });
           }}
         >
           <option value="">todos</option>
@@ -137,7 +147,7 @@ export function QuestionTable({
             type="checkbox"
             checked={filters.onlyReserves}
             onChange={(event) => {
-              onFiltersChange({ ...filters, onlyReserves: event.target.checked });
+              onFiltersChange({ ...filters, onlyReserves: event.target.checked, offset: 0 });
             }}
           />{' '}
           solo reservas
@@ -152,7 +162,7 @@ export function QuestionTable({
       ) : (
         <table className="table">
           <caption className="table__caption">
-            {questions.length} de {total} preguntas del conjunto
+            {desde}–{hasta} de {total} preguntas del conjunto
           </caption>
           <thead>
             <tr>
@@ -221,6 +231,34 @@ export function QuestionTable({
             ))}
           </tbody>
         </table>
+      )}
+
+      {total > filters.limit && (
+        <div className="form__row">
+          <button
+            className="button"
+            type="button"
+            disabled={!hayAnterior}
+            onClick={() => {
+              onFiltersChange({ ...filters, offset: Math.max(0, filters.offset - filters.limit) });
+            }}
+          >
+            Página anterior
+          </button>
+          <span className="hint">
+            Mostrando {desde}–{hasta} de {total}
+          </span>
+          <button
+            className="button"
+            type="button"
+            disabled={!haySiguiente}
+            onClick={() => {
+              onFiltersChange({ ...filters, offset: filters.offset + filters.limit });
+            }}
+          >
+            Página siguiente
+          </button>
+        </div>
       )}
 
       {gruposReordenados.length > 0 && (

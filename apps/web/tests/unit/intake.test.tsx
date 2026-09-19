@@ -91,7 +91,11 @@ describe('entradas directas de la Bandeja', () => {
     // Sin texto no hay nada que guardar: el botón no se ofrece en falso.
     expect(boton).toBeDisabled();
 
-    await userEvent.type(screen.getByLabelText('Texto'), 'Tema 1. La Constitución Española.');
+    // `paste` en lugar de `type`: escribir carácter a carácter en un textarea controlado que vuelve a
+    // renderizar por cada pulsación es lento y, con el tiempo justo, se cuela un espacio entre letras
+    // («Suelto.» llegaba como « S uelto.»). Pegar es lo que hace de verdad una persona aquí.
+    await userEvent.click(screen.getByLabelText('Texto'));
+    await userEvent.paste('Tema 1. La Constitución Española.');
     await userEvent.type(screen.getByLabelText(/Título/), '  Notas del tema 1  ');
     await userEvent.click(boton);
 
@@ -112,7 +116,8 @@ describe('entradas directas de la Bandeja', () => {
     const fetchMock = stubIntakeApi();
     renderTray();
 
-    await userEvent.type(await screen.findByLabelText('Texto'), 'Suelto.');
+    await userEvent.click(await screen.findByLabelText('Texto'));
+    await userEvent.paste('Suelto.');
     await userEvent.click(screen.getByRole('button', { name: 'Guardar el texto' }));
 
     await waitFor(() => {

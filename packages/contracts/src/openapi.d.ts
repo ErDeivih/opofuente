@@ -1376,8 +1376,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Importa preguntas, un CSV o una plantilla a un conjunto
-         * @description Las tres formas de llenar un conjunto: texto, CSV con mapeo y plantilla suelta.
+         * Importa preguntas, un CSV, un JSON o una plantilla a un conjunto
+         * @description Las cuatro formas de llenar un conjunto: texto, CSV con mapeo, JSON y plantilla suelta.
          *
          *     Lo que no se entiende se informa (fila a fila, con su causa) y el resto entra: una fila mala no
          *     aborta el lote.
@@ -3790,7 +3790,7 @@ export interface components {
         };
         /**
          * ParseQuestionSetSchema
-         * @description Lo que se pide al importar: preguntas de un texto, un CSV o una plantilla suelta.
+         * @description Lo que se pide al importar: preguntas de un texto, un CSV, un JSON o una plantilla suelta.
          */
         ParseQuestionSetSchema: {
             /**
@@ -3798,7 +3798,7 @@ export interface components {
              * @default questions
              * @enum {string}
              */
-            kind: "questions" | "answer_key" | "csv";
+            kind: "questions" | "answer_key" | "csv" | "json";
             mapping?: components["schemas"]["CsvMappingSchema"] | null;
             /** Source Document Version Id */
             source_document_version_id?: string | null;

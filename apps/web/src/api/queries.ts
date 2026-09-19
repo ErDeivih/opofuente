@@ -684,9 +684,10 @@ export function useQuestionSet(setId: string | null) {
 
 export function useSetQuestions(
   setId: string | null,
-  filtros: { status: string; originType: string; onlyReserves: boolean },
+  filtros: { status: string; originType: string; onlyReserves: boolean; offset?: number },
 ) {
-  const clave = `${filtros.status}|${filtros.originType}|${String(filtros.onlyReserves)}`;
+  // El desplazamiento entra en la clave: dos páginas del mismo filtro son dos respuestas distintas.
+  const clave = `${filtros.status}|${filtros.originType}|${String(filtros.onlyReserves)}|${String(filtros.offset ?? 0)}`;
   return useQuery({
     queryKey: queryKeys.setQuestions(setId ?? 'ninguno', clave),
     queryFn: () => fetchSetQuestions(setId as string, filtros),

@@ -12,6 +12,7 @@ Lo que se prueba aquí es lo que sostiene los criterios de aceptación del slice
 
 from __future__ import annotations
 
+import json
 from datetime import UTC, datetime
 
 import pytest
@@ -35,6 +36,7 @@ from opofuente.domain.questions import (
     find_question_duplicates,
     parse_answer_key,
     parse_questions,
+    parse_questions_json,
     question_fingerprint,
     same_options_in_other_order,
     strip_numbering,
@@ -409,3 +411,123 @@ def test_una_plantilla_de_otro_conjunto_no_vale() -> None:
 def test_un_desenlace_con_clave_sin_clave_es_un_error_de_dominio() -> None:
     with pytest.raises(ValueError):
         AnswerKeyEntry("q1", KeyOutcome.KEYED, ())
+
+
+# --- asistente JSON (11_IMPLEMENTATION-SLICES §S06) ---------------------------------------------
+
+
+def test_el_asistente_json_lee_preguntas_claves_y_reservas() -> None:
+    texto = json.dumps(
+        {
+            "model_code": "B",
+            "questions": [
+                {
+                    "stem": "¿Cuál es el plazo?",
+                    "options": ["a) diez días", "b) quince días", "c) un mes"],
+                    "correct": "b",
+                    "number": 7,
+                },
+                {
+                    "stem": "¿Cuál NO es un recurso?",
+                    "options": ["alzada", "reposición", "revisión"],
+                    "correct": ["c"],
+                    "reserve": True,
+                    "reserve_order": 1,
+                },
+            ],
+        }
+    )
+
+    resultado = parse_questions_json(texto)
+
+    assert len(resultado.questions) == 2, resultado.issues
+    assert resultado.model_code == "B"
+    assert resultado.with_key == 2
+    assert resultado.reserves == 1
+    # La etiqueta de la opción se quita; el texto que se cita no se toca más.
+    assert [opcion.text for opcion in resultado.questions[0].options] == [
+        "diez días",
+        "quince días",
+        "un mes",
+    ]
+    assert resultado.questions[0].correct_option_keys == ("b",)
+    assert resultado.questions[0].number == 7
+    assert resultado.questions[1].is_reserve is True
+    assert resultado.questions[1].reserve_order == 1
+    assert [incidencia.code for incidencia in resultado.issues] == []
+
+
+def test_el_asistente_json_acepta_la_respuesta_escrita_o_numerada() -> None:
+    """Un JSON exportado de otra herramienta trae la respuesta escrita, no su letra."""
+    texto = json.dumps(
+        [
+            {
+                "stem": "¿Qué artículo?",
+                "options": ["el 14", "el 23", "el 103"],
+                "correct": "el 23",
+            },
+            {
+                "stem": "¿Cuántos bloques?",
+                "options": ["tres", "cuatro", "cinco"],
+                "correct": 2,
+            },
+        ]
+    )
+
+    resultado = parse_questions_json(texto)
+
+    assert resultado.questions[0].correct_option_keys == ("b",)
+    assert resultado.questions[1].correct_option_keys == ("b",)
+
+
+def test_una_pregunta_mala_del_json_no_aborta_el_lote() -> None:
+    """El mismo criterio que el CSV: lo que no se entiende se informa y el resto entra."""
+    texto = json.dumps(
+        [
+            {"stem": "Buena", "options": ["uno", "dos"], "correct": "a"},
+            {"stem": "", "options": ["uno", "dos"]},
+            {"stem": "Sin opciones", "options": ["solo una"]},
+            {"stem": "Clave imposible", "options": ["uno", "dos"], "correct": "z"},
+            {"stem": "Tipo raro", "options": ["uno", "dos"], "type": "inventado"},
+            {"stem": "Otra buena", "options": ["tres", "cuatro"]},
+        ]
+    )
+
+    resultado = parse_questions_json(texto)
+
+    assert [pregunta.stem for pregunta in resultado.questions] == ["Buena", "Otra buena"]
+    assert [incidencia.code for incidencia in resultado.issues] == [
+        "no_stem",
+        "few_options",
+        "key_without_option",
+        "unknown_type",
+    ]
+    # Una pregunta sin clave entra **sin clave**: no se rellena con nada.
+    assert resultado.questions[1].correct_option_keys == ()
+    assert resultado.with_key == 1
+
+
+def test_un_texto_que_no_es_json_lo_dice_sin_inventar_preguntas() -> None:
+    resultado = parse_questions_json("esto no es JSON, es texto suelto")
+
+    assert resultado.questions == ()
+    assert [incidencia.code for incidencia in resultado.issues] == ["not_json"]
+
+
+def test_el_json_declara_los_campos_que_no_guarda() -> None:
+    """Lo que el asistente lee y no guarda se declara: no desaparece sin decirlo."""
+    texto = json.dumps(
+        [
+            {
+                "stem": "Pregunta",
+                "options": ["uno", "dos"],
+                "tags": ["tema-1"],
+                "source": "apuntes",
+            }
+        ]
+    )
+
+    resultado = parse_questions_json(texto)
+
+    assert resultado.ignored_fields == ("tags", "source")
+    assert len(resultado.questions) == 1

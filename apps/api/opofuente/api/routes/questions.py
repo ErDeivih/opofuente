@@ -313,12 +313,12 @@ def list_set_questions(
     "/question-sets/{set_id}/parse",
     response_model=QuestionImportReportSchema,
     responses=INGESTION_WRITE_ERRORS,
-    summary="Importa preguntas, un CSV o una plantilla a un conjunto",
+    summary="Importa preguntas, un CSV, un JSON o una plantilla a un conjunto",
 )
 def parse_into_set(
     set_id: str, request: ParseQuestionSetSchema, service: QuestionServiceDep
 ) -> QuestionImportReportSchema:
-    """Las tres formas de llenar un conjunto: texto, CSV con mapeo y plantilla suelta.
+    """Las cuatro formas de llenar un conjunto: texto, CSV con mapeo, JSON y plantilla suelta.
 
     Lo que no se entiende se informa (fila a fila, con su causa) y el resto entra: una fila mala no
     aborta el lote.
@@ -334,6 +334,8 @@ def parse_into_set(
                 origin_type=Origin.PRIVATE,
             )
         )
+    if request.kind == "json":
+        return _report(service.import_from_json(set_id, request.text, origin_type=Origin.PRIVATE))
     if request.kind == "answer_key":
         informe = service.import_key_from_text(
             set_id,

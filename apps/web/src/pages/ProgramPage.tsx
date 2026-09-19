@@ -142,7 +142,8 @@ export function ProgramPage() {
                 <dt>Cobertura</dt>
                 <dd>
                   <span className="hint">
-                    No disponible todavía: se calcula cuando existan fuentes asignadas (S05).
+                    Se calcula en Revisión, sobre las fuentes asignadas a este nodo (provisional y
+                    aceptada por separado).
                   </span>
                 </dd>
                 <dt>Procedencia</dt>

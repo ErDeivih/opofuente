@@ -382,6 +382,67 @@ def test_la_redireccion_a_red_interna_se_rechaza(monkeypatch: pytest.MonkeyPatch
         url_guard.validate_url("http://interno.test/x")
 
 
+def test_el_fetch_no_sigue_una_redireccion_hacia_una_red_interna(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """El criterio del slice: SSRF bloquea redes no permitidas **tras la redirección**.
+
+    La primera petición sale a un host público; la respuesta redirige a `interno.test`, que resuelve
+    a `127.0.0.1`. Si el segundo salto no se revalidara, la descarga ocurriría. La conexión falsa
+    revienta si alguien intenta usarla para el host interno, así que esta prueba no pasaría con una
+    implementación que solo validara la URL inicial.
+    """
+    from opofuente.infrastructure import url_guard
+
+    def_resolver = {"publico.test": ("93.184.216.34",), "interno.test": ("127.0.0.1",)}
+    conexiones: list[str] = []
+
+    class RespuestaFalsa(io.BytesIO):
+        def __init__(self, status: int, headers: dict[str, str], body: bytes) -> None:
+            super().__init__(body)
+            self.status = status
+            self._headers = headers
+
+        def getheaders(self) -> list[tuple[str, str]]:
+            return list(self._headers.items())
+
+    class ConexionFalsa:
+        def __init__(self, host: str, *_args, **_kwargs) -> None:
+            conexiones.append(host)
+            if host != "publico.test":
+                raise AssertionError("no se debe abrir conexión a un host interno")
+
+        def request(
+            self, method: str, path: str, body: object = None, headers: object = None
+        ) -> None:
+            return None
+
+        def getresponse(self) -> RespuestaFalsa:
+            return RespuestaFalsa(302, {"location": "http://interno.test/privado.pdf"}, b"")
+
+        def close(self) -> None:
+            return None
+
+    monkeypatch.setattr(url_guard, "_PinnedConnection", ConexionFalsa)
+    monkeypatch.setenv("NO_PROXY", "*")
+
+    limite = url_limits_from_settings(timeout_seconds=5, max_bytes=1024, max_redirects=3)
+    with pytest.raises(UrlRejectedError) as error:
+        url_guard.fetch_url(
+            "http://publico.test/inicio",
+            destination=tmp_path / "descarga.bin",
+            limits=limite,
+            resolver=lambda host: def_resolver.get(host, ()),
+        )
+
+    assert "red interna" in str(error.value)
+    assert conexiones == ["publico.test"], "solo se intentó el host público"
+    # El fichero de la primera respuesta existe (la redirección no traía cuerpo), pero está vacío:
+    # lo de la red interna no ha llegado a escribirse en ningún momento.
+    destino = tmp_path / "descarga.bin"
+    assert not destino.exists() or destino.stat().st_size == 0
+
+
 def test_el_fetch_sigue_redirecciones_validadas_y_corta_el_tamano(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

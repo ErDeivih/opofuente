@@ -112,7 +112,7 @@ export const capabilitiesFixture: CapabilitiesResponse = {
       status: 'disabled',
       detail:
         'Sin ruta configurada. Las imágenes y los PDF escaneados quedan pendientes sin bloquear la aplicación.',
-      planned_slice: 'S03',
+      // Sin `planned_slice`: el OCR no llega con un slice ya cerrado, y la API ya no lo promete.
     },
     {
       id: 'llm',

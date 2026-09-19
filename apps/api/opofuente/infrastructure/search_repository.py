@@ -18,7 +18,7 @@ from collections.abc import Sequence
 from datetime import datetime
 from uuid import uuid4
 
-from sqlalchemy import func, select, text
+from sqlalchemy import bindparam, func, select, text
 from sqlalchemy.orm import Session, sessionmaker
 
 from opofuente.application.search_models import (
@@ -45,6 +45,8 @@ from opofuente.domain.rag import (
 from opofuente.infrastructure.db_models import (
     AnswerClaimEvidenceRecord,
     AnswerClaimRecord,
+    ConvocationVersionRecord,
+    CurriculumNodeRecord,
     DocumentSectionRecord,
     DocumentVersionRecord,
     EvidenceSpanRecord,
@@ -59,9 +61,107 @@ def _new_id() -> str:
     return str(uuid4())
 
 
+#: Consulta de búsqueda léxica, **constante**: los valores viajan siempre como parámetros ligados.
+#:
+#: Tres decisiones que se leen en el SQL y no en Python:
+#:
+#: 1. el ámbito de programa se abre con una CTE recursiva, así que pedir un bloque incluye sus
+#:    temas y epígrafes (igual que la cobertura): una versión cuenta para el ámbito si algún
+#:    **mapeo** suyo —de la versión, del artefacto, de la representación, de una sección o de un
+#:    fragmento— cae dentro, y los mapeos rechazados no cuentan;
+#: 2. los cuatro filtros explícitos viajan al `WHERE`, de modo que la ventana de `bm25` ya está
+#:    acotada por ellos (filtrar después del `LIMIT` esconde material que sí respondía);
+#: 3. lo que **no** se decide aquí es la elegibilidad (vigencia, estado y calidad): eso es criterio
+#:    del dominio, en `corpus_eligible`, para que no haya dos verdades sobre qué se puede citar.
+SQL_BUSQUEDA = """
+WITH RECURSIVE ambito(node_id) AS (
+    SELECT id FROM curriculum_nodes WHERE id IN :nodos
+    UNION
+    SELECT hijo.id FROM curriculum_nodes hijo
+    JOIN ambito ON hijo.parent_id = ambito.node_id
+)
+SELECT s.id AS span_id,
+       s.document_version_id AS document_version_id,
+       s.section_id AS section_id,
+       s.page AS page,
+       s.citation_label AS citation_label,
+       s.text AS text,
+       s.ordinal AS ordinal,
+       sec.title AS section_title,
+       sec.page_start AS section_page_start,
+       v.status AS version_status,
+       v.valid_from AS valid_from,
+       v.valid_to AS valid_to,
+       v.language AS language,
+       r.quality AS representation_quality,
+       d.id AS document_id,
+       d.canonical_title AS document_title,
+       d.document_type AS document_type,
+       d.authority_tier AS authority_tier,
+       bm25(evidence_fts) AS score
+FROM evidence_fts
+JOIN evidence_spans s ON s.rowid = evidence_fts.rowid
+JOIN document_versions v ON v.id = s.document_version_id
+JOIN logical_documents d ON d.id = v.logical_document_id
+LEFT JOIN document_sections sec ON sec.id = s.section_id
+LEFT JOIN extracted_representations r ON r.id = v.representation_id
+WHERE evidence_fts MATCH :expresion
+  AND (:solo_publico = 0 OR d.owner_scope <> 'private_user')
+  AND (:sin_documentos = 1 OR d.id IN :documentos)
+  AND (:sin_idiomas = 1 OR v.language IS NULL OR v.language IN :idiomas)
+  AND (:sin_autoridad = 1 OR d.authority_tier = :autoridad)
+  AND (
+    :sin_ambito = 1
+    OR EXISTS (
+      SELECT 1 FROM curriculum_mappings m
+      WHERE m.status <> 'rejected'
+        AND m.curriculum_node_id IN (SELECT node_id FROM ambito)
+        AND (
+          (m.subject_type = 'document_version' AND m.subject_id = v.id)
+          OR (m.subject_type = 'artifact' AND m.subject_id = v.artifact_id)
+          OR (m.subject_type = 'representation' AND m.subject_id = v.representation_id)
+          OR (m.subject_type = 'section'
+              AND m.subject_id IN (
+                SELECT sec2.id FROM document_sections sec2
+                WHERE sec2.document_version_id = v.id
+              ))
+          OR (m.subject_type = 'evidence' AND m.subject_id = s.id)
+        )
+    )
+  )
+ORDER BY score
+LIMIT :limite
+"""
+
+
 class SqlAlchemySearchRepository:
     def __init__(self, session_factory: sessionmaker[Session]) -> None:
         self._session_factory = session_factory
+
+    def _scope_nodes(self, filters: SearchFilters) -> tuple[str, ...]:
+        """Nodos raíz del ámbito pedido: los del filtro, o los de la convocatoria/oposición.
+
+        El ámbito no se limita al nodo exacto: incluye su **subárbol**, igual que la cobertura, para
+        que preguntar por un bloque no deje fuera lo asignado a sus temas.
+        """
+        if filters.curriculum_node_ids:
+            return tuple(filters.curriculum_node_ids)
+        if filters.convocation_id is None and filters.opposition_id is None:
+            return ()
+        with self._session_factory() as session:
+            consulta = select(CurriculumNodeRecord.id).where(
+                CurriculumNodeRecord.parent_id.is_(None)
+            )
+            if filters.convocation_id is not None:
+                consulta = consulta.where(
+                    CurriculumNodeRecord.convocation_version_id == filters.convocation_id
+                )
+            else:
+                consulta = consulta.join(
+                    ConvocationVersionRecord,
+                    ConvocationVersionRecord.id == CurriculumNodeRecord.convocation_version_id,
+                ).where(ConvocationVersionRecord.opposition_id == filters.opposition_id)
+            return tuple(str(nodo) for nodo in session.execute(consulta).scalars())
 
     # ------------------------------------------------------------------ índice
 
@@ -104,52 +204,44 @@ class SqlAlchemySearchRepository:
     ) -> tuple[tuple[CandidateSpan, ...], tuple[str, ...]]:
         """Busca en el índice léxico con los filtros del corpus y devuelve también lo excluido.
 
-        La consulta SQL filtra por lo que se puede decidir en la base (estado, tipo documental,
-        documentos, idioma) y devuelve además lo necesario para que el dominio compruebe la vigencia
-        y la calidad con su propio criterio: así no hay dos verdades sobre qué es elegible.
+        Dos reglas que se aplican **en la consulta** y no después, porque un `LIMIT` antes del
+        filtro esconde material que sí respondía:
+
+        1. los filtros explícitos (documentos, idioma, autoridad y el ámbito de programa) viajan
+           al `WHERE`, así que la ventana de `bm25` ya está acotada;
+        2. el ámbito de programa (`opposition_id`, `convocation_id`, `curriculum_node_ids`) se
+           resuelve por los **mapeos** de la versión del documento —con el subárbol del nodo
+           incluido, igual que la cobertura—: una versión sin mapeo no está probada como material de
+           esa oposición, y sin prueba no entra en su ámbito.
+
+        Lo que sí se decide en el dominio es la **elegibilidad** (vigencia, estado y calidad): así
+        no hay dos verdades sobre qué se puede citar, y lo descartado se informa con su motivo.
         """
         terminos = tuple(significant_terms(expression.replace('"', " ").replace("*", " ")))
+        # Una sola resolución del ámbito: la consulta la usa dos veces (indicador y nodos raíz).
+        nodos_ambito = self._scope_nodes(filters)
+        # Las listas de un `IN` viajan como parámetros **expansibles** de SQLAlchemy: la consulta es
+        # una cadena constante (nada se interpola) y los valores siguen siendo parámetros ligados.
+        parametros: dict[str, object] = {
+            "expresion": expression,
+            "limite": max(1, limit * 4),
+            "solo_publico": 0 if filters.include_private else 1,
+            "documentos": list(filters.document_ids) or [""],
+            "sin_documentos": 0 if filters.document_ids else 1,
+            "idiomas": list(filters.languages) or [""],
+            "sin_idiomas": 0 if filters.languages else 1,
+            "sin_autoridad": 0 if filters.authority_tier is not None else 1,
+            "autoridad": filters.authority_tier or "",
+            "nodos": list(nodos_ambito) or [""],
+            "sin_ambito": 0 if nodos_ambito else 1,
+        }
+        consulta = text(SQL_BUSQUEDA).bindparams(
+            bindparam("documentos", expanding=True),
+            bindparam("idiomas", expanding=True),
+            bindparam("nodos", expanding=True),
+        )
         with self._session_factory() as session:
-            filas = session.execute(
-                text(
-                    """
-                    SELECT s.id AS span_id,
-                           s.document_version_id AS document_version_id,
-                           s.section_id AS section_id,
-                           s.page AS page,
-                           s.citation_label AS citation_label,
-                           s.text AS text,
-                           s.ordinal AS ordinal,
-                           sec.title AS section_title,
-                           sec.page_start AS section_page_start,
-                           v.status AS version_status,
-                           v.valid_from AS valid_from,
-                           v.valid_to AS valid_to,
-                           v.language AS language,
-                           r.quality AS representation_quality,
-                           d.id AS document_id,
-                           d.canonical_title AS document_title,
-                           d.document_type AS document_type,
-                           d.authority_tier AS authority_tier,
-                           bm25(evidence_fts) AS score
-                    FROM evidence_fts
-                    JOIN evidence_spans s ON s.rowid = evidence_fts.rowid
-                    JOIN document_versions v ON v.id = s.document_version_id
-                    JOIN logical_documents d ON d.id = v.logical_document_id
-                    LEFT JOIN document_sections sec ON sec.id = s.section_id
-                    LEFT JOIN extracted_representations r ON r.id = v.representation_id
-                    WHERE evidence_fts MATCH :expresion
-                      AND (:solo_publico = 0 OR d.owner_scope <> 'private_user')
-                    ORDER BY score
-                    LIMIT :limite
-                    """
-                ),
-                {
-                    "expresion": expression,
-                    "limite": max(1, limit * 4),
-                    "solo_publico": 0 if filters.include_private else 1,
-                },
-            ).mappings()
+            filas = session.execute(consulta, parametros).mappings()
 
             candidatos: list[CandidateSpan] = []
             excluidos: list[str] = []
@@ -171,17 +263,8 @@ class SqlAlchemySearchRepository:
                     if motivo not in excluidos:
                         excluidos.append(motivo)
                     continue
-                if filters.document_ids and str(fila["document_id"]) not in filters.document_ids:
-                    continue
-                if filters.languages and (
-                    fila["language"] is not None and str(fila["language"]) not in filters.languages
-                ):
-                    continue
-                if filters.authority_tier is not None and (
-                    fila["authority_tier"] is None
-                    or str(fila["authority_tier"]) != filters.authority_tier
-                ):
-                    continue
+                # Los filtros explícitos (documentos, idioma, autoridad y ámbito de programa) ya los
+                # aplica la consulta antes del `LIMIT`: aquí solo queda la elegibilidad del dominio.
                 normalizado = " ".join(str(fila["text"]).lower().split())
                 candidatos.append(
                     CandidateSpan(

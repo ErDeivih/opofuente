@@ -33,7 +33,7 @@ export type QuestionKind = Question['question_type'];
 export type KeyOutcome = KeyEntry['outcome'];
 export type KeyStatus = AnswerKey['status'];
 export type IssueKind = IssueReport['kind'];
-export type ImportKind = 'questions' | 'csv' | 'answer_key';
+export type ImportKind = 'questions' | 'csv' | 'json' | 'answer_key';
 
 /** Cuántas cosas se piden de una vez: el tope por defecto del servidor. */
 export const PAGE_LIMIT = 100;
@@ -111,9 +111,12 @@ export function fetchQuestionSet(setId: string): Promise<QuestionSet> {
 
 export function fetchSetQuestions(
   setId: string,
-  filtros: { status: string; originType: string; onlyReserves: boolean },
+  filtros: { status: string; originType: string; onlyReserves: boolean; offset?: number },
 ): Promise<QuestionPage> {
-  const params = new URLSearchParams({ limit: String(PAGE_LIMIT), offset: '0' });
+  const params = new URLSearchParams({
+    limit: String(PAGE_LIMIT),
+    offset: String(filtros.offset ?? 0),
+  });
   if (filtros.status !== '') {
     params.set('status', filtros.status);
   }

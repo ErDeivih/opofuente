@@ -199,6 +199,145 @@ def _corpus(settings: Settings) -> None:
     )
 
 
+# --- ámbito de programa (opposition_id / convocation_id / curriculum_node_ids) -------------------
+
+
+def _programa(settings: Settings) -> None:
+    """Una oposición con su convocatoria, un bloque con un tema y dos documentos mapeados.
+
+    `doc-ambito` está asignado al **tema** (hijo del bloque); `doc-fuera` está asignado a un bloque
+    de otra convocatoria. Es el escenario mínimo para comprobar que el ámbito de programa filtra.
+    """
+    _ejecutar(
+        settings,
+        "INSERT INTO oppositions (id, code, name, active, created_at, updated_at) VALUES "
+        "('op-1', 'tai', 'TAI', 1, :ahora, :ahora), "
+        "('op-2', 'gc', 'Guardia Civil', 0, :ahora, :ahora)",
+        {"ahora": AHORA},
+    )
+    _ejecutar(
+        settings,
+        "INSERT INTO convocation_versions (id, opposition_id, code, title, official_url, "
+        "published_at, status, created_at, updated_at) VALUES "
+        "('conv-1', 'op-1', 'tai-2025', 'TAI 2025', 'https://boe.es/x', '2025-12-22', 'active', "
+        ":ahora, :ahora), "
+        "('conv-2', 'op-2', 'gc-2026', 'GC 2026', 'https://boe.es/y', '2026-05-08', 'active', "
+        ":ahora, :ahora)",
+        {"ahora": AHORA},
+    )
+    _ejecutar(
+        settings,
+        "INSERT INTO curriculum_nodes (id, convocation_version_id, parent_id, node_type, "
+        "official_code, title, position, path, depth) VALUES "
+        "('nodo-bloque', 'conv-1', NULL, 'block', 'I', 'Bloque I', 1, 'I', 0), "
+        "('nodo-tema', 'conv-1', 'nodo-bloque', 'topic', '1', 'Tema 1', 1, 'I.1', 1), "
+        "('nodo-otro', 'conv-2', NULL, 'block', 'I', 'Bloque I de GC', 1, 'I', 0)",
+        {},
+    )
+    _documento(settings, version_id="v-ambito", estado="accepted", titulo="Temario TAI")
+    _seccion_y_span(
+        settings,
+        version_id="v-ambito",
+        span_id="span-ambito",
+        texto="El plazo de alegaciones es de diez dias habiles en el procedimiento comun.",
+    )
+    _documento(
+        settings, version_id="v-fuera", estado="accepted", titulo="Temario de otra oposicion"
+    )
+    _seccion_y_span(
+        settings,
+        version_id="v-fuera",
+        span_id="span-fuera",
+        texto="El plazo de alegaciones es de diez dias habiles en el procedimiento comun.",
+    )
+    # El mapeo del documento de ámbito apunta al **tema**, no al bloque: pedir el bloque lo trae.
+    _ejecutar(
+        settings,
+        "INSERT INTO curriculum_mappings (id, curriculum_node_id, subject_type, subject_id, "
+        "coverage_type, depth, confidence, status, created_at, approved_at) VALUES "
+        "('map-1', 'nodo-tema', 'document_version', 'v-ambito', 'complete', 1, 0.9, 'accepted', "
+        ":ahora, :ahora), "
+        "('map-2', 'nodo-otro', 'document_version', 'v-fuera', 'complete', 1, 0.9, 'accepted', "
+        ":ahora, :ahora)",
+        {"ahora": AHORA},
+    )
+    _ejecutar(settings, "INSERT INTO evidence_fts(evidence_fts) VALUES('rebuild')")
+
+
+def test_el_ambito_de_programa_acota_la_busqueda_y_no_es_una_promesa_vacia(tmp_path: Path) -> None:
+    """`curriculum_node_ids` filtra de verdad, y pedir un bloque alcanza lo mapeado a sus temas."""
+    settings = _settings(tmp_path)
+    _corpus(settings)
+    _programa(settings)
+    servicio = _servicio(settings)
+
+    completo = servicio.search_only(
+        SearchRequest(query="plazo de alegaciones", filters=SearchFilters(limit=10))
+    )
+    assert {"span-ambito", "span-fuera"} <= set(completo.ids), "sin ámbito salen los dos"
+
+    del_bloque = servicio.search_only(
+        SearchRequest(
+            query="plazo de alegaciones",
+            filters=SearchFilters(limit=10, curriculum_node_ids=("nodo-bloque",)),
+        )
+    )
+    assert del_bloque.ids == ("span-ambito",), "el subárbol del bloque incluye su tema"
+
+    del_tema_ajeno = servicio.search_only(
+        SearchRequest(
+            query="plazo de alegaciones",
+            filters=SearchFilters(limit=10, curriculum_node_ids=("nodo-otro",)),
+        )
+    )
+    assert del_tema_ajeno.ids == ("span-fuera",)
+
+
+def test_el_ambito_por_oposicion_y_convocatoria_acota_igual(tmp_path: Path) -> None:
+    settings = _settings(tmp_path)
+    _corpus(settings)
+    _programa(settings)
+    servicio = _servicio(settings)
+
+    por_oposicion = servicio.search_only(
+        SearchRequest(
+            query="plazo de alegaciones",
+            filters=SearchFilters(limit=10, opposition_id="op-1"),
+        )
+    )
+    por_convocatoria = servicio.search_only(
+        SearchRequest(
+            query="plazo de alegaciones",
+            filters=SearchFilters(limit=10, convocation_id="conv-2"),
+        )
+    )
+
+    assert por_oposicion.ids == ("span-ambito",)
+    assert por_convocatoria.ids == ("span-fuera",)
+
+
+def test_una_version_sin_mapeo_no_entra_en_el_ambito(tmp_path: Path) -> None:
+    """Sin prueba de que un documento sea de esa oposición, no se cita dentro de su ámbito.
+
+    El corpus de la prueba tiene tres documentos sin mapeo: si el ámbito no filtrara por mapeos,
+    saldrían igual que los mapeados.
+    """
+    settings = _settings(tmp_path)
+    _corpus(settings)
+    _programa(settings)
+    servicio = _servicio(settings)
+
+    resultado = servicio.search_only(
+        SearchRequest(
+            query="plazo de alegaciones",
+            filters=SearchFilters(limit=10, opposition_id="op-1"),
+        )
+    )
+
+    assert "span-plazo" not in resultado.ids, "la versión publicada sin mapeo queda fuera"
+    assert "span-borrador" not in resultado.ids
+
+
 # --- búsqueda -----------------------------------------------------------------------------------
 
 

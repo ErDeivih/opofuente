@@ -89,10 +89,9 @@ describe('pantalla Programa', () => {
 
     expect(await screen.findByText('I.1')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Nodo seleccionado' })).toBeInTheDocument();
-    // La cobertura no se muestra como cero: se declara que todavía no se calcula.
-    expect(
-      screen.getByText(/No disponible todavía: se calcula cuando existan fuentes asignadas/),
-    ).toBeInTheDocument();
+    // La cobertura **no** se inventa aquí: esta pantalla dice dónde se calcula y no enseña un cero que
+    // parecería un dato. (Antes decía que no se calculaba todavía, y se calcula desde S04.)
+    expect(screen.getByText(/Se calcula en Revisión, sobre las fuentes asignadas/)).toBeInTheDocument();
   });
 
   it('la parte de examen se muestra con sus cifras y su cita', async () => {

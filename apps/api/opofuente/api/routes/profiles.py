@@ -3,9 +3,9 @@
 Solo lectura salvo `POST /oppositions/{id}/activate`, que cambia la oposición activa (y por tanto
 es la primera ruta de escritura del proyecto: sobre ella actúa la comprobación de Origin).
 
-`GET /curriculum-nodes/{id}/coverage` **no** existe todavía: la cobertura necesita documentos y
-preguntas (S05 en adelante) y devolver un cero sería afirmar que no hay material. La interfaz lo
-declara como no disponible.
+La cobertura de un nodo **no** vive aquí: se calcula en `GET /curriculum-nodes/{id}/coverage`
+(dominio de clasificación y revisión, S04) a partir de los mapeos aceptados, y esta respuesta no la
+duplica para no dar dos cifras distintas de lo mismo.
 """
 
 from __future__ import annotations

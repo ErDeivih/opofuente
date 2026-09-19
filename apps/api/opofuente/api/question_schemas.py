@@ -133,11 +133,11 @@ class CsvMappingSchema(BaseModel):
 
 
 class ParseQuestionSetSchema(BaseModel):
-    """Lo que se pide al importar: preguntas de un texto, un CSV o una plantilla suelta."""
+    """Lo que se pide al importar: preguntas de un texto, un CSV, un JSON o una plantilla suelta."""
 
     model_config = ConfigDict(extra="forbid")
 
-    kind: Literal["questions", "answer_key", "csv"] = "questions"
+    kind: Literal["questions", "answer_key", "csv", "json"] = "questions"
     text: str = Field(min_length=1)
     mapping: CsvMappingSchema | None = None
     source_document_version_id: str | None = None

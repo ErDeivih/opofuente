@@ -72,8 +72,10 @@ test('S01: abrir un tema muestra su ruta y su procedencia sin inventar cobertura
 
   await expect(page.getByRole('heading', { name: 'Nodo seleccionado' })).toBeVisible();
   await expect(page.getByText('I.1', { exact: true })).toBeVisible();
+  // Esta pantalla **no** inventa la cobertura: dice dónde se calcula en lugar de enseñar un cero que
+  // parecería un dato. (Antes decía que no se calculaba todavía, y se calcula desde S04.)
   await expect(
-    page.getByText(/No disponible todavía: se calcula cuando existan fuentes asignadas/),
+    page.getByText(/Se calcula en Revisión, sobre las fuentes asignadas/),
   ).toBeVisible();
 });
 

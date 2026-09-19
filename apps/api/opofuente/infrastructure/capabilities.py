@@ -17,8 +17,6 @@ from opofuente.config import DataPaths, Settings
 from opofuente.domain.system import Capability, CapabilityStatus
 from opofuente.infrastructure.worker_liveness import WorkerLiveness
 
-_OCR_SLICE = "S03"
-
 
 class ConfigurationCapabilityProvider:
     """Capacidades que dependen solo de configuración (OCR, LLM, embeddings)."""
@@ -40,7 +38,6 @@ class ConfigurationCapabilityProvider:
                     "Sin ruta configurada. Las imágenes y los PDF escaneados quedan "
                     "pendientes sin bloquear la aplicación."
                 ),
-                planned_slice=_OCR_SLICE,
             )
         if not path.is_file():
             return Capability(
@@ -48,14 +45,16 @@ class ConfigurationCapabilityProvider:
                 label="OCR (Tesseract)",
                 status=CapabilityStatus.UNAVAILABLE,
                 detail="La ruta configurada en OPOFUENTE_TESSERACT_PATH no existe en este equipo.",
-                planned_slice=_OCR_SLICE,
             )
         return Capability(
             id="ocr",
             label="OCR (Tesseract)",
             status=CapabilityStatus.CONFIGURED_UNVERIFIED,
-            detail="Binario presente. La extracción OCR real se implementa en S03.",
-            planned_slice=_OCR_SLICE,
+            detail=(
+                "Binario presente, pero la aplicación no lo llama: el OCR no está implementado y "
+                "una imagen se queda pendiente con su aviso. Declararlo evita creer que un PDF "
+                "escaneado se está leyendo."
+            ),
         )
 
     def _llm(self) -> Capability:

@@ -328,6 +328,48 @@ function cuerpoJson(
 }
 
 describe('estudiar: configuración', () => {
+  it('declara en el resultado lo que la convocatoria no evalúa y no lo presenta como evaluado', async () => {
+    // Criterio de S08: personalidad y físicas no se presentan como evaluadas. Las dos reglas las
+    // publica la convocatoria; la pantalla las lee y las dice con sus propias palabras.
+    stubEstudio({
+      '/api/v1/convocations/conv-tai': {
+        body: {
+          ...CONVOCATORIA,
+          rules: [
+            {
+              code: 'personality_scoring_supported',
+              kind: 'scoring',
+              value_text: 'false',
+              description: 'El cuestionario de personalidad no se puntúa en esta convocatoria',
+              evidence_quote: 'El cuestionario de personalidad no se puntúa',
+            },
+            {
+              code: 'psychophysical_not_prepared',
+              kind: 'scope',
+              value_text: 'true',
+              description: 'Las pruebas físicas se convocan aparte',
+              evidence_quote: 'Las pruebas físicas se convocan aparte',
+            },
+          ],
+        },
+      },
+      '/api/v1/study-sessions?limit=50&offset=0&opposition_id=op-1': conSesion({
+        ...SESION,
+        status: 'finished',
+        finished_at: '2026-09-17T12:30:00Z',
+      }),
+      '/api/v1/study-sessions/ses-1/result': { body: RESULTADO },
+      '/api/v1/study-sessions/ses-1/review': { body: REVISION },
+    });
+    renderEstudiar();
+
+    await screen.findByRole('heading', { name: 'Resultado' }, { timeout: 15_000 });
+    const aviso = screen.getByText((contenido) => contenido.startsWith('No se evalúan aquí:'));
+    expect(aviso).toHaveTextContent('el cuestionario de personalidad');
+    expect(aviso).toHaveTextContent('las pruebas físicas y el reconocimiento médico');
+    expect(aviso).toHaveTextContent(/no las presenta como evaluadas/);
+  });
+
   it('ofrece solo las partes que el servidor sabe corregir y dice por qué las demás no', async () => {
     stubEstudio();
     renderEstudiar();

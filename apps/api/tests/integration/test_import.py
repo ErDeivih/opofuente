@@ -661,6 +661,60 @@ def test_la_cancelacion_deja_el_informe_cuadrado(service: IngestionService, mate
     assert con_canceladas.total == counters["cancelled"]
 
 
+def test_una_entrada_cuya_ruta_resuelve_fuera_de_la_raiz_no_se_copia(
+    service: IngestionService, tmp_path: Path, session_factory
+) -> None:
+    """Segunda invariante de ruta del slice: la copia no sigue una ruta que sale de la carpeta.
+
+    El inventario nunca produce una ruta así (no sigue enlaces que escapan), pero la copia **no se
+    fía**: resuelve la ruta y, si cae fuera de la raíz, marca la entrada como fallida con su
+    incidencia `path_outside_root` y no copia nada. Esta prueba es la que cubre esa guarda.
+    """
+    root = tmp_path / "material"
+    root.mkdir()
+    (root / "normal.txt").write_text("contenido normal", encoding="utf-8")
+    # Un fichero de verdad al que apunta la ruta que escapa: si la guarda no actuara, se copiaría.
+    fuera = tmp_path / "secreto.txt"
+    fuera.write_text("no deberia copiarse", encoding="utf-8")
+
+    inventario = service.create_inventory(str(root))
+    batch_id = inventario.batch.id
+    with session_factory() as session:
+        session.add(
+            IngestionItemRecord(
+                id="item-fuera",
+                batch_id=batch_id,
+                relative_path="../secreto.txt",
+                original_name="secreto.txt",
+                size_bytes=fuera.stat().st_size,
+                status=ItemStatus.INVENTORIED.value,
+                position=2,
+                container_depth=0,
+            )
+        )
+        session.commit()
+
+    batch_id = import_all(service, batch_id)
+
+    detalle = service.get_batch(batch_id)
+    assert detalle.batch.counters["copied"] == 1, "solo se copia el de dentro"
+    assert detalle.batch.counters["failed"] == 1
+    incidencias = service.list_issues(batch_id, limit=50, offset=0)
+    codigos = {incidencia.code for incidencia in incidencias.issues}
+    assert IssueCode.PATH_OUTSIDE_ROOT.value in codigos
+    entradas = service.list_entries(batch_id, limit=50, offset=0)
+    fuera_item = next(
+        entrada for entrada in entradas.entries if entrada.relative_path == "../secreto.txt"
+    )
+    assert fuera_item.status == ItemStatus.FAILED.value
+    assert "fuera de la carpeta" in (fuera_item.detail or "")
+    with session_factory() as session:
+        assert (
+            session.execute(select(func.count()).select_from(SourceArtifactRecord)).scalar_one()
+            == 1
+        )
+
+
 def test_el_informe_cuenta_las_incidencias(service: IngestionService, tmp_path: Path) -> None:
     root = tmp_path / "material"
     root.mkdir()

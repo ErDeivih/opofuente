@@ -22,12 +22,15 @@ Reglas:
 | [DEBT-008](#debt-008--conservar-los-formatos-sin-extractor-en-lugar-de-omitirlos) | S03 | Conservar PPTX/XLSX/EPUB y similares como `unsupported_preserved` | **cerrada en S03** |
 | [DEBT-009](#debt-009--el-texto-plano-no-produce-secciones-y-sin-secciones-no-hay-citas) | S06 | El texto plano y el texto pegado no producen secciones: sin ellas no hay citas ni diff | **cerrada en S06** |
 | [DEBT-010](#debt-010--una-pregunta-importada-no-queda-enlazada-a-su-sección) | S06/S11 | Importar preguntas no las enlaza a la sección que las sostiene, y `tags`/`source`/`parte` se leen pero no se guardan | abierta |
-| [DEBT-011](#debt-011--la-pantalla-del-banco-solo-enseña-las-primeras-100-preguntas) | S09 | La pantalla del banco pide 100 preguntas y no permite recorrer el resto de un conjunto grande | abierta |
+| [DEBT-011](#debt-011--la-pantalla-del-banco-solo-enseña-las-primeras-100-preguntas) | S09 | La pantalla del banco pide 100 preguntas y no permite recorrer el resto de un conjunto grande | **cerrada en la revisión de S00–S11** (obligación vencida desde S09; se cerró con paginación real y prueba) |
 | [DEBT-012](#debt-012--modos-de-sesión-declarados-y-sin-implementar) | S11+ | Simulacro y diagnóstico están en el vocabulario del modelo y no implementados | abierta (S10 implementó el **repaso de errores**; siguen fuera el simulacro y el diagnóstico) |
 | [DEBT-013](#debt-013--el-recálculo-no-se-puede-hacer-en-bloque) | S09+ | Recalcular una clave corregida es sesión a sesión, y solo se conserva un resultado anterior | abierta |
 | [DEBT-014](#debt-014--sin-proveedor-de-embeddings-ni-de-lenguaje-el-rag-es-extractivo) | S10+ | No hay embeddings, ni índice vectorial, ni proveedor de lenguaje: la búsqueda es léxica y la respuesta extractiva | abierta |
 | [DEBT-015](#debt-015--el-índice-léxico-se-puede-rehacer-pero-no-desde-la-interfaz) | S12 | El índice léxico se rehace desde el servicio y no hay acción en Ajustes que lo haga | abierta |
 | [DEBT-016](#debt-016--la-dificultad-observada-no-existe-y-los-umbrales-de-dominio-son-provisionales) | S11+ | El dominio se estima sin dificultad observada, con umbrales provisionales | abierta |
+| [DEBT-017](#debt-017--las-colecciones-existen-en-la-api-y-no-en-la-interfaz) | S12 | Las colecciones se pueden crear y llenar por la API; ninguna pantalla las enseña | abierta |
+| [DEBT-018](#debt-018--la-puerta-humana-de-s04-no-se-ejecutó) | antes de usar material real | S04 pedía medir la revisión sobre 20–50 ficheros reales antes de abrir S05, y no se hizo | abierta (condición previa) |
+| [DEBT-019](#debt-019--el-estado-conservado-sin-extractor-no-llega-a-la-pantalla) | S12 | `unsupported_preserved` se guarda y se sirve, pero no hay prueba de interfaz ni de contrato que lo muestre legible | abierta |
 
 ---
 
@@ -456,10 +459,17 @@ Lo que **no** hace todavía:
 | Guardar las columnas `tags` y `source` del CSV | el asistente las lee y el informe declara que **no** se guardan (`ignored_columns`), en lugar de fingir que sí |
 
 El importador desde un **documento** de la biblioteca (con su versión, su sección y su evidencia) es la
-mitad que falta de «parser desde texto/documento»: hoy el camino es texto y CSV.
+mitad que falta de «parser desde texto/documento»: hoy el camino es texto, CSV y JSON.
+
+**Plazo vencido (revisión de S00–S11, 19 de septiembre de 2026).** El plazo era «antes de S11» y S11
+está entregado: `docs/slices/S11.md` reconoce que las aristas hacia preguntas llegarán «cuando llegue
+DEBT-010», así que la obligación sigue viva pero **fuera de plazo**. Lo que sí se cerró en la revisión
+fue la otra mitad del entregable: el asistente **JSON**, que no existía y no estaba declarado en ningún
+sitio.
 
 **Obligación.** Antes de que la ficha de pregunta pueda enseñar el original al lado con su cita (07_UI-UX
-§7) y antes de S11 (cambios e invalidación, que necesita saber qué preguntas dependen de qué evidencia):
+§7) y antes de S11 (cambios e invalidación, que necesita saber qué preguntas dependen de qué evidencia)
+—plazo **ya vencido**, ver arriba—:
 
 1. decidir dónde vive la parte del examen (¿`question_sets.part_code`? ¿una tabla de relación con
    `exam_parts`?) y registrarlo en un ADR si toca al modelo;
@@ -491,14 +501,22 @@ Lo mismo vale para la lista de conjuntos y su selector.
 —paginación explícita o carga incremental— y que el recuento de la leyenda corresponda a lo que se
 puede llegar a ver, sin truncar en silencio ni depender de que alguien lea la leyenda.
 
-**Criterio de cierre.**
+**Estado: cerrada en la revisión de S00–S11 (19 de septiembre de 2026).** La obligación se fijó «antes
+de S09» y los slices S09, S10 y S11 se entregaron sin cumplirla ni reasignarla: era una deuda vencida
+que se estaba leyendo como abierta y en plazo. Se cerró en la revisión, con lo que pide el criterio:
 
-1. Un conjunto con más de 100 preguntas se puede recorrer entero desde la pantalla, y el recuento que
-   muestra coincide con `total` del servidor.
-2. Prueba de interfaz con un conjunto de más de una página: se llega a la última pregunta y se ve la
-   última página, no solo la primera.
-3. La paginación se conserva al cambiar de filtro (estado, origen, reservas) sin mezclar páginas de
-   filtros distintos.
+- `apps/web/src/api/questions.ts` acepta el desplazamiento y `useSetQuestions` lo incluye en la clave de
+  la consulta, así que dos páginas del mismo filtro son dos respuestas distintas;
+- `features/questions/QuestionTable.tsx` dice «*desde*–*hasta* de *total* preguntas del conjunto» y
+  ofrece «Página anterior» / «Página siguiente», que piden al servidor con `offset`;
+- cambiar cualquier filtro (estado, origen, reservas) vuelve a la primera página: no se mezclan páginas
+  de filtros distintos;
+- la prueba de interfaz `pagina el banco con el desplazamiento en el servidor y dice en qué tramo está`
+  recorre 250 preguntas en dos páginas y vuelve atrás.
+
+Lo que **no** cierra esta entrada: la lista de conjuntos sigue pidiendo `limit=100&offset=0`. Un
+poseedor de más de cien conjuntos de preguntas no cabe en esa lista, y eso queda declarado aquí como
+parte viva de la deuda aunque el criterio de cierre (preguntas de un conjunto) esté cumplido.
 
 ## DEBT-012 — Modos de sesión declarados y sin implementar
 
@@ -547,6 +565,12 @@ contrato no coinciden a propósito: el contrato solo declara los modos que se co
 recalcular **el conjunto** de sesiones afectadas por una clave nueva, con un informe de cuántas
 cambiaron y cuánto, y conservar el histórico de resultados (o dejar claro que la evaluación por clave
 es el histórico y el resultado agregado es solo el vigente).
+
+**Plazo vencido (revisión de S00–S11, 19 de septiembre de 2026).** S09 y S11 están entregados y la
+obligación no se cumplió ni se reasignó: el recálculo sigue siendo de una sesión (`POST
+/study-sessions/{id}/recalculate`, S08) y `S11.md` no la menciona. Sigue abierta y fuera de plazo, con
+su sitio natural en la pantalla de claves (avisar de cuántas sesiones quedan desactualizadas) y no en
+un slice futuro.
 
 **Criterio de cierre.**
 
@@ -642,3 +666,75 @@ un ADR** con los datos que los sostienen.
    por dificultad observada.
 4. Una prueba comprueba que dos preguntas con los mismos intentos y distinta dificultad no dan el mismo
    dominio.
+
+## DEBT-017 — Las colecciones existen en la API y no en la interfaz
+
+**Origen:** revisión de S00–S11 (19 de septiembre de 2026), sobre el entregable de S05.
+
+**Problema.** El entregable de S05 dice «Biblioteca, filtros, lector, versiones **y colecciones**», y
+07_UI-UX §6 pide filtrar la lista de la biblioteca «por oposición, tipo, autoridad, estado, versión,
+derechos, calidad **y colección**». El backend está entero y probado —`GET/POST /collections` y
+`POST /collections/{id}/items`, con `test_una_coleccion_agrupa_sin_duplicar` y
+`test_las_colecciones_agrupan_sin_duplicar`—, pero **no hay ninguna pantalla**: `apps/web/src` no
+contiene ni una coincidencia de `collection`, y `features/library/DocumentDetail.tsx` declara cinco
+pestañas, ninguna de colecciones. `docs/slices/S05.md` presentaba las colecciones como visibles en el
+producto: era una promesa que el código no cumplía.
+
+**Obligación antes de S12** (Ajustes y cierre del producto): una superficie real para las colecciones
+—crear, listar, añadir y quitar miembros, y filtrar la biblioteca por colección— o retirar la promesa
+del entregable y de la interfaz con su ADR. Lo que no vale es dejarlo como está: una API sin producto
+que la prosa del slice cuenta como entregada.
+
+**Criterio de cierre.**
+
+1. Se puede crear una colección, meter un documento dentro y verla en la pantalla, con sus miembros.
+2. La lista de la biblioteca se puede filtrar por colección, y el filtro se dice en pantalla como los
+   demás.
+3. Una prueba de interfaz recorre crear → añadir → filtrar → ver el documento dentro.
+4. Si el producto decide no ofrecer colecciones, el entregable de S05 y 07_UI-UX §6 se corrigen con su
+   ADR, y esta entrada se cierra por decisión, no por implementación.
+
+## DEBT-018 — La puerta humana de S04 no se ejecutó
+
+**Origen:** revisión de S00–S11 (19 de septiembre de 2026).
+
+**Problema.** `11_IMPLEMENTATION-SLICES.md` fija para S04 una puerta humana explícita: «Importar copia
+de 20–50 archivos TAI y medir revisión. **Si no ahorra tiempo, no iniciar S05 sin rediseño aprobado**».
+`docs/slices/S04.md` reconoce que la copia se inventarió en lectura y no se importó, y aun así dio S05
+por desbloqueado. La matriz de trazabilidad exige para RF-03 «propuestas, bulk, undo y **métricas de
+muestra**», y las únicas métricas entregadas son de un dataset **sintético** —correctas y
+reproducibles, pero no de material real—. No había entrada en esta lista: la puerta quedó abierta sin
+que nadie la registrara.
+
+**Obligación antes de usar material real de estudio.** Importar una copia de 20–50 ficheros TAI
+reales (nunca los originales: la importación copia por contenido y no toca el origen), medir el tiempo
+de revisión de la clasificación y decidir con ese número si el diseño se sostiene. Si no ahorra tiempo,
+se rediseña la pantalla de revisión antes de seguir construyendo encima.
+
+**Criterio de cierre.**
+
+1. Existe un informe versionado con el tiempo de revisión medido sobre material real, con el número de
+   propuestas revisadas, aceptadas, corregidas y descartadas.
+2. La decisión («se sostiene» o «se rediseña así») queda escrita, con su ADR si toca rediseñar.
+3. El propietario confirma el número: es una puerta humana, no una medición automática.
+
+## DEBT-019 — El estado «conservado sin extractor» no llega a la pantalla
+
+**Origen:** revisión de S00–S11 (19 de septiembre de 2026), sobre la deriva documental de S02 y S03.
+
+**Problema.** Desde S03 un `.pptx`, `.xlsx` o `.epub` **no se omite**: se copia y se conserva como
+`unsupported_preserved` (DEBT-008, cerrada). La documentación de S02 sigue describiendo lo contrario
+(«`.pptx`, `.xlsx`, `.epub` y similares **no se copian**»), y `DEBT-008` se cerró citando pruebas de
+interfaz y un E2E con un `.xlsx` que no existen: el estado se guarda y se sirve, pero ninguna prueba de
+interfaz comprueba que el estado llegue a la pantalla con su nombre legible.
+
+**Obligación antes de S12**: que el estado «conservado sin extractor» se vea en la bandeja con su
+nombre y su explicación (no como el código crudo del enum), con prueba de contrato y de interfaz, y
+corregir los documentos de S02 que describen la omisión que ya no ocurre.
+
+**Criterio de cierre.**
+
+1. Una entrada conservada sin extractor se ve en la bandeja con un texto legible que dice que se ha
+   copiado y que no hay extractor para su formato.
+2. Una prueba de interfaz y una de contrato lo comprueban con un `.xlsx` real de fixture.
+3. Los documentos de S02 y S03 que afirman la omisión quedan corregidos o marcados como históricos.

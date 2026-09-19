@@ -2,7 +2,7 @@ import { useState } from 'react';
 
 import { isApiError } from '../api/client';
 import type { CsvMapping, ImportKind, IssueKind, QuestionImportReport } from '../api/questions';
-import { SET_TYPES } from '../api/questions';
+import { PAGE_LIMIT, SET_TYPES } from '../api/questions';
 import {
   useActivateAnswerKey,
   useAnswerKeys,
@@ -59,7 +59,12 @@ export function QuestionsPage() {
   const [tab, setTab] = useState<TabId>('preguntas');
   const [setIdElegido, setSetIdElegido] = useState<string | null>(null);
   const [questionId, setQuestionId] = useState<string | null>(null);
-  const [filters, setFilters] = useState({ status: '', originType: '', onlyReserves: false });
+  const [filters, setFilters] = useState({
+    status: '',
+    originType: '',
+    onlyReserves: false,
+    offset: 0,
+  });
   const [report, setReport] = useState<QuestionImportReport | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [nuevo, setNuevo] = useState({
@@ -320,7 +325,7 @@ export function QuestionsPage() {
                   <QuestionTable
                     questions={preguntas.data?.questions ?? []}
                     total={preguntas.data?.total ?? 0}
-                    filters={filters}
+                    filters={{ ...filters, limit: PAGE_LIMIT }}
                     onFiltersChange={setFilters}
                     selectedId={questionId}
                     onSelect={setQuestionId}

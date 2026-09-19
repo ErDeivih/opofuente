@@ -8,16 +8,15 @@ trazable, sin mover ni borrar ningún original y sin depender de servicios en la
 - Contrato de implementación para agentes: [`AGENTS.md`](AGENTS.md).
 - Estado de implementación: [`docs/slices/`](docs/slices/).
 
-> **Estado actual: S03 completado** (extractores seguros de PDF, DOCX, HTML, CSV, JSON, texto e
-> imágenes; representaciones con calidad y avisos; OCR declarado como pendiente; las tres formas de
-> entrada —carpeta, ficheros sueltos, texto pegado y URL—; ZIP expandido con límites; y los formatos
-> sin extractor conservados como `unsupported_preserved`), además de S02 (artefactos por SHA-256,
-> inventario en lectura, importación de una copia, lotes, incidencias e informe, con worker local
-> persistido), S01 (perfiles oficiales, programa y reglas de examen) y S00 (repositorio, puertas de
-> calidad, esqueleto de backend y frontend, migración, health/capabilities). Todavía **no** hay OCR
-> ejecutado, clasificación documental ni temática, IA, biblioteca ni sesiones de estudio: cada
-> ausencia se declara explícitamente en la API (`/api/v1/capabilities`, cobertura `null`, rutas que no
-> existen) y en la interfaz.
+> **Estado actual: S11 completado** (importador y banco de preguntas, sesiones y puntuación exacta
+> TAI y Guardia Civil, búsqueda léxica con respuestas extractivas citadas, revisión de errores y
+> exportación, y cambio de material con evaluación de lo que queda pendiente de revisar), además de
+> S00–S10. Lo que **todavía no** existe se declara en `/api/v1/capabilities` y en la interfaz en lugar
+> de simularse: OCR no ejecutado (una imagen queda pendiente con su aviso), sin modelo de lenguaje ni
+> índice vectorial (la búsqueda es léxica y la respuesta se compone del corpus), sin dataset RAG
+> medido, sin baremo oficial importado (no se inventa la calificación 0–50 ni el apto) y sin
+> simulacro ni examen diagnóstico (responden 409 con el motivo). El detalle de cada ausencia está en
+> [`docs/DEBT.md`](docs/DEBT.md).
 >
 > Desde la pantalla **Bandeja** puedes inventariar una carpeta en modo lectura, soltar ficheros, pegar
 > texto o traer una URL, y leer el texto extraído por trozos con su calidad y sus avisos a la vista.
@@ -25,7 +24,7 @@ trazable, sin mover ni borrar ningún original y sin depender de servicios en la
 > (`data/artifacts/sha256/ab/cd/<hash>`), así que dos ficheros idénticos son un solo artefacto con dos
 > orígenes. Una URL se descarga solo si es `http`/`https` pública (cada redirección se revalida) y un
 > ZIP se expande con límites de entradas, bytes, ratio y profundidad. Ver
-> [`docs/slices/S03.md`](docs/slices/S03.md).
+> [`docs/slices/`](docs/slices/) para el recorrido completo, slice a slice.
 >
 > Los perfiles TAI 2025 y Guardia Civil 2026 se siembran desde fuentes oficiales verificadas por
 > hash y por cita literal. Ver [`fixtures/profiles/manifest.json`](fixtures/profiles/manifest.json)
@@ -51,9 +50,10 @@ cd F:\EspacioCodigo\opofuente
 ./scripts/install.ps1
 ```
 
-`install.ps1` sincroniza el entorno de Python con `uv sync`, instala las dependencias de Node con
-`npm install` y comprueba que ambas herramientas responden. Si las políticas de PowerShell bloquean
-los scripts, usa `pwsh -ExecutionPolicy Bypass -File ./scripts/install.ps1`.
+`install.ps1` sincroniza el entorno de Python con `uv sync --locked`, instala las dependencias de
+Node con `npm ci` (ambos respetan los ficheros de bloqueo versionados) y comprueba que las dos
+herramientas responden. Si las políticas de PowerShell bloquean los scripts, usa
+`pwsh -ExecutionPolicy Bypass -File ./scripts/install.ps1`.
 
 ## 3. Comandos
 

@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 
@@ -201,6 +201,35 @@ describe('preguntas: el banco', () => {
     expect(await screen.findByRole('option', { name: /Examen de prueba/ })).toBeInTheDocument();
     expect(screen.getByText(/2 preguntas \(1 incompleta · 1 reserva\) · 1 plantilla/)).toBeInTheDocument();
     expect(screen.getByText('sin clave activa')).toBeInTheDocument();
+  });
+
+  it('pagina el banco con el desplazamiento en el servidor y dice en qué tramo está', async () => {
+    // DEBT-011: antes solo se pedían las primeras cien y la 101 no se veía nunca.
+    const fetchMock = stubQuestions({
+      '/api/v1/question-sets/set-1/questions?limit=100&offset=0': {
+        body: { questions: [PREGUNTA, CONFLICTIVA], total: 250, limit: 100, offset: 0 },
+      },
+      '/api/v1/question-sets/set-1/questions?limit=100&offset=100': {
+        body: { questions: [CONFLICTIVA], total: 250, limit: 100, offset: 100 },
+      },
+    });
+    renderPreguntas();
+
+    expect(await screen.findByText('1–2 de 250 preguntas del conjunto')).toBeInTheDocument();
+    const anterior = screen.getByRole('button', { name: 'Página anterior' });
+    expect(anterior).toBeDisabled();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Página siguiente' }));
+
+    expect(await screen.findByText('101–101 de 250 preguntas del conjunto')).toBeInTheDocument();
+    expect(
+      fetchMock.mock.calls.some((call) =>
+        typeof call[0] === 'string' && call[0].endsWith('offset=100'),
+      ),
+    ).toBe(true);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Página anterior' }));
+    expect(await screen.findByText('1–2 de 250 preguntas del conjunto')).toBeInTheDocument();
   });
 
   it('muestra las preguntas con sus badges de origen, clave y estado', async () => {
@@ -426,10 +455,11 @@ describe('preguntas: importar', () => {
     await userEvent.selectOptions(screen.getByLabelText('Qué se importa'), 'csv');
     await userEvent.clear(screen.getByLabelText('Columna del enunciado'));
     await userEvent.type(screen.getByLabelText('Columna del enunciado'), 'pregunta');
-    await userEvent.type(
-      screen.getByLabelText('Contenido del CSV (con su cabecera)'),
-      'pregunta;option_a;option_b\nuno;dos;tres\n',
-    );
+    // Pegar y no escribir: un CSV en un textarea controlado se escribe carácter a carácter muy
+    // despacio, y aquí lo que se prueba es la importación, no el teclado.
+    fireEvent.change(screen.getByLabelText('Contenido del CSV (con su cabecera)'), {
+      target: { value: 'pregunta;option_a;option_b\nuno;dos;tres\n' },
+    });
     await userEvent.click(screen.getByRole('button', { name: 'Importar en el conjunto' }));
 
     const tabla = await screen.findByRole('table', { name: /filas rechazadas con su causa/ });
@@ -443,6 +473,32 @@ describe('preguntas: importar', () => {
     const peticion = cuerpoJson(fetchMock, '/parse');
     expect(peticion.kind).toBe('csv');
     expect((peticion.mapping as { stem: string }).stem).toBe('pregunta');
+  });
+
+  it('importa un JSON con su kind y explica el formato que espera', async () => {
+    const fetchMock = stubQuestions({
+      '/api/v1/question-sets/set-1/parse': { body: INFORME },
+    });
+    renderPreguntas();
+
+    await userEvent.click(await screen.findByRole('tab', { name: 'Importar' }));
+    await userEvent.selectOptions(
+      screen.getByLabelText('Qué se importa'),
+      'preguntas de un JSON',
+    );
+
+    // El panel declara el formato en vez de dejar que se adivine.
+    expect(screen.getByText(/al menos dos/)).toBeInTheDocument();
+
+    // `userEvent.type` interpreta `{` y `[` como sintaxis de teclas: aquí se pega un texto literal.
+    fireEvent.change(screen.getByLabelText(/Contenido del JSON/), {
+      target: { value: '[{"stem": "uno?", "options": ["a", "b"]}]' },
+    });
+    await userEvent.click(screen.getByRole('button', { name: 'Importar en el conjunto' }));
+
+    const peticion = cuerpoJson(fetchMock, '/parse');
+    expect(peticion.kind).toBe('json');
+    expect(peticion.mapping).toBeUndefined();
   });
 
   it('construye el CSV de lo rechazado solo con lo que se rechazó', async () => {

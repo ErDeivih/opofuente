@@ -299,6 +299,67 @@ def test_un_derivado_marcado_se_revisa_o_se_aparta(
     assert "ha cambiado" in str(revisado["needs_review_reason"])
 
 
+# --- el corpus y la búsqueda respetan el cambio -------------------------------------------------
+
+
+def test_confirmar_un_cambio_actualiza_la_revision_y_lo_que_la_busqueda_puede_citar(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """Criterio de aceptación: reindexación y caché respetan la revisión del corpus.
+
+    Al confirmar, la versión nueva pasa a citarse y la sustituida deja de entrar **con su motivo**;
+    la revisión del corpus cambia (la deriva el material indexado, no un contador a mano) y una
+    respuesta guardada conserva la revisión con la que se respondió.
+    """
+    document_id, _, _ = _documento_aceptado(seeded_client)
+    antes = seeded_client.post(
+        "/api/v1/search", json={"query": "diez", "limit": 5}, headers=ALLOWED_ORIGIN
+    ).json()
+    assert antes["total"] >= 1, "el texto de la versión 1 se recupera antes del cambio"
+
+    artifact2 = _pegar(seeded_client, V2, "plazos-v2f.txt")
+    _promocionar(seeded_client, artifact2, "Plazos administrativos", document_id=document_id)
+    cambio = seeded_client.get("/api/v1/change-sets").json()[0]
+    confirmado = seeded_client.post(
+        f"/api/v1/change-sets/{cambio['id']}/confirm", headers=ALLOWED_ORIGIN
+    )
+    assert confirmado.status_code == 200, confirmado.text
+
+    # Lo que ya no está vigente no se cita, y se dice por qué.
+    viejo = seeded_client.post(
+        "/api/v1/search", json={"query": "diez", "limit": 5}, headers=ALLOWED_ORIGIN
+    ).json()
+    assert viejo["hits"] == []
+    assert any("superseded" in motivo for motivo in viejo["excluded"])
+
+    # Y lo nuevo sí, con la revisión del corpus cambiada: no es la misma que antes del cambio.
+    nuevo = seeded_client.post(
+        "/api/v1/search", json={"query": "veinte", "limit": 5}, headers=ALLOWED_ORIGIN
+    ).json()
+    assert nuevo["total"] >= 1
+    assert nuevo["corpus_revision"] != antes["corpus_revision"]
+    assert all(hit["span"]["version_status"] == "accepted" for hit in nuevo["hits"])
+
+
+def test_una_respuesta_guardada_conserva_la_revision_con_la_que_se_respondio(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """La caché no se reutiliza a ciegas: cada respuesta dice con qué corpus se compuso."""
+    document_id, _, _ = _documento_aceptado(seeded_client)
+    consulta = seeded_client.post(
+        "/api/v1/rag/queries", json={"query": "plazo habiles diez"}, headers=ALLOWED_ORIGIN
+    ).json()
+    assert consulta["corpus_revision"]
+
+    artifact2 = _pegar(seeded_client, V2, "plazos-v2g.txt")
+    _promocionar(seeded_client, artifact2, "Plazos administrativos", document_id=document_id)
+    cambio = seeded_client.get("/api/v1/change-sets").json()[0]
+    seeded_client.post(f"/api/v1/change-sets/{cambio['id']}/confirm", headers=ALLOWED_ORIGIN)
+
+    guardada = seeded_client.get(f"/api/v1/rag/queries/{consulta['id']}").json()
+    assert guardada["corpus_revision"] == consulta["corpus_revision"]
+
+
 # --- lo que no se puede hacer -------------------------------------------------------------------
 
 

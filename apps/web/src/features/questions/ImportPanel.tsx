@@ -22,11 +22,12 @@ export interface ImportPanelProps {
 const KIND_LABEL: Record<ImportKind, string> = {
   questions: 'preguntas de un texto',
   csv: 'un CSV con columnas',
+  json: 'preguntas de un JSON',
   answer_key: 'una plantilla suelta',
 };
 
 /**
- * Importador del banco (04_INGESTION §10): texto, CSV con mapeo de columnas y plantilla suelta.
+ * Importador del banco (04_INGESTION §10): texto, CSV con mapeo de columnas, JSON y plantilla suelta.
  *
  * Tres cosas que la pantalla no hace y son a propósito:
  *
@@ -160,9 +161,23 @@ export function ImportPanel({
         </fieldset>
       )}
 
+      {kind === 'json' && (
+        <p className="hint">
+          Cada pregunta necesita <code>stem</code> y al menos dos <code>options</code>. Son
+          opcionales <code>correct</code> (la letra, la posición o el texto de la opción),{' '}
+          <code>explanation</code>, <code>topic</code>, <code>number</code>, <code>reserve</code>,{' '}
+          <code>reserve_order</code> y <code>type</code>. Una pregunta mala no aborta el lote: se
+          informa con su motivo y el resto entra.
+        </p>
+      )}
+
       <div className="form__row">
         <label className="form__label" htmlFor="importar-texto">
-          {kind === 'csv' ? 'Contenido del CSV (con su cabecera)' : 'Texto a importar'}
+          {kind === 'csv'
+            ? 'Contenido del CSV (con su cabecera)'
+            : kind === 'json'
+              ? 'Contenido del JSON (lista de preguntas, o un objeto con «questions»)'
+              : 'Texto a importar'}
         </label>
         <textarea
           id="importar-texto"

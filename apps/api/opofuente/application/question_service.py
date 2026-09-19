@@ -49,6 +49,7 @@ from opofuente.domain.questions import (
     find_question_duplicates,
     parse_answer_key,
     parse_questions,
+    parse_questions_json,
 )
 from opofuente.infrastructure.question_repository import SqlAlchemyQuestionRepository
 
@@ -204,6 +205,35 @@ class QuestionService:
             origin_type=origin_type,
             issues=parseado.issues,
             model_code=parseado.model_code,
+            actor=actor,
+        )
+
+    def import_from_json(
+        self,
+        set_id: str,
+        text: str,
+        *,
+        origin_type: Origin = Origin.PRIVATE,
+        actor: str = "local",
+    ) -> QuestionImportReport:
+        """Importa preguntas de un JSON, la otra mitad del asistente del slice S06.
+
+        Vale lo mismo que para el CSV: una pregunta mala no aborta el lote, entra todo lo legible y
+        lo rechazado se informa con su motivo. Lo que **no** se hace es suponer: una pregunta sin
+        clave entra sin clave, y los campos que el asistente no guarda se declaran en
+        `ignored_columns` en vez de desaparecer sin decirlo.
+        """
+        if self._questions.get_set(set_id) is None:
+            return QuestionImportReport(set_id=set_id)
+        parseado = parse_questions_json(text)
+        return self._guardar(
+            set_id,
+            parseado.questions,
+            extras=[(pregunta.correct_option_keys, None, None) for pregunta in parseado.questions],
+            origin_type=origin_type,
+            issues=parseado.issues,
+            model_code=parseado.model_code,
+            ignored=parseado.ignored_fields,
             actor=actor,
         )
 

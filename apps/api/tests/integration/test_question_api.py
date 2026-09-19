@@ -128,6 +128,74 @@ def test_un_csv_con_filas_malas_las_informa_y_mete_las_buenas(
     assert datos["missing_columns"], "lo que el mapeo pedía y el fichero no trae se declara"
 
 
+def test_un_json_se_importa_por_la_misma_ruta_que_el_csv(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """El asistente del slice S06 es CSV **y** JSON: la misma ruta, el mismo informe.
+
+    Una entrada mala del JSON no aborta el lote, y la respuesta escrita de una opción se resuelve a
+    su letra: es lo que hace útil importar un JSON exportado de otra herramienta.
+    """
+    conjunto = _conjunto(seeded_client)
+
+    informe = _importar(
+        seeded_client,
+        conjunto["id"],
+        kind="json",
+        text=(
+            '{"model_code": "A", "questions": ['
+            '{"stem": "Pregunta buena", "options": ["uno", "dos"], "correct": "dos"},'
+            '{"stem": "", "options": ["uno", "dos"]},'
+            '{"stem": "Sin opciones", "options": ["solo una"]}'
+            "]}"
+        ),
+    )
+
+    assert informe.status_code == 200, informe.text
+    datos = informe.json()
+    assert datos["created"] == 1, "las dos preguntas malas no abortan el lote"
+    assert [aviso["code"] for aviso in datos["issues"]] == ["no_stem", "few_options"]
+    assert datos["model_code_detected"] == "A"
+
+    preguntas = seeded_client.get(f"/api/v1/question-sets/{conjunto['id']}/questions").json()
+    assert preguntas["total"] == 1
+    assert preguntas["questions"][0]["stem"] == "Pregunta buena"
+    assert preguntas["questions"][0]["correct_option_keys"] == ["b"]
+
+
+def test_un_json_declarado_como_tal_que_no_es_json_no_rompe_nada(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    conjunto = _conjunto(seeded_client)
+
+    informe = _importar(seeded_client, conjunto["id"], kind="json", text="no soy JSON")
+
+    assert informe.status_code == 200, informe.text
+    datos = informe.json()
+    assert datos["created"] == 0
+    assert [aviso["code"] for aviso in datos["issues"]] == ["not_json"]
+    assert (
+        seeded_client.get(f"/api/v1/question-sets/{conjunto['id']}/questions").json()["total"] == 0
+    )
+
+
+def test_un_json_declara_los_campos_que_no_guarda(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """`tags` y `source` se leen y no se guardan: el informe lo dice en vez de callarlo."""
+    conjunto = _conjunto(seeded_client)
+
+    informe = _importar(
+        seeded_client,
+        conjunto["id"],
+        kind="json",
+        text='[{"stem": "Pregunta", "options": ["uno", "dos"], "tags": ["t1"], "source": "x"}]',
+    )
+
+    assert informe.status_code == 200, informe.text
+    assert informe.json()["ignored_columns"] == ["tags", "source"]
+
+
 def test_un_mapeo_que_no_encaja_con_el_fichero_es_un_422_y_no_un_500(
     seeded_settings: Settings, seeded_client: TestClient
 ) -> None:
