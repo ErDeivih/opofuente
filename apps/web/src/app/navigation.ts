@@ -64,8 +64,8 @@ export const NAV_ITEMS: readonly NavItem[] = [
   {
     path: '/ajustes',
     label: 'Ajustes',
-    slice: 'S12',
-    summary: 'Almacenamiento, capacidades instaladas, proveedores y copias.',
+    slice: null,
+    summary: 'Almacenamiento, capacidades instaladas, proveedores, copias y diagnóstico.',
   },
 ];
 

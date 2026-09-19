@@ -8,6 +8,29 @@
       name="description"
       content="Biblioteca personal local para organizar y estudiar material de TAI y Guardia Civil"
     />
+    <!--
+      CSP del frontend (09_SECURITY-PRIVACY-AND-RIGHTS §2: «CSP estricta en frontend»).
+
+      Reglas, y por qué cada una:
+
+      - `default-src 'none'` y `base-uri`/`form-action`/`frame-ancestors` cerrados: nada se carga ni se
+        envía sin decirlo explícitamente;
+      - `script-src 'self'`: **sin** `unsafe-inline` ni `unsafe-eval`. El bundle de Vite es un módulo
+        propio; esto es lo que impide que un HTML inyectado ejecute nada;
+      - `style-src 'self' 'unsafe-inline'`: único permiso amplio, y es porque la interfaz usa estilos en
+        línea en algunos componentes. Se puede quitar cuando no queden;
+      - `connect-src` solo al API local (loopback) y al WebSocket del servidor de desarrollo. Sin esto,
+        la página no podría hablar ni con su propio backend, que es justamente lo que se quiere acotar;
+      - `img-src 'self' data:`: no hay imágenes remotas y no deben poder cargarse (un `img` remoto es una
+        fuga de que alguien está mirando la pantalla).
+
+      Va en el HTML y no solo en la cabecera porque el `preview` de Vite no añade cabeceras; el API sí
+      las manda (api/middleware.py) para sus propias respuestas.
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self' http://127.0.0.1:8765 http://localhost:8765 ws://127.0.0.1:5173 ws://localhost:5173; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; object-src 'none'"
+    />
     <title>OpoFuente</title>
   </head>
   <body>

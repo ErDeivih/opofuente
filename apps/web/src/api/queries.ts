@@ -120,6 +120,20 @@ import {
   type PatchQuestion,
 } from './questions';
 import { fetchCapabilities, fetchReadiness, fetchSettings } from './system';
+import {
+  createBackup,
+  executeRestore,
+  fetchBackups,
+  fetchDiagnostic,
+  fetchDiagnosticText,
+  fetchHousekeeping,
+  fetchIndexHealth,
+  purge,
+  reindex,
+  validateRestore,
+  verifyBackup,
+  type PurgeActionValue,
+} from './maintenance';
 export const queryKeys = {
   readiness: ['system', 'readiness'] as const,
   capabilities: ['system', 'capabilities'] as const,
@@ -188,6 +202,12 @@ export const queryKeys = {
   changeSets: () => ['change', 'sets'] as const,
   changeSet: (changeId: string) => ['change', 'set', changeId] as const,
   derivedArtifacts: (needsReview: string) => ['change', 'artifacts', needsReview] as const,
+  /* S12: copias, almacén y diagnóstico. Cuelgan de «maintenance» porque una copia, una retirada o
+     un reindexado cambian a la vez el uso de disco, la lista de copias y el estado del índice. */
+  backups: () => ['maintenance', 'backups'] as const,
+  housekeeping: () => ['maintenance', 'housekeeping'] as const,
+  indexHealth: () => ['maintenance', 'index'] as const,
+  diagnostic: () => ['maintenance', 'diagnostic'] as const,
 };
 
 export function useReadiness() {
@@ -1186,4 +1206,96 @@ export function useResolveDerivedArtifact() {
       invalidateChanges(queryClient);
     },
   });
+}
+
+/* --- S12: copias, almacén y diagnóstico ------------------------------------------------------- */
+
+/**
+ * Invalida todo lo que cambia cuando se toca el almacén.
+ *
+ * Una copia, una restauración, una retirada o un reindexado cambian a la vez el uso de disco, la
+ * lista de copias, el estado del índice y los recuentos del diagnóstico: invalidar solo una parte
+ * dejaría la pantalla enseñando cifras de antes del cambio.
+ */
+function invalidateMaintenance(queryClient: QueryClient): void {
+  void queryClient.invalidateQueries({ queryKey: ['maintenance'] });
+}
+
+export function useBackups() {
+  return useQuery({ queryKey: queryKeys.backups(), queryFn: fetchBackups });
+}
+
+export function useHousekeeping() {
+  return useQuery({ queryKey: queryKeys.housekeeping(), queryFn: fetchHousekeeping });
+}
+
+export function useIndexHealth() {
+  return useQuery({ queryKey: queryKeys.indexHealth(), queryFn: fetchIndexHealth });
+}
+
+export function useDiagnostic() {
+  return useQuery({ queryKey: queryKeys.diagnostic(), queryFn: fetchDiagnostic });
+}
+
+export function useCreateBackup() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (note: string | null) => createBackup(note),
+    onSuccess: () => {
+      invalidateMaintenance(queryClient);
+    },
+  });
+}
+
+export function useVerifyBackup() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (backupId: string) => verifyBackup(backupId),
+    onSuccess: () => {
+      invalidateMaintenance(queryClient);
+    },
+  });
+}
+
+export function useValidateRestore() {
+  return useMutation({ mutationFn: (backupId: string) => validateRestore(backupId) });
+}
+
+export function useExecuteRestore() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (backupId: string) => executeRestore(backupId),
+    onSuccess: () => {
+      invalidateMaintenance(queryClient);
+    },
+  });
+}
+
+export function usePurge() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { action: PurgeActionValue; references: string[] | null }) =>
+      purge(input.action, input.references),
+    onSuccess: () => {
+      invalidateMaintenance(queryClient);
+      // Retirar material cambia lo que la biblioteca y la bandeja pueden contar.
+      void queryClient.invalidateQueries({ queryKey: ['library'] });
+      void queryClient.invalidateQueries({ queryKey: ['tray'] });
+    },
+  });
+}
+
+export function useReindex() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: reindex,
+    onSuccess: () => {
+      invalidateMaintenance(queryClient);
+      void queryClient.invalidateQueries({ queryKey: ['search'] });
+    },
+  });
+}
+
+export function useDiagnosticText() {
+  return useMutation({ mutationFn: fetchDiagnosticText });
 }

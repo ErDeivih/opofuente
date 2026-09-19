@@ -26,6 +26,48 @@ function stubSystemApi(extra: Record<string, StubbedRoute> = {}) {
   });
 }
 
+function stubAdjustesApi(extra: Record<string, StubbedRoute> = {}) {
+  // Ajustes consulta cinco rutas propias: sin ellas las secciones quedan cargando y la pantalla no
+  // llega a declararse construida.
+  return stubSystemApi({
+    '/api/v1/backups': { body: { backups: [] } },
+    '/api/v1/housekeeping': {
+      body: {
+        usage: [],
+        candidates: [],
+        retention_days: 30,
+        total_bytes: 0,
+        reclaimable_bytes: 0,
+      },
+    },
+    '/api/v1/search/index': { body: { healthy: true, detail: 'completo', missing_entries: 0 } },
+    '/api/v1/diagnostics': {
+      body: {
+        generated_at: '2026-09-19T12:00:00+00:00',
+        version: '0.0.0-test',
+        schema_revision: '0020_changes_and_derivatives',
+        python_version: '3.12.0',
+        platform: 'Windows 11 (python 64 bits)',
+        host: '127.0.0.1',
+        port: 8765,
+        log_level: 'INFO',
+        data_dir_display: '…/datos',
+        database_file_display: '…/datos/opofuente.sqlite3',
+        disk_total_bytes: 1,
+        disk_free_bytes: 1,
+        counts: {},
+        capabilities: capabilitiesFixture.capabilities,
+        degradations: [],
+        checks: readinessReady.checks,
+        limits: settingsFixture.limits,
+        log_tail: [],
+        note: 'Diagnóstico sanitizado',
+      },
+    },
+    ...extra,
+  });
+}
+
 describe('navegación', () => {
   it('contiene las secciones del MVP en orden', () => {
     expect(NAV_ITEMS.map((item) => item.label)).toEqual([
@@ -52,17 +94,16 @@ describe('navegación', () => {
       'Estudiar',
       'Errores',
       'Cambios',
+      'Ajustes',
     ]);
-    const slices = new Map(NAV_ITEMS.map((item) => [item.label, item.slice]));
-    expect(slices.get('Errores')).toBeNull();
-    expect(slices.get('Cambios')).toBeNull();
-    expect(slices.get('Ajustes')).toBe('S12');
+    // Ninguna sección queda pendiente: el MVP está completo (S00–S12).
+    expect(NAV_ITEMS.filter((item) => item.slice !== null)).toEqual([]);
   });
 });
 
 describe('shell de la aplicación', () => {
-  it('anuncia la sección pendiente en lugar de mostrar una pantalla vacía', async () => {
-    stubSystemApi();
+  it('Ajustes ya está construida: su ruta no anuncia un slice pendiente', async () => {
+    stubAdjustesApi();
     renderWithProviders(
       <AppShell>
         <AppRoutes />
@@ -71,8 +112,8 @@ describe('shell de la aplicación', () => {
     );
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Ajustes' })).toBeInTheDocument();
-    expect(screen.getByText(/slice S12/)).toBeInTheDocument();
-    expect(screen.getByText('pendiente')).toBeInTheDocument();
+    expect(screen.queryByText(/slice S12/)).toBeNull();
+    expect(screen.queryByText('pendiente')).toBeNull();
   });
 
   it('Cambios ya está construida: su ruta no anuncia un slice pendiente', async () => {

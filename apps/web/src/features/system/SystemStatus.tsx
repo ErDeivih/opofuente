@@ -3,21 +3,7 @@ import { ErrorState } from '../../components/ErrorState';
 import { LoadingState } from '../../components/LoadingState';
 import { StatusBadge } from '../../components/StatusBadge';
 import { CapabilityList } from './CapabilityList';
-
-function formatBytes(value: number): string {
-  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-  let size = value;
-  let unit = 0;
-  while (size >= 1024 && unit < units.length - 1) {
-    size /= 1024;
-    unit += 1;
-  }
-  return `${size.toFixed(unit === 0 ? 0 : 1)} ${units[unit] ?? 'B'}`;
-}
-
-function describeError(error: unknown): string {
-  return error instanceof Error ? error.message : 'Error desconocido';
-}
+import { describeError, formatBytes } from './labels';
 
 /**
  * Estado real del sistema: salud, capacidades y almacenamiento.
