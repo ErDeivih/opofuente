@@ -58,7 +58,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
   {
     path: '/cambios',
     label: 'Cambios',
-    slice: 'S11',
+    slice: null,
     summary: 'Versiones sustituidas y derivados que necesitan revisión.',
   },
   {

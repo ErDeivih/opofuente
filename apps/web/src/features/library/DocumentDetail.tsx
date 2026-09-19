@@ -6,6 +6,7 @@ import { isCandidate, isRestricted, versionName } from '../../api/library';
 import {
   useAcceptVersion,
   useAssignMapping,
+  useCreateSummary,
   useCurriculum,
   useDocumentDetail,
   useDocumentMappings,
@@ -77,6 +78,10 @@ export function DocumentDetail({ documentId, onClose }: DocumentDetailProps) {
 
   const accept = useAcceptVersion();
   const supersede = useMarkSupersedes();
+  // S11: un resumen extractivo de una sección. Es un derivado de verdad: depende de los fragmentos
+  // de esa sección y quedará pendiente de revisar si el material cambia.
+  const resumir = useCreateSummary();
+  const [avisoResumen, setAvisoResumen] = useState<string | null>(null);
 
   /**
    * Comparación de versiones: se eligen dos y el servidor las compara (no se compara aquí nada).
@@ -322,6 +327,31 @@ export function DocumentDetail({ documentId, onClose }: DocumentDetailProps) {
               onRetry={() => {
                 void sections.refetch();
                 void evidence.refetch();
+              }}
+              summarizePending={resumir.isPending}
+              summarizeNotice={
+                resumir.error !== null
+                  ? describeError(resumir.error)
+                  : avisoResumen
+              }
+              onSummarize={(sectionId) => {
+                if (versionId === null) {
+                  return;
+                }
+                resumir.mutate(
+                  {
+                    document_version_id: versionId,
+                    section_ids: [sectionId],
+                    title: `${document.canonical_title}: resumen de una sección`,
+                  },
+                  {
+                    onSuccess: (resumen) => {
+                      setAvisoResumen(
+                        `Resumen guardado (${resumen.sections.join(', ') || 'sus secciones'}). Si el material cambia, quedará pendiente de revisar en Cambios.`,
+                      );
+                    },
+                  },
+                );
               }}
             />
           )}

@@ -15,6 +15,10 @@ export interface ReaderTabProps {
   isPending: boolean;
   isError: boolean;
   onRetry: () => void;
+  /** Crear un resumen extractivo de esta sección (S11). Sin esto, el lector no lo ofrece. */
+  onSummarize?: ((sectionId: string) => void) | undefined;
+  summarizePending?: boolean | undefined;
+  summarizeNotice?: string | null | undefined;
 }
 
 /** Evidencia de una sección: por su identificador y, si no lo trae, por su página. */
@@ -56,6 +60,9 @@ export function ReaderTab({
   isPending,
   isError,
   onRetry,
+  onSummarize,
+  summarizePending = false,
+  summarizeNotice = null,
 }: ReaderTabProps) {
   const [elegida, setElegida] = useState<string | null>(null);
   // La sección que se lee es la elegida y, mientras nadie elija, la primera del documento: no hace
@@ -153,6 +160,31 @@ export function ReaderTab({
                 </>
               )}
             </p>
+
+            {onSummarize !== undefined && fragmentos.length > 0 && (
+              <div className="form__row">
+                <button
+                  className="button"
+                  type="button"
+                  disabled={summarizePending}
+                  aria-label={`Resumir la sección ${seccion.title ?? seccion.label ?? String(seccion.ordinal)}`}
+                  onClick={() => {
+                    onSummarize(seccion.id);
+                  }}
+                >
+                  Crear un resumen de esta sección
+                </button>
+                <span className="hint">
+                  Extractivo: junta el texto de los fragmentos con su cita, sin modelo. El resumen
+                  dependerá de esta sección y quedará pendiente de revisar si cambia (S11).
+                </span>
+              </div>
+            )}
+            {summarizeNotice !== null && (
+              <p className="hint" role="status">
+                {summarizeNotice}
+              </p>
+            )}
 
             {fragmentos.length === 0 ? (
               <p className="hint">

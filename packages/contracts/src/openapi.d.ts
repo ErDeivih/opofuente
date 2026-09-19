@@ -124,7 +124,7 @@ export interface paths {
         put?: never;
         /**
          * Confirma el cambio: acepta la versión, sustituye la anterior y marca derivados
-         * @description La relación de versión la confirma una persona; la anterior queda `superseded`, no se borra.
+         * @description La relación de versión la confirma una persona; la anterior no se borra.
          */
         post: operations["confirm_change_set_api_v1_change_sets__change_id__confirm_post"];
         delete?: never;

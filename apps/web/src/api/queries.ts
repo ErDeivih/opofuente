@@ -2,6 +2,16 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { QueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 
+import {
+  confirmChangeSet,
+  createSummary,
+  discardChangeSet,
+  fetchChangeSet,
+  fetchChangeSets,
+  fetchDerivedArtifacts,
+  resolveDerivedArtifact,
+  type CreateSummary,
+} from './changes';
 import type { ProposalStatus } from './classification';
 import {
   bulkDecision,
@@ -173,6 +183,11 @@ export const queryKeys = {
   learningError: (errorId: string) => ['review', 'error', errorId] as const,
   reviewHistory: (reviewId: string) => ['review', 'item', reviewId, 'history'] as const,
   mastery: (oppositionId: string) => ['review', 'mastery', oppositionId] as const,
+  /* S11: cambios y derivados. Cuelgan de «change» porque confirmar un cambio afecta a la vez al
+     documento, a sus versiones y a los derivados que dependían de él. */
+  changeSets: () => ['change', 'sets'] as const,
+  changeSet: (changeId: string) => ['change', 'set', changeId] as const,
+  derivedArtifacts: (needsReview: string) => ['change', 'artifacts', needsReview] as const,
 };
 
 export function useReadiness() {
@@ -1100,5 +1115,74 @@ export function useExportBank() {
   return useMutation({
     mutationFn: (input: { format: 'anki-csv' | 'markdown'; request: ExportRequest }) =>
       exportBank(input.format, input.request),
+  });
+}
+
+/* ------------------------------------------------------------------ S11: cambios y derivados */
+
+/** Invalida lo que cambia al confirmar un cambio: los conjuntos, los derivados y la biblioteca. */
+function invalidateChanges(queryClient: QueryClient): void {
+  void queryClient.invalidateQueries({ queryKey: ['change'] });
+  void queryClient.invalidateQueries({ queryKey: ['library'] });
+}
+
+export function useChangeSets() {
+  return useQuery({ queryKey: queryKeys.changeSets(), queryFn: fetchChangeSets });
+}
+
+export function useChangeSet(changeId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.changeSet(changeId ?? 'ninguno'),
+    queryFn: () => fetchChangeSet(changeId as string),
+    enabled: changeId !== null,
+  });
+}
+
+export function useDerivedArtifacts(needsReview?: boolean) {
+  return useQuery({
+    queryKey: queryKeys.derivedArtifacts(needsReview === undefined ? 'todos' : String(needsReview)),
+    queryFn: () => fetchDerivedArtifacts(needsReview),
+  });
+}
+
+export function useConfirmChangeSet() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (changeId: string) => confirmChangeSet(changeId),
+    onSuccess: () => {
+      invalidateChanges(queryClient);
+    },
+  });
+}
+
+export function useDiscardChangeSet() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (changeId: string) => discardChangeSet(changeId),
+    onSuccess: () => {
+      invalidateChanges(queryClient);
+    },
+  });
+}
+
+export function useCreateSummary() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: CreateSummary) => createSummary(input),
+    onSuccess: () => {
+      queryClient.setQueryData(queryKeys.derivedArtifacts('todos'), undefined);
+      invalidateChanges(queryClient);
+    },
+  });
+}
+
+export function useResolveDerivedArtifact() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { artifactId: string; resolution: 'reviewed' | 'discarded' }) =>
+      resolveDerivedArtifact(input.artifactId, input.resolution),
+    onSuccess: () => {
+      invalidateChanges(queryClient);
+    },
   });
 }

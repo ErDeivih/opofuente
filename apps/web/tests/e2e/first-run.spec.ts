@@ -51,16 +51,20 @@ test('E2E-00 navegación: las secciones construidas llevan a su pantalla y el re
   await expect(page.getByRole('heading', { level: 1, name: 'Estudiar' })).toBeVisible();
   await expect(page.getByText('Esta sección todavía no está construida')).toHaveCount(0);
 
-  // Errores se entregó en S10.
+  // Errores se entregó en S10 y Cambios en S11.
   await page.getByRole('link', { name: /^Errores/ }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Errores' })).toBeVisible();
   await expect(page.getByText('Esta sección todavía no está construida')).toHaveCount(0);
 
-  // Las secciones que siguen sin construirse declaran su slice en lugar de quedarse en blanco.
   await page.getByRole('link', { name: /^Cambios/ }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Cambios' })).toBeVisible();
+  await expect(page.getByText('Esta sección todavía no está construida')).toHaveCount(0);
+
+  // Las secciones que siguen sin construirse declaran su slice en lugar de quedarse en blanco.
+  await page.getByRole('link', { name: /^Ajustes/ }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Ajustes' })).toBeVisible();
   await expect(page.getByText('Esta sección todavía no está construida')).toBeVisible();
-  await expect(page.getByText(/slice S11/)).toBeVisible();
+  await expect(page.getByText(/slice S12/)).toBeVisible();
 
   await page.getByRole('link', { name: /^Inicio/ }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Inicio' })).toBeVisible();
