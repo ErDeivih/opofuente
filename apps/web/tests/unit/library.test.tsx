@@ -358,8 +358,27 @@ const PROMOCION = {
   reason: null,
 };
 
-function stubLibraryApi(overrides: Record<string, StubbedRoute> = {}) {
-  return stubApi({
+/** Colecciones de la biblioteca (DEBT-017): una con miembros y otra vacía. */
+const COLECCIONES = [
+  {
+    id: 'col-1',
+    name: 'Oposición 2026',
+    description: 'Material del año',
+    item_count: 2,
+    items: ['ver-1', 'ver-2'],
+    created_at: '2026-09-19T12:00:00+00:00',
+  },
+  {
+    id: 'col-2',
+    name: 'Repaso',
+    description: null,
+    item_count: 0,
+    items: [],
+    created_at: '2026-09-19T12:05:00+00:00',
+  },
+];
+
+function stubLibraryApi(overrides: Record<string, StubbedRoute> = {}) {  return stubApi({
     '/api/v1/documents?limit=50&offset=0&document_type=convocation&owner_scope=generated': {
       body: { ...PAGINA, documents: [], total: 0 },
     },
@@ -370,6 +389,11 @@ function stubLibraryApi(overrides: Record<string, StubbedRoute> = {}) {
       body: { ...PAGINA, documents: [DOC_SIN_VERSION], total: 1 },
     },
     '/api/v1/documents?limit=50&offset=0': { body: PAGINA },
+    // Colecciones (DEBT-017): la lista de documentos lleva además `collection_id` cuando se filtra.
+    '/api/v1/documents?limit=50&offset=0&collection_id=col-1': {
+      body: { ...PAGINA, documents: [DOC_CANDIDATO], total: 1 },
+    },
+    '/api/v1/collections': { body: COLECCIONES },
     '/api/v1/documents/doc-1/versions/ver-1/accept': { body: PROMOCION },
     '/api/v1/documents/doc-1/versions/ver-1/mark-supersedes': { body: PROMOCION },
     // La comparación se pide por ruta, sin parámetros en la clave: el `stubApi` empareja por
@@ -1056,5 +1080,115 @@ describe('biblioteca: asignaciones de programa', () => {
 
     expect(screen.getByText(/No hay ninguna convocatoria activa/)).toBeInTheDocument();
     expect(screen.queryByLabelText('Nodo del programa')).not.toBeInTheDocument();
+  });
+});
+
+describe('biblioteca: colecciones (DEBT-017)', () => {
+  /**
+   * La tarjeta de colecciones, ya **cargada** (una `section` no tiene rol propio, así que se localiza
+   * por su encabezado). Se espera a que el cargador desaparezca: quedarse en «Cargando…» hacía que las
+   * cuatro pruebas de colecciones fallaran por mirar antes de tiempo.
+   */
+  async function panelColecciones(): Promise<HTMLElement> {
+    const titulo = await screen.findByRole('heading', { name: 'Colecciones' });
+    const seccion = titulo.closest('section') as HTMLElement;
+    await waitFor(() => {
+      expect(within(seccion).queryByText(/Cargando las colecciones/)).not.toBeInTheDocument();
+    });
+    return seccion;
+  }
+
+  /** La tarjeta de colecciones del documento abierto, ya cargada (ver `panelColecciones`). */
+  async function panelDocumentoAbierto(): Promise<HTMLElement> {
+    const titulo = await screen.findByRole('heading', {
+      name: 'Colecciones del documento abierto',
+    });
+    const seccion = titulo.closest('section') as HTMLElement;
+    // Puede quedarse en «crea una arriba» (sin colecciones) o enseñar el selector; lo que no puede
+    // es quedarse cargando.
+    await waitFor(() => {
+      expect(within(seccion).queryByText(/Cargando/)).not.toBeInTheDocument();
+    });
+    return seccion;
+  }
+
+  it('enseña las colecciones con sus miembros y deja crear una nueva', async () => {
+    const fetchMock = stubLibraryApi({ '/api/v1/collections': { body: COLECCIONES } });
+    renderLibrary();
+
+    const panel = await panelColecciones();
+    expect(within(panel).getByText(/Oposición 2026/)).toBeInTheDocument();
+    expect(within(panel).getByText('2 miembros')).toBeInTheDocument();
+    expect(within(panel).getByText('Repaso')).toBeInTheDocument();
+    expect(within(panel).getByText('0 miembros')).toBeInTheDocument();
+
+    const campo = within(panel).getByLabelText('Nombre de la colección');
+    await userEvent.type(campo, 'Temario 2026');
+    expect(campo).toHaveValue('Temario 2026');
+    const crear = within(panel).getByRole('button', { name: 'Crear la colección' });
+    expect(crear).toBeEnabled();
+    await userEvent.click(crear);
+
+    // La lectura del listado también va a `/collections`, así que se busca la **escritura**: la que
+    // lleva método POST. Buscar «la última» no vale: después de crear, la pantalla vuelve a leer.
+    const envio = fetchMock.mock.calls.find(
+      (call) =>
+        typeof call[0] === 'string' &&
+        call[0].endsWith('/api/v1/collections') &&
+        call[1]?.method === 'POST',
+    );
+    expect(cuerpoJson(envio)).toEqual({ name: 'Temario 2026', description: null });
+  });
+
+  it('filtra la lista por colección y lo dice, sin descartar nada en el navegador', async () => {
+    const fetchMock = stubLibraryApi({ '/api/v1/collections': { body: COLECCIONES } });
+    renderLibrary();
+
+    const panel = await panelColecciones();
+    await userEvent.click(within(panel).getByRole('button', { name: /Oposición 2026/ }));
+
+    // La petición lleva el filtro: el servidor es quien decide qué documentos son de la colección.
+    await waitFor(() => {
+      expect(peticion(fetchMock, 'collection_id=col-1')).toBeDefined();
+    });
+    expect(
+      await screen.findByText(/filtrados por la colección elegida, en el servidor/),
+    ).toBeInTheDocument();
+
+    // Y volver a pulsar la misma colección quita el filtro.
+    await userEvent.click(within(panel).getByRole('button', { name: /Oposición 2026/ }));
+    await waitFor(() => {
+      expect(screen.queryByText(/filtrados por la colección elegida/)).not.toBeInTheDocument();
+    });
+  });
+
+  it('añade la versión activa del documento abierto a una colección', async () => {
+    const fetchMock = stubLibraryApi({ '/api/v1/collections': { body: COLECCIONES } });
+    renderLibrary('/biblioteca?documento=doc-1');
+
+    const seccion = await panelDocumentoAbierto();
+    await userEvent.selectOptions(within(seccion).getByLabelText('Añadir a una colección'), 'col-2');
+    await userEvent.click(within(seccion).getByRole('button', { name: 'Añadir a la colección' }));
+
+    await waitFor(() => {
+      expect(peticion(fetchMock, '/api/v1/collections/col-2/items')).toBeDefined();
+    });
+    // Se añade la **versión activa** del documento, no «el documento» a secas.
+    expect(cuerpoJson(peticion(fetchMock, '/api/v1/collections/col-2/items'))).toEqual({
+      subject_type: 'document_version',
+      subject_id: DETALLE.document.active_version?.id,
+    });
+  });
+
+  it('sin colecciones no ofrece un selector vacío: dice cómo crear una', async () => {
+    stubLibraryApi({ '/api/v1/collections': { body: [] } });
+    renderLibrary('/biblioteca?documento=doc-1');
+
+    const panel = await panelColecciones();
+    expect(within(panel).getByText(/Todavía no hay colecciones/)).toBeInTheDocument();
+
+    const seccion = await panelDocumentoAbierto();
+    expect(within(seccion).getByText(/crea una arriba/)).toBeInTheDocument();
+    expect(within(seccion).queryByLabelText('Añadir a una colección')).not.toBeInTheDocument();
   });
 });

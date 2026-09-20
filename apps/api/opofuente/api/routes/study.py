@@ -22,6 +22,7 @@ from opofuente.api.study_schemas import (
     AnswerOutcomeSchema,
     AnswerRequestSchema,
     AttemptSchema,
+    BulkRecalculationSchema,
     CorrectionSchema,
     CreateSessionSchema,
     CurrentQuestionSchema,
@@ -33,6 +34,7 @@ from opofuente.api.study_schemas import (
     SessionConfigurationSchema,
     SessionPageSchema,
     SessionQuestionSchema,
+    SessionRecalculationSchema,
     SessionResultSchema,
     SessionSchema,
     SessionSourceSchema,
@@ -444,3 +446,37 @@ def recalculate_study_session(session_id: str, service: StudyServiceDep) -> Sess
     crea evaluaciones nuevas, conserva el resultado anterior y explica de dónde a dónde cambió.
     """
     return _result(service.recalculate(session_id))
+
+
+@router.post(
+    "/question-sets/{set_id}/recalculate-sessions",
+    response_model=BulkRecalculationSchema,
+    responses=INGESTION_WRITE_ERRORS,
+    summary="Recalcula en bloque las sesiones terminadas de un conjunto (DEBT-013)",
+)
+def recalculate_set(set_id: str, service: StudyServiceDep) -> BulkRecalculationSchema:
+    """Corregir una clave y recalcular **todas** las sesiones afectadas de una vez.
+
+    Va aquí y no en `/study-sessions/{id}/recalculate` porque el ámbito es el **conjunto**: lo que
+    se corrige es su plantilla, y lo que hay que arreglar son las sesiones que se corrigieron con
+    ella. El informe dice sesión por sesión qué cambió y cuánto: un «hecho» sin números no se puede
+    comprobar.
+    """
+    vista = service.recalculate_set(set_id)
+    return BulkRecalculationSchema(
+        question_set_id=vista.question_set_id,
+        key_version=vista.key_version,
+        changed=vista.changed,
+        detail=vista.detail,
+        sessions=[
+            SessionRecalculationSchema(
+                session_id=cambio.session_id,
+                previous_total=cambio.previous_total,
+                new_total=cambio.new_total,
+                previous_key_label=cambio.previous_key_label,
+                new_key_label=cambio.new_key_label,
+                changed=cambio.changed,
+            )
+            for cambio in vista.sessions
+        ],
+    )

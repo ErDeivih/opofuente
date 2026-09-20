@@ -42,7 +42,10 @@ import {
 } from './ingestion';
 import {
   acceptVersion,
+  addToCollection,
   assignVersionToNode,
+  createCollection,
+  fetchCollections,
   fetchDocument,
   fetchDocuments,
   fetchEvidence,
@@ -53,6 +56,7 @@ import {
   markSupersedes,
   removeMapping,
   type CoverageType,
+  type SubjectType,
 } from './library';
 import {
   activateOpposition,
@@ -157,8 +161,11 @@ export const queryKeys = {
   coverage: (nodeId: string) => ['classification', 'coverage', nodeId] as const,
   /* S05: biblioteca. Cuelgan de «library» por lo mismo: aceptar una versión cambia el listado (su
      versión activa y su estado) y la propia ficha, y las dos deben contar lo mismo. */
-  libraryDocuments: (documentType: string, ownerScope: string) =>
-    ['library', 'documents', documentType, ownerScope] as const,
+  libraryDocuments: (documentType: string, ownerScope: string, collectionId = '') =>
+    ['library', 'documents', documentType, ownerScope, collectionId] as const,
+  /* Las colecciones cuelgan de «library» porque añadir un documento a una colección cambia a la vez
+     la lista de colecciones y los documentos que enseña el filtro. */
+  libraryCollections: () => ['library', 'collections'] as const,
   libraryDocument: (documentId: string) => ['library', 'document', documentId] as const,
   libraryVersions: (documentId: string) =>
     ['library', 'document', documentId, 'versions'] as const,
@@ -531,15 +538,54 @@ function invalidateLibrary(queryClient: QueryClient) {
 }
 
 /** Documentos de la biblioteca con los filtros que admite el servidor. */
-export function useDocuments(documentType: string, ownerScope: string) {
+export function useDocuments(
+  documentType: string,
+  ownerScope: string,
+  collectionId: string | null = null,
+) {
   return useQuery({
-    queryKey: queryKeys.libraryDocuments(documentType, ownerScope),
+    queryKey: queryKeys.libraryDocuments(documentType, ownerScope, collectionId ?? ''),
     queryFn: () =>
       fetchDocuments({
         documentType: documentType === '' ? null : documentType,
         ownerScope: ownerScope === '' ? null : ownerScope,
+        collectionId,
       }),
     staleTime: 5_000,
+  });
+}
+
+export function useCollections() {
+  return useQuery({ queryKey: queryKeys.libraryCollections(), queryFn: fetchCollections });
+}
+
+export function useCreateCollection() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { name: string; description: string | null }) => createCollection(input),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['library'] });
+    },
+  });
+}
+
+/**
+ * Añade un sujeto a una colección.
+ *
+ * Invalida la biblioteca entera y no solo la colección: si el filtro por colección está activo, los
+ * documentos que se están viendo cambian con esta operación.
+ */
+export function useAddToCollection() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { collectionId: string; subjectType: SubjectType; subjectId: string }) =>
+      addToCollection(input.collectionId, {
+        subjectType: input.subjectType,
+        subjectId: input.subjectId,
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['library'] });
+    },
   });
 }
 

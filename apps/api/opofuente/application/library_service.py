@@ -266,11 +266,16 @@ class LibraryService:
         *,
         document_type: str | None = None,
         owner_scope: str | None = None,
+        collection_id: str | None = None,
         limit: int = 50,
         offset: int = 0,
     ) -> DocumentPage:
         return self._documents.list_documents(
-            document_type=document_type, owner_scope=owner_scope, limit=limit, offset=offset
+            document_type=document_type,
+            owner_scope=owner_scope,
+            collection_id=collection_id,
+            limit=limit,
+            offset=offset,
         )
 
     def document(self, document_id: str) -> DocumentDetail | None:

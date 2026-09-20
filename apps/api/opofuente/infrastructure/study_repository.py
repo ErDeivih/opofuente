@@ -186,6 +186,23 @@ class SqlAlchemyStudyRepository:
                 offset=offset,
             )
 
+    def finished_sessions_of_set(self, question_set_id: str) -> tuple[str, ...]:
+        """Sesiones **terminadas** que se corrigieron con un conjunto de preguntas (DEBT-013).
+
+        Es lo que hace falta para recalcular en bloque tras corregir una clave: no todas las
+        sesiones del conjunto son candidatas (las que siguen en marcha se corrigen al terminar),
+        pero las que ya terminaron y usaron este conjunto son exactamente las que quedan con la
+        puntuación vieja.
+        """
+        with self._session_factory() as session:
+            filas = session.execute(
+                select(StudySessionRecord.id).where(
+                    StudySessionRecord.status == SessionStatus.FINISHED.value,
+                    StudySessionRecord.question_set_id == question_set_id,
+                )
+            ).scalars()
+            return tuple(str(fila) for fila in filas)
+
     def start(self, session_id: str, *, now: datetime, actor: str = "local") -> SessionView | None:
         """Pone la sesión en marcha. Arrancar una que ya corre no cambia nada (es reintentable)."""
         with self._session_factory() as session:

@@ -182,6 +182,29 @@ class AnswerOutcomeView:
 
 
 @dataclass(frozen=True, slots=True)
+class SessionRecalculationView:
+    """Lo que cambió en **una** sesión al recalcularla en bloque (DEBT-013)."""
+
+    session_id: str
+    previous_total: str
+    new_total: str
+    previous_key_label: str
+    new_key_label: str
+    changed: bool
+
+
+@dataclass(frozen=True, slots=True)
+class BulkRecalculationView:
+    """Recálculo en bloque: qué plantilla se usó, sesión por sesión, y cuántas cambiaron."""
+
+    question_set_id: str
+    key_version: int
+    sessions: tuple[SessionRecalculationView, ...]
+    changed: int
+    detail: str
+
+
+@dataclass(frozen=True, slots=True)
 class PartScoreView:
     """Puntuación directa de una parte, con los umbrales oficiales como datos declarados."""
 

@@ -29,12 +29,14 @@ from opofuente.application.review_service import ReviewService
 from opofuente.application.study_models import (
     AnswerOutcomeView,
     AttemptView,
+    BulkRecalculationView,
     CorrectionView,
     PartScoreView,
     ReviewView,
     ScoreView,
     SessionPage,
     SessionQuestionView,
+    SessionRecalculationView,
     SessionResultView,
     SessionView,
     SubstitutionView,
@@ -669,6 +671,69 @@ class StudyService:
             now=ahora,
         )
         return self.result(session_id)
+
+    def recalculate_set(self, question_set_id: str) -> BulkRecalculationView:
+        """Recalcula **todas** las sesiones terminadas del conjunto con la clave activa (DEBT-013).
+
+        El problema que resuelve: una clave mal importada se corrige después de veinte sesiones, y
+        hasta ahora había que recalcularlas una por una —y las que nadie recordara se quedaban con
+        la puntuación vieja—. Aquí se hace de una vez, y el informe dice **sesión por sesión** qué
+        cambió y cuánto, porque un «hecho» sin números no permite comprobar nada.
+
+        Lo que **no** hace: inventar una puntuación nueva donde no la hay. Una sesión que la clave
+        activa no cubre se recalcula igual (es lo que hace `recalculate`) y su resultado lo dirá. Y
+        las sesiones que siguen en marcha no entran: se corrigen al terminar.
+        """
+        if self._questions.get_set(question_set_id) is None:
+            raise NotFoundError("conjunto de preguntas", question_set_id)
+        # La clave activa es la que corrige; sin ella no hay con qué recalcular, y se dice con el
+        # mismo error que usa el resto del servicio para ese caso.
+        activa = self._clave_activa(question_set_id)
+
+        anteriores: dict[str, tuple[Fraction, str, str]] = {}
+        for session_id in self._study.finished_sessions_of_set(question_set_id):
+            antes = self._study.get_session(session_id)
+            if antes is not None and antes.result is not None:
+                anteriores[session_id] = (
+                    antes.result.total.score.value,
+                    antes.result.total.score.fraction,
+                    antes.result.key_label or "",
+                )
+
+        cambios: list[SessionRecalculationView] = []
+        for session_id, (antes_total, antes_fraccion, antes_etiqueta) in anteriores.items():
+            # `recalculate` devuelve el resultado **nuevo** (no la sesión), así que lo que compara
+            # es ese resultado con la foto tomada antes de recalcular.
+            resultado = self.recalculate(session_id)
+            nueva_total = resultado.total.score.value
+            nueva_etiqueta = resultado.key_label or ""
+            cambios.append(
+                SessionRecalculationView(
+                    session_id=session_id,
+                    previous_total=antes_fraccion,
+                    new_total=resultado.total.score.fraction,
+                    previous_key_label=antes_etiqueta,
+                    new_key_label=nueva_etiqueta,
+                    changed=nueva_total != antes_total or nueva_etiqueta != antes_etiqueta,
+                )
+            )
+
+        cambiadas = sum(1 for cambio in cambios if cambio.changed)
+        return BulkRecalculationView(
+            question_set_id=question_set_id,
+            key_version=activa.version_no,
+            sessions=tuple(cambios),
+            changed=cambiadas,
+            detail=(
+                f"{len(cambios)} sesión(es) recalculadas con la plantilla v{activa.version_no}: "
+                f"{cambiadas} cambiaron de puntuación o de plantilla"
+                if cambios
+                else (
+                    "no hay sesiones terminadas de este conjunto: no hay nada que recalcular "
+                    "(las que estén en marcha se corrigen al terminar)"
+                )
+            ),
+        )
 
     def review(self, session_id: str) -> ReviewView:
         """La revisión: cada pregunta con lo que se marcó y, si se puede, su corrección.

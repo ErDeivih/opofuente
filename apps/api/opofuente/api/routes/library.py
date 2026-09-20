@@ -284,12 +284,22 @@ def list_documents(
     service: LibraryServiceDep,
     document_type: Annotated[str | None, Query()] = None,
     owner_scope: Annotated[str | None, Query()] = None,
+    collection_id: Annotated[str | None, Query()] = None,
     limit: Annotated[int, Query(ge=1, le=200)] = 50,
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> DocumentPageSchema:
+    """Documentos de la biblioteca con su versión activa.
+
+    `collection_id` filtra por colección (07_UI-UX §6), y el filtro se aplica en el servidor: la
+    pantalla no se trae la biblioteca entera para descartarla después.
+    """
     return _page(
         service.documents(
-            document_type=document_type, owner_scope=owner_scope, limit=limit, offset=offset
+            document_type=document_type,
+            owner_scope=owner_scope,
+            collection_id=collection_id,
+            limit=limit,
+            offset=offset,
         )
     )
 

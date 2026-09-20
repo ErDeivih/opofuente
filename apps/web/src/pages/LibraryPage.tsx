@@ -2,10 +2,18 @@ import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 import { isRestricted, DOCUMENT_PAGE_LIMIT } from '../api/library';
-import { useDocuments } from '../api/queries';
+import {
+  useAddToCollection,
+  useCollections,
+  useCreateCollection,
+  useDocumentDetail,
+  useDocuments,
+} from '../api/queries';
 import { EmptyState } from '../components/EmptyState';
 import { ErrorState } from '../components/ErrorState';
 import { LoadingState } from '../components/LoadingState';
+import { AddToCollection } from '../features/library/AddToCollection';
+import { CollectionsPanel } from '../features/library/CollectionsPanel';
 import { DocumentDetail } from '../features/library/DocumentDetail';
 import { DocumentList } from '../features/library/DocumentList';
 import { LibraryFilters, type RightsFilter } from '../features/library/LibraryFilters';
@@ -32,8 +40,19 @@ export function LibraryPage() {
   const [documentType, setDocumentType] = useState('');
   const [ownerScope, setOwnerScope] = useState('');
   const [rights, setRights] = useState<RightsFilter>('todos');
+  const [coleccion, setColeccion] = useState<string | null>(null);
 
-  const documents = useDocuments(documentType, ownerScope);
+  const collections = useCollections();
+  const crearColeccion = useCreateCollection();
+  const anadirAColeccion = useAddToCollection();
+  const [avisoColeccion, setAvisoColeccion] = useState<string | null>(null);
+
+  // El filtro de colección lo aplica el servidor: la lista no descarta nada por su cuenta.
+  const documents = useDocuments(documentType, ownerScope, coleccion);
+  // La ficha ya lo pide para sus pestañas; aquí se pide para saber **qué** versión se añade a la
+  // colección, que es la activa del documento abierto.
+  const detalle = useDocumentDetail(documentId);
+  const activeVersionId = detalle.data?.document.active_version?.id ?? null;
 
   const visibles = useMemo(() => {
     const lista = documents.data?.documents ?? [];
@@ -84,8 +103,41 @@ export function LibraryPage() {
             setDocumentType('');
             setOwnerScope('');
             setRights('todos');
+            setColeccion(null);
           }}
         />
+      </section>
+
+      <section className="card" aria-labelledby="colecciones-biblioteca">
+        <h2 id="colecciones-biblioteca">Colecciones</h2>
+        {collections.isPending ? (
+          <LoadingState label="Cargando las colecciones…" />
+        ) : collections.data === undefined ? (
+          <ErrorState
+            title="No se pudieron cargar las colecciones"
+            message={describeError(collections.error)}
+            onRetry={() => {
+              void collections.refetch();
+            }}
+          />
+        ) : (
+          <CollectionsPanel
+            collections={collections.data}
+            selectedId={coleccion}
+            onSelect={setColeccion}
+            onCreate={(input) => {
+              crearColeccion.mutate(input, {
+                onSuccess: (creada) => {
+                  setAvisoColeccion(`Colección «${creada.name}» creada.`);
+                },
+              });
+            }}
+            createPending={crearColeccion.isPending}
+            createError={
+              crearColeccion.error === null ? null : describeError(crearColeccion.error)
+            }
+          />
+        )}
       </section>
 
       <section className="card" aria-labelledby="lista-biblioteca">
@@ -111,6 +163,7 @@ export function LibraryPage() {
             <>
               <p className="hint">
                 {visibles.length} de {documents.data.total} documentos
+                {coleccion !== null && ' (filtrados por la colección elegida, en el servidor)'}
                 {rights !== 'todos' && ' (el filtro de derechos se aplica sobre lo cargado)'}
                 {documents.data.total > DOCUMENT_PAGE_LIMIT &&
                   ` · se leen los primeros ${DOCUMENT_PAGE_LIMIT}`}
@@ -124,10 +177,42 @@ export function LibraryPage() {
               />
             </>
           ))}
+        {coleccion !== null && documents.isSuccess && documents.data.total === 0 && (
+          <p className="hint">
+            Esta colección no tiene ningún documento todavía. Abre un documento y añádelo desde su
+            ficha.
+          </p>
+        )}
       </section>
 
       {documentId !== null && (
-        <DocumentDetail documentId={documentId} onClose={cerrar} />
+        <>
+          <DocumentDetail documentId={documentId} onClose={cerrar} />
+          <section className="card" aria-labelledby="anadir-a-coleccion">
+            <h2 id="anadir-a-coleccion">Colecciones del documento abierto</h2>
+            <AddToCollection
+              collections={collections.data ?? []}
+              subjectId={activeVersionId ?? null}
+              subjectType="document_version"
+              pending={anadirAColeccion.isPending}
+              notice={avisoColeccion}
+              error={
+                anadirAColeccion.error === null
+                  ? null
+                  : describeError(anadirAColeccion.error)
+              }
+              onAdd={(input) => {
+                anadirAColeccion.mutate(input, {
+                  onSuccess: (actualizada) => {
+                    setAvisoColeccion(
+                      `Añadido a «${actualizada.name}»: ahora tiene ${String(actualizada.item_count)} miembro(s).`,
+                    );
+                  },
+                });
+              }}
+            />
+          </section>
+        </>
       )}
     </>
   );

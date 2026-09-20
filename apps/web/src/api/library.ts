@@ -55,6 +55,14 @@ export interface DocumentQuery {
   documentType: string | null;
   /** Ámbito del documento (`public`, `private_user`, `generated`), o `null`. */
   ownerScope: string | null;
+  /**
+   * Colección por la que filtrar, o `null`.
+   *
+   * El filtro lo aplica **el servidor** (`GET /documents?collection_id=…`), porque un miembro de una
+   * colección puede ser una versión, un artefacto, una representación, una sección o una evidencia, y
+   * resolver eso en el navegador obligaría a traerse la biblioteca entera.
+   */
+  collectionId?: string | null;
 }
 
 export function fetchDocuments(query: DocumentQuery): Promise<DocumentPage> {
@@ -68,8 +76,63 @@ export function fetchDocuments(query: DocumentQuery): Promise<DocumentPage> {
   if (query.ownerScope !== null) {
     params.set('owner_scope', query.ownerScope);
   }
+  if (query.collectionId !== null && query.collectionId !== undefined) {
+    params.set('collection_id', query.collectionId);
+  }
   return apiFetch<DocumentPage>(`/api/v1/documents?${params.toString()}`);
 }
+
+export type Collection = components['schemas']['CollectionSchema'];
+
+export function fetchCollections(): Promise<Collection[]> {
+  return apiFetch<Collection[]>('/api/v1/collections');
+}
+
+export function createCollection(input: {
+  name: string;
+  description: string | null;
+}): Promise<Collection> {
+  return apiFetch<Collection>('/api/v1/collections', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+}
+
+/**
+ * Añade un sujeto a una colección. El servidor no duplica: añadir dos veces el mismo sujeto deja la
+ * colección con un solo miembro.
+ */
+export function addToCollection(
+  collectionId: string,
+  input: { subjectType: SubjectType; subjectId: string },
+): Promise<Collection> {
+  return apiFetch<Collection>(
+    `/api/v1/collections/${encodeURIComponent(collectionId)}/items`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ subject_type: input.subjectType, subject_id: input.subjectId }),
+    },
+  );
+}
+
+/** Tipos de sujeto que una colección admite, tal como los declara el contrato. */
+export type SubjectType =
+  | 'artifact'
+  | 'representation'
+  | 'document_version'
+  | 'section'
+  | 'evidence';
+
+/** Cómo se llama cada tipo de sujeto en la pantalla. */
+export const SUBJECT_TYPE_LABEL: Record<SubjectType, string> = {
+  artifact: 'fichero',
+  representation: 'representación (texto extraído)',
+  document_version: 'versión de documento',
+  section: 'sección',
+  evidence: 'cita de evidencia',
+};
 
 export function fetchDocument(documentId: string): Promise<DocumentDetail> {
   return apiFetch<DocumentDetail>(`/api/v1/documents/${encodeURIComponent(documentId)}`);

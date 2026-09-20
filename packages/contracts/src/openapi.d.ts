@@ -686,7 +686,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Biblioteca: documentos con su versión activa */
+        /**
+         * Biblioteca: documentos con su versión activa
+         * @description Documentos de la biblioteca con su versión activa.
+         *
+         *     `collection_id` filtra por colección (07_UI-UX §6), y el filtro se aplica en el servidor: la
+         *     pantalla no se trae la biblioteca entera para descartarla después.
+         */
         get: operations["list_documents_api_v1_documents_get"];
         put?: never;
         /** Promociona un artefacto a documento (o le añade una versión) */
@@ -1546,6 +1552,31 @@ export interface paths {
         get: operations["list_set_questions_api_v1_question_sets__set_id__questions_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/question-sets/{set_id}/recalculate-sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Recalcula en bloque las sesiones terminadas de un conjunto (DEBT-013)
+         * @description Corregir una clave y recalcular **todas** las sesiones afectadas de una vez.
+         *
+         *     Va aquí y no en `/study-sessions/{id}/recalculate` porque el ámbito es el **conjunto**: lo que
+         *     se corrige es su plantilla, y lo que hay que arreglar son las sesiones que se corrigieron con
+         *     ella. El informe dice sesión por sesión qué cambió y cuánto: un «hecho» sin números no se puede
+         *     comprobar.
+         */
+        post: operations["recalculate_set_api_v1_question_sets__set_id__recalculate_sessions_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2576,6 +2607,22 @@ export interface components {
             outcomes: components["schemas"]["DecisionOutcomeSchema"][];
             /** Requested */
             requested: number;
+        };
+        /**
+         * BulkRecalculationSchema
+         * @description Recálculo en bloque: qué plantilla se usó, sesión por sesión, y cuántas cambiaron.
+         */
+        BulkRecalculationSchema: {
+            /** Changed */
+            changed: number;
+            /** Detail */
+            detail: string;
+            /** Key Version */
+            key_version: number;
+            /** Question Set Id */
+            question_set_id: string;
+            /** Sessions */
+            sessions: components["schemas"]["SessionRecalculationSchema"][];
         };
         /** CapabilitiesSchema */
         CapabilitiesSchema: {
@@ -5449,6 +5496,24 @@ export interface components {
             stem: string;
         };
         /**
+         * SessionRecalculationSchema
+         * @description Lo que cambió en una sesión al recalcularla en bloque (DEBT-013).
+         */
+        SessionRecalculationSchema: {
+            /** Changed */
+            changed: boolean;
+            /** New Key Label */
+            new_key_label: string;
+            /** New Total */
+            new_total: string;
+            /** Previous Key Label */
+            previous_key_label: string;
+            /** Previous Total */
+            previous_total: string;
+            /** Session Id */
+            session_id: string;
+        };
+        /**
          * SessionResultSchema
          * @description El resultado de una sesión, tal como se calculó y se guardó.
          */
@@ -7982,6 +8047,7 @@ export interface operations {
             query?: {
                 document_type?: string | null;
                 owner_scope?: string | null;
+                collection_id?: string | null;
                 limit?: number;
                 offset?: number;
             };
@@ -10899,6 +10965,73 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["QuestionPageSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    recalculate_set_api_v1_question_sets__set_id__recalculate_sessions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                set_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulkRecalculationSchema"];
+                };
+            };
+            /** @description La entrada no se puede usar: carpeta inválida (`invalid_source`), contenido rechazado por seguridad (`unsafe_content`) o URL no descargable (`url_rejected`). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
                 };
             };
             /** @description El recurso no existe. */

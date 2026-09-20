@@ -20,10 +20,12 @@ from __future__ import annotations
 import json
 from collections.abc import Mapping, Sequence
 from datetime import datetime
+from typing import Any
 from uuid import uuid4
 
-from sqlalchemy import func, select
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy import Select, func, literal, or_, select
+from sqlalchemy.orm import DeclarativeBase, InstrumentedAttribute, Session, sessionmaker
+from sqlalchemy.sql.elements import ColumnElement
 
 from opofuente.application.library_models import (
     ArtifactFile,
@@ -434,14 +436,27 @@ class SqlAlchemyDocumentRepository:
         *,
         document_type: str | None = None,
         owner_scope: str | None = None,
+        collection_id: str | None = None,
         limit: int = 50,
         offset: int = 0,
     ) -> DocumentPage:
+        """Documentos de la biblioteca, con los filtros que el contrato admite.
+
+        El filtro por **colección** (07_UI-UX §6: «filtros por … y colección») se resuelve por los
+        miembros de la colección, que pueden ser de cinco tipos distintos. Un documento entra si
+        alguno de sus sujetos está dentro:
+
+        - el propio documento lógico (`document_version` → su versión);
+        - el artefacto o la representación de una de sus versiones;
+        - una sección o una evidencia de una de sus versiones.
+        """
         filtros = []
         if document_type is not None:
             filtros.append(LogicalDocumentRecord.document_type == document_type)
         if owner_scope is not None:
             filtros.append(LogicalDocumentRecord.owner_scope == owner_scope)
+        if collection_id is not None:
+            filtros.append(self._in_collection(collection_id))
         with self._session_factory() as session:
             total = int(
                 session.execute(
@@ -461,6 +476,96 @@ class SqlAlchemyDocumentRepository:
             )
             vistas = tuple(self._document_view(session, fila) for fila in filas)
         return DocumentPage(documents=vistas, total=total, limit=limit, offset=offset)
+
+    @staticmethod
+    def _in_collection(collection_id: str) -> ColumnElement[bool]:
+        """Condición «este documento tiene algún sujeto dentro de la colección».
+
+        Una colección agrupa **sujetos** de cinco tipos, así que un documento pertenece a ella si
+        alguno de sus sujetos está dentro. Se resuelve con un `EXISTS` por tipo, correlacionado **a
+        mano** con el documento de la consulta externa (`correlate(LogicalDocumentRecord)`): sin esa
+        correlación explícita, SQLAlchemy autocorrelaciona la subconsulta consigo misma y la
+        condición se cumple siempre —el fallo que encontró la prueba de integración cuando devolvía
+        cuatro documentos donde había uno—.
+        """
+
+        def existe_miembro(tipo: str, condicion: ColumnElement[bool]) -> ColumnElement[bool]:
+            return (
+                select(literal(1))
+                .select_from(CollectionItemRecord)
+                .where(
+                    CollectionItemRecord.collection_id == collection_id,
+                    CollectionItemRecord.subject_type == tipo,
+                    condicion,
+                )
+                .correlate(LogicalDocumentRecord)
+                .exists()
+            )
+
+        def sujetos_del_documento(columna: InstrumentedAttribute[str | None]) -> Select[Any]:
+            """Columna de una versión del documento de fuera, correlacionada **a mano**.
+
+            Sin `correlate(LogicalDocumentRecord)`, SQLAlchemy mete el documento en el `FROM` de la
+            subconsulta y la condición deja de depender del documento de fuera: el filtro devolvía
+            todos los documentos. La subconsulta tiene que usar **el de la consulta externa**, y eso
+            hay que decirlo explícitamente.
+            """
+            return (
+                select(columna)
+                .where(DocumentVersionRecord.logical_document_id == LogicalDocumentRecord.id)
+                .correlate(LogicalDocumentRecord)
+            )
+
+        def sujetos_por_version(
+            columna: InstrumentedAttribute[str],
+            tabla: type[DeclarativeBase],
+            clave: str,
+        ) -> Select[Any]:
+            """Igual que el anterior, pero la tabla cuelga de la **versión**, no del documento."""
+            return (
+                select(columna)
+                .select_from(tabla)
+                .join(DocumentVersionRecord, DocumentVersionRecord.id == getattr(tabla, clave))
+                .where(DocumentVersionRecord.logical_document_id == LogicalDocumentRecord.id)
+                .correlate(LogicalDocumentRecord)
+            )
+
+        return or_(
+            existe_miembro(
+                "document_version",
+                CollectionItemRecord.subject_id.in_(
+                    sujetos_del_documento(DocumentVersionRecord.id)
+                ),
+            ),
+            existe_miembro(
+                "artifact",
+                CollectionItemRecord.subject_id.in_(
+                    sujetos_del_documento(DocumentVersionRecord.artifact_id)
+                ),
+            ),
+            existe_miembro(
+                "representation",
+                CollectionItemRecord.subject_id.in_(
+                    sujetos_del_documento(DocumentVersionRecord.representation_id)
+                ),
+            ),
+            existe_miembro(
+                "section",
+                CollectionItemRecord.subject_id.in_(
+                    sujetos_por_version(
+                        DocumentSectionRecord.id, DocumentSectionRecord, "document_version_id"
+                    )
+                ),
+            ),
+            existe_miembro(
+                "evidence",
+                CollectionItemRecord.subject_id.in_(
+                    sujetos_por_version(
+                        EvidenceSpanRecord.id, EvidenceSpanRecord, "document_version_id"
+                    )
+                ),
+            ),
+        )
 
     def get_document(self, document_id: str) -> DocumentDetail | None:
         with self._session_factory() as session:

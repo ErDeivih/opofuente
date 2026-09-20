@@ -195,6 +195,68 @@ def test_las_colecciones_agrupan_sin_duplicar(
     assert seeded_client.get("/api/v1/collections").json()[0]["name"] == "Oposicion 2026"
 
 
+def test_la_biblioteca_se_filtra_por_coleccion(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """DEBT-017: el filtro por colección se aplica en el servidor y solo trae sus documentos.
+
+    Un miembro de una colección puede ser de cinco tipos. Se comprueba con los dos que más se usan:
+    una **versión de documento** (lo que añade la pantalla) y una **evidencia** (una cita concreta),
+    porque el segundo obliga a pasar por la versión para llegar al documento.
+    """
+    _pegar(seeded_client, "Tema de dentro. Material con coleccion.", "dentro.txt")
+    _pegar(seeded_client, "Tema de fuera. Material sin coleccion.", "fuera.txt")
+    dentro = _promocionar(
+        seeded_client, _artefacto_de(seeded_settings, "dentro.txt"), "Documento de dentro"
+    )
+    _promocionar(seeded_client, _artefacto_de(seeded_settings, "fuera.txt"), "Documento de fuera")
+
+    sin_filtro = seeded_client.get("/api/v1/documents").json()
+    titulos = {documento["canonical_title"] for documento in sin_filtro["documents"]}
+    assert {"Documento de dentro", "Documento de fuera"} <= titulos, (
+        "sin filtro salen los dos (y los que hayan dejado otras pruebas del módulo)"
+    )
+
+    creada = seeded_client.post(
+        "/api/v1/collections", json={"name": "Solo el de dentro"}, headers=ALLOWED_ORIGIN
+    )
+    assert creada.status_code == 200, creada.text
+    coleccion = creada.json()
+
+    vacia = seeded_client.get(f"/api/v1/documents?collection_id={coleccion['id']}").json()
+    assert vacia["total"] == 0, "una colección vacía no trae documentos"
+
+    anadida = seeded_client.post(
+        f"/api/v1/collections/{coleccion['id']}/items",
+        json={"subject_type": "document_version", "subject_id": dentro["version_id"]},
+        headers=ALLOWED_ORIGIN,
+    )
+    assert anadida.status_code == 200, anadida.text
+
+    filtrado = seeded_client.get(f"/api/v1/documents?collection_id={coleccion['id']}").json()
+    assert filtrado["total"] == 1
+    assert filtrado["documents"][0]["canonical_title"] == "Documento de dentro"
+
+    # Y sigue filtrando si el miembro es una **evidencia** de ese documento, no su versión.
+    otra = seeded_client.post(
+        "/api/v1/collections", json={"name": "Por cita"}, headers=ALLOWED_ORIGIN
+    ).json()
+    evidencias = seeded_client.get(
+        f"/api/v1/document-versions/{dentro['version_id']}/evidence"
+    ).json()
+    assert evidencias, "el pegado tiene que dejar al menos una evidencia citable"
+    añadida_cita = seeded_client.post(
+        f"/api/v1/collections/{otra['id']}/items",
+        json={"subject_type": "evidence", "subject_id": evidencias[0]["id"]},
+        headers=ALLOWED_ORIGIN,
+    )
+    assert añadida_cita.status_code == 200, añadida_cita.text
+
+    por_cita = seeded_client.get(f"/api/v1/documents?collection_id={otra['id']}").json()
+    assert por_cita["total"] == 1
+    assert por_cita["documents"][0]["canonical_title"] == "Documento de dentro"
+
+
 def _auditoria_de(settings: Settings, object_id: str) -> list[str]:
     """Acciones auditadas sobre un objeto, en orden: la API no publica la auditoría, la base sí."""
     engine = build_engine(settings.data_paths.database)

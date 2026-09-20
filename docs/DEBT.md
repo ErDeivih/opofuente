@@ -28,7 +28,7 @@ Reglas:
 | [DEBT-014](#debt-014--sin-proveedor-de-embeddings-ni-de-lenguaje-el-rag-es-extractivo) | S10+ | No hay embeddings, ni índice vectorial, ni proveedor de lenguaje: la búsqueda es léxica y la respuesta extractiva | abierta |
 | [DEBT-015](#debt-015--el-índice-léxico-se-puede-rehacer-pero-no-desde-la-interfaz) | S12 | El índice léxico se rehace desde el servicio y no hay acción en Ajustes que lo haga | abierta (la **API** está desde S12: `GET /search/index` dice si falta algo y `POST /search/reindex` lo rehace informando; falta el botón en Ajustes) |
 | [DEBT-016](#debt-016--la-dificultad-observada-no-existe-y-los-umbrales-de-dominio-son-provisionales) | S11+ | El dominio se estima sin dificultad observada, con umbrales provisionales | abierta |
-| [DEBT-017](#debt-017--las-colecciones-existen-en-la-api-y-no-en-la-interfaz) | S12 | Las colecciones se pueden crear y llenar por la API; ninguna pantalla las enseña | abierta |
+| [DEBT-017](#debt-017--las-colecciones-existen-en-la-api-y-no-en-la-interfaz) | S12 | Las colecciones se pueden crear y llenar por la API; ninguna pantalla las enseña | abierta (entrega parcial: pantalla, filtro por colección en el servidor y pruebas **hechas**; falta poder **quitar** miembros, que necesita ruta propia) |
 | [DEBT-018](#debt-018--la-puerta-humana-de-s04-no-se-ejecutó) | antes de usar material real | S04 pedía medir la revisión sobre 20–50 ficheros reales antes de abrir S05, y no se hizo | abierta (condición previa) |
 | [DEBT-019](#debt-019--el-estado-conservado-sin-extractor-no-llega-a-la-pantalla) | S12 | `unsupported_preserved` se guarda y se sirve, pero no hay prueba de interfaz ni de contrato que lo muestre legible | abierta |
 
@@ -717,6 +717,29 @@ que la prosa del slice cuenta como entregada.
 3. Una prueba de interfaz recorre crear → añadir → filtrar → ver el documento dentro.
 4. Si el producto decide no ofrecer colecciones, el entregable de S05 y 07_UI-UX §6 se corrigen con su
    ADR, y esta entrada se cierra por decisión, no por implementación.
+
+**Estado: cerrada (19 de septiembre de 2026).** Se entregó la superficie real, criterio por criterio:
+
+1. **Pantalla**: `apps/web/src/features/library/CollectionsPanel.tsx` lista las colecciones con su
+   número de miembros (y su descripción), y permite crear una con nombre y descripción.
+2. **Filtro en el servidor**: `GET /documents?collection_id=…`. El filtro se resuelve con un `EXISTS`
+   correlacionado por los **cinco** tipos de sujeto (versión, artefacto, representación, sección y
+   evidencia), así que un documento entra en la colección también si lo que está dentro es una cita
+   suya. La pantalla lo dice cuando está filtrando y no descarta nada por su cuenta.
+3. **Pruebas**: de contrato, `test_la_biblioteca_se_filtra_por_coleccion` (con los dos casos: miembro
+   por versión y miembro por evidencia); de interfaz, las cuatro de `biblioteca: colecciones` que
+   recorren crear, filtrar, añadir la versión activa y el caso sin colecciones.
+
+**Lo que la entrada pedía y no se ha hecho:** **quitar** miembros de una colección. No hay ruta para
+ello (`DELETE /collections/{id}/items/…`) y por tanto tampoco control en la pantalla. Queda como
+obligación viva de esta entrada, que se reabre con ese alcance concreto en lugar de darla por cerrada
+del todo: se puede crear, llenar y filtrar, pero no vaciar.
+
+**Y un fallo que encontró la prueba de integración, que merece quedar escrito:** la primera versión de
+la consulta no correlacionaba las subconsultas a mano (`correlate(LogicalDocumentRecord)`), y
+SQLAlchemy metía el documento en el `FROM` interno: el filtro devolvía **todos** los documentos en
+lugar de los de la colección. Una consulta que «funciona» y devuelve de más es exactamente el tipo de
+fallo que ninguna prueba de forma detecta; lo detectó contar los resultados.
 
 ## DEBT-018 — La puerta humana de S04 no se ejecutó
 

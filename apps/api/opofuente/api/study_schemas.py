@@ -171,6 +171,27 @@ class RecalculationSchema(BaseModel):
     note: str
 
 
+class SessionRecalculationSchema(BaseModel):
+    """Lo que cambió en una sesión al recalcularla en bloque (DEBT-013)."""
+
+    session_id: str
+    previous_total: str
+    new_total: str
+    previous_key_label: str
+    new_key_label: str
+    changed: bool
+
+
+class BulkRecalculationSchema(BaseModel):
+    """Recálculo en bloque: qué plantilla se usó, sesión por sesión, y cuántas cambiaron."""
+
+    question_set_id: str
+    key_version: int
+    changed: int
+    detail: str
+    sessions: list[SessionRecalculationSchema]
+
+
 class SessionResultSchema(BaseModel):
     """El resultado de una sesión, tal como se calculó y se guardó."""
 

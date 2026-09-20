@@ -1150,6 +1150,43 @@
         "title": "BulkDecisionResponseSchema",
         "type": "object"
       },
+      "BulkRecalculationSchema": {
+        "description": "Recálculo en bloque: qué plantilla se usó, sesión por sesión, y cuántas cambiaron.",
+        "properties": {
+          "changed": {
+            "title": "Changed",
+            "type": "integer"
+          },
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "key_version": {
+            "title": "Key Version",
+            "type": "integer"
+          },
+          "question_set_id": {
+            "title": "Question Set Id",
+            "type": "string"
+          },
+          "sessions": {
+            "items": {
+              "$ref": "#/components/schemas/SessionRecalculationSchema"
+            },
+            "title": "Sessions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "question_set_id",
+          "key_version",
+          "changed",
+          "detail",
+          "sessions"
+        ],
+        "title": "BulkRecalculationSchema",
+        "type": "object"
+      },
       "CapabilitiesSchema": {
         "properties": {
           "capabilities": {
@@ -9017,6 +9054,45 @@
         "title": "SessionQuestionSchema",
         "type": "object"
       },
+      "SessionRecalculationSchema": {
+        "description": "Lo que cambió en una sesión al recalcularla en bloque (DEBT-013).",
+        "properties": {
+          "changed": {
+            "title": "Changed",
+            "type": "boolean"
+          },
+          "new_key_label": {
+            "title": "New Key Label",
+            "type": "string"
+          },
+          "new_total": {
+            "title": "New Total",
+            "type": "string"
+          },
+          "previous_key_label": {
+            "title": "Previous Key Label",
+            "type": "string"
+          },
+          "previous_total": {
+            "title": "Previous Total",
+            "type": "string"
+          },
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "previous_total",
+          "new_total",
+          "previous_key_label",
+          "new_key_label",
+          "changed"
+        ],
+        "title": "SessionRecalculationSchema",
+        "type": "object"
+      },
       "SessionResultSchema": {
         "description": "El resultado de una sesión, tal como se calculó y se guardó.",
         "properties": {
@@ -12777,6 +12853,7 @@
     },
     "/api/v1/documents": {
       "get": {
+        "description": "Documentos de la biblioteca con su versión activa.\n\n`collection_id` filtra por colección (07_UI-UX §6), y el filtro se aplica en el servidor: la\npantalla no se trae la biblioteca entera para descartarla después.",
         "operationId": "list_documents_api_v1_documents_get",
         "parameters": [
           {
@@ -12809,6 +12886,22 @@
                 }
               ],
               "title": "Owner Scope"
+            }
+          },
+          {
+            "in": "query",
+            "name": "collection_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Collection Id"
             }
           },
           {
@@ -16688,6 +16781,89 @@
         "summary": "Preguntas de un conjunto (banco: con su clave)",
         "tags": [
           "preguntas"
+        ]
+      }
+    },
+    "/api/v1/question-sets/{set_id}/recalculate-sessions": {
+      "post": {
+        "description": "Corregir una clave y recalcular **todas** las sesiones afectadas de una vez.\n\nVa aquí y no en `/study-sessions/{id}/recalculate` porque el ámbito es el **conjunto**: lo que\nse corrige es su plantilla, y lo que hay que arreglar son las sesiones que se corrigieron con\nella. El informe dice sesión por sesión qué cambió y cuánto: un «hecho» sin números no se puede\ncomprobar.",
+        "operationId": "recalculate_set_api_v1_question_sets__set_id__recalculate_sessions_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "set_id",
+            "required": true,
+            "schema": {
+              "title": "Set Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkRecalculationSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "La entrada no se puede usar: carpeta inválida (`invalid_source`), contenido rechazado por seguridad (`unsafe_content`) o URL no descargable (`url_rejected`)."
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Recalcula en bloque las sesiones terminadas de un conjunto (DEBT-013)",
+        "tags": [
+          "estudio"
         ]
       }
     },
