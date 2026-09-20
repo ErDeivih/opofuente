@@ -24,7 +24,7 @@ Reglas:
 | [DEBT-010](#debt-010--una-pregunta-importada-no-queda-enlazada-a-su-sección) | S06/S11 | Importar preguntas no las enlaza a la sección que las sostiene, y `tags`/`source`/`parte` se leen pero no se guardan | abierta |
 | [DEBT-011](#debt-011--la-pantalla-del-banco-solo-enseña-las-primeras-100-preguntas) | S09 | La pantalla del banco pide 100 preguntas y no permite recorrer el resto de un conjunto grande | **cerrada en la revisión de S00–S11** (obligación vencida desde S09; se cerró con paginación real y prueba) |
 | [DEBT-012](#debt-012--modos-de-sesión-declarados-y-sin-implementar) | S11+ | Simulacro y diagnóstico están en el vocabulario del modelo y no implementados | abierta (S10 implementó el **repaso de errores**; siguen fuera el simulacro y el diagnóstico) |
-| [DEBT-013](#debt-013--el-recálculo-no-se-puede-hacer-en-bloque) | S09+ | Recalcular una clave corregida es sesión a sesión, y solo se conserva un resultado anterior | abierta |
+| [DEBT-013](#debt-013--el-recálculo-no-se-puede-hacer-en-bloque) | S09+ | Recalcular una clave corregida es sesión a sesión, y solo se conserva un resultado anterior | abierta (el **recálculo en bloque existe** desde S12 con su informe por sesión; falta el aviso en la interfaz de cuántas sesiones quedan desactualizadas al activar una clave) |
 | [DEBT-014](#debt-014--sin-proveedor-de-embeddings-ni-de-lenguaje-el-rag-es-extractivo) | S10+ | No hay embeddings, ni índice vectorial, ni proveedor de lenguaje: la búsqueda es léxica y la respuesta extractiva | abierta |
 | [DEBT-015](#debt-015--el-índice-léxico-se-puede-rehacer-pero-no-desde-la-interfaz) | S12 | El índice léxico se rehace desde el servicio y no hay acción en Ajustes que lo haga | abierta (la **API** está desde S12: `GET /search/index` dice si falta algo y `POST /search/reindex` lo rehace informando; falta el botón en Ajustes) |
 | [DEBT-016](#debt-016--la-dificultad-observada-no-existe-y-los-umbrales-de-dominio-son-provisionales) | S11+ | El dominio se estima sin dificultad observada, con umbrales provisionales | abierta |
@@ -604,6 +604,26 @@ un slice futuro.
    (idempotencia) y que el resultado de la clave intermedia sigue siendo legible.
 3. La interfaz dice cuántas sesiones quedan desactualizadas después de activar una clave nueva, en
    lugar de dejar que se descubra sesión a sesión.
+
+**Estado: cerrada (19 de septiembre de 2026), con un matiz en el criterio 3.** Lo entregado:
+
+1. **`POST /question-sets/{set_id}/recalculate-sessions`** recalcula **todas** las sesiones
+   terminadas del conjunto con su clave activa y devuelve un informe con **una entrada por sesión**:
+   puntuación antes, puntuación después, plantilla antes, plantilla después y si cambió. Las sesiones
+   que siguen en marcha no entran —se corrigen al terminar— y se dice en el propio informe.
+   Probado en `test_recalcular_en_bloque_todas_las_sesiones_del_conjunto`, que comprueba además que
+   el resultado anterior de cada sesión sigue legible (`recalculation.previous_total`).
+2. Sumado a lo que ya hacía S08, recalcular dos veces con la misma clave es idempotente
+   (`save_evaluation` no escribe una evaluación nueva si ya existe para ese intento y esa clave).
+3. **El criterio 3 no se cumple como está escrito.** La API dice cuántas sesiones cambiaron
+   *después* de recalcular, pero la interfaz todavía **no avisa** de cuántas quedan desactualizadas
+   al activar una clave nueva: no hay acción en la pantalla de claves que lo diga. Queda como
+   obligación viva de esta entrada, con ese alcance concreto, en lugar de darla por cerrada del todo.
+
+**Nota sobre el alcance:** el recálculo en bloque se limita al **conjunto** de preguntas, que es el
+ámbito de la plantilla. Una clave puede cubrir material de varios conjuntos (el mismo temario
+importado dos veces), y en ese caso hay que pedirlo una vez por conjunto: se dice aquí en lugar de
+prometer un «recalcular todo» que hoy no existe.
 
 ## DEBT-014 — Sin proveedor de embeddings ni de lenguaje, el RAG es extractivo
 

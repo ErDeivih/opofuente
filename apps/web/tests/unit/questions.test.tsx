@@ -198,7 +198,20 @@ describe('preguntas: el banco', () => {
     stubQuestions();
     renderPreguntas();
 
-    expect(await screen.findByRole('option', { name: /Examen de prueba/ })).toBeInTheDocument();
+    // El conjunto llega del servidor y la pantalla lo elige sola mientras carga: se espera al
+    // selector **poblado**, no a la primera pintura. En la suite entera (quince entornos jsdom en
+    // paralelo) la primera opción puede tardar más que el tiempo de espera por defecto, y eso no es
+    // un fallo de la pantalla.
+    const selector = await screen.findByLabelText('Conjunto abierto');
+    await waitFor(
+      () => {
+        expect(within(selector).getAllByRole('option').length).toBeGreaterThan(0);
+      },
+      { timeout: 15_000 },
+    );
+    expect(
+      within(selector).getByRole('option', { name: /Examen de prueba/ }),
+    ).toBeInTheDocument();
     expect(screen.getByText(/2 preguntas \(1 incompleta · 1 reserva\) · 1 plantilla/)).toBeInTheDocument();
     expect(screen.getByText('sin clave activa')).toBeInTheDocument();
   });

@@ -512,3 +512,138 @@ def test_recalcular_una_sesion_que_no_ha_terminado_es_un_conflicto(
 
     assert respuesta.status_code == 409
     assert respuesta.json()["code"] == "invalid_session_state"
+
+
+def _terminar_sesion_con_todo_a(
+    client: TestClient, set_id: str, *, cantidad: int
+) -> dict[str, Any]:
+    """Una sesión terminada con todas las respuestas en la opción A. Devuelve su resultado."""
+    sesion = _arrancar(client, _crear_sesion(client, set_id, cantidad=cantidad)["id"])
+    for posicion in range(1, cantidad + 1):
+        actual = client.post(
+            f"/api/v1/study-sessions/{sesion['id']}/navigate",
+            json={"position": posicion},
+            headers=ALLOWED_ORIGIN,
+        ).json()
+        client.post(
+            f"/api/v1/study-sessions/{sesion['id']}/answers",
+            json={
+                "question_version_id": actual["question"]["question_version_id"],
+                "chosen_option_keys": ["a"],
+                "elapsed_ms": 500,
+            },
+            headers=ALLOWED_ORIGIN,
+        )
+    return client.post(
+        f"/api/v1/study-sessions/{sesion['id']}/finish", headers=ALLOWED_ORIGIN
+    ).json()
+
+
+def _activar_clave_corregida(client: TestClient, set_id: str) -> None:
+    """Corrige la clave del conjunto (la buena pasa a ser la B) y la activa."""
+    plantilla = client.post(
+        f"/api/v1/question-sets/{set_id}/parse",
+        json={"kind": "answer_key", "text": "1. b\n2. b\n3. b\n4. b\n"},
+        headers=ALLOWED_ORIGIN,
+    )
+    assert plantilla.status_code == 200, plantilla.text
+    claves = client.get(f"/api/v1/question-sets/{set_id}/answer-keys").json()
+    activada = client.post(
+        f"/api/v1/question-sets/{set_id}/answer-keys/{claves[-1]['id']}/activate",
+        headers=ALLOWED_ORIGIN,
+    )
+    assert activada.status_code == 200, activada.text
+
+
+def test_recalcular_en_bloque_todas_las_sesiones_del_conjunto(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """DEBT-013: corregir una clave recalcula **de una vez** todas las sesiones afectadas.
+
+    El problema que resuelve: sin esto había que recalcular sesión a sesión, y las que nadie
+    recordara se quedaban con la puntuación vieja para siempre. Lo que se comprueba aquí es que se
+    recorren todas, que el informe dice qué cambió en cada una y que las que **no** han terminado no
+    se tocan (se corregirán al terminar).
+    """
+    set_id = _conjunto(seeded_client, preguntas=4)
+    primera = _terminar_sesion_con_todo_a(seeded_client, set_id, cantidad=3)
+    segunda = _terminar_sesion_con_todo_a(seeded_client, set_id, cantidad=2)
+    assert primera["total"]["correct"] == 3, "con la clave original, la A es correcta"
+    assert segunda["total"]["correct"] == 2
+
+    # Y una tercera sesión que **no** ha terminado: no puede entrar en el recálculo.
+    en_marcha = _arrancar(seeded_client, _crear_sesion(seeded_client, set_id, cantidad=2)["id"])
+
+    _activar_clave_corregida(seeded_client, set_id)
+
+    respuesta = seeded_client.post(
+        f"/api/v1/question-sets/{set_id}/recalculate-sessions", headers=ALLOWED_ORIGIN
+    )
+
+    assert respuesta.status_code == 200, respuesta.text
+    cuerpo = respuesta.json()
+    assert cuerpo["question_set_id"] == set_id
+    assert cuerpo["key_version"] == 2
+    assert cuerpo["changed"] == 2, "las dos sesiones terminadas cambian de puntuación"
+    identificadores = {cambio["session_id"] for cambio in cuerpo["sessions"]}
+    assert en_marcha["id"] not in identificadores, "una sesión en marcha se corrige al terminar"
+    assert len(cuerpo["sessions"]) == 2
+
+    for cambio in cuerpo["sessions"]:
+        assert cambio["changed"] is True, "todo lo que estaba en A pasa a estar mal"
+        # Lo que importa es que la puntuación **cambia** y no se queda con la vieja; el valor
+        # concreto lo calcula el dominio y tiene su propia prueba aritmética.
+        assert cambio["new_total"] != cambio["previous_total"]
+        assert cambio["new_total"].startswith("-"), "todo mal con castigo da puntuación negativa"
+        assert "plantilla v1" in cambio["previous_key_label"]
+        assert "plantilla v2" in cambio["new_key_label"]
+
+    # Y las puntuaciones de antes se conservan: recalcular no borra lo que se dijo.
+    primera_releida = seeded_client.get(
+        f"/api/v1/study-sessions/{primera['session_id']}/result"
+    ).json()
+    assert primera_releida["recalculation"]["previous_total"]["fraction"] == "3"
+
+
+def test_recalcular_en_bloque_sin_sesiones_terminadas_lo_dice(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """Sin sesiones terminadas no hay nada que recalcular, y se dice en lugar de dar un «hecho»."""
+    set_id = _conjunto(seeded_client, preguntas=2)
+
+    respuesta = seeded_client.post(
+        f"/api/v1/question-sets/{set_id}/recalculate-sessions", headers=ALLOWED_ORIGIN
+    )
+
+    assert respuesta.status_code == 200, respuesta.text
+    assert respuesta.json()["sessions"] == []
+    assert respuesta.json()["changed"] == 0
+    assert "no hay sesiones terminadas" in respuesta.json()["detail"]
+
+
+def test_recalcular_en_bloque_sin_clave_activa_es_un_conflicto(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """Sin plantilla activa no hay con qué recalcular: se dice, no se inventa una puntuación.
+
+    `_conjunto` activa la plantilla por defecto; aquí se crea el conjunto **sin activarla**, que es
+    como nace de verdad (`activar=False`), y entonces recalcular no tiene con qué.
+    """
+    set_id = _conjunto(seeded_client, preguntas=2, activar=False)
+
+    respuesta = seeded_client.post(
+        f"/api/v1/question-sets/{set_id}/recalculate-sessions", headers=ALLOWED_ORIGIN
+    )
+
+    assert respuesta.status_code == 409, respuesta.text
+    assert respuesta.json()["code"] == "classification_conflict"
+
+
+def test_recalcular_en_bloque_un_conjunto_inexistente_es_un_404(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    respuesta = seeded_client.post(
+        "/api/v1/question-sets/no-existe/recalculate-sessions", headers=ALLOWED_ORIGIN
+    )
+
+    assert respuesta.status_code == 404, respuesta.text
