@@ -771,8 +771,60 @@ describe('estudiar: simulacro y diagnóstico (DEBT-012)', () => {
     });
   });
 
-  it('el diagnóstico se pide sin conjunto ni parte, porque la muestra la compone el servidor', async () => {
-    const fetchMock = stubEstudio({
+  it('enseña cómo se compuso la sesión, mientras se contesta y al terminar (DEBT-012)', async () => {
+    // El servidor manda la nota de composición con la sesión (cuántas preguntas repitió un simulacro,
+    // de qué temas salió una muestra). Un aviso que se guarda y no se pinta no existe. Mientras se
+    // contesta, la sesión que pinta el corredor es la que viaja con la pregunta actual.
+    const nota =
+      'simulacro con el perfil exacto del examen: 5 de 85 pregunta(s) ya se habían intentado en los últimos 60 días, porque el banco no daba para más sin repetir';
+    const configuracion = {
+      ...SESION.configuration,
+      mode: 'mock_exam' as const,
+      feedback: 'at_end' as const,
+      note: nota,
+    };
+    stubEstudio({
+      '/api/v1/study-sessions?limit=50&offset=0&opposition_id=op-1': conSesion({
+        ...SESION,
+        mode: 'mock_exam',
+        feedback: 'at_end',
+        configuration: configuracion,
+      }),
+      '/api/v1/study-sessions/ses-1/current-question': {
+        body: {
+          ...ACTUAL,
+          session: { ...SESION, mode: 'mock_exam', feedback: 'at_end', configuration: configuracion },
+        },
+      },
+    });
+    renderEstudiar();
+
+    expect(await screen.findByRole('heading', { name: 'Sesión en marcha' })).toBeInTheDocument();
+    const enMarcha = await screen.findByText(/Cómo se compuso esta sesión/);
+    expect(enMarcha).toHaveTextContent(nota);
+
+    // Y en el resultado, que es donde se lee después: la sesión terminada.
+    stubEstudio({
+      '/api/v1/study-sessions?limit=50&offset=0&opposition_id=op-1': conSesion({
+        ...SESION,
+        mode: 'mock_exam',
+        feedback: 'at_end',
+        status: 'finished',
+        finished_at: '2026-09-17T12:30:00Z',
+        configuration: configuracion,
+      }),
+      '/api/v1/study-sessions/ses-1/result': {
+        body: { ...RESULTADO, mode: 'mock_exam', official_note: `Es un simulacro. ${nota}` },
+      },
+      '/api/v1/study-sessions/ses-1/review': { body: REVISION },
+    });
+    renderEstudiar();
+
+    const terminada = await screen.findByText(/Cómo se compuso esta sesión/);
+    expect(terminada).toHaveTextContent(nota);
+  });
+
+  it('el diagnóstico se pide sin conjunto ni parte, porque la muestra la compone el servidor', async () => {    const fetchMock = stubEstudio({
       '/api/v1/study-sessions': {
         body: {
           ...SESION,

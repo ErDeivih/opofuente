@@ -624,10 +624,11 @@ vocabulario del modelo y el del contrato vuelven a coincidir:
    (06_QUESTIONS §5). Monta el tamaño y las reservas de la convocatoria, corrige **al terminar** (el
    dominio lo exigía desde S07 y no había modo que lo usara) y ordena el banco por frescura antes de
    elegir: primero las preguntas que no se han intentado en los últimos 60 días —la misma ventana que
-   usa la estimación de dominio— y solo después las demás. La sesión nace con su **nota de composición**
-   («ninguna de sus preguntas se había intentado» o «N de M ya se habían intentado, porque el banco no
-   daba para más»), y el resultado se explica con `MOCK_EXAM_NOTE`: el perfil es el del examen, pero
-   **no es un examen oficial**.
+   usa la estimación de dominio— y solo después las demás. La sesión nace con su **nota de
+   composición** («ninguna de sus preguntas se había intentado en los últimos 60 días» o «N de M ya se
+   habían intentado, porque el banco no daba para más»), que se **enseña** mientras se contesta y en el
+   resultado: un aviso que el servidor manda y nadie pinta no existe. Y el resultado se explica con
+   `MOCK_EXAM_NOTE`: el perfil es el del examen, pero **no es un examen oficial**.
 2. **Diagnóstico (`diagnostic`)** — «muestra pequeña estratificada, con estimación por tema y
    **intervalo**, no un porcentaje de dominio» (§5). Compone una muestra **repartida por temas** del
    programa (round-robin: una de cada tema antes de repetir en uno, empezando por las preguntas menos
@@ -637,6 +638,9 @@ vocabulario del modelo y el del contrato vuelven a coincidir:
    **intervalo de Wilson al 95 %**, con el tamaño de la muestra delante y la frase que dice que no es una
    nota ni un dominio. Los temas sin ninguna respuesta en la muestra se declaran, y una pregunta sin tema
    asignado no entra en la muestra y se cuenta (no se reparte a un tema que no le corresponde).
+   **Corrige al terminar**, y no por copiar al examen: la muestra mide lo que sabes ahora, y ver la
+   respuesta a mitad mejoraría las siguientes preguntas del mismo tema —que es lo que se está midiendo—;
+   pedir otra corrección se rechaza con el motivo.
 3. **El contrato declara los cinco** (`SessionModeName`), y una prueba —`los_cinco_modos_del_vocabulario_se_pueden_pedir`— comprueba que ninguno responde «no implementado»: los que se niegan, se niegan
    por falta de material (sin temas, sin nada vencido) y lo dicen con ese motivo.
 
@@ -653,14 +657,23 @@ de API (`test_un_simulacro_monta_el_perfil_exacto_y_no_se_llama_oficial`,
 `test_un_simulacro_evita_las_preguntas_vistas_hace_poco` —que comprueba **en la composición**, no solo en
 la nota, que ninguna vista entra—, `test_un_simulacro_sin_banco_suficiente_repite_y_lo_dice`,
 `test_un_diagnostico_compone_una_muestra_pequena_por_tema`,
+`test_un_diagnostico_corrige_al_terminar_y_no_deja_elegirlo`,
 `test_la_lectura_del_diagnostico_da_por_tema_un_intervalo`,
 `test_la_lectura_por_temas_no_vale_para_una_practica` y
 `test_un_diagnostico_sin_temas_suficientes_no_se_monta`); de interfaz (el simulacro se pide con el perfil
-y sin campos que la convocatoria fija; el diagnóstico se pide sin conjunto ni parte; la lectura se enseña
-con su intervalo y su aviso); y de extremo a extremo
-(`E2E-06 un diagnóstico reparte la muestra por temas y la lee con su intervalo`, que importa un CSV con
-temas, monta el diagnóstico desde la pantalla, contesta la muestra entera y lee el intervalo contra el
-servidor real).
+y sin campos que la convocatoria fija; el diagnóstico se pide sin conjunto ni parte; la nota de
+composición se enseña mientras se contesta **y** en el resultado; la lectura se enseña con su intervalo y
+su aviso); y de extremo a extremo, los dos modos por el navegador:
+`E2E-06 un simulacro monta el perfil exacto y el resultado no se llama oficial` (importa las 85 preguntas
+del perfil, monta el simulacro desde la pantalla, termina sin contestar y lee el resultado) y
+`E2E-06 un diagnóstico reparte la muestra por temas y la lee con su intervalo` (importa un CSV con temas,
+monta el diagnóstico, contesta la muestra entera y lee el intervalo).
+
+**Lo que la revisión propia de este cierre encontró y arregló**, porque no lo cubría ninguna prueba: la
+**nota de composición no se pintaba en ninguna parte** (el servidor la mandaba y la guardaba, y la
+pantalla no la enseñaba, así que el «cuántas he repetido» que promete el simulacro era invisible). Ahora
+se enseña en las dos pantallas donde la sesión está a la vista: mientras se contesta y en el resultado, y
+hay una prueba de interfaz que la fija.
 
 ## DEBT-013 — El recálculo no se puede hacer en bloque
 

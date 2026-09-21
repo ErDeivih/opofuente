@@ -308,7 +308,9 @@ export function StudySetup({
         <p className="hint">
           El diagnóstico compone una <strong>muestra pequeña repartida por temas</strong> del programa y
           la lee con su intervalo: sirve para ver por dónde está el hueco, no para poner una nota. No se
-          elige conjunto ni parte; hacen falta al menos tres temas con preguntas asignadas.
+          elige conjunto ni parte, y <strong>corrige al terminar</strong> —ver la respuesta a mitad
+          mejoraría las siguientes preguntas del mismo tema, que es lo que se está midiendo—. Hacen
+          falta al menos tres temas con preguntas asignadas.
         </p>
         <button
           className="button"

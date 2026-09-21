@@ -156,6 +156,14 @@ export function StudyResultPanel({
           )}
         </dl>
 
+        {session.configuration.note !== null && session.configuration.note !== undefined && (
+          // La composición de la sesión, también al terminar: un simulacro que repitió preguntas
+          // vistas hace poco lo dice en su resultado, no solo mientras se contesta.
+          <p className="hint" role="note" aria-label="Cómo se compuso esta sesión">
+            Cómo se compuso esta sesión: {session.configuration.note}.
+          </p>
+        )}
+
         {result.substitutions.length > 0 && (
           <>
             <h3>Reservas que entraron</h3>

@@ -312,6 +312,15 @@ export function StudyRunner({
             termina cuando tú lo decidas.
           </p>
         )}
+        {session.configuration.note !== null &&
+          session.configuration.note !== undefined && (
+            // Lo que la composición dice de sí misma: cuántas preguntas de un simulacro se habían
+            // visto hace poco, de qué temas salió la muestra de un diagnóstico. Se guarda con la
+            // sesión y se enseña aquí: un aviso que el servidor manda y nadie pinta no existe.
+            <p className="hint" role="note" aria-label="Cómo se compuso esta sesión">
+              Cómo se compuso esta sesión: {session.configuration.note}.
+            </p>
+          )}
       </section>
 
       {conflict !== null && (

@@ -34,15 +34,18 @@ export type DiagnosticReading = components['schemas']['DiagnosticReadingSchema']
 export type DiagnosticTopic = components['schemas']['DiagnosticTopicSchema'];
 export type DiagnosticInterval = components['schemas']['IntervalSchema'];
 
-/** Modos que el contrato declara: son los que el servidor implementa de verdad. */
+/**
+ * Modos que la pantalla ofrece en la configuración de una sesión (07_UI-UX §8).
+ *
+ * El **diagnóstico** no está aquí porque no se configura: su composición la pone el servidor por temas
+ * y se pide desde su propia acción. El **repaso de errores** se pide desde la cola de Errores, que es
+ * quien sabe qué está vencido.
+ */
 export const SESSION_MODES: readonly SessionMode[] = [
   'practice',
   'official_exam',
   'mock_exam',
 ];
-
-/** Modos cuya composición no se elige a mano: la pone el servidor (DEBT-012). */
-export const COMPOSED_MODES: readonly SessionMode[] = ['diagnostic', 'error_review'];
 
 /** Cuándo se puede ver la corrección. La pantalla no decide esto: lo dice el servidor. */
 export const FEEDBACKS: readonly FeedbackName[] = ['immediate', 'at_end'];

@@ -1106,6 +1106,54 @@ def test_la_lectura_del_diagnostico_da_por_tema_un_intervalo(
     assert "no son una nota ni un dominio del tema" in lectura["detail"]
 
 
+def test_un_diagnostico_corrige_al_terminar_y_no_deja_elegirlo(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """La corrección de un diagnóstico es al terminar, y pedir otra cosa se dice con un 409.
+
+    No es una manía: la muestra mide lo que sabes ahora, y ver la respuesta a mitad mejoraría las
+    siguientes preguntas del mismo tema —que es justo lo que se está midiendo—.
+    """
+    set_id = _conjunto(seeded_client, preguntas=1)
+    oposicion = _oposicion_activa(seeded_client)
+    seeded_client.post(
+        f"/api/v1/question-sets/{set_id}/parse",
+        json={
+            "kind": "csv",
+            "text": _csv_con_temas(6),
+            "mapping": {
+                "stem": "enunciado",
+                "options": ["op1", "op2"],
+                "correct": "clave",
+                "topic": "tema",
+            },
+        },
+        headers=ALLOWED_ORIGIN,
+    )
+    _activar_ultima_clave(seeded_client, set_id)
+
+    creado = seeded_client.post(
+        "/api/v1/study-sessions",
+        json={"opposition_id": oposicion["id"], "mode": "diagnostic", "sources": []},
+        headers=ALLOWED_ORIGIN,
+    )
+    assert creado.status_code == 201, creado.text
+    assert creado.json()["feedback"] == "at_end"
+
+    rechazado = seeded_client.post(
+        "/api/v1/study-sessions",
+        json={
+            "opposition_id": oposicion["id"],
+            "mode": "diagnostic",
+            "sources": [],
+            "feedback": "immediate",
+        },
+        headers=ALLOWED_ORIGIN,
+    )
+    assert rechazado.status_code == 409, rechazado.text
+    assert "corrige al terminar" in rechazado.json()["detail"]
+
+
 def test_la_lectura_por_temas_no_vale_para_una_practica(
     seeded_settings: Settings, seeded_client: TestClient
 ) -> None:

@@ -427,16 +427,18 @@ class StudyService:
         """Lo que un simulacro dice de su propia composición: cuánto ha tenido que repetir.
 
         No se calla: un simulacro que repite preguntas de ayer mide memoria, no temario, y quien lo
-        hace tiene que poder saber cuánto de lo que acaba de ver ya lo había visto.
+        hace tiene que poder saber cuánto de lo que acaba de ver ya lo había visto. La ventana se
+        nombra con su número de días, no con un «hace poco» que cada uno leería a su manera.
         """
         if repetidas == 0:
             return (
                 "simulacro con el perfil exacto del examen: ninguna de sus preguntas se había "
-                "intentado en los últimos días"
+                f"intentado en los últimos {DIAS_VISTA_HACE_POCO} días"
             )
         return (
             f"simulacro con el perfil exacto del examen: {repetidas} de {total} pregunta(s) ya se "
-            "habían intentado en los últimos días, porque el banco no daba para más sin repetir"
+            f"habían intentado en los últimos {DIAS_VISTA_HACE_POCO} días, porque el banco no daba "
+            "para más sin repetir"
         )
 
     def _create_diagnostic_session(
@@ -563,9 +565,18 @@ class StudyService:
                 )
             )
 
+        if request.feedback is not None and request.feedback is not Feedback.AT_END:
+            raise UnsupportedError(
+                "un diagnóstico corrige al terminar: es una muestra para estimar por dónde estás, "
+                "y enseñar la respuesta a mitad mejoraría las siguientes preguntas del mismo tema, "
+                "que es justo lo que se está midiendo"
+            )
         configuracion = SessionConfiguration(
             mode=request.mode,
-            feedback=request.feedback or Feedback.IMMEDIATE,
+            # La corrección es **al terminar**, y no por copiar al examen: la muestra mide lo que
+            # sabes ahora, y una corrección a mitad contamina el resto (la segunda pregunta del
+            # mismo tema ya no sería independiente de la primera).
+            feedback=Feedback.AT_END,
             sources=(),
             time_limit_minutes=None,
             shuffle=request.shuffle,
@@ -587,10 +598,14 @@ class StudyService:
         """Lee una sesión de diagnóstico: por tema, con su intervalo y el tamaño de la muestra.
 
         Solo tiene sentido en un diagnóstico, y se dice con un 409 en cualquier otro modo: la
-        lectura
-        de una muestra pequeña **no** es la nota de un examen, y presentarla al lado de la
-        puntuación
-        de una práctica invitaría a leerla como si lo fuera.
+        lectura de una muestra pequeña **no** es la nota de un examen, y presentarla al lado de la
+        puntuación de una práctica invitaría a leerla como si lo fuera.
+
+        Los temas se leen del mapeo **aceptado** de cada pregunta al leer, con el mismo criterio con
+        el que se compuso la muestra (el primer tema de la pregunta, por ruta). Lo que **no** viaja
+        congelado con la sesión es el tema en sí —una pregunta puede pertenecer a varios—, así que
+        si alguien reasigna una pregunta a otro tema, la lectura la agrupará donde diga el mapeo
+        nuevo. Se dice aquí en lugar de dejar que parezca que el tema se congeló con la sesión.
         """
         session = self._session_or_404(session_id)
         if session.mode is not SessionMode.DIAGNOSTIC:

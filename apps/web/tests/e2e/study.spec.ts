@@ -55,8 +55,54 @@ async function crearConjuntoConClave(page: Page): Promise<string> {
   return titulo;
 }
 
-async function prepararPractica(page: Page, titulo: string, cantidad: string): Promise<void> {
-  await irAConfiguracion(page);
+/**
+ * Un conjunto con las preguntas y las reservas que pide la convocatoria, importadas por texto.
+ *
+ * Es lo que hace falta para montar un simulacro: el perfil exacto del examen son sus 80 preguntas
+ * ordinarias y sus 5 reservas. Cada pregunta lleva su respuesta en la línea de la clave, así que la
+ * plantilla nace con desenlaces; activarla es el paso que la vuelve la clave que corrige.
+ */
+async function crearConjuntoDeExamen(
+  page: Page,
+  preguntas: number,
+  reservas: number,
+): Promise<string> {
+  const titulo = `Examen E2E ${String(Date.now())}-${String(Math.random()).slice(2, 8)}`;
+
+  await page.goto('/preguntas');
+  await page.locator('summary').filter({ hasText: 'Crear un conjunto' }).click();
+  await page.getByLabel('Título', { exact: true }).fill(titulo);
+  await page.getByRole('button', { name: 'Crear el conjunto de preguntas' }).click();
+  await expect(page.getByText(`Conjunto «${titulo}» creado.`)).toBeVisible();
+
+  const lineas: string[] = [];
+  for (let numero = 1; numero <= preguntas + reservas; numero += 1) {
+    const marca = numero > preguntas ? '[R] ' : '';
+    lineas.push(`${String(numero)}. ${marca}El supuesto ${String(numero)} se resuelve así:`);
+    lineas.push('a) Opcion A');
+    lineas.push('b) Opcion B');
+    lineas.push('Respuesta correcta: a');
+    lineas.push('');
+  }
+
+  await page.getByRole('tab', { name: 'Importar' }).click();
+  await page.getByLabel('Texto a importar').fill(lineas.join('\n'));
+  await page.getByRole('button', { name: 'Importar en el conjunto' }).click();
+  await expect(
+    page.getByText(`Importadas ${String(preguntas + reservas)} preguntas nuevas`),
+  ).toBeVisible({ timeout: 30_000 });
+
+  await page.getByRole('tab', { name: 'Plantillas' }).click();
+  await page.getByRole('button', { name: 'Activar la plantilla v1' }).click();
+  await page.getByRole('button', { name: 'Confirmar la activación de la plantilla v1' }).click();
+  await expect(
+    page.getByText('Plantilla activada y aprobada con tu acción: queda registrado en la auditoría.'),
+  ).toBeVisible();
+
+  return titulo;
+}
+
+async function prepararPractica(page: Page, titulo: string, cantidad: string): Promise<void> {  await irAConfiguracion(page);
   const conjunto = page.getByLabel('Conjunto de preguntas');
   const opcion = conjunto.locator('option', { hasText: titulo });
   await expect(opcion).toHaveCount(1);
@@ -277,14 +323,15 @@ test('E2E-06 un diagnóstico reparte la muestra por temas y la lee con su interv
   // Dos preguntas por tema: tres temas del CSV, seis preguntas.
   await expect(page.getByText(/0 de 6 respondidas/)).toBeVisible();
 
-  // Se contestan las seis (todas correctas: la clave del CSV es la opción A, la primera).
+  // Se contestan las seis (todas correctas: la clave del CSV es la opción A, la primera). El
+  // diagnóstico corrige al terminar, así que aquí solo se confirma que la respuesta se guardó.
   for (let posicion = 1; posicion <= 6; posicion += 1) {
     await expect(
       page.getByRole('heading', { name: `Pregunta ${String(posicion)}` }),
     ).toBeVisible();
     await page.getByRole('radio').first().check();
     await page.getByRole('button', { name: 'Enviar la respuesta' }).click();
-    await expect(page.getByText('Respuesta guardada.')).toBeVisible();
+    await expect(page.getByText('Respuesta guardada.', { exact: true })).toBeVisible();
     if (posicion < 6) {
       await page.getByRole('button', { name: 'Ir a la pregunta siguiente' }).click();
     }
@@ -303,4 +350,44 @@ test('E2E-06 un diagnóstico reparte la muestra por temas y la lee con su interv
   await expect(filaTema).toContainText('0.34 – 1.00');
   // Y el resultado no se llama nota: es el recuento de una muestra.
   await expect(page.getByText(/no son una nota ni un dominio/)).toBeVisible();
+});
+
+test('E2E-06 un simulacro monta el perfil exacto y el resultado no se llama oficial (DEBT-012)', async ({
+  page,
+}) => {
+  // Se importan 85 preguntas y se monta el examen entero: con el presupuesto por defecto se queda al
+  // límite por reloj, no por producto.
+  test.slow();
+  const titulo = await crearConjuntoDeExamen(page, 80, 5);
+
+  await irAConfiguracion(page);
+  await page.getByLabel('Modo').selectOption('mock_exam');
+  const conjunto = page.getByLabel('Conjunto de preguntas');
+  const opcion = conjunto.locator('option', { hasText: titulo });
+  await expect(opcion).toHaveCount(1);
+  await conjunto.selectOption((await opcion.first().getAttribute('value')) ?? '');
+  // El simulacro usa el perfil exacto: ni tamaño ni corrección se eligen a mano.
+  await expect(page.getByText(/El simulacro usa el perfil exacto del examen/)).toBeVisible();
+  await expect(page.getByLabel('Cuántas preguntas')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Crear y empezar la sesión' }).click();
+
+  // 80 ordinarias y las 5 reservas de la convocatoria, y se corrige al terminar.
+  await expect(page.getByText(/Sesión de simulacro lista: 85 preguntas/)).toBeVisible();
+  await expect(page.getByText(/0 de 85 respondidas/)).toBeVisible();
+  // Y la composición se dice delante: en esta ejecución, nada se había visto hace poco.
+  await expect(
+    page.getByRole('note', { name: 'Cómo se compuso esta sesión' }),
+  ).toContainText('ninguna de sus preguntas se había intentado');
+
+  // Se termina sin contestar (la pantalla lo permite y lo dice): el resultado es de un simulacro. Las
+  // reservas que no hicieron falta no entran en el cálculo, así que lo pendiente son las 80 ordinarias.
+  await page.getByRole('button', { name: 'Terminar la sesión' }).click();
+  await expect(page.getByRole('heading', { name: 'Resultado' })).toBeVisible();
+  await expect(page.getByText(/Es un simulacro: el perfil es el del examen/)).toBeVisible();
+  await expect(page.getByText('no es un examen oficial')).toBeVisible();
+  await expect(page.getByText(/no puntúan, ni a favor ni en contra/)).toBeVisible();
+  // La composición también queda en el resultado: no solo mientras se contesta.
+  await expect(
+    page.getByRole('note', { name: 'Cómo se compuso esta sesión' }),
+  ).toBeVisible();
 });
