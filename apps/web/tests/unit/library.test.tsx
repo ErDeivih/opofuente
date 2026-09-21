@@ -1112,15 +1112,31 @@ describe('biblioteca: colecciones (DEBT-017)', () => {
     return seccion;
   }
 
+  /**
+   * El botón que **filtra** por una colección. Desde que una colección despliega sus miembros, dos
+   * botones llevan su nombre en el texto accesible; se distinguen por lo que son: el filtro es un
+   * interruptor (`aria-pressed`) y el desplegable, una divulgación (`aria-expanded`).
+   */
+  function filtroDe(panel: HTMLElement, nombre: string): HTMLElement {
+    const candidatos = within(panel).getAllByRole('button', { name: new RegExp(nombre) });
+    const filtro = candidatos.find((boton) => boton.getAttribute('aria-pressed') !== null);
+    if (filtro === undefined) {
+      throw new Error(`ningún botón de filtro menciona «${nombre}»`);
+    }
+    return filtro;
+  }
+
   it('enseña las colecciones con sus miembros y deja crear una nueva', async () => {
     const fetchMock = stubLibraryApi({ '/api/v1/collections': { body: COLECCIONES } });
     renderLibrary();
 
     const panel = await panelColecciones();
-    expect(within(panel).getByText(/Oposición 2026/)).toBeInTheDocument();
-    expect(within(panel).getByText('2 miembros')).toBeInTheDocument();
-    expect(within(panel).getByText('Repaso')).toBeInTheDocument();
-    expect(within(panel).getByText('0 miembros')).toBeInTheDocument();
+    const oposicion = filtroDe(panel, 'Oposición 2026');
+    expect(oposicion).toHaveTextContent('Oposición 2026');
+    expect(oposicion).toHaveTextContent('2 miembros');
+    const repaso = filtroDe(panel, 'Repaso');
+    expect(repaso).toHaveTextContent('Repaso');
+    expect(repaso).toHaveTextContent('0 miembros');
 
     const campo = within(panel).getByLabelText('Nombre de la colección');
     await userEvent.type(campo, 'Temario 2026');
@@ -1145,7 +1161,7 @@ describe('biblioteca: colecciones (DEBT-017)', () => {
     renderLibrary();
 
     const panel = await panelColecciones();
-    await userEvent.click(within(panel).getByRole('button', { name: /Oposición 2026/ }));
+    await userEvent.click(filtroDe(panel, 'Oposición 2026'));
 
     // La petición lleva el filtro: el servidor es quien decide qué documentos son de la colección.
     await waitFor(() => {
@@ -1156,7 +1172,7 @@ describe('biblioteca: colecciones (DEBT-017)', () => {
     ).toBeInTheDocument();
 
     // Y volver a pulsar la misma colección quita el filtro.
-    await userEvent.click(within(panel).getByRole('button', { name: /Oposición 2026/ }));
+    await userEvent.click(filtroDe(panel, 'Oposición 2026'));
     await waitFor(() => {
       expect(screen.queryByText(/filtrados por la colección elegida/)).not.toBeInTheDocument();
     });
@@ -1178,6 +1194,39 @@ describe('biblioteca: colecciones (DEBT-017)', () => {
       subject_type: 'document_version',
       subject_id: DETALLE.document.active_version?.id,
     });
+  });
+
+  it('quita un miembro de una colección sin borrar el documento', async () => {
+    const fetchMock = stubLibraryApi({ '/api/v1/collections': { body: COLECCIONES } });
+    renderLibrary();
+
+    const panel = await panelColecciones();
+    await userEvent.click(
+      within(panel).getByRole('button', { name: 'Ver los miembros de «Oposición 2026»' }),
+    );
+    await userEvent.click(
+      within(panel).getByRole('button', {
+        name: 'Quitar el miembro ver-1 de «Oposición 2026»',
+      }),
+    );
+
+    await waitFor(() => {
+      expect(peticion(fetchMock, '/api/v1/collections/col-1/items')).toBeDefined();
+    });
+    const envio = fetchMock.mock.calls.find(
+      (call) =>
+        typeof call[0] === 'string' &&
+        call[0].endsWith('/api/v1/collections/col-1/items') &&
+        call[1]?.method === 'DELETE',
+    );
+    // Se quita el miembro concreto, y la operación es un DELETE del sujeto: no borra material.
+    expect(cuerpoJson(envio)).toEqual({ subject_type: 'document_version', subject_id: 'ver-1' });
+
+    // Y se dice **donde se hizo**: la tarjeta de colecciones, que es la que está a la vista. El aviso
+    // guardaba antes un estado que solo se pintaba dentro de la ficha de un documento abierto, así
+    // que quitar un miembro con la ficha cerrada no avisaba de nada.
+    const aviso = await within(panel).findByRole('status');
+    expect(aviso).toHaveTextContent(/El documento no se ha borrado/);
   });
 
   it('sin colecciones no ofrece un selector vacío: dice cómo crear una', async () => {

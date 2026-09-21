@@ -31,6 +31,7 @@ from opofuente.application.study_models import (
     AttemptView,
     BulkRecalculationView,
     CorrectionView,
+    OutdatedSessionsView,
     PartScoreView,
     ReviewView,
     ScoreView,
@@ -731,6 +732,51 @@ class StudyService:
                 else (
                     "no hay sesiones terminadas de este conjunto: no hay nada que recalcular "
                     "(las que estén en marcha se corrigen al terminar)"
+                )
+            ),
+        )
+
+    def outdated_sessions(self, question_set_id: str) -> OutdatedSessionsView:
+        """Cuántas sesiones terminadas quedan sin corregir con la clave **activa** (DEBT-013).
+
+        Es la mitad que faltaba del recálculo en bloque: `recalculate_set` dice cuántas cambiaron
+        **después** de recalcular, y esta dice cuántas lo necesitan **antes**. Sin ella, activar una
+        plantilla corregida y no recalcular no se notaba en ninguna parte.
+
+        Lo que no hace: llamar «desactualizada» a una sesión sin ninguna corrección guardada. Esas
+        se cuentan aparte, porque no hay nada que comparar y presentarlas como pendientes dejaría
+        un número que no bajaría nunca.
+        """
+        conjunto = self._questions.get_set(question_set_id)
+        if conjunto is None:
+            raise NotFoundError("conjunto de preguntas", question_set_id)
+        activa = self._clave_activa(question_set_id)
+        terminadas = self._study.finished_sessions_of_set(question_set_id)
+        desactualizadas, sin_correccion = self._study.session_key_state_of_set(
+            question_set_id, activa.id
+        )
+        al_dia = len(terminadas) - len(desactualizadas) - len(sin_correccion)
+        return OutdatedSessionsView(
+            question_set_id=question_set_id,
+            key_version=activa.version_no,
+            key_id=activa.id,
+            finished=len(terminadas),
+            up_to_date=al_dia,
+            outdated=len(desactualizadas),
+            without_evaluation=len(sin_correccion),
+            outdated_session_ids=desactualizadas,
+            detail=(
+                "no hay sesiones terminadas de este conjunto: no hay nada que comparar"
+                if not terminadas
+                else (
+                    f"de {len(terminadas)} sesión(es) terminadas, {len(desactualizadas)} no están "
+                    f"corregidas con la plantilla v{activa.version_no} activa"
+                    + (
+                        f"; {len(sin_correccion)} no tienen ninguna corrección guardada, así que "
+                        "no se pueden comparar"
+                        if sin_correccion
+                        else ""
+                    )
                 )
             ),
         )

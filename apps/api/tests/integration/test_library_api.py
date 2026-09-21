@@ -257,6 +257,64 @@ def test_la_biblioteca_se_filtra_por_coleccion(
     assert por_cita["documents"][0]["canonical_title"] == "Documento de dentro"
 
 
+def test_quitar_un_miembro_de_una_coleccion_no_borra_el_documento(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """DEBT-017 (segunda mitad): una colección se puede vaciar, y vaciarla no borra nada.
+
+    Lo que se comprueba, y por qué: quitar un miembro es **sacar de la agrupación**, no retirar
+    material, así que el documento sigue en la biblioteca; la operación es idempotente (quitarlo dos
+    veces no falla, porque el resultado que se pide ya es el que hay); y una colección que no existe
+    es un 404, no un «hecho» silencioso.
+    """
+    _pegar(seeded_client, "Tema para una coleccion que se vacia.", "vacia.txt")
+    dentro = _promocionar(
+        seeded_client, _artefacto_de(seeded_settings, "vacia.txt"), "Documento que se saca"
+    )
+    coleccion = seeded_client.post(
+        "/api/v1/collections", json={"name": "Se vacía"}, headers=ALLOWED_ORIGIN
+    ).json()
+    cuerpo = {"subject_type": "document_version", "subject_id": dentro["version_id"]}
+    seeded_client.post(
+        f"/api/v1/collections/{coleccion['id']}/items", json=cuerpo, headers=ALLOWED_ORIGIN
+    )
+    assert (
+        seeded_client.get(f"/api/v1/documents?collection_id={coleccion['id']}").json()["total"] == 1
+    )
+
+    quitado = seeded_client.request(
+        "DELETE",
+        f"/api/v1/collections/{coleccion['id']}/items",
+        json=cuerpo,
+        headers=ALLOWED_ORIGIN,
+    )
+
+    assert quitado.status_code == 200, quitado.text
+    assert quitado.json()["item_count"] == 0
+    assert (
+        seeded_client.get(f"/api/v1/documents?collection_id={coleccion['id']}").json()["total"] == 0
+    ), "ya no está en la colección"
+    # Y el documento sigue en la biblioteca: sacar de una colección no retira material.
+    detalle = seeded_client.get(f"/api/v1/documents/{dentro['document_id']}").json()
+    assert detalle["document"]["canonical_title"] == "Documento que se saca"
+
+    # Quitarlo otra vez no falla: el resultado que se pide ya es el que hay.
+    otra_vez = seeded_client.request(
+        "DELETE",
+        f"/api/v1/collections/{coleccion['id']}/items",
+        json=cuerpo,
+        headers=ALLOWED_ORIGIN,
+    )
+    assert otra_vez.status_code == 200, otra_vez.text
+    assert otra_vez.json()["item_count"] == 0
+
+    # Y una colección que no existe es un 404, no un «hecho» silencioso.
+    inexistente = seeded_client.request(
+        "DELETE", "/api/v1/collections/no-existe/items", json=cuerpo, headers=ALLOWED_ORIGIN
+    )
+    assert inexistente.status_code == 404, inexistente.text
+
+
 def _auditoria_de(settings: Settings, object_id: str) -> list[str]:
     """Acciones auditadas sobre un objeto, en orden: la API no publica la auditoría, la base sí."""
     engine = build_engine(settings.data_paths.database)

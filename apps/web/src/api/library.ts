@@ -117,6 +117,27 @@ export function addToCollection(
   );
 }
 
+/**
+ * Quita un sujeto de una colección **sin borrar el sujeto** (ruta añadida al contrato).
+ *
+ * Es idempotente y no pide confirmación: el documento, la versión o la cita siguen donde estaban, y
+ * lo único que cambia es en qué colecciones aparecen.
+ */
+export function removeFromCollection(
+  collectionId: string,
+  subjectId: string,
+  subjectType: SubjectType = 'document_version',
+): Promise<Collection> {
+  return apiFetch<Collection>(
+    `/api/v1/collections/${encodeURIComponent(collectionId)}/items`,
+    {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ subject_type: subjectType, subject_id: subjectId }),
+    },
+  );
+}
+
 /** Tipos de sujeto que una colección admite, tal como los declara el contrato. */
 export type SubjectType =
   | 'artifact'

@@ -205,6 +205,28 @@ class BulkRecalculationView:
 
 
 @dataclass(frozen=True, slots=True)
+class OutdatedSessionsView:
+    """Cuántas sesiones terminadas del conjunto **no** están corregidas con la clave activa.
+
+    Es la pregunta que se hace al activar una plantilla nueva (DEBT-013): corregir una clave cambia
+    lo que ya se corrigió, y saberlo **antes** de recalcular es lo que evita descubrirlo sesión a
+    sesión. Las sesiones se cuentan en tres grupos que no se solapan —al día, desactualizadas y sin
+    ninguna corrección guardada— porque sumarlos de otra forma escondería justo el caso raro.
+    """
+
+    question_set_id: str
+    key_version: int
+    key_id: str
+    finished: int
+    up_to_date: int
+    outdated: int
+    without_evaluation: int
+    #: Las desactualizadas, para poder decir **cuáles** y no solo cuántas.
+    outdated_session_ids: tuple[str, ...]
+    detail: str
+
+
+@dataclass(frozen=True, slots=True)
 class PartScoreView:
     """Puntuación directa de una parte, con los umbrales oficiales como datos declarados."""
 

@@ -8,6 +8,7 @@ import {
   useCreateCollection,
   useDocumentDetail,
   useDocuments,
+  useRemoveFromCollection,
 } from '../api/queries';
 import { EmptyState } from '../components/EmptyState';
 import { ErrorState } from '../components/ErrorState';
@@ -44,8 +45,13 @@ export function LibraryPage() {
 
   const collections = useCollections();
   const crearColeccion = useCreateCollection();
+  const quitarDeColeccion = useRemoveFromCollection();
   const anadirAColeccion = useAddToCollection();
+  // Dos avisos distintos y en dos sitios distintos: añadir se hace desde la ficha del documento
+  // abierto, y quitar desde la tarjeta de colecciones. Un solo aviso se quedaría sin pintar cuando
+  // no hay documento abierto, que es justo el caso de quitar un miembro.
   const [avisoColeccion, setAvisoColeccion] = useState<string | null>(null);
+  const [avisoQuitar, setAvisoQuitar] = useState<string | null>(null);
 
   // El filtro de colección lo aplica el servidor: la lista no descarta nada por su cuenta.
   const documents = useDocuments(documentType, ownerScope, coleccion);
@@ -136,6 +142,20 @@ export function LibraryPage() {
             createError={
               crearColeccion.error === null ? null : describeError(crearColeccion.error)
             }
+            onRemoveMember={(input) => {
+              quitarDeColeccion.mutate(input, {
+                onSuccess: (actualizada) => {
+                  setAvisoQuitar(
+                    `Miembro quitado de «${actualizada.name}»: le quedan ${String(actualizada.item_count)}. El documento no se ha borrado.`,
+                  );
+                },
+              });
+            }}
+            removePending={quitarDeColeccion.isPending}
+            removeNotice={avisoQuitar}
+            removeError={
+              quitarDeColeccion.error === null ? null : describeError(quitarDeColeccion.error)
+            }
           />
         )}
       </section>
@@ -154,11 +174,20 @@ export function LibraryPage() {
         )}
         {documents.isSuccess &&
           (documents.data.total === 0 ? (
-            <EmptyState
-              title="Todavía no hay ningún documento"
-              description="Un documento nace al promocionar material ya copiado: la biblioteca no crea obras."
-              hint="Copia el material en la Bandeja y promociónalo: aparecerá aquí con su versión."
-            />
+            // Con un filtro de colección activo, «no hay ningún documento» sería mentira: la
+            // biblioteca tiene documentos, y lo que está vacío es la colección. Se dice lo que pasa.
+            coleccion === null ? (
+              <EmptyState
+                title="Todavía no hay ningún documento"
+                description="Un documento nace al promocionar material ya copiado: la biblioteca no crea obras."
+                hint="Copia el material en la Bandeja y promociónalo: aparecerá aquí con su versión."
+              />
+            ) : (
+              <p className="hint">
+                Esta colección no tiene ningún documento todavía. Abre un documento y añádelo desde su
+                ficha.
+              </p>
+            )
           ) : (
             <>
               <p className="hint">
@@ -177,12 +206,6 @@ export function LibraryPage() {
               />
             </>
           ))}
-        {coleccion !== null && documents.isSuccess && documents.data.total === 0 && (
-          <p className="hint">
-            Esta colección no tiene ningún documento todavía. Abre un documento y añádelo desde su
-            ficha.
-          </p>
-        )}
       </section>
 
       {documentId !== null && (

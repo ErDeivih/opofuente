@@ -162,3 +162,57 @@ test('E2E-06 un examen oficial no deja elegir lo que fija la convocatoria', asyn
   await expect(page.getByText(/los fija la convocatoria/)).toBeVisible();
   await expect(page.getByText(/80 preguntas ordinarias/)).toBeVisible();
 });
+
+test('E2E-06 activar una clave corregida avisa y recalcula lo ya corregido (DEBT-013)', async ({
+  page,
+}) => {
+  const titulo = await crearConjuntoConClave(page);
+  await prepararPractica(page, titulo, '3');
+
+  // Se fallan las tres: la plantilla del CSV dice que la buena es la B.
+  for (const posicion of [1, 2, 3]) {
+    await expect(page.getByRole('heading', { name: `Pregunta ${String(posicion)}` })).toBeVisible();
+    await page.getByLabel('A) Verdadero').check();
+    await page.getByRole('button', { name: 'Enviar la respuesta' }).click();
+    await expect(page.getByText('Respuesta guardada.')).toBeVisible();
+    if (posicion < 3) {
+      await page.getByRole('button', { name: 'Ir a la pregunta siguiente' }).click();
+    }
+  }
+  await page.getByRole('button', { name: 'Terminar la sesión' }).click();
+  await expect(page.getByRole('heading', { name: 'Resultado' })).toBeVisible();
+  // Tres fallos con un tercio de castigo: −1 exacto.
+  await expect(page.getByText('-1 puntos').first()).toBeVisible();
+
+  // La plantilla estaba mal: la buena es la A. Se importa corregida y se activa desde la pantalla.
+  // Importar **no** activa nada (es la regla del importador), así que la activación es el clic
+  // siguiente, y es lo que tiene que hacer que la pantalla avise.
+  await page.goto('/preguntas');
+  const conjunto = page.getByLabel('Conjunto abierto');
+  const opcion = conjunto.locator('option', { hasText: titulo });
+  await expect(opcion).toHaveCount(1);
+  await conjunto.selectOption((await opcion.first().getAttribute('value')) ?? '');
+  await page.getByRole('tab', { name: 'Importar' }).click();
+  await page.getByLabel('Qué se importa').selectOption('answer_key');
+  await page.getByLabel('Texto a importar').fill('1. a\n2. a\n3. a\n4. a\n');
+  await page.getByRole('button', { name: 'Importar en el conjunto' }).click();
+  await expect(page.getByText('Importadas 0 preguntas nuevas y 4 claves.')).toBeVisible();
+
+  await page.getByRole('tab', { name: 'Plantillas' }).click();
+  // Antes de activarla, la clave en borrador no corrige nada: la sesión está «al día» con la v1.
+  await expect(page.getByText('0 sesiones desactualizadas')).toBeVisible();
+  await page.getByRole('button', { name: 'Activar la plantilla v2' }).click();
+  await page
+    .getByRole('button', { name: 'Confirmar la activación de la plantilla v2' })
+    .click();
+
+  // Y aquí está lo que faltaba: la pantalla dice cuántas sesiones se quedan con la corrección vieja.
+  await expect(page.getByText('1 sesión desactualizada')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Recalcular la sesión desactualizada' }).click();
+
+  // El informe dice qué cambió, con las dos puntuaciones: −1 (todo mal) pasa a 3 (todo bien).
+  await expect(page.getByText(/1 sesión\(es\) recalculadas con la plantilla v2/)).toBeVisible();
+  await expect(page.getByText(/de -1 a 3/)).toBeVisible();
+  await expect(page.getByText('0 sesiones desactualizadas')).toBeVisible();
+});

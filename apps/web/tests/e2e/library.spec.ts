@@ -532,6 +532,67 @@ test('E2E-04 documento compartido: un artefacto, sus asignaciones y la versión 
     page.getByRole('table', { name: /3 asignaciones de programa de la versión/ }),
   ).toBeVisible();
 
+  // --- 11. Colecciones: agrupar sin duplicar y quitar sin borrar (DEBT-017) ---
+  const nombreColeccion = `Coleccion E2E-04 ${sufijo}`;
+  const regionColecciones = page.getByRole('region', { name: 'Colecciones', exact: true });
+  const regionDocumento = page.getByRole('region', {
+    name: 'Colecciones del documento abierto',
+    exact: true,
+  });
+
+  await regionColecciones.getByLabel('Nombre de la colección').fill(nombreColeccion);
+  await regionColecciones.getByRole('button', { name: 'Crear la colección' }).click();
+
+  // El filtro de la colección recién creada: empieza vacía y lo dice. Se ancla el nombre al
+  // principio porque, en cuanto la colección tiene miembros, aparece además el desplegable «Ver los
+  // miembros de «…»», que también lleva el nombre dentro.
+  const filtroColeccion = regionColecciones.getByRole('button', {
+    name: new RegExp(`^${nombreColeccion} `),
+  });
+  await expect(filtroColeccion).toContainText('0 miembros');
+
+  // Se añade la **versión activa** del documento abierto, que es lo que la ficha sabe que está
+  // mirando. Es un POST real: el selector se rellena con lo que devuelve el servidor.
+  await regionDocumento
+    .getByLabel('Añadir a una colección')
+    .selectOption({ label: nombreColeccion });
+  await regionDocumento.getByRole('button', { name: 'Añadir a la colección' }).click();
+  await expect(regionDocumento.getByRole('status')).toContainText('ahora tiene 1 miembro');
+  await expect(filtroColeccion).toContainText('1 miembro');
+
+  // El filtro lo aplica el servidor: se pide por `collection_id` y el documento sigue saliendo.
+  await filtroColeccion.click();
+  await expect(page.getByText(/filtrados por la colección elegida, en el servidor/)).toBeVisible();
+  await expect(fila).toBeVisible();
+
+  // Quitar el miembro: es un DELETE del sujeto, no un borrado de material. El navegador manda el
+  // cuerpo de verdad, así que esto comprueba además que la ruta acepta un cuerpo en un DELETE.
+  await regionColecciones
+    .getByRole('button', { name: `Ver los miembros de «${nombreColeccion}»` })
+    .click();
+  const quitar = regionColecciones.getByRole('button', {
+    name: new RegExp(`^Quitar el miembro .+ de «${nombreColeccion}»$`),
+  });
+  await expect(quitar).toHaveCount(1);
+  await quitar.click();
+
+  // El aviso se da donde se hizo, y dice lo que de verdad ha pasado.
+  await expect(regionColecciones.getByRole('status')).toContainText('El documento no se ha borrado');
+  await expect(filtroColeccion).toContainText('0 miembros');
+  // La colección está vacía, no la biblioteca: el listado lo dice así en lugar de anunciar que no
+  // hay ningún documento.
+  await expect(page.getByText(/Esta colección no tiene ningún documento todavía/)).toBeVisible();
+  await expect(page.getByText('Todavía no hay ningún documento')).toHaveCount(0);
+
+  // Y el documento sigue existiendo, con sus dos versiones: solo ha dejado de estar agrupado.
+  const trasQuitar = await json<{ document: { id: string }; versions: unknown[] }>(
+    request,
+    `/documents/${promocion.document_id}`,
+  );
+  expect(trasQuitar.versions).toHaveLength(2);
+  const colecciones = await json<{ name: string; item_count: number }[]>(request, '/collections');
+  expect(colecciones.find((coleccion) => coleccion.name === nombreColeccion)?.item_count).toBe(0);
+
   const sinViolaciones = await new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
     .analyze();

@@ -5689,6 +5689,63 @@
         "title": "OptionSchema",
         "type": "object"
       },
+      "OutdatedSessionsSchema": {
+        "description": "Sesiones terminadas del conjunto que no están corregidas con su plantilla activa (DEBT-013).\n\nLos tres recuentos —al día, desactualizadas y sin corrección guardada— suman las terminadas: si\nse solaparan, el número que la pantalla enseña no se podría comprobar.",
+        "properties": {
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "finished": {
+            "title": "Finished",
+            "type": "integer"
+          },
+          "key_id": {
+            "title": "Key Id",
+            "type": "string"
+          },
+          "key_version": {
+            "title": "Key Version",
+            "type": "integer"
+          },
+          "outdated": {
+            "title": "Outdated",
+            "type": "integer"
+          },
+          "outdated_session_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Outdated Session Ids",
+            "type": "array"
+          },
+          "question_set_id": {
+            "title": "Question Set Id",
+            "type": "string"
+          },
+          "up_to_date": {
+            "title": "Up To Date",
+            "type": "integer"
+          },
+          "without_evaluation": {
+            "title": "Without Evaluation",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "question_set_id",
+          "key_version",
+          "key_id",
+          "finished",
+          "up_to_date",
+          "outdated",
+          "without_evaluation",
+          "outdated_session_ids",
+          "detail"
+        ],
+        "title": "OutdatedSessionsSchema",
+        "type": "object"
+      },
       "ParseIssueSchema": {
         "properties": {
           "code": {
@@ -11559,6 +11616,97 @@
       }
     },
     "/api/v1/collections/{collection_id}/items": {
+      "delete": {
+        "description": "Saca un sujeto de la colección **sin borrar nada del sujeto**.\n\nRuta **añadida** al contrato: §7 no la lista, y sin ella una colección solo se podía llenar. No\npide confirmación porque no retira material —el documento, la versión o la cita siguen donde\nestaban— y es idempotente: quitar lo que no estaba devuelve la colección como está.",
+        "operationId": "remove_collection_item_api_v1_collections__collection_id__items_delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "collection_id",
+            "required": true,
+            "schema": {
+              "title": "Collection Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CollectionItemRequestSchema"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "La entrada no se puede usar: carpeta inválida (`invalid_source`), contenido rechazado por seguridad (`unsafe_content`) o URL no descargable (`url_rejected`)."
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Quita un sujeto de una colección (ruta añadida: no existe en el contrato)",
+        "tags": [
+          "biblioteca"
+        ]
+      },
       "post": {
         "operationId": "add_collection_item_api_v1_collections__collection_id__items_post",
         "parameters": [
@@ -16561,6 +16709,69 @@
         "summary": "Activa una plantilla (activar es aprobar)",
         "tags": [
           "preguntas"
+        ]
+      }
+    },
+    "/api/v1/question-sets/{set_id}/outdated-sessions": {
+      "get": {
+        "description": "Cuántas sesiones quedan desactualizadas tras activar una plantilla nueva.\n\nEs la lectura que faltaba: `POST /question-sets/{set_id}/recalculate-sessions` dice qué cambió\n**después** de recalcular, y esto dice qué hace falta **antes**. Activar una clave corregida sin\nrecalcular no cambiaba ninguna nota y no se notaba en ninguna pantalla.",
+        "operationId": "outdated_sessions_api_v1_question_sets__set_id__outdated_sessions_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "set_id",
+            "required": true,
+            "schema": {
+              "title": "Set Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OutdatedSessionsSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Sesiones terminadas sin corregir con la plantilla activa (ruta añadida: DEBT-013)",
+        "tags": [
+          "estudio"
         ]
       }
     },

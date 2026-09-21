@@ -54,6 +54,7 @@ import {
   fetchVersionMappings,
   fetchVersions,
   markSupersedes,
+  removeFromCollection,
   removeMapping,
   type CoverageType,
   type SubjectType,
@@ -108,6 +109,7 @@ import {
   correctQuestion,
   createQuestionSet,
   fetchAnswerKeys,
+  fetchOutdatedSessions,
   fetchQuestion,
   fetchQuestionEvidence,
   fetchQuestionSet,
@@ -116,6 +118,7 @@ import {
   markKeySupersedes,
   parseIntoSet,
   patchQuestion,
+  recalculateSetSessions,
   reportQuestionIssue,
   type CreateQuestionSet,
   type CsvMapping,
@@ -184,6 +187,8 @@ export const queryKeys = {
   questionEvidence: (questionId: string) =>
     ['questions', 'question', questionId, 'evidence'] as const,
   answerKeys: (setId: string) => ['questions', 'set', setId, 'keys'] as const,
+  /* DEBT-013: qué sesiones del conjunto quedan sin corregir con su plantilla activa. */
+  outdatedSessions: (setId: string) => ['questions', 'set', setId, 'outdated'] as const,
   /* S07: sesiones de estudio. Cuelgan de «study» porque responder cambia a la vez el progreso de la
      sesión, el intento y su corrección. */
   studySessions: (oppositionId: string) => ['study', 'sessions', oppositionId] as const,
@@ -886,6 +891,37 @@ export function useActivateAnswerKey() {
   return useMutation({
     mutationFn: (input: ActivateKeyInput) => activateAnswerKey(input.setId, input.keyId),
     onSuccess: () => {
+      // Activar una plantilla cambia la corrección de las sesiones ya terminadas, así que se relee
+      // también la cuenta de desactualizadas, que cuelga de «questions» (DEBT-013).
+      invalidateQuestions(queryClient);
+    },
+  });
+}
+
+/**
+ * Las sesiones terminadas del conjunto sin corregir con su plantilla activa (DEBT-013).
+ *
+ * Se lee por conjunto y no se deduce en el navegador: quién está al día depende de la evaluación
+ * **vigente** de cada intento, y eso solo lo sabe el servidor.
+ */
+export function useOutdatedSessions(setId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.outdatedSessions(setId ?? 'ninguno'),
+    queryFn: () => fetchOutdatedSessions(setId as string),
+    enabled: setId !== null,
+  });
+}
+
+/** Recalcula en bloque las sesiones del conjunto. El informe dice qué cambió en cada una. */
+export function useRecalculateSetSessions() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (setId: string) => recalculateSetSessions(setId),
+    onSuccess: () => {
+      // Recalcular mueve la puntuación de sesiones que quizá se estén mirando en otra pantalla, así
+      // que se invalida todo lo que cuelga de las sesiones, además del banco (que lleva la cuenta de
+      // desactualizadas).
+      void queryClient.invalidateQueries({ queryKey: ['study'] });
       invalidateQuestions(queryClient);
     },
   });
@@ -1338,6 +1374,23 @@ export function useReindex() {
     onSuccess: () => {
       invalidateMaintenance(queryClient);
       void queryClient.invalidateQueries({ queryKey: ['search'] });
+    },
+  });
+}
+
+/**
+ * Quita un miembro de una colección.
+ *
+ * Invalida la biblioteca entera como el alta: si el filtro por colección está activo, los documentos
+ * que se están viendo cambian con esta operación.
+ */
+export function useRemoveFromCollection() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { collectionId: string; subjectId: string }) =>
+      removeFromCollection(input.collectionId, input.subjectId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['library'] });
     },
   });
 }

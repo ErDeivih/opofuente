@@ -366,7 +366,15 @@ export interface paths {
         put?: never;
         /** Añade un sujeto a una colección (sin duplicarlo) */
         post: operations["add_collection_item_api_v1_collections__collection_id__items_post"];
-        delete?: never;
+        /**
+         * Quita un sujeto de una colección (ruta añadida: no existe en el contrato)
+         * @description Saca un sujeto de la colección **sin borrar nada del sujeto**.
+         *
+         *     Ruta **añadida** al contrato: §7 no la lista, y sin ella una colección solo se podía llenar. No
+         *     pide confirmación porque no retira material —el documento, la versión o la cita siguen donde
+         *     estaban— y es idempotente: quitar lo que no estaba devuelve la colección como está.
+         */
+        delete: operations["remove_collection_item_api_v1_collections__collection_id__items_delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1512,6 +1520,30 @@ export interface paths {
          *     con el motivo: una aprobación no convierte en oficial un documento que no lo es.
          */
         post: operations["activate_answer_key_api_v1_question_sets__set_id__answer_keys__key_id__activate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/question-sets/{set_id}/outdated-sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Sesiones terminadas sin corregir con la plantilla activa (ruta añadida: DEBT-013)
+         * @description Cuántas sesiones quedan desactualizadas tras activar una plantilla nueva.
+         *
+         *     Es la lectura que faltaba: `POST /question-sets/{set_id}/recalculate-sessions` dice qué cambió
+         *     **después** de recalcular, y esto dice qué hace falta **antes**. Activar una clave corregida sin
+         *     recalcular no cambiaba ninguna nota y no se notaba en ninguna pantalla.
+         */
+        get: operations["outdated_sessions_api_v1_question_sets__set_id__outdated_sessions_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -4248,6 +4280,33 @@ export interface components {
             stable_key: string;
             /** Text */
             text: string;
+        };
+        /**
+         * OutdatedSessionsSchema
+         * @description Sesiones terminadas del conjunto que no están corregidas con su plantilla activa (DEBT-013).
+         *
+         *     Los tres recuentos —al día, desactualizadas y sin corrección guardada— suman las terminadas: si
+         *     se solaparan, el número que la pantalla enseña no se podría comprobar.
+         */
+        OutdatedSessionsSchema: {
+            /** Detail */
+            detail: string;
+            /** Finished */
+            finished: number;
+            /** Key Id */
+            key_id: string;
+            /** Key Version */
+            key_version: number;
+            /** Outdated */
+            outdated: number;
+            /** Outdated Session Ids */
+            outdated_session_ids: string[];
+            /** Question Set Id */
+            question_set_id: string;
+            /** Up To Date */
+            up_to_date: number;
+            /** Without Evaluation */
+            without_evaluation: number;
         };
         /** ParseIssueSchema */
         ParseIssueSchema: {
@@ -7047,6 +7106,77 @@ export interface operations {
         };
     };
     add_collection_item_api_v1_collections__collection_id__items_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                collection_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CollectionItemRequestSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CollectionSchema"];
+                };
+            };
+            /** @description La entrada no se puede usar: carpeta inválida (`invalid_source`), contenido rechazado por seguridad (`unsafe_content`) o URL no descargable (`url_rejected`). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    remove_collection_item_api_v1_collections__collection_id__items_delete: {
         parameters: {
             query?: never;
             header?: never;
@@ -10839,6 +10969,55 @@ export interface operations {
                 };
                 content: {
                     "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    outdated_sessions_api_v1_question_sets__set_id__outdated_sessions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                set_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OutdatedSessionsSchema"];
                 };
             };
             /** @description El recurso no existe. */

@@ -12,6 +12,11 @@ export interface CollectionsPanelProps {
   onCreate: (input: { name: string; description: string | null }) => void;
   createPending: boolean;
   createError: string | null;
+  /** Quita un miembro de una colección. No borra el sujeto: deja de agruparlo. */
+  onRemoveMember: (input: { collectionId: string; subjectId: string }) => void;
+  removePending: boolean;
+  removeNotice: string | null;
+  removeError: string | null;
 }
 
 /**
@@ -30,9 +35,19 @@ export function CollectionsPanel({
   onCreate,
   createPending,
   createError,
+  onRemoveMember,
+  removePending,
+  removeNotice,
+  removeError,
 }: CollectionsPanelProps) {
   const [nombre, setNombre] = useState('');
   const [descripcion, setDescripcion] = useState('');
+  const [abierta, setAbierta] = useState<string | null>(null);
+
+  /** Miembros de una colección: el contrato los declara opcionales, así que se defiende. */
+  function miembrosDe(coleccion: Collection): string[] {
+    return coleccion.items ?? [];
+  }
 
   return (
     <>
@@ -75,6 +90,45 @@ export function CollectionsPanel({
               </button>
               {coleccion.description !== null && coleccion.description !== undefined && (
                 <p className="hint">{coleccion.description}</p>
+              )}
+              {miembrosDe(coleccion).length > 0 && (
+                <>
+                  <button
+                    className="button"
+                    type="button"
+                    aria-expanded={abierta === coleccion.id}
+                    onClick={() => {
+                      setAbierta(abierta === coleccion.id ? null : coleccion.id);
+                    }}
+                  >
+                    {abierta === coleccion.id
+                      ? `Ocultar los miembros de «${coleccion.name}»`
+                      : `Ver los miembros de «${coleccion.name}»`}
+                  </button>
+                  {abierta === coleccion.id && (
+                    <ul>
+                      {miembrosDe(coleccion).map((miembro) => (
+                        <li key={miembro}>
+                          <span className="sample__path">{miembro}</span>{' '}
+                          <button
+                            className="button"
+                            type="button"
+                            disabled={removePending}
+                            aria-label={`Quitar el miembro ${miembro} de «${coleccion.name}»`}
+                            onClick={() => {
+                              onRemoveMember({
+                                collectionId: coleccion.id,
+                                subjectId: miembro,
+                              });
+                            }}
+                          >
+                            Quitar de la colección
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </>
               )}
             </li>
           ))}
@@ -128,6 +182,8 @@ export function CollectionsPanel({
           pueden ser {Object.values(SUBJECT_TYPE_LABEL).join(', ')}.
         </p>
       )}
+      {removeNotice !== null && <p role="status">{removeNotice}</p>}
+      {removeError !== null && <p className="notice">{removeError}</p>}
     </>
   );
 }

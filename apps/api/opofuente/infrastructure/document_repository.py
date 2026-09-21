@@ -23,7 +23,7 @@ from datetime import datetime
 from typing import Any
 from uuid import uuid4
 
-from sqlalchemy import Select, func, literal, or_, select
+from sqlalchemy import Select, delete, func, literal, or_, select
 from sqlalchemy.orm import DeclarativeBase, InstrumentedAttribute, Session, sessionmaker
 from sqlalchemy.sql.elements import ColumnElement
 
@@ -940,6 +940,30 @@ class SqlAlchemyDocumentRepository:
                     )
                 )
                 session.commit()
+            return self._collection_view(session, coleccion)
+
+    def remove_from_collection(
+        self, collection_id: str, *, subject_type: str, subject_id: str
+    ) -> CollectionView | None:
+        """Quita un sujeto de una colección. No borra nada del sujeto: solo deja de agruparlo.
+
+        Es **idempotente**: quitar algo que no estaba devuelve la colección como está, sin error. A
+        diferencia de retirar material (que sí exige confirmación), esto no necesita ninguna: el
+        documento, la versión o la cita siguen donde estaban, y lo único que cambia es en qué
+        colecciones aparecen. Y a diferencia de `add_to_collection`, aquí no se crea nada si falta:
+        una colección o un miembro que no existen no se inventan.
+        """
+        with self._session_factory() as session:
+            coleccion = session.get(CollectionRecord, collection_id)
+            if coleccion is None:
+                return None
+            session.execute(
+                delete(CollectionItemRecord)
+                .where(CollectionItemRecord.collection_id == collection_id)
+                .where(CollectionItemRecord.subject_type == subject_type)
+                .where(CollectionItemRecord.subject_id == subject_id)
+            )
+            session.commit()
             return self._collection_view(session, coleccion)
 
     # ------------------------------------------------------------------ auxiliares

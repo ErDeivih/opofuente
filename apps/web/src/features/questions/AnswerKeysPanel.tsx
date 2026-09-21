@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import type { AnswerKey } from '../../api/questions';
+import type { AnswerKey, BulkRecalculation, OutdatedSessions } from '../../api/questions';
 import { ErrorState } from '../../components/ErrorState';
 import { LoadingState } from '../../components/LoadingState';
 import { StatusBadge } from '../../components/StatusBadge';
@@ -16,6 +16,14 @@ export interface AnswerKeysPanelProps {
   onRetry: () => void;
   onActivate: (keyId: string) => void;
   onSupersede: (keyId: string, supersededId: string) => void;
+  /** Cuántas sesiones terminadas del conjunto no están corregidas con la plantilla activa. */
+  outdated: OutdatedSessions | null;
+  outdatedPending: boolean;
+  outdatedError: string | null;
+  onRecalculate: () => void;
+  recalculating: boolean;
+  recalculation: BulkRecalculation | null;
+  recalculateError: string | null;
 }
 
 /**
@@ -25,6 +33,10 @@ export interface AnswerKeysPanelProps {
  * avisa de que queda auditado con quién y cuándo. Los 409 del servidor se muestran con su motivo y se
  * dice que **nada cambió**: una clave oficial sin su plantilla oficial enlazada no se activa, y una
  * aprobación no la convierte en oficial.
+ *
+ * Y una consecuencia que no se puede dejar escondida (DEBT-013): activar una clave corregida **no**
+ * cambia las notas ya puestas. Aquí se dice cuántas sesiones terminadas se quedan con la corrección
+ * vieja y se ofrece recalcularlas de una vez, con el informe de qué cambió en cada una.
  */
 export function AnswerKeysPanel({
   keys,
@@ -36,6 +48,13 @@ export function AnswerKeysPanel({
   onRetry,
   onActivate,
   onSupersede,
+  outdated,
+  outdatedPending,
+  outdatedError,
+  onRecalculate,
+  recalculating,
+  recalculation,
+  recalculateError,
 }: AnswerKeysPanelProps) {
   const [confirmando, setConfirmando] = useState<string | null>(null);
   const [sustituyendo, setSustituyendo] = useState<string | null>(null);
@@ -218,6 +237,90 @@ export function AnswerKeysPanel({
           </tbody>
         </table>
       )}
+
+      <section aria-labelledby="plantillas-sesiones">
+        <h3 id="plantillas-sesiones">Sesiones ya corregidas</h3>
+        {outdatedPending ? (
+          <LoadingState label="Contando las sesiones del conjunto…" />
+        ) : outdatedError !== null ? (
+          <p className="hint">
+            No se ha podido contar cuántas sesiones quedan sin corregir con la plantilla activa:{' '}
+            {outdatedError}
+          </p>
+        ) : outdated === null ? (
+          <p className="hint">
+            Sin plantilla activa no se puede decir qué sesiones están al día: no hay con qué comparar.
+          </p>
+        ) : (
+          <>
+            <p>
+              <StatusBadge tone={outdated.outdated > 0 ? 'warning' : 'ok'}>
+                {outdated.outdated === 1
+                  ? '1 sesión desactualizada'
+                  : `${String(outdated.outdated)} sesiones desactualizadas`}
+              </StatusBadge>{' '}
+              {outdated.detail}
+            </p>
+            {outdated.outdated > 0 && (
+              <div className="form__row">
+                <button
+                  className="button"
+                  type="button"
+                  disabled={recalculating}
+                  aria-label={
+                    outdated.outdated === 1
+                      ? 'Recalcular la sesión desactualizada'
+                      : `Recalcular las ${String(outdated.outdated)} sesiones desactualizadas`
+                  }
+                  onClick={onRecalculate}
+                >
+                  {recalculating
+                    ? 'Recalculando…'
+                    : outdated.outdated === 1
+                      ? 'Recalcular esa sesión ahora'
+                      : 'Recalcular esas sesiones ahora'}
+                </button>
+                <span className="hint">
+                  Se corrigen con la plantilla v{String(outdated.key_version)} activa. Cada sesión
+                  conserva su resultado anterior: recalcular no borra lo que se dijo entonces.
+                </span>
+              </div>
+            )}
+            {outdated.without_evaluation > 0 && (
+              <p className="hint">
+                {outdated.without_evaluation === 1
+                  ? '1 sesión terminada no tiene ninguna corrección guardada'
+                  : `${String(outdated.without_evaluation)} sesiones terminadas no tienen ninguna corrección guardada`}
+                : no se pueden comparar con la plantilla, y no se cuentan como desactualizadas.
+              </p>
+            )}
+            {recalculation !== null && (
+              <div>
+                <p role="status">
+                  {recalculation.detail}
+                  {recalculation.key_version > 0 &&
+                    ` (plantilla v${String(recalculation.key_version)})`}
+                </p>
+                <ul>
+                  {recalculation.sessions.map((cambio) => (
+                    <li key={cambio.session_id} className="hint">
+                      <span className="sample__path">{cambio.session_id}</span>:{' '}
+                      {cambio.changed
+                        ? `de ${cambio.previous_total} a ${cambio.new_total}`
+                        : `sin cambios (${cambio.new_total})`}
+                      {cambio.previous_key_label !== cambio.new_key_label &&
+                        ` · ${cambio.previous_key_label || 'sin plantilla'} → ${
+                          cambio.new_key_label || 'sin plantilla'
+                        }`}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {recalculateError !== null && <p className="notice">{recalculateError}</p>}
+          </>
+        )}
+      </section>
     </>
   );
 }

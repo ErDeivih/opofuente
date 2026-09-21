@@ -384,6 +384,14 @@ class LibraryService:
             name, description=description, now=self._clock.now()
         )
 
+    def remove_from_collection(
+        self, collection_id: str, *, subject_type: str, subject_id: str
+    ) -> CollectionView | None:
+        """Quita un sujeto de una colección. No borra el sujeto: solo deja de agruparlo."""
+        return self._documents.remove_from_collection(
+            collection_id, subject_type=subject_type, subject_id=subject_id
+        )
+
     def add_to_collection(
         self, collection_id: str, *, subject_type: str, subject_id: str
     ) -> CollectionView | None:

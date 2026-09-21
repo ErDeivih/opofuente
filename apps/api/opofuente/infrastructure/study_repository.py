@@ -203,6 +203,66 @@ class SqlAlchemyStudyRepository:
             ).scalars()
             return tuple(str(fila) for fila in filas)
 
+    def session_key_state_of_set(
+        self, question_set_id: str, key_version_id: str
+    ) -> tuple[tuple[str, ...], tuple[str, ...]]:
+        """(desactualizadas, sin ninguna corrección) entre las sesiones terminadas del conjunto.
+
+        «Desactualizada» es una definición concreta, no una impresión: la sesión tiene correcciones
+        guardadas y **alguna** de las vigentes no la hizo esa clave. Se mira la evaluación
+        **vigente** de cada intento (la última por fecha), que es la que manda para leer el
+        resultado de hoy: las anteriores siguen en la base y no cuentan (invariante 7). Así, tras
+        recalcular con la clave activa, la sesión deja de estar desactualizada sin que nadie marque
+        nada a mano.
+
+        Las sesiones terminadas **sin ninguna corrección guardada** se devuelven aparte y no como
+        desactualizadas: no hay nada que comparar, y contarlas como pendientes dejaría un número que
+        no bajaría nunca por mucho que se recalcule.
+        """
+        with self._session_factory() as session:
+            sesiones = tuple(
+                str(fila)
+                for fila in session.execute(
+                    select(StudySessionRecord.id)
+                    .where(
+                        StudySessionRecord.status == SessionStatus.FINISHED.value,
+                        StudySessionRecord.question_set_id == question_set_id,
+                    )
+                    .order_by(StudySessionRecord.created_at, StudySessionRecord.id)
+                ).scalars()
+            )
+            if not sesiones:
+                return ((), ())
+            # Un intento cuelga de la pregunta de la sesión, no de la sesión: el vínculo se hace por
+            # `session_question_id` y el join es obligatorio, no una comodidad.
+            intentos = session.execute(
+                select(AttemptRecord.id, SessionQuestionRecord.session_id)
+                .join(
+                    SessionQuestionRecord,
+                    AttemptRecord.session_question_id == SessionQuestionRecord.id,
+                )
+                .where(SessionQuestionRecord.session_id.in_(list(sesiones)))
+            ).all()
+            vigentes = self._latest_evaluations(session, [str(fila.id) for fila in intentos])
+            por_sesion: dict[str, list[AttemptEvaluationRecord]] = {}
+            for fila in intentos:
+                evaluacion = vigentes.get(str(fila.id))
+                if evaluacion is not None:
+                    por_sesion.setdefault(str(fila.session_id), []).append(evaluacion)
+
+            desactualizadas: list[str] = []
+            sin_correccion: list[str] = []
+            for sesion_id in sesiones:
+                evaluaciones = por_sesion.get(sesion_id, [])
+                if not evaluaciones:
+                    sin_correccion.append(sesion_id)
+                elif any(
+                    evaluacion.answer_key_version_id != key_version_id
+                    for evaluacion in evaluaciones
+                ):
+                    desactualizadas.append(sesion_id)
+            return (tuple(desactualizadas), tuple(sin_correccion))
+
     def start(self, session_id: str, *, now: datetime, actor: str = "local") -> SessionView | None:
         """Pone la sesión en marcha. Arrancar una que ya corre no cambia nada (es reintentable)."""
         with self._session_factory() as session:

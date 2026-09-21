@@ -19,6 +19,9 @@ export type RejectedRow = components['schemas']['RejectedRowSchema'];
 export type ParseIssue = components['schemas']['ParseIssueSchema'];
 export type DuplicateGroup = components['schemas']['DuplicateGroupSchema'];
 export type AnswerKey = components['schemas']['AnswerKeySchema'];
+export type OutdatedSessions = components['schemas']['OutdatedSessionsSchema'];
+export type BulkRecalculation = components['schemas']['BulkRecalculationSchema'];
+export type SessionRecalculation = components['schemas']['SessionRecalculationSchema'];
 export type KeyEntry = components['schemas']['KeyEntrySchema'];
 export type QuestionEvidence = components['schemas']['QuestionEvidenceSchema'];
 export type IssueReport = components['schemas']['IssueReportSchema'];
@@ -235,6 +238,26 @@ export function markKeySupersedes(keyId: string, supersededId: string): Promise<
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ superseded_id: supersededId }),
     },
+  );
+}
+
+/**
+ * Cuántas sesiones terminadas del conjunto **no** están corregidas con la plantilla activa (DEBT-013).
+ *
+ * Es la cuenta que se hace al activar una plantilla corregida: sin ella, activar una clave nueva no
+ * cambiaba ninguna nota y no se notaba en ninguna parte.
+ */
+export function fetchOutdatedSessions(setId: string): Promise<OutdatedSessions> {
+  return apiFetch<OutdatedSessions>(
+    `/api/v1/question-sets/${encodeURIComponent(setId)}/outdated-sessions`,
+  );
+}
+
+/** Recalcula **en bloque** las sesiones terminadas del conjunto y devuelve qué cambió en cada una. */
+export function recalculateSetSessions(setId: string): Promise<BulkRecalculation> {
+  return apiFetch<BulkRecalculation>(
+    `/api/v1/question-sets/${encodeURIComponent(setId)}/recalculate-sessions`,
+    { method: 'POST' },
   );
 }
 

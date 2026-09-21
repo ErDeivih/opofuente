@@ -647,3 +647,93 @@ def test_recalcular_en_bloque_un_conjunto_inexistente_es_un_404(
     )
 
     assert respuesta.status_code == 404, respuesta.text
+
+
+def test_decir_cuantas_sesiones_quedan_desactualizadas_tras_activar_una_clave(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """DEBT-013, criterio 3: la pantalla puede decir cuántas sesiones se quedan atrás.
+
+    El recálculo en bloque dice qué cambió **después**; esto dice qué hace falta **antes**, que es
+    lo que evita descubrir la clave corregida sesión a sesión. Se comprueba además que el número no
+    es decorativo: baja a cero cuando se recalcula, así que mide lo que dice medir.
+    """
+    set_id = _conjunto(seeded_client, preguntas=4)
+    terminadas = [
+        _terminar_sesion_con_todo_a(seeded_client, set_id, cantidad=3),
+        _terminar_sesion_con_todo_a(seeded_client, set_id, cantidad=2),
+    ]
+    # Una sesión en marcha **no** cuenta: se corrige al terminar, no ahora.
+    _arrancar(seeded_client, _crear_sesion(seeded_client, set_id, cantidad=2)["id"])
+
+    al_dia = seeded_client.get(f"/api/v1/question-sets/{set_id}/outdated-sessions")
+    assert al_dia.status_code == 200, al_dia.text
+    assert al_dia.json()["key_version"] == 1
+    assert al_dia.json()["finished"] == 2, "las dos sesiones terminadas, y solo esas"
+    assert al_dia.json()["up_to_date"] == 2
+    assert al_dia.json()["outdated"] == 0, "todavía no se ha activado nada nuevo"
+
+    _activar_clave_corregida(seeded_client, set_id)
+
+    desactualizadas = seeded_client.get(f"/api/v1/question-sets/{set_id}/outdated-sessions").json()
+    assert desactualizadas["key_version"] == 2
+    assert desactualizadas["outdated"] == 2
+    assert desactualizadas["up_to_date"] == 0
+    assert desactualizadas["without_evaluation"] == 0
+    # Los tres recuentos suman las terminadas: un número que no cuadra no se podría comprobar.
+    assert (
+        desactualizadas["up_to_date"]
+        + desactualizadas["outdated"]
+        + desactualizadas["without_evaluation"]
+        == desactualizadas["finished"]
+    )
+    # Y se dice **cuáles**, no solo cuántas: con el mismo id que devuelve el recálculo.
+    assert set(desactualizadas["outdated_session_ids"]) == {
+        sesion["session_id"] for sesion in terminadas
+    }
+
+    # Después de recalcular, el número baja a cero: mide el estado real, no un «hubo cambios».
+    rehecho = seeded_client.post(
+        f"/api/v1/question-sets/{set_id}/recalculate-sessions", headers=ALLOWED_ORIGIN
+    )
+    assert rehecho.status_code == 200, rehecho.text
+    assert rehecho.json()["changed"] == 2
+
+    despues = seeded_client.get(f"/api/v1/question-sets/{set_id}/outdated-sessions").json()
+    assert despues["outdated"] == 0
+    assert despues["up_to_date"] == 2
+    assert despues["outdated_session_ids"] == []
+
+
+def test_una_sesion_terminada_sin_correcciones_no_se_cuenta_como_desactualizada(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """Una sesión terminada sin ninguna corrección guardada se cuenta aparte, no como pendiente.
+
+    Contarla como desactualizada dejaría un número que no bajaría nunca: no hay nada que comparar
+    con la clave, ni nada que recalcular.
+    """
+    set_id = _conjunto(seeded_client, preguntas=2)
+    sesion = _arrancar(seeded_client, _crear_sesion(seeded_client, set_id, cantidad=2)["id"])
+    terminada = seeded_client.post(
+        f"/api/v1/study-sessions/{sesion['id']}/finish", headers=ALLOWED_ORIGIN
+    )
+    assert terminada.status_code == 200, terminada.text
+
+    respuesta = seeded_client.get(f"/api/v1/question-sets/{set_id}/outdated-sessions")
+
+    assert respuesta.status_code == 200, respuesta.text
+    cuerpo = respuesta.json()
+    assert cuerpo["finished"] == 1
+    assert cuerpo["without_evaluation"] == 1
+    assert cuerpo["outdated"] == 0
+    assert cuerpo["up_to_date"] == 0
+    assert "ninguna corrección guardada" in cuerpo["detail"]
+
+
+def test_las_sesiones_desactualizadas_de_un_conjunto_inexistente_es_un_404(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    respuesta = seeded_client.get("/api/v1/question-sets/no-existe/outdated-sessions")
+
+    assert respuesta.status_code == 404, respuesta.text

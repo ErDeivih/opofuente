@@ -22,6 +22,12 @@ escondidas: son rutas **fuera del contrato y señaladas**. Lo que faltaba era un
 recogiera, porque estaban repartidas en siete documentos y se leían como «pendiente de ratificación»
 siete veces, sin una lista que se pudiera aprobar de una vez.
 
+En la revisión del cierre de deuda (19 de septiembre de 2026) aparecieron **cuatro rutas más que no
+estaban en esta tabla**: las tres de colecciones que S05 dio por entregadas y declaró en la prosa de su
+ficha, y el filtro por colección de la biblioteca. Faltaban aquí, que es donde hay que mirarlas: si esta
+tabla es el registro único, una ruta añadida que no esté en ella es exactamente la ruta escondida que
+esta decisión existe para evitar.
+
 ## Decisión
 
 Se mantienen las rutas añadidas, todas bajo `/api/v1`, con esta tabla como registro único. Ratificarlas
@@ -32,11 +38,17 @@ significa retirarla y asumir la consecuencia escrita en la última columna.
 |---|---|---|---|
 | `POST /classification-runs` | S04 | Lanzar el motor determinista sobre un lote y ver su informe; sin ella, clasificar no se puede pedir desde la interfaz | la pantalla de Revisión no puede pedir una clasificación nueva |
 | `GET /documents/{id}/diff` | S05 | Comparar dos versiones del mismo documento y decir qué sección cambió | la pestaña «Versiones y diff» se queda sin diff |
+| `GET /collections` y `POST /collections` | S05 | Listar y crear colecciones: agrupar material sin duplicarlo (`03_DATA-MODEL` §«colección») | la Biblioteca pierde las colecciones y, con ellas, el filtro por colección |
+| `POST /collections/{id}/items` | S05 | Meter un sujeto en una colección: una versión, un artefacto, una representación, una sección o una evidencia | ninguna colección podría tener nada dentro, así que la superficie entera sobra |
 | `GET /study-sessions` | S07 | Listar las sesiones (en marcha y terminadas) de una oposición | no se puede retomar una sesión sin recordar su id |
 | `POST /study-sessions/{id}/recalculate` | S08 | Recalcular con una clave corregida y conservar el resultado anterior | una clave mal importada cambiaría notas a escondidas o no se podría corregir |
 | Cinco rutas de §8 (búsqueda y RAG) | S09 | El contrato de §8 fija el comportamiento; la interfaz necesita además leer una consulta guardada con su recuperación completa | la vista «Preguntar» no podría auditar de dónde salió una afirmación |
 | Seis rutas | S10 | Cola de errores, conceptos, exportación y su historial | la pantalla de Errores no tendría con qué trabajar |
 | Cinco rutas | S11 | Cambios pendientes, confirmar, descartar, derivados y su resolución | la pantalla de Cambios no existiría como tal |
+| `POST /question-sets/{id}/recalculate-sessions` | DEBT-013 | Recalcular **en bloque** las sesiones terminadas de un conjunto, con informe por sesión; el recálculo de una sola sesión (S08) obligaba a repetirlo una vez por sesión y las olvidadas se quedaban con la puntuación vieja | corregir una clave mal importada vuelve a ser un trabajo manual sesión a sesión, y las que nadie recuerde quedan mal para siempre |
+| `GET /question-sets/{id}/outdated-sessions` | DEBT-013 | Cuántas sesiones terminadas no están corregidas con la plantilla **activa**: es lo que permite avisar al activar una clave nueva en lugar de descubrirlo sesión a sesión | activar una clave corregida no cambia ninguna nota y no se notaría en ninguna pantalla |
+| `DELETE /collections/{id}/items` | DEBT-017 | Quitar un miembro de una colección sin borrar el sujeto; ninguna sección del contrato lista las colecciones, y sin esta ruta una colección se puede llenar y no vaciar | el error de agrupar algo se vuelve permanente |
+| `GET /documents?collection_id=…` | DEBT-017 | Filtrar la biblioteca por colección con el criterio resuelto en el **servidor**, porque un miembro puede ser cualquiera de los cinco tipos de sujeto | el filtro habría que deducirlo en el navegador —o traerse la biblioteca entera—, contra la arquitectura del proyecto |
 
 Las rutas concretas de S09, S10 y S11 están enumeradas en las fichas de sus slices
 (`docs/slices/S09.md`, `S10.md`, `S11.md`), cada una con lo que aporta; esta tabla no las repite una a

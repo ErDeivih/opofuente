@@ -91,8 +91,6 @@ export function SettingsPage() {
   // agregado: mezclar «alguna consulta cargando» con «esta sección ya tiene datos» es la forma de que
   // una sección aparezca vacía sin que nada haya fallado.
   const informe = housekeeping.data ?? null;
-   
-  console.log('HK-DBG', housekeeping.status, housekeeping.data === undefined ? 'undef' : String(housekeeping.data.candidates.length));
   const copias: Backup[] = backups.data?.backups ?? [];
   const elegida = copias.find((copia) => copia.id === backupAElegir) ?? null;
   const previsualizacion = validar.data ?? null;

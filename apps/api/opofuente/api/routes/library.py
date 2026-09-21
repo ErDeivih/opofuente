@@ -456,6 +456,29 @@ def add_collection_item(
     return _collection(coleccion)
 
 
+@router.delete(
+    "/collections/{collection_id}/items",
+    response_model=CollectionSchema,
+    responses=INGESTION_WRITE_ERRORS,
+    summary="Quita un sujeto de una colección (ruta añadida: no existe en el contrato)",
+)
+def remove_collection_item(
+    collection_id: str, request: CollectionItemRequestSchema, service: LibraryServiceDep
+) -> CollectionSchema:
+    """Saca un sujeto de la colección **sin borrar nada del sujeto**.
+
+    Ruta **añadida** al contrato: §7 no la lista, y sin ella una colección solo se podía llenar. No
+    pide confirmación porque no retira material —el documento, la versión o la cita siguen donde
+    estaban— y es idempotente: quitar lo que no estaba devuelve la colección como está.
+    """
+    coleccion = service.remove_from_collection(
+        collection_id, subject_type=request.subject_type, subject_id=request.subject_id
+    )
+    if coleccion is None:
+        raise NotFoundError("colección", collection_id)
+    return _collection(coleccion)
+
+
 @router.post(
     "/document-versions/{version_id}/mappings",
     response_model=MappingSchema,

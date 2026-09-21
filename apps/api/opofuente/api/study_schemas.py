@@ -192,6 +192,24 @@ class BulkRecalculationSchema(BaseModel):
     sessions: list[SessionRecalculationSchema]
 
 
+class OutdatedSessionsSchema(BaseModel):
+    """Sesiones terminadas del conjunto que no están corregidas con su plantilla activa (DEBT-013).
+
+    Los tres recuentos —al día, desactualizadas y sin corrección guardada— suman las terminadas: si
+    se solaparan, el número que la pantalla enseña no se podría comprobar.
+    """
+
+    question_set_id: str
+    key_version: int
+    key_id: str
+    finished: int
+    up_to_date: int
+    outdated: int
+    without_evaluation: int
+    outdated_session_ids: list[str]
+    detail: str
+
+
 class SessionResultSchema(BaseModel):
     """El resultado de una sesión, tal como se calculó y se guardó."""
 

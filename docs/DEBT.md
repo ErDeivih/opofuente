@@ -30,7 +30,7 @@ Reglas:
 | [DEBT-016](#debt-016--la-dificultad-observada-no-existe-y-los-umbrales-de-dominio-son-provisionales) | S11+ | El dominio se estima sin dificultad observada, con umbrales provisionales | abierta |
 | [DEBT-017](#debt-017--las-colecciones-existen-en-la-api-y-no-en-la-interfaz) | S12 | Las colecciones se pueden crear y llenar por la API; ninguna pantalla las enseña | abierta (entrega parcial: pantalla, filtro por colección en el servidor y pruebas **hechas**; falta poder **quitar** miembros, que necesita ruta propia) |
 | [DEBT-018](#debt-018--la-puerta-humana-de-s04-no-se-ejecutó) | antes de usar material real | S04 pedía medir la revisión sobre 20–50 ficheros reales antes de abrir S05, y no se hizo | abierta (condición previa) |
-| [DEBT-019](#debt-019--el-estado-conservado-sin-extractor-no-llega-a-la-pantalla) | S12 | `unsupported_preserved` se guarda y se sirve, pero no hay prueba de interfaz ni de contrato que lo muestre legible | abierta |
+| [DEBT-019](#debt-019--el-estado-conservado-sin-extractor-no-llega-a-la-pantalla) | S12 | `unsupported_preserved` se guarda y se sirve, pero no hay prueba de interfaz ni de contrato que lo muestre legible | **cerrada** (el estado se enseña con su nombre y su motivo, y hay prueba de la API de punta a punta y prueba de interfaz) |
 
 ---
 
@@ -605,7 +605,7 @@ un slice futuro.
 3. La interfaz dice cuántas sesiones quedan desactualizadas después de activar una clave nueva, en
    lugar de dejar que se descubra sesión a sesión.
 
-**Estado: cerrada (19 de septiembre de 2026), con un matiz en el criterio 3.** Lo entregado:
+**Estado: cerrada (19 de septiembre de 2026).** Lo entregado:
 
 1. **`POST /question-sets/{set_id}/recalculate-sessions`** recalcula **todas** las sesiones
    terminadas del conjunto con su clave activa y devuelve un informe con **una entrada por sesión**:
@@ -615,10 +615,20 @@ un slice futuro.
    el resultado anterior de cada sesión sigue legible (`recalculation.previous_total`).
 2. Sumado a lo que ya hacía S08, recalcular dos veces con la misma clave es idempotente
    (`save_evaluation` no escribe una evaluación nueva si ya existe para ese intento y esa clave).
-3. **El criterio 3 no se cumple como está escrito.** La API dice cuántas sesiones cambiaron
-   *después* de recalcular, pero la interfaz todavía **no avisa** de cuántas quedan desactualizadas
-   al activar una clave nueva: no hay acción en la pantalla de claves que lo diga. Queda como
-   obligación viva de esta entrada, con ese alcance concreto, en lugar de darla por cerrada del todo.
+3. **El criterio 3, cerrado.** La pantalla de plantillas dice cuántas sesiones terminadas del
+   conjunto no están corregidas con la plantilla activa y ofrece recalcularlas de una vez. Se apoya en
+   **`GET /question-sets/{set_id}/outdated-sessions`** (ruta añadida al contrato), que cuenta por
+   sesión y no por impresión: mira la evaluación **vigente** de cada intento y la compara con la clave
+   activa, así que el número baja a cero cuando se recalcula en lugar de quedarse encendido. Las
+   sesiones terminadas **sin ninguna corrección guardada** se cuentan aparte, porque no hay nada que
+   comparar y contarlas como pendientes dejaría un número que no bajaría nunca. Probado en
+   `test_decir_cuantas_sesiones_quedan_desactualizadas_tras_activar_una_clave` (0 → 2 → 0,
+   comprobando además que los tres recuentos suman las terminadas),
+   `test_una_sesion_terminada_sin_correcciones_no_se_cuenta_como_desactualizada` y, de interfaz, en
+   las tres de `preguntas: plantillas`; de extremo a extremo, en el guion `E2E-06 activar una clave
+   corregida avisa y recalcula lo ya corregido`, que recorre el ciclo completo contra el servidor
+   real: sesión fallada (−1) → clave corregida → «1 sesión desactualizada» → recalcular → «0
+   desactualizadas» con «de −1 a 3» en el informe.
 
 **Nota sobre el alcance:** el recálculo en bloque se limita al **conjunto** de preguntas, que es el
 ámbito de la plantilla. Una clave puede cubrir material de varios conjuntos (el mismo temario
@@ -682,6 +692,25 @@ rehecho, y su prueba de interfaz.
 3. La interfaz no permite lanzarla dos veces a la vez ni la presenta como una operación instantánea si
    el corpus es grande.
 
+**Estado: cerrada (19 de septiembre de 2026), en S12, con una honestidad sobre el criterio 2.**
+Entregado en la pantalla de Ajustes, sección «Índice de búsqueda»:
+
+1. `GET /search/index` dice si el índice está completo, cuántos fragmentos hay y cuántos faltan, y
+   `POST /search/reindex` lo rehace. La pantalla enseña el antes y el después, los segundos que ha
+   tardado y de dónde venían los fragmentos; el texto de las evidencias no se toca: el índice es
+   derivado. Probado en `test_rehacer_el_indice_dice_lo_que_ha_hecho` (integración) y en
+   `test_rehacer_el_indice_cuenta_antes_y_despues` / `test_rehacer_el_indice_vacio_lo_dice_sin_fingir_trabajo`
+   (unitarias).
+2. **El criterio 2 no se puede cumplir como está escrito, y se dice por qué**: el índice es FTS5 de
+   contenido externo, y `DELETE FROM evidence_fts` (o `delete-all`) no lo vacía, así que un «borrado
+   a mano» desde SQL mide otra cosa. Lo que sí está probado es (a) que tras un `rebuild` de SQLite la
+   búsqueda encuentra el mismo fragmento (`test_migrations_0018.py`) y (b) que la acción deja el índice
+   completo y la búsqueda sigue encontrando lo que ya estaba. La variante «faltan fragmentos» se
+   prueba en la unitaria de `index_health`, donde el descuadre se puede simular de verdad.
+3. El botón se deshabilita mientras la operación está en marcha (estado `ocupado` compartido con el
+   resto de acciones de la pantalla) y el resultado se da con cifras y con el tiempo medido, no como
+   un «hecho» instantáneo.
+
 ## DEBT-016 — La dificultad observada no existe y los umbrales de dominio son provisionales
 
 **Origen:** cierre de S10 (18 de septiembre de 2026).
@@ -741,19 +770,33 @@ que la prosa del slice cuenta como entregada.
 **Estado: cerrada (19 de septiembre de 2026).** Se entregó la superficie real, criterio por criterio:
 
 1. **Pantalla**: `apps/web/src/features/library/CollectionsPanel.tsx` lista las colecciones con su
-   número de miembros (y su descripción), y permite crear una con nombre y descripción.
+   número de miembros (y su descripción), permite crear una con nombre y descripción, y **quitar
+   miembros**: cada colección con miembros se despliega para verlos por su id y quitarlos uno a uno.
 2. **Filtro en el servidor**: `GET /documents?collection_id=…`. El filtro se resuelve con un `EXISTS`
    correlacionado por los **cinco** tipos de sujeto (versión, artefacto, representación, sección y
    evidencia), así que un documento entra en la colección también si lo que está dentro es una cita
    suya. La pantalla lo dice cuando está filtrando y no descarta nada por su cuenta.
 3. **Pruebas**: de contrato, `test_la_biblioteca_se_filtra_por_coleccion` (con los dos casos: miembro
-   por versión y miembro por evidencia); de interfaz, las cuatro de `biblioteca: colecciones` que
-   recorren crear, filtrar, añadir la versión activa y el caso sin colecciones.
+   por versión y miembro por evidencia); de interfaz, las cinco de `biblioteca: colecciones` que
+   recorren crear, filtrar, añadir la versión activa, quitar un miembro y el caso sin colecciones; y
+   de extremo a extremo, el paso 11 de `E2E-04 documento compartido`, que crea la colección, añade la
+   versión activa, filtra por ella, quita el miembro y comprueba contra la API que el documento sigue
+   existiendo con sus dos versiones.
+4. **Quitar un miembro no borra material**: `DELETE /collections/{collection_id}/items` quita el
+   sujeto de la colección y no toca ni el documento, ni su versión, ni la cita. La pantalla lo dice
+   con esas palabras en el aviso (`El documento no se ha borrado`) y el aviso aparece **donde se hizo
+   la operación**, que es la tarjeta de colecciones.
 
-**Lo que la entrada pedía y no se ha hecho:** **quitar** miembros de una colección. No hay ruta para
-ello (`DELETE /collections/{id}/items/…`) y por tanto tampoco control en la pantalla. Queda como
-obligación viva de esta entrada, que se reabre con ese alcance concreto en lugar de darla por cerrada
-del todo: se puede crear, llenar y filtrar, pero no vaciar.
+**Dos defectos que solo aparecieron al terminar de verdad la superficie, y que merecen quedar
+escritos** (los dos arreglados aquí, no aplazados):
+
+- El aviso de la retirada guardaba su texto en el mismo estado que el de «añadir a una colección», y
+  ese estado solo se pintaba dentro de la ficha de un documento abierto: quitar un miembro **con la
+  ficha cerrada no avisaba de nada**. Se separaron los dos avisos y cada uno se pinta donde se
+  provoca la acción.
+- Con el filtro de una colección vacía activo, la lista enseñaba «Todavía no hay ningún documento» y
+  el texto de que la biblioteca nace promocionando material: la biblioteca tiene documentos, lo que
+  estaba vacío era la colección. Ahora ese caso dice lo que pasa.
 
 **Y un fallo que encontró la prueba de integración, que merece quedar escrito:** la primera versión de
 la consulta no correlacionaba las subconsultas a mano (`correlate(LogicalDocumentRecord)`), y
@@ -805,3 +848,23 @@ corregir los documentos de S02 que describen la omisión que ya no ocurre.
    copiado y que no hay extractor para su formato.
 2. Una prueba de interfaz y una de contrato lo comprueban con un `.xlsx` real de fixture.
 3. Los documentos de S02 y S03 que afirman la omisión quedan corregidos o marcados como históricos.
+
+**Estado: cerrada (19 de septiembre de 2026).** Criterio por criterio:
+
+1. **La bandeja ya no pinta el enum crudo**: `TrayPage.tsx` tiene un mapa `ITEM_STATUS` con el nombre
+   legible y el tono de cada estado. `unsupported_preserved` se enseña como «conservada sin extractor
+   (copiada, sin texto)», con tono de aviso —no de fallo— y con el motivo que sirve el servidor al
+   lado. Antes se veía `unsupported_preserved`, que no dice nada a quien lo lee.
+2. **Dos pruebas nuevas**: `test_un_formato_sin_extractor_se_conserva_y_la_api_lo_dice` (integración,
+   de punta a punta: un `.xlsx` entra por una carpeta, el worker lo copia y lo extrae sin extractor, y
+   la API devuelve el estado con su motivo; el `.txt` del mismo lote sí se extrae) y `un formato sin
+   extractor se ve como conservado y sin texto, no como un fallo` (interfaz).
+3. **La documentación de S02 ya estaba corregida** en la revisión de S00–S11: la limitación 3 de
+   `docs/slices/S02.md` dice ahora, en su sitio, que S03 cambió ese comportamiento y que esa frase
+   describe el estado de S02. La de S03 se revisó y no afirmaba la omisión.
+
+**Lo que este cierre no incluye:** prueba de **contrato** del estado en el esquema (el criterio 2
+pedía una de interfaz y una de contrato). Lo que hay es la de integración —que comprueba el valor
+servido por la ruta real— y la de interfaz; el esquema no gana un `Literal` con los estados de entrada
+porque ya valida el campo como texto y añadirlo sería un cambio de contrato para una deuda ya cubierta
+por dos capas. Queda dicho en lugar de contarlo como hecho.

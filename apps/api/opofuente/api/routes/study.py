@@ -27,6 +27,7 @@ from opofuente.api.study_schemas import (
     CreateSessionSchema,
     CurrentQuestionSchema,
     NavigateRequestSchema,
+    OutdatedSessionsSchema,
     PartScoreSchema,
     RecalculationSchema,
     ReviewSchema,
@@ -446,6 +447,33 @@ def recalculate_study_session(session_id: str, service: StudyServiceDep) -> Sess
     crea evaluaciones nuevas, conserva el resultado anterior y explica de dónde a dónde cambió.
     """
     return _result(service.recalculate(session_id))
+
+
+@router.get(
+    "/question-sets/{set_id}/outdated-sessions",
+    response_model=OutdatedSessionsSchema,
+    responses=RESOURCE_ERRORS,
+    summary="Sesiones terminadas sin corregir con la plantilla activa (ruta añadida: DEBT-013)",
+)
+def outdated_sessions(set_id: str, service: StudyServiceDep) -> OutdatedSessionsSchema:
+    """Cuántas sesiones quedan desactualizadas tras activar una plantilla nueva.
+
+    Es la lectura que faltaba: `POST /question-sets/{set_id}/recalculate-sessions` dice qué cambió
+    **después** de recalcular, y esto dice qué hace falta **antes**. Activar una clave corregida sin
+    recalcular no cambiaba ninguna nota y no se notaba en ninguna pantalla.
+    """
+    vista = service.outdated_sessions(set_id)
+    return OutdatedSessionsSchema(
+        question_set_id=vista.question_set_id,
+        key_version=vista.key_version,
+        key_id=vista.key_id,
+        finished=vista.finished,
+        up_to_date=vista.up_to_date,
+        outdated=vista.outdated,
+        without_evaluation=vista.without_evaluation,
+        outdated_session_ids=list(vista.outdated_session_ids),
+        detail=vista.detail,
+    )
 
 
 @router.post(

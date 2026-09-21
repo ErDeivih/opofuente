@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 import type {
   AnswerKey,
+  OutdatedSessions,
   Question,
   QuestionEvidence,
   QuestionImportReport,
@@ -126,6 +127,19 @@ const INFORME: QuestionImportReport = {
   key_id: 'key-1',
 };
 
+/** Las sesiones del conjunto que no están corregidas con la plantilla activa (DEBT-013). */
+const DESACTUALIZADAS: OutdatedSessions = {
+  question_set_id: 'set-1',
+  key_version: 1,
+  key_id: 'key-1',
+  finished: 2,
+  up_to_date: 0,
+  outdated: 2,
+  without_evaluation: 0,
+  outdated_session_ids: ['ses-1', 'ses-2'],
+  detail: 'de 2 sesión(es) terminadas, 2 no están corregidas con la plantilla v1 activa',
+};
+
 function stubQuestions(overrides: Record<string, StubbedRoute> = {}) {
   return stubApi({
     '/api/v1/oppositions': {
@@ -150,6 +164,7 @@ function stubQuestions(overrides: Record<string, StubbedRoute> = {}) {
       body: { questions: [CONFLICTIVA], total: 1, limit: 100, offset: 0 },
     },
     '/api/v1/question-sets/set-1/answer-keys': { body: [CLAVE] },
+    '/api/v1/question-sets/set-1/outdated-sessions': { body: DESACTUALIZADAS },
     '/api/v1/questions/q-1': { body: PREGUNTA },
     '/api/v1/questions/q-2': { body: CONFLICTIVA },
     '/api/v1/questions/q-1/evidence': { body: [] },
@@ -583,5 +598,111 @@ describe('preguntas: plantillas', () => {
       await screen.findByText('una clave oficial necesita la plantilla oficial enlazada'),
     ).toBeInTheDocument();
     expect(screen.getByText(/la plantilla se queda como estaba/)).toBeInTheDocument();
+  });
+
+  it('dice cuántas sesiones quedan desactualizadas y las recalcula en bloque (DEBT-013)', async () => {
+    const fetchMock = stubQuestions({
+      '/api/v1/question-sets/set-1/recalculate-sessions': {
+        body: {
+          question_set_id: 'set-1',
+          key_version: 1,
+          changed: 1,
+          detail: '2 sesión(es) recalculadas con la plantilla v1: 1 cambiaron de puntuación',
+          sessions: [
+            {
+              session_id: 'ses-1',
+              previous_total: '3',
+              new_total: '1',
+              previous_key_label: 'plantilla v1',
+              new_key_label: 'plantilla v1',
+              changed: true,
+            },
+            {
+              session_id: 'ses-2',
+              previous_total: '2',
+              new_total: '2',
+              previous_key_label: 'plantilla v1',
+              new_key_label: 'plantilla v1',
+              changed: false,
+            },
+          ],
+        },
+      },
+    });
+    renderPreguntas();
+
+    await userEvent.click(await screen.findByRole('tab', { name: 'Plantillas' }));
+
+    // Lo primero es el número, que es lo que antes no se podía saber sin abrir sesión a sesión.
+    expect(await screen.findByText('2 sesiones desactualizadas')).toBeInTheDocument();
+    expect(
+      screen.getByText('de 2 sesión(es) terminadas, 2 no están corregidas con la plantilla v1 activa'),
+    ).toBeInTheDocument();
+
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Recalcular las 2 sesiones desactualizadas' }),
+    );
+
+    // El recálculo va al servidor **en bloque**, no sesión a sesión.
+    await waitFor(() => {
+      expect(
+        fetchMock.mock.calls.some(
+          (call) =>
+            typeof call[0] === 'string' &&
+            call[0].includes('/question-sets/set-1/recalculate-sessions') &&
+            call[1]?.method === 'POST',
+        ),
+      ).toBe(true);
+    });
+
+    // Y el informe dice qué cambió en cada una, incluidas las que no cambiaron nada.
+    expect(
+      await screen.findByText(/2 sesión\(es\) recalculadas con la plantilla v1/),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/de 3 a 1/)).toBeInTheDocument();
+    expect(screen.getByText(/sin cambios \(2\)/)).toBeInTheDocument();
+  });
+
+  it('con todas las sesiones al día no ofrece recalcular nada', async () => {
+    stubQuestions({
+      '/api/v1/question-sets/set-1/outdated-sessions': {
+        body: {
+          ...DESACTUALIZADAS,
+          up_to_date: 2,
+          outdated: 0,
+          outdated_session_ids: [],
+          detail: 'de 2 sesión(es) terminadas, 0 no están corregidas con la plantilla v1 activa',
+        },
+      },
+    });
+    renderPreguntas();
+
+    await userEvent.click(await screen.findByRole('tab', { name: 'Plantillas' }));
+
+    expect(await screen.findByText('0 sesiones desactualizadas')).toBeInTheDocument();
+    // Un botón para recalcular cero sesiones no es una acción: no se enseña.
+    expect(screen.queryByRole('button', { name: /Recalcular las/ })).not.toBeInTheDocument();
+  });
+
+  it('si no se puede contar cuántas quedan atrás, lo dice en lugar de callarse', async () => {
+    stubQuestions({
+      '/api/v1/question-sets/set-1/outdated-sessions': {
+        status: 500,
+        contentType: 'application/problem+json',
+        body: {
+          type: 'about:blank',
+          title: 'Internal Server Error',
+          status: 500,
+          detail: 'la base de datos no responde',
+          code: 'internal_error',
+        },
+      },
+    });
+    renderPreguntas();
+
+    await userEvent.click(await screen.findByRole('tab', { name: 'Plantillas' }));
+
+    expect(await screen.findByText(/No se ha podido contar cuántas sesiones/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Recalcular las/ })).not.toBeInTheDocument();
   });
 });

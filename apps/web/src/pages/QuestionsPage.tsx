@@ -10,11 +10,13 @@ import {
   useCreateQuestionSet,
   useMarkKeySupersedes,
   useOppositions,
+  useOutdatedSessions,
   useParseIntoSet,
   usePatchQuestion,
   useQuestion,
   useQuestionEvidence,
   useQuestionSets,
+  useRecalculateSetSessions,
   useReportIssue,
   useSetQuestions,
 } from '../api/queries';
@@ -86,6 +88,10 @@ export function QuestionsPage() {
   const detalle = useQuestion(questionId);
   const evidencia = useQuestionEvidence(questionId);
   const claves = useAnswerKeys(setId);
+  // DEBT-013: activar una plantilla corregida no cambia sola las notas ya puestas, así que se cuenta
+  // cuántas sesiones se quedan con la corrección vieja y se ofrece recalcularlas de una vez.
+  const desactualizadas = useOutdatedSessions(setId);
+  const recalcularConjunto = useRecalculateSetSessions();
 
   const crear = useCreateQuestionSet();
   const importar = useParseIntoSet();
@@ -449,6 +455,30 @@ export function QuestionsPage() {
                       },
                     );
                   }}
+                  outdated={desactualizadas.data ?? null}
+                  outdatedPending={desactualizadas.isPending}
+                  outdatedError={
+                    desactualizadas.isError ? describeError(desactualizadas.error) : null
+                  }
+                  onRecalculate={() => {
+                    if (setId === null) {
+                      return;
+                    }
+                    recalcularConjunto.mutate(setId, {
+                      onSuccess: (informe) => {
+                        setNotice(
+                          `Recalculadas ${String(informe.sessions.length)} sesión(es): ${String(informe.changed)} cambiaron.`,
+                        );
+                      },
+                    });
+                  }}
+                  recalculating={recalcularConjunto.isPending}
+                  recalculation={recalcularConjunto.data ?? null}
+                  recalculateError={
+                    recalcularConjunto.error === null
+                      ? null
+                      : describeError(recalcularConjunto.error)
+                  }
                 />
               )}
             </>
