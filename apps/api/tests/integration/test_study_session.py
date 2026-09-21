@@ -39,7 +39,13 @@ from opofuente.domain.errors import (
     SessionStateError,
     UnsupportedError,
 )
-from opofuente.domain.study import Confidence, Feedback, SessionMode, SessionStatus
+from opofuente.domain.study import (
+    SUPPORTED_MODES,
+    Confidence,
+    Feedback,
+    SessionMode,
+    SessionStatus,
+)
 from opofuente.infrastructure.db import build_engine, build_session_factory
 from opofuente.infrastructure.document_repository import SqlAlchemyDocumentRepository
 from opofuente.infrastructure.profile_repository import SqlAlchemyProfileRepository
@@ -287,24 +293,16 @@ def test_un_examen_oficial_completo_se_monta_con_el_tiempo_del_grupo(
         )
 
 
-def test_un_modo_sin_implementar_se_rechaza_diciendo_que_falta(seeded_settings: Settings) -> None:
-    set_id = _conjunto_con_clave(seeded_settings, preguntas=5)
-    servicio = _servicio(seeded_settings)
-    opposition_id, convocation_id = _ids_de_oposicion(seeded_settings)
-    assert convocation_id is not None
+def test_todo_modo_del_vocabulario_esta_construido(seeded_settings: Settings) -> None:
+    """Los cinco modos de 06_QUESTIONS §5 están implementados (DEBT-012, cerrada).
 
-    # El repaso de errores ya está construido (S10); el simulacro y el diagnóstico no, y quien los
-    # pida recibe el motivo en lugar de una sesión a medias.
-    for modo in (SessionMode.MOCK_EXAM, SessionMode.DIAGNOSTIC):
-        with pytest.raises(UnsupportedError, match="todavía no está implementado"):
-            servicio.create_session(
-                CreateSessionInput(
-                    opposition_id=opposition_id,
-                    mode=modo,
-                    sources=(SourceInput(question_set_id=set_id, part_code="primera_parte"),),
-                    convocation_version_id=convocation_id,
-                )
-            )
+    Esta prueba sustituye a la que comprobaba que un modo sin implementar se rechazaba: ya no hay
+    ninguno sin implementar. Lo que se comprueba ahora es que el conjunto de modos construidos es el
+    vocabulario **entero**; si alguien declara un sexto modo y no lo construye, esta prueba falla en
+    vez de dejar que el guardia de `create_session` tenga que rechazarlo con un 409.
+    """
+    assert set(SUPPORTED_MODES) == set(SessionMode)
+    assert len(SUPPORTED_MODES) == 5
 
 
 def test_las_partes_que_no_son_una_parte_se_rechazan(seeded_settings: Settings) -> None:

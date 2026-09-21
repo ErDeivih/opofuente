@@ -19,7 +19,7 @@ from __future__ import annotations
 import json
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, replace
-from datetime import datetime
+from datetime import datetime, timedelta
 from fractions import Fraction
 
 from opofuente.application.ports import Clock
@@ -41,6 +41,15 @@ from opofuente.application.study_models import (
     SessionResultView,
     SessionView,
     SubstitutionView,
+)
+from opofuente.domain.diagnostic import (
+    DIAS_VISTA_HACE_POCO,
+    MINIMO_TEMAS_DIAGNOSTICO,
+    DiagnosticReading,
+    DiagnosticTopic,
+    order_for_mock,
+    read_diagnostic,
+    stratified_sample,
 )
 from opofuente.domain.errors import (
     AttemptFrozenError,
@@ -181,7 +190,8 @@ class StudyService:
         if request.mode not in SUPPORTED_MODES:
             raise UnsupportedError(
                 f"el modo «{request.mode.value}» todavía no está implementado: "
-                "este slice construye práctica, repaso de errores y examen oficial"
+                "este slice construye práctica, repaso de errores, examen oficial, simulacro y "
+                "diagnóstico"
             )
         oposicion: OppositionDetail | None = self._profiles.get_opposition(request.opposition_id)
         if oposicion is None:
@@ -189,6 +199,8 @@ class StudyService:
         convocatoria = self._convocatoria(request, oposicion.opposition.convocation_id)
         if request.mode is SessionMode.ERROR_REVIEW:
             return self._create_review_session(request, convocatoria)
+        if request.mode is SessionMode.DIAGNOSTIC:
+            return self._create_diagnostic_session(request, convocatoria)
         if not request.sources:
             raise UnsupportedError("una sesión necesita al menos un conjunto de preguntas")
 
@@ -199,6 +211,17 @@ class StudyService:
         etiquetas: list[str] = []
         limite_tiempo: int | None = None
         conjunto_unico: str | None = request.sources[0].question_set_id
+        #: Preguntas del simulacro que ya se habían visto hace poco. Se cuentan para poder decirlo:
+        #: un
+        #: simulacro que repite sin avisar mide memoria de la última sesión (DEBT-012).
+        repetidas = 0
+
+        #: Preguntas que ya se habían visto hace poco: solo el simulacro las evita (DEBT-012).
+        vistas_hace_poco: frozenset[str] = (
+            self._vistas_hace_poco(request.opposition_id)
+            if request.mode is SessionMode.MOCK_EXAM
+            else frozenset()
+        )
 
         for fuente in request.sources:
             parte = self._parte(convocatoria, fuente.part_code)
@@ -206,7 +229,12 @@ class StudyService:
             clave = self._clave_activa(fuente.question_set_id)
             claves.add(clave.id)
             etiquetas.append(f"{parte.name}: plantilla v{clave.version_no}")
-            preguntas = self._preguntas(fuente, parte, request.mode)
+            preguntas = self._preguntas(fuente, parte, request.mode, recently_seen=vistas_hace_poco)
+            if request.mode is SessionMode.MOCK_EXAM:
+                # Cuántas de las elegidas se habían visto hace poco: el orden de `_preguntas`
+                # prefiere
+                # las frescas, y lo que no se puede evitar se dice en la nota de la sesión.
+                repetidas += sum(1 for pregunta in preguntas if pregunta.id in vistas_hace_poco)
             entradas = {entrada.question_version_id: entrada for entrada in clave.entries}
             # Las reservas se numeran al congelarlas: la convocatoria las valora **por su orden**, y
             # una reserva sin orden no se puede sustituir por la primera. Si el material ya traía un
@@ -249,9 +277,13 @@ class StudyService:
         if len(request.sources) > 1:
             conjunto_unico = None
 
+        # Un examen y un simulacro corrigen al terminar: enseñar la corrección mientras se contesta
+        # filtraría la solución, y el simulacro se parece al examen a propósito
+        # (`SessionConfiguration`
+        # lo exige también desde el dominio, no solo aquí).
         feedback = (
             Feedback.AT_END
-            if request.mode is SessionMode.OFFICIAL_EXAM
+            if request.mode in (SessionMode.OFFICIAL_EXAM, SessionMode.MOCK_EXAM)
             else (request.feedback or Feedback.IMMEDIATE)
         )
         configuracion = SessionConfiguration(
@@ -268,6 +300,11 @@ class StudyService:
             ),
             time_limit_minutes=limite_tiempo,
             shuffle=request.shuffle,
+            note=(
+                None
+                if request.mode is not SessionMode.MOCK_EXAM
+                else self._nota_del_simulacro(repetidas, total=len(congeladas))
+            ),
         )
         plan = assign_positions(congeladas, shuffle=request.shuffle)
         return self._study.create_session(
@@ -377,6 +414,212 @@ class StudyService:
             time_limit_minutes=limite_tiempo,
             key_label=" · ".join(etiquetas),
         )
+
+    def _vistas_hace_poco(self, opposition_id: str) -> frozenset[str]:
+        """Las preguntas intentadas en la ventana reciente de la oposición (DEBT-012)."""
+        ahora = self._clock.now()
+        return self._study.recently_attempted_question_ids(
+            opposition_id, since=ahora - timedelta(days=DIAS_VISTA_HACE_POCO)
+        )
+
+    @staticmethod
+    def _nota_del_simulacro(repetidas: int, *, total: int) -> str:
+        """Lo que un simulacro dice de su propia composición: cuánto ha tenido que repetir.
+
+        No se calla: un simulacro que repite preguntas de ayer mide memoria, no temario, y quien lo
+        hace tiene que poder saber cuánto de lo que acaba de ver ya lo había visto.
+        """
+        if repetidas == 0:
+            return (
+                "simulacro con el perfil exacto del examen: ninguna de sus preguntas se había "
+                "intentado en los últimos días"
+            )
+        return (
+            f"simulacro con el perfil exacto del examen: {repetidas} de {total} pregunta(s) ya se "
+            "habían intentado en los últimos días, porque el banco no daba para más sin repetir"
+        )
+
+    def _create_diagnostic_session(
+        self, request: CreateSessionInput, convocatoria: ConvocationDetail
+    ) -> SessionView:
+        """Monta la muestra estratificada por tema de un diagnóstico (06_QUESTIONS §5).
+
+        La composición **no** la elige quien estudia: la elige la muestra, que es la que sabe qué
+        temas
+        hay y cuánto se ha visto cada pregunta. Una muestra pequeña y repartida sirve para saber por
+        dónde está el hueco; un cuestionario largo con cuatro preguntas de un tema mediría el azar
+        de
+        esas cuatro.
+
+        Lo que **no** hace: inventarse temas. Una pregunta sin nodo del programa aceptado no puede
+        estratificar, así que se queda fuera de la muestra y se cuenta.
+        """
+        if request.sources:
+            raise UnsupportedError(
+                "una sesión de diagnóstico la compone la muestra por temas: no se "
+                "elige el conjunto a mano"
+            )
+        ahora = self._clock.now()
+        intentos_previos = self._study.attempt_counts(request.opposition_id)
+        conjuntos = self._questions.list_sets(opposition_id=request.opposition_id, limit=200).sets
+        con_clave = [conjunto for conjunto in conjuntos if conjunto.active_key_id is not None]
+        if not con_clave:
+            raise UnsupportedError(
+                "ningún conjunto de esta oposición tiene plantilla activa: sin clave no se puede "
+                "corregir un diagnóstico"
+            )
+
+        # Los temas se juntan entre conjuntos: el tema es del programa, no del conjunto del que
+        # salió
+        # la pregunta, así que dos temarios del mismo tema son el mismo tema.
+        candidatas: dict[str, list[QuestionView]] = {}
+        titulos: dict[str, str] = {}
+        sin_tema = 0
+        for conjunto in con_clave:
+            temas_del_conjunto = self._questions.node_titles_of_set(conjunto.id)
+            for pregunta in self._questions.all_questions(conjunto.id):
+                if pregunta.question_type not in _SUPPORTED_QUESTION_TYPES or pregunta.is_reserve:
+                    continue
+                suyos = temas_del_conjunto.get(pregunta.id, ())
+                if not suyos:
+                    sin_tema += 1
+                    continue
+                # El **primer** tema de la pregunta (el de ruta anterior) es el que la estratifica:
+                # una
+                # pregunta asignada a dos temas no puede contar dos veces en la misma muestra.
+                node_id, titulo = suyos[0]
+                titulos[node_id] = titulo
+                candidatas.setdefault(node_id, []).append(pregunta)
+
+        temas_del_banco = tuple(
+            DiagnosticTopic(
+                node_id=node_id,
+                title=titulos[node_id],
+                # Primero las preguntas menos intentadas: preguntar siempre las mismas mediría la
+                # memoria de la última sesión. El orden es estable, no aleatorio.
+                question_ids=tuple(
+                    pregunta.id
+                    for pregunta in sorted(
+                        preguntas,
+                        key=lambda pregunta: (
+                            intentos_previos.get(pregunta.id, 0),
+                            pregunta.position,
+                            pregunta.id,
+                        ),
+                    )
+                ),
+            )
+            for node_id, preguntas in sorted(candidatas.items(), key=lambda par: titulos[par[0]])
+        )
+        if len(temas_del_banco) < MINIMO_TEMAS_DIAGNOSTICO:
+            raise UnsupportedError(
+                f"el banco solo tiene preguntas de {len(temas_del_banco)} tema(s) y un "
+                f"diagnóstico necesita al menos {MINIMO_TEMAS_DIAGNOSTICO} para repartir "
+                "la muestra: asigna las preguntas a sus temas (o pide una práctica)"
+            )
+
+        muestra = stratified_sample(temas_del_banco, without_topic=sin_tema)
+        if not muestra.question_ids:
+            raise UnsupportedError("la muestra del diagnóstico ha salido vacía: revisa el banco")
+
+        # La parte de una pregunta del banco no está declarada: el diagnóstico no es un examen, así
+        # que
+        # sus preguntas se congelan **sin parte** y se corrigen en directo, sin la penalización que
+        # la
+        # convocatoria fija para un examen. Inventar a qué parte pertenece cada pregunta sería peor.
+        por_id = {
+            pregunta.id: pregunta for preguntas in candidatas.values() for pregunta in preguntas
+        }
+        claves: dict[str, str] = {}
+        etiquetas: list[str] = []
+        congeladas: list[FrozenQuestion] = []
+        for posicion, question_id in enumerate(muestra.question_ids, start=1):
+            pregunta = por_id[question_id]
+            clave = self._clave_activa(pregunta.question_set_id)
+            claves[pregunta.question_set_id] = clave.id
+            etiqueta = f"plantilla v{clave.version_no}"
+            if etiqueta not in etiquetas:
+                etiquetas.append(etiqueta)
+            entrada = next(
+                (
+                    candidata
+                    for candidata in clave.entries
+                    if candidata.question_version_id == pregunta.id
+                ),
+                None,
+            )
+            congeladas.append(
+                FrozenQuestion(
+                    question_version_id=pregunta.id,
+                    stable_key=pregunta.stable_key,
+                    position=posicion,
+                    part_code=None,
+                    is_reserve=False,
+                    reserve_order=None,
+                    key_outcome=entrada.outcome if entrada is not None else None,
+                    correct_option_keys=(
+                        entrada.correct_option_keys if entrada is not None else ()
+                    ),
+                )
+            )
+
+        configuracion = SessionConfiguration(
+            mode=request.mode,
+            feedback=request.feedback or Feedback.IMMEDIATE,
+            sources=(),
+            time_limit_minutes=None,
+            shuffle=request.shuffle,
+            note=muestra.detail,
+        )
+        return self._study.create_session(
+            opposition_id=request.opposition_id,
+            configuration=configuracion,
+            questions=assign_positions(congeladas, shuffle=request.shuffle),
+            now=ahora,
+            convocation_version_id=convocatoria.summary.id,
+            question_set_id=next(iter(claves)) if len(claves) == 1 else None,
+            answer_key_version_id=next(iter(claves.values())) if len(claves) == 1 else None,
+            time_limit_minutes=None,
+            key_label=" · ".join(etiquetas),
+        )
+
+    def diagnostic_reading(self, session_id: str) -> DiagnosticReading:
+        """Lee una sesión de diagnóstico: por tema, con su intervalo y el tamaño de la muestra.
+
+        Solo tiene sentido en un diagnóstico, y se dice con un 409 en cualquier otro modo: la
+        lectura
+        de una muestra pequeña **no** es la nota de un examen, y presentarla al lado de la
+        puntuación
+        de una práctica invitaría a leerla como si lo fuera.
+        """
+        session = self._session_or_404(session_id)
+        if session.mode is not SessionMode.DIAGNOSTIC:
+            raise UnsupportedError(
+                f"la lectura por temas es del diagnóstico, y esta sesión es de "
+                f"«{session.mode.value}»: una muestra pequeña no se lee igual que un examen"
+            )
+        congeladas = self._study.session_questions(session_id)
+        intentos = self._indice_intentos(session_id)
+        temas_por_pregunta = self._questions.node_titles_of_questions(
+            [congelada.question_version_id for congelada in congeladas]
+        )
+        acumulado: dict[str, tuple[str, int, int]] = {}
+        for congelada in congeladas:
+            suyos = temas_por_pregunta.get(congelada.question_version_id, ())
+            # Sin tema, la pregunta no se puede leer por tema: se agrupa aparte y se dice, en lugar
+            # de
+            # repartirla a un tema que no le corresponde.
+            node_id, titulo = suyos[0] if suyos else ("sin-tema", "sin tema asignado")
+            intento = intentos.get(congelada.question_version_id)
+            respondidas = 0
+            acertadas = 0
+            if intento is not None:
+                respondidas = 1
+                calificado = self._calificar(session, congelada, intento.chosen_option_keys)
+                acertadas = 1 if calificado.outcome is AttemptOutcome.CORRECT else 0
+            previo = acumulado.get(node_id, (titulo, 0, 0))
+            acumulado[node_id] = (titulo, previo[1] + respondidas, previo[2] + acertadas)
+        return read_diagnostic(acumulado, sample_size=len(congeladas))
 
     def list_sessions(
         self,
@@ -942,9 +1185,19 @@ class StudyService:
         return activa
 
     def _preguntas(
-        self, fuente: SourceInput, parte: _PartContext, modo: SessionMode
+        self,
+        fuente: SourceInput,
+        parte: _PartContext,
+        modo: SessionMode,
+        *,
+        recently_seen: frozenset[str] = frozenset(),
     ) -> tuple[QuestionView, ...]:
-        """Las preguntas de una fuente: ordinarias primero y reservas después, sin inventar."""
+        """Las preguntas de una fuente: ordinarias primero y reservas después, sin inventar.
+
+        En un **simulacro** el banco se ordena antes de elegir: primero las preguntas que no se han
+        visto hace poco y después las demás, para que las que entran sean las frescas (DEBT-012). El
+        examen oficial **no** reordena: se presenta en el orden de su publicación.
+        """
         conjunto = self._questions.get_set(fuente.question_set_id)
         if conjunto is None:
             raise NotFoundError("conjunto de preguntas", fuente.question_set_id)
@@ -955,7 +1208,14 @@ class StudyService:
         ordinarias = [pregunta for pregunta in validas if not pregunta.is_reserve]
         reservas = [pregunta for pregunta in validas if pregunta.is_reserve]
 
-        if modo is SessionMode.OFFICIAL_EXAM:
+        if modo is SessionMode.MOCK_EXAM and recently_seen:
+            por_id = {pregunta.id: pregunta for pregunta in ordinarias}
+            frescas, vistas = order_for_mock(
+                [pregunta.id for pregunta in ordinarias], recently_seen=recently_seen
+            )
+            ordinarias = [por_id[identificador] for identificador in (*frescas, *vistas)]
+
+        if modo in (SessionMode.OFFICIAL_EXAM, SessionMode.MOCK_EXAM):
             if parte.ordinary_items is None:
                 raise UnsupportedError(
                     f"la convocatoria no dice cuántas preguntas tiene la parte «{parte.code}»: "
@@ -1030,8 +1290,18 @@ class StudyService:
         )
 
     def _penalizacion(self, session: SessionView, pregunta: SessionQuestionView) -> Fraction:
-        parte = self._parte_de(session, pregunta.part_code)
-        return parte.rule.penalty
+        """La penalización con la que se corrige una pregunta.
+
+        Una pregunta **sin parte declarada** se corrige sin penalización: es el caso de un
+        diagnóstico,
+        cuya muestra sale del banco y no de una parte del examen. Aplicarle la penalización de una
+        parte
+        inventada sería peor que corregir en directo, y el resultado ya lo dice (`part_code` nulo y
+        forma de cálculo directa).
+        """
+        if pregunta.part_code is None:
+            return Fraction(0)
+        return self._parte_de(session, pregunta.part_code).rule.penalty
 
     def _parte_de(self, session: SessionView, part_code: str | None) -> _PartContext:
         if part_code is None:

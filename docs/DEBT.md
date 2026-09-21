@@ -23,7 +23,7 @@ Reglas:
 | [DEBT-009](#debt-009--el-texto-plano-no-produce-secciones-y-sin-secciones-no-hay-citas) | S06 | El texto plano y el texto pegado no producen secciones: sin ellas no hay citas ni diff | **cerrada en S06** |
 | [DEBT-010](#debt-010--una-pregunta-importada-no-queda-enlazada-a-su-sección) | S06/S11 | Importar preguntas no las enlaza a la sección que las sostiene, y `tags`/`source`/`parte` se leen pero no se guardan | **cerrada** (20 de septiembre de 2026: importación desde una versión de documento con su cita, abrible en su página; la parte y las etiquetas se declaran, con la decisión en ADR-014) |
 | [DEBT-011](#debt-011--la-pantalla-del-banco-solo-enseña-las-primeras-100-preguntas) | S09 | La pantalla del banco pide 100 preguntas y no permite recorrer el resto de un conjunto grande | **cerrada en la revisión de S00–S11** (obligación vencida desde S09; se cerró con paginación real y prueba) |
-| [DEBT-012](#debt-012--modos-de-sesión-declarados-y-sin-implementar) | S11+ | Simulacro y diagnóstico están en el vocabulario del modelo y no implementados | abierta (S10 implementó el **repaso de errores**; siguen fuera el simulacro y el diagnóstico) |
+| [DEBT-012](#debt-012--modos-de-sesión-declarados-y-sin-implementar) | S11+ | Simulacro y diagnóstico están en el vocabulario del modelo y no implementados | **cerrada** (21 de septiembre de 2026: simulacro con el perfil exacto que evita lo visto hace poco y diagnóstico con muestra por temas e intervalo de Wilson; el contrato declara los cinco modos) |
 | [DEBT-013](#debt-013--el-recálculo-no-se-puede-hacer-en-bloque) | S09+ | Recalcular una clave corregida es sesión a sesión, y solo se conserva un resultado anterior | **cerrada** (20 de septiembre de 2026: recálculo en bloque con informe por sesión, y la pantalla de plantillas dice cuántas sesiones quedan desactualizadas y las recalcula) |
 | [DEBT-014](#debt-014--sin-proveedor-de-embeddings-ni-de-lenguaje-el-rag-es-extractivo) | S10+ | No hay embeddings, ni índice vectorial, ni proveedor de lenguaje: la búsqueda es léxica y la respuesta extractiva | abierta |
 | [DEBT-015](#debt-015--el-índice-léxico-se-puede-rehacer-pero-no-desde-la-interfaz) | S12 | El índice léxico se rehace desde el servicio y no hay acción en Ajustes que lo haga | **cerrada en S12** (entregada y probada, con la honestidad del criterio 2 escrita: el índice es FTS5 de contenido externo y «borrarlo a mano» no lo vacía) |
@@ -616,6 +616,51 @@ contrato no coinciden a propósito: el contrato solo declara los modos que se co
 2. El contrato declara exactamente los modos que existen, y el vocabulario del modelo y el del contrato
    vuelven a coincidir.
 3. Una prueba comprueba que un modo declarado en el contrato no responde 409 `unsupported`.
+
+**Estado: cerrada (21 de septiembre de 2026).** Los dos modos que faltaban están construidos, y el
+vocabulario del modelo y el del contrato vuelven a coincidir:
+
+1. **Simulacro (`mock_exam`)** — «el perfil exacto, sin llamarse oficial, evitando lo visto hace poco»
+   (06_QUESTIONS §5). Monta el tamaño y las reservas de la convocatoria, corrige **al terminar** (el
+   dominio lo exigía desde S07 y no había modo que lo usara) y ordena el banco por frescura antes de
+   elegir: primero las preguntas que no se han intentado en los últimos 60 días —la misma ventana que
+   usa la estimación de dominio— y solo después las demás. La sesión nace con su **nota de composición**
+   («ninguna de sus preguntas se había intentado» o «N de M ya se habían intentado, porque el banco no
+   daba para más»), y el resultado se explica con `MOCK_EXAM_NOTE`: el perfil es el del examen, pero
+   **no es un examen oficial**.
+2. **Diagnóstico (`diagnostic`)** — «muestra pequeña estratificada, con estimación por tema y
+   **intervalo**, no un porcentaje de dominio» (§5). Compone una muestra **repartida por temas** del
+   programa (round-robin: una de cada tema antes de repetir en uno, empezando por las preguntas menos
+   intentadas, con el tope declarado y los temas que se quedan fuera por el tope escritos), congela las
+   preguntas **sin parte** —no es un examen de una parte— y `GET /study-sessions/{id}/diagnostic` (ruta
+   añadida al contrato, registrada en ADR-013) devuelve la lectura: por tema, lo contestado y su
+   **intervalo de Wilson al 95 %**, con el tamaño de la muestra delante y la frase que dice que no es una
+   nota ni un dominio. Los temas sin ninguna respuesta en la muestra se declaran, y una pregunta sin tema
+   asignado no entra en la muestra y se cuenta (no se reparte a un tema que no le corresponde).
+3. **El contrato declara los cinco** (`SessionModeName`), y una prueba —`los_cinco_modos_del_vocabulario_se_pueden_pedir`— comprueba que ninguno responde «no implementado»: los que se niegan, se niegan
+   por falta de material (sin temas, sin nada vencido) y lo dicen con ese motivo.
+
+**Un defecto que apareció al construir el diagnóstico, y que se arregla aquí:** la pantalla creaba los
+conjuntos **sin convocatoria**, así que la columna `topic` de un CSV no tenía contra qué resolverse y los
+temas se perdían **en silencio** (el asistente ofrecía la columna, el informe no decía nada y el banco
+quedaba sin cobertura de programa). Ahora el formulario manda la convocatoria activa de la oposición y el
+informe declara los temas que no se han podido emparejar (`topic_without_convocation`, `topic_not_found`)
+en lugar de callárselos.
+
+**Pruebas:** unitarias del dominio (`test_diagnostic.py`: reparto round-robin, tope con temas fuera,
+muestra sin temas, y los intervalos calculados a mano —2 de 2 da (0,34; 1,0) y no «dominio perfecto»—);
+de API (`test_un_simulacro_monta_el_perfil_exacto_y_no_se_llama_oficial`,
+`test_un_simulacro_evita_las_preguntas_vistas_hace_poco` —que comprueba **en la composición**, no solo en
+la nota, que ninguna vista entra—, `test_un_simulacro_sin_banco_suficiente_repite_y_lo_dice`,
+`test_un_diagnostico_compone_una_muestra_pequena_por_tema`,
+`test_la_lectura_del_diagnostico_da_por_tema_un_intervalo`,
+`test_la_lectura_por_temas_no_vale_para_una_practica` y
+`test_un_diagnostico_sin_temas_suficientes_no_se_monta`); de interfaz (el simulacro se pide con el perfil
+y sin campos que la convocatoria fija; el diagnóstico se pide sin conjunto ni parte; la lectura se enseña
+con su intervalo y su aviso); y de extremo a extremo
+(`E2E-06 un diagnóstico reparte la muestra por temas y la lee con su intervalo`, que importa un CSV con
+temas, monta el diagnóstico desde la pantalla, contesta la muestra entera y lee el intervalo contra el
+servidor real).
 
 ## DEBT-013 — El recálculo no se puede hacer en bloque
 

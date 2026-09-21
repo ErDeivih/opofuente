@@ -30,9 +30,19 @@ export type SessionStatus = StudySession['status'];
 export type FeedbackName = StudySession['feedback'];
 export type AttemptOutcome = SessionQuestionCorrection['outcome'];
 export type Confidence = NonNullable<AnswerRequest['confidence']>;
+export type DiagnosticReading = components['schemas']['DiagnosticReadingSchema'];
+export type DiagnosticTopic = components['schemas']['DiagnosticTopicSchema'];
+export type DiagnosticInterval = components['schemas']['IntervalSchema'];
 
 /** Modos que el contrato declara: son los que el servidor implementa de verdad. */
-export const SESSION_MODES: readonly SessionMode[] = ['practice', 'official_exam'];
+export const SESSION_MODES: readonly SessionMode[] = [
+  'practice',
+  'official_exam',
+  'mock_exam',
+];
+
+/** Modos cuya composición no se elige a mano: la pone el servidor (DEBT-012). */
+export const COMPOSED_MODES: readonly SessionMode[] = ['diagnostic', 'error_review'];
 
 /** Cuándo se puede ver la corrección. La pantalla no decide esto: lo dice el servidor. */
 export const FEEDBACKS: readonly FeedbackName[] = ['immediate', 'at_end'];
@@ -133,6 +143,18 @@ export function recalculateSession(sessionId: string): Promise<SessionResult> {
   return apiFetch<SessionResult>(
     `/api/v1/study-sessions/${encodeURIComponent(sessionId)}/recalculate`,
     { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) },
+  );
+}
+
+/**
+ * La lectura por temas de un diagnóstico (ruta añadida a §10 al cerrar DEBT-012).
+ *
+ * Es un análisis de la muestra, no la nota: el servidor la niega con un 409 para cualquier otro modo,
+ * y la pantalla solo la pide cuando la sesión es un diagnóstico.
+ */
+export function fetchDiagnosticReading(sessionId: string): Promise<DiagnosticReading> {
+  return apiFetch<DiagnosticReading>(
+    `/api/v1/study-sessions/${encodeURIComponent(sessionId)}/diagnostic`,
   );
 }
 

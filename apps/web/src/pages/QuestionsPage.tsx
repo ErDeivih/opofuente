@@ -272,6 +272,10 @@ export function QuestionsPage() {
                     opposition_id: activa.id,
                     set_type: nuevo.setType as (typeof SET_TYPES)[number],
                     model_code: nuevo.modelCode.trim() === '' ? null : nuevo.modelCode.trim(),
+                    // La convocatoria de la oposición activa: sin ella el conjunto no cuelga de ningún
+                    // programa, así que una columna `topic` no tendría contra qué resolverse (y la
+                    // muestra por temas del diagnóstico se quedaría sin temas).
+                    convocation_version_id: activa.active_convocation?.id ?? null,
                   },
                   {
                     onSuccess: (creado) => {

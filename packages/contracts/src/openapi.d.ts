@@ -2139,6 +2139,33 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/study-sessions/{session_id}/diagnostic": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * La lectura por temas de un diagnóstico (ruta añadida: DEBT-012)
+         * @description Qué dice la muestra de un diagnóstico, tema por tema y con su intervalo.
+         *
+         *     Ruta **añadida** al contrato §10 y registrada en ADR-013. Va aparte del resultado porque no es
+         *     lo
+         *     mismo: el resultado dice la puntuación directa de la muestra —que no es una nota— y esta lectura
+         *     dice, por tema, qué se contestó y con qué incertidumbre. Mezclarlas invitaría a leer el
+         *     intervalo
+         *     como una calificación.
+         */
+        get: operations["diagnostic_reading_api_v1_study_sessions__session_id__diagnostic_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/study-sessions/{session_id}/finish": {
         parameters: {
             query?: never;
@@ -3079,7 +3106,7 @@ export interface components {
              * Mode
              * @enum {string}
              */
-            mode: "practice" | "error_review" | "official_exam";
+            mode: "practice" | "error_review" | "official_exam" | "mock_exam" | "diagnostic";
             /** Opposition Id */
             opposition_id: string;
             /**
@@ -3319,6 +3346,31 @@ export interface components {
             updated_at: string;
         };
         /**
+         * DiagnosticReadingSchema
+         * @description La lectura de un diagnóstico: por tema y con el tamaño de la muestra delante.
+         *
+         *     Los intervalos viajan **con** sus recuentos porque sin ellos no se pueden leer: un intervalo
+         *     ancho
+         *     sobre dos preguntas y uno estrecho sobre veinte no dicen lo mismo.
+         */
+        DiagnosticReadingSchema: {
+            /** Answered */
+            answered: number;
+            /** Detail */
+            detail: string;
+            /**
+             * Mode
+             * @enum {string}
+             */
+            mode: "practice" | "error_review" | "official_exam" | "mock_exam" | "diagnostic";
+            /** Sample Size */
+            sample_size: number;
+            /** Session Id */
+            session_id: string;
+            /** Topics */
+            topics: components["schemas"]["DiagnosticTopicSchema"][];
+        };
+        /**
          * DiagnosticSchema
          * @description Diagnóstico sanitizado (09_SECURITY §12): sin secretos, sin contenido y sin rutas completas.
          *
@@ -3365,6 +3417,23 @@ export interface components {
             schema_revision: string;
             /** Version */
             version: string;
+        };
+        /**
+         * DiagnosticTopicSchema
+         * @description Lo que se contestó de un tema en la muestra, con su intervalo y su aviso.
+         */
+        DiagnosticTopicSchema: {
+            /** Answered */
+            answered: number;
+            /** Correct */
+            correct: number;
+            interval?: components["schemas"]["IntervalSchema"] | null;
+            /** Node Id */
+            node_id: string;
+            /** Note */
+            note: string;
+            /** Title */
+            title: string;
         };
         /** DocumentDetailSchema */
         DocumentDetailSchema: {
@@ -3920,6 +3989,20 @@ export interface components {
             healthy: boolean;
             /** Missing Entries */
             missing_entries: number;
+        };
+        /**
+         * IntervalSchema
+         * @description Un intervalo de confianza sobre una muestra pequeña, con su nivel declarado.
+         */
+        IntervalSchema: {
+            /** Confidence */
+            confidence: number;
+            /** High */
+            high: number;
+            /** Low */
+            low: number;
+            /** Width */
+            width: number;
         };
         /**
          * InventorySchema
@@ -5540,7 +5623,9 @@ export interface components {
              * Mode
              * @enum {string}
              */
-            mode: "practice" | "error_review" | "official_exam";
+            mode: "practice" | "error_review" | "official_exam" | "mock_exam" | "diagnostic";
+            /** Note */
+            note?: string | null;
             /** Shuffle */
             shuffle: boolean;
             /** Sources */
@@ -5629,7 +5714,7 @@ export interface components {
              * Mode
              * @enum {string}
              */
-            mode: "practice" | "error_review" | "official_exam";
+            mode: "practice" | "error_review" | "official_exam" | "mock_exam" | "diagnostic";
             /** Official Available */
             official_available: boolean;
             /** Official Note */
@@ -5677,7 +5762,7 @@ export interface components {
              * Mode
              * @enum {string}
              */
-            mode: "practice" | "error_review" | "official_exam";
+            mode: "practice" | "error_review" | "official_exam" | "mock_exam" | "diagnostic";
             /** Opposition Id */
             opposition_id: string;
             /** Question Set Id */
@@ -12963,6 +13048,55 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CurrentQuestionSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    diagnostic_reading_api_v1_study_sessions__session_id__diagnostic_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiagnosticReadingSchema"];
                 };
             };
             /** @description El recurso no existe. */

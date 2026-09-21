@@ -76,16 +76,26 @@ async function prepararPractica(page: Page, titulo: string, cantidad: string): P
  * Al entrar, la pantalla retoma la última sesión (una a medias se continúa, una terminada enseña su
  * resultado), así que para preparar una nueva hay que pedirlo explícitamente: es el botón «Preparar
  * otra sesión».
+ *
+ * Los dos tiempos de espera son largos a propósito y por una razón medida: mientras la lista de
+ * sesiones se relee, la configuración **no** se pinta (para no sustituir un formulario a medio
+ * rellenar), así que con el equipo cargado —una corrida de puertas entera— 10 s no llegan. Una prueba
+ * que de verdad falla sigue fallando: lo que cambia es cuánto se espera a la pantalla, no lo que se
+ * comprueba.
  */
 async function irAConfiguracion(page: Page): Promise<void> {
   await page.goto('/estudiar');
   await expect(page.getByRole('heading', { level: 1, name: 'Estudiar' })).toBeVisible();
   const prepararOtra = page.getByRole('button', { name: 'Preparar otra sesión' });
-  await expect(prepararOtra.or(page.getByRole('heading', { name: 'Preparar la sesión' }))).toBeVisible();
+  await expect(prepararOtra.or(page.getByRole('heading', { name: 'Preparar la sesión' }))).toBeVisible({
+    timeout: 20_000,
+  });
   if (await prepararOtra.isVisible()) {
     await prepararOtra.click();
   }
-  await expect(page.getByRole('heading', { name: 'Preparar la sesión' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Preparar la sesión' })).toBeVisible({
+    timeout: 20_000,
+  });
 }
 
 test('E2E-06 sesión: acertar, fallar, dejar en blanco y ver la puntuación por partes', async ({
@@ -215,4 +225,82 @@ test('E2E-06 activar una clave corregida avisa y recalcula lo ya corregido (DEBT
   await expect(page.getByText(/1 sesión\(es\) recalculadas con la plantilla v2/)).toBeVisible();
   await expect(page.getByText(/de -1 a 3/)).toBeVisible();
   await expect(page.getByText('0 sesiones desactualizadas')).toBeVisible();
+});
+
+test('E2E-06 un diagnóstico reparte la muestra por temas y la lee con su intervalo (DEBT-012)', async ({
+  page,
+}) => {
+  const titulo = await crearConjuntoConClave(page);
+
+  // Se importan seis preguntas con su tema: la muestra se reparte por temas del programa, así que sin
+  // temas no hay diagnóstico. Es la vía documentada (la columna `topic` del CSV).
+  await page.goto('/preguntas');
+  const conjunto = page.getByLabel('Conjunto abierto');
+  const opcion = conjunto.locator('option', { hasText: titulo });
+  await expect(opcion).toHaveCount(1);
+  await conjunto.selectOption((await opcion.first().getAttribute('value')) ?? '');
+  await page.getByRole('tab', { name: 'Importar' }).click();
+  await page.getByLabel('Qué se importa').selectOption('csv');
+  await page.getByLabel('Columna del enunciado').fill('enunciado');
+  await page.getByLabel('Columnas de opciones (separadas por comas)').fill('op1, op2');
+  await page.getByLabel('Columna de la clave').fill('clave');
+  await page.getByLabel('Columna del tema').fill('tema');
+  await page.getByLabel('Contenido del CSV (con su cabecera)').fill(
+    [
+      'enunciado;op1;op2;clave;tema',
+      'La Constitucion se aprobo en;1976;1978;a;I.1',
+      'Las Cortes Generales son;bicamerales;unicamerales;a;I.2',
+      'El Gobierno se compone de;presidente y ministros;diputados;a;I.3',
+      'El DNI electronico sirve para;identificarse;firmar;a;I.1',
+      'La proteccion de datos se regula en;la LOPDGDD;la LEC;a;I.2',
+      'La sede electronica es;un punto de acceso;un registro;a;I.3',
+    ].join('\n'),
+  );
+  await page.getByRole('button', { name: 'Importar en el conjunto' }).click();
+  await expect(page.getByText('Importadas 6 preguntas nuevas y 6 claves.')).toBeVisible();
+
+  // La plantilla que llega con el CSV nace en borrador: sin activarla no se corrige nada.
+  await page.getByRole('tab', { name: 'Plantillas' }).click();
+  await page.getByRole('button', { name: 'Activar la plantilla v2' }).click();
+  await page
+    .getByRole('button', { name: 'Confirmar la activación de la plantilla v2' })
+    .click();
+  await expect(page.getByText(/Plantilla activada y aprobada/)).toBeVisible();
+
+  // Y el diagnóstico: sin elegir conjunto ni parte, porque la muestra la compone el servidor.
+  await irAConfiguracion(page);
+  await page.getByText('¿No sabes por dónde empezar? Haz un diagnóstico').click();
+  await expect(page.getByText(/muestra pequeña repartida por temas/)).toBeVisible();
+  await page.getByRole('button', { name: 'Crear el diagnóstico' }).click();
+
+  await expect(page.getByText(/Sesión de diagnóstico lista/)).toBeVisible();
+  // Dos preguntas por tema: tres temas del CSV, seis preguntas.
+  await expect(page.getByText(/0 de 6 respondidas/)).toBeVisible();
+
+  // Se contestan las seis (todas correctas: la clave del CSV es la opción A, la primera).
+  for (let posicion = 1; posicion <= 6; posicion += 1) {
+    await expect(
+      page.getByRole('heading', { name: `Pregunta ${String(posicion)}` }),
+    ).toBeVisible();
+    await page.getByRole('radio').first().check();
+    await page.getByRole('button', { name: 'Enviar la respuesta' }).click();
+    await expect(page.getByText('Respuesta guardada.')).toBeVisible();
+    if (posicion < 6) {
+      await page.getByRole('button', { name: 'Ir a la pregunta siguiente' }).click();
+    }
+  }
+  await page.getByRole('button', { name: 'Terminar la sesión' }).click();
+
+  // La lectura por temas, con su intervalo y su muestra: lo que un diagnóstico tiene que decir.
+  await expect(page.getByRole('heading', { name: 'Estimación por tema' })).toBeVisible();
+  await expect(page.getByText(/un intervalo estrecho no es posible/)).toBeVisible();
+  const tabla = page.getByRole('table', { name: /Muestra por tema con su intervalo/ });
+  await expect(tabla).toBeVisible();
+  await expect(tabla.getByRole('row')).toHaveCount(4, { timeout: 10_000 });
+  // El tema se llama como el programa oficial (el nodo del temario), no como la columna del CSV.
+  const filaTema = tabla.getByRole('row', { name: /Constitución Española de 1978/ });
+  await expect(filaTema).toContainText('2 de 2');
+  await expect(filaTema).toContainText('0.34 – 1.00');
+  // Y el resultado no se llama nota: es el recuento de una muestra.
+  await expect(page.getByText(/no son una nota ni un dominio/)).toBeVisible();
 });

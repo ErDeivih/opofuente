@@ -92,6 +92,7 @@ import {
   answerQuestion,
   createSession,
   fetchCurrentQuestion,
+  fetchDiagnosticReading,
   fetchSession,
   fetchSessionResult,
   fetchSessionReview,
@@ -197,6 +198,7 @@ export const queryKeys = {
   studyCurrent: (sessionId: string) => ['study', 'session', sessionId, 'current'] as const,
   studyReview: (sessionId: string) => ['study', 'session', sessionId, 'review'] as const,
   studyResult: (sessionId: string) => ['study', 'session', sessionId, 'result'] as const,
+  studyDiagnostic: (sessionId: string) => ['study', 'session', sessionId, 'diagnostic'] as const,
   /* S09: búsqueda y RAG. Cuelgan de «search» porque una consulta guarda su recuperación y su
      respuesta, y las tres cosas cambian juntas. */
   searchResults: (query: string, versionMode: string) =>
@@ -1005,6 +1007,20 @@ export function useStudyResult(sessionId: string | null, enabled = true) {
   return useQuery({
     queryKey: queryKeys.studyResult(sessionId ?? 'ninguna'),
     queryFn: () => fetchSessionResult(sessionId as string),
+    enabled: sessionId !== null && enabled,
+  });
+}
+
+/**
+ * La lectura por temas de un diagnóstico (DEBT-012).
+ *
+ * Se pide **solo** cuando la sesión es un diagnóstico: en otro modo el servidor responde 409, y pedirla
+ * para que falle sería ruido en la pantalla y en los registros.
+ */
+export function useDiagnosticReading(sessionId: string | null, enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.studyDiagnostic(sessionId ?? 'ninguna'),
+    queryFn: () => fetchDiagnosticReading(sessionId as string),
     enabled: sessionId !== null && enabled,
   });
 }

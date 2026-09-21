@@ -102,17 +102,24 @@ async function crearConjuntoConClave(page: Page, material_: Material): Promise<s
   return titulo;
 }
 
-/** Prepara una práctica de una pregunta y la falla, declarando después por qué. */
+/** Prepara una práctica de una pregunta y la falla, declarando después por qué.
+ *
+ * Los dos tiempos de espera son largos por una razón medida: mientras la lista de sesiones se relee, la
+ * configuración **no** se pinta (para no sustituir un formulario a medio rellenar), así que con el
+ * equipo cargado —una corrida de puertas entera— 10 s no llegan. Lo que se comprueba no cambia.
+ */
 async function practicarYFallar(page: Page, titulo: string): Promise<void> {
   await page.goto('/estudiar');
   const prepararOtra = page.getByRole('button', { name: 'Preparar otra sesión' });
   await expect(
     prepararOtra.or(page.getByRole('heading', { name: 'Preparar la sesión' })),
-  ).toBeVisible();
+  ).toBeVisible({ timeout: 20_000 });
   if (await prepararOtra.isVisible()) {
     await prepararOtra.click();
   }
-  await expect(page.getByRole('heading', { name: 'Preparar la sesión' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Preparar la sesión' })).toBeVisible({
+    timeout: 20_000,
+  });
 
   const conjunto = page.getByLabel('Conjunto de preguntas');
   const opcion = conjunto.locator('option', { hasText: titulo });

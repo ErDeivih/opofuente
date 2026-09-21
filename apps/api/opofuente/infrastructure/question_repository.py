@@ -1104,6 +1104,87 @@ class SqlAlchemyQuestionRepository:
             session.commit()
             return True
 
+    def node_titles_of_set(self, set_id: str) -> dict[str, tuple[tuple[str, str], ...]]:
+        """Los temas (nodos del programa) de cada pregunta del conjunto, por orden de nodo.
+
+        Lo usa el diagnóstico para estratificar la muestra (DEBT-012). Solo cuenta lo **aceptado**:
+        una
+        propuesta de mapeo sin revisar no es un tema de la pregunta, y usarla metería en el
+        diagnóstico
+        una clasificación que nadie ha confirmado.
+        """
+        with self._session_factory() as session:
+            filas = session.execute(
+                select(
+                    CurriculumMappingRecord.subject_id,
+                    CurriculumNodeRecord.id,
+                    CurriculumNodeRecord.title,
+                    CurriculumNodeRecord.position,
+                    CurriculumNodeRecord.path,
+                )
+                .join(
+                    CurriculumNodeRecord,
+                    CurriculumNodeRecord.id == CurriculumMappingRecord.curriculum_node_id,
+                )
+                .join(
+                    QuestionVersionRecord,
+                    QuestionVersionRecord.id == CurriculumMappingRecord.subject_id,
+                )
+                .where(
+                    CurriculumMappingRecord.subject_type == "question_version",
+                    CurriculumMappingRecord.status == "accepted",
+                    QuestionVersionRecord.question_set_id == set_id,
+                )
+                .order_by(
+                    CurriculumMappingRecord.subject_id,
+                    CurriculumNodeRecord.path,
+                    CurriculumNodeRecord.id,
+                )
+            ).all()
+        acumulado: dict[str, list[tuple[str, str]]] = {}
+        for pregunta_id, node_id, titulo, _posicion, _ruta in filas:
+            acumulado.setdefault(str(pregunta_id), []).append((str(node_id), str(titulo)))
+        return {pregunta: tuple(temas) for pregunta, temas in acumulado.items()}
+
+    def node_titles_of_questions(
+        self, question_ids: Sequence[str]
+    ) -> dict[str, tuple[tuple[str, str], ...]]:
+        """Los temas de unas preguntas concretas, por orden de nodo.
+
+        Es la lectura que necesita el diagnóstico para agrupar lo contestado por tema: la sesión
+        guarda
+        qué preguntas se presentaron, no de qué tema eran, y el tema vive en el mapeo de la
+        pregunta.
+        """
+        if not question_ids:
+            return {}
+        with self._session_factory() as session:
+            filas = session.execute(
+                select(
+                    CurriculumMappingRecord.subject_id,
+                    CurriculumNodeRecord.id,
+                    CurriculumNodeRecord.title,
+                )
+                .join(
+                    CurriculumNodeRecord,
+                    CurriculumNodeRecord.id == CurriculumMappingRecord.curriculum_node_id,
+                )
+                .where(
+                    CurriculumMappingRecord.subject_type == "question_version",
+                    CurriculumMappingRecord.status == "accepted",
+                    CurriculumMappingRecord.subject_id.in_(list(question_ids)),
+                )
+                .order_by(
+                    CurriculumMappingRecord.subject_id,
+                    CurriculumNodeRecord.path,
+                    CurriculumNodeRecord.id,
+                )
+            ).all()
+        acumulado: dict[str, list[tuple[str, str]]] = {}
+        for pregunta_id, node_id, titulo in filas:
+            acumulado.setdefault(str(pregunta_id), []).append((str(node_id), str(titulo)))
+        return {pregunta: tuple(temas) for pregunta, temas in acumulado.items()}
+
     # ------------------------------------------------------------------ auxiliares
 
     @staticmethod

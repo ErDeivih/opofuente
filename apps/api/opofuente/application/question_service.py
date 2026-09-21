@@ -747,6 +747,8 @@ class QuestionService:
         )
         entradas: list[AnswerKeyEntry] = []
         conflictos: list[str] = []
+        temas_sin_convocatoria: list[str] = []
+        temas_sin_nodo: list[str] = []
         ya_conocidas = self._questions.entry_map(set_id)
         guardadas = self._questions.get_set(set_id)
         convocatoria = guardadas.convocation_version_id if guardadas is not None else None
@@ -795,17 +797,54 @@ class QuestionService:
                     now=ahora,
                     actor=actor,
                 )
-            if tema and convocatoria is not None:
-                nodo = self._questions.node_by_reference(
-                    convocation_version_id=convocatoria, reference=tema
-                )
-                if nodo is not None:
-                    self._questions.map_question_to_node(
-                        pregunta_id, node_id=nodo[0], now=ahora, actor=actor
+            if tema:
+                # Un tema sin convocatoria no se puede resolver a un nodo del programa, y decir que
+                # no
+                # se ha asignado es la diferencia entre perderlo en silencio y explicarlo: el
+                # conjunto
+                # no cuelga de ningún programa, así que no hay contra qué emparejar «I.1».
+                if convocatoria is None:
+                    temas_sin_convocatoria.append(tema)
+                else:
+                    nodo = self._questions.node_by_reference(
+                        convocation_version_id=convocatoria, reference=tema
                     )
+                    if nodo is not None:
+                        self._questions.map_question_to_node(
+                            pregunta_id, node_id=nodo[0], now=ahora, actor=actor
+                        )
+                    else:
+                        temas_sin_nodo.append(tema)
         entradas = list(por_pregunta.values())
         if entradas:
             self._save_key_if_new(set_id, tuple(entradas), actor=actor)
+        # Los temas que no se pudieron emparejar se declaran: un tema perdido en silencio deja al
+        # banco
+        # sin cobertura de programa y al diagnóstico sin temas, y nadie se entera hasta que falla.
+        incidencias = list(issues)
+        if temas_sin_convocatoria:
+            incidencias.append(
+                ParseIssue(
+                    line=0,
+                    code="topic_without_convocation",
+                    detail=(
+                        "el conjunto no cuelga de ninguna convocatoria, así que sus temas "
+                        f"({', '.join(dict.fromkeys(temas_sin_convocatoria))}) no se han podido "
+                        "asignar a un nodo del programa"
+                    ),
+                )
+            )
+        if temas_sin_nodo:
+            incidencias.append(
+                ParseIssue(
+                    line=0,
+                    code="topic_not_found",
+                    detail=(
+                        "estos temas no son ninguna ruta ni código del programa de la "
+                        f"convocatoria: {', '.join(dict.fromkeys(temas_sin_nodo))}"
+                    ),
+                )
+            )
         # La cita se crea **después** de guardar: hace falta el identificador de cada pregunta, y el
         # de una que ya estaba también vale — volver a importar el mismo documento repara sus citas.
         enlazadas = 0
@@ -830,7 +869,7 @@ class QuestionService:
             with_key=len(entradas),
             key_entries=len(entradas),
             duplicates=self.duplicates(set_id),
-            issues=tuple(issues),
+            issues=tuple(incidencias),
             rejected=rejected,
             ignored_columns=ignored,
             missing_columns=missing,

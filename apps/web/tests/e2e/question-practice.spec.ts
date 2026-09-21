@@ -44,6 +44,10 @@ const JSON_PREGUNTAS = JSON.stringify(
  * se comprueba el encabezado antes de que exista. La primera versión de esta prueba no esperaba y
  * fallaba a veces cuando la suite corría entera; esperar a que «Preparar otra sesión» desaparezca es
  * esperar a lo que de verdad cambia.
+ *
+ * Los dos tiempos de espera son largos por la misma razón, medida: mientras la lista de sesiones se
+ * relee, la configuración **no** se pinta, y con el equipo cargado —una corrida de puertas entera— 10 s
+ * no llegan.
  */
 async function irAConfiguracion(page: Page): Promise<void> {
   await page.goto('/estudiar');
@@ -51,12 +55,14 @@ async function irAConfiguracion(page: Page): Promise<void> {
   const prepararOtra = page.getByRole('button', { name: 'Preparar otra sesión' });
   await expect(
     prepararOtra.or(page.getByRole('heading', { name: 'Preparar la sesión' })),
-  ).toBeVisible();
+  ).toBeVisible({ timeout: 20_000 });
   if (await prepararOtra.isVisible()) {
     await prepararOtra.click();
     await expect(prepararOtra).toHaveCount(0);
   }
-  await expect(page.getByRole('heading', { name: 'Preparar la sesión' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Preparar la sesión' })).toBeVisible({
+    timeout: 20_000,
+  });
 }
 
 test('E2E-05 practicar: el JSON importado se activa y se responde en una sesión', async ({

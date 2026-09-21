@@ -26,6 +26,9 @@ from opofuente.api.study_schemas import (
     CorrectionSchema,
     CreateSessionSchema,
     CurrentQuestionSchema,
+    DiagnosticReadingSchema,
+    DiagnosticTopicSchema,
+    IntervalSchema,
     NavigateRequestSchema,
     OutdatedSessionsSchema,
     PartScoreSchema,
@@ -174,7 +177,7 @@ def _part(view: PartScoreView) -> PartScoreSchema:
 def _result(view: SessionResultView) -> SessionResultSchema:
     return SessionResultSchema(
         session_id=view.session_id,
-        mode=view.mode.value,  # type: ignore[arg-type]
+        mode=view.mode.value,
         answer_key_version_id=view.answer_key_version_id,
         key_label=view.key_label,
         parts=[_part(parte) for parte in view.parts],
@@ -208,7 +211,7 @@ def _recalculation(view: RecalculationView) -> RecalculationSchema:
 def _session(view: SessionView) -> SessionSchema:
     return SessionSchema(
         id=view.id,
-        mode=view.mode.value,  # type: ignore[arg-type]
+        mode=view.mode.value,
         status=view.status.value,
         feedback=view.feedback.value,
         opposition_id=view.opposition_id,
@@ -217,10 +220,11 @@ def _session(view: SessionView) -> SessionSchema:
         answer_key_version_id=view.answer_key_version_id,
         key_label=view.key_label,
         configuration=SessionConfigurationSchema(
-            mode=view.configuration.mode.value,  # type: ignore[arg-type]
+            mode=view.configuration.mode.value,
             feedback=view.configuration.feedback.value,
             time_limit_minutes=view.configuration.time_limit_minutes,
             shuffle=view.configuration.shuffle,
+            note=view.configuration.note,
             sources=[
                 SessionSourceSchema(
                     question_set_id=fuente.question_set_id,
@@ -432,6 +436,52 @@ def study_result(session_id: str, service: StudyServiceDep) -> SessionResultSche
 )
 def study_review(session_id: str, service: StudyServiceDep) -> ReviewSchema:
     return _review(service.review(session_id))
+
+
+@router.get(
+    "/study-sessions/{session_id}/diagnostic",
+    response_model=DiagnosticReadingSchema,
+    responses=RESOURCE_ERRORS,
+    summary="La lectura por temas de un diagnóstico (ruta añadida: DEBT-012)",
+)
+def diagnostic_reading(session_id: str, service: StudyServiceDep) -> DiagnosticReadingSchema:
+    """Qué dice la muestra de un diagnóstico, tema por tema y con su intervalo.
+
+    Ruta **añadida** al contrato §10 y registrada en ADR-013. Va aparte del resultado porque no es
+    lo
+    mismo: el resultado dice la puntuación directa de la muestra —que no es una nota— y esta lectura
+    dice, por tema, qué se contestó y con qué incertidumbre. Mezclarlas invitaría a leer el
+    intervalo
+    como una calificación.
+    """
+    lectura = service.diagnostic_reading(session_id)
+    return DiagnosticReadingSchema(
+        session_id=session_id,
+        mode="diagnostic",
+        sample_size=lectura.sample_size,
+        answered=lectura.answered,
+        detail=lectura.detail,
+        topics=[
+            DiagnosticTopicSchema(
+                node_id=ficha.node_id,
+                title=ficha.title,
+                answered=ficha.answered,
+                correct=ficha.correct,
+                interval=(
+                    None
+                    if ficha.interval is None
+                    else IntervalSchema(
+                        low=ficha.interval.low,
+                        high=ficha.interval.high,
+                        confidence=ficha.interval.confidence,
+                        width=ficha.interval.width,
+                    )
+                ),
+                note=ficha.note,
+            )
+            for ficha in lectura.topics
+        ],
+    )
 
 
 @router.post(

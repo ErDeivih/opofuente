@@ -16,10 +16,12 @@ from pydantic import BaseModel, Field
 
 from opofuente.api.question_schemas import OptionSchema, QuestionEvidenceSchema
 
-#: Modos que el contrato acepta: los que la aplicación **sabe construir y corregir** de verdad. Los
-#: otros dos del vocabulario del modelo (`mock_exam`, `diagnostic`) siguen fuera a propósito, y su
-#: deuda está registrada (DEBT-012).
-SessionModeName = Literal["practice", "error_review", "official_exam"]
+#: Modos que el contrato acepta: los cinco que la aplicación **sabe construir y corregir** de
+#: verdad (06_QUESTIONS §5). El vocabulario del modelo y el del contrato vuelven a coincidir al
+#: cerrar
+#: DEBT-012: `mock_exam` monta el perfil exacto sin llamarse oficial y `diagnostic` compone una
+#: muestra estratificada por tema y la lee con su intervalo.
+SessionModeName = Literal["practice", "error_review", "official_exam", "mock_exam", "diagnostic"]
 SessionStatusName = Literal["draft", "running", "finished", "abandoned"]
 FeedbackName = Literal["immediate", "at_end"]
 ConfidenceName = Literal["low", "medium", "high"]
@@ -122,6 +124,45 @@ class SessionConfigurationSchema(BaseModel):
     time_limit_minutes: int | None = None
     shuffle: bool
     sources: list[SessionSourceSchema]
+    #: Lo que la composición dice de sí misma: cuántas preguntas de un simulacro se habían visto
+    #: hace poco, de qué temas salió la muestra de un diagnóstico (DEBT-012).
+    note: str | None = None
+
+
+class IntervalSchema(BaseModel):
+    """Un intervalo de confianza sobre una muestra pequeña, con su nivel declarado."""
+
+    low: float
+    high: float
+    confidence: float
+    width: float
+
+
+class DiagnosticTopicSchema(BaseModel):
+    """Lo que se contestó de un tema en la muestra, con su intervalo y su aviso."""
+
+    node_id: str
+    title: str
+    answered: int
+    correct: int
+    interval: IntervalSchema | None = None
+    note: str
+
+
+class DiagnosticReadingSchema(BaseModel):
+    """La lectura de un diagnóstico: por tema y con el tamaño de la muestra delante.
+
+    Los intervalos viajan **con** sus recuentos porque sin ellos no se pueden leer: un intervalo
+    ancho
+    sobre dos preguntas y uno estrecho sobre veinte no dicen lo mismo.
+    """
+
+    session_id: str
+    mode: SessionModeName
+    sample_size: int
+    answered: int
+    topics: list[DiagnosticTopicSchema]
+    detail: str
 
 
 class PartScoreSchema(BaseModel):

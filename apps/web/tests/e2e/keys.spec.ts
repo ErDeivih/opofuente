@@ -49,17 +49,24 @@ async function conjuntoConClave(page: Page): Promise<string> {
   return titulo;
 }
 
-/** Responde una práctica de `cantidad` preguntas marcando siempre la «a». */
+/** Responde una práctica de `cantidad` preguntas marcando siempre la «a».
+ *
+ * Los dos tiempos de espera son largos por una razón medida: mientras la lista de sesiones se relee, la
+ * configuración **no** se pinta (para no sustituir un formulario a medio rellenar), así que con el
+ * equipo cargado —una corrida de puertas entera— 10 s no llegan. Lo que se comprueba no cambia.
+ */
 async function practicarMarcandoA(page: Page, titulo: string, cantidad: number): Promise<void> {
   await page.goto('/estudiar');
   const prepararOtra = page.getByRole('button', { name: 'Preparar otra sesión' });
   await expect(
     prepararOtra.or(page.getByRole('heading', { name: 'Preparar la sesión' })),
-  ).toBeVisible();
+  ).toBeVisible({ timeout: 20_000 });
   if (await prepararOtra.isVisible()) {
     await prepararOtra.click();
   }
-  await expect(page.getByRole('heading', { name: 'Preparar la sesión' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Preparar la sesión' })).toBeVisible({
+    timeout: 20_000,
+  });
 
   const conjunto = page.getByLabel('Conjunto de preguntas');
   // Se elige **el conjunto de esta ejecución** por su título irrepetible: el directorio de datos del

@@ -28,12 +28,15 @@ from opofuente.domain.errors import InvariantViolationError, SessionStateError
 
 
 class SessionMode(StrEnum):
-    """Modos de sesión de 06_QUESTIONS §5.
+    """Modos de sesión de 06_QUESTIONS §5, los cinco que la spec define y el producto ofrece.
 
-    S07 implementó `practice` y `official_exam`; S10 añade `error_review`, que compone la sesión con
-    lo que la cola de repaso tiene vencido. Los otros dos están declarados porque el vocabulario del
-    modelo los nombra, y quien los pida recibe un error que lo dice: no se simula un simulacro ni un
-    diagnóstico que nadie ha construido (DEBT-012).
+    S07 implementó `practice` y `official_exam`; S10 añadió `error_review`, que compone la sesión
+    con
+    lo que la cola de repaso tiene vencido; y `mock_exam` y `diagnostic` llegaron al cerrar la deuda
+    DEBT-012: el simulacro monta el perfil exacto del examen (sin llamarse oficial y evitando lo
+    visto
+    hace poco) y el diagnóstico compone una muestra pequeña estratificada por tema y la lee con su
+    intervalo (`domain/diagnostic.py`).
     """
 
     PRACTICE = "practice"
@@ -48,6 +51,8 @@ SUPPORTED_MODES: tuple[SessionMode, ...] = (
     SessionMode.PRACTICE,
     SessionMode.ERROR_REVIEW,
     SessionMode.OFFICIAL_EXAM,
+    SessionMode.MOCK_EXAM,
+    SessionMode.DIAGNOSTIC,
 )
 
 
@@ -217,6 +222,11 @@ class SessionConfiguration:
     sources: tuple[SessionSource, ...]
     time_limit_minutes: int | None = None
     shuffle: bool = False
+    #: Lo que la composición quiere decir de sí misma y no cabe en ningún otro campo: cuántas
+    #: preguntas del simulacro se habían visto hace poco, de qué temas salió la muestra del
+    #: diagnóstico. Se guarda con la sesión porque se congela con ella: la explicación de una
+    #: composición no puede cambiar después (DEBT-012).
+    note: str | None = None
 
     def __post_init__(self) -> None:
         if self.mode in (SessionMode.OFFICIAL_EXAM, SessionMode.MOCK_EXAM) and (
@@ -784,7 +794,7 @@ def aggregate(
         substitutions=tuple(substitutions),
         unfinished=sum(1 for item in items if item.attempt is None),
         official_available=False,
-        official_note=OFFICIAL_UNAVAILABLE_NOTE,
+        official_note=unavailable_note(mode),
     )
 
 
@@ -795,6 +805,29 @@ OFFICIAL_UNAVAILABLE_NOTE = (
     "que fija la Comisión de Selección, y esa tabla no está importada: se muestra la puntuación "
     "directa y no se declara aprobado ni suspenso."
 )
+
+#: Lo que se añade al anterior en un **simulacro** (06_QUESTIONS §5: «no se denomina oficial»).
+MOCK_EXAM_NOTE = (
+    "Es un simulacro: el perfil es el del examen —mismas preguntas por parte y mismas reservas—, "
+    "pero no es un examen oficial."
+)
+
+#: Lo que se añade en un **diagnóstico**: su puntuación no es una nota, es el recuento de una
+#: muestra.
+DIAGNOSTIC_NOTE = (
+    "Es un diagnóstico: una muestra pequeña repartida por temas. La puntuación directa es el "
+    "recuento de esa muestra, no una nota; la estimación por tema, con su intervalo, se lee aparte."
+)
+
+
+def unavailable_note(mode: SessionMode) -> str:
+    """La explicación de la puntuación según el modo: un simulacro no es un examen, y se dice."""
+    if mode is SessionMode.MOCK_EXAM:
+        return f"{MOCK_EXAM_NOTE} {OFFICIAL_UNAVAILABLE_NOTE}"
+    if mode is SessionMode.DIAGNOSTIC:
+        return f"{DIAGNOSTIC_NOTE} {OFFICIAL_UNAVAILABLE_NOTE}"
+    return OFFICIAL_UNAVAILABLE_NOTE
+
 
 # --- estados de la sesión -------------------------------------------------------------------------
 

@@ -720,3 +720,164 @@ describe('estudiar: el resultado', () => {
     expect(await screen.findByText(/Sesión recalculada/)).toBeInTheDocument();
   });
 });
+
+describe('estudiar: simulacro y diagnóstico (DEBT-012)', () => {
+  it('el simulacro se pide con el perfil del examen y sin llamarse oficial', async () => {
+    const fetchMock = stubEstudio({
+      '/api/v1/study-sessions': {
+        body: {
+          ...SESION,
+          id: 'ses-mock',
+          mode: 'mock_exam',
+          feedback: 'at_end',
+          total_questions: 85,
+          configuration: {
+            mode: 'mock_exam',
+            feedback: 'at_end',
+            time_limit_minutes: 120,
+            shuffle: false,
+            note: 'simulacro con el perfil exacto del examen: ninguna de sus preguntas se había intentado en los últimos días',
+            sources: [],
+          },
+        },
+        status: 201,
+      },
+    });
+    renderEstudiar();
+
+    await screen.findByRole('heading', { name: 'Preparar la sesión' });
+    await userEvent.selectOptions(
+      screen.getByLabelText('Modo'),
+      await screen.findByRole('option', { name: 'simulacro' }),
+    );
+    await userEvent.selectOptions(screen.getByLabelText('Conjunto de preguntas'), 'set-1');
+    // El simulacro usa el perfil exacto: la pantalla lo dice y no ofrece elegir tamaño ni corrección.
+    expect(screen.getByText(/El simulacro usa el perfil exacto del examen/)).toBeInTheDocument();
+    expect(screen.queryByLabelText('Cuántas preguntas')).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Crear y empezar la sesión' }));
+
+    await waitFor(() => {
+      const envio = cuerpoJson(fetchMock, '/api/v1/study-sessions', 'POST');
+      expect(envio.mode).toBe('mock_exam');
+      // Con las reservas del perfil: el simulacro es el examen entero, no una parte suelta.
+      expect(envio.sources).toEqual([
+        {
+          question_set_id: 'set-1',
+          part_code: 'primera_parte',
+          count: null,
+          include_reserves: true,
+        },
+      ]);
+    });
+  });
+
+  it('el diagnóstico se pide sin conjunto ni parte, porque la muestra la compone el servidor', async () => {
+    const fetchMock = stubEstudio({
+      '/api/v1/study-sessions': {
+        body: {
+          ...SESION,
+          id: 'ses-diag',
+          mode: 'diagnostic',
+          total_questions: 6,
+          configuration: {
+            mode: 'diagnostic',
+            feedback: 'immediate',
+            time_limit_minutes: null,
+            shuffle: false,
+            note: '6 preguntas en 3 tema(s) de 3 con preguntas.',
+            sources: [],
+          },
+        },
+        status: 201,
+      },
+    });
+    renderEstudiar();
+
+    await screen.findByRole('heading', { name: 'Preparar la sesión' });
+    await userEvent.click(
+      screen.getByText('¿No sabes por dónde empezar? Haz un diagnóstico'),
+    );
+    // Se dice antes de pedirlo: la muestra es pequeña y repartida, no una nota.
+    expect(screen.getByText(/muestra pequeña repartida por temas/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Crear el diagnóstico' }));
+
+    await waitFor(() => {
+      const envio = cuerpoJson(fetchMock, '/api/v1/study-sessions', 'POST');
+      expect(envio.mode).toBe('diagnostic');
+      expect(envio.sources).toEqual([]);
+    });
+  });
+
+  it('al terminar un diagnóstico enseña la estimación por tema con su intervalo', async () => {
+    stubEstudio({
+      '/api/v1/study-sessions?limit=50&offset=0&opposition_id=op-1': conSesion({
+        ...SESION,
+        id: 'ses-1',
+        mode: 'diagnostic',
+        status: 'finished',
+        finished_at: '2026-09-17T12:30:00Z',
+      }),
+      '/api/v1/study-sessions/ses-1/result': {
+        body: {
+          ...RESULTADO,
+          mode: 'diagnostic',
+          official_note:
+            'Es un diagnóstico: una muestra pequeña repartida por temas. La puntuación directa es el recuento de esa muestra, no una nota; la estimación por tema, con su intervalo, se lee aparte.',
+        },
+      },
+      '/api/v1/study-sessions/ses-1/review': { body: REVISION },
+      '/api/v1/study-sessions/ses-1/diagnostic': {
+        body: {
+          session_id: 'ses-1',
+          mode: 'diagnostic',
+          sample_size: 6,
+          answered: 3,
+          detail:
+            'muestra de 6 pregunta(s), 3 contestada(s): estos intervalos son del 95 % sobre esta muestra y no son una nota ni un dominio del tema',
+          topics: [
+            {
+              node_id: 'node-1',
+              title: 'La Constitución Española de 1978',
+              answered: 1,
+              correct: 1,
+              interval: { low: 0.2065, high: 1.0, confidence: 0.95, width: 0.7935 },
+              note: 'la muestra solo trae 1 pregunta(s) de este tema: el intervalo es ancho y no se puede leer como un dominio',
+            },
+            {
+              node_id: 'node-2',
+              title: 'Las Cortes Generales',
+              answered: 1,
+              correct: 0,
+              interval: { low: 0.0, high: 0.7935, confidence: 0.95, width: 0.7935 },
+              note: 'la muestra solo trae 1 pregunta(s) de este tema: el intervalo es ancho y no se puede leer como un dominio',
+            },
+            {
+              node_id: 'node-3',
+              title: 'El Gobierno',
+              answered: 0,
+              correct: 0,
+              interval: null,
+              note: 'no se contestó ninguna pregunta de este tema en la muestra',
+            },
+          ],
+        },
+      },
+    });
+    renderEstudiar();
+
+    expect(
+      await screen.findByRole('heading', { name: 'Estimación por tema' }),
+    ).toBeInTheDocument();
+    // El aviso va delante de la tabla, no al final en letra pequeña.
+    expect(screen.getByText(/un intervalo estrecho no es posible/)).toBeInTheDocument();
+    const tabla = screen.getByRole('table', { name: /Muestra por tema con su intervalo/ });
+    const primera = within(tabla).getByRole('row', { name: /La Constitución Española de 1978/ });
+    expect(within(primera).getByText('1 de 1')).toBeInTheDocument();
+    expect(within(primera).getByText('0.21 – 1.00')).toBeInTheDocument();
+    expect(within(primera).getByText(/el intervalo es ancho/)).toBeInTheDocument();
+    const tercera = within(tabla).getByRole('row', { name: /El Gobierno/ });
+    expect(within(tercera).getByText('sin respuestas')).toBeInTheDocument();
+    // Y el resultado sigue diciendo que no es una nota.
+    expect(screen.getByText(/muestra pequeña repartida por temas/)).toBeInTheDocument();
+  });
+});

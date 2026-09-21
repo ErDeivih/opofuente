@@ -2313,7 +2313,9 @@
             "enum": [
               "practice",
               "error_review",
-              "official_exam"
+              "official_exam",
+              "mock_exam",
+              "diagnostic"
             ],
             "title": "Mode",
             "type": "string"
@@ -2973,6 +2975,55 @@
         "title": "DerivedArtifactSchema",
         "type": "object"
       },
+      "DiagnosticReadingSchema": {
+        "description": "La lectura de un diagnóstico: por tema y con el tamaño de la muestra delante.\n\nLos intervalos viajan **con** sus recuentos porque sin ellos no se pueden leer: un intervalo\nancho\nsobre dos preguntas y uno estrecho sobre veinte no dicen lo mismo.",
+        "properties": {
+          "answered": {
+            "title": "Answered",
+            "type": "integer"
+          },
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "mode": {
+            "enum": [
+              "practice",
+              "error_review",
+              "official_exam",
+              "mock_exam",
+              "diagnostic"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "sample_size": {
+            "title": "Sample Size",
+            "type": "integer"
+          },
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          },
+          "topics": {
+            "items": {
+              "$ref": "#/components/schemas/DiagnosticTopicSchema"
+            },
+            "title": "Topics",
+            "type": "array"
+          }
+        },
+        "required": [
+          "session_id",
+          "mode",
+          "sample_size",
+          "answered",
+          "topics",
+          "detail"
+        ],
+        "title": "DiagnosticReadingSchema",
+        "type": "object"
+      },
       "DiagnosticSchema": {
         "description": "Diagnóstico sanitizado (09_SECURITY §12): sin secretos, sin contenido y sin rutas completas.\n\nEs lo que se puede pegar en una incidencia. Lleva **lo que hace falta para juzgar el estado** y\nnada de lo que el usuario tiene dentro: ni una ruta absoluta, ni un enunciado, ni una clave.",
         "properties": {
@@ -3089,6 +3140,50 @@
           "note"
         ],
         "title": "DiagnosticSchema",
+        "type": "object"
+      },
+      "DiagnosticTopicSchema": {
+        "description": "Lo que se contestó de un tema en la muestra, con su intervalo y su aviso.",
+        "properties": {
+          "answered": {
+            "title": "Answered",
+            "type": "integer"
+          },
+          "correct": {
+            "title": "Correct",
+            "type": "integer"
+          },
+          "interval": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IntervalSchema"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "node_id": {
+            "title": "Node Id",
+            "type": "string"
+          },
+          "note": {
+            "title": "Note",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "node_id",
+          "title",
+          "answered",
+          "correct",
+          "note"
+        ],
+        "title": "DiagnosticTopicSchema",
         "type": "object"
       },
       "DocumentDetailSchema": {
@@ -4683,6 +4778,35 @@
           "missing_entries"
         ],
         "title": "IndexHealthSchema",
+        "type": "object"
+      },
+      "IntervalSchema": {
+        "description": "Un intervalo de confianza sobre una muestra pequeña, con su nivel declarado.",
+        "properties": {
+          "confidence": {
+            "title": "Confidence",
+            "type": "number"
+          },
+          "high": {
+            "title": "High",
+            "type": "number"
+          },
+          "low": {
+            "title": "Low",
+            "type": "number"
+          },
+          "width": {
+            "title": "Width",
+            "type": "number"
+          }
+        },
+        "required": [
+          "low",
+          "high",
+          "confidence",
+          "width"
+        ],
+        "title": "IntervalSchema",
         "type": "object"
       },
       "InventorySchema": {
@@ -8942,10 +9066,23 @@
             "enum": [
               "practice",
               "error_review",
-              "official_exam"
+              "official_exam",
+              "mock_exam",
+              "diagnostic"
             ],
             "title": "Mode",
             "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
           },
           "shuffle": {
             "title": "Shuffle",
@@ -9219,7 +9356,9 @@
             "enum": [
               "practice",
               "error_review",
-              "official_exam"
+              "official_exam",
+              "mock_exam",
+              "diagnostic"
             ],
             "title": "Mode",
             "type": "string"
@@ -9363,7 +9502,9 @@
             "enum": [
               "practice",
               "error_review",
-              "official_exam"
+              "official_exam",
+              "mock_exam",
+              "diagnostic"
             ],
             "title": "Mode",
             "type": "string"
@@ -19378,6 +19519,69 @@
           }
         },
         "summary": "La pregunta que toca ahora, sin solución",
+        "tags": [
+          "estudio"
+        ]
+      }
+    },
+    "/api/v1/study-sessions/{session_id}/diagnostic": {
+      "get": {
+        "description": "Qué dice la muestra de un diagnóstico, tema por tema y con su intervalo.\n\nRuta **añadida** al contrato §10 y registrada en ADR-013. Va aparte del resultado porque no es\nlo\nmismo: el resultado dice la puntuación directa de la muestra —que no es una nota— y esta lectura\ndice, por tema, qué se contestó y con qué incertidumbre. Mezclarlas invitaría a leer el\nintervalo\ncomo una calificación.",
+        "operationId": "diagnostic_reading_api_v1_study_sessions__session_id__diagnostic_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiagnosticReadingSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "La lectura por temas de un diagnóstico (ruta añadida: DEBT-012)",
         "tags": [
           "estudio"
         ]

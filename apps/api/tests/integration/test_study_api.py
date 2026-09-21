@@ -39,8 +39,35 @@ def _texto(preguntas: int, *, reservas: int = 0) -> str:
     return "\n".join(lineas)
 
 
+def _texto_largo(preguntas: int, *, reservas: int = 0) -> str:
+    """Un cuestionario largo con preguntas **distintas de verdad**, para montar un examen.
+
+    `_texto` repite el caso cada 26 preguntas (le basta para una práctica), así que con 80 preguntas
+    el
+    banco se queda en 26: la huella ve la misma pregunta repetida y la cuenta como «ya estaba». Aquí
+    el
+    supuesto lleva su número, que no se normaliza, y las 90 preguntas son 90.
+    """
+    lineas: list[str] = []
+    for numero in range(1, preguntas + reservas + 1):
+        marca = "[R] " if numero > preguntas else ""
+        lineas.append(
+            f"{numero}. {marca}El supuesto practico numero {numero} se resuelve en diez dias:"
+        )
+        for indice in range(4):
+            lineas.append(f"{chr(ord('a') + indice)}) Opcion {chr(ord('A') + indice)}")
+        lineas.append("Respuesta correcta: a")
+        lineas.append("")
+    return "\n".join(lineas)
+
+
 def _conjunto(
-    client: TestClient, *, preguntas: int, reservas: int = 0, activar: bool = True
+    client: TestClient,
+    *,
+    preguntas: int,
+    reservas: int = 0,
+    activar: bool = True,
+    texto: str | None = None,
 ) -> str:
     oposiciones = client.get("/api/v1/oppositions").json()
     activa = next(oposicion for oposicion in oposiciones if oposicion["active"])
@@ -58,7 +85,10 @@ def _conjunto(
     conjunto = creado.json()
     importado = client.post(
         f"/api/v1/question-sets/{conjunto['id']}/parse",
-        json={"kind": "questions", "text": _texto(preguntas, reservas=reservas)},
+        json={
+            "kind": "questions",
+            "text": texto if texto is not None else _texto(preguntas, reservas=reservas),
+        },
         headers=ALLOWED_ORIGIN,
     )
     assert importado.status_code == 200, importado.text
@@ -163,12 +193,16 @@ def test_sin_clave_activa_la_sesion_no_se_crea(
 def test_un_modo_que_no_existe_no_entra_por_el_contrato(
     seeded_settings: Settings, seeded_client: TestClient
 ) -> None:
-    """El contrato solo declara los modos que el slice implementa: lo demás es 422 del esquema."""
+    """El contrato declara exactamente los cinco modos que la aplicación sabe construir (DEBT-012).
+
+    Un modo que no está en el vocabulario no entra por el esquema (422), y los cinco que sí están se
+    pueden pedir sin recibir un «no implementado»: lo comprueba el resto de pruebas del módulo.
+    """
     respuesta = seeded_client.post(
         "/api/v1/study-sessions",
         json={
             "opposition_id": "op-1",
-            "mode": "mock_exam",
+            "mode": "examen_sorpresa",
             "sources": [{"question_set_id": "x", "part_code": "primera_parte"}],
         },
         headers=ALLOWED_ORIGIN,
@@ -176,6 +210,56 @@ def test_un_modo_que_no_existe_no_entra_por_el_contrato(
 
     assert respuesta.status_code == 422
     assert respuesta.json()["code"] == "validation_error"
+
+
+def test_los_cinco_modos_del_vocabulario_se_pueden_pedir(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """Ningún modo del contrato responde «no implementado»: era el criterio 3 de DEBT-012.
+
+    Se piden los cinco con un conjunto preparado para el que más exige (práctica y examen oficial) y
+    se
+    comprueba que el que falla, si falla, falla por **falta de material** y no por no estar
+    construido.
+    """
+    set_id = _conjunto(seeded_client, preguntas=80, reservas=5, texto=_texto_largo(80, reservas=5))
+    oposicion = _oposicion_activa(seeded_client)
+    modos = ["practice", "official_exam", "mock_exam", "diagnostic", "error_review"]
+
+    for modo in modos:
+        respuesta = seeded_client.post(
+            "/api/v1/study-sessions",
+            json={
+                "opposition_id": oposicion["id"],
+                "mode": modo,
+                "sources": (
+                    []
+                    if modo in ("diagnostic", "error_review")
+                    else [
+                        {
+                            "question_set_id": set_id,
+                            "part_code": "primera_parte",
+                            **({"count": 3} if modo == "practice" else {}),
+                        }
+                    ]
+                ),
+                **({"review_limit": 5} if modo == "error_review" else {}),
+            },
+            headers=ALLOWED_ORIGIN,
+        )
+        if modo == "diagnostic":
+            # El banco de esta prueba no tiene temas: el diagnóstico se niega por eso, no por no
+            # existir.
+            assert respuesta.status_code == 409, respuesta.text
+            assert "diagnóstico necesita al menos" in respuesta.json()["detail"]
+            continue
+        if modo == "error_review":
+            # Y el repaso se niega porque no hay nada vencido: tampoco por no estar implementado.
+            assert respuesta.status_code == 409, respuesta.text
+            assert "no hay nada vencido" in respuesta.json()["detail"]
+            continue
+        assert respuesta.status_code == 201, f"{modo}: {respuesta.text}"
+        assert respuesta.json()["mode"] == modo
 
 
 # --- la solución no se filtra -------------------------------------------------------------------
@@ -737,3 +821,319 @@ def test_las_sesiones_desactualizadas_de_un_conjunto_inexistente_es_un_404(
     respuesta = seeded_client.get("/api/v1/question-sets/no-existe/outdated-sessions")
 
     assert respuesta.status_code == 404, respuesta.text
+
+
+# --- simulacro y diagnóstico (DEBT-012) -----------------------------------------------------------
+
+
+def _oposicion_activa(client: TestClient) -> dict[str, Any]:
+    oposiciones = client.get("/api/v1/oppositions").json()
+    return next(oposicion for oposicion in oposiciones if oposicion["active"])
+
+
+def _csv_con_temas(preguntas: int) -> str:
+    """Un CSV con la columna `topic`: es la vía documentada para asignar una pregunta a su tema.
+
+    Los temas son rutas del programa sembrado (`I.1`, `I.2`, `I.3`), las mismas que ve la pantalla.
+    """
+    lineas = ["enunciado;op1;op2;clave;tema"]
+    for numero in range(1, preguntas + 1):
+        caso = chr(ord("A") + (numero - 1) % 26)
+        tema = f"I.{((numero - 1) % 3) + 1}"
+        lineas.append(f"Pregunta con tema del caso {caso} numero {numero};Verdadero;Falso;a;{tema}")
+    return "\n".join(lineas)
+
+
+def _activar_ultima_clave(client: TestClient, set_id: str) -> None:
+    """Activa la plantilla más nueva del conjunto.
+
+    Importar un CSV con la columna de la clave crea una plantilla **en borrador**: sin activarla,
+    las
+    preguntas importadas no tienen desenlace con el que corregirlas y contestarlas bien saldría mal.
+    """
+    claves = client.get(f"/api/v1/question-sets/{set_id}/answer-keys").json()
+    activada = client.post(
+        f"/api/v1/question-sets/{set_id}/answer-keys/{claves[-1]['id']}/activate",
+        headers=ALLOWED_ORIGIN,
+    )
+    assert activada.status_code == 200, activada.text
+
+
+def test_un_simulacro_monta_el_perfil_exacto_y_no_se_llama_oficial(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """`mock_exam`: mismo perfil que el examen, corrección al final y sin llamarse oficial."""
+    set_id = _conjunto(seeded_client, preguntas=80, reservas=5, texto=_texto_largo(80, reservas=5))
+    oposicion = _oposicion_activa(seeded_client)
+
+    respuesta = seeded_client.post(
+        "/api/v1/study-sessions",
+        json={
+            "opposition_id": oposicion["id"],
+            "mode": "mock_exam",
+            "sources": [{"question_set_id": set_id, "part_code": "primera_parte"}],
+        },
+        headers=ALLOWED_ORIGIN,
+    )
+
+    assert respuesta.status_code == 201, respuesta.text
+    sesion = respuesta.json()
+    assert sesion["mode"] == "mock_exam"
+    assert sesion["total_questions"] == 85, "80 ordinarias y las 5 reservas de la convocatoria"
+    assert sesion["time_limit_minutes"] == 120, "el simulacro usa el tiempo del perfil"
+    assert sesion["configuration"]["feedback"] == "at_end", "no corrige mientras se contesta"
+    # Lo que la composición dice de sí misma: sin nada visto antes, no repite nada.
+    assert "ninguna de sus preguntas se había intentado" in sesion["configuration"]["note"]
+
+    # Y al terminar, la puntuación se explica como la de un simulacro: **no** es un examen oficial.
+    arrancada = _arrancar(seeded_client, sesion["id"])
+    assert arrancada["status"] == "running"
+    terminada = seeded_client.post(
+        f"/api/v1/study-sessions/{sesion['id']}/finish", headers=ALLOWED_ORIGIN
+    )
+    assert terminada.status_code == 200, terminada.text
+    nota = terminada.json()["official_note"]
+    assert "simulacro" in nota
+    assert "no es un examen oficial" in nota
+    assert terminada.json()["official_available"] is False
+
+
+def test_un_simulacro_evita_las_preguntas_vistas_hace_poco(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """Con banco de sobra, las preguntas recientes se quedan fuera y la nota lo dice."""
+    set_id = _conjunto(seeded_client, preguntas=90, reservas=5, texto=_texto_largo(90, reservas=5))
+    oposicion = _oposicion_activa(seeded_client)
+
+    # Una práctica con las **cinco primeras** preguntas: son las que el banco ofrece primero, así
+    # que
+    # sin evitarlas serían también las cinco primeras del simulacro.
+    practica = _arrancar(seeded_client, _crear_sesion(seeded_client, set_id, cantidad=5)["id"])
+    vistas: set[str] = set()
+    for posicion in range(1, 6):
+        actual = seeded_client.post(
+            f"/api/v1/study-sessions/{practica['id']}/navigate",
+            json={"position": posicion},
+            headers=ALLOWED_ORIGIN,
+        ).json()
+        vistas.add(actual["question"]["question_version_id"])
+        seeded_client.post(
+            f"/api/v1/study-sessions/{practica['id']}/answers",
+            json={
+                "question_version_id": actual["question"]["question_version_id"],
+                "chosen_option_keys": ["a"],
+                "elapsed_ms": 400,
+            },
+            headers=ALLOWED_ORIGIN,
+        )
+    seeded_client.post(f"/api/v1/study-sessions/{practica['id']}/finish", headers=ALLOWED_ORIGIN)
+    assert len(vistas) == 5
+
+    simulacro = seeded_client.post(
+        "/api/v1/study-sessions",
+        json={
+            "opposition_id": oposicion["id"],
+            "mode": "mock_exam",
+            "sources": [{"question_set_id": set_id, "part_code": "primera_parte"}],
+        },
+        headers=ALLOWED_ORIGIN,
+    )
+
+    assert simulacro.status_code == 201, simulacro.text
+    cuerpo = simulacro.json()
+    assert "ninguna de sus preguntas se había intentado" in cuerpo["configuration"]["note"]
+
+    # Y no es solo la nota: ninguna de las vistas entra en la composición, porque hay 85 sin ver.
+    revision = seeded_client.get(f"/api/v1/study-sessions/{cuerpo['id']}/review")
+    assert revision.status_code == 200, revision.text
+    compuestas = {entrada["question_version_id"] for entrada in revision.json()["entries"]}
+    assert compuestas & vistas == set(), "el simulacro ha repetido una pregunta vista hace poco"
+    assert len(compuestas) == 85
+
+
+def test_un_simulacro_sin_banco_suficiente_repite_y_lo_dice(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """Si no hay banco para no repetir, repite —y lo cuenta— en lugar de no montar el examen.
+
+    El aviso es la diferencia entre un simulacro útil y uno que mide la memoria de ayer sin decirlo.
+    """
+    set_id = _conjunto(seeded_client, preguntas=80, reservas=5, texto=_texto_largo(80, reservas=5))
+    oposicion = _oposicion_activa(seeded_client)
+
+    practica = _arrancar(seeded_client, _crear_sesion(seeded_client, set_id, cantidad=5)["id"])
+    for posicion in range(1, 6):
+        actual = seeded_client.post(
+            f"/api/v1/study-sessions/{practica['id']}/navigate",
+            json={"position": posicion},
+            headers=ALLOWED_ORIGIN,
+        ).json()
+        seeded_client.post(
+            f"/api/v1/study-sessions/{practica['id']}/answers",
+            json={
+                "question_version_id": actual["question"]["question_version_id"],
+                "chosen_option_keys": ["a"],
+                "elapsed_ms": 400,
+            },
+            headers=ALLOWED_ORIGIN,
+        )
+    seeded_client.post(f"/api/v1/study-sessions/{practica['id']}/finish", headers=ALLOWED_ORIGIN)
+
+    simulacro = seeded_client.post(
+        "/api/v1/study-sessions",
+        json={
+            "opposition_id": oposicion["id"],
+            "mode": "mock_exam",
+            "sources": [{"question_set_id": set_id, "part_code": "primera_parte"}],
+        },
+        headers=ALLOWED_ORIGIN,
+    )
+
+    assert simulacro.status_code == 201, simulacro.text
+    nota = simulacro.json()["configuration"]["note"]
+    assert "5 de 85 pregunta(s) ya se habían intentado" in nota
+    assert simulacro.json()["total_questions"] == 85, "el perfil se respeta aunque haya que repetir"
+
+
+def test_un_diagnostico_compone_una_muestra_pequena_por_tema(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """`diagnostic`: la muestra la pone el servidor, se reparte por temas y se declara."""
+    # Un conjunto con **una** pregunta sin tema: se queda fuera de la muestra y el informe lo
+    # cuenta.
+    set_id = _conjunto(seeded_client, preguntas=1)
+    oposicion = _oposicion_activa(seeded_client)
+    importado = seeded_client.post(
+        f"/api/v1/question-sets/{set_id}/parse",
+        json={
+            "kind": "csv",
+            "text": _csv_con_temas(6),
+            "mapping": {
+                "stem": "enunciado",
+                "options": ["op1", "op2"],
+                "correct": "clave",
+                "topic": "tema",
+            },
+        },
+        headers=ALLOWED_ORIGIN,
+    )
+    assert importado.status_code == 200, importado.text
+    _activar_ultima_clave(seeded_client, set_id)
+
+    respuesta = seeded_client.post(
+        "/api/v1/study-sessions",
+        json={"opposition_id": oposicion["id"], "mode": "diagnostic", "sources": []},
+        headers=ALLOWED_ORIGIN,
+    )
+
+    assert respuesta.status_code == 201, respuesta.text
+    sesion = respuesta.json()
+    assert sesion["total_questions"] == 6, "dos preguntas por tema en la muestra"
+    assert sesion["mode"] == "diagnostic"
+    assert sesion["configuration"]["sources"] == []
+    assert "6 preguntas en 3 tema(s) de 3 con preguntas" in sesion["configuration"]["note"]
+    # La pregunta sin tema no entra en la muestra, y se dice que se ha quedado fuera.
+    assert "1 pregunta(s) del banco no tienen tema asignado" in sesion["configuration"]["note"]
+
+    # Y las preguntas de la muestra no llevan parte: un diagnóstico no es un examen de una parte.
+    revision = seeded_client.get(f"/api/v1/study-sessions/{sesion['id']}/review").json()
+    assert {entrada["part_code"] for entrada in revision["entries"]} == {None}
+
+
+def test_la_lectura_del_diagnostico_da_por_tema_un_intervalo(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """La lectura por temas: lo contestado, su intervalo y el tamaño de la muestra delante."""
+    set_id = _conjunto(seeded_client, preguntas=1)
+    oposicion = _oposicion_activa(seeded_client)
+    seeded_client.post(
+        f"/api/v1/question-sets/{set_id}/parse",
+        json={
+            "kind": "csv",
+            "text": _csv_con_temas(6),
+            "mapping": {
+                "stem": "enunciado",
+                "options": ["op1", "op2"],
+                "correct": "clave",
+                "topic": "tema",
+            },
+        },
+        headers=ALLOWED_ORIGIN,
+    )
+    _activar_ultima_clave(seeded_client, set_id)
+    sesion = seeded_client.post(
+        "/api/v1/study-sessions",
+        json={"opposition_id": oposicion["id"], "mode": "diagnostic", "sources": []},
+        headers=ALLOWED_ORIGIN,
+    ).json()
+    _arrancar(seeded_client, sesion["id"])
+
+    # Se contestan las tres primeras de la muestra (una por tema, porque la muestra es round-robin).
+    for posicion in range(1, 4):
+        actual = seeded_client.post(
+            f"/api/v1/study-sessions/{sesion['id']}/navigate",
+            json={"position": posicion},
+            headers=ALLOWED_ORIGIN,
+        ).json()
+        assert actual.get("question") is not None, actual
+        seeded_client.post(
+            f"/api/v1/study-sessions/{sesion['id']}/answers",
+            json={
+                "question_version_id": actual["question"]["question_version_id"],
+                "chosen_option_keys": ["a"],
+                "elapsed_ms": 300,
+            },
+            headers=ALLOWED_ORIGIN,
+        )
+
+    respuesta = seeded_client.get(f"/api/v1/study-sessions/{sesion['id']}/diagnostic")
+
+    assert respuesta.status_code == 200, respuesta.text
+    lectura = respuesta.json()
+    assert lectura["session_id"] == sesion["id"]
+    assert lectura["mode"] == "diagnostic"
+    assert lectura["sample_size"] == 6
+    assert lectura["answered"] == 3
+    assert len(lectura["topics"]) == 3, "un tema por cada tema de la muestra"
+    for ficha in lectura["topics"]:
+        assert ficha["answered"] == 1
+        assert ficha["correct"] == 1
+        # Con una sola respuesta el intervalo es ancho, y la ficha lo dice: no es un dominio.
+        assert ficha["interval"] is not None
+        assert ficha["interval"]["low"] < 0.4
+        assert ficha["interval"]["high"] == 1.0
+        assert "el intervalo es ancho" in ficha["note"]
+    assert "no son una nota ni un dominio del tema" in lectura["detail"]
+
+
+def test_la_lectura_por_temas_no_vale_para_una_practica(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """Se dice con un 409: una muestra pequeña no se lee igual que la nota de una práctica."""
+    set_id = _conjunto(seeded_client, preguntas=4)
+    practica = _crear_sesion(seeded_client, set_id, cantidad=2)
+
+    respuesta = seeded_client.get(f"/api/v1/study-sessions/{practica['id']}/diagnostic")
+
+    assert respuesta.status_code == 409, respuesta.text
+    assert respuesta.json()["code"] == "unsupported"
+    assert "es del diagnóstico" in respuesta.json()["detail"]
+
+
+def test_un_diagnostico_sin_temas_suficientes_no_se_monta(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """Sin temas no hay muestra estratificada: se dice qué falta en lugar de sortear preguntas."""
+    _conjunto(seeded_client, preguntas=6)
+    oposicion = _oposicion_activa(seeded_client)
+
+    respuesta = seeded_client.post(
+        "/api/v1/study-sessions",
+        json={"opposition_id": oposicion["id"], "mode": "diagnostic", "sources": []},
+        headers=ALLOWED_ORIGIN,
+    )
+
+    assert respuesta.status_code == 409, respuesta.text
+    assert respuesta.json()["code"] == "unsupported"
+    assert "el banco solo tiene preguntas de 0 tema(s)" in respuesta.json()["detail"]
+    assert "un diagnóstico necesita al menos 3" in respuesta.json()["detail"]

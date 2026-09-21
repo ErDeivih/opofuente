@@ -263,6 +263,47 @@ class SqlAlchemyStudyRepository:
                     desactualizadas.append(sesion_id)
             return (tuple(desactualizadas), tuple(sin_correccion))
 
+    def recently_attempted_question_ids(
+        self, opposition_id: str, *, since: datetime
+    ) -> frozenset[str]:
+        """Preguntas que se han intentado desde `since` (DEBT-012: lo que un simulacro evita).
+
+        Se mira la **oposición** entera y no un conjunto: una pregunta vista en cualquier sesión
+        cuenta
+        como vista, y el simulacro existe para no repetir lo reciente con el banco que haya.
+        """
+        with self._session_factory() as session:
+            filas = session.execute(
+                select(SessionQuestionRecord.question_version_id)
+                .join(AttemptRecord, AttemptRecord.session_question_id == SessionQuestionRecord.id)
+                .join(StudySessionRecord, StudySessionRecord.id == SessionQuestionRecord.session_id)
+                .where(
+                    StudySessionRecord.opposition_id == opposition_id,
+                    AttemptRecord.answered_at >= since,
+                )
+            ).scalars()
+            return frozenset(str(fila) for fila in filas)
+
+    def attempt_counts(self, opposition_id: str) -> Mapping[str, int]:
+        """Cuántas veces se ha intentado cada pregunta de la oposición (DEBT-012).
+
+        Lo usa la muestra del diagnóstico para empezar por los temas y las preguntas **menos
+        vistos**:
+        preguntar siempre lo mismo mediría la memoria de la última sesión, no el temario.
+        """
+        with self._session_factory() as session:
+            filas = session.execute(
+                select(
+                    SessionQuestionRecord.question_version_id,
+                    func.count(AttemptRecord.id),
+                )
+                .join(AttemptRecord, AttemptRecord.session_question_id == SessionQuestionRecord.id)
+                .join(StudySessionRecord, StudySessionRecord.id == SessionQuestionRecord.session_id)
+                .where(StudySessionRecord.opposition_id == opposition_id)
+                .group_by(SessionQuestionRecord.question_version_id)
+            ).all()
+        return {str(pregunta): int(total) for pregunta, total in filas}
+
     def start(self, session_id: str, *, now: datetime, actor: str = "local") -> SessionView | None:
         """Pone la sesión en marcha. Arrancar una que ya corre no cambia nada (es reintentable)."""
         with self._session_factory() as session:
@@ -797,6 +838,10 @@ class SqlAlchemyStudyRepository:
             "time_limit_minutes": configuration.time_limit_minutes,
             "shuffle": configuration.shuffle,
             "key_label": key_label,
+            # La nota de la composición se congela con ella: por qué se eligieron estas preguntas
+            # (un
+            # simulacro que repitió, de qué temas salió una muestra) no puede cambiar después.
+            "note": configuration.note,
             "sources": [
                 {
                     "question_set_id": fuente.question_set_id,
@@ -838,6 +883,7 @@ class SqlAlchemyStudyRepository:
                 else None
             ),
             shuffle=bool(datos.get("shuffle", False)),
+            note=(str(datos["note"]) if datos.get("note") is not None else None),
         )
 
     @staticmethod

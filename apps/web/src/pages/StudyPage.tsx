@@ -7,6 +7,7 @@ import {
   useConvocation,
   useCreateStudySession,
   useCurrentQuestion,
+  useDiagnosticReading,
   useFinishStudySession,
   useNavigateStudy,
   useOppositions,
@@ -19,9 +20,10 @@ import {
 } from '../api/queries';
 import { isApiError } from '../api/client';
 import { CAUSE_LABEL } from '../api/reviews';
-import type { CreateSession, SessionQuestion } from '../api/study';
+import type { CreateSession, SessionQuestion, StudySession } from '../api/study';
 import { ErrorState } from '../components/ErrorState';
 import { LoadingState } from '../components/LoadingState';
+import { DiagnosticPanel } from '../features/study/DiagnosticPanel';
 import { StudyResultPanel } from '../features/study/StudyResultPanel';
 import { StudyRunner } from '../features/study/StudyRunner';
 import { StudySetup } from '../features/study/StudySetup';
@@ -76,6 +78,11 @@ export function StudyPage() {
   const current = useCurrentQuestion(enCurso ? sessionId : null);
   const result = useStudyResult(terminada ? sessionId : null);
   const review = useStudyReview(terminada ? sessionId : null);
+  // DEBT-012: la lectura por temas solo se pide si la sesión es un diagnóstico; en otro modo el
+  // servidor la niega con un 409 y pedirla sería ruido.
+  const diagnostico = useDiagnosticReading(
+    terminada && session?.mode === 'diagnostic' ? sessionId : null,
+  );
   // Las plantillas del conjunto de la sesión: con ellas se sabe si hay una activa distinta de la que
   // corrigió, y solo entonces tiene sentido ofrecer recalcular (S08).
   const claves = useAnswerKeys(terminada ? (session?.question_set_id ?? null) : null);
@@ -132,17 +139,22 @@ export function StudyPage() {
   function empezar(input: CreateSession): void {
     crear.mutate(input, {
       onSuccess: (creada) => {
-        setAviso(null);
-        arrancar.mutate(creada.id, {
-          onSuccess: (arrancada) => {
-            setPreparandoOtra(false);
-            setSessionIdElegida(arrancada.id);
-            setAviso(
-              `Sesión de ${modeLabel(arrancada.mode)} lista: ` +
-                `${String(arrancada.total_questions)} preguntas.`,
-            );
-          },
-        });
+        abrirCreada(creada);
+      },
+    });
+  }
+
+  /** Una sesión creada se abre y se arranca: es lo que espera quien acaba de pulsar «Empezar». */
+  function abrirCreada(creada: StudySession): void {
+    setAviso(null);
+    arrancar.mutate(creada.id, {
+      onSuccess: (arrancada) => {
+        setPreparandoOtra(false);
+        setSessionIdElegida(arrancada.id);
+        setAviso(
+          `Sesión de ${modeLabel(arrancada.mode)} lista: ` +
+            `${String(arrancada.total_questions)} preguntas.`,
+        );
       },
     });
   }
@@ -241,6 +253,23 @@ export function StudyPage() {
           conflict={conflictoCrear}
           error={errorCrear}
           onCreate={empezar}
+          onDiagnostic={() => {
+            if (activa === null) {
+              return;
+            }
+            crear.mutate(
+              {
+                opposition_id: activa.id,
+                mode: 'diagnostic',
+                sources: [],
+                convocation_version_id: activa.active_convocation?.id ?? null,
+                feedback: null,
+                shuffle: false,
+                time_limit_minutes: null,
+              },
+              { onSuccess: abrirCreada },
+            );
+          }}
         />
       )}
 
@@ -315,6 +344,17 @@ export function StudyPage() {
           message="El servidor no responde o la sesión no está disponible."
           onRetry={() => {
             void current.refetch();
+          }}
+        />
+      )}
+
+      {terminada && session !== null && session.mode === 'diagnostic' && (
+        <DiagnosticPanel
+          reading={diagnostico.data ?? null}
+          isPending={diagnostico.isPending}
+          isError={diagnostico.isError}
+          onRetry={() => {
+            void diagnostico.refetch();
           }}
         />
       )}

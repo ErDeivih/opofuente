@@ -15,6 +15,8 @@ export interface StudySetupProps {
   conflict: string | null;
   error: string | null;
   onCreate: (input: CreateSession) => void;
+  /** El diagnóstico no elige conjunto ni parte: la muestra la compone el servidor por temas. */
+  onDiagnostic: () => void;
 }
 
 /**
@@ -58,7 +60,15 @@ function whyNotPracticeable(part: ConvocationDetail['parts'][number]): string {
  * 3. **no crea la sesión sin clave activa**: sin plantilla activa no hay corrección, y se dice antes
  *    de intentarlo.
  */
-export function StudySetup({ convocation, sets, busy, conflict, error, onCreate }: StudySetupProps) {
+export function StudySetup({
+  convocation,
+  sets,
+  busy,
+  conflict,
+  error,
+  onCreate,
+  onDiagnostic,
+}: StudySetupProps) {
   const parts = convocation?.parts ?? [];
   const practicables = parts.filter(isPracticeable);
   const [mode, setMode] = useState<CreateSession['mode']>('practice');
@@ -77,6 +87,9 @@ export function StudySetup({ convocation, sets, busy, conflict, error, onCreate 
   const parte = practicables.find((candidato) => candidato.code === partCode) ?? null;
   const disponible = parte?.ordinary_items ?? null;
   const sinClave = conjunto !== null && conjunto.active_key_id === null;
+  // Un simulacro monta el **perfil exacto** del examen: mismas reservas, mismo tamaño, mismo tiempo. Lo
+  // único que cambia es que no se llama oficial y que evita lo visto hace poco (06_QUESTIONS §5).
+  const modoDeExamen = mode === 'official_exam' || mode === 'mock_exam';
 
   const bloqueado = conjunto === null || sinClave || parte === null || disponible === 0;
 
@@ -88,7 +101,7 @@ export function StudySetup({ convocation, sets, busy, conflict, error, onCreate 
       question_set_id: conjunto.id,
       part_code: parte.code,
       count: mode === 'practice' ? Number(count) : null,
-      include_reserves: mode === 'official_exam',
+      include_reserves: modoDeExamen,
     };
     onCreate({
       opposition_id: conjunto.opposition_id,
@@ -106,7 +119,9 @@ export function StudySetup({ convocation, sets, busy, conflict, error, onCreate 
       <h2 id="configurar-sesion">Preparar la sesión</h2>
       <p className="hint">
         El modo decide cómo se corrige: en práctica se puede corregir al responder; un examen oficial
-        corrige al terminar, con el tamaño, las reservas y el tiempo de la convocatoria.
+        corrige al terminar, con el tamaño, las reservas y el tiempo de la convocatoria; un{' '}
+        <strong>simulacro</strong> monta ese mismo perfil pero no se llama oficial y prefiere las
+        preguntas que no has visto hace poco.
       </p>
 
       <div className="form__row">
@@ -120,7 +135,7 @@ export function StudySetup({ convocation, sets, busy, conflict, error, onCreate 
           onChange={(event) => {
             const elegido = event.target.value as CreateSession['mode'];
             setMode(elegido);
-            if (elegido === 'official_exam') {
+            if (elegido !== 'practice') {
               setShuffle(false);
             }
           }}
@@ -248,10 +263,13 @@ export function StudySetup({ convocation, sets, busy, conflict, error, onCreate 
           </>
         ) : (
           <p className="hint">
-            En un examen oficial no se eligen ni el número de preguntas ni la corrección: los fija la
-            convocatoria ({disponible ?? '—'} preguntas ordinarias
+            {mode === 'mock_exam'
+              ? 'El simulacro usa el perfil exacto del examen: '
+              : 'En un examen oficial no se eligen ni el número de preguntas ni la corrección: los fija la convocatoria ('}
+            {disponible ?? '—'} preguntas ordinarias
             {parte?.reserve_items ? ` y ${String(parte.reserve_items)} de reserva` : ''}
-            {parte?.time_minutes ? `, ${String(parte.time_minutes)} minutos` : ''}).
+            {parte?.time_minutes ? `, ${String(parte.time_minutes)} minutos` : ''}
+            {mode === 'mock_exam' ? '.' : ').'}
           </p>
         )}
       </div>
@@ -282,6 +300,26 @@ export function StudySetup({ convocation, sets, busy, conflict, error, onCreate 
       >
         Empezar
       </button>
+
+      {/* El diagnóstico no se configura: su composición la pone el servidor. Se ofrece aparte para no
+          dar a entender que se eligen conjunto ni parte —no se eligen—. */}
+      <details>
+        <summary>¿No sabes por dónde empezar? Haz un diagnóstico</summary>
+        <p className="hint">
+          El diagnóstico compone una <strong>muestra pequeña repartida por temas</strong> del programa y
+          la lee con su intervalo: sirve para ver por dónde está el hueco, no para poner una nota. No se
+          elige conjunto ni parte; hacen falta al menos tres temas con preguntas asignadas.
+        </p>
+        <button
+          className="button"
+          type="button"
+          disabled={busy}
+          aria-label="Crear el diagnóstico"
+          onClick={onDiagnostic}
+        >
+          Empezar un diagnóstico
+        </button>
+      </details>
     </section>
   );
 }
