@@ -68,13 +68,14 @@ def _conjunto(
     reservas: int = 0,
     activar: bool = True,
     texto: str | None = None,
+    titulo: str = "Examen de prueba",
 ) -> str:
     oposiciones = client.get("/api/v1/oppositions").json()
     activa = next(oposicion for oposicion in oposiciones if oposicion["active"])
     creado = client.post(
         "/api/v1/question-sets",
         json={
-            "title": "Examen de prueba",
+            "title": titulo,
             "opposition_id": activa["id"],
             "set_type": "private_bank",
             "convocation_version_id": activa["active_convocation"]["id"],
@@ -1152,6 +1153,59 @@ def test_un_diagnostico_corrige_al_terminar_y_no_deja_elegirlo(
     )
     assert rechazado.status_code == 409, rechazado.text
     assert "corrige al terminar" in rechazado.json()["detail"]
+
+
+def test_un_diagnostico_con_dos_conjuntos_dice_de_donde_sale_cada_plantilla(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """La muestra puede salir de **varios** conjuntos: la sesión dice cuál es cada plantilla.
+
+    Es el caso que se rompía al decir solo «plantilla v1»: dos conjuntos distintos con su v1 son dos
+    claves distintas, y una etiqueta que las junta miente sobre con qué se corrige.
+    """
+    primera = _conjunto(seeded_client, preguntas=1, titulo="Conjunto A")
+    segunda = _conjunto(seeded_client, preguntas=1, titulo="Conjunto B")
+    oposicion = _oposicion_activa(seeded_client)
+    for set_id, sufijo in ((primera, "A"), (segunda, "B")):
+        importado = seeded_client.post(
+            f"/api/v1/question-sets/{set_id}/parse",
+            json={
+                "kind": "csv",
+                "text": "\n".join(
+                    [
+                        "enunciado;op1;op2;clave;tema",
+                        f"Pregunta uno del conjunto {sufijo};Verdadero;Falso;a;I.1",
+                        f"Pregunta dos del conjunto {sufijo};Verdadero;Falso;a;I.2",
+                        f"Pregunta tres del conjunto {sufijo};Verdadero;Falso;a;I.3",
+                    ]
+                ),
+                "mapping": {
+                    "stem": "enunciado",
+                    "options": ["op1", "op2"],
+                    "correct": "clave",
+                    "topic": "tema",
+                },
+            },
+            headers=ALLOWED_ORIGIN,
+        )
+        assert importado.status_code == 200, importado.text
+        _activar_ultima_clave(seeded_client, set_id)
+
+    respuesta = seeded_client.post(
+        "/api/v1/study-sessions",
+        json={"opposition_id": oposicion["id"], "mode": "diagnostic", "sources": []},
+        headers=ALLOWED_ORIGIN,
+    )
+
+    assert respuesta.status_code == 201, respuesta.text
+    sesion = respuesta.json()
+    # Seis preguntas: dos por tema, y con tres temas la muestra entera cabe (dos de cada conjunto).
+    assert sesion["total_questions"] == 6
+    assert sesion["question_set_id"] is None, "la muestra sale de más de un conjunto"
+    assert sesion["answer_key_version_id"] is None
+    # Y la etiqueta nombra los dos conjuntos: no se funden en una sola «plantilla v1».
+    assert "Conjunto A: plantilla v" in sesion["key_label"]
+    assert "Conjunto B: plantilla v" in sesion["key_label"]
 
 
 def test_la_lectura_por_temas_no_vale_para_una_practica(

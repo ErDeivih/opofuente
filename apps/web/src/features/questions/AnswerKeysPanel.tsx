@@ -286,6 +286,24 @@ export function AnswerKeysPanel({
                 </span>
               </div>
             )}
+            {outdated.outdated_session_ids.length > 0 && (
+              // Cuáles son, no solo cuántas: el servidor manda los identificadores para poder
+              // señalarlas, y una cifra sin lista obliga a buscarlas sesión a sesión en el historial.
+              <details>
+                <summary>
+                  {outdated.outdated_session_ids.length === 1
+                    ? 'Ver la sesión desactualizada'
+                    : `Ver las ${String(outdated.outdated_session_ids.length)} sesiones desactualizadas`}
+                </summary>
+                <ul className="hint">
+                  {outdated.outdated_session_ids.map((sesionId) => (
+                    <li key={sesionId}>
+                      <span className="sample__path">{sesionId}</span>
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            )}
             {outdated.without_evaluation > 0 && (
               <p className="hint">
                 {outdated.without_evaluation === 1

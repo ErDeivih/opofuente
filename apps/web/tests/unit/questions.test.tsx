@@ -811,6 +811,9 @@ describe('preguntas: plantillas', () => {
     expect(
       screen.getByText('de 2 sesión(es) terminadas, 2 no están corregidas con la plantilla v1 activa'),
     ).toBeInTheDocument();
+    // Y se pueden ver **cuáles**, no solo cuántas: los identificadores que manda el servidor.
+    expect(screen.getByText('ses-1')).toBeInTheDocument();
+    expect(screen.getByText('ses-2')).toBeInTheDocument();
 
     await userEvent.click(
       screen.getByRole('button', { name: 'Recalcular las 2 sesiones desactualizadas' }),

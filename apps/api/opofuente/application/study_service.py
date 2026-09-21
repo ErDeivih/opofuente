@@ -525,13 +525,13 @@ class StudyService:
             raise UnsupportedError("la muestra del diagnóstico ha salido vacía: revisa el banco")
 
         # La parte de una pregunta del banco no está declarada: el diagnóstico no es un examen, así
-        # que
-        # sus preguntas se congelan **sin parte** y se corrigen en directo, sin la penalización que
-        # la
-        # convocatoria fija para un examen. Inventar a qué parte pertenece cada pregunta sería peor.
+        # que sus preguntas se congelan **sin parte** y se corrigen en directo, sin la penalización
+        # que la convocatoria fija para un examen. Inventar a qué parte pertenece cada pregunta
+        # sería peor que corregirla sin penalización, y el resultado lo dice (parte nula, directo).
         por_id = {
             pregunta.id: pregunta for preguntas in candidatas.values() for pregunta in preguntas
         }
+        titulos_por_conjunto = {conjunto.id: conjunto.title for conjunto in con_clave}
         claves: dict[str, str] = {}
         etiquetas: list[str] = []
         congeladas: list[FrozenQuestion] = []
@@ -539,7 +539,12 @@ class StudyService:
             pregunta = por_id[question_id]
             clave = self._clave_activa(pregunta.question_set_id)
             claves[pregunta.question_set_id] = clave.id
-            etiqueta = f"plantilla v{clave.version_no}"
+            # La etiqueta lleva el conjunto: la muestra puede salir de varios, y dos plantillas «v1»
+            # de conjuntos distintos no son la misma clave (decir «plantilla v1» a secas mentiría).
+            etiqueta = (
+                f"{titulos_por_conjunto.get(pregunta.question_set_id, 'conjunto')}: "
+                f"plantilla v{clave.version_no}"
+            )
             if etiqueta not in etiquetas:
                 etiquetas.append(etiqueta)
             entrada = next(
@@ -1231,22 +1236,25 @@ class StudyService:
             ordinarias = [por_id[identificador] for identificador in (*frescas, *vistas)]
 
         if modo in (SessionMode.OFFICIAL_EXAM, SessionMode.MOCK_EXAM):
+            # El nombre del modo entra en los mensajes: decirle «examen oficial» a quien pidió un
+            # simulacro es confundir dos cosas que la aplicación distingue a propósito.
+            cual = "el examen oficial" if modo is SessionMode.OFFICIAL_EXAM else "el simulacro"
             if parte.ordinary_items is None:
                 raise UnsupportedError(
                     f"la convocatoria no dice cuántas preguntas tiene la parte «{parte.code}»: "
-                    "sin ese dato no se puede montar el examen oficial"
+                    f"sin ese dato no se puede montar {cual}"
                 )
             if len(ordinarias) < parte.ordinary_items:
                 raise UnsupportedError(
                     f"el conjunto «{conjunto.title}» tiene {len(ordinarias)} preguntas y la parte "
-                    f"«{parte.code}» pide {parte.ordinary_items}: faltan preguntas para el examen"
+                    f"«{parte.code}» pide {parte.ordinary_items}: faltan preguntas para {cual}"
                 )
             elegidas = ordinarias[: parte.ordinary_items]
             necesarias = parte.reserve_items or 0
             if len(reservas) < necesarias:
                 raise UnsupportedError(
                     f"la parte «{parte.code}» pide {necesarias} reservas y el conjunto tiene "
-                    f"{len(reservas)}: faltan reservas para el examen"
+                    f"{len(reservas)}: faltan reservas para {cual}"
                 )
             return (*elegidas, *reservas[:necesarias])
 
