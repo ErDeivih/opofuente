@@ -29,7 +29,7 @@ Reglas:
 | [DEBT-015](#debt-015--el-índice-léxico-se-puede-rehacer-pero-no-desde-la-interfaz) | S12 | El índice léxico se rehace desde el servicio y no hay acción en Ajustes que lo haga | **cerrada en S12** (entregada y probada, con la honestidad del criterio 2 escrita: el índice es FTS5 de contenido externo y «borrarlo a mano» no lo vacía) |
 | [DEBT-016](#debt-016--la-dificultad-observada-no-existe-y-los-umbrales-de-dominio-son-provisionales) | S11+ | El dominio se estima sin dificultad observada, con umbrales provisionales | abierta |
 | [DEBT-017](#debt-017--las-colecciones-existen-en-la-api-y-no-en-la-interfaz) | S12 | Las colecciones se pueden crear y llenar por la API; ninguna pantalla las enseña | **cerrada** (20 de septiembre de 2026: pantalla, filtro en el servidor, alta y **baja** de miembros, con dos defectos que la propia superficie destapó y se arreglaron) |
-| [DEBT-018](#debt-018--la-puerta-humana-de-s04-no-se-ejecutó) | antes de usar material real | S04 pedía medir la revisión sobre 20–50 ficheros reales antes de abrir S05, y no se hizo | abierta (condición previa) |
+| [DEBT-018](#debt-018--la-puerta-humana-de-s04-no-se-ejecutó) | antes de usar material real | S04 pedía medir la revisión sobre 20–50 ficheros reales antes de abrir S05, y no se hizo | abierta (la **mitad de la máquina está medida** con 30 ficheros reales —90 propuestas, 38 pendientes de revisar—; falta el tiempo de revisión del propietario, la decisión y su confirmación) |
 | [DEBT-019](#debt-019--el-estado-conservado-sin-extractor-no-llega-a-la-pantalla) | S12 | `unsupported_preserved` se guarda y se sirve, pero no hay prueba de interfaz ni de contrato que lo muestre legible | **cerrada** (el estado se enseña con su nombre y su motivo, y hay prueba de la API de punta a punta y prueba de interfaz) |
 
 ---
@@ -917,6 +917,28 @@ se rediseña la pantalla de revisión antes de seguir construyendo encima.
    propuestas revisadas, aceptadas, corregidas y descartadas.
 2. La decisión («se sostiene» o «se rediseña así») queda escrita, con su ADR si toca rediseñar.
 3. El propietario confirma el número: es una puerta humana, no una medición automática.
+
+**Estado: abierta, con la mitad de la máquina medida (21 de septiembre de 2026).** Se importó una copia
+de 30 ficheros reales del propietario (29 PDF y 1 DOCX, 11,8 MB) en una base **aparte** —nunca la real y
+nunca los originales— y se midió lo que la máquina puede medir. El informe está en
+`docs/reviews/DEBT-018-revision-material-real.md`, con el método para repetirlo. Los números:
+
+| Paso | Medida |
+|---|---|
+| Inventario en lectura (30 ficheros) | 1,4 s · 30 descubiertos · 0 incidencias |
+| Copia + extracción (el worker) | 2,8 s · 30 de 30 extraídos · 0 fallidos · 0 conservados sin extractor |
+| Clasificación determinista | 46,7 s |
+| Propuestas generadas | 90 (60 `topic`, 28 `document_type`, 2 `authority`) |
+| **Pendientes de revisar a mano** | **38** (52 quedaron aplicadas de forma provisional) |
+
+Lo que esto dice del diseño, sin adornos: **38 propuestas para 30 ficheros**, 26 de ellas de
+`document_type`. El coste de la revisión no es despreciable y se concentra en un eje: ahí tiene su primer
+objetivo cualquier rediseño que quiera ahorrar tiempo.
+
+**Por qué sigue abierta:** falta lo que no puede medir la máquina —el **tiempo de revisión** del
+propietario sobre esas 38 propuestas, los recuentos de revisadas/aceptadas/corregidas/descartadas, la
+decisión escrita y su confirmación (criterio 3). Lo que hay es la mitad reproducible; la mitad que
+decide si el producto ahorra tiempo necesita una persona, y esa persona es el propietario.
 
 ## DEBT-019 — El estado «conservado sin extractor» no llega a la pantalla
 
