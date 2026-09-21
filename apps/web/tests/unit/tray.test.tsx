@@ -369,10 +369,57 @@ describe('pantalla Bandeja', () => {
 
     const tabla = await screen.findByRole('table', { name: /entradas/ });
     expect(within(tabla).getByText('tema-02.txt')).toBeInTheDocument();
-    expect(within(tabla).getByText('hashed')).toBeInTheDocument();
+    // El estado de una entrada se lee, no se pinta el valor crudo del enum (DEBT-019).
+    expect(within(tabla).getByText('copiada y verificada')).toBeInTheDocument();
+    expect(within(tabla).queryByText('hashed')).not.toBeInTheDocument();
 
     const incidencias = await screen.findByRole('region', { name: 'Incidencias del lote' });
     expect(within(incidencias).getByText('source_changed')).toBeInTheDocument();
+  });
+
+  it('un formato sin extractor se ve como conservado y sin texto, no como un fallo (DEBT-019)', async () => {
+    // S03 cambió el comportamiento: un `.xlsx` ya **no** se omite, se copia y se conserva sin
+    // extraer. DEBT-019 pedía que eso llegue a la pantalla con su nombre y su explicación, en lugar
+    // del código crudo del enum, que no dice nada a quien lo lee.
+    stubTrayApi({
+      '/api/v1/ingestion-batches/batch-importacion/items': {
+        body: {
+          ...entradasDelLote,
+          entries: [
+            {
+              ...entradasDelLote.entries[0],
+              id: 'item-xlsx',
+              relative_path: 'plantilla.xlsx',
+              original_name: 'plantilla.xlsx',
+              media_type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+              status: 'unsupported_preserved',
+              detail: 'copiado y conservado: no hay extractor para este formato',
+            },
+          ],
+          total: 1,
+        },
+      },
+    });
+    renderWithProviders(
+      <AppShell>
+        <TrayPage />
+      </AppShell>,
+      { route: '/bandeja' },
+    );
+
+    await inventariar();
+    await screen.findByRole('heading', { name: 'Vista previa del inventario' });
+    await userEvent.click(screen.getByRole('button', { name: 'Importar una copia' }));
+
+    const tabla = await screen.findByRole('table', { name: /entradas/ });
+    const fila = within(tabla).getByRole('row', { name: /plantilla\.xlsx/ });
+    expect(within(fila).getByText('conservada sin extractor (copiada, sin texto)')).toBeInTheDocument();
+    expect(
+      within(fila).getByText('copiado y conservado: no hay extractor para este formato'),
+    ).toBeInTheDocument();
+    // Y no se presenta como un fallo: está copiada, solo que sin texto.
+    expect(within(fila).queryByText('fallida')).not.toBeInTheDocument();
+    expect(within(tabla).queryByText('unsupported_preserved')).not.toBeInTheDocument();
   });
 
   it('ofrece cancelar mientras el lote trabaja', async () => {

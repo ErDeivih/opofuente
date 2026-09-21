@@ -38,6 +38,30 @@ const SEVERITY_TONE: Record<string, StatusTone> = {
   error: 'blocked',
 };
 
+/**
+ * Cómo se llama cada estado de una entrada, y qué hacer con él (DEBT-019).
+ *
+ * Antes la tabla pintaba el valor crudo del enum (`unsupported_preserved`), que no dice nada a quien
+ * lo lee. Desde S03 un formato sin extractor **se conserva** en lugar de omitirse, y eso tiene que
+ * verse: la entrada está copiada, no se ha extraído nada de ella, y no es un fallo.
+ */
+const ITEM_STATUS: Record<string, { label: string; tone: StatusTone }> = {
+  discovered: { label: 'descubierta', tone: 'info' },
+  inventoried: { label: 'inventariada', tone: 'info' },
+  omitted: { label: 'omitida', tone: 'warning' },
+  copied: { label: 'copiada', tone: 'ok' },
+  hashed: { label: 'copiada y verificada', tone: 'ok' },
+  extracted: { label: 'copiada y con texto extraído', tone: 'ok' },
+  unsupported_preserved: {
+    label: 'conservada sin extractor (copiada, sin texto)',
+    tone: 'warning',
+  },
+  expanded: { label: 'contenedor expandido', tone: 'info' },
+  ocr_pending: { label: 'pendiente de OCR (copiada, sin texto)', tone: 'warning' },
+  failed: { label: 'fallida', tone: 'blocked' },
+  cancelled: { label: 'cancelada', tone: 'info' },
+};
+
 /** Estados desde los que la API admite un reintento (los demás responden 409). */
 const CAN_RETRY: ReadonlySet<string> = new Set(['failed', 'cancelled']);
 
@@ -380,8 +404,8 @@ export function TrayPage() {
                     {entry.relative_path}
                   </th>
                   <td>
-                    <StatusBadge tone={entry.status === 'hashed' ? 'ok' : entry.status === 'failed' ? 'blocked' : 'info'}>
-                      {entry.status}
+                    <StatusBadge tone={(ITEM_STATUS[entry.status] ?? { tone: 'info' as const }).tone}>
+                      {ITEM_STATUS[entry.status]?.label ?? entry.status}
                     </StatusBadge>
                   </td>
                   <td>{formatBytes(entry.size_bytes)}</td>

@@ -336,11 +336,13 @@ test('E2E-03 bandeja: un ZIP subido se expande en entradas propias y se extrae',
     timeout: 60_000,
   });
 
-  // Los miembros del contenedor son entradas del lote, no un fichero opaco.
+  // Los miembros del contenedor son entradas del lote, no un fichero opaco. Y el estado se lee: la
+  // tabla no enseña el código crudo del enum (DEBT-019).
   const entradas = page.getByRole('table', { name: /entradas/ });
   await expect(entradas.getByText('paquete.zip/temas/tema-01.txt')).toBeVisible();
   await expect(entradas.getByText('paquete.zip/temas/tema-02.txt')).toBeVisible();
-  await expect(entradas.getByText('expanded', { exact: true })).toBeVisible();
+  await expect(entradas.getByText('contenedor expandido', { exact: true })).toBeVisible();
+  await expect(entradas.getByText('expanded', { exact: true })).toHaveCount(0);
 });
 
 test('E2E-02 bandeja: una carpeta inexistente se explica en lugar de fallar en silencio', async ({

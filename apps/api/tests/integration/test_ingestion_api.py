@@ -565,6 +565,45 @@ def test_reintentar_un_lote_de_texto_pegado_funciona_sin_carpeta_de_origen(
     assert final["entries"][0]["status"] == ItemStatus.EXTRACTED.value
 
 
+def test_un_formato_sin_extractor_se_conserva_y_la_api_lo_dice(
+    seeded_settings: Settings,
+    migrated_settings: Settings,
+    api_only_client: TestClient,
+    tmp_path: Path,
+) -> None:
+    """DEBT-019: el estado «conservado sin extractor» se sirve por la API, no solo se guarda.
+
+    Desde S03 un `.xlsx` **no** se omite: se copia y se conserva. Lo que faltaba era que ese estado
+    llegara legible hasta la respuesta de las entradas, que es lo que la pantalla enseña. Aquí se
+    comprueba de punta a punta: el fichero entra por una carpeta, el worker lo copia y lo extrae
+    (sin extractor), y la API devuelve la entrada en `unsupported_preserved` con su motivo.
+    """
+    carpeta = tmp_path / "material-con-xlsx"
+    carpeta.mkdir()
+    # Un `.xlsx` de verdad (ZIP con la firma de Office): se conserva, no se extrae.
+    (carpeta / "plantilla.xlsx").write_bytes(
+        b"PK\x03\x04" + b"\x00" * 64 + b"[Content_Types].xml" + b"\x00" * 32
+    )
+    (carpeta / "notas.txt").write_text("texto plano con extractor", encoding="utf-8")
+
+    inventario = inventariar(api_only_client, carpeta)
+    batch = api_only_client.post(
+        f"/api/v1/inventories/{inventario['batch']['id']}/confirm-import", headers=ALLOWED_ORIGIN
+    ).json()
+
+    # El worker hace las dos fases: copiar y extraer.
+    run_one_job(api_only_client, attempts=3)
+
+    entradas = api_only_client.get(f"/api/v1/ingestion-batches/{batch['id']}/items").json()
+    por_nombre = {entrada["relative_path"]: entrada for entrada in entradas["entries"]}
+    assert "plantilla.xlsx" in por_nombre
+    conservada = por_nombre["plantilla.xlsx"]
+    assert conservada["status"] == ItemStatus.UNSUPPORTED_PRESERVED.value
+    assert conservada["detail"], "el motivo tiene que viajar: la pantalla lo enseña"
+    # Y el fichero de texto sí se extrae: conservar no es dejar de extraer lo que sí se puede.
+    assert por_nombre["notas.txt"]["status"] == ItemStatus.EXTRACTED.value
+
+
 def test_el_ciclo_completo_lo_ejecuta_el_worker(seeded_settings: Settings, material: Path) -> None:
     """Con el worker en marcha, confirmar la importación termina en un lote copiado."""
     settings = Settings(
