@@ -187,6 +187,19 @@ class QuestionImportReportSchema(BaseModel):
     unmatched_positions: list[int]
     model_code_detected: str | None = None
     key_id: str | None = None
+    #: Rótulos de parte vistos en el material. Se declaran y **no** se guardan por pregunta
+    #: (ADR-014): lo que no se hace es perderlos en silencio (DEBT-010, criterio 3).
+    parts_detected: list[str] = Field(default_factory=list)
+    #: Citas creadas al importar desde un documento: el enlace pregunta↔fragmento (DEBT-010).
+    evidence_links: int = 0
+
+
+class ImportQuestionsFromDocumentSchema(BaseModel):
+    """Importar las preguntas de una **versión de documento** (DEBT-010)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    document_version_id: str = Field(min_length=1)
 
 
 class KeyEntrySchema(BaseModel):

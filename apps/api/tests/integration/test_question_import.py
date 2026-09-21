@@ -21,8 +21,10 @@ from opofuente.application.question_service import QuestionService
 from opofuente.config import Settings
 from opofuente.domain.errors import InvariantViolationError, MappingMismatchError
 from opofuente.infrastructure.db import build_engine, build_session_factory
+from opofuente.infrastructure.document_repository import SqlAlchemyDocumentRepository
 from opofuente.infrastructure.migrations import run_migrations
 from opofuente.infrastructure.question_repository import SqlAlchemyQuestionRepository
+from opofuente.infrastructure.representation_store import RepresentationStore
 
 AHORA = datetime(2026, 9, 17, 12, 0, tzinfo=UTC)
 
@@ -65,7 +67,10 @@ def _servicio(tmp_path: Path) -> tuple[QuestionService, Settings]:
     sesiones = build_session_factory(engine)
     _sembrar(settings)
     repositorio = SqlAlchemyQuestionRepository(sesiones)
-    return QuestionService(repositorio, _Reloj()), settings
+    # El servicio necesita además los documentos: importar preguntas **desde un documento**
+    # (DEBT-010) lee la versión y sus fragmentos para crear la cita.
+    documentos = SqlAlchemyDocumentRepository(sesiones, RepresentationStore(settings.data_paths))
+    return QuestionService(repositorio, _Reloj(), documentos), settings
 
 
 def _sembrar(settings: Settings) -> None:

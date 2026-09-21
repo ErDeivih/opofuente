@@ -125,6 +125,8 @@ const INFORME: QuestionImportReport = {
   unmatched_positions: [40],
   model_code_detected: null,
   key_id: 'key-1',
+  parts_detected: [],
+  evidence_links: 0,
 };
 
 /** Las sesiones del conjunto que no están corregidas con la plantilla activa (DEBT-013). */
@@ -344,7 +346,8 @@ describe('preguntas: la ficha', () => {
     expect(
       await screen.findByText(/no tiene documento de origen adjunto/),
     ).toBeInTheDocument();
-    expect(screen.getByText(/DEBT-010/)).toBeInTheDocument();
+    // Y dice de dónde sale una cita, que ya no es una deuda: se importa desde un documento.
+    expect(screen.getByText(/desde la pestaña «Importar» de esta pantalla/)).toBeInTheDocument();
   });
 
   it('muestra la evidencia con su cita cuando existe', async () => {
@@ -355,6 +358,36 @@ describe('preguntas: la ficha', () => {
     expect(await screen.findByText('Tema 1, pág. 3')).toBeInTheDocument();
     expect(screen.getByText('La Constitucion espanola de 1978')).toBeInTheDocument();
     expect(screen.getByText(/sostiene: Sostiene la respuesta correcta/)).toBeInTheDocument();
+  });
+
+  it('la cita se puede abrir en el original y en su página (DEBT-010)', async () => {
+    stubQuestions();
+    renderPreguntas();
+    await abrirPregunta(2);
+
+    // La cita no es un texto decorativo: lleva al fichero original, y al salto de página cuando la
+    // cita dice en qué página está.
+    const enlace = await screen.findByRole('link', {
+      name: 'abrir el original de la cita en la página 3',
+    });
+    expect(enlace.getAttribute('href')).toContain(
+      '/api/v1/document-versions/ver-1/original#page=3',
+    );
+    expect(enlace).toHaveAttribute('rel', 'noreferrer');
+  });
+
+  it('una cita sin página abre el original sin inventarse un salto', async () => {
+    stubQuestions({
+      '/api/v1/questions/q-2/evidence': { body: [{ ...EVIDENCIA[0], page: null }] },
+    });
+    renderPreguntas();
+    await abrirPregunta(2);
+
+    const enlace = await screen.findByRole('link', { name: 'abrir el original de la cita' });
+    // Sin página no hay `#page`: el enlace lleva al fichero, sin un salto inventado.
+    expect(enlace.getAttribute('href')).toMatch(
+      /\/api\/v1\/document-versions\/ver-1\/original$/,
+    );
   });
 
   it('guarda la composición con el tipo y la reserva elegidos', async () => {
@@ -537,6 +570,146 @@ describe('preguntas: importar', () => {
 
     expect(csv.split('\n')[0]).toBe('fila,causa,detalle');
     expect(csv).toContain('2,no_stem,"la fila no trae ""enunciado"""');
+  });
+
+  it('importa las preguntas de la versión activa de un documento y dice las citas creadas (DEBT-010)', async () => {
+    const fetchMock = stubQuestions({
+      '/api/v1/documents?limit=50&offset=0': {
+        body: {
+          documents: [
+            {
+              id: 'doc-1',
+              canonical_title: 'Temario sintetico',
+              document_type: 'curriculum',
+              authority_tier: 'A',
+              owner_scope: 'private_user',
+              is_public: false,
+              version_count: 1,
+              mapping_count: 0,
+              active_version: {
+                id: 'ver-1',
+                logical_document_id: 'doc-1',
+                artifact_id: 'art-1',
+                is_accepted: true,
+                evidence_count: 2,
+                section_count: 1,
+              },
+            },
+          ],
+          total: 1,
+          limit: 50,
+          offset: 0,
+        },
+      },
+      '/api/v1/question-sets/set-1/import-document': {
+        body: {
+          ...INFORME,
+          created: 3,
+          evidence_links: 3,
+          parts_detected: ['2'],
+          rejected: [],
+          missing_columns: [],
+          ignored_columns: [],
+          unmatched_positions: [],
+          keys_in_conflict: 0,
+        },
+      },
+    });
+    renderPreguntas();
+
+    await userEvent.click(await screen.findByRole('tab', { name: 'Importar' }));
+    await userEvent.selectOptions(
+      screen.getByLabelText('Qué se importa'),
+      'document',
+    );
+    await userEvent.selectOptions(
+      await screen.findByLabelText('Documento del que salen las preguntas'),
+      'doc-1',
+    );
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Importar las preguntas del documento' }),
+    );
+
+    // Se manda la **versión**, no el documento: es lo que el servidor lee para crear la cita.
+    await waitFor(() => {
+      expect(cuerpoJson(fetchMock, '/question-sets/set-1/import-document', 'POST')).toEqual({
+        document_version_id: 'ver-1',
+      });
+    });
+    // Y el informe dice cuántas citas se han creado, y que la parte detectada no se guarda.
+    expect(await screen.findByText(/citas creadas/)).toBeInTheDocument();
+    expect(screen.getByText(/El material trae rótulos de parte/)).toBeInTheDocument();
+    expect(screen.getByText(/No se guardan/)).toBeInTheDocument();
+  });
+
+  it('no importa de una versión sin aceptar, y dice por qué', async () => {
+    stubQuestions({
+      '/api/v1/documents?limit=50&offset=0': {
+        body: {
+          documents: [
+            {
+              id: 'doc-1',
+              canonical_title: 'Temario sin aceptar',
+              document_type: 'curriculum',
+              authority_tier: 'A',
+              owner_scope: 'private_user',
+              is_public: false,
+              version_count: 1,
+              mapping_count: 0,
+              active_version: {
+                id: 'ver-1',
+                logical_document_id: 'doc-1',
+                artifact_id: 'art-1',
+                is_accepted: false,
+                evidence_count: 2,
+                section_count: 1,
+              },
+            },
+          ],
+          total: 1,
+          limit: 50,
+          offset: 0,
+        },
+      },
+    });
+    renderPreguntas();
+
+    await userEvent.click(await screen.findByRole('tab', { name: 'Importar' }));
+    await userEvent.selectOptions(screen.getByLabelText('Qué se importa'), 'document');
+    await userEvent.selectOptions(
+      await screen.findByLabelText('Documento del que salen las preguntas'),
+      'doc-1',
+    );
+
+    // Una candidata no es la versión buena: sus preguntas citarían material sin aceptar.
+    expect(
+      screen.getByRole('button', { name: 'Importar las preguntas del documento' }),
+    ).toBeDisabled();
+    expect(screen.getByText(/una candidata no es la versión buena/)).toBeInTheDocument();
+  });
+
+  it('si la biblioteca no se puede leer, lo dice en lugar de enseñarla vacía', async () => {
+    stubQuestions({
+      '/api/v1/documents?limit=50&offset=0': {
+        status: 500,
+        contentType: 'application/problem+json',
+        body: {
+          type: 'about:blank',
+          title: 'Internal Server Error',
+          status: 500,
+          detail: 'la base de datos no responde',
+          code: 'internal_error',
+        },
+      },
+    });
+    renderPreguntas();
+
+    await userEvent.click(await screen.findByRole('tab', { name: 'Importar' }));
+    await userEvent.selectOptions(screen.getByLabelText('Qué se importa'), 'document');
+
+    // «No hay documentos» y «no se ha podido leer» no son lo mismo: si no se sabe, se dice.
+    expect(await screen.findByText(/No se ha podido leer la biblioteca/)).toBeInTheDocument();
+    expect(screen.queryByText(/La biblioteca todavía no tiene documentos/)).not.toBeInTheDocument();
   });
 });
 

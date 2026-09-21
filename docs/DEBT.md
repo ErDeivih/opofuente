@@ -21,14 +21,14 @@ Reglas:
 | [DEBT-007](#debt-007--higiene-del-almacén-artefactos-sin-origen-y-temporales) | S12 | Recolector de artefactos sin origen, temporales `.part` y purga de trabajos | **cerrada en S12** (backend e interfaz: foto del almacén, retirada con confirmación y prueba de que lo referenciado no se toca) |
 | [DEBT-008](#debt-008--conservar-los-formatos-sin-extractor-en-lugar-de-omitirlos) | S03 | Conservar PPTX/XLSX/EPUB y similares como `unsupported_preserved` | **cerrada en S03** |
 | [DEBT-009](#debt-009--el-texto-plano-no-produce-secciones-y-sin-secciones-no-hay-citas) | S06 | El texto plano y el texto pegado no producen secciones: sin ellas no hay citas ni diff | **cerrada en S06** |
-| [DEBT-010](#debt-010--una-pregunta-importada-no-queda-enlazada-a-su-sección) | S06/S11 | Importar preguntas no las enlaza a la sección que las sostiene, y `tags`/`source`/`parte` se leen pero no se guardan | abierta |
+| [DEBT-010](#debt-010--una-pregunta-importada-no-queda-enlazada-a-su-sección) | S06/S11 | Importar preguntas no las enlaza a la sección que las sostiene, y `tags`/`source`/`parte` se leen pero no se guardan | **cerrada** (20 de septiembre de 2026: importación desde una versión de documento con su cita, abrible en su página; la parte y las etiquetas se declaran, con la decisión en ADR-014) |
 | [DEBT-011](#debt-011--la-pantalla-del-banco-solo-enseña-las-primeras-100-preguntas) | S09 | La pantalla del banco pide 100 preguntas y no permite recorrer el resto de un conjunto grande | **cerrada en la revisión de S00–S11** (obligación vencida desde S09; se cerró con paginación real y prueba) |
 | [DEBT-012](#debt-012--modos-de-sesión-declarados-y-sin-implementar) | S11+ | Simulacro y diagnóstico están en el vocabulario del modelo y no implementados | abierta (S10 implementó el **repaso de errores**; siguen fuera el simulacro y el diagnóstico) |
-| [DEBT-013](#debt-013--el-recálculo-no-se-puede-hacer-en-bloque) | S09+ | Recalcular una clave corregida es sesión a sesión, y solo se conserva un resultado anterior | abierta (el **recálculo en bloque existe** desde S12 con su informe por sesión; falta el aviso en la interfaz de cuántas sesiones quedan desactualizadas al activar una clave) |
+| [DEBT-013](#debt-013--el-recálculo-no-se-puede-hacer-en-bloque) | S09+ | Recalcular una clave corregida es sesión a sesión, y solo se conserva un resultado anterior | **cerrada** (20 de septiembre de 2026: recálculo en bloque con informe por sesión, y la pantalla de plantillas dice cuántas sesiones quedan desactualizadas y las recalcula) |
 | [DEBT-014](#debt-014--sin-proveedor-de-embeddings-ni-de-lenguaje-el-rag-es-extractivo) | S10+ | No hay embeddings, ni índice vectorial, ni proveedor de lenguaje: la búsqueda es léxica y la respuesta extractiva | abierta |
-| [DEBT-015](#debt-015--el-índice-léxico-se-puede-rehacer-pero-no-desde-la-interfaz) | S12 | El índice léxico se rehace desde el servicio y no hay acción en Ajustes que lo haga | abierta (la **API** está desde S12: `GET /search/index` dice si falta algo y `POST /search/reindex` lo rehace informando; falta el botón en Ajustes) |
+| [DEBT-015](#debt-015--el-índice-léxico-se-puede-rehacer-pero-no-desde-la-interfaz) | S12 | El índice léxico se rehace desde el servicio y no hay acción en Ajustes que lo haga | **cerrada en S12** (entregada y probada, con la honestidad del criterio 2 escrita: el índice es FTS5 de contenido externo y «borrarlo a mano» no lo vacía) |
 | [DEBT-016](#debt-016--la-dificultad-observada-no-existe-y-los-umbrales-de-dominio-son-provisionales) | S11+ | El dominio se estima sin dificultad observada, con umbrales provisionales | abierta |
-| [DEBT-017](#debt-017--las-colecciones-existen-en-la-api-y-no-en-la-interfaz) | S12 | Las colecciones se pueden crear y llenar por la API; ninguna pantalla las enseña | abierta (entrega parcial: pantalla, filtro por colección en el servidor y pruebas **hechas**; falta poder **quitar** miembros, que necesita ruta propia) |
+| [DEBT-017](#debt-017--las-colecciones-existen-en-la-api-y-no-en-la-interfaz) | S12 | Las colecciones se pueden crear y llenar por la API; ninguna pantalla las enseña | **cerrada** (20 de septiembre de 2026: pantalla, filtro en el servidor, alta y **baja** de miembros, con dos defectos que la propia superficie destapó y se arreglaron) |
 | [DEBT-018](#debt-018--la-puerta-humana-de-s04-no-se-ejecutó) | antes de usar material real | S04 pedía medir la revisión sobre 20–50 ficheros reales antes de abrir S05, y no se hizo | abierta (condición previa) |
 | [DEBT-019](#debt-019--el-estado-conservado-sin-extractor-no-llega-a-la-pantalla) | S12 | `unsupported_preserved` se guarda y se sirve, pero no hay prueba de interfaz ni de contrato que lo muestre legible | **cerrada** (el estado se enseña con su nombre y su motivo, y hay prueba de la API de punta a punta y prueba de interfaz) |
 
@@ -509,6 +509,51 @@ sitio.
 2. La ficha muestra esa cita junto al enunciado y se puede abrir el original en su página.
 3. Prueba de que la parte detectada no se pierde en silencio: o se guarda, o el informe dice que no se
    guarda (hoy hace lo segundo solo para `tags` y `source`).
+
+**Estado: cerrada (20 de septiembre de 2026).** Criterio por criterio, y con las decisiones escritas:
+
+1. **Cita con su fragmento, su página y su etiqueta.** `POST /question-sets/{id}/import-document` (ruta
+   añadida al contrato, registrada en ADR-013) lee la versión por sus fragmentos, reconstruye el texto
+   conservando la estructura de líneas y crea, por pregunta, una `question_evidence` con papel `stem`,
+   estado `accepted` y el fragmento exacto del que se leyó el enunciado. El texto de la versión se lee
+   en el orden que dejó la extracción y la **sección** de origen se guarda en
+   `question_versions.source_section_id` —el campo existía desde S05 y nadie lo rellenaba—. Probado en
+   `test_importar_desde_un_documento_enlaza_cada_pregunta_con_su_fragmento`: tres preguntas, tres citas,
+   cada una con su span, su página, su etiqueta de cita y su sección, y sin cruzarse entre secciones.
+2. **La ficha enseña la cita y la abre.** La evidencia se pinta con su etiqueta, su texto y su enlace
+   «abrir el original» a `GET /document-versions/{id}/original#page=N`. Probado en la interfaz (`la cita
+   se puede abrir en el original y en su página`, y el caso sin página, que no inventa un salto) y de
+   extremo a extremo en `E2E-05 importación: las preguntas de un documento entran con su cita y se abre
+   el original`, que sube un temario por la Bandeja, lo promociona, acepta su versión, importa las
+   preguntas **desde la pantalla** y abre la cita.
+3. **La parte detectada no se pierde en silencio, y se decidió dónde vive.** El rótulo del material viaja
+   en el informe (`parts_detected`) con el texto que dice que **no** se guarda por pregunta, y el
+   **ADR-014** decide por qué: el modelo no liga preguntas a `exam_parts`, emparejar «Parte 2» con un
+   código de la convocatoria sería adivinar, y guardar el rótulo suelto sería un dato que ninguna
+   pantalla lee. Probado en la prueba de integración (el rótulo `["2"]` llega declarado) y en la de
+   interfaz.
+
+**Lo que la deuda pedía y se resolvió decidiendo, no implementando** (todo en el ADR-014): `tags` y
+`source` —y `section`, `reference`, `image`, `id` del JSON— siguen leyéndose y declarándose en
+`ignored_columns`, pero ya no como un «todavía»: **es su destino final**, porque ninguna pantalla,
+filtro ni exportación consume etiquetas libres y la procedencia ya está resuelta con la cita. Quitar
+`tags` y `source` del mapeo contradiría `04_INGESTION` §10 sin ganar nada; guardarlos sería coleccionar
+datos que nadie lee.
+
+**Dos cosas que este cierre añade y conviene saber:**
+
+- **Solo se importa de la versión aceptada.** Una candidata no es la versión buena (la regla de la
+  Biblioteca), así que la pantalla deja el botón deshabilitado y dice qué hacer mientras la versión no
+  esté aceptada. Está decidido en el ADR-014 y probado en la interfaz.
+- **Volver a importar el mismo documento repara las citas**: la pregunta ya estaba (idempotente por
+  huella) y el enlace se crea si no existía, sin duplicar nada. Probado en
+  `test_importar_dos_veces_el_mismo_documento_no_duplica_ni_la_pregunta_ni_la_cita`, y el caso contrario
+  —una versión sin texto extraído— en `test_una_version_sin_fragmentos_no_inventa_citas`: el informe
+  trae su incidencia y **no** se crea ninguna evidencia vacía.
+
+**Lo que queda fuera a propósito:** la parte del examen no se guarda (ADR-014, con lo que haría falta
+para guardarla) y las etiquetas libres tampoco. Ninguna de las dos es una promesa incumplida: las dos
+están decididas y se declaran donde se leen.
 
 ## DEBT-011 — La pantalla del banco solo enseña las primeras 100 preguntas
 

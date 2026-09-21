@@ -29,8 +29,10 @@ from opofuente.config import Settings
 from opofuente.domain.errors import SessionStateError
 from opofuente.domain.study import Feedback, SessionMode
 from opofuente.infrastructure.db import build_engine, build_session_factory
+from opofuente.infrastructure.document_repository import SqlAlchemyDocumentRepository
 from opofuente.infrastructure.profile_repository import SqlAlchemyProfileRepository
 from opofuente.infrastructure.question_repository import SqlAlchemyQuestionRepository
+from opofuente.infrastructure.representation_store import RepresentationStore
 from opofuente.infrastructure.study_repository import SqlAlchemyStudyRepository
 
 AHORA = datetime(2026, 9, 17, 12, 0, tzinfo=UTC)
@@ -51,7 +53,13 @@ def _piezas(settings: Settings) -> tuple[StudyService, QuestionService, SqlAlche
     reloj = _Reloj()
     return (
         StudyService(study=estudio, questions=preguntas, profiles=perfiles, clock=reloj),
-        QuestionService(questions=preguntas, clock=reloj),
+        QuestionService(
+            questions=preguntas,
+            clock=reloj,
+            documents=SqlAlchemyDocumentRepository(
+                sesiones, RepresentationStore(settings.data_paths)
+            ),
+        ),
         estudio,
     )
 

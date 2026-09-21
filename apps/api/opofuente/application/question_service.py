@@ -16,6 +16,7 @@ from __future__ import annotations
 import csv
 import io
 from collections.abc import Sequence
+from dataclasses import replace
 from datetime import date
 from typing import Any
 
@@ -33,7 +34,7 @@ from opofuente.application.question_models import (
     QuestionView,
     RejectedRow,
 )
-from opofuente.domain.errors import InvariantViolationError, MappingMismatchError
+from opofuente.domain.errors import InvariantViolationError, MappingMismatchError, NotFoundError
 from opofuente.domain.questions import (
     AnswerKeyEntry,
     KeyOutcome,
@@ -51,6 +52,7 @@ from opofuente.domain.questions import (
     parse_questions,
     parse_questions_json,
 )
+from opofuente.infrastructure.document_repository import SqlAlchemyDocumentRepository
 from opofuente.infrastructure.question_repository import SqlAlchemyQuestionRepository
 
 #: Columnas que el CSV puede traer y que **todavía no se guardan**: se leen y se declaran, en
@@ -99,9 +101,17 @@ def _is_true(value: str) -> bool:
 class QuestionService:
     """Cara del banco de preguntas para la API: nada de reglas nuevas, sí de comprobaciones."""
 
-    def __init__(self, questions: SqlAlchemyQuestionRepository, clock: Clock) -> None:
+    def __init__(
+        self,
+        questions: SqlAlchemyQuestionRepository,
+        clock: Clock,
+        documents: SqlAlchemyDocumentRepository,
+    ) -> None:
         self._questions = questions
         self._clock = clock
+        # Se inyecta porque importar **desde un documento** (DEBT-010) necesita leer las secciones y
+        # los fragmentos de una versión: la cita de una pregunta sale de ahí, no de un texto suelto.
+        self._documents = documents
 
     # ------------------------------------------------------------------ conjuntos
 
@@ -205,8 +215,94 @@ class QuestionService:
             origin_type=origin_type,
             issues=parseado.issues,
             model_code=parseado.model_code,
+            parts=parseado.parts_detected,
             actor=actor,
         )
+
+    def import_from_document(
+        self,
+        set_id: str,
+        document_version_id: str,
+        *,
+        origin_type: Origin = Origin.PRIVATE,
+        actor: str = "local",
+    ) -> QuestionImportReport:
+        """Importa las preguntas de una **versión de documento** y su cita (DEBT-010).
+
+        Es la mitad que faltaba del importador: hasta ahora el camino era texto pegado, CSV y JSON,
+        y una pregunta que salía de un documento de la biblioteca perdía de dónde salió — la ficha
+        no podía abrir la cita que sostiene el enunciado porque no había cita.
+
+        Cómo se enlaza, sin inventar nada: se lee la versión por sus **fragmentos** (en su orden),
+        se reconstruye el texto con la misma estructura de líneas y se guarda, para cada línea, de
+        qué fragmento venía. El parser devuelve, por pregunta, la línea donde empezó su enunciado,
+        así que la cita es exactamente el fragmento del que se leyó. Y la **sección** de origen se
+        guarda en `source_section_id`, que el modelo ya tenía y nadie rellenaba.
+
+        Lo que **no** hace: resolver la parte del examen. El parser detecta los rótulos que trae el
+        material («Parte 2», «Primera parte») y aquí se **declaran** en el informe, pero no se
+        guardan por pregunta: el modelo no tiene dónde, y emparejar un rótulo suelto con los
+        códigos de `exam_parts` de la convocatoria sería adivinar. Queda en el ADR-014.
+        """
+        if self._questions.get_set(set_id) is None:
+            return QuestionImportReport(set_id=set_id)
+        detalle = self._documents.version_detail(document_version_id)
+        if detalle is None:
+            raise NotFoundError("versión de documento", document_version_id)
+
+        texto, mapa = self._texto_de_la_version(document_version_id)
+        parseado = parse_questions(texto)
+        fuentes = tuple(self._fuente_de(pregunta.line, mapa) for pregunta in parseado.questions)
+        # La sección de origen viaja en la pregunta: el modelo tenía el campo y nadie lo rellenaba.
+        preguntas = tuple(
+            pregunta
+            if fuente is None or fuente[1] is None
+            else replace(pregunta, source_section_id=fuente[1])
+            for pregunta, fuente in zip(parseado.questions, fuentes, strict=True)
+        )
+        return self._guardar(
+            set_id,
+            preguntas,
+            extras=[(pregunta.correct_option_keys, None, None) for pregunta in preguntas],
+            origin_type=origin_type,
+            issues=parseado.issues,
+            model_code=parseado.model_code,
+            parts=parseado.parts_detected,
+            evidence_spans=tuple(None if fuente is None else fuente[0] for fuente in fuentes),
+            actor=actor,
+        )
+
+    def _texto_de_la_version(
+        self, document_version_id: str
+    ) -> tuple[str, tuple[tuple[str, str | None, str | None], ...]]:
+        """El texto de la versión, línea a línea, con el fragmento y la sección de cada línea.
+
+        El mapa es tan importante como el texto: sin él, una pregunta sabría de qué documento salió
+        pero no de qué fragmento, y la cita sería una promesa sin dirección.
+        """
+        lineas: list[str] = []
+        mapa: list[tuple[str, str | None, str | None]] = []
+        for fragmento in self._documents.list_evidence(document_version_id):
+            texto = str(fragmento.text or "").strip("\n")
+            if texto.strip() == "":
+                continue
+            for linea in texto.splitlines():
+                lineas.append(linea)
+                mapa.append((fragmento.id, fragmento.section_id, fragmento.citation_label))
+            # Un fragmento no se pega al siguiente: entre uno y otro va una línea en blanco, para
+            # que dos párrafos no formen una sola frase a ojos del parser.
+            lineas.append("")
+            mapa.append((fragmento.id, fragmento.section_id, fragmento.citation_label))
+        return "\n".join(lineas), tuple(mapa)
+
+    @staticmethod
+    def _fuente_de(
+        line: int, mapa: tuple[tuple[str, str | None, str | None], ...]
+    ) -> tuple[str, str | None, str | None] | None:
+        """El fragmento del que salió el enunciado de una pregunta, por su número de línea."""
+        if line < 1 or line > len(mapa):
+            return None
+        return mapa[line - 1]
 
     def import_from_json(
         self,
@@ -234,6 +330,7 @@ class QuestionService:
             issues=parseado.issues,
             model_code=parseado.model_code,
             ignored=parseado.ignored_fields,
+            parts=parseado.parts_detected,
             actor=actor,
         )
 
@@ -641,6 +738,8 @@ class QuestionService:
         ignored: tuple[str, ...] = (),
         missing: tuple[str, ...] = (),
         rejected: tuple[RejectedRow, ...] = (),
+        parts: tuple[str, ...] = (),
+        evidence_spans: Sequence[str | None] | None = None,
     ) -> QuestionImportReport:
         ahora = self._clock.now()
         resultado = self._questions.save_questions(
@@ -707,6 +806,22 @@ class QuestionService:
         entradas = list(por_pregunta.values())
         if entradas:
             self._save_key_if_new(set_id, tuple(entradas), actor=actor)
+        # La cita se crea **después** de guardar: hace falta el identificador de cada pregunta, y el
+        # de una que ya estaba también vale — volver a importar el mismo documento repara sus citas.
+        enlazadas = 0
+        if evidence_spans is not None:
+            for question_id, span_id in zip(resultado.question_ids, evidence_spans, strict=False):
+                if span_id is None:
+                    continue
+                if self._questions.link_evidence(
+                    question_id,
+                    evidence_span_id=span_id,
+                    role="stem",
+                    status="accepted",
+                    now=ahora,
+                    actor=actor,
+                ):
+                    enlazadas += 1
         return QuestionImportReport(
             set_id=set_id,
             created=resultado.created,
@@ -721,6 +836,8 @@ class QuestionService:
             missing_columns=missing,
             conflicts=tuple(conflictos),
             model_code_detected=model_code,
+            parts_detected=parts,
+            evidence_links=enlazadas,
         )
 
     @staticmethod

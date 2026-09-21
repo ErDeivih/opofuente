@@ -21,6 +21,7 @@ from opofuente.api.question_schemas import (
     CreateQuestionSetSchema,
     CsvMappingSchema,
     DuplicateGroupSchema,
+    ImportQuestionsFromDocumentSchema,
     IssueReportRequestSchema,
     IssueReportSchema,
     KeyEntrySchema,
@@ -190,6 +191,8 @@ def _report(
         unmatched_positions=[],
         model_code_detected=informe.model_code_detected,
         key_id=key_id,
+        parts_detected=list(informe.parts_detected),
+        evidence_links=informe.evidence_links,
     )
 
 
@@ -362,6 +365,33 @@ def parse_into_set(
             ],
         )
     return _report(service.import_from_text(set_id, request.text, origin_type=Origin.PRIVATE))
+
+
+@router.post(
+    "/question-sets/{set_id}/import-document",
+    response_model=QuestionImportReportSchema,
+    responses=INGESTION_WRITE_ERRORS,
+    summary="Importa las preguntas de una versión de documento (ruta añadida: DEBT-010)",
+)
+def import_from_document(
+    set_id: str, request: ImportQuestionsFromDocumentSchema, service: QuestionServiceDep
+) -> QuestionImportReportSchema:
+    """Las preguntas de un documento de la biblioteca, con la cita de dónde salió cada una.
+
+    Ruta **añadida** al contrato §9 y registrada en ADR-013. Es la mitad que faltaba del importador
+    (04_INGESTION §10: «parser desde texto/**documento**»): hasta ahora solo entraba texto suelto,
+    así que una pregunta nacida de un documento no podía enseñar su cita ni abrir el original.
+
+    Lo que **no** hace: inventar la cita. Si la versión no tiene fragmentos extraídos no hay de
+    dónde citar, y el informe lo dice con una incidencia en lugar de crear una evidencia vacía.
+    """
+    if service.set_detail(set_id) is None:
+        raise NotFoundError("conjunto de preguntas", set_id)
+    return _report(
+        service.import_from_document(
+            set_id, request.document_version_id, origin_type=Origin.PRIVATE
+        )
+    )
 
 
 @router.get(

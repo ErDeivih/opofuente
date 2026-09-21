@@ -115,6 +115,7 @@ import {
   fetchQuestionSet,
   fetchQuestionSets,
   fetchSetQuestions,
+  importQuestionsFromDocument,
   markKeySupersedes,
   parseIntoSet,
   patchQuestion,
@@ -806,6 +807,24 @@ export interface ParseIntoSetInput {
   kind: ImportKind;
   text: string;
   mapping?: CsvMapping | null;
+}
+
+/**
+ * Importa las preguntas de una versión de documento (DEBT-010).
+ *
+ * Va aparte de `useParseIntoSet` porque no manda texto: manda la versión, y lo que entra lo decide el
+ * servidor leyendo el documento. Mezclarlas obligaría a que el asistente de texto aceptara un cuerpo
+ * sin texto, que es justo lo que no es.
+ */
+export function useImportQuestionsFromDocument() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { setId: string; documentVersionId: string }) =>
+      importQuestionsFromDocument(input.setId, input.documentVersionId),
+    onSuccess: () => {
+      invalidateQuestions(queryClient);
+    },
+  });
 }
 
 export function useParseIntoSet() {

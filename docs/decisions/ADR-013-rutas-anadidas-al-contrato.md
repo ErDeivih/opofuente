@@ -49,6 +49,7 @@ significa retirarla y asumir la consecuencia escrita en la última columna.
 | `GET /question-sets/{id}/outdated-sessions` | DEBT-013 | Cuántas sesiones terminadas no están corregidas con la plantilla **activa**: es lo que permite avisar al activar una clave nueva en lugar de descubrirlo sesión a sesión | activar una clave corregida no cambia ninguna nota y no se notaría en ninguna pantalla |
 | `DELETE /collections/{id}/items` | DEBT-017 | Quitar un miembro de una colección sin borrar el sujeto; ninguna sección del contrato lista las colecciones, y sin esta ruta una colección se puede llenar y no vaciar | el error de agrupar algo se vuelve permanente |
 | `GET /documents?collection_id=…` | DEBT-017 | Filtrar la biblioteca por colección con el criterio resuelto en el **servidor**, porque un miembro puede ser cualquiera de los cinco tipos de sujeto | el filtro habría que deducirlo en el navegador —o traerse la biblioteca entera—, contra la arquitectura del proyecto |
+| `POST /question-sets/{id}/import-document` | DEBT-010 | Importar las preguntas de una versión de documento creando la cita de cada una; el camino del contrato §9 solo tiene texto, CSV, JSON y plantilla, y sin esta ruta una pregunta nacida de un documento no puede enseñar de dónde salió | la ficha no puede abrir la cita que sostiene el enunciado, y adivinar la sección en el navegador sería peor |
 
 Las rutas concretas de S09, S10 y S11 están enumeradas en las fichas de sus slices
 (`docs/slices/S09.md`, `S10.md`, `S11.md`), cada una con lo que aporta; esta tabla no las repite una a

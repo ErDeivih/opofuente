@@ -484,6 +484,9 @@ class ParsedQuestion:
     reserve_order: int | None = None
     correct_option_keys: tuple[str, ...] = ()
     type_reason: str | None = None
+    #: Sección del documento de la que salió la pregunta (DEBT-010). El parser de un texto pegado no
+    #: la conoce —ahí no hay documento—, así que la rellena quien importa desde una versión.
+    source_section_id: str | None = None
 
     @property
     def is_complete(self) -> bool:

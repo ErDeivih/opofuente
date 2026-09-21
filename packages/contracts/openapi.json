@@ -4586,6 +4586,22 @@
         "title": "HousekeepingReportSchema",
         "type": "object"
       },
+      "ImportQuestionsFromDocumentSchema": {
+        "additionalProperties": false,
+        "description": "Importar las preguntas de una **versión de documento** (DEBT-010).",
+        "properties": {
+          "document_version_id": {
+            "minLength": 1,
+            "title": "Document Version Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "document_version_id"
+        ],
+        "title": "ImportQuestionsFromDocumentSchema",
+        "type": "object"
+      },
       "ImportReportSchema": {
         "description": "Informe del lote. Los contadores deben cuadrar (total = copiadas + fallidas + omitidas).",
         "properties": {
@@ -6737,6 +6753,11 @@
             "title": "Duplicates",
             "type": "array"
           },
+          "evidence_links": {
+            "default": 0,
+            "title": "Evidence Links",
+            "type": "integer"
+          },
           "existing": {
             "default": 0,
             "title": "Existing",
@@ -6799,6 +6820,13 @@
               }
             ],
             "title": "Model Code Detected"
+          },
+          "parts_detected": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Parts Detected",
+            "type": "array"
           },
           "rejected": {
             "items": {
@@ -16707,6 +16735,99 @@
           }
         },
         "summary": "Activa una plantilla (activar es aprobar)",
+        "tags": [
+          "preguntas"
+        ]
+      }
+    },
+    "/api/v1/question-sets/{set_id}/import-document": {
+      "post": {
+        "description": "Las preguntas de un documento de la biblioteca, con la cita de dónde salió cada una.\n\nRuta **añadida** al contrato §9 y registrada en ADR-013. Es la mitad que faltaba del importador\n(04_INGESTION §10: «parser desde texto/**documento**»): hasta ahora solo entraba texto suelto,\nasí que una pregunta nacida de un documento no podía enseñar su cita ni abrir el original.\n\nLo que **no** hace: inventar la cita. Si la versión no tiene fragmentos extraídos no hay de\ndónde citar, y el informe lo dice con una incidencia en lugar de crear una evidencia vacía.",
+        "operationId": "import_from_document_api_v1_question_sets__set_id__import_document_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "set_id",
+            "required": true,
+            "schema": {
+              "title": "Set Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportQuestionsFromDocumentSchema"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuestionImportReportSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "La entrada no se puede usar: carpeta inválida (`invalid_source`), contenido rechazado por seguridad (`unsafe_content`) o URL no descargable (`url_rejected`)."
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Importa las preguntas de una versión de documento (ruta añadida: DEBT-010)",
         "tags": [
           "preguntas"
         ]

@@ -36,7 +36,11 @@ export type QuestionKind = Question['question_type'];
 export type KeyOutcome = KeyEntry['outcome'];
 export type KeyStatus = AnswerKey['status'];
 export type IssueKind = IssueReport['kind'];
-export type ImportKind = 'questions' | 'csv' | 'json' | 'answer_key';
+/**
+ * Las formas de llenar un conjunto. `document` no manda texto: manda la **versión** de un documento
+ * de la biblioteca, y el servidor lee de ahí las preguntas y la cita de cada una (DEBT-010).
+ */
+export type ImportKind = 'questions' | 'csv' | 'json' | 'answer_key' | 'document';
 
 /** Cuántas cosas se piden de una vez: el tope por defecto del servidor. */
 export const PAGE_LIMIT = 100;
@@ -258,6 +262,26 @@ export function recalculateSetSessions(setId: string): Promise<BulkRecalculation
   return apiFetch<BulkRecalculation>(
     `/api/v1/question-sets/${encodeURIComponent(setId)}/recalculate-sessions`,
     { method: 'POST' },
+  );
+}
+
+/**
+ * Importa las preguntas de una **versión de documento** y crea la cita de cada una (DEBT-010).
+ *
+ * Es la única forma de importar que deja la pregunta con su origen: el servidor lee la versión por
+ * sus fragmentos, así que la ficha puede enseñar la cita y abrir el original en su página.
+ */
+export function importQuestionsFromDocument(
+  setId: string,
+  documentVersionId: string,
+): Promise<QuestionImportReport> {
+  return apiFetch<QuestionImportReport>(
+    `/api/v1/question-sets/${encodeURIComponent(setId)}/import-document`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ document_version_id: documentVersionId }),
+    },
   );
 }
 

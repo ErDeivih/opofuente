@@ -227,6 +227,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     question_service = QuestionService(
         questions=SqlAlchemyQuestionRepository(session_factory),
         clock=clock,
+        # Importar preguntas **desde un documento** necesita leer sus secciones y fragmentos: la
+        # cita de una pregunta sale de ahí (DEBT-010).
+        documents=SqlAlchemyDocumentRepository(session_factory, representations),
     )
     search_service = SearchService(
         search=SqlAlchemySearchRepository(session_factory),

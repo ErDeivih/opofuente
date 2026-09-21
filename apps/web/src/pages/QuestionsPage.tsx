@@ -8,6 +8,8 @@ import {
   useAnswerKeys,
   useCorrectQuestion,
   useCreateQuestionSet,
+  useDocuments,
+  useImportQuestionsFromDocument,
   useMarkKeySupersedes,
   useOppositions,
   useOutdatedSessions,
@@ -92,6 +94,10 @@ export function QuestionsPage() {
   // cuántas sesiones se quedan con la corrección vieja y se ofrece recalcularlas de una vez.
   const desactualizadas = useOutdatedSessions(setId);
   const recalcularConjunto = useRecalculateSetSessions();
+  // DEBT-010: importar **desde un documento** necesita la biblioteca, para elegir de qué documento
+  // salen las preguntas (y de qué versión: la activa, que es la aceptada).
+  const biblioteca = useDocuments('', '');
+  const importarDocumento = useImportQuestionsFromDocument();
 
   const crear = useCreateQuestionSet();
   const importar = useParseIntoSet();
@@ -415,8 +421,24 @@ export function QuestionsPage() {
                       },
                     );
                   }}
+                  onImportDocument={(documentVersionId) => {
+                    importarDocumento.mutate(
+                      { setId: setId, documentVersionId },
+                      {
+                        onSuccess: (informe) => {
+                          setReport(informe);
+                          setNotice(
+                            `Importadas ${String(informe.created)} preguntas del documento, con ${String(informe.evidence_links)} cita(s).`,
+                          );
+                        },
+                      },
+                    );
+                  }}
+                  documents={biblioteca.data?.documents ?? []}
+                  documentsIsPending={biblioteca.isPending}
+                  documentsError={biblioteca.isError ? describeError(biblioteca.error) : null}
                   report={report}
-                  isPending={importar.isPending}
+                  isPending={importar.isPending || importarDocumento.isPending}
                   conflict={conflictoImportar}
                   error={errorImportar}
                 />

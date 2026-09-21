@@ -2,6 +2,7 @@ import { useState } from 'react';
 
 import type { IssueKind, Question, QuestionEvidence, QuestionKind } from '../../api/questions';
 import { ISSUE_KINDS, QUESTION_KINDS } from '../../api/questions';
+import { apiBaseUrl } from '../../api/client';
 import { ErrorState } from '../../components/ErrorState';
 import { LoadingState } from '../../components/LoadingState';
 import { StatusBadge } from '../../components/StatusBadge';
@@ -37,8 +38,9 @@ export interface QuestionDetailProps {
  * Ficha de una pregunta (07_UI-UX §7): los campos estructurados a un lado y **el original al otro**.
  *
  * El original es lo que se importó: el enunciado tal y como llegó y, cuando existe, la cita que lo
- * sostiene. Si la pregunta no tiene documento de origen adjunto, se dice —no se enseña un hueco ni se
- * inventa una cita—.
+ * sostiene —con enlace para abrir el original en su página, que es lo que pedía DEBT-010: una cita que
+ * se puede abrir—. Si la pregunta no tiene documento de origen adjunto, se dice —no se enseña un hueco
+ * ni se inventa una cita—.
  *
  * Corregir una transcripción **no** se hace aquí con el editor: se hace con corrección local, que crea
  * versión nueva con motivo y no reescribe el original. La pantalla lo explica donde toca.
@@ -131,8 +133,8 @@ export function QuestionDetail({
             ) : evidence.length === 0 ? (
               <p className="hint">
                 Esta pregunta no tiene documento de origen adjunto, así que no hay cita que abrir. La
-                cita se crea al importar la pregunta <strong>desde un documento</strong> (deuda
-                registrada, DEBT-010); no se rellena con una cita inventada.
+                cita se crea al importar la pregunta <strong>desde un documento</strong>, desde la
+                pestaña «Importar» de esta pantalla; no se rellena con una cita inventada.
               </p>
             ) : (
               <>
@@ -143,7 +145,22 @@ export function QuestionDetail({
                       <StatusBadge tone={cita.status === 'accepted' ? 'ok' : 'warning'}>
                         {cita.role}
                       </StatusBadge>{' '}
-                      {cita.citation_label ?? `página ${String(cita.page ?? 'sin página')}`}
+                      {cita.citation_label ?? `página ${String(cita.page ?? 'sin página')}`}{' '}
+                      <a
+                        href={originalDeLaCita(cita)}
+                        target="_blank"
+                        rel="noreferrer"
+                        aria-label={
+                          cita.page === null || cita.page === undefined
+                            ? 'abrir el original de la cita'
+                            : `abrir el original de la cita en la página ${String(cita.page)}`
+                        }
+                      >
+                        abrir el original
+                        {cita.page === null || cita.page === undefined
+                          ? ''
+                          : ` (página ${String(cita.page)})`}
+                      </a>
                       <blockquote className="reader">{cita.text}</blockquote>
                       {cita.claim !== null && cita.claim !== undefined && (
                         <p className="hint">sostiene: {cita.claim}</p>
@@ -364,4 +381,18 @@ export function QuestionDetail({
       </section>
     </>
   );
+}
+
+/**
+ * La URL del original de una cita, en su página cuando se sabe.
+ *
+ * El `#page=N` lo entiende el visor del navegador para los PDF; para un texto plano se abre el fichero
+ * igual, sin salto. Se enlaza a la ruta del contrato (`GET /document-versions/{id}/original`), que es
+ * la que sirve el fichero con `Content-Disposition: inline` para los tipos seguros.
+ */
+function originalDeLaCita(cita: QuestionEvidence): string {
+  const base = `${apiBaseUrl()}/api/v1/document-versions/${encodeURIComponent(
+    cita.document_version_id,
+  )}/original`;
+  return cita.page === null || cita.page === undefined ? base : `${base}#page=${String(cita.page)}`;
 }

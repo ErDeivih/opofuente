@@ -1526,6 +1526,33 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/question-sets/{set_id}/import-document": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Importa las preguntas de una versión de documento (ruta añadida: DEBT-010)
+         * @description Las preguntas de un documento de la biblioteca, con la cita de dónde salió cada una.
+         *
+         *     Ruta **añadida** al contrato §9 y registrada en ADR-013. Es la mitad que faltaba del importador
+         *     (04_INGESTION §10: «parser desde texto/**documento**»): hasta ahora solo entraba texto suelto,
+         *     así que una pregunta nacida de un documento no podía enseñar su cita ni abrir el original.
+         *
+         *     Lo que **no** hace: inventar la cita. Si la versión no tiene fragmentos extraídos no hay de
+         *     dónde citar, y el informe lo dice con una incidencia en lugar de crear una evidencia vacía.
+         */
+        post: operations["import_from_document_api_v1_question_sets__set_id__import_document_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/question-sets/{set_id}/outdated-sessions": {
         parameters: {
             query?: never;
@@ -3844,6 +3871,14 @@ export interface components {
             usage: components["schemas"]["AreaUsageSchema"][];
         };
         /**
+         * ImportQuestionsFromDocumentSchema
+         * @description Importar las preguntas de una **versión de documento** (DEBT-010).
+         */
+        ImportQuestionsFromDocumentSchema: {
+            /** Document Version Id */
+            document_version_id: string;
+        };
+        /**
          * ImportReportSchema
          * @description Informe del lote. Los contadores deben cuadrar (total = copiadas + fallidas + omitidas).
          */
@@ -4638,6 +4673,11 @@ export interface components {
             /** Duplicates */
             duplicates: components["schemas"]["DuplicateGroupSchema"][];
             /**
+             * Evidence Links
+             * @default 0
+             */
+            evidence_links: number;
+            /**
              * Existing
              * @default 0
              */
@@ -4667,6 +4707,8 @@ export interface components {
             missing_columns: string[];
             /** Model Code Detected */
             model_code_detected?: string | null;
+            /** Parts Detected */
+            parts_detected?: string[];
             /** Rejected */
             rejected: components["schemas"]["RejectedRowSchema"][];
             /** Set Id */
@@ -10951,6 +10993,77 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AnswerKeySchema"];
+                };
+            };
+            /** @description La entrada no se puede usar: carpeta inválida (`invalid_source`), contenido rechazado por seguridad (`unsafe_content`) o URL no descargable (`url_rejected`). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    import_from_document_api_v1_question_sets__set_id__import_document_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                set_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImportQuestionsFromDocumentSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuestionImportReportSchema"];
                 };
             };
             /** @description La entrada no se puede usar: carpeta inválida (`invalid_source`), contenido rechazado por seguridad (`unsafe_content`) o URL no descargable (`url_rejected`). */

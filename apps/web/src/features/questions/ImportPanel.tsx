@@ -1,5 +1,6 @@
 import { useState } from 'react';
 
+import type { DocumentSummary } from '../../api/library';
 import type {
   CsvMapping,
   ImportKind,
@@ -13,6 +14,13 @@ import { StatusBadge } from '../../components/StatusBadge';
 
 export interface ImportPanelProps {
   onImport: (input: { kind: ImportKind; text: string; mapping: CsvMapping | null }) => void;
+  /** Importa las preguntas de la versión **activa** de un documento de la biblioteca (DEBT-010). */
+  onImportDocument: (documentVersionId: string) => void;
+  /** Documentos de la biblioteca, para elegir de cuál salen las preguntas. */
+  documents: DocumentSummary[];
+  documentsIsPending: boolean;
+  /** Si la biblioteca no se pudo leer: se dice, en lugar de enseñarla como vacía. */
+  documentsError: string | null;
   report: QuestionImportReport | null;
   isPending: boolean;
   conflict: string | null;
@@ -24,20 +32,30 @@ const KIND_LABEL: Record<ImportKind, string> = {
   csv: 'un CSV con columnas',
   json: 'preguntas de un JSON',
   answer_key: 'una plantilla suelta',
+  document: 'las preguntas de un documento',
 };
 
 /**
- * Importador del banco (04_INGESTION §10): texto, CSV con mapeo de columnas, JSON y plantilla suelta.
+ * Importador del banco (04_INGESTION §10): texto, CSV con mapeo de columnas, JSON, plantilla suelta y
+ * **desde un documento** de la biblioteca.
  *
- * Tres cosas que la pantalla no hace y son a propósito:
+ * Cuatro cosas que la pantalla no hace y son a propósito:
  *
  * 1. **no inventa columnas**: el mapeo enseña lo que va a leer y lo que falta se informa;
  * 2. **no esconde lo rechazado**: cada fila que no entró sale con su número y su causa, y se puede
  *    descargar en CSV para arreglarla;
- * 3. **no activa nada**: importar crea preguntas y, si vienen claves, una plantilla en borrador.
+ * 3. **no activa nada**: importar crea preguntas y, si vienen claves, una plantilla en borrador;
+ * 4. **no inventa la cita**: importar desde un documento enlaza cada pregunta con el fragmento del
+ *    que se leyó su enunciado, y solo se importa la versión **aceptada** del documento —una candidata
+ *    no es la versión buena, así que sus preguntas citarían material sin aceptar—. Para importar otra
+ *    versión, se acepta antes en la Biblioteca.
  */
 export function ImportPanel({
   onImport,
+  onImportDocument,
+  documents,
+  documentsIsPending,
+  documentsError,
   report,
   isPending,
   conflict,
@@ -46,6 +64,12 @@ export function ImportPanel({
   const [kind, setKind] = useState<ImportKind>('questions');
   const [text, setText] = useState('');
   const [mapping, setMapping] = useState<CsvMapping>(DEFAULT_CSV_MAPPING);
+  const [documento, setDocumento] = useState('');
+
+  /** El documento elegido y su versión **aceptada**: lo que se manda es la versión, no el título. */
+  const elegido = documents.find((candidato) => candidato.id === documento) ?? null;
+  const versionAceptada =
+    elegido?.active_version?.is_accepted === true ? elegido.active_version.id : null;
 
   function enviar(): void {
     onImport({
@@ -171,33 +195,100 @@ export function ImportPanel({
         </p>
       )}
 
-      <div className="form__row">
-        <label className="form__label" htmlFor="importar-texto">
-          {kind === 'csv'
-            ? 'Contenido del CSV (con su cabecera)'
-            : kind === 'json'
-              ? 'Contenido del JSON (lista de preguntas, o un objeto con «questions»)'
-              : 'Texto a importar'}
-        </label>
-        <textarea
-          id="importar-texto"
-          className="reader"
-          rows={10}
-          value={text}
-          onChange={(event) => {
-            setText(event.target.value);
-          }}
-        />
-        <button
-          className="button"
-          type="button"
-          disabled={isPending || text.trim() === ''}
-          aria-label="Importar en el conjunto"
-          onClick={enviar}
-        >
-          Importar
-        </button>
-      </div>
+      {kind === 'document' ? (
+        <div className="form__row">
+          <label className="form__label" htmlFor="importar-documento">
+            Documento del que salen las preguntas
+          </label>
+          {documentsIsPending ? (
+            <LoadingState label="Leyendo la biblioteca…" />
+          ) : documentsError !== null ? (
+            <p className="hint">
+              No se ha podido leer la biblioteca, así que no se puede elegir de qué documento salen
+              las preguntas: {documentsError}
+            </p>
+          ) : documents.length === 0 ? (
+            <p className="hint">
+              La biblioteca todavía no tiene documentos. Un documento nace al promocionar material
+              copiado en la Bandeja.
+            </p>
+          ) : (
+            <>
+              <select
+                id="importar-documento"
+                className="selector__select"
+                value={documento}
+                onChange={(event) => {
+                  setDocumento(event.target.value);
+                }}
+              >
+                <option value="">elige un documento</option>
+                {documents.map((candidato) => (
+                  <option key={candidato.id} value={candidato.id}>
+                    {candidato.canonical_title}
+                    {candidato.active_version === null ||
+                    candidato.active_version === undefined
+                      ? ' · sin ninguna versión'
+                      : candidato.active_version.is_accepted
+                        ? ''
+                        : ' · versión sin aceptar'}
+                  </option>
+                ))}
+              </select>
+              <button
+                className="button"
+                type="button"
+                disabled={isPending || versionAceptada === null}
+                aria-label="Importar las preguntas del documento"
+                onClick={() => {
+                  if (versionAceptada !== null) {
+                    onImportDocument(versionAceptada);
+                  }
+                }}
+              >
+                Importar del documento
+              </button>
+              <p className="hint">
+                {elegido === null
+                  ? 'Se importan las preguntas de la versión aceptada del documento, y cada una queda con la cita del fragmento del que salió.'
+                  : elegido.active_version === null || elegido.active_version === undefined
+                    ? `«${elegido.canonical_title}» no tiene ninguna versión: promociona su material en la Bandeja y vuelve aquí.`
+                    : !elegido.active_version.is_accepted
+                      ? `«${elegido.canonical_title}» tiene una versión sin aceptar: una candidata no es la versión buena, así que sus preguntas citarían material que todavía no se ha aceptado. Acéptala en la Biblioteca y vuelve aquí.`
+                      : `Se importa la versión aceptada de «${elegido.canonical_title}», y cada pregunta queda con la cita del fragmento del que salió.`}
+              </p>
+            </>
+          )}
+        </div>
+      ) : (
+        <div className="form__row">
+          <label className="form__label" htmlFor="importar-texto">
+            {kind === 'csv'
+              ? 'Contenido del CSV (con su cabecera)'
+              : kind === 'json'
+                ? 'Contenido del JSON (lista de preguntas, o un objeto con «questions»)'
+                : 'Texto a importar'}
+          </label>
+          <textarea
+            id="importar-texto"
+            className="reader"
+            rows={10}
+            value={text}
+            onChange={(event) => {
+              setText(event.target.value);
+            }}
+          />
+          <button
+            className="button"
+            type="button"
+            disabled={isPending || text.trim() === ''}
+            aria-label="Importar en el conjunto"
+            onClick={enviar}
+          >
+            Importar
+          </button>
+        </div>
+      )}
 
       {isPending && <LoadingState label="Importando…" />}
       {conflict !== null && (
@@ -235,6 +326,23 @@ export function ImportPanel({
             )}
           </dl>
 
+          {report.evidence_links > 0 && (
+            <p className="hint">
+              <strong>{report.evidence_links}</strong>{' '}
+              {report.evidence_links === 1 ? 'cita creada' : 'citas creadas'}: cada pregunta queda
+              enlazada con el fragmento del que se leyó su enunciado, y la ficha puede abrir el
+              original en esa página.
+            </p>
+          )}
+          {(report.parts_detected ?? []).length > 0 && (
+            <p className="hint">
+              El material trae rótulos de parte:{' '}
+              <span className="sample__path">{(report.parts_detected ?? []).join(', ')}</span>.{' '}
+              <strong>No se guardan</strong> por pregunta: el modelo no tiene dónde, y emparejarlos
+              con las partes de la convocatoria sería adivinar (ADR-014). Se dicen aquí en lugar de
+              perderse.
+            </p>
+          )}
           {report.missing_columns.length > 0 && (
             <p className="hint">
               El mapeo pedía columnas que el fichero no trae:{' '}

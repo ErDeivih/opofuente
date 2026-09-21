@@ -1,5 +1,8 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test } from '@playwright/test';
+import { expect, test, type APIRequestContext } from '@playwright/test';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 
 /**
  * E2E-05 «Preguntas» (10_TEST-PLAN §5): importar un CSV parcialmente inválido, corregir el mapeo de
@@ -25,6 +28,43 @@ const CSV_SIN_CORREGIR = [
   'enunciado;op1;op2;clave',
   'La Constitucion espanola se aprobo en;1976;1978;b',
 ].join('\n');
+
+const API_BASE = process.env.OPOFUENTE_API_URL ?? 'http://127.0.0.1:8765';
+
+/**
+ * El material del que salen las preguntas: un texto con dos preguntas numeradas, cada una con sus
+ * opciones. Se escribe en el directorio temporal del sistema y entra por la Bandeja, que es el camino
+ * real: la copia, la extracción y la promoción no se simulan.
+ */
+const TEXTO_DEL_DOCUMENTO = [
+  'Temario de prueba para preguntas importadas de un documento.',
+  '',
+  '1. La Constitucion Espanola se aprobo en:',
+  'a) 1976',
+  'b) 1978',
+  'c) 1980',
+  '',
+  '2. El plazo de alegaciones del procedimiento es de:',
+  'a) Diez dias habiles',
+  'b) Veinte dias habiles',
+  'c) Un mes',
+  '',
+].join('\n');
+
+interface LoteConEntradas {
+  id: string;
+  status: string;
+  entries: { original_name: string }[];
+}
+
+interface Representacion {
+  artifact_id: string;
+}
+
+interface Promocion {
+  document_id: string;
+  version_id: string;
+}
 
 const CSV = [
   'enunciado;op1;op2;clave',
@@ -58,6 +98,99 @@ async function crearConjunto(page: import('@playwright/test').Page): Promise<str
 async function escribirCsv(page: import('@playwright/test').Page, csv: string) {
   await page.getByLabel('Contenido del CSV (con su cabecera)').fill(csv);
 }
+
+/** El lote que trae ese fichero: otros guiones comparten servidor y base, así que «el último» no vale. */
+async function loteCon(request: APIRequestContext, nombre: string): Promise<LoteConEntradas> {
+  const lotes = (await (
+    await request.get(`${API_BASE}/api/v1/ingestion-batches?limit=25`)
+  ).json()) as { id: string; status: string }[];
+  for (const candidato of lotes) {
+    const detalle = (await (
+      await request.get(`${API_BASE}/api/v1/ingestion-batches/${candidato.id}`)
+    ).json()) as { entries: { original_name: string }[] };
+    if (detalle.entries.some((entrada) => entrada.original_name === nombre)) {
+      return { id: candidato.id, status: candidato.status, entries: detalle.entries };
+    }
+  }
+  throw new Error(`ningún lote trae ${nombre}`);
+}
+
+test('E2E-05 importación: las preguntas de un documento entran con su cita y se abre el original', async ({
+  page,
+  request,
+}) => {
+  // El guion hace dos ingestas (subir el texto y esperar al worker) y promociona el documento: con el
+  // presupuesto por defecto se queda al límite por reloj, no por producto.
+  test.slow();
+
+  // --- 1. El material entra por la Bandeja, que es el camino real ------------
+  const temporal = fs.mkdtempSync(path.join(os.tmpdir(), 'opofuente-e2e-05-'));
+  const sufijo = Date.now().toString(36);
+  const fichero = path.join(temporal, `temario-${sufijo}.txt`);
+  fs.writeFileSync(fichero, TEXTO_DEL_DOCUMENTO, 'utf8');
+
+  await page.goto('/bandeja');
+  await page.getByLabel(/Suelta aquí o elige ficheros/).setInputFiles(fichero);
+  const importacion = page.getByRole('region', { name: 'Importación' });
+  await expect(importacion.getByText('succeeded', { exact: true }).first()).toBeVisible({
+    timeout: 60_000,
+  });
+
+  // --- 2. Se promociona a documento y se acepta su versión -------------------
+  // Por la API, como en E2E-04: la aceptación tiene su propio recorrido en la Biblioteca, y lo que
+  // aquí se mide es la importación de preguntas desde un documento.
+  const lote = await loteCon(request, path.basename(fichero));
+  const representaciones = (await (
+    await request.get(`${API_BASE}/api/v1/ingestion-batches/${lote.id}/representations`)
+  ).json()) as Representacion[];
+  const artifactId = representaciones[0]?.artifact_id ?? '';
+  const titulo = `Temario E2E preguntas ${sufijo}`;
+  const promocion = (await (
+    await request.post(`${API_BASE}/api/v1/documents`, {
+      data: { artifact_id: artifactId, title: titulo, document_type: 'curriculum' },
+    })
+  ).json()) as Promocion;
+  const aceptada = await request.post(
+    `${API_BASE}/api/v1/documents/${promocion.document_id}/versions/${promocion.version_id}/accept`,
+    { data: {} },
+  );
+  expect(aceptada.ok(), `aceptar la versión: ${String(aceptada.status())}`).toBe(true);
+
+  // --- 3. Se importan las preguntas desde ese documento ----------------------
+  await crearConjunto(page);
+  await page.getByRole('tab', { name: 'Importar' }).click();
+  await page.getByLabel('Qué se importa').selectOption('document');
+  await page
+    .getByLabel('Documento del que salen las preguntas')
+    .selectOption({ label: titulo });
+
+  // El aviso dice de dónde salen: de la versión **aceptada**, que es la buena.
+  await expect(page.getByText(/Se importa la versión aceptada de/)).toBeVisible();
+  await page.getByRole('button', { name: 'Importar las preguntas del documento' }).click();
+
+  // El informe dice las citas creadas: la pregunta queda enlazada con su fragmento.
+  const informe = page.locator('section[aria-labelledby="informe-importacion"]');
+  await expect(informe.getByText(/citas creadas/)).toBeVisible({ timeout: 30_000 });
+
+  // --- 4. La pregunta está en el banco y su ficha enseña la cita -------------
+  await page.getByRole('tab', { name: 'Preguntas' }).click();
+  const banco = page.getByRole('table', { name: /preguntas del conjunto/ });
+  await expect(banco.getByText('La Constitucion Espanola se aprobo en:')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Abrir la pregunta 1' }).click();
+  const ficha = page.locator('div.card', { has: page.getByRole('heading', { name: 'Pregunta 1' }) });
+  await expect(ficha.getByRole('heading', { name: 'Evidencia que la sostiene' })).toBeVisible();
+  await expect(ficha.getByText('stem')).toBeVisible();
+  await expect(ficha.getByText(/La Constitucion Espanola se aprobo en/).last()).toBeVisible();
+
+  // Y la cita se puede abrir en el original: es el enlace que faltaba (DEBT-010).
+  const enlace = ficha.getByRole('link', { name: /abrir el original de la cita/ });
+  await expect(enlace).toBeVisible();
+  await expect(enlace).toHaveAttribute(
+    'href',
+    new RegExp(`/api/v1/document-versions/${promocion.version_id}/original`),
+  );
+});
 
 test('E2E-05 importación: el CSV con columnas raras se importa tras corregir el mapeo', async ({
   page,

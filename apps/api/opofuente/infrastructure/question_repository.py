@@ -248,7 +248,7 @@ class SqlAlchemyQuestionRepository:
                         reserve_order=parseada.reserve_order,
                         status="complete" if parseada.is_complete else "incomplete",
                         origin_type=origin_type.value,
-                        source_section_id=None,
+                        source_section_id=parseada.source_section_id,
                         supersedes_id=None,
                         created_at=now,
                     )
@@ -1050,6 +1050,59 @@ class SqlAlchemyQuestionRepository:
             )
             for enlace, span in filas
         )
+
+    def link_evidence(
+        self,
+        question_version_id: str,
+        *,
+        evidence_span_id: str,
+        role: str,
+        status: str = "accepted",
+        claim: str | None = None,
+        now: datetime,
+        actor: str = "local",
+    ) -> bool:
+        """Enlaza una pregunta con el fragmento del que salió (DEBT-010).
+
+        Es **idempotente**: la clave primaria de `question_evidence` es (pregunta, fragmento,
+        papel), así que volver a importar el mismo documento no duplica la cita ni la cuenta.
+        Devuelve si el enlace es nuevo, para que el informe pueda decir cuántas citas ha creado.
+
+        El papel por defecto es `stem` y el estado `accepted`: la cita de una pregunta importada de
+        un documento **no es una propuesta**, es de dónde se leyó el enunciado.
+        """
+        with self._session_factory() as session:
+            existente = session.get(
+                QuestionEvidenceRecord, (question_version_id, evidence_span_id, role)
+            )
+            if existente is not None:
+                return False
+            if session.get(QuestionVersionRecord, question_version_id) is None:
+                return False
+            if session.get(EvidenceSpanRecord, evidence_span_id) is None:
+                return False
+            session.add(
+                QuestionEvidenceRecord(
+                    question_version_id=question_version_id,
+                    evidence_span_id=evidence_span_id,
+                    role=role,
+                    claim=claim,
+                    status=status,
+                    created_at=now,
+                )
+            )
+            self._audit(
+                session,
+                actor=actor,
+                action="question.evidence_linked",
+                object_type="question_version",
+                object_id=question_version_id,
+                before={},
+                after={"evidence_span_id": evidence_span_id, "role": role, "status": status},
+                now=now,
+            )
+            session.commit()
+            return True
 
     # ------------------------------------------------------------------ auxiliares
 

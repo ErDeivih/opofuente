@@ -201,6 +201,12 @@ class QuestionImportReport:
     missing_columns: tuple[str, ...] = ()
     conflicts: tuple[str, ...] = ()
     model_code_detected: str | None = None
+    #: Rótulos de parte que el parser ha visto en el material («2», «IV»…). Se **declaran** aquí y
+    #: no se guardan por pregunta: el modelo no tiene dónde, y emparejarlos con `exam_parts` sería
+    #: adivinar (ADR-014). Lo que no se hace es perderlos en silencio (DEBT-010, criterio 3).
+    parts_detected: tuple[str, ...] = ()
+    #: Citas creadas al importar desde un documento: es el enlace que antes no existía (DEBT-010).
+    evidence_links: int = 0
 
     @property
     def imported(self) -> int:
