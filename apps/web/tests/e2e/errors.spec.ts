@@ -104,22 +104,23 @@ async function crearConjuntoConClave(page: Page, material_: Material): Promise<s
 
 /** Prepara una práctica de una pregunta y la falla, declarando después por qué.
  *
- * Los dos tiempos de espera son largos por una razón medida: mientras la lista de sesiones se relee, la
- * configuración **no** se pinta (para no sustituir un formulario a medio rellenar), así que con el
- * equipo cargado —una corrida de puertas entera— 10 s no llegan. Lo que se comprueba no cambia.
+ * La espera es un bucle **a propósito**, y no un `if` seguido de una espera: al entrar en Estudiar, la
+ * pantalla pinta la configuración si todavía no ha leído las sesiones y la sustituye por la sesión
+ * abierta cuando la lista llega. Comprobar una sola vez si el botón está —antes de que la lista llegue—
+ * saltaba el clic y luego se esperaba una pantalla que ya no iba a aparecer. El bucle pulsa «Preparar
+ * otra sesión» cuando aparece y comprueba el resultado; lo que se afirma es lo mismo.
  */
 async function practicarYFallar(page: Page, titulo: string): Promise<void> {
   await page.goto('/estudiar');
   const prepararOtra = page.getByRole('button', { name: 'Preparar otra sesión' });
-  await expect(
-    prepararOtra.or(page.getByRole('heading', { name: 'Preparar la sesión' })),
-  ).toBeVisible({ timeout: 20_000 });
-  if (await prepararOtra.isVisible()) {
-    await prepararOtra.click();
-  }
-  await expect(page.getByRole('heading', { name: 'Preparar la sesión' })).toBeVisible({
-    timeout: 20_000,
-  });
+  await expect(async () => {
+    if (await prepararOtra.isVisible()) {
+      await prepararOtra.click();
+    }
+    await expect(page.getByRole('heading', { name: 'Preparar la sesión' })).toBeVisible({
+      timeout: 1_000,
+    });
+  }).toPass({ timeout: 20_000 });
 
   const conjunto = page.getByLabel('Conjunto de preguntas');
   const opcion = conjunto.locator('option', { hasText: titulo });

@@ -3,7 +3,7 @@ import { ErrorState } from '../../components/ErrorState';
 import { LoadingState } from '../../components/LoadingState';
 import { StatusBadge } from '../../components/StatusBadge';
 import { CapabilityList } from './CapabilityList';
-import { describeError, formatBytes } from './labels';
+import { destinationLabel, describeError, formatBytes } from './labels';
 
 /**
  * Estado real del sistema: salud, capacidades y almacenamiento.
@@ -97,8 +97,8 @@ export function SystemStatus() {
           <dd>{formatBytes(settings.data.disk_free_bytes)}</dd>
           <dt>Proveedor de IA</dt>
           <dd>
-            {settings.data.llm.provider}
-            {settings.data.llm.sends_data_off_device ? ' (enviaría datos fuera)' : ' (todo local)'}
+            {settings.data.llm.provider}{' '}
+            <span className="hint">({destinationLabel(settings.data.llm.destination)})</span>
           </dd>
           <dt>OCR</dt>
           <dd>{settings.data.ocr.tesseract_available ? 'disponible' : 'no disponible'}</dd>

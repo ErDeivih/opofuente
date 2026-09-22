@@ -4213,8 +4213,6 @@ export interface components {
             model?: string | null;
             /** Provider */
             provider: string;
-            /** Sends Data Off Device */
-            sends_data_off_device: boolean;
         };
         /**
          * LocalCorrectionSchema

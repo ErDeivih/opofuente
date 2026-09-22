@@ -194,7 +194,6 @@ export const settingsFixture: SettingsResponse = {
     model: null,
     base_url_configured: false,
     api_key_configured: false,
-    sends_data_off_device: false,
     destination: 'disabled',
     destination_reason: 'el modelo de lenguaje no está configurado: no se envía nada',
   },

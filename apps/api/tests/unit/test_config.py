@@ -8,6 +8,11 @@ import pytest
 
 from opofuente.config import Settings, project_root
 from opofuente.domain.errors import ConfigurationError
+from opofuente.domain.providers import (
+    DataDestination,
+    classify_provider,
+    sends_content_off_device,
+)
 
 
 def test_host_no_loopback_falla() -> None:
@@ -57,7 +62,8 @@ def test_proveedor_llm_completo_es_valido() -> None:
     assert settings.llm_provider == "openai_compatible"
     # DEBT-001, corregido en S12: un endpoint en loopback **no** saca los datos del equipo. Antes
     # esta prueba afirmaba lo contrario porque el booleano no miraba el endpoint: ese era el fallo.
-    assert settings.sends_data_off_device is False
+    assert settings.llm_destination.destination is DataDestination.LOCAL
+    assert sends_content_off_device(settings.llm_destination) is False
 
 
 def test_un_endpoint_remoto_si_saca_los_datos_del_equipo() -> None:
@@ -75,8 +81,8 @@ def test_un_endpoint_remoto_si_saca_los_datos_del_equipo() -> None:
         _env_file=None,
     )
 
-    assert remoto.sends_data_off_device is True
-    assert local.sends_data_off_device is False
+    assert remoto.llm_destination.destination is DataDestination.REMOTE
+    assert local.llm_destination.destination is DataDestination.LOCAL
 
 
 def test_embedding_local_sin_endpoint_no_se_presenta_como_local() -> None:
@@ -87,13 +93,14 @@ def test_embedding_local_sin_endpoint_no_se_presenta_como_local() -> None:
         _env_file=None,
     )
 
-    assert settings.sends_data_off_device is True, "sin endpoint no se puede afirmar que sea local"
+    assert settings.embeddings_destination.destination is DataDestination.UNKNOWN
+    assert sends_content_off_device(settings.embeddings_destination) is True, (
+        "sin endpoint no se puede afirmar que sea local"
+    )
 
 
 def test_el_destino_de_cada_proveedor_se_clasifica_aparte() -> None:
     """DEBT-001: el destino de los embeddings no se informa dentro del bloque del lenguaje."""
-    from opofuente.domain.providers import DataDestination, classify_provider
-
     llm = classify_provider(name="el modelo de lenguaje", provider="disabled", endpoint=None)
     embeddings = classify_provider(
         name="el proveedor de embeddings",
@@ -110,7 +117,8 @@ def test_por_defecto_no_sale_datos_del_equipo() -> None:
     settings = Settings(_env_file=None)
     assert settings.llm_provider == "disabled"
     assert settings.embedding_provider == "disabled"
-    assert settings.sends_data_off_device is False
+    assert settings.llm_destination.destination is DataDestination.DISABLED
+    assert settings.embeddings_destination.destination is DataDestination.DISABLED
 
 
 def test_clave_nunca_se_serializa() -> None:

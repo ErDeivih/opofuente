@@ -5324,17 +5324,12 @@
           "provider": {
             "title": "Provider",
             "type": "string"
-          },
-          "sends_data_off_device": {
-            "title": "Sends Data Off Device",
-            "type": "boolean"
           }
         },
         "required": [
           "provider",
           "base_url_configured",
           "api_key_configured",
-          "sends_data_off_device",
           "destination",
           "destination_reason"
         ],

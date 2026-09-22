@@ -18,7 +18,7 @@ from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from opofuente.domain.errors import ConfigurationError
-from opofuente.domain.providers import classify_provider, sends_content_off_device
+from opofuente.domain.providers import DestinationReason, classify_provider
 
 LogLevel = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
 LlmProvider = Literal["disabled", "openai_compatible", "ollama"]
@@ -234,25 +234,27 @@ class Settings(BaseSettings):
         return self.llm_api_key is not None and bool(self.llm_api_key.get_secret_value())
 
     @property
-    def sends_data_off_device(self) -> bool:
-        """Indica si la configuración actual puede enviar contenido a un tercero.
-
-        Se mantiene porque el contrato lo publica, pero **ya no es la respuesta buena**: desde S12
-        el destino de cada proveedor se clasifica por separado y con su motivo
-        (`GET /settings` → `llm.destination`, `embeddings.destination`), y un endpoint sin
-        determinar cuenta como que sí sale. Esta propiedad es el resumen conservador de las dos.
-        """
-        llm = classify_provider(
+    def llm_destination(self) -> DestinationReason:
+        """A dónde irían los fragmentos que se manderen al modelo de lenguaje (DEBT-001)."""
+        return classify_provider(
             name="el modelo de lenguaje",
             provider=self.llm_provider,
             endpoint=self.llm_base_url,
         )
-        embeddings = classify_provider(
+
+    @property
+    def embeddings_destination(self) -> DestinationReason:
+        """A dónde iría el texto que se mandara a embeddings, por separado del modelo (DEBT-001).
+
+        Es la mitad del defecto que registró la deuda: antes había un booleano global que mezclaba
+        los dos proveedores, así que un endpoint de embeddings remoto aparecía informado dentro del
+        bloque del modelo de lenguaje.
+        """
+        return classify_provider(
             name="el proveedor de embeddings",
             provider=self.embedding_provider,
             endpoint=self.embedding_base_url,
         )
-        return sends_content_off_device(llm) or sends_content_off_device(embeddings)
 
 
 @lru_cache(maxsize=1)

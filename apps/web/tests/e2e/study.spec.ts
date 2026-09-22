@@ -123,25 +123,24 @@ async function prepararPractica(page: Page, titulo: string, cantidad: string): P
  * resultado), así que para preparar una nueva hay que pedirlo explícitamente: es el botón «Preparar
  * otra sesión».
  *
- * Los dos tiempos de espera son largos a propósito y por una razón medida: mientras la lista de
- * sesiones se relee, la configuración **no** se pinta (para no sustituir un formulario a medio
- * rellenar), así que con el equipo cargado —una corrida de puertas entera— 10 s no llegan. Una prueba
- * que de verdad falla sigue fallando: lo que cambia es cuánto se espera a la pantalla, no lo que se
- * comprueba.
+ * La espera es un bucle **a propósito**, y no un `if` seguido de una espera: la pantalla pinta la
+ * configuración si todavía no ha leído las sesiones y la sustituye por la sesión abierta cuando la
+ * lista llega. Comprobar una sola vez si el botón está —antes de que la lista llegue— saltaba el clic y
+ * luego se esperaba una pantalla que ya no iba a aparecer. Lo que se afirma es lo mismo: la
+ * configuración a la vista.
  */
 async function irAConfiguracion(page: Page): Promise<void> {
   await page.goto('/estudiar');
   await expect(page.getByRole('heading', { level: 1, name: 'Estudiar' })).toBeVisible();
   const prepararOtra = page.getByRole('button', { name: 'Preparar otra sesión' });
-  await expect(prepararOtra.or(page.getByRole('heading', { name: 'Preparar la sesión' }))).toBeVisible({
-    timeout: 20_000,
-  });
-  if (await prepararOtra.isVisible()) {
-    await prepararOtra.click();
-  }
-  await expect(page.getByRole('heading', { name: 'Preparar la sesión' })).toBeVisible({
-    timeout: 20_000,
-  });
+  await expect(async () => {
+    if (await prepararOtra.isVisible()) {
+      await prepararOtra.click();
+    }
+    await expect(page.getByRole('heading', { name: 'Preparar la sesión' })).toBeVisible({
+      timeout: 1_000,
+    });
+  }).toPass({ timeout: 20_000 });
 }
 
 test('E2E-06 sesión: acertar, fallar, dejar en blanco y ver la puntuación por partes', async ({

@@ -62,10 +62,11 @@ class LlmSettingsSchema(BaseModel):
     model: str | None = None
     base_url_configured: bool
     api_key_configured: bool
-    sends_data_off_device: bool
     #: Destino real del proveedor, calculado sobre el endpoint efectivo (DEBT-001): `disabled`,
-    #: `local`, `remote` o `unknown`. El booleano de arriba se mantiene porque el contrato lo
-    #: publica, pero deja de ser la única respuesta: `unknown` cuenta como que sí sale.
+    #: `local`, `remote` o `unknown`. **No hay booleano**: había uno (`sends_data_off_device`) que
+    #: mezclaba los dos proveedores y decía que sí salía cuando el endpoint era de este equipo; con
+    #: la clasificación por proveedor y su motivo, un booleano al lado solo sería una segunda forma
+    #: de decir lo mismo, y peor.
     destination: Literal["disabled", "local", "remote", "unknown"]
     destination_reason: str
 

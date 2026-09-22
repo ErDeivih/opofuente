@@ -31,7 +31,6 @@ from opofuente.api.schemas import (
 )
 from opofuente.config import Settings as AppSettings
 from opofuente.config import project_root
-from opofuente.domain.providers import classify_provider, sends_content_off_device
 
 router = APIRouter()
 
@@ -131,16 +130,10 @@ def read_settings(settings: AppSettingsDep) -> SettingsSchema:
     base = paths.root if paths.root.exists() else project_root()
     usage = shutil.disk_usage(base)
     tesseract_path = settings.tesseract_path
-    llm_destino = classify_provider(
-        name="el modelo de lenguaje",
-        provider=settings.llm_provider,
-        endpoint=settings.llm_base_url,
-    )
-    embeddings_destino = classify_provider(
-        name="el proveedor de embeddings",
-        provider=settings.embedding_provider,
-        endpoint=settings.embedding_base_url,
-    )
+    # La clasificación sale del propio `Settings`, que la calcula una vez: pedirla otra vez aquí con
+    # los mismos argumentos sería tener dos sitios donde se decide lo mismo.
+    llm_destino = settings.llm_destination
+    embeddings_destino = settings.embeddings_destination
     return SettingsSchema(
         version=__version__,
         host=settings.host,
@@ -157,7 +150,6 @@ def read_settings(settings: AppSettingsDep) -> SettingsSchema:
             model=settings.llm_model,
             base_url_configured=bool(settings.llm_base_url),
             api_key_configured=settings.llm_api_key_configured,
-            sends_data_off_device=sends_content_off_device(llm_destino),
             destination=llm_destino.destination.value,
             destination_reason=llm_destino.reason,
         ),

@@ -14,6 +14,7 @@ from sqlalchemy import Engine, text
 from sqlalchemy.exc import SQLAlchemyError
 
 from opofuente.config import DataPaths, Settings
+from opofuente.domain.providers import sends_content_off_device
 from opofuente.domain.system import Capability, CapabilityStatus
 from opofuente.infrastructure.worker_liveness import WorkerLiveness
 
@@ -69,10 +70,14 @@ class ConfigurationCapabilityProvider:
                     "citan cada afirmación. Un modelo de lenguaje llegaría con la deuda DEBT-014."
                 ),
             )
+        # El destino se calcula **para este proveedor**, no con un booleano que mezclaba los dos
+        # (DEBT-001): decir «los fragmentos saldrían del equipo» por el endpoint de embeddings sería
+        # acusar al modelo de lenguaje de lo que hace otro.
+        destino = self._settings.llm_destination
         extra = (
-            " Los fragmentos enviados saldrían del equipo."
-            if self._settings.sends_data_off_device
-            else " El modelo elegido es local."
+            " Los fragmentos que se le mandaran saldrían de este equipo."
+            if sends_content_off_device(destino)
+            else f" El endpoint configurado {destino.reason}."
         )
         return Capability(
             id="llm",
@@ -97,13 +102,21 @@ class ConfigurationCapabilityProvider:
                     "respuesta lo declara como degradación (DEBT-014)."
                 ),
             )
+        # Y aquí el suyo, que es lo que la deuda pedía: el bloque de embeddings informa de **su**
+        # destino, no del que tenga el modelo de lenguaje.
+        destino = self._settings.embeddings_destination
+        extra = (
+            " El texto que se mandara saldría de este equipo."
+            if sends_content_off_device(destino)
+            else f" El endpoint configurado {destino.reason}."
+        )
         return Capability(
             id="embeddings",
             label="Embeddings",
             status=CapabilityStatus.CONFIGURED_UNVERIFIED,
             detail=(
                 f"Proveedor {provider} configurado, pero sin índice vectorial construido ni "
-                "benchmark en español: la búsqueda sigue siendo literal (DEBT-014)."
+                f"benchmark en español: la búsqueda sigue siendo literal (DEBT-014).{extra}"
             ),
         )
 

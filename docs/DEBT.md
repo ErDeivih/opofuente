@@ -12,7 +12,7 @@ Reglas:
 
 | ID | Slice | Obligación | Estado |
 |---|---|---|---|
-| [DEBT-001](#debt-001--clasificación-del-destino-de-datos-por-proveedor) | S12 | Sustituir `Settings.sends_data_off_device` por clasificación por proveedor | abierta (reasignada de S09 a S12: los proveedores no llegan en S09, ver DEBT-014) |
+| [DEBT-001](#debt-001--clasificación-del-destino-de-datos-por-proveedor) | S12 | Sustituir `Settings.sends_data_off_device` por clasificación por proveedor | **cerrada** (21 de septiembre de 2026: clasificación por proveedor con su motivo, booleano retirado del contrato **y** de `Settings`, y la misma frase en Ajustes y en el estado del sistema) |
 | [DEBT-002](#debt-002--documentar-403-404-y-422-en-el-contrato) | S02 | Cerrar el caso real de validación fallida (422) con `field_errors` | **cerrada en S02** |
 | [DEBT-003](#debt-003--uso-privado-del-temario-de-la-guardia-civil) | antes de publicar | No publicar el repositorio ni distribuir la aplicación con el temario de GC | abierta (condición previa) |
 | [DEBT-004](#debt-004--parseo-seguro-de-xmlhtml-no-confiable) | S03 | Los extractores deben defenderse de XML/HTML no confiable | **cerrada en S03** |
@@ -85,6 +85,34 @@ booleano global y por eso no se cierra.
    detalle de las capacidades `llm` y `embeddings`) incluyen la clasificación por proveedor, y no
    queda ningún booleano llamado `sends_data_off_device` en ninguna de las dos respuestas.
 4. La pantalla de Ajustes muestra, por proveedor, si los datos salen del equipo (07_UI-UX §11).
+
+**Estado: cerrada (21 de septiembre de 2026), con el último trozo hecho al revisar el registro.** S12
+entregó la clasificación por proveedor; lo que quedaba era lo que el criterio 3 pedía y nadie había
+hecho: **quitar el booleano**. Criterio por criterio:
+
+1. **`/settings` y `/capabilities`** exponen la clasificación por proveedor con su motivo
+   (`llm.destination` + `destination_reason`, `embeddings.destination` + `destination_reason`). Las
+   capacidades de `llm` y `embeddings` dicen **su** destino: antes el detalle del modelo de lenguaje se
+   calculaba con un booleano global que mezclaba los dos, así que un endpoint de embeddings remoto
+   aparecía acusando al modelo de lenguaje de enviar los fragmentos fuera.
+2. **Pruebas unitarias de la clasificación** (`apps/api/tests/unit/test_provider_destination.py`, 21
+   casos): loopback por nombre, `::1`, IPv4-mapped, rangos privados, link-local → `local`; dominios
+   públicos y direcciones fuera de rango → `remote`; vacío, no-URL y esquema que no es http(s) →
+   `unknown`; proveedor desactivado → `disabled`; proveedor activo **sin** endpoint → `unknown`; y que
+   el motivo nombre el host y no la URL entera.
+3. **El booleano ya no existe**: ni en la respuesta (`LlmSettingsSchema`) ni en `Settings`. Se quitó
+   `Settings.sends_data_off_device` (que después de S12 era el resumen conservador de los dos
+   proveedores) porque tener dos formas de decir el mismo destino es tener dos formas de equivocarse, y
+   una de ellas ya se equivocó: `sends_content_off_device` sigue existiendo como la **regla** («`unknown`
+   cuenta como que sí sale») que usan la pantalla y las capacidades.
+4. **La pantalla lo enseña**: Ajustes muestra, por proveedor, «no sale de tu equipo» / «sale a un
+   tercero» / «no se puede determinar» / «sin proveedor», y **el estado del sistema usa la misma
+   frase** (antes decía «todo local» o «enviaría datos fuera» a partir del booleano): una sola manera
+   de decirlo, en un solo sitio (`features/system/labels.ts`).
+
+Lo que **no** cierra esta entrada: sigue sin haber proveedor de lenguaje ni de embeddings, así que estas
+pantallas dicen «sin proveedor» y nada se envía. Eso es DEBT-014, no esta deuda: aquí lo que se pedía era
+que **cuando** haya proveedor, la aplicación sepa —y diga— a dónde va el contenido.
 
 ---
 

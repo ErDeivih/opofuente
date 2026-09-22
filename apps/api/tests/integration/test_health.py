@@ -144,12 +144,12 @@ def test_settings_no_expone_la_clave(tmp_path: Path) -> None:
     body = response.json()
     assert body["llm"]["api_key_configured"] is True
     assert body["llm"]["provider"] == "openai_compatible"
-    # DEBT-001 (S12): el destino se calcula sobre el endpoint efectivo. Este es loopback, así que
-    # **no** sale del equipo, y la respuesta trae el motivo. Antes esta prueba esperaba `True`, que
-    # era el defecto: el booleano no miraba a dónde apuntaba el endpoint.
-    assert body["llm"]["sends_data_off_device"] is False
+    # DEBT-001 (S12, cerrada del todo al quitar el booleano): el destino se calcula sobre el
+    # endpoint efectivo. Este es loopback, así que **no** sale del equipo, y la respuesta trae el
+    # motivo. Ya no hay ningún booleano al lado: una sola forma de decir el destino, y la buena.
     assert body["llm"]["destination"] == "local"
     assert "loopback" in body["llm"]["destination_reason"]
+    assert "sends_data_off_device" not in body["llm"]
     # Y el proveedor de embeddings se informa aparte, con su propio destino.
     assert body["embeddings"]["destination"] == "disabled"
     assert body["editable"] is False

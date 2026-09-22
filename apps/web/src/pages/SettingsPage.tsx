@@ -24,7 +24,11 @@ import { ErrorState } from '../components/ErrorState';
 import { LoadingState } from '../components/LoadingState';
 import { StatusBadge } from '../components/StatusBadge';
 import { CapabilityList } from '../features/system/CapabilityList';
-import { describeError as describeFailure, formatBytes } from '../features/system/labels';
+import {
+  destinationLabel,
+  describeError as describeFailure,
+  formatBytes,
+} from '../features/system/labels';
 
 /**
  * Ajustes (07_UI-UX §11): ruta de datos y uso de disco, capacidades instaladas, privacidad explicada,
@@ -621,23 +625,4 @@ export function SettingsPage() {
       </section>
     </>
   );
-}
-
-/**
- * El destino de un proveedor con palabras que no se pueden confundir.
- *
- * `unknown` **nunca** se presenta como local: si no se puede determinar a dónde va el contenido, la
- * pantalla lo dice así.
- */
-function destinationLabel(destination: string): string {
-  if (destination === 'local') {
-    return 'no sale de tu equipo';
-  }
-  if (destination === 'remote') {
-    return 'sale a un tercero';
-  }
-  if (destination === 'unknown') {
-    return 'no se puede determinar';
-  }
-  return 'sin proveedor';
 }
