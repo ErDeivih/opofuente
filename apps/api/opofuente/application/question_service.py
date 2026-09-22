@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import csv
 import io
+import logging
 from collections.abc import Sequence
 from dataclasses import replace
 from datetime import date
@@ -46,6 +47,7 @@ from opofuente.domain.questions import (
     QuestionStatus,
     QuestionType,
     QuestionVersion,
+    SetStatus,
     SetType,
     find_question_duplicates,
     parse_answer_key,
@@ -54,6 +56,8 @@ from opofuente.domain.questions import (
 )
 from opofuente.infrastructure.document_repository import SqlAlchemyDocumentRepository
 from opofuente.infrastructure.question_repository import SqlAlchemyQuestionRepository
+
+logger = logging.getLogger("opofuente.application.question_service")
 
 #: Columnas que el CSV puede traer y que **todavía no se guardan**: se leen y se declaran, en
 #: lugar de fingir que se han importado.
@@ -159,6 +163,22 @@ class QuestionService:
             limit=limit,
             offset=offset,
         )
+
+    def archive_set(self, set_id: str, *, reason: str, actor: str = "local") -> bool:
+        """Archiva un conjunto. Se usa cuando algo lo creó y resultó no tener nada dentro.
+
+        Un conjunto vacío no es un conjunto: es una fila que ensucia la lista del banco. Se archiva
+        (no se borra: el producto no borra) y el motivo queda en el registro.
+        """
+        archivado = self._questions.set_status(
+            set_id, SetStatus.ARCHIVED.value, now=self._clock.now(), actor=actor
+        )
+        if archivado:
+            logger.info(
+                "questions.set_archived",
+                extra={"event": "set_archived", "path": set_id, "reason": reason},
+            )
+        return archivado
 
     def set_detail(self, set_id: str) -> QuestionSetView | None:
         return self._questions.get_set(set_id)

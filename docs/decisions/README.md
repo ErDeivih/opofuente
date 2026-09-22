@@ -21,6 +21,7 @@ Formato: `ADR-NNN-titulo.md` con contexto, opciones, datos, decisión, consecuen
 | [ADR-014](ADR-014-parte-detectada-y-datos-sin-lector.md) | Dónde vive lo que el importador lee y no puede guardar | aceptada (S12), cierra DEBT-010 |
 | [ADR-015](ADR-015-tercera-oposicion-celador.md) | Tercera oposición: Celador/a del SACYL | aceptada (22/09/2026) por decisión del propietario |
 | [ADR-016](ADR-016-anki-y-markdown-como-material.md) | Anki y Markdown entran como material, y con qué se lee una baraja | aceptada (S12.3) |
+| [ADR-017](ADR-017-que-hace-la-aplicacion-sola.md) | Qué hace la aplicación sola y qué sigue pidiendo una persona | aceptada (S12.5) |
 
 La deuda técnica obligatoria (con su slice y su criterio de cierre) se registra aparte en
 [`docs/DEBT.md`](../DEBT.md).

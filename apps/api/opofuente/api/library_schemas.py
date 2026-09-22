@@ -130,6 +130,13 @@ class PromotionOutcomeSchema(BaseModel):
     created_version: bool
     applied: bool
     reason: str | None = None
+    #: Lo que la aplicación hizo **sola** al aceptar la versión (S12.5, ADR-017): las preguntas que
+    #: el material traía, ya importadas y con su cita. Viaja aquí porque aceptar una versión es el
+    #: momento en que el material pasa a contar, y quien lo hace tiene que ver qué ha pasado sin ir
+    #: a buscarlo a otra pantalla.
+    questions_imported: int = 0
+    question_set_id: str | None = None
+    questions_note: str | None = None
 
 
 class MarkSupersedesRequestSchema(BaseModel):

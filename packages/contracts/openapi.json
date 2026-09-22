@@ -6484,6 +6484,33 @@
             ],
             "title": "Document Id"
           },
+          "question_set_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Question Set Id"
+          },
+          "questions_imported": {
+            "default": 0,
+            "title": "Questions Imported",
+            "type": "integer"
+          },
+          "questions_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Questions Note"
+          },
           "reason": {
             "anyOf": [
               {
@@ -13671,6 +13698,7 @@
     },
     "/api/v1/documents/{document_id}/versions/{version_id}/accept": {
       "post": {
+        "description": "Acepta la versión y, después, la aplicación hace sola lo que se puede hacer sola.\n\nAceptar una versión es un acto de una persona (ADR-009) y sigue pidiendo un clic. Lo que\nva detrás —leer el material, ver qué es e **importar sus preguntas con su cita**— no necesita a\nnadie, así que ocurre aquí y se cuenta en la respuesta (S12.5, ADR-017). Si el material no trae\npreguntas, no está clasificado o no está asignado a ninguna oposición, se dice con su motivo en\nlugar de callarlo.",
         "operationId": "accept_version_api_v1_documents__document_id__versions__version_id__accept_post",
         "parameters": [
           {

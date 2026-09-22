@@ -1,7 +1,7 @@
 import { useRef, useState, type KeyboardEvent } from 'react';
 
 import { isApiError } from '../../api/client';
-import type { CoverageType, Version } from '../../api/library';
+import type { CoverageType, PromotionOutcome, Version } from '../../api/library';
 import { isCandidate, isRestricted, versionName } from '../../api/library';
 import {
   useAcceptVersion,
@@ -48,6 +48,24 @@ function describeError(error: unknown): string {
   return error instanceof Error ? error.message : 'Error desconocido';
 }
 
+/**
+ * Qué contar de lo que la aplicación hizo sola al aceptar una versión (S12.5).
+ *
+ * Tres casos, y los tres se dicen: importó preguntas, no importó nada **y por qué**, o el servidor
+ * no lo cuenta (una versión antigua del backend). Callar el tercero haría creer que no pasó nada.
+ */
+function describeImportacionAutomatica(resultado: PromotionOutcome): string {
+  const importadas = resultado.questions_imported ?? 0;
+  if (importadas > 0) {
+    return `Se importaron ${String(importadas)} preguntas de este documento al banco, con su cita. Ya se pueden estudiar.`;
+  }
+  const motivo = resultado.questions_note ?? null;
+  if (motivo === null) {
+    return 'No se importaron preguntas de este documento.';
+  }
+  return `No se importaron preguntas: ${motivo}.`;
+}
+
 export interface DocumentDetailProps {
   documentId: string;
   onClose: () => void;
@@ -82,6 +100,10 @@ export function DocumentDetail({ documentId, onClose }: DocumentDetailProps) {
   // de esa sección y quedará pendiente de revisar si el material cambia.
   const resumir = useCreateSummary();
   const [avisoResumen, setAvisoResumen] = useState<string | null>(null);
+  // Lo que la aplicación hizo sola al aceptar una versión (S12.5): se enseña una vez y se puede
+  // descartar. Se cuenta siempre —también cuando no hizo nada— porque «no hizo nada» con su motivo
+  // es información: si esperabas que importara preguntas, quieres saber por qué no lo ha hecho.
+  const [avisoAutomatico, setAvisoAutomatico] = useState<string | null>(null);
 
   /**
    * Comparación de versiones: se eligen dos y el servidor las compara (no se compara aquí nada).
@@ -281,6 +303,13 @@ export function DocumentDetail({ documentId, onClose }: DocumentDetailProps) {
         </section>
       )}
 
+      {avisoAutomatico !== null && (
+        <section className="card notice" aria-labelledby="aviso-importacion-automatica">
+          <h3 id="aviso-importacion-automatica">Lo que la aplicación hizo al aceptar</h3>
+          <p role="note">{avisoAutomatico}</p>
+        </section>
+      )}
+
       <section className="card" aria-labelledby="ficha-documento">
         <h3 id="ficha-documento">Ficha del documento</h3>
         <div className="tabs" role="tablist" aria-label="Partes de la ficha">
@@ -413,7 +442,14 @@ export function DocumentDetail({ documentId, onClose }: DocumentDetailProps) {
                 void versions.refetch();
               }}
               onAccept={(id) => {
-                accept.mutate({ documentId, versionId: id });
+                accept.mutate(
+                  { documentId, versionId: id },
+                  {
+                    onSuccess: (resultado) => {
+                      setAvisoAutomatico(describeImportacionAutomatica(resultado));
+                    },
+                  },
+                );
               }}
               onSupersede={(versionId, supersededId) => {
                 supersede.mutate({ documentId, versionId, supersededId });

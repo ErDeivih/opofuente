@@ -739,6 +739,73 @@ describe('biblioteca: versiones', () => {
     ).toBeNull();
   });
 
+  it('cuenta lo que la aplicación hizo sola al aceptar: las preguntas importadas', async () => {
+    // S12.5: aceptar una versión de un banco de preguntas las importa sin que nadie lo pida. Lo que
+    // se comprueba aquí es que el usuario **se entera**: si no, tendría que ir al banco a ver si
+    // pasó algo.
+    const fetchMock = stubLibraryApi({
+      '/api/v1/documents/doc-1/versions/ver-1/accept': {
+        body: {
+          ...PROMOCION,
+          questions_imported: 43,
+          question_set_id: 'set-1',
+          questions_note: 'importadas 43 preguntas de este documento',
+        },
+      },
+    });
+    renderLibrary();
+    const tabs = await abrirFicha('Convocatoria TAI 2025');
+    await userEvent.click(within(tabs).getByRole('tab', { name: 'Versiones y diff' }));
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Aceptar la versión: convocatoria 2025' }),
+    );
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: 'Confirmar la aceptación de la versión: convocatoria 2025',
+      }),
+    );
+
+    const aviso = await screen.findByRole('region', {
+      name: /Lo que la aplicación hizo al aceptar/,
+    });
+    expect(within(aviso).getByText(/Se importaron 43 preguntas/)).toBeInTheDocument();
+    expect(within(aviso).getByText(/Ya se pueden estudiar/)).toBeInTheDocument();
+    expect(peticion(fetchMock, '/documents/doc-1/versions/ver-1/accept')).toBeDefined();
+  });
+
+  it('dice por qué NO importó nada, en lugar de callarse', async () => {
+    // «No hizo nada» con su motivo también es información: si esperabas que importara, quieres
+    // saber por qué no lo ha hecho.
+    stubLibraryApi({
+      '/api/v1/documents/doc-1/versions/ver-1/accept': {
+        body: {
+          ...PROMOCION,
+          questions_imported: 0,
+          question_set_id: null,
+          questions_note: 'el material está clasificado como «curriculum»',
+        },
+      },
+    });
+    renderLibrary();
+    const tabs = await abrirFicha('Convocatoria TAI 2025');
+    await userEvent.click(within(tabs).getByRole('tab', { name: 'Versiones y diff' }));
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Aceptar la versión: convocatoria 2025' }),
+    );
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: 'Confirmar la aceptación de la versión: convocatoria 2025',
+      }),
+    );
+
+    const aviso = await screen.findByRole('region', {
+      name: /Lo que la aplicación hizo al aceptar/,
+    });
+    expect(
+      within(aviso).getByText(/No se importaron preguntas: el material está clasificado/),
+    ).toBeInTheDocument();
+  });
+
   it('marca que una versión sustituye a otra, con confirmación y envío explícito', async () => {
     const fetchMock = stubLibraryApi();
     renderLibrary();

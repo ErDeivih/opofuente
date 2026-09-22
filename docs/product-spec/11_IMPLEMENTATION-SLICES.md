@@ -359,23 +359,38 @@ verificadas y documentadas en `15_OFFICIAL-PROFILES-AND-SOURCE-MANIFEST` §4, si
   significa nada.
 - Las entradas de un ZIP siguen mostrándose como `contenedor/miembro`, como antes.
 
-## S12.5 — Que la aplicación lo haga todo (pendiente)
+## S12.5 — Importar las preguntas sin que nadie pulse nada
 
-Lo que el propietario pidió después de S12.2: que él solo deje sus documentos y la aplicación
-clasifique cada uno por su papel (temario, ayuda, parte de un temario, preguntas, supuestos,
-anotaciones, respuestas, plantillas), importe las preguntas que encuentre, las catalogue por bloque y
-tema, enlace cada plantilla con su examen y deje el material listo para estudiar sin que él actúe.
+### Entrega
 
-Piezas identificadas, sin construir todavía:
+- Al aceptar una versión de documento, la aplicación mira qué es el material y, si es un examen
+  oficial, un banco de preguntas o unos supuestos, **crea el conjunto e importa las preguntas con su
+  cita**, sin que el usuario lo pida (ADR-017).
+- La respuesta de la aceptación dice qué ha hecho: cuántas preguntas, a qué conjunto o el motivo de no
+  importar ninguna («está clasificado como temario», «no está asignado a ninguna oposición», «no está
+  clasificado»), y la ficha del documento lo cuenta.
+- Un conjunto por **documento**, no por versión: una versión nueva añade lo que trae de nuevo. Un
+  conjunto que se creó y quedó vacío se **archiva**.
 
-- **importar preguntas sin que nadie pulse nada** cuando el material se clasifica como banco de
-  preguntas, examen o tarjetas, en vez de esperar a que el usuario lo pida desde la ficha;
-- **enlazar la plantilla con su examen** (hoy la clave se importa a mano, con su conjunto);
+### Aceptación
+
+- Un banco de preguntas aceptado deja sus preguntas en el banco, con su sección y su fragmento.
+- Un temario, unos apuntes o algo sin clasificar **no** crean ningún conjunto, y se dice por qué.
+- Sin asignación aceptada al programa no se inventa la oposición: no hay conjunto.
+- Aceptar la versión 2 del mismo documento añade solo las preguntas nuevas al conjunto que ya existía.
+- Un material que decía traer preguntas y no trae ninguna no deja un conjunto vacío en la lista.
+
+## S12.6 — Catalogar y enlazar (pendiente)
+
+Lo que queda de «que la aplicación lo haga todo», cada pieza con su decisión antes de codificar:
+
+- **enlazar la plantilla de respuestas con su examen**: hoy la clave se importa a mano, con su
+  conjunto. Enlazarla exige decidir cómo se reconoce que una plantilla es de un examen concreto
+  (por el modelo, por el número de preguntas, por la fecha) y qué se hace cuando no cuadra;
 - **catalogar cada pregunta por bloque y tema**: los mapeos existen para documentos y artefactos, no
-  para preguntas (`SubjectType` solo tiene esos dos);
-- **la política de qué se aplica sin preguntar** (ADR-017): qué bandas deciden solas, qué se queda en
-  la cola y qué no se aplica nunca sin confirmación (autoridad y derechos, ADR-009);
-- **una pantalla que diga «esto ya está listo para estudiar»** y qué falta, si falta algo.
-
-Se decide antes de codificar, y con el propietario delante en las decisiones que cambian lo que la
-aplicación da por bueno sin preguntarle.
+  para preguntas (`SubjectType` solo tiene esos dos). Una pregunta mal catalogada envenena el
+  diagnóstico por temas, así que la propuesta y su banda tienen que decidirse, no suponerse;
+- **una pantalla que diga «esto ya está listo para estudiar»** y qué falta, si falta algo, por
+  oposición: material por papel, preguntas por tema, claves activas y lo que sigue esperando una
+  decisión de una persona (autoridad y derechos, aceptar una versión);
+- de paso, **DEBT-024**: clasificar deja de ser una petición síncrona con el corpus entero.

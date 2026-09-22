@@ -34,8 +34,8 @@ Reglas:
 | [DEBT-020](#debt-020--la-clave-oficial-de-celador-está-escaneada-y-no-se-puede-importar) | S09+ | La plantilla oficial de respuestas correctas de Celador es un escaneo sin capa de texto: la clave existe y no entra en la aplicación | abierta |
 | [DEBT-021](#debt-021--la-puerta-e2e-puede-correr-contra-un-servidor-ajeno) | antes de dar por buena una corrida E2E | La suite E2E reutiliza cualquier servidor que escuche en el 8765: corre contra su base de datos y escribe en ella | abierta |
 | [DEBT-022](#debt-022--la-suite-e2e-no-distingue-la-máquina-está-cargada-de-esto-se-ha-roto) | antes de dar por buena la puerta E2E | La suite tarda 1,8 min en vacío y 11 cargada, y sus esperas fijas pueden caducar sin decir si el problema es el código o el ordenador (los cuatro rojos que primero se le atribuyeron eran del servidor reutilizado, DEBT-021) | abierta |
-| [DEBT-023](#debt-023--una-tarjeta-de-anki-no-puede-ser-una-pregunta-porque-no-hay-dónde-guardar-su-respuesta) | S12.4+ | El modelo tiene el tipo `free_text_reference` y no tiene dónde guardar la respuesta de referencia: el reverso de una tarjeta no entra | abierta |
-| [DEBT-024](#debt-024--la-clasificación-se-pide-de-forma-síncrona-y-con-el-corpus-entero-tarda-demasiado) | S12.5 | «Buscar propuestas ahora» clasifica todo el corpus en la misma petición: con material real tarda decenas de segundos y bloquea la pantalla | abierta |
+| [DEBT-023](#debt-023--una-tarjeta-de-anki-no-puede-ser-una-pregunta-porque-no-hay-dónde-guardar-su-respuesta) | S12.6 | El modelo tiene el tipo `free_text_reference` y no tiene dónde guardar la respuesta de referencia: el reverso de una tarjeta no entra | abierta |
+| [DEBT-024](#debt-024--la-clasificación-se-pide-de-forma-síncrona-y-con-el-corpus-entero-tarda-demasiado) | S12.6 | «Buscar propuestas ahora» clasifica todo el corpus en la misma petición: con material real tarda decenas de segundos y bloquea la pantalla | abierta |
 
 ---
 
@@ -1214,5 +1214,5 @@ progreso, como extraer y recalcular, y que la pantalla diga en qué va.
 3. Con el corpus del propietario, la petición responde en menos de un segundo y el trabajo informa de
    su progreso real.
 
-**Estado: abierta.** Vive en el mismo terreno que S12.5 (que la aplicación lo haga todo sola), donde
+**Estado: abierta.** Vive en el mismo terreno que S12.6 (catalogar y enlazar; la importación automática ya está en S12.5), donde
 la clasificación pasa a ser un paso automático y no un botón.

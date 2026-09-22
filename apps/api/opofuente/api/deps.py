@@ -10,6 +10,7 @@ from typing import Annotated
 
 from fastapi import Depends, Request
 
+from opofuente.application.auto_study_service import AutoStudyService
 from opofuente.application.backup_service import BackupService
 from opofuente.application.change_service import ChangeService
 from opofuente.application.classification_service import ClassificationService
@@ -86,6 +87,11 @@ def get_question_service(request: Request) -> QuestionService:
     return service
 
 
+def get_auto_study_service(request: Request) -> AutoStudyService:
+    service: AutoStudyService = request.app.state.auto_study_service
+    return service
+
+
 def get_study_service(request: Request) -> StudyService:
     service: StudyService = request.app.state.study_service
     return service
@@ -138,6 +144,7 @@ ClassificationServiceDep = Annotated[ClassificationService, Depends(get_classifi
 LibraryServiceDep = Annotated[LibraryService, Depends(get_library_service)]
 ArtifactStoreDep = Annotated[ArtifactStore, Depends(get_artifact_store)]
 QuestionServiceDep = Annotated[QuestionService, Depends(get_question_service)]
+AutoStudyServiceDep = Annotated[AutoStudyService, Depends(get_auto_study_service)]
 StudyServiceDep = Annotated[StudyService, Depends(get_study_service)]
 SearchServiceDep = Annotated[SearchService, Depends(get_search_service)]
 ReviewServiceDep = Annotated[ReviewService, Depends(get_review_service)]

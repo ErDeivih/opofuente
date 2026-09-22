@@ -785,7 +785,16 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Acepta una versión (promoción crítica, confirmada y auditada) */
+        /**
+         * Acepta una versión (promoción crítica, confirmada y auditada)
+         * @description Acepta la versión y, después, la aplicación hace sola lo que se puede hacer sola.
+         *
+         *     Aceptar una versión es un acto de una persona (ADR-009) y sigue pidiendo un clic. Lo que
+         *     va detrás —leer el material, ver qué es e **importar sus preguntas con su cita**— no necesita a
+         *     nadie, así que ocurre aquí y se cuenta en la respuesta (S12.5, ADR-017). Si el material no trae
+         *     preguntas, no está clasificado o no está asignado a ninguna oposición, se dice con su motivo en
+         *     lugar de callarlo.
+         */
         post: operations["accept_version_api_v1_documents__document_id__versions__version_id__accept_post"];
         delete?: never;
         options?: never;
@@ -4613,6 +4622,15 @@ export interface components {
             created_version: boolean;
             /** Document Id */
             document_id?: string | null;
+            /** Question Set Id */
+            question_set_id?: string | null;
+            /**
+             * Questions Imported
+             * @default 0
+             */
+            questions_imported: number;
+            /** Questions Note */
+            questions_note?: string | null;
             /** Reason */
             reason?: string | null;
             /** Version Id */

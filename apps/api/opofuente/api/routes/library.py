@@ -24,7 +24,7 @@ from fastapi import APIRouter, Query
 from fastapi.responses import FileResponse
 
 from opofuente.api.classification_schemas import MappingSchema, mapping_schema
-from opofuente.api.deps import ArtifactStoreDep, LibraryServiceDep
+from opofuente.api.deps import ArtifactStoreDep, AutoStudyServiceDep, LibraryServiceDep
 from opofuente.api.error_responses import INGESTION_WRITE_ERRORS, RESOURCE_ERRORS
 from opofuente.api.library_schemas import (
     CollectionItemRequestSchema,
@@ -361,11 +361,30 @@ def list_versions(document_id: str, service: LibraryServiceDep) -> list[VersionS
     summary="Acepta una versión (promoción crítica, confirmada y auditada)",
 )
 def accept_version(
-    document_id: str, version_id: str, service: LibraryServiceDep
+    document_id: str,
+    version_id: str,
+    service: LibraryServiceDep,
+    auto: AutoStudyServiceDep,
 ) -> PromotionOutcomeSchema:
+    """Acepta la versión y, después, la aplicación hace sola lo que se puede hacer sola.
+
+    Aceptar una versión es un acto de una persona (ADR-009) y sigue pidiendo un clic. Lo que
+    va detrás —leer el material, ver qué es e **importar sus preguntas con su cita**— no necesita a
+    nadie, así que ocurre aquí y se cuenta en la respuesta (S12.5, ADR-017). Si el material no trae
+    preguntas, no está clasificado o no está asignado a ninguna oposición, se dice con su motivo en
+    lugar de callarlo.
+    """
     if service.version(document_id, version_id) is None:
         raise NotFoundError("versión", version_id)
-    return _outcome(service.accept_version(version_id))
+    resultado = _outcome(service.accept_version(version_id))
+    automatico = auto.after_version_accepted(version_id)
+    return resultado.model_copy(
+        update={
+            "questions_imported": automatico.imported,
+            "question_set_id": automatico.set_id,
+            "questions_note": automatico.note,
+        }
+    )
 
 
 @router.post(

@@ -28,6 +28,7 @@ from opofuente.api.middleware import (
     SecurityHeadersMiddleware,
 )
 from opofuente.api.openapi import apply_problem_media_type
+from opofuente.application.auto_study_service import AutoStudyService
 from opofuente.application.backup_service import BackupService
 from opofuente.application.change_service import ChangeService
 from opofuente.application.classification_service import ClassificationService
@@ -235,6 +236,16 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         search=SqlAlchemySearchRepository(session_factory),
         clock=clock,
     )
+    # Lo que la aplicación hace sola cuando una versión se acepta (S12.5, ADR-017): importar sin que
+    # nadie pulse nada las preguntas que el material trae y la clasificación ya dice qué es.
+    auto_study_service = AutoStudyService(
+        questions=question_service,
+        classifications=classification_service,
+        library=library_service,
+        profiles=profiles_service,
+        documents=SqlAlchemyDocumentRepository(session_factory, representations),
+        clock=clock,
+    )
     review_service = ReviewService(
         reviews=SqlAlchemyReviewRepository(session_factory),
         clock=clock,
@@ -363,6 +374,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.library_service = library_service
     app.state.artifact_store = artifact_store
     app.state.question_service = question_service
+    app.state.auto_study_service = auto_study_service
     app.state.study_service = study_service
     app.state.search_service = search_service
     app.state.review_service = review_service
