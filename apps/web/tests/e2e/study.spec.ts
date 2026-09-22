@@ -1,3 +1,4 @@
+import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 
 /**
@@ -25,6 +26,13 @@ const CSV = [
   'El plazo del procedimiento del caso C es de treinta dias habiles;Verdadero;Falso;b',
   'El plazo del procedimiento del caso D es de cuarenta dias habiles;Verdadero;Falso;b',
 ].join('\n');
+
+/** Los tres anchos de referencia de 07_UI-UX §14. */
+const VIEWPORTS = [
+  { name: 'escritorio 1440x900', width: 1440, height: 900 },
+  { name: 'portátil 1024x768', width: 1024, height: 768 },
+  { name: 'móvil 390x844', width: 390, height: 844 },
+];
 
 async function crearConjuntoConClave(page: Page): Promise<string> {
   const titulo = `Practica E2E ${String(Date.now())}-${String(Math.random()).slice(2, 8)}`;
@@ -389,4 +397,52 @@ test('E2E-06 un simulacro monta el perfil exacto y el resultado no se llama ofic
   await expect(
     page.getByRole('note', { name: 'Cómo se compuso esta sesión' }),
   ).toBeVisible();
+});
+
+/**
+ * 07_UI-UX §13 y §14 sobre la pantalla que más se usa: la pregunta y su corrección.
+ *
+ * §14 pide los tres anchos de referencia para «Pregunta y Corrección» y §13 pide que el flujo
+ * completo se pueda hacer **con teclado**. Ninguna de las dos cosas estaba comprobada: Estudiar no
+ * tenía prueba de accesibilidad ni de responsive, y la de teclado no existía en ninguna pantalla.
+ */
+test('E2E-06 accesibilidad y responsive: la pregunta y la corrección, con teclado y a tres anchos', async ({
+  page,
+}) => {
+  const titulo = await crearConjuntoConClave(page);
+  await prepararPractica(page, titulo, '2');
+  await expect(page.getByRole('heading', { name: 'Pregunta 1' })).toBeVisible();
+
+  // Los tres anchos, sin scroll horizontal: el enunciado y las opciones son lo más largo de la
+  // aplicación y donde un desbordamiento se nota.
+  for (const viewport of VIEWPORTS) {
+    await page.setViewportSize({ width: viewport.width, height: viewport.height });
+    await expect(page.getByRole('heading', { name: 'Pregunta 1' })).toBeVisible();
+    const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
+    expect(scrollWidth, `scroll horizontal en la pregunta (${viewport.name})`).toBeLessThanOrEqual(
+      viewport.width + 1,
+    );
+  }
+  await page.setViewportSize({ width: 1440, height: 900 });
+
+  // Accesibilidad de la pregunta **sin corregir**: aquí es donde no puede aparecer la solución.
+  const pregunta = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
+    .analyze();
+  expect(pregunta.violations).toEqual([]);
+
+  // Y se responde con el teclado, que es lo que §13 pide: foco en la opción, espacio para marcarla,
+  // tabulador hasta el botón y enter para enviar. Sin ratón en ningún paso.
+  await page.getByLabel('B) Falso').focus();
+  await page.keyboard.press(' ');
+  await expect(page.getByLabel('B) Falso')).toBeChecked();
+  await page.getByRole('button', { name: 'Enviar la respuesta' }).focus();
+  await page.keyboard.press('Enter');
+  await expect(page.getByText('Respuesta guardada.')).toBeVisible();
+
+  // La corrección también se comprueba: enseña la solución, así que su accesibilidad importa igual.
+  const correccion = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
+    .analyze();
+  expect(correccion.violations).toEqual([]);
 });

@@ -635,7 +635,8 @@ describe('pantalla Bandeja', () => {
 
     const importacion = await screen.findByRole('region', { name: 'Importación' });
     await waitFor(() => {
-      expect(within(importacion).getByText('succeeded')).toBeInTheDocument();
+      // El estado se lee en palabras: «succeeded» es el valor del enum, no lo que dice una pantalla.
+      expect(within(importacion).getByText('terminado')).toBeInTheDocument();
     });
     expect(within(importacion).queryByRole('button', { name: 'Reintentar' })).not.toBeInTheDocument();
   });

@@ -19,50 +19,16 @@ import { EmptyState } from '../components/EmptyState';
 import { ErrorState } from '../components/ErrorState';
 import { LoadingState } from '../components/LoadingState';
 import { StatusBadge } from '../components/StatusBadge';
-import type { StatusTone } from '../components/StatusBadge';
 import { IntakeActions } from '../features/ingestion/IntakeActions';
+import {
+  BATCH_STATUS_TONE,
+  ITEM_STATUS,
+  SEVERITY_TONE,
+  batchKindLabel,
+  batchStatusLabel,
+} from '../features/ingestion/labels';
 import { TextViewer } from '../features/ingestion/TextViewer';
 
-const STATUS_TONE: Record<string, StatusTone> = {
-  queued: 'info',
-  running: 'info',
-  cancel_requested: 'warning',
-  succeeded: 'ok',
-  failed: 'blocked',
-  cancelled: 'info',
-};
-
-const SEVERITY_TONE: Record<string, StatusTone> = {
-  info: 'info',
-  warning: 'warning',
-  error: 'blocked',
-};
-
-/**
- * Cómo se llama cada estado de una entrada, y qué hacer con él (DEBT-019).
- *
- * Antes la tabla pintaba el valor crudo del enum (`unsupported_preserved`), que no dice nada a quien
- * lo lee. Desde S03 un formato sin extractor **se conserva** en lugar de omitirse, y eso tiene que
- * verse: la entrada está copiada, no se ha extraído nada de ella, y no es un fallo.
- */
-const ITEM_STATUS: Record<string, { label: string; tone: StatusTone }> = {
-  discovered: { label: 'descubierta', tone: 'info' },
-  inventoried: { label: 'inventariada', tone: 'info' },
-  omitted: { label: 'omitida', tone: 'warning' },
-  copied: { label: 'copiada', tone: 'ok' },
-  hashed: { label: 'copiada y verificada', tone: 'ok' },
-  extracted: { label: 'copiada y con texto extraído', tone: 'ok' },
-  unsupported_preserved: {
-    label: 'conservada sin extractor (copiada, sin texto)',
-    tone: 'warning',
-  },
-  expanded: { label: 'contenedor expandido', tone: 'info' },
-  ocr_pending: { label: 'pendiente de OCR (copiada, sin texto)', tone: 'warning' },
-  failed: { label: 'fallida', tone: 'blocked' },
-  cancelled: { label: 'cancelada', tone: 'info' },
-};
-
-/** Estados desde los que la API admite un reintento (los demás responden 409). */
 const CAN_RETRY: ReadonlySet<string> = new Set(['failed', 'cancelled']);
 
 function formatBytes(value: number): string {
@@ -312,8 +278,8 @@ export function TrayPage() {
           {batch.isSuccess && (
             <>
               <div className="status-summary" aria-live="polite">
-                <StatusBadge tone={STATUS_TONE[batch.data.batch.status] ?? 'info'}>
-                  {batch.data.batch.status}
+                <StatusBadge tone={BATCH_STATUS_TONE[batch.data.batch.status] ?? 'info'}>
+                  {batchStatusLabel(batch.data.batch.status)}
                 </StatusBadge>
                 <span className="hint">
                   {job.data === undefined
@@ -464,9 +430,11 @@ export function TrayPage() {
                     setBatchId(row.id);
                   }}
                 >
-                  {row.kind} · {row.source_path_display}
+                  {batchKindLabel(row.kind)} · {row.source_path_display}
                 </button>
-                <StatusBadge tone={STATUS_TONE[row.status] ?? 'info'}>{row.status}</StatusBadge>
+                <StatusBadge tone={BATCH_STATUS_TONE[row.status] ?? 'info'}>
+                  {batchStatusLabel(row.status)}
+                </StatusBadge>
                 <span className="hint"> {row.total_items} entradas</span>
               </li>
             ))}

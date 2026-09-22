@@ -272,7 +272,7 @@ test('E2E-04 documento compartido: un artefacto, sus asignaciones y la versión 
   await page.getByLabel(/Suelta aquí ficheros o carpetas/).setInputFiles([original, copia]);
 
   const importacion = page.getByRole('region', { name: 'Importación' });
-  await expect(importacion.getByText('succeeded', { exact: true }).first()).toBeVisible({
+  await expect(importacion.getByText('terminado', { exact: true }).first()).toBeVisible({
     timeout: 60_000,
   });
   const entradas = page.getByRole('table', { name: /entradas/ });
@@ -486,7 +486,7 @@ test('E2E-04 documento compartido: un artefacto, sus asignaciones y la versión 
   );
   await page.goto('/bandeja');
   await page.getByLabel(/Suelta aquí ficheros o carpetas/).setInputFiles([originalV2]);
-  await expect(importacion.getByText('succeeded', { exact: true }).first()).toBeVisible({
+  await expect(importacion.getByText('terminado', { exact: true }).first()).toBeVisible({
     timeout: 60_000,
   });
 

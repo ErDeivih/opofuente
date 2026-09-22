@@ -169,6 +169,19 @@ button:focus-visible,
   font-variant-numeric: tabular-nums;
 }
 
+/* Contador de la sección: cuánto espera ahí (07_UI-UX §2). Mismo lenguaje que la insignia de aviso. */
+.nav__count {
+  margin-left: auto;
+  padding: 0 0.45rem;
+  border-radius: 999px;
+  border: 1px solid currentcolor;
+  background: var(--color-aviso-fondo);
+  color: var(--color-aviso);
+  font-size: 0.78rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
 /* --- Indicadores de cabecera ---------------------------------------------- */
 
 .indicators {

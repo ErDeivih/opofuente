@@ -5,6 +5,13 @@ const API = 'http://127.0.0.1:8765/api/v1';
 const GC_NAME = 'Escala de Cabos y Guardias de la Guardia Civil';
 const TAI_NAME = 'Cuerpo de Técnicos Auxiliares de Informática de la Administración del Estado';
 
+/** Los tres anchos de referencia de 07_UI-UX §14. */
+const VIEWPORTS = [
+  { name: 'escritorio 1440x900', width: 1440, height: 900 },
+  { name: 'portátil 1024x768', width: 1024, height: 768 },
+  { name: 'móvil 390x844', width: 390, height: 844 },
+];
+
 /**
  * Cambiar de oposición es una escritura y afecta a toda la aplicación, así que cada prueba deja
  * TAI activo al terminar. Sin esto, una prueba que falle a mitad dejaría el estado cambiado y
@@ -90,3 +97,24 @@ test('S01: accesibilidad del Programa sin violaciones automatizables', async ({ 
 
   expect(results.violations).toEqual([]);
 });
+
+/**
+ * 07_UI-UX §14: los tres anchos de referencia, sin scroll horizontal.
+ *
+ * El árbol del programa es lo más ancho de la aplicación —rutas, títulos oficiales largos y las cifras
+ * de cada nodo—, así que es donde un desbordamiento se ve primero. Faltaba: Programa solo tenía la
+ * comprobación de accesibilidad.
+ */
+for (const viewport of VIEWPORTS) {
+  test(`S01: responsive sin scroll horizontal (${viewport.name})`, async ({ page }) => {
+    await page.setViewportSize({ width: viewport.width, height: viewport.height });
+    await page.goto('/programa');
+    await expect(page.getByRole('heading', { level: 1, name: 'Programa' })).toBeVisible();
+    await expect(page.getByText(/33 temas/)).toBeVisible();
+
+    const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
+    expect(scrollWidth, `scroll horizontal en ${viewport.name}`).toBeLessThanOrEqual(
+      viewport.width + 1,
+    );
+  });
+}

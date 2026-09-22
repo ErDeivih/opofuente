@@ -266,3 +266,100 @@ describe('shell de la aplicación', () => {
     expect(screen.getByRole('link', { name: 'Volver a Inicio' })).toBeInTheDocument();
   });
 });
+
+describe('contadores de la navegación', () => {
+  /** Lo que el servidor cuenta para los cuatro contadores de §2. */
+  function stubContadores(extra: Record<string, StubbedRoute> = {}) {
+    return stubSystemApi({
+      '/api/v1/pending-actions': {
+        body: {
+          actions: [
+            {
+              key: 'importaciones',
+              title: 'Importaciones con avisos o errores',
+              detail: '7 aviso(s) y error(es) de importación sin resolver',
+              count: 7,
+              href: '/bandeja',
+              label: 'Ver la bandeja',
+            },
+            {
+              key: 'cambios',
+              title: 'Cambios de fuente sin confirmar',
+              detail: '4 cambio(s) propuesto(s) entre versiones',
+              count: 4,
+              href: '/cambios',
+              label: 'Ver los cambios',
+            },
+          ],
+          total: 11,
+        },
+      },
+      '/api/v1/reviews/due?opposition_id=opp-tai': {
+        body: {
+          items: [],
+          stats: { active: 9, due: 5, next_due_at: null, lapses: 1 },
+          concepts: [],
+          notes: [],
+        },
+      },
+      '/api/v1/questions?status=conflicting&limit=1': {
+        body: { questions: [], total: 3, limit: 1, offset: 0 },
+      },
+      ...extra,
+    });
+  }
+
+  it('dice cuánto espera en cada sección, con la cifra que cuenta el servidor', async () => {
+    stubContadores();
+    renderWithProviders(
+      <AppShell>
+        <HomePage />
+      </AppShell>,
+      { route: '/' },
+    );
+
+    // Cuatro contadores: los tres del servidor y el de repaso, que es el de la cola de verdad. El
+    // nombre del enlace dice el número **y** qué es, así que el contador no es decorativo ni mudo.
+    const bandeja = await screen.findByRole('link', {
+      name: 'Bandeja: 7 avisos o errores de importación',
+    });
+    expect(bandeja).toHaveTextContent('7');
+    expect(
+      screen.getByRole('link', { name: 'Preguntas: 3 preguntas en conflicto' }),
+    ).toBeInTheDocument();
+    // El de repaso necesita la oposición activa, que llega en su propia consulta: se espera.
+    expect(
+      await screen.findByRole('link', { name: 'Errores: 5 repasos vencidos' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: 'Cambios: 4 cambios sin confirmar' }),
+    ).toBeInTheDocument();
+  });
+
+  it('no enseña ceros: una sección sin nada pendiente no lleva insignia', async () => {
+    stubContadores({
+      '/api/v1/pending-actions': { body: { actions: [], total: 0 } },
+      '/api/v1/reviews/due?opposition_id=opp-tai': {
+        body: {
+          items: [],
+          stats: { active: 0, due: 0, next_due_at: null, lapses: 0 },
+          concepts: [],
+          notes: [],
+        },
+      },
+      '/api/v1/questions?status=conflicting&limit=1': {
+        body: { questions: [], total: 0, limit: 1, offset: 0 },
+      },
+    });
+    renderWithProviders(
+      <AppShell>
+        <HomePage />
+      </AppShell>,
+      { route: '/' },
+    );
+
+    // Se espera a que la pantalla esté montada antes de comprobar que no hay insignias.
+    expect(await screen.findByText('¿Listo para estudiar?')).toBeInTheDocument();
+    expect(document.querySelectorAll('.nav__count')).toHaveLength(0);
+  });
+});

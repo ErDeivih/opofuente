@@ -100,7 +100,7 @@ async function ingerir(page: Page, archivo: string): Promise<void> {
   await page.goto('/bandeja');
   await page.getByLabel(/Suelta aquí ficheros o carpetas/).setInputFiles([archivo]);
   await expect(
-    page.getByRole('region', { name: 'Importación' }).getByText('succeeded', { exact: true }).first(),
+    page.getByRole('region', { name: 'Importación' }).getByText('terminado', { exact: true }).first(),
   ).toBeVisible({ timeout: 60_000 });
 }
 

@@ -110,6 +110,7 @@ import {
   correctQuestion,
   createQuestionSet,
   fetchAnswerKeys,
+  fetchConflictingQuestions,
   fetchOutdatedSessions,
   fetchQuestion,
   fetchQuestionEvidence,
@@ -150,6 +151,7 @@ export const queryKeys = {
   studyReadiness: (oppositionId: string) =>
     ['profiles', 'study-readiness', oppositionId] as const,
   pendingActions: ['profiles', 'pending-actions'] as const,
+  conflictingQuestions: ['questions', 'conflicting'] as const,
   capabilities: ['system', 'capabilities'] as const,
   settings: ['system', 'settings'] as const,
   oppositions: ['profiles', 'oppositions'] as const,
@@ -1465,6 +1467,19 @@ export function usePendingActions() {
   return useQuery({
     queryKey: queryKeys.pendingActions,
     queryFn: fetchPendingActions,
+    staleTime: 30_000,
+  });
+}
+
+/**
+ * Cuántas preguntas están en conflicto (07_UI-UX §2: el contador de la navegación).
+ *
+ * Es una consulta de una fila: se pide el total, no el banco.
+ */
+export function useConflictingQuestions() {
+  return useQuery({
+    queryKey: queryKeys.conflictingQuestions,
+    queryFn: fetchConflictingQuestions,
     staleTime: 30_000,
   });
 }

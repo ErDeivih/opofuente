@@ -38,6 +38,7 @@ Reglas:
 | [DEBT-024](#debt-024--la-clasificación-se-pide-de-forma-síncrona-y-con-el-corpus-entero-tarda-demasiado) | S12.6 | «Buscar propuestas ahora» clasifica todo el corpus en la misma petición: con material real tarda decenas de segundos y bloquea la pantalla | cerrada |
 | [DEBT-025](#debt-025--corregir-una-pregunta-infla-el-conjunto-y-puede-volver-a-preguntarse-el-texto-viejo) | S12.6 | La versión sustituida de una pregunta corregida cuenta como pregunta: el conjunto se infla, el banco enseña el enunciado viejo y una sesión nueva puede componerse con él | **cerrada** (22 de septiembre de 2026: las consultas del banco dejan fuera `superseded`, y la historia se sigue leyendo pidiéndola) |
 | [DEBT-026](#debt-026--la-suite-e2e-toma-su-directorio-de-datos-del-entorno-y-escribe-donde-le-digan) | S12.6 | Playwright resuelve su directorio de datos con `OPOFUENTE_DATA_DIR`: con esa variable puesta apuntando a una copia del corpus del propietario, correr la suite a mano escribe las pruebas **dentro de su material** | **cerrada** (22 de septiembre de 2026: la suite usa siempre `.e2e-data` y, para apuntarla a otro sitio, una variable propia) |
+| [DEBT-027](#debt-027--07_ui-ux-no-está-aplicada-entera) | S12.6 | La especificación de interfaz pide cosas que no existen: pausar un lote, tabla de revisión virtualizada, columnas de preguntas y próxima revisión en el Programa, lector sincronizado y explicación por opción | abierta (auditada sección a sección el 22 de septiembre de 2026; lo que faltaba en Inicio y en las comprobaciones de accesibilidad ya está) |
 
 ---
 
@@ -1354,4 +1355,52 @@ conserva la fecha de modificación anterior (23:30:20, frente a los ficheros de 
 **Lo que sigue en pie.** El mismo patrón podría repetirse en cualquier otro sitio que resuelva datos
 desde el entorno (`scripts/dev.ps1`, `scripts/*.ps1`): se revisó que las puertas y los scripts del
 repositorio fijan su propio directorio, pero no hay una comprobación automática de que **ningún**
-proceso de prueba herede `OPOFUENTE_DATA_DIR`. La prueba de las 45 E2E es hoy la única red.
+proceso de prueba herede `OPOFUENTE_DATA_DIR`. La prueba de las 49 E2E es hoy la única red.
+
+---
+
+## DEBT-027 — 07_UI-UX no está aplicada entera
+
+**Origen:** pregunta del propietario del 22 de septiembre de 2026 —«¿está aplicado lo de UI/UX,
+experiencia sencilla de usuario completamente?»— al terminar S12.6.
+
+**Problema.** La respuesta honesta era que **no**: la especificación de interfaz tiene catorce
+secciones y cinco de ellas pedían cosas que no existían o no se parecían a lo pedido. Lo que más
+cantaba estaba en la primera pantalla, que es donde el propietario mira todos los días.
+
+**Auditoría sección a sección** (22 de septiembre de 2026). Lo que se encontró y lo que se hizo:
+
+| Sección | Estado antes | Qué se hizo |
+|---|---|---|
+| §1 Principios | cumplidos (nada depende solo del color; lo automático se explica; las operaciones largas son trabajos) | — |
+| §2 Estructura | **faltaban los contadores** `[pendientes] [conflictos] [vencidos] [revisar]` | contadores reales, con la cifra del servidor y nombre accesible que la explica |
+| §3 Inicio | **faltaban** dominio y actividad reciente; «Acciones necesarias» era un texto fijo | dominio, actividad reciente y acciones reales |
+| §4 Bandeja | el estado se leía como valor crudo del enum; **sin pausar**; sin tabla virtualizada | estados en palabras y etiquetas compartidas; el resto sigue pendiente |
+| §5 Programa | falta preguntas por estado y próxima revisión por nodo | el dominio ya estaba; el resto sigue pendiente |
+| §6 Biblioteca | lecturas, filtros, cita y derechos están; **falta** el lector sincronizado página ↔ texto | — |
+| §7 Preguntas | badges de origen, conflictos arriba y original al lado están; **falta** explicación por opción | — |
+| §8–§11 | cumplidas por S07–S12 (configuración, pregunta, corrección, resultado, errores, cambios, ajustes) | — |
+| §12 Estados y mensajes | cumplida en general | — |
+| §13 Accesibilidad | faltaba el flujo con teclado (no estaba probado en ninguna pantalla) | probado en la pregunta y su corrección |
+| §14 Aceptación visual | Programa no tenía tres anchos; Pregunta y Corrección no tenían nada | Programa a 1440/1024/390 y pregunta/corrección con accesibilidad y teclado; el caso de 1.000 filas sigue sin probar |
+
+**Qué falta todavía** (esto es lo que deja abierta la deuda):
+
+1. **Pausar un lote** (§4): el trabajo se puede cancelar, no pausar. Pausar de verdad exige decidir qué
+   pasa con las entradas a medias y con su trabajo ya encolado; no se inventa un botón que solo cambie
+   una etiqueta.
+2. **Tabla de revisión virtualizada con selección múltiple y panel lateral** (§4): hoy la revisión va por
+   grupos y propuestas, con lote y exclusiones, y funciona; lo que no hay es virtualización ni preview
+   lateral con fragmentos justificativos (la evidencia se abre en la ficha).
+3. **Columnas de preguntas por estado y próxima revisión por nodo** (§5): el Programa enseña cobertura,
+   fuentes y dominio por nodo; las otras dos columnas necesitan una consulta agregada que no existe.
+4. **Lector sincronizado página original ↔ texto extraído** (§6): el lector enseña el texto con sus
+   secciones y el original se abre aparte; sincronizar exige mapear página ↔ carácter, que hoy no se
+   guarda.
+5. **Explicación por opción** (§7): el modelo guarda explicaciones por pregunta (`question_explanations`),
+   no por opción; el editor no puede ofrecer lo que no existe.
+6. **El caso de 1.000 filas** (§14): ninguna prueba mira una tabla con ese volumen, así que no se sabe
+   si la interfaz aguanta.
+
+**Estado: abierta.** Lo urgente —lo que se veía en Inicio y lo que no estaba probado— está cerrado y
+verificado; lo que queda son pantallas concretas, con su coste dicho arriba, y ninguna bloquea estudiar.

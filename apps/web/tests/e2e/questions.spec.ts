@@ -132,7 +132,7 @@ test('E2E-05 importación: las preguntas de un documento entran con su cita y se
   await page.goto('/bandeja');
   await page.getByLabel(/Suelta aquí ficheros o carpetas/).setInputFiles(fichero);
   const importacion = page.getByRole('region', { name: 'Importación' });
-  await expect(importacion.getByText('succeeded', { exact: true }).first()).toBeVisible({
+  await expect(importacion.getByText('terminado', { exact: true }).first()).toBeVisible({
     timeout: 60_000,
   });
 

@@ -166,6 +166,17 @@ export function fetchQuestion(questionId: string): Promise<Question> {
   return apiFetch<Question>(`/api/v1/questions/${encodeURIComponent(questionId)}`);
 }
 
+/**
+ * Cuántas preguntas están en conflicto, en todo el banco (07_UI-UX §2: el contador de la navegación).
+ *
+ * Se pide **una sola** página con `limit=1` y se lee su total: el número lo cuenta el servidor, no la
+ * pantalla contando filas, y traer el banco entero para contar conflictos sería pagar el corpus para
+ * pintar un número.
+ */
+export function fetchConflictingQuestions(): Promise<QuestionPage> {
+  return apiFetch<QuestionPage>('/api/v1/questions?status=conflicting&limit=1');
+}
+
 export function patchQuestion(questionId: string, cambios: PatchQuestion): Promise<Question> {
   return apiFetch<Question>(`/api/v1/questions/${encodeURIComponent(questionId)}`, {
     method: 'PATCH',

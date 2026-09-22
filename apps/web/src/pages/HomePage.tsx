@@ -2,10 +2,11 @@ import { Link } from 'react-router-dom';
 
 import { EmptyState } from '../components/EmptyState';
 import { LoadingState } from '../components/LoadingState';
+import { ActivityPanel } from '../features/home/ActivityPanel';
 import { PendingActionsPanel } from '../features/home/PendingActionsPanel';
 import { StudyReadinessPanel } from '../features/home/StudyReadinessPanel';
 import { SystemStatus } from '../features/system/SystemStatus';
-import { useOppositions, useReviewQueue, useStudySessions } from '../api/queries';
+import { useOppositions, useMastery, useReviewQueue, useStudySessions } from '../api/queries';
 import { queueSummary } from '../api/reviews';
 import { modeLabel, statusLabel } from '../features/study/labels';
 
@@ -18,8 +19,9 @@ import { modeLabel, statusLabel } from '../features/study/labels';
  *
  * Desde S12.6 las dos tarjetas que antes no leían nada leen de verdad: «Acciones necesarias» enseña
  * lo que espera una decisión humana (incidencias, propuestas, cambios y material sin aceptar) y
- * «Estado del programa» añade si la oposición está **lista para estudiar** y qué falta. El orden es el
- * de §3: qué hacer hoy, qué me espera, cómo va el programa y, al final, el estado del sistema.
+ * «Estado del programa» añade si la oposición está **lista para estudiar**, qué falta y el dominio
+ * estimado. El orden es el de §3: qué hacer hoy, qué me espera, cómo va el programa, actividad
+ * reciente y, al final, el estado del sistema.
  */
 export function HomePage() {
   const oppositions = useOppositions();
@@ -27,6 +29,7 @@ export function HomePage() {
   const total = oppositions.data?.length ?? 0;
   const sessions = useStudySessions(active?.id ?? null);
   const repaso = useReviewQueue(active?.id ?? null);
+  const mastery = useMastery(active?.id ?? null);
 
   const enMarcha = sessions.data?.sessions.find((sesion) => sesion.status === 'running') ?? null;
   const ultima = sessions.data?.sessions[0] ?? null;
@@ -184,7 +187,19 @@ export function HomePage() {
         {oppositions.isSuccess && active !== null && (
           <StudyReadinessPanel oppositionId={active.id} />
         )}
+        {oppositions.isSuccess && active !== null && (
+          <p className="hint">
+            Dominio estimado por tema (07_UI-UX §3, §5):{' '}
+            {mastery.data === undefined
+              ? 'contando lo que has practicado…'
+              : `${mastery.data.nodes_with_estimate} de ${mastery.data.nodes_total} temas con datos suficientes`}
+            . Sin intentos no hay dominio, y con pocos es «evidencia insuficiente»:{' '}
+            <Link to="/programa">verlo tema a tema en el Programa</Link>.
+          </p>
+        )}
       </section>
+
+      <ActivityPanel oppositionId={active?.id ?? null} />
 
       <SystemStatus />
     </>

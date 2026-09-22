@@ -224,7 +224,7 @@ async function confirmarImportacion(page: Page) {
   const importacion = page.getByRole('region', { name: 'Importación' });
   await expect(importacion).toBeVisible();
   // El trabajo lo ejecuta el worker real del servidor: se espera a que termine de verdad.
-  await expect(importacion.getByText('succeeded', { exact: true }).first()).toBeVisible({
+  await expect(importacion.getByText('terminado', { exact: true }).first()).toBeVisible({
     timeout: 60_000,
   });
   return importacion;
@@ -305,7 +305,7 @@ test('E2E-03 bandeja: el texto pegado se copia, se extrae y se lee sin salir de 
   await page.getByRole('button', { name: 'Guardar el texto' }).click();
 
   const importacion = page.getByRole('region', { name: 'Importación' });
-  await expect(importacion.getByText('succeeded', { exact: true }).first()).toBeVisible({
+  await expect(importacion.getByText('terminado', { exact: true }).first()).toBeVisible({
     timeout: 60_000,
   });
 
@@ -332,7 +332,7 @@ test('E2E-03 bandeja: un ZIP subido se expande en entradas propias y se extrae',
   await page.getByLabel(/Suelta aquí ficheros o carpetas/).setInputFiles(zip);
 
   const importacion = page.getByRole('region', { name: 'Importación' });
-  await expect(importacion.getByText('succeeded', { exact: true }).first()).toBeVisible({
+  await expect(importacion.getByText('terminado', { exact: true }).first()).toBeVisible({
     timeout: 60_000,
   });
 
@@ -369,7 +369,7 @@ test('E2E-12 bandeja: elegir una carpeta entera sube sus ficheros con su estruct
   await page.getByLabel('O elige una carpeta').setInputFiles(carpeta);
 
   const importacion = page.getByRole('region', { name: 'Importación' });
-  await expect(importacion.getByText('succeeded', { exact: true }).first()).toBeVisible({
+  await expect(importacion.getByText('terminado', { exact: true }).first()).toBeVisible({
     timeout: 60_000,
   });
 
@@ -402,7 +402,7 @@ test('E2E-02 bandeja: el historial abre un lote anterior sin volver a copiar', a
   await historial.getByRole('button', { name: /import/ }).first().click();
 
   await expect(page.getByRole('heading', { name: 'Entradas del lote' })).toBeVisible();
-  await expect(page.getByText('succeeded', { exact: true }).first()).toBeVisible();
+  await expect(page.getByText('terminado', { exact: true }).first()).toBeVisible();
 });
 
 for (const viewport of VIEWPORTS) {

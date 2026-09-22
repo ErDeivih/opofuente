@@ -70,6 +70,8 @@ function stubInicio(overrides: Record<string, StubbedRoute> = {}) {
     // preparación recibiría el listado de oposiciones y la pantalla tendría que adivinar.
     '/api/v1/oppositions/opp-tai/readiness': { body: PREPARACION_INCOMPLETA },
     '/api/v1/pending-actions': { body: PENDIENTES },
+    // Actividad reciente (07_UI-UX §3.4): sin lotes ni sesiones, la tarjeta lo dice.
+    '/api/v1/ingestion-batches?limit=25': { body: [] },
     '/api/v1/study-sessions?limit=50&offset=0&opposition_id=opp-tai': {
       body: { sessions: [], total: 0, limit: 50, offset: 0 },
     },
@@ -187,6 +189,65 @@ describe('inicio: qué falta para poder estudiar (S12.6)', () => {
 
     expect(
       await screen.findByText(/Nada esperando tu decisión: no hay incidencias/),
+    ).toBeInTheDocument();
+  });
+});
+
+describe('inicio: cómo va el programa y qué ha pasado (07_UI-UX §3.3 y §3.4)', () => {
+  it('dice el dominio estimado por tema, con los temas que tienen datos suficientes', async () => {
+    stubInicio({
+      '/api/v1/reviews/mastery?opposition_id=opp-tai': {
+        body: {
+          opposition_id: 'opp-tai',
+          nodes_total: 33,
+          nodes_with_estimate: 4,
+          nodes: [],
+          note: 'Sin intentos no hay dominio; con pocos, evidencia insuficiente.',
+        },
+      },
+    });
+    renderInicio();
+
+    expect(await screen.findByText(/4 de 33 temas con datos suficientes/)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /verlo tema a tema/ })).toHaveAttribute(
+      'href',
+      '/programa',
+    );
+  });
+
+  it('la actividad reciente son los últimos lotes y las últimas sesiones de verdad', async () => {
+    stubInicio({
+      '/api/v1/ingestion-batches?limit=25': {
+        body: [
+          {
+            id: 'lote-1',
+            kind: 'file',
+            status: 'succeeded',
+            source_path_display: '…/Apuntes TAI',
+            total_items: 12,
+            counters: {},
+            created_at: '2026-09-22T09:00:00Z',
+            finished_at: '2026-09-22T09:01:00Z',
+            issue_counts: {},
+          },
+        ],
+      },
+    });
+    renderInicio();
+
+    // El lote se lee con palabras, no con el valor del enum.
+    expect(await screen.findByText(/carpeta elegida/)).toBeInTheDocument();
+    expect(screen.getByText(/terminado/)).toBeInTheDocument();
+    expect(screen.getByText(/12 entrada\(s\)/)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Ver en la bandeja' })).toBeInTheDocument();
+  });
+
+  it('sin actividad lo dice, en lugar de enseñar una tabla vacía', async () => {
+    stubInicio();
+    renderInicio();
+
+    expect(
+      await screen.findByText(/Todavía no hay actividad: ni lotes en la bandeja ni sesiones/),
     ).toBeInTheDocument();
   });
 });

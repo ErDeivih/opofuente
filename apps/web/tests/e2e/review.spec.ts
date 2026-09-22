@@ -195,7 +195,7 @@ test('E2E-03 revisión en lote: aceptar un grupo, excluir una fila, corregir un 
   await page.getByLabel(/Suelta aquí ficheros o carpetas/).setInputFiles(ficheros);
 
   const importacion = page.getByRole('region', { name: 'Importación' });
-  await expect(importacion.getByText('succeeded', { exact: true }).first()).toBeVisible({
+  await expect(importacion.getByText('terminado', { exact: true }).first()).toBeVisible({
     timeout: 60_000,
   });
 

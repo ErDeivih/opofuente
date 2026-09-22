@@ -46,7 +46,7 @@ async function pegar(page: Page, texto: string, titulo: string): Promise<void> {
   await page.getByLabel('Título (opcional)').fill(titulo);
   await page.getByRole('button', { name: 'Guardar el texto' }).click();
   await expect(
-    page.getByRole('region', { name: 'Importación' }).getByText('succeeded', { exact: true }).first(),
+    page.getByRole('region', { name: 'Importación' }).getByText('terminado', { exact: true }).first(),
   ).toBeVisible({ timeout: 60_000 });
 }
 
