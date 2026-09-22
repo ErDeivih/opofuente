@@ -21,6 +21,7 @@ from uuid import uuid4
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.sql.elements import ColumnElement
 
 from opofuente.application.question_models import (
     AnswerKeyView,
@@ -65,6 +66,16 @@ from opofuente.infrastructure.db_models import (
 
 def _new_id() -> str:
     return str(uuid4())
+
+
+#: Filtro de las versiones que **son** pregunta del conjunto.
+#:
+#: Corregir una pregunta no borra la anterior: la deja `superseded` para poder leer qué decía. Pero
+#: una versión sustituida no es una pregunta del banco, y contarla lo infla: con una corrección, un
+#: examen de 70 preguntas pasa a tener 71, la lista del banco enseña la versión vieja y una sesión
+#: nueva puede componerse con ella (DEBT-025). Solo queda fuera `superseded`: una pregunta
+#: `annulled` sigue siendo parte del examen, y quien dice que está anulada es su clave.
+_NO_SUSTITUIDAS: ColumnElement[bool] = QuestionVersionRecord.status != "superseded"
 
 
 def _nuevo_stable_key(numero: int | None, identidad: str, usadas: set[str]) -> str:
@@ -312,6 +323,10 @@ class SqlAlchemyQuestionRepository:
             filtros.append(QuestionVersionRecord.question_set_id == set_id)
         if status is not None:
             filtros.append(QuestionVersionRecord.status == status)
+        else:
+            # Sin estado pedido se listan las preguntas del banco, no su historia: la versión
+            # sustituida solo aparece si alguien la pide por su estado (DEBT-025).
+            filtros.append(_NO_SUSTITUIDAS)
         if origin_type is not None:
             filtros.append(QuestionVersionRecord.origin_type == origin_type)
         if only_reserves:
@@ -693,11 +708,16 @@ class SqlAlchemyQuestionRepository:
             return fila.id
 
     def questions_by_position(self, set_id: str) -> dict[int, str]:
-        """Identificador de cada pregunta por su posición: es lo que alinea una plantilla suelta."""
+        """Identificador de cada pregunta por su posición: es lo que alinea una plantilla suelta.
+
+        Sin la versión sustituida (DEBT-025): la corregida conserva la posición de la anterior, y
+        con las dos dentro la plantilla se alinearía con la que devolviera el orden de la consulta.
+        """
         with self._session_factory() as session:
             filas = session.execute(
                 select(QuestionVersionRecord.position, QuestionVersionRecord.id).where(
-                    QuestionVersionRecord.question_set_id == set_id
+                    QuestionVersionRecord.question_set_id == set_id,
+                    _NO_SUSTITUIDAS,
                 )
             ).all()
         return {int(posicion): str(pregunta_id) for posicion, pregunta_id in filas}
@@ -709,12 +729,18 @@ class SqlAlchemyQuestionRepository:
         sesión se corrige con la clave **activa** congelada, no con lo que devuelva esta consulta.
         Sin tope de página a propósito: recortar aquí dejaría una sesión oficial sin las últimas
         preguntas.
+
+        La versión sustituida de una pregunta corregida **no** entra (DEBT-025): si entrara, una
+        sesión nueva podría preguntar el texto viejo y contar la pregunta dos veces.
         """
         with self._session_factory() as session:
             filas = (
                 session.execute(
                     select(QuestionVersionRecord)
-                    .where(QuestionVersionRecord.question_set_id == set_id)
+                    .where(
+                        QuestionVersionRecord.question_set_id == set_id,
+                        _NO_SUSTITUIDAS,
+                    )
                     .order_by(
                         QuestionVersionRecord.position,
                         QuestionVersionRecord.stable_key,
@@ -1117,6 +1143,7 @@ class SqlAlchemyQuestionRepository:
                 select(QuestionVersionRecord.id)
                 .where(
                     QuestionVersionRecord.question_set_id == set_id,
+                    _NO_SUSTITUIDAS,
                     ~session.query(CurriculumMappingRecord.id)
                     .filter(
                         CurriculumMappingRecord.subject_type == "question_version",
@@ -1164,6 +1191,7 @@ class SqlAlchemyQuestionRepository:
                     CurriculumMappingRecord.subject_type == "question_version",
                     CurriculumMappingRecord.status == "accepted",
                     QuestionVersionRecord.question_set_id == set_id,
+                    _NO_SUSTITUIDAS,
                 )
                 .order_by(
                     CurriculumMappingRecord.subject_id,
@@ -1219,7 +1247,13 @@ class SqlAlchemyQuestionRepository:
 
     @staticmethod
     def _identidades(session: Session, set_id: str) -> dict[str, str]:
-        """Identidad (huella) de cada pregunta del conjunto, con su identificador."""
+        """Identidad (huella) de cada pregunta del conjunto, con su identificador.
+
+        Aquí **sí** entran las versiones sustituidas, a diferencia del resto de consultas del banco
+        (DEBT-025): esta es la comprobación de «esa pregunta ya estaba» al importar, y si la versión
+        vieja no contara, volver a importar el texto original crearía una pregunta nueva con el
+        enunciado equivocado que alguien ya había corregido.
+        """
         filas = (
             session.execute(
                 select(QuestionVersionRecord).where(QuestionVersionRecord.question_set_id == set_id)
@@ -1240,6 +1274,8 @@ class SqlAlchemyQuestionRepository:
 
     @staticmethod
     def _stable_keys(session: Session, set_id: str) -> list[str]:
+        # Con las sustituidas dentro: la clave estable de una pregunta corregida sigue siendo la
+        # misma, y si no contara, una reimportación le daría una clave nueva y la duplicaría.
         return [
             str(clave)
             for clave in session.execute(
@@ -1253,11 +1289,13 @@ class SqlAlchemyQuestionRepository:
 
     @staticmethod
     def _question_ids(session: Session, set_id: str) -> list[str]:
+        """Identificadores de las preguntas del conjunto, sin las sustituidas (DEBT-025)."""
         return [
             str(fila)
             for fila in session.execute(
                 select(QuestionVersionRecord.id).where(
-                    QuestionVersionRecord.question_set_id == set_id
+                    QuestionVersionRecord.question_set_id == set_id,
+                    _NO_SUSTITUIDAS,
                 )
             )
             .scalars()
@@ -1352,11 +1390,16 @@ class SqlAlchemyQuestionRepository:
         return {str(pregunta_id): int(total) for pregunta_id, total in filas}
 
     def _set_view(self, session: Session, fila: QuestionSetRecord) -> QuestionSetView:
+        # Los recuentos del conjunto no cuentan las versiones sustituidas (DEBT-025): corregir una
+        # pregunta no puede hacer que el conjunto tenga una pregunta más de las que tiene.
         preguntas = int(
             session.execute(
                 select(func.count())
                 .select_from(QuestionVersionRecord)
-                .where(QuestionVersionRecord.question_set_id == fila.id)
+                .where(
+                    QuestionVersionRecord.question_set_id == fila.id,
+                    _NO_SUSTITUIDAS,
+                )
             ).scalar_one()
         )
         reservas = int(
@@ -1366,6 +1409,7 @@ class SqlAlchemyQuestionRepository:
                 .where(
                     QuestionVersionRecord.question_set_id == fila.id,
                     QuestionVersionRecord.is_reserve.is_(True),
+                    _NO_SUSTITUIDAS,
                 )
             ).scalar_one()
         )

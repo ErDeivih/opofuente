@@ -36,6 +36,7 @@ Reglas:
 | [DEBT-022](#debt-022--la-suite-e2e-no-distingue-la-máquina-está-cargada-de-esto-se-ha-roto) | antes de dar por buena la puerta E2E | La suite tarda 1,8 min en vacío y 11 cargada, y sus esperas fijas pueden caducar sin decir si el problema es el código o el ordenador (los cuatro rojos que primero se le atribuyeron eran del servidor reutilizado, DEBT-021) | abierta |
 | [DEBT-023](#debt-023--una-tarjeta-de-anki-no-puede-ser-una-pregunta-porque-no-hay-dónde-guardar-su-respuesta) | S12.6 | El modelo tiene el tipo `free_text_reference` y no tiene dónde guardar la respuesta de referencia: el reverso de una tarjeta no entra | abierta |
 | [DEBT-024](#debt-024--la-clasificación-se-pide-de-forma-síncrona-y-con-el-corpus-entero-tarda-demasiado) | S12.6 | «Buscar propuestas ahora» clasifica todo el corpus en la misma petición: con material real tarda decenas de segundos y bloquea la pantalla | cerrada |
+| [DEBT-025](#debt-025--corregir-una-pregunta-infla-el-conjunto-y-puede-volver-a-preguntarse-el-texto-viejo) | S12.6 | La versión sustituida de una pregunta corregida cuenta como pregunta: el conjunto se infla, el banco enseña el enunciado viejo y una sesión nueva puede componerse con él | **cerrada** (22 de septiembre de 2026: las consultas del banco dejan fuera `superseded`, y la historia se sigue leyendo pidiéndola) |
 
 ---
 
@@ -1248,3 +1249,57 @@ síncrona— era de 46,7 s (DEBT-018): el trabajo tarda lo mismo, pero la petici
 **Lo que sigue en pie.** Una pasada clasifica como mucho `limit` sujetos (200 por defecto). El corpus
 medido tiene 186, así que entró entero, pero uno mayor necesitará varias pasadas o un límite más alto;
 el resumen dice cuántos sujetos ha visto, no cuántos quedan por ver.
+
+---
+
+## DEBT-025 — Corregir una pregunta infla el conjunto y puede volver a preguntarse el texto viejo
+
+**Origen:** verificación de S12.6 (22 de septiembre de 2026), buscando cómo contar las preguntas de un
+conjunto para la pantalla de «listo para estudiar».
+
+**Problema.** Corregir una pregunta deja la anterior en la base con estado `superseded` (a propósito:
+hay que poder leer qué decía). Pero **ninguna** consulta del banco filtraba ese estado, así que la
+versión sustituida seguía contando como pregunta del conjunto. Medido sobre la API real, con un
+conjunto de 3 preguntas y **una** corrección:
+
+| Consulta | Antes de corregir | Después de corregir |
+|---|---|---|
+| `GET /question-sets/{id}` → `question_count` | 3 | **4** |
+| `GET /questions?set_id=…` | 3 | **4** (con la sustituida dentro, estado `superseded`) |
+| `POST /study-sessions` con `count` = 10 | — | 409: «el conjunto tiene **4** preguntas y se han pedido 10» |
+
+De dónde sale el daño, más allá del recuento:
+
+- `all_questions` es la lista de la que una sesión elige su composición: una sesión nueva podía
+  preguntar **el enunciado viejo** de una pregunta ya corregida, y contarla dos veces (el examen
+  oficial de 70 preguntas pasa a 71 con una corrección, 72 con dos).
+- `questions_by_position` alinea una plantilla suelta por posición: con la sustituida dentro, dos
+  filas comparten posición y la plantilla se alinea con la que devuelva el orden de la consulta.
+- `questions_without_topic` (catalogación de S12.6) y `node_titles_of_set` (diagnóstico) veían la
+  versión vieja como una pregunta más sin tema.
+
+**Qué se hizo** (22 de septiembre de 2026, S12.6). Se aplicó una sola regla, escrita una vez en el
+repositorio (`_NO_SUSTITUIDAS`): **una versión sustituida no es una pregunta del conjunto**. Se aplica
+al listado del banco, a la composición de sesiones, a los recuentos del conjunto, a la alineación por
+posición, a la catalogación por tema y a la estratificación del diagnóstico. Solo queda fuera
+`superseded`: una pregunta `annulled` sigue siendo parte del examen, y quien lo dice es su clave.
+
+Dos excepciones deliberadas, con su motivo escrito en el código:
+
+- **`_identidades` y `_stable_keys` sí ven las sustituidas**: son la comprobación de «esa pregunta ya
+  estaba» al importar. Si no las vieran, volver a importar el texto original crearía una pregunta
+  nueva con el enunciado equivocado que alguien ya había corregido, y la clave estable de la corregida
+  cambiaría.
+- **`GET /questions?status=superseded` sigue funcionando**: la historia no se esconde, se pide. Sin
+  estado en la consulta se listan las preguntas; con él, lo que se pida.
+
+**Cómo se comprueba.**
+`tests/integration/test_question_api.py::test_una_pregunta_corregida_no_cuenta_dos_veces` recorre el
+caso entero: el conjunto sigue con 2 preguntas, el banco no enseña la sustituida, la sustituida se lee
+por su identificador y se lista por estado, la sesión de 3 se rechaza diciendo que hay 2 y la de 2 se
+crea con 2.
+
+**Lo que sigue en pie.** El recuento cuenta **versiones vivas**, no preguntas distintas por
+`stable_key`: si dos importaciones crearan dos versiones vivas de la misma pregunta por un camino que
+no pase por la huella, contarían dos. No se ha visto que ocurra —la importación es idempotente por
+contenido—, pero el recuento no lo impide.

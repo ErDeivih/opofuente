@@ -319,6 +319,100 @@ def test_marcar_que_una_clave_sustituye_a_otra(
     assert inventada.status_code == 409
 
 
+def test_una_pregunta_corregida_no_cuenta_dos_veces(seeded_client: TestClient) -> None:
+    """DEBT-025: la versión sustituida se conserva para poder leerla, pero no es una pregunta.
+
+    Corregir una pregunta deja la anterior en la base con su estado `superseded`. Si esa versión
+    contara como pregunta del conjunto, un examen oficial de 70 pasaría a tener 71, el banco
+    enseñaría el enunciado viejo y una sesión nueva podría componerse con él. Lo que se comprueba
+    aquí es el recorrido entero: el conjunto, el banco y la composición de una sesión.
+    """
+    conjunto = _conjunto(seeded_client)
+    _importar(seeded_client, conjunto["id"], kind="questions", text=TEXTO)
+    antes = seeded_client.get(f"/api/v1/question-sets/{conjunto['id']}").json()
+    pregunta = seeded_client.get("/api/v1/questions", params={"set_id": conjunto["id"]}).json()[
+        "questions"
+    ][0]
+    assert antes["question_count"] == 2
+
+    correccion = seeded_client.post(
+        f"/api/v1/questions/{pregunta['id']}/local-corrections",
+        json={"note": "El plazo eran quince dias, no diez"},
+        headers=ALLOWED_ORIGIN,
+    )
+    assert correccion.status_code == 201, correccion.text
+    corregida = correccion.json()["question"]
+
+    despues = seeded_client.get(f"/api/v1/question-sets/{conjunto['id']}").json()
+    assert despues["question_count"] == 2, "corregir no añade una pregunta al conjunto"
+    banco = seeded_client.get(
+        "/api/v1/questions", params={"set_id": conjunto["id"], "limit": 200}
+    ).json()
+    assert banco["total"] == 2
+    identificadores = [fila["id"] for fila in banco["questions"]]
+    assert corregida["id"] in identificadores, "el banco tiene que enseñar la corregida"
+    assert pregunta["id"] not in identificadores, "el banco no puede enseñar la sustituida"
+
+    # La historia no se pierde: la versión sustituida se sigue leyendo, y se puede listar aparte.
+    sustituida = seeded_client.get(f"/api/v1/questions/{pregunta['id']}").json()
+    assert sustituida["status"] == "superseded"
+    assert sustituida["stem"] == pregunta["stem"]
+    historicas = seeded_client.get(
+        "/api/v1/questions", params={"set_id": conjunto["id"], "status": "superseded"}
+    ).json()
+    assert [fila["id"] for fila in historicas["questions"]] == [pregunta["id"]]
+
+    # Y la sesión se compone con las dos preguntas que hay, no con tres: el aviso del 409 lo dice.
+    activa = next(op for op in seeded_client.get("/api/v1/oppositions").json() if op["active"])
+    claves = seeded_client.get(f"/api/v1/question-sets/{conjunto['id']}/answer-keys").json()
+    activada = seeded_client.post(
+        f"/api/v1/question-sets/{conjunto['id']}/answer-keys/{claves[0]['id']}/activate",
+        headers=ALLOWED_ORIGIN,
+    )
+    assert activada.status_code == 200, activada.text
+    sesion = seeded_client.post(
+        "/api/v1/study-sessions",
+        json={
+            "opposition_id": activa["id"],
+            "mode": "practice",
+            "sources": [
+                {
+                    "question_set_id": conjunto["id"],
+                    "part_code": "primera_parte",
+                    "count": 3,
+                    "include_reserves": False,
+                }
+            ],
+            "convocation_version_id": activa["active_convocation"]["id"],
+            "feedback": "immediate",
+        },
+        headers=ALLOWED_ORIGIN,
+    )
+    assert sesion.status_code == 409, sesion.text
+    assert "tiene 2 preguntas" in sesion.json()["detail"]
+
+    caben = seeded_client.post(
+        "/api/v1/study-sessions",
+        json={
+            "opposition_id": activa["id"],
+            "mode": "practice",
+            "sources": [
+                {
+                    "question_set_id": conjunto["id"],
+                    "part_code": "primera_parte",
+                    "count": 2,
+                    "include_reserves": False,
+                }
+            ],
+            "convocation_version_id": activa["active_convocation"]["id"],
+            "feedback": "immediate",
+        },
+        headers=ALLOWED_ORIGIN,
+    )
+    assert caben.status_code == 201, caben.text
+    assert caben.json()["total_questions"] == 2
+
+
 def test_editar_composicion_corregir_con_motivo_y_reportar(
     seeded_settings: Settings, seeded_client: TestClient
 ) -> None:
