@@ -205,15 +205,3 @@ class AcceptedClassificationSchema(BaseModel):
     subject_label: str | None = None
     pending_review: bool
     values: list[AcceptedValueSchema] = Field(default_factory=list)
-
-
-class ClassificationReportSchema(BaseModel):
-    """Qué dejó la última pasada de clasificación: se sirve tal cual, sin redondear nada."""
-
-    subjects: int
-    proposals_created: int
-    proposals_unchanged: int
-    subjects_without_signals: int
-    auto_applied: int
-    duplicates_found: int
-    summary: str

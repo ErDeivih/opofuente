@@ -11,7 +11,8 @@ export type DecisionOutcome = components['schemas']['DecisionOutcomeSchema'];
 export type BulkDecisionResponse = components['schemas']['BulkDecisionResponseSchema'];
 export type DecisionRequest = components['schemas']['DecisionRequestSchema'];
 export type BulkDecisionRequest = components['schemas']['BulkDecisionRequestSchema'];
-export type ClassificationReport = components['schemas']['ClassificationReportSchema'];
+/** El trabajo que ejecuta una pasada de clasificación: es el mismo `JobSchema` de la ingestión. */
+export type ClassificationJob = components['schemas']['JobSchema'];
 export type AcceptedClassification = components['schemas']['AcceptedClassificationSchema'];
 export type AcceptedValue = components['schemas']['AcceptedValueSchema'];
 
@@ -57,9 +58,15 @@ export function fetchCoverage(nodeId: string): Promise<Coverage> {
   return apiFetch<Coverage>(`/api/v1/curriculum-nodes/${nodeId}/coverage`);
 }
 
-/** Ejecuta una pasada de clasificación ahora. Es idempotente y no aplica nada definitivo. */
-export function runClassification(): Promise<ClassificationReport> {
-  return apiFetch<ClassificationReport>('/api/v1/classification-runs', { method: 'POST' });
+/**
+ * Encola una pasada de clasificación del corpus (DEBT-024).
+ *
+ * Antes era una petición larga: con el corpus real tardaba casi un minuto y dejaba el botón
+ * bloqueado sin decir en qué iba. Ahora devuelve el **trabajo** encolado (202) y su `step` lleva el
+ * resumen cuando termina. Es idempotente: si ya hay una pasada viva, devuelve esa.
+ */
+export function runClassification(): Promise<ClassificationJob> {
+  return apiFetch<ClassificationJob>('/api/v1/classification-runs', { method: 'POST' });
 }
 
 /**

@@ -308,12 +308,15 @@ test('E2E-04 documento compartido: un artefacto, sus asignaciones y la versión 
   const artifactId = representacion.artifact_id;
 
   // --- 3. Clasificación: la pasada real del servidor sobre el texto extraído --
-  const informe = await enviar<{ subjects: number; proposals_created: number }>(
-    request,
-    '/classification-runs',
-    undefined,
-  );
-  expect(informe.subjects).toBeGreaterThan(0);
+  // La pasada es un **trabajo** (DEBT-024): se encola, el worker la ejecuta y aquí se espera a que
+  // termine de verdad, en lugar de suponer que ya está.
+  const trabajo = await enviar<{ id: string }>(request, '/classification-runs', undefined);
+  await expect
+    .poll(async () => (await json<{ status: string }>(request, `/jobs/${trabajo.id}`)).status, {
+      timeout: 60_000,
+      message: 'la clasificación no terminó',
+    })
+    .toBe('succeeded');
 
   const propuestas = await json<{ proposals: { axis: string }[]; total: number }>(
     request,

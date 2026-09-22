@@ -17,7 +17,6 @@ from opofuente.api.classification_schemas import (
     AlternativeSchema,
     BulkDecisionRequestSchema,
     BulkDecisionResponseSchema,
-    ClassificationReportSchema,
     CoverageNodeSchema,
     CoverageSchema,
     DecisionOutcomeSchema,
@@ -31,14 +30,15 @@ from opofuente.api.classification_schemas import (
     ReviewGroupSchema,
     mapping_schema,
 )
-from opofuente.api.deps import ClassificationServiceDep
+from opofuente.api.deps import ClassificationServiceDep, JobServiceDep
 from opofuente.api.error_responses import INGESTION_WRITE_ERRORS, RESOURCE_ERRORS
+from opofuente.api.ingestion_schemas import JobSchema
 from opofuente.application.read_models import (
     BulkDecisionResult,
-    ClassificationRunReport,
     DecisionOutcome,
     DuplicateClusterView,
     DuplicateMemberView,
+    JobView,
     MappingView,
     NodeCoverageView,
     ProposalPage,
@@ -402,20 +402,41 @@ def accepted_classification(
     )
 
 
+def _job(job: JobView) -> JobSchema:
+    """El trabajo encolado, con la misma forma que sirve la API de ingestión: es el mismo."""
+    return JobSchema(
+        id=job.id,
+        job_type=job.job_type,
+        status=job.status,
+        progress=job.progress,
+        attempts=job.attempts,
+        max_attempts=job.max_attempts,
+        created_at=job.created_at,
+        updated_at=job.updated_at,
+        step=job.step,
+        error_code=job.error_code,
+        error_message=job.error_message,
+        started_at=job.started_at,
+        finished_at=job.finished_at,
+        cancel_requested=job.cancel_requested,
+    )
+
+
 @router.post(
     "/classification-runs",
-    response_model=ClassificationReportSchema,
+    response_model=JobSchema,
+    status_code=202,
     responses=INGESTION_WRITE_ERRORS,
-    summary="Ejecuta una pasada de clasificación ahora (idempotente)",
+    summary="Encola una pasada de clasificación del corpus (idempotente)",
 )
-def run_classification(service: ClassificationServiceDep) -> ClassificationReportSchema:
-    report: ClassificationRunReport = service.run()
-    return ClassificationReportSchema(
-        subjects=report.subjects,
-        proposals_created=report.proposals_created,
-        proposals_unchanged=report.proposals_unchanged,
-        subjects_without_signals=report.subjects_without_signals,
-        auto_applied=report.auto_applied,
-        duplicates_found=report.duplicates_found,
-        summary=report.summary(),
-    )
+def run_classification(service: ClassificationServiceDep, jobs: JobServiceDep) -> JobSchema:
+    """Clasificar dejó de ser una petición larga: se **encola** y se sigue por su trabajo.
+
+    Con el material real del propietario una pasada tarda 46,7 segundos: tener eso dentro de una
+    petición dejaba el botón bloqueado sin decir en qué iba (DEBT-024). Ahora responde **202** con
+    el trabajo recién encolado —su `step` dirá el resumen al terminar— y la pantalla lo sigue.
+
+    Si ya hay una pasada viva, devuelve **esa**: pulsar dos veces no clasifica dos veces.
+    """
+    trabajo = service.enqueue_run()
+    return _job(jobs.get_job(trabajo.id))

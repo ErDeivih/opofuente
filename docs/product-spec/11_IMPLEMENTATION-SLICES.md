@@ -390,12 +390,17 @@ verificadas y documentadas en `15_OFFICIAL-PROFILES-AND-SOURCE-MANIFEST` §4, si
   **aceptada** no se cataloga nada, y una pregunta que ya tiene tema no se toca (ADR-017).
 - El informe lo cuenta: `mapped_to_topics` en el informe de importación y `questions_catalogued` en
   la respuesta de aceptar una versión; la ficha del documento lo dice.
+- **DEBT-024, cerrada**: clasificar dejó de ser una petición síncrona con el corpus entero. Se encola
+  (202 + trabajo), el trabajador lo ejecuta y la pasada informa de sus tramos —clasificando, guardando,
+  aplicando, buscando duplicados— mientras la pantalla los sigue y enseña su avance.
 
 ### Aceptación (de lo hecho)
 
 - Las preguntas de un documento asignado quedan con su nodo, y el diagnóstico por temas las ve.
 - Una asignación **provisional** no cataloga ni crea conjunto: es una sugerencia, no una decisión.
 - Las preguntas que ya traían tema (por ejemplo, de una columna del material) se quedan como estaban.
+- Clasificar responde en menos de un segundo y su trabajo dice en qué va, con el corpus del propietario
+  (186 sujetos: 0,097 s de respuesta, 48,2 s de trabajo).
 
 ### Pendiente
 
@@ -404,5 +409,4 @@ verificadas y documentadas en `15_OFFICIAL-PROFILES-AND-SOURCE-MANIFEST` §4, si
   cuando no cuadra;
 - **una pantalla que diga «esto ya está listo para estudiar»** y qué falta, si falta algo, por
   oposición: material por papel, preguntas por tema, claves activas y lo que sigue esperando una
-  decisión de una persona;
-- de paso, **DEBT-024**: clasificar deja de ser una petición síncrona con el corpus entero.
+  decisión de una persona.

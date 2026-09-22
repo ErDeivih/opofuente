@@ -15,9 +15,12 @@ from __future__ import annotations
 
 from typing import Any
 
+import pytest
 from fastapi.testclient import TestClient
 
-from opofuente_testing.jobs import run_one_job
+from opofuente.domain.errors import JobCancelledError
+from opofuente.domain.jobs import Job, JobStatus, JobType
+from opofuente_testing.jobs import FakeExecution, FixedClock, run_one_job
 
 ALLOWED_ORIGIN = {"Origin": "http://127.0.0.1:5173"}
 
@@ -77,9 +80,19 @@ def _propuestas(client: TestClient, **filtros: Any) -> list[dict[str, Any]]:
 
 
 def _clasificar(client: TestClient) -> dict[str, Any]:
+    """Encola la pasada de clasificación del corpus y **la ejecuta** (DEBT-024).
+
+    Clasificar dejó de ser una petición larga: la ruta responde **202** con el trabajo encolado y
+    el trabajador lo ejecuta. En las pruebas lo corre `run_one_job`, para que el resultado no
+    dependa de cuándo despierte el worker.
+    """
     respuesta = client.post("/api/v1/classification-runs", headers=ALLOWED_ORIGIN)
-    assert respuesta.status_code == 200, respuesta.text
-    return respuesta.json()
+    assert respuesta.status_code == 202, respuesta.text
+    trabajo: dict[str, Any] = respuesta.json()
+    assert trabajo["job_type"] == "classify_document"
+    run_one_job(client, attempts=3)
+    detalle: dict[str, Any] = client.get(f"/api/v1/jobs/{trabajo['id']}").json()
+    return detalle
 
 
 def _material_clasificable(client: TestClient) -> tuple[str, dict[str, Any]]:
@@ -108,9 +121,13 @@ def test_una_pasada_de_clasificacion_propone_con_evidencia_y_sin_inventar(
 
     informe = _clasificar(seeded_client)
 
-    assert informe["subjects"] >= 2, "se clasifican la representación y su artefacto"
-    assert informe["proposals_created"] == 0, "volver a clasificar no duplica propuestas"
-    assert informe["proposals_unchanged"] >= 1
+    # El trabajo termina y su resumen viaja en el paso: es lo que la pantalla enseña al terminar.
+    assert informe["status"] == "succeeded", informe
+    assert "sujetos" in (informe["step"] or ""), informe
+    # Volver a clasificar no crea propuestas nuevas: se cuentan antes y después.
+    total_antes = len(_propuestas(seeded_client))
+    _clasificar(seeded_client)
+    assert len(_propuestas(seeded_client)) == total_antes, "clasificar dos veces no duplica"
     propuestas = _propuestas(seeded_client)
     temas = [propuesta for propuesta in propuestas if propuesta["axis"] == "topic"]
     assert temas, f"debería haberse propuesto el tema pegado: {propuestas}"
@@ -129,14 +146,33 @@ def test_una_pasada_de_clasificacion_propone_con_evidencia_y_sin_inventar(
 def test_la_clasificacion_es_idempotente(seeded_client: TestClient) -> None:
     """Volver a clasificar el mismo material no duplica propuestas."""
     _material_clasificable(seeded_client)
-    primera = _clasificar(seeded_client)
+    _clasificar(seeded_client)
     total_antes = len(_propuestas(seeded_client))
 
     segunda = _clasificar(seeded_client)
 
-    assert segunda["proposals_created"] == 0
-    assert segunda["proposals_unchanged"] >= primera["proposals_created"]
+    assert segunda["status"] == "succeeded", segunda
     assert len(_propuestas(seeded_client)) == total_antes
+
+
+def test_dos_pasadas_seguidas_no_encolan_dos_trabajos(seeded_client: TestClient) -> None:
+    """Pulsar dos veces «Buscar propuestas ahora» no clasifica dos veces (DEBT-024).
+
+    La clave de idempotencia es una sola para el corpus: mientras hay una pasada viva, la segunda
+    petición devuelve **esa** pasada en lugar de encolar otra.
+    """
+    primera = seeded_client.post("/api/v1/classification-runs", headers=ALLOWED_ORIGIN)
+    segunda = seeded_client.post("/api/v1/classification-runs", headers=ALLOWED_ORIGIN)
+
+    assert primera.status_code == 202, primera.text
+    assert segunda.status_code == 202, segunda.text
+    assert primera.json()["id"] == segunda.json()["id"], "debería devolver la pasada que ya había"
+
+    # Y al ejecutarla, el trabajo queda terminado con su resumen.
+    run_one_job(seeded_client, attempts=3)
+    detalle = seeded_client.get(f"/api/v1/jobs/{primera.json()['id']}").json()
+    assert detalle["status"] == "succeeded", detalle
+    assert detalle["progress"] == 1.0
 
 
 def test_un_eje_critico_no_se_aplica_solo_aunque_la_confianza_sea_alta(
@@ -418,3 +454,60 @@ def test_deshacer_sin_decisiones_es_un_conflicto(seeded_client: TestClient) -> N
     assert respuesta.json()["code"] == "classification_conflict"
     despues = seeded_client.get(f"/api/v1/classification-proposals/{pendiente['id']}").json()
     assert despues["status"] == antes["status"], "un conflicto no cambia nada"
+
+
+# --- avance del trabajo (DEBT-024) ------------------------------------------------------------
+
+
+def _trabajo_de_clasificacion() -> Job:
+    """Un trabajo de clasificación en curso, sin encolarlo: aquí lo ejecuta la propia prueba."""
+    ahora = FixedClock().now()
+    return Job(
+        id="job-de-prueba",
+        job_type=JobType.CLASSIFY_DOCUMENT,
+        status=JobStatus.RUNNING,
+        payload={"limit": 200},
+        progress=0.0,
+        attempts=0,
+        max_attempts=3,
+        created_at=ahora,
+        updated_at=ahora,
+    )
+
+
+def test_la_pasada_de_clasificacion_informa_de_sus_tramos(seeded_client: TestClient) -> None:
+    """Clasificar dice por dónde va: el avance del trabajo no salta de 0,05 a 1 (DEBT-024).
+
+    Se ejecuta el manejador del trabajo con una ejecución de prueba, que es lo que permite ver
+    **todos** los informes y no solo el último que quedó guardado.
+    """
+    _material_clasificable(seeded_client)
+    app: Any = seeded_client.app
+    ejecucion = FakeExecution(_trabajo_de_clasificacion())
+
+    app.state.classification_service.run_classification_job(ejecucion)
+
+    avance = ejecucion.progress_calls
+    assert avance[0] == 0.05 and avance[-1] == 1.0, avance
+    intermedios = [valor for valor in avance if 0.05 < valor < 1.0]
+    assert len(intermedios) >= 3, f"clasificar informa de sus tramos, no de uno solo: {avance}"
+    assert avance == sorted(avance), f"el avance no puede retroceder: {avance}"
+    pasos = [paso or "" for paso in ejecucion.progress_steps]
+    assert any("clasificando material (" in paso for paso in pasos), pasos
+    assert any("guardando propuestas" in paso for paso in pasos), pasos
+    assert any("buscando duplicados" in paso for paso in pasos), pasos
+    # El último paso es el resumen: es lo que la pantalla enseña cuando el trabajo termina.
+    assert "sujetos" in pasos[-1], pasos
+
+
+def test_cancelar_una_pasada_de_clasificacion_la_corta_a_mitad(client: TestClient) -> None:
+    """Pedir cancelar corta la pasada entre tramos en lugar de dejarla terminar entera."""
+    app: Any = client.app
+    # La primera comprobación la hace el propio manejador al empezar; la segunda, ya dentro de la
+    # pasada: con `cancel_after=1` lo que se prueba es que se comprueba **durante** el trabajo.
+    ejecucion = FakeExecution(_trabajo_de_clasificacion(), cancel_after=1)
+
+    with pytest.raises(JobCancelledError):
+        app.state.classification_service.run_classification_job(ejecucion)
+
+    assert ejecucion.progress_calls == [0.05], ejecucion.progress_calls

@@ -36,7 +36,7 @@ significa retirarla y asumir la consecuencia escrita en la última columna.
 
 | Ruta | Slice | Por qué existe | Qué se pierde si se retira |
 |---|---|---|---|
-| `POST /classification-runs` | S04 | Lanzar el motor determinista sobre un lote y ver su informe; sin ella, clasificar no se puede pedir desde la interfaz | la pantalla de Revisión no puede pedir una clasificación nueva |
+| `POST /classification-runs` | S04 | Lanzar el motor determinista sobre el corpus y seguir su avance; sin ella, clasificar no se puede pedir desde la interfaz. Desde DEBT-024 (S12.6) responde **202 con el trabajo encolado**, no con el informe: el informe viaja en el paso del trabajo al terminar | la pantalla de Revisión no puede pedir una clasificación nueva |
 | `GET /documents/{id}/diff` | S05 | Comparar dos versiones del mismo documento y decir qué sección cambió | la pestaña «Versiones y diff» se queda sin diff |
 | `GET /collections` y `POST /collections` | S05 | Listar y crear colecciones: agrupar material sin duplicarlo (`03_DATA-MODEL` §«colección») | la Biblioteca pierde las colecciones y, con ellas, el filtro por colección |
 | `POST /collections/{id}/items` | S05 | Meter un sujeto en una colección: una versión, un artefacto, una representación, una sección o una evidencia | ninguna colección podría tener nada dentro, así que la superficie entera sobra |

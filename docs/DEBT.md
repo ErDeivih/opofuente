@@ -35,7 +35,7 @@ Reglas:
 | [DEBT-021](#debt-021--la-puerta-e2e-puede-correr-contra-un-servidor-ajeno) | antes de dar por buena una corrida E2E | La suite E2E reutiliza cualquier servidor que escuche en el 8765: corre contra su base de datos y escribe en ella | abierta |
 | [DEBT-022](#debt-022--la-suite-e2e-no-distingue-la-máquina-está-cargada-de-esto-se-ha-roto) | antes de dar por buena la puerta E2E | La suite tarda 1,8 min en vacío y 11 cargada, y sus esperas fijas pueden caducar sin decir si el problema es el código o el ordenador (los cuatro rojos que primero se le atribuyeron eran del servidor reutilizado, DEBT-021) | abierta |
 | [DEBT-023](#debt-023--una-tarjeta-de-anki-no-puede-ser-una-pregunta-porque-no-hay-dónde-guardar-su-respuesta) | S12.6 | El modelo tiene el tipo `free_text_reference` y no tiene dónde guardar la respuesta de referencia: el reverso de una tarjeta no entra | abierta |
-| [DEBT-024](#debt-024--la-clasificación-se-pide-de-forma-síncrona-y-con-el-corpus-entero-tarda-demasiado) | S12.6 | «Buscar propuestas ahora» clasifica todo el corpus en la misma petición: con material real tarda decenas de segundos y bloquea la pantalla | abierta |
+| [DEBT-024](#debt-024--la-clasificación-se-pide-de-forma-síncrona-y-con-el-corpus-entero-tarda-demasiado) | S12.6 | «Buscar propuestas ahora» clasifica todo el corpus en la misma petición: con material real tarda decenas de segundos y bloquea la pantalla | cerrada |
 
 ---
 
@@ -1214,5 +1214,37 @@ progreso, como extraer y recalcular, y que la pantalla diga en qué va.
 3. Con el corpus del propietario, la petición responde en menos de un segundo y el trabajo informa de
    su progreso real.
 
-**Estado: abierta.** Vive en el mismo terreno que S12.6 (catalogar y enlazar; la importación automática ya está en S12.5), donde
-la clasificación pasa a ser un paso automático y no un botón.
+**Estado: cerrada** (22 de septiembre de 2026, S12.6).
+
+**Qué se hizo.** Clasificar dejó de ser una petición larga y pasó a ser un trabajo del pipeline, como
+extraer y recalcular claves:
+
+- `POST /api/v1/classification-runs` responde **202** con el trabajo encolado (`enqueue_run`, con la
+  clave de idempotencia `classify_document:corpus`: dos pulsaciones seguidas no clasifican dos veces,
+  la segunda devuelve el trabajo que ya estaba vivo);
+- el trabajador lo ejecuta con el manejador `classify_document`, que ya existía para la vía automática;
+- la pantalla de Revisión **sigue el trabajo** (`useJob`), enseña el paso que informa el servidor y su
+  avance mientras corre, y recarga las propuestas cuando termina;
+- la pasada informa de sus tramos —`clasificando material (N de M)`, `guardando propuestas`,
+  `aplicando lo que se decide solo`, `buscando duplicados`— en lugar de saltar de 0,05 a 1, y cada
+  informe es también el punto donde se comprueba si han pedido cancelar.
+
+**Cómo se comprueba.**
+
+| Criterio | Prueba o medición | Resultado |
+|---|---|---|
+| 1. Se encola y la pantalla muestra el avance y el resultado | `tests/integration/test_classification.py::test_la_pasada_de_clasificacion_informa_de_sus_tramos` y `apps/web/tests/unit/review.test.tsx` | 202 con `job_type=classify_document`; el avance no retrocede, lleva al menos tres tramos intermedios con su paso y termina con el resumen; la pantalla enseña paso y porcentaje |
+| 1b. Cancelar corta la pasada | `…::test_cancelar_una_pasada_de_clasificacion_la_corta_a_mitad` | se corta entre tramos, en lugar de dejarla terminar entera |
+| 2. Clasificar dos veces no duplica propuestas | la prueba de idempotencia de S04, sin cambios | verde |
+| 3. La petición responde en menos de un segundo | medición sobre una copia del corpus del propietario (186 sujetos) | **0,097 s** de respuesta; el trabajo tarda 48,2 s |
+
+La medición del criterio 3 se hizo el 22 de septiembre de 2026 con
+`F:\temp-opofuente\medir_clasificacion_job.py`, sobre una **copia nueva** de `datos-apuntes-tai` (nunca
+sobre la carpeta del propietario ni sobre la copia de DEBT-018). El trabajo terminó en `succeeded` con
+el resumen «186 sujetos: 4 propuestas nuevas, 390 ya existentes, 2 sin señales, 0 aplicadas
+provisionalmente, 0 grupos de duplicados». La referencia anterior —la misma pasada, de forma
+síncrona— era de 46,7 s (DEBT-018): el trabajo tarda lo mismo, pero la petición ya no espera.
+
+**Lo que sigue en pie.** Una pasada clasifica como mucho `limit` sujetos (200 por defecto). El corpus
+medido tiene 186, así que entró entero, pero uno mayor necesitará varias pasadas o un límite más alto;
+el resumen dice cuántos sujetos ha visto, no cuántos quedan por ver.

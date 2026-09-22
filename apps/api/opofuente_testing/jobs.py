@@ -2,7 +2,8 @@
 
 `FixedClock` da tiempo determinista, `FakeExecution` sustituye el trabajo real del worker cuando la
 prueba quiere controlar la cancelación, y `run_one_job` ejecuta el pipeline con el worker de verdad
-sobre la aplicación de prueba (despachando **los dos** tipos de trabajo: copiar y extraer).
+sobre la aplicación de prueba (despachando **los tres** tipos de trabajo: copiar, extraer y
+clasificar).
 
 También viven aquí dos ayudantes que usan varias pruebas de integración: `jobs_for_batch` (consulta
 la cola real) y `failed_extraction` (un resultado de extracción fallido, del mismo tipo que devuelve
@@ -68,12 +69,17 @@ class FixedClock:
 
 
 class FakeExecution(JobExecution):
-    """Ejecución de prueba: informa sin base de datos y permite forzar la cancelación."""
+    """Ejecución de prueba: informa sin base de datos y permite forzar la cancelación.
+
+    Guarda **qué** se informó (`progress_calls`) y **con qué paso** (`progress_steps`): saber que un
+    trabajo llegó al 0,9 no dice si supo explicarlo, y hay pruebas que comprueban las dos cosas.
+    """
 
     def __init__(self, job: Job, *, cancel_after: int | None = None) -> None:
         self._cancel_after = cancel_after
         self._checks = 0
         self.progress_calls: list[float] = []
+        self.progress_steps: list[str | None] = []
         self.latidos = 0
         super().__init__(
             job,
@@ -84,6 +90,7 @@ class FakeExecution(JobExecution):
 
     def _report(self, value: float, step: str | None) -> None:
         self.progress_calls.append(value)
+        self.progress_steps.append(step)
 
     def _heartbeat(self) -> None:
         self.latidos += 1

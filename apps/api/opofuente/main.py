@@ -212,6 +212,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         repository=classification_repository,
         engines=(DeterministicClassifier(),),
         clock=clock,
+        # Clasificar el corpus entero es un **trabajo**, no una petición: con el material del
+        # propietario tarda casi un minuto y bloqueaba la pantalla (DEBT-024).
+        jobs=job_queue,
     )
     change_service = ChangeService(
         changes=SqlAlchemyChangeRepository(session_factory),

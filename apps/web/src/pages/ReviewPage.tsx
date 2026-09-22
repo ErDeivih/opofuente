@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import type {
   BulkDecisionResponse,
@@ -13,12 +13,14 @@ import {
   useCoverage,
   useCurriculum,
   useDecideProposal,
+  useJob,
   useOppositions,
   useProposals,
   useReviewGroups,
   useRunClassification,
   useUndoDecision,
 } from '../api/queries';
+import { useQueryClient } from '@tanstack/react-query';
 import { ErrorState } from '../components/ErrorState';
 import { LoadingState } from '../components/LoadingState';
 import { CoveragePanel } from '../features/review/CoveragePanel';
@@ -31,6 +33,22 @@ import { subjectLabel, valueLabel } from '../features/review/labels';
 
 function describeError(error: unknown): string {
   return error instanceof Error ? error.message : 'Error desconocido';
+}
+
+/** Estados en los que un trabajo sigue trabajando: mientras dure, la pantalla lo sigue. */
+const ACTIVE_JOB_STATUSES = new Set(['queued', 'leased', 'running', 'cancel_requested']);
+
+/**
+ * El avance de un trabajo, en palabras (DEBT-024).
+ *
+ * Un trabajo recién encolado informa 0 y ya terminado informa 1: en esos dos extremos el porcentaje
+ * no dice nada que no diga el estado, así que solo se enseña mientras hay avance de verdad.
+ */
+function describeAvance(progress: number | undefined): string {
+  if (typeof progress !== 'number' || progress <= 0 || progress >= 1) {
+    return '';
+  }
+  return ` · ${String(Math.round(progress * 100))} %`;
 }
 
 /** Identificador con el que se deshace una decisión: su traza de auditoría, o la propuesta. */
@@ -67,6 +85,24 @@ export function ReviewPage() {
   const undo = useUndoDecision();
   const classify = useRunClassification();
   const [history, setHistory] = useState<SessionDecision[]>([]);
+
+  // La pasada de clasificación es un **trabajo** (DEBT-024): se encola, se sigue por su id y, al
+  // terminar, se recargan las propuestas. Mientras corre se dice en qué va, en lugar de dejar el
+  // botón bloqueado sin explicación.
+  const [classificationJobId, setClassificationJobId] = useState<string | null>(null);
+  const classificationJob = useJob(classificationJobId);
+  const queryClient = useQueryClient();
+  const jobStatus = classificationJob.data?.status ?? null;
+  const clasificando =
+    classificationJobId !== null && (jobStatus === null || ACTIVE_JOB_STATUSES.has(jobStatus));
+
+  useEffect(() => {
+    if (jobStatus !== 'succeeded') {
+      return;
+    }
+    // Terminó: ahora sí, lo que hay que releer son las propuestas.
+    void queryClient.invalidateQueries({ queryKey: ['classification'] });
+  }, [jobStatus, queryClient]);
 
   const proposals = useMemo(
     () => [...(pending.data?.proposals ?? []), ...(provisional.data?.proposals ?? [])],
@@ -193,24 +229,42 @@ export function ReviewPage() {
           <button
             className="button"
             type="button"
-            disabled={classify.isPending}
+            disabled={classify.isPending || clasificando}
             onClick={() => {
-              classify.mutate();
+              classify.mutate(undefined, {
+                onSuccess: (trabajo) => {
+                  setClassificationJobId(trabajo.id);
+                },
+              });
             }}
           >
-            {classify.isPending ? 'Clasificando…' : 'Buscar propuestas ahora'}
+            {clasificando ? 'Clasificando…' : 'Buscar propuestas ahora'}
           </button>
           <span className="hint">
             Una pasada de clasificación no cambia nada por sí sola: solo propone.
           </span>
         </div>
-        {classify.isSuccess && (
+        {clasificando && (
           <p className="hint" role="status">
-            {classify.data.subjects} sujetos · {classify.data.proposals_created} propuestas nuevas ·{' '}
-            {classify.data.proposals_unchanged} ya existentes ·{' '}
-            {classify.data.auto_applied} aplicadas provisionalmente ·{' '}
-            {classify.data.subjects_without_signals} sin señales
+            {classificationJob.data?.step ?? 'Encolada: clasificando el material…'}
+            {describeAvance(classificationJob.data?.progress)}
           </p>
+        )}
+        {jobStatus === 'succeeded' && (
+          <p className="hint" role="status">
+            {classificationJob.data?.step ?? 'Clasificación terminada.'}
+          </p>
+        )}
+        {jobStatus !== null && !ACTIVE_JOB_STATUSES.has(jobStatus) && jobStatus !== 'succeeded' && (
+          <ErrorState
+            title="La clasificación no terminó"
+            message={
+              classificationJob.data?.error_message ?? 'El trabajo de clasificación falló.'
+            }
+            onRetry={() => {
+              void classificationJob.refetch();
+            }}
+          />
         )}
         {classify.isError && (
           <ErrorState

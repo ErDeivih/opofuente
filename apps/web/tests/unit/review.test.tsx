@@ -211,15 +211,42 @@ function stubReviewApi(overrides: Record<string, StubbedRoute> = {}) {
     '/api/v1/classification-decisions/evt-1/undo': {
       body: { ...aceptadaUno, status: 'pending', audit_event_id: 'evt-2' },
     },
+    // La pasada de clasificación devuelve un **trabajo** encolado (DEBT-024), y su `step` lleva el
+    // resumen cuando termina.
     '/api/v1/classification-runs': {
       body: {
-        subjects: 6,
-        proposals_created: 4,
-        proposals_unchanged: 0,
-        subjects_without_signals: 1,
-        auto_applied: 1,
-        duplicates_found: 0,
-        summary: '6 sujetos: 4 propuestas nuevas',
+        id: 'job-clasificar',
+        job_type: 'classify_document',
+        status: 'queued',
+        progress: 0,
+        attempts: 0,
+        max_attempts: 3,
+        created_at: '2026-09-22T10:00:00Z',
+        updated_at: '2026-09-22T10:00:00Z',
+        step: null,
+        error_code: null,
+        error_message: null,
+        started_at: null,
+        finished_at: null,
+        cancel_requested: false,
+      },
+    },
+    '/api/v1/jobs/job-clasificar': {
+      body: {
+        id: 'job-clasificar',
+        job_type: 'classify_document',
+        status: 'succeeded',
+        progress: 1,
+        attempts: 1,
+        max_attempts: 3,
+        created_at: '2026-09-22T10:00:00Z',
+        updated_at: '2026-09-22T10:00:05Z',
+        step: '6 sujetos: 4 propuestas nuevas, 0 ya existentes, 1 sin señales',
+        error_code: null,
+        error_message: null,
+        started_at: '2026-09-22T10:00:01Z',
+        finished_at: '2026-09-22T10:00:05Z',
+        cancel_requested: false,
       },
     },
     '/api/v1/review-groups': { body: grupos },
@@ -522,6 +549,9 @@ describe('pantalla Revisión', () => {
   });
 
   it('busca propuestas ahora sin aplicar nada definitivo', async () => {
+    // Desde DEBT-024 la pasada es un **trabajo**: se encola (202), la pantalla lo sigue y, cuando
+    // termina, enseña su resumen y recarga las propuestas. El resumen lo dice el servidor en el
+    // paso del trabajo, no lo compone la pantalla sumando cifras por su cuenta.
     const fetchMock = stubReviewApi();
     renderReview();
 
@@ -531,9 +561,46 @@ describe('pantalla Revisión', () => {
       expect(peticion(fetchMock, '/classification-runs')).toBeDefined();
     });
     expect(peticion(fetchMock, '/classification-runs')?.[1]?.method).toBe('POST');
+    await waitFor(() => {
+      expect(peticion(fetchMock, '/jobs/job-clasificar')).toBeDefined();
+    });
     expect(
-      await screen.findByText(/6 sujetos · 4 propuestas nuevas · 0 ya existentes · 1 aplicadas provisionalmente/),
+      await screen.findByText(/6 sujetos: 4 propuestas nuevas, 0 ya existentes, 1 sin señales/),
     ).toBeInTheDocument();
     expect(screen.getByText(/no cambia nada por sí sola: solo propone/)).toBeInTheDocument();
+  });
+
+  it('dice por dónde va la clasificación mientras está trabajando', async () => {
+    // Mientras el trabajo corre, la pantalla enseña el paso que informa el servidor —no uno que se
+    // invente la interfaz— y el avance que trae (DEBT-024): el trabajo ya no salta de 0,05 a 1.
+    const fetchMock = stubReviewApi({
+      '/api/v1/jobs/job-clasificar': {
+        body: {
+          id: 'job-clasificar',
+          job_type: 'classify_document',
+          status: 'running',
+          progress: 0.42,
+          attempts: 1,
+          max_attempts: 3,
+          created_at: '2026-09-22T10:00:00Z',
+          updated_at: '2026-09-22T10:00:05Z',
+          step: 'clasificando material (40 de 312)',
+          error_code: null,
+          error_message: null,
+          started_at: '2026-09-22T10:00:01Z',
+          finished_at: null,
+          cancel_requested: false,
+        },
+      },
+    });
+    renderReview();
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Buscar propuestas ahora' }));
+
+    await waitFor(() => {
+      expect(peticion(fetchMock, '/jobs/job-clasificar')).toBeDefined();
+    });
+    const aviso = await screen.findByText(/clasificando material \(40 de 312\)/);
+    expect(aviso).toHaveTextContent('42 %');
   });
 });

@@ -306,7 +306,16 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Ejecuta una pasada de clasificación ahora (idempotente) */
+        /**
+         * Encola una pasada de clasificación del corpus (idempotente)
+         * @description Clasificar dejó de ser una petición larga: se **encola** y se sigue por su trabajo.
+         *
+         *     Con el material real del propietario una pasada tarda 46,7 segundos: tener eso dentro de una
+         *     petición dejaba el botón bloqueado sin decir en qué iba (DEBT-024). Ahora responde **202** con
+         *     el trabajo recién encolado —su `step` dirá el resumen al terminar— y la pantalla lo sigue.
+         *
+         *     Si ya hay una pasada viva, devuelve **esa**: pulsar dos veces no clasifica dos veces.
+         */
         post: operations["run_classification_api_v1_classification_runs_post"];
         delete?: never;
         options?: never;
@@ -2843,26 +2852,6 @@ export interface components {
             support: "direct" | "inferred";
             /** Text */
             text: string;
-        };
-        /**
-         * ClassificationReportSchema
-         * @description Qué dejó la última pasada de clasificación: se sirve tal cual, sin redondear nada.
-         */
-        ClassificationReportSchema: {
-            /** Auto Applied */
-            auto_applied: number;
-            /** Duplicates Found */
-            duplicates_found: number;
-            /** Proposals Created */
-            proposals_created: number;
-            /** Proposals Unchanged */
-            proposals_unchanged: number;
-            /** Subjects */
-            subjects: number;
-            /** Subjects Without Signals */
-            subjects_without_signals: number;
-            /** Summary */
-            summary: string;
         };
         /** CollectionItemRequestSchema */
         CollectionItemRequestSchema: {
@@ -7041,12 +7030,12 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description Successful Response */
-            200: {
+            202: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ClassificationReportSchema"];
+                    "application/json": components["schemas"]["JobSchema"];
                 };
             };
             /** @description La entrada no se puede usar: carpeta inválida (`invalid_source`), contenido rechazado por seguridad (`unsafe_content`) o URL no descargable (`url_rejected`). */

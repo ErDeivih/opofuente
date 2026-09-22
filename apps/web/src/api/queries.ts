@@ -525,12 +525,10 @@ export function useUndoDecision() {
 }
 
 export function useRunClassification() {
-  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: runClassification,
-    onSuccess: () => {
-      invalidateClassification(queryClient);
-    },
+    // No se invalida nada aquí: encolar no clasifica todavía. Lo que se sigue es el **trabajo**
+    // (DEBT-024), y cuando termina es cuando la pantalla recarga las propuestas.
   });
 }
 

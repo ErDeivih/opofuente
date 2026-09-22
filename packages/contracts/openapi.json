@@ -1528,50 +1528,6 @@
         "title": "ClaimSchema",
         "type": "object"
       },
-      "ClassificationReportSchema": {
-        "description": "Qué dejó la última pasada de clasificación: se sirve tal cual, sin redondear nada.",
-        "properties": {
-          "auto_applied": {
-            "title": "Auto Applied",
-            "type": "integer"
-          },
-          "duplicates_found": {
-            "title": "Duplicates Found",
-            "type": "integer"
-          },
-          "proposals_created": {
-            "title": "Proposals Created",
-            "type": "integer"
-          },
-          "proposals_unchanged": {
-            "title": "Proposals Unchanged",
-            "type": "integer"
-          },
-          "subjects": {
-            "title": "Subjects",
-            "type": "integer"
-          },
-          "subjects_without_signals": {
-            "title": "Subjects Without Signals",
-            "type": "integer"
-          },
-          "summary": {
-            "title": "Summary",
-            "type": "string"
-          }
-        },
-        "required": [
-          "subjects",
-          "proposals_created",
-          "proposals_unchanged",
-          "subjects_without_signals",
-          "auto_applied",
-          "duplicates_found",
-          "summary"
-        ],
-        "title": "ClassificationReportSchema",
-        "type": "object"
-      },
       "CollectionItemRequestSchema": {
         "properties": {
           "subject_id": {
@@ -11541,13 +11497,14 @@
     },
     "/api/v1/classification-runs": {
       "post": {
+        "description": "Clasificar dejó de ser una petición larga: se **encola** y se sigue por su trabajo.\n\nCon el material real del propietario una pasada tarda 46,7 segundos: tener eso dentro de una\npetición dejaba el botón bloqueado sin decir en qué iba (DEBT-024). Ahora responde **202** con\nel trabajo recién encolado —su `step` dirá el resumen al terminar— y la pantalla lo sigue.\n\nSi ya hay una pasada viva, devuelve **esa**: pulsar dos veces no clasifica dos veces.",
         "operationId": "run_classification_api_v1_classification_runs_post",
         "responses": {
-          "200": {
+          "202": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ClassificationReportSchema"
+                  "$ref": "#/components/schemas/JobSchema"
                 }
               }
             },
@@ -11604,7 +11561,7 @@
             "description": "Error interno inesperado (RFC 9457)."
           }
         },
-        "summary": "Ejecuta una pasada de clasificación ahora (idempotente)",
+        "summary": "Encola una pasada de clasificación del corpus (idempotente)",
         "tags": [
           "clasificación"
         ]
