@@ -263,3 +263,58 @@ si la ambigüedad supera el umbral acordado.
 
 El MVP personal termina en S12. S13 es experimental. Comercialización, nube y tercera oposición
 requieren una decisión nueva.
+
+**Tercera oposición (22 de septiembre de 2026):** decidida y entregada como S12.1 — Celador/a del
+SACYL, perfil `celador-sacyl-2022`. No añade modelo, contrato ni interfaz: es un caso más de lo que
+ya existía. La decisión está en [ADR-015](../decisions/ADR-015-tercera-oposicion-celador.md) y su
+detalle, en `15_OFFICIAL-PROFILES-AND-SOURCE-MANIFEST` §3. Un cuarto perfil vuelve a exigir decisión.
+
+## S12.1 — tercer perfil oficial: Celador/a del SACYL (Salamanca)
+
+### Entrega
+
+- Perfil `celador-sacyl-2022` con el programa del ANEXO II (16 temas, sin bloques) extraído del HTML
+  del BOCYL y con dieciséis reglas, cada una con su cita literal.
+- Nueve fuentes nuevas en el manifiesto: la orden, la resolución que fija la fecha del ejercicio, el
+  cuestionario publicado, la plantilla de respuestas, el cuestionario del llamamiento aplazado y los
+  dos avisos legales revisados.
+- Extractor `celador_curriculum` en `build_profile_fixtures`, con el corte de anexo propio del BOCYL.
+
+### Aceptación
+
+- Las citas de las dieciséis reglas y de la parte se verifican contra el documento descargado; el
+  manifiesto comprueba el `sha256` de las nueve fuentes.
+- El cuestionario publicado confirma la estructura del fixture (77 preguntas, 7 de reserva).
+- La fecha del ejercicio del fixture coincide con la que publica el BOCYL.
+- Ninguna fuente de derechos dudosos se declara reutilizable: las que no publican condiciones quedan
+  en `unknown`, con la nota que lo explica.
+- TAI sigue siendo la oposición activa después de sembrar.
+
+## S12.2 — segunda convocatoria de Celador: estabilización (Ley 20/2021) — **no empezado**
+
+**Precondición, y no es técnica:** su plazo de solicitudes cerró el 27 de enero de 2023, así que este
+programa solo sirve a quien se presentó a ese proceso. Se construye si el propietario dice que es su
+caso (o si quiere el temario por otro motivo). Lo que hay hoy: sus catorce temas y sus reglas
+verificadas y documentadas en `15_OFFICIAL-PROFILES-AND-SOURCE-MANIFEST` §4, sin sembrar.
+
+### Entrega
+
+- Convocatoria `celador-sacyl-estabilizacion-2022` dentro de la misma oposición `celador-sacyl`, con
+  el programa del ANEXO V de la ORDEN SAN/1917/2022 (catorce temas en parte general y parte
+  específica) extraído del PDF del BOCYL y con sus reglas citadas.
+- Ejercicio declarado como lo publica la orden: 44 preguntas incluidas las de reserva, tres
+  alternativas, error penalizado con 1/9, 60 minutos, 0–150 puntos.
+- **Selector de convocatoria en la interfaz.** Hoy Programa, Estudio, Repaso y Banco resuelven la
+  convocatoria con `active_convocation`, y solo puede haber una convocatoria activa por oposición: una
+  segunda convocatoria sembrada sería invisible. O se añade el selector, o esto no se entrega.
+- **Decidir el estado de una convocatoria publicada que no es la vigente.** `draft`, `active`,
+  `superseded` y `archived` no la describen; usarla como `draft` sería mentir sobre un acto ya
+  publicado. Es un cambio de modelo (enumerado, restricción de la base y contrato), con su migración.
+
+### Aceptación
+
+- El fixture dice, en su nota de fecha, que el ejercicio **no se ha convocado** y que el plazo de
+  solicitudes cerró el 27 de enero de 2023: no se presenta como un examen disponible.
+- Sus cifras de examen son distintas de las de la convocatoria ordinaria y las pruebas lo comprueban,
+  para que nadie confunda un perfil con otro.
+- La convocatoria ordinaria sigue siendo la vigente de la oposición.

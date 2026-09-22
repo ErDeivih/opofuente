@@ -8,6 +8,7 @@ from opofuente.api.errors import PROBLEM_MEDIA_TYPE
 
 TAI = "tai-age"
 GC = "gc-cabos-guardias"
+CELADOR = "celador-sacyl"
 
 
 def _opposition_id(client: TestClient, code: str) -> str:
@@ -19,7 +20,7 @@ def test_lista_de_oposiciones_con_su_convocatoria_activa(seeded_client: TestClie
     response = seeded_client.get("/api/v1/oppositions")
     assert response.status_code == 200
     oppositions = response.json()
-    assert {item["code"] for item in oppositions} == {TAI, GC}
+    assert {item["code"] for item in oppositions} == {TAI, GC, CELADOR}
 
     tai = next(item for item in oppositions if item["code"] == TAI)
     assert tai["active"] is True
@@ -98,6 +99,70 @@ def test_programa_de_guardia_civil_tiene_veinticinco_temas(seeded_client: TestCl
     assert body["nodes"][0]["children"], "cada tema debe traer sus bloques"
     primer_bloque = body["nodes"][0]["children"][0]
     assert primer_bloque["children"], "cada bloque debe traer sus epígrafes"
+
+
+def test_programa_de_celador_tiene_dieciseis_temas_sin_bloques(seeded_client: TestClient) -> None:
+    oposicion_id = _opposition_id(seeded_client, CELADOR)
+    convocatoria = seeded_client.get(f"/api/v1/oppositions/{oposicion_id}/convocations").json()[0]
+    assert convocatoria["exam_date"] == "2023-11-12"
+
+    response = seeded_client.get(f"/api/v1/convocations/{convocatoria['id']}/curriculum")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["counts"] == {"block": 0, "topic": 16, "epigraph": 0}
+    assert len(body["nodes"]) == 16
+    assert body["nodes"][0]["official_code"] == "1"
+    assert body["nodes"][0]["title"].startswith("Estructura de la Consejería de Sanidad.")
+    assert all(not node["children"] for node in body["nodes"])
+
+
+def test_convocatoria_de_celador_sirve_su_ejercicio_y_sus_reglas(seeded_client: TestClient) -> None:
+    oposicion_id = _opposition_id(seeded_client, CELADOR)
+    convocatoria = seeded_client.get(f"/api/v1/oppositions/{oposicion_id}/convocations").json()[0]
+    response = seeded_client.get(f"/api/v1/convocations/{convocatoria['id']}")
+    assert response.status_code == 200
+    body = response.json()
+
+    assert body["source_reference"] == (
+        "BOCYL-D-22122022-7 · ANEXO I (descripción del proceso) y ANEXO II (programa)"
+    )
+    partes = {part["code"]: part for part in body["parts"]}
+    ejercicio = partes["ejercicio_unico"]
+    assert (ejercicio["ordinary_items"], ejercicio["reserve_items"]) == (70, 7)
+    assert ejercicio["options_per_question"] == 4
+    assert ejercicio["time_minutes"] == 90
+    assert ejercicio["pass_score"] is None
+    reglas = {rule["code"]: rule for rule in body["rules"]}
+    assert reglas["published_exam_date"]["value_text"] == "2023-11-12"
+    assert all(rule["evidence_quote"] for rule in body["rules"])
+
+
+def test_activar_celador_deja_una_convocatoria_con_la_que_trabajar(
+    seeded_client: TestClient,
+) -> None:
+    """Un perfil cuyo proceso ya terminó sigue siendo utilizable.
+
+    Las pantallas de Programa, Estudio, Repaso y Banco resuelven su convocatoria con
+    `active_convocation` de la oposición activa. Si la convocatoria de Celador no fuese la vigente
+    de su oposición, activarla dejaría la aplicación sin programa: esta prueba defiende eso.
+    """
+    oposicion_id = _opposition_id(seeded_client, CELADOR)
+    respuesta = seeded_client.post(f"/api/v1/oppositions/{oposicion_id}/activate")
+    assert respuesta.status_code == 200
+    assert respuesta.json()["active"] is True
+
+    activa = next(
+        item for item in seeded_client.get("/api/v1/oppositions").json() if item["active"]
+    )
+    assert activa["code"] == CELADOR
+    assert activa["active_convocation"]["code"] == "celador-sacyl-2022"
+    assert activa["active_convocation"]["status"] == "active"
+
+    curriculum = seeded_client.get(
+        f"/api/v1/convocations/{activa['active_convocation']['id']}/curriculum"
+    )
+    assert curriculum.status_code == 200
+    assert curriculum.json()["counts"]["topic"] == 16
 
 
 def test_detalle_de_nodo_con_ancestros_y_procedencia(seeded_client: TestClient) -> None:

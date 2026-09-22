@@ -4,17 +4,26 @@ Estas pruebas defienden los criterios de aceptación de S01 sobre los datos semb
 
 - TAI tiene exactamente 4 bloques y 33 temas;
 - Guardia Civil tiene 25 temas y sus partes escritas configuradas;
+- Celador (SACYL) tiene 16 temas sin bloques y un ejercicio único de 70 preguntas más 7 de reserva;
 - todo dato numérico tiene su cita, y lo que la convocatoria no publica se queda sin valor.
 """
 
 from __future__ import annotations
 
 import json
+from datetime import date
 
 import pytest
 
 from opofuente.config import project_root
-from opofuente.domain.profiles import NodeType, PartKind, RuleKind, count_by_type, flatten
+from opofuente.domain.profiles import (
+    ConvocationStatus,
+    NodeType,
+    PartKind,
+    RuleKind,
+    count_by_type,
+    flatten,
+)
 from opofuente.infrastructure.fixture_loader import load_profiles
 
 FIXTURES = project_root() / "fixtures" / "profiles"
@@ -25,8 +34,8 @@ def profiles():
     return {profile.convocation.code: profile for profile in load_profiles(FIXTURES)}
 
 
-def test_se_cargan_los_dos_perfiles_oficiales(profiles) -> None:
-    assert set(profiles) == {"tai-age-2025", "gc-cabos-guardias-2026"}
+def test_se_cargan_los_tres_perfiles_oficiales(profiles) -> None:
+    assert set(profiles) == {"tai-age-2025", "gc-cabos-guardias-2026", "celador-sacyl-2022"}
 
 
 def test_manifiesto_declara_las_fuentes_y_sus_derechos() -> None:
@@ -39,6 +48,14 @@ def test_manifiesto_declara_las_fuentes_y_sus_derechos() -> None:
         "gc-temario-oficial-pdf",
         "boe-aviso-legal-html",
         "gc-nota-legal-html",
+        "celador-2022-bocyl-orden-html",
+        "celador-2022-bocyl-orden-pdf",
+        "celador-2023-bocyl-resolucion-salamanca-html",
+        "celador-2022-cuestionario-pdf",
+        "celador-2022-plantilla-respuestas-pdf",
+        "celador-2023-cuestionario-aplazado-pdf",
+        "bocyl-aviso-legal-html",
+        "saludcastillayleon-aviso-legal-html",
     ):
         source = sources[source_id]
         assert source["canonical_url"].startswith("https://")
@@ -49,6 +66,10 @@ def test_manifiesto_declara_las_fuentes_y_sus_derechos() -> None:
     # El temario de Guardia Civil está limitado a uso privado: la aplicación no puede publicarlo.
     assert sources["gc-temario-oficial-pdf"]["rights_status"] == "private_use_only"
     assert "uso privado" in sources["gc-temario-oficial-pdf"]["rights_quote"].lower()
+    # Las fuentes del BOCYL no publican condiciones de reutilización: se declaran desconocidas en
+    # lugar de dar por supuesto un permiso que nadie ha concedido.
+    assert sources["celador-2022-bocyl-orden-html"]["rights_status"] == "unknown"
+    assert sources["celador-2022-cuestionario-pdf"]["rights_status"] == "unknown"
 
 
 def test_tai_tiene_cuatro_bloques_y_treinta_y_tres_temas(profiles) -> None:
@@ -196,8 +217,93 @@ def test_el_programa_no_tiene_huecos_ni_titulos_vacios(profiles) -> None:
 
 
 def test_la_fecha_de_examen_no_se_inventa(profiles) -> None:
-    for profile in profiles.values():
-        assert profile.convocation.exam_date is None
+    """Una convocatoria sin fecha publicada se queda sin fecha; una con fecha la cita.
+
+    TAI y Guardia Civil no publican el día del ejercicio en sus bases: se quedan a nulo. Celador
+    sí lo tiene, porque el BOCYL publicó la resolución que lo fija, y la fecha del fixture tiene
+    que ser exactamente la que esa resolución dice.
+    """
+    assert profiles["tai-age-2025"].convocation.exam_date is None
+    assert profiles["gc-cabos-guardias-2026"].convocation.exam_date is None
+
+    celador = profiles["celador-sacyl-2022"]
+    assert celador.convocation.exam_date == date(2023, 11, 12)
+    regla = next(rule for rule in celador.rules if rule.code == "published_exam_date")
+    assert regla.value_text == celador.convocation.exam_date.isoformat()
+    assert regla.evidence_quote.startswith("para la realización del ejercicio de la fase")
+
+
+def test_celador_tiene_dieciseis_temas_sin_bloques(profiles) -> None:
+    """El programa oficial de Celador son dieciséis temas que no cuelgan de ningún bloque."""
+    curriculum = profiles["celador-sacyl-2022"].curriculum
+    assert count_by_type(curriculum) == {
+        NodeType.BLOCK: 0,
+        NodeType.TOPIC: 16,
+        NodeType.EPIGRAPH: 0,
+    }
+    temas = list(curriculum)
+    assert [tema.official_code for tema in temas] == [str(n) for n in range(1, 17)]
+    assert [tema.path for tema in temas] == [str(n) for n in range(1, 17)]
+    assert all(tema.depth == 0 for tema in temas)
+    assert all(not tema.children for tema in temas)
+    assert temas[0].title.startswith("Estructura de la Consejería de Sanidad.")
+    assert temas[6].title == (
+        "La atención al usuario. El derecho a la información y a la confidencialidad."
+    )
+    assert temas[-1].title.startswith("Plan de emergencias ante incendios.")
+
+
+def test_celador_configura_su_ejercicio_unico(profiles) -> None:
+    parts = {part.code: part for part in profiles["celador-sacyl-2022"].parts}
+    assert set(parts) == {"ejercicio_unico"}
+    ejercicio = parts["ejercicio_unico"]
+    assert ejercicio.kind is PartKind.TEST
+    assert ejercicio.format is not None and ejercicio.format.value == "single_choice"
+    assert (ejercicio.ordinary_items, ejercicio.reserve_items) == (70, 7)
+    assert ejercicio.options_per_question == 4
+    assert (ejercicio.score_min, ejercicio.score_max) == (0, 150)
+    assert ejercicio.wrong_penalty_fraction == 0.25
+    assert ejercicio.time_minutes == 90
+    # No hay nota de corte fija: el umbral es relativo a las diez mejores puntuaciones.
+    assert ejercicio.pass_score is None
+
+
+def test_cada_cifra_del_ejercicio_de_celador_tiene_su_regla(profiles) -> None:
+    """El tiempo también es una cifra: se cita, no se deja sin respaldo.
+
+    TAI declara 120 minutos sin una regla que los cite (su cita habla de las dos partes); aquí el
+    tiempo tiene su propia regla con la frase literal de la convocatoria, y esta prueba impide que
+    vuelva a quedarse sin ella.
+    """
+    perfil = profiles["celador-sacyl-2022"]
+    reglas = {rule.code: rule for rule in perfil.rules}
+    tiempo = reglas["exercise_total_time"]
+    assert tiempo.value_text == str(perfil.parts[0].time_minutes)
+    assert "90 minutos" in tiempo.evidence_quote
+
+
+def test_celador_declara_el_umbral_relativo_y_las_reglas_del_proceso(profiles) -> None:
+    rules = {rule.code: rule for rule in profiles["celador-sacyl-2022"].rules}
+    umbral = rules["pass_threshold_relative_to_top_ten"]
+    assert umbral.kind is RuleKind.TEXT
+    assert umbral.value_text == "60 % de la media de las 10 puntuaciones más altas"
+    assert "no lo estima" in umbral.description
+    assert rules["wrong_answer_penalty"].value_text == "1/4 del valor de una respuesta correcta"
+    assert rules["blank_answer_penalty"].value_text == "0"
+    assert rules["convoked_places"].value_text == "420"
+    assert rules["same_exercise_both_turns"].value_text == "true"
+    assert rules["published_questionnaire_matches_bases"].value_text == "true"
+    assert "77 preguntas" in rules["published_questionnaire_matches_bases"].evidence_quote
+
+
+def test_celador_no_queda_activo_al_sembrar(profiles) -> None:
+    """Añadir un perfil no cambia qué oposición está activa: lo decide el fixture."""
+    celador = profiles["celador-sacyl-2022"]
+    assert celador.opposition.active is False
+    # Su convocatoria es la vigente de esa oposición: no hay otra que la sustituya. Que el proceso
+    # ya se haya resuelto se ve en `exam_date`, no marcando la convocatoria como archivada, que en
+    # esta aplicación significa «no hay convocatoria con la que trabajar».
+    assert celador.convocation.status is ConvocationStatus.ACTIVE
 
 
 def test_los_documentos_originales_no_estan_en_el_repositorio() -> None:

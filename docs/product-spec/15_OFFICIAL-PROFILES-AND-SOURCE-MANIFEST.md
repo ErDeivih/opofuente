@@ -195,7 +195,145 @@ La página oficial indica que PDF nº 2 corrige la pregunta 7 del modelo A y la 
 primera plantilla. Este es el fixture de aceptación de `AnswerKeyVersion`, previa descarga y
 verificación de documentos reales.
 
-## 3. Manifiesto que debe generar S01
+## 3. Celador/a del SACYL — convocatoria 2022
+
+**Decisión:** tercera oposición, aceptada por el propietario el 22 de septiembre de 2026
+([ADR-015](../decisions/ADR-015-tercera-oposicion-celador.md)).
+
+### Identidad
+
+- Código de oposición: `celador-sacyl`.
+- Convocatoria: `celador-sacyl-2022`.
+- Cuerpo/categoría: Celador/a, personal estatutario fijo del Servicio de Salud de Castilla y León.
+- Fuente primaria (citas y programa): [ORDEN SAN/1828/2022, de 12 de diciembre](https://bocyl.jcyl.es/html/2022/12/22/html/BOCYL-D-22122022-7.do),
+  `BOCYL-D-22122022-7`, anexos I y II. Copia en PDF: [BOCYL de 22/12/2022](https://bocyl.jcyl.es/boletines/2022/12/22/pdf/BOCYL-D-22122022-7.pdf).
+- Publicación: 22 de diciembre de 2022.
+- Plazas: 420 de acceso libre, 42 reservadas al turno de personas con discapacidad (grado ≥ 33 %).
+  Las plazas de ese turno que no se cubran se incrementan al resto (base 2.2).
+- Titulación: Certificado de Escolaridad o equivalente.
+- Sistema: concurso-oposición.
+- Estado: `active`. El proceso terminó: aprobados de la oposición en enero de 2024, ORDEN
+  SAN/1445/2024 de aprobados y oferta de vacantes, y nombramientos en 2025. Es la **última
+  convocatoria de Celador con ejercicio celebrado**. La convocatoria queda `active` porque es la
+  vigente de su oposición —la aplicación resuelve el temario con la convocatoria activa y una
+  archivada dejaría la oposición sin nada que estudiar—; que el ejercicio ya se celebrara se ve en
+  `exam_date`.
+
+### Fecha y lugar del ejercicio
+
+La orden de convocatoria **no** fija fecha. La fija la
+[RESOLUCIÓN de 26 de septiembre de 2023, de la Gerencia de Salud de Área de Salamanca](https://bocyl.jcyl.es/html/2023/10/02/html/BOCYL-D-02102023-6.do)
+(`BOCYL-D-02102023-6`, BOCYL de 2 de octubre de 2023): llamamiento único el **12 de noviembre de
+2023 a las 10:00** en la **Universidad de Salamanca**. El portal de Salud publica además un
+cuestionario del **ejercicio aplazado** (ficha del portal: 21/12/2023), con las mismas 77 preguntas:
+quien no se examinó el 12 de noviembre no lo hizo ese día.
+
+La ficha del portal de Salud etiqueta esa resolución como «Resolución de 18 de septiembre de 2023»;
+el documento publicado en el BOCYL está fechado el 26 de septiembre de 2023. El perfil se atiene al
+documento.
+
+### Programa exacto (ANEXO II): 16 temas, sin bloques
+
+1. Estructura de la Consejería de Sanidad. Reglamento de la Gerencia Regional de Salud de Castilla y
+   León. Estructura orgánica de los servicios centrales y periféricos de la Gerencia Regional de
+   Salud de Castilla y León.
+2. Modalidades de la asistencia sanitaria. La Atención Primaria de la Salud, los Equipos de Atención
+   Primaria, el Centro de Salud y la Zona Básica de Salud. La Atención Especializada: centros y
+   servicios dependientes de la misma. Los órganos directivos, la estructura y organización de los
+   hospitales.
+3. Clasificación del personal estatutario. Provisión de plazas, selección y promoción interna.
+   Adquisición y pérdida de la condición de personal estatutario fijo.
+4. La Ley 31/1995, de 8 de noviembre, de Prevención de Riesgos Laborales: Objeto, ámbito de
+   aplicación y definiciones. Derechos y obligaciones. Servicios de prevención. Consulta y
+   participación de los trabajadores.
+5. Organización preventiva de la Gerencia Regional de Salud de Castilla y León. Planes de Prevención
+   de Riesgos Laborales de la Gerencia Regional de Salud de Castilla y León. Procedimiento de
+   valoración del puesto de trabajo por causa de salud. Procedimiento de protección de las
+   trabajadoras durante el embarazo y la lactancia. El Plan Integral frente a las agresiones al
+   personal de la Gerencia Regional de Salud.
+6. Derechos y deberes de los pacientes en relación con la salud. Autonomía de decisión. Intimidad y
+   confidencialidad, protección de datos, secreto profesional. Derecho a la información. Decreto
+   101/2005, de 22 de diciembre por el que se regula la Historia Clínica en Castilla y León.
+7. La atención al usuario. El derecho a la información y a la confidencialidad.
+8. Funciones de vigilancia. Funciones de asistencia al personal sanitario facultativo y no
+   facultativo. Relación del Celador con los familiares de los enfermos. Actuaciones en las
+   habitaciones de los enfermos y las estancias comunes. Aseo del paciente.
+9. El celador en su relación con los enfermos. Traslado y movilidad de los pacientes. Técnicas de
+   movilización de pacientes. Traslado de paciente encamando, en camilla y en silla de ruedas.
+   Posiciones anatómicas básicas. Uso y mantenimiento del material auxiliar (grúas, transfer, sillas,
+   camillas, sujeciones, correas…). Actuación del celador en relación con los pacientes terminales.
+10. Normas de actuación del celador en los quirófanos. Normas de higiene. La Esterilización.
+11. Actuación del celador en relación con los pacientes fallecidos. Actuación en las salas de
+    autopsias y mortuorios. Relación del celador con los familiares de las personas fallecidas.
+12. Los suministros. Suministros internos y externos. Recepción y almacenamiento de mercancías.
+    Organización del almacén. Distribución de pedidos.
+13. El traslado de documentos y objetos. Manejo y traslado de la documentación sanitaria.
+14. Recepción, movilización y traslado de pacientes en urgencias. Criterios de actuación del Celador
+    en urgencias frente a traumatismos, heridas, quemaduras y asfixia. Nociones generales sobre
+    primeros auxilios.
+15. Concepto de infección intrahospitalaria. Prevención. Gestión de residuos sanitarios.
+    Clasificación, transporte, eliminación y tratamiento.
+16. Plan de emergencias ante incendios. Medidas preventivas. Conceptos básicos. Medios técnicos de
+    protección. Equipos de primera intervención: funciones, actuaciones a realizar.
+
+El fixture completo se extrae del anexo II del HTML del BOCYL; esta lista es su resumen legible. El
+programa oficial **no** publica bloques ni epígrafes: el fixture declara `0 / 16 / 0` y no rellena
+niveles que no existen.
+
+### Examen y puntuación
+
+- Un **ejercicio único**, obligatorio y eliminatorio, idéntico para los dos turnos.
+- **70 preguntas** del programa más el **10 % de preguntas de reserva** (7: el cuestionario publicado
+  confirma 77 en total).
+- Cuatro respuestas alternativas por pregunta; solo una correcta; todas valen lo mismo.
+- Cada error descuenta **1/4** del valor de una respuesta correcta; en blanco no puntúa ni penaliza.
+- **90 minutos**, incluidas las preguntas de reserva.
+- Calificación de **0 a 150 puntos** (60 % del proceso).
+- Aprobado: al menos el **60 % de la media de las 10 puntuaciones más altas**. No hay nota de corte
+  fija, así que `pass_score` queda a nulo y el umbral vive como regla con su cita.
+- Máximo de aprobados de la oposición: **250 %** de las plazas convocadas.
+- Fase de concurso: hasta **100 puntos** (40 %); nunca sirve para aprobar el ejercicio.
+- Total del proceso: **250 puntos**.
+
+### Fuentes y caso de derechos
+
+El aviso legal del BOCYL garantiza autenticidad y acceso «universal, público y gratuito», pero **no
+publica condiciones de reutilización**; el [aviso legal del portal de Salud](https://www.saludcastillayleon.es/es/aviso-legal)
+regula el uso de su **aplicación móvil**, no los ficheros de los procesos selectivos. Las fuentes
+nuevas quedan con estado `unknown` —ni permiso ni prohibición supuestos— con la cita de lo que sí
+dicen. La publicación del cuestionario y de la plantilla de respuestas la ordena la **base
+duodécima** de la convocatoria, que es la que se cita.
+
+La **plantilla oficial de respuestas correctas** de este ejercicio es un escaneo **sin capa de
+texto**: la clave existe publicada y no se puede importar sin OCR o lectura manual (DEBT-020).
+
+## 4. Celador/a — convocatoria de estabilización (pendiente de ejercicio)
+
+No es una convocatoria ordinaria y **todavía no tiene examen**, pero es posterior en el tiempo y hay
+que decirla para no dar por hecho que no existe nada más.
+
+- [ORDEN SAN/1917/2022, de 23 de diciembre](https://www.saludcastillayleon.es/profesionales/es/procesos_selectivos/proceso-excepcional-estabilizacion-ley-20-2021-28-diciembre/personal-gestion-servicios/celador-concurso-oposicion)
+  (BOCYL de 28 de diciembre de 2022, `BOCYL-D-28122022-8`): proceso excepcional de estabilización de
+  empleo temporal por concurso extraordinario de méritos **y por concurso-oposición** (Ley 20/2021),
+  personal de Gestión y Servicios del SACYL.
+- Celador, por concurso-oposición: 57 plazas libres y 6 reservadas a personas con discapacidad (63 en
+  total). Las otras 343 plazas de Celador de ese proceso se resolvieron por el turno de concurso
+  extraordinario de méritos: 406 plazas de la categoría en total (ANEXO I).
+- Programa (ANEXO V): **catorce temas** en **parte general** (1–5) y **parte específica** (6–14).
+  No coincide con los dieciséis temas de la convocatoria ordinaria.
+- Ejercicio (base 3.2.A, grupo «otro personal»): cuestionario de **44 preguntas incluidas las de
+  reserva** —es decir 40 más el 10 %, 4 de reserva— en **60 minutos**, con un máximo de 15 preguntas
+  de la parte general, **tres** respuestas alternativas por pregunta, solo una correcta y error
+  penalizado con **1/9** del valor de una respuesta correcta. Las no contestadas no puntúan.
+  Calificación de 0 a 150 puntos (60 % del proceso) y baremo de méritos de hasta 100 (ANEXO III).
+- Estado: listas **provisionales** de admitidos y excluidos publicadas el 21 de octubre de 2025
+  (Resolución de 15 de octubre de 2025), con alegaciones hasta el 4 de noviembre de 2025. **No hay
+  fecha de ejercicio publicada** y el plazo de solicitudes cerró el 27 de enero de 2023.
+
+Se incorporará como segunda convocatoria de la oposición `celador-sacyl` cuando su programa se extraiga
+con sus citas (S12.2). Mientras tanto, el perfil de estudio es el de la convocatoria ordinaria.
+
+## 5. Manifiesto que debe generar S01
 
 Por cada fuente:
 

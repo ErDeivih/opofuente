@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections import defaultdict
 from dataclasses import replace
 from datetime import UTC, datetime
 from uuid import uuid4
@@ -60,6 +61,7 @@ def test_recuentos_sembrados_coinciden_con_los_fixtures(
     esperados = {
         "tai-age-2025": {NodeType.BLOCK: 4, NodeType.TOPIC: 33, NodeType.EPIGRAPH: 0},
         "gc-cabos-guardias-2026": {NodeType.TOPIC: 25},
+        "celador-sacyl-2022": {NodeType.BLOCK: 0, NodeType.TOPIC: 16, NodeType.EPIGRAPH: 0},
     }
     with session_factory() as session:
         for code, esperado in esperados.items():
@@ -137,7 +139,7 @@ def test_una_segunda_convocatoria_en_borrador_si_se_permite(
         total = session.execute(
             select(func.count()).select_from(ConvocationVersionRecord)
         ).scalar_one()
-        assert total == 3
+        assert total == 4
 
 
 def test_solo_una_oposicion_activa(seeded_client) -> None:
@@ -166,7 +168,10 @@ def test_una_oposicion_existente_sin_cambios_se_activa_si_el_fixture_lo_pide(
     siembra tiene que activarla igualmente.
     """
     tai = next(profile for profile in profiles if profile.convocation.code == "tai-age-2025")
-    otro = next(profile for profile in profiles if profile.convocation.code != "tai-age-2025")
+    # Explícito a propósito: con tres perfiles, «el que no es TAI» ya no identifica a uno solo.
+    otro = next(
+        profile for profile in profiles if profile.convocation.code == "gc-cabos-guardias-2026"
+    )
 
     with session_factory() as session:
         service = ProfilesService(SqlAlchemyProfileRepository(session_factory), SystemClock())
@@ -181,7 +186,11 @@ def test_una_oposicion_existente_sin_cambios_se_activa_si_el_fixture_lo_pide(
             row.code: row.active
             for row in session.execute(select(OppositionRecord)).scalars().all()
         }
-        assert oposiciones == {"tai-age": True, "gc-cabos-guardias": False}
+        assert oposiciones == {
+            "tai-age": True,
+            "gc-cabos-guardias": False,
+            "celador-sacyl": False,
+        }
 
 
 def test_borrar_una_convocatoria_arrastra_su_contenido_pero_no_la_oposicion(
@@ -202,14 +211,16 @@ def test_borrar_una_convocatoria_arrastra_su_contenido_pero_no_la_oposicion(
 
         assert _count(session, CurriculumNodeRecord, convocation_id) == 0
         assert _count(session, ExamPartRecord, convocation_id) == 0
-        assert session.execute(select(func.count()).select_from(OppositionRecord)).scalar_one() == 2
+        assert session.execute(select(func.count()).select_from(OppositionRecord)).scalar_one() == 3
 
 
 def test_si_el_fixture_cambia_la_siembra_lo_actualiza(
     seeded_settings: Settings, session_factory, profiles
 ) -> None:
     tai = next(profile for profile in profiles if profile.convocation.code == "tai-age-2025")
-    otro = next(profile for profile in profiles if profile.convocation.code != "tai-age-2025")
+    otro = next(
+        profile for profile in profiles if profile.convocation.code == "gc-cabos-guardias-2026"
+    )
     original = tai.curriculum[0]
     perfil_modificado = replace(
         tai,
@@ -234,13 +245,26 @@ def test_si_el_fixture_cambia_la_siembra_lo_actualiza(
         assert row.title == "Título corregido en el fixture"
 
 
-def test_las_rutas_del_programa_sembrado_son_unicas(
+def test_las_rutas_del_programa_sembrado_son_unicas_en_su_convocatoria(
     seeded_settings: Settings, session_factory
 ) -> None:
+    """La ruta del programa identifica un nodo **dentro de su convocatoria**, no en toda la base.
+
+    Dos convocatorias pueden numerar sus temas igual: Guardia Civil y Celador cuelgan sus temas de
+    la raíz con las rutas «1», «2», …. La restricción real es la de la base
+    (`uq_curriculum_path`: convocatoria + ruta), así que la prueba comprueba eso y no más.
+    """
     with session_factory() as session:
-        paths = [row.path for row in session.execute(select(CurriculumNodeRecord)).scalars().all()]
-    assert len(paths) == len(set(paths))
-    assert len(paths) == 37 + 198
+        rows = session.execute(select(CurriculumNodeRecord)).scalars().all()
+
+    por_convocatoria: dict[str, list[str]] = defaultdict(list)
+    for row in rows:
+        por_convocatoria[row.convocation_version_id].append(row.path)
+
+    assert len(por_convocatoria) == 3
+    for convocation_id, paths in por_convocatoria.items():
+        assert len(paths) == len(set(paths)), f"rutas repetidas en {convocation_id}"
+    assert len(rows) == 37 + 198 + 16
 
 
 def test_un_nodo_con_material_asignado_no_se_retira_al_sembrar(
@@ -290,7 +314,7 @@ def test_un_nodo_con_material_asignado_no_se_retira_al_sembrar(
 
     # El fixture nuevo ya no trae los dos últimos temas.
     perfil_sin_los_ultimos = replace(gc, curriculum=gc.curriculum[:-2])
-    otro = next(profile for profile in profiles if profile is not gc)
+    otro = next(profile for profile in profiles if profile.convocation.code == "tai-age-2025")
 
     with session_factory() as session:
         service = ProfilesService(SqlAlchemyProfileRepository(session_factory), SystemClock())

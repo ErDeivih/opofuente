@@ -179,7 +179,13 @@ def test_sin_clave_activa_la_sesion_no_se_crea(
     respuesta = seeded_client.post(
         "/api/v1/study-sessions",
         json={
-            "opposition_id": seeded_client.get("/api/v1/oppositions").json()[0]["id"],
+            # La oposición activa, por su nombre y no por su posición en la lista: con tres perfiles
+            # sembrados, «la primera» ya no es TAI y la parte «primera_parte» es suya.
+            "opposition_id": next(
+                oposicion["id"]
+                for oposicion in seeded_client.get("/api/v1/oppositions").json()
+                if oposicion["code"] == "tai-age"
+            ),
             "mode": "practice",
             "sources": [{"question_set_id": set_id, "part_code": "primera_parte", "count": 2}],
         },

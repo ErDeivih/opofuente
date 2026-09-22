@@ -31,6 +31,9 @@ Reglas:
 | [DEBT-017](#debt-017--las-colecciones-existen-en-la-api-y-no-en-la-interfaz) | S12 | Las colecciones se pueden crear y llenar por la API; ninguna pantalla las enseña | **cerrada** (20 de septiembre de 2026: pantalla, filtro en el servidor, alta y **baja** de miembros, con dos defectos que la propia superficie destapó y se arreglaron) |
 | [DEBT-018](#debt-018--la-puerta-humana-de-s04-no-se-ejecutó) | antes de usar material real | S04 pedía medir la revisión sobre 20–50 ficheros reales antes de abrir S05, y no se hizo | abierta (la **mitad de la máquina está medida** con 30 ficheros reales —90 propuestas, 38 pendientes de revisar—; falta el tiempo de revisión del propietario, la decisión y su confirmación) |
 | [DEBT-019](#debt-019--el-estado-conservado-sin-extractor-no-llega-a-la-pantalla) | S12 | `unsupported_preserved` se guarda y se sirve, pero no hay prueba de interfaz ni de contrato que lo muestre legible | **cerrada** (el estado se enseña con su nombre y su motivo, y hay prueba de la API de punta a punta y prueba de interfaz) |
+| [DEBT-020](#debt-020--la-clave-oficial-de-celador-está-escaneada-y-no-se-puede-importar) | S09+ | La plantilla oficial de respuestas correctas de Celador es un escaneo sin capa de texto: la clave existe y no entra en la aplicación | abierta |
+| [DEBT-021](#debt-021--la-puerta-e2e-puede-correr-contra-un-servidor-ajeno) | antes de dar por buena una corrida E2E | La suite E2E reutiliza cualquier servidor que escuche en el 8765: corre contra su base de datos y escribe en ella | abierta |
+| [DEBT-022](#debt-022--la-suite-e2e-no-distingue-la-máquina-está-cargada-de-esto-se-ha-roto) | antes de dar por buena la puerta E2E | La misma suite da 44 verdes en una máquina descargada y 10 rojos en una cargada, sin decir cuál de las dos cosas ha pasado | abierta |
 
 ---
 
@@ -1021,3 +1024,117 @@ pedía una de interfaz y una de contrato). Lo que hay es la de integración —q
 servido por la ruta real— y la de interfaz; el esquema no gana un `Literal` con los estados de entrada
 porque ya valida el campo como texto y añadirlo sería un cambio de contrato para una deuda ya cubierta
 por dos capas. Queda dicho en lugar de contarlo como hecho.
+
+---
+
+## DEBT-020 — La clave oficial de Celador está escaneada y no se puede importar
+
+**Origen:** alta del tercer perfil (`celador-sacyl-2022`, 22 de septiembre de 2026).
+
+**Problema.** El tribunal publicó la **plantilla de respuestas correctas** del ejercicio de Celador
+del llamamiento del 12 de noviembre de 2023, y es la clave de las 77 preguntas de ese cuestionario.
+Pero el PDF que publica el portal de Salud es un **escaneo sin capa de texto**: PyMuPDF no extrae ni
+una palabra de sus dos páginas. La aplicación importa preguntas y claves **leyendo texto**; sin texto
+no hay enunciados, ni opciones, ni clave, y no se puede rellenar a mano un cuestionario de 77
+preguntas sin transcribirlo entero.
+
+Esto no es un defecto de la herramienta: es una característica de la fuente, y el proyecto no inventa
+datos que no puede leer. Se registra para no dar por hecho que «está publicada, luego se puede
+importar».
+
+**Obligación antes de usar este perfil para practicar con preguntas oficiales:** o bien incorporar un
+lector de PDF escaneado (OCR local, sin salida a la red) con su prueba sobre este documento concreto,
+o bien declarar en la interfaz que la clave de este ejercicio no se puede importar y ofrecer la
+transcripción manual con su cita. Lo que no vale es dejar creer que la clave entra sola.
+
+**Criterio de cierre.**
+
+1. La plantilla de Celador se importa de punta a punta (OCR local verificado pregunta a pregunta
+   contra el escaneo, o transcripción manual con su incidencia), y las 77 preguntas quedan con su
+   clave y su cita a la página del escaneo.
+2. Hay una prueba con **el documento real** (no con un PDF de laboratorio) que comprueba que las
+   respuestas importadas coinciden con la plantilla publicada.
+3. Si se elige no hacerlo, la interfaz dice, con esas palabras, que la clave oficial de este ejercicio
+   no se puede importar y por qué, y ninguna pantalla promete lo contrario.
+
+**Estado: abierta.** El perfil sirve para estudiar el programa (16 temas) y las reglas del examen,
+que es para lo que se dio de alta; la clave oficial de este ejercicio queda pendiente de esa decisión.
+
+---
+
+## DEBT-021 — La puerta E2E puede correr contra un servidor ajeno
+
+**Origen:** alta del tercer perfil (`celador-sacyl-2022`, 22 de septiembre de 2026).
+
+**Problema.** `apps/web/playwright.config.ts` levanta su propia API sobre `.e2e-data`… salvo que ya
+haya algo escuchando en `127.0.0.1:8765`, porque usa `reuseExistingServer: !process.env.CI`. En esta
+máquina había quedado vivo un servidor de la medición de DEBT-018, con
+`OPOFUENTE_DATA_DIR=F:\temp-opofuente\datos-apuntes-tai` (una copia del material real del
+propietario). Las primeras corridas de la suite E2E de este trabajo **reutilizaron ese servidor**: no
+se migró ni se sembró `.e2e-data`, las pruebas hablaron con la base de esa medición y **escribieron en
+ella** (lotes, documentos, conjuntos de preguntas, propuestas de clasificación). Además, los fallos
+que produjeron parecían una regresión del cambio que se estaba midiendo, y no lo eran.
+
+Nada de esto se ve: la suite no dice contra qué base está corriendo, y el puerto ocupado no produce
+ningún aviso.
+
+**Obligación antes de dar por buena cualquier corrida de E2E:** que la suite compruebe que el servidor
+que reutiliza es el suyo, o que no reutilice ninguno.
+
+**Criterio de cierre.**
+
+1. Antes de reutilizar un servidor, la suite lee `GET /api/v1/settings` y compara `data_dir` con el
+   directorio de datos del E2E; si no coincide, falla con un mensaje que dice qué servidor ocupa el
+   puerto y con qué datos.
+2. Prueba de que, con un servidor ajeno escuchando en el puerto, la suite no reutiliza ni escribe
+   nada.
+3. `docs/OPERACION.md` explica cómo liberar los puertos 8765 y 4173 antes de correr las puertas.
+4. La medición de DEBT-018 se rehace sobre una copia limpia: la actual recibió datos de E2E y sus
+   recuentos ya no son solo del material real.
+
+**Estado: abierta.** Mientras siga abierta, una corrida E2E solo vale si se comprueba a mano que
+ningún proceso ajeno ocupa el 8765 y que la base que se usa es `.e2e-data`.
+
+---
+
+## DEBT-022 — La suite E2E no distingue «la máquina está cargada» de «esto se ha roto»
+
+**Origen:** verificación de S12.1 (22 de septiembre de 2026).
+
+**Problema.** La misma suite, sobre el mismo árbol y con `.e2e-data` borrado, dio dos resultados
+opuestos según la carga de la máquina:
+
+| Corrida | Máquina | Resultado |
+|---|---|---|
+| con el perfil nuevo | cargada (trabajos pesados del propietario en marcha) | 34 pasan, **10 fallan**; la suite tarda 11 min |
+| sin el perfil nuevo, para comparar | igual de cargada | **las mismas cuatro pruebas** fallan por los mismos motivos |
+| con el perfil nuevo, puerta 18 de `gates.ps1` | descargada | **44 pasan**, en 1,7 min |
+
+Las cuatro que fallan siempre con carga son:
+
+| Prueba | Qué dice el fallo |
+|---|---|
+| `questions.spec.ts:118` | «aceptar la versión: 409» |
+| `questions.spec.ts:195` | no aparece el texto «con clave activa» |
+| `review.spec.ts:186` | no aparece «propuestas nuevas» tras «Buscar propuestas ahora» |
+| `review.spec.ts:400` | tiempo agotado |
+
+Y varias más (bandeja, biblioteca, ajustes, cambios) se agotan por tiempo esperando a que el trabajo
+de fondo copie, extraiga y clasifique.
+
+Lo que se sabe con seguridad: **no lo introduce S12.1** (se midió quitando sus fixtures y repitiendo
+la corrida). Lo que no se sabe todavía es si, además de la carga, hay un defecto real detrás de las
+cuatro de arriba: en una máquina descargada pasan.
+
+**Obligación:** que el resultado de la puerta 18 signifique algo por sí solo.
+
+**Criterio de cierre.**
+
+1. Las cuatro pruebas quedan explicadas: o se arregla el producto, o la prueba estaba mal y se
+   corrige con el motivo escrito.
+2. La puerta no depende del reloj de la máquina: o el trabajo de fondo se completa de forma
+   determinista dentro de la prueba, o la espera se declara con su motivo y su medida, y el fallo
+   distingue «ha tardado más» de «no funciona».
+
+**Estado: abierta.** Con la máquina descargada la puerta está verde; el peligro es el contrario: una
+corrida en rojo que no dice si el problema es el código o el ordenador.

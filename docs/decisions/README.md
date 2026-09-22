@@ -18,6 +18,8 @@ Formato: `ADR-NNN-titulo.md` con contexto, opciones, datos, decisión, consecuen
 | [ADR-011](ADR-011-forma-de-corregir-una-parte.md) | La forma de corregir una parte la fija su convocatoria | aceptada (S08) |
 | [ADR-012](ADR-012-busqueda-lexica-sin-embeddings.md) | La búsqueda del corpus es léxica (FTS5) hasta que exista un proveedor de embeddings | aceptada (S09), pendiente de ratificación |
 | [ADR-013](ADR-013-rutas-anadidas-al-contrato.md) | Rutas añadidas al contrato de la API: registro único de lo que se construyó fuera de §6–§11 | propuesta (revisión de S00–S11), pendiente de ratificación |
+| [ADR-014](ADR-014-parte-detectada-y-datos-sin-lector.md) | Dónde vive lo que el importador lee y no puede guardar | aceptada (S12), cierra DEBT-010 |
+| [ADR-015](ADR-015-tercera-oposicion-celador.md) | Tercera oposición: Celador/a del SACYL | aceptada (22/09/2026) por decisión del propietario |
 
 La deuda técnica obligatoria (con su slice y su criterio de cierre) se registra aparte en
 [`docs/DEBT.md`](../DEBT.md).

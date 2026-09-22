@@ -112,6 +112,57 @@ describe('pantalla Programa', () => {
     expect(screen.getAllByText('Las respuestas en blanco no penalizan.')).toHaveLength(2);
   });
 
+  it('muestra un ejercicio único que no cuelga de ninguna agrupación', async () => {
+    // Celador publica un solo ejercicio, sin agrupar: si la pantalla solo pintara pruebas dentro de
+    // un grupo, la parte no aparecería por ninguna parte y el examen quedaría sin cifras.
+    stubApi({
+      [`/api/v1/oppositions/${GC_ID}/activate`]: { body: { ...oppositionsFixture[1], active: true } },
+      '/api/v1/oppositions': { body: oppositionsFixture },
+      [`/api/v1/convocations/${TAI_CONVOCATION_ID}/curriculum`]: { body: curriculumFixture },
+      [`/api/v1/convocations/${TAI_CONVOCATION_ID}`]: {
+        body: {
+          ...convocationFixture,
+          parts: [
+            {
+              code: 'ejercicio_unico',
+              name: 'Ejercicio único de la fase de oposición',
+              kind: 'test',
+              format: 'single_choice',
+              position: 1,
+              parent_code: null,
+              ordinary_items: 70,
+              reserve_items: 7,
+              options_per_question: 4,
+              score_min: 0,
+              score_max: 150,
+              pass_score: null,
+              wrong_penalty_fraction: 0.25,
+              fail_if_errors_gte: null,
+              time_minutes: 90,
+              structure_note: 'Un único ejercicio obligatorio y eliminatorio.',
+              notes: null,
+              evidence_quote: 'El ejercicio consistirá, para todos los turnos',
+            },
+          ],
+        },
+      },
+    });
+    renderWithProviders(
+      <AppShell>
+        <ProgramPage />
+      </AppShell>,
+      { route: '/programa' },
+    );
+
+    expect(
+      await screen.findByRole('heading', { name: /Ejercicio único de la fase de oposición/ }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('90 min')).toBeInTheDocument();
+    expect(screen.getByText('70 (+7 de reserva)')).toBeInTheDocument();
+    // Sin mínimo fijo no se inventa uno: el umbral relativo lo cuenta su regla.
+    expect(screen.getByText('0–150, mínimo no consta')).toBeInTheDocument();
+  });
+
   it('cambia de oposición activa a través de la API', async () => {
     const fetchMock = stubProgramApi();
     renderWithProviders(

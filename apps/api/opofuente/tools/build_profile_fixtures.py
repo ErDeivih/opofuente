@@ -48,6 +48,15 @@ _IGNORED_PREFIXES = (
     "DE LA GUARDIA CIVIL",
 )
 _WHITESPACE = re.compile(r"\s+")
+_PARAGRAPH = re.compile(r"<p\b([^>]*)>(.*?)</p>", re.DOTALL | re.IGNORECASE)
+_CLASS = re.compile(r'class="([^"]*)"')
+#: Clases con las que los boletines marcan el encabezado de un anexo: el XML del BOE usa
+#: `anexo_num`/`anexo` y el HTML del BOCYL, `aparienciaTitulo`.
+_ANNEX_CLASSES = frozenset({"anexo_num", "anexo", "aparienciaTitulo"})
+#: Raya del separador de los títulos de tema del BOCYL («Tema 1.<raya> …»). Se escribe escapada
+#: porque la raya y el guion son caracteres distintos y el patrón admite los dos.
+_EN_DASH = "\u2013"
+_TOPIC = re.compile(rf"^Tema\s+(\d+)\.\s*[{_EN_DASH}-]\s*(.+)$")
 
 
 def normalize(value: str) -> str:
@@ -135,6 +144,23 @@ def xml_paragraphs(path: Path) -> list[tuple[str, str]]:
     return result
 
 
+def html_paragraphs(path: Path) -> list[tuple[str, str]]:
+    """Pares (clase CSS, texto) de todos los párrafos de un documento HTML.
+
+    El BOCYL publica cada párrafo del acto en su propio `<p>` y marca los encabezados de anexo con
+    la clase `aparienciaTitulo`. Se analiza con expresiones regulares porque el HTML del boletín no
+    es XML bien formado; el fichero ya está verificado por `sha256` contra el manifiesto.
+    """
+    raw = path.read_text(encoding="utf-8", errors="replace")
+    result: list[tuple[str, str]] = []
+    for match in _PARAGRAPH.finditer(raw):
+        css = _CLASS.search(match.group(1))
+        text = normalize(match.group(2))
+        if text:
+            result.append((css.group(1) if css else "", text))
+    return result
+
+
 def pdf_text(path: Path) -> str:
     # PyMuPDF no publica tipos: la llamada no se puede comprobar, pero el fichero ya está
     # verificado por sha256 contra el manifiesto antes de llegar aquí.
@@ -146,7 +172,7 @@ def annex_range(paragraphs: Sequence[tuple[str, str]], heading: str) -> tuple[in
     """Rango [inicio, fin) de un anexo identificado por su encabezado."""
     start = None
     for index, (css, text) in enumerate(paragraphs):
-        if css in {"anexo_num", "anexo"} and text.upper() == heading.upper():
+        if css in _ANNEX_CLASSES and text.upper() == heading.upper():
             start = index
             break
     if start is None:
@@ -154,7 +180,31 @@ def annex_range(paragraphs: Sequence[tuple[str, str]], heading: str) -> tuple[in
     end = len(paragraphs)
     for index in range(start + 1, len(paragraphs)):
         css, _text = paragraphs[index]
-        if css in {"anexo_num", "anexo"}:
+        if css in _ANNEX_CLASSES:
+            end = index
+            break
+    return start, end
+
+
+def bocyl_annex_range(paragraphs: Sequence[tuple[str, str]], heading: str) -> tuple[int, int]:
+    """Rango [inicio, fin) de un anexo del BOCYL en HTML.
+
+    Aquí no sirve cortar por clase CSS: en el BOCYL el encabezado del anexo y el título que lo
+    sigue comparten la misma clase (`aparienciaTitulo`), así que el corte por clase dejaría el
+    anexo vacío a la altura de su propio título. El anexo acaba donde empieza el siguiente.
+    """
+    start = None
+    for index, (_css, text) in enumerate(paragraphs):
+        if text.upper() == heading.upper():
+            start = index
+            break
+    if start is None:
+        raise InvariantViolationError(f"no se encontró el anexo {heading!r} en el documento")
+
+    end = len(paragraphs)
+    for index in range(start + 1, len(paragraphs)):
+        _css, text = paragraphs[index]
+        if text.upper().startswith("ANEXO "):
             end = index
             break
     return start, end
@@ -368,12 +418,47 @@ def gc_curriculum(path: Path) -> list[dict[str, Any]]:
     return topics
 
 
+def celador_curriculum(path: Path) -> list[dict[str, Any]]:
+    """Programa de Celador/a del SACYL desde el ANEXO II de la orden publicada en el BOCYL.
+
+    El programa oficial son dieciséis temas y nada más: el BOCYL publica cada tema en un párrafo
+    que empieza por «Tema» y su número, y no hay bloques ni epígrafes. Por eso los temas cuelgan de
+    la raíz y el texto de cada tema se conserva íntegro como título del nodo.
+    """
+    paragraphs = html_paragraphs(path)
+    start, end = bocyl_annex_range(paragraphs, "ANEXO II")
+
+    topics: list[dict[str, Any]] = []
+    for _css, text in paragraphs[start + 1 : end]:
+        match = _TOPIC.match(text)
+        if not match:
+            continue
+        position = int(match.group(1))
+        topics.append(
+            {
+                "node_type": "topic",
+                "official_code": str(position),
+                "title": match.group(2).strip(),
+                "position": position,
+                "path": str(position),
+                "depth": 0,
+                "children": [],
+            }
+        )
+    return topics
+
+
 CURRICULUM_BUILDERS = {
     "tai-age-2025": ("tai-boe-convocatoria-xml", "ANEXO V (apartado 3. Programa)", tai_curriculum),
     "gc-cabos-guardias-2026": (
         "gc-temario-oficial-pdf",
         "temario oficial completo",
         gc_curriculum,
+    ),
+    "celador-sacyl-2022": (
+        "celador-2022-bocyl-orden-html",
+        "ANEXO II (PROGRAMA)",
+        celador_curriculum,
     ),
 }
 
@@ -394,6 +479,16 @@ TRANSFORMATIONS: dict[str, list[str]] = {
         "el programa de OpoFuente solo distingue bloque, tema y epígrafe.",
         "Se unen las líneas partidas por el salto de página del PDF; no se cambia ni se resume "
         "ninguna palabra del texto oficial.",
+    ],
+    "celador-sacyl-2022": [
+        "Solo se usa el ANEXO II (PROGRAMA) de la orden; los demás anexos son las plazas, el "
+        "baremo de méritos y los modelos de solicitud.",
+        "Los temas son los dieciséis párrafos que empiezan por «Tema» y su número, en el orden en "
+        "que se publican.",
+        "El programa oficial no publica bloques ni epígrafes: los dieciséis temas cuelgan de la "
+        "raíz y el recuento de bloques y epígrafes del fixture es cero, no se rellena.",
+        "El texto de cada tema se conserva íntegro como título del nodo: no se resume ni "
+        "se recorta.",
     ],
 }
 
