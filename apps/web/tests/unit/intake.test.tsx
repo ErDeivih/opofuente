@@ -8,9 +8,51 @@ import { TrayPage } from '../../src/pages/TrayPage';
 import { renderWithProviders, stubApi, type StubbedRoute } from './testUtils';
 
 /**
- * Las tres entradas directas de S03 (04_INGESTION §2), probadas desde la pantalla real: lo que se
+ * Las entradas directas de S03 (04_INGESTION §2), probadas desde la pantalla real: lo que se
  * comprueba es la petición que sale del navegador, no la forma interna del componente.
+ *
+ * Desde S12.4 también la entrada por **carpeta**: se suelta una carpeta entera y entran sus
+ * ficheros. El recorrido y el nombre de cada fichero se prueban aparte, en `carpetas.test.ts`.
  */
+
+/** Un árbol de entradas como el que da el navegador al soltar una carpeta (con subcarpeta). */
+function entradaDeCarpeta(): unknown {
+  // El lector entrega las entradas **una vez** y después una lista vacía, que es como termina el
+  // contrato de `readEntries` en el navegador.
+  const lector = (entradas: unknown[]) => {
+    let servidas = 0;
+    return {
+      readEntries: (exito: (lote: unknown[]) => void) => {
+        exito(servidas === 0 ? entradas : []);
+        servidas += 1;
+      },
+    };
+  };
+  const fichero = (nombre: string, ruta: string) => ({
+    isFile: true,
+    isDirectory: false,
+    name: nombre,
+    fullPath: ruta,
+    file: (exito: (file: File) => void) => exito(new File(['x'], nombre, { type: 'text/plain' })),
+  });
+  const subcarpeta = {
+    isFile: false,
+    isDirectory: true,
+    name: 'Tema 3',
+    fullPath: '/Apuntes TAI/Tema 3',
+    createReader: () => lector([fichero('resumen.txt', '/Apuntes TAI/Tema 3/resumen.txt')]),
+  };
+  return {
+    kind: 'file',
+    webkitGetAsEntry: () => ({
+      isFile: false,
+      isDirectory: true,
+      name: 'Apuntes TAI',
+      fullPath: '/Apuntes TAI',
+      createReader: () => lector([fichero('tema-01.txt', '/Apuntes TAI/tema-01.txt'), subcarpeta]),
+    }),
+  };
+}
 
 const loteCreado: Batch = {
   id: 'batch-nuevo',
@@ -133,7 +175,7 @@ describe('entradas directas de la Bandeja', () => {
     renderTray();
 
     const fichero = new File(['Tema 1'], 'tema-01.txt', { type: 'text/plain' });
-    await userEvent.upload(await screen.findByLabelText(/Suelta aquí o elige ficheros/), fichero);
+    await userEvent.upload(await screen.findByLabelText(/Suelta aquí ficheros o carpetas/), fichero);
 
     await waitFor(() => {
       expect(cuerpoEnviado(fetchMock, '/ingestion-batches/files')).toBeDefined();
@@ -153,7 +195,7 @@ describe('entradas directas de la Bandeja', () => {
     const fetchMock = stubIntakeApi();
     renderTray();
 
-    const zona = (await screen.findByLabelText(/Suelta aquí o elige ficheros/)).closest(
+    const zona = (await screen.findByLabelText(/Suelta aquí ficheros o carpetas/)).closest(
       '.intake__drop',
     );
     expect(zona).not.toBeNull();
@@ -167,6 +209,56 @@ describe('entradas directas de la Bandeja', () => {
     const enviado = cuerpoEnviado(fetchMock, '/ingestion-batches/files')?.[1]?.body;
     const partes = (enviado as FormData).getAll('files');
     expect((partes[0] as File).name).toBe('soltado.txt');
+  });
+
+  it('al soltar una carpeta sube sus ficheros con su ruta, no cero ficheros', async () => {
+    // Lo que hace el navegador de verdad: `files` viene vacío al soltar una carpeta, y solo
+    // `items[].webkitGetAsEntry()` permite bajar por los directorios. Antes, soltar una carpeta no
+    // hacía absolutamente nada. El nombre con el que viaja cada fichero (su ruta relativa) se
+    // comprueba en `carpetas.test.ts`, porque jsdom no conserva el nombre del `FormData`.
+    const fetchMock = stubIntakeApi();
+    renderTray();
+
+    const zona = (await screen.findByLabelText(/Suelta aquí ficheros o carpetas/)).closest(
+      '.intake__drop',
+    );
+    fireEvent.drop(zona as Element, { dataTransfer: { files: [], items: [entradaDeCarpeta()] } });
+
+    await waitFor(() => {
+      expect(cuerpoEnviado(fetchMock, '/ingestion-batches/files')).toBeDefined();
+    });
+    const enviado = cuerpoEnviado(fetchMock, '/ingestion-batches/files')?.[1]?.body;
+    const partes = (enviado as FormData).getAll('files');
+    expect(partes).toHaveLength(2);
+  });
+
+  it('si la carpeta está vacía lo dice, en lugar de crear un lote sin entradas', async () => {
+    const fetchMock = stubIntakeApi();
+    renderTray();
+
+    const zona = (await screen.findByLabelText(/Suelta aquí ficheros o carpetas/)).closest(
+      '.intake__drop',
+    );
+    fireEvent.drop(zona as Element, {
+      dataTransfer: {
+        files: [],
+        items: [
+          {
+            kind: 'file',
+            webkitGetAsEntry: () => ({
+              isFile: false,
+              isDirectory: true,
+              name: 'Vacía',
+              fullPath: '/Vacía',
+              createReader: () => ({ readEntries: (exito: (e: unknown[]) => void) => exito([]) }),
+            }),
+          },
+        ],
+      },
+    });
+
+    expect(await screen.findByText(/No había ningún fichero que subir/)).toBeInTheDocument();
+    expect(cuerpoEnviado(fetchMock, '/ingestion-batches/files')).toBeUndefined();
   });
 
   it('trae una URL pública por el servidor, que es quien comprueba la red', async () => {

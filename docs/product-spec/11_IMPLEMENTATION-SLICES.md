@@ -341,7 +341,25 @@ verificadas y documentadas en `15_OFFICIAL-PROFILES-AND-SOURCE-MANIFEST` §4, si
   (DEBT-023), y la baraja se clasifica como tarjetas.
 - Todo dato leído tiene su tramo con etiqueta y sus desplazamientos dentro del texto guardado.
 
-## S12.4 — Que la aplicación lo haga todo (pendiente)
+## S12.4 — Soltar carpetas enteras
+
+### Entrega
+
+- La bandeja acepta **carpetas**: soltarlas sobre la zona de arrastre (recorridas en el navegador con
+  `webkitGetAsEntry`) o elegirlas con el selector de carpetas.
+- Cada fichero viaja con su **ruta relativa** y esa ruta se conserva hasta el final: en la entrada del
+  lote, en el nombre original (que es lo que ve el clasificador) y en lo que se enseña.
+- La basura del sistema operativo no entra, y una carpeta de más de 2.000 ficheros se declara en
+  lugar de subirse a medias.
+
+### Aceptación
+
+- Soltar una carpeta con una subcarpeta sube **todos** sus ficheros, no cero, y con su estructura.
+- La descarga de un original aplana el nombre: en una cabecera `Content-Disposition` una barra no
+  significa nada.
+- Las entradas de un ZIP siguen mostrándose como `contenedor/miembro`, como antes.
+
+## S12.5 — Que la aplicación lo haga todo (pendiente)
 
 Lo que el propietario pidió después de S12.2: que él solo deje sus documentos y la aplicación
 clasifique cada uno por su papel (temario, ayuda, parte de un temario, preguntas, supuestos,

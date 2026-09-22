@@ -329,7 +329,7 @@ test('E2E-03 bandeja: un ZIP subido se expande en entradas propias y se extrae',
   );
 
   await page.goto('/bandeja');
-  await page.getByLabel(/Suelta aquí o elige ficheros/).setInputFiles(zip);
+  await page.getByLabel(/Suelta aquí ficheros o carpetas/).setInputFiles(zip);
 
   const importacion = page.getByRole('region', { name: 'Importación' });
   await expect(importacion.getByText('succeeded', { exact: true }).first()).toBeVisible({
@@ -343,6 +343,41 @@ test('E2E-03 bandeja: un ZIP subido se expande en entradas propias y se extrae',
   await expect(entradas.getByText('paquete.zip/temas/tema-02.txt')).toBeVisible();
   await expect(entradas.getByText('contenedor expandido', { exact: true })).toBeVisible();
   await expect(entradas.getByText('expanded', { exact: true })).toHaveCount(0);
+});
+
+test('E2E-12 bandeja: elegir una carpeta entera sube sus ficheros con su estructura', async ({
+  page,
+}) => {
+  // Lo que pidió el propietario: no treinta ficheros sueltos, una carpeta. Aquí se elige la carpeta
+  // con el selector; el arrastre de una carpeta usa el mismo recorrido, y ese se prueba en la capa
+  // que decide qué entra y con qué nombre (`carpetas.test.ts`), porque el navegador no deja
+  // arrastrar una carpeta desde una prueba.
+  const carpeta = path.join(base, 'Apuntes TAI');
+  fs.mkdirSync(path.join(carpeta, 'Tema 3'), { recursive: true });
+  fs.writeFileSync(
+    path.join(carpeta, 'tema-01.txt'),
+    'La Ley 39/2015 regula el procedimiento administrativo común.\n',
+  );
+  fs.writeFileSync(
+    path.join(carpeta, 'Tema 3', 'resumen.txt'),
+    'El acto administrativo y su eficacia frente a terceros.\n',
+  );
+  // Basura del sistema: no puede llegar a la bandeja como si fuera material.
+  fs.writeFileSync(path.join(carpeta, '.DS_Store'), 'no soy material\n');
+
+  await page.goto('/bandeja');
+  await page.getByLabel('O elige una carpeta').setInputFiles(carpeta);
+
+  const importacion = page.getByRole('region', { name: 'Importación' });
+  await expect(importacion.getByText('succeeded', { exact: true }).first()).toBeVisible({
+    timeout: 60_000,
+  });
+
+  // Dos entradas, con su ruta: la estructura de la carpeta se conserva y la basura no entra.
+  const entradas = page.getByRole('table', { name: /entradas/ });
+  await expect(entradas.getByText(/tema-01\.txt/)).toBeVisible();
+  await expect(entradas.getByText(/Tema 3\/resumen\.txt/)).toBeVisible();
+  await expect(entradas.getByText('.DS_Store')).toHaveCount(0);
 });
 
 test('E2E-02 bandeja: una carpeta inexistente se explica en lugar de fallar en silencio', async ({

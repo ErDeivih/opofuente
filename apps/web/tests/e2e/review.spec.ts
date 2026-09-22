@@ -192,7 +192,7 @@ test('E2E-03 revisión en lote: aceptar un grupo, excluir una fila, corregir un 
 
   // --- 1. Material sintético por la bandeja -------------------------------------------------
   await page.goto('/bandeja');
-  await page.getByLabel(/Suelta aquí o elige ficheros/).setInputFiles(ficheros);
+  await page.getByLabel(/Suelta aquí ficheros o carpetas/).setInputFiles(ficheros);
 
   const importacion = page.getByRole('region', { name: 'Importación' });
   await expect(importacion.getByText('succeeded', { exact: true }).first()).toBeVisible({

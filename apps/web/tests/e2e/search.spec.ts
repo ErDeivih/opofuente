@@ -98,7 +98,7 @@ async function loteCon(request: APIRequestContext, nombre: string): Promise<Fila
 /** Ingresa un fichero por la bandeja (el camino real: se copia, se extrae y se clasifica). */
 async function ingerir(page: Page, archivo: string): Promise<void> {
   await page.goto('/bandeja');
-  await page.getByLabel(/Suelta aquí o elige ficheros/).setInputFiles([archivo]);
+  await page.getByLabel(/Suelta aquí ficheros o carpetas/).setInputFiles([archivo]);
   await expect(
     page.getByRole('region', { name: 'Importación' }).getByText('succeeded', { exact: true }).first(),
   ).toBeVisible({ timeout: 60_000 });

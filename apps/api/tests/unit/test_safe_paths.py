@@ -18,6 +18,7 @@ from opofuente.infrastructure.safe_paths import (
     relative_display,
     resolve_within,
     safe_display_name,
+    safe_display_path,
 )
 from opofuente.workers.job_worker import _safe_message
 
@@ -112,4 +113,20 @@ def test_safe_display_name_quita_separadores_y_reservados() -> None:
     assert "\\" not in traversal
     assert traversal.endswith("etc_passwd")
     assert safe_display_name("CON") == "_CON"
+
+
+def test_safe_display_path_conserva_las_carpetas_y_sanea_cada_segmento() -> None:
+    """Soltar una carpeta entera se ve como la carpeta, no como nombres sueltos (S12.4)."""
+    assert safe_display_path("Apuntes TAI/Tema 3/resumen.pdf") == "Apuntes TAI/Tema 3/resumen.pdf"
+    assert safe_display_path("Tema 3\\resumen.pdf") == "Tema 3/resumen.pdf"
+    assert safe_display_path("suelto.txt") == "suelto.txt"
+
+    # Lo peligroso se cae segmento a segmento, no se cuela por llevar barras.
+    assert safe_display_path("../../fuera.txt") == "fuera.txt"
+    assert safe_display_path("CON/x.txt") == "_CON/x.txt"
+    assert ".." not in safe_display_path("a/../../b.txt")
+
+    # Un nombre vacío o de solo basura no inventa una ruta.
+    assert safe_display_path("   ") == "sin-nombre"
+    assert safe_display_path("///") == "sin-nombre"
     assert safe_display_name("   ") == "sin-nombre"

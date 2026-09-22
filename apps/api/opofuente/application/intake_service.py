@@ -43,7 +43,7 @@ from opofuente.domain.ingestion import (
 )
 from opofuente.domain.jobs import JobType
 from opofuente.infrastructure.artifact_store import ArtifactStore
-from opofuente.infrastructure.safe_paths import resolve_within, safe_display_name
+from opofuente.infrastructure.safe_paths import resolve_within, safe_display_name, safe_display_path
 from opofuente.infrastructure.url_guard import (
     FetchResult,
     UrlLimits,
@@ -175,7 +175,10 @@ class IntakeService:
         )
         try:
             for item in files:
-                nombre = safe_display_name(item.name)
+                # La carpeta de la que sale un fichero se conserva al mostrarlo: soltar «Apuntes
+                # TAI» entero tiene que verse como «Apuntes TAI/Tema 3/resumen.pdf», no como una
+                # lista de nombres sueltos que ya no dicen de dónde son (S12.4).
+                nombre = safe_display_path(item.name)
                 self._store_one(
                     batch_id,
                     display_location=nombre,
@@ -327,6 +330,10 @@ class IntakeService:
         """Copia un fichero al almacén y le crea su entrada en el lote."""
         stat = source.stat()
         stored = self._store.store_file(source)
+        # La carpeta de la que sale un fichero se conserva al guardarlo: «Apuntes TAI/Tema 3/
+        # resumen.pdf» dice de dónde viene el material y es una señal para el clasificador (S12.4).
+        # Se sanea segmento a segmento: ni separadores raros ni nombres reservados.
+        guardado = safe_display_path(original_name)
         artifact_id, _created = self._repository.register_artifact(
             digest=stored.sha256,
             size_bytes=stored.size_bytes,
@@ -334,18 +341,18 @@ class IntakeService:
             storage_key=stored.storage_key,
             origin_type=origin_type,
             display_location=display_location,
-            original_name=safe_display_name(original_name),
+            original_name=guardado,
             source_path_display=source_path_display,
             file_mtime=None,
             now=self._clock.now(),
         )
-        relativo = self._unique_path(batch_id, safe_display_name(original_name))
+        relativo = self._unique_path(batch_id, guardado)
         self._repository.add_entries(
             batch_id,
             (
                 DiscoveredEntry(
                     relative_path=relativo,
-                    original_name=safe_display_name(original_name),
+                    original_name=guardado,
                     size_bytes=stat.st_size,
                     mtime=None,
                     media_type=media_type_for(original_name),

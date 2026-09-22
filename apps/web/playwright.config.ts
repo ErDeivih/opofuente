@@ -36,7 +36,12 @@ export default defineConfig({
       cwd: repoRoot,
       url: 'http://127.0.0.1:8765/api/v1/health/live',
       env: { ...inheritedEnv, OPOFUENTE_DATA_DIR: e2eDataDir, OPOFUENTE_LOG_LEVEL: 'WARNING' },
-      reuseExistingServer: !process.env.CI,
+      // **No se reutiliza** un servidor que ya esté escuchando (DEBT-021). Reutilizarlo corría la
+      // suite contra la base de datos de otro proceso —incluso contra una copia del material real—
+      // y le dejaba escritas sus pruebas dentro. Peor: el puerto ocupado no avisaba de nada, así que
+      // los fallos parecían defectos del código. Si el puerto está ocupado, la suite tiene que
+      // fallar y decirlo.
+      reuseExistingServer: false,
       timeout: 120_000,
     },
     {
@@ -44,7 +49,9 @@ export default defineConfig({
       command: 'npm run preview --workspace @opofuente/web -- --port 4173 --strictPort',
       cwd: repoRoot,
       url: 'http://127.0.0.1:4173',
-      reuseExistingServer: !process.env.CI,
+      // Tampoco se reutiliza: un servidor de vista previa viejo sirve un paquete viejo, y entonces
+      // la suite prueba una interfaz que ya no existe (pasó al renombrar una etiqueta).
+      reuseExistingServer: false,
       timeout: 120_000,
     },
   ],

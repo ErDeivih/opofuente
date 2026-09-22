@@ -64,6 +64,25 @@ def safe_display_name(name: str, *, fallback: str = "sin-nombre") -> str:
     return cleaned[:200]
 
 
+def safe_display_path(name: str, *, fallback: str = "sin-nombre", max_length: int = 400) -> str:
+    """Ruta relativa para mostrar, segmento a segmento, conservando la estructura de carpetas.
+
+    Al soltar una carpeta entera, el navegador manda cada fichero con su ruta relativa
+    («Apuntes TAI/Tema 3/resumen.pdf»). Aplanar esa ruta a un nombre suelto pierde la única pista de
+    dónde estaba el material: es lo que el usuario ve en su disco y lo que ayuda a clasificarlo. Se
+    sanea **cada segmento** con `safe_display_name` y se vuelven a unir con «/».
+
+    Sigue siendo un **metadato**: el destino de la copia sale del hash, no de esto.
+    """
+    limpio = unicodedata.normalize("NFC", name)
+    limpio = _CONTROL_CHARS.sub("", limpio)
+    segmentos = [segmento for segmento in re.split(r"[/\\]+", limpio) if segmento.strip(". ")]
+    if not segmentos:
+        return fallback
+    saneados = [safe_display_name(segmento, fallback=fallback) for segmento in segmentos]
+    return "/".join(saneados)[:max_length]
+
+
 def relative_display(root: Path, path: Path) -> str:
     """Ruta relativa a la raíz para mostrar. Nunca incluye la raíz absoluta del usuario."""
     try:

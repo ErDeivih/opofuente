@@ -63,6 +63,7 @@ from opofuente.application.library_models import (
     VersionView,
 )
 from opofuente.domain.errors import ClassificationConflictError, NotFoundError
+from opofuente.infrastructure.safe_paths import safe_display_name
 
 router = APIRouter(tags=["biblioteca"])
 
@@ -597,7 +598,10 @@ def get_version_original(
     return FileResponse(
         path=ruta,
         media_type=archivo.media_type,
-        filename=archivo.original_name or version_id,
+        # El nombre con el que se descarga es un nombre **de fichero**, no una ruta: desde S12.4 el
+        # original puede traer la carpeta de la que salió («Tema 3/resumen.pdf») y una barra en la
+        # cabecera `Content-Disposition` no significa nada. Se aplana solo aquí.
+        filename=safe_display_name(archivo.original_name) if archivo.original_name else version_id,
         content_disposition_type=(
             "inline" if archivo.media_type in SAFE_INLINE_TYPES else "attachment"
         ),

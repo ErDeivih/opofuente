@@ -3,6 +3,11 @@ import { useState } from 'react';
 import type { Batch } from '../../api/ingestion';
 import { useIngestFiles, useIngestPaste, useIngestUrl } from '../../api/queries';
 import { ErrorState } from '../../components/ErrorState';
+import {
+  ficherosDeSelector,
+  ficherosSoltados,
+  type FicheroParaSubir,
+} from './carpetas';
 
 export interface IntakeActionsProps {
   /** Cuando una entrada crea un lote, la bandeja lo selecciona para seguir su progreso. */
@@ -14,28 +19,57 @@ function describeError(error: unknown): string {
 }
 
 /**
- * Las tres formas de entrada de 04_INGESTION §2 que el usuario tiene delante: carpeta (en la
- * pantalla principal), ficheros sueltos, texto pegado y URL.
+ * Las tres formas de entrada de 04_INGESTION §2 que el usuario tiene delante: ficheros o **carpetas
+ * enteras**, texto pegado y URL.
  *
  * Las tres **copian**: ninguna toca el material de origen. La URL pasa por la guarda de red del
  * servidor, así que una dirección interna se rechaza aquí con su motivo en lugar de descargarse.
+ *
+ * Sobre las carpetas: el navegador no entrega la ruta de una carpeta que se suelta, así que se
+ * recorre **en el navegador** y se suben sus ficheros con su ruta relativa. Suelta una carpeta con
+ * treinta ficheros y entran los treinta, no cero.
  */
 export function IntakeActions({ onBatchCreated }: IntakeActionsProps) {
   const [pasteText, setPasteText] = useState('');
   const [pasteTitle, setPasteTitle] = useState('');
   const [url, setUrl] = useState('');
+  const [revisando, setRevisando] = useState(false);
+  const [aviso, setAviso] = useState<string | null>(null);
 
   const files = useIngestFiles();
   const paste = useIngestPaste();
   const remote = useIngestUrl();
 
+  function enviar(seleccion: FicheroParaSubir[]): void {
+    setAviso(null);
+    if (seleccion.length === 0) {
+      setAviso('No había ningún fichero que subir: revisa que la carpeta no esté vacía.');
+      return;
+    }
+    files.mutate(seleccion, { onSuccess: onBatchCreated });
+  }
+
+  async function soltar(event: React.DragEvent<HTMLDivElement>): Promise<void> {
+    event.preventDefault();
+    setRevisando(true);
+    try {
+      const seleccion = await ficherosSoltados(event.dataTransfer);
+      enviar(seleccion);
+    } catch (error) {
+      setAviso(describeError(error));
+    } finally {
+      setRevisando(false);
+    }
+  }
+
   return (
     <>
       <div className="intake">
-        <h3>Ficheros sueltos</h3>
+        <h3>Ficheros o carpetas enteras</h3>
         <p className="hint">
-          Se copian al almacén por contenido. Un ZIP se copia y se expande al extraer, con límites de
-          tamaño y sin seguir rutas que salgan del paquete.
+          Suelta una carpeta y entran todos sus ficheros, conservando su ruta («Tema 3/apuntes.pdf»).
+          Un ZIP se copia y se expande al extraer, con límites de tamaño y sin seguir rutas que salgan
+          del paquete. Una baraja de Anki (`.apkg`) se lee como baraja.
         </p>
         <div
           className="intake__drop"
@@ -43,15 +77,11 @@ export function IntakeActions({ onBatchCreated }: IntakeActionsProps) {
             event.preventDefault();
           }}
           onDrop={(event) => {
-            event.preventDefault();
-            const dropped = Array.from(event.dataTransfer.files);
-            if (dropped.length > 0) {
-              files.mutate(dropped, { onSuccess: onBatchCreated });
-            }
+            void soltar(event);
           }}
         >
           <label className="form__label" htmlFor="ficheros">
-            Suelta aquí o elige ficheros
+            Suelta aquí ficheros o carpetas
           </label>
           <input
             id="ficheros"
@@ -59,14 +89,33 @@ export function IntakeActions({ onBatchCreated }: IntakeActionsProps) {
             type="file"
             multiple
             onChange={(event) => {
-              const chosen = Array.from(event.target.files ?? []);
-              if (chosen.length > 0) {
-                files.mutate(chosen, { onSuccess: onBatchCreated });
-              }
+              enviar(ficherosDeSelector(event.target.files ?? []));
+              event.target.value = '';
+            }}
+          />
+          <label className="form__label" htmlFor="carpeta">
+            O elige una carpeta
+          </label>
+          <input
+            id="carpeta"
+            className="form__input"
+            type="file"
+            multiple
+            // Atributo no estándar pero soportado por los navegadores: convierte el selector en un
+            // selector de carpetas y rellena `webkitRelativePath`, que es la ruta que se conserva.
+            {...{ webkitdirectory: '' }}
+            onChange={(event) => {
+              enviar(ficherosDeSelector(event.target.files ?? []));
+              event.target.value = '';
             }}
           />
         </div>
-        {files.isPending && <p className="hint">Copiando los ficheros…</p>}
+        {(files.isPending || revisando) && (
+          <p className="hint">
+            {revisando ? 'Leyendo lo que has soltado…' : 'Copiando los ficheros…'}
+          </p>
+        )}
+        {aviso !== null && <p className="hint">{aviso}</p>}
         {files.isError && (
           <ErrorState
             title="No se pudieron copiar los ficheros"

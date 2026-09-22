@@ -1,5 +1,6 @@
 import type { components } from '@opofuente/contracts';
 
+import type { FicheroParaSubir } from '../features/ingestion/carpetas';
 import { apiFetch } from './client';
 
 export type Entry = components['schemas']['EntrySchema'];
@@ -62,11 +63,17 @@ export function fetchRepresentationText(
 
 /* --- Entradas directas de S03 ------------------------------------------------------------- */
 
-/** Sube ficheros. No se fija `Content-Type`: lo pone el navegador con su separador. */
-export function ingestFiles(files: File[]): Promise<Batch> {
+/**
+ * Sube ficheros. No se fija `Content-Type`: lo pone el navegador con su separador.
+ *
+ * El nombre que viaja **no** es siempre el del fichero: al soltar una carpeta entera se manda su
+ * ruta relativa («Tema 3/apuntes.pdf»), porque si no, treinta ficheros de tres carpetas llegan
+ * como treinta entradas sin ninguna relación entre ellas.
+ */
+export function ingestFiles(files: FicheroParaSubir[]): Promise<Batch> {
   const form = new FormData();
-  for (const file of files) {
-    form.append('files', file, file.name);
+  for (const { file, name } of files) {
+    form.append('files', file, name);
   }
   return apiFetch<Batch>('/api/v1/ingestion-batches/files', { method: 'POST', body: form });
 }

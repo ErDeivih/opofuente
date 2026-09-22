@@ -33,8 +33,9 @@ Reglas:
 | [DEBT-019](#debt-019--el-estado-conservado-sin-extractor-no-llega-a-la-pantalla) | S12 | `unsupported_preserved` se guarda y se sirve, pero no hay prueba de interfaz ni de contrato que lo muestre legible | **cerrada** (el estado se enseña con su nombre y su motivo, y hay prueba de la API de punta a punta y prueba de interfaz) |
 | [DEBT-020](#debt-020--la-clave-oficial-de-celador-está-escaneada-y-no-se-puede-importar) | S09+ | La plantilla oficial de respuestas correctas de Celador es un escaneo sin capa de texto: la clave existe y no entra en la aplicación | abierta |
 | [DEBT-021](#debt-021--la-puerta-e2e-puede-correr-contra-un-servidor-ajeno) | antes de dar por buena una corrida E2E | La suite E2E reutiliza cualquier servidor que escuche en el 8765: corre contra su base de datos y escribe en ella | abierta |
-| [DEBT-022](#debt-022--la-suite-e2e-no-distingue-la-máquina-está-cargada-de-esto-se-ha-roto) | antes de dar por buena la puerta E2E | La misma suite da 44 verdes en una máquina descargada y 10 rojos en una cargada, sin decir cuál de las dos cosas ha pasado | abierta |
+| [DEBT-022](#debt-022--la-suite-e2e-no-distingue-la-máquina-está-cargada-de-esto-se-ha-roto) | antes de dar por buena la puerta E2E | La suite tarda 1,8 min en vacío y 11 cargada, y sus esperas fijas pueden caducar sin decir si el problema es el código o el ordenador (los cuatro rojos que primero se le atribuyeron eran del servidor reutilizado, DEBT-021) | abierta |
 | [DEBT-023](#debt-023--una-tarjeta-de-anki-no-puede-ser-una-pregunta-porque-no-hay-dónde-guardar-su-respuesta) | S12.4+ | El modelo tiene el tipo `free_text_reference` y no tiene dónde guardar la respuesta de referencia: el reverso de una tarjeta no entra | abierta |
+| [DEBT-024](#debt-024--la-clasificación-se-pide-de-forma-síncrona-y-con-el-corpus-entero-tarda-demasiado) | S12.5 | «Buscar propuestas ahora» clasifica todo el corpus en la misma petición: con material real tarda decenas de segundos y bloquea la pantalla | abierta |
 
 ---
 
@@ -1093,8 +1094,17 @@ que reutiliza es el suyo, o que no reutilice ninguno.
 4. La medición de DEBT-018 se rehace sobre una copia limpia: la actual recibió datos de E2E y sus
    recuentos ya no son solo del material real.
 
-**Estado: abierta.** Mientras siga abierta, una corrida E2E solo vale si se comprueba a mano que
-ningún proceso ajeno ocupa el 8765 y que la base que se usa es `.e2e-data`.
+**Estado: abierta, con la parte peligrosa cerrada (22 de septiembre de 2026, S12.4).** Lo entregado:
+la suite **ya no reutiliza** ningún servidor (`reuseExistingServer: false` en los dos: la API y la
+vista previa), así que un puerto ocupado hace fallar la corrida en vez de correrla contra la base de
+otro; y `docs/OPERACION.md` §5 explica cómo liberar los puertos. Falta el criterio 2 (una prueba que
+lo demuestre con un servidor ajeno puesto a propósito), y el 4, que es del propietario.
+
+Lo que se aprendió al hacerlo, y que conviene no olvidar: el servidor y la vista previa que arranca
+Playwright **sobreviven** a una corrida interrumpida. Con la reutilización activa, un servidor viejo
+apuntando a un `.e2e-data` que ya se había borrado hacía fallar cuatro pruebas por motivos que
+parecían del producto (un 409 al aceptar una versión, un texto que no aparecía) y dedicar una tarde a
+buscarlos donde no estaban.
 
 ---
 
@@ -1103,42 +1113,42 @@ ningún proceso ajeno ocupa el 8765 y que la base que se usa es `.e2e-data`.
 **Origen:** verificación de S12.1 (22 de septiembre de 2026).
 
 **Problema.** La misma suite, sobre el mismo árbol y con `.e2e-data` borrado, dio dos resultados
-opuestos según la carga de la máquina:
+opuestos según el estado de la máquina y del puerto:
 
-| Corrida | Máquina | Resultado |
+| Corrida | Entorno | Resultado |
 |---|---|---|
-| con el perfil nuevo | cargada (trabajos pesados del propietario en marcha) | 34 pasan, **10 fallan**; la suite tarda 11 min |
-| sin el perfil nuevo, para comparar | igual de cargada | **las mismas cuatro pruebas** fallan por los mismos motivos |
-| con el perfil nuevo, puerta 18 de `gates.ps1` | descargada | **44 pasan**, en 1,7 min |
+| con el perfil nuevo | un servidor E2E viejo ocupando el 8765 (y la base ya borrada) | 34 pasan, **10 fallan**; la suite tarda 11 min |
+| sin el perfil nuevo, para comparar | igual | **las mismas cuatro pruebas** fallan por los mismos motivos |
+| con el perfil nuevo, puerta 18 de `gates.ps1` | puertos libres, máquina descargada | **45 pasan**, en 1,8 min |
 
-Las cuatro que fallan siempre con carga son:
+**Corrección al diagnóstico inicial (22 de septiembre de 2026, S12.4).** Lo que primero se atribuyó a
+la carga de la máquina era, sobre todo, **el servidor reutilizado** de DEBT-021: cuatro pruebas
+fallaban igual con cualquier árbol porque hablaban con un `uvicorn` viejo cuya base de datos ya no
+existía. Con eso cerrado, la carga de la máquina ya no produjo ningún rojo, aunque sí alarga la suite
+de 2 a 11 minutos.
 
-| Prueba | Qué dice el fallo |
+Lo que queda de esta deuda es entonces más estrecho y más honesto:
+
+| Prueba | Qué decía el fallo |
 |---|---|
-| `questions.spec.ts:118` | «aceptar la versión: 409» |
-| `questions.spec.ts:195` | no aparece el texto «con clave activa» |
-| `review.spec.ts:186` | no aparece «propuestas nuevas» tras «Buscar propuestas ahora» |
-| `review.spec.ts:400` | tiempo agotado |
+| `questions.spec.ts:118` | «aceptar la versión: 409» — era el servidor ajeno (DEBT-021) |
+| `questions.spec.ts:195` | no aparecía el texto «con clave activa» — lo mismo |
+| `review.spec.ts:186` | no aparecía «propuestas nuevas» — lo mismo, más la clasificación síncrona (DEBT-024) |
+| `review.spec.ts:400` | tiempo agotado — carga de la máquina |
 
-Y varias más (bandeja, biblioteca, ajustes, cambios) se agotan por tiempo esperando a que el trabajo
-de fondo copie, extraiga y clasifique.
-
-Lo que se sabe con seguridad: **no lo introduce S12.1** (se midió quitando sus fixtures y repitiendo
-la corrida). Lo que no se sabe todavía es si, además de la carga, hay un defecto real detrás de las
-cuatro de arriba: en una máquina descargada pasan.
-
-**Obligación:** que el resultado de la puerta 18 signifique algo por sí solo.
+**Obligación:** que el resultado de la puerta 18 signifique algo por sí solo, sin tener que mirar
+cuánto tardó la suite ni qué procesos había abiertos.
 
 **Criterio de cierre.**
 
-1. Las cuatro pruebas quedan explicadas: o se arregla el producto, o la prueba estaba mal y se
-   corrige con el motivo escrito.
-2. La puerta no depende del reloj de la máquina: o el trabajo de fondo se completa de forma
-   determinista dentro de la prueba, o la espera se declara con su motivo y su medida, y el fallo
-   distingue «ha tardado más» de «no funciona».
+1. La puerta distingue «ha tardado más» de «no funciona»: o el trabajo de fondo se completa de forma
+   determinista dentro de la prueba, o la espera se declara con su motivo y su medida, y el informe
+   dice cuál de las dos cosas ha pasado.
+2. Una corrida con la máquina cargada no produce rojos por tiempo.
 
-**Estado: abierta.** Con la máquina descargada la puerta está verde; el peligro es el contrario: una
-corrida en rojo que no dice si el problema es el código o el ordenador.
+**Estado: abierta.** Con los puertos libres y la máquina descargada la puerta está verde (45/45 en
+1,8 min); el peligro que queda es una corrida en rojo que no diga si el problema es el código, el
+ordenador o un proceso olvidado.
 
 ---
 
@@ -1172,3 +1182,37 @@ cuando toque:
 
 **Estado: abierta.** Hoy la baraja entra entera como material y se puede buscar y citar; lo que no se
 puede es responderla como pregunta.
+
+---
+
+## DEBT-024 — La clasificación se pide de forma síncrona y con el corpus entero tarda demasiado
+
+**Origen:** verificación de S12.4 (22 de septiembre de 2026), al medir la puerta E2E.
+
+**Problema.** `POST /api/v1/classification-runs` clasifica **todo** el corpus y no vuelve hasta
+terminar. Con el material real del propietario (30 ficheros) la medición de DEBT-018 dio **46,7
+segundos**; con un corpus más grande la petición sigue creciendo. La consecuencia se vio de dos
+formas:
+
+- la pantalla de Revisión bloquea el botón «Buscar propuestas ahora» hasta que termina, y con el
+  corpus entero eso puede ser un minuto de espera sin progreso visible;
+- las pruebas E2E que lo pulsan esperan un texto con un plazo fijo y, en una máquina cargada, se
+  agotan antes de que la clasificación acabe (es parte de lo que hace ruidosa la puerta 18, DEBT-022).
+
+Es el mismo problema que resolvió el recálculo de claves en S09/S11: una operación larga no puede
+vivir dentro de una petición.
+
+**Obligación antes de trabajar con corpus grandes:** que clasificar sea un **trabajo** con su
+progreso, como extraer y recalcular, y que la pantalla diga en qué va.
+
+**Criterio de cierre.**
+
+1. La clasificación se encola y devuelve un identificador de trabajo; la pantalla muestra el avance y
+   el resultado cuando termina.
+2. Clasificar dos veces seguidas no duplica propuestas (ya se cumple: la prueba de idempotencia
+   existente tiene que seguir verde con el camino nuevo).
+3. Con el corpus del propietario, la petición responde en menos de un segundo y el trabajo informa de
+   su progreso real.
+
+**Estado: abierta.** Vive en el mismo terreno que S12.5 (que la aplicación lo haga todo sola), donde
+la clasificación pasa a ser un paso automático y no un botón.

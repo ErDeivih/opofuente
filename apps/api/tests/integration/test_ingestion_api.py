@@ -704,3 +704,32 @@ def test_listado_de_lotes_y_entradas_paginado(api_only_client: TestClient, mater
     assert informe["kind"] == "inventory"
     assert informe["counters"]["inventoried"] == 2
     assert informe["balanced"] is True
+
+
+def test_subir_una_carpeta_entera_conserva_su_estructura(api_only_client: TestClient) -> None:
+    """Soltar una carpeta entera entra como la carpeta, no como nombres sueltos (S12.4).
+
+    El navegador no entrega la ruta de una carpeta soltada: recorre la carpeta y manda cada fichero
+    con su ruta relativa como nombre. Esa ruta es lo único que dice de dónde salió cada cosa,
+    así que tiene que llegar hasta la bandeja y hasta el clasificador, que la usa como señal.
+    """
+    lote = api_only_client.post(
+        "/api/v1/ingestion-batches/files",
+        files=[
+            ("files", ("Apuntes TAI/tema-01.txt", b"La Ley 39/2015 regula el procedimiento.\n")),
+            (
+                "files",
+                ("Apuntes TAI/Tema 3/resumen.txt", b"El acto administrativo y su eficacia.\n"),
+            ),
+        ],
+        headers=ALLOWED_ORIGIN,
+    ).json()
+
+    detalle = api_only_client.get(f"/api/v1/ingestion-batches/{lote['id']}").json()
+    rutas = sorted(entrada["relative_path"] for entrada in detalle["entries"])
+
+    assert rutas == ["Apuntes TAI/Tema 3/resumen.txt", "Apuntes TAI/tema-01.txt"]
+    # Y el nombre original de la entrada —lo que ve el clasificador y la ficha— conserva la
+    # carpeta: si se aplanara, «Tema 3» dejaría de ser una señal de nada.
+    originales = sorted(entrada["original_name"] for entrada in detalle["entries"])
+    assert originales == ["Apuntes TAI/Tema 3/resumen.txt", "Apuntes TAI/tema-01.txt"]

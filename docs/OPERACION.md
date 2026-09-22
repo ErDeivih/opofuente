@@ -104,6 +104,7 @@ rutas absolutas ni las claves: el formateador solo copia una lista blanca de cam
 | El disco se llena | Ajustes → Uso del almacén y Qué se puede retirar |
 | Una copia no se puede restaurar | Verifícala: el motivo se dice. Si es de una revisión más nueva, actualiza el programa |
 | Corrupción de la base | Para el proceso (no dejar que siga escribiendo), copia `opofuente.sqlite3` y el manifiesto a mano, y restaura desde la última copia verificada |
+| Las puertas E2E fallan al arrancar porque el puerto está ocupado | Es lo que tiene que pasar (DEBT-021): la suite **no** reutiliza un servidor ajeno. Libera el 8765 y el 4173 —`Get-NetTCPConnection -State Listen -LocalPort 8765,4173` y `Stop-Process` del proceso que los ocupa— y vuelve a lanzarlas. Ojo: cerrar la ventana de la aplicación **no** siempre para el proceso `uvicorn` |
 
 ## 6. Qué **no** hace la aplicación (y lo dice)
 
@@ -112,7 +113,11 @@ rutas absolutas ni las claves: el formateador solo copia una lista blanca de cam
   compone del propio corpus, citando cada afirmación.
 - **Calificación oficial 0–50 y apto/suspenso**: sin baremo oficial importado no se inventan; se da la
   puntuación directa por partes.
-- **Simulacro y examen diagnóstico**: no existen; pedirlos responde 409 con el motivo.
+- **Convocatorias tipo test**: el simulacro (el perfil exacto de la convocatoria, evitando lo visto
+  hace poco) y el diagnóstico por temas existen desde S12; un diagnóstico se corrige **al terminar**,
+  y pedir otra forma de corregirlo responde 409 con el motivo.
+- **Tarjetas de Anki como preguntas**: una baraja entra entera como material citable, pero su reverso
+  no se puede guardar como respuesta de una pregunta (DEBT-023).
 - **Borrado de material**: el producto archiva y excluye; no borra. La retirada de la sección de higiene
   solo toca lo que ya no sostiene nada.
 - **Múltiples usuarios y acceso remoto**: fuera de alcance a propósito.

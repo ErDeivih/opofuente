@@ -20,6 +20,15 @@ No seguir enlaces simbólicos/junctions fuera de la raíz seleccionada. Registra
 denegados como incidencias. Ignorar por defecto archivos ocultos del sistema, temporales Office,
 ejecutables y directorios configurables (`node_modules`, `.git`, caches), mostrándolos en el resumen.
 
+**Soltar o elegir una carpeta (S12.4).** Además de inventariar una ruta escrita, una carpeta se puede
+**soltar** sobre la bandeja o elegir con el selector de carpetas. El navegador no entrega la ruta de
+lo que se suelta —y no debe: la aplicación no lee el disco por su cuenta—, así que la carpeta se
+recorre **en el navegador** y cada fichero se sube **con su ruta relativa**. Esa ruta se conserva
+segmento a segmento (`Apuntes TAI/Tema 3/resumen.pdf`), porque es lo único que dice de dónde salió
+cada cosa y es una señal para el clasificador. La basura del sistema (`__MACOSX`, `.DS_Store`,
+`Thumbs.db`, `desktop.ini` y los `._algo` de macOS) no entra, y hay un tope de 2.000 ficheros por
+tanda: por encima de eso no es «soltar una carpeta», es un volcado, y se dice en lugar de intentarlo.
+
 ### Texto pegado
 
 El usuario elige pista opcional: documento, preguntas o auto. Se crea un artefacto UTF-8 con origen

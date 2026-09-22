@@ -55,3 +55,6 @@ Desktop.ini
 *.sqlite3
 *.sqlite3-wal
 *.sqlite3-shm
+
+# Volcados de memoria de Node cuando una prueba se queda sin memoria: nunca son fuente.
+Heap.*.heapsnapshot
