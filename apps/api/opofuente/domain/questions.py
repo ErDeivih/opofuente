@@ -245,6 +245,30 @@ _MARK_ERRORS = re.compile(
 )
 _OPTION_KEYS = ("a", "b", "c", "d", "e", "f", "g", "h")
 
+#: Adornos de Markdown que envuelven una línea entera y no forman parte de lo que dice.
+_MD_HEADING = re.compile(r"^\s{0,3}#{1,6}\s+")
+_MD_QUOTE = re.compile(r"^\s{0,3}>\s?")
+_MD_BULLET = re.compile(r"^\s{0,3}[-*+]\s+")
+#: Marcas de énfasis fuerte (`**`, `__`). Se quitan estén donde estén: marcan énfasis, no dicen
+#: nada. Las de énfasis simple (`*`, `_`) **no** se tocan, porque un guion bajo separa palabras.
+_MD_STRONG = re.compile(r"\*\*|__")
+
+
+def strip_markdown_decoration(line: str) -> str:
+    """Quita de una línea el adorno de Markdown que no es contenido.
+
+    Un cuestionario escrito en Markdown no dice lo mismo con `**Respuesta correcta: b**` que sin los
+    asteriscos: los asteriscos son cómo se escribe, no qué se dice. Se quitan encabezados (`##`),
+    citas (`>`), viñetas de lista (`- `) y las marcas de énfasis fuerte (`**`, `__`).
+
+    Lo que **no** hace: tocar las palabras ni el énfasis simple. `*diez* días` sigue diciendo lo
+    mismo, y el enunciado se guarda con su texto.
+    """
+    texto = _MD_HEADING.sub("", line)
+    texto = _MD_QUOTE.sub("", texto)
+    texto = _MD_BULLET.sub("", texto)
+    return _MD_STRONG.sub("", texto).strip()
+
 
 def numbering_match(line: str) -> re.Match[str] | None:
     """Numeración de una pregunta, en cualquiera de sus dos formas, o nada.
@@ -614,8 +638,17 @@ def parse_questions(text: str) -> ParsedSet:
         opciones = []
         claves = ()
 
-    for numero_linea, linea in enumerate(text.splitlines(), 1):
+    for numero_linea, linea_texto in enumerate(text.splitlines(), 1):
+        # Un cuestionario escrito en Markdown trae adornos que no son parte del enunciado
+        # (`**Respuesta correcta: b**`, `- a) opción`, `## Tema 5`). Se quitan **antes** de mirar la
+        # línea, y el fragmento original sigue siendo el que se cita.
+        es_encabezado = _MD_HEADING.match(linea_texto) is not None
+        linea = strip_markdown_decoration(linea_texto)
         if not linea.strip():
+            continue
+        if es_encabezado:
+            # Un encabezado de Markdown es **estructura**, no texto suelto: encabeza lo que viene
+            # debajo. Se entiende y no se informa como problema, igual que «Modelo A» o «Parte 2».
             continue
 
         encontrado_modelo = _MODEL.search(linea)
@@ -1131,6 +1164,7 @@ __all__ = [
     "parse_questions_json",
     "question_fingerprint",
     "same_options_in_other_order",
+    "strip_markdown_decoration",
     "strip_numbering",
     "strip_option_label",
 ]

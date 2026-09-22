@@ -40,6 +40,7 @@ from opofuente.infrastructure.job_repository import SqlAlchemyJobRepository
 from opofuente.infrastructure.representation_store import RepresentationStore
 from opofuente_testing.jobs import FakeExecution, FixedClock
 from opofuente_testing.synthetic_documents import (
+    build_anki_deck,
     build_bomb_docx,
     build_csv,
     build_html,
@@ -310,6 +311,52 @@ def test_un_zip_se_expande_en_entradas_del_lote_y_se_extrae(services, tmp_path: 
     assert len(representaciones) == 2
     trozo = extraction.read_text(representaciones[0].id, offset=0, limit=500)
     assert trozo.text.strip()
+
+
+def test_una_baraja_de_anki_entra_como_material_y_no_se_expande_como_un_zip(
+    services, tmp_path: Path
+) -> None:
+    """Un `.apkg` se lee como baraja: sus tarjetas son texto citable, no un ZIP con un SQLite.
+
+    Si el contenedor se tratara como un ZIP cualquiera, entrarían como entradas sueltas la colección
+    (un SQLite ilegible) y las imágenes del mazo, y las tarjetas se perderían.
+    """
+    ingestion, extraction, _jobs, _clock = services
+    root = tmp_path / "barajas"
+    root.mkdir()
+    build_anki_deck(
+        root / "Tema 5 - plazos.apkg",
+        cards=[
+            ("¿Cuál es el plazo de alegaciones?", "Diez días hábiles."),
+            ("¿Quién resuelve?", "El órgano competente."),
+        ],
+        deck="Tema 5",
+        tags="plazos",
+    )
+
+    batch_id = _import(ingestion, root)
+    job = _job_for(ingestion, batch_id, JobType.EXTRACT_ARTIFACT)
+    extraction.run_extraction_job(FakeExecution(job))
+
+    detalle = ingestion.get_batch(batch_id)
+    estados = {entry.relative_path: entry.status for entry in detalle.entries}
+    assert list(estados) == ["Tema 5 - plazos.apkg"], "la baraja no se expande en miembros"
+    assert estados["Tema 5 - plazos.apkg"] == ItemStatus.EXTRACTED.value
+
+    representaciones = extraction.representations_for_batch(batch_id)
+    assert len(representaciones) == 1
+    representacion = representaciones[0]
+    assert representacion.extractor_name == "anki_apkg"
+    assert representacion.quality in {"good", "usable_with_warnings"}
+    # Sin media en la baraja no hay aviso de media: el aviso se da cuando hay algo que no se extrae.
+    assert "media_not_extracted" not in representacion.warnings
+
+    trozo = extraction.read_text(representacion.id, offset=0, limit=2000)
+    assert "TARJETA 1. Tema 5 · Básico" in trozo.text
+    assert "TARJETA 2. Tema 5 · Básico" in trozo.text, "las dos tarjetas entran, no solo la primera"
+    assert "¿Cuál es el plazo de alegaciones?" in trozo.text
+    assert "Diez días hábiles." in trozo.text
+    assert "Etiquetas: plazos" in trozo.text
 
 
 def test_un_zip_dentro_de_otro_no_se_expande_ni_con_nombre_enganoso(

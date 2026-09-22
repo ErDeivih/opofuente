@@ -11,11 +11,14 @@ from __future__ import annotations
 
 import io
 import json
+import sqlite3
+import tempfile
 import zipfile
 from pathlib import Path
 
 import docx
 import pymupdf
+import zstandard
 
 #: Texto de relleno propio. Se repite para que la calidad salga «buena» sin textos largos escritos a
 #: mano; el contenido no significa nada.
@@ -228,6 +231,130 @@ def build_zip(path: Path, members: dict[str, bytes]) -> Path:
     with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as archive:
         for name, content in members.items():
             archive.writestr(name, content)
+    return path
+
+
+#: Separador de campos dentro de `notes.flds` de una colección de Anki (unidad de separación).
+ANKI_FIELD_SEPARATOR = "\x1f"
+
+#: Tipo de nota de las barajas de prueba: (nombre, nombres de campo).
+ANKI_BASIC_NOTE_TYPE = ("Básico", ("Anverso", "Reverso"))
+
+
+def anki_collection_bytes(
+    path: Path,
+    *,
+    notes: list[tuple[int, int, str, str]],
+    decks: dict[int, str],
+    note_types: dict[int, tuple[str, tuple[str, ...]]] | None = None,
+) -> bytes:
+    """Colección moderna de Anki en SQLite (`notetypes`, `decks`, `notes`, `cards`).
+
+    `notes` son `(id, mid, flds, tags)`, con los campos unidos por `ANKI_FIELD_SEPARATOR`, que es
+    como los guarda Anki.
+    """
+    tipos = dict(note_types or {1: ANKI_BASIC_NOTE_TYPE})
+    conexion = sqlite3.connect(path)
+    try:
+        conexion.executescript(
+            """
+            create table notetypes (
+                id integer primary key, name text, mtime_secs integer, usn integer, config text
+            );
+            create table decks (
+                id integer primary key, name text, mtime_secs integer, usn integer,
+                common text, kind text
+            );
+            create table notes (
+                id integer primary key, guid text, mid integer, mod integer, usn integer,
+                tags text, flds text, sfld text, csum integer, flags integer, data text
+            );
+            create table cards (
+                id integer primary key, nid integer, did integer, ord integer, mod integer,
+                usn integer, type integer, queue integer, due integer, ivl integer, factor integer,
+                reps integer, lapses integer, left integer, odue integer, odid integer,
+                flags integer, data text
+            );
+            """
+        )
+        for tipo_id, (nombre, campos) in tipos.items():
+            conexion.execute(
+                "insert into notetypes values (?, ?, 0, 0, ?)",
+                (
+                    tipo_id,
+                    nombre,
+                    json.dumps(
+                        {
+                            "flds": [
+                                {"name": campo, "ord": indice}
+                                for indice, campo in enumerate(campos)
+                            ]
+                        }
+                    ),
+                ),
+            )
+        for deck_id, nombre in decks.items():
+            conexion.execute(
+                "insert into decks values (?, ?, 0, 0, '', 0)",
+                (deck_id, json.dumps({"name": nombre})),
+            )
+        for note_id, mid, flds, tags in notes:
+            conexion.execute(
+                "insert into notes values (?, ?, ?, 0, 0, ?, ?, '', 0, 0, '')",
+                (note_id, f"guid{note_id}", mid, tags, flds),
+            )
+            conexion.execute(
+                "insert into cards values "
+                "(?, ?, 1, 0, 0, 0, 2, 2, 1, 0, 2500, 1, 0, 0, 0, 0, 0, '')",
+                (note_id * 10, note_id),
+            )
+        conexion.commit()
+    finally:
+        conexion.close()
+    return path.read_bytes()
+
+
+def build_anki_deck(
+    path: Path,
+    *,
+    cards: list[tuple[str, str]] | None = None,
+    deck: str = "Mazo sintético",
+    tags: str = "",
+    collection: bytes | None = None,
+    member: str = "collection.anki21",
+    compressed: bool = True,
+    media: int = 0,
+) -> Path:
+    """Baraja de Anki (`.apkg`) como la exporta Anki: ZIP con la colección dentro y la media.
+
+    Desde Anki 2.1.50 la colección va comprimida con zstd; con `compressed=False` se guarda como
+    SQLite a pelo, que es como la exportan las versiones anteriores (`collection.anki2`). Se le
+    pueden dar las tarjetas (`cards`) o una colección ya construida (`collection`).
+    """
+    if collection is None:
+        # La colección se construye en un directorio temporal y **no** junto a la baraja: si se
+        # dejara al lado, al importar una carpeta entraría también como fichero suelto.
+        with tempfile.TemporaryDirectory(prefix="opofuente-anki-") as carpeta:
+            collection = anki_collection_bytes(
+                Path(carpeta) / "collection.sqlite",
+                notes=[
+                    (
+                        indice,
+                        1,
+                        f"{anverso}{ANKI_FIELD_SEPARATOR}{reverso}",
+                        tags,
+                    )
+                    for indice, (anverso, reverso) in enumerate(cards or [], start=1)
+                ],
+                decks={1: deck},
+            )
+    datos = zstandard.ZstdCompressor().compress(collection) if compressed else collection
+    with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr(member, datos)
+        for numero in range(media):
+            archive.writestr(str(numero), b"\x89PNG\r\n\x1a\n" + b"0" * 32)
+        if media:
+            archive.writestr("media", json.dumps({"0": "imagen.png"}))
     return path
 
 

@@ -39,6 +39,7 @@ from opofuente.domain.questions import (
     parse_questions_json,
     question_fingerprint,
     same_options_in_other_order,
+    strip_markdown_decoration,
     strip_numbering,
     strip_option_label,
 )
@@ -262,6 +263,57 @@ def test_el_parser_lee_enunciados_opciones_claves_y_reservas() -> None:
     assert resultado.incomplete == 0
     assert resultado.reserves == 1
     assert [incidencia.code for incidencia in resultado.issues] == [], resultado.issues
+
+
+CUESTIONARIO_MARKDOWN = """## Tema 5. Los plazos
+
+**1.** El plazo del procedimiento es de:
+- a) diez días
+- b) veinte días
+- c) treinta días
+**Respuesta correcta: a**
+
+2. La Ley 39/2015 se aplica a:
+a) todo el sector público
+b) nadie
+Respuesta correcta: b
+"""
+
+
+def test_un_cuestionario_en_markdown_se_lee_igual_que_uno_en_texto() -> None:
+    """El adorno de Markdown no es contenido: `**Respuesta correcta: a**` dice lo mismo.
+
+    Sin esto, un cuestionario en Markdown entraba con las preguntas sin opciones («orphan
+    option») y sin clave, porque la línea de la clave empieza por `**` y las opciones por `- `.
+    """
+    resultado = parse_questions(CUESTIONARIO_MARKDOWN)
+
+    assert [pregunta.number for pregunta in resultado.questions] == [1, 2]
+    primera = resultado.questions[0]
+    assert primera.stem == "El plazo del procedimiento es de:"
+    assert [opcion.text for opcion in primera.options] == [
+        "diez días",
+        "veinte días",
+        "treinta días",
+    ]
+    assert primera.correct_option_keys == ("a",)
+    segunda = resultado.questions[1]
+    assert segunda.correct_option_keys == ("b",)
+    assert resultado.with_key == 2
+    # El encabezado de Markdown es estructura: no se informa como texto suelto.
+    assert [incidencia.code for incidencia in resultado.issues] == [], resultado.issues
+
+
+def test_el_adorno_de_markdown_se_quita_sin_tocar_las_palabras() -> None:
+    assert strip_markdown_decoration("**Respuesta correcta: b**") == "Respuesta correcta: b"
+    assert strip_markdown_decoration("## Tema 5") == "Tema 5"
+    assert strip_markdown_decoration("> cita textual") == "cita textual"
+    assert strip_markdown_decoration("- a) diez días") == "a) diez días"
+    assert strip_markdown_decoration("1. La Ley 39/2015 **es** de 2015") == (
+        "1. La Ley 39/2015 es de 2015"
+    )
+    # El énfasis simple no se toca: un guion bajo separa palabras y un asterisco puede ser una nota.
+    assert strip_markdown_decoration("archivo_final.txt") == "archivo_final.txt"
 
 
 def test_una_fila_mala_no_aborta_el_lote() -> None:

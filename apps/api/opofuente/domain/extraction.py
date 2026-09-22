@@ -102,6 +102,8 @@ class WarningCode(StrEnum):
     OCR_NOT_EXECUTED = "ocr_not_executed"
     SCRIPT_REMOVED = "script_removed"
     ACTIVE_CONTENT_REMOVED = "active_content_removed"
+    #: La baraja traía imágenes o audio y no se extraen: se dice, no se calla (extractor de Anki).
+    MEDIA_NOT_EXTRACTED = "media_not_extracted"
     EXTERNAL_ENTITY_BLOCKED = "external_entity_blocked"
     MALFORMED_STRUCTURE = "malformed_structure"
     EXTRACTOR_FAILED = "extractor_failed"

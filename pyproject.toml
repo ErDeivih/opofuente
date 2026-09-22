@@ -19,6 +19,10 @@ dependencies = [
     "python-multipart>=0.0.12",
     "sqlalchemy>=2.0.35",
     "uvicorn[standard]>=0.32",
+    # Una baraja de Anki moderna guarda su colección comprimida con zstd (Anki 2.1.50+), así que
+    # leerla sin esta biblioteca sería quedarse fuera de casi todas las barajas actuales. Licencia
+    # BSD-3-Clause, compatible con el uso local del proyecto (ADR-016).
+    "zstandard>=0.23",
 ]
 
 [dependency-groups]

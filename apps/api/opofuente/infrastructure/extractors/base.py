@@ -238,6 +238,10 @@ def _zip_family(path: Path) -> str:
         return "presentation"
     if "mimetype" in names:
         return "epub"
+    if any(_ANKI_COLLECTIONS & {name.lower() for name in names}):
+        # Una baraja de Anki es un ZIP con una colección dentro: si se expandiera como un ZIP se
+        # perderían las tarjetas y quedarían sueltos un SQLite y unas imágenes (ADR-016).
+        return "anki"
     return "zip"
 
 
@@ -265,6 +269,10 @@ def decode_with_warning(data: bytes) -> tuple[str, bool]:
         return data.decode("utf-8"), False
     except UnicodeDecodeError:
         return data.decode("cp1252", errors="replace"), True
+
+
+#: Miembros que identifican una baraja de Anki dentro del ZIP (ADR-016).
+_ANKI_COLLECTIONS = frozenset({"collection.anki2", "collection.anki21", "collection.anki21b"})
 
 
 def _looks_like_json(data: bytes) -> bool:

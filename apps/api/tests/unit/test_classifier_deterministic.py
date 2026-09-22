@@ -220,3 +220,41 @@ def test_el_extracto_se_acota_y_no_se_mira_mas_alla() -> None:
     sujeto = _sujeto(text=("relleno " * 4000) + "Boletín Oficial del Estado")
 
     assert Axis.AUTHORITY not in _por_eje(sujeto)
+
+
+def test_una_baraja_de_anki_se_reconoce_por_su_extension() -> None:
+    """La extensión es la señal, y el extractor comprueba además que dentro hay una colección."""
+    propuestas = _por_eje(_sujeto(original_name="Tema 5 - plazos.apkg"))
+
+    assert propuestas[Axis.DOCUMENT_TYPE].proposed_value == DocumentType.FLASHCARDS.value
+    assert propuestas[Axis.DOCUMENT_TYPE].confidence >= 0.75, "puede aplicarse sola"
+    assert "«.apkg»" in propuestas[Axis.DOCUMENT_TYPE].evidence
+
+
+def test_las_senales_nuevas_dicen_lo_que_son_y_no_mas() -> None:
+    """Una baraja y «preguntas tipo test» deciden solas; «cuestionario» y «anotaciones», no.
+
+    Una palabra suelta puede estar en un documento que no es de ese tipo («el cuestionario constará
+    de setenta preguntas» está en unas bases de convocatoria), así que se queda en la cola de
+    revisión mientras «preguntas tipo test» no aparece por casualidad. «Supuesto práctico» es una
+    señal fuerte (0,7) pero tampoco llega sola a la banda alta: la política de qué se aplica sin
+    preguntar se decide en S12.4, no cue a cue.
+    """
+    tipo_test = _por_eje(_sujeto(text="Cuestionario de preguntas tipo test del tema 4."))
+    assert tipo_test[Axis.DOCUMENT_TYPE].proposed_value == DocumentType.PRIVATE_QUESTION_BANK.value
+    assert tipo_test[Axis.DOCUMENT_TYPE].confidence >= 0.7
+
+    supuesto = _por_eje(_sujeto(text="Supuesto práctico sobre plazos administrativos."))
+    assert supuesto[Axis.DOCUMENT_TYPE].proposed_value == DocumentType.PRACTICAL_CASE.value
+    assert supuesto[Axis.DOCUMENT_TYPE].confidence >= 0.7
+
+    solo_cuestionario = _por_eje(_sujeto(text="El cuestionario constará de setenta preguntas."))
+    assert (
+        solo_cuestionario[Axis.DOCUMENT_TYPE].proposed_value
+        == DocumentType.PRIVATE_QUESTION_BANK.value
+    )
+    assert solo_cuestionario[Axis.DOCUMENT_TYPE].confidence < 0.7, "no se aplica sola"
+
+    apuntes = _por_eje(_sujeto(text="Anotaciones de la clase del jueves."))
+    assert apuntes[Axis.DOCUMENT_TYPE].proposed_value == DocumentType.PERSONAL_NOTES.value
+    assert apuntes[Axis.DOCUMENT_TYPE].confidence < 0.7, "no se aplica sola"

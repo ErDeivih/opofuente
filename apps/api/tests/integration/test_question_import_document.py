@@ -39,6 +39,22 @@ TEXTO_PARTE_2 = (
 
 TEXTO_PARTE_1 = "1. La Constitucion Espanola se aprobo en:\na) 1978\nb) 1979\nc) 1980\n"
 
+#: Cuestionario escrito en Markdown, como lo guarda quien estudia con Obsidian: encabezado, viñetas
+#: y la clave en negrita. Sin quitar el adorno, el importador leía dos preguntas sin opciones y sin
+#: clave («orphan option»).
+TEXTO_MARKDOWN = (
+    "## Tema 5. Los plazos\n"
+    "**1.** El plazo del procedimiento es de:\n"
+    "- a) diez dias habiles\n"
+    "- b) veinte dias habiles\n"
+    "**Respuesta correcta: a**\n"
+    "\n"
+    "3. El silencio administrativo se regula en:\n"
+    "a) la Ley 39/2015\n"
+    "b) la Ley 40/2015\n"
+    "Respuesta correcta: a\n"
+)
+
 
 def _version_con_fragmentos(
     settings: Settings,
@@ -277,3 +293,46 @@ def test_importar_de_una_version_que_no_existe_es_un_404(
 
     assert respuesta.status_code == 404, respuesta.text
     assert respuesta.json()["code"] == "not_found"
+
+
+def test_importar_un_cuestionario_en_markdown_lee_preguntas_opciones_y_clave(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """Un cuestionario en Markdown entra completo: enunciado, opciones y clave, con su cita.
+
+    El adorno de Markdown (`##`, `- `, `**`) no es contenido. Antes de S12.3, la clave en negrita no
+    se leía y las opciones con viñeta se quedaban huérfanas: el informe lo declaraba, pero el
+    cuestionario entraba a medias.
+    """
+    version = _version_con_fragmentos(seeded_settings, secciones=[("Tema 5", 7, [TEXTO_MARKDOWN])])
+    set_id = _conjunto(seeded_client)
+
+    respuesta = seeded_client.post(
+        f"/api/v1/question-sets/{set_id}/import-document",
+        json={"document_version_id": version},
+        headers=ALLOWED_ORIGIN,
+    )
+
+    assert respuesta.status_code == 200, respuesta.text
+    informe = respuesta.json()
+    assert informe["created"] == 2
+    assert informe["evidence_links"] == 2
+    # Las dos preguntas entran **con su clave**: sin leer `**Respuesta correcta: a**`
+    # como preguntas incompletas (sin opción correcta).
+    assert informe["with_key"] == 2
+    assert informe["incomplete"] == 0
+    assert informe["issues"] == []
+
+    preguntas = _preguntas(seeded_client, set_id)
+    por_enunciado = {pregunta["stem"]: pregunta for pregunta in preguntas}
+    primera = por_enunciado["El plazo del procedimiento es de:"]
+    assert primera["source_section_id"] == "sec-1"
+    assert primera["question_type"] == "single_choice"
+    assert primera["status"] == "complete"
+    detalle = seeded_client.get(f"/api/v1/questions/{primera['id']}").json()
+    assert [opcion["text"] for opcion in detalle["options"]] == [
+        "diez dias habiles",
+        "veinte dias habiles",
+    ]
+    # La respuesta correcta no viaja en la ficha de la pregunta: eso lo dice la clave.
+    assert "is_correct" not in detalle["options"][0]

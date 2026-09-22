@@ -50,6 +50,10 @@ PRESERVED_SUFFIXES: dict[str, str] = {
 #: Sufijos que cuentan como contenedor ZIP para la política de anidamiento.
 ZIP_SUFFIXES = frozenset({".zip"})
 
+#: Barajas de Anki: son contenedores ZIP con una base de datos dentro, pero **no** se expanden como
+#: un ZIP (se perderían las tarjetas). Tienen familia y extractor propios (ADR-016).
+ANKI_SUFFIXES = frozenset({".apkg", ".colpkg"})
+
 #: Sufijos de texto plano, CSV, JSON y HTML. Se declaran aquí porque varias capas los consultan
 #: (el registro de extractores y las entradas directas, que rechazan un ejecutable al subirlo).
 TEXT_SUFFIXES = frozenset({".txt", ".md", ".markdown", ".log", ".rst"})
@@ -152,6 +156,7 @@ def storage_refusal(*, name: str, head: bytes) -> str | None:
 
 
 __all__ = [
+    "ANKI_SUFFIXES",
     "CSV_SUFFIXES",
     "DANGEROUS_SUFFIXES",
     "HTML_SUFFIXES",

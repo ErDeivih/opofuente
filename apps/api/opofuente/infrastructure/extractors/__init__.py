@@ -31,6 +31,7 @@ from opofuente.domain.formats import (
     is_dangerous_suffix,
     match_signature,
 )
+from opofuente.infrastructure.extractors.anki import AnkiExtractor
 from opofuente.infrastructure.extractors.base import (
     DetectedFormat,
     Extractor,
@@ -119,6 +120,11 @@ class ExtractorRegistry:
                     else settings.tesseract_path is not None
                 ),
                 max_bytes=settings.max_image_bytes,
+            ),
+            "anki": AnkiExtractor(
+                max_chars=settings.max_representation_chars,
+                max_bytes=settings.max_text_bytes,
+                limits=self._limits,
             ),
         }
 

@@ -47,9 +47,14 @@ a temporal aislado y tratar cada miembro como ítem.
 | CSV | asistente de columnas | delimitador/codificación/previsualización |
 | JSON | esquema flexible guiado | límites de profundidad y tamaño |
 | PNG/JPEG | metadatos + OCR opcional | original siempre conservado |
+| Anki (`.apkg`, `.colpkg`) | lectura de la colección (SQLite, zstd desde Anki 2.1.50) | una tarjeta por tramo, con los nombres de campo de la baraja; la media **no** se extrae y se avisa (ADR-016) |
 
 Archivos Office con macros, audio, vídeo, EPUB y PPTX quedan `unsupported_preserved`: se conservan
 íntegros en el almacén, **sin ejecutar ni extraer** nada de ellos.
+
+Un `.apkg` es un contenedor ZIP, pero **no se expande** como un ZIP: si se expandiera entrarían como
+entradas sueltas la colección (un SQLite ilegible) y las imágenes de la baraja, y las tarjetas se
+perderían. Se reconoce por el contenido —la colección dentro— y tiene su propio extractor.
 
 Los ejecutables y bibliotecas (`.exe`, `.dll`, `.msi`, `.bat`, `.cmd`, `.com`, `.scr`, `.ps1`,
 `.jar`, `.so`, `.dylib`) **no** se conservan: se omiten por seguridad, como dice §2. OpoFuente no

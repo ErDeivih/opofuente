@@ -318,3 +318,46 @@ verificadas y documentadas en `15_OFFICIAL-PROFILES-AND-SOURCE-MANIFEST` §4, si
 - Sus cifras de examen son distintas de las de la convocatoria ordinaria y las pruebas lo comprueban,
   para que nadie confunda un perfil con otro.
 - La convocatoria ordinaria sigue siendo la vigente de la oposición.
+
+## S12.3 — Anki y Markdown entran como material
+
+### Entrega
+
+- Extractor de barajas de Anki (`.apkg`, `.colpkg`): familia propia reconocida por contenido, lectura
+  de la colección (SQLite, zstd desde Anki 2.1.50) y una tarjeta por tramo con los nombres de campo
+  de la baraja. La media no se extrae y se avisa (`media_not_extracted`).
+- El adorno de Markdown deja de leerse como contenido: encabezados, citas, viñetas y énfasis fuerte
+  se quitan antes de leer enunciados, opciones y claves; un encabezado es estructura, no texto suelto.
+- Señales nuevas del clasificador con su cita: `.apkg`/`.colpkg` → tarjetas (0,8), `preguntas tipo
+  test` y `supuesto práctico` (0,7), `cuestionario` y `anotaciones` (0,5).
+
+### Aceptación
+
+- Una carpeta con una baraja y un cuestionario en Markdown entra entera: la baraja **no** se expande
+  en miembros, y el cuestionario entra con sus opciones y su clave.
+- Un contenedor sin colección, una colección vacía y una comprimida ilegible se declaran; nunca
+  devuelven texto inventado.
+- Una tarjeta **no** se convierte en pregunta: el modelo no tiene dónde guardar su respuesta
+  (DEBT-023), y la baraja se clasifica como tarjetas.
+- Todo dato leído tiene su tramo con etiqueta y sus desplazamientos dentro del texto guardado.
+
+## S12.4 — Que la aplicación lo haga todo (pendiente)
+
+Lo que el propietario pidió después de S12.2: que él solo deje sus documentos y la aplicación
+clasifique cada uno por su papel (temario, ayuda, parte de un temario, preguntas, supuestos,
+anotaciones, respuestas, plantillas), importe las preguntas que encuentre, las catalogue por bloque y
+tema, enlace cada plantilla con su examen y deje el material listo para estudiar sin que él actúe.
+
+Piezas identificadas, sin construir todavía:
+
+- **importar preguntas sin que nadie pulse nada** cuando el material se clasifica como banco de
+  preguntas, examen o tarjetas, en vez de esperar a que el usuario lo pida desde la ficha;
+- **enlazar la plantilla con su examen** (hoy la clave se importa a mano, con su conjunto);
+- **catalogar cada pregunta por bloque y tema**: los mapeos existen para documentos y artefactos, no
+  para preguntas (`SubjectType` solo tiene esos dos);
+- **la política de qué se aplica sin preguntar** (ADR-017): qué bandas deciden solas, qué se queda en
+  la cola y qué no se aplica nunca sin confirmación (autoridad y derechos, ADR-009);
+- **una pantalla que diga «esto ya está listo para estudiar»** y qué falta, si falta algo.
+
+Se decide antes de codificar, y con el propietario delante en las decisiones que cambian lo que la
+aplicación da por bueno sin preguntarle.

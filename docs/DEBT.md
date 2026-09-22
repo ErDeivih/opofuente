@@ -34,6 +34,7 @@ Reglas:
 | [DEBT-020](#debt-020--la-clave-oficial-de-celador-está-escaneada-y-no-se-puede-importar) | S09+ | La plantilla oficial de respuestas correctas de Celador es un escaneo sin capa de texto: la clave existe y no entra en la aplicación | abierta |
 | [DEBT-021](#debt-021--la-puerta-e2e-puede-correr-contra-un-servidor-ajeno) | antes de dar por buena una corrida E2E | La suite E2E reutiliza cualquier servidor que escuche en el 8765: corre contra su base de datos y escribe en ella | abierta |
 | [DEBT-022](#debt-022--la-suite-e2e-no-distingue-la-máquina-está-cargada-de-esto-se-ha-roto) | antes de dar por buena la puerta E2E | La misma suite da 44 verdes en una máquina descargada y 10 rojos en una cargada, sin decir cuál de las dos cosas ha pasado | abierta |
+| [DEBT-023](#debt-023--una-tarjeta-de-anki-no-puede-ser-una-pregunta-porque-no-hay-dónde-guardar-su-respuesta) | S12.4+ | El modelo tiene el tipo `free_text_reference` y no tiene dónde guardar la respuesta de referencia: el reverso de una tarjeta no entra | abierta |
 
 ---
 
@@ -1138,3 +1139,36 @@ cuatro de arriba: en una máquina descargada pasan.
 
 **Estado: abierta.** Con la máquina descargada la puerta está verde; el peligro es el contrario: una
 corrida en rojo que no dice si el problema es el código o el ordenador.
+
+---
+
+## DEBT-023 — Una tarjeta de Anki no puede ser una pregunta porque no hay dónde guardar su respuesta
+
+**Origen:** entrada de Anki en S12.3 (22 de septiembre de 2026).
+
+**Problema.** Una tarjeta de Anki es un enunciado con su respuesta (el anverso y el reverso). El
+modelo de preguntas tiene el tipo `free_text_reference` —una pregunta sin opciones, «de referencia»—
+pero **no tiene ninguna columna ni campo para la respuesta de referencia**: se comprobó buscando el
+sitio donde viviría y no existe. Importar una baraja como preguntas dejaría, por tanto, el reverso
+fuera, que es justo lo que hace útil la tarjeta.
+
+Por eso S12.3 las deja entrar como **material estudiable y citable** (una tarjeta por tramo, con su
+cita), clasificado como tarjetas, y no inventa una pregunta a medias.
+
+**Obligación antes de prometer que las barajas «se convierten en preguntas»:** decidir dónde vive la
+respuesta de referencia, con su migración, su contrato y su interfaz. Las opciones, para decidir
+cuando toque:
+
+- un campo de respuesta de referencia en la versión de la pregunta (sirve para `free_text_reference`
+  y para las preguntas abiertas de un supuesto práctico);
+- o un tipo de estudio propio de tarjetas (anverso/reverso) que no pase por el banco de preguntas.
+
+**Criterio de cierre.**
+
+1. La decisión está escrita en un ADR, con lo que se descarta y por qué.
+2. Una tarjeta importada de una baraja conserva su reverso y se puede estudiar con él a la vista.
+3. Hay una prueba con una baraja sintética que comprueba el recorrido completo: tarjeta → estudio →
+   respuesta cotejada o autoevaluada, sin inventar corrección automática donde no la hay.
+
+**Estado: abierta.** Hoy la baraja entra entera como material y se puede buscar y citar; lo que no se
+puede es responderla como pregunta.

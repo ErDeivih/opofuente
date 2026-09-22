@@ -102,6 +102,15 @@ _CUES_DOCUMENT_TYPE: tuple[tuple[DocumentType, str, float, str], ...] = (
     (DocumentType.PRIVATE_QUESTION_BANK, r"\btest de repaso\b", 0.5, "«test de repaso»"),
     (DocumentType.FLASHCARDS, r"\btarjetas de repaso\b", 0.7, "«tarjetas de repaso»"),
     (DocumentType.FLASHCARDS, r"\bflashcards\b", 0.7, "«flashcards»"),
+    # Una baraja de Anki se reconoce por su extensión: además, el extractor comprueba que dentro
+    # hay una colección de verdad (`collection.anki2`/`anki21`/`anki21b`), así que la señal es
+    # fuerte y merece la banda alta (ADR-016).
+    (DocumentType.FLASHCARDS, r"\.apkg\b", 0.8, "«.apkg»"),
+    (DocumentType.FLASHCARDS, r"\.colpkg\b", 0.8, "«.colpkg»"),
+    (DocumentType.PRIVATE_QUESTION_BANK, r"\bpreguntas tipo test\b", 0.7, "«preguntas tipo test»"),
+    (DocumentType.PRIVATE_QUESTION_BANK, r"\bcuestionario\b", 0.5, "«cuestionario»"),
+    (DocumentType.PRACTICAL_CASE, r"\bsupuesto practico\b", 0.7, "«supuesto práctico»"),
+    (DocumentType.PERSONAL_NOTES, r"\banotaciones\b", 0.5, "«anotaciones»"),
     (DocumentType.PRACTICAL_CASE, r"\bcaso practico\b", 0.7, "«caso práctico»"),
     (DocumentType.COMMUNITY_MATERIAL, r"\bapuntes de\b", 0.4, "«apuntes de»"),
     (DocumentType.COMMUNITY_MATERIAL, r"\bforo\b", 0.4, "«foro»"),

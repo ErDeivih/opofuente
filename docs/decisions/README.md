@@ -20,6 +20,7 @@ Formato: `ADR-NNN-titulo.md` con contexto, opciones, datos, decisión, consecuen
 | [ADR-013](ADR-013-rutas-anadidas-al-contrato.md) | Rutas añadidas al contrato de la API: registro único de lo que se construyó fuera de §6–§11 | propuesta (revisión de S00–S11), pendiente de ratificación |
 | [ADR-014](ADR-014-parte-detectada-y-datos-sin-lector.md) | Dónde vive lo que el importador lee y no puede guardar | aceptada (S12), cierra DEBT-010 |
 | [ADR-015](ADR-015-tercera-oposicion-celador.md) | Tercera oposición: Celador/a del SACYL | aceptada (22/09/2026) por decisión del propietario |
+| [ADR-016](ADR-016-anki-y-markdown-como-material.md) | Anki y Markdown entran como material, y con qué se lee una baraja | aceptada (S12.3) |
 
 La deuda técnica obligatoria (con su slice y su criterio de cierre) se registra aparte en
 [`docs/DEBT.md`](../DEBT.md).

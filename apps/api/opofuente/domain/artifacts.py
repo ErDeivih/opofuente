@@ -36,6 +36,10 @@ _MEDIA_TYPES: dict[str, str] = {
     ".gif": "image/gif",
     ".webp": "image/webp",
     ".zip": "application/zip",
+    # Una baraja de Anki es literalmente un ZIP con una colección dentro: el tipo MIME lo dice, y
+    # lo que la identifica como baraja es la familia detectada por contenido (ADR-016).
+    ".apkg": "application/zip",
+    ".colpkg": "application/zip",
     ".epub": "application/epub+zip",
     ".pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
 }
