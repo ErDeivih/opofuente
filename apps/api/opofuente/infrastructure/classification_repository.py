@@ -45,18 +45,18 @@ from opofuente.application.read_models import (
     ReviewGroupView,
 )
 from opofuente.domain.classification import (
+    AUTHORITY_LABELS,
     CRITICAL_AXES,
-    AuthorityTier,
+    DOCUMENT_TYPE_LABELS,
+    RIGHTS_LABELS,
     Axis,
     ClassificationSubject,
     ConfidenceBands,
     CoverageType,
-    DocumentType,
     MappingStatus,
     ProfileCandidate,
     Proposal,
     ProposalStatus,
-    RightsStatus,
     SubjectType,
     TopicCandidate,
     coverage_counts_as_accepted,
@@ -154,44 +154,12 @@ def _quality(valor: str | None) -> Quality | None:
 def value_label(axis: str, valor: str) -> str | None:
     """Etiqueta legible de un valor propuesto, para los vocabularios cerrados."""
     if axis == Axis.DOCUMENT_TYPE.value:
-        return _DOCUMENT_TYPE_LABELS.get(valor)
+        return DOCUMENT_TYPE_LABELS.get(valor)
     if axis == Axis.AUTHORITY.value:
-        return _AUTHORITY_LABELS.get(valor)
+        return AUTHORITY_LABELS.get(valor)
     if axis == Axis.RIGHTS.value:
-        return _RIGHTS_LABELS.get(valor)
+        return RIGHTS_LABELS.get(valor)
     return None
-
-
-_DOCUMENT_TYPE_LABELS = {
-    DocumentType.CONVOCATION.value: "Convocatoria",
-    DocumentType.CURRICULUM.value: "Temario o programa",
-    DocumentType.LAW_OR_REGULATION.value: "Norma legal",
-    DocumentType.OFFICIAL_TECHNICAL.value: "Documentación técnica oficial",
-    DocumentType.PRIVATE_SYLLABUS.value: "Temario particular",
-    DocumentType.PERSONAL_NOTES.value: "Apuntes personales",
-    DocumentType.OFFICIAL_EXAM.value: "Examen oficial",
-    DocumentType.ANSWER_KEY.value: "Plantilla de respuestas",
-    DocumentType.PRIVATE_QUESTION_BANK.value: "Banco de preguntas privado",
-    DocumentType.PRACTICAL_CASE.value: "Caso práctico",
-    DocumentType.FLASHCARDS.value: "Tarjetas de repaso",
-    DocumentType.COMMUNITY_MATERIAL.value: "Material de la comunidad",
-    DocumentType.UNKNOWN.value: "Sin determinar",
-}
-
-_AUTHORITY_LABELS = {
-    AuthorityTier.A.value: "Publicación oficial",
-    AuthorityTier.B.value: "Administración pública",
-    AuthorityTier.C.value: "Tercero identificable",
-    AuthorityTier.D.value: "Origen comunitario o anónimo",
-    AuthorityTier.UNKNOWN.value: "Sin determinar",
-}
-
-_RIGHTS_LABELS = {
-    RightsStatus.REUSE_WITH_CONDITIONS.value: "Reutilización con condiciones",
-    RightsStatus.PRIVATE_USE_ONLY.value: "Solo uso privado",
-    RightsStatus.RIGHTS_DOCUMENT.value: "Documento de condiciones de uso",
-    RightsStatus.UNKNOWN.value: "Derechos sin determinar",
-}
 
 
 class SqlAlchemyClassificationRepository:

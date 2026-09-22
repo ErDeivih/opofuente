@@ -90,6 +90,43 @@ class RightsStatus(StrEnum):
     UNKNOWN = "unknown"
 
 
+#: Cómo se dice cada valor de los vocabularios cerrados cuando hay que enseñarlo o contarlo.
+#:
+#: Vive en el dominio porque lo usan el repositorio (para etiquetar una propuesta) y el resumen de
+#: preparación (para contar el material por papel). Dos tablas de etiquetas serían dos verdades: la
+#: pantalla podría decir «Temario» donde el informe dice «Temario o programa».
+DOCUMENT_TYPE_LABELS: dict[str, str] = {
+    DocumentType.CONVOCATION.value: "Convocatoria",
+    DocumentType.CURRICULUM.value: "Temario o programa",
+    DocumentType.LAW_OR_REGULATION.value: "Norma legal",
+    DocumentType.OFFICIAL_TECHNICAL.value: "Documentación técnica oficial",
+    DocumentType.PRIVATE_SYLLABUS.value: "Temario particular",
+    DocumentType.PERSONAL_NOTES.value: "Apuntes personales",
+    DocumentType.OFFICIAL_EXAM.value: "Examen oficial",
+    DocumentType.ANSWER_KEY.value: "Plantilla de respuestas",
+    DocumentType.PRIVATE_QUESTION_BANK.value: "Banco de preguntas privado",
+    DocumentType.PRACTICAL_CASE.value: "Caso práctico",
+    DocumentType.FLASHCARDS.value: "Tarjetas de repaso",
+    DocumentType.COMMUNITY_MATERIAL.value: "Material de la comunidad",
+    DocumentType.UNKNOWN.value: "Sin determinar",
+}
+
+AUTHORITY_LABELS: dict[str, str] = {
+    AuthorityTier.A.value: "Publicación oficial",
+    AuthorityTier.B.value: "Administración pública",
+    AuthorityTier.C.value: "Tercero identificable",
+    AuthorityTier.D.value: "Origen comunitario o anónimo",
+    AuthorityTier.UNKNOWN.value: "Sin determinar",
+}
+
+RIGHTS_LABELS: dict[str, str] = {
+    RightsStatus.REUSE_WITH_CONDITIONS.value: "Reutilización con condiciones",
+    RightsStatus.PRIVATE_USE_ONLY.value: "Solo uso privado",
+    RightsStatus.RIGHTS_DOCUMENT.value: "Documento de condiciones de uso",
+    RightsStatus.UNKNOWN.value: "Derechos sin determinar",
+}
+
+
 class ProposalStatus(StrEnum):
     """Estados de una propuesta de clasificación (03_DATA-MODEL §5)."""
 

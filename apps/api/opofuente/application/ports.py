@@ -36,6 +36,12 @@ from opofuente.application.read_models import (
     ReviewGroupView,
     SeedOutcome,
 )
+from opofuente.application.readiness_models import (
+    MaterialSummary,
+    OppositionRef,
+    PendingCounts,
+    QuestionSummary,
+)
 from opofuente.domain.artifacts import OriginType, Sha256, StoredArtifact
 from opofuente.domain.classification import (
     ClassificationSubject,
@@ -449,3 +455,21 @@ class ChangeRecorder(Protocol):
     """
 
     def record_version_change(self, *, document_id: str, new_version_id: str) -> object | None: ...
+
+
+@runtime_checkable
+class ReadinessRepository(Protocol):
+    """Lo que hay que contar para decir si una oposición está lista para estudiar (S12.6).
+
+    Son recuentos agregados, no listas: el resumen no enseña material ni preguntas, dice cuánto hay
+    y qué falta. Por eso el puerto devuelve los modelos del resumen y no entidades, y cada cifra se
+    resuelve en la base en lugar de traerse las filas para contarlas en memoria.
+    """
+
+    def opposition(self, opposition_id: str) -> OppositionRef | None: ...
+
+    def material(self, *, opposition_id: str) -> MaterialSummary: ...
+
+    def questions(self, *, opposition_id: str) -> QuestionSummary: ...
+
+    def pending(self) -> PendingCounts: ...

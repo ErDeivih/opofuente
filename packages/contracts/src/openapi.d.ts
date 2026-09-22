@@ -1469,6 +1469,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/oppositions/{opposition_id}/readiness": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * ¿Está esta oposición lista para estudiar, y qué falta?
+         * @description Material por papel, preguntas por tema y claves activas, con lo que falta en palabras.
+         */
+        get: operations["get_readiness_api_v1_oppositions__opposition_id__readiness_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pending-actions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Lo que sigue esperando una decisión de una persona
+         * @description Incidencias de importación, propuestas de clasificación, cambios y material sin aceptar.
+         */
+        get: operations["get_pending_actions_api_v1_pending_actions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/question-sets": {
         parameters: {
             query?: never;
@@ -4556,6 +4596,34 @@ export interface components {
             stem?: string | null;
         };
         /**
+         * PendingActionSchema
+         * @description Algo que espera a una persona, con la cifra y la pantalla donde se resuelve.
+         */
+        PendingActionSchema: {
+            /** Count */
+            count: number;
+            /** Detail */
+            detail: string;
+            /** Href */
+            href: string;
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Title */
+            title: string;
+        };
+        /**
+         * PendingActionsSchema
+         * @description Todo lo que espera a una persona ahora mismo, ya ordenado.
+         */
+        PendingActionsSchema: {
+            /** Actions */
+            actions: components["schemas"]["PendingActionSchema"][];
+            /** Total */
+            total: number;
+        };
+        /**
          * ProblemDetail
          * @description Cuerpo de error del contrato.
          */
@@ -5859,6 +5927,50 @@ export interface components {
         SnoozeReviewSchema: {
             /** Days */
             days: number;
+        };
+        /**
+         * StudyReadinessSchema
+         * @description Si esta oposición se puede estudiar ya, paso a paso, y qué falta si falta algo.
+         */
+        StudyReadinessSchema: {
+            /** Convocation Code */
+            convocation_code?: string | null;
+            /**
+             * Missing
+             * @description Una frase por paso que no está listo, tal y como se enseña.
+             */
+            missing?: string[];
+            /** Opposition Id */
+            opposition_id: string;
+            /** Opposition Name */
+            opposition_name: string;
+            /** Ready */
+            ready: boolean;
+            /** Steps */
+            steps: components["schemas"]["StudyReadinessStepSchema"][];
+        };
+        /**
+         * StudyReadinessStepSchema
+         * @description Un paso hacia poder estudiar: qué es, cómo está y por dónde se resuelve.
+         */
+        StudyReadinessStepSchema: {
+            /** Action Href */
+            action_href: string;
+            /** Action Label */
+            action_label: string;
+            /** Count */
+            count: number;
+            /** Detail */
+            detail: string;
+            /** Key */
+            key: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "ready" | "incomplete" | "empty";
+            /** Title */
+            title: string;
         };
         /**
          * SubstitutionSchema
@@ -10845,6 +10957,84 @@ export interface operations {
                 };
                 content: {
                     "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    get_readiness_api_v1_oppositions__opposition_id__readiness_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                opposition_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudyReadinessSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    get_pending_actions_api_v1_pending_actions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PendingActionsSchema"];
                 };
             };
             /** @description Error interno inesperado (RFC 9457). */

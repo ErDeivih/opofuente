@@ -407,6 +407,7 @@ verificadas y documentadas en `15_OFFICIAL-PROFILES-AND-SOURCE-MANIFEST` §4, si
 - **enlazar la plantilla de respuestas con su examen**: decidir cómo se reconoce que una plantilla es
   de un examen concreto (por el modelo, por el número de preguntas, por la fecha) y qué se hace
   cuando no cuadra;
-- **una pantalla que diga «esto ya está listo para estudiar»** y qué falta, si falta algo, por
-  oposición: material por papel, preguntas por tema, claves activas y lo que sigue esperando una
-  decisión de una persona.
+- **la pantalla que diga «esto ya está listo para estudiar»**: el servidor que la alimenta ya está
+  entregado (dos rutas de solo lectura, `GET /oppositions/{id}/readiness` y `GET /pending-actions`,
+  con su modelo de lectura y sus cinco pruebas de integración); falta ponerla en Inicio, sustituyendo
+  la tarjeta de «Acciones necesarias», que hoy enseña un texto fijo.

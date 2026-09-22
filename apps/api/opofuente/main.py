@@ -42,6 +42,7 @@ from opofuente.application.job_service import JobService
 from opofuente.application.library_service import LibraryService
 from opofuente.application.profiles_service import ProfilesService
 from opofuente.application.question_service import QuestionService
+from opofuente.application.readiness_service import ReadinessService
 from opofuente.application.review_service import ReviewService
 from opofuente.application.search_service import SearchService
 from opofuente.application.study_service import StudyService
@@ -72,6 +73,7 @@ from opofuente.infrastructure.observability import setup_logging
 from opofuente.infrastructure.probes import DatabaseProbe, DataDirectoryProbe
 from opofuente.infrastructure.profile_repository import SqlAlchemyProfileRepository
 from opofuente.infrastructure.question_repository import SqlAlchemyQuestionRepository
+from opofuente.infrastructure.readiness_repository import SqlAlchemyReadinessRepository
 from opofuente.infrastructure.representation_store import RepresentationStore
 from opofuente.infrastructure.review_repository import SqlAlchemyReviewRepository
 from opofuente.infrastructure.search_repository import SqlAlchemySearchRepository
@@ -253,6 +255,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         reviews=SqlAlchemyReviewRepository(session_factory),
         clock=clock,
     )
+    # S12.6: «¿ya puedo estudiar con lo que he soltado?». Cuenta lo que hay (material por papel,
+    # preguntas por tema, claves activas) y lo que sigue esperando a una persona; no escribe nada.
+    readiness_service = ReadinessService(
+        repository=SqlAlchemyReadinessRepository(session_factory),
+    )
     export_service = ExportService(
         questions=SqlAlchemyQuestionRepository(session_factory),
         documents=SqlAlchemyDocumentRepository(session_factory, representations),
@@ -386,6 +393,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.backup_service = backup_service
     app.state.housekeeping_service = housekeeping_service
     app.state.diagnostic_service = diagnostic_service
+    app.state.readiness_service = readiness_service
 
     # El orden importa: el último añadido es el más externo, así que el identificador de
     # correlación envuelve también los rechazos por Origin.
