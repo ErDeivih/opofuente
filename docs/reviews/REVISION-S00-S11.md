@@ -307,3 +307,28 @@ aserción: en los cuatro casos había algo que arreglar de verdad.
    era **falso para el usuario** y he listado el resto en una tabla. Corregir cuarenta frases de ocho
    documentos históricos habría producido un diff enorme y difícil de revisar, a cambio de nada que el
    producto note. Es una decisión, no un olvido, y por eso está escrita.
+
+---
+
+## 9. Cierre posterior de lo que esta revisión dejó abierto (21 de septiembre de 2026)
+
+Esta acta es del 19 de septiembre y describe lo que había entonces. Lo que sigue se ha cerrado
+**después**, y se apunta aquí para que quien empiece por este documento no lea como viva una deuda ya
+cerrada. El registro vivo es `docs/DEBT.md`.
+
+| Lo que esta revisión dejó abierto | Cuándo se cerró y dónde está la prueba |
+|---|---|
+| **DEBT-001** (el destino de los datos era un booleano global) | 21 de septiembre: clasificación por proveedor con su motivo, y el booleano retirado del contrato **y** de `Settings` |
+| **DEBT-010** (una pregunta importada no quedaba enlazada a su sección) | 20 de septiembre: `POST /question-sets/{id}/import-document` crea la cita de cada pregunta y la ficha abre el original. ADR-014 decide lo que **no** se guarda (la parte detectada y las etiquetas) |
+| **DEBT-012** (simulacro y diagnóstico declarados y sin implementar) | 21 de septiembre: los dos modos construidos de punta a punta y el contrato declara los cinco |
+| **DEBT-013** (el recálculo no se podía hacer en bloque) | 20 de septiembre: recálculo en bloque con informe por sesión, y la pantalla dice cuántas sesiones quedan desactualizadas |
+| **DEBT-015** (el índice no se podía rehacer desde la interfaz) | Entregado en S12; la entrada se escribió al revisar el registro de deuda |
+| **DEBT-017** (las colecciones existían en la API y no en la interfaz) | 20 de septiembre: pantalla, filtro en el servidor, alta y **baja** de miembros |
+| **DEBT-019** (el estado conservado sin extractor no llegaba a la pantalla) | 20 de septiembre: la bandeja enseña el nombre legible y su motivo |
+| La lista de conjuntos sin paginar (nota de DEBT-011) | **Sigue abierta** como parte viva de DEBT-011, tal como se declaró |
+
+Y lo que sigue abierto de verdad, con su motivo: **DEBT-003** (condición previa a publicar),
+**DEBT-014** (no hay proveedor de lenguaje ni de embeddings: es una decisión, ADR-012), **DEBT-016**
+(necesita datos reales de estudio y un ADR con los umbrales) y **DEBT-018** (la puerta humana de S04: la
+mitad de la máquina está medida con 30 ficheros reales y falta el tiempo de revisión del propietario).
+Las tres primeras no se pueden cerrar escribiendo código; la cuarta necesita a una persona.
