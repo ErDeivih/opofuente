@@ -13,7 +13,10 @@ $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 . (Join-Path $PSScriptRoot 'common.ps1')
 
 $apiScript = Join-Path $PSScriptRoot 'api.ps1'
-$api = Start-Process -FilePath 'pwsh' -ArgumentList @('-NoProfile', '-File', $apiScript, '-Reload') -PassThru -WindowStyle Hidden
+# El intérprete se resuelve, no se escribe a mano: `pwsh` no está en todos los equipos (aquí no lo
+# está) y `Start-Process -FilePath 'pwsh'` falla con «no se puede encontrar el archivo».
+$shell = Get-OpoFuenteShell
+$api = Start-Process -FilePath $shell -ArgumentList @('-NoProfile', '-File', $apiScript, '-Reload') -PassThru -WindowStyle Hidden
 Write-Host "API arrancada en proceso $($api.Id)." -ForegroundColor Cyan
 
 try {

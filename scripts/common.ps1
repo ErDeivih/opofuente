@@ -43,3 +43,18 @@ function Get-OpoFuenteDataDir {
     if ($env:OPOFUENTE_DATA_DIR) { return $env:OPOFUENTE_DATA_DIR }
     return (Join-Path $script:OpoFuenteRepoRoot 'data')
 }
+
+function Get-OpoFuenteShell {
+    <#
+    .SYNOPSIS
+        La ruta del intérprete de PowerShell para lanzar un script en otro proceso.
+    .DESCRIPTION
+        `pwsh` (PowerShell 7) **no está siempre en el PATH**: en equipos donde solo está el Windows
+        PowerShell, `Start-Process -FilePath 'pwsh'` falla con «no se puede encontrar el archivo» y el
+        arranque documentado no funciona. Se prefiere `pwsh` si está y, si no, se usa el intérprete que
+        está ejecutando esto (`$PSHOME`), que es el que ya sabemos que existe.
+    #>
+    $pwsh = Get-Command pwsh -ErrorAction SilentlyContinue
+    if ($null -ne $pwsh) { return $pwsh.Source }
+    return (Join-Path $PSHOME 'powershell.exe')
+}
