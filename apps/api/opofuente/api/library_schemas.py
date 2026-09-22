@@ -137,6 +137,9 @@ class PromotionOutcomeSchema(BaseModel):
     questions_imported: int = 0
     question_set_id: str | None = None
     questions_note: str | None = None
+    #: Y cuántas de esas preguntas quedaron **catalogadas por bloque y tema**, heredando el programa
+    #: del documento del que salen (S12.6). Sin esto, el diagnóstico por temas no las vería.
+    questions_catalogued: int = 0
 
 
 class MarkSupersedesRequestSchema(BaseModel):

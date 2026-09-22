@@ -183,6 +183,22 @@ class QuestionService:
     def set_detail(self, set_id: str) -> QuestionSetView | None:
         return self._questions.get_set(set_id)
 
+    def questions_without_topic(self, set_id: str, *, limit: int = 500) -> tuple[str, ...]:
+        """Preguntas del conjunto sin tema asignado: las únicas que la catalogación puede tocar."""
+        return self._questions.questions_without_topic(set_id, limit=limit)
+
+    def map_question_to_node(
+        self, question_id: str, *, node_id: str, actor: str = "auto"
+    ) -> str | None:
+        """Cataloga una pregunta en un nodo del programa. Idempotente por `(nodo, pregunta)`.
+
+        `actor` vale `auto` cuando lo hace la aplicación sola (S12.6) y `local` cuando lo pide una
+        persona: la auditoría tiene que poder distinguirlos.
+        """
+        return self._questions.map_question_to_node(
+            question_id, node_id=node_id, now=self._clock.now(), actor=actor
+        )
+
     def questions(
         self,
         *,

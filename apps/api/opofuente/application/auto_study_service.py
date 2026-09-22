@@ -59,6 +59,8 @@ class AutoImportOutcome:
     imported: int = 0
     set_id: str | None = None
     note: str | None = None
+    #: Preguntas catalogadas por bloque y tema al heredar el programa del documento (S12.6).
+    catalogued: int = 0
 
     @property
     def did_something(self) -> bool:
@@ -111,6 +113,7 @@ class AutoStudyService:
         )
         if existente is not None:
             informe = self._questions.import_from_document(existente.id, version_id)
+            catalogadas = self.catalogue_questions(set_id=existente.id, version_id=version_id)
             return AutoImportOutcome(
                 imported=informe.created,
                 set_id=existente.id,
@@ -138,11 +141,37 @@ class AutoStudyService:
                 conjunto.id, reason="el material no traía preguntas reconocibles"
             )
             return AutoImportOutcome(note="el material no traía preguntas reconocibles")
+        catalogadas = self.catalogue_questions(set_id=conjunto.id, version_id=version_id)
         return AutoImportOutcome(
             imported=informe.created,
             set_id=conjunto.id,
             note=f"importadas {informe.created} preguntas de este documento",
+            catalogued=catalogadas,
         )
+
+    def catalogue_questions(self, *, set_id: str, version_id: str) -> int:
+        """Cataloga por bloque y tema las preguntas que aún no tienen tema (S12.6).
+
+        El tema no se adivina: se **hereda** de la asignación aceptada del documento del que salen
+        las preguntas. Si el documento está asignado al «Tema 3» del programa, sus preguntas son del
+        tema 3; si no está asignado a nada, no se cataloga ninguna y no se inventa un tema.
+
+        Solo se tocan las preguntas **sin** tema: una que ya lo tiene (puesto a mano o traído de una
+        columna del material) se respeta, porque pisarla sería cambiar una decisión en silencio.
+        """
+        nodos = [
+            mapeo.node_id
+            for mapeo in self._library.mappings_of(version_id)
+            if mapeo.status == "accepted"
+        ]
+        if not nodos:
+            return 0
+        catalogadas = 0
+        for pregunta_id in self._questions.questions_without_topic(set_id, limit=500):
+            for node_id in nodos:
+                if self._questions.map_question_to_node(pregunta_id, node_id=node_id) is not None:
+                    catalogadas += 1
+        return catalogadas
 
     def _document_type(self, artifact_id: str) -> str | None:
         """Tipo documental vigente del material: lo aceptado manda sobre lo aplicado provisional."""

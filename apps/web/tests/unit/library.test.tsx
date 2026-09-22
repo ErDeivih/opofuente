@@ -750,6 +750,7 @@ describe('biblioteca: versiones', () => {
           questions_imported: 43,
           question_set_id: 'set-1',
           questions_note: 'importadas 43 preguntas de este documento',
+          questions_catalogued: 43,
         },
       },
     });
@@ -770,6 +771,8 @@ describe('biblioteca: versiones', () => {
     });
     expect(within(aviso).getByText(/Se importaron 43 preguntas/)).toBeInTheDocument();
     expect(within(aviso).getByText(/Ya se pueden estudiar/)).toBeInTheDocument();
+    // Y se dice que quedaron catalogadas por tema: sin eso, el diagnóstico por temas no las vería.
+    expect(within(aviso).getByText(/43 quedaron catalogadas por bloque y tema/)).toBeInTheDocument();
     expect(peticion(fetchMock, '/documents/doc-1/versions/ver-1/accept')).toBeDefined();
   });
 

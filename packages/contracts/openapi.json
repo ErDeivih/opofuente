@@ -6495,6 +6495,11 @@
             ],
             "title": "Question Set Id"
           },
+          "questions_catalogued": {
+            "default": 0,
+            "title": "Questions Catalogued",
+            "type": "integer"
+          },
           "questions_imported": {
             "default": 0,
             "title": "Questions Imported",
@@ -6947,6 +6952,11 @@
           "keys_in_conflict": {
             "default": 0,
             "title": "Keys In Conflict",
+            "type": "integer"
+          },
+          "mapped_to_topics": {
+            "default": 0,
+            "title": "Mapped To Topics",
             "type": "integer"
           },
           "missing_columns": {
@@ -13698,7 +13708,7 @@
     },
     "/api/v1/documents/{document_id}/versions/{version_id}/accept": {
       "post": {
-        "description": "Acepta la versión y, después, la aplicación hace sola lo que se puede hacer sola.\n\nAceptar una versión es un acto de una persona (ADR-009) y sigue pidiendo un clic. Lo que\nva detrás —leer el material, ver qué es e **importar sus preguntas con su cita**— no necesita a\nnadie, así que ocurre aquí y se cuenta en la respuesta (S12.5, ADR-017). Si el material no trae\npreguntas, no está clasificado o no está asignado a ninguna oposición, se dice con su motivo en\nlugar de callarlo.",
+        "description": "Acepta la versión y, después, la aplicación hace sola lo que se puede hacer sola.\n\nAceptar una versión es un acto de una persona (ADR-009) y sigue pidiendo un clic. Lo que\nva detrás —leer el material, ver qué es, **importar sus preguntas con su cita** y catalogarlas\npor bloque y tema— no necesita a nadie, así que ocurre aquí y se cuenta en la respuesta (S12.5 y\nS12.6, ADR-017). Si el material no trae preguntas, no está clasificado o no está asignado a\nninguna oposición, se dice con su motivo en lugar de callarlo.",
         "operationId": "accept_version_api_v1_documents__document_id__versions__version_id__accept_post",
         "parameters": [
           {
@@ -16906,7 +16916,7 @@
     },
     "/api/v1/question-sets/{set_id}/import-document": {
       "post": {
-        "description": "Las preguntas de un documento de la biblioteca, con la cita de dónde salió cada una.\n\nRuta **añadida** al contrato §9 y registrada en ADR-013. Es la mitad que faltaba del importador\n(04_INGESTION §10: «parser desde texto/**documento**»): hasta ahora solo entraba texto suelto,\nasí que una pregunta nacida de un documento no podía enseñar su cita ni abrir el original.\n\nLo que **no** hace: inventar la cita. Si la versión no tiene fragmentos extraídos no hay de\ndónde citar, y el informe lo dice con una incidencia en lugar de crear una evidencia vacía.",
+        "description": "Las preguntas de un documento de la biblioteca, con la cita de dónde salió cada una.\n\nRuta **añadida** al contrato §9 y registrada en ADR-013. Es la mitad que faltaba del importador\n(04_INGESTION §10: «parser desde texto/**documento**»): hasta ahora solo entraba texto suelto,\nasí que una pregunta nacida de un documento no podía enseñar su cita ni abrir el original.\n\nDespués de importar se **cataloga**: cada pregunta hereda el programa del documento del que sale\n(S12.6), igual que cuando la importación la hace la aplicación sola al aceptar una versión. Sin\nese paso, las preguntas importadas a mano se quedarían fuera del diagnóstico por temas.\n\nLo que **no** hace: inventar la cita. Si la versión no tiene fragmentos extraídos no hay de\ndónde citar, y el informe lo dice con una incidencia en lugar de crear una evidencia vacía.",
         "operationId": "import_from_document_api_v1_question_sets__set_id__import_document_post",
         "parameters": [
           {

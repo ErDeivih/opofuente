@@ -238,6 +238,68 @@ def test_un_banco_de_preguntas_aceptado_importa_sus_preguntas_solo(
     assert evidencia[0]["status"] == "accepted"
 
 
+def test_las_preguntas_importadas_quedan_catalogadas_por_bloque_y_tema(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """S12.6: el tema se **hereda** del documento, no se adivina.
+
+    Si el documento está asignado al programa —«esto son apuntes del tema 3»—, sus preguntas son del
+    tema 3. El diagnóstico por temas cuenta con ese mapeo, así que inventarlo sería peor que no
+    tenerlo.
+    """
+    version = _version(seeded_settings, texto=TEXTO_PREGUNTAS)
+    _clasificar(seeded_settings, artifact_id="art-1", valor="private_question_bank")
+    _asignar(seeded_settings, version_id=version, node_path="I.1")
+
+    resultado = _aceptar(seeded_client, document_id="doc-ver-1", version_id=version)
+
+    assert resultado["questions_imported"] == 2
+    assert resultado["questions_catalogued"] == 2
+
+    # Se comprueba por la API: cada pregunta tiene su nodo del programa.
+    preguntas = seeded_client.get(
+        f"/api/v1/question-sets/{resultado['question_set_id']}/questions?limit=10"
+    ).json()["questions"]
+    for pregunta in preguntas:
+        mapeos = seeded_client.get(
+            f"/api/v1/mappings?subject_type=question_version&subject_id={pregunta['id']}"
+        ).json()
+        assert len(mapeos) == 1, pregunta["id"]
+        assert mapeos[0]["node_path"] == "I.1"
+        assert mapeos[0]["status"] == "accepted"
+
+
+def test_una_asignacion_sin_aceptar_no_cataloga_ni_crea_conjunto(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """Una asignación **provisional** es una sugerencia, no una decisión: no se usa para nada."""
+    version = _version(seeded_settings, texto=TEXTO_PREGUNTAS)
+    _clasificar(seeded_settings, artifact_id="art-1", valor="private_question_bank")
+    engine = build_engine(seeded_settings.data_paths.database)
+    try:
+        with engine.begin() as conexion:
+            nodo = conexion.execute(
+                text("SELECT id FROM curriculum_nodes WHERE path = 'I.1' LIMIT 1")
+            ).scalar_one()
+            conexion.execute(
+                text(
+                    "INSERT INTO curriculum_mappings (id, curriculum_node_id, subject_type, "
+                    "subject_id, coverage_type, depth, confidence, status, created_at) VALUES "
+                    "('map-provisional', :nodo, 'document_version', :version, 'partial', 1, 0.5, "
+                    "'provisional', :ahora)"
+                ),
+                {"nodo": nodo, "version": version, "ahora": AHORA.isoformat()},
+            )
+    finally:
+        engine.dispose()
+
+    resultado = _aceptar(seeded_client, document_id="doc-ver-1", version_id=version)
+
+    assert resultado["questions_imported"] == 0
+    assert resultado["questions_catalogued"] == 0
+    assert "no está asignada a ninguna oposición" in str(resultado["questions_note"])
+
+
 def test_un_temario_no_crea_ningun_conjunto(
     seeded_settings: Settings, seeded_client: TestClient
 ) -> None:

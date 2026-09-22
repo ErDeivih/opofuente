@@ -13,7 +13,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Query
 
-from opofuente.api.deps import QuestionServiceDep
+from opofuente.api.deps import AutoStudyServiceDep, QuestionServiceDep
 from opofuente.api.error_responses import INGESTION_WRITE_ERRORS, RESOURCE_ERRORS
 from opofuente.api.question_schemas import (
     AnswerKeySchema,
@@ -167,7 +167,7 @@ def _group(grupo: QuestionDuplicateGroup) -> DuplicateGroupSchema:
 
 
 def _report(
-    informe: QuestionImportReport, *, key_id: str | None = None
+    informe: QuestionImportReport, *, key_id: str | None = None, catalogadas: int = 0
 ) -> QuestionImportReportSchema:
     return QuestionImportReportSchema(
         set_id=informe.set_id,
@@ -177,6 +177,7 @@ def _report(
         with_key=informe.with_key,
         key_entries=informe.key_entries,
         keys_in_conflict=informe.keys_in_conflict,
+        mapped_to_topics=catalogadas,
         rejected=[
             RejectedRowSchema(row_number=fila.row_number, cause=fila.cause, detail=fila.detail)
             for fila in informe.rejected
@@ -374,7 +375,10 @@ def parse_into_set(
     summary="Importa las preguntas de una versión de documento (ruta añadida: DEBT-010)",
 )
 def import_from_document(
-    set_id: str, request: ImportQuestionsFromDocumentSchema, service: QuestionServiceDep
+    set_id: str,
+    request: ImportQuestionsFromDocumentSchema,
+    service: QuestionServiceDep,
+    auto: AutoStudyServiceDep,
 ) -> QuestionImportReportSchema:
     """Las preguntas de un documento de la biblioteca, con la cita de dónde salió cada una.
 
@@ -382,16 +386,20 @@ def import_from_document(
     (04_INGESTION §10: «parser desde texto/**documento**»): hasta ahora solo entraba texto suelto,
     así que una pregunta nacida de un documento no podía enseñar su cita ni abrir el original.
 
+    Después de importar se **cataloga**: cada pregunta hereda el programa del documento del que sale
+    (S12.6), igual que cuando la importación la hace la aplicación sola al aceptar una versión. Sin
+    ese paso, las preguntas importadas a mano se quedarían fuera del diagnóstico por temas.
+
     Lo que **no** hace: inventar la cita. Si la versión no tiene fragmentos extraídos no hay de
     dónde citar, y el informe lo dice con una incidencia en lugar de crear una evidencia vacía.
     """
     if service.set_detail(set_id) is None:
         raise NotFoundError("conjunto de preguntas", set_id)
-    return _report(
-        service.import_from_document(
-            set_id, request.document_version_id, origin_type=Origin.PRIVATE
-        )
+    informe = service.import_from_document(
+        set_id, request.document_version_id, origin_type=Origin.PRIVATE
     )
+    catalogadas = auto.catalogue_questions(set_id=set_id, version_id=request.document_version_id)
+    return _report(informe, catalogadas=catalogadas)
 
 
 @router.get(

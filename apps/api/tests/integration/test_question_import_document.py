@@ -151,6 +151,33 @@ def _version_con_fragmentos(
     return version_id
 
 
+def _asignar_version_al_programa(settings: Settings, *, version_id: str, node_path: str) -> None:
+    """Asigna la versión a un nodo del programa, aceptado, como lo deja la revisión."""
+    engine = build_engine(settings.data_paths.database)
+    try:
+        with engine.begin() as conexion:
+            nodo = conexion.execute(
+                text("SELECT id FROM curriculum_nodes WHERE path = :path LIMIT 1"),
+                {"path": node_path},
+            ).scalar_one()
+            conexion.execute(
+                text(
+                    "INSERT INTO curriculum_mappings (id, curriculum_node_id, subject_type, "
+                    "subject_id, coverage_type, depth, confidence, status, created_at, "
+                    "approved_at) VALUES (:id, :nodo, 'document_version', :version, 'partial', 1, "
+                    "0.9, 'accepted', :ahora, :ahora)"
+                ),
+                {
+                    "id": f"map-{version_id}",
+                    "nodo": nodo,
+                    "version": version_id,
+                    "ahora": AHORA.isoformat(),
+                },
+            )
+    finally:
+        engine.dispose()
+
+
 def _conjunto(client: TestClient) -> str:
     oposiciones = client.get("/api/v1/oppositions").json()
     activa = next(oposicion for oposicion in oposiciones if oposicion["active"])
@@ -336,3 +363,35 @@ def test_importar_un_cuestionario_en_markdown_lee_preguntas_opciones_y_clave(
     ]
     # La respuesta correcta no viaja en la ficha de la pregunta: eso lo dice la clave.
     assert "is_correct" not in detalle["options"][0]
+
+
+def test_importar_a_mano_tambien_cataloga_por_bloque_y_tema(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """La catalogación no depende de que la importación la haga la aplicación sola (S12.6).
+
+    Si el documento está asignado al programa, sus preguntas heredan el tema también cuando la
+    importación la pide una persona. Si no, las preguntas importadas a mano se quedarían fuera del
+    diagnóstico por temas, que es lo que agrupa lo contestado por bloque y tema.
+    """
+    version = _version_con_fragmentos(seeded_settings, secciones=[("Tema 1", 1, [TEXTO_PARTE_1])])
+    _asignar_version_al_programa(seeded_settings, version_id=version, node_path="I.1")
+    set_id = _conjunto(seeded_client)
+
+    respuesta = seeded_client.post(
+        f"/api/v1/question-sets/{set_id}/import-document",
+        json={"document_version_id": version},
+        headers=ALLOWED_ORIGIN,
+    )
+
+    assert respuesta.status_code == 200, respuesta.text
+    informe = respuesta.json()
+    assert informe["created"] == 1
+    assert informe["mapped_to_topics"] == 1
+
+    pregunta_id = _preguntas(seeded_client, set_id)[0]["id"]
+    mapeos = seeded_client.get(
+        f"/api/v1/mappings?subject_type=question_version&subject_id={pregunta_id}"
+    ).json()
+    assert [mapeo["node_path"] for mapeo in mapeos] == ["I.1"]
+    assert mapeos[0]["status"] == "accepted"

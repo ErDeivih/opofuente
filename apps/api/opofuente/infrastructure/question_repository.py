@@ -1104,6 +1104,36 @@ class SqlAlchemyQuestionRepository:
             session.commit()
             return True
 
+    def questions_without_topic(self, set_id: str, *, limit: int = 500) -> tuple[str, ...]:
+        """Preguntas del conjunto que **no** están catalogadas en ningún nodo del programa.
+
+        Lo usa la catalogación automática (S12.6): solo se catalogan las que no tienen tema, porque
+        pisar un tema que ya estaba —puesto a mano o traído de una columna del material— sería
+        cambiar una decisión sin decirlo. Una sola consulta, con la ausencia comprobada en la base y
+        no pregunta a pregunta.
+        """
+        with self._session_factory() as session:
+            filas = session.execute(
+                select(QuestionVersionRecord.id)
+                .where(
+                    QuestionVersionRecord.question_set_id == set_id,
+                    ~session.query(CurriculumMappingRecord.id)
+                    .filter(
+                        CurriculumMappingRecord.subject_type == "question_version",
+                        CurriculumMappingRecord.subject_id == QuestionVersionRecord.id,
+                        CurriculumMappingRecord.status == "accepted",
+                    )
+                    .exists(),
+                )
+                .order_by(
+                    QuestionVersionRecord.position,
+                    QuestionVersionRecord.stable_key,
+                    QuestionVersionRecord.id,
+                )
+                .limit(limit)
+            ).scalars()
+            return tuple(str(fila) for fila in filas)
+
     def node_titles_of_set(self, set_id: str) -> dict[str, tuple[tuple[str, str], ...]]:
         """Los temas (nodos del programa) de cada pregunta del conjunto, por orden de nodo.
 

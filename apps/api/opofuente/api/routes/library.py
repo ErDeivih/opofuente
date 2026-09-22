@@ -369,10 +369,10 @@ def accept_version(
     """Acepta la versión y, después, la aplicación hace sola lo que se puede hacer sola.
 
     Aceptar una versión es un acto de una persona (ADR-009) y sigue pidiendo un clic. Lo que
-    va detrás —leer el material, ver qué es e **importar sus preguntas con su cita**— no necesita a
-    nadie, así que ocurre aquí y se cuenta en la respuesta (S12.5, ADR-017). Si el material no trae
-    preguntas, no está clasificado o no está asignado a ninguna oposición, se dice con su motivo en
-    lugar de callarlo.
+    va detrás —leer el material, ver qué es, **importar sus preguntas con su cita** y catalogarlas
+    por bloque y tema— no necesita a nadie, así que ocurre aquí y se cuenta en la respuesta (S12.5 y
+    S12.6, ADR-017). Si el material no trae preguntas, no está clasificado o no está asignado a
+    ninguna oposición, se dice con su motivo en lugar de callarlo.
     """
     if service.version(document_id, version_id) is None:
         raise NotFoundError("versión", version_id)
@@ -383,6 +383,7 @@ def accept_version(
             "questions_imported": automatico.imported,
             "question_set_id": automatico.set_id,
             "questions_note": automatico.note,
+            "questions_catalogued": automatico.catalogued,
         }
     )
 

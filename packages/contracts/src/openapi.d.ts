@@ -790,10 +790,10 @@ export interface paths {
          * @description Acepta la versión y, después, la aplicación hace sola lo que se puede hacer sola.
          *
          *     Aceptar una versión es un acto de una persona (ADR-009) y sigue pidiendo un clic. Lo que
-         *     va detrás —leer el material, ver qué es e **importar sus preguntas con su cita**— no necesita a
-         *     nadie, así que ocurre aquí y se cuenta en la respuesta (S12.5, ADR-017). Si el material no trae
-         *     preguntas, no está clasificado o no está asignado a ninguna oposición, se dice con su motivo en
-         *     lugar de callarlo.
+         *     va detrás —leer el material, ver qué es, **importar sus preguntas con su cita** y catalogarlas
+         *     por bloque y tema— no necesita a nadie, así que ocurre aquí y se cuenta en la respuesta (S12.5 y
+         *     S12.6, ADR-017). Si el material no trae preguntas, no está clasificado o no está asignado a
+         *     ninguna oposición, se dice con su motivo en lugar de callarlo.
          */
         post: operations["accept_version_api_v1_documents__document_id__versions__version_id__accept_post"];
         delete?: never;
@@ -1551,6 +1551,10 @@ export interface paths {
          *     Ruta **añadida** al contrato §9 y registrada en ADR-013. Es la mitad que faltaba del importador
          *     (04_INGESTION §10: «parser desde texto/**documento**»): hasta ahora solo entraba texto suelto,
          *     así que una pregunta nacida de un documento no podía enseñar su cita ni abrir el original.
+         *
+         *     Después de importar se **cataloga**: cada pregunta hereda el programa del documento del que sale
+         *     (S12.6), igual que cuando la importación la hace la aplicación sola al aceptar una versión. Sin
+         *     ese paso, las preguntas importadas a mano se quedarían fuera del diagnóstico por temas.
          *
          *     Lo que **no** hace: inventar la cita. Si la versión no tiene fragmentos extraídos no hay de
          *     dónde citar, y el informe lo dice con una incidencia en lugar de crear una evidencia vacía.
@@ -4625,6 +4629,11 @@ export interface components {
             /** Question Set Id */
             question_set_id?: string | null;
             /**
+             * Questions Catalogued
+             * @default 0
+             */
+            questions_catalogued: number;
+            /**
              * Questions Imported
              * @default 0
              */
@@ -4802,6 +4811,11 @@ export interface components {
              * @default 0
              */
             keys_in_conflict: number;
+            /**
+             * Mapped To Topics
+             * @default 0
+             */
+            mapped_to_topics: number;
             /** Missing Columns */
             missing_columns: string[];
             /** Model Code Detected */

@@ -178,6 +178,9 @@ class QuestionImportReportSchema(BaseModel):
     with_key: int = 0
     key_entries: int = 0
     keys_in_conflict: int = 0
+    #: Preguntas que quedaron **catalogadas por bloque y tema** al heredar el programa del documento
+    #: del que salen (S12.6). Sin ese mapeo, el diagnóstico por temas no las vería.
+    mapped_to_topics: int = 0
     #: Listas obligatorias: «sin filas rechazadas» se dice con una lista vacía, no con un ausente.
     rejected: list[RejectedRowSchema]
     issues: list[ParseIssueSchema]

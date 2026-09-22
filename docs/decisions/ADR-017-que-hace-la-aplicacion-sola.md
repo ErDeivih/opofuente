@@ -56,6 +56,14 @@ existe (lo que ya estaba se reconoce por su huella). Si el material decía traer
 reconoció ninguna, el conjunto se **archiva**: no se queda un conjunto vacío ensuciando la lista, y
 tampoco se borra.
 
+**4 bis. El tema de una pregunta se **hereda**, no se adivina.**
+
+Catalogar por bloque y tema (S12.6) se hace **derivando**: si el documento del que sale la pregunta
+está asignado al programa —«esto son apuntes del tema 3»—, la pregunta es del tema 3. Sin asignación
+aceptada no se cataloga nada, y una pregunta que **ya** tiene tema no se toca, porque pisar una
+decisión (puesta a mano o traída de una columna del material) sería cambiarla en silencio. Una
+asignación solo *propuesta* no cuenta: es una sugerencia, no una decisión.
+
 **5. Todo lo automático se cuenta.**
 
 Cada efecto de una decisión automática viaja con su motivo: cuántas preguntas entraron, o por qué no
@@ -70,10 +78,10 @@ ha hecho nada.
   están en el banco, con su cita**.
 - El banco puede tener conjuntos que el usuario no creó. Se reconocen por su título («Preguntas de
   …»), llevan su `source_document_version_id` y se pueden archivar como cualquier otro.
-- Queda pendiente, y se decidirá en S12.6: **catalogar cada pregunta por bloque y tema** (los mapeos
-  existen para documentos y artefactos, no para preguntas) y **enlazar la plantilla con su examen**.
-  Esta decisión no los autoriza por sí sola: cada uno tiene su propio riesgo (una pregunta mal
-  catalogada envenena el diagnóstico por temas).
+- Queda pendiente, y se decidirá en S12.6: **enlazar la plantilla con su examen** (hoy la clave se
+  importa a mano, con su conjunto). Esa decisión no lo autoriza por sí sola: reconocer que una
+  plantilla es de un examen concreto tiene su propio riesgo (una clave mal enlazada corrige con las
+  respuestas de otro examen).
 - Automatizar la importación **no** automatiza la corrección: las claves siguen siendo lo que son, y
   un conjunto importado sin clave activa no corrige nada (la pantalla lo dice).
 

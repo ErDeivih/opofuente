@@ -57,7 +57,12 @@ function describeError(error: unknown): string {
 function describeImportacionAutomatica(resultado: PromotionOutcome): string {
   const importadas = resultado.questions_imported ?? 0;
   if (importadas > 0) {
-    return `Se importaron ${String(importadas)} preguntas de este documento al banco, con su cita. Ya se pueden estudiar.`;
+    const catalogadas = resultado.questions_catalogued ?? 0;
+    const programa =
+      catalogadas > 0
+        ? ` Y ${String(catalogadas)} quedaron catalogadas por bloque y tema, así que el diagnóstico por temas ya las ve.`
+        : ' No se catalogaron por tema: el documento no está asignado al programa de ninguna oposición.';
+    return `Se importaron ${String(importadas)} preguntas de este documento al banco, con su cita. Ya se pueden estudiar.${programa}`;
   }
   const motivo = resultado.questions_note ?? null;
   if (motivo === null) {

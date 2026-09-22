@@ -380,17 +380,29 @@ verificadas y documentadas en `15_OFFICIAL-PROFILES-AND-SOURCE-MANIFEST` §4, si
 - Aceptar la versión 2 del mismo documento añade solo las preguntas nuevas al conjunto que ya existía.
 - Un material que decía traer preguntas y no trae ninguna no deja un conjunto vacío en la lista.
 
-## S12.6 — Catalogar y enlazar (pendiente)
+## S12.6 — Catalogar por bloque y tema, y enlazar la clave (en curso)
 
-Lo que queda de «que la aplicación lo haga todo», cada pieza con su decisión antes de codificar:
+### Entrega (hecha)
 
-- **enlazar la plantilla de respuestas con su examen**: hoy la clave se importa a mano, con su
-  conjunto. Enlazarla exige decidir cómo se reconoce que una plantilla es de un examen concreto
-  (por el modelo, por el número de preguntas, por la fecha) y qué se hace cuando no cuadra;
-- **catalogar cada pregunta por bloque y tema**: los mapeos existen para documentos y artefactos, no
-  para preguntas (`SubjectType` solo tiene esos dos). Una pregunta mal catalogada envenena el
-  diagnóstico por temas, así que la propuesta y su banda tienen que decidirse, no suponerse;
+- Al importar preguntas de un documento —sola, al aceptar una versión (S12.5), o a mano desde el
+  banco—, cada pregunta **hereda el programa** del documento del que sale: si la versión está asignada
+  al «Tema 3», sus preguntas son del tema 3. Es una derivación, no una adivinanza: sin asignación
+  **aceptada** no se cataloga nada, y una pregunta que ya tiene tema no se toca (ADR-017).
+- El informe lo cuenta: `mapped_to_topics` en el informe de importación y `questions_catalogued` en
+  la respuesta de aceptar una versión; la ficha del documento lo dice.
+
+### Aceptación (de lo hecho)
+
+- Las preguntas de un documento asignado quedan con su nodo, y el diagnóstico por temas las ve.
+- Una asignación **provisional** no cataloga ni crea conjunto: es una sugerencia, no una decisión.
+- Las preguntas que ya traían tema (por ejemplo, de una columna del material) se quedan como estaban.
+
+### Pendiente
+
+- **enlazar la plantilla de respuestas con su examen**: decidir cómo se reconoce que una plantilla es
+  de un examen concreto (por el modelo, por el número de preguntas, por la fecha) y qué se hace
+  cuando no cuadra;
 - **una pantalla que diga «esto ya está listo para estudiar»** y qué falta, si falta algo, por
   oposición: material por papel, preguntas por tema, claves activas y lo que sigue esperando una
-  decisión de una persona (autoridad y derechos, aceptar una versión);
+  decisión de una persona;
 - de paso, **DEBT-024**: clasificar deja de ser una petición síncrona con el corpus entero.
