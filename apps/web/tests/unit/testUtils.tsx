@@ -15,6 +15,7 @@ import type {
   CurriculumNodeDetail,
   Opposition,
 } from '../../src/api/profiles';
+import type { PendingActions, StudyReadiness } from '../../src/api/readiness';
 
 export function createTestQueryClient(): QueryClient {
   return new QueryClient({
@@ -227,6 +228,83 @@ export const TAI_ID = 'opp-tai';
 export const GC_ID = 'opp-gc';
 export const TAI_CONVOCATION_ID = 'conv-tai';
 export const GC_CONVOCATION_ID = 'conv-gc';
+
+/**
+ * El resumen de preparación de S12.6, como lo sirve el servidor.
+ *
+ * Las frases van con sus cifras y **las compone el servidor**: la pantalla las enseña tal cual, así
+ * que estas respuestas son el contrato de lo que se lee en Inicio.
+ */
+export const studyReadinessFixture: StudyReadiness = {
+  opposition_id: TAI_ID,
+  opposition_name: 'Cuerpo de Técnicos Auxiliares de Informática de la Administración del Estado',
+  convocation_code: 'tai-age-2025',
+  ready: false,
+  steps: [
+    {
+      key: 'material',
+      title: 'Material por papel',
+      status: 'ready',
+      detail: '12 documento(s) aceptado(s): Temario o programa (5), Apuntes personales (7)',
+      count: 12,
+      action_href: '/biblioteca',
+      action_label: 'Ver la biblioteca',
+    },
+    {
+      key: 'preguntas',
+      title: 'Preguntas por tema',
+      status: 'incomplete',
+      detail: '70 pregunta(s) en 1 conjunto(s); 62 catalogada(s) por tema. Quedan 8 sin tema',
+      count: 70,
+      action_href: '/preguntas',
+      action_label: 'Ver el banco',
+    },
+    {
+      key: 'claves',
+      title: 'Claves activas',
+      status: 'ready',
+      detail: '1 de 1 conjunto(s) con clave activa',
+      count: 1,
+      action_href: '/preguntas',
+      action_label: 'Ver las plantillas',
+    },
+  ],
+  missing: ['70 pregunta(s) en 1 conjunto(s); 62 catalogada(s) por tema. Quedan 8 sin tema'],
+};
+
+/** El mismo resumen con los tres pasos completos: es lo que se ve cuando ya se puede estudiar. */
+export const studyReadinessReadyFixture: StudyReadiness = {
+  ...studyReadinessFixture,
+  ready: true,
+  steps: studyReadinessFixture.steps.map((paso) =>
+    paso.key === 'preguntas' ? { ...paso, status: 'ready' as const } : paso,
+  ),
+  missing: [],
+};
+
+export const pendingActionsFixture: PendingActions = {
+  actions: [
+    {
+      key: 'clasificaciones',
+      title: 'Clasificaciones esperando tu decisión',
+      detail: '38 propuesta(s) sin decidir: hasta que se decidan, ese material no está en ningún tema',
+      count: 38,
+      href: '/revision',
+      label: 'Revisar propuestas',
+    },
+    {
+      key: 'versiones',
+      title: 'Material sin aceptar',
+      detail: '2 versión(es) de documento sin aceptar',
+      count: 2,
+      href: '/biblioteca',
+      label: 'Ver la biblioteca',
+    },
+  ],
+  total: 40,
+};
+
+export const pendingActionsEmptyFixture: PendingActions = { actions: [], total: 0 };
 
 export const oppositionsFixture: Opposition[] = [
   {

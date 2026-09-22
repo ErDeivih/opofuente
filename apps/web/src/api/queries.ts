@@ -129,6 +129,7 @@ import {
   type PatchQuestion,
 } from './questions';
 import { fetchCapabilities, fetchReadiness, fetchSettings } from './system';
+import { fetchPendingActions, fetchStudyReadiness } from './readiness';
 import {
   createBackup,
   executeRestore,
@@ -145,6 +146,10 @@ import {
 } from './maintenance';
 export const queryKeys = {
   readiness: ['system', 'readiness'] as const,
+  // `readiness` (arriba) es la salud del sistema; esta es la preparación para estudiar (S12.6).
+  studyReadiness: (oppositionId: string) =>
+    ['profiles', 'study-readiness', oppositionId] as const,
+  pendingActions: ['profiles', 'pending-actions'] as const,
   capabilities: ['system', 'capabilities'] as const,
   settings: ['system', 'settings'] as const,
   oppositions: ['profiles', 'oppositions'] as const,
@@ -1430,4 +1435,36 @@ export function useRemoveFromCollection() {
 
 export function useDiagnosticText() {
   return useMutation({ mutationFn: fetchDiagnosticText });
+}
+
+/* --------------------------------------------------- S12.6: ¿está listo para estudiar? */
+
+/**
+ * El resumen de preparación de una oposición: material por papel, preguntas por tema y claves activas.
+ *
+ * Se refresca a los 30 segundos como los perfiles: lo que cuenta cambia cuando el propietario acepta
+ * material o activa una clave, y volver a Inicio tiene que enseñar el estado de ahora, no el de la
+ * primera carga.
+ */
+export function useStudyReadiness(oppositionId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.studyReadiness(oppositionId ?? 'ninguna'),
+    queryFn: () => fetchStudyReadiness(oppositionId as string),
+    enabled: oppositionId !== null,
+    staleTime: 30_000,
+  });
+}
+
+/**
+ * Lo que sigue esperando una decisión de una persona.
+ *
+ * No se refresca sola con la misma prisa: es una lista de tareas, no un dato vivo. Se recarga al
+ * volver a la pantalla y cuando una acción de la propia interfaz invalida `['profiles']`.
+ */
+export function usePendingActions() {
+  return useQuery({
+    queryKey: queryKeys.pendingActions,
+    queryFn: fetchPendingActions,
+    staleTime: 30_000,
+  });
 }

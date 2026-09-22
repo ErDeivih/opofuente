@@ -28,7 +28,18 @@ test('E2E-00 primera ejecución: la aplicación arranca y declara su estado real
       .or(page.getByText('Última sesión'))
       .or(page.getByText('Sesión en marcha')),
   ).toBeVisible();
-  await expect(page.getByText('No hay material importado')).toBeVisible();
+
+  // Desde S12.6 las dos tarjetas que antes no leían nada leen de verdad. El estado del programa dice
+  // si se puede estudiar, con los tres pasos del servidor y su frase...
+  await expect(page.getByRole('heading', { name: '¿Listo para estudiar?' })).toBeVisible();
+  await expect(page.getByText(/Material por papel: /)).toBeVisible();
+  await expect(page.getByText(/Preguntas por tema: /)).toBeVisible();
+  await expect(page.getByText(/Claves activas: /)).toBeVisible();
+  await expect(page.getByText(/listo para estudiar|falta/).first()).toBeVisible();
+  // ...y las acciones necesarias o dicen qué espera una decisión, o dicen que no hay nada.
+  await expect(
+    page.getByText(/Nada esperando tu decisión|pendiente\(s\)/).first(),
+  ).toBeVisible();
 });
 
 test('E2E-00 navegación: las secciones construidas llevan a su pantalla y el resto anuncia su slice', async ({

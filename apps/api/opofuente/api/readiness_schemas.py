@@ -34,12 +34,13 @@ class StudyReadinessSchema(BaseModel):
 
     opposition_id: str
     opposition_name: str
-    convocation_code: str | None = None
+    #: Sin convocatoria activa se sirve `null` y el campo sigue estando: la interfaz distingue «no
+    #: hay convocatoria» de «no me lo han dicho», y un campo ausente no distingue nada.
+    convocation_code: str | None
     ready: bool
     steps: list[StudyReadinessStepSchema]
     missing: list[str] = Field(
-        default_factory=list,
-        description="Una frase por paso que no está listo, tal y como se enseña.",
+        description="Una frase por paso que no está listo, tal y como se enseña."
     )
 
 

@@ -105,6 +105,7 @@ rutas absolutas ni las claves: el formateador solo copia una lista blanca de cam
 | Una copia no se puede restaurar | Verifícala: el motivo se dice. Si es de una revisión más nueva, actualiza el programa |
 | Corrupción de la base | Para el proceso (no dejar que siga escribiendo), copia `opofuente.sqlite3` y el manifiesto a mano, y restaura desde la última copia verificada |
 | Las puertas E2E fallan al arrancar porque el puerto está ocupado | Es lo que tiene que pasar (DEBT-021): la suite **no** reutiliza un servidor ajeno. Libera el 8765 y el 4173 —`Get-NetTCPConnection -State Listen -LocalPort 8765,4173` y `Stop-Process` del proceso que los ocupa— y vuelve a lanzarlas. Ojo: cerrar la ventana de la aplicación **no** siempre para el proceso `uvicorn` |
+| Vas a lanzar la suite E2E a mano y en la máquina está puesta `OPOFUENTE_DATA_DIR` | Desde DEBT-026 la suite **ignora** esa variable: sus datos van siempre a `.e2e-data` dentro del repositorio, porque esa variable es la que apunta la aplicación a los datos de verdad y heredarla hacía que las pruebas escribieran dentro. Para apuntar la suite a otro sitio, `OPOFUENTE_E2E_DATA_DIR` |
 
 ## 6. Qué **no** hace la aplicación (y lo dice)
 

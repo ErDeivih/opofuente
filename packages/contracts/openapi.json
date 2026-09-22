@@ -9813,8 +9813,10 @@
         "required": [
           "opposition_id",
           "opposition_name",
+          "convocation_code",
           "ready",
-          "steps"
+          "steps",
+          "missing"
         ],
         "title": "StudyReadinessSchema",
         "type": "object"

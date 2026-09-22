@@ -9,10 +9,12 @@ import { SearchPage } from '../../src/pages/SearchPage';
 import {
   capabilitiesFixture,
   oppositionsFixture,
+  pendingActionsFixture,
   readinessReady,
   renderWithProviders,
   settingsFixture,
   stubApi,
+  studyReadinessFixture,
   type StubbedRoute,
 } from './testUtils';
 
@@ -121,6 +123,10 @@ function stubBusqueda(overrides: Record<string, StubbedRoute> = {}) {
     '/api/v1/capabilities': { body: capabilitiesFixture },
     '/api/v1/settings': { body: settingsFixture },
     '/api/v1/oppositions': { body: oppositionsFixture },
+    // Las pruebas de esta pantalla navegan a Inicio, que desde S12.6 lee estos dos resúmenes. La
+    // clave de la preparación es más larga que `/api/v1/oppositions`, así que gana para su ruta.
+    '/api/v1/oppositions/opp-tai/readiness': { body: studyReadinessFixture },
+    '/api/v1/pending-actions': { body: pendingActionsFixture },
     '/api/v1/search': { body: BUSQUEDA },
     '/api/v1/rag/queries': { body: RESPUESTA_INSUFICIENTE, status: 201 },
     '/api/v1/rag/queries/rag-1/retrieval': {

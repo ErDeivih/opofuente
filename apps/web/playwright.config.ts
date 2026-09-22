@@ -5,7 +5,21 @@ import { defineConfig, devices } from '@playwright/test';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(here, '..', '..');
-const e2eDataDir = process.env.OPOFUENTE_DATA_DIR ?? path.join(repoRoot, '.e2e-data');
+
+/**
+ * El directorio de datos de la suite es **suyo y solo suyo**: `.e2e-data` dentro del repositorio.
+ *
+ * **No** se toma de `OPOFUENTE_DATA_DIR` a propósito (DEBT-026): esa es la variable con la que se
+ * apunta la aplicación a los datos de verdad —el propietario la tiene puesta en su máquina, a veces
+ * señalando una copia de su corpus—, y una suite que la hereda escribe sus pruebas **dentro de esos
+ * datos**. Pasó el 22 de septiembre de 2026: dos ficheros sintéticos, su clasificación y sus sesiones
+ * entraron en una copia del corpus del propietario por correr Playwright a mano con esa variable
+ * puesta. Las puertas no lo veían porque `gates.ps1` borra la variable antes de la puerta 18; el
+ * camino manual, que es el que se usa para depurar, sí.
+ *
+ * Para apuntar la suite a otro sitio hay una variable propia y explícita, que nadie pone sin querer.
+ */
+const e2eDataDir = process.env.OPOFUENTE_E2E_DATA_DIR ?? path.join(repoRoot, '.e2e-data');
 
 /** Entorno del sistema sin variables sin definir, para pasarlo a los procesos hijos. */
 const inheritedEnv: Record<string, string> = Object.fromEntries(

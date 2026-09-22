@@ -5934,12 +5934,12 @@ export interface components {
          */
         StudyReadinessSchema: {
             /** Convocation Code */
-            convocation_code?: string | null;
+            convocation_code: string | null;
             /**
              * Missing
              * @description Una frase por paso que no está listo, tal y como se enseña.
              */
-            missing?: string[];
+            missing: string[];
             /** Opposition Id */
             opposition_id: string;
             /** Opposition Name */

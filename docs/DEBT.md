@@ -37,6 +37,7 @@ Reglas:
 | [DEBT-023](#debt-023--una-tarjeta-de-anki-no-puede-ser-una-pregunta-porque-no-hay-dónde-guardar-su-respuesta) | S12.6 | El modelo tiene el tipo `free_text_reference` y no tiene dónde guardar la respuesta de referencia: el reverso de una tarjeta no entra | abierta |
 | [DEBT-024](#debt-024--la-clasificación-se-pide-de-forma-síncrona-y-con-el-corpus-entero-tarda-demasiado) | S12.6 | «Buscar propuestas ahora» clasifica todo el corpus en la misma petición: con material real tarda decenas de segundos y bloquea la pantalla | cerrada |
 | [DEBT-025](#debt-025--corregir-una-pregunta-infla-el-conjunto-y-puede-volver-a-preguntarse-el-texto-viejo) | S12.6 | La versión sustituida de una pregunta corregida cuenta como pregunta: el conjunto se infla, el banco enseña el enunciado viejo y una sesión nueva puede componerse con él | **cerrada** (22 de septiembre de 2026: las consultas del banco dejan fuera `superseded`, y la historia se sigue leyendo pidiéndola) |
+| [DEBT-026](#debt-026--la-suite-e2e-toma-su-directorio-de-datos-del-entorno-y-escribe-donde-le-digan) | S12.6 | Playwright resuelve su directorio de datos con `OPOFUENTE_DATA_DIR`: con esa variable puesta apuntando a una copia del corpus del propietario, correr la suite a mano escribe las pruebas **dentro de su material** | **cerrada** (22 de septiembre de 2026: la suite usa siempre `.e2e-data` y, para apuntarla a otro sitio, una variable propia) |
 
 ---
 
@@ -1303,3 +1304,54 @@ crea con 2.
 `stable_key`: si dos importaciones crearan dos versiones vivas de la misma pregunta por un camino que
 no pase por la huella, contarían dos. No se ha visto que ocurra —la importación es idempotente por
 contenido—, pero el recuento no lo impide.
+
+---
+
+## DEBT-026 — La suite E2E toma su directorio de datos del entorno y escribe donde le digan
+
+**Origen:** verificación de S12.6 (22 de septiembre de 2026), al mirar una captura de la pantalla de
+Inicio con material: la captura enseñaba **348 propuestas pendientes, 150 avisos de importación y 11
+cambios propuestos** después de importar dos ficheros sintéticos.
+
+**Problema.** `apps/web/playwright.config.ts` resolvía su directorio de datos así:
+
+```ts
+const e2eDataDir = process.env.OPOFUENTE_DATA_DIR ?? path.join(repoRoot, '.e2e-data');
+```
+
+`OPOFUENTE_DATA_DIR` es la variable con la que se apunta **la aplicación** a sus datos: la que el
+propietario tiene puesta en su máquina, a veces señalando una copia de su corpus real. Una suite que
+la hereda no prueba una base de datos de pruebas: prueba **la suya**, y le escribe dentro. Las puertas
+no lo veían porque `scripts/gates.ps1` borra esa variable antes de la puerta 18 (`Remove-Item
+Env:OPOFUENTE_DATA_DIR`), así que el camino automático estaba a salvo; el camino manual —el que se usa
+para depurar y para mirar la interfaz— no.
+
+Medido el 22 de septiembre de 2026, con esa variable puesta apuntando a una copia del corpus del
+propietario:
+
+| Corrida | Directorio de datos usado | Efecto |
+|---|---|---|
+| `npx playwright test` a mano | la copia del corpus del propietario | dos ficheros sintéticos, su clasificación y sus sesiones **dentro de su material**; la base de la copia se reescribió a las 23:27-23:34 |
+| puerta 18 de `gates.ps1` | `.e2e-data` (la variable se borra antes) | ninguna: la puerta estaba bien |
+
+La carpeta real del propietario (`C:\Users\David\OneDrive\Escritorio\Apuntes TAI`) **no** se tocó: la
+aplicación nunca escribe en el material de origen, solo copia de él. Lo que se contaminó fue la copia
+de medición de DEBT-018/DEBT-024, que ya estaba contaminada de corridas anteriores por el mismo motivo.
+
+**Qué se hizo** (22 de septiembre de 2026, S12.6). La suite deja de mirar la variable de la aplicación:
+
+- su directorio es siempre `.e2e-data`, dentro del repositorio;
+- para apuntarla a otro sitio hay una variable **propia** y explícita, `OPOFUENTE_E2E_DATA_DIR`, que
+  nadie tiene puesta sin querer;
+- el porqué queda escrito en la config y en `docs/OPERACION.md` §5, que es donde se busca cuando algo
+  va mal.
+
+**Cómo se comprueba.** Con `OPOFUENTE_DATA_DIR` puesta apuntando a la copia del corpus, una corrida
+completa de las 45 pruebas E2E crea y usa `.e2e-data` y **no toca** la copia: su `opofuente.sqlite3`
+conserva la fecha de modificación anterior (23:30:20, frente a los ficheros de `.e2e-data` de las
+23:33-23:34).
+
+**Lo que sigue en pie.** El mismo patrón podría repetirse en cualquier otro sitio que resuelva datos
+desde el entorno (`scripts/dev.ps1`, `scripts/*.ps1`): se revisó que las puertas y los scripts del
+repositorio fijan su propio directorio, pero no hay una comprobación automática de que **ningún**
+proceso de prueba herede `OPOFUENTE_DATA_DIR`. La prueba de las 45 E2E es hoy la única red.

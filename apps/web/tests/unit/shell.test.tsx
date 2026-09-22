@@ -9,10 +9,12 @@ import { HomePage } from '../../src/pages/HomePage';
 import {
   capabilitiesFixture,
   oppositionsFixture,
+  pendingActionsFixture,
   readinessReady,
   renderWithProviders,
   settingsFixture,
   stubApi,
+  studyReadinessFixture,
   type StubbedRoute,
 } from './testUtils';
 
@@ -22,6 +24,10 @@ function stubSystemApi(extra: Record<string, StubbedRoute> = {}) {
     '/api/v1/capabilities': { body: capabilitiesFixture },
     '/api/v1/settings': { body: settingsFixture },
     '/api/v1/oppositions': { body: oppositionsFixture },
+    // Inicio lee además la preparación y lo que espera una decisión (S12.6). La clave de la
+    // preparación es más larga que `/api/v1/oppositions`, así que gana para su ruta.
+    '/api/v1/oppositions/opp-tai/readiness': { body: studyReadinessFixture },
+    '/api/v1/pending-actions': { body: pendingActionsFixture },
     ...extra,
   });
 }

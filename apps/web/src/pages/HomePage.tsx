@@ -2,6 +2,8 @@ import { Link } from 'react-router-dom';
 
 import { EmptyState } from '../components/EmptyState';
 import { LoadingState } from '../components/LoadingState';
+import { PendingActionsPanel } from '../features/home/PendingActionsPanel';
+import { StudyReadinessPanel } from '../features/home/StudyReadinessPanel';
 import { SystemStatus } from '../features/system/SystemStatus';
 import { useOppositions, useReviewQueue, useStudySessions } from '../api/queries';
 import { queueSummary } from '../api/reviews';
@@ -13,6 +15,11 @@ import { modeLabel, statusLabel } from '../features/study/labels';
  * «Estado del programa» muestra el perfil realmente sembrado, y «Continuar estudiando» lee las
  * sesiones de verdad. Desde S10 la tarjeta también mira el **repaso vencido**: §3 pide recomendar la
  * siguiente tarea, y lo que toca hoy manda sobre lo último que se hizo.
+ *
+ * Desde S12.6 las dos tarjetas que antes no leían nada leen de verdad: «Acciones necesarias» enseña
+ * lo que espera una decisión humana (incidencias, propuestas, cambios y material sin aceptar) y
+ * «Estado del programa» añade si la oposición está **lista para estudiar** y qué falta. El orden es el
+ * de §3: qué hacer hoy, qué me espera, cómo va el programa y, al final, el estado del sistema.
  */
 export function HomePage() {
   const oppositions = useOppositions();
@@ -133,14 +140,7 @@ export function HomePage() {
         )}
       </section>
 
-      <section className="card" aria-labelledby="acciones-necesarias">
-        <h2 id="acciones-necesarias">Acciones necesarias</h2>
-        <EmptyState
-          title="No hay material importado"
-          description="Desde S02 puedes inventariar una carpeta y copiar lo que confirmes, pero esta pantalla todavía no resume esos avisos."
-          hint="El resumen de importaciones con errores llega en el slice S12."
-        />
-      </section>
+      <PendingActionsPanel />
 
       <section className="card" aria-labelledby="estado-programa">
         <h2 id="estado-programa">Estado del programa</h2>
@@ -180,6 +180,9 @@ export function HomePage() {
             <dt>Perfiles disponibles</dt>
             <dd>{total}</dd>
           </dl>
+        )}
+        {oppositions.isSuccess && active !== null && (
+          <StudyReadinessPanel oppositionId={active.id} />
         )}
       </section>
 
