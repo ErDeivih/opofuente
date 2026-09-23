@@ -190,6 +190,24 @@ class IngestionRepository(Protocol):
 
     def request_cancel(self, batch_id: str) -> bool: ...
 
+    def request_pause(self, batch_id: str) -> bool:
+        """Marca el lote en pausa: deja de avanzar sin perder lo hecho (DEBT-027 §4)."""
+        ...
+
+    def clear_pause(self, batch_id: str) -> bool:
+        """Quita la pausa de un lote y lo devuelve a la cola."""
+        ...
+
+    def is_paused(self, batch_id: str) -> bool: ...
+
+    def start_running(self, batch_id: str, *, now: datetime) -> bool:
+        """Pasa el lote a `running` si no está en pausa. `False` si la pausa llegó antes."""
+        ...
+
+    def confirm_pause(self, batch_id: str, counters: CountersLike, *, now: datetime) -> bool:
+        """Deja la pausa confirmada con los contadores al día, si el lote sigue en pausa."""
+        ...
+
     def get_batch(self, batch_id: str) -> BatchView | None: ...
 
     def list_batches(self, *, limit: int, offset: int) -> tuple[BatchView, ...]: ...
@@ -305,6 +323,18 @@ class JobQueue(Protocol):
     def finish(self, job_id: str, *, owner: str, now: datetime) -> None: ...
 
     def acknowledge_cancel(self, job_id: str, *, owner: str, now: datetime) -> None: ...
+
+    def pause(self, job_id: str, *, now: datetime) -> bool:
+        """Detiene un trabajo que aún no ha empezado (uno en marcha lo para su manejador)."""
+        ...
+
+    def acknowledge_pause(self, job_id: str, *, owner: str, now: datetime) -> None:
+        """El manejador ha parado por la pausa de su lote: queda detenido, no terminado."""
+        ...
+
+    def resume(self, job_id: str, *, now: datetime) -> bool:
+        """Devuelve a la cola un trabajo en pausa."""
+        ...
 
     def fail(
         self,

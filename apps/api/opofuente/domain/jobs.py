@@ -45,6 +45,14 @@ class JobStatus(StrEnum):
     SUCCEEDED = "succeeded"
     FAILED = "failed"
     CANCEL_REQUESTED = "cancel_requested"
+    PAUSED = "paused"
+    """Detenido a propósito y sin terminar: el trabajo se reanuda, no se reintenta.
+
+    No es `cancelled` (que es terminal) ni `queued` (que lo reclamaría el worker en la siguiente
+    vuelta). Un trabajo en pausa **sigue vivo** y por tanto conserva su clave de idempotencia: si
+    no, pausar un lote permitiría encolar un segundo trabajo para el mismo lote (DEBT-027 §4).
+    """
+
     CANCELLED = "cancelled"
 
 
@@ -54,6 +62,7 @@ ALIVE_STATUSES = (
     JobStatus.LEASED,
     JobStatus.RUNNING,
     JobStatus.CANCEL_REQUESTED,
+    JobStatus.PAUSED,
 )
 
 _TERMINAL = frozenset({JobStatus.SUCCEEDED, JobStatus.FAILED, JobStatus.CANCELLED})
@@ -65,6 +74,11 @@ def is_terminal(status: JobStatus) -> bool:
 
 def is_cancellable(status: JobStatus) -> bool:
     return status in ALIVE_STATUSES
+
+
+def is_pausable(status: JobStatus) -> bool:
+    """Un trabajo se puede pausar si todavía no ha empezado; uno en marcha lo para su manejador."""
+    return status in {JobStatus.QUEUED, JobStatus.LEASED, JobStatus.CANCEL_REQUESTED}
 
 
 def lease_expiry(now: datetime, seconds: int) -> datetime:

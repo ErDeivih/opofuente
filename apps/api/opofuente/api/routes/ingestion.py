@@ -327,6 +327,27 @@ def cancel_batch(batch_id: str, service: IngestionServiceDep) -> BatchSchema:
 
 
 @router.post(
+    "/ingestion-batches/{batch_id}/pause",
+    response_model=BatchSchema,
+    responses=RETRY_ERRORS,
+    summary="Pausa el lote: deja de avanzar sin perder lo hecho; 409 si ya terminó",
+)
+def pause_batch(batch_id: str, service: IngestionServiceDep) -> BatchSchema:
+    """Pausar no es cancelar: lo copiado sigue copiado y el lote se reanuda (DEBT-027 §4)."""
+    return _batch(service.pause_batch(batch_id))
+
+
+@router.post(
+    "/ingestion-batches/{batch_id}/resume",
+    response_model=BatchSchema,
+    responses=RETRY_ERRORS,
+    summary="Reanuda un lote en pausa y lo devuelve a la cola; 409 si no está en pausa",
+)
+def resume_batch(batch_id: str, service: IngestionServiceDep) -> BatchSchema:
+    return _batch(service.resume_batch(batch_id))
+
+
+@router.post(
     "/ingestion-batches/{batch_id}/retry",
     response_model=BatchSchema,
     responses=RETRY_ERRORS,

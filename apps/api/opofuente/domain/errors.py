@@ -93,17 +93,31 @@ class JobCancelledError(OpoFuenteError):
     """El trabajo se detuvo porque se pidió cancelarlo. No es un fallo."""
 
 
+class JobPausedError(OpoFuenteError):
+    """El trabajo se detuvo porque su lote está en pausa. No es un fallo ni un final.
+
+    Se distingue de `JobCancelledError` porque el desenlace es distinto: cancelar cierra el trabajo,
+    pausar lo deja detenido para poder retomarlo. El worker lo traduce a estado `paused`, y el lote
+    conserva lo que ya había hecho (DEBT-027 §4).
+    """
+
+
 class InvalidBatchStateError(OpoFuenteError):
     """La operación no tiene sentido en el estado actual del lote. La API lo traduce a 409.
 
     Ejemplo: reintentar un lote que ya terminó bien, o que todavía se está copiando. Reintentar
     devolvería entradas a la cola mientras el worker trabaja sobre ellas.
+
+    `action` es el verbo de lo que se intentaba («reintentar», «pausar», «reanudar»): el mensaje
+    tiene que decir lo que el usuario pidió, no lo que suele pedirse en este error.
     """
 
-    def __init__(self, current: str, allowed: tuple[str, ...]) -> None:
+    def __init__(
+        self, current: str, allowed: tuple[str, ...], *, action: str = "reintentar"
+    ) -> None:
         allowed_text = " o ".join(allowed)
         super().__init__(
-            f"el lote está en estado «{current}»: solo se puede reintentar si está {allowed_text}"
+            f"el lote está en estado «{current}»: solo se puede {action} si está {allowed_text}"
         )
         self.current = current
         self.allowed = allowed

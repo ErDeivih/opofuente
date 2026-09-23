@@ -29,6 +29,7 @@ from opofuente.domain.artifacts import OriginType, media_type_for
 from opofuente.domain.errors import (
     InvalidSourceError,
     JobCancelledError,
+    JobPausedError,
     NotFoundError,
     UnsafeContentError,
 )
@@ -125,7 +126,9 @@ class ExtractionService:
             raise InvalidSourceError("solo se extrae de un lote de importación")
 
         now = self._clock.now()
-        self._ingestions.set_status(batch_id, BatchStatus.RUNNING, now=now)
+        if not self._ingestions.start_running(batch_id, now=now):
+            # El lote se pausó entre la reclamación del trabajo y esta línea: no se arranca.
+            raise JobPausedError("el lote está en pausa")
         tick = _Ticker(execution)
         tick.start()
 
@@ -135,6 +138,15 @@ class ExtractionService:
             # Cancelar deja el lote cerrado con lo que sí se extrajo: lo copiado sigue copiado y no
             # queda ninguna representación a medias (se guarda entera o no se guarda).
             self._finish_cancelled(batch_id)
+            raise
+        except JobPausedError:
+            # Pausar **no** cierra el lote: se guarda el informe con lo extraído hasta aquí y el
+            # trabajo queda detenido para retomarlo.
+            self._ingestions.confirm_pause(
+                batch_id,
+                self._ingestions.summarize_import(batch_id),
+                now=self._clock.now(),
+            )
             raise
         self._finish(batch_id, report)
         tick.report(report)
@@ -167,6 +179,8 @@ class ExtractionService:
             for entry in pending:
                 if execution.cancelled():
                     raise JobCancelledError("la extracción se canceló a petición del usuario")
+                if self._ingestions.is_paused(batch_id):
+                    raise JobPausedError("el lote está en pausa")
                 outcome = self._extract_entry(batch_id, entry)
                 processed += 1
                 extracted += outcome == ItemStatus.EXTRACTED

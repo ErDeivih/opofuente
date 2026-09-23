@@ -44,6 +44,8 @@ REQUIRED_PATHS = (
     "/api/v1/ingestion-batches",
     "/api/v1/ingestion-batches/{batch_id}",
     "/api/v1/ingestion-batches/{batch_id}/cancel",
+    "/api/v1/ingestion-batches/{batch_id}/pause",
+    "/api/v1/ingestion-batches/{batch_id}/resume",
     "/api/v1/ingestion-batches/{batch_id}/retry",
     "/api/v1/ingestion-batches/{batch_id}/items",
     "/api/v1/ingestion-batches/{batch_id}/issues",

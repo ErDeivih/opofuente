@@ -28,6 +28,7 @@ from opofuente.domain.jobs import (
     Job,
     JobStatus,
     JobType,
+    is_pausable,
     is_terminal,
     lease_expiry,
     retry_delay_seconds,
@@ -219,6 +220,49 @@ class SqlAlchemyJobRepository:
             record.lease_owner = None
             record.lease_expires_at = None
             session.commit()
+
+    def pause(self, job_id: str, *, now: datetime) -> bool:
+        """Pausa un trabajo que **todavía no ha empezado**; uno en marcha lo para su manejador.
+
+        El estado `paused` cuenta como vivo en el índice de idempotencia, así que la clave del
+        trabajo sigue ocupada: pausar un lote no permite encolar otro trabajo para el mismo lote.
+        """
+        with self._session_factory() as session:
+            record = session.get(JobRecord, job_id)
+            if record is None or not is_pausable(JobStatus(record.status)):
+                return False
+            record.status = JobStatus.PAUSED.value
+            record.lease_owner = None
+            record.lease_expires_at = None
+            record.updated_at = now
+            session.commit()
+            return True
+
+    def acknowledge_pause(self, job_id: str, *, owner: str, now: datetime) -> None:
+        """El manejador ha parado por la pausa del lote: el trabajo queda detenido, no terminado.
+
+        `finished_at` se deja a nulo a propósito: el trabajo no ha terminado, y la interfaz dice
+        «en pausa», no «terminado a las 12:03».
+        """
+        with self._session_factory() as session:
+            record = self._owned(session, job_id, owner)
+            record.status = JobStatus.PAUSED.value
+            record.updated_at = now
+            record.lease_owner = None
+            record.lease_expires_at = None
+            session.commit()
+
+    def resume(self, job_id: str, *, now: datetime) -> bool:
+        """Devuelve a la cola un trabajo en pausa, para que el worker lo retome."""
+        with self._session_factory() as session:
+            record = session.get(JobRecord, job_id)
+            if record is None or record.status != JobStatus.PAUSED.value:
+                return False
+            record.status = JobStatus.QUEUED.value
+            record.not_before = None
+            record.updated_at = now
+            session.commit()
+            return True
 
     def fail(
         self,

@@ -411,6 +411,81 @@ class SqlAlchemyIngestionRepository:
             session.commit()
             return True
 
+    def request_pause(self, batch_id: str) -> bool:
+        """Marca el lote en pausa: deja de avanzar donde está, sin perder lo hecho (DEBT-027 §4).
+
+        No se pausa un lote terminado (no hay nada que continuar) ni uno ya cancelado; pausar dos
+        veces es una operación sin efecto que devuelve `True` porque el estado pedido ya es el que
+        hay.
+        """
+        with self._session_factory() as session:
+            record = session.get(IngestionBatchRecord, batch_id)
+            if record is None:
+                return False
+            if record.status in {
+                BatchStatus.SUCCEEDED.value,
+                BatchStatus.FAILED.value,
+                BatchStatus.CANCELLED.value,
+            }:
+                return False
+            record.status = BatchStatus.PAUSED.value
+            session.commit()
+            return True
+
+    def clear_pause(self, batch_id: str) -> bool:
+        """Quita la pausa: el lote vuelve a la cola. Solo vale si estaba en pausa."""
+        with self._session_factory() as session:
+            record = session.get(IngestionBatchRecord, batch_id)
+            if record is None:
+                return False
+            if record.status != BatchStatus.PAUSED.value:
+                return False
+            record.status = BatchStatus.QUEUED.value
+            session.commit()
+            return True
+
+    def is_paused(self, batch_id: str) -> bool:
+        """La consulta que hace el manejador entre entradas: ¿sigue en pausa este lote?"""
+        with self._session_factory() as session:
+            record = session.get(IngestionBatchRecord, batch_id)
+            return record is not None and record.status == BatchStatus.PAUSED.value
+
+    def start_running(self, batch_id: str, *, now: datetime) -> bool:
+        """Pasa el lote a `running` **si no está en pausa**. Devuelve si arrancó de verdad.
+
+        Existe por una carrera real: el worker reclama el trabajo y, entre la reclamación y la
+        primera línea del manejador, alguien pausa el lote. Si el manejador escribiera `running` sin
+        mirar, desharía la pausa que se acaba de pedir y el lote seguiría copiando. Con esto, la
+        pausa gana: el manejador se detiene y el trabajo queda `paused`.
+        """
+        with self._session_factory() as session:
+            record = session.get(IngestionBatchRecord, batch_id)
+            if record is None:
+                raise InvariantViolationError("el lote no existe")
+            if record.status == BatchStatus.PAUSED.value:
+                return False
+            record.status = BatchStatus.RUNNING.value
+            if record.started_at is None:
+                record.started_at = now
+            session.commit()
+            return True
+
+    def confirm_pause(self, batch_id: str, counters: CountersLike, *, now: datetime) -> bool:
+        """Confirma la pausa **y** guarda los contadores, solo si el lote sigue en pausa.
+
+        Devuelve `False` cuando la pausa se levantó entre la comprobación del manejador y este
+        momento: en ese caso el lote no se toca y el trabajo sigue, que es lo que pidió quien
+        reanudó. Sin esta comprobación dentro de la misma transacción, una reanudación justo en ese
+        hueco dejaría el lote en pausa otra vez, contra la voluntad de quien lo reanudó.
+        """
+        with self._session_factory() as session:
+            record = session.get(IngestionBatchRecord, batch_id)
+            if record is None or record.status != BatchStatus.PAUSED.value:
+                return False
+            record.counters_json = json.dumps(counters.to_dict())
+            session.commit()
+            return True
+
     def get_batch(self, batch_id: str) -> BatchView | None:
         with self._session_factory() as session:
             record = session.get(IngestionBatchRecord, batch_id)

@@ -24,7 +24,7 @@ from opofuente.application.job_service import JobExecution
 from opofuente.config import DataPaths, Settings
 from opofuente.domain.artifacts import Sha256
 from opofuente.domain.errors import InvalidBatchStateError
-from opofuente.domain.ingestion import BatchStatus, IssueCode, ItemStatus
+from opofuente.domain.ingestion import BatchKind, BatchMode, BatchStatus, IssueCode, ItemStatus
 from opofuente.domain.jobs import Job, JobStatus, JobType
 from opofuente.infrastructure.artifact_store import ArtifactStore
 from opofuente.infrastructure.db import build_engine, build_session_factory
@@ -641,6 +641,88 @@ def test_el_espera_entre_reintentos_es_real(migrated_settings: Settings, session
 
     clock.advance(int((esperando.not_before - clock.now()).total_seconds()) + 1)
     assert repository.claim_next(owner="w", now=clock.now(), lease_seconds=30) is not None
+
+
+def test_la_pausa_detiene_el_lote_sin_perder_lo_copiado(
+    service: IngestionService, material: Path
+) -> None:
+    """DEBT-027 §4: pausar no es cancelar.
+
+    El lote se pausa **antes** de que su trabajo arranque (el caso de «pauso y me voy»), se
+    comprueba que no ha copiado nada y que el trabajo queda detenido en vez de fallar, y al
+    reanudar termina la copia sin repetir lo que ya estaba hecho.
+    """
+    from opofuente.domain.errors import JobPausedError
+
+    inventario = service.create_inventory(str(material))
+    batch = service.confirm_import(inventario.batch.id)
+    assert batch.status == BatchStatus.QUEUED.value
+
+    pausado = service.pause_batch(batch.id)
+    assert pausado.status == BatchStatus.PAUSED.value
+    # El trabajo que aún no había empezado se pausa con él: el worker no lo reclamará.
+    job = _job_for(service, batch.id)
+    assert job.status is JobStatus.PAUSED
+
+    # Aunque alguien lo ejecutara a mano, el manejador no arranca un lote en pausa.
+    with pytest.raises(JobPausedError):
+        service.run_import_job(FakeExecution(job))
+    detalle = service.get_batch(batch.id)
+    assert detalle.batch.status == BatchStatus.PAUSED.value
+    assert all(entrada.status == ItemStatus.INVENTORIED.value for entrada in detalle.entries), (
+        "en pausa no se copia nada"
+    )
+
+    reanudado = service.resume_batch(batch.id)
+    assert reanudado.status == BatchStatus.QUEUED.value
+    job_reanudado = _job_for(service, batch.id)
+    assert job_reanudado.status is JobStatus.QUEUED
+
+    service.run_import_job(FakeExecution(job_reanudado))
+    detalle = service.get_batch(batch.id)
+    assert detalle.batch.counters["copied"] == 3
+    assert detalle.batch.status == BatchStatus.QUEUED.value, "queda la extracción"
+
+
+def test_pausar_un_lote_terminado_se_rechaza_con_su_motivo(
+    service: IngestionService, material: Path
+) -> None:
+    """El estado se dice con un 409 en lugar de aceptarse y no hacer nada."""
+    inventario = service.create_inventory(str(material))
+    batch = service.confirm_import(inventario.batch.id)
+
+    # Cancelar deja el lote en `cancel_requested`: ni se pausa (no hay nada que continuar) ni se
+    # reanuda (no está en pausa). Las dos se rechazan con el motivo.
+    cancelado = service.cancel_batch(batch.id)
+    assert cancelado.status == BatchStatus.CANCEL_REQUESTED.value
+    with pytest.raises(InvalidBatchStateError):
+        service.pause_batch(batch.id)
+    with pytest.raises(InvalidBatchStateError):
+        service.resume_batch(batch.id)
+
+
+def test_reanudar_un_lote_sin_nada_pendiente_lo_cierra(
+    service: IngestionService, session_factory
+) -> None:
+    """Si no queda trabajo detenido ni entradas por hacer, reanudar cierra el lote.
+
+    Es la rama defensiva: un lote en pausa cuyo trabajo ya no existe (por ejemplo, porque terminó
+    justo cuando se pausó) no puede quedarse en pausa para siempre.
+    """
+    repositorio = SqlAlchemyIngestionRepository(session_factory)
+    lote = repositorio.create_batch(
+        kind=BatchKind.IMPORT,
+        mode=BatchMode.COPY,
+        source_path_display="C:/material",
+        source_root=None,
+        now=datetime(2026, 1, 1, tzinfo=UTC),
+        status=BatchStatus.QUEUED,
+    )
+
+    service.pause_batch(lote)
+    reanudado = service.resume_batch(lote)
+
+    assert reanudado.status == BatchStatus.SUCCEEDED.value
 
 
 def test_la_cancelacion_deja_el_informe_cuadrado(service: IngestionService, material: Path) -> None:

@@ -401,6 +401,62 @@ def test_reintentar_un_lote_en_cola_devuelve_409(
     )
 
 
+def test_pausar_y_reanudar_un_lote_por_la_api(api_only_client: TestClient, material: Path) -> None:
+    """DEBT-027 §4: pausar/cancelar desde la API, con el worker parado.
+
+    Con el worker desactivado el lote se queda en cola, que es el momento exacto en el que pausar
+    tiene un efecto observable: el trabajo deja de estar disponible para reclamarlo.
+    """
+    inventario = inventariar(api_only_client, material)
+    batch = api_only_client.post(
+        f"/api/v1/inventories/{inventario['batch']['id']}/confirm-import", headers=ALLOWED_ORIGIN
+    ).json()
+    assert batch["status"] == "queued"
+
+    pausado = api_only_client.post(
+        f"/api/v1/ingestion-batches/{batch['id']}/pause", headers=ALLOWED_ORIGIN
+    )
+    assert pausado.status_code == 200, pausado.text
+    assert pausado.json()["status"] == "paused"
+    # El trabajo del lote queda detenido: no está en la cola que el worker reclama.
+    assert api_only_client.get(f"/api/v1/jobs/{batch['job_id']}").json()["status"] == "paused"
+
+    reanudado = api_only_client.post(
+        f"/api/v1/ingestion-batches/{batch['id']}/resume", headers=ALLOWED_ORIGIN
+    )
+    assert reanudado.status_code == 200, reanudado.text
+    assert reanudado.json()["status"] == "queued"
+    assert api_only_client.get(f"/api/v1/jobs/{batch['job_id']}").json()["status"] == "queued"
+
+
+def test_pausar_un_lote_terminado_y_reanudar_uno_que_no_lo_esta_devuelven_409(
+    api_only_client: TestClient, material: Path
+) -> None:
+    inventario = inventariar(api_only_client, material)
+    batch = api_only_client.post(
+        f"/api/v1/inventories/{inventario['batch']['id']}/confirm-import", headers=ALLOWED_ORIGIN
+    ).json()
+
+    # Reanudar lo que no está en pausa: 409 con el motivo y el estado, no un 200 sin efecto.
+    response = api_only_client.post(
+        f"/api/v1/ingestion-batches/{batch['id']}/resume", headers=ALLOWED_ORIGIN
+    )
+    assert response.status_code == 409
+    assert response.headers["content-type"].startswith(PROBLEM_MEDIA_TYPE)
+    body = response.json()
+    assert body["code"] == "invalid_state"
+    assert "paused" in body["detail"]
+    assert body["correlation_id"]
+
+    # Y un lote cancelado no se pausa: no hay nada que continuar.
+    api_only_client.post(f"/api/v1/ingestion-batches/{batch['id']}/cancel", headers=ALLOWED_ORIGIN)
+    pausa = api_only_client.post(
+        f"/api/v1/ingestion-batches/{batch['id']}/pause", headers=ALLOWED_ORIGIN
+    )
+    assert pausa.status_code == 409
+    assert pausa.json()["code"] == "invalid_state"
+
+
 def test_reintentar_un_lote_cancelado_cuadra_el_informe(
     migrated_settings: Settings, material: Path
 ) -> None:

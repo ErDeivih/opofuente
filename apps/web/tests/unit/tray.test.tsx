@@ -454,6 +454,68 @@ describe('pantalla Bandeja', () => {
     });
   });
 
+  it('pausa el lote sin cancelarlo, y lo reanuda después (DEBT-027 §4)', async () => {
+    const fetchMock = stubTrayApi({
+      '/api/v1/ingestion-batches/batch-importacion/pause': {
+        body: { ...loteImportado, status: 'paused' },
+      },
+    });
+    renderWithProviders(
+      <AppShell>
+        <TrayPage />
+      </AppShell>,
+      { route: '/bandeja' },
+    );
+
+    await inventariar();
+    await screen.findByRole('heading', { name: 'Vista previa del inventario' });
+    await userEvent.click(screen.getByRole('button', { name: 'Importar una copia' }));
+
+    const importacion = await screen.findByRole('region', { name: 'Importación' });
+    await userEvent.click(within(importacion).getByRole('button', { name: 'Pausar' }));
+
+    await waitFor(() => {
+      expect(
+        fetchMock.mock.calls.some(
+          (call) =>
+            typeof call[0] === 'string' &&
+            call[0].includes('batch-importacion/pause') &&
+            call[1]?.method === 'POST',
+        ),
+      ).toBe(true);
+    });
+  });
+
+  it('un lote en pausa se lee «en pausa» y ofrece reanudarlo, no cancelarlo', async () => {
+    stubTrayApi({
+      '/api/v1/ingestion-batches/batch-importacion': {
+        body: { ...detalleDelLote, batch: { ...loteImportado, status: 'paused' } },
+      },
+    });
+    renderWithProviders(
+      <AppShell>
+        <TrayPage />
+      </AppShell>,
+      { route: '/bandeja' },
+    );
+
+    await inventariar();
+    await screen.findByRole('heading', { name: 'Vista previa del inventario' });
+    await userEvent.click(screen.getByRole('button', { name: 'Importar una copia' }));
+
+    const importacion = await screen.findByRole('region', { name: 'Importación' });
+    // En palabras, no el valor crudo del enum, y con el botón que corresponde.
+    await waitFor(() => {
+      expect(within(importacion).getByText('en pausa')).toBeInTheDocument();
+    });
+    expect(within(importacion).queryByText('paused')).not.toBeInTheDocument();
+    expect(within(importacion).getByRole('button', { name: 'Reanudar' })).toBeInTheDocument();
+    // No se ofrece pausar lo que ya está en pausa ni cancelar lo que no está trabajando.
+    expect(within(importacion).queryByRole('button', { name: 'Pausar' })).not.toBeInTheDocument();
+    expect(within(importacion).queryByRole('button', { name: 'Cancelar' })).not.toBeInTheDocument();
+    expect(within(importacion).queryByRole('button', { name: 'Reintentar' })).not.toBeInTheDocument();
+  });
+
   it('muestra el texto extraído con su extractor, su calidad y sus avisos', async () => {
     stubTrayApi();
     renderWithProviders(

@@ -1037,7 +1037,8 @@
           "succeeded",
           "failed",
           "cancel_requested",
-          "cancelled"
+          "cancelled",
+          "paused"
         ],
         "title": "BatchStatus",
         "type": "string"
@@ -5193,6 +5194,7 @@
           "succeeded",
           "failed",
           "cancel_requested",
+          "paused",
           "cancelled"
         ],
         "title": "JobStatus",
@@ -15726,6 +15728,86 @@
         "summary": "Entradas del lote"
       }
     },
+    "/api/v1/ingestion-batches/{batch_id}/pause": {
+      "post": {
+        "description": "Pausar no es cancelar: lo copiado sigue copiado y el lote se reanuda (DEBT-027 §4).",
+        "operationId": "pause_batch_api_v1_ingestion_batches__batch_id__pause_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "batch_id",
+            "required": true,
+            "schema": {
+              "title": "Batch Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "La operación no vale para el estado actual del recurso (`invalid_state`). Por ejemplo, reintentar un lote que no está fallido ni cancelado."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Pausa el lote: deja de avanzar sin perder lo hecho; 409 si ya terminó"
+      }
+    },
     "/api/v1/ingestion-batches/{batch_id}/report": {
       "get": {
         "operationId": "get_report_api_v1_ingestion_batches__batch_id__report_get",
@@ -15846,6 +15928,85 @@
           }
         },
         "summary": "Texto extraído de las entradas del lote, con su calidad y sus avisos"
+      }
+    },
+    "/api/v1/ingestion-batches/{batch_id}/resume": {
+      "post": {
+        "operationId": "resume_batch_api_v1_ingestion_batches__batch_id__resume_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "batch_id",
+            "required": true,
+            "schema": {
+              "title": "Batch Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "La operación no vale para el estado actual del recurso (`invalid_state`). Por ejemplo, reintentar un lote que no está fallido ni cancelado."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Reanuda un lote en pausa y lo devuelve a la cola; 409 si no está en pausa"
       }
     },
     "/api/v1/ingestion-batches/{batch_id}/retry": {

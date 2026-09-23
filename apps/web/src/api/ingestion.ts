@@ -15,12 +15,26 @@ export type IssuePage = components['schemas']['IssuePageSchema'];
 export type Representation = components['schemas']['RepresentationSchema'];
 export type RepresentationText = components['schemas']['RepresentationTextSchema'];
 
-/** Estados en los que el lote sigue trabajando: la interfaz refresca mientras dure. */
+/**
+ * Estados en los que el lote sigue trabajando: la interfaz refresca mientras dure.
+ *
+ * `paused` **no** está aquí a propósito: un lote en pausa no avanza, así que refrescarlo cada
+ * segundo sería preguntar por algo que no cambia. Vuelve a refrescarse en cuanto se reanuda.
+ */
 export const ACTIVE_BATCH_STATUSES: ReadonlySet<string> = new Set([
   'queued',
   'running',
   'cancel_requested',
 ]);
+
+export function isPaused(batch: Batch | undefined): boolean {
+  return batch?.status === 'paused';
+}
+
+/** Un lote en marcha o en cola se puede pausar; uno en pausa, reanudar. */
+export function canPause(batch: Batch | undefined): boolean {
+  return batch !== undefined && (batch.status === 'queued' || batch.status === 'running');
+}
 
 export function isActive(batch: Batch | undefined): boolean {
   return batch !== undefined && ACTIVE_BATCH_STATUSES.has(batch.status);
@@ -108,6 +122,15 @@ export function confirmImport(inventoryId: string): Promise<Batch> {
 
 export function cancelBatch(batchId: string): Promise<Batch> {
   return apiFetch<Batch>(`/api/v1/ingestion-batches/${batchId}/cancel`, { method: 'POST' });
+}
+
+/** Pausa el lote: deja de avanzar donde está y lo copiado sigue copiado (DEBT-027 §4). */
+export function pauseBatch(batchId: string): Promise<Batch> {
+  return apiFetch<Batch>(`/api/v1/ingestion-batches/${batchId}/pause`, { method: 'POST' });
+}
+
+export function resumeBatch(batchId: string): Promise<Batch> {
+  return apiFetch<Batch>(`/api/v1/ingestion-batches/${batchId}/resume`, { method: 'POST' });
 }
 
 export function retryBatch(batchId: string): Promise<Batch> {

@@ -262,7 +262,7 @@ class IngestionBatchRecord(Base):
         CheckConstraint("mode IN ('read_only', 'copy')", name="ck_batch_mode"),
         CheckConstraint(
             "status IN ('queued', 'running', 'succeeded', 'failed', 'cancel_requested', "
-            "'cancelled')",
+            "'cancelled', 'paused')",
             name="ck_batch_status",
         ),
     )
@@ -400,7 +400,7 @@ class JobRecord(Base):
     __table_args__ = (
         CheckConstraint(
             "status IN ('queued', 'leased', 'running', 'succeeded', 'failed', "
-            "'cancel_requested', 'cancelled')",
+            "'cancel_requested', 'cancelled', 'paused')",
             name="ck_job_status",
         ),
         CheckConstraint(

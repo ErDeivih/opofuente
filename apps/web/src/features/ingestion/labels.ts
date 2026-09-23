@@ -16,6 +16,7 @@ export const BATCH_STATUS_TONE: Record<string, StatusTone> = {
   succeeded: 'ok',
   failed: 'blocked',
   cancelled: 'info',
+  paused: 'warning',
 };
 
 /** Cómo se lee el estado de un lote en palabras. */
@@ -26,6 +27,7 @@ export const BATCH_STATUS_LABEL: Record<string, string> = {
   succeeded: 'terminado',
   failed: 'fallido',
   cancelled: 'cancelado',
+  paused: 'en pausa',
 };
 
 /** Cómo se lee de dónde salió un lote. */

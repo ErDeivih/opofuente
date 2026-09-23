@@ -41,6 +41,7 @@ from opofuente.domain.errors import (
     InvalidBatchStateError,
     InvalidSourceError,
     JobCancelledError,
+    JobPausedError,
     NotFoundError,
 )
 from opofuente.domain.ingestion import (
@@ -314,6 +315,92 @@ class IngestionService:
         refreshed = self._repository.get_batch(batch_id)
         return refreshed if refreshed is not None else batch
 
+    def pause_batch(self, batch_id: str) -> BatchView:
+        """Pausa un lote: deja de avanzar donde está, sin perder lo hecho (DEBT-027 §4).
+
+        Tres reglas, porque pausar no es cancelar:
+
+        1. **Un lote terminado no se pausa** (no hay nada que continuar): 409 `invalid_state`.
+        2. **Lo que está en curso termina**: el trabajo no se mata a mitad de una entrada —eso
+           dejaría el almacén con material copiado y sin registrar—, así que se detiene en la
+           siguiente frontera de entrada. Eso lo hace el manejador, no esta llamada.
+        3. **Un trabajo que aún no ha empezado se pausa aquí mismo**, para que el worker no lo
+           reclame mientras su lote está detenido.
+        """
+        batch = self._repository.get_batch(batch_id)
+        if batch is None:
+            raise NotFoundError("lote", batch_id)
+        if batch.status not in {BatchStatus.QUEUED.value, BatchStatus.RUNNING.value}:
+            raise InvalidBatchStateError(batch.status, ("queued", "running"), action="pausar")
+        self._repository.request_pause(batch_id)
+        if batch.job_id:
+            self.jobs.pause(batch.job_id, now=self._clock.now())
+        logger.info("ingestion.batch_paused", extra={"event": "batch_paused"})
+        refreshed = self._repository.get_batch(batch_id)
+        return refreshed if refreshed is not None else batch
+
+    def resume_batch(self, batch_id: str) -> BatchView:
+        """Reanuda un lote en pausa: vuelve a la cola y retoma por lo que falte.
+
+        No se resetea el estado de ninguna entrada (eso es lo que hace el reintento): lo copiado
+        sigue copiado. Si el trabajo quedó detenido, se reencola; si por lo que sea no hay trabajo
+        detenido, se encola el de la fase en la que se quedó el lote, y si no queda nada por hacer
+        se cierra como terminado en vez de dejarlo en pausa para siempre.
+        """
+        batch = self._repository.get_batch(batch_id)
+        if batch is None:
+            raise NotFoundError("lote", batch_id)
+        if batch.status != BatchStatus.PAUSED.value:
+            raise InvalidBatchStateError(batch.status, ("paused",), action="reanudar")
+        self._repository.clear_pause(batch_id)
+        now = self._clock.now()
+
+        if batch.job_id and self.jobs.resume(batch.job_id, now=now):
+            logger.info("ingestion.batch_resumed", extra={"event": "batch_resumed"})
+        elif self._repository.pending_entries(batch_id):
+            job, _created = self.jobs.enqueue(
+                job_type=JobType.INGEST_BATCH,
+                payload={"batch_id": batch_id},
+                now=now,
+                idempotency_key=f"ingest_batch:{batch_id}",
+            )
+            self._repository.set_job(batch_id, job.id)
+        elif self._pending_extraction(batch_id):
+            job_id = self.enqueue_extraction(batch_id)
+            if job_id is not None:
+                self._repository.set_job(batch_id, job_id)
+        else:
+            # No queda nada por hacer: el lote terminó justo cuando se pausó.
+            counters = self._repository.summarize_import(batch_id)
+            self._repository.set_counters(batch_id, counters)
+            self._repository.set_status(
+                batch_id,
+                BatchStatus.FAILED if counters.failed else BatchStatus.SUCCEEDED,
+                now=now,
+            )
+
+        refreshed = self._repository.get_batch(batch_id)
+        return refreshed if refreshed is not None else batch
+
+    def is_paused(self, batch_id: str) -> bool:
+        """Lo pregunta el manejador de extracción entre entradas (el de importación lo hace por su
+        cuenta para poder confirmar la pausa guardando los contadores)."""
+        return self._repository.is_paused(batch_id)
+
+    def confirm_pause(self, batch_id: str) -> None:
+        """Deja el lote en pausa con sus contadores al día, si sigue en pausa.
+
+        Recalcula el informe del lote desde el estado real de sus entradas, para que mientras está
+        detenido diga la verdad (lo copiado y lo extraído hasta ahí) en lugar de quedarse con las
+        cifras de cuando empezó.
+        """
+        counters = self._repository.summarize_import(batch_id)
+        if self._repository.confirm_pause(batch_id, counters, now=self._clock.now()):
+            logger.info(
+                "ingestion.batch_pause_confirmed",
+                extra={"event": "batch_pause_confirmed", "status_code": counters.copied},
+            )
+
     # ------------------------------------------------------------------ consultas
 
     def list_batches(self, *, limit: int, offset: int) -> tuple[BatchView, ...]:
@@ -366,7 +453,9 @@ class IngestionService:
             raise NotFoundError("lote", batch_id)
 
         now = self._clock.now()
-        self._repository.set_status(batch_id, BatchStatus.RUNNING, now=now)
+        if not self._repository.start_running(batch_id, now=now):
+            # El lote se pausó entre la reclamación del trabajo y esta línea: no se arranca.
+            raise JobPausedError("el lote de importación está en pausa")
         pending = self._repository.pending_entries(batch_id)
 
         source_root = self._repository.source_root_of(batch_id)
@@ -388,12 +477,14 @@ class IngestionService:
                     raise JobCancelledError(
                         "el lote de importación se canceló a petición del usuario"
                     )
+                if self._paused(batch_id) and self._finish_paused(batch_id):
+                    raise JobPausedError("el lote de importación está en pausa")
 
                 if root is not None:
                     self._copy_entry(batch_id, root, entry, execution, heartbeat)
                 execution.progress(index / max(len(pending), 1), f"{index}/{len(pending)}")
                 heartbeat.maybe()
-        except JobCancelledError:
+        except (JobCancelledError, JobPausedError):
             raise
         except Exception as error:
             if not execution.retry_pending:
@@ -659,6 +750,30 @@ class IngestionService:
         )
         if not counters.balanced:  # pragma: no cover - salvaguarda del informe
             logger.warning("ingestion.report_unbalanced", extra={"event": "report_unbalanced"})
+
+    def _finish_paused(self, batch_id: str) -> bool:
+        """Cierra la pasada del lote por una pausa, **sin** tocar el estado de las entradas.
+
+        Es la diferencia con cancelar: aquí no se marca nada como cancelado ni se cierra el lote. Lo
+        que ya se copió sigue copiado, lo que no llegó a empezar sigue pendiente, y los contadores
+        se recalculan del estado real para que el informe diga la verdad mientras está en pausa. Al
+        reanudar, el trabajo retoma por la primera entrada que no esté hecha.
+
+        Devuelve `False` si la pausa se levantó mientras se decidía: en ese caso el lote no se toca
+        y el trabajo continúa, que es lo que pidió quien reanudó.
+        """
+        counters = self._repository.summarize_import(batch_id)
+        if not self._repository.confirm_pause(batch_id, counters, now=self._clock.now()):
+            return False
+        logger.info(
+            "ingestion.import_paused",
+            extra={"event": "import_paused", "status_code": counters.copied},
+        )
+        return True
+
+    def _paused(self, batch_id: str) -> bool:
+        """¿Sigue en pausa el lote? Se pregunta a la base, que es quien lo sabe."""
+        return self._repository.is_paused(batch_id)
 
     def _record_issue(
         self,

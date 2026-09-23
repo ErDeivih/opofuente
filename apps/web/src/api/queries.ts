@@ -38,6 +38,8 @@ import {
   ingestPaste,
   ingestUrl,
   isActive,
+  pauseBatch,
+  resumeBatch,
   retryBatch,
 } from './ingestion';
 import {
@@ -437,6 +439,29 @@ export function useRetryBatch() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: retryBatch,
+    onSuccess: (batch) => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.batch(batch.id) });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.batches });
+    },
+  });
+}
+
+/** Pausar y reanudar un lote (DEBT-027 §4): invalidan lo mismo que cancelar. */
+export function usePauseBatch() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: pauseBatch,
+    onSuccess: (batch) => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.batch(batch.id) });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.batches });
+    },
+  });
+}
+
+export function useResumeBatch() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: resumeBatch,
     onSuccess: (batch) => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.batch(batch.id) });
       void queryClient.invalidateQueries({ queryKey: queryKeys.batches });

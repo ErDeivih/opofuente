@@ -33,6 +33,13 @@ class BatchStatus(StrEnum):
     FAILED = "failed"
     CANCEL_REQUESTED = "cancel_requested"
     CANCELLED = "cancelled"
+    PAUSED = "paused"
+    """En pausa: el lote no avanza, pero **no** se pierde lo hecho.
+
+    No es lo mismo que `cancel_requested`: cancelar termina el lote, pausar lo deja donde está para
+    seguir después. Una entrada ya copiada sigue copiada, y al reanudar el trabajo retoma por la
+    primera entrada que no esté hecha (DEBT-027 §4).
+    """
 
 
 class ItemStatus(StrEnum):

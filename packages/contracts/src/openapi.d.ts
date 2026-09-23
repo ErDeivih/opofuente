@@ -1201,6 +1201,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/ingestion-batches/{batch_id}/pause": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Pausa el lote: deja de avanzar sin perder lo hecho; 409 si ya terminó
+         * @description Pausar no es cancelar: lo copiado sigue copiado y el lote se reanuda (DEBT-027 §4).
+         */
+        post: operations["pause_batch_api_v1_ingestion_batches__batch_id__pause_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/ingestion-batches/{batch_id}/report": {
         parameters: {
             query?: never;
@@ -1229,6 +1249,23 @@ export interface paths {
         get: operations["list_representations_api_v1_ingestion_batches__batch_id__representations_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ingestion-batches/{batch_id}/resume": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reanuda un lote en pausa y lo devuelve a la cola; 409 si no está en pausa */
+        post: operations["resume_batch_api_v1_ingestion_batches__batch_id__resume_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2778,7 +2815,7 @@ export interface components {
          * BatchStatus
          * @enum {string}
          */
-        BatchStatus: "queued" | "running" | "succeeded" | "failed" | "cancel_requested" | "cancelled";
+        BatchStatus: "queued" | "running" | "succeeded" | "failed" | "cancel_requested" | "cancelled" | "paused";
         /** Body_ingest_files_api_v1_ingestion_batches_files_post */
         Body_ingest_files_api_v1_ingestion_batches_files_post: {
             /**
@@ -4292,7 +4329,7 @@ export interface components {
          * JobStatus
          * @enum {string}
          */
-        JobStatus: "queued" | "leased" | "running" | "succeeded" | "failed" | "cancel_requested" | "cancelled";
+        JobStatus: "queued" | "leased" | "running" | "succeeded" | "failed" | "cancel_requested" | "paused" | "cancelled";
         /** KeyEntrySchema */
         KeyEntrySchema: {
             /** Correct Option Keys */
@@ -10286,6 +10323,73 @@ export interface operations {
             };
         };
     };
+    pause_batch_api_v1_ingestion_batches__batch_id__pause_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                batch_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BatchSchema"];
+                };
+            };
+            /** @description Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description La operación no vale para el estado actual del recurso (`invalid_state`). Por ejemplo, reintentar un lote que no está fallido ni cancelado. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
     get_report_api_v1_ingestion_batches__batch_id__report_get: {
         parameters: {
             query?: never;
@@ -10357,6 +10461,73 @@ export interface operations {
             };
             /** @description El recurso no existe. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    resume_batch_api_v1_ingestion_batches__batch_id__resume_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                batch_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BatchSchema"];
+                };
+            };
+            /** @description Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description La operación no vale para el estado actual del recurso (`invalid_state`). Por ejemplo, reintentar un lote que no está fallido ni cancelado. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -9,7 +9,10 @@ Decisiones:
 - **sin bloquear el bucle**: el manejador se ejecuta en un hilo (`asyncio.to_thread`) para que la
   API siga respondiendo mientras se copian gigabytes;
 - **cancelación cooperativa**: el manejador comprueba `cancelled()` entre unidades y lanza
-  `JobCancelledError`, que el worker traduce a estado `cancelled`.
+  `JobCancelledError`, que el worker traduce a estado `cancelled`;
+- **pausa cooperativa**: el manejador comprueba si su lote sigue en pausa entre entradas y lanza
+  `JobPausedError`, que el worker traduce a estado `paused`. La diferencia con cancelar es el
+  desenlace: el trabajo en pausa **no** termina, se puede retomar, y el lote conserva lo hecho.
 """
 
 from __future__ import annotations
@@ -24,7 +27,7 @@ from uuid import uuid4
 
 from opofuente.application.job_service import JobExecution, JobHandler
 from opofuente.application.ports import Clock, JobQueue
-from opofuente.domain.errors import JobCancelledError, NotFoundError
+from opofuente.domain.errors import JobCancelledError, JobPausedError, NotFoundError
 from opofuente.domain.jobs import Job, JobStatus, JobType
 from opofuente.infrastructure.safe_paths import redact_paths
 from opofuente.infrastructure.worker_liveness import WorkerLiveness
@@ -176,6 +179,10 @@ class JobWorker:
         except JobCancelledError:
             self._queue.acknowledge_cancel(job.id, owner=self._owner, now=self._clock.now())
             logger.info("worker.job_cancelled", extra={"event": "job_cancelled", "job_id": job.id})
+        except JobPausedError:
+            # Pausa, no fallo ni final: el trabajo queda detenido y su lote lo reencola al reanudar.
+            self._queue.acknowledge_pause(job.id, owner=self._owner, now=self._clock.now())
+            logger.info("worker.job_paused", extra={"event": "job_paused", "job_id": job.id})
         except NotFoundError as error:
             status = self._queue.fail(
                 job.id,

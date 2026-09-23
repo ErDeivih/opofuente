@@ -1406,6 +1406,8 @@ proceso de prueba herede `OPOFUENTE_DATA_DIR`. La prueba de las 49 E2E es hoy la
 
 ## DEBT-027 — 07_UI-UX no está aplicada entera
 
+**Estado: cerrada** (23 de septiembre de 2026).
+
 **Origen:** pregunta del propietario del 22 de septiembre de 2026 —«¿está aplicado lo de UI/UX,
 experiencia sencilla de usuario completamente?»— al terminar S12.6.
 
@@ -1477,7 +1479,7 @@ Lo que queda abierto, ya solo una cosa:
 
 1. **Pausar un lote** (§4): el trabajo se puede cancelar, no pausar. Pausar de verdad exige decidir qué
    pasa con las entradas a medias y con su trabajo ya encolado; no se inventa un botón que solo cambie
-   una etiqueta.
+   una etiqueta. *(Cerrado el 23 de septiembre de 2026: ver la quinta pasada, abajo.)*
 
 **Cuarta pasada: las dos columnas del Programa, y el defecto que apareció al ir a servirlas** (23 de
 septiembre de 2026). `07_UI-UX` §5 pide cuatro columnas por nodo: fuentes, preguntas
@@ -1513,17 +1515,54 @@ camino y se corrigieron: un `flex-wrap` que faltaba en las etiquetas del árbol 
 nuevas, la fila desbordaba a 390 px y rompía la puerta de responsive) y las dos pruebas E2E que
 dependían de que el directorio estuviera limpio.
 
-**Lo que se decidió NO hacer, y por qué** (para que no vuelva a aparecer como pendiente sin contexto):
+**Quinta pasada: pausar un lote, que era lo último que quedaba** (23 de septiembre de 2026). `07_UI-UX`
+§4 pide «pausar/cancelar» y solo existía cancelar. Pausar no es cancelar, y esa diferencia es la que
+decide el diseño entero:
 
+- **El lote deja de avanzar donde está.** Estado nuevo `paused` en el lote y **en su trabajo**: un
+  trabajo `paused` no lo reclama el worker (`claim_next` solo mira `queued` y `cancel_requested`), así
+  que no hay ni un hilo de sondeo ni una espera artificial.
+- **Lo que está en curso termina.** El manejador comprueba la pausa **entre entradas** y lanza
+  `JobPausedError`, que el worker traduce a `paused`: no se mata nada a mitad de una copia, así que no
+  quedan artefactos a medio registrar. Lo copiado sigue copiado y el informe se recalcula del estado
+  real para que diga la verdad mientras está detenido.
+- **Reanudar retoma donde se quedó.** El trabajo detenido vuelve a la cola y el manejador empieza por
+  la primera entrada que no esté hecha (`pending_entries`), sin resetear ninguna entrada —eso es lo que
+  hace el reintento, que es otra cosa—. Si no queda trabajo detenido, se encola el de la fase en la que
+  se quedó el lote y, si no queda nada, se cierra como terminado en vez de dejarlo en pausa para
+  siempre.
+- **La consecuencia que no se ve, y por eso se prueba**: el índice único parcial de idempotencia
+  enumeraba los estados «vivos». Con `paused` fuera de esa lista, pausar un lote habría **liberado su
+  clave** y un segundo `ingest_batch` del mismo lote podría haberse encolado mientras el primero está
+  en pausa: dos trabajos avanzando el mismo lote. La migración `0023` lo recrea con el predicado nuevo
+  y hay una prueba que lo comprueba (dos trabajos con la misma clave, el segundo rechazado).
+- **Una carrera que el diseño cierra**: el worker reclama el trabajo y, entre la reclamación y la
+  primera línea del manejador, alguien pausa el lote. Si el manejador escribiera `running` sin mirar,
+  desharía la pausa recién pedida. Ahora la transición a `running` es condicional
+  (`start_running` devuelve `False` si el lote está en pausa) y en ese caso el trabajo queda `paused`.
+- **Y el mensaje dice lo que se pidió**: `InvalidBatchStateError` acepta el verbo de la acción, así que
+  un 409 al pausar dice «solo se puede pausar si está queued o running», no «reintentar».
+
+Verificación: pruebas de migración (estados, idempotencia, índices y claves foráneas), de integración
+(pausa antes de arrancar, reanudación que termina la copia, 409 en los estados que no valen, la rama
+sin nada pendiente), de la API (pausar/reanudar por HTTP con el worker parado), de componentes (el
+botón y la etiqueta «en pausa», en palabras y no como valor crudo) y E2E (el contrato de estado de las
+dos rutas contra el servidor real). La pausa **con el lote a medias** se prueba en la integración, con
+el worker parado: en la E2E el worker es real y un lote de tres ficheros termina antes de que nadie lo
+pause, así que esperar a mitad sería una carrera, no una prueba —y está dicho en el propio guion—.
+
+**Lo que se decidió NO hacer, y por qué** (para que no vuelva a aparecer como pendiente sin contexto):
 - **Virtualizar la tabla de revisión**: medido, no hace falta (arriba). Si algún día el servidor deja
   de paginar, el problema volverá y la medición es la referencia.
 - **Panel lateral con fragmentos justificativos** (§4): la evidencia va **en la propia fila** desde S04
   —una propuesta que no se puede comprobar no se puede revisar— y además se abre la ficha con su cita.
   Un panel lateral duplicaría lo que ya está delante y escondería la evidencia en un clic más.
 
-**Estado: abierta.** Lo urgente —lo que se veía en Inicio, la cola cortada, lo que no estaba probado y
-las cuatro columnas del Programa— está cerrado y verificado; de la especificación solo queda **una
-cosa** (pausar un lote, §4), con su coste dicho arriba, y no bloquea estudiar.
+**Estado: cerrada.** El 23 de septiembre de 2026 se cerraron las tres cosas que quedaban de la
+especificación de interfaz: el caso de 1.000 filas (medido), las cuatro columnas del Programa y
+pausar/cancelar el lote. Lo que sigue abierto no es de esta deuda sino de las que se citan en cada
+pasada (DEBT-022 para la suite E2E con la máquina cargada, DEBT-028 para el estado del proceso
+selectivo).
 
 ## DEBT-028 — La aplicación no sabe si un proceso selectivo está abierto o cerrado
 

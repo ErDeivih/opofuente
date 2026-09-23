@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import type { Issue, Inventory } from '../api/ingestion';
-import { isActive } from '../api/ingestion';
+import { canPause, isActive, isPaused } from '../api/ingestion';
 import {
   useCancelBatch,
   useConfirmImport,
@@ -12,7 +12,9 @@ import {
   useBatchItems,
   useBatches,
   useJob,
+  usePauseBatch,
   useRepresentations,
+  useResumeBatch,
   useRetryBatch,
 } from '../api/queries';
 import { EmptyState } from '../components/EmptyState';
@@ -88,6 +90,8 @@ export function TrayPage() {
   const confirmImport = useConfirmImport();
   const cancelBatch = useCancelBatch();
   const retryBatch = useRetryBatch();
+  const pauseBatch = usePauseBatch();
+  const resumeBatch = useResumeBatch();
 
   const batches = useBatches();
   const batch = useBatch(batchId);
@@ -305,6 +309,33 @@ export function TrayPage() {
               </dl>
 
               <div className="form__row">
+                {/* Pausar no es cancelar: el lote deja de avanzar y se puede reanudar. Solo se
+                    ofrece donde la API lo acepta (en cola o trabajando); en cualquier otro estado
+                    responde 409 y no se pinta un botón que fallaría. */}
+                {canPause(batch.data.batch) && (
+                  <button
+                    className="button"
+                    type="button"
+                    disabled={pauseBatch.isPending}
+                    onClick={() => {
+                      pauseBatch.mutate(batch.data.batch.id);
+                    }}
+                  >
+                    Pausar
+                  </button>
+                )}
+                {isPaused(batch.data.batch) && (
+                  <button
+                    className="button button--primary"
+                    type="button"
+                    disabled={resumeBatch.isPending}
+                    onClick={() => {
+                      resumeBatch.mutate(batch.data.batch.id);
+                    }}
+                  >
+                    Reanudar
+                  </button>
+                )}
                 {isWorking && (
                   <button
                     className="button"
@@ -332,10 +363,15 @@ export function TrayPage() {
                   </button>
                 )}
               </div>
-              {(retryBatch.isError || cancelBatch.isError) && (
+              {(retryBatch.isError || cancelBatch.isError || pauseBatch.isError || resumeBatch.isError) && (
                 <ErrorState
                   title="No se pudo cambiar el estado del lote"
-                  message={describeError(retryBatch.error ?? cancelBatch.error)}
+                  message={describeError(
+                    retryBatch.error ??
+                      cancelBatch.error ??
+                      pauseBatch.error ??
+                      resumeBatch.error,
+                  )}
                 />
               )}
               {(batch.data.batch.counters.source_changed ?? 0) > 0 && (

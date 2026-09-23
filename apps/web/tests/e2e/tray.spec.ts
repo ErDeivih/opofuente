@@ -24,6 +24,8 @@ const VIEWPORTS = [
   { name: 'móvil 390x844', width: 390, height: 844 },
 ];
 
+const API_BASE = process.env.OPOFUENTE_API_URL ?? 'http://127.0.0.1:8765/api/v1';
+
 let base = '';
 let inbox = '';
 let outside = '';
@@ -391,6 +393,44 @@ test('E2E-02 bandeja: una carpeta inexistente se explica en lugar de fallar en s
   await expect(error).toBeVisible();
   await expect(error).toContainText('No se pudo inventariar esa carpeta');
   await expect(page.getByRole('heading', { name: 'Vista previa del inventario' })).toHaveCount(0);
+});
+
+test('E2E-02 bandeja: un lote terminado no se pausa ni se reanuda, y la API lo dice', async ({
+  page,
+  request,
+}) => {
+  // DEBT-027 §4. Lo que se comprueba aquí es el contrato de estado de las dos rutas nuevas contra
+  // el servidor real: pausar un lote que ya terminó (no hay nada que continuar) y reanudar uno que
+  // no está en pausa. La pausa **con el lote a medias** se prueba en la integración, con el worker
+  // parado: aquí el worker es real y un lote de tres ficheros termina antes de que nadie lo pause,
+  // así que esperar a mitad sería una carrera, no una prueba.
+  const carpeta = inbox;
+  await inventariar(page, carpeta);
+  const importacion = await confirmarImportacion(page);
+  // El lote que se acaba de importar es el último de la lista (llegan ordenados por fecha y la
+  // suite corre con un solo worker, así que no hay otro lote creándose a la vez).
+  const ultimos = (await (
+    await request.get(`${API_BASE}/ingestion-batches?limit=1`)
+  ).json()) as { id: string }[];
+  const batchId = ultimos[0]?.id ?? '';
+  expect(batchId, 'la importación deja un lote en la API').not.toBe('');
+
+  // Un lote terminado no ofrece pausar: el botón no está.
+  await expect(importacion.getByRole('button', { name: 'Pausar' })).toHaveCount(0);
+
+  const pausa = await request.post(`${API_BASE}/ingestion-batches/${batchId}/pause`, {
+    headers: { Origin: 'http://127.0.0.1:5173' },
+  });
+  expect(pausa.status()).toBe(409);
+  const problema = (await pausa.json()) as { code: string; detail: string };
+  expect(problema.code).toBe('invalid_state');
+  expect(problema.detail).toContain('pausar');
+
+  const reanudacion = await request.post(`${API_BASE}/ingestion-batches/${batchId}/resume`, {
+    headers: { Origin: 'http://127.0.0.1:5173' },
+  });
+  expect(reanudacion.status()).toBe(409);
+  expect(((await reanudacion.json()) as { detail: string }).detail).toContain('reanudar');
 });
 
 test('E2E-02 bandeja: el historial abre un lote anterior sin volver a copiar', async ({ page }) => {

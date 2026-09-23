@@ -51,6 +51,12 @@ programa y las reglas del examen que se ven en las demás pantallas. La que deja
 pero **no se borra ni se archiva**: sigue disponible y se puede volver a ella. Al volver a sembrar los
 perfiles oficiales (`scripts/seed.ps1`) la vigente vuelve a ser la que declara el fixture.
 
+**Una importación larga se puede pausar sin perder lo hecho.** En la bandeja, con el lote en marcha,
+**Pausar** y **Reanudar**: pausar no cancela. El lote deja de copiar en la siguiente entrada —la que
+está copiándose termina, para no dejar nada a medias— y lo ya copiado sigue copiado; si cierras la
+aplicación en pausa, al volver sigue en pausa. Reanudar continúa por donde se quedó, no desde el
+principio. Cancelar sigue siendo lo otro: cierra el lote con lo que había y lo deja reintentable.
+
 ## 3. Copia de seguridad
 
 **Ajustes → Copia y restauración → Hacer una copia ahora.** Una copia contiene:
