@@ -1071,6 +1071,22 @@ _KEY_SHEET = re.compile(r"^\s*(\d{1,3})\s*(?:[.)\-\u2013:]+\s*|\s+)(.+)$")
 _ANNULLED = re.compile(r"\banulada\b|\bnula\b|^\s*[-x]\s*$", re.IGNORECASE)
 _UNANSWERED = re.compile(r"sin\s+responder|no\s+contestada|\bblanco\b", re.IGNORECASE)
 
+#: El modelo del examen, cuando la plantilla lo declara: «Modelo A», «MODELO B», «modelo: A».
+#: Un examen oficial sale en varios modelos y cada uno tiene **su** plantilla: enlazar la equivocada
+#: corrige el examen con las respuestas de otro (S12.6).
+_KEY_MODEL = re.compile(r"\bmodelo\s*:?\s*([A-Z])\b", re.IGNORECASE)
+
+
+def parse_key_model(text: str) -> str | None:
+    """El modelo que declara una plantilla de respuestas, si lo declara.
+
+    Devuelve la letra en mayúsculas (`A`, `B`) o `None` cuando la plantilla no dice de qué modelo
+    es. No se adivina por el nombre del fichero ni por la fecha: un enlace equivocado corrige un
+    examen entero con las respuestas de otro, y eso es peor que no enlazar nada.
+    """
+    encontrado = _KEY_MODEL.search(text)
+    return encontrado.group(1).upper() if encontrado is not None else None
+
 
 def parse_answer_key(text: str) -> tuple[tuple[ParsedKeyLine, ...], tuple[ParseIssue, ...]]:
     """Parsea una plantilla suelta: `1. b`, `2-a`, `3 anulada`, `4 sin responder`.

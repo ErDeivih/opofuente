@@ -380,7 +380,7 @@ verificadas y documentadas en `15_OFFICIAL-PROFILES-AND-SOURCE-MANIFEST` §4, si
 - Aceptar la versión 2 del mismo documento añade solo las preguntas nuevas al conjunto que ya existía.
 - Un material que decía traer preguntas y no trae ninguna no deja un conjunto vacío en la lista.
 
-## S12.6 — Catalogar por bloque y tema, y enlazar la clave (en curso)
+## S12.6 — Catalogar por bloque y tema, enlazar la clave y decir qué falta (entregada)
 
 ### Entrega (hecha)
 
@@ -393,6 +393,14 @@ verificadas y documentadas en `15_OFFICIAL-PROFILES-AND-SOURCE-MANIFEST` §4, si
 - **DEBT-024, cerrada**: clasificar dejó de ser una petición síncrona con el corpus entero. Se encola
   (202 + trabajo), el trabajador lo ejecuta y la pasada informa de sus tramos —clasificando, guardando,
   aplicando, buscando duplicados— mientras la pantalla los sigue y enseña su avance.
+- **La plantilla de respuestas se enlaza sola con su examen** (ADR-017, 4 ter): se acepta el documento
+  de la plantilla y la aplicación busca su examen por oposición, modelo y encaje (95 % de sus líneas
+  en preguntas del examen), y solo si encaja con **uno**; con dos candidatos lo dice y no elige. Queda
+  en borrador: activarla sigue siendo de una persona.
+- **La pantalla que dice «esto ya está listo para estudiar»**: `GET /oppositions/{id}/readiness` y
+  `GET /pending-actions` alimentan Inicio —«¿Listo para estudiar?» con sus tres pasos y «Acciones
+  necesarias» con lo que espera una decisión—, más los contadores de la navegación, la actividad
+  reciente y el dominio (§2, §3.3, §3.4 de 07_UI-UX).
 
 ### Aceptación (de lo hecho)
 
@@ -401,13 +409,11 @@ verificadas y documentadas en `15_OFFICIAL-PROFILES-AND-SOURCE-MANIFEST` §4, si
 - Las preguntas que ya traían tema (por ejemplo, de una columna del material) se quedan como estaban.
 - Clasificar responde en menos de un segundo y su trabajo dice en qué va, con el corpus del propietario
   (186 sujetos: 0,097 s de respuesta, 48,2 s de trabajo).
+- Una plantilla que no se puede enlazar sin riesgo no se enlaza, y el aviso dice por qué (dos exámenes
+  que encajan, ninguno que encaje, plantilla sin asignar).
 
 ### Pendiente
 
-- **enlazar la plantilla de respuestas con su examen**: decidir cómo se reconoce que una plantilla es
-  de un examen concreto (por el modelo, por el número de preguntas, por la fecha) y qué se hace
-  cuando no cuadra;
-- **la pantalla que diga «esto ya está listo para estudiar»**: el servidor que la alimenta ya está
-  entregado (dos rutas de solo lectura, `GET /oppositions/{id}/readiness` y `GET /pending-actions`,
-  con su modelo de lectura y sus cinco pruebas de integración); falta ponerla en Inicio, sustituyendo
-  la tarjeta de «Acciones necesarias», que hoy enseña un texto fijo.
+- Nada de este slice. Lo que queda de interfaz (pausar un lote, tabla de revisión virtualizada,
+  columnas de preguntas y próxima revisión en el Programa, lector sincronizado, explicación por opción
+  y el caso de 1.000 filas) está en **DEBT-027**, con su coste.

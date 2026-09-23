@@ -20,6 +20,8 @@ seguía pidiendo manos era lo de después:
 | Enlazar la plantilla de respuestas con su examen | una persona, a mano |
 | Saber si el material ya está listo para estudiar | nadie: había que mirar cinco pantallas |
 
+Las tres últimas se cerraron en S12.5 y S12.6: la aplicación importa, cataloga y dice qué falta.
+
 ## Decisión
 
 **1. Se automatiza todo lo que va **después** de aceptar una versión.**
@@ -64,6 +66,24 @@ aceptada no se cataloga nada, y una pregunta que **ya** tiene tema no se toca, p
 decisión (puesta a mano o traída de una columna del material) sería cambiarla en silencio. Una
 asignación solo *propuesta* no cuenta: es una sugerencia, no una decisión.
 
+**4 ter. La plantilla de respuestas se **enlaza** con su examen, y solo cuando no hay duda.**
+
+Un examen oficial no trae sus respuestas: llegan en un documento aparte, la plantilla. Cuando ese
+documento se acepta, la aplicación busca el examen y **enlaza** la plantilla con él (le guarda su
+`source_document_version_id`). La regla es conservadora a propósito, porque el riesgo no es simétrico:
+no enlazar deja una clave sin usar —molesto y visible—, y enlazar mal corrige un examen entero con las
+respuestas de otro, que no se nota hasta que se estudia con ello. Así que se enlaza solo si:
+
+1. **es de la misma oposición**: la plantilla tiene que estar asignada al programa (sin asignación no
+   se sabe de quién es) y el examen ser de esa oposición;
+2. **el modelo coincide**, cuando la plantilla lo declara («Modelo B») y el examen lo tiene declarado;
+3. **encaja**: al menos el 95 % de las líneas de la plantilla caen en una pregunta del examen, por
+   número de pregunta;
+4. **encaja con uno solo**. Con dos candidatos no se elige: se dice cuáles son y se para.
+
+Lo que **no** hace: activar la plantilla. Activar es aprobar (ADR-009), así que queda enlazada en
+**borrador** y el aviso lo dice («queda en borrador; actívala en Preguntas para corregir con ella»).
+
 **5. Todo lo automático se cuenta.**
 
 Cada efecto de una decisión automática viaja con su motivo: cuántas preguntas entraron, o por qué no
@@ -78,10 +98,10 @@ ha hecho nada.
   están en el banco, con su cita**.
 - El banco puede tener conjuntos que el usuario no creó. Se reconocen por su título («Preguntas de
   …»), llevan su `source_document_version_id` y se pueden archivar como cualquier otro.
-- Queda pendiente, y se decidirá en S12.6: **enlazar la plantilla con su examen** (hoy la clave se
-  importa a mano, con su conjunto). Esa decisión no lo autoriza por sí sola: reconocer que una
-  plantilla es de un examen concreto tiene su propio riesgo (una clave mal enlazada corrige con las
-  respuestas de otro examen).
+- Enlazar la plantilla (4 ter) **no** activa nada: el propietario sigue dando el último paso, y el
+  aviso se lo dice. Lo que se ha quitado es el trabajo de buscar el examen y subir la clave a mano.
+- Cuando no se puede enlazar sin riesgo —dos exámenes que encajan, ninguna coincidencia, plantilla sin
+  asignar— el aviso dice **por qué** y no se guarda nada: un enlace a medias sería peor que ninguno.
 - Automatizar la importación **no** automatiza la corrección: las claves siguen siendo lo que son, y
   un conjunto importado sin clave activa no corrige nada (la pantalla lo dice).
 
@@ -89,5 +109,7 @@ ha hecho nada.
 
 La importación automática se apaga quitando la llamada en la ruta que acepta la versión. Lo ya
 importado no se toca: los conjuntos siguen ahí, con su procedencia, y se archivan o se dejan como
-estén. No hay migración ni cambio de esquema: lo que se ha añadido son tres campos **opcionales** en
+estén. El enlace de la plantilla se apaga igual (la rama de `answer_key` en el mismo manejador), y lo
+ya enlazado se queda: una clave enlazada es una clave enlazada, con su `source_document_version_id`
+escrito. No hay migración ni cambio de esquema: lo que se ha añadido son tres campos **opcionales** en
 la respuesta de la aceptación.

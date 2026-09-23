@@ -25,6 +25,7 @@ suponerlas.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 
 from opofuente.application.classification_service import ClassificationService
@@ -35,6 +36,7 @@ from opofuente.application.question_models import QuestionSetView
 from opofuente.application.question_service import QuestionService
 from opofuente.domain.classification import DocumentType
 from opofuente.domain.errors import NotFoundError
+from opofuente.domain.questions import ParsedKeyLine, parse_answer_key, parse_key_model
 from opofuente.infrastructure.document_repository import SqlAlchemyDocumentRepository
 
 #: Tipos documentales que **traen preguntas**. Un temario, unos apuntes o una ley no: de ahí no se
@@ -46,6 +48,19 @@ QUESTION_DOCUMENT_TYPES: frozenset[str] = frozenset(
         DocumentType.PRACTICAL_CASE.value,
     }
 )
+
+#: Tipos documentales que **son** una plantilla de respuestas: no traen preguntas, traen la clave de
+#: un examen que ya está en el banco. Lo que se hace con ellas es **enlazarlas** (S12.6).
+KEY_DOCUMENT_TYPES: frozenset[str] = frozenset({DocumentType.ANSWER_KEY.value})
+
+#: Proporción mínima de líneas de la plantilla que tienen que caer en una pregunta del examen para
+#: dar el enlace por bueno. Casi todas: una plantilla de verdad cubre el examen entero, así que si
+#: hay líneas que no encuentran pregunta, lo que no encaja es el examen.
+KEY_ALIGNMENT_MINIMUM = 0.95
+
+#: Conjuntos con los que se puede enlazar una plantilla: un examen oficial, que es lo que tiene
+#: plantilla. Un banco privado se corrige con la clave que trae su propio material.
+KEY_SET_TYPES: frozenset[str] = frozenset({"official_exam"})
 
 #: Título del conjunto que se crea solo. Lleva el título del documento para que se sepa de dónde
 #: salió sin abrirlo, y para que dos documentos distintos no compartan conjunto.
@@ -98,6 +113,10 @@ class AutoStudyService:
             return AutoImportOutcome(
                 note="el material no está clasificado: no se sabe si trae preguntas"
             )
+        if tipo in KEY_DOCUMENT_TYPES:
+            # Una plantilla no trae preguntas: trae las respuestas de un examen que ya está en el
+            # banco. Enlazarla es todo lo que se puede hacer sin equivocarse (S12.6).
+            return self._link_answer_key(version_id=version_id)
         if tipo not in QUESTION_DOCUMENT_TYPES:
             return AutoImportOutcome(note=f"el material está clasificado como «{tipo}»")
 
@@ -148,6 +167,127 @@ class AutoStudyService:
             note=f"importadas {informe.created} preguntas de este documento",
             catalogued=catalogadas,
         )
+
+    # ------------------------------------------------------------------ plantilla de respuestas
+
+    def _link_answer_key(self, *, version_id: str) -> AutoImportOutcome:
+        """Enlaza una plantilla de respuestas con **el** examen al que pertenece, o dice por qué no.
+
+        La regla es conservadora a propósito (S12.6): enlazar la plantilla de un modelo con el
+        examen de otro corrige el examen entero con las respuestas equivocadas, y eso no se nota
+        hasta que el propietario estudia con ello. Por eso solo se enlaza si **no hay duda**:
+
+        1. el examen tiene que ser de la misma oposición, y la versión tiene que estar asignada a su
+           programa (sin asignación no se sabe de quién es la plantilla);
+        2. si la plantilla declara el modelo —«Modelo A»—, el examen tiene que ser de ese modelo;
+        3. la plantilla tiene que **encajar**: casi todas sus líneas (95 %) caen en una pregunta del
+           examen;
+        4. tiene que encajar con **un solo** examen. Con dos candidatos no se elige por nadie: se
+           dice y se para.
+
+        Lo que **no** hace: activar la plantilla. Activar es aprobar (ADR-009) y eso lo decide una
+        persona; aquí se deja enlazada, en borrador, y se dice qué falta.
+        """
+        oposicion = self._opposition_of(version_id)
+        if oposicion is None:
+            return AutoImportOutcome(
+                note=(
+                    "la plantilla no está asignada a ninguna oposición: no se sabe de qué examen es"
+                )
+            )
+        opposition_id, _convocation_id = oposicion
+
+        texto = self._texto(version_id)
+        if texto is None:
+            return AutoImportOutcome(note="la plantilla no tiene texto extraído que se pueda leer")
+        lineas, _incidencias = parse_answer_key(texto)
+        if not lineas:
+            return AutoImportOutcome(
+                note="la plantilla no tiene ninguna respuesta reconocible: no se enlaza nada"
+            )
+
+        modelo = parse_key_model(texto)
+        candidatos = [
+            conjunto
+            for conjunto in self._questions.sets(opposition_id=opposition_id, limit=200).sets
+            if conjunto.set_type in KEY_SET_TYPES
+            and (modelo is None or conjunto.model_code == modelo)
+        ]
+        if not candidatos:
+            del_modelo = f" del modelo {modelo}" if modelo is not None else ""
+            return AutoImportOutcome(
+                note=(
+                    "no hay ningún examen oficial"
+                    f"{del_modelo} de esta oposición con el que enlazar la plantilla"
+                )
+            )
+
+        puntuaciones = [
+            (self._alineacion(conjunto.id, lineas), conjunto) for conjunto in candidatos
+        ]
+        buenos = [
+            (alineacion, conjunto)
+            for alineacion, conjunto in puntuaciones
+            if alineacion >= KEY_ALIGNMENT_MINIMUM
+        ]
+        if not buenos:
+            mejor = max(puntuaciones, key=lambda par: par[0])
+            return AutoImportOutcome(
+                note=(
+                    "la plantilla no encaja con ningún examen de esta oposición: la que más se "
+                    f"parece es «{mejor[1].title}» y solo coincide en el "
+                    f"{round(mejor[0] * 100)} % de sus líneas"
+                )
+            )
+        if len(buenos) > 1:
+            titulos = ", ".join(f"«{conjunto.title}»" for _alineacion, conjunto in buenos[:3])
+            return AutoImportOutcome(
+                note=(
+                    f"la plantilla encaja con {len(buenos)} exámenes ({titulos}): "
+                    "no se elige por ti, dime cuál es y se enlaza"
+                )
+            )
+
+        _alineacion, examen = buenos[0]
+        informe = self._questions.import_key_from_text(
+            examen.id,
+            texto,
+            source_document_version_id=version_id,
+            actor="auto",
+        )
+        if informe.key_id is None:
+            return AutoImportOutcome(
+                note="la plantilla encaja con el examen, pero no se pudo guardar ninguna respuesta"
+            )
+        return AutoImportOutcome(
+            set_id=examen.id,
+            note=(
+                f"plantilla enlazada con el examen «{examen.title}»: {informe.entries} respuestas "
+                "(queda en borrador; actívala en Preguntas para corregir con ella)"
+            ),
+        )
+
+    def _texto(self, version_id: str) -> str | None:
+        """Texto extraído de la versión, o `None` si no hay nada que leer."""
+        vista = self._library.version_text(version_id)
+        if vista is None or not vista.text.strip():
+            return None
+        return vista.text
+
+    def _alineacion(self, set_id: str, lineas: Sequence[ParsedKeyLine]) -> float:
+        """Qué proporción de las líneas de la plantilla cae en una pregunta del conjunto.
+
+        Se mira por **número de pregunta**, que es como se alinea una plantilla suelta: si el
+        fichero dice «17. c», tiene que haber una pregunta en la posición 17.
+        """
+        posiciones = {
+            pregunta.position
+            for pregunta in self._questions.questions(set_id=set_id, limit=200).questions
+        }
+        if not posiciones:
+            return 0.0
+        coincidencias = sum(1 for linea in lineas if linea.position in posiciones)
+        return coincidencias / len(lineas)
 
     def catalogue_questions(self, *, set_id: str, version_id: str) -> int:
         """Cataloga por bloque y tema las preguntas que aún no tienen tema (S12.6).
