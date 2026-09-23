@@ -1097,11 +1097,26 @@ que reutiliza es el suyo, o que no reutilice ninguno.
 4. La medición de DEBT-018 se rehace sobre una copia limpia: la actual recibió datos de E2E y sus
    recuentos ya no son solo del material real.
 
-**Estado: abierta, con la parte peligrosa cerrada (22 de septiembre de 2026, S12.4).** Lo entregado:
-la suite **ya no reutiliza** ningún servidor (`reuseExistingServer: false` en los dos: la API y la
-vista previa), así que un puerto ocupado hace fallar la corrida en vez de correrla contra la base de
-otro; y `docs/OPERACION.md` §5 explica cómo liberar los puertos. Falta el criterio 2 (una prueba que
-lo demuestre con un servidor ajeno puesto a propósito), y el 4, que es del propietario.
+**Estado: abierta, con los criterios 1, 2 y 3 cerrados.** Lo entregado en S12.4 (22 de septiembre de
+2026): la suite **ya no reutiliza** ningún servidor (`reuseExistingServer: false` en los dos: la API y
+la vista previa), así que un puerto ocupado hace fallar la corrida en vez de correrla contra la base de
+otro; y `docs/OPERACION.md` §5 explica cómo liberar los puertos. Queda el criterio 4, que es del
+propietario (rehacer la medición de DEBT-018 sobre una copia limpia).
+
+**Criterio 2, cumplido y ejecutado (23 de septiembre de 2026).** Se levantó un listener propio en
+`127.0.0.1:8765` que no habla el protocolo de la aplicación y se lanzó una corrida corta de la suite:
+
+| Qué se midió | Resultado |
+|---|---|
+| código de salida de la corrida | **1** (no corre) |
+| mensaje | `Error: Process from config.webServer was not able to start. Exit code: 3` y `[Errno 10048] error while attempting to bind on address ('127.0.0.1', 8765)` |
+| peticiones recibidas por el servidor ajeno | 10, **todas** `GET /api/v1/health/live` (la sonda con la que Playwright decide si reutilizar); **ninguna escritura** |
+
+La corrida falla, no se ejecuta ninguna prueba y el servidor ajeno no recibe nada más que sondas de
+lectura: la suite no escribe en datos que no son suyos. Como guarda permanente, además de esta
+medición, queda una prueba de componentes (`playwright-config.test.ts`) que lee la configuración de
+verdad y falla si alguien vuelve a poner `reuseExistingServer: true` o si la API del E2E deja de fijar
+su propio `OPOFUENTE_DATA_DIR`.
 
 Lo que se aprendió al hacerlo, y que conviene no olvidar: el servidor y la vista previa que arranca
 Playwright **sobreviven** a una corrida interrumpida. Con la reutilización activa, un servidor viejo
