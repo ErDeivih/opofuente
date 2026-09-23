@@ -21,6 +21,7 @@ from opofuente.api.question_schemas import (
     CreateQuestionSetSchema,
     CsvMappingSchema,
     DuplicateGroupSchema,
+    ExplanationSchema,
     ImportQuestionsFromDocumentSchema,
     IssueReportRequestSchema,
     IssueReportSchema,
@@ -38,10 +39,12 @@ from opofuente.api.question_schemas import (
     QuestionSetPageSchema,
     QuestionSetSchema,
     RejectedRowSchema,
+    SetExplanationRequestSchema,
 )
 from opofuente.application.question_models import (
     AnswerKeyView,
     CsvColumnMapping,
+    ExplanationView,
     IssueReportView,
     OptionView,
     QuestionEvidenceView,
@@ -194,6 +197,7 @@ def _report(
         key_id=key_id,
         parts_detected=list(informe.parts_detected),
         evidence_links=informe.evidence_links,
+        option_explanations=informe.option_explanations,
     )
 
 
@@ -204,6 +208,19 @@ def _issue(view: IssueReportView) -> IssueReportSchema:
         kind=view.kind,  # type: ignore[arg-type]
         detail=view.detail,
         status=view.status,  # type: ignore[arg-type]
+        created_at=view.created_at,
+    )
+
+
+def _explanation(view: ExplanationView) -> ExplanationSchema:
+    return ExplanationSchema(
+        id=view.id,
+        question_version_id=view.question_version_id,
+        option_stable_key=view.option_stable_key,
+        text=view.text,
+        origin=view.origin,  # type: ignore[arg-type]
+        status=view.status,  # type: ignore[arg-type]
+        model_name=view.model_name,
         created_at=view.created_at,
     )
 
@@ -515,6 +532,48 @@ def report_question_issue(
     if informe is None:
         raise NotFoundError("pregunta", question_id)
     return _issue(informe)
+
+
+@router.get(
+    "/questions/{question_id}/explanations",
+    response_model=list[ExplanationSchema],
+    responses=RESOURCE_ERRORS,
+    summary="Explicaciones de la pregunta y de cada una de sus opciones (ruta añadida: S12.7)",
+)
+def list_question_explanations(
+    question_id: str, service: QuestionServiceDep
+) -> list[ExplanationSchema]:
+    """La explicación de la pregunta entera y la de cada opción, con su clave de opción.
+
+    Se sirven **todas juntas**: quien lee quiere entender la pregunta, y separarlas obligaría a la
+    interfaz a juntarlas otra vez (07_UI-UX §7).
+    """
+    return [_explanation(item) for item in service.explanations(question_id)]
+
+
+@router.post(
+    "/questions/{question_id}/explanations",
+    response_model=ExplanationSchema,
+    status_code=201,
+    responses={**INGESTION_WRITE_ERRORS, **RESOURCE_ERRORS},
+    summary="Escribe la explicación de la pregunta o de una de sus opciones (ruta añadida: S12.7)",
+)
+def set_question_explanation(
+    question_id: str, request: SetExplanationRequestSchema, service: QuestionServiceDep
+) -> ExplanationSchema:
+    """Escribe o **sustituye** la explicación de ese hueco: la identidad es (pregunta, opción).
+
+    Una opción que la pregunta no tiene es un 409 con el motivo, no una explicación huérfana: la
+    explicación de una opción que no está no explica nada.
+    """
+    guardada = service.set_explanation(
+        question_id,
+        text=request.text,
+        option_stable_key=request.option_stable_key,
+    )
+    if guardada is None:
+        raise NotFoundError("pregunta", question_id)
+    return _explanation(guardada)
 
 
 @router.get(

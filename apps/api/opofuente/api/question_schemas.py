@@ -195,6 +195,8 @@ class QuestionImportReportSchema(BaseModel):
     parts_detected: list[str] = Field(default_factory=list)
     #: Citas creadas al importar desde un documento: el enlace pregunta↔fragmento (DEBT-010).
     evidence_links: int = 0
+    #: Explicaciones **por opción** guardadas al importar (S12.7): el material las traía y se dice.
+    option_explanations: int = 0
 
 
 class ImportQuestionsFromDocumentSchema(BaseModel):
@@ -245,6 +247,33 @@ class IssueReportSchema(BaseModel):
     detail: str
     status: Literal["open", "reviewed", "dismissed"]
     created_at: datetime | None = None
+
+
+class ExplanationSchema(BaseModel):
+    """Explicación de una pregunta entera o de una de sus opciones (07_UI-UX §7, S12.7).
+
+    `option_stable_key` nulo es «la pregunta entera»; con valor, es la explicación de esa opción
+    («por qué la b no vale»). El origen y el estado no son adorno: una explicación generada por un
+    modelo queda en borrador y se dice con qué modelo se escribió.
+    """
+
+    id: str
+    question_version_id: str
+    option_stable_key: str | None = None
+    text: str
+    origin: Literal["official", "private", "generated"]
+    status: Literal["draft", "reviewed", "rejected"]
+    model_name: str | None = None
+    created_at: datetime | None = None
+
+
+class SetExplanationRequestSchema(BaseModel):
+    """Escribir (o sustituir) la explicación de una pregunta o de una de sus opciones."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    text: str = Field(min_length=1, max_length=4000)
+    option_stable_key: str | None = Field(default=None, max_length=16)
 
 
 class QuestionEvidenceSchema(BaseModel):

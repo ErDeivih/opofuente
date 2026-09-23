@@ -25,6 +25,7 @@ from sqlalchemy.sql.elements import ColumnElement
 
 from opofuente.application.question_models import (
     AnswerKeyView,
+    ExplanationView,
     IssueReportView,
     KeyEntryView,
     OptionView,
@@ -642,6 +643,41 @@ class SqlAlchemyQuestionRepository:
             return self._key_view(session, fila)
 
     # ------------------------------------------------------------------ explicaciones y mapeos
+
+    def explanations_of(self, question_id: str) -> tuple[ExplanationView, ...]:
+        """Explicaciones de una pregunta: la de la pregunta entera y las de sus opciones (S12.7).
+
+        Se devuelven **todas**, con su `option_stable_key` a la vista: la de la pregunta entera lo
+        lleva nulo y la interfaz la coloca bajo el enunciado; las demás, bajo su opción. El orden es
+        la pregunta entera primero y después las opciones por su clave.
+        """
+        with self._session_factory() as session:
+            filas = (
+                session.execute(
+                    select(QuestionExplanationRecord)
+                    .where(QuestionExplanationRecord.question_version_id == question_id)
+                    .order_by(
+                        QuestionExplanationRecord.option_stable_key.is_(None).desc(),
+                        QuestionExplanationRecord.option_stable_key,
+                        QuestionExplanationRecord.id,
+                    )
+                )
+                .scalars()
+                .all()
+            )
+        return tuple(
+            ExplanationView(
+                id=str(fila.id),
+                question_version_id=str(fila.question_version_id),
+                option_stable_key=fila.option_stable_key,
+                text=str(fila.text),
+                origin=str(fila.origin),
+                status=str(fila.status),
+                model_name=fila.model_name,
+                created_at=fila.created_at,
+            )
+            for fila in filas
+        )
 
     def add_explanation(
         self,

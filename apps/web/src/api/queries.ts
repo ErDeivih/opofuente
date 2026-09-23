@@ -111,6 +111,7 @@ import {
   createQuestionSet,
   fetchAnswerKeys,
   fetchConflictingQuestions,
+  fetchExplanations,
   fetchOutdatedSessions,
   fetchQuestion,
   fetchQuestionEvidence,
@@ -123,6 +124,7 @@ import {
   patchQuestion,
   recalculateSetSessions,
   reportQuestionIssue,
+  setExplanation,
   type CreateQuestionSet,
   type CsvMapping,
   type ImportKind,
@@ -196,6 +198,9 @@ export const queryKeys = {
   question: (questionId: string) => ['questions', 'question', questionId] as const,
   questionEvidence: (questionId: string) =>
     ['questions', 'question', questionId, 'evidence'] as const,
+  /* S12.7: la explicación de la pregunta entera y la de cada opción. */
+  questionExplanations: (questionId: string) =>
+    ['questions', 'question', questionId, 'explanations'] as const,
   answerKeys: (setId: string) => ['questions', 'set', setId, 'keys'] as const,
   /* DEBT-013: qué sesiones del conjunto quedan sin corregir con su plantilla activa. */
   outdatedSessions: (setId: string) => ['questions', 'set', setId, 'outdated'] as const,
@@ -789,6 +794,37 @@ export function useQuestionEvidence(questionId: string | null) {
     queryKey: queryKeys.questionEvidence(questionId ?? 'ninguna'),
     queryFn: () => fetchQuestionEvidence(questionId as string),
     enabled: questionId !== null,
+  });
+}
+
+/** Explicaciones de la pregunta y de cada opción (S12.7). */
+export function useQuestionExplanations(questionId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.questionExplanations(questionId ?? 'ninguna'),
+    queryFn: () => fetchExplanations(questionId as string),
+    enabled: questionId !== null,
+  });
+}
+
+/**
+ * Escribe o sustituye la explicación de un hueco (la pregunta entera o una de sus opciones).
+ *
+ * Al guardar se recargan las explicaciones de esa pregunta: la identidad es `(pregunta, opción)`, así
+ * que la respuesta del servidor sustituye a la que había y la ficha tiene que enseñar la nueva.
+ */
+export function useSetQuestionExplanation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { questionId: string; text: string; optionStableKey: string | null }) =>
+      setExplanation(input.questionId, {
+        text: input.text,
+        optionStableKey: input.optionStableKey,
+      }),
+    onSuccess: (_explicacion, input) => {
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.questionExplanations(input.questionId),
+      });
+    },
   });
 }
 

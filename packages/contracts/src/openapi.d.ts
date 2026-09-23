@@ -1762,6 +1762,36 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/questions/{question_id}/explanations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Explicaciones de la pregunta y de cada una de sus opciones (ruta añadida: S12.7)
+         * @description La explicación de la pregunta entera y la de cada opción, con su clave de opción.
+         *
+         *     Se sirven **todas juntas**: quien lee quiere entender la pregunta, y separarlas obligaría a la
+         *     interfaz a juntarlas otra vez (07_UI-UX §7).
+         */
+        get: operations["list_question_explanations_api_v1_questions__question_id__explanations_get"];
+        put?: never;
+        /**
+         * Escribe la explicación de la pregunta o de una de sus opciones (ruta añadida: S12.7)
+         * @description Escribe o **sustituye** la explicación de ese hueco: la identidad es (pregunta, opción).
+         *
+         *     Una opción que la pregunta no tiene es un 409 con el motivo, no una explicación huérfana: la
+         *     explicación de una opción que no está no explica nada.
+         */
+        post: operations["set_question_explanation_api_v1_questions__question_id__explanations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/questions/{question_id}/local-corrections": {
         parameters: {
             query?: never;
@@ -3894,6 +3924,38 @@ export interface components {
             value_text: string;
         };
         /**
+         * ExplanationSchema
+         * @description Explicación de una pregunta entera o de una de sus opciones (07_UI-UX §7, S12.7).
+         *
+         *     `option_stable_key` nulo es «la pregunta entera»; con valor, es la explicación de esa opción
+         *     («por qué la b no vale»). El origen y el estado no son adorno: una explicación generada por un
+         *     modelo queda en borrador y se dice con qué modelo se escribió.
+         */
+        ExplanationSchema: {
+            /** Created At */
+            created_at?: string | null;
+            /** Id */
+            id: string;
+            /** Model Name */
+            model_name?: string | null;
+            /** Option Stable Key */
+            option_stable_key?: string | null;
+            /**
+             * Origin
+             * @enum {string}
+             */
+            origin: "official" | "private" | "generated";
+            /** Question Version Id */
+            question_version_id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "draft" | "reviewed" | "rejected";
+            /** Text */
+            text: string;
+        };
+        /**
          * ExportRequestSchema
          * @description Qué se exporta: un conjunto concreto, un tema, o todo lo de una oposición.
          */
@@ -4877,6 +4939,11 @@ export interface components {
             missing_columns: string[];
             /** Model Code Detected */
             model_code_detected?: string | null;
+            /**
+             * Option Explanations
+             * @default 0
+             */
+            option_explanations: number;
             /** Parts Detected */
             parts_detected?: string[];
             /** Rejected */
@@ -5889,6 +5956,16 @@ export interface components {
             part_code: string;
             /** Question Set Id */
             question_set_id: string;
+        };
+        /**
+         * SetExplanationRequestSchema
+         * @description Escribir (o sustituir) la explicación de una pregunta o de una de sus opciones.
+         */
+        SetExplanationRequestSchema: {
+            /** Option Stable Key */
+            option_stable_key?: string | null;
+            /** Text */
+            text: string;
         };
         /**
          * SettingsSchema
@@ -11841,6 +11918,126 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["QuestionEvidenceSchema"][];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    list_question_explanations_api_v1_questions__question_id__explanations_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                question_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExplanationSchema"][];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    set_question_explanation_api_v1_questions__question_id__explanations_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                question_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetExplanationRequestSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExplanationSchema"];
+                };
+            };
+            /** @description La entrada no se puede usar: carpeta inválida (`invalid_source`), contenido rechazado por seguridad (`unsafe_content`) o URL no descargable (`url_rejected`). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
                 };
             };
             /** @description El recurso no existe. */

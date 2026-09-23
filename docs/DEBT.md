@@ -1377,8 +1377,8 @@ cantaba estaba en la primera pantalla, que es donde el propietario mira todos lo
 | §3 Inicio | **faltaban** dominio y actividad reciente; «Acciones necesarias» era un texto fijo | dominio, actividad reciente y acciones reales |
 | §4 Bandeja | el estado se leía como valor crudo del enum; **sin pausar**; sin tabla virtualizada | estados en palabras y etiquetas compartidas; el resto sigue pendiente |
 | §5 Programa | falta preguntas por estado y próxima revisión por nodo | el dominio ya estaba; el resto sigue pendiente |
-| §6 Biblioteca | lecturas, filtros, cita y derechos están; **falta** el lector sincronizado página ↔ texto | — |
-| §7 Preguntas | badges de origen, conflictos arriba y original al lado están; **falta** explicación por opción | — |
+| §6 Biblioteca | **lector sincronizado página ↔ texto: ya estaba** | nada: la auditoría se corrigió al leer el código (ver abajo) |
+| §7 Preguntas | badges de origen, conflictos arriba y original al lado están; **falta** explicación por opción | **cerrado en S12.7**: el modelo ya la soportaba; faltaba el camino (importación, API y ficha) |
 | §8–§11 | cumplidas por S07–S12 (configuración, pregunta, corrección, resultado, errores, cambios, ajustes) | — |
 | §12 Estados y mensajes | cumplida en general | — |
 | §13 Accesibilidad | faltaba el flujo con teclado (no estaba probado en ninguna pantalla) | probado en la pregunta y su corrección |
@@ -1416,16 +1416,25 @@ Lo que salió de ahí:
 
 **Qué falta todavía** (esto es lo que deja abierta la deuda):
 
+**Tercera pasada: la auditoría tenía dos errores, y uno de ellos era una promesa de menos** (23 de
+septiembre de 2026). Al ir a cerrar los puntos que quedaban, leyendo el código antes de escribirlo:
+
+- **§6 «lector sincronizado página ↔ texto» ya estaba hecho** y la auditoría lo dio por ausente: el
+  lector enseña cada sección con su página y ofrece **abrir esa página del original** (`#page=N`) y el
+  fichero original copiado. Lo que no existe —y no puede existir— es el camino inverso (pinchar en el
+  PDF y que se resalte el texto), porque el original se abre en otra pestaña del navegador.
+- **§7 «explicación por opción» no era un problema de modelo**: `question_explanations` tiene
+  `option_stable_key` con índice único por `(pregunta, opción)` desde S06. Faltaba el **camino**: que
+  entrara al importar, que se pudiera leer y escribir por la API y que la ficha la enseñara. Eso es
+  ahora **S12.7**, entregado.
+
+Lo que queda abierto, ya solo dos cosas:
+
 1. **Pausar un lote** (§4): el trabajo se puede cancelar, no pausar. Pausar de verdad exige decidir qué
    pasa con las entradas a medias y con su trabajo ya encolado; no se inventa un botón que solo cambie
    una etiqueta.
 2. **Columnas de preguntas por estado y próxima revisión por nodo** (§5): el Programa enseña cobertura,
    fuentes y dominio por nodo; las otras dos columnas necesitan una consulta agregada que no existe.
-3. **Lector sincronizado página original ↔ texto extraído** (§6): el lector enseña el texto con sus
-   secciones y el original se abre aparte. Las páginas **sí** están guardadas (secciones y fragmentos
-   tienen `page_start`/`page`), así que es trabajo de interfaz, no de modelo.
-4. **Explicación por opción** (§7): el modelo guarda explicaciones por pregunta (`question_explanations`),
-   no por opción; el editor no puede ofrecer lo que no existe.
 
 **Lo que se decidió NO hacer, y por qué** (para que no vuelva a aparecer como pendiente sin contexto):
 
@@ -1436,5 +1445,5 @@ Lo que salió de ahí:
   Un panel lateral duplicaría lo que ya está delante y escondería la evidencia en un clic más.
 
 **Estado: abierta.** Lo urgente —lo que se veía en Inicio, la cola cortada y lo que no estaba probado—
-está cerrado y verificado; lo que queda son cuatro pantallas concretas, con su coste dicho arriba, y
-ninguna bloquea estudiar.
+está cerrado y verificado; de la especificación solo quedan **dos pantallas** sin hacer, con su coste
+dicho arriba, y ninguna bloquea estudiar.

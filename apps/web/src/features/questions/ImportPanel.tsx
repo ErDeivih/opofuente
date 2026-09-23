@@ -167,6 +167,11 @@ export function ImportPanel({
                 });
               }}
             />
+            <p className="hint">
+              Es la explicación de la <strong>pregunta entera</strong>. Si el fichero explica cada
+              opción, se leen sus columnas <code>explanation_a</code>, <code>explanation_b</code>… sin
+              mapearlas una a una: van atadas a su opción y se ven en la ficha (S12.7).
+            </p>
             <label className="form__label" htmlFor="mapeo-topic">
               Columna del tema
             </label>

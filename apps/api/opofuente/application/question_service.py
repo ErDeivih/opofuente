@@ -25,6 +25,7 @@ from opofuente.application.ports import Clock
 from opofuente.application.question_models import (
     AnswerKeyView,
     CsvColumnMapping,
+    ExplanationView,
     IssueReportView,
     KeyImportReport,
     QuestionEvidenceView,
@@ -35,7 +36,12 @@ from opofuente.application.question_models import (
     QuestionView,
     RejectedRow,
 )
-from opofuente.domain.errors import InvariantViolationError, MappingMismatchError, NotFoundError
+from opofuente.domain.errors import (
+    InvalidAnswerError,
+    InvariantViolationError,
+    MappingMismatchError,
+    NotFoundError,
+)
 from opofuente.domain.questions import (
     AnswerKeyEntry,
     KeyOutcome,
@@ -457,6 +463,14 @@ class QuestionService:
                 if mapeo.explanation is not None
                 else ""
             )
+            # Explicaciones **por opción** (S12.7): columnas `explanation_a`, `explanation_b`… por
+            # convenio, como `option_a`/`option_b`. Son opcionales y no se piden una a una en el
+            # asistente: si están se leen, y si no están no falta nada.
+            explicaciones_opcion = tuple(
+                (letra, normalizada[f"explanation_{letra}"].strip())
+                for letra in (chr(ord("a") + orden) for orden in range(len(opciones)))
+                if normalizada.get(f"explanation_{letra}", "").strip()
+            )
             tema = (
                 normalizada.get(mapeo.topic.strip().lower(), "").strip()
                 if mapeo.topic is not None
@@ -484,6 +498,7 @@ class QuestionService:
                     is_reserve=reserva,
                     reserve_order=None,
                     correct_option_keys=claves,
+                    option_explanations=explicaciones_opcion,
                 )
             )
             extras.append((claves, explicacion or None, tema or None))
@@ -708,6 +723,58 @@ class QuestionService:
         """Lo que sostiene la pregunta, con su cita: es lo que hace abrible una explicación."""
         return self._questions.question_evidence(question_id)
 
+    def explanations(self, question_id: str) -> tuple[ExplanationView, ...]:
+        """Explicaciones de la pregunta y de cada una de sus opciones (S12.7).
+
+        Se devuelven todas juntas y con su `option_stable_key`: la interfaz coloca la de la pregunta
+        bajo el enunciado y las demás bajo su opción, sin adivinar a cuál pertenece cada una.
+        """
+        if self._questions.get_question(question_id) is None:
+            raise NotFoundError("pregunta", question_id)
+        return self._questions.explanations_of(question_id)
+
+    def set_explanation(
+        self,
+        question_id: str,
+        *,
+        text: str,
+        option_stable_key: str | None = None,
+        origin: Origin = Origin.PRIVATE,
+        actor: str = "local",
+    ) -> ExplanationView | None:
+        """Escribe (o sustituye) la explicación de una pregunta o de una de sus opciones.
+
+        La identidad es `(pregunta, opción)`: volver a explicar la misma opción **sustituye** la
+        anterior en lugar de acumular versiones, porque dos explicaciones de lo mismo es una
+        decisión editorial y no un dato más. Si la opción no existe, no se guarda nada y se dice:
+        una explicación colgada de una opción que no está no explica nada.
+        """
+        vista = self._questions.get_question(question_id)
+        if vista is None:
+            raise NotFoundError("pregunta", question_id)
+        if option_stable_key is not None:
+            claves = {opcion.stable_key for opcion in vista.options}
+            if option_stable_key not in claves:
+                raise InvalidAnswerError(
+                    f"la pregunta no tiene ninguna opción «{option_stable_key}»: "
+                    f"sus opciones son {', '.join(sorted(claves)) or 'ninguna'}",
+                    field="option_stable_key",
+                )
+        guardada = self._questions.add_explanation(
+            question_id,
+            text=text,
+            origin=origin,
+            now=self._clock.now(),
+            option_stable_key=option_stable_key,
+            actor=actor,
+        )
+        if guardada is None:
+            return None
+        return next(
+            (item for item in self._questions.explanations_of(question_id) if item.id == guardada),
+            None,
+        )
+
     # ------------------------------------------------------------------ auxiliares
 
     @staticmethod
@@ -793,8 +860,9 @@ class QuestionService:
         # no puede tener dos entradas para la misma pregunta. Con la misma respuesta se queda una;
         # con otra distinta, el conflicto se marca como siempre.
         por_pregunta: dict[str, AnswerKeyEntry] = {}
-        for (claves, explicacion, tema), pregunta_id in zip(
-            extras, resultado.question_ids, strict=False
+        explicaciones_opcion_guardadas = 0
+        for indice, ((claves, explicacion, tema), pregunta_id) in enumerate(
+            zip(extras, resultado.question_ids, strict=False)
         ):
             if claves:
                 anterior = ya_conocidas.get(pregunta_id)
@@ -833,6 +901,20 @@ class QuestionService:
                     now=ahora,
                     actor=actor,
                 )
+            # Explicación de cada opción (S12.7): la identidad es `(pregunta, opción)`, así que
+            # reimportar sustituye la del mismo hueco en lugar de acumular versiones.
+            if indice < len(preguntas):
+                for opcion, texto_opcion in preguntas[indice].option_explanations:
+                    guardada = self._questions.add_explanation(
+                        pregunta_id,
+                        text=texto_opcion,
+                        origin=origin_type,
+                        now=ahora,
+                        option_stable_key=opcion,
+                        actor=actor,
+                    )
+                    if guardada is not None:
+                        explicaciones_opcion_guardadas += 1
             if tema:
                 # Un tema sin convocatoria no se puede resolver a un nodo del programa, y decir que
                 # no
@@ -913,6 +995,7 @@ class QuestionService:
             model_code_detected=model_code,
             parts_detected=parts,
             evidence_links=enlazadas,
+            option_explanations=explicaciones_opcion_guardadas,
         )
 
     @staticmethod

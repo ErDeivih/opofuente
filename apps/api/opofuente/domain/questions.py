@@ -511,6 +511,10 @@ class ParsedQuestion:
     #: Sección del documento de la que salió la pregunta (DEBT-010). El parser de un texto pegado no
     #: la conoce —ahí no hay documento—, así que la rellena quien importa desde una versión.
     source_section_id: str | None = None
+    #: Explicación de **cada opción** («por qué la b no vale»), por clave de opción (S12.7). El
+    #: modelo ya guardaba esto (`question_explanations.option_stable_key`); lo que faltaba era que
+    #: llegara desde el material, y de eso se encargan los parsers.
+    option_explanations: tuple[tuple[str, str], ...] = ()
 
     @property
     def is_complete(self) -> bool:
@@ -1014,6 +1018,18 @@ def parse_questions_json(text: str) -> ParsedSet:
         if orden_reserva is not None:
             reserva = True
 
+        explicaciones, incidencia_explicacion = _json_option_explanations(
+            fila.get("explanations"), opciones=opciones
+        )
+        if incidencia_explicacion is not None:
+            incidencias.append(
+                ParseIssue(
+                    line=numero_fila,
+                    code="explanation_without_option",
+                    detail=incidencia_explicacion,
+                )
+            )
+
         preguntas.append(
             ParsedQuestion(
                 number=numero,
@@ -1025,6 +1041,7 @@ def parse_questions_json(text: str) -> ParsedSet:
                 reserve_order=orden_reserva,
                 correct_option_keys=claves,
                 type_reason=motivo,
+                option_explanations=explicaciones,
             )
         )
 
@@ -1034,6 +1051,45 @@ def parse_questions_json(text: str) -> ParsedSet:
         model_code=modelo,
         ignored_fields=_json_ignored_fields(payload),
     )
+
+
+def _json_option_explanations(
+    bruto: object, *, opciones: Sequence[ParsedOption]
+) -> tuple[tuple[tuple[str, str], ...], str | None]:
+    """Explicaciones **por opción** de una pregunta JSON (S12.7).
+
+    El formato es `"explanations": {"b": "por qué la b no vale", ...}`, con la clave de la opción
+    (letra) o el texto exacto de la opción, igual que la respuesta. Lo que no se puede atribuir a
+    una opción **no se guarda** y se informa: una explicación colgada de la opción equivocada es
+    peor que ninguna, porque enseña mal.
+    """
+    if bruto is None:
+        return (), None
+    if not isinstance(bruto, Mapping):
+        return (), "«explanations» no es un objeto de opción → explicación"
+    textos = [opcion.text.strip().lower() for opcion in opciones]
+    pares: list[tuple[str, str]] = []
+    sin_pareja: list[str] = []
+    for clave, valor in bruto.items():
+        if not isinstance(valor, str) or not valor.strip():
+            continue
+        destino: str | None = None
+        referencia = str(clave).strip().lower()
+        if len(referencia) == 1 and "a" <= referencia <= "h":
+            if ord(referencia) - ord("a") < len(opciones):
+                destino = opciones[ord(referencia) - ord("a")].stable_key
+        elif referencia in textos:
+            destino = opciones[textos.index(referencia)].stable_key
+        if destino is None:
+            sin_pareja.append(str(clave).strip())
+            continue
+        pares.append((destino, valor.strip()))
+    motivo = (
+        f"estas claves de «explanations» no corresponden a ninguna opción: {', '.join(sin_pareja)}"
+        if sin_pareja
+        else None
+    )
+    return tuple(pares), motivo
 
 
 def _json_ignored_fields(payload: object) -> tuple[str, ...]:

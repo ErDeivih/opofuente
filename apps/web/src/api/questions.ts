@@ -19,6 +19,8 @@ export type RejectedRow = components['schemas']['RejectedRowSchema'];
 export type ParseIssue = components['schemas']['ParseIssueSchema'];
 export type DuplicateGroup = components['schemas']['DuplicateGroupSchema'];
 export type AnswerKey = components['schemas']['AnswerKeySchema'];
+/** Explicación de una pregunta entera (`option_stable_key` nulo) o de una de sus opciones (S12.7). */
+export type Explanation = components['schemas']['ExplanationSchema'];
 export type OutdatedSessions = components['schemas']['OutdatedSessionsSchema'];
 export type BulkRecalculation = components['schemas']['BulkRecalculationSchema'];
 export type SessionRecalculation = components['schemas']['SessionRecalculationSchema'];
@@ -164,6 +166,35 @@ export function parseIntoSet(
 
 export function fetchQuestion(questionId: string): Promise<Question> {
   return apiFetch<Question>(`/api/v1/questions/${encodeURIComponent(questionId)}`);
+}
+
+/**
+ * Explicaciones de una pregunta: la de la pregunta entera y las de sus opciones (S12.7).
+ *
+ * `option_stable_key` nulo es «la pregunta entera»; con valor, es la explicación de esa opción («por
+ * qué la b no vale»). Se leen juntas y la ficha las coloca donde toca.
+ */
+export function fetchExplanations(questionId: string): Promise<Explanation[]> {
+  return apiFetch<Explanation[]>(
+    `/api/v1/questions/${encodeURIComponent(questionId)}/explanations`,
+  );
+}
+
+/**
+ * Escribe o **sustituye** la explicación de ese hueco: la identidad es (pregunta, opción).
+ *
+ * Una opción que la pregunta no tiene responde 422 con el campo que hay que corregir, así que la
+ * pantalla no puede dejar un texto colgado de una opción que no existe.
+ */
+export function setExplanation(
+  questionId: string,
+  input: { text: string; optionStableKey: string | null },
+): Promise<Explanation> {
+  return apiFetch<Explanation>(`/api/v1/questions/${encodeURIComponent(questionId)}/explanations`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text: input.text, option_stable_key: input.optionStableKey }),
+  });
 }
 
 /**

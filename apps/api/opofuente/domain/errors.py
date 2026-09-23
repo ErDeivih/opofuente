@@ -55,7 +55,9 @@ class InvalidAnswerError(OpoFuenteError):
     """La respuesta no vale para esa pregunta. La API lo traduce a 422 `invalid_answer`.
 
     Casos: una opción que no existe en la pregunta, o más de una marca en una pregunta de respuesta
-    única. Se dice con `field_errors`, como cualquier otra entrada inválida.
+    única. Se dice con `field_errors`, como cualquier otra entrada inválida. Desde S12.7 vale
+    también para explicar una opción que la pregunta no tiene: es la misma entrada inválida —una
+    clave de opción que no está— y se contesta igual, en lugar de guardar algo huérfano.
     """
 
     def __init__(self, reason: str, *, field: str, code: str = "invalid_answer") -> None:

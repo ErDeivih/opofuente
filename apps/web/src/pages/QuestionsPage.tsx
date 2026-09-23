@@ -17,9 +17,11 @@ import {
   usePatchQuestion,
   useQuestion,
   useQuestionEvidence,
+  useQuestionExplanations,
   useQuestionSets,
   useRecalculateSetSessions,
   useReportIssue,
+  useSetQuestionExplanation,
   useSetQuestions,
 } from '../api/queries';
 import { ErrorState } from '../components/ErrorState';
@@ -89,6 +91,9 @@ export function QuestionsPage() {
   const preguntas = useSetQuestions(setId, filters);
   const detalle = useQuestion(questionId);
   const evidencia = useQuestionEvidence(questionId);
+  // S12.7: la explicación de la pregunta entera y la de cada opción, con su escritura.
+  const explicaciones = useQuestionExplanations(questionId);
+  const guardarExplicacion = useSetQuestionExplanation();
   const claves = useAnswerKeys(setId);
   // DEBT-013: activar una plantilla corregida no cambia sola las notas ya puestas, así que se cuenta
   // cuántas sesiones se quedan con la corrección vieja y se ofrece recalcularlas de una vez.
@@ -363,9 +368,32 @@ export function QuestionsPage() {
                       question={detalle.data}
                       evidence={evidencia.data ?? []}
                       evidenceIsPending={evidencia.isPending}
+                      explanations={explicaciones.data ?? []}
+                      explanationsIsPending={explicaciones.isPending}
+                      explanationsError={
+                        explicaciones.isError ? describeError(explicaciones.error) : null
+                      }
                       busy={busy}
                       conflict={conflictoFicha}
                       error={errorFicha}
+                      onSetExplanation={(input) => {
+                        guardarExplicacion.mutate(
+                          {
+                            questionId: detalle.data.id,
+                            text: input.text,
+                            optionStableKey: input.optionStableKey,
+                          },
+                          {
+                            onSuccess: () => {
+                              setNotice(
+                                input.optionStableKey === null
+                                  ? 'Explicación de la pregunta guardada.'
+                                  : `Explicación de la opción ${input.optionStableKey.toUpperCase()} guardada.`,
+                              );
+                            },
+                          },
+                        );
+                      }}
                       onPatch={(changes) => {
                         editar.mutate(
                           { questionId: detalle.data.id, changes },

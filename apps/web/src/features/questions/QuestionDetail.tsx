@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import type { IssueKind, Question, QuestionEvidence, QuestionKind } from '../../api/questions';
+import type { Explanation, IssueKind, Question, QuestionEvidence, QuestionKind } from '../../api/questions';
 import { ISSUE_KINDS, QUESTION_KINDS } from '../../api/questions';
 import { apiBaseUrl } from '../../api/client';
 import { ErrorState } from '../../components/ErrorState';
@@ -21,9 +21,14 @@ export interface QuestionDetailProps {
   question: Question;
   evidence: QuestionEvidence[];
   evidenceIsPending: boolean;
+  /** Explicaciones de la pregunta entera y de cada opción (S12.7). */
+  explanations: Explanation[];
+  explanationsIsPending: boolean;
+  explanationsError: string | null;
   busy: boolean;
   conflict: string | null;
   error: string | null;
+  onSetExplanation: (input: { text: string; optionStableKey: string | null }) => void;
   onPatch: (changes: {
     question_type: QuestionKind;
     position: number;
@@ -49,9 +54,13 @@ export function QuestionDetail({
   question,
   evidence,
   evidenceIsPending,
+  explanations,
+  explanationsIsPending,
+  explanationsError,
   busy,
   conflict,
   error,
+  onSetExplanation,
   onPatch,
   onCorrect,
   onReportIssue,
@@ -67,6 +76,19 @@ export function QuestionDetail({
   const [options, setOptions] = useState(question.options.map((opcion) => opcion.text).join('\n'));
   const [issueKind, setIssueKind] = useState<IssueKind>('ambiguous');
   const [issueDetail, setIssueDetail] = useState('');
+  // Qué hueco se está explicando: la pregunta entera (`null`) o una de sus opciones.
+  const [hueco, setHueco] = useState<string>('');
+  const [textoExplicacion, setTextoExplicacion] = useState('');
+
+  const deLaPregunta = explanations.find((item) => item.option_stable_key === null) ?? null;
+  const porOpcion = new Map(
+    explanations
+      .filter((item) => item.option_stable_key !== null)
+      .map((item) => [item.option_stable_key as string, item]),
+  );
+  // Al elegir un hueco se trae lo que ya hubiera escrito ahí: explicar es corregir lo que hay, no
+  // empezar de cero cada vez.
+  const vigente = hueco === '' ? deLaPregunta : (porOpcion.get(hueco) ?? null);
 
   const correctas = new Set(question.correct_option_keys);
   const opcionesActuales = question.options.map((opcion) => opcion.text).join('\n');
@@ -168,6 +190,104 @@ export function QuestionDetail({
                     </li>
                   ))}
                 </ul>
+              </>
+            )}
+          </section>
+          <section aria-labelledby="explicaciones-pregunta">
+            <h4 id="explicaciones-pregunta">Explicaciones</h4>
+            <p className="hint">
+              Por qué cada opción es la correcta o no lo es (07_UI-UX §7). El texto es tuyo o viene del
+              material; no se inventa ninguna explicación y una opción sin explicación se queda sin
+              ella.
+            </p>
+            {explanationsIsPending && <LoadingState label="Cargando las explicaciones…" />}
+            {explanationsError !== null && (
+              <ErrorState title="No se pudieron leer las explicaciones" message={explanationsError} />
+            )}
+            {!explanationsIsPending && explanationsError === null && (
+              <>
+                {deLaPregunta === null ? (
+                  <p className="hint">La pregunta no tiene explicación propia.</p>
+                ) : (
+                  <p>
+                    <StatusBadge tone={deLaPregunta.origin === 'generated' ? 'warning' : 'info'}>
+                      la pregunta entera
+                    </StatusBadge>{' '}
+                    {deLaPregunta.text}
+                  </p>
+                )}
+                <ul>
+                  {question.options.map((opcion) => {
+                    const explicacion = porOpcion.get(opcion.stable_key);
+                    return (
+                      <li key={`explicacion-${opcion.id}`}>
+                        <span className="sample__path">{opcion.stable_key.toUpperCase()}</span>{' '}
+                        {explicacion === undefined ? (
+                          <span className="hint">sin explicación</span>
+                        ) : (
+                          explicacion.text
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+                <div className="form__row">
+                  <label className="form__label" htmlFor="explicacion-hueco">
+                    Qué se explica
+                  </label>
+                  <select
+                    id="explicacion-hueco"
+                    className="selector__select"
+                    value={hueco}
+                    onChange={(event) => {
+                      const elegido = event.target.value;
+                      setHueco(elegido);
+                      const actual =
+                        elegido === ''
+                          ? deLaPregunta
+                          : (porOpcion.get(elegido) ?? null);
+                      setTextoExplicacion(actual === null ? '' : actual.text);
+                    }}
+                  >
+                    <option value="">La pregunta entera</option>
+                    {question.options.map((opcion) => (
+                      <option key={opcion.stable_key} value={opcion.stable_key}>
+                        La opción {opcion.stable_key.toUpperCase()}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form__row">
+                  <label className="form__label" htmlFor="explicacion-texto">
+                    Explicación
+                  </label>
+                  <textarea
+                    id="explicacion-texto"
+                    className="form__input"
+                    rows={3}
+                    value={textoExplicacion}
+                    onChange={(event) => {
+                      setTextoExplicacion(event.target.value);
+                    }}
+                  />
+                  <button
+                    className="button"
+                    type="button"
+                    disabled={busy || textoExplicacion.trim() === ''}
+                    onClick={() => {
+                      onSetExplanation({
+                        text: textoExplicacion.trim(),
+                        optionStableKey: hueco === '' ? null : hueco,
+                      });
+                    }}
+                  >
+                    {vigente === null ? 'Guardar la explicación' : 'Sustituir la explicación'}
+                  </button>
+                  <span className="hint">
+                    Guardar en el mismo hueco <strong>sustituye</strong> lo que hubiera: una
+                    explicación por opción, no un historial de versiones.
+                  </span>
+                </div>
               </>
             )}
           </section>

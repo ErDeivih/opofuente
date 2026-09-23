@@ -59,6 +59,25 @@ class QuestionView:
 
 
 @dataclass(frozen=True, slots=True)
+class ExplanationView:
+    """Explicación de una pregunta entera o de una de sus opciones (S12.7).
+
+    `option_stable_key` nulo significa «la pregunta entera»; con valor, es la explicación de esa
+    opción («por qué la b no vale»). El vocabulario está cerrado en la base: `origin` vale
+    `official`, `private` o `generated`, y el estado es de borrador hasta que alguien la revisa.
+    """
+
+    id: str
+    question_version_id: str
+    option_stable_key: str | None
+    text: str
+    origin: str
+    status: str
+    model_name: str | None = None
+    created_at: datetime | None = None
+
+
+@dataclass(frozen=True, slots=True)
 class QuestionSetView:
     """Un conjunto con sus recuentos: es lo que se ve en el listado del banco."""
 
@@ -207,6 +226,10 @@ class QuestionImportReport:
     parts_detected: tuple[str, ...] = ()
     #: Citas creadas al importar desde un documento: es el enlace que antes no existía (DEBT-010).
     evidence_links: int = 0
+    #: Explicaciones **por opción** guardadas al importar (S12.7). Se cuentan para que el informe
+    #: diga que el material las traía: sin esta cifra, un fichero con «por qué la b no vale» en cada
+    #: fila parecería no haber traído nada.
+    option_explanations: int = 0
 
     @property
     def imported(self) -> int:

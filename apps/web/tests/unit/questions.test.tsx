@@ -128,6 +128,7 @@ const INFORME: QuestionImportReport = {
   key_id: 'key-1',
   parts_detected: [],
   evidence_links: 0,
+  option_explanations: 0,
 };
 
 /** Las sesiones del conjunto que no están corregidas con la plantilla activa (DEBT-013). */
@@ -172,6 +173,10 @@ function stubQuestions(overrides: Record<string, StubbedRoute> = {}) {
     '/api/v1/questions/q-2': { body: CONFLICTIVA },
     '/api/v1/questions/q-1/evidence': { body: [] },
     '/api/v1/questions/q-2/evidence': { body: EVIDENCIA },
+    // S12.7: las explicaciones. La clave es más larga que `/api/v1/questions/q-1`, así que gana para
+    // su ruta; sin ella, la ficha recibiría la pregunta y estallaría al buscar sus explicaciones.
+    '/api/v1/questions/q-1/explanations': { body: [] },
+    '/api/v1/questions/q-2/explanations': { body: [] },
     ...overrides,
   });
 }
@@ -210,6 +215,77 @@ async function abrirPregunta(posicion: number) {
   );
   return waitFor(() => screen.getByRole('heading', { name: `Pregunta ${String(posicion)}` }));
 }
+
+describe('preguntas: las explicaciones por opción (S12.7)', () => {
+  const EXPLICACIONES = [
+    {
+      id: 'exp-1',
+      question_version_id: 'q-1',
+      option_stable_key: null,
+      text: 'el plazo lo fija la Ley 39/2015',
+      origin: 'private',
+      status: 'draft',
+      model_name: null,
+      created_at: null,
+    },
+    {
+      id: 'exp-2',
+      question_version_id: 'q-1',
+      option_stable_key: 'b',
+      text: 'la b no vale: el plazo es de diez dias',
+      origin: 'private',
+      status: 'draft',
+      model_name: null,
+      created_at: null,
+    },
+  ];
+
+  it('enseña la de la pregunta y la de cada opción, y dice cuál no tiene ninguna', async () => {
+    stubQuestions({ '/api/v1/questions/q-1/explanations': { body: EXPLICACIONES } });
+    renderPreguntas();
+    await abrirPregunta(1);
+
+    expect(await screen.findByText('el plazo lo fija la Ley 39/2015')).toBeInTheDocument();
+    expect(screen.getByText('la b no vale: el plazo es de diez dias')).toBeInTheDocument();
+    // Las opciones sin explicación se dicen: no se deja un hueco mudo.
+    expect(screen.getAllByText('sin explicación').length).toBeGreaterThan(0);
+  });
+
+  it('escribe la explicación de una opción concreta y la manda atada a esa opción', async () => {
+    const fetchMock = stubQuestions({ '/api/v1/questions/q-1/explanations': { body: [] } });
+    renderPreguntas();
+    await abrirPregunta(1);
+
+    await screen.findByText('La pregunta no tiene explicación propia.');
+    await userEvent.selectOptions(screen.getByLabelText('Qué se explica'), 'a');
+    await userEvent.type(
+      screen.getByLabelText('Explicación'),
+      'la a es la correcta: la ley dice diez dias',
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Guardar la explicación' }));
+
+    await waitFor(() => {
+      expect(cuerpoJson(fetchMock, '/api/v1/questions/q-1/explanations', 'POST')).toEqual({
+        text: 'la a es la correcta: la ley dice diez dias',
+        option_stable_key: 'a',
+      });
+    });
+  });
+
+  it('al elegir una opción que ya tiene explicación, la trae para corregirla en lugar de partir de cero', async () => {
+    stubQuestions({ '/api/v1/questions/q-1/explanations': { body: EXPLICACIONES } });
+    renderPreguntas();
+    await abrirPregunta(1);
+
+    await screen.findByText('la b no vale: el plazo es de diez dias');
+    await userEvent.selectOptions(screen.getByLabelText('Qué se explica'), 'b');
+
+    expect(screen.getByLabelText('Explicación')).toHaveValue(
+      'la b no vale: el plazo es de diez dias',
+    );
+    expect(screen.getByRole('button', { name: 'Sustituir la explicación' })).toBeInTheDocument();
+  });
+});
 
 describe('preguntas: el banco', () => {
   it('lista el conjunto con sus recuentos y el estado de su clave', async () => {
@@ -463,6 +539,7 @@ describe('preguntas: la ficha', () => {
       // La ficha salta a la versión nueva, así que también se pide su evidencia (y sin esta
       // respuesta el stub general de `q-1` devolvería la pregunta entera como si fuera evidencia).
       '/api/v1/questions/q-1-v2/evidence': { body: [] },
+      '/api/v1/questions/q-1-v2/explanations': { body: [] },
     });
     renderPreguntas();
     await abrirPregunta(1);

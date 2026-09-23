@@ -532,6 +532,45 @@ def test_el_asistente_json_acepta_la_respuesta_escrita_o_numerada() -> None:
     assert resultado.questions[1].correct_option_keys == ("b",)
 
 
+def test_el_json_trae_explicaciones_por_opcion_y_sabe_a_cual_van() -> None:
+    """S12.7: «por qué la b no vale» llega desde el material, atado a **su** opción.
+
+    La clave puede ser la letra o el texto exacto de la opción, como en la respuesta. Una clave que
+    no corresponde a ninguna opción **no se guarda** y se informa: una explicación colgada de la
+    opción equivocada enseña mal, y eso es peor que no tenerla.
+    """
+    texto = json.dumps(
+        [
+            {
+                "stem": "¿Cuál es el plazo?",
+                "options": ["diez días", "quince días"],
+                "correct": "a",
+                "explanations": {
+                    "b": "la ley dice diez días hábiles",
+                    "diez días": "es la correcta",
+                },
+            },
+            {
+                "stem": "¿Qué artículo?",
+                "options": ["el 14", "el 23"],
+                "explanations": {"z": "no existe esa opción", "b": 17},
+            },
+        ]
+    )
+
+    resultado = parse_questions_json(texto)
+
+    assert resultado.questions[0].option_explanations == (
+        ("b", "la ley dice diez días hábiles"),
+        ("a", "es la correcta"),
+    )
+    # La segunda pregunta no trae ninguna explicación utilizable: la clave «z» no es una opción y el
+    # valor 17 no es texto, así que no se guarda nada y la incidencia dice qué clave sobra.
+    assert resultado.questions[1].option_explanations == ()
+    assert [incidencia.code for incidencia in resultado.issues] == ["explanation_without_option"]
+    assert "z" in resultado.issues[0].detail
+
+
 def test_una_pregunta_mala_del_json_no_aborta_el_lote() -> None:
     """El mismo criterio que el CSV: lo que no se entiende se informa y el resto entra."""
     texto = json.dumps(

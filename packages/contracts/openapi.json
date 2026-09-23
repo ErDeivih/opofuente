@@ -4420,6 +4420,84 @@
         "title": "ExamRuleSchema",
         "type": "object"
       },
+      "ExplanationSchema": {
+        "description": "Explicación de una pregunta entera o de una de sus opciones (07_UI-UX §7, S12.7).\n\n`option_stable_key` nulo es «la pregunta entera»; con valor, es la explicación de esa opción\n(«por qué la b no vale»). El origen y el estado no son adorno: una explicación generada por un\nmodelo queda en borrador y se dice con qué modelo se escribió.",
+        "properties": {
+          "created_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "model_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Name"
+          },
+          "option_stable_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Option Stable Key"
+          },
+          "origin": {
+            "enum": [
+              "official",
+              "private",
+              "generated"
+            ],
+            "title": "Origin",
+            "type": "string"
+          },
+          "question_version_id": {
+            "title": "Question Version Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "draft",
+              "reviewed",
+              "rejected"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "question_version_id",
+          "text",
+          "origin",
+          "status"
+        ],
+        "title": "ExplanationSchema",
+        "type": "object"
+      },
       "ExportRequestSchema": {
         "description": "Qué se exporta: un conjunto concreto, un tema, o todo lo de una oposición.",
         "properties": {
@@ -6993,6 +7071,11 @@
               }
             ],
             "title": "Model Code Detected"
+          },
+          "option_explanations": {
+            "default": 0,
+            "title": "Option Explanations",
+            "type": "integer"
           },
           "parts_detected": {
             "items": {
@@ -9672,6 +9755,35 @@
           "part_code"
         ],
         "title": "SessionSourceSchema",
+        "type": "object"
+      },
+      "SetExplanationRequestSchema": {
+        "additionalProperties": false,
+        "description": "Escribir (o sustituir) la explicación de una pregunta o de una de sus opciones.",
+        "properties": {
+          "option_stable_key": {
+            "anyOf": [
+              {
+                "maxLength": 16,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Option Stable Key"
+          },
+          "text": {
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "title": "SetExplanationRequestSchema",
         "type": "object"
       },
       "SettingsSchema": {
@@ -17937,6 +18049,164 @@
           }
         },
         "summary": "Evidencia que sostiene una pregunta",
+        "tags": [
+          "preguntas"
+        ]
+      }
+    },
+    "/api/v1/questions/{question_id}/explanations": {
+      "get": {
+        "description": "La explicación de la pregunta entera y la de cada opción, con su clave de opción.\n\nSe sirven **todas juntas**: quien lee quiere entender la pregunta, y separarlas obligaría a la\ninterfaz a juntarlas otra vez (07_UI-UX §7).",
+        "operationId": "list_question_explanations_api_v1_questions__question_id__explanations_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "question_id",
+            "required": true,
+            "schema": {
+              "title": "Question Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ExplanationSchema"
+                  },
+                  "title": "Response List Question Explanations Api V1 Questions  Question Id  Explanations Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Explicaciones de la pregunta y de cada una de sus opciones (ruta añadida: S12.7)",
+        "tags": [
+          "preguntas"
+        ]
+      },
+      "post": {
+        "description": "Escribe o **sustituye** la explicación de ese hueco: la identidad es (pregunta, opción).\n\nUna opción que la pregunta no tiene es un 409 con el motivo, no una explicación huérfana: la\nexplicación de una opción que no está no explica nada.",
+        "operationId": "set_question_explanation_api_v1_questions__question_id__explanations_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "question_id",
+            "required": true,
+            "schema": {
+              "title": "Question Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetExplanationRequestSchema"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExplanationSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "La entrada no se puede usar: carpeta inválida (`invalid_source`), contenido rechazado por seguridad (`unsafe_content`) o URL no descargable (`url_rejected`)."
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Escribe la explicación de la pregunta o de una de sus opciones (ruta añadida: S12.7)",
         "tags": [
           "preguntas"
         ]

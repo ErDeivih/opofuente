@@ -36,6 +36,14 @@ b) Falso
 
 CSV = "stem;option_a;option_b;correct\n;Verdadero;Falso;a\nPregunta buena;uno;dos;b\n"
 
+#: Un CSV con la explicación de cada opción en sus propias columnas (S12.7).
+CSV_CON_EXPLICACIONES = (
+    "stem;option_a;option_b;correct;explanation_a;explanation_b\n"
+    "El plazo del caso A es de diez dias;Verdadero;Falso;a;"
+    "es la correcta: la ley dice diez dias;la ley no dice veinte\n"
+    "El plazo del caso B es de veinte dias;Verdadero;Falso;b;;falso por la misma razon\n"
+)
+
 
 def _conjunto(
     client: TestClient, *, set_type: str = "private_bank", **extra: Any
@@ -359,6 +367,98 @@ def test_mil_preguntas_se_recorren_enteras_y_el_total_lo_dice_el_servidor(
     assert len(identificadores) == 1000, (
         "entre todas las páginas están las mil, sin repetir ninguna"
     )
+
+
+def test_las_explicaciones_por_opcion_entran_al_importar_y_se_leen_y_se_escriben(
+    seeded_client: TestClient,
+) -> None:
+    """S12.7: cada opción puede llevar su explicación, y la ficha las devuelve atadas a su opción.
+
+    El camino entero: un CSV con columnas `explanation_a`/`explanation_b` (por convenio, como
+    `option_a`/`option_b`), el informe que dice cuántas entraron, la lectura por la API y la
+    escritura de una nueva que **sustituye** a la del mismo hueco en lugar de acumularse.
+    """
+    conjunto = _conjunto(seeded_client)
+
+    informe = _importar(seeded_client, conjunto["id"], kind="csv", text=CSV_CON_EXPLICACIONES)
+
+    assert informe.status_code == 200, informe.text
+    assert informe.json()["created"] == 2
+    assert informe.json()["option_explanations"] == 3, "el informe cuenta las que entraron"
+
+    preguntas = seeded_client.get(
+        "/api/v1/questions", params={"set_id": conjunto["id"], "limit": 10}
+    ).json()["questions"]
+    primera = next(pregunta for pregunta in preguntas if pregunta["position"] == 1)
+    segunda = next(pregunta for pregunta in preguntas if pregunta["position"] == 2)
+
+    explicaciones = seeded_client.get(f"/api/v1/questions/{primera['id']}/explanations")
+    assert explicaciones.status_code == 200, explicaciones.text
+    por_opcion = {item["option_stable_key"]: item["text"] for item in explicaciones.json()}
+    assert por_opcion == {
+        "a": "es la correcta: la ley dice diez dias",
+        "b": "la ley no dice veinte",
+    }
+    assert all(item["origin"] == "private" for item in explicaciones.json())
+    assert all(item["status"] == "draft" for item in explicaciones.json())
+
+    # La segunda fila solo traía la explicación de la «b», y llega solo esa.
+    solo_una = seeded_client.get(f"/api/v1/questions/{segunda['id']}/explanations").json()
+    assert [item["option_stable_key"] for item in solo_una] == ["b"]
+
+    # Se escribe una nueva para la «a»: sustituye la que había, no se acumula.
+    escrita = seeded_client.post(
+        f"/api/v1/questions/{segunda['id']}/explanations",
+        json={"text": "la correcta porque el plazo es de veinte dias", "option_stable_key": "a"},
+        headers=ALLOWED_ORIGIN,
+    )
+    assert escrita.status_code == 201, escrita.text
+    assert escrita.json()["option_stable_key"] == "a"
+    de_segunda = seeded_client.get(f"/api/v1/questions/{segunda['id']}/explanations").json()
+    assert {item["option_stable_key"]: item["text"] for item in de_segunda} == {
+        "a": "la correcta porque el plazo es de veinte dias",
+        "b": "falso por la misma razon",
+    }
+    # Y sustituir otra vez deja una sola entrada para esa opción.
+    repetida = seeded_client.post(
+        f"/api/v1/questions/{segunda['id']}/explanations",
+        json={"text": "otra vez, la a es la correcta", "option_stable_key": "a"},
+        headers=ALLOWED_ORIGIN,
+    )
+    assert repetida.status_code == 201, repetida.text
+    assert len(seeded_client.get(f"/api/v1/questions/{segunda['id']}/explanations").json()) == 2
+
+    # La explicación de la pregunta entera no lleva opción.
+    entera = seeded_client.post(
+        f"/api/v1/questions/{segunda['id']}/explanations",
+        json={"text": "el plazo lo fija la Ley 39/2015"},
+        headers=ALLOWED_ORIGIN,
+    )
+    assert entera.status_code == 201, entera.text
+    assert entera.json()["option_stable_key"] is None
+    todas = seeded_client.get(f"/api/v1/questions/{segunda['id']}/explanations").json()
+    assert [item["option_stable_key"] for item in todas] == [None, "a", "b"], (
+        "la de la pregunta entera va primero"
+    )
+
+    # Una opción que la pregunta no tiene es un **422** con el campo que hay que corregir, no una
+    # explicación huérfana: la explicación de una opción que no está no explica nada.
+    huerfana = seeded_client.post(
+        f"/api/v1/questions/{segunda['id']}/explanations",
+        json={"text": "esto no explica nada", "option_stable_key": "z"},
+        headers=ALLOWED_ORIGIN,
+    )
+    assert huerfana.status_code == 422, huerfana.text
+    assert huerfana.json()["code"] == "invalid_answer"
+    assert huerfana.json()["field_errors"][0]["field"] == "option_stable_key"
+
+    assert seeded_client.get("/api/v1/questions/no-existe/explanations").status_code == 404
+    vacio = seeded_client.post(
+        "/api/v1/questions/no-existe/explanations",
+        json={"text": "x"},
+        headers=ALLOWED_ORIGIN,
+    )
+    assert vacio.status_code == 404
 
 
 def test_una_pregunta_corregida_no_cuenta_dos_veces(seeded_client: TestClient) -> None:
