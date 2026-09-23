@@ -480,6 +480,132 @@ def test_el_dominio_con_pocos_datos_es_evidencia_insuficiente(
     assert sin_datos.explanation == "Ningún intento en este tema: no hay nada que estimar."
 
 
+def test_el_estado_de_estudio_de_un_nodo_cuenta_sus_preguntas_y_su_repaso(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """DEBT-027 §5: las dos columnas que faltaban en el Programa, contadas donde se decide.
+
+    La regla es la misma que la del banco y la de la preparación —versiones **vigentes** con mapeo
+    **aceptado**—, porque dos cifras distintas de lo mismo en dos pantallas es peor que no tenerlas.
+    """
+    from datetime import UTC, datetime, timedelta
+    from uuid import uuid4
+
+    from sqlalchemy import insert, update
+
+    from opofuente.application.review_service import ReviewService
+    from opofuente.infrastructure.clock import SystemClock
+    from opofuente.infrastructure.db import build_engine, build_session_factory
+    from opofuente.infrastructure.db_models import (
+        CurriculumMappingRecord,
+        QuestionVersionRecord,
+        ReviewItemRecord,
+    )
+    from opofuente.infrastructure.review_repository import SqlAlchemyReviewRepository
+
+    set_id, _ = _fallar_una(seeded_client, preguntas=3)
+    nodo = _primer_tema(seeded_client)
+    activa = _oposicion_activa(seeded_client)
+    preguntas = seeded_client.get(f"/api/v1/question-sets/{set_id}/questions").json()["questions"]
+    ahora = datetime.now(UTC)
+
+    engine = build_engine(seeded_settings.data_paths.database)
+    with build_session_factory(engine)() as session:
+        # Tres preguntas mapeadas al tema; una tercera queda **sustituida** y no puede contar.
+        for pregunta in preguntas[:3]:
+            session.execute(
+                insert(CurriculumMappingRecord).values(
+                    id=str(uuid4()),
+                    curriculum_node_id=nodo["id"],
+                    subject_type="question_version",
+                    subject_id=pregunta["id"],
+                    coverage_type="partial",
+                    depth=int(nodo["depth"]),
+                    confidence=1.0,
+                    status="accepted",
+                    created_at=ahora,
+                    approved_at=ahora,
+                )
+            )
+        session.execute(
+            update(QuestionVersionRecord)
+            .where(QuestionVersionRecord.id == preguntas[1]["id"])
+            .values(status="conflicting")
+        )
+        session.execute(
+            update(QuestionVersionRecord)
+            .where(QuestionVersionRecord.id == preguntas[2]["id"])
+            .values(status="superseded")
+        )
+        # La pregunta que se falló ya tiene su repaso (lo crea el fallo): se atrasa para que cuente
+        # como vencido, y a la segunda se le programa uno para dentro de tres días.
+        session.execute(
+            update(ReviewItemRecord)
+            .where(ReviewItemRecord.question_version_id == preguntas[0]["id"])
+            .values(due_at=ahora - timedelta(days=1))
+        )
+        session.execute(
+            insert(ReviewItemRecord).values(
+                id=str(uuid4()),
+                question_version_id=preguntas[1]["id"],
+                opposition_id=activa["id"],
+                learning_error_id=None,
+                due_at=ahora + timedelta(days=3),
+                interval_days=1,
+                repetitions=1,
+                lapses=0,
+                last_reviewed_at=None,
+                last_reason=None,
+                created_at=ahora,
+                updated_at=ahora,
+            )
+        )
+        session.commit()
+
+    servicio = ReviewService(
+        reviews=SqlAlchemyReviewRepository(build_session_factory(engine)),
+        clock=SystemClock(),
+    )
+    estado = servicio.study_state([nodo["id"]])[nodo["id"]]
+    # La sustituida no cuenta; las otras dos sí, cada una con su estado.
+    assert estado.questions_total == 2
+    assert estado.questions_by_status == (("complete", 1), ("conflicting", 1))
+    assert estado.reviews_due == 1
+    assert estado.next_review_at is not None
+    assert estado.next_review_at > ahora
+
+    # Y un nodo sin nada asignado no inventa cifras: cero preguntas y ningún repaso.
+    vacio = servicio.study_state(["nodo-sin-preguntas"])["nodo-sin-preguntas"]
+    assert vacio.questions_total == 0
+    assert vacio.questions_by_status == ()
+    assert vacio.reviews_due == 0
+    assert vacio.next_review_at is None
+
+
+def test_la_api_del_programa_sirve_las_dos_columnas(seeded_client: TestClient) -> None:
+    """El payload que lee la pantalla de Programa trae el estado de estudio de cada nodo."""
+    respuesta = seeded_client.get("/api/v1/reviews/mastery")
+    assert respuesta.status_code == 200, respuesta.text
+    cuerpo = respuesta.json()
+
+    assert cuerpo["nodes"], "el programa tiene nodos"
+    for ficha in cuerpo["nodes"]:
+        assert "study_state" in ficha, ficha["curriculum_node_id"]
+        estado = ficha["study_state"]
+        assert set(estado) == {
+            "questions_total",
+            "questions_by_status",
+            "questions_by_origin",
+            "reviews_due",
+            "next_review_at",
+        }
+        assert estado["questions_total"] == sum(
+            fila["count"] for fila in estado["questions_by_status"]
+        )
+    # Sin datos cargados, un tema no dice «0 preguntas estudiadas»: dice que no tiene ninguna.
+    assert all(ficha["study_state"]["reviews_due"] == 0 for ficha in cuerpo["nodes"])
+
+
 def _primer_tema(client: TestClient) -> dict[str, Any]:
     activa = _oposicion_activa(client)
     curriculum = client.get(

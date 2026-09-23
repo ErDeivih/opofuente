@@ -159,6 +159,32 @@ class NodeMasteryView:
 
 
 @dataclass(frozen=True, slots=True)
+class NodeStudyState:
+    """El estado de estudio de un nodo: qué preguntas tiene y cuándo toca repasarlas.
+
+    Es la otra mitad de la pregunta que contesta el dominio: un tema con dominio alto y sin ninguna
+    pregunta asignada que se pueda practicar no es lo mismo que un tema con preguntas y buen
+    dominio, y la pantalla de Programa tiene que poder decirlo.
+    """
+
+    curriculum_node_id: str
+    #: Cuántas preguntas (versiones vigentes con mapeo **aceptado** a este nodo) hay de cada estado.
+    questions_by_status: tuple[tuple[str, int], ...] = ()
+    #: Las mismas preguntas por **origen** (oficial, privada, generada): 07_UI-UX §5 pide ver las
+    #: oficiales separadas del resto, y eso no se puede deducir del estado.
+    questions_by_origin: tuple[tuple[str, int], ...] = ()
+    #: Repasos ya vencidos del nodo (los que tocan ahora).
+    reviews_due: int = 0
+    #: Cuándo toca el siguiente repaso **programado** (el que aún no ha vencido). Los vencidos van
+    #: en `reviews_due`: una fecha pasada aquí confundiría «toca ahora» con «toca el día 25».
+    next_review_at: datetime | None = None
+
+    @property
+    def questions_total(self) -> int:
+        return sum(cantidad for _, cantidad in self.questions_by_status)
+
+
+@dataclass(frozen=True, slots=True)
 class ExportView:
     """El resultado de una exportación: el fichero escrito y lo que hay que saber de él."""
 

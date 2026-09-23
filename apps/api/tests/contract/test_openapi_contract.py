@@ -463,3 +463,52 @@ def test_el_inventario_declara_que_no_copia_nada(schema: dict[str, Any]) -> None
     batch = schema["components"]["schemas"]["BatchSchema"]["properties"]
     assert "source_path_display" in batch
     assert "source_root" not in batch
+
+
+def _patron(camino: str) -> re.Pattern[str]:
+    """El patrón con el que FastAPI compara una ruta: sus parámetros son un segmento cualquiera."""
+    return re.compile("^" + re.sub(r"\{[^}]+\}", "[^/]+", camino) + "$")
+
+
+def _rutas_tapadas(rutas: list[str]) -> list[str]:
+    """Rutas literales que una ruta anterior con parámetros se lleva por delante."""
+    tapadas: list[str] = []
+    for indice, camino in enumerate(rutas):
+        if "{" in camino:  # una ruta con parámetros no puede quedar tapada
+            continue
+        for anterior in rutas[:indice]:
+            if "{" in anterior and _patron(anterior).match(camino):
+                tapadas.append(f"{camino} (la sirve {anterior})")
+                break
+    return tapadas
+
+
+def test_el_guarda_de_rutas_detecta_una_tapada() -> None:
+    """La prueba de abajo solo vale si sabe fallar: se comprueba con el caso real que la motivó."""
+    assert _rutas_tapadas(["/api/v1/reviews/{review_id}", "/api/v1/reviews/mastery"]) == [
+        "/api/v1/reviews/mastery (la sirve /api/v1/reviews/{review_id})"
+    ]
+    assert _rutas_tapadas(["/api/v1/reviews/mastery", "/api/v1/reviews/{review_id}"]) == []
+
+
+def test_ninguna_ruta_literal_queda_tapada_por_una_con_parametro() -> None:
+    """FastAPI resuelve por orden: lo literal va antes que lo parametrizado (ADR-018).
+
+    Se recorren las rutas **en el orden en que están registradas** y, por cada ruta sin parámetros,
+    se comprueba que ninguna anterior con parámetros encaje con ella. Encontrado en S12.2:
+    `/reviews/mastery` estaba declarada detrás de `/reviews/{review_id}`, así que la aplicación
+    pedía el dominio por tema y recibía el 404 de «no existe repaso con ese identificador» —la
+    columna de dominio del Programa nunca llegó a servirse—. Ni las pruebas unitarias de la
+    interfaz (que simulan `fetch`) ni las E2E (que no miraban esa columna) podían verlo.
+    """
+    from opofuente.config import Settings
+    from opofuente.main import create_app
+
+    app = create_app(Settings(data_dir=Path(".") / "no-se-usa", _env_file=None))
+    rutas = [
+        ruta
+        for ruta in (getattr(route, "path", "") for route in app.routes)
+        if ruta.startswith("/api/v1")
+    ]
+
+    assert _rutas_tapadas(rutas) == []

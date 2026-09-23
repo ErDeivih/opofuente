@@ -17,6 +17,7 @@ import type {
   Opposition,
 } from '../../src/api/profiles';
 import type { PendingActions, StudyReadiness } from '../../src/api/readiness';
+import type { MasteryProgram } from '../../src/api/reviews';
 
 export function createTestQueryClient(): QueryClient {
   return new QueryClient({
@@ -446,6 +447,60 @@ export const curriculumFixture: Curriculum = {
       ],
     },
   ],
+};
+
+/** El estado de estudio por nodo del programa (S10 y DEBT-027 §5). */
+export const masteryFixture: MasteryProgram = {
+  opposition_id: TAI_ID,
+  convocation_id: TAI_CONVOCATION_ID,
+  nodes: [
+    {
+      curriculum_node_id: 'node-i',
+      level: 'medium',
+      attempts: 12,
+      correct: 8,
+      recent_attempts: 5,
+      accuracy: 0.6666666666666666,
+      explanation: '5 de los últimos 10 intentos correctos: dominio medio (provisional).',
+      has_estimate: true,
+      study_state: {
+        questions_total: 12,
+        questions_by_status: [
+          { status: 'annulled', count: 1 },
+          { status: 'complete', count: 10 },
+          { status: 'conflicting', count: 1 },
+        ],
+        questions_by_origin: [
+          { status: 'official', count: 4 },
+          { status: 'private', count: 8 },
+        ],
+        reviews_due: 2,
+        next_review_at: null,
+      },
+    },
+    {
+      curriculum_node_id: 'node-i-1',
+      level: 'no_data',
+      attempts: 0,
+      correct: 0,
+      recent_attempts: 0,
+      accuracy: null,
+      explanation: 'Ningún intento en este tema: no hay nada que estimar.',
+      has_estimate: false,
+      study_state: {
+        questions_total: 3,
+        questions_by_status: [{ status: 'verified', count: 3 }],
+        questions_by_origin: [{ status: 'official', count: 3 }],
+        reviews_due: 0,
+        next_review_at: '2026-09-25T08:00:00Z',
+      },
+    },
+  ],
+  nodes_total: 2,
+  nodes_with_estimate: 1,
+  nodes_insufficient: 0,
+  nodes_without_data: 1,
+  note: 'El dominio se estima por tema con los intentos de las preguntas asignadas a ese tema.',
 };
 
 export const nodeDetailFixture: CurriculumNodeDetail = {

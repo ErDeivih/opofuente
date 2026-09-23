@@ -22,6 +22,7 @@ Formato: `ADR-NNN-titulo.md` con contexto, opciones, datos, decisión, consecuen
 | [ADR-015](ADR-015-tercera-oposicion-celador.md) | Tercera oposición: Celador/a del SACYL | aceptada (22/09/2026) por decisión del propietario |
 | [ADR-016](ADR-016-anki-y-markdown-como-material.md) | Anki y Markdown entran como material, y con qué se lee una baraja | aceptada (S12.3) |
 | [ADR-017](ADR-017-que-hace-la-aplicacion-sola.md) | Qué hace la aplicación sola y qué sigue pidiendo una persona | aceptada (S12.5) |
+| [ADR-018](ADR-018-orden-de-rutas-literales.md) | Las rutas literales se declaran antes que las parametrizadas, con una prueba que lo vigila | propuesta (23/09/2026), pendiente de ratificación |
 
 La deuda técnica obligatoria (con su slice y su criterio de cierre) se registra aparte en
 [`docs/DEBT.md`](../DEBT.md).

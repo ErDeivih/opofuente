@@ -27,6 +27,7 @@ from opofuente.application.review_models import (
     DueItemView,
     ErrorDetailView,
     ErrorView,
+    NodeStudyState,
     ReviewEventView,
     ReviewItemView,
     ReviewStatsView,
@@ -524,6 +525,125 @@ class SqlAlchemyReviewRepository:
         for (node_id, _), (correcto, answered_at, _) in vigentes.items():
             acumulado.setdefault(node_id, []).append((correcto, as_utc(answered_at) or answered_at))
         return {node_id: tuple(intentos) for node_id, intentos in acumulado.items()}
+
+    def node_study_state(
+        self, node_ids: Sequence[str], *, now: datetime
+    ) -> dict[str, NodeStudyState]:
+        """Qué preguntas tiene cada nodo y cuándo toca repasarlas (DEBT-027 §5).
+
+        Dos consultas agregadas, no dos listados: el árbol del programa tiene decenas de nodos y
+        traerse las preguntas de cada uno para contarlas en memoria es lo que este proyecto evita.
+
+        Cuenta **versiones vigentes con mapeo aceptado**: la misma regla que usan el banco, la
+        cobertura y la preparación. Si aquí contara otra cosa, la pantalla de Programa y la de
+        Preguntas darían dos cifras distintas de lo mismo.
+
+        El `JOIN` con `review_items` es por la versión de pregunta mapeada, así que un repaso cuenta
+        para el nodo en el que está catalogada su pregunta.
+        """
+        if not node_ids:
+            return {}
+        nodos = tuple(node_ids)
+        with self._session_factory() as session:
+            # Una sola consulta agrupada por estado y origen: son los dos ejes que pide 07_UI-UX §5
+            # («preguntas: oficiales/verificadas/dudosas») y así no se recorren las preguntas dos
+            # veces.
+            por_estado_y_origen = session.execute(
+                select(
+                    CurriculumMappingRecord.curriculum_node_id,
+                    QuestionVersionRecord.status,
+                    QuestionVersionRecord.origin_type,
+                    func.count(QuestionVersionRecord.id),
+                )
+                .select_from(CurriculumMappingRecord)
+                .join(
+                    QuestionVersionRecord,
+                    QuestionVersionRecord.id == CurriculumMappingRecord.subject_id,
+                )
+                .where(
+                    CurriculumMappingRecord.subject_type == "question_version",
+                    CurriculumMappingRecord.status == "accepted",
+                    CurriculumMappingRecord.curriculum_node_id.in_(nodos),
+                    QuestionVersionRecord.status != "superseded",
+                )
+                .group_by(
+                    CurriculumMappingRecord.curriculum_node_id,
+                    QuestionVersionRecord.status,
+                    QuestionVersionRecord.origin_type,
+                )
+            ).all()
+            repasos = session.execute(
+                select(
+                    CurriculumMappingRecord.curriculum_node_id,
+                    func.count(ReviewItemRecord.id),
+                    func.min(ReviewItemRecord.due_at),
+                )
+                .select_from(CurriculumMappingRecord)
+                .join(
+                    ReviewItemRecord,
+                    ReviewItemRecord.question_version_id == CurriculumMappingRecord.subject_id,
+                )
+                .where(
+                    CurriculumMappingRecord.subject_type == "question_version",
+                    CurriculumMappingRecord.status == "accepted",
+                    CurriculumMappingRecord.curriculum_node_id.in_(nodos),
+                    # El siguiente repaso **programado** es el que aún no ha vencido: los vencidos
+                    # se cuentan aparte (`reviews_due`), y dar aquí una fecha pasada confundiría
+                    # «toca ahora» con «toca el día 25».
+                    ReviewItemRecord.due_at > now,
+                )
+                .group_by(CurriculumMappingRecord.curriculum_node_id)
+            ).all()
+            vencidos = {
+                str(nodo): int(cantidad)
+                for nodo, cantidad in session.execute(
+                    select(
+                        CurriculumMappingRecord.curriculum_node_id,
+                        func.count(ReviewItemRecord.id),
+                    )
+                    .select_from(CurriculumMappingRecord)
+                    .join(
+                        ReviewItemRecord,
+                        ReviewItemRecord.question_version_id == CurriculumMappingRecord.subject_id,
+                    )
+                    .where(
+                        CurriculumMappingRecord.subject_type == "question_version",
+                        CurriculumMappingRecord.status == "accepted",
+                        CurriculumMappingRecord.curriculum_node_id.in_(nodos),
+                        ReviewItemRecord.due_at <= now,
+                    )
+                    .group_by(CurriculumMappingRecord.curriculum_node_id)
+                ).all()
+            }
+
+        estados: dict[str, dict[str, int]] = {}
+        origenes: dict[str, dict[str, int]] = {}
+        for nodo, estado, origen, cantidad in por_estado_y_origen:
+            estados.setdefault(str(nodo), {})[str(estado)] = estados.get(str(nodo), {}).get(
+                str(estado), 0
+            ) + int(cantidad)
+            origenes.setdefault(str(nodo), {})[str(origen)] = origenes.get(str(nodo), {}).get(
+                str(origen), 0
+            ) + int(cantidad)
+        siguientes = {
+            str(nodo): as_utc(proximo) for nodo, _, proximo in repasos if proximo is not None
+        }
+
+        def _recuento(
+            acumulado: dict[str, dict[str, int]], nodo: str
+        ) -> tuple[tuple[str, int], ...]:
+            return tuple(sorted(acumulado.get(nodo, {}).items()))
+
+        return {
+            nodo: NodeStudyState(
+                curriculum_node_id=nodo,
+                questions_by_status=_recuento(estados, nodo),
+                questions_by_origin=_recuento(origenes, nodo),
+                reviews_due=vencidos.get(nodo, 0),
+                next_review_at=siguientes.get(nodo),
+            )
+            for nodo in nodos
+        }
 
     # ------------------------------------------------------------------ vistas
 

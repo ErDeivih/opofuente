@@ -24,6 +24,7 @@ from opofuente.application.review_models import (
     DueItemView,
     ErrorDetailView,
     ErrorView,
+    NodeStudyState,
     ReviewEventView,
     ReviewItemView,
     ReviewQueueView,
@@ -303,6 +304,15 @@ class ReviewService:
             )
             for node_id in node_ids
         }
+
+    def study_state(self, node_ids: Sequence[str]) -> dict[str, NodeStudyState]:
+        """Qué preguntas tiene cada nodo y cuándo toca repasarlas (DEBT-027 §5).
+
+        Va aparte del dominio a propósito: son dos hechos distintos y la pantalla los enseña en dos
+        columnas. Un tema sin ninguna pregunta asignada tiene `questions_total` a cero, que **no**
+        es lo mismo que un dominio bajo: no hay nada que practicar.
+        """
+        return self._reviews.node_study_state(tuple(node_ids), now=self._clock.now())
 
     # ------------------------------------------------------------------ ayudas
 

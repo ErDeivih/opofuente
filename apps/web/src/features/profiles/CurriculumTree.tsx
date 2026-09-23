@@ -4,6 +4,7 @@ import type { CurriculumNode } from '../../api/profiles';
 import type { NodeMastery } from '../../api/reviews';
 import { MASTERY_LABEL } from '../../api/reviews';
 import { StatusBadge } from '../../components/StatusBadge';
+import { questionStatusLabel } from '../questions/labels';
 
 export interface CurriculumTreeProps {
   nodes: CurriculumNode[];
@@ -26,6 +27,10 @@ const LEVEL_LABEL: Record<CurriculumNode['node_type'], string> = {
  * violación de accesibilidad real (axe `nested-interactive`). Aquí cada nodo es **un** botón que
  * selecciona el nodo y, si tiene hijos, los despliega, declarando `aria-expanded`. Sin roles ARIA
  * de árbol: no se declara una semántica que luego no se cumple.
+ *
+ * Cada fila lleva las columnas que pide 07_UI-UX §5 en forma de etiqueta: el dominio, las preguntas
+ * que tiene el tema **por estado** (con las dudosas siempre visibles, que son las que piden algo) y
+ * cuándo toca repasarlo. El desglose completo se lee al seleccionar el nodo.
  */
 export function CurriculumTree({ nodes, selectedId, onSelect, mastery }: CurriculumTreeProps) {
   const [expandedIds, setExpandedIds] = useState<string[]>(() =>
@@ -73,6 +78,23 @@ export function CurriculumTree({ nodes, selectedId, onSelect, mastery }: Curricu
                   tone={dominio.has_estimate ? 'ok' : 'info'}
                 >{`dominio: ${MASTERY_LABEL[dominio.level]} (${String(dominio.recent_attempts)})`}</StatusBadge>
               )}
+              {dominio !== undefined && (
+                <>
+                  <StatusBadge tone={dominio.study_state.questions_total === 0 ? 'info' : 'ok'}>
+                    {dominio.study_state.questions_total === 0
+                      ? 'sin preguntas asignadas'
+                      : `preguntas: ${String(dominio.study_state.questions_total)}`}
+                  </StatusBadge>
+                  {dudosas(dominio).map((fila) => (
+                    <StatusBadge key={fila.status} tone="blocked">
+                      {`${questionStatusLabel(fila.status)}: ${String(fila.count)}`}
+                    </StatusBadge>
+                  ))}
+                  <StatusBadge tone={dominio.study_state.reviews_due > 0 ? 'warning' : 'info'}>
+                    {textoRepaso(dominio)}
+                  </StatusBadge>
+                </>
+              )}
             </button>
             {hasChildren && isExpanded && renderItems(node.children, false)}
           </li>
@@ -82,4 +104,31 @@ export function CurriculumTree({ nodes, selectedId, onSelect, mastery }: Curricu
   );
 
   return renderItems(nodes, true);
+}
+
+/**
+ * Las preguntas que piden algo: las `conflicting` y las `annulled` de 07_UI-UX §5 («dudosas»).
+ *
+ * Se enseñan siempre, aunque el tema tenga otras completas: un tema con doce preguntas y dos en
+ * conflicto no está «bien», y esconder las dos detrás de un total sería el único dato que importa.
+ */
+function dudosas(dominio: NodeMastery): { status: string; count: number }[] {
+  return dominio.study_state.questions_by_status.filter(
+    (fila) => fila.status === 'conflicting' || fila.status === 'annulled',
+  );
+}
+
+/**
+ * La próxima revisión del tema: lo vencido primero, después la fecha programada y, si no hay nada,
+ * se dice que no hay nada (no se deja la columna vacía, que se leería como «no se sabe»).
+ */
+function textoRepaso(dominio: NodeMastery): string {
+  const { reviews_due: vencidos, next_review_at: proxima } = dominio.study_state;
+  if (vencidos > 0) {
+    return `repaso vencido: ${String(vencidos)}`;
+  }
+  if (proxima !== null && proxima !== undefined) {
+    return `repaso: ${proxima.slice(0, 10)}`;
+  }
+  return 'sin repaso programado';
 }

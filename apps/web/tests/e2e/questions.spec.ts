@@ -127,7 +127,11 @@ test('E2E-05 importación: las preguntas de un documento entran con su cita y se
   const temporal = fs.mkdtempSync(path.join(os.tmpdir(), 'opofuente-e2e-05-'));
   const sufijo = Date.now().toString(36);
   const fichero = path.join(temporal, `temario-${sufijo}.txt`);
-  fs.writeFileSync(fichero, TEXTO_DEL_DOCUMENTO, 'utf8');
+  // El texto lleva una nota con el sufijo de la corrida a propósito: la promoción es idempotente
+  // **por artefacto** (un artefacto del mismo contenido no se promociona dos veces), así que con el
+  // mismo texto la segunda corrida recibiría la versión ya aceptada de la primera y el paso de
+  // aceptar contestaría 409. Con el contenido único, cada corrida recorre el camino entero.
+  fs.writeFileSync(fichero, `${TEXTO_DEL_DOCUMENTO}\nNota de la corrida ${sufijo}.\n`, 'utf8');
 
   await page.goto('/bandeja');
   await page.getByLabel(/Suelta aquí ficheros o carpetas/).setInputFiles(fichero);

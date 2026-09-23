@@ -137,8 +137,15 @@ test('E2E-09 cambio: versionar, confirmar el diff y revisar el derivado afectado
 
   await page.goto('/cambios');
   await expect(page.getByRole('heading', { level: 1, name: 'Cambios' })).toBeVisible();
-  // La propuesta está sin aplicar y se puede mirar entera.
-  await expect(page.getByText('propuesto, sin aplicar')).toBeVisible();
+  // La pantalla lista **todas** las propuestas, y el directorio de datos del E2E se reutiliza: una
+  // corrida anterior interrumpida puede haber dejado las suyas sin confirmar. Por eso se busca la
+  // propuesta de **este** documento por su título (que lleva el sufijo de la corrida) y se selecciona
+  // antes de mirar el detalle, en lugar de dar por hecho que la primera de la lista es la nuestra.
+  const lista = page.getByRole('list', { name: 'Cambios de versión' });
+  const propio = lista.getByRole('listitem').filter({ hasText: TITULO });
+  await expect(propio.getByText('propuesto, sin aplicar')).toBeVisible();
+  await propio.getByRole('button', { name: new RegExp(TITULO) }).click();
+
   const tabla = page.getByRole('table', { name: 'Diff por sección' });
   await expect(tabla.getByText('con el texto cambiado')).toBeVisible();
   await expect(tabla.getByText(/veinte dias habiles/)).toBeVisible();

@@ -1154,6 +1154,17 @@ funcionan solo mientras el directorio esté recién hecho o el dato anterior no 
 prueba que reutiliza datos tiene que decir de qué dato habla** (por fila, por identificador o por
 nombre propio), o el rojo no se puede atribuir.
 
+**Las dos se arreglaron el 23 de septiembre de 2026** (segunda vez que aparecieron, ya sin servidor
+ajeno de por medio), aplicando esa regla a cada una:
+
+| Prueba | Qué hace ahora |
+|---|---|
+| `questions.spec.ts:118` | el texto que se pega lleva una nota con el sufijo de la corrida: la promoción es idempotente **por artefacto** (el mismo contenido no se promociona dos veces), así que sin contenido único la segunda corrida recibía la versión ya aceptada de la primera y «aceptar» contestaba 409 |
+| `changes.spec.ts:141` | la propuesta se busca **por el título de su documento** (que lleva el sufijo) y se selecciona antes de leer el detalle, en vez de dar por hecho que la primera de la lista es la suya |
+
+Comprobado de la forma que importa: las dos pruebas, **dos veces seguidas sobre el mismo
+`.e2e-data`** con restos de una corrida interrumpida dentro. Verdes las dos veces.
+
 **Obligación:** que el resultado de la puerta 18 signifique algo por sí solo, sin tener que mirar
 cuánto tardó la suite ni qué procesos había abiertos.
 
@@ -1163,10 +1174,14 @@ cuánto tardó la suite ni qué procesos había abiertos.
    determinista dentro de la prueba, o la espera se declara con su motivo y su medida, y el informe
    dice cuál de las dos cosas ha pasado.
 2. Una corrida con la máquina cargada no produce rojos por tiempo.
+3. **Añadido el 23/09/2026:** una corrida sobre un directorio de datos ya usado, con restos de corridas
+   anteriores interrumpidas, da el mismo resultado que una sobre el directorio recién hecho. Es lo que
+   hace falta para que un rojo hable del código y no de la basura que quedó.
 
-**Estado: abierta.** Con los puertos libres, el directorio del E2E recién hecho y la máquina
-descargada la puerta está verde (51/51 en ~3 min); el peligro que queda es una corrida en rojo que no
-diga si el problema es el código, el ordenador, un proceso olvidado o un dato de la corrida anterior.
+**Estado: abierta.** Con los puertos libres y la máquina descargada la puerta está verde (52/52 en
+~3 min) **también sobre un directorio reutilizado**; de los tres criterios, el 3 ya está cumplido por
+las pruebas que se arreglaron aquí, y quedan el 1 y el 2 (declarar la espera y no producir rojos por
+tiempo con la máquina cargada).
 
 ---
 
@@ -1391,7 +1406,7 @@ cantaba estaba en la primera pantalla, que es donde el propietario mira todos lo
 | §2 Estructura | **faltaban los contadores** `[pendientes] [conflictos] [vencidos] [revisar]` | contadores reales, con la cifra del servidor y nombre accesible que la explica |
 | §3 Inicio | **faltaban** dominio y actividad reciente; «Acciones necesarias» era un texto fijo | dominio, actividad reciente y acciones reales |
 | §4 Bandeja | el estado se leía como valor crudo del enum; **sin pausar**; sin tabla virtualizada | estados en palabras y etiquetas compartidas; el resto sigue pendiente |
-| §5 Programa | falta preguntas por estado y próxima revisión por nodo | el dominio ya estaba; el resto sigue pendiente |
+| §5 Programa | falta preguntas por estado y próxima revisión por nodo | el dominio ya estaba; **las otras dos columnas, cerradas el 23 de septiembre de 2026** (abajo, con el defecto que apareció al ir a servirlas) |
 | §6 Biblioteca | **lector sincronizado página ↔ texto: ya estaba** | nada: la auditoría se corrigió al leer el código (ver abajo) |
 | §7 Preguntas | badges de origen, conflictos arriba y original al lado están; **falta** explicación por opción | **cerrado en S12.7**: el modelo ya la soportaba; faltaba el camino (importación, API y ficha) |
 | §8–§11 | cumplidas por S07–S12 (configuración, pregunta, corrección, resultado, errores, cambios, ajustes) | — |
@@ -1443,13 +1458,45 @@ septiembre de 2026). Al ir a cerrar los puntos que quedaban, leyendo el código 
   entrara al importar, que se pudiera leer y escribir por la API y que la ficha la enseñara. Eso es
   ahora **S12.7**, entregado.
 
-Lo que queda abierto, ya solo dos cosas:
+Lo que queda abierto, ya solo una cosa:
 
 1. **Pausar un lote** (§4): el trabajo se puede cancelar, no pausar. Pausar de verdad exige decidir qué
    pasa con las entradas a medias y con su trabajo ya encolado; no se inventa un botón que solo cambie
    una etiqueta.
-2. **Columnas de preguntas por estado y próxima revisión por nodo** (§5): el Programa enseña cobertura,
-   fuentes y dominio por nodo; las otras dos columnas necesitan una consulta agregada que no existe.
+
+**Cuarta pasada: las dos columnas del Programa, y el defecto que apareció al ir a servirlas** (23 de
+septiembre de 2026). `07_UI-UX` §5 pide cuatro columnas por nodo: fuentes, preguntas
+(oficiales/verificadas/dudosas), dominio y próxima revisión. Faltaban las dos del medio:
+
+- **`GET /reviews/mastery` sirve ahora el estado de estudio de cada nodo**: cuántas preguntas tiene
+  —por **estado** y por **origen**, que son los dos ejes que pide la especificación—, cuántos repasos
+  tiene vencidos y cuándo toca el siguiente programado. La ruta conserva su nombre (está registrada en
+  ADR-013): el dominio sigue siendo el núcleo y las otras dos cifras viajan con él, porque las tres se
+  leen de la misma pantalla con la misma clave. Se cuenta con la **misma regla que el banco**: versiones
+  vigentes con mapeo aceptado; si contara otra cosa, dos pantallas darían dos cifras distintas de lo
+  mismo.
+- **El árbol del Programa** enseña en cada fila `preguntas: N`, las dudosas siempre visibles
+  (`en conflicto`, `anulada`) —que son las que piden algo— y `repaso: fecha` / `repaso vencido: N` /
+  `sin repaso programado`. La ficha del nodo seleccionado desglosa el total por origen y por estado.
+- **El defecto que apareció al ir a servirlas**: `/reviews/mastery` estaba declarada **detrás** de
+  `/reviews/{review_id}`, así que FastAPI la atendía con `review_id="mastery"` y contestaba el 404 de
+  «no existe repaso con ese identificador». **La columna de dominio del Programa no se había servido
+  nunca**, y nada lo delataba: las pruebas de componentes simulan `fetch`, las de la API probaban el
+  servicio y no la ruta, y un 404 en una consulta opcional no rompe ninguna pantalla. Lo cazó una prueba
+  escrita para esta deuda que pedía la ruta por HTTP. Corregido el orden, y con él una regla nueva
+  (**ADR-018**) y una prueba de contrato que recorre el orden real de las rutas y sabe fallar (se
+  comprueba con el caso que la motivó).
+
+Lo que queda de §5, si alguna vez se pide: **la columna de fuentes** (aceptadas/candidatas/obsoletas)
+por nodo ya existe, pero se enseña en la ficha del nodo y no en la fila del árbol; subirla al árbol
+exigiría otra consulta agregada por nodo, y no es lo que la deuda pedía.
+
+Verificación de esta pasada: **18/18 puertas** (497 unitarias, 447 integración, 26 contrato, 210
+Vitest, **53 E2E**), y la 18 corrida **sobre un `.e2e-data` reutilizado y sucio**, no sobre uno recién
+hecho: era la forma de comprobar de paso el criterio 3 de DEBT-022. Dos cosas aparecieron en el
+camino y se corrigieron: un `flex-wrap` que faltaba en las etiquetas del árbol (con las columnas
+nuevas, la fila desbordaba a 390 px y rompía la puerta de responsive) y las dos pruebas E2E que
+dependían de que el directorio estuviera limpio.
 
 **Lo que se decidió NO hacer, y por qué** (para que no vuelva a aparecer como pendiente sin contexto):
 
@@ -1459,9 +1506,9 @@ Lo que queda abierto, ya solo dos cosas:
   —una propuesta que no se puede comprobar no se puede revisar— y además se abre la ficha con su cita.
   Un panel lateral duplicaría lo que ya está delante y escondería la evidencia en un clic más.
 
-**Estado: abierta.** Lo urgente —lo que se veía en Inicio, la cola cortada y lo que no estaba probado—
-está cerrado y verificado; de la especificación solo quedan **dos pantallas** sin hacer, con su coste
-dicho arriba, y ninguna bloquea estudiar.
+**Estado: abierta.** Lo urgente —lo que se veía en Inicio, la cola cortada, lo que no estaba probado y
+las cuatro columnas del Programa— está cerrado y verificado; de la especificación solo queda **una
+cosa** (pausar un lote, §4), con su coste dicho arriba, y no bloquea estudiar.
 
 ## DEBT-028 — La aplicación no sabe si un proceso selectivo está abierto o cerrado
 

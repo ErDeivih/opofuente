@@ -2014,11 +2014,22 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * El dominio estimado de cada nodo del programa (ruta añadida a §10)
-         * @description Lo que la aplicación puede decir del dominio de cada tema, sin inventar un porcentaje.
+         * El estado de estudio de cada nodo: dominio, preguntas y próximo repaso (ruta de §10)
+         * @description Lo que la aplicación puede decir del estado de estudio de cada tema, sin inventar nada.
          *
          *     Los nodos sin intentos se declaran «sin datos» y los que tienen pocos, «evidencia insuficiente»:
          *     07_UI-UX §5 pide enseñar esa columna, y aquí se calcula con la misma regla para todos.
+         *
+         *     Desde DEBT-027 §5 la misma respuesta trae las otras dos columnas que pedía la especificación
+         *     —cuántas preguntas tiene el tema y en qué estado, y cuándo toca repasarlo—, porque las tres se
+         *     leen de la misma pantalla y con la misma clave (el nodo). La ruta conserva su nombre histórico
+         *     (`/reviews/mastery` es una ruta registrada en ADR-013): el dominio sigue siendo el núcleo de la
+         *     respuesta, y las otras dos cifras viajan con él en lugar de obligar a una segunda llamada.
+         *
+         *     **Esta ruta se declara antes que `/reviews/{review_id}` a propósito**: FastAPI resuelve por
+         *     orden de declaración, así que una ruta literal registrada después de una con parámetro nunca
+         *     se alcanza —se pedía `/reviews/mastery` y contestaba el 404 de «no existe repaso con ese
+         *     identificador»—. Hay una prueba de contrato que recorre el orden de todas las rutas.
          */
         get: operations["program_mastery_api_v1_reviews_mastery_get"];
         put?: never;
@@ -4470,7 +4481,7 @@ export interface components {
         };
         /**
          * NodeMasterySchema
-         * @description El dominio de un nodo concreto del programa.
+         * @description El dominio de un nodo concreto del programa, con el estado de sus preguntas y su repaso.
          */
         NodeMasterySchema: {
             /** Accuracy */
@@ -4492,6 +4503,26 @@ export interface components {
             level: "no_data" | "insufficient_evidence" | "low" | "medium" | "high";
             /** Recent Attempts */
             recent_attempts: number;
+            study_state: components["schemas"]["NodeStudyStateSchema"];
+        };
+        /**
+         * NodeStudyStateSchema
+         * @description Qué preguntas tiene un nodo y cuándo toca repasarlas.
+         *
+         *     Va con el dominio porque la pantalla de Programa las enseña juntas, en columnas distintas: son
+         *     dos hechos independientes (un tema puede tener buen dominio y una sola pregunta, o ninguna).
+         */
+        NodeStudyStateSchema: {
+            /** Next Review At */
+            next_review_at?: string | null;
+            /** Questions By Origin */
+            questions_by_origin: components["schemas"]["QuestionCountSchema"][];
+            /** Questions By Status */
+            questions_by_status: components["schemas"]["QuestionCountSchema"][];
+            /** Questions Total */
+            questions_total: number;
+            /** Reviews Due */
+            reviews_due: number;
         };
         /**
          * NodeType
@@ -4897,6 +4928,16 @@ export interface components {
             removed: number;
             /** Skipped */
             skipped: string[];
+        };
+        /**
+         * QuestionCountSchema
+         * @description Cuántas preguntas de un estado tiene un nodo (DEBT-027 §5).
+         */
+        QuestionCountSchema: {
+            /** Count */
+            count: number;
+            /** Status */
+            status: string;
         };
         /** QuestionEvidenceSchema */
         QuestionEvidenceSchema: {

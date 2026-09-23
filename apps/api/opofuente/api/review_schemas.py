@@ -191,10 +191,32 @@ class MasterySchema(BaseModel):
     has_estimate: bool
 
 
+class QuestionCountSchema(BaseModel):
+    """Cuántas preguntas de un estado tiene un nodo (DEBT-027 §5)."""
+
+    status: str
+    count: int
+
+
+class NodeStudyStateSchema(BaseModel):
+    """Qué preguntas tiene un nodo y cuándo toca repasarlas.
+
+    Va con el dominio porque la pantalla de Programa las enseña juntas, en columnas distintas: son
+    dos hechos independientes (un tema puede tener buen dominio y una sola pregunta, o ninguna).
+    """
+
+    questions_total: int
+    questions_by_status: list[QuestionCountSchema]
+    questions_by_origin: list[QuestionCountSchema]
+    reviews_due: int
+    next_review_at: datetime | None = None
+
+
 class NodeMasterySchema(MasterySchema):
-    """El dominio de un nodo concreto del programa."""
+    """El dominio de un nodo concreto del programa, con el estado de sus preguntas y su repaso."""
 
     curriculum_node_id: str
+    study_state: NodeStudyStateSchema
 
 
 class MasteryProgramSchema(BaseModel):

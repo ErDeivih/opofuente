@@ -31,6 +31,8 @@ from opofuente.api.review_schemas import (
     ErrorSchema,
     MasteryProgramSchema,
     NodeMasterySchema,
+    NodeStudyStateSchema,
+    QuestionCountSchema,
     ResolveErrorSchema,
     ReviewEventSchema,
     ReviewItemSchema,
@@ -46,6 +48,7 @@ from opofuente.application.review_models import (
     DueItemView,
     ErrorDetailView,
     ErrorView,
+    NodeStudyState,
     ReviewEventView,
     ReviewItemView,
     ReviewQueueView,
@@ -217,6 +220,63 @@ def due_reviews(
     return _queue(service.queue(opposition_id=opposition_id, limit=limit))
 
 
+@router.get(
+    "/reviews/mastery",
+    response_model=MasteryProgramSchema,
+    responses=RESOURCE_ERRORS,
+    summary="El estado de estudio de cada nodo: dominio, preguntas y próximo repaso (ruta de §10)",
+)
+def program_mastery(
+    service: ReviewServiceDep,
+    profiles: ProfilesServiceDep,
+    opposition_id: Annotated[str | None, Query()] = None,
+) -> MasteryProgramSchema:
+    """Lo que la aplicación puede decir del estado de estudio de cada tema, sin inventar nada.
+
+    Los nodos sin intentos se declaran «sin datos» y los que tienen pocos, «evidencia insuficiente»:
+    07_UI-UX §5 pide enseñar esa columna, y aquí se calcula con la misma regla para todos.
+
+    Desde DEBT-027 §5 la misma respuesta trae las otras dos columnas que pedía la especificación
+    —cuántas preguntas tiene el tema y en qué estado, y cuándo toca repasarlo—, porque las tres se
+    leen de la misma pantalla y con la misma clave (el nodo). La ruta conserva su nombre histórico
+    (`/reviews/mastery` es una ruta registrada en ADR-013): el dominio sigue siendo el núcleo de la
+    respuesta, y las otras dos cifras viajan con él en lugar de obligar a una segunda llamada.
+
+    **Esta ruta se declara antes que `/reviews/{review_id}` a propósito**: FastAPI resuelve por
+    orden de declaración, así que una ruta literal registrada después de una con parámetro nunca
+    se alcanza —se pedía `/reviews/mastery` y contestaba el 404 de «no existe repaso con ese
+    identificador»—. Hay una prueba de contrato que recorre el orden de todas las rutas.
+    """
+    oposicion = _oposicion(profiles, opposition_id)
+    convocatoria_id = oposicion.opposition.convocation_id
+    if convocatoria_id is None:
+        raise NotFoundError("convocatoria activa", oposicion.opposition.code)
+    curriculum = profiles.get_curriculum(convocatoria_id)
+    nodos = _aplanar(curriculum.nodes)
+    identificadores = [nodo.id for nodo in nodos]
+    estimaciones = service.mastery(identificadores)
+    estados = service.study_state(identificadores)
+    fichas = [_mastery(nodo.id, estimaciones[nodo.id], estados[nodo.id]) for nodo in nodos]
+    con_estimacion = sum(1 for ficha in fichas if ficha.has_estimate)
+    sin_datos = sum(1 for ficha in fichas if ficha.attempts == 0)
+    return MasteryProgramSchema(
+        opposition_id=oposicion.opposition.id,
+        convocation_id=convocatoria_id,
+        nodes=fichas,
+        nodes_total=len(fichas),
+        nodes_with_estimate=con_estimacion,
+        nodes_insufficient=len(fichas) - con_estimacion - sin_datos,
+        nodes_without_data=sin_datos,
+        note=(
+            "El dominio se estima por tema con los intentos de las preguntas **asignadas** a ese "
+            "tema. Un tema sin preguntas asignadas no tiene datos, y con menos de "
+            f"{MIN_INTENTOS_DOMINIO} intentos recientes se dice «evidencia insuficiente» en lugar "
+            "de un porcentaje. Las preguntas y el próximo repaso de cada tema se cuentan con la "
+            "misma regla que el banco: versiones vigentes con mapeo **aceptado**."
+        ),
+    )
+
+
 @router.post(
     "/reviews/{review_id}/complete",
     response_model=ReviewItemSchema,
@@ -293,49 +353,6 @@ def get_learning_error(error_id: str, service: ReviewServiceDep) -> ErrorDetailS
     return _detail(service.error(error_id))
 
 
-@router.get(
-    "/reviews/mastery",
-    response_model=MasteryProgramSchema,
-    responses=RESOURCE_ERRORS,
-    summary="El dominio estimado de cada nodo del programa (ruta añadida a §10)",
-)
-def program_mastery(
-    service: ReviewServiceDep,
-    profiles: ProfilesServiceDep,
-    opposition_id: Annotated[str | None, Query()] = None,
-) -> MasteryProgramSchema:
-    """Lo que la aplicación puede decir del dominio de cada tema, sin inventar un porcentaje.
-
-    Los nodos sin intentos se declaran «sin datos» y los que tienen pocos, «evidencia insuficiente»:
-    07_UI-UX §5 pide enseñar esa columna, y aquí se calcula con la misma regla para todos.
-    """
-    oposicion = _oposicion(profiles, opposition_id)
-    convocatoria_id = oposicion.opposition.convocation_id
-    if convocatoria_id is None:
-        raise NotFoundError("convocatoria activa", oposicion.opposition.code)
-    curriculum = profiles.get_curriculum(convocatoria_id)
-    nodos = _aplanar(curriculum.nodes)
-    estimaciones = service.mastery([nodo.id for nodo in nodos])
-    fichas = [_mastery(nodo.id, estimaciones[nodo.id]) for nodo in nodos]
-    con_estimacion = sum(1 for ficha in fichas if ficha.has_estimate)
-    sin_datos = sum(1 for ficha in fichas if ficha.attempts == 0)
-    return MasteryProgramSchema(
-        opposition_id=oposicion.opposition.id,
-        convocation_id=convocatoria_id,
-        nodes=fichas,
-        nodes_total=len(fichas),
-        nodes_with_estimate=con_estimacion,
-        nodes_insufficient=len(fichas) - con_estimacion - sin_datos,
-        nodes_without_data=sin_datos,
-        note=(
-            "El dominio se estima por tema con los intentos de las preguntas **asignadas** a ese "
-            "tema. Un tema sin preguntas asignadas no tiene datos, y con menos de "
-            f"{MIN_INTENTOS_DOMINIO} intentos recientes se dice «evidencia insuficiente» en lugar "
-            "de un porcentaje."
-        ),
-    )
-
-
 def _oposicion(profiles: ProfilesService, opposition_id: str | None) -> OppositionDetail:
     if opposition_id is not None:
         return profiles.get_opposition(opposition_id)
@@ -349,7 +366,7 @@ def _aplanar(nodos: Sequence[NodeView]) -> list[NodeView]:
     return [nodo for raiz in nodos for nodo in (raiz, *_aplanar(raiz.children))]
 
 
-def _mastery(node_id: str, mastery: Mastery) -> NodeMasterySchema:
+def _mastery(node_id: str, mastery: Mastery, estado: NodeStudyState) -> NodeMasterySchema:
     return NodeMasterySchema(
         curriculum_node_id=node_id,
         level=mastery.level.value,
@@ -359,6 +376,19 @@ def _mastery(node_id: str, mastery: Mastery) -> NodeMasterySchema:
         accuracy=mastery.accuracy,
         explanation=mastery.explanation,
         has_estimate=mastery.has_estimate,
+        study_state=NodeStudyStateSchema(
+            questions_total=estado.questions_total,
+            questions_by_status=[
+                QuestionCountSchema(status=nombre, count=cantidad)
+                for nombre, cantidad in estado.questions_by_status
+            ],
+            questions_by_origin=[
+                QuestionCountSchema(status=nombre, count=cantidad)
+                for nombre, cantidad in estado.questions_by_origin
+            ],
+            reviews_due=estado.reviews_due,
+            next_review_at=estado.next_review_at,
+        ),
     )
 
 

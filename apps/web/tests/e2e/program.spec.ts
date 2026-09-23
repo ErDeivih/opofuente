@@ -81,6 +81,28 @@ test('S01: el Programa muestra las reglas del examen con su cita', async ({ page
   await expect(page.getByText('No consta en la convocatoria')).toBeVisible();
 });
 
+test('DEBT-027 §5: el Programa enseña preguntas y próximo repaso de cada tema', async ({
+  page,
+}) => {
+  // Las dos columnas que faltaban, servidas por `/reviews/mastery`. Lo que se comprueba es que la
+  // respuesta **se sirve y se ve**, no una cifra concreta: `.e2e-data` se reutiliza entre corridas y
+  // las preguntas cambian. Esta prueba es también la que habría cazado el defecto de S12.2: la ruta
+  // literal `/reviews/mastery` estaba declarada detrás de `/reviews/{review_id}`, así que contestaba
+  // un 404 y la columna de dominio nunca llegó a pintarse.
+  await page.goto('/programa');
+
+  await expect(page.getByRole('heading', { level: 1, name: 'Programa' })).toBeVisible();
+  // La nota la compone el servidor: solo llega si la ruta contesta de verdad.
+  await expect(page.getByText(/con dominio estimado/)).toBeVisible();
+  // Y cada fila lleva sus dos columnas, con valor o diciendo que no hay nada.
+  await expect(page.getByText(/^preguntas: \d+$/).first()).toBeVisible();
+  await expect(
+    page
+      .getByText(/^(repaso: \d{4}-\d{2}-\d{2}|repaso vencido: \d+|sin repaso programado)$/)
+      .first(),
+  ).toBeVisible();
+});
+
 test('S01: cambiar de oposición cambia el programa (25 temas de Guardia Civil)', async ({ page }) => {
   await page.goto('/programa');
 

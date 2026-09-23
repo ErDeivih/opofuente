@@ -20,6 +20,7 @@ import {
   convocationFixture,
   curriculumFixture,
   gcConvocationsFixture,
+  masteryFixture,
   nodeDetailFixture,
   oppositionsFixture,
   renderWithProviders,
@@ -34,6 +35,7 @@ function stubProgramApi() {
     '/api/v1/oppositions': { body: oppositionsFixture },
     [`/api/v1/oppositions/${TAI_ID}/convocations`]: { body: taiConvocationsFixture },
     [`/api/v1/oppositions/${GC_ID}/convocations`]: { body: gcConvocationsFixture },
+    [`/api/v1/reviews/mastery?opposition_id=${TAI_ID}`]: { body: masteryFixture },
     '/api/v1/curriculum-nodes/node-i-1': { body: nodeDetailFixture },
     [`/api/v1/convocations/${TAI_CONVOCATION_ID}/curriculum`]: { body: curriculumFixture },
     [`/api/v1/convocations/${TAI_CONVOCATION_ID}`]: { body: convocationFixture },
@@ -107,6 +109,92 @@ describe('pantalla Programa', () => {
     // La cobertura **no** se inventa aquí: esta pantalla dice dónde se calcula y no enseña un cero que
     // parecería un dato. (Antes decía que no se calculaba todavía, y se calcula desde S04.)
     expect(screen.getByText(/Se calcula en Revisión, sobre las fuentes asignadas/)).toBeInTheDocument();
+  });
+
+  it('muestra las preguntas y el próximo repaso de cada tema (07_UI-UX §5)', async () => {
+    stubProgramApi();
+    renderWithProviders(
+      <AppShell>
+        <ProgramPage />
+      </AppShell>,
+      { route: '/programa' },
+    );
+
+    // El bloque tiene 12 preguntas, dos de ellas dudosas, y dos repasos vencidos.
+    expect(await screen.findByText('preguntas: 12')).toBeInTheDocument();
+    expect(screen.getByText('en conflicto: 1')).toBeInTheDocument();
+    expect(screen.getByText('anulada: 1')).toBeInTheDocument();
+    expect(screen.getByText('repaso vencido: 2')).toBeInTheDocument();
+    // El tema sin repaso programado lo dice, y el que tiene fecha la enseña.
+    expect(screen.getByText('repaso: 2026-09-25')).toBeInTheDocument();
+    expect(screen.getByText(/1 de 2 con dominio estimado/)).toBeInTheDocument();
+  });
+
+  it('el descuadre del nodo no se enseña como cero: dice que no hay preguntas asignadas', async () => {
+    stubProgramApi();
+    stubApi({
+      '/api/v1/oppositions': { body: oppositionsFixture },
+      [`/api/v1/oppositions/${TAI_ID}/convocations`]: { body: taiConvocationsFixture },
+      [`/api/v1/reviews/mastery?opposition_id=${TAI_ID}`]: {
+        body: {
+          ...masteryFixture,
+          nodes: [
+            {
+              ...masteryFixture.nodes[1]!,
+              study_state: {
+                questions_total: 0,
+                questions_by_status: [],
+                questions_by_origin: [],
+                reviews_due: 0,
+                next_review_at: null,
+              },
+            },
+          ],
+        },
+      },
+      '/api/v1/curriculum-nodes/node-i-1': { body: nodeDetailFixture },
+      [`/api/v1/convocations/${TAI_CONVOCATION_ID}/curriculum`]: { body: curriculumFixture },
+      [`/api/v1/convocations/${TAI_CONVOCATION_ID}`]: { body: convocationFixture },
+    });
+    renderWithProviders(
+      <AppShell>
+        <ProgramPage />
+      </AppShell>,
+      { route: '/programa' },
+    );
+
+    expect(await screen.findByText('sin preguntas asignadas')).toBeInTheDocument();
+    expect(screen.getByText('sin repaso programado')).toBeInTheDocument();
+  });
+
+  it('el nodo seleccionado desglosa sus preguntas por origen y por estado', async () => {
+    stubProgramApi();
+    stubApi({
+      '/api/v1/oppositions': { body: oppositionsFixture },
+      [`/api/v1/oppositions/${TAI_ID}/convocations`]: { body: taiConvocationsFixture },
+      [`/api/v1/reviews/mastery?opposition_id=${TAI_ID}`]: { body: masteryFixture },
+      // El bloque también tiene ficha: la tarjeta del nodo seleccionado la pide.
+      '/api/v1/curriculum-nodes/node-i': {
+        body: { ...nodeDetailFixture, node: curriculumFixture.nodes[0]!, ancestors: [] },
+      },
+      [`/api/v1/convocations/${TAI_CONVOCATION_ID}/curriculum`]: { body: curriculumFixture },
+      [`/api/v1/convocations/${TAI_CONVOCATION_ID}`]: { body: convocationFixture },
+    });
+    renderWithProviders(
+      <AppShell>
+        <ProgramPage />
+      </AppShell>,
+      { route: '/programa' },
+    );
+
+    const bloque = await screen.findByRole('button', { name: /Organización del Estado/ });
+    await userEvent.click(bloque);
+
+    // El desglose completo vive en la ficha del nodo, que es donde hay sitio para leerlo.
+    expect(
+      await screen.findByText(/12 en total · 4 OFICIAL, 8 PRIVADA · 1 anulada, 10 completa/),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/2 repaso\(s\) vencido\(s\): tocan ahora/)).toBeInTheDocument();
   });
 
   it('la parte de examen se muestra con sus cifras y su cita', async () => {
