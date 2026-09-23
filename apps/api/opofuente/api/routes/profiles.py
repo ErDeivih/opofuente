@@ -1,7 +1,9 @@
 """Rutas de perfiles: oposiciones, convocatorias, programa y reglas de examen (08_API-CONTRACT §3).
 
-Solo lectura salvo `POST /oppositions/{id}/activate`, que cambia la oposición activa (y por tanto
-es la primera ruta de escritura del proyecto: sobre ella actúa la comprobación de Origin).
+Solo lectura salvo dos rutas de escritura: `POST /oppositions/{id}/activate`, que elige la oposición
+activa, y `POST /convocations/{id}/activate`, que elige la convocatoria vigente de esa oposición (y
+por tanto es también la primera ruta de escritura del proyecto: sobre ellas actúa la comprobación de
+Origin).
 
 La cobertura de un nodo **no** vive aquí: se calcula en `GET /curriculum-nodes/{id}/coverage`
 (dominio de clasificación y revisión, S04) a partir de los mapeos aceptados, y esta respuesta no la
@@ -13,7 +15,12 @@ from __future__ import annotations
 from fastapi import APIRouter
 
 from opofuente.api.deps import ProfilesServiceDep
-from opofuente.api.error_responses import BASE_ERRORS, RESOURCE_ERRORS, WRITE_ERRORS
+from opofuente.api.error_responses import (
+    ACTIVATION_ERRORS,
+    BASE_ERRORS,
+    RESOURCE_ERRORS,
+    WRITE_ERRORS,
+)
 from opofuente.api.profile_schemas import (
     ActiveConvocationSchema,
     ConvocationDetailSchema,
@@ -134,6 +141,24 @@ def list_convocations(
     return [_convocation_reference(row) for row in service.list_convocations(opposition_id)]
 
 
+@router.post(
+    "/convocations/{convocation_id}/activate",
+    response_model=ConvocationReferenceSchema,
+    responses=ACTIVATION_ERRORS,
+    summary="Convierte una convocatoria en la vigente de su oposición",
+)
+def activate_convocation(
+    convocation_id: str, service: ProfilesServiceDep
+) -> ConvocationReferenceSchema:
+    """Elige con qué convocatoria trabaja la aplicación.
+
+    La vigente anterior queda «superada» (sigue visible y se puede volver a ella). Se rechaza con
+    409 si la convocatoria está en borrador, archivada o no tiene programa sembrado: la aplicación
+    no ofrece como vigente algo que no puede mostrar.
+    """
+    return _convocation_reference(service.activate_convocation(convocation_id))
+
+
 @router.get(
     "/convocations/{convocation_id}",
     response_model=ConvocationDetailSchema,
@@ -149,6 +174,7 @@ def get_convocation(convocation_id: str, service: ProfilesServiceDep) -> Convoca
         official_url=detail.summary.official_url,
         published_at=detail.summary.published_at,
         exam_date=detail.summary.exam_date,
+        exam_date_note=detail.exam_date_note,
         status=detail.summary.status,
         source_reference=detail.source_reference,
         opposition_id=detail.summary.opposition_id,

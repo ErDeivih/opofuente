@@ -16,6 +16,17 @@ def _opposition_id(client: TestClient, code: str) -> str:
     return next(item["id"] for item in oppositions if item["code"] == code)
 
 
+def _convocation(client: TestClient, opposition_code: str, convocation_code: str) -> dict:
+    """Una convocatoria concreta de una oposición, por su código.
+
+    Celador tiene dos convocatorias publicadas, así que «la primera de la lista» ya no identifica
+    ninguna: las pruebas que quieren la de acceso libre lo dicen por su código.
+    """
+    oposicion_id = _opposition_id(client, opposition_code)
+    filas = client.get(f"/api/v1/oppositions/{oposicion_id}/convocations").json()
+    return next(row for row in filas if row["code"] == convocation_code)
+
+
 def test_lista_de_oposiciones_con_su_convocatoria_activa(seeded_client: TestClient) -> None:
     response = seeded_client.get("/api/v1/oppositions")
     assert response.status_code == 200
@@ -102,8 +113,7 @@ def test_programa_de_guardia_civil_tiene_veinticinco_temas(seeded_client: TestCl
 
 
 def test_programa_de_celador_tiene_dieciseis_temas_sin_bloques(seeded_client: TestClient) -> None:
-    oposicion_id = _opposition_id(seeded_client, CELADOR)
-    convocatoria = seeded_client.get(f"/api/v1/oppositions/{oposicion_id}/convocations").json()[0]
+    convocatoria = _convocation(seeded_client, CELADOR, "celador-sacyl-2022")
     assert convocatoria["exam_date"] == "2023-11-12"
 
     response = seeded_client.get(f"/api/v1/convocations/{convocatoria['id']}/curriculum")
@@ -116,9 +126,34 @@ def test_programa_de_celador_tiene_dieciseis_temas_sin_bloques(seeded_client: Te
     assert all(not node["children"] for node in body["nodes"])
 
 
-def test_convocatoria_de_celador_sirve_su_ejercicio_y_sus_reglas(seeded_client: TestClient) -> None:
+def test_una_oposicion_puede_tener_dos_convocatorias_con_programas_distintos(
+    seeded_client: TestClient,
+) -> None:
+    """Celador tiene dos: la de acceso libre de 2022 y la de estabilización, y no dicen lo mismo."""
     oposicion_id = _opposition_id(seeded_client, CELADOR)
-    convocatoria = seeded_client.get(f"/api/v1/oppositions/{oposicion_id}/convocations").json()[0]
+    filas = seeded_client.get(f"/api/v1/oppositions/{oposicion_id}/convocations").json()
+    assert [row["code"] for row in filas] == [
+        "celador-sacyl-estabilizacion-2022",
+        "celador-sacyl-2022",
+    ]
+    estados = {row["code"]: row["status"] for row in filas}
+    assert estados == {
+        "celador-sacyl-estabilizacion-2022": "available",
+        "celador-sacyl-2022": "active",
+    }
+    # La vigente es la ordinaria: la de estabilización está publicada y disponible, pero no es la
+    # que la aplicación usa para trabajar mientras su proceso siga sin ejercicio.
+    detalle = seeded_client.get(f"/api/v1/oppositions/{oposicion_id}").json()
+    assert detalle["opposition"]["active_convocation"]["code"] == "celador-sacyl-2022"
+
+    nueva = seeded_client.get(f"/api/v1/convocations/{filas[0]['id']}/curriculum").json()
+    vieja = seeded_client.get(f"/api/v1/convocations/{filas[1]['id']}/curriculum").json()
+    assert nueva["counts"] == {"block": 2, "topic": 14, "epigraph": 0}
+    assert vieja["counts"] == {"block": 0, "topic": 16, "epigraph": 0}
+
+
+def test_convocatoria_de_celador_sirve_su_ejercicio_y_sus_reglas(seeded_client: TestClient) -> None:
+    convocatoria = _convocation(seeded_client, CELADOR, "celador-sacyl-2022")
     response = seeded_client.get(f"/api/v1/convocations/{convocatoria['id']}")
     assert response.status_code == 200
     body = response.json()
@@ -137,14 +172,73 @@ def test_convocatoria_de_celador_sirve_su_ejercicio_y_sus_reglas(seeded_client: 
     assert all(rule["evidence_quote"] for rule in body["rules"])
 
 
+def test_convocatoria_de_estabilizacion_sirve_su_ejercicio_y_sus_reglas(
+    seeded_client: TestClient,
+) -> None:
+    convocatoria = _convocation(seeded_client, CELADOR, "celador-sacyl-estabilizacion-2022")
+    body = seeded_client.get(f"/api/v1/convocations/{convocatoria['id']}").json()
+
+    partes = {part["code"]: part for part in body["parts"]}
+    ejercicio = partes["ejercicio_unico"]
+    assert (ejercicio["ordinary_items"], ejercicio["reserve_items"]) == (40, 4)
+    assert ejercicio["options_per_question"] == 3
+    assert ejercicio["time_minutes"] == 60
+    assert ejercicio["pass_score"] is None
+    assert body["exam_date"] is None
+    # Y la nota dice por qué no hay fecha, en lugar de dejar un «no consta» que se lee igual cuando
+    # falta el dato que cuando lo dirá otra resolución.
+    assert "plazo de solicitudes cerró en enero de 2023" in body["exam_date_note"]
+    reglas = {rule["code"]: rule for rule in body["rules"]}
+    assert reglas["convoked_places"]["value_text"] == "406"
+    assert reglas["wrong_answer_penalty"]["value_text"] == "1/9 del valor de una respuesta correcta"
+    assert all(rule["evidence_quote"] for rule in body["rules"])
+
+
+def test_cambiar_de_convocatoria_deja_la_anterior_disponible(seeded_client: TestClient) -> None:
+    """El selector de convocatoria de la interfaz usa esta ruta."""
+    oposicion_id = _opposition_id(seeded_client, CELADOR)
+    nueva = _convocation(seeded_client, CELADOR, "celador-sacyl-estabilizacion-2022")
+    respuesta = seeded_client.post(f"/api/v1/convocations/{nueva['id']}/activate")
+    assert respuesta.status_code == 200
+    assert respuesta.json()["status"] == "active"
+
+    detalle = seeded_client.get(f"/api/v1/oppositions/{oposicion_id}").json()
+    assert (
+        detalle["opposition"]["active_convocation"]["code"] == "celador-sacyl-estabilizacion-2022"
+    )
+    estados = {row["code"]: row["status"] for row in detalle["convocations"]}
+    # La ordinaria no queda «superada»: nada la ha reemplazado, sigue publicada y utilizable.
+    assert estados["celador-sacyl-2022"] == "available"
+
+    # Se puede volver: la disponible sigue siendo activable y conserva su programa.
+    vieja = _convocation(seeded_client, CELADOR, "celador-sacyl-2022")
+    vuelta = seeded_client.post(f"/api/v1/convocations/{vieja['id']}/activate")
+    assert vuelta.status_code == 200
+    assert vuelta.json()["status"] == "active"
+    programa = seeded_client.get(f"/api/v1/convocations/{vuelta.json()['id']}/curriculum").json()
+    assert programa["counts"]["topic"] == 16
+    detalle = seeded_client.get(f"/api/v1/oppositions/{oposicion_id}").json()
+    assert detalle["opposition"]["active_convocation"]["code"] == "celador-sacyl-2022"
+    assert {row["code"]: row["status"] for row in detalle["convocations"]}[
+        "celador-sacyl-estabilizacion-2022"
+    ] == "available"
+
+
+def test_activar_una_convocatoria_inexistente_devuelve_404(seeded_client: TestClient) -> None:
+    respuesta = seeded_client.post("/api/v1/convocations/no-existe/activate")
+    assert respuesta.status_code == 404
+    assert respuesta.headers["content-type"].startswith(PROBLEM_MEDIA_TYPE)
+    assert respuesta.json()["code"] == "not_found"
+
+
 def test_activar_celador_deja_una_convocatoria_con_la_que_trabajar(
     seeded_client: TestClient,
 ) -> None:
-    """Un perfil cuyo proceso ya terminó sigue siendo utilizable.
+    """Una oposición con dos convocatorias sigue teniendo una vigente al activarse.
 
     Las pantallas de Programa, Estudio, Repaso y Banco resuelven su convocatoria con
-    `active_convocation` de la oposición activa. Si la convocatoria de Celador no fuese la vigente
-    de su oposición, activarla dejaría la aplicación sin programa: esta prueba defiende eso.
+    `active_convocation` de la oposición activa. Si la oposición de Celador no tuviera ninguna
+    vigente, activarla dejaría la aplicación sin programa: esta prueba defiende eso.
     """
     oposicion_id = _opposition_id(seeded_client, CELADOR)
     respuesta = seeded_client.post(f"/api/v1/oppositions/{oposicion_id}/activate")

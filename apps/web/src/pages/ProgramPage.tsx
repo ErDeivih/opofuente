@@ -5,16 +5,21 @@ import { useConvocation, useCurriculum, useCurriculumNode, useMastery, useOpposi
 import { EmptyState } from '../components/EmptyState';
 import { ErrorState } from '../components/ErrorState';
 import { LoadingState } from '../components/LoadingState';
+import { ConvocationSelector } from '../features/profiles/ConvocationSelector';
 import { ConvocationSource } from '../features/profiles/ConvocationSource';
 import { CurriculumTree } from '../features/profiles/CurriculumTree';
 import { ExamSummary } from '../features/profiles/ExamSummary';
 
 /**
- * Programa (07_UI-UX §5): árbol oficial del temario de la convocatoria activa.
+ * Programa (07_UI-UX §5): árbol oficial del temario de la convocatoria vigente.
  *
  * Se muestra la estructura y las reglas tal y como las publica la convocatoria. La cobertura documental
  * y las preguntas **no** se muestran como ceros; el **dominio** sí, desde S10, con la regla honesta:
  * sin intentos «sin datos» y con pocos, «evidencia insuficiente» (nunca un porcentaje).
+ *
+ * Cuando la oposición tiene más de una convocatoria publicada (Celador: acceso libre de 2022 y
+ * estabilización), el selector de convocatoria de S12.2 elige con cuál se trabaja; sin él, el
+ * programa de la otra quedaría sembrado pero invisible.
  */
 export function ProgramPage() {
   const oppositions = useOppositions();
@@ -70,6 +75,12 @@ export function ProgramPage() {
         <h1>Programa</h1>
         <p className="page__lead">
           {active.name}
+          {convocation.data && (
+            <>
+              {' · '}
+              <code>{convocation.data.code}</code>
+            </>
+          )}
           {curriculum.data && (
             <>
               {' · '}
@@ -84,6 +95,8 @@ export function ProgramPage() {
           )}
         </p>
       </header>
+
+      <ConvocationSelector oppositionId={active.id} />
 
       <section className="card" aria-labelledby="arbol-programa">
         <h2 id="arbol-programa">Temario oficial</h2>

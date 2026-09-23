@@ -34,8 +34,29 @@ def profiles():
     return {profile.convocation.code: profile for profile in load_profiles(FIXTURES)}
 
 
-def test_se_cargan_los_tres_perfiles_oficiales(profiles) -> None:
-    assert set(profiles) == {"tai-age-2025", "gc-cabos-guardias-2026", "celador-sacyl-2022"}
+def test_se_cargan_los_cuatro_perfiles_oficiales(profiles) -> None:
+    assert set(profiles) == {
+        "tai-age-2025",
+        "gc-cabos-guardias-2026",
+        "celador-sacyl-2022",
+        "celador-sacyl-estabilizacion-2022",
+    }
+
+
+def test_las_dos_convocatorias_de_celador_son_la_misma_oposicion(profiles) -> None:
+    """Compartir oposición no es compartir convocatoria.
+
+    La siembra identifica la oposición por su código y **actualiza** su nombre y su descripción con
+    lo que declara el fixture que se está sembrando. Si los dos ficheros de Celador no dijeran
+    exactamente lo mismo, el último en sembrarse reescribiría la oposición y el resultado dependería
+    del orden de los ficheros. Esta prueba fija que digan lo mismo.
+    """
+    acceso_libre = profiles["celador-sacyl-2022"].opposition
+    estabilizacion = profiles["celador-sacyl-estabilizacion-2022"].opposition
+    assert acceso_libre.code == estabilizacion.code == "celador-sacyl"
+    assert acceso_libre.name == estabilizacion.name
+    assert acceso_libre.description == estabilizacion.description
+    assert acceso_libre.active is estabilizacion.active is False
 
 
 def test_manifiesto_declara_las_fuentes_y_sus_derechos() -> None:
@@ -54,6 +75,7 @@ def test_manifiesto_declara_las_fuentes_y_sus_derechos() -> None:
         "celador-2022-cuestionario-pdf",
         "celador-2022-plantilla-respuestas-pdf",
         "celador-2023-cuestionario-aplazado-pdf",
+        "celador-2022-bocyl-estabilizacion-html",
         "bocyl-aviso-legal-html",
         "saludcastillayleon-aviso-legal-html",
     ):
@@ -300,10 +322,97 @@ def test_celador_no_queda_activo_al_sembrar(profiles) -> None:
     """Añadir un perfil no cambia qué oposición está activa: lo decide el fixture."""
     celador = profiles["celador-sacyl-2022"]
     assert celador.opposition.active is False
-    # Su convocatoria es la vigente de esa oposición: no hay otra que la sustituya. Que el proceso
-    # ya se haya resuelto se ve en `exam_date`, no marcando la convocatoria como archivada, que en
-    # esta aplicación significa «no hay convocatoria con la que trabajar».
+    # La vigente sigue siendo la convocatoria ordinaria: es el perfil de estudio mientras el
+    # proceso de estabilización no tenga ejercicio. La de estabilización queda «disponible»: está
+    # publicada y se puede estudiar, pero no es la que la aplicación usa para trabajar.
     assert celador.convocation.status is ConvocationStatus.ACTIVE
+    estabilizacion = profiles["celador-sacyl-estabilizacion-2022"]
+    assert estabilizacion.convocation.status is ConvocationStatus.AVAILABLE
+    assert estabilizacion.opposition.code == celador.opposition.code
+
+
+def test_la_estabilizacion_de_celador_tiene_catorce_temas_en_dos_partes(profiles) -> None:
+    """El ANEXO V trae el temario de todas las categorías: el de Celador son dos partes y 14."""
+    curriculum = profiles["celador-sacyl-estabilizacion-2022"].curriculum
+    assert count_by_type(curriculum) == {
+        NodeType.BLOCK: 2,
+        NodeType.TOPIC: 14,
+        NodeType.EPIGRAPH: 0,
+    }
+    general, especifica = list(curriculum)
+    assert (general.path, general.title, len(general.children)) == ("1", "Parte general", 5)
+    assert (especifica.path, especifica.title, len(especifica.children)) == (
+        "2",
+        "Parte específica",
+        9,
+    )
+    assert [hijo.official_code for hijo in general.children] == [f"Tema {n}" for n in range(1, 6)]
+    assert [hijo.official_code for hijo in especifica.children] == [
+        f"Tema {n}" for n in range(6, 15)
+    ]
+    assert [hijo.path for hijo in especifica.children] == [f"2.{n}" for n in range(1, 10)]
+    # La posición es la del hijo dentro de su parte (el tema 6 abre la parte específica), mientras
+    # que el número que publica la convocatoria viaja en `official_code`.
+    assert [hijo.position for hijo in general.children] == list(range(1, 6))
+    assert [hijo.position for hijo in especifica.children] == list(range(1, 10))
+    assert general.children[0].title.startswith("Estructura orgánica de los Servicios Centrales")
+    assert especifica.children[0].title.startswith("Funciones de vigilancia.")
+    assert especifica.children[-1].title.startswith("Plan de emergencias ante incendios.")
+
+
+def test_la_estabilizacion_configura_su_ejercicio_de_cuarenta_y_cuatro_preguntas(profiles) -> None:
+    parts = {part.code: part for part in profiles["celador-sacyl-estabilizacion-2022"].parts}
+    assert set(parts) == {"ejercicio_unico"}
+    ejercicio = parts["ejercicio_unico"]
+    assert ejercicio.kind is PartKind.TEST
+    assert (ejercicio.ordinary_items, ejercicio.reserve_items) == (40, 4)
+    assert ejercicio.options_per_question == 3
+    assert (ejercicio.score_min, ejercicio.score_max) == (0, 150)
+    assert ejercicio.time_minutes == 60
+    assert ejercicio.pass_score is None
+    # 1/9 no es exacto en coma flotante: el campo lleva el valor redondeado y la regla, el texto.
+    assert ejercicio.wrong_penalty_fraction == pytest.approx(1 / 9)
+
+
+def test_la_estabilizacion_declara_sus_reglas_con_cita(profiles) -> None:
+    rules = {rule.code: rule for rule in profiles["celador-sacyl-estabilizacion-2022"].rules}
+    assert rules["convoked_places"].value_text == "406"
+    assert "343" in rules["convoked_places"].description
+    assert "CELADOR 343 63 57 6 406" in rules["convoked_places"].evidence_quote
+    assert rules["wrong_answer_penalty"].value_text == "1/9 del valor de una respuesta correcta"
+    assert rules["blank_answer_penalty"].value_text == "0"
+    assert rules["max_general_questions"].value_text == "15"
+    assert rules["three_options_one_correct"].value_text == "3"
+    assert rules["questionnaire_size"].value_text == "44"
+    assert rules["exercise_total_time"].value_text == "60"
+    # La cifra del tiempo y la del cuestionario salen de la misma fila del ANEXO I.
+    assert "OTRO PERSONAL 44 60" in rules["exercise_total_time"].evidence_quote
+    assert rules["pass_threshold_relative_to_top_ten"].kind is RuleKind.TEXT
+    assert "no lo estima" in rules["pass_threshold_relative_to_top_ten"].description
+    assert rules["exam_date_fixed_later"].value_text == "true"
+    assert "anexo V" in rules["curriculum_source"].evidence_quote
+
+
+def test_la_estabilizacion_no_se_inventa_la_fecha_del_ejercicio(profiles) -> None:
+    """La orden no publica el día: lo fijará la resolución de admitidos, y el fixture lo dice.
+
+    Además lo sitúa en el tiempo: el plazo de solicitudes cerró en enero de 2023 (veinte días
+    hábiles desde la publicación) y el proceso sigue pendiente de ejercicio, así que no se presenta
+    como un examen disponible.
+    """
+    convocatoria = profiles["celador-sacyl-estabilizacion-2022"].convocation
+    assert convocatoria.exam_date is None
+    nota = convocatoria.source_note or ""
+    assert "diez días hábiles" in nota
+    assert "sigue sin ejercicio" in nota
+    assert "enero de 2023" in nota
+
+
+def test_la_estabilizacion_declara_cuando_cerro_el_plazo_de_solicitudes(profiles) -> None:
+    rules = {rule.code: rule for rule in profiles["celador-sacyl-estabilizacion-2022"].rules}
+    plazo = rules["application_deadline"]
+    assert plazo.value_text == "20 días hábiles desde el día siguiente a la publicación"
+    assert "5.1.1" in plazo.evidence_quote
 
 
 def test_los_documentos_originales_no_estan_en_el_repositorio() -> None:

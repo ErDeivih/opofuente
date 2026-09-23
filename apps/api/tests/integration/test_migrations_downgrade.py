@@ -1,4 +1,4 @@
-"""La vuelta atrás de las migraciones de S05 a S09, **ejecutada de verdad**.
+"""La vuelta atrás de las migraciones de S05 a S12, **ejecutada de verdad**.
 
 El método del proyecto es explícito: «escrito no es hecho; ejecutado es hecho». Varios slices
 declaraban que su `downgrade` estaba probado y no había ninguna prueba que lo ejecutara (solo 0011 y
@@ -6,7 +6,8 @@ declaraban que su `downgrade` estaba probado y no había ninguna prueba que lo e
 comprueba en cada uno tres cosas:
 
 1. la revisión marcada es la que se pidió;
-2. las tablas que esa migración había creado **ya no están**;
+2. las tablas que esa migración había creado **ya no están** (una migración que solo ensancha una
+   restricción no retira ninguna tabla, y por eso su escalón va vacío);
 3. volver a subir a la cabeza las recrea: bajar no deja el esquema en un estado del que no se pueda
    salir.
 
@@ -29,6 +30,16 @@ from opofuente.infrastructure.migrations import alembic_config, run_migrations, 
 #: Revisión de partida y, por cada escalón, la revisión a la que se baja y las tablas que deben
 #: desaparecer al hacerlo. El orden es el de la cadena, de la más nueva a la más antigua.
 ESCALONES: tuple[tuple[str, str, tuple[str, ...]], ...] = (
+    (
+        "0022_convocation_exam_date_note",
+        "0021_convocation_available",
+        (),
+    ),
+    (
+        "0021_convocation_available",
+        "0020_changes_and_derivatives",
+        (),
+    ),
     (
         "0020_changes_and_derivatives",
         "0019_errors_and_reviews",

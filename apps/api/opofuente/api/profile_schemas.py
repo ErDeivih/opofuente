@@ -83,6 +83,8 @@ class ConvocationDetailSchema(BaseModel):
     official_url: str
     published_at: date
     exam_date: date | None = None
+    #: Por qué la fecha de ejercicio es esa, o por qué no hay ninguna (S12.2).
+    exam_date_note: str | None = None
     status: ConvocationStatus
     source_reference: str | None = None
     opposition_id: str

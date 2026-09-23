@@ -1777,6 +1777,17 @@
             ],
             "title": "Exam Date"
           },
+          "exam_date_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exam Date Note"
+          },
           "id": {
             "title": "Id",
             "type": "string"
@@ -1902,9 +1913,11 @@
         "type": "object"
       },
       "ConvocationStatus": {
+        "description": "Estado de una convocatoria publicada.\n\n`active` no significa «la última que ha salido» sino **la que la aplicación usa para trabajar**:\nes la que resuelven Programa, Estudio, Repaso y Banco, y solo puede haber una por oposición (lo\ngarantiza un índice único parcial). Los demás estados describen por qué una convocatoria no es\nesa:\n\n- `draft`: todavía no se ha publicado. Nadie la ha convocado, así que no es utilizable.\n- `available`: está publicada, es utilizable y **no es la vigente**. Es el caso de una oposición\n  con dos procesos vivos a la vez —Celador tiene la convocatoria ordinaria de acceso libre y el\n  proceso de estabilización de la Ley 20/2021—: ninguna sustituye a la otra, las dos se pueden\n  estudiar y solo una se elige para trabajar.\n- `superseded`: otra convocatoria del **mismo proceso** la ha reemplazado (una orden corregida,\n  una republicación). No es lo mismo que `available`: aquí sí hay un acto posterior que la deja\n  atrás.\n- `archived`: la aplicación no debe usar esta convocatoria.",
         "enum": [
           "draft",
           "active",
+          "available",
           "superseded",
           "archived"
         ],
@@ -12288,6 +12301,86 @@
           }
         },
         "summary": "Convocatoria con sus partes y sus reglas de examen"
+      }
+    },
+    "/api/v1/convocations/{convocation_id}/activate": {
+      "post": {
+        "description": "Elige con qué convocatoria trabaja la aplicación.\n\nLa vigente anterior queda «superada» (sigue visible y se puede volver a ella). Se rechaza con\n409 si la convocatoria está en borrador, archivada o no tiene programa sembrado: la aplicación\nno ofrece como vigente algo que no puede mostrar.",
+        "operationId": "activate_convocation_api_v1_convocations__convocation_id__activate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "convocation_id",
+            "required": true,
+            "schema": {
+              "title": "Convocation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConvocationReferenceSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "La operación no vale para el estado actual del recurso (`invalid_state`). Por ejemplo, reintentar un lote que no está fallido ni cancelado."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Convierte una convocatoria en la vigente de su oposición"
       }
     },
     "/api/v1/convocations/{convocation_id}/curriculum": {

@@ -1,9 +1,26 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test } from '@playwright/test';
+import { expect, test, type APIRequestContext } from '@playwright/test';
 
 const API = 'http://127.0.0.1:8765/api/v1';
 const GC_NAME = 'Escala de Cabos y Guardias de la Guardia Civil';
 const TAI_NAME = 'Cuerpo de Técnicos Auxiliares de Informática de la Administración del Estado';
+
+interface OppositionRow {
+  id: string;
+  code: string;
+  active_convocation: { code: string } | null;
+}
+
+interface ConvocationRow {
+  id: string;
+  code: string;
+  status: string;
+}
+
+interface OppositionListRow {
+  id: string;
+  code: string;
+}
 
 /** Los tres anchos de referencia de 07_UI-UX §14. */
 const VIEWPORTS = [
@@ -13,16 +30,27 @@ const VIEWPORTS = [
 ];
 
 /**
- * Cambiar de oposición es una escritura y afecta a toda la aplicación, así que cada prueba deja
- * TAI activo al terminar. Sin esto, una prueba que falle a mitad dejaría el estado cambiado y
- * haría fallar a las siguientes por un motivo que no es el suyo.
+ * Cambiar de oposición o de convocatoria es una escritura y afecta a toda la aplicación, así que cada
+ * prueba deja TAI activo y la convocatoria de Celador como está en el fixture al terminar.
+ * `.e2e-data` se conserva entre ejecuciones: sin esto, una prueba que falle a mitad dejaría el estado
+ * cambiado y haría fallar a las siguientes por un motivo que no es el suyo.
  */
 test.afterEach(async ({ request }) => {
   const response = await request.get(`${API}/oppositions`);
-  const oppositions = (await response.json()) as { id: string; code: string }[];
+  const oppositions = (await response.json()) as OppositionListRow[];
   const tai = oppositions.find((item) => item.code === 'tai-age');
   if (tai !== undefined) {
     await request.post(`${API}/oppositions/${tai.id}/activate`);
+  }
+  const celador = oppositions.find((item) => item.code === 'celador-sacyl');
+  if (celador !== undefined) {
+    const rowsResponse = await request.get(`${API}/oppositions/${celador.id}/convocations`);
+    const rows = (await rowsResponse.json()) as ConvocationRow[];
+    // La vigente que declara el fixture es la convocatoria ordinaria de acceso libre.
+    const vigente = rows.find((row) => row.code === 'celador-sacyl-2022');
+    if (vigente !== undefined && vigente.status !== 'active') {
+      await request.post(`${API}/convocations/${vigente.id}/activate`);
+    }
   }
 });
 
@@ -67,6 +95,81 @@ test('S01: cambiar de oposición cambia el programa (25 temas de Guardia Civil)'
   // Y se puede volver.
   await page.getByLabel('Oposición').selectOption({ label: TAI_NAME });
   await expect(page.getByText(/33 temas/)).toBeVisible();
+});
+
+test('S12.2: una oposición con dos convocatorias deja elegir con cuál se estudia', async ({
+  page,
+  request,
+}) => {
+  const oppositions = (await (await request.get(`${API}/oppositions`)).json()) as OppositionRow[];
+  const celador = oppositions.find((item) => item.code === 'celador-sacyl');
+  expect(celador, 'la siembra tiene que traer la oposición de Celador').toBeDefined();
+  await request.post(`${API}/oppositions/${celador!.id}/activate`);
+
+  await page.goto('/programa');
+
+  const selector = page.getByLabel('Convocatoria');
+  await expect(selector).toBeVisible();
+  // La vigente es la convocatoria ordinaria de acceso libre: dieciséis temas y 70 preguntas en 90
+  // minutos. La de estabilización está publicada, pendiente de ejercicio y se puede elegir.
+  await expect(selector).toHaveValue(await idDe(request, 'celador-sacyl-2022'));
+  await expect(page.locator('option', { hasText: 'sin fecha de ejercicio' })).toHaveCount(1);
+  await expect(page.getByText(/16 temas/)).toBeVisible();
+  await expect(page.getByText('90 min', { exact: true })).toBeVisible();
+  await expect(page.getByText('70 (+7 de reserva)', { exact: true })).toBeVisible();
+  await expect(page.locator('time[datetime="2023-11-12"]')).toBeVisible();
+
+  // Se cambia a la del proceso de estabilización: otro programa y otras reglas.
+  await selector.selectOption({ label: 'ORDEN SAN/1917/2022 · 2022-12-28 · sin fecha de ejercicio' });
+
+  await expect(page.getByText(/14 temas/)).toBeVisible();
+  await expect(page.getByText('60 min', { exact: true })).toBeVisible();
+  await expect(page.getByText('40 (+4 de reserva)', { exact: true })).toBeVisible();
+  // La penalización es la de esta convocatoria: una novena parte, no un cuarto.
+  await expect(page.getByText('wrong_answer_penalty')).toBeVisible();
+  await expect(page.getByText('1/9 del valor de una respuesta correcta')).toBeVisible();
+  await expect(page.getByText('No consta en la convocatoria')).toBeVisible();
+  // Y dice por qué no consta: el plazo cerró y la fecha la fijará la resolución de admitidos.
+  await expect(page.getByText(/El plazo de solicitudes cerró en enero de 2023/)).toBeVisible();
+
+  // Y se puede volver: cambiar de convocatoria no borra la anterior. Ahora la vigente es la otra,
+  // así que su etiqueta ya no lo dice.
+  await selector.selectOption({ label: 'ORDEN SAN/1828/2022 · 2022-12-22' });
+  await expect(page.getByText(/16 temas/)).toBeVisible();
+  await expect(page.getByText('90 min', { exact: true })).toBeVisible();
+});
+
+/** Identificador de una convocatoria de Celador, para comprobar qué opción está seleccionada. */
+async function idDe(request: APIRequestContext, code: string): Promise<string> {
+  const oppositions = (await (await request.get(`${API}/oppositions`)).json()) as OppositionRow[];
+  const celador = oppositions.find((item) => item.code === 'celador-sacyl');
+  const rows = (await (
+    await request.get(`${API}/oppositions/${celador!.id}/convocations`)
+  ).json()) as ConvocationRow[];
+  return rows.find((row) => row.code === code)!.id;
+}
+
+test('S12.2: la convocatoria vigente se elige por la API, no solo en pantalla', async ({
+  request,
+}) => {
+  const oppositions = (await (await request.get(`${API}/oppositions`)).json()) as OppositionRow[];
+  const celador = oppositions.find((item) => item.code === 'celador-sacyl');
+  const rows = (await (
+    await request.get(`${API}/oppositions/${celador!.id}/convocations`)
+  ).json()) as ConvocationRow[];
+  const estabilizacion = rows.find((row) => row.code === 'celador-sacyl-estabilizacion-2022');
+
+  const activada = await request.post(`${API}/convocations/${estabilizacion!.id}/activate`);
+  expect(activada.status()).toBe(200);
+
+  const despues = (await (
+    await request.get(`${API}/oppositions/${celador!.id}/convocations`)
+  ).json()) as ConvocationRow[];
+  expect(despues.find((row) => row.code === 'celador-sacyl-estabilizacion-2022')?.status).toBe(
+    'active',
+  );
+  // La ordinaria no queda «superada»: nada la ha reemplazado, queda publicada y disponible.
+  expect(despues.find((row) => row.code === 'celador-sacyl-2022')?.status).toBe('available');
 });
 
 test('S01: abrir un tema muestra su ruta y su procedencia sin inventar cobertura', async ({

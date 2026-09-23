@@ -59,6 +59,9 @@ class ConvocationDetail:
     opposition_code: str
     opposition_name: str
     source_reference: str | None
+    #: Por qué la fecha de ejercicio es la que es, o por qué no hay ninguna: distingue «no lo sé» de
+    #: «lo dirá otra resolución», y por eso la interfaz puede enseñarlo (S12.2).
+    exam_date_note: str | None
     parts: tuple[ExamPart, ...]
     rules: tuple[ExamRule, ...]
 

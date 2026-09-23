@@ -35,6 +35,7 @@ REQUIRED_PATHS = (
     "/api/v1/oppositions/{opposition_id}/activate",
     "/api/v1/oppositions/{opposition_id}/convocations",
     "/api/v1/convocations/{convocation_id}",
+    "/api/v1/convocations/{convocation_id}/activate",
     "/api/v1/convocations/{convocation_id}/curriculum",
     "/api/v1/curriculum-nodes/{node_id}",
     "/api/v1/inventories",
@@ -226,6 +227,27 @@ def test_la_primera_ruta_de_escritura_documenta_el_403(schema: dict[str, Any]) -
     # Una ruta de solo lectura no documenta un 403 que no puede ocurrir.
     read_responses = schema["paths"]["/api/v1/oppositions/{opposition_id}"]["get"]["responses"]
     assert "403" not in read_responses
+
+
+def test_la_activacion_de_convocatoria_documenta_su_conflicto(schema: dict[str, Any]) -> None:
+    """Elegir la convocatoria vigente puede rechazarse por estado: el contrato lo declara.
+
+    El resto de escrituras de perfil no produce 409, así que no lo documentan: documentar un error
+    que no ocurre es prometer algo que la interfaz tendría que gestionar sin motivo.
+    """
+    responses = schema["paths"]["/api/v1/convocations/{convocation_id}/activate"]["post"][
+        "responses"
+    ]
+    assert set(responses) >= {"200", "404", "409", "422", "403"}
+    content = responses["409"]["content"]
+    assert set(content) == {PROBLEM_MEDIA_TYPE}
+    assert content[PROBLEM_MEDIA_TYPE]["schema"]["$ref"].endswith("/ProblemDetail")
+
+    otras = schema["paths"]["/api/v1/oppositions/{opposition_id}/activate"]["post"]["responses"]
+    assert "409" not in otras
+    # Y devuelve la convocatoria, no el árbol: el selector de la interfaz solo necesita su fila.
+    ok = responses["200"]["content"]["application/json"]["schema"]
+    assert ok["$ref"].endswith("/ConvocationReferenceSchema")
 
 
 def test_las_rutas_de_perfil_documentan_el_404(schema: dict[str, Any]) -> None:

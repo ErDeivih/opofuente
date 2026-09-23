@@ -363,6 +363,27 @@
       "rights_quote": "La Persona Usuaria exclusivamente tiene permitido el uso privado y personal de la Aplicación móvil, de forma gratuita, y únicamente con el fin de acceder a las prestaciones de los servicios, en los términos previstos en las presentes Condiciones de Uso.",
       "rights_note": "El aviso legal revisado regula el uso de la aplicación móvil del portal, no los documentos de los procesos selectivos. Se registra tal cual y no se extrapola a esos ficheros: por eso el cuestionario y la plantilla de respuestas quedan con estado «unknown» y su cita de derechos es la base duodécima de la convocatoria, que es la que ordena publicarlos.",
       "notes": "Se descargó para comprobar si el portal publicaba condiciones aplicables a los documentos de los procesos selectivos. No las publica."
+    },
+    {
+      "id": "celador-2022-bocyl-estabilizacion-html",
+      "role": "convocatoria de la estabilización (base 1), reglas del ejercicio y calificación (base 3.2) y temario de Celador (ANEXO V)",
+      "profile_code": "celador-sacyl-estabilizacion-2022",
+      "title": "ORDEN SAN/1917/2022, de 23 de diciembre, por la que se convoca proceso excepcional de estabilización de empleo temporal por concurso extraordinario de méritos y concurso-oposición para el acceso a la condición de personal estatutario fijo en las categorías del Servicio de Salud de Castilla y León (texto publicado)",
+      "publisher": "Junta de Castilla y León — Boletín Oficial de Castilla y León",
+      "identifier": "BOCYL-D-28122022-8",
+      "canonical_url": "https://bocyl.jcyl.es/html/2022/12/28/html/BOCYL-D-28122022-8.do",
+      "retrieved_url": "https://bocyl.jcyl.es/html/2022/12/28/html/BOCYL-D-28122022-8.do",
+      "retrieved_format": "html",
+      "published_at": "2022-12-28",
+      "retrieved_at": "2026-09-23",
+      "sha256": "f033b3baa4bbb8ec9cae0d724b0f38151e3ab71fbbe1ec835f85a03362118971",
+      "local_path": "data/sources/celador-2022-bocyl-estabilizacion.html",
+      "authority_tier": "A",
+      "rights_status": "unknown",
+      "rights_source_url": "https://bocyl.jcyl.es/verAvisoLegal.do",
+      "rights_quote": "El acceso a la edición electrónica del Boletín Oficial de Castilla y León es universal, público y gratuito, a través de su dirección web oficial https://bocyl.jcyl.es que tiene la consideración de sede electrónica.",
+      "rights_note": "El aviso legal del BOCYL no publica condiciones de reutilización: garantiza la autenticidad de la edición electrónica y su acceso universal, público y gratuito. El estado se registra como «unknown» porque el documento revisado no concede ni prohíbe la reutilización, y no se supone ninguna de las dos cosas. OpoFuente es local y de un solo usuario, cita la fuente en la interfaz y no redistribuye los originales (DEBT-003).",
+      "notes": "Acto que convoca la estabilización de la Ley 20/2021 en el SACYL. Su ANEXO I trae las plazas por categoría (Celador: 406 en total, 343 por concurso de méritos y 63 por concurso-oposición) y su base 3.2 las reglas del ejercicio (44 preguntas incluida la reserva y 60 minutos para «OTRO PERSONAL», la categoría de Celador). El ANEXO V trae el temario de todas las categorías convocadas; el de Celador son catorce temas en dos partes (general 1-5 y específica 6-14). El PDF del mismo acto NO se conserva como fuente: el BOCYL sirve un PDF distinto en cada descarga —tres descargas seguidas dieron tres sha256 diferentes con el mismo tamaño—, así que el texto que se verifica es el HTML, que sí es estable."
     }
   ]
 }

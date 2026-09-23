@@ -48,15 +48,20 @@ _IGNORED_PREFIXES = (
     "DE LA GUARDIA CIVIL",
 )
 _WHITESPACE = re.compile(r"\s+")
-_PARAGRAPH = re.compile(r"<p\b([^>]*)>(.*?)</p>", re.DOTALL | re.IGNORECASE)
+# Bloques de texto del boletín: párrafos `<p>` y elementos de lista `<li>`. El BOCYL publica las
+# bases de las convocatorias como listas y ahí viven reglas que no son recuperables de ninguna otra
+# parte del documento (p. ej. la penalización por respuesta errónea). La retrorreferencia `\1` exige
+# que la etiqueta de cierre coincida, así que un `<p>` sin cerrar no se traga el resto del fichero.
+_PARAGRAPH = re.compile(r"<(p|li)\b([^>]*)>(.*?)</\1>", re.DOTALL | re.IGNORECASE)
 _CLASS = re.compile(r'class="([^"]*)"')
 #: Clases con las que los boletines marcan el encabezado de un anexo: el XML del BOE usa
 #: `anexo_num`/`anexo` y el HTML del BOCYL, `aparienciaTitulo`.
 _ANNEX_CLASSES = frozenset({"anexo_num", "anexo", "aparienciaTitulo"})
-#: Raya del separador de los títulos de tema del BOCYL («Tema 1.<raya> …»). Se escribe escapada
-#: porque la raya y el guion son caracteres distintos y el patrón admite los dos.
+#: Título de tema del BOCYL: «Tema 1.<raya> …» o «Tema 1. …». La raya del separador es opcional
+#: porque no todas las órdenes la publican: la de acceso libre de 2022 escribe separador y la de
+#: estabilización, no. La raya y el guion son caracteres distintos y el patrón admite los dos.
 _EN_DASH = "\u2013"
-_TOPIC = re.compile(rf"^Tema\s+(\d+)\.\s*[{_EN_DASH}-]\s*(.+)$")
+_TOPIC = re.compile(rf"^Tema\s+(\d+)\.\s*[{_EN_DASH}-]?\s*(.+)$")
 
 
 def normalize(value: str) -> str:
@@ -145,17 +150,19 @@ def xml_paragraphs(path: Path) -> list[tuple[str, str]]:
 
 
 def html_paragraphs(path: Path) -> list[tuple[str, str]]:
-    """Pares (clase CSS, texto) de todos los párrafos de un documento HTML.
+    """Pares (clase CSS, texto) de todos los párrafos y elementos de lista de un documento HTML.
 
-    El BOCYL publica cada párrafo del acto en su propio `<p>` y marca los encabezados de anexo con
-    la clase `aparienciaTitulo`. Se analiza con expresiones regulares porque el HTML del boletín no
-    es XML bien formado; el fichero ya está verificado por `sha256` contra el manifiesto.
+    El BOCYL publica cada párrafo del acto en su propio `<p>`, marca los encabezados de anexo con la
+    clase `aparienciaTitulo` y escribe las listas de las bases (temarios, reglas de calificación)
+    como `<li>`. Se extraen los dos tipos de bloque porque el texto de una base puede estar
+    únicamente en la lista. Se analiza con expresiones regulares porque el HTML del boletín no es
+    XML bien formado; el fichero ya está verificado por `sha256` contra el manifiesto.
     """
     raw = path.read_text(encoding="utf-8", errors="replace")
     result: list[tuple[str, str]] = []
     for match in _PARAGRAPH.finditer(raw):
-        css = _CLASS.search(match.group(1))
-        text = normalize(match.group(2))
+        css = _CLASS.search(match.group(2))
+        text = normalize(match.group(3))
         if text:
             result.append((css.group(1) if css else "", text))
     return result
@@ -448,6 +455,71 @@ def celador_curriculum(path: Path) -> list[dict[str, Any]]:
     return topics
 
 
+def celador_estabilizacion_curriculum(path: Path) -> list[dict[str, Any]]:
+    """Programa de Celador/a del SACYL desde el ANEXO V de la orden de estabilización.
+
+    El ANEXO V trae el temario de **todas** las categorías convocadas en el mismo acto, una detrás
+    de otra. El de Celador son catorce temas repartidos en dos partes —general (1-5) y específica
+    (6-14)—, y esas dos partes son los bloques del árbol, porque el programa oficial las publica
+    así. Se recorta desde el encabezado «CELADOR» hasta el siguiente encabezado de categoría: sin
+    ese corte, el fixture se llevaría por delante el temario de las categorías vecinas.
+    """
+    paragraphs = html_paragraphs(path)
+    start, end = bocyl_annex_range(paragraphs, "ANEXO V:")
+
+    # La sección de cada categoría empieza con su nombre en un encabezado y, dentro, las partes del
+    # programa («PARTE GENERAL», «PARTE ESPECÍFICA») también como encabezados.
+    categoria = None
+    for indice in range(start + 1, end):
+        css, text = paragraphs[indice]
+        if css in _ANNEX_CLASSES and normalize(text).upper() == "CELADOR":
+            categoria = indice
+            break
+    if categoria is None:
+        raise InvariantViolationError("el ANEXO V no trae el temario de la categoría CELADOR")
+
+    bloques: list[dict[str, Any]] = []
+    for indice in range(categoria + 1, end):
+        css, text = paragraphs[indice]
+        limpio = normalize(text)
+        if css in _ANNEX_CLASSES and not limpio.upper().startswith("PARTE "):
+            # Otra categoría: el temario de Celador ha terminado.
+            break
+        if css in _ANNEX_CLASSES and limpio.upper().startswith("PARTE "):
+            bloques.append(
+                {
+                    "node_type": "block",
+                    "official_code": limpio,
+                    "title": limpio.capitalize() if limpio.isupper() else limpio,
+                    "position": len(bloques) + 1,
+                    "path": str(len(bloques) + 1),
+                    "depth": 0,
+                    "children": [],
+                }
+            )
+            continue
+        match = _TOPIC.match(limpio)
+        if not match or not bloques:
+            continue
+        # `position` es la posición dentro del padre (el programa se valida con posiciones
+        # consecutivas desde 1), no el número que publica la convocatoria: la parte específica
+        # empieza en el tema 6 y su primer hijo ocupa la posición 1 de esa parte. El número oficial
+        # no se pierde: viaja en `official_code`.
+        temas = len(bloques[-1]["children"]) + 1
+        bloques[-1]["children"].append(
+            {
+                "node_type": "topic",
+                "official_code": f"Tema {int(match.group(1))}",
+                "title": match.group(2).strip(),
+                "position": temas,
+                "path": f"{bloques[-1]['path']}.{temas}",
+                "depth": 1,
+                "children": [],
+            }
+        )
+    return bloques
+
+
 CURRICULUM_BUILDERS = {
     "tai-age-2025": ("tai-boe-convocatoria-xml", "ANEXO V (apartado 3. Programa)", tai_curriculum),
     "gc-cabos-guardias-2026": (
@@ -459,6 +531,11 @@ CURRICULUM_BUILDERS = {
         "celador-2022-bocyl-orden-html",
         "ANEXO II (PROGRAMA)",
         celador_curriculum,
+    ),
+    "celador-sacyl-estabilizacion-2022": (
+        "celador-2022-bocyl-estabilizacion-html",
+        "ANEXO V (TEMARIOS), sección CELADOR",
+        celador_estabilizacion_curriculum,
     ),
 }
 
@@ -489,6 +566,17 @@ TRANSFORMATIONS: dict[str, list[str]] = {
         "raíz y el recuento de bloques y epígrafes del fixture es cero, no se rellena.",
         "El texto de cada tema se conserva íntegro como título del nodo: no se resume ni "
         "se recorta.",
+    ],
+    "celador-sacyl-estabilizacion-2022": [
+        "Solo se usa el ANEXO V (TEMARIOS) de la orden, y de él únicamente la sección de la "
+        "categoría CELADOR: el anexo trae el temario de todas las categorías convocadas en el "
+        "mismo acto, y sin recortar por categoría el fixture se llevaría las vecinas por delante.",
+        "Los bloques son las dos partes que publica el programa oficial («PARTE GENERAL» y «PARTE "
+        "ESPECÍFICA»), y los temas son los párrafos numerados que cuelgan de cada una.",
+        "El programa de Celador no publica epígrafes: el recuento de epígrafes del fixture es "
+        "cero, no se rellena.",
+        "El texto de cada tema se conserva íntegro como título del nodo: no se resume ni se "
+        "recorta.",
     ],
 }
 

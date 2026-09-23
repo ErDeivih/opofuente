@@ -11,6 +11,7 @@ import type {
 } from '../../src/api/system';
 import type {
   ConvocationDetail,
+  ConvocationReference,
   Curriculum,
   CurriculumNodeDetail,
   Opposition,
@@ -228,6 +229,9 @@ export const TAI_ID = 'opp-tai';
 export const GC_ID = 'opp-gc';
 export const TAI_CONVOCATION_ID = 'conv-tai';
 export const GC_CONVOCATION_ID = 'conv-gc';
+export const CELADOR_ID = 'opp-celador';
+export const CELADOR_ESTABILIZACION_ID = 'conv-celador-estabilizacion';
+export const CELADOR_2022_ID = 'conv-celador-2022';
 
 /**
  * El resumen de preparación de S12.6, como lo sirve el servidor.
@@ -456,4 +460,249 @@ export const nodeDetailFixture: CurriculumNodeDetail = {
   source_reference: 'BOE-A-2025-26262 · ANEXO V',
   ancestors: [curriculumFixture.nodes[0]!],
   coverage: null,
+};
+
+/* ------------------------------------------------------------------ S12.2: dos convocatorias */
+
+/**
+ * TAI y Guardia Civil publican una sola convocatoria cada una: con esas listas el selector de
+ * convocatoria no se pinta, que es lo que esperan las pruebas de la pantalla de Programa.
+ *
+ * Se declaran a propósito: `/api/v1/oppositions/{id}/convocations` contiene
+ * `/api/v1/oppositions`, así que sin una respuesta propia el simulador serviría la lista de
+ * oposiciones en su lugar.
+ */
+export const taiConvocationsFixture: ConvocationReference[] = [
+  {
+    id: TAI_CONVOCATION_ID,
+    code: 'tai-age-2025',
+    title: 'Resolución de 18 de diciembre de 2025, por la que se convocan procesos selectivos',
+    official_url: 'https://www.boe.es/diario_boe/txt.php?id=BOE-A-2025-26262',
+    published_at: '2025-12-22',
+    exam_date: null,
+    status: 'active',
+  },
+];
+
+export const gcConvocationsFixture: ConvocationReference[] = [
+  {
+    id: GC_CONVOCATION_ID,
+    code: 'gc-cabos-guardias-2026',
+    title: 'Resolución de 8 de mayo de 2026, por la que se convoca el proceso selectivo',
+    official_url: 'https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-9982',
+    published_at: '2026-05-08',
+    exam_date: null,
+    status: 'active',
+  },
+];
+
+/**
+ * Celador (SACYL) con dos convocatorias publicadas: la ordinaria de acceso libre de 2022, que es la
+ * vigente y ya se examinó, y la del proceso de estabilización, publicada y disponible pero sin fecha
+ * de ejercicio (el proceso sigue pendiente).
+ */
+export const celadorOppositionsFixture: Opposition[] = [
+  {
+    id: CELADOR_ID,
+    code: 'celador-sacyl',
+    name: 'Celador/a del Servicio de Salud de Castilla y León',
+    description: 'Esta oposición tiene más de una convocatoria publicada.',
+    active: true,
+    active_convocation: {
+      id: CELADOR_2022_ID,
+      code: 'celador-sacyl-2022',
+      published_at: '2022-12-22',
+      status: 'active',
+    },
+  },
+];
+
+export const celadorConvocationsFixture: ConvocationReference[] = [
+  {
+    id: CELADOR_ESTABILIZACION_ID,
+    code: 'celador-sacyl-estabilizacion-2022',
+    title:
+      'ORDEN SAN/1917/2022, de 23 de diciembre, por la que se convoca proceso excepcional de estabilización de empleo temporal',
+    official_url: 'https://bocyl.jcyl.es/html/2022/12/28/html/BOCYL-D-28122022-8.do',
+    published_at: '2022-12-28',
+    exam_date: null,
+    status: 'available',
+  },
+  {
+    id: CELADOR_2022_ID,
+    code: 'celador-sacyl-2022',
+    title:
+      'ORDEN SAN/1828/2022, de 12 de diciembre, por la que se convoca proceso selectivo para el acceso a la condición de personal estatutario fijo',
+    official_url: 'https://bocyl.jcyl.es/html/2022/12/22/html/BOCYL-D-22122022-7.do',
+    published_at: '2022-12-22',
+    exam_date: '2023-11-12',
+    status: 'active',
+  },
+];
+
+/** La convocatoria vigente de Celador: la ordinaria de acceso libre de 2022. */
+export const celadorConvocationFixture: ConvocationDetail = {
+  id: CELADOR_2022_ID,
+  code: 'celador-sacyl-2022',
+  title: celadorConvocationsFixture[1]!.title,
+  official_url: celadorConvocationsFixture[1]!.official_url,
+  published_at: '2022-12-22',
+  exam_date: '2023-11-12',
+  status: 'active',
+  source_reference: 'BOCYL-D-22122022-7 · ANEXO I (descripción del proceso) y ANEXO II (programa)',
+  opposition_id: CELADOR_ID,
+  opposition_code: 'celador-sacyl',
+  opposition_name: 'Celador/a del Servicio de Salud de Castilla y León',
+  parts: [
+    {
+      code: 'ejercicio_unico',
+      name: 'Ejercicio único de la fase de oposición',
+      kind: 'test',
+      format: 'single_choice',
+      position: 1,
+      parent_code: null,
+      ordinary_items: 70,
+      reserve_items: 7,
+      options_per_question: 4,
+      score_min: 0,
+      score_max: 150,
+      pass_score: null,
+      wrong_penalty_fraction: 0.25,
+      fail_if_errors_gte: null,
+      time_minutes: 90,
+      structure_note: 'Un único ejercicio obligatorio y eliminatorio.',
+      notes: null,
+      evidence_quote:
+        'El ejercicio consistirá, para todos los turnos, en contestar un cuestionario que estará formado por 70 preguntas relacionadas con el programa más el 10% de preguntas de reserva para posibles anulaciones.',
+    },
+  ],
+  rules: [
+    {
+      code: 'published_exam_date',
+      kind: 'text',
+      value_text: '2023-11-12',
+      description: 'Fecha del ejercicio, fijada por la resolución publicada en el BOCYL.',
+      evidence_quote: 'para la realización del ejercicio de la fase de oposición el día 12 de noviembre',
+    },
+  ],
+};
+
+/** La convocatoria del proceso de estabilización: disponible y todavía sin ejercicio. */
+export const celadorEstabilizacionConvocationFixture: ConvocationDetail = {
+  id: CELADOR_ESTABILIZACION_ID,
+  code: 'celador-sacyl-estabilizacion-2022',
+  title: celadorConvocationsFixture[0]!.title,
+  official_url: celadorConvocationsFixture[0]!.official_url,
+  published_at: '2022-12-28',
+  exam_date: null,
+  exam_date_note:
+    'El plazo de solicitudes cerró en enero de 2023 y el proceso sigue sin ejercicio: la fecha la fijará la resolución de admitidos (base 8.3).',
+  status: 'available',
+  source_reference: 'BOCYL-D-28122022-8 · ANEXO I y ANEXO V (sección CELADOR)',
+  opposition_id: CELADOR_ID,
+  opposition_code: 'celador-sacyl',
+  opposition_name: 'Celador/a del Servicio de Salud de Castilla y León',
+  parts: [
+    {
+      code: 'ejercicio_unico',
+      name: 'Ejercicio único de la fase de oposición del concurso-oposición',
+      kind: 'test',
+      format: 'single_choice',
+      position: 1,
+      parent_code: null,
+      ordinary_items: 40,
+      reserve_items: 4,
+      options_per_question: 3,
+      score_min: 0,
+      score_max: 150,
+      pass_score: null,
+      wrong_penalty_fraction: 0.1111111111111111,
+      fail_if_errors_gte: null,
+      time_minutes: 60,
+      structure_note: '44 preguntas incluidas las de reserva, en 60 minutos.',
+      notes: null,
+      evidence_quote:
+        'El ejercicio consistirá, para todos los turnos, en contestar un cuestionario que estará formado por un número de preguntas relacionadas con el temario más el 10% de preguntas de reserva para posibles anulaciones.',
+    },
+  ],
+  rules: [
+    {
+      code: 'wrong_answer_penalty',
+      kind: 'text',
+      value_text: '1/9 del valor de una respuesta correcta',
+      description: 'Cada contestación errónea descuenta una novena parte.',
+      evidence_quote:
+        'Las contestaciones erróneas se penalizarán con una novena parte (1/9) del valor de las respuestas correctas.',
+    },
+  ],
+};
+
+/** Programa de Celador en el acceso libre de 2022: dieciséis temas sin bloques. */
+export const celador2022CurriculumFixture: Curriculum = {
+  convocation_id: CELADOR_2022_ID,
+  convocation_code: 'celador-sacyl-2022',
+  opposition_code: 'celador-sacyl',
+  counts: { block: 0, topic: 16, epigraph: 0 },
+  nodes: Array.from({ length: 16 }, (_valor, indice) => ({
+    id: `node-2022-tema-${indice + 1}`,
+    node_type: 'topic' as const,
+    official_code: String(indice + 1),
+    title: `Tema ${indice + 1} del programa de 2022`,
+    description: null,
+    position: indice + 1,
+    path: String(indice + 1),
+    depth: 0,
+    children: [],
+  })),
+};
+
+/** Programa de Celador en la estabilización: dos partes y catorce temas. */export const celadorCurriculumFixture: Curriculum = {
+  convocation_id: CELADOR_ESTABILIZACION_ID,
+  convocation_code: 'celador-sacyl-estabilizacion-2022',
+  opposition_code: 'celador-sacyl',
+  counts: { block: 2, topic: 14, epigraph: 0 },
+  nodes: [
+    {
+      id: 'node-parte-general',
+      node_type: 'block',
+      official_code: 'PARTE GENERAL',
+      title: 'Parte general',
+      description: null,
+      position: 1,
+      path: '1',
+      depth: 0,
+      children: [1, 2, 3, 4, 5].map((numero) => ({
+        id: `node-tema-${numero}`,
+        node_type: 'topic' as const,
+        official_code: `Tema ${numero}`,
+        title: `Tema ${numero} de la parte general`,
+        description: null,
+        position: numero,
+        path: `1.${numero}`,
+        depth: 1,
+        children: [],
+      })),
+    },
+    {
+      id: 'node-parte-especifica',
+      node_type: 'block',
+      official_code: 'PARTE ESPECÍFICA',
+      title: 'Parte específica',
+      description: null,
+      position: 2,
+      path: '2',
+      depth: 0,
+      children: [6, 7, 8, 9, 10, 11, 12, 13, 14].map((numero, indice) => ({
+        id: `node-tema-${numero}`,
+        node_type: 'topic' as const,
+        official_code: `Tema ${numero}`,
+        title: `Tema ${numero} de la parte específica`,
+        description: null,
+        position: indice + 1,
+        path: `2.${indice + 1}`,
+        depth: 1,
+        children: [],
+      })),
+    },
+  ],
 };

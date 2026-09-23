@@ -290,7 +290,7 @@ detalle, en `15_OFFICIAL-PROFILES-AND-SOURCE-MANIFEST` §3. Un cuarto perfil vue
   en `unknown`, con la nota que lo explica.
 - TAI sigue siendo la oposición activa después de sembrar.
 
-## S12.2 — segunda convocatoria de Celador: estabilización (Ley 20/2021) — **no empezado**
+## S12.2 — segunda convocatoria de Celador: estabilización (Ley 20/2021) — **entregada**
 
 **Precondición, y no es técnica:** su plazo de solicitudes cerró el 27 de enero de 2023, así que este
 programa solo sirve a quien se presentó a ese proceso. Se construye si el propietario dice que es su
@@ -318,6 +318,15 @@ verificadas y documentadas en `15_OFFICIAL-PROFILES-AND-SOURCE-MANIFEST` §4, si
 - Sus cifras de examen son distintas de las de la convocatoria ordinaria y las pruebas lo comprueban,
   para que nadie confunda un perfil con otro.
 - La convocatoria ordinaria sigue siendo la vigente de la oposición.
+
+**Entrega** (`docs/slices/S12.2.md`, 23 de septiembre de 2026). El estado nuevo que pedía esta ficha
+es `available` («publicada, utilizable y no vigente»), con su migración
+(`0021_convocation_available`) y su enumerado en el contrato. El selector de convocatoria vive en la
+pantalla de Programa y se apoya en `POST /convocations/{id}/activate`: al cambiar, la anterior queda
+`available` —no `superseded`, porque nada la ha reemplazado— y se puede volver a ella. La fecha de
+ejercicio de la estabilización se queda a nulo, como pedía la ficha, con la nota que explica de dónde
+saldrá y qué sí consta (el plazo de solicitudes, ya visible en la interfaz desde la migración
+`0022_convocation_exam_date_note`).
 
 ## S12.3 — Anki y Markdown entran como material
 

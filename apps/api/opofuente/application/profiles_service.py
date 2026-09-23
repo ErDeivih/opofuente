@@ -18,8 +18,13 @@ from opofuente.application.read_models import (
     OppositionSummary,
     SeedReport,
 )
-from opofuente.domain.errors import NotFoundError
-from opofuente.domain.profiles import Profile, validate_curriculum, validate_exam
+from opofuente.domain.errors import InvalidStateError, NotFoundError
+from opofuente.domain.profiles import (
+    ConvocationStatus,
+    Profile,
+    validate_curriculum,
+    validate_exam,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -58,6 +63,39 @@ class ProfilesService:
         if detail is None:
             raise NotFoundError("convocatoria", convocation_id)
         return detail
+
+    def activate_convocation(self, convocation_id: str) -> ConvocationSummary:
+        """Cambia la convocatoria vigente de una oposición.
+
+        Se exige que la convocatoria se pueda usar de verdad: una convocatoria publicada (no en
+        borrador ni archivada) y con programa sembrado. Una oposición con dos convocatorias —la de
+        acceso libre de 2022 y la de estabilización, en Celador— necesita poder elegir con cuál se
+        estudia, y la aplicación no debe dejar elegir una que no tenga temario que mostrar.
+        """
+        detail = self.get_convocation(convocation_id)
+        status = detail.summary.status
+        if status is ConvocationStatus.DRAFT:
+            raise InvalidStateError(
+                "la convocatoria está en borrador y todavía no se ha publicado: "
+                "no se puede convertir en la vigente"
+            )
+        if status is ConvocationStatus.ARCHIVED:
+            raise InvalidStateError(
+                "la convocatoria está archivada: está marcada como no utilizable por la aplicación"
+            )
+        curriculum = self._repository.get_curriculum(convocation_id)
+        if curriculum is None or not curriculum.nodes:
+            raise InvalidStateError(
+                "la convocatoria no tiene programa sembrado: no hay temario con el que trabajar"
+            )
+        activated = self._repository.activate_convocation(convocation_id, now=self._clock.now())
+        if activated is None:  # pragma: no cover - se acaba de comprobar que existe
+            raise NotFoundError("convocatoria", convocation_id)
+        logger.info(
+            "profiles.convocation_activated",
+            extra={"event": "convocation_activated", "path": activated.code},
+        )
+        return activated
 
     def get_curriculum(self, convocation_id: str) -> CurriculumView:
         view = self._repository.get_curriculum(convocation_id)

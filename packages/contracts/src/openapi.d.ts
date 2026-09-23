@@ -406,6 +406,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/convocations/{convocation_id}/activate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Convierte una convocatoria en la vigente de su oposición
+         * @description Elige con qué convocatoria trabaja la aplicación.
+         *
+         *     La vigente anterior queda «superada» (sigue visible y se puede volver a ella). Se rechaza con
+         *     409 si la convocatoria está en borrador, archivada o no tiene programa sembrado: la aplicación
+         *     no ofrece como vigente algo que no puede mostrar.
+         */
+        post: operations["activate_convocation_api_v1_convocations__convocation_id__activate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/convocations/{convocation_id}/curriculum": {
         parameters: {
             query?: never;
@@ -3011,6 +3035,8 @@ export interface components {
             code: string;
             /** Exam Date */
             exam_date?: string | null;
+            /** Exam Date Note */
+            exam_date_note?: string | null;
             /** Id */
             id: string;
             /** Official Url */
@@ -3057,9 +3083,25 @@ export interface components {
         };
         /**
          * ConvocationStatus
+         * @description Estado de una convocatoria publicada.
+         *
+         *     `active` no significa «la última que ha salido» sino **la que la aplicación usa para trabajar**:
+         *     es la que resuelven Programa, Estudio, Repaso y Banco, y solo puede haber una por oposición (lo
+         *     garantiza un índice único parcial). Los demás estados describen por qué una convocatoria no es
+         *     esa:
+         *
+         *     - `draft`: todavía no se ha publicado. Nadie la ha convocado, así que no es utilizable.
+         *     - `available`: está publicada, es utilizable y **no es la vigente**. Es el caso de una oposición
+         *       con dos procesos vivos a la vez —Celador tiene la convocatoria ordinaria de acceso libre y el
+         *       proceso de estabilización de la Ley 20/2021—: ninguna sustituye a la otra, las dos se pueden
+         *       estudiar y solo una se elige para trabajar.
+         *     - `superseded`: otra convocatoria del **mismo proceso** la ha reemplazado (una orden corregida,
+         *       una republicación). No es lo mismo que `available`: aquí sí hay un acto posterior que la deja
+         *       atrás.
+         *     - `archived`: la aplicación no debe usar esta convocatoria.
          * @enum {string}
          */
-        ConvocationStatus: "draft" | "active" | "superseded" | "archived";
+        ConvocationStatus: "draft" | "active" | "available" | "superseded" | "archived";
         /**
          * CorrectionOutcomeSchema
          * @description La versión corregida y, si la tenía, la plantilla nueva que apunta a ella.
@@ -7604,6 +7646,73 @@ export interface operations {
             };
             /** @description El recurso no existe. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    activate_convocation_api_v1_convocations__convocation_id__activate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                convocation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConvocationReferenceSchema"];
+                };
+            };
+            /** @description Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description La operación no vale para el estado actual del recurso (`invalid_state`). Por ejemplo, reintentar un lote que no está fallido ni cancelado. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

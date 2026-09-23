@@ -34,6 +34,11 @@ export function ConvocationSource({ convocation }: ConvocationSourceProps) {
           )}
         </dd>
       </dl>
+      {convocation.exam_date_note != null && convocation.exam_date_note.length > 0 && (
+        // La nota explica de dónde sale la fecha —o por qué no hay ninguna—: «no consta» a secas se
+        // lee igual cuando falta el dato que cuando la convocatoria lo deja para otra resolución.
+        <p className="hint">{convocation.exam_date_note}</p>
+      )}
       <p className="hint">
         Los datos se extraen de la publicación oficial. OpoFuente no es un organismo oficial y esta
         pantalla no sustituye a la convocatoria: ante cualquier duda, prevalece el texto publicado.

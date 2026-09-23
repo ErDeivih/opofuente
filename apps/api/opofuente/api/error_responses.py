@@ -88,6 +88,14 @@ INGESTION_WRITE_ERRORS: dict[int | str, dict[str, Any]] = {
     **_INVALID_SOURCE,
 }
 
+#: Errores **solo** de `POST /convocations/{id}/activate`: además del resto de escrituras, rechaza
+#: con 409 la convocatoria que no se puede usar como vigente (en borrador, archivada o sin
+#: programa).
+ACTIVATION_ERRORS: dict[int | str, dict[str, Any]] = {
+    **WRITE_ERRORS,
+    **_INVALID_STATE,
+}
+
 #: Errores **solo** de `POST /retry`, que es la única ruta que rechaza por estado del lote.
 #: Cancelar no produce 409: sobre un lote ya terminado es una operación sin efecto que devuelve el
 #: estado actual, así que documentarlo ahí sería documentar algo que no ocurre.

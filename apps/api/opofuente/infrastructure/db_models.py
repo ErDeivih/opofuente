@@ -67,7 +67,7 @@ class ConvocationVersionRecord(Base):
     __tablename__ = "convocation_versions"
     __table_args__ = (
         CheckConstraint(
-            "status IN ('draft', 'active', 'superseded', 'archived')",
+            "status IN ('draft', 'active', 'available', 'superseded', 'archived')",
             name="ck_convocation_status",
         ),
     )
@@ -81,6 +81,9 @@ class ConvocationVersionRecord(Base):
     official_url: Mapped[str] = mapped_column(Text, nullable=False)
     published_at: Mapped[date] = mapped_column(Date, nullable=False)
     exam_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    # Por qué la fecha de ejercicio es la que es, o por qué no hay ninguna: distingue «no lo sé» de
+    # «lo dirá otra resolución» (S12.2).
+    exam_date_note: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(String(16), nullable=False)
     # Procedencia: identificador del acto oficial y su ubicación dentro del documento.
     source_reference: Mapped[str | None] = mapped_column(Text, nullable=True)

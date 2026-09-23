@@ -138,6 +138,7 @@ class SqlAlchemyProfileRepository:
                 opposition_code=opposition.code,
                 opposition_name=opposition.name,
                 source_reference=record.source_reference,
+                exam_date_note=record.exam_date_note,
                 parts=tuple(self._part(row, codes_by_id) for row in parts),
                 rules=tuple(self._rule(row) for row in rules),
             )
@@ -221,6 +222,37 @@ class SqlAlchemyProfileRepository:
             session.commit()
             return self._summary(session, target)
 
+    def activate_convocation(
+        self, convocation_id: str, *, now: datetime
+    ) -> ConvocationSummary | None:
+        """Marca una convocatoria como la vigente de su oposición.
+
+        Una oposición tiene una sola convocatoria vigente (índice único parcial). La que lo era
+        queda **disponible**: sigue publicada, conserva su programa y se puede volver a ella. No se
+        marca como superada porque nada la ha reemplazado —son procesos distintos que conviven— ni
+        se toca `supersedes_id`, que dice qué acto deroga a cuál.
+        """
+        with self._session_factory() as session:
+            target = session.get(ConvocationVersionRecord, convocation_id)
+            if target is None:
+                return None
+            if target.status != ConvocationStatus.ACTIVE.value:
+                # Primero se degrada la vigente anterior: el índice único parcial no admite dos
+                # activas ni de forma momentánea dentro de la misma transacción.
+                session.execute(
+                    update(ConvocationVersionRecord)
+                    .where(
+                        ConvocationVersionRecord.opposition_id == target.opposition_id,
+                        ConvocationVersionRecord.status == ConvocationStatus.ACTIVE.value,
+                        ConvocationVersionRecord.id != target.id,
+                    )
+                    .values(status=ConvocationStatus.AVAILABLE.value, updated_at=now)
+                )
+                target.status = ConvocationStatus.ACTIVE.value
+                target.updated_at = now
+            session.commit()
+            return self._convocation_summary(target)
+
     def upsert_profile(self, profile: Profile, *, now: datetime) -> SeedOutcome:
         with self._session_factory() as session:
             outcomes: list[EntityOutcome] = []
@@ -302,6 +334,7 @@ class SqlAlchemyProfileRepository:
             "official_url": convocation.official_url,
             "published_at": convocation.published_at,
             "exam_date": convocation.exam_date,
+            "exam_date_note": convocation.source_note,
             "status": convocation.status.value,
             "source_reference": convocation.source_reference,
         }
@@ -309,16 +342,59 @@ class SqlAlchemyProfileRepository:
             record = ConvocationVersionRecord(
                 id=_new_id(), code=convocation.code, **values, created_at=now, updated_at=now
             )
+            # Antes de insertar hay que dejar libre el puesto de vigente: el índice único parcial no
+            # admite dos convocatorias activas de la misma oposición, ni de forma momentánea.
+            self._demote_other_active(
+                session, record, en_vigor=self._declara_vigente(convocation), now=now
+            )
             session.add(record)
             session.flush()
             return record, EntityOutcome(code=convocation.code, created=True, updated=False)
 
+        self._demote_other_active(
+            session, record, en_vigor=self._declara_vigente(convocation), now=now
+        )
         changed = any(getattr(record, key) != value for key, value in values.items())
         if changed:
             for key, value in values.items():
                 setattr(record, key, value)
             record.updated_at = now
         return record, EntityOutcome(code=convocation.code, created=False, updated=changed)
+
+    @staticmethod
+    def _declara_vigente(convocation: Convocation) -> bool:
+        """¿El fixture declara esta convocatoria como la vigente de su oposición?"""
+        return convocation.status is ConvocationStatus.ACTIVE
+
+    @staticmethod
+    def _demote_other_active(
+        session: Session,
+        record: ConvocationVersionRecord,
+        *,
+        en_vigor: bool,
+        now: datetime,
+    ) -> None:
+        """Deja libre el puesto de convocatoria vigente de esa oposición.
+
+        Solo actúa cuando el fixture declara **esta** convocatoria como la vigente, y lo hace
+        **antes** de escribir el estado, con independencia de cuál estuviera vigente antes: el
+        fixture decide cuál es la vigente, no el estado en el que estuviera la base (igual que en la
+        oposición). Sin esto, resembrar después de haber cambiado de convocatoria en la interfaz
+        choca con el índice único parcial `uq_convocation_single_active` y la siembra falla con un
+        error de integridad en lugar de dejar el estado que dice el fixture.
+        """
+        if not en_vigor:
+            return
+        session.execute(
+            update(ConvocationVersionRecord)
+            .where(
+                ConvocationVersionRecord.opposition_id == record.opposition_id,
+                ConvocationVersionRecord.status == ConvocationStatus.ACTIVE.value,
+                ConvocationVersionRecord.id != record.id,
+            )
+            .values(status=ConvocationStatus.AVAILABLE.value, updated_at=now)
+        )
+        session.flush()
 
     def _sync_curriculum(
         self,

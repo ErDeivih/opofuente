@@ -1,0 +1,168 @@
+{
+  "code": "celador-sacyl-estabilizacion-2022",
+  "generated_from": {
+    "source_id": "celador-2022-bocyl-estabilizacion-html",
+    "sha256": "f033b3baa4bbb8ec9cae0d724b0f38151e3ab71fbbe1ec835f85a03362118971",
+    "location": "ANEXO V (TEMARIOS), sección CELADOR",
+    "role": "convocatoria de la estabilización (base 1), reglas del ejercicio y calificación (base 3.2) y temario de Celador (ANEXO V)"
+  },
+  "transformations": [
+    "Solo se usa el ANEXO V (TEMARIOS) de la orden, y de él únicamente la sección de la categoría CELADOR: el anexo trae el temario de todas las categorías convocadas en el mismo acto, y sin recortar por categoría el fixture se llevaría las vecinas por delante.",
+    "Los bloques son las dos partes que publica el programa oficial («PARTE GENERAL» y «PARTE ESPECÍFICA»), y los temas son los párrafos numerados que cuelgan de cada una.",
+    "El programa de Celador no publica epígrafes: el recuento de epígrafes del fixture es cero, no se rellena.",
+    "El texto de cada tema se conserva íntegro como título del nodo: no se resume ni se recorta."
+  ],
+  "counts": {
+    "blocks": 2,
+    "topics": 14,
+    "epigraphs": 0
+  },
+  "nodes": [
+    {
+      "node_type": "block",
+      "official_code": "PARTE GENERAL",
+      "title": "Parte general",
+      "position": 1,
+      "path": "1",
+      "depth": 0,
+      "children": [
+        {
+          "node_type": "topic",
+          "official_code": "Tema 1",
+          "title": "Estructura orgánica de los Servicios Centrales y Periféricos de la Gerencia Regional de Salud de Castilla y León.",
+          "position": 1,
+          "path": "1.1",
+          "depth": 1,
+          "children": []
+        },
+        {
+          "node_type": "topic",
+          "official_code": "Tema 2",
+          "title": "Clasificación del personal estatutario. Provisión de plazas, selección y promoción interna. Adquisición y pérdida de la condición de personal estatutario fijo.",
+          "position": 2,
+          "path": "1.2",
+          "depth": 1,
+          "children": []
+        },
+        {
+          "node_type": "topic",
+          "official_code": "Tema 3",
+          "title": "Derechos y deberes de los pacientes en relación con la salud. Autonomía de decisión. Intimidad y confidencialidad, protección de datos, secreto profesional. Derecho a la información.",
+          "position": 3,
+          "path": "1.3",
+          "depth": 1,
+          "children": []
+        },
+        {
+          "node_type": "topic",
+          "official_code": "Tema 4",
+          "title": "Ley 8/2003, de 8 de abril, sobre derechos y deberes de las personas en relación con la salud. Ley Orgánica 3/2018, de 5 de diciembre, de Protección de Datos Personales y garantía de los derechos digitales. Decreto 101/2005, de 22 de diciembre por el que se regula la Historia Clínica en Castilla y León.",
+          "position": 4,
+          "path": "1.4",
+          "depth": 1,
+          "children": []
+        },
+        {
+          "node_type": "topic",
+          "official_code": "Tema 5",
+          "title": "La Ley 31/1995 de 8 de noviembre de Prevención de Riesgos Laborales: Derechos y obligaciones. Servicios de Prevención. Consulta y participación de los trabajadores.",
+          "position": 5,
+          "path": "1.5",
+          "depth": 1,
+          "children": []
+        }
+      ]
+    },
+    {
+      "node_type": "block",
+      "official_code": "PARTE ESPECÍFICA",
+      "title": "Parte específica",
+      "position": 2,
+      "path": "2",
+      "depth": 0,
+      "children": [
+        {
+          "node_type": "topic",
+          "official_code": "Tema 6",
+          "title": "Funciones de vigilancia. Funciones de asistencia al personal sanitario facultativo y no facultativo. Relación del Celador con los familiares de los enfermos. Actuaciones en las habitaciones de los enfermos y las estancias comunes. Aseo del paciente.",
+          "position": 1,
+          "path": "2.1",
+          "depth": 1,
+          "children": []
+        },
+        {
+          "node_type": "topic",
+          "official_code": "Tema 7",
+          "title": "El celador en su relación con los enfermos. Traslado y movilidad de los pacientes. Técnicas de movilización de pacientes. Traslado de paciente encamando, en camilla y en silla de ruedas. Posiciones anatómicas básicas. Uso y mantenimiento del material auxiliar (grúas, transfer, sillas, camillas, sujeciones, correas…). Actuación del celador en relación con los pacientes terminales.",
+          "position": 2,
+          "path": "2.2",
+          "depth": 1,
+          "children": []
+        },
+        {
+          "node_type": "topic",
+          "official_code": "Tema 8",
+          "title": "Normas de actuación del celador en los quirófanos. Normas de higiene. La Esterilización.",
+          "position": 3,
+          "path": "2.3",
+          "depth": 1,
+          "children": []
+        },
+        {
+          "node_type": "topic",
+          "official_code": "Tema 9",
+          "title": "Actuación del celador en relación con los pacientes fallecidos. Actuación en las salas de autopsias y mortuorios. Relación del celador con los familiares de las personas fallecidas.",
+          "position": 4,
+          "path": "2.4",
+          "depth": 1,
+          "children": []
+        },
+        {
+          "node_type": "topic",
+          "official_code": "Tema 10",
+          "title": "Los suministros. Suministros internos y externos. Recepción y almacenamiento de mercancías. Organización del almacén. Distribución de pedidos.",
+          "position": 5,
+          "path": "2.5",
+          "depth": 1,
+          "children": []
+        },
+        {
+          "node_type": "topic",
+          "official_code": "Tema 11",
+          "title": "El traslado de documentos y objetos. Manejo y traslado de la documentación sanitaria.",
+          "position": 6,
+          "path": "2.6",
+          "depth": 1,
+          "children": []
+        },
+        {
+          "node_type": "topic",
+          "official_code": "Tema 12",
+          "title": "Recepción, movilización y traslado de pacientes en urgencias. Criterios de actuación del Celador en urgencias frente a traumatismos, heridas, quemaduras y asfixia. Nociones generales sobre primeros auxilios.",
+          "position": 7,
+          "path": "2.7",
+          "depth": 1,
+          "children": []
+        },
+        {
+          "node_type": "topic",
+          "official_code": "Tema 13",
+          "title": "Concepto de infección intrahospitalaria. Prevención. Gestión de residuos sanitarios. Clasificación, transporte, eliminación y tratamiento.",
+          "position": 8,
+          "path": "2.8",
+          "depth": 1,
+          "children": []
+        },
+        {
+          "node_type": "topic",
+          "official_code": "Tema 14",
+          "title": "Plan de emergencias ante incendios. Medidas preventivas. Conceptos básicos. Medios técnicos de protección. Equipos de primera intervención: funciones, actuaciones a realizar.",
+          "position": 9,
+          "path": "2.9",
+          "depth": 1,
+          "children": []
+        }
+      ]
+    }
+  ]
+}

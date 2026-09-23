@@ -1139,6 +1139,21 @@ Lo que queda de esta deuda es entonces más estrecho y más honesto:
 | `review.spec.ts:186` | no aparecía «propuestas nuevas» — lo mismo, más la clasificación síncrona (DEBT-024) |
 | `review.spec.ts:400` | tiempo agotado — carga de la máquina |
 
+**Tercera causa, medida en S12.2 (23 de septiembre de 2026): el directorio de datos del E2E acumula
+estado y hay selectores que lo notan.** Corriendo la puerta 18 con `.e2e-data` de varias corridas
+interrumpidas (no de una corrida limpia), dos pruebas fallaron por motivos que no eran del código:
+
+| Prueba | Qué decía el fallo | Causa |
+|---|---|---|
+| `questions.spec.ts:118` | «aceptar la versión: 409» | la versión de una corrida anterior ya estaba aceptada |
+| `changes.spec.ts:141` | `getByText('propuesto, sin aplicar')` resolvió a **3** elementos | tres conjuntos de cambios sin aplicar, uno de esta corrida y dos heredados |
+
+Ninguna de las dos pruebas crea un dato único (mismo fichero de entrada, misma frase buscada), así que
+funcionan solo mientras el directorio esté recién hecho o el dato anterior no colisione. Con
+`.e2e-data` borrado, la puerta volvió a estar verde. Lo que esto añade a la obligación de arriba: **una
+prueba que reutiliza datos tiene que decir de qué dato habla** (por fila, por identificador o por
+nombre propio), o el rojo no se puede atribuir.
+
 **Obligación:** que el resultado de la puerta 18 signifique algo por sí solo, sin tener que mirar
 cuánto tardó la suite ni qué procesos había abiertos.
 
@@ -1149,9 +1164,9 @@ cuánto tardó la suite ni qué procesos había abiertos.
    dice cuál de las dos cosas ha pasado.
 2. Una corrida con la máquina cargada no produce rojos por tiempo.
 
-**Estado: abierta.** Con los puertos libres y la máquina descargada la puerta está verde (45/45 en
-1,8 min); el peligro que queda es una corrida en rojo que no diga si el problema es el código, el
-ordenador o un proceso olvidado.
+**Estado: abierta.** Con los puertos libres, el directorio del E2E recién hecho y la máquina
+descargada la puerta está verde (51/51 en ~3 min); el peligro que queda es una corrida en rojo que no
+diga si el problema es el código, el ordenador, un proceso olvidado o un dato de la corrida anterior.
 
 ---
 
@@ -1447,3 +1462,39 @@ Lo que queda abierto, ya solo dos cosas:
 **Estado: abierta.** Lo urgente —lo que se veía en Inicio, la cola cortada y lo que no estaba probado—
 está cerrado y verificado; de la especificación solo quedan **dos pantallas** sin hacer, con su coste
 dicho arriba, y ninguna bloquea estudiar.
+
+## DEBT-028 — La aplicación no sabe si un proceso selectivo está abierto o cerrado
+
+**Origen:** S12.2 (segunda convocatoria de Celador), 23 de septiembre de 2026, al tener que decir qué
+se podía afirmar de la convocatoria del proceso de estabilización.
+
+**Problema.** De una convocatoria la aplicación guarda su acto, su fecha de publicación, su fecha de
+ejercicio (con la nota que explica de dónde sale, desde la migración
+`0022_convocation_exam_date_note`) y su estado interno
+(`draft`/`active`/`available`/`superseded`/`archived`, que habla de si la aplicación trabaja con ella,
+no del proceso administrativo). **No guarda si el plazo de solicitudes está abierto, ni si el proceso
+sigue vivo.** Eso vive hoy en la prosa de la nota del fixture:
+
+- la convocatoria de estabilización se publicó el 28 de diciembre de 2022 y su plazo de solicitudes
+  (20 días hábiles, base 5.1.1) cerró en enero de 2023;
+- su ejercicio no tiene fecha publicada: la fijará la resolución de admitidos (base 8.3), y en las
+  fuentes conservadas no hay ninguna que lo fije.
+
+Un lector de la interfaz ve «sin fecha de ejercicio» en el selector y, al elegirla, la nota que dice
+por qué (el plazo cerró y la fijará la resolución de admitidos). Lo que no ve es un aviso en el propio
+selector: «este proceso ya no admite solicitudes» o «este proceso sigue pendiente», que es lo que de
+verdad decide si tiene sentido estudiar para él. La pantalla no puede inventarlo: no hay dato.
+
+**Qué haría falta.** Una fuente que publique el estado del proceso de forma estructurada (el portal de
+procesos selectivos de Salud de Castilla y León lo publica en HTML, sin condiciones de reutilización
+declaradas, como el resto), una tabla de hitos por convocatoria (publicación, plazo, listas
+provisionales, listas definitivas, ejercicio, resultado) y una regla de lectura: qué se puede afirmar
+cuando solo se conoce el hito anterior. No es un campo `open: true/false`: los procesos tienen varios
+estados intermedios y una fecha sola no los distingue.
+
+**Por qué no se hizo en S12.2.** Porque el alcance era la convocatoria, y meter aquí un modelo de
+hitos —con su fuente, su manifiesto y su extracción— habría dejado el slice a medias. La nota del
+fixture es la información disponible hoy, y está escrita para que nadie tenga que deducirla.
+
+**Estado: abierta.** No bloquea estudiar: la aplicación declara lo que no consta en lugar de
+presentar un examen pendiente como si estuviera convocado.

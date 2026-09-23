@@ -36,12 +36,20 @@ de datos, así que un corte no pierde nada: al volver a arrancar, lo que quedó 
 | Repasar lo fallado | **Errores** |
 | Buscar o preguntar al corpus | Buscador de la cabecera |
 | Ver cambios de material y qué depende de ellos | **Cambios** |
+| Cambiar de oposición | Selector **Oposición** de la cabecera |
+| Cambiar de convocatoria (misma oposición) | **Programa** → selector **Convocatoria** |
 | Copias, almacén, proveedores y diagnóstico | **Ajustes** |
 
 **Nada de esto mueve, renombra ni borra tus originales.** La importación copia por contenido (SHA-256),
 así que dos ficheros idénticos son un solo artefacto con dos orígenes, y el original se queda donde
 estaba. La única operación que retira algo es la de **Ajustes → Qué se puede retirar**, y solo retira
 material que ya no sostiene ninguna cita ni cobertura, con confirmación explícita.
+
+**Una oposición puede tener varias convocatorias publicadas.** El selector de **Convocatoria** (en
+Programa, y solo aparece cuando hay más de una) elige con cuál trabaja la aplicación: cambian el
+programa y las reglas del examen que se ven en las demás pantallas. La que dejas deja de ser la vigente,
+pero **no se borra ni se archiva**: sigue disponible y se puede volver a ella. Al volver a sembrar los
+perfiles oficiales (`scripts/seed.ps1`) la vigente vuelve a ser la que declara el fixture.
 
 ## 3. Copia de seguridad
 

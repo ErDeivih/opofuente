@@ -1,24 +1,39 @@
-import { screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 
 import { AppShell } from '../../src/app/AppShell';
 import { ProgramPage } from '../../src/pages/ProgramPage';
 import {
+  CELADOR_2022_ID,
+  CELADOR_ESTABILIZACION_ID,
+  CELADOR_ID,
   GC_ID,
   TAI_CONVOCATION_ID,
+  TAI_ID,
+  celadorConvocationFixture,
+  celadorConvocationsFixture,
+  celadorCurriculumFixture,
+  celador2022CurriculumFixture,
+  celadorEstabilizacionConvocationFixture,
+  celadorOppositionsFixture,
   convocationFixture,
   curriculumFixture,
+  gcConvocationsFixture,
   nodeDetailFixture,
   oppositionsFixture,
   renderWithProviders,
   stubApi,
+  taiConvocationsFixture,
+  type StubbedRoute,
 } from './testUtils';
 
 function stubProgramApi() {
   return stubApi({
     [`/api/v1/oppositions/${GC_ID}/activate`]: { body: { ...oppositionsFixture[1], active: true } },
     '/api/v1/oppositions': { body: oppositionsFixture },
+    [`/api/v1/oppositions/${TAI_ID}/convocations`]: { body: taiConvocationsFixture },
+    [`/api/v1/oppositions/${GC_ID}/convocations`]: { body: gcConvocationsFixture },
     '/api/v1/curriculum-nodes/node-i-1': { body: nodeDetailFixture },
     [`/api/v1/convocations/${TAI_CONVOCATION_ID}/curriculum`]: { body: curriculumFixture },
     [`/api/v1/convocations/${TAI_CONVOCATION_ID}`]: { body: convocationFixture },
@@ -118,6 +133,8 @@ describe('pantalla Programa', () => {
     stubApi({
       [`/api/v1/oppositions/${GC_ID}/activate`]: { body: { ...oppositionsFixture[1], active: true } },
       '/api/v1/oppositions': { body: oppositionsFixture },
+      [`/api/v1/oppositions/${TAI_ID}/convocations`]: { body: taiConvocationsFixture },
+      [`/api/v1/oppositions/${GC_ID}/convocations`]: { body: gcConvocationsFixture },
       [`/api/v1/convocations/${TAI_CONVOCATION_ID}/curriculum`]: { body: curriculumFixture },
       [`/api/v1/convocations/${TAI_CONVOCATION_ID}`]: {
         body: {
@@ -184,5 +201,186 @@ describe('pantalla Programa', () => {
       );
       expect(called).toBe(true);
     });
+  });
+});
+
+/** Celador tiene dos convocatorias publicadas: la ordinaria (vigente) y la de estabilización. */
+function stubCeladorProgramApi(extra: Record<string, StubbedRoute> = {}) {
+  return stubApi({
+    '/api/v1/oppositions': { body: celadorOppositionsFixture },
+    [`/api/v1/oppositions/${CELADOR_ID}/convocations`]: { body: celadorConvocationsFixture },
+    [`/api/v1/convocations/${CELADOR_2022_ID}/curriculum`]: {
+      body: celador2022CurriculumFixture,
+    },
+    [`/api/v1/convocations/${CELADOR_2022_ID}`]: { body: celadorConvocationFixture },
+    [`/api/v1/convocations/${CELADOR_ESTABILIZACION_ID}/curriculum`]: {
+      body: celadorCurriculumFixture,
+    },
+    [`/api/v1/convocations/${CELADOR_ESTABILIZACION_ID}`]: {
+      body: celadorEstabilizacionConvocationFixture,
+    },
+    ...extra,
+  });
+}
+
+describe('selector de convocatoria', () => {
+  it('no se pinta cuando la oposición tiene una sola convocatoria', async () => {
+    stubApi({
+      '/api/v1/oppositions': { body: oppositionsFixture },
+      [`/api/v1/oppositions/${CELADOR_ID}/convocations`]: {
+        body: [celadorConvocationsFixture[0]],
+      },
+      [`/api/v1/oppositions/${CELADOR_ID}/activate`]: {
+        body: { ...oppositionsFixture[0], active: true },
+      },
+      [`/api/v1/convocations/${TAI_CONVOCATION_ID}/curriculum`]: { body: curriculumFixture },
+      [`/api/v1/convocations/${TAI_CONVOCATION_ID}`]: { body: convocationFixture },
+    });
+    renderWithProviders(
+      <AppShell>
+        <ProgramPage />
+      </AppShell>,
+      { route: '/programa' },
+    );
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Programa' })).toBeInTheDocument();
+    // Un desplegable de una sola opción es ruido: con una convocatoria no se pinta.
+    expect(screen.queryByLabelText('Convocatoria')).not.toBeInTheDocument();
+  });
+
+  it('ofrece las dos convocatorias y marca cuál es la vigente', async () => {
+    stubCeladorProgramApi();
+    renderWithProviders(
+      <AppShell>
+        <ProgramPage />
+      </AppShell>,
+      { route: '/programa' },
+    );
+
+    const selector = await screen.findByLabelText('Convocatoria');
+    const opciones = within(selector).getAllByRole('option');
+    expect(opciones).toHaveLength(2);
+    // La de estabilización está publicada y pendiente de ejercicio; la ordinaria es la vigente.
+    expect(opciones[0]).toHaveTextContent(
+      'ORDEN SAN/1917/2022 · 2022-12-28 · sin fecha de ejercicio',
+    );
+    expect(opciones[1]).toHaveTextContent('ORDEN SAN/1828/2022 · 2022-12-22 · vigente');
+    expect(selector).toHaveValue(CELADOR_2022_ID);
+  });
+
+  it('muestra el programa y el ejercicio de la convocatoria vigente', async () => {
+    stubCeladorProgramApi();
+    renderWithProviders(
+      <AppShell>
+        <ProgramPage />
+      </AppShell>,
+      { route: '/programa' },
+    );
+
+    // La vigente es la ordinaria: dieciséis temas sin bloques y 70 preguntas en 90 minutos.
+    expect(
+      await screen.findByRole('heading', { name: /Ejercicio único de la fase de oposición/ }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('90 min')).toBeInTheDocument();
+    expect(screen.getByText('70 (+7 de reserva)')).toBeInTheDocument();
+    expect(screen.getByText('Tema 1 del programa de 2022')).toBeInTheDocument();
+  });
+
+  it('explica por qué una convocatoria no tiene fecha de ejercicio', async () => {
+    // Estado real tras elegir la de estabilización: no hay fecha y la procedencia dice por qué.
+    stubCeladorProgramApi({
+      '/api/v1/oppositions': {
+        body: [
+          {
+            ...celadorOppositionsFixture[0],
+            active_convocation: {
+              id: CELADOR_ESTABILIZACION_ID,
+              code: 'celador-sacyl-estabilizacion-2022',
+              published_at: '2022-12-28',
+              status: 'active',
+            },
+          },
+        ],
+      },
+      [`/api/v1/oppositions/${CELADOR_ID}/convocations`]: {
+        body: [
+          { ...celadorConvocationsFixture[0], status: 'active' },
+          { ...celadorConvocationsFixture[1], status: 'available' },
+        ],
+      },
+    });
+    renderWithProviders(
+      <AppShell>
+        <ProgramPage />
+      </AppShell>,
+      { route: '/programa' },
+    );
+
+    expect(await screen.findByText('No consta en la convocatoria')).toBeInTheDocument();
+    expect(
+      screen.getByText(/El plazo de solicitudes cerró en enero de 2023 y el proceso sigue sin ejercicio/),
+    ).toBeInTheDocument();
+  });
+
+  it('cambia de convocatoria a través de la API', async () => {
+    const fetchMock = stubCeladorProgramApi();
+    renderWithProviders(
+      <AppShell>
+        <ProgramPage />
+      </AppShell>,
+      { route: '/programa' },
+    );
+
+    await userEvent.selectOptions(
+      await screen.findByLabelText('Convocatoria'),
+      CELADOR_ESTABILIZACION_ID,
+    );
+
+    await waitFor(() => {
+      const called = fetchMock.mock.calls.some(
+        (call) =>
+          typeof call[0] === 'string' &&
+          call[0].includes(`/convocations/${CELADOR_ESTABILIZACION_ID}/activate`) &&
+          call[1]?.method === 'POST',
+      );
+      expect(called).toBe(true);
+    });
+  });
+
+  it('enseña el motivo cuando la convocatoria no se puede activar', async () => {
+    // 409 del servidor: la convocatoria existe pero no se puede usar (sin programa, en borrador o
+    // archivada). El motivo que da la API es la explicación, no un «error» genérico.
+    stubCeladorProgramApi({
+      [`/api/v1/convocations/${CELADOR_ESTABILIZACION_ID}/activate`]: {
+        status: 409,
+        body: {
+          type: 'about:blank',
+          title: 'Conflict',
+          status: 409,
+          detail: 'la convocatoria no tiene programa sembrado: no hay temario con el que trabajar',
+          instance: `/api/v1/convocations/${CELADOR_ESTABILIZACION_ID}/activate`,
+          code: 'invalid_state',
+          correlation_id: 'corr-de-prueba',
+        },
+        contentType: 'application/problem+json',
+      },
+    });
+    renderWithProviders(
+      <AppShell>
+        <ProgramPage />
+      </AppShell>,
+      { route: '/programa' },
+    );
+
+    await userEvent.selectOptions(
+      await screen.findByLabelText('Convocatoria'),
+      CELADOR_ESTABILIZACION_ID,
+    );
+
+    expect(
+      await screen.findByText(
+        'la convocatoria no tiene programa sembrado: no hay temario con el que trabajar',
+      ),
+    ).toBeInTheDocument();
   });
 });

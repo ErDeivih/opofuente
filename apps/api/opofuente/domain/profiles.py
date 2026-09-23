@@ -18,8 +18,27 @@ MAX_DEPTH = 2
 
 
 class ConvocationStatus(StrEnum):
+    """Estado de una convocatoria publicada.
+
+    `active` no significa «la última que ha salido» sino **la que la aplicación usa para trabajar**:
+    es la que resuelven Programa, Estudio, Repaso y Banco, y solo puede haber una por oposición (lo
+    garantiza un índice único parcial). Los demás estados describen por qué una convocatoria no es
+    esa:
+
+    - `draft`: todavía no se ha publicado. Nadie la ha convocado, así que no es utilizable.
+    - `available`: está publicada, es utilizable y **no es la vigente**. Es el caso de una oposición
+      con dos procesos vivos a la vez —Celador tiene la convocatoria ordinaria de acceso libre y el
+      proceso de estabilización de la Ley 20/2021—: ninguna sustituye a la otra, las dos se pueden
+      estudiar y solo una se elige para trabajar.
+    - `superseded`: otra convocatoria del **mismo proceso** la ha reemplazado (una orden corregida,
+      una republicación). No es lo mismo que `available`: aquí sí hay un acto posterior que la deja
+      atrás.
+    - `archived`: la aplicación no debe usar esta convocatoria.
+    """
+
     DRAFT = "draft"
     ACTIVE = "active"
+    AVAILABLE = "available"
     SUPERSEDED = "superseded"
     ARCHIVED = "archived"
 

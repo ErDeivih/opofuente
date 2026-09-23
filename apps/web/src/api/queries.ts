@@ -60,8 +60,10 @@ import {
   type SubjectType,
 } from './library';
 import {
+  activateConvocation,
   activateOpposition,
   fetchConvocation,
+  fetchConvocations,
   fetchCurriculum,
   fetchCurriculumNode,
   fetchOppositions,
@@ -157,6 +159,7 @@ export const queryKeys = {
   capabilities: ['system', 'capabilities'] as const,
   settings: ['system', 'settings'] as const,
   oppositions: ['profiles', 'oppositions'] as const,
+  convocations: (oppositionId: string) => ['profiles', 'convocations', oppositionId] as const,
   convocation: (id: string) => ['profiles', 'convocation', id] as const,
   curriculum: (id: string) => ['profiles', 'curriculum', id] as const,
   curriculumNode: (id: string) => ['profiles', 'curriculum-node', id] as const,
@@ -303,6 +306,30 @@ export function useActivateOpposition() {
     mutationFn: activateOpposition,
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.oppositions });
+    },
+  });
+}
+
+export function useConvocations(oppositionId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.convocations(oppositionId ?? 'ninguna'),
+    queryFn: () => fetchConvocations(oppositionId as string),
+    enabled: oppositionId !== null,
+    staleTime: 30_000,
+  });
+}
+
+/**
+ * Cambia la convocatoria vigente. Se invalida todo `['profiles']` porque la convocatoria elegida
+ * aparece en más de una respuesta (la oposición activa, el programa, el resumen de preparación) y
+ * dejar una de ellas con la anterior daría dos versiones de lo mismo en pantalla.
+ */
+export function useActivateConvocation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: activateConvocation,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['profiles'] });
     },
   });
 }

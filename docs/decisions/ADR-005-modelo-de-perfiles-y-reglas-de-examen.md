@@ -66,6 +66,13 @@ exam_rules             (id, convocation_version_id, code, kind, value_text, desc
 - Restricciones reales: `UNIQUE(convocation_version_id, code)` en partes y reglas y
   `UNIQUE(convocation_version_id, path)` en el programa, más **dos índices únicos parciales** que
   impiden más de una convocatoria `active` por oposición y más de una oposición activa.
+- **`active` significa «la que la aplicación usa para trabajar»**, no «la última publicada». Desde
+  S12.2 una oposición puede tener más de una convocatoria publicada y utilizable a la vez (Celador: la
+  ordinaria de acceso libre y la del proceso de estabilización de la Ley 20/2021), y para eso está el
+  estado `available`: publicada, utilizable y **no vigente**. `superseded` queda para lo que sí ha sido
+  reemplazado por otro acto del mismo proceso, y `archived` para lo que la aplicación no debe usar.
+  El estado se decide en el fixture y el usuario lo puede cambiar con
+  `POST /convocations/{id}/activate`.
 - **`official_code` no es única** y la migración no lo pretende: guarda la numeración que publica la
   convocatoria y, donde no publica ninguna (los subniveles del temario de Guardia Civil, donde cada
   tema vuelve a empezar por «Bloque 1»), la secuencia dentro del padre. La identidad estable de un

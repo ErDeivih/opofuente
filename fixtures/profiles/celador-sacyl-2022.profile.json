@@ -4,7 +4,7 @@
   "opposition": {
     "code": "celador-sacyl",
     "name": "Celador/a del Servicio de Salud de Castilla y León",
-    "description": "Personal estatutario fijo de la categoría de Celador/a del Servicio de Salud de Castilla y León (SACYL), acceso libre por concurso-oposición. Programa oficial de dieciséis temas sin bloques.",
+    "description": "Personal estatutario fijo de la categoría de Celador/a del Servicio de Salud de Castilla y León (SACYL). Esta oposición tiene más de una convocatoria publicada y cada una trae su propio programa.",
     "active": false
   },
   "convocation": {
@@ -13,7 +13,7 @@
     "official_url": "https://bocyl.jcyl.es/html/2022/12/22/html/BOCYL-D-22122022-7.do",
     "published_at": "2022-12-22",
     "exam_date": "2023-11-12",
-    "exam_date_note": "La orden de convocatoria no fija la fecha: la fija la resolución de la Gerencia de Salud de Área de Salamanca (BOCYL de 2 de octubre de 2023), que convoca el llamamiento único para el 12 de noviembre de 2023 a las 10:00 en la Universidad de Salamanca. El portal de Salud publica además un cuestionario del ejercicio aplazado, celebrado según su ficha el 21 de diciembre de 2023: quien no pudo examinarse el 12 de noviembre no lo hizo ese día.",
+    "exam_date_note": "La orden de convocatoria no fija la fecha: la fija la resolución de la Gerencia de Salud de Área de Salamanca (BOCYL de 2 de octubre de 2023), que convoca el llamamiento único para el 12 de noviembre de 2023 a las 10:00 en la Universidad de Salamanca. El portal de Salud publica además un cuestionario del ejercicio aplazado, celebrado según su ficha el 21 de diciembre de 2023: quien no pudo examinarse el 12 de noviembre no lo hizo ese día. Esta es la convocatoria vigente de la oposición: la del proceso de estabilización (ORDEN SAN/1917/2022, de 23 de diciembre) es una segunda convocatoria publicada, con su propio programa y sin fecha de ejercicio, y se puede elegir en el selector de convocatoria.",
     "status": "active",
     "source_id": "celador-2022-bocyl-orden-html",
     "source_identifier": "BOCYL-D-22122022-7",

@@ -62,6 +62,12 @@ def test_recuentos_sembrados_coinciden_con_los_fixtures(
         "tai-age-2025": {NodeType.BLOCK: 4, NodeType.TOPIC: 33, NodeType.EPIGRAPH: 0},
         "gc-cabos-guardias-2026": {NodeType.TOPIC: 25},
         "celador-sacyl-2022": {NodeType.BLOCK: 0, NodeType.TOPIC: 16, NodeType.EPIGRAPH: 0},
+        # Dos convocatorias de la misma oposición, cada una con su programa sembrado.
+        "celador-sacyl-estabilizacion-2022": {
+            NodeType.BLOCK: 2,
+            NodeType.TOPIC: 14,
+            NodeType.EPIGRAPH: 0,
+        },
     }
     with session_factory() as session:
         for code, esperado in esperados.items():
@@ -139,7 +145,84 @@ def test_una_segunda_convocatoria_en_borrador_si_se_permite(
         total = session.execute(
             select(func.count()).select_from(ConvocationVersionRecord)
         ).scalar_one()
-        assert total == 4
+        assert total == 5
+
+
+def test_una_convocatoria_sin_programa_no_se_convierte_en_la_vigente(
+    seeded_settings: Settings, session_factory, seeded_client
+) -> None:
+    """La aplicación no pone como vigente algo que no puede mostrar.
+
+    Una convocatoria en borrador no tiene programa sembrado: elegirla dejaría la pantalla de
+    Programa vacía. La ruta lo rechaza con 409 y explica por qué, en lugar de aceptarlo y dejar la
+    aplicación sin temario.
+    """
+    borrador_id = str(uuid4())
+    with session_factory() as session:
+        oposicion = session.execute(
+            select(OppositionRecord).where(OppositionRecord.code == "celador-sacyl")
+        ).scalar_one()
+        session.add(
+            ConvocationVersionRecord(
+                id=borrador_id,
+                opposition_id=oposicion.id,
+                code="celador-sacyl-2027-borrador",
+                title="Convocatoria futura de Celador/a",
+                official_url="https://bocyl.jcyl.es/",
+                published_at=datetime(2027, 1, 1).date(),
+                exam_date=None,
+                status=ConvocationStatus.DRAFT.value,
+                source_reference=None,
+                supersedes_id=None,
+                created_at=NOW,
+                updated_at=NOW,
+            )
+        )
+        session.commit()
+        oposicion_id = oposicion.id
+
+    respuesta = seeded_client.post(f"/api/v1/convocations/{borrador_id}/activate")
+    assert respuesta.status_code == 409
+    assert respuesta.json()["code"] == "invalid_state"
+    assert "borrador" in respuesta.json()["detail"]
+
+    # Y la vigente sigue siendo la ordinaria: el rechazo no deja nada a medias.
+    detalle = seeded_client.get(f"/api/v1/oppositions/{oposicion_id}").json()
+    assert detalle["opposition"]["active_convocation"]["code"] == "celador-sacyl-2022"
+    assert {row["code"]: row["status"] for row in detalle["convocations"]}[
+        "celador-sacyl-2027-borrador"
+    ] == "draft"
+
+
+def test_resembrar_devuelve_la_convocatoria_vigente_que_dice_el_fixture(
+    seeded_settings: Settings, seeded_client
+) -> None:
+    """Resembrar después de cambiar de convocatoria no falla y deja el estado del fixture.
+
+    Con dos convocatorias publicadas y una sola vigente por oposición (índice único parcial), al
+    escribir el estado que declara el fixture hay que degradar antes la que estuviera vigente. Sin
+    eso, la segunda siembra —la que hace `scripts/seed.ps1` al arrancar— choca con el índice y falla
+    con un error de integridad, que es un fallo del programa y no de los datos.
+    """
+    oposicion_id = next(
+        item["id"]
+        for item in seeded_client.get("/api/v1/oppositions").json()
+        if item["code"] == "celador-sacyl"
+    )
+    convocatorias = seeded_client.get(f"/api/v1/oppositions/{oposicion_id}/convocations").json()
+    estabilizacion = next(
+        row for row in convocatorias if row["code"] == "celador-sacyl-estabilizacion-2022"
+    )
+    respuesta = seeded_client.post(f"/api/v1/convocations/{estabilizacion['id']}/activate")
+    assert respuesta.status_code == 200
+
+    seed_official_profiles(seeded_settings)
+
+    despues = seeded_client.get(f"/api/v1/oppositions/{oposicion_id}/convocations").json()
+    assert {row["code"]: row["status"] for row in despues} == {
+        "celador-sacyl-estabilizacion-2022": "available",
+        "celador-sacyl-2022": "active",
+    }
 
 
 def test_solo_una_oposicion_activa(seeded_client) -> None:
@@ -250,9 +333,9 @@ def test_las_rutas_del_programa_sembrado_son_unicas_en_su_convocatoria(
 ) -> None:
     """La ruta del programa identifica un nodo **dentro de su convocatoria**, no en toda la base.
 
-    Dos convocatorias pueden numerar sus temas igual: Guardia Civil y Celador cuelgan sus temas de
-    la raíz con las rutas «1», «2», …. La restricción real es la de la base
-    (`uq_curriculum_path`: convocatoria + ruta), así que la prueba comprueba eso y no más.
+    Dos convocatorias pueden numerar sus temas igual: Guardia Civil y las dos convocatorias de
+    Celador cuelgan sus temas de la raíz con las rutas «1», «2», …. La restricción real es la de la
+    base (`uq_curriculum_path`: convocatoria + ruta), así que la prueba comprueba eso y no más.
     """
     with session_factory() as session:
         rows = session.execute(select(CurriculumNodeRecord)).scalars().all()
@@ -261,10 +344,10 @@ def test_las_rutas_del_programa_sembrado_son_unicas_en_su_convocatoria(
     for row in rows:
         por_convocatoria[row.convocation_version_id].append(row.path)
 
-    assert len(por_convocatoria) == 3
+    assert len(por_convocatoria) == 4
     for convocation_id, paths in por_convocatoria.items():
         assert len(paths) == len(set(paths)), f"rutas repetidas en {convocation_id}"
-    assert len(rows) == 37 + 198 + 16
+    assert len(rows) == 37 + 198 + 16 + 16
 
 
 def test_un_nodo_con_material_asignado_no_se_retira_al_sembrar(
