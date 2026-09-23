@@ -21,6 +21,13 @@ export interface ProposalListProps {
   curriculumNodes: CurriculumNode[];
   busy: boolean;
   onDecide: (input: { proposalId: string; decision: Decision; overrideValue?: string }) => void;
+  /** Qué se está enseñando: la cola que espera decisión o lo aplicado provisionalmente. */
+  caption: string;
+  /** Cuántas hay **en total** en el servidor, no cuántas caben en esta página. */
+  total: number;
+  offset: number;
+  limit: number;
+  onOffsetChange: (offset: number) => void;
 }
 
 /** Los temas del programa, en orden de programa: lo único que se puede proponer en el eje de tema. */
@@ -45,12 +52,31 @@ function topicNodes(nodes: CurriculumNode[]): CurriculumNode[] {
  * revisar, y obligar a abrir otra pantalla para ver de dónde sale esconde justo lo que hay que mirar
  * (04 §8). Las propuestas de eje crítico se marcan como «requiere tu confirmación» y las aplicadas
  * provisionalmente se declaran reversibles en lugar de presentarse como hechas.
+ *
+ * La lista está **paginada**: el servidor devuelve una página y la tabla dice en qué tramo va y
+ * cuántas hay de verdad. Antes pedía las primeras 200 y el título decía «200 propuestas esperando tu
+ * decisión» aunque hubiera 348 —una cifra falsa y, peor, 148 propuestas imposibles de alcanzar desde
+ * la interfaz—.
  */
-export function ProposalList({ proposals, curriculumNodes, busy, onDecide }: ProposalListProps) {
+export function ProposalList({
+  proposals,
+  curriculumNodes,
+  busy,
+  onDecide,
+  caption,
+  total,
+  offset,
+  limit,
+  onOffsetChange,
+}: ProposalListProps) {
   const [corrections, setCorrections] = useState<Record<string, string>>({});
   const topics = topicNodes(curriculumNodes);
+  const desde = total === 0 ? 0 : offset + 1;
+  const hasta = offset + proposals.length;
+  const hayAnterior = offset > 0;
+  const haySiguiente = hasta < total;
 
-  if (proposals.length === 0) {
+  if (total === 0) {
     return (
       <p className="hint">
         No hay ninguna propuesta esperando tu decisión. Las que ya decidiste están en el historial de
@@ -60,10 +86,11 @@ export function ProposalList({ proposals, curriculumNodes, busy, onDecide }: Pro
   }
 
   return (
-    <table className="table">
-      <caption className="table__caption">
-        {proposals.length} propuestas esperando tu decisión
-      </caption>
+    <>
+      <table className="table">
+        <caption className="table__caption">
+          {total} {caption}
+        </caption>
       <thead>
         <tr>
           <th scope="col">Material</th>
@@ -216,7 +243,36 @@ export function ProposalList({ proposals, curriculumNodes, busy, onDecide }: Pro
             </tr>
           );
         })}
-      </tbody>
-    </table>
+        </tbody>
+      </table>
+
+      {total > limit && (
+        <div className="form__row">
+          <button
+            className="button"
+            type="button"
+            disabled={!hayAnterior}
+            onClick={() => {
+              onOffsetChange(Math.max(0, offset - limit));
+            }}
+          >
+            Página anterior
+          </button>
+          <span className="hint">
+            Mostrando {desde}–{hasta} de {total}
+          </span>
+          <button
+            className="button"
+            type="button"
+            disabled={!haySiguiente}
+            onClick={() => {
+              onOffsetChange(offset + limit);
+            }}
+          >
+            Página siguiente
+          </button>
+        </div>
+      )}
+    </>
   );
 }

@@ -168,7 +168,8 @@ export const queryKeys = {
     ['ingestion', 'representation', id, 'text', offset, limit] as const,
   /* S04: revisión de clasificación. Todas cuelgan de «classification» para poder invalidarlas
      juntas: una decisión cambia la cola, los grupos y la cobertura a la vez. */
-  proposals: (status: string) => ['classification', 'proposals', status] as const,
+  proposals: (status: string, offset = 0) =>
+    ['classification', 'proposals', status, offset] as const,
   reviewGroups: ['classification', 'review-groups'] as const,
   coverage: (nodeId: string) => ['classification', 'coverage', nodeId] as const,
   /* S05: biblioteca. Cuelgan de «library» por lo mismo: aceptar una versión cambia el listado (su
@@ -476,10 +477,10 @@ function invalidateClassification(queryClient: QueryClient) {
 }
 
 /** Propuestas de un estado concreto, tal y como las sirve el servidor. */
-export function useProposals(status: ProposalStatus) {
+export function useProposals(status: ProposalStatus, offset = 0) {
   return useQuery({
-    queryKey: queryKeys.proposals(status),
-    queryFn: () => fetchProposals(status),
+    queryKey: queryKeys.proposals(status, offset),
+    queryFn: () => fetchProposals(status, offset),
     staleTime: 5_000,
   });
 }

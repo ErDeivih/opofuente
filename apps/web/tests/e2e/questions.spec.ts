@@ -325,3 +325,67 @@ test('E2E-05 responsive: el banco no provoca scroll horizontal a 390 px', async 
   const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
   expect(scrollWidth, 'scroll horizontal a 390 px').toBeLessThanOrEqual(391);
 });
+
+test('E2E-05 mil filas: el banco se pagina y la última pregunta es alcanzable', async ({
+  page,
+  request,
+}) => {
+  // 07_UI-UX §14 pide mirar el caso de 1.000 filas. Medido: la página tarda medio segundo en enseñar
+  // la primera fila y el DOM nunca tiene mil filas porque el banco pide 100 por página (medición en
+  // la ficha del slice). Lo que esta prueba defiende es que **todas** son alcanzables desde la
+  // interfaz, que es lo que un tope sin paginador rompería sin que nadie lo note.
+  test.slow();
+
+  const titulo = `Banco de mil E2E ${String(Date.now())}`;
+  const oposiciones = (await (await request.get(`${API_BASE}/api/v1/oppositions`)).json()) as {
+    id: string;
+    active: boolean;
+    active_convocation: { id: string } | null;
+  }[];
+  const activa = oposiciones.find((oposicion) => oposicion.active);
+  expect(activa).toBeDefined();
+
+  const conjunto = (await (
+    await request.post(`${API_BASE}/api/v1/question-sets`, {
+      data: {
+        title: titulo,
+        opposition_id: activa?.id,
+        set_type: 'private_bank',
+        convocation_version_id: activa?.active_convocation?.id ?? null,
+      },
+      headers: { Origin: 'http://127.0.0.1:4173' },
+    })
+  ).json()) as { id: string };
+
+  const preguntas = Array.from({ length: 1000 }, (_, indice) => ({
+    stem: `Pregunta del supuesto ${String(indice + 1)} del caso ${String(indice + 1)}`,
+    options: ['uno', 'dos'],
+    correct: 'uno',
+  }));
+  const importadas = await request.post(
+    `${API_BASE}/api/v1/question-sets/${conjunto.id}/parse`,
+    {
+      data: { kind: 'json', text: JSON.stringify(preguntas) },
+      headers: { Origin: 'http://127.0.0.1:4173' },
+    },
+  );
+  expect(importadas.ok(), `importar mil preguntas: ${String(importadas.status())}`).toBe(true);
+
+  await page.goto('/preguntas');
+  await expect(page.getByRole('heading', { level: 1, name: 'Preguntas' })).toBeVisible();
+  // Se elige el conjunto grande en el selector del banco («Conjunto abierto») y se mira la primera
+  // página: el banco enseña 100 filas y dice en qué tramo va.
+  const selector = page.getByLabel('Conjunto abierto');
+  const opcion = selector.locator('option', { hasText: titulo });
+  await expect(opcion).toHaveCount(1);
+  await selector.selectOption((await opcion.first().getAttribute('value')) ?? '');
+  await page.getByRole('tab', { name: 'Preguntas' }).click();
+
+  await expect(page.getByText('Mostrando 1–100 de 1000')).toBeVisible({ timeout: 30_000 });
+  // Y la última página se alcanza: ninguna pregunta queda fuera de la interfaz.
+  for (let pagina = 0; pagina < 9; pagina += 1) {
+    await page.getByRole('button', { name: 'Página siguiente' }).click();
+  }
+  await expect(page.getByText('Mostrando 901–1000 de 1000')).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByRole('button', { name: 'Página siguiente' })).toBeDisabled();
+});

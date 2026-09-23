@@ -315,9 +315,12 @@ describe('pantalla Revisión', () => {
     const aviso = await screen.findByRole('region', { name: 'Esto son propuestas, no hechos' });
     expect(within(aviso).getByText(/cada propuesta espera tu decisión/)).toBeInTheDocument();
     expect(within(aviso).getByText(/no se aplican solas nunca, ni con confianza alta/)).toBeInTheDocument();
-    // Lo aplicado por el motor se declara tal cual: provisional y reversible, no hecho.
-    const propuestas = await screen.findByRole('table', { name: /propuestas esperando tu decisión/ });
-    const fila = within(propuestas).getByRole('row', { name: /notas-provisionales\.txt/ });
+    // Lo aplicado por el motor se declara tal cual: provisional y reversible, no hecho. Y va en su
+    // propia tabla, con su total, porque no es lo mismo que una propuesta que espera decisión.
+    const provisionales = await screen.findByRole('table', {
+      name: /propuestas aplicadas provisionalmente/,
+    });
+    const fila = within(provisionales).getByRole('row', { name: /notas-provisionales\.txt/ });
     expect(within(fila).getByText('aplicada provisionalmente')).toBeInTheDocument();
     expect(within(fila).getByText(/sigue siendo reversible/)).toBeInTheDocument();
     expect(within(fila).getByRole('button', { name: /^Confirmar: / })).toBeInTheDocument();
@@ -548,8 +551,7 @@ describe('pantalla Revisión', () => {
     expect(within(filaTema).getByText(ARCHIVO_UNO)).toBeInTheDocument();
   });
 
-  it('busca propuestas ahora sin aplicar nada definitivo', async () => {
-    // Desde DEBT-024 la pasada es un **trabajo**: se encola (202), la pantalla lo sigue y, cuando
+  it('busca propuestas ahora sin aplicar nada definitivo', async () => {    // Desde DEBT-024 la pasada es un **trabajo**: se encola (202), la pantalla lo sigue y, cuando
     // termina, enseña su resumen y recarga las propuestas. El resumen lo dice el servidor en el
     // paso del trabajo, no lo compone la pantalla sumando cifras por su cuenta.
     const fetchMock = stubReviewApi();
@@ -602,5 +604,32 @@ describe('pantalla Revisión', () => {
     });
     const aviso = await screen.findByText(/clasificando material \(40 de 312\)/);
     expect(aviso).toHaveTextContent('42 %');
+  });
+
+  it('pagina la cola: dice el total del servidor y deja alcanzar lo que no cabe en una página', async () => {
+    // El defecto que esto cierra: con 348 propuestas pendientes, la pantalla pedía las primeras 200,
+    // el título decía «200» —una cifra falsa— y las otras 148 no se podían alcanzar de ninguna forma.
+    const fetchMock = stubReviewApi({
+      '/api/v1/classification-proposals?status=pending&limit=200&offset=0': {
+        body: { proposals: [propuestaTipoUno], total: 348, limit: 200, offset: 0 },
+      },
+      '/api/v1/classification-proposals?status=pending&limit=200&offset=200': {
+        body: { proposals: [propuestaTipoDos], total: 348, limit: 200, offset: 200 },
+      },
+    });
+    renderReview();
+
+    const tabla = await waitFor(() => tablaDePropuestas());
+    expect(tabla).toHaveTextContent('348 propuestas esperando tu decisión');
+    expect(screen.getByText('Mostrando 1–1 de 348')).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Página siguiente' }));
+
+    await waitFor(() => {
+      expect(peticion(fetchMock, 'offset=200')).toBeDefined();
+    });
+    expect(await screen.findByText('Mostrando 201–201 de 348')).toBeInTheDocument();
+    // El total sigue siendo el del servidor: la página cambia, la cifra no.
+    expect(tablaDePropuestas()).toHaveTextContent('348 propuestas esperando tu decisión');
   });
 });
