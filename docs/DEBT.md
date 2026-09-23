@@ -879,6 +879,17 @@ un ADR** con los datos que los sostienen.
 4. Una prueba comprueba que dos preguntas con los mismos intentos y distinta dificultad no dan el mismo
    dominio.
 
+**Decisión del propietario (23 de septiembre de 2026): no se hace.** Ante la propuesta de estimar la
+dificultad desde los intentos y dejar los umbrales pendientes de calibrar con datos de estudio, su
+respuesta fue «no hace falta hacer las complicaciones que indicas en d)». Es decir: la estimación de
+dominio se queda como está —acierto en una ventana reciente, con recuento— y los umbrales (0,6 y 0,8)
+siguen declarados **provisionales** en cada respuesta, que es lo que hoy hace la aplicación. Nada
+promete una dificultad observada que no existe, ni un umbral validado con datos reales.
+
+**Estado: cerrada por decisión del propietario.** Los cuatro criterios no se cumplen y no se van a
+cumplir: se cierra dejando escrito que lo que hay es provisional y por qué. Si algún día quiere la
+calibración, hace falta estudiar con la aplicación y volver a abrirla.
+
 ## DEBT-017 — Las colecciones existen en la API y no en la interfaz
 
 **Origen:** revisión de S00–S11 (19 de septiembre de 2026), sobre el entregable de S05.
@@ -1062,8 +1073,26 @@ transcripción manual con su cita. Lo que no vale es dejar creer que la clave en
 3. Si se elige no hacerlo, la interfaz dice, con esas palabras, que la clave oficial de este ejercicio
    no se puede importar y por qué, y ninguna pantalla promete lo contrario.
 
-**Estado: abierta.** El perfil sirve para estudiar el programa (16 temas) y las reglas del examen,
-que es para lo que se dio de alta; la clave oficial de este ejercicio queda pendiente de esa decisión.
+**Estado: abierta, con el OCR medido (23 de septiembre de 2026).** El perfil sirve para estudiar el
+programa (16 temas) y las reglas del examen, que es para lo que se dio de alta. Lo que se ha medido
+ahora, con Tesseract 5.4.0 y el modelo español instalados en este equipo (el informe completo está en
+`docs/reviews/OCR-escaneos-2026-09.md`):
+
+| Prueba sobre el escaneo real | Resultado |
+|---|---|
+| Texto nativo del PDF | 0 caracteres (por eso hace falta OCR) |
+| Prosa (cabecera y pie) | **correcta**, verificada leyendo la imagen |
+| Tabla de 77 respuestas, OCR de página | destroza la tabla: las líneas de la rejilla se leen como caracteres |
+| Tabla, OCR por columnas | 53 de 77 leídas y ~48 correctas, **y sin saber cuáles fallan** |
+
+Conclusión, en corto: **el OCR sirve para el texto y no para esta tabla.** Importar la clave así sería
+meter respuestas falsas en el banco, que es peor que no tenerlas. Las salidas siguen siendo las dos del
+criterio: teclearla una vez (77 letras, con la tabla de `docs/reviews/OCR-escaneos-2026-09.md` como
+comprobación) o construir un lector de tablas de verdad (detectar la rejilla y OCRizar cada celda).
+
+Lo que sí queda desbloqueado y es lo siguiente: **usar Tesseract para las páginas sin capa de texto**,
+que es lo que hace falta para que los apuntes escaneados o fotografiados entren como fuentes del
+dossier del tema (ADR-019).
 
 ---
 
