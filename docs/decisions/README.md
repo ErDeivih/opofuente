@@ -16,13 +16,18 @@ Formato: `ADR-NNN-titulo.md` con contexto, opciones, datos, decisión, consecuen
 | [ADR-009](ADR-009-activar-es-aprobar.md) | Activar una plantilla es aprobarla | aceptada (S06) |
 | [ADR-010](ADR-010-aritmetica-exacta-y-calificacion-oficial.md) | La puntuación se calcula con fracciones exactas, y la calificación oficial no se inventa | aceptada (S07), cierra DEBT-006 |
 | [ADR-011](ADR-011-forma-de-corregir-una-parte.md) | La forma de corregir una parte la fija su convocatoria | aceptada (S08) |
-| [ADR-012](ADR-012-busqueda-lexica-sin-embeddings.md) | La búsqueda del corpus es léxica (FTS5) hasta que exista un proveedor de embeddings | aceptada (S09), pendiente de ratificación |
-| [ADR-013](ADR-013-rutas-anadidas-al-contrato.md) | Rutas añadidas al contrato de la API: registro único de lo que se construyó fuera de §6–§11 | propuesta (revisión de S00–S11), pendiente de ratificación |
+| [ADR-012](ADR-012-busqueda-lexica-sin-embeddings.md) | La búsqueda del corpus es léxica (FTS5) hasta que exista un proveedor de embeddings | ratificada el 23/09/2026 por delegación del propietario, y confirmada por su decisión de no conectar ningún proveedor todavía |
+| [ADR-013](ADR-013-rutas-anadidas-al-contrato.md) | Rutas añadidas al contrato de la API: registro único de lo que se construyó fuera de §6–§11 | ratificada el 23/09/2026 por delegación del propietario |
 | [ADR-014](ADR-014-parte-detectada-y-datos-sin-lector.md) | Dónde vive lo que el importador lee y no puede guardar | aceptada (S12), cierra DEBT-010 |
 | [ADR-015](ADR-015-tercera-oposicion-celador.md) | Tercera oposición: Celador/a del SACYL | aceptada (22/09/2026) por decisión del propietario |
 | [ADR-016](ADR-016-anki-y-markdown-como-material.md) | Anki y Markdown entran como material, y con qué se lee una baraja | aceptada (S12.3) |
 | [ADR-017](ADR-017-que-hace-la-aplicacion-sola.md) | Qué hace la aplicación sola y qué sigue pidiendo una persona | aceptada (S12.5) |
-| [ADR-018](ADR-018-orden-de-rutas-literales.md) | Las rutas literales se declaran antes que las parametrizadas, con una prueba que lo vigila | propuesta (23/09/2026), pendiente de ratificación |
+| [ADR-018](ADR-018-orden-de-rutas-literales.md) | Las rutas literales se declaran antes que las parametrizadas, con una prueba que lo vigila | ratificada el 23/09/2026 por delegación del propietario |
+| [ADR-019](ADR-019-el-tema-como-unidad.md) | La unidad del producto es el tema, no el fichero: el tema se construye con lo que dicen las fuentes | propuesta (23/09/2026), decide el codificador por delegación del propietario |
+
+El 23 de septiembre de 2026 el propietario delegó expresamente la ratificación de las ADR pendientes
+(«ratificaciones decide tú»). Quedan ratificadas por esa delegación, y se dice aquí en lugar de
+atribuirlas a una revisión que no ocurrió.
 
 La deuda técnica obligatoria (con su slice y su criterio de cierre) se registra aparte en
 [`docs/DEBT.md`](../DEBT.md).
