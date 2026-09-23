@@ -23,7 +23,14 @@ export type SubjectType = Proposal['subject_type'];
 export type Decision = 'accepted' | 'rejected';
 export type CoverageType = DecisionRequest['coverage_type'];
 
-/** Cuántas propuestas se piden de una vez. La cola de revisión se lee entera para poder decidirla. */
+/**
+ * Cuántas propuestas se piden de una vez.
+ *
+ * La cola de revisión **se pagina**: «leerla entera» dejaba fuera todo lo que pasara del tope —con el
+ * corpus del propietario, 148 propuestas de 348 eran inalcanzables— y el título de la tabla decía el
+ * tamaño de la página como si fuera el total. Ahora el total lo dice el servidor y la lista se recorre
+ * con «Página anterior» y «Página siguiente», igual que el banco de preguntas (DEBT-011).
+ */
 const PROPOSAL_LIMIT = 200;
 
 /**
@@ -45,8 +52,12 @@ export const OPEN_PROPOSAL_STATUSES: readonly ProposalStatus[] = [
  */
 const DEFAULT_COVERAGE_TYPE: CoverageType = 'partial';
 
-export function fetchProposals(status: ProposalStatus): Promise<ProposalPage> {
-  const params = new URLSearchParams({ status, limit: String(PROPOSAL_LIMIT) });
+export function fetchProposals(status: ProposalStatus, offset = 0): Promise<ProposalPage> {
+  const params = new URLSearchParams({
+    status,
+    limit: String(PROPOSAL_LIMIT),
+    offset: String(offset),
+  });
   return apiFetch<ProposalPage>(`/api/v1/classification-proposals?${params.toString()}`);
 }
 

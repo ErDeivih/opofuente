@@ -1382,25 +1382,59 @@ cantaba estaba en la primera pantalla, que es donde el propietario mira todos lo
 | §8–§11 | cumplidas por S07–S12 (configuración, pregunta, corrección, resultado, errores, cambios, ajustes) | — |
 | §12 Estados y mensajes | cumplida en general | — |
 | §13 Accesibilidad | faltaba el flujo con teclado (no estaba probado en ninguna pantalla) | probado en la pregunta y su corrección |
-| §14 Aceptación visual | Programa no tenía tres anchos; Pregunta y Corrección no tenían nada | Programa a 1440/1024/390 y pregunta/corrección con accesibilidad y teclado; el caso de 1.000 filas sigue sin probar |
+| §14 Aceptación visual | Programa no tenía tres anchos; Pregunta y Corrección no tenían nada | Programa a 1440/1024/390 y pregunta/corrección con accesibilidad y teclado; **el caso de 1.000 filas, medido y cerrado** |
+
+**Segunda pasada: el caso de las 1.000 filas y la cola que se cortaba en 200** (22 de septiembre de
+2026, misma sesión). Medir el caso grande destapó un defecto de verdad, no un problema de rendimiento:
+
+| Medición | Resultado |
+|---|---|
+| Importar 1.000 preguntas por el importador real | 1,1 s |
+| `GET /questions?limit=100` (primera y última página) | 42–56 ms |
+| `GET /questions?limit=200` | 122 ms |
+| `GET /classification-proposals?limit=200` (120 propuestas) | 12 ms |
+| Banco, hasta la primera fila en pantalla (1440×900) | 515 ms · 100 filas en el DOM · 1.841 nodos |
+| Revisión, hasta las propuestas (1440×900) | 899 ms · 127 filas en el DOM · 5.656 nodos |
+| Scroll horizontal a 1440/1024/390 | ninguno (los tres anchos) |
+
+Lo que salió de ahí:
+
+- **La cola de revisión estaba cortada en 200 y lo decía mal.** `fetchProposals` pedía las primeras
+  200 propuestas y la tabla titulaba con `proposals.length`: con el corpus del propietario (348
+  pendientes) la pantalla decía «200 propuestas esperando tu decisión» —una cifra falsa— y **148
+  propuestas eran inalcanzables** desde la interfaz. Arreglado: la lista se **pagina** (como el banco
+  desde DEBT-011), el título usa el `total` del servidor y hay «Página anterior / Página siguiente»
+  con «Mostrando X–Y de N». Las aplicadas provisionalmente pasan a su propia tabla, porque no son lo
+  mismo que una propuesta que espera decisión y su total es otro.
+- **No hace falta virtualizar**: el DOM nunca tiene mil filas porque el servidor pagina (100 por
+  página en el banco, 200 en la revisión), y con 120 propuestas la tabla tarda 899 ms en estar lista
+  con 5.656 nodos. Virtualizar habría sido optimizar un problema que no existe; lo que existía era un
+  tope sin paginador.
+- **Dos pruebas nuevas lo defienden**: la de integración recorre las diez páginas de 1.000 preguntas y
+  comprueba que suman mil sin repetir ninguna, y la E2E recorre el banco de la primera a la última
+  página en la interfaz.
 
 **Qué falta todavía** (esto es lo que deja abierta la deuda):
 
 1. **Pausar un lote** (§4): el trabajo se puede cancelar, no pausar. Pausar de verdad exige decidir qué
    pasa con las entradas a medias y con su trabajo ya encolado; no se inventa un botón que solo cambie
    una etiqueta.
-2. **Tabla de revisión virtualizada con selección múltiple y panel lateral** (§4): hoy la revisión va por
-   grupos y propuestas, con lote y exclusiones, y funciona; lo que no hay es virtualización ni preview
-   lateral con fragmentos justificativos (la evidencia se abre en la ficha).
-3. **Columnas de preguntas por estado y próxima revisión por nodo** (§5): el Programa enseña cobertura,
+2. **Columnas de preguntas por estado y próxima revisión por nodo** (§5): el Programa enseña cobertura,
    fuentes y dominio por nodo; las otras dos columnas necesitan una consulta agregada que no existe.
-4. **Lector sincronizado página original ↔ texto extraído** (§6): el lector enseña el texto con sus
-   secciones y el original se abre aparte; sincronizar exige mapear página ↔ carácter, que hoy no se
-   guarda.
-5. **Explicación por opción** (§7): el modelo guarda explicaciones por pregunta (`question_explanations`),
+3. **Lector sincronizado página original ↔ texto extraído** (§6): el lector enseña el texto con sus
+   secciones y el original se abre aparte. Las páginas **sí** están guardadas (secciones y fragmentos
+   tienen `page_start`/`page`), así que es trabajo de interfaz, no de modelo.
+4. **Explicación por opción** (§7): el modelo guarda explicaciones por pregunta (`question_explanations`),
    no por opción; el editor no puede ofrecer lo que no existe.
-6. **El caso de 1.000 filas** (§14): ninguna prueba mira una tabla con ese volumen, así que no se sabe
-   si la interfaz aguanta.
 
-**Estado: abierta.** Lo urgente —lo que se veía en Inicio y lo que no estaba probado— está cerrado y
-verificado; lo que queda son pantallas concretas, con su coste dicho arriba, y ninguna bloquea estudiar.
+**Lo que se decidió NO hacer, y por qué** (para que no vuelva a aparecer como pendiente sin contexto):
+
+- **Virtualizar la tabla de revisión**: medido, no hace falta (arriba). Si algún día el servidor deja
+  de paginar, el problema volverá y la medición es la referencia.
+- **Panel lateral con fragmentos justificativos** (§4): la evidencia va **en la propia fila** desde S04
+  —una propuesta que no se puede comprobar no se puede revisar— y además se abre la ficha con su cita.
+  Un panel lateral duplicaría lo que ya está delante y escondería la evidencia en un clic más.
+
+**Estado: abierta.** Lo urgente —lo que se veía en Inicio, la cola cortada y lo que no estaba probado—
+está cerrado y verificado; lo que queda son cuatro pantallas concretas, con su coste dicho arriba, y
+ninguna bloquea estudiar.

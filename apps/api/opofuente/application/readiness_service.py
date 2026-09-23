@@ -194,7 +194,7 @@ class ReadinessService:
         """Lo que espera a una persona, en el orden en que conviene mirarlo.
 
         El orden no es decorativo: primero lo que impide entrar material (incidencias), después lo
-        que deja el material sin clasificar (propuestas), luego lo que puede haber cambiado bajo los
+        que deja el material sin clasificar (decisiones), luego lo que puede haber cambiado bajo los
         pies (cambios) y por último lo que solo espera un visto bueno (material sin aceptar).
         """
         cuentas = self._repository.pending()
@@ -202,7 +202,7 @@ class ReadinessService:
             accion
             for accion in (
                 self._import_issues(cuentas),
-                self._pending_proposals(cuentas),
+                self._pending_decisions(cuentas),
                 self._proposed_changes(cuentas),
                 self._unaccepted_versions(cuentas),
             )
@@ -230,17 +230,17 @@ class ReadinessService:
         )
 
     @staticmethod
-    def _pending_proposals(cuentas: PendingCounts) -> PendingActionView | None:
-        if cuentas.pending_proposals == 0:
+    def _pending_decisions(cuentas: PendingCounts) -> PendingActionView | None:
+        if cuentas.pending_decisions == 0:
             return None
         return PendingActionView(
             key="clasificaciones",
             title="Clasificaciones esperando tu decisión",
             detail=(
-                f"{cuentas.pending_proposals} propuesta(s) sin decidir: hasta que se decidan, ese "
+                f"{cuentas.pending_decisions} decisión(es) sin tomar: mientras no se tomen, ese "
                 "material no está en ningún tema del programa"
             ),
-            count=cuentas.pending_proposals,
+            count=cuentas.pending_decisions,
             href=REVIEW_HREF,
             label="Revisar propuestas",
         )

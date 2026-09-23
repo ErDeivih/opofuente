@@ -511,3 +511,90 @@ def test_cancelar_una_pasada_de_clasificacion_la_corta_a_mitad(client: TestClien
         app.state.classification_service.run_classification_job(ejecucion)
 
     assert ejecucion.progress_calls == [0.05], ejecucion.progress_calls
+
+
+# --- reconciliación: la misma pregunta sobre el material y sobre su texto (DEBT-018) -----------
+
+
+def _grupos(client: TestClient) -> list[dict[str, Any]]:
+    respuesta = client.get("/api/v1/review-groups")
+    assert respuesta.status_code == 200, respuesta.text
+    return respuesta.json()
+
+
+def _grupo_de_tipo_documental(client: TestClient) -> dict[str, Any]:
+    """El grupo de tipo documental del material (no el de su texto): el que manda el artefacto."""
+    grupos = _grupos(client)
+    grupo = next(
+        (
+            candidato
+            for candidato in grupos
+            if candidato["axis"] == "document_type" and candidato["subject_type"] == "artifact"
+        ),
+        None,
+    )
+    assert grupo is not None, f"debería haber un grupo de tipo documental del material: {grupos}"
+    return grupo
+
+
+def test_la_misma_propuesta_sobre_el_material_y_su_texto_es_una_decision(
+    seeded_client: TestClient,
+) -> None:
+    """La cola enseña **decisiones**, no filas, y las dos pantallas dicen el mismo número.
+
+    Pegar un fichero deja dos sujetos clasificables —el artefacto y su representación— y los dos se
+    clasifican con el mismo texto, así que el motor propone lo mismo dos veces. En la cola eso es
+    una fila con las dos propuestas dentro, y esas propuestas existen: agrupar no es borrar.
+    """
+    _material_clasificable(seeded_client)
+    _clasificar(seeded_client)
+
+    propuestas = _propuestas(seeded_client, status="pending")
+    grupos = _grupos(seeded_client)
+    grupo = _grupo_de_tipo_documental(seeded_client)
+
+    assert grupo["size"] >= 2, f"el material y su texto van juntos: {grupo}"
+    assert len(grupo["proposal_ids"]) == grupo["size"]
+    assert len(grupos) < len(propuestas), (
+        "si cada propuesta fuera un grupo, esto no sería una reconciliación"
+    )
+    # Nada se esconde: cada propuesta del grupo sigue estando entre las pendientes.
+    pendientes = {propuesta["id"] for propuesta in propuestas}
+    for candidato in grupos:
+        assert set(candidato["proposal_ids"]) <= pendientes
+
+    # Y la pantalla de Inicio cuenta lo mismo que la de Revisión: decisiones, no filas.
+    acciones = seeded_client.get("/api/v1/pending-actions").json()["actions"]
+    accion = next(accion for accion in acciones if accion["key"] == "clasificaciones")
+    assert accion["count"] == len(grupos), acciones
+
+
+def test_decidir_el_grupo_decide_el_material_y_su_texto(seeded_client: TestClient) -> None:
+    """Una decisión decide los dos sujetos: ninguno se queda sin clasificar por ir agrupado.
+
+    Si el grupo juntara las propuestas y decidiera solo una, el material seguiría sin tipo y el
+    enlace de plantilla de ADR-017 se rompería justo donde el usuario cree haber decidido.
+    """
+    _material_clasificable(seeded_client)
+    _clasificar(seeded_client)
+
+    grupo = _grupo_de_tipo_documental(seeded_client)
+    ids = list(grupo["proposal_ids"])
+
+    respuesta = seeded_client.post(
+        "/api/v1/classification-proposals/bulk-decision",
+        json={
+            "proposal_ids": ids,
+            "decision": "accepted",
+            "note": "Una decisión, dos sujetos",
+        },
+        headers=ALLOWED_ORIGIN,
+    )
+
+    assert respuesta.status_code == 200, respuesta.text
+    assert respuesta.json()["applied"] == len(ids)
+    for proposal_id in ids:
+        detalle = seeded_client.get(f"/api/v1/classification-proposals/{proposal_id}").json()
+        assert detalle["status"] == "accepted", detalle
+    # Y el grupo ya no está esperando: una decisión, una fila menos.
+    assert all(candidato["key"] != grupo["key"] for candidato in _grupos(seeded_client))

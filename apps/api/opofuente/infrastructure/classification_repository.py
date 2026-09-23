@@ -54,6 +54,7 @@ from opofuente.domain.classification import (
     ConfidenceBands,
     CoverageType,
     MappingStatus,
+    PendingProposal,
     ProfileCandidate,
     Proposal,
     ProposalStatus,
@@ -61,7 +62,7 @@ from opofuente.domain.classification import (
     TopicCandidate,
     coverage_counts_as_accepted,
     decision_allowed,
-    group_key,
+    reconcile_pending_proposals,
     value_matches_axis,
 )
 from opofuente.domain.duplicates import TextDocument
@@ -473,7 +474,27 @@ class SqlAlchemyClassificationRepository:
             valores = self._value_labels(session, [fila])
             return self._proposal_view(fila, etiquetas, valores)
 
+    def _artifact_of_representations(
+        self, session: Session, representation_ids: Sequence[str]
+    ) -> dict[str, str]:
+        """A qué artefacto pertenece cada representación, para poder reconciliar sus propuestas."""
+        if not representation_ids:
+            return {}
+        filas = session.execute(
+            select(
+                ExtractedRepresentationRecord.id, ExtractedRepresentationRecord.artifact_id
+            ).where(ExtractedRepresentationRecord.id.in_(representation_ids))
+        ).all()
+        return {str(fila[0]): str(fila[1]) for fila in filas}
+
     def pending_groups(self) -> tuple[ReviewGroupView, ...]:
+        """Propuestas pendientes agrupadas por **decisión**, no por sujeto.
+
+        Un grupo es lo que una persona decide de una vez. Cuando el motor propone exactamente lo
+        mismo sobre el material y sobre su texto, eso es **una** decisión y no dos: el grupo lleva
+        las dos propuestas, se deciden juntas, y el sujeto que manda es el artefacto, que es el que
+        el usuario ve. La regla y sus números están en `reconcile_pending_proposals`.
+        """
         with self._session_factory() as session:
             filas = (
                 session.execute(
@@ -489,28 +510,52 @@ class SqlAlchemyClassificationRepository:
                 .all()
             )
             valores = self._value_labels(session, filas)
+            artefacto_de = self._artifact_of_representations(
+                session,
+                [
+                    fila.subject_id
+                    for fila in filas
+                    if fila.subject_type == SubjectType.REPRESENTATION.value
+                ],
+            )
 
-        agrupadas: dict[str, list[ClassificationProposalRecord]] = defaultdict(list)
-        for fila in filas:
-            clave = group_key(SubjectType(fila.subject_type), Axis(fila.axis), fila.proposed_value)
-            agrupadas[clave].append(fila)
+        pendientes = [
+            PendingProposal(
+                id=fila.id,
+                subject_type=SubjectType(fila.subject_type),
+                subject_id=fila.subject_id,
+                axis=Axis(fila.axis),
+                proposed_value=fila.proposed_value,
+                confidence=fila.confidence,
+                engine_name=fila.engine_name,
+                engine_version=fila.engine_version,
+            )
+            for fila in filas
+        ]
 
         grupos: list[ReviewGroupView] = []
-        for clave, miembros in agrupadas.items():
-            primero = miembros[0]
-            confianzas = [fila.confidence for fila in miembros]
+        for clave, miembros in reconcile_pending_proposals(
+            pendientes, artifact_of_representation=artefacto_de
+        ):
+            # El sujeto que manda es el artefacto cuando el grupo es una reconciliación: es el que
+            # el usuario ve y nombra, y el que da la etiqueta del grupo.
+            sujeto = next(
+                (miembro for miembro in miembros if miembro.subject_type is SubjectType.ARTIFACT),
+                miembros[0],
+            )
+            confianzas = [miembro.confidence for miembro in miembros]
             grupos.append(
                 ReviewGroupView(
                     key=clave,
-                    subject_type=primero.subject_type,
-                    axis=primero.axis,
-                    proposed_value=primero.proposed_value,
-                    label=valores.get((primero.axis, primero.proposed_value))
-                    or primero.proposed_value,
-                    proposal_ids=tuple(fila.id for fila in miembros),
+                    subject_type=sujeto.subject_type.value,
+                    axis=sujeto.axis.value,
+                    proposed_value=sujeto.proposed_value,
+                    label=valores.get((sujeto.axis.value, sujeto.proposed_value))
+                    or sujeto.proposed_value,
+                    proposal_ids=tuple(miembro.id for miembro in miembros),
                     min_confidence=min(confianzas),
                     max_confidence=max(confianzas),
-                    is_critical=Axis(primero.axis) in CRITICAL_AXES,
+                    is_critical=sujeto.axis in CRITICAL_AXES,
                 )
             )
         return tuple(sorted(grupos, key=lambda grupo: (-grupo.max_confidence, grupo.key)))

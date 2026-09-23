@@ -23,6 +23,7 @@ Decisiones que la especificación deja abiertas y cómo se cierran (ver `docs/sl
 
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from enum import StrEnum
 
@@ -323,6 +324,89 @@ class ReviewGroup:
 def group_key(subject_type: SubjectType, axis: Axis, value: str) -> str:
     """Clave determinista de un grupo: mismo sujeto, eje y valor propuesto, mismo grupo."""
     return f"{subject_type.value}:{axis.value}:{value}"
+
+
+@dataclass(frozen=True, slots=True)
+class PendingProposal:
+    """Una propuesta pendiente, con lo justo para saber si **es la misma decisión** que otra.
+
+    No lleva etiqueta, ni alternativas, ni evidencia: aquí no se decide cómo se enseña una
+    propuesta, solo **cuántas decisiones** espera una persona. La identidad completa vive en
+    `Proposal`; esto es la parte que hace falta para contar y agrupar.
+    """
+
+    id: str
+    subject_type: SubjectType
+    subject_id: str
+    axis: Axis
+    proposed_value: str
+    confidence: float
+    engine_name: str
+    engine_version: str
+
+
+def decision_signature(propuesta: PendingProposal) -> tuple[str, str, float, str, str]:
+    """Lo que convierte dos propuestas en **la misma pregunta**: eje, valor, confianza y motor.
+
+    La confianza entra a propósito: dos propuestas con el mismo valor y confianza distinta no son la
+    misma decisión, son un desacuerdo del motor consigo mismo y se revisan por separado.
+    """
+    return (
+        propuesta.axis.value,
+        propuesta.proposed_value,
+        propuesta.confidence,
+        propuesta.engine_name,
+        propuesta.engine_version,
+    )
+
+
+def reconcile_pending_proposals(
+    proposals: Sequence[PendingProposal],
+    *,
+    artifact_of_representation: Mapping[str, str],
+) -> tuple[tuple[str, tuple[PendingProposal, ...]], ...]:
+    """Agrupa las propuestas pendientes por **decisión**, no por sujeto.
+
+    El motor clasifica el material (el artefacto) y su representación —el texto extraído— y lo hace
+    sobre el mismo texto: al artefacto le da la representación de mejor calidad y más texto. Así que
+    a menudo propone **exactamente lo mismo dos veces**. En el material real del propietario
+    (DEBT-018) son 62 pares de 124 propuestas de tipo documental, idénticos en valor y confianza y
+    sin una sola discrepancia: 61 decisiones de una persona presentadas como 122. En los cuatro ejes
+    son 200 pares, y los 348 pendientes son **174 decisiones**.
+
+    La regla, en tres líneas:
+
+    - dos propuestas con el **mismo eje, valor, confianza y motor**, una sobre un artefacto y otra
+      sobre una representación **suya**, son **una decisión**;
+    - la canónica es la del **artefacto**, que es el sujeto que el usuario ve y nombra;
+    - la otra **no se borra ni se esconde**: viaja en el mismo grupo y se decide con él, así que
+      cada sujeto sigue teniendo su propuesta decidida (el material y su texto).
+
+    Con valores o confianzas distintas no se reconcilia nada: eso sí son dos decisiones y la cola
+    tiene que enseñarlas como dos, porque el motor no se está repitiendo, se está contradiciendo.
+
+    Devuelve pares `(clave de grupo, propuestas)`, con la clave canónica de cada decisión.
+    """
+    claves_del_artefacto = {
+        (propuesta.subject_id, *decision_signature(propuesta)): group_key(
+            SubjectType.ARTIFACT, propuesta.axis, propuesta.proposed_value
+        )
+        for propuesta in proposals
+        if propuesta.subject_type is SubjectType.ARTIFACT
+    }
+
+    agrupadas: dict[str, list[PendingProposal]] = {}
+    for propuesta in proposals:
+        clave: str | None = None
+        if propuesta.subject_type is SubjectType.REPRESENTATION:
+            artefacto = artifact_of_representation.get(propuesta.subject_id)
+            if artefacto is not None:
+                clave = claves_del_artefacto.get((artefacto, *decision_signature(propuesta)))
+        if clave is None:
+            clave = group_key(propuesta.subject_type, propuesta.axis, propuesta.proposed_value)
+        agrupadas.setdefault(clave, []).append(propuesta)
+
+    return tuple((clave, tuple(miembros)) for clave, miembros in agrupadas.items())
 
 
 @dataclass(frozen=True, slots=True)

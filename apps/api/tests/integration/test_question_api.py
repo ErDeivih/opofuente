@@ -7,10 +7,14 @@ Los criterios de aceptación del slice, por su ruta:
   responde **409 con el motivo**;
 - **respuesta privada no se convierte en oficial**: lo importado nace privado y con su estado;
 - **negaciones se conservan** y **claves conflictivas no se fusionan**: el informe lo dice.
+
+Y desde S12.6, el caso de **1.000 filas** de 07_UI-UX §14: el banco se pagina y todas las preguntas
+son alcanzables (la pantalla pide 100 por página, así que el DOM nunca tiene mil filas).
 """
 
 from __future__ import annotations
 
+import json
 from typing import Any
 
 from fastapi.testclient import TestClient
@@ -317,6 +321,44 @@ def test_marcar_que_una_clave_sustituye_a_otra(
         headers=ALLOWED_ORIGIN,
     )
     assert inventada.status_code == 409
+
+
+def test_mil_preguntas_se_recorren_enteras_y_el_total_lo_dice_el_servidor(
+    seeded_client: TestClient,
+) -> None:
+    """El caso de 1.000 filas (07_UI-UX §14): la tabla se pagina y no se pierde ninguna.
+
+    Lo que se comprueba no es la velocidad —eso se midió y está en la ficha del slice—, sino que
+    **todas** las preguntas son alcanzables: primera página, última página y que entre todas suman
+    el total sin repetir ninguna. La pantalla pide 100 por página, así que el navegador nunca tiene
+    mil filas en el DOM.
+    """
+    conjunto = _conjunto(seeded_client)
+    filas = [
+        {
+            "stem": f"Pregunta del supuesto {numero} del caso {numero}",
+            "options": ["uno", "dos"],
+            "correct": "uno",
+        }
+        for numero in range(1, 1001)
+    ]
+    informe = _importar(seeded_client, conjunto["id"], kind="json", text=json.dumps(filas))
+    assert informe.status_code == 200, informe.text
+    assert informe.json()["created"] == 1000
+
+    identificadores: set[str] = set()
+    for offset in range(0, 1000, 100):
+        pagina = seeded_client.get(
+            "/api/v1/questions",
+            params={"set_id": conjunto["id"], "limit": 100, "offset": offset},
+        ).json()
+        assert pagina["total"] == 1000, "el total lo cuenta el servidor, no la página"
+        assert len(pagina["questions"]) == 100, f"la página {offset} viene incompleta"
+        identificadores.update(pregunta["id"] for pregunta in pagina["questions"])
+
+    assert len(identificadores) == 1000, (
+        "entre todas las páginas están las mil, sin repetir ninguna"
+    )
 
 
 def test_una_pregunta_corregida_no_cuenta_dos_veces(seeded_client: TestClient) -> None:

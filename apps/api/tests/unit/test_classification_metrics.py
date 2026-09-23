@@ -13,6 +13,8 @@ from __future__ import annotations
 
 import json
 import re
+from collections.abc import Sequence
+from pathlib import Path
 
 import pytest
 
@@ -32,8 +34,12 @@ from opofuente.domain.classification_metrics import (
 from opofuente.infrastructure.classifiers import DeterministicClassifier
 from opofuente.tools.classification_metrics import (
     DATASET_PATH,
+    DEFAULT_ENGINE,
     INTENTS,
+    build_engine,
     build_report,
+    dataset_argument,
+    engine_argument,
     format_report,
     load_dataset,
     main,
@@ -494,3 +500,62 @@ def test_una_etiqueta_o_un_valor_fuera_de_vocabulario_no_se_acepta(
 
     with pytest.raises(ValueError, match=mensaje):
         load_dataset(alterado)
+
+
+# --- el motor que se mide (PoC de un motor de decisiones) --------------------------------------
+
+
+class _MotorDeMentira:
+    """Un motor que no existe, para probar que el arnés mide el que le dicen y lo dice.
+
+    Cumple el puerto sin heredar de nada —nombre, versión y `propose`—, que es justo lo que hará el
+    motor del PoC: registrarse aquí **en su propia rama** sin que el producto dependa de él.
+    """
+
+    name = "de-mentira"
+    version = "9"
+
+    def propose(self, subject: ClassificationSubject) -> Sequence[Proposal]:
+        return list(DeterministicClassifier().propose(subject))
+
+
+def test_el_arnes_mide_el_motor_que_le_dicen_y_lo_dice_en_el_informe() -> None:
+    """Dos informes sin autor no se pueden comparar: el PoC mide tres motores y los nombra.
+
+    El motor de mentira delega en el determinista, así que los números tienen que ser los mismos y
+    lo único que cambia es de quién son.
+    """
+    motor = _MotorDeMentira()
+
+    informe = format_report(DATASET, build_report(DATASET, engine=motor), engine=motor)
+
+    assert "Motor: de-mentira 9" in informe
+    assert "precisión: 0.9000 · recall: 0.7500 · f1: 0.8182" in informe
+
+
+def test_un_motor_desconocido_no_cae_en_silencio_al_de_siempre() -> None:
+    """Un nombre mal escrito tiene que doler: medir otro motor y llamarlo determinista es mentir."""
+    assert build_engine(DEFAULT_ENGINE).name == DeterministicClassifier.name
+
+    with pytest.raises(
+        ValueError, match=r"Motor desconocido: «no-existe»\. Disponibles: determinista"
+    ):
+        build_engine("no-existe")
+
+
+def test_las_opciones_se_leen_todas_y_no_solo_la_primera() -> None:
+    """`--engine` detrás de `--dataset` se ignoraba en silencio: el informe salía de otro motor.
+
+    Y una opción que no existe se rechaza, en lugar de ignorarse: en un arnés que existe para
+    comparar motores, leer mal una opción es un informe falso.
+    """
+    args = ["--dataset", "otro.json", "--engine", "determinista"]
+
+    assert dataset_argument(args) == Path("otro.json")
+    assert engine_argument(args) == "determinista"
+    assert engine_argument([]) == DEFAULT_ENGINE
+
+    with pytest.raises(ValueError, match="«--engine» necesita un valor"):
+        engine_argument(["--engine"])
+    with pytest.raises(ValueError, match="Argumento no reconocido"):
+        engine_argument(["--motor", "determinista"])

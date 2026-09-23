@@ -31,6 +31,9 @@ import { ProposalList } from '../features/review/ProposalList';
 import { ReviewGroups } from '../features/review/ReviewGroups';
 import { subjectLabel, valueLabel } from '../features/review/labels';
 
+/** Cuántas propuestas se piden por página (el mismo tope que usa el cliente de la API). */
+const PROPOSAL_LIMIT = 200;
+
 function describeError(error: unknown): string {
   return error instanceof Error ? error.message : 'Error desconocido';
 }
@@ -73,8 +76,12 @@ export function ReviewPage() {
   const convocationId = active?.active_convocation?.id ?? null;
   const curriculum = useCurriculum(convocationId);
 
-  const pending = useProposals('pending');
-  const provisional = useProposals('auto_applied_provisional');
+  // Las dos listas se paginan por su cuenta: una cola de 348 propuestas no cabe en una página, y
+  // enseñar las primeras 200 como si fueran todas dejaba 148 inalcanzables.
+  const [offsetPendientes, setOffsetPendientes] = useState(0);
+  const [offsetProvisionales, setOffsetProvisionales] = useState(0);
+  const pending = useProposals('pending', offsetPendientes);
+  const provisional = useProposals('auto_applied_provisional', offsetProvisionales);
   const groups = useReviewGroups();
 
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
@@ -108,6 +115,8 @@ export function ReviewPage() {
     () => [...(pending.data?.proposals ?? []), ...(provisional.data?.proposals ?? [])],
     [pending.data, provisional.data],
   );
+  const proposalsPendientes = pending.data?.proposals ?? [];
+  const proposalsProvisionales = provisional.data?.proposals ?? [];
   // El panel de clasificación vigente muestra el material de la primera propuesta abierta: es el
   // que el usuario tiene delante en la cola.
   const primerSujeto = proposals[0];
@@ -320,12 +329,41 @@ export function ReviewPage() {
           />
         )}
         {(pending.isSuccess || provisional.isSuccess) && (
-          <ProposalList
-            proposals={proposals}
-            curriculumNodes={curriculumNodes}
-            busy={busy}
-            onDecide={decideOne}
-          />
+          <>
+            {/* Dos listas, no una: lo que espera una decisión y lo que el motor aplicó por su banda.
+                Cada una se pagina por su cuenta, así que el total que se enseña es el del servidor. */}
+            <ProposalList
+              proposals={proposalsPendientes}
+              curriculumNodes={curriculumNodes}
+              busy={busy}
+              onDecide={decideOne}
+              caption="propuestas esperando tu decisión"
+              total={pending.data?.total ?? 0}
+              offset={offsetPendientes}
+              limit={PROPOSAL_LIMIT}
+              onOffsetChange={setOffsetPendientes}
+            />
+            {(provisional.data?.total ?? 0) > 0 && (
+              <>
+                <h3>Aplicadas provisionalmente por el motor</h3>
+                <p className="hint">
+                  El motor las aplicó por su banda de confianza. Siguen siendo reversibles: confírmalas
+                  o recházalas, y deshacer una la deja como estaba.
+                </p>
+                <ProposalList
+                  proposals={proposalsProvisionales}
+                  curriculumNodes={curriculumNodes}
+                  busy={busy}
+                  onDecide={decideOne}
+                  caption="propuestas aplicadas provisionalmente (reversibles)"
+                  total={provisional.data?.total ?? 0}
+                  offset={offsetProvisionales}
+                  limit={PROPOSAL_LIMIT}
+                  onOffsetChange={setOffsetProvisionales}
+                />
+              </>
+            )}
+          </>
         )}
         {decide.isError && (
           <>
