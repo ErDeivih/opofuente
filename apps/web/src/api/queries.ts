@@ -22,6 +22,7 @@ import {
   runClassification,
   undoDecision,
 } from './classification';
+import { archiveDossier, fetchDossier, fetchDossierVersions } from './dossier';
 import type { Batch } from './ingestion';
 import {
   cancelBatch,
@@ -165,6 +166,10 @@ export const queryKeys = {
   convocation: (id: string) => ['profiles', 'convocation', id] as const,
   curriculum: (id: string) => ['profiles', 'curriculum', id] as const,
   curriculumNode: (id: string) => ['profiles', 'curriculum-node', id] as const,
+  /* S13: el dossier del tema. Cuelga de «profiles» junto al nodo al que pertenece: archivar una
+     versión cambia el dossier y su historial, y las dos lecturas tienen que contar lo mismo. */
+  dossier: (nodeId: string) => ['profiles', 'dossier', nodeId] as const,
+  dossierVersions: (nodeId: string) => ['profiles', 'dossier', nodeId, 'versions'] as const,
   batches: ['ingestion', 'batches'] as const,
   batch: (id: string) => ['ingestion', 'batch', id] as const,
   batchItems: (id: string) => ['ingestion', 'batch', id, 'items'] as const,
@@ -299,6 +304,40 @@ export function useCurriculumNode(nodeId: string | null) {
     queryFn: () => fetchCurriculumNode(nodeId as string),
     enabled: nodeId !== null,
     staleTime: 60_000,
+  });
+}
+
+/**
+ * El dossier del tema (S13): lo que el corpus dice de él, citado.
+ *
+ * Sin `staleTime`: el dossier se calcula desde el corpus y cambia en cuanto entra material, así que
+ * una lectura vieja sería justo lo que esta pantalla existe para no enseñar.
+ */
+export function useDossier(nodeId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.dossier(nodeId ?? 'ninguno'),
+    queryFn: () => fetchDossier(nodeId as string),
+    enabled: nodeId !== null,
+  });
+}
+
+export function useDossierVersions(nodeId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.dossierVersions(nodeId ?? 'ninguno'),
+    queryFn: () => fetchDossierVersions(nodeId as string),
+    enabled: nodeId !== null,
+  });
+}
+
+/** Archiva la lectura actual. Invalida el dossier y su historial: los dos cambian. */
+export function useArchiveDossier(nodeId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => archiveDossier(nodeId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.dossier(nodeId) });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.dossierVersions(nodeId) });
+    },
   });
 }
 

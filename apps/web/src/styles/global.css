@@ -862,6 +862,66 @@ button:focus-visible,
   }
 }
 
+/* --- El dossier del tema (S13) ---------------------------------------------- */
+
+/* Cada fuente del tema, separada: el dossier puede traer diez y hay que poder contarlas de un vistazo. */
+.dossier__source {
+  border-top: 1px solid var(--color-borde);
+  padding-top: 0.6rem;
+  margin-top: 0.6rem;
+}
+
+.dossier__source h3 {
+  margin: 0 0 0.2rem;
+  font-size: 0.98rem;
+}
+
+.dossier__passages {
+  list-style: none;
+  padding: 0;
+  margin: 0.4rem 0 0;
+}
+
+.dossier__passages > li + li {
+  margin-top: 0.6rem;
+}
+
+/* Los huecos: lo que el tema no tiene, con su nombre. No es un adorno: es el dato que falta. */
+.dossier__holes {
+  list-style: none;
+  padding: 0;
+  margin: 0.3rem 0 0.6rem;
+}
+
+.dossier__holes > li {
+  margin-bottom: 0.3rem;
+  overflow-wrap: anywhere;
+}
+
+.dossier__versions {
+  margin: 0.3rem 0;
+  padding-left: 1.2rem;
+}
+
+.dossier__versions > li {
+  margin-bottom: 0.2rem;
+}
+
+/* Un botón que se lee como un enlace: se usa para acciones que no cambian de pantalla. */
+.link {
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--color-acento);
+  text-decoration: underline;
+  cursor: pointer;
+  font: inherit;
+}
+
+.dossier__version--open {
+  font-weight: 600;
+}
+
 @media (max-width: 640px) {
   .app__header,
   .app__body,

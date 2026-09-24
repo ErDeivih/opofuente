@@ -16,6 +16,7 @@ import type {
   CurriculumNodeDetail,
   Opposition,
 } from '../../src/api/profiles';
+import type { Dossier, DossierVersion } from '../../src/api/dossier';
 import type { PendingActions, StudyReadiness } from '../../src/api/readiness';
 import type { MasteryProgram } from '../../src/api/reviews';
 
@@ -44,18 +45,39 @@ export interface StubbedRoute {
  * Cuando varias claves encajan con la URL gana la **más específica** (la más larga): así una ruta
  * general (`/ingestion-batches/x`) no se come a otra más concreta (`…/x/retry`), y el orden en el
  * que se declaran las respuestas deja de importar.
+ *
+ * Una clave puede empezar por el método (`"POST /api/v1/…"`) cuando la **misma** ruta responde cosas
+ * distintas según el verbo —archivar el dossier y listar sus versiones comparten ruta—: sin eso, la
+ * simulación no podría distinguirlas y la prueba estaría comprobando la respuesta equivocada.
  */
 export function stubApi(routes: Record<string, StubbedRoute>) {
   // El tipo de la función incluye `init` para que las pruebas puedan comprobar el método HTTP
   // (por ejemplo, que activar una oposición es un POST), aunque la simulación no lo use.
   const fetchMock = vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>(
-    (input) => {
+    (input, init) => {
       const url =
         typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
-      const match = Object.keys(routes)
-        .filter((path) => url.includes(path))
-        .sort((left, right) => right.length - left.length)[0];
-      if (match === undefined) {
+      const metodo = (init?.method ?? 'GET').toUpperCase();
+      const candidatas = Object.entries(routes)
+        .map(([clave, ruta]) => {
+          const [posibleMetodo, ...resto] = clave.split(' ');
+          const tieneMetodo = resto.length > 0;
+          const camino = tieneMetodo ? resto.join(' ') : clave;
+          return { camino, ruta, metodo: tieneMetodo ? posibleMetodo?.toUpperCase() : null };
+        })
+        .filter(
+          (candidata) =>
+            url.includes(candidata.camino) &&
+            (candidata.metodo === null || candidata.metodo === metodo),
+        );
+      // Gana la coincidencia más larga; a igualdad de camino, la que declara el método.
+      candidatas.sort(
+        (izquierda, derecha) =>
+          derecha.camino.length - izquierda.camino.length ||
+          (derecha.metodo === null ? 0 : 1) - (izquierda.metodo === null ? 0 : 1),
+      );
+      const elegida = candidatas[0];
+      if (elegida === undefined) {
         return Promise.resolve(
           new Response(JSON.stringify({ code: 'not_found' }), {
             status: 404,
@@ -63,7 +85,7 @@ export function stubApi(routes: Record<string, StubbedRoute>) {
           }),
         );
       }
-      const route = routes[match] as StubbedRoute;
+      const route = elegida.ruta;
       return Promise.resolve(
         new Response(JSON.stringify(route.body), {
           status: route.status ?? 200,
@@ -761,3 +783,133 @@ export const celador2022CurriculumFixture: Curriculum = {
     },
   ],
 };
+
+/* ------------------------------------------------------------------ S13: el dossier del tema */
+
+/**
+ * Un dossier con dos fuentes, un pasaje repetido en otra y dos huecos: lo que dice, lo que no dice y
+ * lo que falta. Sirve para comprobar que la pantalla **no** enseña el texto repetido dos veces, que
+ * declara el hueco y que una fuente sin confirmar lleva su etiqueta.
+ */
+export const dossierFixture: Dossier = {
+  format_version: 1,
+  node_id: 'node-i-1',
+  path: 'I.1',
+  title: 'La Constitución Española de 1978',
+  depth: 1,
+  generated_at: '2026-09-24T09:00:00Z',
+  content_hash: 'a'.repeat(64),
+  version_id: null,
+  previous_version_id: null,
+  sources_total: 2,
+  passages_total: 2,
+  accepted_sources: 1,
+  provisional_sources: 1,
+  provisional: true,
+  empty: false,
+  sources: [
+    {
+      document_id: 'doc-apuntes',
+      document_title: 'Apuntes de la Constitución',
+      document_type: 'personal_notes',
+      authority_tier: 'C',
+      version_id: 'v-apuntes',
+      version_label: 'v1',
+      version_status: 'accepted',
+      quality: 'good',
+      mappings: ['accepted'],
+      provisional: false,
+      passages_total: 1,
+      passages: [
+        {
+          evidence_id: 'span-1',
+          text: 'España se constituye en un Estado social y democrático de Derecho.',
+          citation_label: 'Título preliminar, pág. 3',
+          page: 3,
+          section_title: 'Título preliminar',
+          ordinal: 1,
+          quality: 'good',
+          repeated_in: ['Manual de la oposición, pág. 9'],
+        },
+      ],
+    },
+    {
+      document_id: 'doc-manual',
+      document_title: 'Manual de la oposición',
+      document_type: 'private_syllabus',
+      authority_tier: null,
+      version_id: 'v-manual',
+      version_label: null,
+      version_status: 'accepted',
+      quality: 'usable_with_warnings',
+      mappings: ['provisional'],
+      provisional: true,
+      passages_total: 1,
+      passages: [
+        {
+          evidence_id: 'span-2',
+          text: 'La soberanía nacional reside en el pueblo español.',
+          citation_label: null,
+          page: 12,
+          section_title: null,
+          ordinal: 4,
+          quality: 'usable_with_warnings',
+          repeated_in: [],
+        },
+      ],
+    },
+  ],
+  holes: [
+    { code: 'mapeo_provisional', count: 1, reason: null },
+    { code: 'repetido_en_otra_fuente', count: 1, reason: null },
+  ],
+};
+
+/** Un tema sin nada asignado: ni fuentes ni pasajes, con su hueco y sin ceros que parezcan datos. */
+export const dossierEmptyFixture: Dossier = {
+  ...dossierFixture,
+  node_id: 'node-vacio',
+  path: 'II.1',
+  title: 'Tema sin material',
+  content_hash: 'b'.repeat(64),
+  sources_total: 0,
+  passages_total: 0,
+  accepted_sources: 0,
+  provisional_sources: 0,
+  provisional: false,
+  empty: true,
+  sources: [],
+  holes: [{ code: 'sin_material', count: 0, reason: null }],
+};
+
+/** Un tema con material asignado que todavía no tiene texto citable y una versión sin aceptar. */
+export const dossierHolesFixture: Dossier = {
+  ...dossierEmptyFixture,
+  sources_total: 0,
+  empty: true,
+  holes: [
+    { code: 'sin_texto', count: 2, reason: null },
+    {
+      code: 'no_citable',
+      count: 3,
+      reason: 'la versión está en estado «candidate»',
+    },
+  ],
+};
+
+export const dossierVersionsFixture: DossierVersion[] = [
+  {
+    id: 'ver-2',
+    content_hash: 'c'.repeat(64),
+    built_at: '2026-09-24T09:00:00Z',
+    sources_count: 2,
+    passages_count: 2,
+  },
+  {
+    id: 'ver-1',
+    content_hash: 'd'.repeat(64),
+    built_at: '2026-09-20T08:00:00Z',
+    sources_count: 1,
+    passages_count: 1,
+  },
+];

@@ -3734,10 +3734,7 @@ export interface components {
              * @enum {string}
              */
             code: "sin_material" | "sin_texto" | "no_citable" | "sin_version_aceptada" | "mapeo_provisional" | "repetido_en_otra_fuente";
-            /**
-             * Count
-             * @default 0
-             */
+            /** Count */
             count: number;
             /** Reason */
             reason?: string | null;
@@ -3755,7 +3752,7 @@ export interface components {
             /** Quality */
             quality?: string | null;
             /** Repeated In */
-            repeated_in?: string[];
+            repeated_in: string[];
             /** Section Title */
             section_title?: string | null;
             /**
@@ -3769,19 +3766,13 @@ export interface components {
          * @description El dossier de un tema: sus fuentes citadas, sus huecos y con qué se construyó.
          */
         DossierSchema: {
-            /**
-             * Accepted Sources
-             * @default 0
-             */
+            /** Accepted Sources */
             accepted_sources: number;
             /** Content Hash */
             content_hash: string;
             /** Depth */
             depth: number;
-            /**
-             * Empty
-             * @default false
-             */
+            /** Empty */
             empty: boolean;
             /** Format Version */
             format_version: number;
@@ -3791,34 +3782,22 @@ export interface components {
              */
             generated_at: string;
             /** Holes */
-            holes?: components["schemas"]["DossierHoleSchema"][];
+            holes: components["schemas"]["DossierHoleSchema"][];
             /** Node Id */
             node_id: string;
-            /**
-             * Passages Total
-             * @default 0
-             */
+            /** Passages Total */
             passages_total: number;
             /** Path */
             path: string;
             /** Previous Version Id */
             previous_version_id?: string | null;
-            /**
-             * Provisional
-             * @default false
-             */
+            /** Provisional */
             provisional: boolean;
-            /**
-             * Provisional Sources
-             * @default 0
-             */
+            /** Provisional Sources */
             provisional_sources: number;
             /** Sources */
-            sources?: components["schemas"]["DossierSourceSchema"][];
-            /**
-             * Sources Total
-             * @default 0
-             */
+            sources: components["schemas"]["DossierSourceSchema"][];
+            /** Sources Total */
             sources_total: number;
             /** Title */
             title: string;
@@ -3836,18 +3815,12 @@ export interface components {
             /** Document Type */
             document_type: string;
             /** Mappings */
-            mappings?: string[];
+            mappings: string[];
             /** Passages */
-            passages?: components["schemas"]["DossierPassageSchema"][];
-            /**
-             * Passages Total
-             * @default 0
-             */
+            passages: components["schemas"]["DossierPassageSchema"][];
+            /** Passages Total */
             passages_total: number;
-            /**
-             * Provisional
-             * @default false
-             */
+            /** Provisional */
             provisional: boolean;
             /** Quality */
             quality?: string | null;

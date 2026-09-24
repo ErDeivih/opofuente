@@ -3336,7 +3336,6 @@
             "type": "string"
           },
           "count": {
-            "default": 0,
             "minimum": 0.0,
             "title": "Count",
             "type": "integer"
@@ -3354,7 +3353,8 @@
           }
         },
         "required": [
-          "code"
+          "code",
+          "count"
         ],
         "title": "DossierHoleSchema",
         "type": "object"
@@ -3429,7 +3429,8 @@
         "required": [
           "evidence_id",
           "text",
-          "ordinal"
+          "ordinal",
+          "repeated_in"
         ],
         "title": "DossierPassageSchema",
         "type": "object"
@@ -3438,7 +3439,6 @@
         "description": "El dossier de un tema: sus fuentes citadas, sus huecos y con qué se construyó.",
         "properties": {
           "accepted_sources": {
-            "default": 0,
             "minimum": 0.0,
             "title": "Accepted Sources",
             "type": "integer"
@@ -3452,7 +3452,6 @@
             "type": "integer"
           },
           "empty": {
-            "default": false,
             "title": "Empty",
             "type": "boolean"
           },
@@ -3477,7 +3476,6 @@
             "type": "string"
           },
           "passages_total": {
-            "default": 0,
             "minimum": 0.0,
             "title": "Passages Total",
             "type": "integer"
@@ -3498,12 +3496,10 @@
             "title": "Previous Version Id"
           },
           "provisional": {
-            "default": false,
             "title": "Provisional",
             "type": "boolean"
           },
           "provisional_sources": {
-            "default": 0,
             "minimum": 0.0,
             "title": "Provisional Sources",
             "type": "integer"
@@ -3516,7 +3512,6 @@
             "type": "array"
           },
           "sources_total": {
-            "default": 0,
             "minimum": 0.0,
             "title": "Sources Total",
             "type": "integer"
@@ -3544,7 +3539,15 @@
           "title",
           "depth",
           "generated_at",
-          "content_hash"
+          "content_hash",
+          "sources_total",
+          "passages_total",
+          "accepted_sources",
+          "provisional_sources",
+          "provisional",
+          "empty",
+          "sources",
+          "holes"
         ],
         "title": "DossierSchema",
         "type": "object"
@@ -3589,13 +3592,11 @@
             "type": "array"
           },
           "passages_total": {
-            "default": 0,
             "minimum": 0.0,
             "title": "Passages Total",
             "type": "integer"
           },
           "provisional": {
-            "default": false,
             "title": "Provisional",
             "type": "boolean"
           },
@@ -3635,7 +3636,11 @@
           "document_title",
           "document_type",
           "version_id",
-          "version_status"
+          "version_status",
+          "mappings",
+          "provisional",
+          "passages_total",
+          "passages"
         ],
         "title": "DossierSourceSchema",
         "type": "object"

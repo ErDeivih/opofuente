@@ -10,6 +10,7 @@ import { ConvocationSelector } from '../features/profiles/ConvocationSelector';
 import { ConvocationSource } from '../features/profiles/ConvocationSource';
 import { CurriculumTree } from '../features/profiles/CurriculumTree';
 import { ExamSummary } from '../features/profiles/ExamSummary';
+import { TopicPanel } from '../features/dossier/TopicPanel';
 import { originLabel, questionStatusLabel } from '../features/questions/labels';
 
 /**
@@ -155,7 +156,7 @@ export function ProgramPage() {
 
       {selectedId !== null && (
         <section className="card" aria-labelledby="detalle-nodo">
-          <h2 id="detalle-nodo">Nodo seleccionado</h2>
+          <h2 id="detalle-nodo">El tema</h2>
           {node.isPending && <LoadingState label="Cargando el nodo…" />}
           {node.isError && (
             <ErrorState
@@ -175,14 +176,10 @@ export function ProgramPage() {
                   {node.data.ancestors.map((ancestor) => ancestor.title).join(' › ')}
                 </p>
               )}
+              {/* Lo que el corpus dice del tema: sus fuentes citadas, sus huecos y su historial
+                  (S13). Sustituye al panel que solo decía dónde se calculaba la cobertura. */}
+              <TopicPanel nodeId={node.data.node.id} />
               <dl className="facts">
-                <dt>Cobertura</dt>
-                <dd>
-                  <span className="hint">
-                    Se calcula en Revisión, sobre las fuentes asignadas a este nodo (provisional y
-                    aceptada por separado).
-                  </span>
-                </dd>
                 <dt>Preguntas</dt>
                 <dd>
                   {/* El desglose completo del tema: es lo que en el árbol va en etiquetas. */}
@@ -217,7 +214,6 @@ export function ProgramPage() {
           )}
         </section>
       )}
-
       {convocation.isPending && <LoadingState label="Cargando la convocatoria…" />}
       {convocation.isError && (
         <ErrorState

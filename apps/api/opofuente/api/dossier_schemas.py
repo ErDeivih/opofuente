@@ -29,7 +29,7 @@ HoleCodeSchema = Literal[
 
 class DossierHoleSchema(BaseModel):
     code: HoleCodeSchema
-    count: int = Field(default=0, ge=0)
+    count: int = Field(ge=0)
     reason: str | None = None
 
 
@@ -41,7 +41,9 @@ class DossierPassageSchema(BaseModel):
     section_title: str | None = None
     ordinal: int
     quality: str | None = None
-    repeated_in: list[str] = Field(default_factory=list)
+    #: Obligatorio aunque pueda estar vacío: el servidor manda siempre la lista, y declararla
+    #: opcional obligaría a cada cliente a defenderse de un `undefined` que no ocurre.
+    repeated_in: list[str]
 
 
 class DossierSourceSchema(BaseModel):
@@ -53,10 +55,10 @@ class DossierSourceSchema(BaseModel):
     version_label: str | None = None
     version_status: str
     quality: str | None = None
-    mappings: list[str] = Field(default_factory=list)
-    provisional: bool = False
-    passages_total: int = Field(default=0, ge=0)
-    passages: list[DossierPassageSchema] = Field(default_factory=list)
+    mappings: list[str]
+    provisional: bool
+    passages_total: int = Field(ge=0)
+    passages: list[DossierPassageSchema]
 
 
 class DossierSchema(BaseModel):
@@ -71,14 +73,14 @@ class DossierSchema(BaseModel):
     content_hash: str
     version_id: str | None = None
     previous_version_id: str | None = None
-    sources_total: int = Field(default=0, ge=0)
-    passages_total: int = Field(default=0, ge=0)
-    accepted_sources: int = Field(default=0, ge=0)
-    provisional_sources: int = Field(default=0, ge=0)
-    provisional: bool = False
-    empty: bool = False
-    sources: list[DossierSourceSchema] = Field(default_factory=list)
-    holes: list[DossierHoleSchema] = Field(default_factory=list)
+    sources_total: int = Field(ge=0)
+    passages_total: int = Field(ge=0)
+    accepted_sources: int = Field(ge=0)
+    provisional_sources: int = Field(ge=0)
+    provisional: bool
+    empty: bool
+    sources: list[DossierSourceSchema]
+    holes: list[DossierHoleSchema]
 
     @model_validator(mode="after")
     def _coherente(self) -> DossierSchema:

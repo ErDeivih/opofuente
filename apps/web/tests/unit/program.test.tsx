@@ -19,6 +19,8 @@ import {
   celadorOppositionsFixture,
   convocationFixture,
   curriculumFixture,
+  dossierEmptyFixture,
+  dossierFixture,
   gcConvocationsFixture,
   masteryFixture,
   nodeDetailFixture,
@@ -36,6 +38,10 @@ function stubProgramApi() {
     [`/api/v1/oppositions/${TAI_ID}/convocations`]: { body: taiConvocationsFixture },
     [`/api/v1/oppositions/${GC_ID}/convocations`]: { body: gcConvocationsFixture },
     [`/api/v1/reviews/mastery?opposition_id=${TAI_ID}`]: { body: masteryFixture },
+    // El dossier va **después** de la ficha del nodo porque su ruta la contiene: gana la clave más
+    // larga, así que estas dos tienen que estar declaradas para no recibir la ficha del nodo.
+    '/api/v1/curriculum-nodes/node-i-1/dossier/versions': { body: [] },
+    '/api/v1/curriculum-nodes/node-i-1/dossier': { body: dossierFixture },
     '/api/v1/curriculum-nodes/node-i-1': { body: nodeDetailFixture },
     [`/api/v1/convocations/${TAI_CONVOCATION_ID}/curriculum`]: { body: curriculumFixture },
     [`/api/v1/convocations/${TAI_CONVOCATION_ID}`]: { body: convocationFixture },
@@ -93,7 +99,7 @@ describe('pantalla Programa', () => {
     expect(await screen.findByText('No consta en la convocatoria')).toBeInTheDocument();
   });
 
-  it('abre el detalle de un nodo con su procedencia y sin inventar cobertura', async () => {
+  it('abre el tema con su dossier, su procedencia y sin inventar cobertura', async () => {
     stubProgramApi();
     renderWithProviders(
       <AppShell>
@@ -105,10 +111,17 @@ describe('pantalla Programa', () => {
     await userEvent.click(await screen.findByRole('button', { name: /La Constitución Española/ }));
 
     expect(await screen.findByText('I.1')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Nodo seleccionado' })).toBeInTheDocument();
-    // La cobertura **no** se inventa aquí: esta pantalla dice dónde se calcula y no enseña un cero que
-    // parecería un dato. (Antes decía que no se calculaba todavía, y se calcula desde S04.)
-    expect(screen.getByText(/Se calcula en Revisión, sobre las fuentes asignadas/)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'El tema' })).toBeInTheDocument();
+    // La ficha del tema ya no dice **dónde** se calcula la cobertura: enseña lo que el corpus dice
+    // del tema, que es la sustancia (S13).
+    expect(
+      await screen.findByRole('heading', { name: 'Apuntes de la Constitución' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('España se constituye en un Estado social y democrático de Derecho.'),
+    ).toBeInTheDocument();
+    // La procedencia sigue en la ficha del tema (y también en la de la convocatoria, más abajo).
+    expect(screen.getAllByRole('link', { name: /BOE-A-2025-26262/ }).length).toBeGreaterThan(0);
   });
 
   it('muestra las preguntas y el próximo repaso de cada tema (07_UI-UX §5)', async () => {
@@ -152,6 +165,8 @@ describe('pantalla Programa', () => {
           ],
         },
       },
+      '/api/v1/curriculum-nodes/node-i-1/dossier/versions': { body: [] },
+      '/api/v1/curriculum-nodes/node-i-1/dossier': { body: dossierEmptyFixture },
       '/api/v1/curriculum-nodes/node-i-1': { body: nodeDetailFixture },
       [`/api/v1/convocations/${TAI_CONVOCATION_ID}/curriculum`]: { body: curriculumFixture },
       [`/api/v1/convocations/${TAI_CONVOCATION_ID}`]: { body: convocationFixture },
@@ -174,6 +189,8 @@ describe('pantalla Programa', () => {
       [`/api/v1/oppositions/${TAI_ID}/convocations`]: { body: taiConvocationsFixture },
       [`/api/v1/reviews/mastery?opposition_id=${TAI_ID}`]: { body: masteryFixture },
       // El bloque también tiene ficha: la tarjeta del nodo seleccionado la pide.
+      '/api/v1/curriculum-nodes/node-i/dossier/versions': { body: [] },
+      '/api/v1/curriculum-nodes/node-i/dossier': { body: { ...dossierEmptyFixture, node_id: 'node-i' } },
       '/api/v1/curriculum-nodes/node-i': {
         body: { ...nodeDetailFixture, node: curriculumFixture.nodes[0]!, ancestors: [] },
       },

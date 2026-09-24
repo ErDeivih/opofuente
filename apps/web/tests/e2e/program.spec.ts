@@ -194,20 +194,23 @@ test('S12.2: la convocatoria vigente se elige por la API, no solo en pantalla', 
   expect(despues.find((row) => row.code === 'celador-sacyl-2022')?.status).toBe('available');
 });
 
-test('S01: abrir un tema muestra su ruta y su procedencia sin inventar cobertura', async ({
-  page,
-}) => {
+test('S13: abrir un tema enseña su dossier, y guardarlo es un POST de verdad', async ({ page }) => {
   await page.goto('/programa');
 
   await expect(page.getByText(/33 temas/)).toBeVisible();
   await page.getByRole('button', { name: /La Constitución Española/ }).click();
 
-  await expect(page.getByRole('heading', { name: 'Nodo seleccionado' })).toBeVisible();
+  // La ficha del tema ya no dice dónde se calcula la cobertura: enseña lo que el corpus dice de él.
+  await expect(page.getByRole('heading', { name: 'El tema' })).toBeVisible();
   await expect(page.getByText('I.1', { exact: true })).toBeVisible();
-  // Esta pantalla **no** inventa la cobertura: dice dónde se calcula en lugar de enseñar un cero que
-  // parecería un dato. (Antes decía que no se calculaba todavía, y se calcula desde S04.)
+  await expect(page.getByText(/leído el \d{4}-\d{2}-\d{2}/)).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Versiones guardadas' })).toBeVisible();
+
+  // Archivar la lectura llama a la API de verdad y la pantalla dice qué ha pasado: «guardada» la
+  // primera vez y «ya estaba» la segunda, porque el archivo es idempotente por contenido.
+  await page.getByRole('button', { name: 'Guardar esta lectura' }).click();
   await expect(
-    page.getByText(/Se calcula en Revisión, sobre las fuentes asignadas/),
+    page.getByText(/Lectura guardada como versión nueva\.|Esa lectura ya estaba guardada/),
   ).toBeVisible();
 });
 
