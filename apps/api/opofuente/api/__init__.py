@@ -11,6 +11,7 @@ from opofuente.api.routes import (
     backups,
     changes,
     classification,
+    dossier,
     exports,
     housekeeping,
     ingestion,
@@ -39,5 +40,9 @@ api_router.include_router(changes.router)
 api_router.include_router(backups.router)
 api_router.include_router(housekeeping.router)
 api_router.include_router(readiness.router)
+# El dossier va al final: sus rutas cuelgan de `/curriculum-nodes/{node_id}` y no deben quedar
+# detrás
+# de una ruta con parámetro que las tape (ADR-018).
+api_router.include_router(dossier.router)
 
 __all__ = ["api_router"]

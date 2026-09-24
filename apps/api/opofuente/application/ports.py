@@ -21,6 +21,7 @@ from opofuente.application.read_models import (
     CoverageView,
     CurriculumView,
     DecisionOutcome,
+    DossierVersionView,
     DuplicateClusterDraft,
     DuplicateClusterView,
     EntryPage,
@@ -49,6 +50,7 @@ from opofuente.domain.classification import (
     Proposal,
     ProposalStatus,
 )
+from opofuente.domain.dossier import PassageFacts, TopicDossier
 from opofuente.domain.duplicates import TextDocument
 from opofuente.domain.ingestion import (
     BatchKind,
@@ -458,6 +460,46 @@ class ClassificationRepository(Protocol):
     def resolve_duplicate_cluster(
         self, cluster_id: str, *, relation: str, note: str | None, now: datetime, actor: str = ...
     ) -> DuplicateClusterView | None: ...
+
+
+@runtime_checkable
+class DossierRepository(Protocol):
+    """De dónde salen los tramos de un tema y dónde se guardan sus versiones (S13).
+
+    Un solo puerto para las dos cosas porque las dos son «el dossier en la base de datos»: el corpus
+    (evidencias y mapeos) y el archivo de lo que se leyó. La primera no filtra nada: decide el
+    dominio.
+    """
+
+    def node(self, node_id: str) -> tuple[str, str, int] | None:
+        """`(path, title, depth)` del nodo, o `None` si no existe."""
+        ...
+
+    def passages_for_node(self, node_id: str) -> tuple[PassageFacts, ...]:
+        """Los tramos citables que le llegan al tema y a su subárbol, con sus mapeos."""
+        ...
+
+    def mappings_for_node(self, node_id: str) -> tuple[str, ...]:
+        """Estados de los mapeos vivos (no rechazados) que llegan al tema y a su subárbol."""
+        ...
+
+    def save_snapshot(
+        self, *, node_id: str, dossier: TopicDossier, payload: str, now: datetime
+    ) -> tuple[str, bool]:
+        """Guarda una versión del dossier. Devuelve `(id, creada)`; repetir no duplica."""
+        ...
+
+    def latest_snapshot_id(self, node_id: str) -> str | None:
+        """La última versión guardada, o `None` si el tema no tiene ninguna."""
+        ...
+
+    def snapshot(self, node_id: str, version_id: str) -> tuple[str, datetime, str] | None:
+        """`(payload, built_at, content_hash)` de una versión guardada, si es de ese tema."""
+        ...
+
+    def snapshots(self, node_id: str) -> tuple[DossierVersionView, ...]:
+        """Las versiones guardadas, de la más nueva a la más antigua, sin su contenido."""
+        ...
 
 
 @runtime_checkable

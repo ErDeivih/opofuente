@@ -68,7 +68,10 @@ def _new_id() -> str:
 #: 1. el ámbito de programa se abre con una CTE recursiva, así que pedir un bloque incluye sus
 #:    temas y epígrafes (igual que la cobertura): una versión cuenta para el ámbito si algún
 #:    **mapeo** suyo —de la versión, del artefacto, de la representación, de una sección o de un
-#:    fragmento— cae dentro, y los mapeos rechazados no cuentan;
+#:    fragmento— cae dentro, y los mapeos rechazados no cuentan. Un mapeo de **sección** alcanza a
+#:    los tramos de esa sección, no a todo el documento: hasta el 24/09/2026 alcanzaba al documento
+#:    entero, así que asignar un capítulo traía el libro (lo encontró la prueba que compara el
+#:    ámbito de la búsqueda con el del dossier, en `test_dossier_api.py`);
 #: 2. los cuatro filtros explícitos viajan al `WHERE`, de modo que la ventana de `bm25` ya está
 #:    acotada por ellos (filtrar después del `LIMIT` esconde material que sí respondía);
 #: 3. lo que **no** se decide aquí es la elegibilidad (vigencia, estado y calidad): eso es criterio
@@ -120,11 +123,7 @@ WHERE evidence_fts MATCH :expresion
           (m.subject_type = 'document_version' AND m.subject_id = v.id)
           OR (m.subject_type = 'artifact' AND m.subject_id = v.artifact_id)
           OR (m.subject_type = 'representation' AND m.subject_id = v.representation_id)
-          OR (m.subject_type = 'section'
-              AND m.subject_id IN (
-                SELECT sec2.id FROM document_sections sec2
-                WHERE sec2.document_version_id = v.id
-              ))
+          OR (m.subject_type = 'section' AND m.subject_id = s.section_id)
           OR (m.subject_type = 'evidence' AND m.subject_id = s.id)
         )
     )

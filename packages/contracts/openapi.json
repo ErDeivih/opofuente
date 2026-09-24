@@ -3298,6 +3298,385 @@
         "title": "DocumentSchema",
         "type": "object"
       },
+      "DossierArchiveSchema": {
+        "description": "Resultado de archivar: el dossier archivado y si esa lectura ya estaba guardada.",
+        "properties": {
+          "created": {
+            "title": "Created",
+            "type": "boolean"
+          },
+          "dossier": {
+            "$ref": "#/components/schemas/DossierSchema"
+          },
+          "version_id": {
+            "title": "Version Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "created",
+          "version_id",
+          "dossier"
+        ],
+        "title": "DossierArchiveSchema",
+        "type": "object"
+      },
+      "DossierHoleSchema": {
+        "properties": {
+          "code": {
+            "enum": [
+              "sin_material",
+              "sin_texto",
+              "no_citable",
+              "sin_version_aceptada",
+              "mapeo_provisional",
+              "repetido_en_otra_fuente"
+            ],
+            "title": "Code",
+            "type": "string"
+          },
+          "count": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Count",
+            "type": "integer"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "required": [
+          "code"
+        ],
+        "title": "DossierHoleSchema",
+        "type": "object"
+      },
+      "DossierPassageSchema": {
+        "properties": {
+          "citation_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Citation Label"
+          },
+          "evidence_id": {
+            "title": "Evidence Id",
+            "type": "string"
+          },
+          "ordinal": {
+            "title": "Ordinal",
+            "type": "integer"
+          },
+          "page": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page"
+          },
+          "quality": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quality"
+          },
+          "repeated_in": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Repeated In",
+            "type": "array"
+          },
+          "section_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Section Title"
+          },
+          "text": {
+            "description": "Texto literal del tramo: la cita, tal cual se guardó.",
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "evidence_id",
+          "text",
+          "ordinal"
+        ],
+        "title": "DossierPassageSchema",
+        "type": "object"
+      },
+      "DossierSchema": {
+        "description": "El dossier de un tema: sus fuentes citadas, sus huecos y con qué se construyó.",
+        "properties": {
+          "accepted_sources": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Accepted Sources",
+            "type": "integer"
+          },
+          "content_hash": {
+            "title": "Content Hash",
+            "type": "string"
+          },
+          "depth": {
+            "title": "Depth",
+            "type": "integer"
+          },
+          "empty": {
+            "default": false,
+            "title": "Empty",
+            "type": "boolean"
+          },
+          "format_version": {
+            "title": "Format Version",
+            "type": "integer"
+          },
+          "generated_at": {
+            "format": "date-time",
+            "title": "Generated At",
+            "type": "string"
+          },
+          "holes": {
+            "items": {
+              "$ref": "#/components/schemas/DossierHoleSchema"
+            },
+            "title": "Holes",
+            "type": "array"
+          },
+          "node_id": {
+            "title": "Node Id",
+            "type": "string"
+          },
+          "passages_total": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Passages Total",
+            "type": "integer"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "previous_version_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous Version Id"
+          },
+          "provisional": {
+            "default": false,
+            "title": "Provisional",
+            "type": "boolean"
+          },
+          "provisional_sources": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Provisional Sources",
+            "type": "integer"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/DossierSourceSchema"
+            },
+            "title": "Sources",
+            "type": "array"
+          },
+          "sources_total": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Sources Total",
+            "type": "integer"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "version_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version Id"
+          }
+        },
+        "required": [
+          "format_version",
+          "node_id",
+          "path",
+          "title",
+          "depth",
+          "generated_at",
+          "content_hash"
+        ],
+        "title": "DossierSchema",
+        "type": "object"
+      },
+      "DossierSourceSchema": {
+        "properties": {
+          "authority_tier": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Authority Tier"
+          },
+          "document_id": {
+            "title": "Document Id",
+            "type": "string"
+          },
+          "document_title": {
+            "title": "Document Title",
+            "type": "string"
+          },
+          "document_type": {
+            "title": "Document Type",
+            "type": "string"
+          },
+          "mappings": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Mappings",
+            "type": "array"
+          },
+          "passages": {
+            "items": {
+              "$ref": "#/components/schemas/DossierPassageSchema"
+            },
+            "title": "Passages",
+            "type": "array"
+          },
+          "passages_total": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Passages Total",
+            "type": "integer"
+          },
+          "provisional": {
+            "default": false,
+            "title": "Provisional",
+            "type": "boolean"
+          },
+          "quality": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quality"
+          },
+          "version_id": {
+            "title": "Version Id",
+            "type": "string"
+          },
+          "version_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version Label"
+          },
+          "version_status": {
+            "title": "Version Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "document_id",
+          "document_title",
+          "document_type",
+          "version_id",
+          "version_status"
+        ],
+        "title": "DossierSourceSchema",
+        "type": "object"
+      },
+      "DossierVersionSchema": {
+        "description": "Una versión guardada del dossier: lo justo para listarla y elegir con cuál comparar.",
+        "properties": {
+          "built_at": {
+            "format": "date-time",
+            "title": "Built At",
+            "type": "string"
+          },
+          "content_hash": {
+            "title": "Content Hash",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "passages_count": {
+            "minimum": 0.0,
+            "title": "Passages Count",
+            "type": "integer"
+          },
+          "sources_count": {
+            "minimum": 0.0,
+            "title": "Sources Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "content_hash",
+          "built_at",
+          "sources_count",
+          "passages_count"
+        ],
+        "title": "DossierVersionSchema",
+        "type": "object"
+      },
       "DueItemSchema": {
         "description": "Una pregunta vencida, con su motivo y sus opciones para poder repasarla.",
         "properties": {
@@ -12707,6 +13086,287 @@
         "summary": "Cobertura de un nodo y de su subárbol (provisional y aceptada, separadas)",
         "tags": [
           "clasificación"
+        ]
+      }
+    },
+    "/api/v1/curriculum-nodes/{node_id}/dossier": {
+      "get": {
+        "description": "Lo que el corpus dice hoy de este tema, con la procedencia de cada cita.\n\nIncluye los temas que cuelgan de él (el ámbito de un bloque es su subárbol) y **no** incluye\nnada\nque no se pueda citar: una versión sin aceptar o un texto pobre se declaran como huecos con su\nmotivo, en lugar de aparecer como si fueran material bueno.",
+        "operationId": "node_dossier_api_v1_curriculum_nodes__node_id__dossier_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "node_id",
+            "required": true,
+            "schema": {
+              "title": "Node Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DossierSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Dossier del tema: los pasajes que lo sostienen, citados, y lo que falta",
+        "tags": [
+          "programa"
+        ]
+      }
+    },
+    "/api/v1/curriculum-nodes/{node_id}/dossier/versions": {
+      "get": {
+        "operationId": "list_dossier_versions_api_v1_curriculum_nodes__node_id__dossier_versions_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "node_id",
+            "required": true,
+            "schema": {
+              "title": "Node Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DossierVersionSchema"
+                  },
+                  "title": "Response List Dossier Versions Api V1 Curriculum Nodes  Node Id  Dossier Versions Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Versiones guardadas del dossier, de la más nueva a la más antigua",
+        "tags": [
+          "programa"
+        ]
+      },
+      "post": {
+        "description": "Guarda lo que el tema dice hoy, para poder compararlo con lo que diga mañana.\n\nSi la lectura no ha cambiado desde la última versión guardada, no se crea otra: se devuelve la\nque\nya estaba con `created: false`. Eso es lo que permite decir «esto es lo que sabía antes y esto\nlo\nque sé ahora» sin que el historial se llene de copias idénticas.",
+        "operationId": "archive_dossier_api_v1_curriculum_nodes__node_id__dossier_versions_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "node_id",
+            "required": true,
+            "schema": {
+              "title": "Node Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DossierArchiveSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "La entrada no se puede usar: carpeta inválida (`invalid_source`), contenido rechazado por seguridad (`unsafe_content`) o URL no descargable (`url_rejected`)."
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Archiva la lectura actual del tema como una versión del dossier",
+        "tags": [
+          "programa"
+        ]
+      }
+    },
+    "/api/v1/curriculum-nodes/{node_id}/dossier/versions/{version_id}": {
+      "get": {
+        "operationId": "get_dossier_version_api_v1_curriculum_nodes__node_id__dossier_versions__version_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "node_id",
+            "required": true,
+            "schema": {
+              "title": "Node Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "title": "Version Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DossierSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Una versión guardada del dossier, tal como se leyó entonces",
+        "tags": [
+          "programa"
         ]
       }
     },

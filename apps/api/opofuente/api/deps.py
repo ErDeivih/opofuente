@@ -15,6 +15,7 @@ from opofuente.application.backup_service import BackupService
 from opofuente.application.change_service import ChangeService
 from opofuente.application.classification_service import ClassificationService
 from opofuente.application.diagnostic_service import DiagnosticService
+from opofuente.application.dossier_service import DossierService
 from opofuente.application.export_service import ExportService
 from opofuente.application.extraction_service import ExtractionService
 from opofuente.application.housekeeping_service import HousekeepingService
@@ -138,6 +139,11 @@ def get_readiness_service(request: Request) -> ReadinessService:
     return service
 
 
+def get_dossier_service(request: Request) -> DossierService:
+    service: DossierService = request.app.state.dossier_service
+    return service
+
+
 #: Dependencias anotadas (estilo moderno de FastAPI: sin llamadas en valores por defecto).
 AppSettingsDep = Annotated[Settings, Depends(get_app_settings)]
 SystemServiceDep = Annotated[SystemService, Depends(get_system_service)]
@@ -156,6 +162,7 @@ SearchServiceDep = Annotated[SearchService, Depends(get_search_service)]
 ReviewServiceDep = Annotated[ReviewService, Depends(get_review_service)]
 ExportServiceDep = Annotated[ExportService, Depends(get_export_service)]
 ChangeServiceDep = Annotated[ChangeService, Depends(get_change_service)]
+DossierServiceDep = Annotated[DossierService, Depends(get_dossier_service)]
 BackupServiceDep = Annotated[BackupService, Depends(get_backup_service)]
 HousekeepingServiceDep = Annotated[HousekeepingService, Depends(get_housekeeping_service)]
 DiagnosticServiceDep = Annotated[DiagnosticService, Depends(get_diagnostic_service)]

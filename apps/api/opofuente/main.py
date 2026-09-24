@@ -33,6 +33,7 @@ from opofuente.application.backup_service import BackupService
 from opofuente.application.change_service import ChangeService
 from opofuente.application.classification_service import ClassificationService
 from opofuente.application.diagnostic_service import DiagnosticService
+from opofuente.application.dossier_service import DossierService
 from opofuente.application.export_service import ExportService
 from opofuente.application.extraction_service import ExtractionService
 from opofuente.application.housekeeping_service import HousekeepingService
@@ -62,6 +63,7 @@ from opofuente.infrastructure.classifiers import DeterministicClassifier
 from opofuente.infrastructure.clock import SystemClock
 from opofuente.infrastructure.db import build_engine, build_session_factory
 from opofuente.infrastructure.document_repository import SqlAlchemyDocumentRepository
+from opofuente.infrastructure.dossier_repository import SqlAlchemyDossierRepository
 from opofuente.infrastructure.extraction_repository import SqlAlchemyExtractionRepository
 from opofuente.infrastructure.extractors import ExtractorRegistry
 from opofuente.infrastructure.filesystem_inventory import FilesystemInventory
@@ -264,6 +266,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     readiness_service = ReadinessService(
         repository=SqlAlchemyReadinessRepository(session_factory),
     )
+    # S13: el dossier del tema. Se calcula desde el corpus cada vez que se pide y se archiva cuando
+    # alguien lo pide: la verdad está en las fuentes, no en una copia.
+    dossier_service = DossierService(
+        repository=SqlAlchemyDossierRepository(session_factory),
+        clock=clock,
+    )
     export_service = ExportService(
         questions=SqlAlchemyQuestionRepository(session_factory),
         documents=SqlAlchemyDocumentRepository(session_factory, representations),
@@ -398,6 +406,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.housekeeping_service = housekeeping_service
     app.state.diagnostic_service = diagnostic_service
     app.state.readiness_service = readiness_service
+    app.state.dossier_service = dossier_service
 
     # El orden importa: el último añadido es el más externo, así que el identificador de
     # correlación envuelve también los rechazos por Origin.

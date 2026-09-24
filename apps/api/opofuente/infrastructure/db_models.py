@@ -621,9 +621,38 @@ class CurriculumMappingRecord(Base):
     node: Mapped[CurriculumNodeRecord] = relationship()
 
 
+class DossierSnapshotRecord(Base):
+    """Una versión guardada del dossier de un tema (S13).
+
+    El dossier **no vive aquí**: se calcula desde el corpus (evidencias y mapeos) cada vez que se
+    pide,
+    porque la verdad está en las fuentes. Esta tabla guarda lo que se leyó en un momento dado, para
+    poder compararlo con lo que se lee ahora; `payload_json` lleva el dossier entero, no una
+    referencia,
+    porque una versión anterior tiene que poder leerse **como se leyó**.
+    """
+
+    __tablename__ = "dossier_snapshots"
+    __table_args__ = (
+        CheckConstraint("length(content_hash) = 64", name="ck_dossier_hash"),
+        CheckConstraint("sources_count >= 0 AND passages_count >= 0", name="ck_dossier_counts"),
+        UniqueConstraint("curriculum_node_id", "content_hash", name="uq_dossier_snapshot_hash"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    curriculum_node_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("curriculum_nodes.id", ondelete="CASCADE"), nullable=False
+    )
+    content_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    built_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    sources_count: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
+    passages_count: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
+    payload_json: Mapped[str] = mapped_column(Text, nullable=False)
+
+
 class DuplicateClusterRecord(Base):
     """Grupo de material con el mismo texto o muy parecido.
-
     Los duplicados **exactos** de bytes no llegan aquí: ya son un artefacto con varios orígenes.
     Aquí viven el mismo texto con otra codificación o maquetación (`same_text`) y los casi
     duplicados.

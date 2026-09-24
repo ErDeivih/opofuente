@@ -498,6 +498,75 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/curriculum-nodes/{node_id}/dossier": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Dossier del tema: los pasajes que lo sostienen, citados, y lo que falta
+         * @description Lo que el corpus dice hoy de este tema, con la procedencia de cada cita.
+         *
+         *     Incluye los temas que cuelgan de él (el ámbito de un bloque es su subárbol) y **no** incluye
+         *     nada
+         *     que no se pueda citar: una versión sin aceptar o un texto pobre se declaran como huecos con su
+         *     motivo, en lugar de aparecer como si fueran material bueno.
+         */
+        get: operations["node_dossier_api_v1_curriculum_nodes__node_id__dossier_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/curriculum-nodes/{node_id}/dossier/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Versiones guardadas del dossier, de la más nueva a la más antigua */
+        get: operations["list_dossier_versions_api_v1_curriculum_nodes__node_id__dossier_versions_get"];
+        put?: never;
+        /**
+         * Archiva la lectura actual del tema como una versión del dossier
+         * @description Guarda lo que el tema dice hoy, para poder compararlo con lo que diga mañana.
+         *
+         *     Si la lectura no ha cambiado desde la última versión guardada, no se crea otra: se devuelve la
+         *     que
+         *     ya estaba con `created: false`. Eso es lo que permite decir «esto es lo que sabía antes y esto
+         *     lo
+         *     que sé ahora» sin que el historial se llene de copias idénticas.
+         */
+        post: operations["archive_dossier_api_v1_curriculum_nodes__node_id__dossier_versions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/curriculum-nodes/{node_id}/dossier/versions/{version_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Una versión guardada del dossier, tal como se leyó entonces */
+        get: operations["get_dossier_version_api_v1_curriculum_nodes__node_id__dossier_versions__version_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/derived-artifacts": {
         parameters: {
             query?: never;
@@ -3646,6 +3715,167 @@ export interface components {
              * @default 0
              */
             version_count: number;
+        };
+        /**
+         * DossierArchiveSchema
+         * @description Resultado de archivar: el dossier archivado y si esa lectura ya estaba guardada.
+         */
+        DossierArchiveSchema: {
+            /** Created */
+            created: boolean;
+            dossier: components["schemas"]["DossierSchema"];
+            /** Version Id */
+            version_id: string;
+        };
+        /** DossierHoleSchema */
+        DossierHoleSchema: {
+            /**
+             * Code
+             * @enum {string}
+             */
+            code: "sin_material" | "sin_texto" | "no_citable" | "sin_version_aceptada" | "mapeo_provisional" | "repetido_en_otra_fuente";
+            /**
+             * Count
+             * @default 0
+             */
+            count: number;
+            /** Reason */
+            reason?: string | null;
+        };
+        /** DossierPassageSchema */
+        DossierPassageSchema: {
+            /** Citation Label */
+            citation_label?: string | null;
+            /** Evidence Id */
+            evidence_id: string;
+            /** Ordinal */
+            ordinal: number;
+            /** Page */
+            page?: number | null;
+            /** Quality */
+            quality?: string | null;
+            /** Repeated In */
+            repeated_in?: string[];
+            /** Section Title */
+            section_title?: string | null;
+            /**
+             * Text
+             * @description Texto literal del tramo: la cita, tal cual se guardó.
+             */
+            text: string;
+        };
+        /**
+         * DossierSchema
+         * @description El dossier de un tema: sus fuentes citadas, sus huecos y con qué se construyó.
+         */
+        DossierSchema: {
+            /**
+             * Accepted Sources
+             * @default 0
+             */
+            accepted_sources: number;
+            /** Content Hash */
+            content_hash: string;
+            /** Depth */
+            depth: number;
+            /**
+             * Empty
+             * @default false
+             */
+            empty: boolean;
+            /** Format Version */
+            format_version: number;
+            /**
+             * Generated At
+             * Format: date-time
+             */
+            generated_at: string;
+            /** Holes */
+            holes?: components["schemas"]["DossierHoleSchema"][];
+            /** Node Id */
+            node_id: string;
+            /**
+             * Passages Total
+             * @default 0
+             */
+            passages_total: number;
+            /** Path */
+            path: string;
+            /** Previous Version Id */
+            previous_version_id?: string | null;
+            /**
+             * Provisional
+             * @default false
+             */
+            provisional: boolean;
+            /**
+             * Provisional Sources
+             * @default 0
+             */
+            provisional_sources: number;
+            /** Sources */
+            sources?: components["schemas"]["DossierSourceSchema"][];
+            /**
+             * Sources Total
+             * @default 0
+             */
+            sources_total: number;
+            /** Title */
+            title: string;
+            /** Version Id */
+            version_id?: string | null;
+        };
+        /** DossierSourceSchema */
+        DossierSourceSchema: {
+            /** Authority Tier */
+            authority_tier?: string | null;
+            /** Document Id */
+            document_id: string;
+            /** Document Title */
+            document_title: string;
+            /** Document Type */
+            document_type: string;
+            /** Mappings */
+            mappings?: string[];
+            /** Passages */
+            passages?: components["schemas"]["DossierPassageSchema"][];
+            /**
+             * Passages Total
+             * @default 0
+             */
+            passages_total: number;
+            /**
+             * Provisional
+             * @default false
+             */
+            provisional: boolean;
+            /** Quality */
+            quality?: string | null;
+            /** Version Id */
+            version_id: string;
+            /** Version Label */
+            version_label?: string | null;
+            /** Version Status */
+            version_status: string;
+        };
+        /**
+         * DossierVersionSchema
+         * @description Una versión guardada del dossier: lo justo para listarla y elegir con cuál comparar.
+         */
+        DossierVersionSchema: {
+            /**
+             * Built At
+             * Format: date-time
+             */
+            built_at: string;
+            /** Content Hash */
+            content_hash: string;
+            /** Id */
+            id: string;
+            /** Passages Count */
+            passages_count: number;
+            /** Sources Count */
+            sources_count: number;
         };
         /**
          * DueItemSchema
@@ -7999,6 +8229,221 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CoverageSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    node_dossier_api_v1_curriculum_nodes__node_id__dossier_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                node_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DossierSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    list_dossier_versions_api_v1_curriculum_nodes__node_id__dossier_versions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                node_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DossierVersionSchema"][];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    archive_dossier_api_v1_curriculum_nodes__node_id__dossier_versions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                node_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DossierArchiveSchema"];
+                };
+            };
+            /** @description La entrada no se puede usar: carpeta inválida (`invalid_source`), contenido rechazado por seguridad (`unsafe_content`) o URL no descargable (`url_rejected`). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    get_dossier_version_api_v1_curriculum_nodes__node_id__dossier_versions__version_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                node_id: string;
+                version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DossierSchema"];
                 };
             };
             /** @description El recurso no existe. */

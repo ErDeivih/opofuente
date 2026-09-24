@@ -17,9 +17,10 @@ from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import text
 
 from opofuente.api.openapi import PROBLEM_MEDIA_TYPE
-from opofuente.config import project_root
+from opofuente.config import Settings, project_root
 from opofuente.tools.export_openapi import render_schema
 
 CONTRACT_PATH = project_root() / "packages" / "contracts" / "openapi.json"
@@ -38,6 +39,9 @@ REQUIRED_PATHS = (
     "/api/v1/convocations/{convocation_id}/activate",
     "/api/v1/convocations/{convocation_id}/curriculum",
     "/api/v1/curriculum-nodes/{node_id}",
+    "/api/v1/curriculum-nodes/{node_id}/dossier",
+    "/api/v1/curriculum-nodes/{node_id}/dossier/versions",
+    "/api/v1/curriculum-nodes/{node_id}/dossier/versions/{version_id}",
     "/api/v1/inventories",
     "/api/v1/inventories/{inventory_id}",
     "/api/v1/inventories/{inventory_id}/confirm-import",
@@ -333,6 +337,78 @@ def test_el_422_servido_cumple_el_esquema_documentado(
     assert lista.status_code == 422
     assert lista.json()["code"] == "validation_error"
     assert {error["field"] for error in lista.json()["field_errors"]} == {"query.limit"}
+
+
+def test_el_dossier_declara_sus_huecos_y_su_forma(schema: dict[str, Any]) -> None:
+    """El contrato del dossier: la forma, los códigos de hueco y lo que no promete.
+
+    Se comprueba en las dos direcciones: que el esquema documenta todo lo que el dossier necesita
+    para
+    leerse sin adivinar (fuentes, pasajes, huecos, huella y versión), y que **los códigos de hueco
+    del
+    contrato son exactamente los del dominio**: una lista que se separa en silencio es una lista que
+    miente.
+    """
+    from opofuente.api.dossier_schemas import hole_codes
+
+    referencia = schema["paths"]["/api/v1/curriculum-nodes/{node_id}/dossier"]["get"]["responses"][
+        "200"
+    ]["content"]["application/json"]["schema"]["$ref"]
+    propiedades = _component(schema, referencia)["properties"]
+    for campo in (
+        "format_version",
+        "node_id",
+        "generated_at",
+        "content_hash",
+        "version_id",
+        "previous_version_id",
+        "sources",
+        "holes",
+        "sources_total",
+        "passages_total",
+        "empty",
+    ):
+        assert campo in propiedades, campo
+
+    pasaje = schema["components"]["schemas"]["DossierPassageSchema"]["properties"]
+    for campo in ("evidence_id", "text", "page", "ordinal", "repeated_in"):
+        assert campo in pasaje, campo
+    hueco = schema["components"]["schemas"]["DossierHoleSchema"]["properties"]
+    assert set(hueco["code"]["enum"]) == set(hole_codes()), (
+        "el contrato y el dominio tienen que declarar los mismos códigos de hueco"
+    )
+
+    archivado = schema["components"]["schemas"]["DossierArchiveSchema"]["properties"]
+    assert "created" in archivado and "version_id" in archivado
+
+
+def test_el_dossier_servido_cumple_el_esquema_documentado(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """El cuerpo que se sirve de verdad, comparado con el contrato: campos y totales que cuadran."""
+    from opofuente.infrastructure.db import build_engine
+
+    engine = build_engine(seeded_settings.data_paths.database)
+    try:
+        with engine.begin() as conexion:
+            nodo = conexion.execute(
+                text("SELECT id FROM curriculum_nodes ORDER BY path LIMIT 1")
+            ).first()
+    finally:
+        engine.dispose()
+    assert nodo is not None
+
+    respuesta = seeded_client.get(f"/api/v1/curriculum-nodes/{nodo[0]}/dossier")
+
+    assert respuesta.status_code == 200, respuesta.text
+    cuerpo = respuesta.json()
+    assert cuerpo["node_id"] == nodo[0]
+    assert cuerpo["passages_total"] == sum(fuente["passages_total"] for fuente in cuerpo["sources"])
+    assert cuerpo["sources_total"] == len(cuerpo["sources"])
+    assert cuerpo["format_version"] == 1
+    # Un tema sin material lo dice con su hueco, no con un cero a secas.
+    assert cuerpo["empty"] is True
+    assert [hueco["code"] for hueco in cuerpo["holes"]] == ["sin_material"]
 
 
 def test_la_respuesta_de_programa_cumple_el_esquema(seeded_client: TestClient) -> None:

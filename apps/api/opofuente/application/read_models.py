@@ -477,6 +477,17 @@ class NodeCoverageView:
 
 
 @dataclass(frozen=True, slots=True)
+class DossierVersionView:
+    """Una versión guardada del dossier de un tema (S13): lo justo para listarla y elegirla."""
+
+    id: str
+    content_hash: str
+    built_at: datetime
+    sources_count: int
+    passages_count: int
+
+
+@dataclass(frozen=True, slots=True)
 class DecisionOutcome:
     """Resultado de decidir una propuesta. Cada ítem es transaccional: o se aplica, o se explica."""
 
