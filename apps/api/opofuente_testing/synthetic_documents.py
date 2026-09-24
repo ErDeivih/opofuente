@@ -28,6 +28,10 @@ FILLER = (
     "creado para las pruebas de OpoFuente y no reproduce ningún texto oficial. "
 )
 
+#: Calidad del JPEG de un escaneo sintético. Alta pero no máxima: el texto se lee igual y el fichero
+#: se queda en decenas de kilobytes, que es lo que permite subirlo con los límites de las pruebas.
+JPEG_QUALITY = 88
+
 
 def build_text_pdf(path: Path, *, pages: int = 3, filler: str = FILLER) -> Path:
     """PDF nativo de varias páginas, con texto real en cada una."""
@@ -51,6 +55,41 @@ def build_scanned_pdf(path: Path, *, pages: int = 2) -> Path:
     for _ in range(pages):
         page = document.new_page()
         page.insert_image(pymupdf.Rect(50, 50, 350, 250), stream=image_bytes)
+    document.save(str(path))
+    document.close()
+    return path
+
+
+def build_scanned_pdf_with_text(
+    path: Path,
+    *,
+    pages: int = 1,
+    lines: tuple[str, ...] = ("Tema 4. Medidas cautelares",),
+) -> Path:
+    """PDF «escaneado» **legible**: cada página es la imagen de un texto, sin capa de texto.
+
+    Es el caso que el OCR tiene que resolver de verdad: el fichero no trae ni un carácter
+    seleccionable, pero la imagen dice algo. Se construye renderizando una página de texto a PNG y
+    metiendo ese PNG como imagen de otra página, que es exactamente lo que hace un escáner. Frases
+    sin acentos y sin adornos a propósito: lo que se comprueba es que el texto **se lee**, no la
+    puntería del modelo con los signos.
+
+    La imagen va en JPEG, no en PNG: PyMuPDF guarda un PNG como trama sin comprimir y el fichero
+    salía de 11 MB, por encima del límite de subida de las pruebas (no llegaban ni a importarlo).
+    """
+    origen = pymupdf.open()
+    pagina = origen.new_page()
+    y = 90
+    for linea in lines:
+        pagina.insert_text((72, y), linea, fontsize=18)
+        y += 34
+    imagen = pagina.get_pixmap(dpi=200).tobytes("jpg", JPEG_QUALITY)
+    origen.close()
+
+    document = pymupdf.open()
+    for _ in range(pages):
+        hoja = document.new_page()
+        hoja.insert_image(pymupdf.Rect(40, 40, 560, 400), stream=imagen)
     document.save(str(path))
     document.close()
     return path

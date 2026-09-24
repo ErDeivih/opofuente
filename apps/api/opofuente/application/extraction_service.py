@@ -349,14 +349,22 @@ class ExtractionService:
             return ItemStatus.FAILED
 
         if result.status is RepresentationStatus.PENDING:
-            # Sin texto nativo utilizable (imagen, PDF escaneado): el original ya está copiado y es
-            # válido, así que la entrada no falla; queda pendiente de OCR y se declara.
+            # Sin texto utilizable (imagen, PDF escaneado): el original ya está copiado y es válido,
+            # así que la entrada no falla; queda pendiente de OCR y se declara. Se distingue «no se
+            # ha ejecutado» de «se ejecutó y no reconoció nada»: son cosas distintas y la primera no
+            # se puede decir cuando ya se ha llamado al OCR.
+            ejecutado = result.kind is RepresentationKind.OCR
             self._issue(
                 batch_id,
                 entry,
                 IssueCode.OCR_PENDING,
                 IssueSeverity.WARNING,
-                "Sin texto nativo: queda pendiente de OCR, que no se ha ejecutado.",
+                (
+                    "El OCR se ha ejecutado y no ha reconocido texto: la representación queda "
+                    "pendiente."
+                )
+                if ejecutado
+                else "Sin texto nativo: queda pendiente de OCR, que no se ha ejecutado.",
             )
             self._ingestions.mark_item(
                 entry.item_id,

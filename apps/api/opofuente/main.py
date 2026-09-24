@@ -70,6 +70,7 @@ from opofuente.infrastructure.ingestion_repository import SqlAlchemyIngestionRep
 from opofuente.infrastructure.job_repository import SqlAlchemyJobRepository
 from opofuente.infrastructure.migrations import database_revision, run_migrations, script_head
 from opofuente.infrastructure.observability import setup_logging
+from opofuente.infrastructure.ocr import tesseract_from_settings
 from opofuente.infrastructure.probes import DatabaseProbe, DataDirectoryProbe
 from opofuente.infrastructure.profile_repository import SqlAlchemyProfileRepository
 from opofuente.infrastructure.question_repository import SqlAlchemyQuestionRepository
@@ -142,6 +143,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     session_factory = build_session_factory(engine)
 
     worker_liveness = WorkerLiveness()
+    # Un solo adaptador de OCR por proceso: la sonda se ejecuta una vez y el informe de capacidades
+    # dice lo mismo que el extractor hace (un binario, una versión, unos idiomas).
+    ocr = tesseract_from_settings(resolved)
     system_service = SystemService(
         version=__version__,
         probes=(
@@ -149,7 +153,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             DataDirectoryProbe(paths),
         ),
         capability_providers=(
-            ConfigurationCapabilityProvider(resolved),
+            ConfigurationCapabilityProvider(resolved, ocr=ocr),
             SqliteCapabilityProvider(engine),
             IngestionCapabilityProvider(
                 paths=paths,
@@ -187,7 +191,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         ingestions=ingestion_repository,
         store=artifact_store,
         representations=RepresentationStore(paths),
-        registry=ExtractorRegistry(resolved),
+        registry=ExtractorRegistry(resolved, ocr=ocr),
         jobs=job_queue,
         clock=clock,
         data_root=paths.root,

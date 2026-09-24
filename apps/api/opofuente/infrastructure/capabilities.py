@@ -16,21 +16,29 @@ from sqlalchemy.exc import SQLAlchemyError
 from opofuente.config import DataPaths, Settings
 from opofuente.domain.providers import sends_content_off_device
 from opofuente.domain.system import Capability, CapabilityStatus
+from opofuente.infrastructure.ocr import TesseractOcr, tesseract_from_settings
 from opofuente.infrastructure.worker_liveness import WorkerLiveness
 
 
 class ConfigurationCapabilityProvider:
     """Capacidades que dependen solo de configuración (OCR, LLM, embeddings)."""
 
-    def __init__(self, settings: Settings) -> None:
+    def __init__(self, settings: Settings, *, ocr: TesseractOcr | None = None) -> None:
         self._settings = settings
+        self._ocr_adapter = ocr if ocr is not None else tesseract_from_settings(settings)
 
     def provide(self) -> tuple[Capability, ...]:
         return (self._ocr(), self._llm(), self._embeddings())
 
     def _ocr(self) -> Capability:
-        path = self._settings.tesseract_path
-        if path is None:
+        """OCR comprobado **de verdad**, no por tener una ruta escrita.
+
+        Es el mismo criterio que el del almacén o el del worker: la capacidad se declara operativa
+        cuando el binario responde y tiene el idioma pedido. Un Tesseract instalado sin `spa`
+        respondería a `--version` y luego no podría leer español: eso no es tener OCR, y decirlo
+        `configured_unverified` cuando ya se usa sería igual de falso en el otro sentido.
+        """
+        if self._ocr_adapter is None:
             return Capability(
                 id="ocr",
                 label="OCR (Tesseract)",
@@ -40,21 +48,31 @@ class ConfigurationCapabilityProvider:
                     "pendientes sin bloquear la aplicación."
                 ),
             )
-        if not path.is_file():
+
+        sonda = self._ocr_adapter.probe()
+        if not sonda.available:
             return Capability(
                 id="ocr",
                 label="OCR (Tesseract)",
                 status=CapabilityStatus.UNAVAILABLE,
-                detail="La ruta configurada en OPOFUENTE_TESSERACT_PATH no existe en este equipo.",
+                detail=(
+                    f"{sonda.detail} Los escaneos quedan pendientes con su aviso, sin inventar "
+                    "texto a partir de la imagen."
+                ),
             )
+        modelos = (
+            f" Modelos de idioma en {self._ocr_adapter.tessdata}."
+            if self._ocr_adapter.tessdata is not None
+            else ""
+        )
         return Capability(
             id="ocr",
             label="OCR (Tesseract)",
-            status=CapabilityStatus.CONFIGURED_UNVERIFIED,
+            status=CapabilityStatus.ENABLED,
             detail=(
-                "Binario presente, pero la aplicación no lo llama: el OCR no está implementado y "
-                "una imagen se queda pendiente con su aviso. Declararlo evita creer que un PDF "
-                "escaneado se está leyendo."
+                f"{sonda.detail}.{modelos} Se ejecuta solo cuando el fichero no trae texto nativo "
+                "(un PDF escaneado o una imagen) y el resultado se guarda como representación de "
+                "tipo `ocr`, aparte del texto nativo: nunca se fusionan."
             ),
         )
 

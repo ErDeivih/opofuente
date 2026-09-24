@@ -12,6 +12,7 @@ from opofuente.infrastructure.capabilities import (
     IngestionCapabilityProvider,
     VectorIndexCapabilityProvider,
 )
+from opofuente.infrastructure.ocr import CompletedRun, TesseractOcr
 from opofuente.infrastructure.worker_liveness import WorkerLiveness
 
 
@@ -54,6 +55,56 @@ def test_ocr_con_ruta_inexistente_es_no_disponible(tmp_path: Path) -> None:
     report = service.capabilities()
     ocr = report.by_id["ocr"]
     assert ocr.status is CapabilityStatus.UNAVAILABLE
+    assert any(degradation.code == "ocr.unavailable" for degradation in report.degradations)
+
+
+def _ocr_sondeable(tmp_path: Path, *, idiomas: tuple[str, ...]) -> TesseractOcr:
+    """Adaptador con el binario falseado: la sonda de verdad, el proceso no."""
+    binario = tmp_path / "tesseract-falso.exe"
+    binario.write_bytes(b"ruta que existe")
+
+    def runner(command, timeout):
+        if "--version" in command:
+            return CompletedRun(returncode=0, stdout="tesseract v5.4.0.20240606\n")
+        if "--list-langs" in command:
+            listado = "List of available languages (n):\n" + "\n".join(idiomas) + "\n"
+            return CompletedRun(returncode=0, stdout=listado)
+        return CompletedRun(returncode=0, stdout="")
+
+    return TesseractOcr(binary=binario, languages="spa", runner=runner)
+
+
+def _report_con_ocr(settings: Settings, adaptador: TesseractOcr):
+    service = SystemService(
+        version="0.0.0-test",
+        probes=(),
+        capability_providers=(ConfigurationCapabilityProvider(settings, ocr=adaptador),),
+    )
+    return service.capabilities()
+
+
+def test_el_ocr_se_declara_operativo_solo_si_la_sonda_pasa(tmp_path: Path) -> None:
+    settings = Settings(tesseract_path=tmp_path / "tesseract.exe", _env_file=None)
+
+    report = _report_con_ocr(settings, _ocr_sondeable(tmp_path, idiomas=("eng", "osd", "spa")))
+
+    ocr = report.by_id["ocr"]
+    assert ocr.status is CapabilityStatus.ENABLED
+    assert "v5.4.0.20240606" in ocr.detail, "la capacidad dice qué binario ha respondido"
+    assert "spa" in ocr.detail
+    assert not [item for item in report.degradations if item.code == "ocr.unavailable"]
+
+
+def test_el_ocr_sin_el_idioma_pedido_no_se_declara_operativo(tmp_path: Path) -> None:
+    """Un Tesseract instalado sin español no lee este material: no es «tener OCR»."""
+    settings = Settings(tesseract_path=tmp_path / "tesseract.exe", _env_file=None)
+
+    report = _report_con_ocr(settings, _ocr_sondeable(tmp_path, idiomas=("eng", "osd")))
+
+    ocr = report.by_id["ocr"]
+    assert ocr.status is CapabilityStatus.UNAVAILABLE
+    assert ocr.status is not CapabilityStatus.CONFIGURED_UNVERIFIED
+    assert "spa" in ocr.detail
     assert any(degradation.code == "ocr.unavailable" for degradation in report.degradations)
 
 

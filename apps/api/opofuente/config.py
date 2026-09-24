@@ -121,6 +121,14 @@ class Settings(BaseSettings):
     embedding_base_url: str | None = None
 
     tesseract_path: Path | None = None
+    #: Idiomas del OCR, en la forma que entiende Tesseract (`spa`, `spa+eng`). Por defecto español,
+    #: porque el material de esta aplicación está en español y un OCR en inglés sobre texto español
+    #: produce texto plausible y equivocado.
+    tesseract_languages: str = "spa"
+    #: Directorio de datos de idioma de Tesseract (`tessdata`). Se pasa explícitamente al binario en
+    #: vez de depender de `TESSDATA_PREFIX` del sistema: en Windows el directorio del programa no
+    #: es escribible sin administrador, así que el modelo de español suele vivir en otro sitio.
+    tesseract_tessdata: Path | None = None
 
     # --- Ingestión y worker local (S02) ---------------------------------------
     #: Worker en el propio proceso: consume la cola persistida sin Redis ni Celery.
@@ -170,7 +178,7 @@ class Settings(BaseSettings):
             )
         return resolved
 
-    @field_validator("tesseract_path", mode="after")
+    @field_validator("tesseract_path", "tesseract_tessdata", mode="after")
     @classmethod
     def _resolve_tesseract_path(cls, value: Path | None) -> Path | None:
         if value is None:
@@ -186,6 +194,7 @@ class Settings(BaseSettings):
         "embedding_base_url",
         "embedding_model",
         "tesseract_path",
+        "tesseract_tessdata",
         mode="before",
     )
     @classmethod

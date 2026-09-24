@@ -57,6 +57,11 @@ está copiándose termina, para no dejar nada a medias— y lo ya copiado sigue 
 aplicación en pausa, al volver sigue en pausa. Reanudar continúa por donde se quedó, no desde el
 principio. Cancelar sigue siendo lo otro: cierra el lote con lo que había y lo deja reintentable.
 
+**Los PDF escaneados y las fotos se leen**, si el OCR está instalado (ver §8). Al leer un documento con
+la capa de texto vacía, la aplicación lo OCRiza, guarda lo reconocido como una lectura **aparte** de la
+nativa —nunca mezcladas—, lo etiqueta `ocr_unreviewed` y deja el original intacto. Las páginas se
+citan por su número, así que una cita de un escaneo dice de qué página salió.
+
 ## 3. Copia de seguridad
 
 **Ajustes → Copia y restauración → Hacer una copia ahora.** Una copia contiene:
@@ -113,7 +118,7 @@ rutas absolutas ni las claves: el formateador solo copia una lista blanca de cam
 | Síntoma | Qué mirar |
 |---|---|
 | «No está listo» en la cabecera | Ajustes → capacidades, o `GET /api/v1/health/ready`: cada comprobación dice qué falla |
-| Una imagen no tiene texto | Es lo esperado: el OCR **no** está implementado. La entrada queda `ocr_pending` con su aviso |
+| Una imagen no tiene texto | Ajustes → capacidades → **OCR**: dice si falta el binario, si falta el idioma o si el OCR se ejecutó y no reconoció nada. Ver §8 |
 | La búsqueda no encuentra algo que debería | Comprueba el estado del corpus (una versión `candidate` o `superseded` no se recupera por defecto) y, si el índice se quedó atrás, **Ajustes → Rehacer el índice** |
 | El disco se llena | Ajustes → Uso del almacén y Qué se puede retirar |
 | Una copia no se puede restaurar | Verifícala: el motivo se dice. Si es de una revisión más nueva, actualiza el programa |
@@ -123,7 +128,10 @@ rutas absolutas ni las claves: el formateador solo copia una lista blanca de cam
 
 ## 6. Qué **no** hace la aplicación (y lo dice)
 
-- **OCR**: no está implementado. Una imagen o un PDF escaneado quedan pendientes con su aviso.
+- **OCR**: funciona **si se instala** (ver §8); sin Tesseract instalado no se lee nada y una imagen o un
+  PDF escaneado quedan `ocr_pending` con su aviso. Lo que la aplicación no hace es leer una tabla con
+  rejilla de forma fiable ni importar la plantilla de respuestas de un escaneo sin que alguien la mire
+  (DEBT-020).
 - **Modelo de lenguaje e índice vectorial**: no hay proveedor. La búsqueda es léxica y la respuesta se
   compone del propio corpus, citando cada afirmación.
 - **Calificación oficial 0–50 y apto/suspenso**: sin baremo oficial importado no se inventan; se da la
@@ -147,3 +155,55 @@ rutas absolutas ni las claves: el formateador solo copia una lista blanca de cam
 La release local incluye los artefactos construidos y un `RELEASE.md` con la versión, la revisión de
 esquema y la lista de comprobaciones ejecutadas. No se publica nada a ningún sitio: el repositorio es
 privado mientras el temario de Guardia Civil siga dentro (DEBT-003).
+
+## 8. Leer escaneos y fotos (OCR)
+
+Sin esto, la aplicación funciona igual: un PDF escaneado o una imagen quedan `ocr_pending` con su aviso
+y no se inventa texto. Con esto, se leen. Son **dos pasos**, y los dos hacen falta:
+
+```powershell
+# 1. El motor (una vez). Sin administrador.
+winget install --id UB-Mannheim.TesseractOCR
+
+# 2. El modelo de español, en un directorio del usuario: el `tessdata` que trae el instalador está
+#    dentro de `Program Files`, que NO es escribible sin administrador, y el español no viene de serie.
+$origen  = 'C:\Program Files\Tesseract-OCR\tessdata'
+$destino = "$env:LOCALAPPDATA\OpoFuente\tessdata"
+New-Item -ItemType Directory -Force $destino | Out-Null
+Copy-Item "$origen\*" $destino -Recurse -Force      # eng, osd y los ficheros de configuración
+Invoke-WebRequest 'https://github.com/tesseract-ocr/tessdata/raw/main/spa.traineddata' `
+                  -OutFile "$destino\spa.traineddata"
+```
+
+El modelo que se instala es el **oficial** (`tesseract-ocr/tessdata`, 18 256 019 bytes): es el que mejor
+lee este material en la medición. Los otros dos oficiales —`tessdata_fast` y `tessdata_best`— son más
+pequeños y leen menos; si se instala uno de ellos, se pone como `spa.traineddata` o se pide por su
+nombre con `OPOFUENTE_TESSERACT_LANGUAGES`.
+
+La aplicación **encuentra sola** ese directorio: no hay que configurar nada si el modelo está ahí. Si se
+prefiere tenerlo en otro sitio, se declara en el `.env` de la raíz del repositorio:
+
+```ini
+OPOFUENTE_TESSERACT_PATH=C:\Program Files\Tesseract-OCR\tesseract.exe
+OPOFUENTE_TESSERACT_TESSDATA=C:\ruta\a\tu\tessdata
+OPOFUENTE_TESSERACT_LANGUAGES=spa
+```
+
+**Comprobar que funciona**: Ajustes → capacidades → **OCR** debe decir `operativo`, con la versión del
+binario, los idiomas disponibles y dónde están los modelos. Si dice otra cosa, el motivo está escrito
+ahí mismo: «la ruta no existe», «no tiene el idioma spa: solo puede leer eng y osd», etc. Esa frase es
+la que hay que resolver; no hay nada que adivinar.
+
+**Qué se lee y qué no.** Texto de apuntes escaneados o fotografiados: sí, y con acentos. Una **tabla con
+rejilla** (por ejemplo una plantilla de respuestas oficial): regular —medido, 76 de 77 en el mejor caso,
+con una respuesta que ni siquiera aparece—, así que una tabla no se importa nunca sin que alguien la
+revise. Los números de esa medición, y cómo repetirla, están en
+`docs/reviews/OCR-escaneos-2026-09.md`.
+
+**Las pruebas del repositorio** incluyen dos que ejecutan Tesseract de verdad sobre documentos
+sintéticos: se ejecutan si el equipo tiene un OCR utilizable y se saltan con el motivo si no. Para
+lanzarlas a mano:
+
+```powershell
+uv run pytest apps/api/tests/unit/test_ocr.py -q
+```

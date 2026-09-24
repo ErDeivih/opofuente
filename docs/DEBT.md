@@ -31,7 +31,7 @@ Reglas:
 | [DEBT-017](#debt-017--las-colecciones-existen-en-la-api-y-no-en-la-interfaz) | S12 | Las colecciones se pueden crear y llenar por la API; ninguna pantalla las enseña | **cerrada** (20 de septiembre de 2026: pantalla, filtro en el servidor, alta y **baja** de miembros, con dos defectos que la propia superficie destapó y se arreglaron) |
 | [DEBT-018](#debt-018--la-puerta-humana-de-s04-no-se-ejecutó) | antes de usar material real | S04 pedía medir la revisión sobre 20–50 ficheros reales antes de abrir S05, y no se hizo | abierta (la **mitad de la máquina está medida** con 30 ficheros reales —90 propuestas, 38 pendientes de revisar—; falta el tiempo de revisión del propietario, la decisión y su confirmación) |
 | [DEBT-019](#debt-019--el-estado-conservado-sin-extractor-no-llega-a-la-pantalla) | S12 | `unsupported_preserved` se guarda y se sirve, pero no hay prueba de interfaz ni de contrato que lo muestre legible | **cerrada** (el estado se enseña con su nombre y su motivo, y hay prueba de la API de punta a punta y prueba de interfaz) |
-| [DEBT-020](#debt-020--la-clave-oficial-de-celador-está-escaneada-y-no-se-puede-importar) | S09+ | La plantilla oficial de respuestas correctas de Celador es un escaneo sin capa de texto: la clave existe y no entra en la aplicación | abierta |
+| [DEBT-020](#debt-020--la-clave-oficial-de-celador-está-escaneada-y-no-se-puede-importar) | S09+ | La plantilla oficial de respuestas correctas de Celador es un escaneo sin capa de texto: la clave existe y no entra en la aplicación | abierta (OCR hecho; falta el importador revisado o la transcripción) |
 | [DEBT-021](#debt-021--la-puerta-e2e-puede-correr-contra-un-servidor-ajeno) | antes de dar por buena una corrida E2E | La suite E2E reutiliza cualquier servidor que escuche en el 8765: corre contra su base de datos y escribe en ella | abierta |
 | [DEBT-022](#debt-022--la-suite-e2e-no-distingue-la-máquina-está-cargada-de-esto-se-ha-roto) | antes de dar por buena la puerta E2E | La suite tarda 1,8 min en vacío y 11 cargada, y sus esperas fijas pueden caducar sin decir si el problema es el código o el ordenador (los cuatro rojos que primero se le atribuyeron eran del servidor reutilizado, DEBT-021) | abierta |
 | [DEBT-023](#debt-023--una-tarjeta-de-anki-no-puede-ser-una-pregunta-porque-no-hay-dónde-guardar-su-respuesta) | S12.6 | El modelo tiene el tipo `free_text_reference` y no tiene dónde guardar la respuesta de referencia: el reverso de una tarjeta no entra | abierta |
@@ -1073,26 +1073,48 @@ transcripción manual con su cita. Lo que no vale es dejar creer que la clave en
 3. Si se elige no hacerlo, la interfaz dice, con esas palabras, que la clave oficial de este ejercicio
    no se puede importar y por qué, y ninguna pantalla promete lo contrario.
 
-**Estado: abierta, con el OCR medido (23 de septiembre de 2026).** El perfil sirve para estudiar el
-programa (16 temas) y las reglas del examen, que es para lo que se dio de alta. Lo que se ha medido
-ahora, con Tesseract 5.4.0 y el modelo español instalados en este equipo (el informe completo está en
-`docs/reviews/OCR-escaneos-2026-09.md`):
+**Estado: abierta, con el OCR medido y la clave verificada (23 de septiembre de 2026).** El perfil sirve
+para estudiar el programa (16 temas) y las reglas del examen, que es para lo que se dio de alta. Lo que
+se ha medido, con Tesseract 5.4.0 y los modelos de español instalados en este equipo (el informe
+completo, con el método y cómo repetirlo, está en `docs/reviews/OCR-escaneos-2026-09.md`):
 
 | Prueba sobre el escaneo real | Resultado |
 |---|---|
 | Texto nativo del PDF | 0 caracteres (por eso hace falta OCR) |
-| Prosa (cabecera y pie) | **correcta**, verificada leyendo la imagen |
-| Tabla de 77 respuestas, OCR de página | destroza la tabla: las líneas de la rejilla se leen como caracteres |
-| Tabla, OCR por columnas | 53 de 77 leídas y ~48 correctas, **y sin saber cuáles fallan** |
+| Prosa (cabecera, plazo y pie) | **correcta**, verificada leyendo la imagen |
+| Tabla de 77 respuestas, OCR de página completa con `--psm 6` | destroza la tabla: las líneas de la rejilla se leen como caracteres |
+| Tabla, página entera a 300 ppp, modelo oficial `tessdata` | **76 de 77 leídas y 76 correctas**, 0 mal, 1 sin leer (la 75) |
+| Igual, modelo `tessdata_best` | 72 leídas, 72 correctas, 5 sin leer |
+| Igual, modelo `tessdata_fast` | 63 leídas, 62 correctas, 14 sin leer |
 
-Conclusión, en corto: **el OCR sirve para el texto y no para esta tabla.** Importar la clave así sería
-meter respuestas falsas en el banco, que es peor que no tenerlas. Las salidas siguen siendo las dos del
-criterio: teclearla una vez (77 letras, con la tabla de `docs/reviews/OCR-escaneos-2026-09.md` como
-comprobación) o construir un lector de tablas de verdad (detectar la rejilla y OCRizar cada celda).
+Y una corrección que forma parte del resultado: la **primera** clave transcrita a mano en esa sesión
+tenía dos errores (46 y 57). Se detectaron porque el OCR no coincidía, y al mirar los recortes de esas
+filas el OCR tenía razón. La clave se ha re-verificado entera leyendo los 77 pares en rejillas de
+recortes, y es la que está en el informe. La medición anterior («53 de 77») queda superada: usaba el
+modelo rápido, un emparejado por líneas que se desplazaba sin avisar y la clave equivocada.
 
-Lo que sí queda desbloqueado y es lo siguiente: **usar Tesseract para las páginas sin capa de texto**,
-que es lo que hace falta para que los apuntes escaneados o fotografiados entren como fuentes del
-dossier del tema (ADR-019).
+**Decisión (23 de septiembre de 2026).** La tabla **sí se lee**, casi entera, con el modelo oficial a
+300 ppp; lo que no se puede es leerla **en silencio**:
+
+- la clave se teclea una vez contra la tabla verificada del informe **o** se importa desde el escaneo
+  **como propuesta a revisar**; en ningún caso entra como verdad sin que alguien mire las 77;
+- mientras ese importador no exista, la interfaz dice que la clave de este ejercicio no se ha
+  importado, y por qué.
+
+**Criterio de cierre.**
+
+1. Las 77 preguntas quedan con su clave y su cita a la página del escaneo, por transcripción verificada o
+   por importación revisada (nunca por OCR automático y silencioso).
+2. Hay una prueba con **el documento real** (no con un PDF de laboratorio) que comprueba que las
+   respuestas importadas coinciden con la plantilla publicada, y que un fallo de lectura de una fila se
+   detecta y bloquea la importación en lugar de colarse.
+3. Si se elige no hacerlo, la interfaz dice, con esas palabras, que la clave oficial de este ejercicio
+   no se puede importar y por qué, y ninguna pantalla promete lo contrario.
+
+**Lo que ya no está pendiente:** el OCR de las páginas sin capa de texto **está hecho** (S03: el
+escaneo o la imagen se OCRizan cuando la sonda pasa, y el resultado se guarda como representación `ocr`
+aparte del texto nativo, con la página de cada tramo). Es la entrada que necesita el dossier del tema
+(ADR-019), y el OCR de prosa —apuntes escaneados o fotografiados— es lo que se ha verificado correcto.
 
 ---
 
@@ -1209,6 +1231,21 @@ ajeno de por medio), aplicando esa regla a cada una:
 Comprobado de la forma que importa: las dos pruebas, **dos veces seguidas sobre el mismo
 `.e2e-data`** con restos de una corrida interrumpida dentro. Verdes las dos veces.
 
+**Cuarta medida (24 de septiembre de 2026, verificación del OCR): un rojo por transporte, no por
+tiempo, en la puerta 18 con la máquina recién cargada.** Sobre el mismo árbol congelado, la puerta 18
+dio este resultado:
+
+| Corrida | Entorno | Resultado |
+|---|---|---|
+| puerta 18 completa, justo después de las puertas 1–17 (1 000 pruebas de backend, dos builds) | máquina cargada | 53 pasan, **1 falla**: `search.spec.ts:173`, con `apiRequestContext.get: read ECONNRESET` en `GET /api/v1/ingestion-batches?limit=25` |
+| la misma prueba sola | puertos libres, máquina descargada | **pasa** en 18 s |
+| la puerta 18 completa otra vez | máquina descargada | **54 pasan** en 5 min |
+
+No es un fallo de la prueba ni del árbol: es el servidor local cerrando la conexión mientras la máquina
+está ocupada, y la prueba lo ve como rojo porque un `GET` no se reintenta. Añade un matiz al criterio 2:
+lo que hay que tolerar no es solo que algo tarde más, sino que **una petición idempotente que se cae por
+transporte no debería contar como un fallo funcional** —o, si cuenta, tiene que decir que fue eso.
+
 **Obligación:** que el resultado de la puerta 18 signifique algo por sí solo, sin tener que mirar
 cuánto tardó la suite ni qué procesos había abiertos.
 
@@ -1217,15 +1254,17 @@ cuánto tardó la suite ni qué procesos había abiertos.
 1. La puerta distingue «ha tardado más» de «no funciona»: o el trabajo de fondo se completa de forma
    determinista dentro de la prueba, o la espera se declara con su motivo y su medida, y el informe
    dice cuál de las dos cosas ha pasado.
-2. Una corrida con la máquina cargada no produce rojos por tiempo.
+2. Una corrida con la máquina cargada no produce rojos por tiempo **ni por transporte**: una petición
+   idempotente que se cae porque el servidor local está ocupado no cuenta como fallo funcional (medido
+   el 24/09/2026: un `ECONNRESET` en un `GET` fue el único rojo de la puerta 18).
 3. **Añadido el 23/09/2026:** una corrida sobre un directorio de datos ya usado, con restos de corridas
    anteriores interrumpidas, da el mismo resultado que una sobre el directorio recién hecho. Es lo que
    hace falta para que un rojo hable del código y no de la basura que quedó.
 
-**Estado: abierta.** Con los puertos libres y la máquina descargada la puerta está verde (52/52 en
-~3 min) **también sobre un directorio reutilizado**; de los tres criterios, el 3 ya está cumplido por
+**Estado: abierta.** Con los puertos libres y la máquina descargada la puerta está verde (54/54 en
+~5 min) **también sobre un directorio reutilizado**; de los tres criterios, el 3 ya está cumplido por
 las pruebas que se arreglaron aquí, y quedan el 1 y el 2 (declarar la espera y no producir rojos por
-tiempo con la máquina cargada).
+tiempo ni por transporte con la máquina cargada).
 
 ---
 

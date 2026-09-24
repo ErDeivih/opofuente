@@ -11,6 +11,7 @@ Las pruebas negativas de seguridad (ZIP traversal, bombas, entidades externas) e
 from __future__ import annotations
 
 import json
+from collections.abc import Sequence
 from pathlib import Path
 
 import pytest
@@ -28,6 +29,7 @@ from opofuente.domain.extraction import (
 from opofuente.infrastructure.extractors import ExtractionPlan, ExtractorRegistry
 from opofuente.infrastructure.extractors.base import detect_format
 from opofuente.infrastructure.extractors.text_files import MAX_BLOCK_SECTIONS
+from opofuente.infrastructure.ocr import CompletedRun, TesseractOcr
 from opofuente_testing.synthetic_documents import (
     build_bomb_docx,
     build_cp1252_text,
@@ -41,6 +43,7 @@ from opofuente_testing.synthetic_documents import (
     build_pdf_with_repeated_header,
     build_png,
     build_scanned_pdf,
+    build_scanned_pdf_with_text,
     build_spreadsheet_like,
     build_text_pdf,
 )
@@ -278,6 +281,143 @@ def test_imagen_sin_ocr_queda_pendiente_y_no_inventa_texto(tmp_path: Path) -> No
     assert resultado.metadata["height"] == 24
     # Lo que hay en `text` son metadatos, no texto del documento.
     assert "píxeles" in resultado.text
+
+
+# --- OCR: solo cuando no hay texto nativo, y siempre como otra representación -----------------
+
+
+def _ocr_con_guion(
+    tmp_path: Path,
+    *,
+    por_pagina: tuple[str, ...] = (),
+    texto: str = "texto reconocido",
+    codigo: int = 0,
+) -> tuple[TesseractOcr, list[list[str]]]:
+    """Adaptador real con el binario falseado: se comprueba la decisión, no la puntería del OCR."""
+    binario = tmp_path / "tesseract-falso.exe"
+    binario.write_bytes(b"ruta que existe")
+    lecturas: list[list[str]] = []
+
+    def runner(command: Sequence[str], timeout: float) -> CompletedRun:
+        if "--version" in command:
+            return CompletedRun(returncode=0, stdout="tesseract v0.0.0-falso\n")
+        if "--list-langs" in command:
+            return CompletedRun(returncode=0, stdout="List of available languages (1):\nspa\n")
+        lecturas.append(list(command))
+        if codigo != 0:
+            return CompletedRun(returncode=codigo, stdout="", stderr="Error: no se pudo leer")
+        if por_pagina:
+            return CompletedRun(returncode=0, stdout=por_pagina[len(lecturas) - 1])
+        return CompletedRun(returncode=0, stdout=texto)
+
+    return TesseractOcr(binary=binario, runner=runner), lecturas
+
+
+def _registro_con_ocr(
+    tmp_path: Path, **kwargs: object
+) -> tuple[ExtractorRegistry, list[list[str]]]:
+    adaptador, lecturas = _ocr_con_guion(tmp_path, **kwargs)  # type: ignore[arg-type]
+    return ExtractorRegistry(Settings(_env_file=None), ocr=adaptador), lecturas
+
+
+def test_sin_ocr_un_escaneo_queda_pendiente_y_se_dice(tmp_path: Path) -> None:
+    archivo = build_scanned_pdf_with_text(tmp_path / "escaneado.pdf", pages=2)
+
+    resultado = ExtractorRegistry(Settings(_env_file=None)).extract(archivo)
+
+    assert resultado.kind is RepresentationKind.NATIVE_TEXT
+    assert resultado.status is RepresentationStatus.PENDING
+    assert resultado.ocr_candidate is True
+    assert WarningCode.OCR_CANDIDATE in resultado.warnings
+    assert WarningCode.EMPTY_TEXT in resultado.warnings
+
+
+def test_con_ocr_un_escaneo_se_lee_y_su_representacion_es_ocr(tmp_path: Path) -> None:
+    archivo = build_scanned_pdf_with_text(tmp_path / "escaneado.pdf", pages=2)
+    registry, lecturas = _registro_con_ocr(
+        tmp_path, por_pagina=("Tema 4. Medidas cautelares", "Silencio administrativo")
+    )
+
+    resultado = registry.extract(archivo)
+
+    assert resultado.kind is RepresentationKind.OCR, "el OCR es otra representación, no el nativo"
+    assert resultado.status is RepresentationStatus.EXTRACTED
+    assert resultado.extractor.name == "tesseract_ocr"
+    assert resultado.text == "Tema 4. Medidas cautelares\n\nSilencio administrativo"
+    assert resultado.quality is Quality.OCR_UNREVIEWED
+    assert resultado.indexable is True, "el texto reconocido entra en el índice, etiquetado"
+    assert resultado.page_count == 2
+    assert resultado.metadata["pages_read"] == 2
+    assert resultado.metadata["dpi"] == 300
+    assert resultado.metadata["languages"] == "spa"
+    assert len(lecturas) == 2, "una lectura por página"
+    # El aviso del nativo que sigue siendo cierto se conserva…
+    assert WarningCode.OCR_CANDIDATE in resultado.warnings
+    # …y el que describe el contenido del nativo, no: este texto **sí** tiene texto.
+    assert WarningCode.EMPTY_TEXT not in resultado.warnings
+
+
+def test_las_secciones_del_ocr_señalan_cada_página_y_no_inventan_páginas(tmp_path: Path) -> None:
+    """Medido: partir el texto por líneas en blanco daba 18 «páginas» en un documento de 2."""
+    archivo = build_scanned_pdf_with_text(tmp_path / "escaneado.pdf", pages=3)
+    registry, _lecturas = _registro_con_ocr(
+        tmp_path, por_pagina=("uno\n\ncon un hueco", "dos", "tres")
+    )
+
+    resultado = registry.extract(archivo)
+
+    assert [section.page_start for section in resultado.sections] == [1, 2, 3]
+    assert all(section.label and "OCR" in section.label for section in resultado.sections)
+    assert sections_are_consistent(resultado.text, resultado.sections)
+    inicio, fin = resultado.sections[0].char_start, resultado.sections[0].char_end
+    assert resultado.text[inicio:fin] == "uno\n\ncon un hueco", "el tramo apunta a su página"
+
+
+def test_un_pdf_con_texto_nativo_no_pasa_por_ocr(tmp_path: Path) -> None:
+    archivo = build_text_pdf(tmp_path / "temario.pdf", pages=2)
+    registry, lecturas = _registro_con_ocr(tmp_path, texto="ESTO NO DEBERÍA LEERSE")
+
+    resultado = registry.extract(archivo)
+
+    assert resultado.kind is RepresentationKind.NATIVE_TEXT
+    assert "ESTO NO DEBERÍA LEERSE" not in resultado.text
+    assert lecturas == [], "con texto nativo no se llama al OCR ni una vez"
+
+
+def test_una_imagen_se_ocr_iza_cuando_no_trae_texto(tmp_path: Path) -> None:
+    archivo = build_png(tmp_path / "rotulo.png")
+    registry, lecturas = _registro_con_ocr(tmp_path, texto="Medidas cautelares")
+
+    resultado = registry.extract(archivo)
+
+    assert resultado.kind is RepresentationKind.OCR
+    assert resultado.text.strip() == "Medidas cautelares"
+    assert resultado.page_count == 1, "una imagen es una página"
+    assert len(lecturas) == 1
+
+
+def test_un_texto_vacio_no_se_manda_a_ocr(tmp_path: Path) -> None:
+    """Un TXT sin texto no es un escaneo: OCRizarlo sería inventar una imagen que no existe."""
+    archivo = tmp_path / "vacio.txt"
+    archivo.write_text("   \n\n", encoding="utf-8")
+    registry, lecturas = _registro_con_ocr(tmp_path, texto="ESTO NO DEBERÍA LEERSE")
+
+    resultado = registry.extract(archivo)
+
+    assert resultado.kind is RepresentationKind.NATIVE_TEXT
+    assert lecturas == []
+
+
+def test_si_el_ocr_falla_se_conserva_el_nativo_y_se_dice_por_que(tmp_path: Path) -> None:
+    archivo = build_scanned_pdf_with_text(tmp_path / "escaneado.pdf", pages=1)
+    registry, _lecturas = _registro_con_ocr(tmp_path, codigo=1)
+
+    resultado = registry.extract(archivo)
+
+    assert resultado.kind is RepresentationKind.NATIVE_TEXT, "sin OCR utilizable, queda el nativo"
+    assert resultado.status is RepresentationStatus.PENDING
+    assert WarningCode.EXTRACTOR_FAILED in resultado.warnings
+    assert "código 1" in str(resultado.metadata["ocr_error"])
 
 
 # --- Planes: qué se extrae, qué se conserva y qué se rechaza --------------------------------

@@ -1,6 +1,6 @@
 """Registro de extractores: qué se extrae, con qué y qué se conserva sin extraer.
 
-Cuatro decisiones que se toman aquí y en ningún otro sitio:
+Cinco decisiones que se toman aquí y en ningún otro sitio:
 
 - **el formato manda el contenido**, no la extensión (`detect_format`); si algo dice `.pdf` pero no
   empieza por `%PDF-`, se trata por lo que es de verdad;
@@ -12,17 +12,25 @@ Cuatro decisiones que se toman aquí y en ningún otro sitio:
   ejecutables: se rechazan por sufijo **y** por firma (`MZ`, ELF), porque un nombre inocente no
   convierte un binario en material de estudio;
 - **un ZIP no es un documento**: se expande en sus miembros (con los límites de `safe_zip`) y cada
-  miembro se trata por separado, hasta la profundidad configurada.
+  miembro se trata por separado, hasta la profundidad configurada;
+- **cuando no hay texto del material y hay OCR, se OCRiza** (ver `extract`): una sola vez, en un
+  solo sitio, y con la sonda del binario como única puerta.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 from opofuente.config import Settings
 from opofuente.domain.errors import InvariantViolationError
-from opofuente.domain.extraction import ExtractionResult
+from opofuente.domain.extraction import (
+    ExtractionResult,
+    RepresentationKind,
+    RepresentationStatus,
+    WarningCode,
+    merge_warnings,
+)
 from opofuente.domain.formats import (
     DANGEROUS_SUFFIXES,
     PRESERVED_SUFFIXES,
@@ -40,6 +48,7 @@ from opofuente.infrastructure.extractors.base import (
 )
 from opofuente.infrastructure.extractors.docx import DocxTextExtractor, docx_zip_limits
 from opofuente.infrastructure.extractors.images import ImageMetadataExtractor
+from opofuente.infrastructure.extractors.ocr import OcrExtractor
 from opofuente.infrastructure.extractors.pdf import PdfTextExtractor
 from opofuente.infrastructure.extractors.text_files import (
     CsvPreviewExtractor,
@@ -47,6 +56,7 @@ from opofuente.infrastructure.extractors.text_files import (
     JsonPreviewExtractor,
     PlainTextExtractor,
 )
+from opofuente.infrastructure.ocr import TesseractOcr, tesseract_from_settings
 from opofuente.infrastructure.safe_zip import ZipLimits
 
 #: Familias que se conservan sin extraer, con el motivo que se muestra al usuario (DEBT-008).
@@ -55,6 +65,24 @@ PRESERVED_FAMILIES: dict[str, str] = {
     "presentation": "presentación: se conserva, todavía no se extrae",
     "epub": "libro electrónico: se conserva, todavía no se extrae",
 }
+
+#: Familias en las que tiene sentido OCRizar cuando no hay texto nativo: un PDF escaneado y una
+#: imagen. Un DOCX sin texto o un TXT vacío no son un escaneo, y pasarlos por OCR sería buscarle
+#: tres pies al gato (y, en el caso del TXT, inventar una imagen que no existe).
+_OCR_FAMILIES = frozenset({"pdf", "image"})
+
+#: Avisos que describen el **contenido** de una representación, y que por tanto **no** se arrastran
+#: a la del OCR: `measure_quality` los vuelve a medir sobre el texto reconocido. Arrastrar un
+#: `empty_text` a una representación que sí tiene texto es decir en la interfaz lo contrario de lo
+#: que ha pasado (medido: un escaneo de 1675 caracteres salía con «sin texto» entre sus avisos).
+_CONTENT_WARNINGS = frozenset(
+    {
+        WarningCode.EMPTY_TEXT,
+        WarningCode.LOW_USEFUL_TEXT,
+        WarningCode.HIGH_SYMBOL_RATIO,
+        WarningCode.REPEATED_LINES,
+    }
+)
 
 __all__ = [
     "DANGEROUS_SUFFIXES",
@@ -82,8 +110,25 @@ class ExtractionPlan:
 class ExtractorRegistry:
     """Elige el extractor por contenido y decide qué se conserva sin extraer."""
 
-    def __init__(self, settings: Settings, *, ocr_configured: bool | None = None) -> None:
+    def __init__(
+        self,
+        settings: Settings,
+        *,
+        ocr: TesseractOcr | None = None,
+    ) -> None:
         self._settings = settings
+        #: OCR disponible: se construye desde la configuración, pero **solo cuenta si su sonda
+        #: pasa** (binario presente y con el idioma pedido). Así, tener una ruta escrita en el
+        #: `.env` no convierte a la aplicación en una que lee escaneos. No hay forma de declararlo
+        #: desde fuera: el único camino es que la sonda pase.
+        self._ocr_extractor: OcrExtractor | None = None
+        candidato = ocr if ocr is not None else tesseract_from_settings(settings)
+        if candidato is not None and candidato.probe().available:
+            self._ocr_extractor = OcrExtractor(
+                ocr=candidato,
+                max_chars=settings.max_representation_chars,
+                max_pages=settings.max_pdf_pages,
+            )
         self._limits = ZipLimits(
             max_entries=settings.max_zip_entries,
             max_uncompressed_bytes=settings.max_zip_uncompressed_bytes,
@@ -114,11 +159,9 @@ class ExtractorRegistry:
                 max_chars=settings.max_representation_chars, max_bytes=settings.max_text_bytes
             ),
             "image": ImageMetadataExtractor(
-                ocr_configured=(
-                    ocr_configured
-                    if ocr_configured is not None
-                    else settings.tesseract_path is not None
-                ),
+                # Lo que importa es si el OCR **está en condiciones** de usarse, no si hay una ruta
+                # escrita: si la sonda no pasa, la imagen tiene que decirlo con su aviso.
+                ocr_configured=self._ocr_extractor is not None,
                 max_bytes=settings.max_image_bytes,
             ),
             "anki": AnkiExtractor(
@@ -222,10 +265,60 @@ class ExtractorRegistry:
 
         Si el plan no es de extracción, es un error de programación del llamante: el servicio tiene
         que conservar el artefacto, no pedir texto que no existe.
+
+        **Cuando no hay texto del material y hay OCR, se OCRiza.** La decisión se toma aquí, en un
+        solo sitio, y con dos reglas:
+
+        - un PDF con capa de texto **no** pasa por OCR: el OCR es otra representación y no se
+          fusiona con el nativo (04_INGESTION §5);
+        - si el OCR no está configurado o su sonda no pasa, se devuelve el resultado nativo tal
+          cual (con su aviso de `ocr_not_executed`/`empty_text`), que es lo honesto: mejor decir que
+          no se ha leído que devolver texto inventado.
+
+        Los avisos del resultado nativo que siguen siendo ciertos se **conservan** en el del OCR: si
+        la página venía sin capa de texto, eso se sigue sabiendo.
         """
         resolved = plan if plan is not None else self.plan(path)
         if resolved.extractor is None or resolved.detected is None:
             raise InvariantViolationError(
                 f"ese artefacto no se extrae ({resolved.action}): {resolved.reason}"
             )
-        return resolved.extractor.extract(path, detected=resolved.detected)
+        nativo = resolved.extractor.extract(path, detected=resolved.detected)
+        if self._ocr_extractor is None or _trae_texto_del_material(nativo):
+            return nativo
+        # Sin texto del material: una imagen siempre; un PDF solo si de verdad no trae nada.
+        if resolved.detected.family not in _OCR_FAMILIES:
+            return nativo
+        reconocido = self._ocr_extractor.extract(path, detected=resolved.detected)
+        if reconocido.status is RepresentationStatus.FAILED:
+            # El OCR existe pero falló: el aviso del OCR es el que informa, y se conserva el nativo.
+            return replace(
+                nativo,
+                warnings=merge_warnings(nativo.warnings, reconocido.warnings),
+                metadata={**nativo.metadata, **reconocido.metadata},
+            )
+        return replace(
+            reconocido,
+            warnings=merge_warnings(_sin_contenido(nativo.warnings), reconocido.warnings),
+            ocr_candidate=True,
+        )
+
+
+def _sin_contenido(warnings: tuple[WarningCode, ...]) -> tuple[WarningCode, ...]:
+    """Los avisos del nativo que siguen siendo ciertos del texto reconocido.
+
+    Lo que describe **su** contenido (`empty_text`, `low_useful_text`…) se queda fuera: de eso ya
+    informa la medida de calidad del propio OCR.
+    """
+    return tuple(code for code in warnings if code not in _CONTENT_WARNINGS)
+
+
+def _trae_texto_del_material(resultado: ExtractionResult) -> bool:
+    """¿El resultado nativo trae texto **del documento**, o solo metadatos?
+
+    Los metadatos de una imagen no son su texto (lo dice el propio tipo de representación): que se
+    sepan sus píxeles no la convierte en un documento leído. Confundir una cosa con la otra dejaba
+    las imágenes sin OCR cuando sí estaba configurado, porque su resumen de metadatos contaba como
+    «texto nativo» y el OCR nunca llegaba a ejecutarse.
+    """
+    return resultado.has_text and resultado.kind is not RepresentationKind.IMAGE_METADATA

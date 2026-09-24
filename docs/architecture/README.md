@@ -157,6 +157,30 @@ La deuda obligatoria, con su slice y su criterio de cierre, está en
   corrección, `max_text_bytes`, `max_json_bytes` y `max_image_bytes`) se usa en el código y está
   documentado en `.env.example`; los que no tenían uso se retiraron.
 
+## OCR (23/09/2026): Tesseract, con sonda y como representación aparte
+
+- **Se OCRiza solo lo que no trae texto del material**: un PDF sin capa de texto o una imagen, y solo
+  si la sonda del binario pasa (existe, responde y **tiene el idioma pedido**). Los metadatos de una
+  imagen no cuentan como texto del documento: confundirlos dejaba las imágenes sin OCR aunque
+  estuviera configurado.
+- **El resultado es otra representación** (`kind=ocr`, `extractor=tesseract_ocr`), nunca fusionada con
+  el texto nativo (04_INGESTION §5), con calidad `ocr_unreviewed` y el texto troceado **por página**:
+  cada sección lleva su número de página, que es lo que necesitan las citas. Los tramos salen de los
+  rangos reales de cada página, no de partir el texto por líneas en blanco (que inventaba 18 «páginas»
+  en un documento de 2).
+- **Los avisos del nativo que siguen siendo ciertos se conservan** (`ocr_candidate`: el fichero no traía
+  texto) y los que describen su contenido (`empty_text`, `low_useful_text`…) no, porque de esos ya
+  informa la medida de calidad del texto reconocido. Un resultado de OCR con `empty_text` era decir en
+  la interfaz lo contrario de lo que había pasado.
+- **La capacidad no se declara por configuración**: `/capabilities` dice `enabled` solo cuando la sonda
+  responde, con la versión, los idiomas y el directorio de modelos; si no, dice qué falta. No hay forma
+  de declarar OCR «desde fuera» del registro de extractores.
+- **La resolución y el modelo son decisiones medidas**: 300 ppp (a 400 lee peor) y el modelo oficial de
+  `tesseract-ocr/tessdata`. La medición completa, con la clave de la plantilla de Celador verificada a
+  mano, está en `docs/reviews/OCR-escaneos-2026-09.md`; DEBT-020 recoge la decisión sobre tablas.
+- **Degradación honesta**: sin OCR instalado todo sigue funcionando y las entradas quedan `ocr_pending`
+  con su incidencia, distinguiendo «no se ha ejecutado» de «se ejecutó y no reconoció nada».
+
 ## Corrección de S03 (15/09/2026, tras la revisión del propietario)
 
 Trece bloqueos, todos con prueba de regresión. Los que cambian la forma del sistema:

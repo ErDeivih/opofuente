@@ -24,6 +24,7 @@ Formato: `ADR-NNN-titulo.md` con contexto, opciones, datos, decisión, consecuen
 | [ADR-017](ADR-017-que-hace-la-aplicacion-sola.md) | Qué hace la aplicación sola y qué sigue pidiendo una persona | aceptada (S12.5) |
 | [ADR-018](ADR-018-orden-de-rutas-literales.md) | Las rutas literales se declaran antes que las parametrizadas, con una prueba que lo vigila | ratificada el 23/09/2026 por delegación del propietario |
 | [ADR-019](ADR-019-el-tema-como-unidad.md) | La unidad del producto es el tema, no el fichero: el tema se construye con lo que dicen las fuentes | propuesta (23/09/2026), decide el codificador por delegación del propietario |
+| [ADR-020](ADR-020-ocr-al-importar.md) | El OCR se ejecuta cuando está configurado, y se declara siempre | aceptada (24/09/2026) por delegación del propietario, con su instrucción de conectar y probar Tesseract |
 
 El 23 de septiembre de 2026 el propietario delegó expresamente la ratificación de las ADR pendientes
 («ratificaciones decide tú»). Quedan ratificadas por esa delegación, y se dice aquí en lugar de

@@ -37,6 +37,7 @@ from opofuente.infrastructure.extractors import ExtractorRegistry
 from opofuente.infrastructure.filesystem_inventory import FilesystemInventory
 from opofuente.infrastructure.ingestion_repository import SqlAlchemyIngestionRepository
 from opofuente.infrastructure.job_repository import SqlAlchemyJobRepository
+from opofuente.infrastructure.ocr import CompletedRun, TesseractOcr
 from opofuente.infrastructure.representation_store import RepresentationStore
 from opofuente_testing.jobs import FakeExecution, FixedClock
 from opofuente_testing.synthetic_documents import (
@@ -45,6 +46,7 @@ from opofuente_testing.synthetic_documents import (
     build_csv,
     build_html,
     build_png,
+    build_scanned_pdf_with_text,
     build_spreadsheet_like,
     build_text_pdf,
     build_zip,
@@ -72,10 +74,9 @@ def material(tmp_path: Path) -> Path:
     return root
 
 
-@pytest.fixture
-def services(migrated_settings: Settings, session_factory, tmp_path: Path):
+def _construir_servicios(settings: Settings, session_factory, registry: ExtractorRegistry):
     """Los dos servicios de S03, sobre el mismo almacén y la misma base de datos."""
-    paths = migrated_settings.data_paths
+    paths = settings.data_paths
     clock = FixedClock()
     ingestion_repository = SqlAlchemyIngestionRepository(session_factory)
     jobs = SqlAlchemyJobRepository(session_factory)
@@ -96,13 +97,43 @@ def services(migrated_settings: Settings, session_factory, tmp_path: Path):
         ingestions=ingestion_repository,
         store=store,
         representations=RepresentationStore(paths),
-        registry=ExtractorRegistry(migrated_settings),
+        registry=registry,
         jobs=jobs,
         clock=clock,
         data_root=paths.root,
-        max_member_bytes=migrated_settings.max_file_bytes,
+        max_member_bytes=settings.max_file_bytes,
     )
     return ingestion, extraction, jobs, clock
+
+
+@pytest.fixture
+def services(migrated_settings: Settings, session_factory, tmp_path: Path):
+    """Sin OCR configurado: es el estado por defecto de la aplicación."""
+    return _construir_servicios(
+        migrated_settings, session_factory, ExtractorRegistry(migrated_settings)
+    )
+
+
+def _registro_con_ocr(settings: Settings, *, por_pagina: tuple[str, ...] = ()) -> ExtractorRegistry:
+    """Registro con OCR y binario falseado: se comprueba el recorrido, no la puntería del OCR."""
+    binario = settings.data_paths.root / "tesseract-falso.exe"
+    binario.parent.mkdir(parents=True, exist_ok=True)
+    binario.write_bytes(b"ruta que existe")
+    lecturas: list[int] = []
+
+    def runner(command, timeout):
+        if "--version" in command:
+            return CompletedRun(returncode=0, stdout="tesseract v0.0.0-falso\n")
+        if "--list-langs" in command:
+            return CompletedRun(returncode=0, stdout="List of available languages (1):\nspa\n")
+        indice = len(lecturas)
+        lecturas.append(indice)
+        if por_pagina:
+            return CompletedRun(returncode=0, stdout=por_pagina[indice])
+        return CompletedRun(returncode=0, stdout="")
+
+    adaptador = TesseractOcr(binary=binario, runner=runner)
+    return ExtractorRegistry(settings, ocr=adaptador)
 
 
 def _import(ingestion: IngestionService, material: Path) -> str:
@@ -686,3 +717,72 @@ def test_el_ocr_pendiente_se_declara_sin_romper_la_aplicacion(services, tmp_path
     assert representacion.status == RepresentationStatus.PENDING.value
     assert representacion.ocr_candidate is True
     assert representacion.quality == "poor"
+
+
+def test_un_escaneo_se_lee_con_ocr_y_se_guarda_como_representacion_de_ocr(
+    migrated_settings: Settings, session_factory, tmp_path: Path
+) -> None:
+    """El recorrido entero: escaneo sin capa de texto → texto leído, guardado y citado por página.
+
+    Es la prueba que faltaba: hasta ahora el OCR se decidía y no se llegaba a guardar nada.
+    """
+    ingestion, extraction, _jobs, _clock = _construir_servicios(
+        migrated_settings,
+        session_factory,
+        _registro_con_ocr(
+            migrated_settings, por_pagina=("Medidas cautelares", "Silencio administrativo")
+        ),
+    )
+    root = tmp_path / "escaneos"
+    root.mkdir()
+    build_scanned_pdf_with_text(root / "escaneo.pdf", pages=2)
+
+    batch_id = _import(ingestion, root)
+    job = _job_for(ingestion, batch_id, JobType.EXTRACT_ARTIFACT)
+    extraction.run_extraction_job(FakeExecution(job))
+
+    detalle = ingestion.get_batch(batch_id)
+    assert detalle.batch.status == BatchStatus.SUCCEEDED.value
+    assert not [issue for issue in detalle.issues if issue.code == IssueCode.OCR_PENDING.value], (
+        "si el OCR ha leído, la entrada no queda pendiente de OCR"
+    )
+
+    representacion = extraction.representations_for_batch(batch_id)[0]
+    assert representacion.kind == RepresentationKind.OCR.value
+    assert representacion.status == RepresentationStatus.EXTRACTED.value
+    assert representacion.extractor_name == "tesseract_ocr"
+    assert representacion.quality == Quality.OCR_UNREVIEWED.value
+    assert representacion.page_count == 2
+
+    leido = extraction.read_text(representacion.id, offset=0, limit=10_000)
+    assert "Medidas cautelares" in leido.text
+    assert "Silencio administrativo" in leido.text
+    secciones = extraction._representations.sections(representacion.id)
+    assert [seccion.page_start for seccion in secciones] == [1, 2]
+
+
+def test_si_el_ocr_no_reconoce_nada_se_dice_que_se_ejecuto(
+    migrated_settings: Settings, session_factory, tmp_path: Path
+) -> None:
+    """«Pendiente de OCR» y «el OCR no reconoció nada» no son lo mismo, y la incidencia lo dice."""
+    ingestion, extraction, _jobs, _clock = _construir_servicios(
+        migrated_settings, session_factory, _registro_con_ocr(migrated_settings)
+    )
+    root = tmp_path / "escaneos"
+    root.mkdir()
+    build_png(root / "en-blanco.png")
+
+    batch_id = _import(ingestion, root)
+    job = _job_for(ingestion, batch_id, JobType.EXTRACT_ARTIFACT)
+    extraction.run_extraction_job(FakeExecution(job))
+
+    detalle = ingestion.get_batch(batch_id)
+    incidencia = next(
+        issue for issue in detalle.issues if issue.code == IssueCode.OCR_PENDING.value
+    )
+    assert "se ha ejecutado" in incidencia.safe_message
+    assert "no se ha ejecutado" not in incidencia.safe_message
+
+    representacion = extraction.representations_for_batch(batch_id)[0]
+    assert representacion.kind == RepresentationKind.OCR.value
+    assert representacion.status == RepresentationStatus.PENDING.value
