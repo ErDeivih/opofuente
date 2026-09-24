@@ -3331,6 +3331,11 @@ export interface components {
         CreateSessionSchema: {
             /** Convocation Version Id */
             convocation_version_id?: string | null;
+            /**
+             * Curriculum Node Id
+             * @description Solo en `practice`: el tema cuyas preguntas catalogadas componen la sesión (S13). La composición la pone la catalogación del tema, así que no se mandan `sources`.
+             */
+            curriculum_node_id?: string | null;
             /** Feedback */
             feedback?: ("immediate" | "at_end") | null;
             /**

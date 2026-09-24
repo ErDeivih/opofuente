@@ -206,6 +206,16 @@ test('S13: abrir un tema enseña su dossier, y guardarlo es un POST de verdad', 
   await expect(page.getByText(/leído el \d{4}-\d{2}-\d{2}/)).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Versiones guardadas' })).toBeVisible();
 
+  // Las preguntas del tema (S13, parte 3): o se pueden practicar, o se dice que no hay ninguna y se
+  // lleva al banco. Lo que **no** hay es un botón que prometa una sesión que no se puede montar.
+  const preguntas = page.getByRole('region', { name: 'Preguntas del tema' });
+  await expect(preguntas).toBeVisible();
+  await expect(
+    preguntas.getByRole('button', { name: 'Practicar este tema' }).or(
+      preguntas.getByRole('link', { name: 'Ir al banco de preguntas' }),
+    ),
+  ).toBeVisible();
+
   // Archivar la lectura llama a la API de verdad y la pantalla dice qué ha pasado: «guardada» la
   // primera vez y «ya estaba» la segunda, porque el archivo es idempotente por contenido.
   await page.getByRole('button', { name: 'Guardar esta lectura' }).click();

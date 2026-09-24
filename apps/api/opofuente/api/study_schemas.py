@@ -73,6 +73,14 @@ class CreateSessionSchema(BaseModel):
         le=50,
         description="Solo en `error_review`: cuántas preguntas vencidas entran como mucho.",
     )
+    curriculum_node_id: str | None = Field(
+        default=None,
+        min_length=1,
+        description=(
+            "Solo en `practice`: el tema cuyas preguntas catalogadas componen la sesión (S13). La "
+            "composición la pone la catalogación del tema, así que no se mandan `sources`."
+        ),
+    )
 
 
 class ScoreSchema(BaseModel):

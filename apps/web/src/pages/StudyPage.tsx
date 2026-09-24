@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 
 import {
   useAnswerKeys,
@@ -49,7 +50,11 @@ function describeError(error: unknown): string {
  * que estuviera en marcha.
  */
 export function StudyPage() {
-  const [sessionIdElegida, setSessionIdElegida] = useState<string | null>(null);
+  const [parametros] = useSearchParams();
+  // `?sesion=` llega cuando la sesión la ha montado otra pantalla (la práctica por tema de S13): se
+  // abre esa y no la última, que es lo que se acaba de pedir.
+  const sesionDeLaUrl = parametros.get('sesion');
+  const [sessionIdElegida, setSessionIdElegida] = useState<string | null>(sesionDeLaUrl);
   const [preparandoOtra, setPreparandoOtra] = useState(false);
   const [aviso, setAviso] = useState<string | null>(null);
   // La pregunta recién respondida, con su corrección: se enseña hasta que se navega a otra.

@@ -1166,6 +1166,52 @@ class SqlAlchemyQuestionRepository:
             session.commit()
             return True
 
+    def question_ids_of_node(self, node_id: str) -> tuple[str, ...]:
+        """Las preguntas catalogadas en este tema, en orden estable.
+
+        Es la misma regla que la cifra «preguntas: N» del Programa: mapeo **aceptado** de la
+        pregunta
+        al nodo, sin contar las versiones sustituidas. Si aquí contara otra cosa, practicar un tema
+        traería preguntas distintas de las que la pantalla dice que tiene.
+
+        **El tema es el exacto**, no su subárbol: la cifra del Programa se cuenta así, y practicar
+        un
+        bloque que no tiene preguntas propias no puede inventarse las de sus temas.
+        """
+        with self._session_factory() as session:
+            filas = session.execute(
+                select(
+                    QuestionVersionRecord.id,
+                    QuestionSetRecord.title,
+                    QuestionVersionRecord.position,
+                    QuestionVersionRecord.stable_key,
+                )
+                .join(
+                    CurriculumMappingRecord,
+                    CurriculumMappingRecord.subject_id == QuestionVersionRecord.id,
+                )
+                .join(
+                    QuestionSetRecord,
+                    QuestionSetRecord.id == QuestionVersionRecord.question_set_id,
+                )
+                .where(
+                    CurriculumMappingRecord.subject_type == "question_version",
+                    CurriculumMappingRecord.status == "accepted",
+                    CurriculumMappingRecord.curriculum_node_id == node_id,
+                    _NO_SUSTITUIDAS,
+                )
+                .order_by(
+                    QuestionSetRecord.title,
+                    QuestionVersionRecord.position,
+                    QuestionVersionRecord.stable_key,
+                    QuestionVersionRecord.id,
+                )
+            ).all()
+        ordenadas: dict[str, None] = {}
+        for pregunta_id, _titulo, _posicion, _clave in filas:
+            ordenadas.setdefault(str(pregunta_id), None)
+        return tuple(ordenadas)
+
     def questions_without_topic(self, set_id: str, *, limit: int = 500) -> tuple[str, ...]:
         """Preguntas del conjunto que **no** están catalogadas en ningún nodo del programa.
 

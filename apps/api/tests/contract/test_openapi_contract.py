@@ -411,6 +411,25 @@ def test_el_dossier_servido_cumple_el_esquema_documentado(
     assert [hueco["code"] for hueco in cuerpo["holes"]] == ["sin_material"]
 
 
+def test_la_practica_por_tema_documenta_su_campo(schema: dict[str, Any]) -> None:
+    """S13: practicar un tema se pide con `curriculum_node_id`, y no se eligen conjuntos.
+
+    Se comprueba que el contrato lo declara **opcional** (sigue habiendo sesiones que eligen
+    conjuntos) y que su descripción dice que en ese modo no se mandan `sources`: sin eso, un cliente
+    podría mandar los dos y descubrir el 409 al intentarlo.
+    """
+    sesion = schema["components"]["schemas"]["CreateSessionSchema"]
+    assert "curriculum_node_id" in sesion["properties"], (
+        "el contrato de la sesión no declara el tema"
+    )
+    assert "curriculum_node_id" not in sesion.get("required", []), (
+        "es opcional: solo la práctica por tema lo usa"
+    )
+    descripcion = sesion["properties"]["curriculum_node_id"]["description"]
+    assert "practice" in descripcion
+    assert "sources" in descripcion
+
+
 def test_la_respuesta_de_programa_cumple_el_esquema(seeded_client: TestClient) -> None:
     oppositions = seeded_client.get("/api/v1/oppositions").json()
     convocation_id = next(

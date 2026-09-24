@@ -178,7 +178,11 @@ export function ProgramPage() {
               )}
               {/* Lo que el corpus dice del tema: sus fuentes citadas, sus huecos y su historial
                   (S13). Sustituye al panel que solo decía dónde se calculaba la cobertura. */}
-              <TopicPanel nodeId={node.data.node.id} />
+              <TopicPanel
+                nodeId={node.data.node.id}
+                questionsTotal={estadoDelNodo?.study_state.questions_total}
+                oppositionId={active.id}
+              />
               <dl className="facts">
                 <dt>Preguntas</dt>
                 <dd>

@@ -341,6 +341,30 @@ export function useArchiveDossier(nodeId: string) {
   });
 }
 
+/**
+ * Practicar un tema (S13): monta una sesión con las preguntas catalogadas en él.
+ *
+ * La composición la pone el **servidor** a partir de la catalogación del tema (mapeo aceptado): la
+ * pantalla no elige conjuntos ni preguntas. Si el tema no tiene ninguna, el servidor contesta 409 con
+ * el motivo y la pantalla lo enseña.
+ */
+export function usePracticeTopic() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ oppositionId, nodeId }: { oppositionId: string; nodeId: string }) =>
+      createSession({
+        opposition_id: oppositionId,
+        mode: 'practice',
+        sources: [],
+        shuffle: false,
+        curriculum_node_id: nodeId,
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['study', 'sessions'] });
+    },
+  });
+}
+
 export function useActivateOpposition() {
   const queryClient = useQueryClient();
   return useMutation({

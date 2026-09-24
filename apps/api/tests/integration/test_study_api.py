@@ -1245,3 +1245,129 @@ def test_un_diagnostico_sin_temas_suficientes_no_se_monta(
     assert respuesta.json()["code"] == "unsupported"
     assert "el banco solo tiene preguntas de 0 tema(s)" in respuesta.json()["detail"]
     assert "un diagnóstico necesita al menos 3" in respuesta.json()["detail"]
+
+
+def _tema_con_preguntas(client: TestClient, *, ruta: str = "I.1") -> str:
+    """El id del nodo del programa con esa ruta, en la convocatoria activa."""
+    oposicion = _oposicion_activa(client)
+    convocatoria = oposicion["active_convocation"]["id"]
+    nodos = client.get(f"/api/v1/convocations/{convocatoria}/curriculum").json()["nodes"]
+
+    def buscar(items: list[dict[str, Any]]) -> str | None:
+        for nodo in items:
+            if nodo["path"] == ruta:
+                return str(nodo["id"])
+            encontrado = buscar(nodo["children"])
+            if encontrado is not None:
+                return encontrado
+        return None
+
+    encontrado = buscar(nodos)
+    assert encontrado is not None, f"el programa sembrado no tiene el nodo {ruta}"
+    return encontrado
+
+
+def test_una_practica_por_tema_la_compone_la_catalogacion_del_tema(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """`practice` con `curriculum_node_id`: las preguntas del tema, y ni una de otro (S13).
+
+    La composición **no** la elige quien estudia: se practica lo que está catalogado en el tema con
+    mapeo aceptado, que es lo que dice la cifra «preguntas: N» del Programa. Se comprueba en las dos
+    direcciones: entran las del tema pedido y **no** entran las de los otros dos.
+    """
+    set_id = _conjunto(seeded_client, preguntas=1)
+    oposicion = _oposicion_activa(seeded_client)
+    # Seis preguntas repartidas entre I.1, I.2 e I.3 (dos de cada una).
+    importado = seeded_client.post(
+        f"/api/v1/question-sets/{set_id}/parse",
+        json={
+            "kind": "csv",
+            "text": _csv_con_temas(6),
+            "mapping": {
+                "stem": "enunciado",
+                "options": ["op1", "op2"],
+                "correct": "clave",
+                "topic": "tema",
+            },
+        },
+        headers=ALLOWED_ORIGIN,
+    )
+    assert importado.status_code == 200, importado.text
+    _activar_ultima_clave(seeded_client, set_id)
+    nodo = _tema_con_preguntas(seeded_client, ruta="I.1")
+
+    respuesta = seeded_client.post(
+        "/api/v1/study-sessions",
+        json={
+            "opposition_id": oposicion["id"],
+            "mode": "practice",
+            "sources": [],
+            "curriculum_node_id": nodo,
+        },
+        headers=ALLOWED_ORIGIN,
+    )
+
+    assert respuesta.status_code == 201, respuesta.text
+    sesion = respuesta.json()
+    assert sesion["mode"] == "practice"
+    assert sesion["total_questions"] == 2, "las dos preguntas catalogadas en I.1"
+    assert sesion["configuration"]["sources"] == [], "la composición no la elige quien estudia"
+    assert "Práctica de un tema: 2 pregunta(s)" in sesion["configuration"]["note"]
+    assert "sin parte declarada" in sesion["configuration"]["note"]
+
+    revision = seeded_client.get(f"/api/v1/study-sessions/{sesion['id']}/review").json()
+    assert {entrada["part_code"] for entrada in revision["entries"]} == {None}, (
+        "la parte de una pregunta del banco no está declarada: no se inventa"
+    )
+    enunciados = {entrada["stem"] for entrada in revision["entries"]}
+    assert all("tema del caso" in enunciado for enunciado in enunciados)
+
+
+def test_una_practica_por_tema_no_se_monta_sin_preguntas_y_lo_dice(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """Un tema sin preguntas catalogadas no crea una sesión vacía: se dice qué falta."""
+    oposicion = _oposicion_activa(seeded_client)
+    nodo = _tema_con_preguntas(seeded_client, ruta="I.1")
+
+    respuesta = seeded_client.post(
+        "/api/v1/study-sessions",
+        json={
+            "opposition_id": oposicion["id"],
+            "mode": "practice",
+            "sources": [],
+            "curriculum_node_id": nodo,
+        },
+        headers=ALLOWED_ORIGIN,
+    )
+
+    assert respuesta.status_code == 409, respuesta.text
+    assert respuesta.json()["code"] == "unsupported"
+    assert "no tiene ninguna pregunta catalogada" in respuesta.json()["detail"]
+    assert "Revisión" in respuesta.json()["detail"], (
+        "el motivo dice por dónde se arregla: asignarlas en Revisión"
+    )
+
+
+def test_una_practica_por_tema_no_admite_elegir_conjuntos(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """Elegir conjuntos y pedir un tema a la vez son dos composiciones distintas: se rechaza."""
+    set_id = _conjunto(seeded_client, preguntas=2)
+    oposicion = _oposicion_activa(seeded_client)
+    nodo = _tema_con_preguntas(seeded_client, ruta="I.1")
+
+    respuesta = seeded_client.post(
+        "/api/v1/study-sessions",
+        json={
+            "opposition_id": oposicion["id"],
+            "mode": "practice",
+            "sources": [{"question_set_id": set_id, "part_code": "primera_parte"}],
+            "curriculum_node_id": nodo,
+        },
+        headers=ALLOWED_ORIGIN,
+    )
+
+    assert respuesta.status_code == 409, respuesta.text
+    assert "la compone la catalogación del tema" in respuesta.json()["detail"]

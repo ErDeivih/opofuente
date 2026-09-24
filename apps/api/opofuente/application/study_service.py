@@ -127,6 +127,8 @@ class CreateSessionInput:
     #: Solo para el repaso de errores: cuántas preguntas vencidas entran como mucho (el material lo
     #: pone la cola de repaso, no quien pide la sesión).
     review_limit: int | None = None
+    #: Solo en práctica: el tema cuyas preguntas catalogadas componen la sesión (S13).
+    curriculum_node_id: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -201,6 +203,11 @@ class StudyService:
             return self._create_review_session(request, convocatoria)
         if request.mode is SessionMode.DIAGNOSTIC:
             return self._create_diagnostic_session(request, convocatoria)
+        if request.mode is SessionMode.PRACTICE and request.curriculum_node_id is not None:
+            # Práctica de un tema concreto (S13): la composición la pone la catalogación del tema,
+            # así
+            # que no se eligen conjuntos y la sesión no puede quedar vacía en silencio.
+            return self._create_topic_session(request, convocatoria)
         if not request.sources:
             raise UnsupportedError("una sesión necesita al menos un conjunto de preguntas")
 
@@ -318,6 +325,135 @@ class StudyService:
             time_limit_minutes=limite_tiempo,
             key_label=" · ".join(etiquetas),
         )
+
+    def _create_topic_session(
+        self, request: CreateSessionInput, convocatoria: ConvocationDetail
+    ) -> SessionView:
+        """Monta una sesión con las preguntas catalogadas en un tema concreto (S13).
+
+        Tres decisiones, y las tres se ven en el código:
+
+        1. **la composición la pone la catalogación**, no quien estudia: se practica lo que está
+           mapeado al tema con mapeo **aceptado**, que es exactamente lo que la cifra «preguntas: N»
+           del Programa cuenta. Si aquí se pudiera elegir otra cosa, la pantalla y la sesión dirían
+           números distintos del mismo tema;
+        2. **el tema es el exacto**, no su subárbol: un bloque cuyas preguntas están catalogadas en
+        sus
+           temas no tiene preguntas propias, y eso se dice en lugar de mezclar temas que nadie ha
+           pedido;
+        3. **la parte no se declara**, igual que en el diagnóstico: la pregunta del banco no dice a
+        qué
+           parte del examen pertenece, e inventarla cambiaría la corrección (la penalización la fija
+           la
+           convocatoria por parte). Se corrige en directo y la sesión lo declara.
+        """
+        if request.sources:
+            raise UnsupportedError(
+                "una práctica por tema la compone la catalogación del tema: no se eligen los "
+                "conjuntos a mano (usa la práctica normal si quieres elegir tú)"
+            )
+        if request.curriculum_node_id is None:  # pragma: no cover - lo garantiza el llamante
+            raise UnsupportedError("una práctica por tema necesita el tema")
+        candidatas = self._questions.question_ids_of_node(request.curriculum_node_id)
+        if not candidatas:
+            raise UnsupportedError(
+                "este tema no tiene ninguna pregunta catalogada: se catalogan al importarlas o "
+                "asignándolas en Revisión, y sin preguntas no hay sesión que montar"
+            )
+
+        ahora = self._clock.now()
+        claves: dict[str, str] = {}
+        etiquetas: list[str] = []
+        congeladas: list[FrozenQuestion] = []
+        sin_clave = 0
+        no_practicables = 0
+        for question_id in candidatas:
+            pregunta = self._questions.get_question(question_id)
+            if pregunta is None or pregunta.question_type not in _SUPPORTED_QUESTION_TYPES:
+                no_practicables += 1
+                continue
+            if pregunta.is_reserve:
+                # Una reserva no se practica sola: entra en un examen para sustituir a otra.
+                no_practicables += 1
+                continue
+            conjunto = self._questions.get_set(pregunta.question_set_id)
+            if conjunto is None or conjunto.active_key_id is None:
+                # Sin plantilla activa no hay con qué corregir: se queda fuera y se cuenta.
+                sin_clave += 1
+                continue
+            clave = self._clave_activa(pregunta.question_set_id)
+            claves[pregunta.question_set_id] = clave.id
+            etiqueta = f"{conjunto.title}: plantilla v{clave.version_no}"
+            if etiqueta not in etiquetas:
+                etiquetas.append(etiqueta)
+            entrada = next(
+                (
+                    candidata
+                    for candidata in clave.entries
+                    if candidata.question_version_id == pregunta.id
+                ),
+                None,
+            )
+            congeladas.append(
+                FrozenQuestion(
+                    question_version_id=pregunta.id,
+                    stable_key=pregunta.stable_key,
+                    position=len(congeladas) + 1,
+                    part_code=None,
+                    is_reserve=False,
+                    reserve_order=None,
+                    key_outcome=entrada.outcome if entrada is not None else None,
+                    correct_option_keys=(
+                        entrada.correct_option_keys if entrada is not None else ()
+                    ),
+                )
+            )
+
+        if not congeladas:
+            motivo = (
+                f"{sin_clave} sin plantilla activa y {no_practicables} que no se practican solas "
+                "(reservas o tipo no soportado)"
+                if sin_clave or no_practicables
+                else "ninguna con plantilla activa"
+            )
+            raise UnsupportedError(
+                f"las preguntas de este tema no se pueden corregir todavía: {motivo}"
+            )
+
+        configuracion = SessionConfiguration(
+            mode=SessionMode.PRACTICE,
+            feedback=request.feedback or Feedback.IMMEDIATE,
+            sources=(),
+            time_limit_minutes=None,
+            shuffle=request.shuffle,
+            note=self._nota_del_tema(
+                total=len(congeladas), sin_clave=sin_clave, no_practicables=no_practicables
+            ),
+        )
+        return self._study.create_session(
+            opposition_id=request.opposition_id,
+            configuration=configuracion,
+            questions=assign_positions(congeladas, shuffle=request.shuffle),
+            now=ahora,
+            convocation_version_id=convocatoria.summary.id,
+            question_set_id=next(iter(claves)) if len(claves) == 1 else None,
+            answer_key_version_id=next(iter(claves.values())) if len(claves) == 1 else None,
+            time_limit_minutes=None,
+            key_label=" · ".join(etiquetas),
+        )
+
+    @staticmethod
+    def _nota_del_tema(*, total: int, sin_clave: int, no_practicables: int) -> str:
+        """Lo que una práctica por tema deja fuera, dicho: si no, el número no cuadraría."""
+        nota = (
+            f"Práctica de un tema: {total} pregunta(s) catalogadas en él, sin parte declarada y "
+            "corregidas en directo (la parte la fija la convocatoria para un examen)."
+        )
+        if sin_clave:
+            nota += f" {sin_clave} se quedaron fuera por no tener plantilla activa."
+        if no_practicables:
+            nota += f" {no_practicables} no se practican solas (reservas o tipo no soportado)."
+        return nota
 
     def _create_review_session(
         self, request: CreateSessionInput, convocatoria: ConvocationDetail
