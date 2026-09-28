@@ -61,15 +61,15 @@ SQL = (
     "datos; un disparador se ejecuta automaticamente al insertar o borrar filas de una tabla.\n\n"
     "Los eventos de la base de datos permiten programar tareas. La normalizacion de tablas y los "
     "lenguajes de interrogacion son la base de este tema.\n\n"
-    "Un procedimiento almacenado puede recibir parametros y devolver un resultado al cliente que lo "
-    "invoca; los disparadores no reciben parametros y trabajan sobre la fila que ha cambiado."
+    "Un procedimiento almacenado puede recibir parametros y devolver un resultado al cliente "
+    "que lo invoca; los disparadores no reciben parametros y trabajan sobre la fila que ha"
 )
 
 REDES = (
-    "La topologia en estrella conecta cada dispositivo a un conmutador central y es la mas habitual "
-    "en las redes locales actuales. El metodo de acceso al medio reparte el canal entre estaciones.\n\n"
-    "Los dispositivos de interconexion, conmutadores y encaminadores, unen segmentos de la red local "
-    "y deciden por donde sale cada trama.\n\n"
+    "La topologia en estrella conecta cada dispositivo a un conmutador central y es la mas "
+    "habitual en las redes locales actuales. El metodo de acceso al medio reparte el canal.\n\n"
+    "Los dispositivos de interconexion, conmutadores y encaminadores, unen los segmentos de la "
+    "red local y deciden por donde sale cada trama.\n\n"
     "Las tecnicas de transmision y la tipologia de la red condicionan el cableado y la velocidad "
     "disponible en cada puesto de trabajo."
 )
@@ -132,17 +132,22 @@ def test_nunca_pasa_de_tres_nodos() -> None:
     assert all(p.evidence for p in propuestas), "una propuesta sin evidencia no se puede revisar"
 
 
-def test_la_confianza_es_la_parte_del_documento() -> None:
-    """La confianza significa algo: la parte del documento que habla de ese tema.
+def test_la_confianza_mide_que_el_tema_esta_no_cuanto_abunda() -> None:
+    """La confianza es la fuerza de la evidencia, no la cuota del documento.
 
-    Si solo un nodo casa con algun fragmento no hay alternativas, y eso tambien es correcto: no
-    habia nada mas con lo que comparar. Por eso la prueba no exige que existan.
+        Es la diferencia que costo una medicion descubrir: con la cuota como confianza, un temario
+        trata tres temas reparte 0,33 para cada uno, se queda por debajo de la banda baja y **no se
+    propone ningun mapeo**. Con la fuerza, un tema presente en varios fragmentos llega a la banda
+        y se aplica; uno mencionado de pasada se queda abajo, que es lo correcto.
     """
     propuestas = FragmentTopicClassifier().propose(_sujeto(SQL))
 
     assert propuestas
     principal = propuestas[0]
+    assert principal.confidence >= 0.75, (
+        "un documento que habla de un tema tiene que poder aplicar su mapeo solo"
+    )
     assert 0.0 < principal.confidence <= 1.0
-    assert sum(a.confidence for a in principal.alternatives) + principal.confidence <= 1.0 + 1e-9
     if principal.alternatives:
         assert principal.confidence >= max(a.confidence for a in principal.alternatives)
+    assert "evidencia" in principal.evidence[0]

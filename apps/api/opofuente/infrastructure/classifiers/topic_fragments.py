@@ -101,9 +101,24 @@ class FragmentTopicClassifier:
         total = sum(pesos.values())
         if total <= 0.0:
             return []
+        # Dos cifras distintas, y cada una para lo suyo:
+        #   - **cuota**: qué parte del documento habla de este tema. Ordena las propuestas entre sí.
+        #   - **fuerza**: cuánta evidencia hay de que el tema ESTÁ en el documento. Es la confianza.
+        #
+        # La diferencia importa y costó una medición descubrirla. Con la cuota como confianza, un
+        # temario que trata tres temas reparte 0,33 para cada uno, se queda por debajo de la banda
+        # baja
+        # y **no se propone ningún mapeo**: el material está perfectamente identificado y la
+        # pantalla
+        # sigue vacía. La fuerza no se diluye con el reparto: suma la evidencia de todos los
+        # fragmentos
+        # (cada coincidencia ya viene normalizada por el peso del título del tema), así que un tema
+        # presente en varios fragmentos llega a la banda alta y se aplica, mientras uno mencionado
+        # de
+        # pasada se queda abajo, que es lo correcto.
         ordenados = sorted(pesos.items(), key=lambda par: (-par[1], par[0]))[:MAX_NODOS]
         return [
-            self._propuesta(subject, ruta, peso / total, ordenados, ejemplos, len(trozos))
+            self._propuesta(subject, ruta, peso, peso / total, ordenados, ejemplos, len(trozos))
             for ruta, peso in ordenados
             if peso / total >= MIN_PARTE
         ]
@@ -112,29 +127,29 @@ class FragmentTopicClassifier:
         self,
         subject: ClassificationSubject,
         ruta: str,
-        parte: float,
+        fuerza: float,
+        cuota: float,
         ordenados: list[tuple[str, float]],
         ejemplos: dict[str, str],
         cuantos: int,
     ) -> Proposal:
         """Una propuesta de tema, con sus alternativas y su evidencia."""
-        suma = sum(peso for _, peso in ordenados) or 1.0
         return Proposal(
             id="",
             subject_type=subject.subject_type,
             subject_id=subject.subject_id,
             axis=Axis.TOPIC,
             proposed_value=ruta,
-            confidence=round(parte, 4),
+            confidence=round(min(1.0, fuerza), 4),
             engine_name=self.name,
             engine_version=self.version,
             alternatives=tuple(
-                Alternative(value=otra, confidence=round(peso / suma, 4))
-                for otra, peso in ordenados
+                Alternative(value=otra, confidence=round(min(1.0, otro_peso), 4))
+                for otra, otro_peso in ordenados
                 if otra != ruta
             ),
             evidence=(
-                f"{parte:.0%} de {cuantos} fragmentos del documento; "
+                f"evidencia {fuerza:.2f} y {cuota:.0%} del documento en {cuantos} fragmentos; "
                 f"p. ej. «{ejemplos.get(ruta, '')}»",
             ),
         )
