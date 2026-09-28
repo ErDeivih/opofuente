@@ -60,6 +60,7 @@ from opofuente.infrastructure.capabilities import (
 from opofuente.infrastructure.change_repository import SqlAlchemyChangeRepository
 from opofuente.infrastructure.classification_repository import SqlAlchemyClassificationRepository
 from opofuente.infrastructure.classifiers import DeterministicClassifier
+from opofuente.infrastructure.classifiers.topic_fragments import FragmentTopicClassifier
 from opofuente.infrastructure.clock import SystemClock
 from opofuente.infrastructure.db import build_engine, build_session_factory
 from opofuente.infrastructure.document_repository import SqlAlchemyDocumentRepository
@@ -218,7 +219,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     classification_repository = SqlAlchemyClassificationRepository(session_factory, representations)
     classification_service = ClassificationService(
         repository=classification_repository,
-        engines=(DeterministicClassifier(),),
+        engines=(DeterministicClassifier(), FragmentTopicClassifier()),
         clock=clock,
         # Clasificar el corpus entero es un **trabajo**, no una petición: con el material del
         # propietario tarda casi un minuto y bloqueaba la pantalla (DEBT-024).
