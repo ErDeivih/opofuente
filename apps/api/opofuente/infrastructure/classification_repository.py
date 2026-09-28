@@ -101,6 +101,28 @@ _DECISION_ACTIONS = (
     "proposal.auto_applied_provisional",
 )
 
+#: Quién opina: sujeto, eje y motor. Es la clave con la que se decide qué propuesta sustituye a cuál
+#: (ver `_guardar_propuestas`): la opinión de un motor solo la sustituye ese mismo motor.
+ClaveDeMotor = tuple[str, str, str, str, str]
+
+
+def _clave_de_motor(propuesta: Proposal) -> ClaveDeMotor:
+    """La identidad de la opinión: sobre qué sujeto, en qué eje, y de qué motor."""
+    return (
+        propuesta.subject_type.value,
+        propuesta.subject_id,
+        propuesta.axis.value,
+        propuesta.engine_name,
+        propuesta.engine_version,
+    )
+
+
+def _retirar(propuesta: ClassificationProposalRecord, *, now: datetime) -> None:
+    """Retira una propuesta pendiente que su propio motor ya no sostiene. No la borra."""
+    propuesta.status = ProposalStatus.SUPERSEDED.value
+    propuesta.decided_at = now
+    propuesta.decision_note = "Sustituida por una propuesta nueva del mismo motor"
+
 
 def _new_id() -> str:
     return str(uuid4())
@@ -356,63 +378,111 @@ class SqlAlchemyClassificationRepository:
     def _guardar_propuestas(
         self, session: Session, proposals: Sequence[Proposal], *, now: datetime
     ) -> tuple[int, int]:
-        """Deduplica, retira las pendientes que sustituye y añade lo nuevo. No confirma nada."""
+        """Deduplica, retira lo que esta pasada deja atrás y añade lo nuevo. No confirma nada.
+
+        Tres reglas, y las tres responden a la misma pregunta: *¿de quién es esta opinión?*
+
+        1. **La opinión de un motor sustituye a la de ese motor, y solo a la suya.** El motor
+           determinista propone **un** tema por documento (el mejor: el que ve el título oficial
+           en el texto, hasta 0,80) y el de fragmentos hasta tres, con confianzas más bajas. Si el
+           segundo pisara al primero, la señal fuerte moriría al llegar la débil: medido sobre el
+           material real, cinco temas del temario se quedaban **sin nada** por eso, con su propuesta
+           de 0,80 ya escrita en la base y en estado `superseded`.
+        2. **Dentro de la misma pasada, los hermanos de un eje no se pisan.** El eje del tema admite
+           hasta tres nodos (`04 §7`): proponer tres temas de un documento no es cambiar de opinión
+           dos veces. Antes, el último valor escrito borraba a los otros dos, así que el motor de
+           fragmentos guardaba uno de cada tres.
+        3. **Una propuesta `superseded` vuelve a `pending` si su motor la vuelve a proponer.** Es
+           contabilidad de la máquina, no la decisión de nadie: sin esto, un valor propuesto una vez
+           no puede volver **nunca**, y el corpus arrastra 10.169 filas muertas que parecen
+           opiniones vivas.
+
+        Lo que **no** se toca jamás: una propuesta aceptada, rechazada o aplicada provisionalmente.
+        Esas las decidió una persona —o la banda, que es una decisión escrita— y una pasada nueva no
+        las revive ni las retira. Un rechazo del usuario sigue siendo un rechazo aunque el motor
+        vuelva a proponer lo mismo en la pasada siguiente.
+        """
+        #: Qué valores propone cada motor **en esta pasada**, por sujeto y eje. Los que están aquí
+        #: son su opinión de hoy; los que no están y siguen pendientes son lo que ya no sostiene.
+        opinion: dict[ClaveDeMotor, set[str]] = defaultdict(set)
+        for propuesta in proposals:
+            opinion[_clave_de_motor(propuesta)].add(propuesta.proposed_value)
+
         creadas = 0
         existentes = 0
+        #: Filas ya leídas de la base en esta pasada, por sujeto, eje y motor: el bucle escribe
+        #: miles de propuestas y volver a preguntar por cada una sería miles de consultas.
+        conocidas: dict[ClaveDeMotor, list[ClassificationProposalRecord]] = {}
         for propuesta in proposals:
-            ya = session.execute(
-                select(ClassificationProposalRecord.id).where(
-                    ClassificationProposalRecord.subject_type == propuesta.subject_type.value,
-                    ClassificationProposalRecord.subject_id == propuesta.subject_id,
-                    ClassificationProposalRecord.axis == propuesta.axis.value,
-                    ClassificationProposalRecord.engine_name == propuesta.engine_name,
-                    ClassificationProposalRecord.engine_version == propuesta.engine_version,
-                    ClassificationProposalRecord.proposed_value == propuesta.proposed_value,
-                )
-            ).first()
-            if ya is not None:
-                existentes += 1
-                continue
-            pendientes = (
-                session.execute(
-                    select(ClassificationProposalRecord).where(
-                        ClassificationProposalRecord.subject_type == propuesta.subject_type.value,
-                        ClassificationProposalRecord.subject_id == propuesta.subject_id,
-                        ClassificationProposalRecord.axis == propuesta.axis.value,
-                        ClassificationProposalRecord.status == ProposalStatus.PENDING.value,
+            clave = _clave_de_motor(propuesta)
+            if clave not in conocidas:
+                conocidas[clave] = list(
+                    session.execute(
+                        select(ClassificationProposalRecord).where(
+                            ClassificationProposalRecord.subject_type
+                            == propuesta.subject_type.value,
+                            ClassificationProposalRecord.subject_id == propuesta.subject_id,
+                            ClassificationProposalRecord.axis == propuesta.axis.value,
+                            ClassificationProposalRecord.engine_name == propuesta.engine_name,
+                            ClassificationProposalRecord.engine_version == propuesta.engine_version,
+                        )
                     )
+                    .scalars()
+                    .all()
                 )
-                .scalars()
-                .all()
+            del_motor = conocidas[clave]
+            valores_de_hoy = opinion[clave]
+            actual = next(
+                (fila for fila in del_motor if fila.proposed_value == propuesta.proposed_value),
+                None,
             )
-            for anterior in pendientes:
-                anterior.status = ProposalStatus.SUPERSEDED.value
-                anterior.decided_at = now
-                anterior.decision_note = "Sustituida por una propuesta nueva del mismo motor"
-            session.add(
-                ClassificationProposalRecord(
-                    id=_new_id(),
-                    subject_type=propuesta.subject_type.value,
-                    subject_id=propuesta.subject_id,
-                    axis=propuesta.axis.value,
-                    proposed_value=propuesta.proposed_value,
-                    confidence=propuesta.confidence,
-                    alternatives_json=json.dumps(
-                        [
-                            {"value": alternativa.value, "confidence": alternativa.confidence}
-                            for alternativa in propuesta.alternatives
-                        ],
-                        ensure_ascii=False,
-                    ),
-                    evidence_json=_json_list(propuesta.evidence),
-                    engine_name=propuesta.engine_name,
-                    engine_version=propuesta.engine_version,
-                    status=ProposalStatus.PENDING.value,
-                    created_at=now,
-                    decided_at=None,
-                    decision_note=None,
-                )
+            if actual is not None:
+                existentes += 1
+                if actual.status == ProposalStatus.SUPERSEDED.value:
+                    # La máquina la había retirado y su motor vuelve a sostenerla: vuelve a estar
+                    # pendiente. Una decisión humana nunca entra aquí, porque no está `superseded`.
+                    actual.status = ProposalStatus.PENDING.value
+                    actual.decided_at = None
+                    actual.decision_note = None
+                for anterior in del_motor:
+                    if anterior is actual or anterior.status != ProposalStatus.PENDING.value:
+                        continue
+                    if anterior.proposed_value in valores_de_hoy:
+                        continue
+                    _retirar(anterior, now=now)
+                continue
+            for anterior in del_motor:
+                if anterior.status != ProposalStatus.PENDING.value:
+                    continue
+                if anterior.proposed_value in valores_de_hoy:
+                    continue
+                _retirar(anterior, now=now)
+            nueva = ClassificationProposalRecord(
+                id=_new_id(),
+                subject_type=propuesta.subject_type.value,
+                subject_id=propuesta.subject_id,
+                axis=propuesta.axis.value,
+                proposed_value=propuesta.proposed_value,
+                confidence=propuesta.confidence,
+                alternatives_json=json.dumps(
+                    [
+                        {"value": alternativa.value, "confidence": alternativa.confidence}
+                        for alternativa in propuesta.alternatives
+                    ],
+                    ensure_ascii=False,
+                ),
+                evidence_json=_json_list(propuesta.evidence),
+                engine_name=propuesta.engine_name,
+                engine_version=propuesta.engine_version,
+                status=ProposalStatus.PENDING.value,
+                created_at=now,
+                decided_at=None,
+                decision_note=None,
             )
+            session.add(nueva)
+            # La fila nueva entra en la lista del motor: si esta misma pasada vuelve a proponer ese
+            # valor (dos perfiles que comparten nodo, por ejemplo), eso ya no es nuevo.
+            del_motor.append(nueva)
             creadas += 1
         return creadas, existentes
 

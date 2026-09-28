@@ -74,6 +74,10 @@ ProgressReporter = Callable[[float, str], None]
 #: escribir en la base de datos en cada vuelta; con un corpus pequeño siguen viéndose los tramos.
 PROGRESS_EVERY = 10
 
+#: Cuántas propuestas pendientes se miran de una vez al aplicar la banda alta. Es el tamaño de
+#: página, no un tope: se recorren todas (ver `_apply_high_band`).
+PAGINA_DE_APLICACION = 1000
+
 #: Reparto del avance de una pasada: clasificar sujetos, guardar, aplicar y buscar duplicados.
 _PHASE_SUBJECTS = 0.7
 _PHASE_SAVE = 0.7
@@ -209,6 +213,14 @@ class ClassificationService:
 
         Solo se aplican las propuestas que **acaban de salir** de un motor y solo si su banda lo
         permite: una propuesta ya aplicada no se vuelve a tocar (su estado lo decide el usuario).
+
+        Las pendientes se recorren **enteras**, por páginas. Mirar solo las primeras mil bastaba
+        mientras una pasada dejaba un puñado de propuestas vivas; con el corpus real deja miles (una
+        sola pasada escribió 14.162 filas), y las de una misma pasada **comparten instante**, así
+        que ordenar por fecha no dice cuáles entran en la ventana: entraban mil al azar y el resto
+        se quedaba pendiente sin que nadie pudiera explicar por qué unos temas sí y otros no.
+        Primero se recogen los identificadores y después se decide: decidir cambia el estado y
+        movería la ventana bajo los pies.
         """
         bandas = ConfidenceBands()
         candidatas = {
@@ -223,16 +235,27 @@ class ClassificationService:
         }
         if not candidatas:
             return 0
-        pendientes = self._repository.list_proposals(
-            status=ProposalStatus.PENDING.value, limit=1000
-        )
+        identificadores: list[str] = []
+        desplazamiento = 0
+        while True:
+            pagina = self._repository.list_proposals(
+                status=ProposalStatus.PENDING.value,
+                limit=PAGINA_DE_APLICACION,
+                offset=desplazamiento,
+            )
+            for vista in pagina.proposals:
+                clave = (vista.subject_type, vista.subject_id, vista.axis, vista.proposed_value)
+                if clave in candidatas:
+                    identificadores.append(vista.id)
+            if not pagina.proposals:
+                break
+            desplazamiento += len(pagina.proposals)
+            if desplazamiento >= pagina.total:
+                break
         aplicadas = 0
-        for vista in pendientes.proposals:
-            clave = (vista.subject_type, vista.subject_id, vista.axis, vista.proposed_value)
-            if clave not in candidatas:
-                continue
+        for identificador in identificadores:
             resultado = self._repository.decide(
-                vista.id,
+                identificador,
                 status=ProposalStatus.AUTO_APPLIED_PROVISIONAL,
                 note="Aplicada provisionalmente: banda alta y eje no crítico",
                 now=self._clock.now(),
