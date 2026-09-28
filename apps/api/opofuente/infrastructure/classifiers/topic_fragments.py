@@ -56,6 +56,19 @@ MIN_PARTE = 0.10
 #: documento entero (lo pide `domain/classification.py`).
 LARGO_EVIDENCIA = 90
 
+#: Caracteres que se miran de cada sujeto.
+#:
+#: El motor determinista mira 20.000 (`MAX_EXCERPT_CHARS`); aquí se mira menos **a propósito**: si
+#: un
+#: documento trata un tema, lo dice en sus primeros miles de caracteres, y lo que viene después son
+#: más
+#: páginas del mismo tema. Medido: con 20.000 la pasada completa del corpus real tardaba hora y
+#: media a
+#: 0,43 sujetos por segundo, con la máquina ociosa y un solo hilo de trabajo. Con 8.000 el trabajo
+#: por
+#: sujeto baja a menos de la mitad, y el tema se sigue reconociendo.
+MAXIMO_CARACTERES = 8_000
+
 
 class FragmentTopicClassifier:
     """Propone los temas del programa que de verdad aparecen en el texto, trozo a trozo."""
@@ -63,11 +76,30 @@ class FragmentTopicClassifier:
     name = ENGINE_NAME
     version = ENGINE_VERSION
 
+    def __init__(self) -> None:
+        #: Índice de títulos ya construido, por conjunto de nodos.
+        #:
+        #: El programa es el mismo para todo el corpus, así que construir el índice en cada sujeto
+        #: es
+        #: trabajo repetido: se normaliza y se recorta la raíz de cada palabra de cada título una
+        #: vez
+        #: por sujeto, cuando basta con hacerlo una vez por pasada.
+        self._emparejadores: dict[tuple[str, ...], EmparejadorDeTemas] = {}
+
+    def _emparejador(self, nodos: Sequence[NodoPrograma]) -> EmparejadorDeTemas:
+        """El índice de esos nodos, construido una sola vez."""
+        clave = tuple(nodo.node_id for nodo in nodos)
+        emparejador = self._emparejadores.get(clave)
+        if emparejador is None:
+            emparejador = EmparejadorDeTemas(nodos)
+            self._emparejadores[clave] = emparejador
+        return emparejador
+
     def propose(self, subject: ClassificationSubject) -> Sequence[Proposal]:
         """Propuestas de tema del sujeto. Sin texto o sin programa, ninguna."""
         if not subject.text.strip() or not subject.profiles:
             return ()
-        trozos = fragmentar(subject.text)
+        trozos = fragmentar(subject.text[:MAXIMO_CARACTERES])
         if not trozos:
             return ()
         propuestas: list[Proposal] = []
@@ -88,7 +120,7 @@ class FragmentTopicClassifier:
             # Con un solo nodo no hay nada que elegir: proponerlo seria decir que todo el material
             # es de ese tema, y eso no lo dice el texto.
             return []
-        emparejador = EmparejadorDeTemas(nodos)
+        emparejador = self._emparejador(nodos)
         pesos: dict[str, float] = {}
         ejemplos: dict[str, str] = {}
         for trozo in trozos:
