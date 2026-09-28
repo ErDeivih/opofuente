@@ -53,8 +53,18 @@ from opofuente.domain.jobs import Job, JobType
 
 logger = logging.getLogger("opofuente.application.classification_service")
 
-#: Sujetos que se clasifican en una pasada cuando el trabajo no dice otra cosa.
-DEFAULT_LIMIT = 200
+#: Representaciones que se clasifican en una pasada cuando el trabajo no dice otra cosa.
+#:
+#: Era 200, y con el corpus real del propietario (1.066 representaciones extraídas) eso dejaba
+#: fuera a **casi la mitad del material**, con un agravante: `classification_targets` ordena por
+#: fecha de creación y no salta lo ya clasificado, así que **otra pasada volvía a mirar los
+#: mismos 200** y el material del final de la cola no se clasificaba nunca. Medido: tres pasadas
+#: seguidas dejaron las mismas 5.544 propuestas.
+#:
+#: El tope existía para que una pasada no fuera eterna; pero la pasada es un trabajo en cola, con
+#: lease, progreso y cancelación entre sujetos (DEBT-024), así que un corpus de miles cabe en una
+#: sola pasada. Se sube a 10.000 para que alcance todo el material que la aplicación tenga.
+DEFAULT_LIMIT = 10_000
 
 #: Cómo informa una pasada de por dónde va: valor entre 0 y 1 y paso legible para la pantalla.
 #: El valor es **relativo a la pasada**; quien llama decide en qué tramo del trabajo cae (DEBT-024).
