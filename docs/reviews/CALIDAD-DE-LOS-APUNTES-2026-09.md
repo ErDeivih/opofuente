@@ -38,16 +38,26 @@ alto que la mayoría de los buenos. Se comprobó también que **ningún** fragme
 solo en palabras que aparecen en muchos títulos (0 de 2.547), así que ni contar palabras ni mirar su rareza
 los distingue. **Subir el umbral quitaría material bueno sin quitar los errores.**
 
+## Qué se probó para arreglarlo, y qué salió
+
+Se probaron **tres** caminos en la misma sesión, y los tres se midieron. Dos no sirven y se dicen:
+
+| Intento | Cobertura medida | Resultado |
+|---|---|---|
+| **La carpeta del material como etiqueta** («BLOQUE 4\07 El modelo TCPIP…») | Solo **10 documentos y 19 fragmentos (el 1 %)** | No sirve: casi todo el material son documentos de **bloque entero** («Resumen de Hellcito», «Bloque 2 y 4», «Bloque 1 Actualizado 2026») que no están en una carpeta de tema |
+| **El tema que el propio material declara** dentro del texto («BLOQUE III TEMA 4: ANSI-SQL») | **28 fragmentos de 2.547 (el 1 %)** | Tampoco: en esos 21 emparejables, la regla coincidía con lo declarado el **52,4 %** de las veces (coherente con la auditoría) |
+| **El hilo del documento**: un trozo que cae en un tema distinto al de sus vecinos se va con ellos | Se activó **154 veces** en todo el material | **Revertido**: cambió solo **6 de los 2.436 fragmentos** que entran en los apuntes (0,25 %) y la auditoría de 20 fragmentos salió **idéntica**. Los errores **no vienen sueltos**: vienen en tandas (una sección entera de un documento de bloque colocada en el tema vecino), y el hilo local no ve eso |
+
 ## Qué haría falta para arreglarlo (y cómo se mediría)
 
-1. **Usar la organización del propio propietario como señal.** El material trae carpetas con el tema en el
-   nombre («BLOQUE 4\07 El modelo TCP/IP…», «BLOQUE 1\T4_Trebep-Transparencia-Agenda 2030»): eso es una
-   etiqueta puesta por una persona y vale más que cualquier parecido de palabras. Un documento que vive en
-   una carpeta de un tema se coloca ahí **entero**, y solo sus trozos dudosos se reparten por la regla.
-2. **Reordenar por el vocabulario del tema, restringido al bloque.** La técnica ya está medida en el banco
+1. **Reordenar por el vocabulario del tema, restringido al bloque.** La técnica ya está medida en el banco
    de preguntas: preguntando al vocabulario del tema, con un margen de 0,08, acierta el 90 % frente a las
-   preguntas que sí tenían tema por el título. Aquí serviría para **reordenar** los fragmentos del bloque,
-   no para traerlos de otro.
+   preguntas que sí tenían tema por el título. Aquí serviría para **reordenar** los fragmentos dentro del
+   bloque al que pertenecen, no para traerlos de otro. Ojo: la comprobación hecha con ese vocabulario es
+   **circular** si se usa para medirse a sí misma — hay que auditarla a mano, como se hizo aquí.
+2. **Partir los documentos de bloque por sus propios títulos.** Los «Bloque N Actualizado 2026» traen
+   dentro su propio índice de temas; usar eso como fronteras es más prometedor que cualquier parecido de
+   palabras, pero exige leer esos documentos por dentro y comprobar cuántos lo traen.
 3. **Medir cada intento con la misma auditoría**: 20 fragmentos al azar, a mano, y el recuento publicado.
 
 Lo que **no** se hace: dar por bueno el 85,8 % del vocabulario. Era circular, y decirlo es parte del
