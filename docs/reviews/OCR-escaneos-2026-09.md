@@ -101,3 +101,59 @@ Y la prueba automática que queda en el repositorio: `apps/api/tests/unit/test_o
 páginas y fallos, con un runner inyectado) más dos pruebas que **ejecutan el binario de verdad** sobre
 una imagen y un PDF sintéticos legibles; se saltan si el equipo no tiene Tesseract con español, y en
 este equipo **se ejecutan**.
+
+---
+
+# Anexo (28 de septiembre de 2026): las 39 plantillas de respuestas escaneadas del banco de TAI
+
+**Qué se buscaba.** El banco de preguntas del material del propietario tiene 2.896 preguntas de examenes
+oficiales y solo 775 con su respuesta oficial: el resto de exámenes o no traen plantilla o la traen en un
+PDF aparte. De los 245 PDF de baquedano.es, **90 no tienen capa de texto** y **39 de esos 90 son
+plantillas de respuestas**: justo las que faltan. Se intentó leerlas.
+
+**Primero, una corrección mía.** Dije que «Tesseract no está instalado» porque `tesseract` no responde en
+el PATH. **Sí está**: en `C:\Program Files\Tesseract-OCR\tesseract.exe`, instalado por el propietario, con
+el modelo español oficial en `%LOCALAPPDATA%\OpoFuente\tessdata`, y la aplicación lo llama por ruta
+absoluta. La comprobación correcta era mirar dónde lo busca la aplicación, no el PATH.
+
+## Qué se midió
+
+| Prueba | Resultado |
+|---|---|
+| Lector 1: **OCR de Windows** (`Windows.Media.Ocr`, es-ES), página entera a 250 y 400 ppp | Devuelve la **columna de números** y **pierde la de letras**: sin letras no hay respuesta que emparejar. Comprobado mirando la página renderizada: las letras están ahí y son legibles |
+| Lector 1, la misma página **partida en mitades** (la tabla tiene dos parejas de columnas) | Igual: números sí, letras no. En una banda de tres filas llegó a leer «36 37 38 … c C», es decir, **a veces** y con duplicados |
+| Lector 2: **Tesseract** `spa` oficial, página entera a 300 ppp (la configuración ya medida como buena) | Lee las dos columnas: «1 B», «2 c», «3 A»… con ruido en las letras que no son A–D limpias («Le;», «e;») y algún dígito cambiado («31 o:» donde la otra pasada lee «37 c») |
+| Lector 2 con **`spa_fast`**, misma página y resolución | Lee las mismas filas con otros errores («Cc», «qe») |
+| **Acuerdo entre los dos modelos** de Tesseract, exigiendo la misma letra en la misma fila | **37 plantillas rechazadas de 39**; las 2 que pasan (una sola columna, sin discrepancias) no se pueden usar: su examen es también un escaneo sin texto |
+| Validación de coherencia (numeración consecutiva desde 1 o 101, menos del 20 % de huecos) | Rechaza con su motivo las que no cuadran (huecos, empieza en otro número, menos de 10 respuestas legibles) |
+
+Depuración de guiones en `docs\opofuente\_oficial\`: `ocr_preparar.py` (renderiza), `ocr_windows.ps1`
+(OCR del sistema), `ocr_tesseract.py` (Tesseract, dos modelos), `ocr_leer.py` (acuerdo y validación). Las
+muestras del texto OCR quedan en `F:\OpoFuente\BANCO\ocr300\` y `F:\OpoFuente\BANCO\ocr300-spa_fast\`.
+
+**Dos sí pasaron** la criba estricta, y merece la pena dejarlo escrito: `C_sol_1_libre_CD_2021.pdf` (89
+respuestas, 5 sin leer, **0 discrepancias**) y `TAI_sol_libre_UAH_2010.pdf` (73 respuestas, 14 sin leer, 0
+discrepancias). Son las dos únicas con una tabla limpia de una sola columna. Aun así **no se han podido
+usar**: sus exámenes (`C_ejer_1_libre_CD_2021.pdf` y `TAI_ejer_libre_UAH_2010.pdf`) son también escaneos,
+con **0 caracteres** de texto y 18 páginas cada uno, así que no hay preguntas a las que pegarles la
+respuesta. Leer los dos lados por OCR (18 páginas de enunciados con sus opciones) metería texto con ruido
+en un banco de estudio: peor que no tenerlo. Quedan guardadas en `F:\OpoFuente\BANCO\claves-ocr.json` para
+el día en que se lean los exámenes.
+
+## Qué se concluye
+
+1. **No se importa ninguna respuesta de estas plantillas.** Un lector que acierta «casi todas» y falla una
+   de cada diez, sin avisar cuál, mete respuestas falsas en el banco: eso corrige mal un examen entero y
+   no se nota hasta que se estudia con ello. La regla que ya estaba escrita para DEBT-020 vale igual aquí:
+   del escaneo sale **una propuesta a revisar**, nunca una verdad.
+2. **La vía que sí funciona es la que ya se midió en esta página**: leer la tabla **a ojo** sobre recortes
+   de fila, con el OCR solo para dar la geometría. Para una tabla (77 filas) funcionó y quedó verificada.
+   Para 39 tablas (unas 2.000 respuestas) es trabajo manual de horas, y por eso **no se ha hecho**: es una
+   tarea para pedir, no para colar en silencio.
+3. **El límite no es el motor, es la tabla.** Estas plantillas son tablas con rejilla, dos parejas de
+   columnas y celdas de una sola letra: lo que peor leen los dos OCR que hay en el equipo. La prosa de los
+   mismos escaneos se lee perfectamente (es lo que ya decía la medición de arriba), así que el material
+   escaneado **sí** sirve para los apuntes; lo que no sirve es automatizar las claves.
+4. **Lo que gana el alumno con esto, medido**: las 90 preguntas de examen que hoy tienen respuesta oficial
+   siguen siendo 775. Con las 39 plantillas leídas a mano subirían a unas 2.000, y quedarían **por tema**
+   porque cada pregunta ya está colocada en el suyo.
