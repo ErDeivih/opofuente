@@ -181,6 +181,7 @@ def _report(
         key_entries=informe.key_entries,
         keys_in_conflict=informe.keys_in_conflict,
         mapped_to_topics=catalogadas,
+        topics_from_column=informe.topics_from_column,
         rejected=[
             RejectedRowSchema(row_number=fila.row_number, cause=fila.cause, detail=fila.detail)
             for fila in informe.rejected

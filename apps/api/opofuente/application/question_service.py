@@ -897,6 +897,7 @@ class QuestionService:
         # no puede tener dos entradas para la misma pregunta. Con la misma respuesta se queda una;
         # con otra distinta, el conflicto se marca como siempre.
         por_pregunta: dict[str, AnswerKeyEntry] = {}
+        con_tema: set[str] = set()
         explicaciones_opcion_guardadas = 0
         for indice, ((claves, explicacion, tema), pregunta_id) in enumerate(
             zip(extras, resultado.question_ids, strict=False)
@@ -965,9 +966,10 @@ class QuestionService:
                         convocation_version_id=convocatoria, reference=tema
                     )
                     if nodo is not None:
-                        self._questions.map_question_to_node(
+                        if self._questions.map_question_to_node(
                             pregunta_id, node_id=nodo[0], now=ahora, actor=actor
-                        )
+                        ):
+                            con_tema.add(pregunta_id)
                     else:
                         temas_sin_nodo.append(tema)
         entradas = list(por_pregunta.values())
@@ -1033,6 +1035,7 @@ class QuestionService:
             parts_detected=parts,
             evidence_links=enlazadas,
             option_explanations=explicaciones_opcion_guardadas,
+            topics_from_column=len(con_tema),
         )
 
     @staticmethod

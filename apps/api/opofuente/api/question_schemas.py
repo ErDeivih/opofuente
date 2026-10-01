@@ -181,6 +181,9 @@ class QuestionImportReportSchema(BaseModel):
     #: Preguntas que quedaron **catalogadas por bloque y tema** al heredar el programa del documento
     #: del que salen (S12.6). Sin ese mapeo, el diagnóstico por temas no las vería.
     mapped_to_topics: int = 0
+    #: Preguntas con tema asignado desde la columna `topic` del CSV (o el campo del JSON).
+    #: `mapped_to_topics` es otra cosa: lo que catalogó la aplicación sola.
+    topics_from_column: int = 0
     #: Listas obligatorias: «sin filas rechazadas» se dice con una lista vacía, no con un ausente.
     rejected: list[RejectedRowSchema]
     issues: list[ParseIssueSchema]

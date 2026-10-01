@@ -230,6 +230,10 @@ class QuestionImportReport:
     #: diga que el material las traía: sin esta cifra, un fichero con «por qué la b no vale» en cada
     #: fila parecería no haber traído nada.
     option_explanations: int = 0
+    #: Preguntas a las que la columna de tema (`topic`) dejó asignado un nodo del programa. Sin esta
+    #: cifra el informe no decía cuántos temas había aplicado y había que contarlos en la base
+    #: (§4.8 del traspaso de octubre de 2026).
+    topics_from_column: int = 0
 
     @property
     def imported(self) -> int:

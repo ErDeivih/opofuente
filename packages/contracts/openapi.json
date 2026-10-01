@@ -7577,6 +7577,11 @@
             "title": "Set Id",
             "type": "string"
           },
+          "topics_from_column": {
+            "default": 0,
+            "title": "Topics From Column",
+            "type": "integer"
+          },
           "unmatched_positions": {
             "items": {
               "type": "integer"

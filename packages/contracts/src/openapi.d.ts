@@ -5332,6 +5332,11 @@ export interface components {
             rejected: components["schemas"]["RejectedRowSchema"][];
             /** Set Id */
             set_id: string;
+            /**
+             * Topics From Column
+             * @default 0
+             */
+            topics_from_column: number;
             /** Unmatched Positions */
             unmatched_positions: number[];
             /**

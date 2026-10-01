@@ -197,6 +197,7 @@ def test_con_material_asignado_preguntas_con_tema_y_clave_activa_esta_listo(
     )
     assert importado.status_code == 200, importado.text
     assert importado.json()["created"] == 2
+    assert importado.json()["topics_from_column"] == 2, "el informe dice cuántos temas aplicó"
     claves = seeded_client.get(f"/api/v1/question-sets/{conjunto['id']}/answer-keys").json()
     activada = seeded_client.post(
         f"/api/v1/question-sets/{conjunto['id']}/answer-keys/{claves[0]['id']}/activate",
