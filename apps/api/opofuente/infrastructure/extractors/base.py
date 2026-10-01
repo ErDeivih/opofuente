@@ -17,6 +17,7 @@ Tres reglas que se aplican aquí (09_SECURITY §3, DEBT-004):
 
 from __future__ import annotations
 
+import codecs
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol
@@ -210,6 +211,12 @@ def detect_format(
     if _looks_like_html(data):
         return DetectedFormat("html", suffix, suffix in HTML_SUFFIXES)
     decoded = try_decode_text(data)
+    if decoded is None:
+        # El principio se lee con un tope de bytes, y el tope puede partir un carácter UTF-8. Si el
+        # resto del bloque tiene además un byte que Windows-1252 no define (`0x81`, `0x8D`, `0x8F`,
+        # `0x90`, `0x9D`: «Á» es `C3 81`), ninguna de las dos lecturas valía y un `.txt` legible se
+        # declaraba binario y se conservaba sin extraer (§4.2 del traspaso de octubre de 2026).
+        decoded = _decode_utf8_prefix(data)
     if decoded is not None:
         if suffix in JSON_SUFFIXES and _looks_like_json(data):
             return DetectedFormat("json", suffix, True)
@@ -261,6 +268,21 @@ def try_decode_text(data: bytes) -> str | None:
         except UnicodeDecodeError:
             continue
     return None
+
+
+def _decode_utf8_prefix(data: bytes) -> str | None:
+    """Lee como UTF-8 un bloque cuyo **único** defecto es un carácter partido al final.
+
+    El decodificador incremental sin `final` guarda la secuencia incompleta del final en vez de
+    fallar, y sigue fallando con cualquier otro byte inválido: no convierte en texto lo que no lo
+    es.
+    """
+    if b"\x00" in data:
+        return None
+    try:
+        return codecs.getincrementaldecoder("utf-8")().decode(data, final=False)
+    except UnicodeDecodeError:
+        return None
 
 
 def decode_with_warning(data: bytes) -> tuple[str, bool]:

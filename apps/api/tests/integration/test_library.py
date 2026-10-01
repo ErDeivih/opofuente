@@ -224,11 +224,20 @@ def test_promocionar_lleva_las_secciones_y_las_evidencias_del_texto_real(tmp_pat
     assert secciones[0].page_start == 3
 
     evidencias = biblioteca.list_evidence(resultado.version_id or "")
-    assert len(evidencias) == 2
+    assert len(evidencias) == 3
     assert "diez dias habiles" in evidencias[1].text
     assert evidencias[1].page == 3
     assert evidencias[1].citation_label == "Plazos, pág. 3"
     assert evidencias[1].section_id == secciones[1].id
+    # El texto que no cae en ninguna sección también se guarda y se cita: antes se perdía en
+    # silencio (§4.1 del traspaso de octubre de 2026). Toma la última página de la sección anterior,
+    # que es donde sigue el texto.
+    assert evidencias[2].text == "Tema 2. Documentacion clinica."
+    assert evidencias[2].section_id is None
+    assert evidencias[2].page == 4
+    # Los offsets son exactos: el texto de la evidencia es literalmente ese tramo del documento.
+    for evidencia in evidencias:
+        assert TEXTO[evidencia.char_start : evidencia.char_end] == evidencia.text
 
 
 def test_promocionar_dos_veces_no_crea_dos_documentos(tmp_path: Path) -> None:
@@ -374,7 +383,7 @@ def test_sustituir_no_borra_la_version_antigua(tmp_path: Path) -> None:
     versiones_antiguas = [
         version for version in detalle.versions if version.id == primera.version_id
     ]
-    assert versiones_antiguas[0].evidence_count == 2, "la versión antigua conserva su contenido"
+    assert versiones_antiguas[0].evidence_count == 3, "la versión antigua conserva su contenido"
     assert detalle.document.active_version is not None
     assert detalle.document.active_version.id == segunda.version_id
 

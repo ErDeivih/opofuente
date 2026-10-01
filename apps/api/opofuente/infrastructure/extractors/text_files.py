@@ -213,27 +213,46 @@ def _tramo(position: int, char_start: int, char_end: int) -> ExtractedSection:
 
 
 def _markdown_sections(text: str) -> tuple[ExtractedSection, ...]:
-    """Secciones de un Markdown: los encabezados `#` marcan los cortes."""
+    """Secciones de un Markdown: cada encabezado `#` abre una sección que llega hasta el siguiente.
+
+    Antes cada sección abarcaba solo la línea del encabezado, así que el cuerpo no caía en ninguna y
+    un apunte de 80 KB se quedaba en 447 caracteres citables (§4.3 del traspaso de octubre de 2026).
+    El texto que va antes del primer encabezado es un tramo sin título: se cita igual.
+    """
     sections: list[ExtractedSection] = []
+    abiertos: list[tuple[SectionType, int, str | None]] = []  # tipo, inicio, título
     offset = 0
-    position = 0
+    en_bloque_de_codigo = False
     for line in text.splitlines(keepends=True):
         stripped = line.lstrip()
-        if stripped.startswith("#"):
+        if stripped.startswith("```") or stripped.startswith("~~~"):
+            # Un `#` dentro de un bloque de código es un comentario, no un encabezado.
+            en_bloque_de_codigo = not en_bloque_de_codigo
+        elif not en_bloque_de_codigo and stripped.startswith("#"):
             hashes = len(stripped) - len(stripped.lstrip("#"))
             title = stripped[hashes:].strip()
-            if title:
-                position += 1
-                sections.append(
-                    ExtractedSection(
-                        section_type=SectionType.TITLE if hashes == 1 else SectionType.HEADING,
-                        position=position,
-                        char_start=offset,
-                        char_end=offset + len(line),
-                        title=title,
-                    )
+            if title and hashes <= 6:
+                abiertos.append(
+                    (SectionType.TITLE if hashes == 1 else SectionType.HEADING, offset, title)
                 )
         offset += len(line)
+    if not abiertos:
+        return _block_sections(text)
+    if text[: abiertos[0][1]].strip():
+        abiertos.insert(0, (SectionType.PARAGRAPH, 0, None))
+    for indice, (tipo, inicio, titulo) in enumerate(abiertos):
+        fin = abiertos[indice + 1][1] if indice + 1 < len(abiertos) else len(text)
+        while fin > inicio and text[fin - 1].isspace():
+            fin -= 1
+        sections.append(
+            ExtractedSection(
+                section_type=tipo,
+                position=indice + 1,
+                char_start=inicio,
+                char_end=fin,
+                title=titulo,
+            )
+        )
     return tuple(sections)
 
 

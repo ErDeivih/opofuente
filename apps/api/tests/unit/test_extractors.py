@@ -1155,3 +1155,59 @@ def test_los_tramos_de_un_texto_enorme_se_acotan(tmp_path: Path) -> None:
 
     assert len(resultado.sections) == MAX_BLOCK_SECTIONS
     assert "Bloque 1199" in resultado.text, "el texto no se recorta: solo se dejan de partir tramos"
+
+
+# --- Defectos medidos sobre el material real (traspaso de octubre de 2026) -----------------------
+
+
+def test_un_txt_cuyo_corte_de_deteccion_parte_un_caracter_sigue_siendo_texto(
+    tmp_path: Path,
+) -> None:
+    """§4.2: el detector lee 4.096 bytes; si el corte parte un carácter y el bloque tiene un byte
+    que Windows-1252 no define («Á» es `C3 81`), el `.txt` se declaraba binario y no se leía."""
+    contenido = ("Á" + "a" * 4093 + "é" + " fin del texto con ñ.").encode()
+    assert contenido[:4096].endswith(b"\xc3"), "el corte de detección debe partir la «é»"
+    archivo = tmp_path / "apunte.txt"
+    archivo.write_bytes(contenido)
+
+    assert detect_format(archivo).family == "text"
+    resultado = ExtractorRegistry(Settings(_env_file=None)).extract(archivo)
+    assert resultado.text.endswith("fin del texto con ñ.")
+
+
+def test_un_binario_de_verdad_no_pasa_por_texto_con_el_arreglo_del_corte(tmp_path: Path) -> None:
+    archivo = tmp_path / "datos.txt"
+    archivo.write_bytes(bytes(range(1, 256)) * 20)
+    assert detect_format(archivo).family == "binary"
+
+
+def test_el_cuerpo_de_un_markdown_cae_en_la_seccion_de_su_encabezado(tmp_path: Path) -> None:
+    """§4.3: cada sección abarcaba solo la línea `#`, y el cuerpo no se citaba."""
+    archivo = tmp_path / "apunte.md"
+    archivo.write_text(
+        "Preámbulo sin título.\n\n"
+        "# Tema 1\n\nEl plazo es de diez días.\n\n"
+        "```\n# esto es código, no un encabezado\n```\n\n"
+        "## Plazos\n\nSegundo párrafo del apunte.\n",
+        encoding="utf-8",
+    )
+
+    resultado = ExtractorRegistry(Settings(_env_file=None)).extract(archivo)
+    texto = resultado.text
+    trozos = [texto[s.char_start : s.char_end] for s in resultado.sections]
+
+    assert [s.title for s in resultado.sections] == [None, "Tema 1", "Plazos"]
+    assert trozos[0] == "Preámbulo sin título."
+    assert "El plazo es de diez días." in trozos[1]
+    assert "esto es código" in trozos[1]
+    assert trozos[2].endswith("Segundo párrafo del apunte.")
+
+
+def test_un_markdown_sin_encabezados_se_trocea_por_bloques(tmp_path: Path) -> None:
+    archivo = tmp_path / "notas.md"
+    archivo.write_text("Uno.\n\nDos.\n", encoding="utf-8")
+    resultado = ExtractorRegistry(Settings(_env_file=None)).extract(archivo)
+    assert [resultado.text[s.char_start : s.char_end] for s in resultado.sections] == [
+        "Uno.",
+        "Dos.",
+    ]

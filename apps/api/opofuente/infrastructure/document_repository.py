@@ -7,8 +7,9 @@ Lo que decide este repositorio, y por qué:
   puede promocionar a un documento nuevo o **añadir una versión a uno existente**, que es como se
   representa «la misma obra, otro fichero».
 - **Las secciones y las evidencias salen de la representación**, no se inventan: S03 ya guardó
-  secciones con sus offsets, así que aquí se copian a `document_sections` y cada sección produce una
-  evidencia citable con su página y su etiqueta.
+  secciones con sus offsets, así que aquí se copian a `document_sections` y su texto se trocea en
+  evidencias citables con su página y su etiqueta: **todo** el texto, sin perder lo que pasa del
+  tope de una cita.
 - **Aceptar y sustituir son promociones críticas**: exigen que alguien lo pida, dejan su evento de
   auditoría y **no borran la versión antigua** (queda `superseded`, con su contenido intacto).
 - **Los derechos no se inventan**: si no se indica código, la versión nace sin derechos revisados, y
@@ -18,6 +19,7 @@ Lo que decide este repositorio, y por qué:
 from __future__ import annotations
 
 import json
+from bisect import bisect_right
 from collections.abc import Mapping, Sequence
 from datetime import datetime
 from typing import Any
@@ -44,6 +46,8 @@ from opofuente.application.library_models import (
     VersionView,
 )
 from opofuente.domain.documents import VersionStatus, diff_versions, document_section_type
+from opofuente.domain.errors import InvariantViolationError
+from opofuente.domain.evidence import MAX_EVIDENCE_CHARS, evidence_cuts, uncovered_ranges
 from opofuente.infrastructure.db_models import (
     ArtifactOriginRecord,
     AuditEventRecord,
@@ -63,12 +67,10 @@ from opofuente.infrastructure.db_models import (
 )
 from opofuente.infrastructure.representation_store import RepresentationStore
 
-#: Cuánto texto entra en una evidencia citable. Una cita es un fragmento, no el documento entero.
-MAX_EVIDENCE_CHARS = 1200
-
-#: Cuánto texto se lee de la representación para recortar evidencias. Una representación entera no
-#: hace falta: las citas salen de sus secciones, que están al principio de lo que se leyó.
-MAX_EVIDENCE_TEXT_CHARS = 400_000
+#: Cuánto texto se lee de la representación para sacar evidencias: **entera**. La representación ya
+#: está acotada al extraerla (`max_representation_chars`), y leer menos dejaba sin citar todo lo que
+#: venía después (antes se leían 400.000 caracteres y el resto se perdía).
+MAX_EVIDENCE_TEXT_CHARS = 1_000_000_000
 
 
 def _new_id() -> str:
@@ -256,7 +258,12 @@ class SqlAlchemyDocumentRepository:
         representacion: ExtractedRepresentationRecord | None,
         now: datetime,
     ) -> tuple[int, int]:
-        """Copia la estructura que S03 ya extrajo y crea una evidencia citable por sección."""
+        """Copia la estructura que S03 ya extrajo y trocea **todo** su texto en evidencias citables.
+
+        Cada sección produce tantas evidencias como hagan falta para que ninguna pase del tope, y el
+        texto que no cae en ninguna sección se cubre con evidencias propias (ver
+        `opofuente.domain.evidence`).
+        """
         if representacion is None:
             return 0, 0
         # Las secciones de S03 guardan **offsets** sobre el texto de la representacion, no el texto:
@@ -265,6 +272,9 @@ class SqlAlchemyDocumentRepository:
         secciones = self._parse_sections(representacion.sections_json)
         creadas = 0
         evidencias = 0
+        cubiertos: list[tuple[int, int]] = []
+        # Sección más cercana por delante de cada offset: da etiqueta y página a los huecos.
+        anclas: list[tuple[int, DocumentSectionRecord]] = []
         for indice, seccion in enumerate(secciones, start=1):
             registro = DocumentSectionRecord(
                 id=_new_id(),
@@ -283,26 +293,48 @@ class SqlAlchemyDocumentRepository:
             session.add(registro)
             session.flush()
             creadas += 1
-            texto = self._slice(texto_completo, seccion)
-            if texto:
+            inicio, fin = registro.char_start, registro.char_end
+            cubiertos.append((inicio, fin))
+            anclas.append((inicio, registro))
+            # Una sección larga produce **varias** evidencias: antes producía una recortada a 1.200
+            # caracteres y el resto del texto se perdía (§4.1 del traspaso de octubre de 2026).
+            for corte in evidence_cuts(texto_completo, inicio, fin):
+                evidencias += 1
                 session.add(
-                    EvidenceSpanRecord(
-                        id=_new_id(),
-                        document_version_id=version.id,
-                        section_id=registro.id,
-                        ordinal=evidencias + 1,
-                        text=texto,
-                        normalized_text=" ".join(texto.split()),
-                        char_start=_int(seccion.get("char_start")),
-                        char_end=_int(seccion.get("char_start")) + len(texto),
-                        page=_opt_int(seccion.get("page_start")),
-                        citation_label=self._citation_label(registro),
-                        quality=representacion.quality,
-                        index_status="pending",
-                        created_at=now,
+                    self._evidence(
+                        version,
+                        representacion,
+                        texto_completo,
+                        corte,
+                        evidencias,
+                        now,
+                        seccion=registro,
                     )
                 )
+        # El texto que no cae en ninguna sección también se cita: el cuerpo de un Markdown cuyas
+        # secciones solo eran los encabezados, o lo que quedaba tras el tope de bloques de un .txt.
+        anclas.sort(key=lambda par: par[0])
+        inicios = [inicio for inicio, _ in anclas]
+        for hueco in uncovered_ranges(len(texto_completo), cubiertos):
+            cortes = evidence_cuts(texto_completo, *hueco)
+            if not cortes:
+                continue
+            posicion = bisect_right(inicios, hueco[0])
+            ancla = anclas[posicion - 1][1] if posicion else None
+            for corte in cortes:
                 evidencias += 1
+                session.add(
+                    self._evidence(
+                        version,
+                        representacion,
+                        texto_completo,
+                        corte,
+                        evidencias,
+                        now,
+                        seccion=None,
+                        ancla=ancla,
+                    )
+                )
         return creadas, evidencias
 
     @staticmethod
@@ -328,14 +360,53 @@ class SqlAlchemyDocumentRepository:
         except OSError:
             return ""
 
-    @staticmethod
-    def _slice(texto: str, seccion: dict[str, object]) -> str:
-        """Recorta el texto de la sección con sus offsets, acotado a lo que es una cita."""
-        inicio = _int(seccion.get("char_start"))
-        fin = _int(seccion.get("char_end"))
-        if fin <= inicio:
-            return ""
-        return texto[inicio:fin][:MAX_EVIDENCE_CHARS].strip()
+    def _evidence(
+        self,
+        version: DocumentVersionRecord,
+        representacion: ExtractedRepresentationRecord,
+        texto: str,
+        corte: tuple[int, int],
+        ordinal: int,
+        now: datetime,
+        *,
+        seccion: DocumentSectionRecord | None,
+        ancla: DocumentSectionRecord | None = None,
+    ) -> EvidenceSpanRecord:
+        """Una evidencia con offsets exactos: `texto[char_start:char_end]` es su texto.
+
+        `seccion` es la sección que la contiene. Una evidencia de texto que no cae en ninguna
+        sección no se cuelga de ninguna, pero toma la página y la etiqueta de la sección anterior
+        (`ancla`), que es dónde está en el documento.
+        """
+        inicio, fin = corte
+        fragmento = texto[inicio:fin]
+        if len(fragmento) > MAX_EVIDENCE_CHARS:  # lo garantiza `evidence_cuts`; se comprueba igual
+            raise InvariantViolationError("Una evidencia no puede pasar del tope de caracteres")
+        referencia = seccion if seccion is not None else ancla
+        return EvidenceSpanRecord(
+            id=_new_id(),
+            document_version_id=version.id,
+            section_id=None if seccion is None else seccion.id,
+            ordinal=ordinal,
+            text=fragmento,
+            normalized_text=" ".join(fragmento.split()),
+            char_start=inicio,
+            char_end=fin,
+            # Dentro de una sección, su primera página; tras ella, la última, que es donde sigue.
+            page=(
+                seccion.page_start
+                if seccion is not None
+                else None
+                if ancla is None
+                else ancla.page_end or ancla.page_start
+            ),
+            citation_label=(
+                f"fragmento {ordinal}" if referencia is None else self._citation_label(referencia)
+            ),
+            quality=representacion.quality,
+            index_status="pending",
+            created_at=now,
+        )
 
     @staticmethod
     def _parse_sections(raw: str | None) -> tuple[dict[str, object], ...]:
@@ -757,7 +828,9 @@ class SqlAlchemyDocumentRepository:
         return tuple(
             (
                 fila.title,
-                self._slice(texto, {"char_start": fila.char_start, "char_end": fila.char_end}),
+                texto[fila.char_start : fila.char_end][:MAX_EVIDENCE_CHARS].strip()
+                if fila.char_end > fila.char_start
+                else "",
             )
             for fila in filas
         )
