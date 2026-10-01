@@ -3,8 +3,10 @@
 Por qué existe esta herramienta y no un JSON escrito a mano: el programa oficial y las reglas de
 examen deben poder rastrearse hasta el documento descargado. Aquí se hace así:
 
-1. se verifica el `sha256` de cada fuente contra `fixtures/profiles/manifest.json` (si el documento
-   cambia, la herramienta falla y no se genera nada);
+1. se verifica que cada fuente es la que `fixtures/profiles/manifest.json` dice: por `sha256` de sus
+   bytes y, en las fuentes que el servidor sirve distintas en cada descarga (marcadas `volatile`),
+   por el `sha256` de su **texto visible** (`content_sha256`); si el documento cambia, no se genera
+   nada;
 2. el **programa** se extrae automáticamente del documento oficial: en TAI del ANEXO V del BOE, en
    Guardia Civil del PDF oficial del temario;
 3. cada valor de los **perfiles curados** (`*.profile.json`) lleva una cita literal de la fuente, y
@@ -15,10 +17,13 @@ Una cifra sin cita no puede entrar en un fixture.
 Uso:
     uv run python -m opofuente.tools.build_profile_fixtures             # escribe los fixtures
     uv run python -m opofuente.tools.build_profile_fixtures --check     # falla si hay diferencias
+    uv run python -m opofuente.tools.build_profile_fixtures --refresh-content
+        # actualiza la huella de contenido de las fuentes volátiles
 """
 
 from __future__ import annotations
 
+import hashlib
 import html
 import json
 import re
@@ -87,6 +92,11 @@ class Source:
     sha256: str
     role: str
     profile_code: str | None
+    #: Fuente cuyo **contenido** se verifica en lugar de sus bytes, porque el servidor la sirve
+    #: distinta en cada descarga (véase `content_fingerprint`).
+    volatile: bool = False
+    #: `sha256` del texto visible de la fuente, que es lo que se compara cuando `volatile`.
+    content_sha256: str | None = None
 
 
 def load_manifest(root: Path) -> list[Source]:
@@ -101,6 +111,8 @@ def load_manifest(root: Path) -> list[Source]:
             sha256=entry["sha256"],
             role=entry["role"],
             profile_code=entry.get("profile_code"),
+            volatile=bool(entry.get("volatile", False)),
+            content_sha256=entry.get("content_sha256"),
         )
         for entry in data["sources"]
     ]
@@ -109,14 +121,54 @@ def load_manifest(root: Path) -> list[Source]:
     return sources
 
 
-def verify_sources(sources: Iterable[Source]) -> None:
-    import hashlib
+#: Bloques cuyo texto **no** se lee: son código de la página, no lo que la página dice.
+_SCRIPT_OR_STYLE = re.compile(
+    r"<(script|style|noscript)\b[^>]*>.*?</\1>", re.DOTALL | re.IGNORECASE
+)
+_COMMENT = re.compile(r"<!--.*?-->", re.DOTALL)
 
+
+def content_fingerprint(path: Path) -> str:
+    """`sha256` del **texto visible** de una fuente, para las que cambian de bytes en cada descarga.
+
+    El 1 de octubre de 2026 la puerta 17 no podía ponerse verde por dos páginas de la Guardia Civil:
+    dos descargas seguidas, en el mismo minuto, diferían en 22 de unas 3.200 líneas, y todo lo que
+    cambiaba eran identificadores que el gestor de contenidos inventa al renderizar
+    (`data-cssid="sgrowcolumn_n167974"`). Un `sha256` de bytes no puede ser estable ahí; el texto
+    que la página dice, sí. Por eso las fuentes que se declaran `volatile` en el manifiesto se
+    comparan por esta huella: se quitan comentarios, scripts y hojas de estilo (lo que no se lee) y
+    todas las etiquetas (que es donde viven esos identificadores), se colapsan los espacios y se
+    hashea el texto que queda.
+    """
+    raw = path.read_text(encoding="utf-8", errors="replace")
+    sin_ruido = _SCRIPT_OR_STYLE.sub(" ", _COMMENT.sub(" ", raw))
+    return hashlib.sha256(normalize(sin_ruido).encode("utf-8")).hexdigest()
+
+
+def verify_sources(sources: Iterable[Source]) -> None:
+    """Comprueba que cada fuente descargada es la que el manifiesto dice.
+
+    Por bytes, salvo las declaradas `volatile`, que se comprueban por el `sha256` de su texto
+    visible (`content_sha256`). Una fuente volátil sin `content_sha256` **no se da por buena**: se
+    dice que falta, en vez de dejar pasar sin comprobar nada.
+    """
     missing: list[str] = []
     mismatch: list[str] = []
+    volatile_mismatch: list[str] = []
+    sin_huella: list[str] = []
     for source in sources:
         if not source.local_path.is_file():
             missing.append(str(source.local_path))
+            continue
+        if source.volatile:
+            if not source.content_sha256:
+                sin_huella.append(source.id)
+                continue
+            huella = content_fingerprint(source.local_path)
+            if huella != source.content_sha256:
+                volatile_mismatch.append(
+                    f"{source.id} ({huella[:12]}… != {source.content_sha256[:12]}…)"
+                )
             continue
         digest = hashlib.sha256(source.local_path.read_bytes()).hexdigest()
         if digest != source.sha256:
@@ -124,6 +176,20 @@ def verify_sources(sources: Iterable[Source]) -> None:
     if missing:
         raise InvariantViolationError(
             "faltan fuentes locales; ejecuta scripts/fetch-sources.ps1: " + ", ".join(missing)
+        )
+    if sin_huella:
+        raise InvariantViolationError(
+            "fuentes volátiles sin huella de contenido en el manifiesto "
+            "(se comparan por texto, no por bytes): "
+            + ", ".join(sin_huella)
+            + "; rellénala con --refresh-content"
+        )
+    if volatile_mismatch:
+        raise InvariantViolationError(
+            "el texto de una fuente volátil ha cambiado (se compara el texto visible, no los "
+            "bytes): " + "; ".join(volatile_mismatch) + ". Comprueba que sigue diciendo lo mismo "
+            "que los perfiles y, si lo dice, actualiza la huella con --refresh-content (que antes "
+            "verifica las citas y no escribe si alguna falta)"
         )
     if mismatch:
         raise InvariantViolationError(
@@ -627,15 +693,79 @@ def render(value: Any) -> str:
     return json.dumps(value, ensure_ascii=False, indent=2) + "\n"
 
 
+def refresh_content_hashes(root: Path, sources: Sequence[Source]) -> int:
+    """Actualiza la huella de contenido de las fuentes volátiles, y solo eso.
+
+    Esto **es** el acto de revisar una fuente que ha cambiado: el texto de la página es otro, así
+    que hay que mirar si sigue diciendo lo que los perfiles le atribuyen. Antes de escribir nada se
+    verifican todas las **citas** de los perfiles contra las fuentes descargadas: si alguna cita ha
+    dejado de aparecer, no se actualiza la huella y se dice cuál falta. Así una fuente no se puede
+    dar por buena «refrescando» el número.
+
+    Solo se toca `content_sha256` de las fuentes marcadas `volatile`; el `sha256` de bytes, las
+    notas y todo lo demás se quedan como están.
+    """
+    manifest_path = root / MANIFEST
+    data = json.loads(manifest_path.read_text(encoding="utf-8"))
+    entradas = {entry["id"]: entry for entry in data["sources"]}
+    volatiles = [source for source in sources if source.volatile]
+    if not volatiles:
+        print("el manifiesto no declara ninguna fuente volátil: nada que refrescar")
+        return 0
+
+    por_id = {source.id: source for source in sources}
+    cache: dict[str, str] = {}
+    checked: list[str] = []
+    profiles_dir = root / "fixtures" / "profiles"
+    for profile_path in sorted(profiles_dir.glob(f"*{PROFILE_SUFFIX}")):
+        profile = json.loads(profile_path.read_text(encoding="utf-8"))
+        verify_quotes(profile, profile["code"], cache=cache, sources=por_id, checked=checked)
+    print(f"citas verificadas antes de tocar el manifiesto: {len(checked)}")
+
+    cambios: list[tuple[str, str | None, str]] = []
+    for source in volatiles:
+        if not source.local_path.is_file():
+            raise InvariantViolationError(
+                f"no está descargada la fuente volátil {source.id}: "
+                "ejecuta scripts/fetch-sources.ps1"
+            )
+        huella = content_fingerprint(source.local_path)
+        anterior = entradas[source.id].get("content_sha256")
+        if huella == anterior:
+            print(f"  sin cambios: {source.id}")
+            continue
+        entradas[source.id]["content_sha256"] = huella
+        cambios.append((source.id, anterior, huella))
+        texto = normalize(source.local_path.read_text(encoding="utf-8", errors="replace"))
+        print(f"  cambia: {source.id}")
+        print(f"      huella anterior: {anterior or '(no había)'}")
+        print(f"      huella nueva   : {huella}")
+        print(f"      texto visible  : {len(texto)} caracteres · empieza por «{texto[:160]}…»")
+
+    if not cambios:
+        print("nada que escribir")
+        return 0
+
+    manifest_path.write_text(render(data), encoding="utf-8", newline="\n")
+    nombres = ", ".join(cambio[0] for cambio in cambios)
+    print(f"manifiesto escrito con {len(cambios)} huella(s) nueva(s): {nombres}")
+    return 0
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     args = list(sys.argv[1:] if argv is None else argv)
     check_only = "--check" in args
+    refresh_content = "--refresh-content" in args
     root = project_root()
 
     sources_list = load_manifest(root)
     sources = {source.id: source for source in sources_list}
+
+    if refresh_content:
+        return refresh_content_hashes(root, sources_list)
+
     verify_sources(sources_list)
-    print(f"Fuentes verificadas por sha256: {len(sources_list)}")
+    print(f"Fuentes verificadas: {len(sources_list)}")
 
     cache: dict[str, str] = {}
     checked: list[str] = []

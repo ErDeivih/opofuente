@@ -131,7 +131,9 @@
       "rights_source_url": "https://web.guardiacivil.es/es/informacion-general/nota-legal/index.html",
       "rights_quote": "La licencia de uso de cualquier contenido de este Portal otorgada al usuario se limita a la descarga por parte del usuario de dicho contenido y al uso privado del mismo conforme a la habilitación concedida.",
       "rights_note": "Se cita como procedencia del enlace al temario; no se reproduce su contenido.",
-      "notes": "Declara que los títulos de los 25 temas estructuran el temario y que «el temario no sufrirá modificaciones en las distintas convocatorias salvo si las circunstancias aconsejaran su modificación». Evidencia de que el temario publicado es el aplicable a la convocatoria de 2026."
+      "notes": "Declara que los títulos de los 25 temas estructuran el temario y que «el temario no sufrirá modificaciones en las distintas convocatorias salvo si las circunstancias aconsejaran su modificación». Evidencia de que el temario publicado es el aplicable a la convocatoria de 2026.",
+      "volatile": true,
+      "content_sha256": "6aca40125b1c9022806e06bcc0f16a1263993f619dddac0cd4e659185dbf3aef"
     },
     {
       "id": "boe-aviso-legal-html",
@@ -173,7 +175,9 @@
       "rights_source_url": "https://web.guardiacivil.es/es/informacion-general/nota-legal/index.html",
       "rights_quote": "queda totalmente prohibida salvo que medie autorización expresa de la Dirección General de la Guardia Civil.",
       "rights_note": "Documento que limita la licencia del portal al uso privado y fundamenta DEBT-003.",
-      "notes": "Para obtener autorización: sugerencias-intranet@guardiacivil.org."
+      "notes": "Para obtener autorización: sugerencias-intranet@guardiacivil.org.",
+      "volatile": true,
+      "content_sha256": "d0f91753d56182ca8f91e9f06c5732ab7dfea41045828a9d176b87d82e32c732"
     },
     {
       "id": "celador-2022-bocyl-orden-html",

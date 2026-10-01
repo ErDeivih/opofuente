@@ -5,6 +5,10 @@
     Los documentos se guardan en `data/sources` (ignorado por git: los originales no se versionan).
     Después se comprueban contra `fixtures/profiles/manifest.json`: si un documento cambia, el hash
     deja de coincidir y la verificación falla. Con -VerifyOnly no se descarga nada.
+
+    Las fuentes marcadas `volatile` en el manifiesto (páginas que el servidor sirve distintas en cada
+    descarga) **no se comprueban aquí**: su texto visible lo comprueba
+    `uv run python -m opofuente.tools.build_profile_fixtures --check`.
 .PARAMETER VerifyOnly
     Solo comprueba los ficheros ya descargados.
 #>
@@ -50,7 +54,17 @@ try {
             continue
         }
         $hash = (Get-FileHash $target -Algorithm SHA256).Hash.ToLower()
-        if ($hash -ne $source.sha256) {
+        # Con StrictMode, leer una propiedad que no está en el JSON es un error: se pregunta antes.
+        $propiedadVolatile = $source.PSObject.Properties['volatile']
+        $esVolatil = $null -ne $propiedadVolatile -and $propiedadVolatile.Value
+        if ($esVolatil) {
+            # El servidor sirve esta página distinta en cada descarga (identificadores que el gestor
+            # de contenidos inventa al renderizar), así que su `sha256` de bytes no puede coincidir
+            # nunca. Se verifica por su **texto visible**: de eso se encarga la herramienta, y aquí
+            # solo se dice para que nadie lo lea como un fallo.
+            Write-Host ("  TEXT {0,-28} se compara por su texto, no por sus bytes" -f $source.id) -ForegroundColor DarkGray
+        }
+        elseif ($hash -ne $source.sha256) {
             $mismatch += ("{0}: {1} != {2}" -f $source.id, $hash.Substring(0, 12), $source.sha256.Substring(0, 12))
         }
         else {

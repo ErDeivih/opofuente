@@ -10,12 +10,14 @@ Estas pruebas defienden los criterios de aceptación de S01 sobre los datos semb
 
 from __future__ import annotations
 
+import hashlib
 import json
 from datetime import date
 
 import pytest
 
 from opofuente.config import project_root
+from opofuente.domain.errors import InvariantViolationError
 from opofuente.domain.profiles import (
     ConvocationStatus,
     NodeType,
@@ -25,6 +27,13 @@ from opofuente.domain.profiles import (
     flatten,
 )
 from opofuente.infrastructure.fixture_loader import load_profiles
+from opofuente.tools.build_profile_fixtures import (
+    Source,
+    content_fingerprint,
+    load_manifest,
+    refresh_content_hashes,
+    verify_sources,
+)
 
 FIXTURES = project_root() / "fixtures" / "profiles"
 
@@ -419,3 +428,140 @@ def test_los_documentos_originales_no_estan_en_el_repositorio() -> None:
     """Los PDF y XML descargados viven en la caché local ignorada por git, no en fixtures."""
     extensiones = {path.suffix for path in FIXTURES.iterdir() if path.is_file()}
     assert extensiones == {".json"}
+
+
+# --- fuentes que el servidor sirve distintas en cada descarga (1 de octubre de 2026) ------------
+
+
+def _pagina(marca: str, texto: str) -> str:
+    """Una página como las del gestor de contenidos de la Guardia Civil: identificadores al azar."""
+    return (
+        '<html><body><div id="grid_container">'
+        f'<div class="sgrow-columna" data-cssid="sgrowcolumn_{marca}">'
+        f"<p>{texto}</p></div></div></body></html>"
+    )
+
+
+def test_una_fuente_volatil_se_verifica_por_su_texto(tmp_path) -> None:
+    """Los identificadores que el servidor inventa al renderizar no cuentan; el texto, sí.
+
+    Medido el 1 de octubre de 2026: dos descargas seguidas de las páginas de la Guardia Civil, en el
+    mismo minuto, diferían en 22 de unas 3.200 líneas y todas las diferencias eran identificadores
+    (`data-cssid="sgrowcolumn_n167974"`). Un `sha256` de bytes no puede ser estable ahí y el texto
+    sí, que es lo que la puerta tiene que vigilar.
+    """
+    pagina = tmp_path / "pagina.html"
+    pagina.write_text(_pagina("167974", "el temario no sufrirá modificaciones"), encoding="utf-8")
+    huella = content_fingerprint(pagina)
+    fuente = Source(
+        id="pagina",
+        local_path=pagina,
+        sha256="0" * 64,
+        role="procedencia del temario",
+        profile_code=None,
+        volatile=True,
+        content_sha256=huella,
+    )
+
+    # Otra descarga: cambian los bytes (los identificadores), no lo que la página dice.
+    pagina.write_text(_pagina("903112", "el temario no sufrirá modificaciones"), encoding="utf-8")
+    assert hashlib.sha256(pagina.read_bytes()).hexdigest() != fuente.sha256
+    assert content_fingerprint(pagina) == huella
+    verify_sources([fuente])
+
+    # Y si lo que dice cambia, se nota.
+    pagina.write_text(_pagina("903112", "el temario cambia en cada convocatoria"), encoding="utf-8")
+    assert content_fingerprint(pagina) != huella
+    with pytest.raises(InvariantViolationError, match="texto de una fuente volátil ha cambiado"):
+        verify_sources([fuente])
+
+
+def test_una_fuente_volatil_sin_huella_no_se_da_por_buena(tmp_path) -> None:
+    """Sin huella de contenido no hay comprobación posible: se dice, no se deja pasar."""
+    pagina = tmp_path / "pagina.html"
+    pagina.write_text(_pagina("1", "algo"), encoding="utf-8")
+    fuente = Source(
+        id="pagina",
+        local_path=pagina,
+        sha256="0" * 64,
+        role="r",
+        profile_code=None,
+        volatile=True,
+    )
+    with pytest.raises(InvariantViolationError, match="sin huella de contenido"):
+        verify_sources([fuente])
+
+
+def test_refrescar_la_huella_no_escribe_si_una_cita_ha_desaparecido(tmp_path) -> None:
+    """Actualizar la huella es revisar la fuente; si una cita ya no está, no se actualiza nada."""
+    perfiles = tmp_path / "fixtures" / "profiles"
+    perfiles.mkdir(parents=True)
+    (tmp_path / "fuentes").mkdir()
+    pagina = tmp_path / "fuentes" / "pagina.html"
+    pagina.write_text(_pagina("1", "el temario no sufrirá modificaciones"), encoding="utf-8")
+    manifiesto = {
+        "schema_version": 1,
+        "sources": [
+            {
+                "id": "pagina",
+                "local_path": "fuentes/pagina.html",
+                "sha256": "0" * 64,
+                "role": "procedencia del temario",
+                "volatile": True,
+            }
+        ],
+    }
+    ruta_manifiesto = perfiles / "manifest.json"
+    ruta_manifiesto.write_text(
+        json.dumps(manifiesto, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
+    (perfiles / "x.profile.json").write_text(
+        json.dumps(
+            {
+                "code": "x",
+                "exam": {
+                    "rules": [
+                        {
+                            "code": "temario_estable",
+                            "evidence": {
+                                "source_id": "pagina",
+                                "quote": "el temario no sufrirá modificaciones",
+                            },
+                        }
+                    ]
+                },
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    fuentes = load_manifest(tmp_path)
+
+    assert refresh_content_hashes(tmp_path, fuentes) == 0
+    escrito = json.loads(ruta_manifiesto.read_text(encoding="utf-8"))
+    huella = escrito["sources"][0]["content_sha256"]
+    assert len(huella) == 64
+
+    # La fuente cambia y ya no dice lo que el perfil le atribuye: la huella no se toca.
+    pagina.write_text(_pagina("2", "el temario se revisa cada año"), encoding="utf-8")
+    with pytest.raises(InvariantViolationError):
+        refresh_content_hashes(tmp_path, load_manifest(tmp_path))
+    assert (
+        json.loads(ruta_manifiesto.read_text(encoding="utf-8"))["sources"][0]["content_sha256"]
+        == huella
+    )
+
+
+def test_las_paginas_que_cambian_en_cada_descarga_se_verifican_por_su_texto() -> None:
+    """Las dos páginas volátiles del manifiesto tienen huella de contenido, y es la del fichero."""
+    manifest = json.loads((FIXTURES / "manifest.json").read_text(encoding="utf-8"))
+    sources = {source["id"]: source for source in manifest["sources"]}
+    volatiles = {source_id for source_id, source in sources.items() if source.get("volatile")}
+    assert volatiles == {"gc-pagina-oficial-html", "gc-nota-legal-html"}
+    for source_id in volatiles:
+        assert len(sources[source_id]["content_sha256"]) == 64
+        ruta = project_root() / sources[source_id]["local_path"]
+        if ruta.is_file():  # solo donde se hayan descargado las fuentes
+            assert content_fingerprint(ruta) == sources[source_id]["content_sha256"]
