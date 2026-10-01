@@ -15,6 +15,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import text
 
@@ -219,3 +220,28 @@ def test_el_material_privado_se_puede_dejar_fuera(
     assert respuesta.json()["answer"]["status"] == "insufficient", (
         "sin material privado no queda nada que citar, y se dice"
     )
+
+
+def test_la_ventana_del_indice_no_esconde_lo_que_responde_tras_los_filtros(
+    seeded_settings: Settings, seeded_client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """La consulta cruza solo las mejores coincidencias del índice (rendimiento, octubre de 2026).
+
+    Si los filtros dejan esa ventana sin filas, se repite sin ventana: el fragmento que responde y
+    está más abajo en el orden de `bm25` tiene que seguir apareciendo. Con una ventana de 1, la
+    mejor coincidencia de «veinte» es el borrador, y el filtro por documento lo descarta.
+    """
+    from opofuente.infrastructure import search_repository
+
+    monkeypatch.setattr(search_repository, "VENTANA_MINIMA", 1)
+    monkeypatch.setattr(search_repository, "VENTANA_POR_FILA", 0)
+    _corpus(seeded_settings)
+
+    respuesta = seeded_client.post(
+        "/api/v1/search",
+        json={"query": "plazo alegaciones veinte", "document_ids": ["doc-v-ok"]},
+        headers=ALLOWED_ORIGIN,
+    )
+
+    assert respuesta.status_code == 200, respuesta.text
+    assert [hit["span"]["id"] for hit in respuesta.json()["hits"]] == ["span-v-ok"]

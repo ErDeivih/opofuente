@@ -76,6 +76,12 @@ def _new_id() -> str:
 #:    acotada por ellos (filtrar después del `LIMIT` esconde material que sí respondía);
 #: 3. lo que **no** se decide aquí es la elegibilidad (vigencia, estado y calidad): eso es criterio
 #:    del dominio, en `corpus_eligible`, para que no haya dos verdades sobre qué se puede citar.
+#:
+#: Y una de rendimiento: el índice ordena por `bm25` **antes** de cruzar con las tablas, dentro de
+#: una ventana (`:ventana`) de las mejores coincidencias. Sin ella, un término común («datos»
+#: coincide con 217.107 fragmentos del material real) obligaba a cruzar cada coincidencia con su
+#: versión y su documento para quedarse con 40. Si la ventana no da filas suficientes tras los
+#: filtros, `search` repite la consulta sin ventana (`-1`), así que el resultado es el mismo.
 SQL_BUSQUEDA = """
 WITH RECURSIVE ambito(node_id) AS (
     SELECT id FROM curriculum_nodes WHERE id IN :nodos
@@ -101,15 +107,20 @@ SELECT s.id AS span_id,
        d.canonical_title AS document_title,
        d.document_type AS document_type,
        d.authority_tier AS authority_tier,
-       bm25(evidence_fts) AS score
-FROM evidence_fts
-JOIN evidence_spans s ON s.rowid = evidence_fts.rowid
+       f.score AS score
+FROM (
+    SELECT rowid AS fts_rowid, bm25(evidence_fts) AS score
+    FROM evidence_fts
+    WHERE evidence_fts MATCH :expresion
+    ORDER BY score
+    LIMIT :ventana
+) f
+JOIN evidence_spans s ON s.rowid = f.fts_rowid
 JOIN document_versions v ON v.id = s.document_version_id
 JOIN logical_documents d ON d.id = v.logical_document_id
 LEFT JOIN document_sections sec ON sec.id = s.section_id
 LEFT JOIN extracted_representations r ON r.id = v.representation_id
-WHERE evidence_fts MATCH :expresion
-  AND (:solo_publico = 0 OR d.owner_scope <> 'private_user')
+WHERE (:solo_publico = 0 OR d.owner_scope <> 'private_user')
   AND (:sin_documentos = 1 OR d.id IN :documentos)
   AND (:sin_idiomas = 1 OR v.language IS NULL OR v.language IN :idiomas)
   AND (:sin_autoridad = 1 OR d.authority_tier = :autoridad)
@@ -131,6 +142,12 @@ WHERE evidence_fts MATCH :expresion
 ORDER BY score
 LIMIT :limite
 """
+
+
+#: Mejores coincidencias del índice que se cruzan con las tablas en el primer intento: unas cuantas
+#: veces lo que se va a devolver, para que los filtros tengan dónde elegir sin repetir la consulta.
+VENTANA_POR_FILA = 10
+VENTANA_MINIMA = 400
 
 
 class SqlAlchemySearchRepository:
@@ -208,16 +225,25 @@ class SqlAlchemySearchRepository:
         el material indexable (se promociona o se retira algo), que es lo que `05_RAG §4` pide para
         invalidar cachés y para saber con qué corpus se respondió.
         """
+        # Sin recorrer los fragmentos: con 700.277, `count(*)` y dos `max()` sin índice costaban
+        # 0,6 s en **cada** búsqueda. `rowid` crece con cada fragmento nuevo, y el estado de las
+        # versiones (una tabla pequeña) cambia al aceptar, sustituir o retirar material.
         with self._session_factory() as session:
-            fila = session.execute(
-                select(
-                    func.count(),
-                    func.max(EvidenceSpanRecord.created_at),
-                    func.max(EvidenceSpanRecord.ordinal),
-                ).select_from(EvidenceSpanRecord)
-            ).one()
-        total, ultimo, ultimo_ordinal = fila
-        return f"{int(total)}-{ultimo or 'sin-fecha'}-{int(ultimo_ordinal or 0)}"
+            ultimo = session.execute(
+                text(
+                    "SELECT rowid, created_at, ordinal FROM evidence_spans "
+                    "ORDER BY rowid DESC LIMIT 1"
+                )
+            ).one_or_none()
+            versiones = session.execute(
+                text(
+                    "SELECT status, COUNT(*) FROM document_versions GROUP BY status ORDER BY status"
+                )
+            ).all()
+        if ultimo is None:
+            return "0-sin-fecha-0"
+        estados = ".".join(f"{estado}{cuantas}" for estado, cuantas in versiones)
+        return f"{int(ultimo[0])}-{ultimo[1] or 'sin-fecha'}-{int(ultimo[2] or 0)}-{estados}"
 
     # ------------------------------------------------------------------ búsqueda
 
@@ -251,6 +277,7 @@ class SqlAlchemySearchRepository:
         parametros: dict[str, object] = {
             "expresion": expression,
             "limite": max(1, limit * 4),
+            "ventana": max(VENTANA_MINIMA, limit * 4 * VENTANA_POR_FILA),
             "solo_publico": 0 if filters.include_private else 1,
             "documentos": list(filters.document_ids) or [""],
             "sin_documentos": 0 if filters.document_ids else 1,
@@ -267,7 +294,12 @@ class SqlAlchemySearchRepository:
             bindparam("nodos", expanding=True),
         )
         with self._session_factory() as session:
-            filas = session.execute(consulta, parametros).mappings()
+            filas = list(session.execute(consulta, parametros).mappings())
+            if len(filas) < int(str(parametros["limite"])):
+                # Los filtros dejaron la ventana corta: puede que haya filas válidas más abajo en el
+                # orden de `bm25`. Se repite sin ventana para no esconderlas.
+                parametros["ventana"] = -1
+                filas = list(session.execute(consulta, parametros).mappings())
 
             candidatos: list[CandidateSpan] = []
             excluidos: list[str] = []
