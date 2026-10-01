@@ -533,15 +533,46 @@ class QuestionService:
         conjunto = self._questions.get_set(set_id)
         if conjunto is None:
             return KeyImportReport(key_id=None, version_no=None)
-        lineas, incidencias = parse_answer_key(text)
-        por_posicion = self._questions.questions_by_position(set_id)
+        lineas, leidas = parse_answer_key(text)
+        incidencias = list(leidas)
+        por_posicion = self._questions.question_ids_by_position(set_id)
         entradas: list[AnswerKeyEntry] = []
         sin_pareja: list[int] = []
+        vistas: dict[int, int] = {}
         for linea in lineas:
-            pregunta_id = por_posicion.get(linea.position)
-            if pregunta_id is None:
+            candidatas = por_posicion.get(linea.position, ())
+            if not candidatas:
                 sin_pareja.append(linea.position)
                 continue
+            # Una pregunta solo cabe una vez en una plantilla. Antes, un número repetido (o dos
+            # preguntas en la misma posición) llegaban a la base y la API devolvía 500 (§4.5 del
+            # traspaso de octubre de 2026). Lo que no se puede decidir se informa, no se adivina.
+            if linea.position in vistas:
+                incidencias.append(
+                    ParseIssue(
+                        line=linea.line,
+                        code="key_position_repeated",
+                        detail=(
+                            f"el número {linea.position} ya salió en la línea "
+                            f"{vistas[linea.position]}: se aplica aquella"
+                        ),
+                    )
+                )
+                continue
+            vistas[linea.position] = linea.line
+            if len(candidatas) > 1:
+                incidencias.append(
+                    ParseIssue(
+                        line=linea.line,
+                        code="key_position_ambiguous",
+                        detail=(
+                            f"hay {len(candidatas)} preguntas en la posición {linea.position}: "
+                            "no se sabe a cuál se refiere y no se aplica"
+                        ),
+                    )
+                )
+                continue
+            pregunta_id = candidatas[0]
             entradas.append(
                 AnswerKeyEntry(
                     question_version_id=pregunta_id,
@@ -551,7 +582,10 @@ class QuestionService:
             )
         if not entradas:
             return KeyImportReport(
-                key_id=None, version_no=None, unmatched=tuple(sin_pareja), issues=incidencias
+                key_id=None,
+                version_no=None,
+                unmatched=tuple(sin_pareja),
+                issues=tuple(incidencias),
             )
         clave = self._save_key_if_new(
             set_id,
@@ -561,14 +595,17 @@ class QuestionService:
         )
         if clave is None:
             return KeyImportReport(
-                key_id=None, version_no=None, unmatched=tuple(sin_pareja), issues=incidencias
+                key_id=None,
+                version_no=None,
+                unmatched=tuple(sin_pareja),
+                issues=tuple(incidencias),
             )
         return KeyImportReport(
             key_id=clave.id,
             version_no=clave.version_no,
             entries=clave.entry_count,
             unmatched=tuple(sin_pareja),
-            issues=incidencias,
+            issues=tuple(incidencias),
         )
 
     # ------------------------------------------------------------------ claves

@@ -649,3 +649,53 @@ def test_una_pregunta_que_ya_estaba_con_otra_clave_se_marca_en_el_informe(
         "questions"
     ][0]
     assert pregunta["status"] == "conflicting"
+
+
+def test_una_plantilla_que_repite_un_numero_no_es_un_500(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """§4.5 del traspaso de octubre de 2026: 500 determinista en 11 de 24 conjuntos.
+
+    Dos líneas con el mismo número apuntaban a la misma pregunta y la plantilla no admite una
+    pregunta dos veces: la base lo rechazaba y la API devolvía 500. Ahora se aplica la primera y la
+    repetida se informa.
+    """
+    conjunto = _conjunto(seeded_client)
+    _importar(seeded_client, conjunto["id"], kind="questions", text=TEXTO)
+
+    informe = _importar(
+        seeded_client, conjunto["id"], kind="answer_key", text="1. b\n1 anulada\n2. a\n"
+    )
+
+    assert informe.status_code == 200, informe.text
+    datos = informe.json()
+    assert datos["key_entries"] == 2
+    assert [aviso["code"] for aviso in datos["issues"]] == ["key_position_repeated"]
+    assert datos["issues"][0]["line"] == 2
+
+
+def test_una_plantilla_no_se_aplica_a_ciegas_si_dos_preguntas_comparten_posicion(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """Un conjunto con dos preguntas en la posición 1 no sabe a cuál va «1. b»: se informa.
+
+    Antes la clave caía en cualquiera de las dos, según el orden de la consulta, sin avisar.
+    """
+    conjunto = _conjunto(seeded_client)
+    _importar(seeded_client, conjunto["id"], kind="questions", text=TEXTO)
+    _importar(
+        seeded_client,
+        conjunto["id"],
+        kind="questions",
+        text="1. Otra pregunta distinta con el mismo numero:\na) uno\nb) dos\n",
+    )
+    preguntas = seeded_client.get(f"/api/v1/question-sets/{conjunto['id']}/questions").json()
+    posiciones = [pregunta["position"] for pregunta in preguntas["questions"]]
+    assert posiciones.count(1) == 2, posiciones
+
+    informe = _importar(seeded_client, conjunto["id"], kind="answer_key", text="1. b\n2. a\n")
+
+    assert informe.status_code == 200, informe.text
+    datos = informe.json()
+    assert datos["key_entries"] == 1, "solo la 2, que no es ambigua"
+    assert [aviso["code"] for aviso in datos["issues"]] == ["key_position_ambiguous"]

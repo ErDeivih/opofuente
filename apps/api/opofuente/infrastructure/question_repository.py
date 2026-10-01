@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections import Counter
 from collections.abc import Mapping, Sequence
 from datetime import date, datetime
 from uuid import uuid4
@@ -474,6 +475,14 @@ class SqlAlchemyQuestionRepository:
                     "La plantilla incluye preguntas que no son de este conjunto: "
                     + ", ".join(sorted(ajenas)[:5])
                 )
+            veces = Counter(entrada.question_version_id for entrada in entries)
+            repetidas = sorted(pregunta for pregunta, cuantas in veces.items() if cuantas > 1)
+            if repetidas:
+                # La base lo rechazaría igual, pero como un 500: esto es un error de quien llama.
+                raise InvariantViolationError(
+                    "La plantilla incluye la misma pregunta más de una vez: "
+                    + ", ".join(repetidas[:5])
+                )
             version = (
                 int(
                     session.execute(
@@ -743,20 +752,29 @@ class SqlAlchemyQuestionRepository:
             session.commit()
             return fila.id
 
-    def questions_by_position(self, set_id: str) -> dict[int, str]:
-        """Identificador de cada pregunta por su posición: es lo que alinea una plantilla suelta.
+    def question_ids_by_position(self, set_id: str) -> dict[int, tuple[str, ...]]:
+        """Las preguntas de cada posición: es lo que alinea una plantilla suelta.
+
+        Devuelve **todas** las de cada posición, no una: un conjunto con dos preguntas en la misma
+        posición no puede recibir la plantilla por número, y elegir una a ciegas (lo que hacía un
+        diccionario posición → pregunta) aplicaba la clave a la pregunta equivocada sin avisar.
 
         Sin la versión sustituida (DEBT-025): la corregida conserva la posición de la anterior, y
         con las dos dentro la plantilla se alinearía con la que devolviera el orden de la consulta.
         """
         with self._session_factory() as session:
             filas = session.execute(
-                select(QuestionVersionRecord.position, QuestionVersionRecord.id).where(
+                select(QuestionVersionRecord.position, QuestionVersionRecord.id)
+                .where(
                     QuestionVersionRecord.question_set_id == set_id,
                     _NO_SUSTITUIDAS,
                 )
+                .order_by(QuestionVersionRecord.position, QuestionVersionRecord.id)
             ).all()
-        return {int(posicion): str(pregunta_id) for posicion, pregunta_id in filas}
+        por_posicion: dict[int, list[str]] = {}
+        for posicion, pregunta_id in filas:
+            por_posicion.setdefault(int(posicion), []).append(str(pregunta_id))
+        return {posicion: tuple(ids) for posicion, ids in por_posicion.items()}
 
     def all_questions(self, set_id: str) -> tuple[QuestionView, ...]:
         """Todas las preguntas de un conjunto en su orden, sin clave.
