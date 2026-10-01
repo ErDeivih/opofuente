@@ -118,3 +118,17 @@ En Linux (la máquina de trabajo no es el Windows del propietario), por tandas:
 - Las evidencias de texto fuera de sección no cuelgan de ninguna sección (`section_id` nulo): un mapeo
   de **sección** no las alcanza.
 - La ventana de búsqueda es una constante sin medir en el Windows del propietario.
+
+## Segunda tanda (1 de octubre, tarde): lo que destaparon las puertas y las claves
+
+| origen | defecto | arreglo |
+| --- | --- | --- |
+| puertas en Windows | `review.spec.ts:186` fallaba siempre (también en `main`): dos motores proponen el mismo tema para el mismo material y sus botones tenían el mismo nombre accesible. | El nombre accesible de cada acción lleva valor y confianza («… · Tema del programa: 4.1, 100 %»). Prueba E2E verde en Linux. |
+| puertas en Windows | `gates.ps1` imprimió OK en las puertas 17 y 18 con sus comandos fallando. No reproducido. | `Invoke-OpoFuenteStep` lee el código global, trata excepciones como fallo y escribe el código en cada OK; `gates.ps1` empieza comprobando que el intérprete detecta un `exit 3`. Probado con PowerShell 7. |
+| informe de claves | Una pregunta sin entrada en la clave activa entraba en la práctica por tema y se corregía como «excluida». | Práctica por tema y diagnóstico eligen solo lo que la clave activa corrige; la práctica cuenta lo que deja fuera. Los exámenes no cambian. |
+| informe de claves | No había ruta para enlazar la plantilla oficial a una clave existente. | `POST /question-sets/{id}/answer-keys/{kid}/source`: compara plantilla y clave pregunta a pregunta (una discrepancia → 409; <95 % confirmado → 409); `null` desenlaza salvo la activa de un examen oficial. Auditado. |
+| informe de claves | La alineación por número daba «100 %» con 93 líneas sobre 135 preguntas que reiniciaban la numeración, y solo miraba las 200 primeras. | `key_alignment` (dominio): una línea cuenta solo si su número es de una sola pregunta; la nota es lo peor entre encajar y cubrir. |
+
+**Para el propietario**: con la alineación nueva, un conjunto con secciones que numeran desde 1 ya
+no recibe una plantilla por número (antes la recibía mal). Las claves de TAI 2025 que se activaron a
+mano el 1 de octubre se comprobaron por enunciado contra el fichero oficial, así que no les afecta.
