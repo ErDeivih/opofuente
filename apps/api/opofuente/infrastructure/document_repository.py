@@ -45,7 +45,12 @@ from opofuente.application.library_models import (
     VersionText,
     VersionView,
 )
-from opofuente.domain.documents import VersionStatus, diff_versions, document_section_type
+from opofuente.domain.documents import (
+    WITHDRAWABLE_FROM,
+    VersionStatus,
+    diff_versions,
+    document_section_type,
+)
 from opofuente.domain.errors import InvariantViolationError
 from opofuente.domain.evidence import MAX_EVIDENCE_CHARS, evidence_cuts, uncovered_ranges
 from opofuente.infrastructure.db_models import (
@@ -457,6 +462,94 @@ class SqlAlchemyDocumentRepository:
             )
             session.commit()
             return PromotionOutcome(version.logical_document_id, version.id, False, False)
+
+    def withdraw_version(
+        self, version_id: str, *, reason: str, now: datetime, actor: str = "local"
+    ) -> PromotionOutcome:
+        """Retira una versión: deja de buscarse y de citarse, pero **no se borra**.
+
+        Es la salida para el material obsoleto que no tiene sustituta en el mismo documento (una
+        generación vieja de apuntes con otro título, un corpus truncado que se volvió a ingerir
+        partido): antes no había ruta y se quedaba en la biblioteca y en la búsqueda (§4.7 del
+        traspaso de octubre de 2026). Se puede deshacer con `reinstate_version`.
+        """
+        motivo = reason.strip()
+        if not motivo:
+            return PromotionOutcome(None, None, False, False, reason="Retirar exige un motivo")
+        with self._session_factory() as session:
+            version = session.get(DocumentVersionRecord, version_id)
+            if version is None:
+                return PromotionOutcome(None, None, False, False, reason="La versión no existe")
+            actual = VersionStatus(version.status)
+            if actual not in WITHDRAWABLE_FROM:
+                return PromotionOutcome(
+                    version.logical_document_id,
+                    version.id,
+                    False,
+                    False,
+                    reason=f"No se puede retirar una versión «{actual.value}»",
+                )
+            version.status = VersionStatus.WITHDRAWN.value
+            self._audit(
+                session,
+                actor=actor,
+                action="version.withdrawn",
+                object_type="document_version",
+                object_id=version.id,
+                before={"status": actual.value},
+                after={"status": version.status, "reason": motivo},
+                now=now,
+            )
+            session.commit()
+            return PromotionOutcome(version.logical_document_id, version.id, False, False)
+
+    def reinstate_version(
+        self, version_id: str, *, now: datetime, actor: str = "local"
+    ) -> PromotionOutcome:
+        """Devuelve una versión retirada a candidata: para volver a usarla hay que aceptarla."""
+        with self._session_factory() as session:
+            version = session.get(DocumentVersionRecord, version_id)
+            if version is None:
+                return PromotionOutcome(None, None, False, False, reason="La versión no existe")
+            if version.status != VersionStatus.WITHDRAWN.value:
+                return PromotionOutcome(
+                    version.logical_document_id,
+                    version.id,
+                    False,
+                    False,
+                    reason=f"Solo se repone una versión retirada, y esta es «{version.status}»",
+                )
+            version.status = VersionStatus.CANDIDATE.value
+            version.approved_at = None
+            version.approved_by = None
+            self._audit(
+                session,
+                actor=actor,
+                action="version.reinstated",
+                object_type="document_version",
+                object_id=version.id,
+                before={"status": VersionStatus.WITHDRAWN.value},
+                after={"status": version.status},
+                now=now,
+            )
+            session.commit()
+            return PromotionOutcome(version.logical_document_id, version.id, False, False)
+
+    def live_version_ids(self, document_id: str) -> tuple[str, ...]:
+        """Versiones del documento que se pueden retirar (aceptadas, candidatas o desfasadas)."""
+        with self._session_factory() as session:
+            return tuple(
+                session.execute(
+                    select(DocumentVersionRecord.id)
+                    .where(
+                        DocumentVersionRecord.logical_document_id == document_id,
+                        DocumentVersionRecord.status.in_(
+                            [estado.value for estado in WITHDRAWABLE_FROM]
+                        ),
+                    )
+                    .order_by(DocumentVersionRecord.id)
+                ).scalars()
+            )
 
     def mark_supersedes(
         self, version_id: str, *, superseded_id: str, now: datetime, actor: str = "local"

@@ -126,6 +126,29 @@ class LibraryService:
         """Acepta una versión: promoción crítica, confirmada por una persona y auditada."""
         return self._documents.accept_version(version_id, now=self._clock.now(), actor=actor)
 
+    def withdraw_version(
+        self, version_id: str, *, reason: str, actor: str = "local"
+    ) -> PromotionOutcome:
+        """Retira una versión: sale de la búsqueda y de los dossieres, y no se borra."""
+        return self._documents.withdraw_version(
+            version_id, reason=reason, now=self._clock.now(), actor=actor
+        )
+
+    def reinstate_version(self, version_id: str, *, actor: str = "local") -> PromotionOutcome:
+        """Devuelve una versión retirada a candidata."""
+        return self._documents.reinstate_version(version_id, now=self._clock.now(), actor=actor)
+
+    def withdraw_document(
+        self, document_id: str, *, reason: str, actor: str = "local"
+    ) -> tuple[PromotionOutcome, ...]:
+        """Retira todas las versiones vivas de un documento («archivar»), cada una auditada."""
+        return tuple(
+            self._documents.withdraw_version(
+                version_id, reason=reason, now=self._clock.now(), actor=actor
+            )
+            for version_id in self._documents.live_version_ids(document_id)
+        )
+
     def mark_supersedes(
         self, version_id: str, *, superseded_id: str, actor: str = "local"
     ) -> PromotionOutcome:

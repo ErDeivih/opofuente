@@ -54,6 +54,12 @@ ACCEPTABLE_FROM: frozenset[VersionStatus] = frozenset(
     {VersionStatus.CANDIDATE, VersionStatus.OUTDATED}
 )
 
+#: Estados desde los que una versión se puede **retirar**: deja de buscarse y citarse, sin borrarse.
+#: Una sustituida ya está fuera del corpus y una rechazada nunca entró.
+WITHDRAWABLE_FROM: frozenset[VersionStatus] = frozenset(
+    {VersionStatus.CANDIDATE, VersionStatus.ACCEPTED, VersionStatus.OUTDATED}
+)
+
 #: Estados que siguen contando como versiones vivas del documento (ni retiradas ni rechazadas).
 LIVE_STATUSES: frozenset[VersionStatus] = frozenset(
     {

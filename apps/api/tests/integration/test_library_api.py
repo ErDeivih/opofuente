@@ -709,3 +709,63 @@ def test_el_diff_compara_dos_versiones_del_mismo_documento(
         ).status_code
         == 404
     )
+
+
+def _buscar(client: TestClient, consulta: str) -> list[dict[str, Any]]:
+    respuesta = client.post("/api/v1/search", json={"query": consulta}, headers=ALLOWED_ORIGIN)
+    assert respuesta.status_code == 200, respuesta.text
+    hits: list[dict[str, Any]] = respuesta.json()["hits"]
+    return hits
+
+
+def test_retirar_una_version_la_saca_de_la_busqueda_sin_borrarla_y_se_puede_reponer(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """§4.7 del traspaso de octubre de 2026: no había forma de retirar material obsoleto."""
+    _pegar(seeded_client, "Tema 1. El silencio administrativo positivo.", "obsoleto.txt")
+    promocion = _promocionar(
+        seeded_client, _artefacto_de(seeded_settings, "obsoleto.txt"), "Apunte obsoleto"
+    )
+    base = f"/api/v1/documents/{promocion['document_id']}"
+    ruta = f"{base}/versions/{promocion['version_id']}"
+    assert seeded_client.post(f"{ruta}/accept", headers=ALLOWED_ORIGIN).status_code == 200
+    assert _buscar(seeded_client, "silencio administrativo"), "aceptada, se encuentra"
+
+    sin_motivo = seeded_client.post(f"{ruta}/withdraw", json={"reason": ""}, headers=ALLOWED_ORIGIN)
+    assert sin_motivo.status_code == 422
+
+    retirada = seeded_client.post(
+        f"{ruta}/withdraw", json={"reason": "generación vieja de apuntes"}, headers=ALLOWED_ORIGIN
+    )
+    assert retirada.status_code == 200, retirada.text
+    versiones = seeded_client.get(f"{base}/versions").json()
+    assert [version["status"] for version in versiones] == ["withdrawn"], "no se borra"
+    assert not _buscar(seeded_client, "silencio administrativo"), "retirada, no se busca"
+
+    otra_vez = seeded_client.post(f"{ruta}/withdraw", json={"reason": "x"}, headers=ALLOWED_ORIGIN)
+    assert otra_vez.status_code == 409
+
+    repuesta = seeded_client.post(f"{ruta}/reinstate", headers=ALLOWED_ORIGIN)
+    assert repuesta.status_code == 200, repuesta.text
+    assert seeded_client.get(f"{base}/versions").json()[0]["status"] == "candidate"
+    assert seeded_client.post(f"{ruta}/accept", headers=ALLOWED_ORIGIN).status_code == 200
+    assert _buscar(seeded_client, "silencio administrativo")
+
+
+def test_archivar_un_documento_retira_todas_sus_versiones_vivas(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    _pegar(seeded_client, "Tema 2. Recursos administrativos de alzada.", "recursos.txt")
+    promocion = _promocionar(
+        seeded_client, _artefacto_de(seeded_settings, "recursos.txt"), "Recursos"
+    )
+    base = f"/api/v1/documents/{promocion['document_id']}"
+
+    respuesta = seeded_client.post(
+        f"{base}/withdraw", json={"reason": "duplicado"}, headers=ALLOWED_ORIGIN
+    )
+
+    assert respuesta.status_code == 200, respuesta.text
+    assert respuesta.json()["withdrawn_version_ids"] == [promocion["version_id"]]
+    assert respuesta.json()["failed"] == []
+    assert seeded_client.get(f"{base}/versions").json()[0]["status"] == "withdrawn"

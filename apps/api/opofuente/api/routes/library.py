@@ -46,6 +46,8 @@ from opofuente.api.library_schemas import (
     VersionDetailSchema,
     VersionDiffSchema,
     VersionSchema,
+    WithdrawDocumentResultSchema,
+    WithdrawRequestSchema,
 )
 from opofuente.application.library_models import (
     CollectionView,
@@ -385,6 +387,68 @@ def accept_version(
             "questions_note": automatico.note,
             "questions_catalogued": automatico.catalogued,
         }
+    )
+
+
+@router.post(
+    "/documents/{document_id}/versions/{version_id}/withdraw",
+    response_model=PromotionOutcomeSchema,
+    responses=INGESTION_WRITE_ERRORS,
+    summary="Retira una versión: deja de buscarse y citarse, y no se borra",
+)
+def withdraw_version(
+    document_id: str,
+    version_id: str,
+    request: WithdrawRequestSchema,
+    service: LibraryServiceDep,
+) -> PromotionOutcomeSchema:
+    """Para el material obsoleto sin sustituta en el mismo documento. Se deshace con `reinstate`."""
+    if service.version(document_id, version_id) is None:
+        raise NotFoundError("versión", version_id)
+    return _outcome(service.withdraw_version(version_id, reason=request.reason))
+
+
+@router.post(
+    "/documents/{document_id}/versions/{version_id}/reinstate",
+    response_model=PromotionOutcomeSchema,
+    responses=INGESTION_WRITE_ERRORS,
+    summary="Repone una versión retirada como candidata (para usarla hay que aceptarla)",
+)
+def reinstate_version(
+    document_id: str, version_id: str, service: LibraryServiceDep
+) -> PromotionOutcomeSchema:
+    if service.version(document_id, version_id) is None:
+        raise NotFoundError("versión", version_id)
+    return _outcome(service.reinstate_version(version_id))
+
+
+@router.post(
+    "/documents/{document_id}/withdraw",
+    response_model=WithdrawDocumentResultSchema,
+    responses=INGESTION_WRITE_ERRORS,
+    summary="Archiva un documento: retira todas sus versiones vivas, sin borrar nada",
+)
+def withdraw_document(
+    document_id: str, request: WithdrawRequestSchema, service: LibraryServiceDep
+) -> WithdrawDocumentResultSchema:
+    if service.document(document_id) is None:
+        raise NotFoundError("documento", document_id)
+    resultados = service.withdraw_document(document_id, reason=request.reason)
+    return WithdrawDocumentResultSchema(
+        document_id=document_id,
+        withdrawn_version_ids=[r.version_id for r in resultados if r.applied and r.version_id],
+        failed=[
+            PromotionOutcomeSchema(
+                document_id=r.document_id,
+                version_id=r.version_id,
+                created_document=r.created_document,
+                created_version=r.created_version,
+                applied=r.applied,
+                reason=r.reason,
+            )
+            for r in resultados
+            if not r.applied
+        ],
     )
 
 

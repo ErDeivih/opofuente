@@ -146,6 +146,20 @@ class MarkSupersedesRequestSchema(BaseModel):
     superseded_id: str = Field(min_length=1)
 
 
+class WithdrawRequestSchema(BaseModel):
+    """Retirar exige decir por qué: queda en la auditoría junto a quién y cuándo."""
+
+    reason: str = Field(min_length=1, max_length=500)
+
+
+class WithdrawDocumentResultSchema(BaseModel):
+    """Lo que pasó al retirar un documento entero: las versiones retiradas y las que no."""
+
+    document_id: str
+    withdrawn_version_ids: list[str]
+    failed: list[PromotionOutcomeSchema] = Field(default_factory=list)
+
+
 class CollectionSchema(BaseModel):
     id: str
     name: str
