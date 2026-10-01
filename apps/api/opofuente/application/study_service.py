@@ -60,6 +60,7 @@ from opofuente.domain.errors import (
     UnsupportedError,
 )
 from opofuente.domain.profiles import ExamPart
+from opofuente.domain.questions import KeyOutcome
 from opofuente.domain.study import (
     SUPPORTED_MODES,
     AttemptOutcome,
@@ -366,6 +367,7 @@ class StudyService:
         etiquetas: list[str] = []
         congeladas: list[FrozenQuestion] = []
         sin_clave = 0
+        sin_respuesta = 0
         no_practicables = 0
         for question_id in candidatas:
             pregunta = self._questions.get_question(question_id)
@@ -394,6 +396,13 @@ class StudyService:
                 ),
                 None,
             )
+            if entrada is None or entrada.outcome != KeyOutcome.KEYED.value:
+                # La plantilla activa no dice cuál es la buena (no tiene entrada, o la anula, o se
+                # contradice): la pregunta no se puede corregir y responderla no contaría. Antes
+                # entraba igual y se corregía como «excluida»; en una práctica, que elige las
+                # preguntas, se deja fuera y se cuenta.
+                sin_respuesta += 1
+                continue
             congeladas.append(
                 FrozenQuestion(
                     question_version_id=pregunta.id,
@@ -411,9 +420,10 @@ class StudyService:
 
         if not congeladas:
             motivo = (
-                f"{sin_clave} sin plantilla activa y {no_practicables} que no se practican solas "
+                f"{sin_clave} sin plantilla activa, {sin_respuesta} que la plantilla activa no "
+                f"responde y {no_practicables} que no se practican solas "
                 "(reservas o tipo no soportado)"
-                if sin_clave or no_practicables
+                if sin_clave or sin_respuesta or no_practicables
                 else "ninguna con plantilla activa"
             )
             raise UnsupportedError(
@@ -427,7 +437,10 @@ class StudyService:
             time_limit_minutes=None,
             shuffle=request.shuffle,
             note=self._nota_del_tema(
-                total=len(congeladas), sin_clave=sin_clave, no_practicables=no_practicables
+                total=len(congeladas),
+                sin_clave=sin_clave,
+                sin_respuesta=sin_respuesta,
+                no_practicables=no_practicables,
             ),
         )
         return self._study.create_session(
@@ -443,7 +456,9 @@ class StudyService:
         )
 
     @staticmethod
-    def _nota_del_tema(*, total: int, sin_clave: int, no_practicables: int) -> str:
+    def _nota_del_tema(
+        *, total: int, sin_clave: int, no_practicables: int, sin_respuesta: int = 0
+    ) -> str:
         """Lo que una práctica por tema deja fuera, dicho: si no, el número no cuadraría."""
         nota = (
             f"Práctica de un tema: {total} pregunta(s) catalogadas en él, sin parte declarada y "
@@ -451,6 +466,11 @@ class StudyService:
         )
         if sin_clave:
             nota += f" {sin_clave} se quedaron fuera por no tener plantilla activa."
+        if sin_respuesta:
+            nota += (
+                f" {sin_respuesta} se quedaron fuera porque la plantilla activa no dice su "
+                "respuesta (sin entrada, anulada o en conflicto)."
+            )
         if no_practicables:
             nota += f" {no_practicables} no se practican solas (reservas o tipo no soportado)."
         return nota
@@ -615,12 +635,21 @@ class StudyService:
         sin_tema = 0
         for conjunto in con_clave:
             temas_del_conjunto = self._questions.node_titles_of_set(conjunto.id)
+            # Solo cuenta lo que la plantilla activa puede corregir: una pregunta sin respuesta en
+            # ella se corregiría como «excluida» y el diagnóstico mediría menos de lo que dice.
+            corregibles = {
+                entrada.question_version_id
+                for entrada in self._clave_activa(conjunto.id).entries
+                if entrada.outcome == KeyOutcome.KEYED.value
+            }
             for pregunta in self._questions.all_questions(conjunto.id):
                 if pregunta.question_type not in _SUPPORTED_QUESTION_TYPES or pregunta.is_reserve:
                     continue
                 suyos = temas_del_conjunto.get(pregunta.id, ())
                 if not suyos:
                     sin_tema += 1
+                    continue
+                if pregunta.id not in corregibles:
                     continue
                 # El **primer** tema de la pregunta (el de ruta anterior) es el que la estratifica:
                 # una

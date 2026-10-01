@@ -1371,3 +1371,56 @@ def test_una_practica_por_tema_no_admite_elegir_conjuntos(
 
     assert respuesta.status_code == 409, respuesta.text
     assert "la compone la catalogación del tema" in respuesta.json()["detail"]
+
+
+def test_una_practica_por_tema_deja_fuera_lo_que_la_plantilla_activa_no_responde(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """Una pregunta sin entrada en la clave activa no entra en la práctica, y se cuenta.
+
+    Antes entraba igual y se corregía como «excluida»: quien estudia la contestaba para nada
+    (informe de claves de octubre de 2026, `study_service.py:380`).
+    """
+    set_id = _conjunto(seeded_client, preguntas=1)
+    oposicion = _oposicion_activa(seeded_client)
+    # I.1 son las preguntas 1 y 4; la 4 llega sin clave, así que la plantilla no la responde.
+    texto = _csv_con_temas(6).replace(
+        "numero 4;Verdadero;Falso;a;I.1", "numero 4;Verdadero;Falso;;I.1"
+    )
+    assert "numero 4;Verdadero;Falso;;I.1" in texto
+    importado = seeded_client.post(
+        f"/api/v1/question-sets/{set_id}/parse",
+        json={
+            "kind": "csv",
+            "text": texto,
+            "mapping": {
+                "stem": "enunciado",
+                "options": ["op1", "op2"],
+                "correct": "clave",
+                "topic": "tema",
+            },
+        },
+        headers=ALLOWED_ORIGIN,
+    )
+    assert importado.status_code == 200, importado.text
+    _activar_ultima_clave(seeded_client, set_id)
+    nodo = _tema_con_preguntas(seeded_client, ruta="I.1")
+
+    respuesta = seeded_client.post(
+        "/api/v1/study-sessions",
+        json={
+            "opposition_id": oposicion["id"],
+            "mode": "practice",
+            "sources": [],
+            "curriculum_node_id": nodo,
+        },
+        headers=ALLOWED_ORIGIN,
+    )
+
+    assert respuesta.status_code == 201, respuesta.text
+    sesion = respuesta.json()
+    assert sesion["total_questions"] == 1, "solo la que la plantilla activa sabe corregir"
+    assert (
+        "1 se quedaron fuera porque la plantilla activa no dice su respuesta"
+        in (sesion["configuration"]["note"])
+    )
