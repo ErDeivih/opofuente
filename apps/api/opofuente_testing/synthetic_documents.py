@@ -286,11 +286,16 @@ def anki_collection_bytes(
     notes: list[tuple[int, int, str, str]],
     decks: dict[int, str],
     note_types: dict[int, tuple[str, tuple[str, ...]]] | None = None,
+    protobuf_config: bool = False,
 ) -> bytes:
     """Colección moderna de Anki en SQLite (`notetypes`, `decks`, `notes`, `cards`).
 
     `notes` son `(id, mid, flds, tags)`, con los campos unidos por `ANKI_FIELD_SEPARATOR`, que es
     como los guarda Anki.
+
+    Con `protobuf_config`, la colección es como las de Anki 2.1.28+ (esquema 18): la configuración
+    del tipo de nota es un blob **protobuf**, no JSON, y los nombres de campo viven en la tabla
+    `fields` (`ntid`, `ord`, `name`).
     """
     tipos = dict(note_types or {1: ANKI_BASIC_NOTE_TYPE})
     conexion = sqlite3.connect(path)
@@ -316,7 +321,24 @@ def anki_collection_bytes(
             );
             """
         )
+        if protobuf_config:
+            conexion.execute(
+                "create table fields (ntid integer, ord integer, name text, config blob, "
+                "primary key (ntid, ord))"
+            )
         for tipo_id, (nombre, campos) in tipos.items():
+            if protobuf_config:
+                # Bytes que no son JSON, como el protobuf real (`\x1a` es la etiqueta de un campo).
+                conexion.execute(
+                    "insert into notetypes values (?, ?, 0, 0, ?)",
+                    (tipo_id, nombre, b"\x1a\x05\x08\x01\x10\x02\x22\x00"),
+                )
+                for orden, campo in enumerate(campos):
+                    conexion.execute(
+                        "insert into fields values (?, ?, ?, ?)",
+                        (tipo_id, orden, campo, b"\x1a\x00"),
+                    )
+                continue
             conexion.execute(
                 "insert into notetypes values (?, ?, 0, 0, ?)",
                 (

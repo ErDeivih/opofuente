@@ -234,3 +234,26 @@ def test_el_texto_se_recorta_y_se_dice(tmp_path: Path) -> None:
     # Los tramos se ajustan al texto recortado: ninguno señala texto que ya no está.
     for seccion in resultado.sections:
         assert seccion.char_end <= len(resultado.text)
+
+
+def test_una_baraja_moderna_con_config_protobuf_conserva_los_nombres_de_campo(
+    tmp_path: Path,
+) -> None:
+    """§4.6 del traspaso: en el esquema 18 los nombres están en la tabla `fields`, no en JSON.
+
+    Antes salían «campo 1», «campo 2»… en 4 documentos y 1.851 fragmentos del material real.
+    """
+    coleccion = anki_collection_bytes(
+        tmp_path / "collection.sqlite",
+        notes=[(1, 7, f"¿Quién aprueba la ley?{ANKI_FIELD_SEPARATOR}Las Cortes.", "")],
+        decks={1: "Constitución"},
+        note_types={7: ("Pregunta y respuesta", ("Pregunta", "Respuesta"))},
+        protobuf_config=True,
+    )
+    baraja = build_anki_deck(tmp_path / "moderna.apkg", collection=coleccion)
+
+    resultado = _extractor().extract(baraja, detected=detect_format(baraja))
+
+    assert "Pregunta: ¿Quién aprueba la ley?" in resultado.text
+    assert "Respuesta: Las Cortes." in resultado.text
+    assert "campo 1" not in resultado.text

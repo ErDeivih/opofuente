@@ -256,7 +256,7 @@ def _read_notes(
             for fila in conexion.execute("select name from sqlite_master where type = 'table'")
         }
         if "notetypes" in tablas:
-            tipos, mazos = _modern_types_and_decks(conexion)
+            tipos, mazos = _modern_types_and_decks(conexion, con_tabla_de_campos="fields" in tablas)
         else:
             tipos, mazos = _legacy_types_and_decks(conexion)
         mazo_por_nota = _deck_by_note(conexion) if "cards" in tablas else {}
@@ -278,17 +278,25 @@ def _read_notes(
 
 
 def _modern_types_and_decks(
-    conexion: sqlite3.Connection,
+    conexion: sqlite3.Connection, *, con_tabla_de_campos: bool = False
 ) -> tuple[dict[int, _NoteType], dict[int, str]]:
+    # Desde el esquema 18 (Anki 2.1.28+) `notetypes.config` es **protobuf**, no JSON, y los nombres
+    # de campo están en la tabla `fields`. Leyendo solo el JSON, cada campo de esas barajas salía
+    # como «campo 1», «campo 2»… (§4.6 del traspaso de octubre de 2026: 1.851 fragmentos).
+    por_tabla: dict[int, list[str]] = {}
+    if con_tabla_de_campos:
+        for fila in conexion.execute("select ntid, ord, name from fields order by ntid, ord"):
+            por_tabla.setdefault(int(fila["ntid"]), []).append(str(fila["name"] or ""))
     tipos: dict[int, _NoteType] = {}
     for fila in conexion.execute("select id, name, config from notetypes"):
-        config = _json(fila["config"])
-        campos = config.get("flds") if isinstance(config, dict) else None
-        nombres: list[str] = []
-        if isinstance(campos, list):
-            for campo in campos:
-                if isinstance(campo, dict) and isinstance(campo.get("name"), str):
-                    nombres.append(str(campo["name"]))
+        nombres: list[str] = list(por_tabla.get(int(fila["id"]), ()))
+        if not nombres:
+            config = _json(fila["config"])
+            campos = config.get("flds") if isinstance(config, dict) else None
+            if isinstance(campos, list):
+                for campo in campos:
+                    if isinstance(campo, dict) and isinstance(campo.get("name"), str):
+                        nombres.append(str(campo["name"]))
         tipos[int(fila["id"])] = _NoteType(str(fila["name"] or ""), tuple(nombres))
 
     mazos: dict[int, str] = {}
