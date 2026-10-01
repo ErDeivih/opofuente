@@ -25,6 +25,8 @@ $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $gatesDataDir = Join-Path $repoRoot '.gates-data'
 $started = Get-Date
 
+Test-OpoFuenteExitCodeDetection
+
 Push-Location $repoRoot
 try {
     Invoke-OpoFuenteStep -Name '1. ruff format --check' -Action { uv run ruff format --check . }
@@ -88,3 +90,4 @@ finally {
 $elapsed = (Get-Date) - $started
 Write-Host ''
 Write-Host ("Todas las puertas ejecutadas en {0:mm\:ss} minutos." -f $elapsed) -ForegroundColor Green
+exit 0
