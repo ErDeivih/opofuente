@@ -238,6 +238,8 @@ def test_promocionar_lleva_las_secciones_y_las_evidencias_del_texto_real(tmp_pat
     # Los offsets son exactos: el texto de la evidencia es literalmente ese tramo del documento.
     for evidencia in evidencias:
         assert TEXTO[evidencia.char_start : evidencia.char_end] == evidencia.text
+    # Y el orden de los ordinales es el del documento.
+    assert [e.char_start for e in evidencias] == sorted(e.char_start for e in evidencias)
 
 
 def test_promocionar_dos_veces_no_crea_dos_documentos(tmp_path: Path) -> None:
@@ -712,3 +714,45 @@ def test_el_diff_dice_que_seccion_cambio_y_cual_es_nueva(tmp_path: Path) -> None
         )
         is None
     )
+
+
+def test_una_seccion_larga_y_los_huecos_dan_evidencias_en_orden_sin_perder_texto(
+    tmp_path: Path,
+) -> None:
+    """§4.1 del traspaso: una sección de 30.000 caracteres dejaba 1.200 citables."""
+    preambulo = "Preambulo que no cae en ninguna seccion."
+    largo = " ".join(f"Frase numero {numero} del tema." for numero in range(1, 1200))
+    texto = f"{preambulo}\n{largo}\nCola final sin seccion."
+    inicio = len(preambulo) + 1
+    secciones = (
+        ExtractedSection(
+            section_type=SectionType.PARAGRAPH,
+            position=1,
+            char_start=inicio,
+            char_end=inicio + len(largo),
+            label="Cuerpo",
+            page_start=2,
+            page_end=5,
+        ),
+    )
+    biblioteca, extraccion, settings = _biblioteca(tmp_path)
+    _artefacto(settings, "art-1", "a" * 64)
+    _guardar_representacion(
+        extraccion,
+        settings,
+        artifact_id="art-1",
+        representacion_id="rep-1",
+        resultado=_resultado(texto=texto, secciones=secciones),
+    )
+
+    resultado = biblioteca.promote_artifact(
+        "art-1", now=AHORA, title="Largo", document_type="curriculum"
+    )
+    evidencias = biblioteca.list_evidence(resultado.version_id or "")
+
+    assert len(evidencias) > 25
+    assert all(len(e.text) <= 1200 for e in evidencias)
+    assert evidencias[0].text == preambulo and evidencias[0].section_id is None
+    assert evidencias[-1].text == "Cola final sin seccion." and evidencias[-1].page == 5
+    assert [e.char_start for e in evidencias] == sorted(e.char_start for e in evidencias)
+    assert "".join("".join(e.text.split()) for e in evidencias) == "".join(texto.split())

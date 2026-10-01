@@ -280,6 +280,9 @@ class SqlAlchemyDocumentRepository:
         cubiertos: list[tuple[int, int]] = []
         # Sección más cercana por delante de cada offset: da etiqueta y página a los huecos.
         anclas: list[tuple[int, DocumentSectionRecord]] = []
+        pendientes: list[
+            tuple[tuple[int, int], DocumentSectionRecord | None, DocumentSectionRecord | None]
+        ] = []
         for indice, seccion in enumerate(secciones, start=1):
             registro = DocumentSectionRecord(
                 id=_new_id(),
@@ -304,18 +307,7 @@ class SqlAlchemyDocumentRepository:
             # Una sección larga produce **varias** evidencias: antes producía una recortada a 1.200
             # caracteres y el resto del texto se perdía (§4.1 del traspaso de octubre de 2026).
             for corte in evidence_cuts(texto_completo, inicio, fin):
-                evidencias += 1
-                session.add(
-                    self._evidence(
-                        version,
-                        representacion,
-                        texto_completo,
-                        corte,
-                        evidencias,
-                        now,
-                        seccion=registro,
-                    )
-                )
+                pendientes.append((corte, registro, None))
         # El texto que no cae en ninguna sección también se cita: el cuerpo de un Markdown cuyas
         # secciones solo eran los encabezados, o lo que quedaba tras el tope de bloques de un .txt.
         anclas.sort(key=lambda par: par[0])
@@ -327,19 +319,24 @@ class SqlAlchemyDocumentRepository:
             posicion = bisect_right(inicios, hueco[0])
             ancla = anclas[posicion - 1][1] if posicion else None
             for corte in cortes:
-                evidencias += 1
-                session.add(
-                    self._evidence(
-                        version,
-                        representacion,
-                        texto_completo,
-                        corte,
-                        evidencias,
-                        now,
-                        seccion=None,
-                        ancla=ancla,
-                    )
+                pendientes.append((corte, None, ancla))
+        # Los ordinales siguen el orden del documento, no el orden en que se encontraron: los
+        # tramos de un hueco van entre los de las secciones que lo rodean.
+        pendientes.sort(key=lambda pendiente: pendiente[0])
+        for corte, seccion_de, ancla_de in pendientes:
+            evidencias += 1
+            session.add(
+                self._evidence(
+                    version,
+                    representacion,
+                    texto_completo,
+                    corte,
+                    evidencias,
+                    now,
+                    seccion=seccion_de,
+                    ancla=ancla_de,
                 )
+            )
         return creadas, evidencias
 
     @staticmethod
