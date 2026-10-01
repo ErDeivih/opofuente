@@ -281,8 +281,15 @@ function nombreDeFila(material: string, tipo: string, eje: string): RegExp {
 }
 
 /** Nombre accesible de una acción de la fila, tal y como lo escribe la pantalla. */
-function accion(verbo: string, material: string, tipo: string, eje: string): string {
-  return `${verbo}: ${material} (${tipo}) · ${eje}`;
+function accion(
+  verbo: string,
+  material: string,
+  tipo: string,
+  eje: string,
+  valor: string,
+  confianza: string,
+): string {
+  return `${verbo}: ${material} (${tipo}) · ${eje}: ${valor}, ${confianza}`;
 }
 
 const TIPO_DOCUMENTAL = 'Tipo de documento';
@@ -370,7 +377,7 @@ describe('pantalla Revisión', () => {
 
     await userEvent.click(
       await screen.findByRole('button', {
-        name: accion('Aceptar', ARCHIVO_UNO, MATERIAL, TIPO_DOCUMENTAL),
+        name: accion('Aceptar', ARCHIVO_UNO, MATERIAL, TIPO_DOCUMENTAL, 'community_material', '40 %'),
       }),
     );
 
@@ -394,7 +401,7 @@ describe('pantalla Revisión', () => {
 
     await userEvent.click(
       await screen.findByRole('button', {
-        name: accion('Aceptar', ARCHIVO_UNO, MATERIAL, TIPO_DOCUMENTAL),
+        name: accion('Aceptar', ARCHIVO_UNO, MATERIAL, TIPO_DOCUMENTAL, 'community_material', '40 %'),
       }),
     );
     const historial = await screen.findByRole('region', { name: 'Decisiones de esta sesión' });
@@ -439,7 +446,7 @@ describe('pantalla Revisión', () => {
     await userEvent.selectOptions(selector, 'I.1');
     await userEvent.click(
       within(fila).getByRole('button', {
-        name: accion('Aceptar con la corrección', ARCHIVO_UNO, MATERIAL, TEMA),
+        name: accion('Aceptar con la corrección', ARCHIVO_UNO, MATERIAL, TEMA, '4.1', '68 %'),
       }),
     );
 
@@ -515,7 +522,7 @@ describe('pantalla Revisión', () => {
     await userEvent.selectOptions(selector, 'I.1');
     await userEvent.click(
       within(fila).getByRole('button', {
-        name: accion('Aceptar con la corrección', ARCHIVO_UNO, MATERIAL, TEMA),
+        name: accion('Aceptar con la corrección', ARCHIVO_UNO, MATERIAL, TEMA, '4.1', '68 %'),
       }),
     );
 

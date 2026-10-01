@@ -346,21 +346,18 @@ test('E2E-03 revisión en lote: aceptar un grupo, excluir una fila, corregir un 
     'el texto que cita el título del tema debe traer una propuesta de tema',
   ).toBeDefined();
 
-  // La fila se identifica por el botón exacto que se va a pulsar (incluye el tipo de sujeto y el
-  // eje), y no por el nombre del fichero: el mismo material aparece como artefacto y como
-  // representación, y filtrar solo por el nombre daba dos filas.
+  // La fila se identifica por el botón exacto que se va a pulsar (incluye el tipo de sujeto, el
+  // eje, el valor y la confianza), y no por el nombre del fichero: el mismo material aparece como
+  // artefacto y como representación, y dos motores pueden proponerle el mismo tema con distinta
+  // confianza. Con solo el fichero, el tipo y el eje resolvía a varias filas (strict mode).
+  const valorDelTema = `${propuestaTema?.proposed_value ?? ''}, ${Math.round((propuestaTema?.confidence ?? 0) * 100)} %`;
+  const accionDelTema = `Aceptar con la corrección: ${ficheroDelTema} (material) · Tema del programa: ${valorDelTema}`;
   const filaDelTema = page.getByRole('row').filter({
-    has: page.getByRole('button', {
-      name: `Aceptar con la corrección: ${ficheroDelTema} (material) · Tema del programa`,
-    }),
+    has: page.getByRole('button', { name: accionDelTema, exact: true }),
   });
   await expect(filaDelTema).toBeVisible();
   await filaDelTema.getByLabel('Corregir el tema').selectOption(temaDestino?.path ?? '');
-  await filaDelTema
-    .getByRole('button', {
-      name: `Aceptar con la corrección: ${ficheroDelTema} (material) · Tema del programa`,
-    })
-    .click();
+  await filaDelTema.getByRole('button', { name: accionDelTema, exact: true }).click();
 
   // La corrección llega al servidor: el mapeo queda en el nodo elegido, no en el propuesto.
   const mapeos = (await (

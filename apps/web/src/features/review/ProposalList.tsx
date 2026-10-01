@@ -108,9 +108,14 @@ export function ProposalList({
           const label = subjectLabel(proposal);
           const tipo = SUBJECT_TYPE_LABEL[proposal.subject_type];
           const axis = AXIS_LABEL[proposal.axis];
-          // El nombre accesible de cada acción lleva el material, de qué se trata y su eje: en una
-          // tabla con varias propuestas del mismo fichero, «Aceptar» a secas no dice cuál se acepta.
-          const sujeto = `${label} (${tipo}) · ${axis}`;
+          // El nombre accesible de cada acción lleva el material, de qué se trata, su eje, el valor
+          // propuesto y la confianza: en una tabla con varias propuestas del mismo fichero,
+          // «Aceptar» a secas no dice cuál se acepta. El valor y la confianza hacen falta porque
+          // dos motores pueden proponer el mismo eje para el mismo material (un tema al 100 % por
+          // la evidencia y al 68 % por el título del programa): sin ellos, las dos filas tenían
+          // botones con el mismo nombre y no se distinguían ni con lector de pantalla.
+          const valor = `${proposal.proposed_value}, ${percent(proposal.confidence)}`;
+          const sujeto = `${label} (${tipo}) · ${axis}: ${valor}`;
           const correction = corrections[proposal.id] ?? '';
           const provisional = proposal.status === 'auto_applied_provisional';
           return (
