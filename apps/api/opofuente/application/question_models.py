@@ -277,6 +277,20 @@ class IssueReportView:
 
 
 @dataclass(frozen=True, slots=True)
+class KeySourceLink:
+    """Resultado de enlazar la plantilla oficial con una clave: si se hizo y lo que se comparó."""
+
+    applied: bool
+    reason: str | None
+    lines: int = 0
+    agreeing: int = 0
+    disagreeing: int = 0
+    without_entry: int = 0
+    ambiguous: int = 0
+    key_entries: int = 0
+
+
+@dataclass(frozen=True, slots=True)
 class KeyImportReport:
     """Resultado de alinear una plantilla suelta con las preguntas del conjunto."""
 
@@ -297,6 +311,7 @@ __all__ = [
     "IssueReportView",
     "KeyEntryView",
     "KeyImportReport",
+    "KeySourceLink",
     "OptionView",
     "QuestionEvidenceView",
     "QuestionImportReport",

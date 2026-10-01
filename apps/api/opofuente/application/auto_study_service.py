@@ -36,7 +36,12 @@ from opofuente.application.question_models import QuestionSetView
 from opofuente.application.question_service import QuestionService
 from opofuente.domain.classification import DocumentType
 from opofuente.domain.errors import NotFoundError
-from opofuente.domain.questions import ParsedKeyLine, parse_answer_key, parse_key_model
+from opofuente.domain.questions import (
+    ParsedKeyLine,
+    key_alignment,
+    parse_answer_key,
+    parse_key_model,
+)
 from opofuente.infrastructure.document_repository import SqlAlchemyDocumentRepository
 
 #: Tipos documentales que **traen preguntas**. Un temario, unos apuntes o una ley no: de ahí no se
@@ -275,19 +280,14 @@ class AutoStudyService:
         return vista.text
 
     def _alineacion(self, set_id: str, lineas: Sequence[ParsedKeyLine]) -> float:
-        """Qué proporción de las líneas de la plantilla cae en una pregunta del conjunto.
+        """Cómo encaja la plantilla con el conjunto por **número de pregunta** (`key_alignment`).
 
-        Se mira por **número de pregunta**, que es como se alinea una plantilla suelta: si el
-        fichero dice «17. c», tiene que haber una pregunta en la posición 17.
+        Una línea solo cuenta si su número es el de una sola pregunta, y la plantilla tiene que
+        cubrir el conjunto, no solo caer en él. Antes se miraba solo si cada línea encontraba alguna
+        pregunta, y solo entre las 200 primeras: una plantilla de 93 líneas daba «100 %» con un
+        conjunto de 135 preguntas que reiniciaba la numeración en cada sección.
         """
-        posiciones = {
-            pregunta.position
-            for pregunta in self._questions.questions(set_id=set_id, limit=200).questions
-        }
-        if not posiciones:
-            return 0.0
-        coincidencias = sum(1 for linea in lineas if linea.position in posiciones)
-        return coincidencias / len(lineas)
+        return key_alignment(lineas, self._questions.question_ids_by_position(set_id)).score
 
     def catalogue_questions(self, *, set_id: str, version_id: str) -> int:
         """Cataloga por bloque y tema las preguntas que aún no tienen tema (S12.6).

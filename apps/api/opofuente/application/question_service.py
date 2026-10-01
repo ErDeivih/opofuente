@@ -28,6 +28,7 @@ from opofuente.application.question_models import (
     ExplanationView,
     IssueReportView,
     KeyImportReport,
+    KeySourceLink,
     QuestionEvidenceView,
     QuestionImportReport,
     QuestionPage,
@@ -106,6 +107,11 @@ def _letters(value: str, *, option_count: int) -> tuple[str, ...] | None:
 
 def _is_true(value: str) -> bool:
     return value.strip().lower() in _TRUE_VALUES
+
+
+#: Parte de las respuestas de una clave que su plantilla oficial tiene que confirmar, una a una,
+#: para enlazarlas. Casi todas: una plantilla de verdad dice lo mismo que su clave.
+KEY_SOURCE_MINIMUM = 0.95
 
 
 class QuestionService:
@@ -615,6 +621,101 @@ class QuestionService:
 
     def key(self, key_id: str) -> AnswerKeyView | None:
         return self._questions.get_key(key_id)
+
+    def question_ids_by_position(self, set_id: str) -> dict[int, tuple[str, ...]]:
+        """Las preguntas de cada posición del conjunto (todas, no una por posición)."""
+        return self._questions.question_ids_by_position(set_id)
+
+    def link_key_source(
+        self,
+        key_id: str,
+        *,
+        source_document_version_id: str | None,
+        actor: str = "local",
+    ) -> KeySourceLink:
+        """Enlaza (o desenlaza) la plantilla oficial de una clave que ya existe.
+
+        El enlace solo lo hacía la aplicación al aceptar la versión de la plantilla, y si el
+        examen se importaba después no había forma de hacerlo: una clave oficial sin plantilla
+        enlazada no se puede activar (invariante 4), así que el examen se quedaba sin corregir
+        (informe de claves de octubre de 2026). Enlazar dice «esta clave **es** la de ese
+        documento», así que antes se comprueba que lo es: pregunta a pregunta, por número, la
+        plantilla tiene que decir lo mismo que la clave. Una sola discrepancia y no se enlaza.
+        """
+        clave = self._questions.get_key(key_id)
+        if clave is None:
+            return KeySourceLink(False, "la plantilla no existe")
+        conjunto = self._questions.get_set(clave.question_set_id)
+        if conjunto is None:
+            return KeySourceLink(False, "el conjunto de la plantilla no existe")
+        if source_document_version_id is None:
+            if clave.status == "active" and conjunto.is_official:
+                return KeySourceLink(
+                    False,
+                    "es la clave activa de un examen oficial: sin la plantilla enlazada no podría "
+                    "estar activa (activa otra antes de desenlazar esta)",
+                )
+            self._questions.set_key_source(
+                key_id, source_document_version_id=None, now=self._clock.now(), actor=actor
+            )
+            return KeySourceLink(True, None)
+        if self._documents.version_detail(source_document_version_id) is None:
+            raise NotFoundError("versión de documento", source_document_version_id)
+        texto, _mapa = self._texto_de_la_version(source_document_version_id)
+        lineas, _incidencias = parse_answer_key(texto)
+        if not lineas:
+            return KeySourceLink(False, "el documento no tiene ninguna respuesta reconocible")
+        por_posicion = self._questions.question_ids_by_position(clave.question_set_id)
+        entradas = {entrada.question_version_id: entrada for entrada in clave.entries}
+        coinciden = 0
+        discrepan: list[int] = []
+        sin_entrada = 0
+        ambiguas = 0
+        for linea in lineas:
+            candidatas = por_posicion.get(linea.position, ())
+            if len(candidatas) != 1:
+                ambiguas += 1 if len(candidatas) > 1 else 0
+                continue
+            entrada = entradas.get(candidatas[0])
+            if entrada is None:
+                sin_entrada += 1
+                continue
+            if entrada.outcome == linea.outcome.value and set(entrada.correct_option_keys) == set(
+                linea.correct_option_keys
+            ):
+                coinciden += 1
+            else:
+                discrepan.append(linea.position)
+        informe = {
+            "lines": len(lineas),
+            "agreeing": coinciden,
+            "disagreeing": len(discrepan),
+            "without_entry": sin_entrada,
+            "ambiguous": ambiguas,
+            "key_entries": len(entradas),
+        }
+        if discrepan:
+            muestra = ", ".join(str(posicion) for posicion in discrepan[:10])
+            return KeySourceLink(
+                False,
+                f"la plantilla y la clave no dicen lo mismo en {len(discrepan)} pregunta(s) "
+                f"(números {muestra}): no es la plantilla de esta clave",
+                **informe,
+            )
+        if not entradas or coinciden < KEY_SOURCE_MINIMUM * len(entradas):
+            return KeySourceLink(
+                False,
+                f"la plantilla solo confirma {coinciden} de las {len(entradas)} respuestas de la "
+                "clave: no basta para decir que es su plantilla",
+                **informe,
+            )
+        self._questions.set_key_source(
+            key_id,
+            source_document_version_id=source_document_version_id,
+            now=self._clock.now(),
+            actor=actor,
+        )
+        return KeySourceLink(True, None, **informe)
 
     def activate_key(self, key_id: str, *, actor: str = "local") -> tuple[bool, str | None]:
         """Activa una plantilla. **Activar es aprobar**: lo decide una persona y queda auditado.

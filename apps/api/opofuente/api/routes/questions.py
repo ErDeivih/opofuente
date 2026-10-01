@@ -26,6 +26,8 @@ from opofuente.api.question_schemas import (
     IssueReportRequestSchema,
     IssueReportSchema,
     KeyEntrySchema,
+    KeySourceLinkSchema,
+    LinkKeySourceRequestSchema,
     LocalCorrectionSchema,
     MarkKeySupersedesRequestSchema,
     OptionSchema,
@@ -609,6 +611,43 @@ def activate_answer_key(set_id: str, key_id: str, service: QuestionServiceDep) -
         raise ClassificationConflictError(motivo or "la plantilla no se pudo activar")
     activada = next(candidata for candidata in service.keys(set_id) if candidata.id == key_id)
     return _key(activada)
+
+
+@router.post(
+    "/question-sets/{set_id}/answer-keys/{key_id}/source",
+    response_model=KeySourceLinkSchema,
+    responses=INGESTION_WRITE_ERRORS,
+    summary="Enlaza (o desenlaza) la plantilla oficial de una clave que ya existe",
+)
+def link_answer_key_source(
+    set_id: str,
+    key_id: str,
+    request: LinkKeySourceRequestSchema,
+    service: QuestionServiceDep,
+) -> KeySourceLinkSchema:
+    """Antes, el enlace solo se hacía al aceptar la versión de la plantilla: un examen importado
+    después se quedaba con su clave oficial sin poder activarse. Enlazar exige que la plantilla
+    diga lo mismo que la clave, pregunta a pregunta; si no, 409 con lo que no coincide.
+    """
+    if not any(candidata.id == key_id for candidata in service.keys(set_id)):
+        raise NotFoundError("plantilla", key_id)
+    resultado = service.link_key_source(
+        key_id, source_document_version_id=request.source_document_version_id
+    )
+    if not resultado.applied:
+        raise ClassificationConflictError(resultado.reason or "la plantilla no se pudo enlazar")
+    clave = service.key(key_id)
+    if clave is None:
+        raise NotFoundError("plantilla", key_id)
+    return KeySourceLinkSchema(
+        key=_key(clave),
+        lines=resultado.lines,
+        agreeing=resultado.agreeing,
+        disagreeing=resultado.disagreeing,
+        without_entry=resultado.without_entry,
+        ambiguous=resultado.ambiguous,
+        key_entries=resultado.key_entries,
+    )
 
 
 @router.post(

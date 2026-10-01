@@ -236,6 +236,26 @@ class MarkKeySupersedesRequestSchema(BaseModel):
     superseded_id: str = Field(min_length=1)
 
 
+class LinkKeySourceRequestSchema(BaseModel):
+    """La versión de documento que es la plantilla oficial de la clave (`null` desenlaza)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    source_document_version_id: str | None = Field(default=None, min_length=1)
+
+
+class KeySourceLinkSchema(BaseModel):
+    """Lo que se comparó al enlazar: la plantilla, pregunta a pregunta, contra la clave."""
+
+    key: AnswerKeySchema
+    lines: int
+    agreeing: int
+    disagreeing: int
+    without_entry: int
+    ambiguous: int
+    key_entries: int
+
+
 class IssueReportRequestSchema(BaseModel):
     model_config = ConfigDict(extra="forbid")
 

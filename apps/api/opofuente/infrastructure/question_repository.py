@@ -556,6 +556,36 @@ class SqlAlchemyQuestionRepository:
             session.commit()
             return True
 
+    def set_key_source(
+        self,
+        key_id: str,
+        *,
+        source_document_version_id: str | None,
+        now: datetime,
+        actor: str = "local",
+    ) -> bool:
+        """Cambia la plantilla oficial enlazada a una clave. Queda en la auditoría."""
+        with self._session_factory() as session:
+            fila = session.get(AnswerKeyVersionRecord, key_id)
+            if fila is None:
+                return False
+            anterior = fila.source_document_version_id
+            fila.source_document_version_id = source_document_version_id
+            self._audit(
+                session,
+                actor=actor,
+                action="answer_key.source_linked"
+                if source_document_version_id is not None
+                else "answer_key.source_unlinked",
+                object_type="answer_key_version",
+                object_id=key_id,
+                before={"source_document_version_id": anterior},
+                after={"source_document_version_id": source_document_version_id},
+                now=now,
+            )
+            session.commit()
+            return True
+
     def activate_key(
         self, key_id: str, *, now: datetime, actor: str = "local"
     ) -> tuple[bool, str | None]:

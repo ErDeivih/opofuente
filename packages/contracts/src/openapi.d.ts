@@ -1768,6 +1768,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/question-sets/{set_id}/answer-keys/{key_id}/source": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Enlaza (o desenlaza) la plantilla oficial de una clave que ya existe
+         * @description Antes, el enlace solo se hacía al aceptar la versión de la plantilla: un examen importado
+         *     después se quedaba con su clave oficial sin poder activarse. Enlazar exige que la plantilla
+         *     diga lo mismo que la clave, pregunta a pregunta; si no, 409 con lo que no coincide.
+         */
+        post: operations["link_answer_key_source_api_v1_question_sets__set_id__answer_keys__key_id__source_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/question-sets/{set_id}/import-document": {
         parameters: {
             query?: never;
@@ -4607,6 +4629,25 @@ export interface components {
             question_version_id: string;
         };
         /**
+         * KeySourceLinkSchema
+         * @description Lo que se comparó al enlazar: la plantilla, pregunta a pregunta, contra la clave.
+         */
+        KeySourceLinkSchema: {
+            /** Agreeing */
+            agreeing: number;
+            /** Ambiguous */
+            ambiguous: number;
+            /** Disagreeing */
+            disagreeing: number;
+            key: components["schemas"]["AnswerKeySchema"];
+            /** Key Entries */
+            key_entries: number;
+            /** Lines */
+            lines: number;
+            /** Without Entry */
+            without_entry: number;
+        };
+        /**
          * LimitsSchema
          * @description Límites efectivos de la configuración (07_UI-UX §11: «límites» en Ajustes).
          *
@@ -4640,6 +4681,14 @@ export interface components {
             max_zip_uncompressed_bytes: number;
             /** Worker Poll Seconds */
             worker_poll_seconds: number;
+        };
+        /**
+         * LinkKeySourceRequestSchema
+         * @description La versión de documento que es la plantilla oficial de la clave (`null` desenlaza).
+         */
+        LinkKeySourceRequestSchema: {
+            /** Source Document Version Id */
+            source_document_version_id?: string | null;
         };
         /** LiveSchema */
         LiveSchema: {
@@ -12398,6 +12447,78 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AnswerKeySchema"];
+                };
+            };
+            /** @description La entrada no se puede usar: carpeta inválida (`invalid_source`), contenido rechazado por seguridad (`unsafe_content`) o URL no descargable (`url_rejected`). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    link_answer_key_source_api_v1_question_sets__set_id__answer_keys__key_id__source_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                set_id: string;
+                key_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkKeySourceRequestSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KeySourceLinkSchema"];
                 };
             };
             /** @description La entrada no se puede usar: carpeta inválida (`invalid_source`), contenido rechazado por seguridad (`unsafe_content`) o URL no descargable (`url_rejected`). */

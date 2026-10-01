@@ -1201,6 +1201,59 @@ def parse_answer_key(text: str) -> tuple[tuple[ParsedKeyLine, ...], tuple[ParseI
     return tuple(lineas), tuple(incidencias)
 
 
+@dataclass(frozen=True, slots=True)
+class KeyAlignment:
+    """Cómo encaja una plantilla suelta con un conjunto **por número de pregunta**.
+
+    Mira en las dos direcciones, y no se fía de un número compartido:
+
+    - `matched`: líneas cuyo número es el de **una sola** pregunta del conjunto;
+    - `ambiguous`: líneas cuyo número tienen varias preguntas (un conjunto con secciones que
+      vuelven a numerar desde 1): por número no se sabe a cuál se refiere;
+    - `covered` / `questions`: preguntas del conjunto que reciben respuesta, de todas.
+
+    Antes solo se miraba la primera dirección: 93 líneas sobre un conjunto de 135 preguntas con la
+    numeración reiniciada daban «100 % de encaje» (informe de claves de octubre de 2026).
+    """
+
+    lines: int
+    matched: int
+    ambiguous: int
+    covered: int
+    questions: int
+
+    @property
+    def score(self) -> float:
+        """Lo peor de las dos direcciones: una plantilla buena encaja **y** cubre el conjunto."""
+        if self.lines == 0 or self.questions == 0:
+            return 0.0
+        return min(self.matched / self.lines, self.covered / self.questions)
+
+
+def key_alignment(
+    lines: Sequence[ParsedKeyLine], by_position: Mapping[int, Sequence[str]]
+) -> KeyAlignment:
+    """Alinea las líneas de una plantilla con las preguntas de un conjunto, por su número."""
+    emparejadas = 0
+    ambiguas = 0
+    cubiertas: set[str] = set()
+    for linea in lines:
+        candidatas = by_position.get(linea.position, ())
+        if len(candidatas) == 1:
+            emparejadas += 1
+            cubiertas.add(candidatas[0])
+        elif len(candidatas) > 1:
+            ambiguas += 1
+    preguntas = {pregunta for ids in by_position.values() for pregunta in ids}
+    return KeyAlignment(
+        lines=len(lines),
+        matched=emparejadas,
+        ambiguous=ambiguas,
+        covered=len(cubiertas),
+        questions=len(preguntas),
+    )
+
+
 __all__ = [
     "JSON_QUESTION_FIELDS",
     "REORDERED_OPTIONS",
@@ -1210,6 +1263,7 @@ __all__ = [
     "AnswerKeyVersion",
     "EvidenceRole",
     "ExplanationStatus",
+    "KeyAlignment",
     "KeyOutcome",
     "KeyStatus",
     "OptionVersion",
@@ -1229,6 +1283,7 @@ __all__ = [
     "SetType",
     "can_activate",
     "find_question_duplicates",
+    "key_alignment",
     "normalise_question_text",
     "numbering_match",
     "parse_answer_key",

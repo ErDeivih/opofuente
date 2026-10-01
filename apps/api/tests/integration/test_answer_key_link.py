@@ -413,3 +413,57 @@ def test_una_plantilla_sin_asignar_no_se_enlaza_con_nada(
     resultado = _aceptar(seeded_client, version_id="plantilla")
 
     assert "no está asignada a ninguna oposición" in str(resultado["questions_note"])
+
+
+def _enlazar(client: TestClient, set_id: str, key_id: str, version_id: str | None) -> Any:
+    return client.post(
+        f"/api/v1/question-sets/{set_id}/answer-keys/{key_id}/source",
+        json={"source_document_version_id": version_id},
+        headers=ALLOWED_ORIGIN,
+    )
+
+
+def test_la_plantilla_oficial_se_enlaza_a_una_clave_que_ya_existia_si_dice_lo_mismo(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """Informe de claves (octubre de 2026): el enlace solo se hacía al aceptar la plantilla.
+
+    Aquí la clave entra antes, pegada a mano: sin plantilla enlazada, un examen oficial no la deja
+    activar. La ruta nueva la enlaza, pero solo si la plantilla dice lo mismo, pregunta a pregunta.
+    """
+    examen = _preparar_examen(seeded_settings, seeded_client)
+    set_id = str(examen["question_set_id"])
+    pegada = seeded_client.post(
+        f"/api/v1/question-sets/{set_id}/parse",
+        json={"kind": "answer_key", "text": PLANTILLA},
+        headers=ALLOWED_ORIGIN,
+    )
+    assert pegada.status_code == 200, pegada.text
+    key_id = str(pegada.json()["key_id"])
+    activar = f"/api/v1/question-sets/{set_id}/answer-keys/{key_id}/activate"
+    assert seeded_client.post(activar, headers=ALLOWED_ORIGIN).status_code == 409
+
+    # Una plantilla que no dice lo mismo no se enlaza, y se dice dónde discrepa.
+    _plantilla(
+        seeded_settings,
+        seeded_client,
+        texto="1. a\n2. b\n3. a\n4. a\n",
+        version_id="otra",
+        asignar=False,
+    )
+    otra = _enlazar(seeded_client, set_id, key_id, "otra")
+    assert otra.status_code == 409, otra.text
+    assert "números 2" in otra.json()["detail"]
+
+    # La buena sí, con las cuentas de lo comparado.
+    _plantilla(seeded_settings, seeded_client, asignar=False)
+    buena = _enlazar(seeded_client, set_id, key_id, "plantilla")
+    assert buena.status_code == 200, buena.text
+    cuerpo = buena.json()
+    assert (cuerpo["agreeing"], cuerpo["disagreeing"], cuerpo["key_entries"]) == (4, 0, 4)
+    assert cuerpo["key"]["source_document_version_id"] == "plantilla"
+    assert seeded_client.post(activar, headers=ALLOWED_ORIGIN).status_code == 200
+
+    # Activa en un examen oficial, ya no se puede desenlazar.
+    assert _enlazar(seeded_client, set_id, key_id, None).status_code == 409
+    assert _enlazar(seeded_client, set_id, key_id, "no-existe").status_code == 404
