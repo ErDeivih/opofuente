@@ -118,6 +118,7 @@ const INFORME: QuestionImportReport = {
   key_entries: 1,
   keys_in_conflict: 1,
   mapped_to_topics: 0,
+  topics_from_column: 0,
   rejected: [{ row_number: 2, cause: 'no_stem', detail: 'la fila no trae enunciado' }],
   issues: [],
   duplicates: [],
