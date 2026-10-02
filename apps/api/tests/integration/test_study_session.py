@@ -749,3 +749,34 @@ def test_un_conjunto_que_numera_por_secciones_se_compone_en_el_orden_del_documen
         "Supuesto practico",
         "Cuarta de la primera parte:",
     ], "las seis, en el orden del documento y la reserva al final (como la compone la aplicación)"
+
+
+def test_sin_posiciones_repetidas_manda_la_posicion_aunque_se_haya_cambiado_a_mano(
+    seeded_settings: Settings,
+) -> None:
+    """El orden del documento es el de inserción: si alguien cambia la posición de una pregunta,
+    deja de coincidir con ella. Sin posiciones repetidas tiene que seguir mandando la posición
+    (revisión del cambio del 2 de octubre de 2026, que ordenaba siempre por inserción)."""
+    cuestiones = _cuestiones(seeded_settings)
+    opposition_id, convocation_id = _ids_de_oposicion(seeded_settings)
+    conjunto = cuestiones.create_set(
+        "Conjunto reordenado a mano",
+        opposition_id=opposition_id,
+        set_type="private_bank",
+        convocation_version_id=convocation_id,
+    )
+    texto = "\n".join(
+        f"{numero}. Pregunta {nombre} del conjunto:\na) uno\nb) dos\nRespuesta correcta: a\n"
+        for numero, nombre in ((1, "Alfa"), (2, "Beta"), (3, "Gamma"))
+    )
+    cuestiones.import_from_text(conjunto.id, texto)
+    alfa = next(p for p in cuestiones.questions(set_id=conjunto.id).questions if "Alfa" in p.stem)
+    cuestiones.update_question(alfa.id, position=10)
+    aplicada, motivo = cuestiones.activate_key(cuestiones.keys(conjunto.id)[0].id)
+    assert aplicada, motivo
+
+    servicio = _servicio(seeded_settings)
+    sesion = servicio.create_session(_practica(seeded_settings, conjunto.id, cantidad=3))
+
+    orden = [entrada.stem.split()[1] for entrada in servicio.review(sesion.id).entries]
+    assert orden == ["Beta", "Gamma", "Alfa"], "Alfa pasó a la posición 10: va la última"

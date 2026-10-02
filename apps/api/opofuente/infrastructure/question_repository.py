@@ -852,13 +852,20 @@ class SqlAlchemyQuestionRepository:
         repetidas, y ordenar por posición mezcla la parte primera con los supuestos prácticos.
         Medido el 2 de octubre de 2026 con los exámenes reimportados: la sesión salía con las
         preguntas intercaladas (parte primera nº 1, supuesto I nº 1, supuesto II nº 1, parte primera
-        nº 2…), que no es el examen. En un conjunto sin posiciones repetidas los dos órdenes
-        coinciden.
+        nº 2…), que no es el examen.
+
+        Por eso el orden del documento se usa **solo** cuando hay posiciones repetidas. Sin ellas
+        se ordena por posición, como siempre: el orden de inserción no es el de la posición si se
+        cambió la posición de una pregunta (`update_question`) o si el conjunto se importó en
+        tandas desordenadas, y en esos casos la posición es la que manda.
 
         La versión sustituida de una pregunta corregida **no** entra (DEBT-025): si entrara, una
         sesión nueva podría preguntar el texto viejo y contar la pregunta dos veces.
         """
-        orden = self.questions_in_document_order(set_id)
+        orden = list(self.questions_in_document_order(set_id))
+        posiciones = [posicion for _identificador, posicion in orden]
+        if len(set(posiciones)) == len(posiciones):
+            orden.sort(key=lambda par: par[1])
         with self._session_factory() as session:
             filas = {
                 str(fila.id): fila
