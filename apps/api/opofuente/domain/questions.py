@@ -515,6 +515,10 @@ class ParsedQuestion:
     #: modelo ya guardaba esto (`question_explanations.option_stable_key`); lo que faltaba era que
     #: llegara desde el material, y de eso se encargan los parsers.
     option_explanations: tuple[tuple[str, str], ...] = ()
+    #: Explicación general y tema (ruta o código del programa) que trae el propio material: los
+    #: lee el asistente JSON. Antes se leían en el contrato pero no llegaban a ningún sitio.
+    explanation: str | None = None
+    topic: str | None = None
 
     @property
     def is_complete(self) -> bool:
@@ -877,6 +881,13 @@ def _json_key_value(
     return f"«{bruto}» no corresponde a ninguna opción"
 
 
+def _json_text(valor: object) -> str | None:
+    """Un campo de texto opcional del JSON: limpio, o `None` si no viene o viene vacío."""
+    if isinstance(valor, str) and valor.strip():
+        return valor.strip()
+    return None
+
+
 def parse_questions_json(text: str) -> ParsedSet:
     """Parsea el mismo cuestionario en JSON, para el asistente del slice S06.
 
@@ -1042,6 +1053,8 @@ def parse_questions_json(text: str) -> ParsedSet:
                 correct_option_keys=claves,
                 type_reason=motivo,
                 option_explanations=explicaciones,
+                explanation=_json_text(fila.get("explanation")),
+                topic=_json_text(fila.get("topic")),
             )
         )
 

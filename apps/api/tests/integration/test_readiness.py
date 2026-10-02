@@ -10,6 +10,7 @@ cosa que el banco, esta prueba tiene que fallar.
 
 from __future__ import annotations
 
+import json
 from typing import Any
 
 from fastapi.testclient import TestClient
@@ -289,3 +290,54 @@ def test_lo_que_espera_a_una_persona_se_cuenta_con_la_cifra_de_su_pantalla(
     # Lo que no hay no se enseña: sin cambios de fuente propuestos, esa acción no está.
     assert "cambios" not in acciones
     assert pendientes["total"] == sum(accion["count"] for accion in pendientes["actions"])
+
+
+def test_el_tema_y_la_explicacion_de_un_json_se_aplican_tambien_a_las_que_ya_estaban(
+    seeded_client: TestClient,
+) -> None:
+    """El asistente JSON leía `topic` y `explanation` y no los guardaba: el informe decía
+    `existing: 135 · topics_from_column: 0` sin ninguna incidencia (octubre de 2026)."""
+    oposicion = _oposicion_activa(seeded_client)
+    convocatoria = oposicion["active_convocation"]["id"]
+    conjunto = seeded_client.post(
+        "/api/v1/question-sets",
+        json={
+            "title": "Banco JSON",
+            "opposition_id": oposicion["id"],
+            "set_type": "private_bank",
+            "convocation_version_id": convocatoria,
+        },
+        headers=ALLOWED_ORIGIN,
+    ).json()
+
+    def importar(tema: str) -> dict[str, Any]:
+        cuerpo = json.dumps(
+            [
+                {
+                    "stem": f"El plazo del caso {letra} es de diez dias",
+                    "options": ["Verdadero", "Falso"],
+                    "correct": "a",
+                    "explanation": f"Lo dice el articulo del caso {letra}.",
+                    "topic": tema,
+                }
+                for letra in "AB"
+            ]
+        )
+        respuesta = seeded_client.post(
+            f"/api/v1/question-sets/{conjunto['id']}/parse",
+            json={"kind": "json", "text": cuerpo},
+            headers=ALLOWED_ORIGIN,
+        )
+        assert respuesta.status_code == 200, respuesta.text
+        return dict(respuesta.json())
+
+    primera = importar("I.1")
+    assert (primera["created"], primera["topics_from_column"]) == (2, 2)
+    preguntas = seeded_client.get(f"/api/v1/question-sets/{conjunto['id']}/questions").json()
+    detalle = seeded_client.get(f"/api/v1/questions/{preguntas['questions'][0]['id']}").json()
+    assert detalle["explanation_count"] == 1, "la explicación del JSON se guarda"
+
+    segunda = importar("I.2")
+    assert (segunda["existing"], segunda["topics_from_column"]) == (2, 2), (
+        "las que ya estaban también reciben el tema"
+    )

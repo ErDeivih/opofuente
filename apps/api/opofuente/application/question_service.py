@@ -372,10 +372,16 @@ class QuestionService:
         if self._questions.get_set(set_id) is None:
             return QuestionImportReport(set_id=set_id)
         parseado = parse_questions_json(text)
+        # La explicación y el tema del JSON viajan como en el CSV: `_guardar` los aplica a cada
+        # pregunta, también a las que ya estaban (misma huella). Antes se pasaban vacíos y el
+        # informe decía `topics_from_column: 0` sin ninguna incidencia (octubre de 2026).
         return self._guardar(
             set_id,
             parseado.questions,
-            extras=[(pregunta.correct_option_keys, None, None) for pregunta in parseado.questions],
+            extras=[
+                (pregunta.correct_option_keys, pregunta.explanation, pregunta.topic)
+                for pregunta in parseado.questions
+            ],
             origin_type=origin_type,
             issues=parseado.issues,
             model_code=parseado.model_code,
