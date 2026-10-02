@@ -840,35 +840,41 @@ class SqlAlchemyQuestionRepository:
         return tuple((str(fila.id), int(fila.position)) for fila in vigentes)
 
     def all_questions(self, set_id: str) -> tuple[QuestionView, ...]:
-        """Todas las preguntas de un conjunto en su orden, sin clave.
+        """Todas las preguntas de un conjunto **en el orden del documento**, sin clave.
 
         Es la lista de la que una sesión elige su composición: no lleva la solución porque una
         sesión se corrige con la clave **activa** congelada, no con lo que devuelva esta consulta.
         Sin tope de página a propósito: recortar aquí dejaría una sesión oficial sin las últimas
         preguntas.
 
+        El orden es el del **documento** (`questions_in_document_order`), no el de la posición: un
+        examen que numera desde 1 en cada sección —los del INAP, sin ir más lejos— tiene posiciones
+        repetidas, y ordenar por posición mezcla la parte primera con los supuestos prácticos.
+        Medido el 2 de octubre de 2026 con los exámenes reimportados: la sesión salía con las
+        preguntas intercaladas (parte primera nº 1, supuesto I nº 1, supuesto II nº 1, parte primera
+        nº 2…), que no es el examen. En un conjunto sin posiciones repetidas los dos órdenes
+        coinciden.
+
         La versión sustituida de una pregunta corregida **no** entra (DEBT-025): si entrara, una
         sesión nueva podría preguntar el texto viejo y contar la pregunta dos veces.
         """
+        orden = self.questions_in_document_order(set_id)
         with self._session_factory() as session:
-            filas = (
-                session.execute(
-                    select(QuestionVersionRecord)
-                    .where(
+            filas = {
+                str(fila.id): fila
+                for fila in session.execute(
+                    select(QuestionVersionRecord).where(
                         QuestionVersionRecord.question_set_id == set_id,
                         _NO_SUSTITUIDAS,
-                    )
-                    .order_by(
-                        QuestionVersionRecord.position,
-                        QuestionVersionRecord.stable_key,
-                        QuestionVersionRecord.id,
                     )
                 )
                 .scalars()
                 .all()
-            )
+            }
             return tuple(
-                self._question_view(session, fila, {}, include_key=False) for fila in filas
+                self._question_view(session, filas[identificador], {}, include_key=False)
+                for identificador, _posicion in orden
+                if identificador in filas
             )
 
     def node_by_reference(

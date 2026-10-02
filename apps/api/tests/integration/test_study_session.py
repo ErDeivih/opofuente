@@ -678,3 +678,74 @@ def _anular_en_la_sesion(settings: Settings, session_id: str, question_version_i
             )
     finally:
         engine.dispose()
+
+
+def _texto_por_secciones() -> str:
+    """Un cuestionario como el del INAP: cada sección numera desde 1 y hay un bloque de reserva."""
+    lineas: list[str] = ["## Primera parte", ""]
+    for numero in (1, 2, 3):
+        lineas.append(f"{numero}. Primera parte, pregunta {numero}:")
+        for indice in range(4):
+            lineas.append(f"{chr(ord('a') + indice)}) Opcion {chr(ord('A') + indice)}")
+        lineas.append("Respuesta correcta: a")
+        lineas.append("")
+    lineas.append("## Preguntas de reserva")
+    lineas.append("")
+    # Ojo con la palabra «reserva» en el enunciado: el analizador la toma por la marca de reserva y
+    # la quita del texto (por eso aquí la reserva se llama «Cuarta de la primera parte»).
+    lineas.append("1. [R] Cuarta de la primera parte:")
+    for indice in range(4):
+        lineas.append(f"{chr(ord('a') + indice)}) Opcion {chr(ord('A') + indice)}")
+    lineas.append("Respuesta correcta: a")
+    lineas.append("")
+    lineas.append("## Supuesto practico")
+    lineas.append("")
+    for numero in (1, 2):
+        lineas.append(f"{numero}. Supuesto practico, pregunta {numero}:")
+        for indice in range(4):
+            lineas.append(f"{chr(ord('a') + indice)}) Opcion {chr(ord('A') + indice)}")
+        lineas.append("Respuesta correcta: a")
+        lineas.append("")
+    return "\n".join(lineas)
+
+
+def test_un_conjunto_que_numera_por_secciones_se_compone_en_el_orden_del_documento(
+    seeded_settings: Settings,
+) -> None:
+    """El orden de la composición es el del documento, no el de la posición.
+
+    Medido el 2 de octubre de 2026 con los exámenes del INAP reimportados: si cada sección numera
+    desde 1 (1..80, luego 1..5, luego 1..20…), ordenar por posición mezcla la parte primera con los
+    supuestos prácticos y la sesión deja de ser el examen: salía parte primera nº 1, supuesto I
+    nº 1, supuesto II nº 1, parte primera nº 2… Lo que ordena el examen es el orden en que se leyó
+    el cuadernillo.
+    """
+
+    cuestiones = _cuestiones(seeded_settings)
+    opposition_id, convocation_id = _ids_de_oposicion(seeded_settings)
+    conjunto = cuestiones.create_set(
+        "Examen con secciones que numeran desde 1",
+        opposition_id=opposition_id,
+        set_type="private_bank",
+        convocation_version_id=convocation_id,
+    )
+    cuestiones.import_from_text(conjunto.id, _texto_por_secciones())
+    clave = cuestiones.keys(conjunto.id)[0]
+    aplicada, motivo = cuestiones.activate_key(clave.id)
+    assert aplicada, motivo
+
+    servicio = _servicio(seeded_settings)
+    sesion = servicio.create_session(
+        _practica(seeded_settings, conjunto.id, cantidad=5, reservas=True)
+    )
+    assert sesion.total_questions == 6, "cinco ordinarias y la reserva del bloque"
+
+    orden = [entrada.stem.split(",")[0] for entrada in servicio.review(sesion.id).entries]
+    assert orden == [
+        "Primera parte",
+        "Primera parte",
+        "Primera parte",
+        "Supuesto practico",
+        "Supuesto practico",
+        "Cuarta de la primera parte:",
+    ], "las seis, en el orden del documento y la reserva al final (como la compone la aplicación)"
