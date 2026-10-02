@@ -47,6 +47,7 @@ from opofuente.domain.questions import (
     AnswerKeyEntry,
     KeyOutcome,
     Origin,
+    ParsedKeyLine,
     ParsedOption,
     ParsedQuestion,
     ParseIssue,
@@ -57,6 +58,7 @@ from opofuente.domain.questions import (
     SetStatus,
     SetType,
     find_question_duplicates,
+    ordered_key_mapping,
     parse_answer_key,
     parse_questions,
     parse_questions_json,
@@ -535,25 +537,25 @@ class QuestionService:
         source_document_version_id: str | None = None,
         actor: str = "local",
     ) -> KeyImportReport:
-        """Alinea una plantilla suelta con las preguntas del conjunto **por número**."""
+        """Alinea una plantilla suelta con las preguntas del conjunto, en orden o por número."""
         conjunto = self._questions.get_set(set_id)
         if conjunto is None:
             return KeyImportReport(key_id=None, version_no=None)
         lineas, leidas = parse_answer_key(text)
         incidencias = list(leidas)
-        por_posicion = self._questions.question_ids_by_position(set_id)
+        destinos, en_orden = self.key_line_targets(set_id, lineas)
         entradas: list[AnswerKeyEntry] = []
         sin_pareja: list[int] = []
         vistas: dict[int, int] = {}
-        for linea in lineas:
-            candidatas = por_posicion.get(linea.position, ())
+        for linea, candidatas in zip(lineas, destinos, strict=True):
             if not candidatas:
                 sin_pareja.append(linea.position)
                 continue
             # Una pregunta solo cabe una vez en una plantilla. Antes, un número repetido (o dos
             # preguntas en la misma posición) llegaban a la base y la API devolvía 500 (§4.5 del
             # traspaso de octubre de 2026). Lo que no se puede decidir se informa, no se adivina.
-            if linea.position in vistas:
+            # Alineada en orden, un número repetido es lo esperado (cada sección empieza en 1).
+            if not en_orden and linea.position in vistas:
                 incidencias.append(
                     ParseIssue(
                         line=linea.line,
@@ -626,6 +628,21 @@ class QuestionService:
         """Las preguntas de cada posición del conjunto (todas, no una por posición)."""
         return self._questions.question_ids_by_position(set_id)
 
+    def key_line_targets(
+        self, set_id: str, lineas: Sequence[ParsedKeyLine]
+    ) -> tuple[tuple[tuple[str, ...], ...], bool]:
+        """A qué pregunta(s) va cada línea de una plantilla, y si se alineó **en orden**.
+
+        Primero en orden (`ordered_key_mapping`), que es lo único que sirve cuando la numeración
+        se reinicia en cada sección y solo se acepta si encaja uno a uno; si no, por número, donde
+        un número de varias preguntas queda como varias candidatas para que quien llama lo diga.
+        """
+        en_orden = ordered_key_mapping(lineas, self._questions.questions_in_document_order(set_id))
+        if en_orden is not None:
+            return tuple((pregunta_id,) for pregunta_id in en_orden), True
+        por_posicion = self._questions.question_ids_by_position(set_id)
+        return tuple(por_posicion.get(linea.position, ()) for linea in lineas), False
+
     def link_key_source(
         self,
         key_id: str,
@@ -641,6 +658,9 @@ class QuestionService:
         (informe de claves de octubre de 2026). Enlazar dice «esta clave **es** la de ese
         documento», así que antes se comprueba que lo es: pregunta a pregunta, por número, la
         plantilla tiene que decir lo mismo que la clave. Una sola discrepancia y no se enlaza.
+        Si el examen reinicia la numeración en cada sección, se compara **en orden**
+        (`key_line_targets`): por número, el «12» de la segunda parte se comparaba con el de la
+        primera y la ruta se negaba con una plantilla buena.
         """
         clave = self._questions.get_key(key_id)
         if clave is None:
@@ -665,14 +685,13 @@ class QuestionService:
         lineas, _incidencias = parse_answer_key(texto)
         if not lineas:
             return KeySourceLink(False, "el documento no tiene ninguna respuesta reconocible")
-        por_posicion = self._questions.question_ids_by_position(clave.question_set_id)
+        destinos, _en_orden = self.key_line_targets(clave.question_set_id, lineas)
         entradas = {entrada.question_version_id: entrada for entrada in clave.entries}
         coinciden = 0
         discrepan: list[int] = []
         sin_entrada = 0
         ambiguas = 0
-        for linea in lineas:
-            candidatas = por_posicion.get(linea.position, ())
+        for linea, candidatas in zip(lineas, destinos, strict=True):
             if len(candidatas) != 1:
                 ambiguas += 1 if len(candidatas) > 1 else 0
                 continue

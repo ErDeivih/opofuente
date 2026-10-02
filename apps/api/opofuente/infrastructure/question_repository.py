@@ -21,6 +21,7 @@ from datetime import date, datetime
 from uuid import uuid4
 
 from sqlalchemy import func, select
+from sqlalchemy import text as sql_text
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.sql.elements import ColumnElement
 
@@ -805,6 +806,38 @@ class SqlAlchemyQuestionRepository:
         for posicion, pregunta_id in filas:
             por_posicion.setdefault(int(posicion), []).append(str(pregunta_id))
         return {posicion: tuple(ids) for posicion, ids in por_posicion.items()}
+
+    def questions_in_document_order(self, set_id: str) -> tuple[tuple[str, int], ...]:
+        """`(id, posición)` de las preguntas vigentes **en el orden del documento**.
+
+        La posición no sirve para ordenar un examen cuya numeración se reinicia en cada sección.
+        El orden de inserción sí: las preguntas se guardan según se leen del material. Una pregunta
+        corregida tiene su versión nueva al final, así que se ordena por la de su **primera**
+        versión, que es la que ocupa su sitio.
+        """
+        with self._session_factory() as session:
+            filas = session.execute(
+                sql_text(
+                    "SELECT rowid, id, supersedes_id, position, status FROM question_versions "
+                    "WHERE question_set_id = :conjunto"
+                ),
+                {"conjunto": set_id},
+            ).all()
+        por_id = {str(fila.id): fila for fila in filas}
+
+        def raiz(pregunta_id: str) -> int:
+            vistos: set[str] = set()
+            actual = por_id[pregunta_id]
+            while actual.supersedes_id is not None and str(actual.supersedes_id) in por_id:
+                if str(actual.id) in vistos:
+                    break
+                vistos.add(str(actual.id))
+                actual = por_id[str(actual.supersedes_id)]
+            return int(actual.rowid)
+
+        vigentes = [fila for fila in filas if fila.status != "superseded"]
+        vigentes.sort(key=lambda fila: (raiz(str(fila.id)), int(fila.rowid)))
+        return tuple((str(fila.id), int(fila.position)) for fila in vigentes)
 
     def all_questions(self, set_id: str) -> tuple[QuestionView, ...]:
         """Todas las preguntas de un conjunto en su orden, sin clave.

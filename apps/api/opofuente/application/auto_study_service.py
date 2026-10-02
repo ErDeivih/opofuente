@@ -287,6 +287,10 @@ class AutoStudyService:
         pregunta, y solo entre las 200 primeras: una plantilla de 93 líneas daba «100 %» con un
         conjunto de 135 preguntas que reiniciaba la numeración en cada sección.
         """
+        _destinos, en_orden = self._questions.key_line_targets(set_id, lineas)
+        if en_orden:
+            # Encaja uno a uno en el orden del examen (numeración reiniciada por secciones).
+            return 1.0
         return key_alignment(lineas, self._questions.question_ids_by_position(set_id)).score
 
     def catalogue_questions(self, *, set_id: str, version_id: str) -> int:

@@ -467,3 +467,45 @@ def test_la_plantilla_oficial_se_enlaza_a_una_clave_que_ya_existia_si_dice_lo_mi
     # Activa en un examen oficial, ya no se puede desenlazar.
     assert _enlazar(seeded_client, set_id, key_id, None).status_code == 409
     assert _enlazar(seeded_client, set_id, key_id, "no-existe").status_code == 404
+
+
+def test_enlazar_compara_en_orden_si_el_examen_reinicia_la_numeracion(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """Los seis exámenes oficiales de 2025-2026 numeran desde 1 en cada parte: comparando por
+    número, la ruta se negaba con su plantilla buena («no dicen lo mismo en 17 preguntas»)."""
+    examen_por_partes = (
+        "PRIMERA PARTE\n" + EXAMEN.split("3. ")[0] + "SEGUNDA PARTE\n"
+        "1. El plazo del procedimiento del caso C es de treinta dias habiles:\n"
+        "a) Verdadero\n"
+        "b) Falso\n"
+        "2. El plazo del procedimiento del caso D es de cuarenta dias habiles:\n"
+        "a) Verdadero\n"
+        "b) Falso\n"
+    )
+    _version(
+        seeded_settings,
+        texto=examen_por_partes,
+        version_id="examen",
+        document_type="official_exam",
+        titulo="Examen oficial por partes",
+    )
+    _asignar(seeded_settings, version_id="examen", node_path="I.1")
+    set_id = str(_aceptar(seeded_client, version_id="examen")["question_set_id"])
+    plantilla = "1. a\n2. b\n1. b\n2. a\n"
+    pegada = seeded_client.post(
+        f"/api/v1/question-sets/{set_id}/parse",
+        json={"kind": "answer_key", "text": plantilla},
+        headers=ALLOWED_ORIGIN,
+    )
+    assert pegada.status_code == 200, pegada.text
+    key_id = str(pegada.json()["key_id"])
+
+    _plantilla(seeded_settings, seeded_client, texto=plantilla, asignar=False)
+    enlace = _enlazar(seeded_client, set_id, key_id, "plantilla")
+
+    assert enlace.status_code == 200, enlace.text
+    cuerpo = enlace.json()
+    assert (cuerpo["agreeing"], cuerpo["disagreeing"], cuerpo["ambiguous"]) == (4, 0, 0)
+    activar = f"/api/v1/question-sets/{set_id}/answer-keys/{key_id}/activate"
+    assert seeded_client.post(activar, headers=ALLOWED_ORIGIN).status_code == 200

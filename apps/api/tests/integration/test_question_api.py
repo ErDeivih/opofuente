@@ -699,3 +699,57 @@ def test_una_plantilla_no_se_aplica_a_ciegas_si_dos_preguntas_comparten_posicion
     datos = informe.json()
     assert datos["key_entries"] == 1, "solo la 2, que no es ambigua"
     assert [aviso["code"] for aviso in datos["issues"]] == ["key_position_ambiguous"]
+
+
+#: Un examen de dos partes que **numeran desde 1** cada una, como el TAI de 2025.
+EXAMEN_POR_PARTES = """PRIMERA PARTE
+1. La primera pregunta de la parte uno trata del plazo:
+a) uno
+b) dos
+2. La segunda pregunta de la parte uno trata del silencio:
+a) uno
+b) dos
+SEGUNDA PARTE
+1. La primera pregunta de la parte dos trata de redes:
+a) uno
+b) dos
+2. La segunda pregunta de la parte dos trata de bases de datos:
+a) uno
+b) dos
+"""
+
+
+def test_una_plantilla_de_un_examen_que_reinicia_la_numeracion_se_aplica_en_orden(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """Por número, el «1» es de las dos partes y la plantilla no se podía aplicar (se decía
+    `key_position_ambiguous`). En orden encaja uno a uno, así que se aplica entera y bien."""
+    conjunto = _conjunto(seeded_client)
+    importado = _importar(seeded_client, conjunto["id"], kind="questions", text=EXAMEN_POR_PARTES)
+    assert importado.status_code == 200, importado.text
+    preguntas = seeded_client.get(f"/api/v1/question-sets/{conjunto['id']}/questions").json()
+    assert sorted(p["position"] for p in preguntas["questions"]) == [1, 1, 2, 2]
+
+    informe = _importar(
+        seeded_client, conjunto["id"], kind="answer_key", text="1. a\n2. b\n1. b\n2. a\n"
+    )
+
+    assert informe.status_code == 200, informe.text
+    datos = informe.json()
+    assert datos["key_entries"] == 4
+    assert datos["issues"] == []
+    clave = seeded_client.get(f"/api/v1/question-sets/{conjunto['id']}/answer-keys").json()[-1]
+    por_pregunta = {
+        entrada["question_version_id"]: entrada["correct_option_keys"]
+        for entrada in clave["entries"]
+    }
+    respuestas = {
+        pregunta["stem"].split(" trata ")[0]: por_pregunta[pregunta["id"]]
+        for pregunta in preguntas["questions"]
+    }
+    assert respuestas == {
+        "La primera pregunta de la parte uno": ["a"],
+        "La segunda pregunta de la parte uno": ["b"],
+        "La primera pregunta de la parte dos": ["b"],
+        "La segunda pregunta de la parte dos": ["a"],
+    }, "cada respuesta en su pregunta, no en la del mismo número de la otra parte"

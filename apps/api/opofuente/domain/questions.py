@@ -1126,6 +1126,40 @@ class ParsedKeyLine:
 _KEY_SHEET = re.compile(r"^\s*(\d{1,3})\s*(?:[.)\-\u2013:]+\s*|\s+)(.+)$")
 _ANNULLED = re.compile(r"\banulada\b|\bnula\b|^\s*[-x]\s*$", re.IGNORECASE)
 _UNANSWERED = re.compile(r"sin\s+responder|no\s+contestada|\bblanco\b", re.IGNORECASE)
+#: Un número de pregunta **solo** en su línea: `1.`, `12)`, `3 -`. El PDF de las plantillas
+#: oficiales del INAP (TAI 2025) saca así las preguntas 1 a 9, con la letra en la línea de abajo.
+_KEY_NUMBER_ALONE = re.compile(r"^\s*(\d{1,3})\s*[.)\-\u2013:]*\s*$")
+#: Lo que puede ser la respuesta de esa línea de abajo: una o varias letras, o un desenlace.
+_KEY_ANSWER_ALONE = re.compile(
+    r"^\s*(?:[a-hA-H](?:\s*[,y]\s*[a-hA-H])*|anulada|nula|sin\s+responder|[-x])\s*$",
+    re.IGNORECASE,
+)
+
+
+def _join_split_key_lines(lineas: list[str]) -> list[tuple[int, str]]:
+    """Junta «1.» con la respuesta de la línea siguiente cuando la extracción las separó.
+
+    Devuelve `(número de línea original, texto)`. Solo se junta si la línea es **solo** un número
+    y la siguiente con contenido es **solo** una respuesta: así un encabezado como «Supuesto I» o un
+    enunciado nunca se pega a nada.
+    """
+    resultado: list[tuple[int, str]] = []
+    indice = 0
+    while indice < len(lineas):
+        linea = lineas[indice]
+        numero = _KEY_NUMBER_ALONE.match(linea)
+        if numero is not None:
+            siguiente = indice + 1
+            while siguiente < len(lineas) and not lineas[siguiente].strip():
+                siguiente += 1
+            if siguiente < len(lineas) and _KEY_ANSWER_ALONE.match(lineas[siguiente]):
+                resultado.append((indice + 1, f"{numero.group(1)}. {lineas[siguiente].strip()}"))
+                indice = siguiente + 1
+                continue
+        resultado.append((indice + 1, linea))
+        indice += 1
+    return resultado
+
 
 #: El modelo del examen, cuando la plantilla lo declara: «Modelo A», «MODELO B», «modelo: A».
 #: Un examen oficial sale en varios modelos y cada uno tiene **su** plantilla: enlazar la equivocada
@@ -1153,7 +1187,7 @@ def parse_answer_key(text: str) -> tuple[tuple[ParsedKeyLine, ...], tuple[ParseI
     """
     lineas: list[ParsedKeyLine] = []
     incidencias: list[ParseIssue] = []
-    for numero_linea, linea in enumerate(text.splitlines(), 1):
+    for numero_linea, linea in _join_split_key_lines(text.splitlines()):
         if not linea.strip():
             continue
         encontrado = _KEY_SHEET.match(linea)
@@ -1254,6 +1288,36 @@ def key_alignment(
     )
 
 
+def ordered_key_mapping(
+    lines: Sequence[ParsedKeyLine], questions_in_order: Sequence[tuple[str, int]]
+) -> tuple[str, ...] | None:
+    """Empareja las líneas de una plantilla con las preguntas **en orden**, si y solo si encajan.
+
+    Es para los exámenes cuya numeración vuelve a empezar en cada sección (TAI 2025: dos partes
+    que numeran desde 1). Por número no se pueden alinear —el «12» es de las dos partes—, pero en
+    orden sí: la plantilla lista las respuestas en el mismo orden que el examen.
+
+    La regla es estricta a propósito, porque emparejar mal corrige mal: tiene que haber **tantas
+    líneas como preguntas** y el número de cada línea tiene que ser **el de su pregunta**, uno a
+    uno. Si algo no cuadra (una pregunta de más, una línea de menos, un número cambiado) devuelve
+    `None` y quien llama sigue por número. Solo se usa si hay números repetidos: sin ellos, el
+    número basta.
+
+    `questions_in_order` son `(id, posición)` en el orden del documento.
+    """
+    if not lines or len(lines) != len(questions_in_order):
+        return None
+    posiciones = [posicion for _id, posicion in questions_in_order]
+    if len(set(posiciones)) == len(posiciones):
+        return None
+    if any(
+        linea.position != posicion
+        for linea, (_id, posicion) in zip(lines, questions_in_order, strict=True)
+    ):
+        return None
+    return tuple(pregunta_id for pregunta_id, _posicion in questions_in_order)
+
+
 __all__ = [
     "JSON_QUESTION_FIELDS",
     "REORDERED_OPTIONS",
@@ -1286,6 +1350,7 @@ __all__ = [
     "key_alignment",
     "normalise_question_text",
     "numbering_match",
+    "ordered_key_mapping",
     "parse_answer_key",
     "parse_questions",
     "parse_questions_json",
