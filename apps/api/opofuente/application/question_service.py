@@ -586,6 +586,7 @@ class QuestionService:
                     question_version_id=pregunta_id,
                     outcome=linea.outcome,
                     correct_option_keys=linea.correct_option_keys,
+                    notes=linea.note,
                 )
             )
         if not entradas:

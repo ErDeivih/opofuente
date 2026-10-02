@@ -1119,6 +1119,9 @@ class ParsedKeyLine:
     outcome: KeyOutcome
     correct_option_keys: tuple[str, ...] = ()
     line: int = 0
+    note: str | None = None
+    """Lo que la plantilla dice de esa respuesta además de la letra: «modificada» (la Comisión la
+    cambió tras las alegaciones), «rectificada»… Se guarda con la entrada de la clave."""
 
 
 #: Línea de plantilla: `1. b`, `12-a`, `3 anulada`, `4 sin responder`. El separador es opcional,
@@ -1130,8 +1133,14 @@ _UNANSWERED = re.compile(r"sin\s+responder|no\s+contestada|\bblanco\b", re.IGNOR
 #: oficiales del INAP (TAI 2025) saca así las preguntas 1 a 9, con la letra en la línea de abajo.
 _KEY_NUMBER_ALONE = re.compile(r"^\s*(\d{1,3})\s*[.)\-\u2013:]*\s*$")
 #: Lo que puede ser la respuesta de esa línea de abajo: una o varias letras, o un desenlace.
+#: Marca que una plantilla definitiva pone junto a una respuesta cambiada: «d MODIFICADA».
+_KEY_AMENDMENT = re.compile(
+    r"\(?\s*\b(modificada|rectificada|corregida|cambiada)\b\s*\)?", re.IGNORECASE
+)
 _KEY_ANSWER_ALONE = re.compile(
-    r"^\s*(?:[a-hA-H](?:\s*[,y]\s*[a-hA-H])*|anulada|nula|sin\s+responder|[-x])\s*$",
+    r"^\s*(?:[a-hA-H](?:\s*[,y]\s*[a-hA-H])*"
+    r"(?:\s*\(?\s*(?:modificada|rectificada|corregida|cambiada)\s*\)?)?"
+    r"|anulada|nula|sin\s+responder|[-x])\s*$",
     re.IGNORECASE,
 )
 
@@ -1224,12 +1233,14 @@ def parse_answer_key(text: str) -> tuple[tuple[ParsedKeyLine, ...], tuple[ParseI
                 )
             )
             continue
+        enmienda = _KEY_AMENDMENT.search(resto)
         lineas.append(
             ParsedKeyLine(
                 position=posicion,
                 outcome=KeyOutcome.KEYED,
                 correct_option_keys=claves,
                 line=numero_linea,
+                note=None if enmienda is None else f"respuesta {enmienda.group(1).lower()}",
             )
         )
     return tuple(lineas), tuple(incidencias)

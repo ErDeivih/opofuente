@@ -753,3 +753,19 @@ def test_una_plantilla_de_un_examen_que_reinicia_la_numeracion_se_aplica_en_orde
         "La primera pregunta de la parte dos": ["b"],
         "La segunda pregunta de la parte dos": ["a"],
     }, "cada respuesta en su pregunta, no en la del mismo número de la otra parte"
+
+
+def test_la_nota_de_una_respuesta_modificada_llega_a_la_clave(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    conjunto = _conjunto(seeded_client)
+    _importar(seeded_client, conjunto["id"], kind="questions", text=TEXTO)
+
+    informe = _importar(
+        seeded_client, conjunto["id"], kind="answer_key", text="1.\nb MODIFICADA\n2. a\n"
+    )
+
+    assert informe.status_code == 200, informe.text
+    clave = seeded_client.get(f"/api/v1/question-sets/{conjunto['id']}/answer-keys").json()[-1]
+    notas = sorted(str(entrada["notes"]) for entrada in clave["entries"])
+    assert notas == ["None", "respuesta modificada"]

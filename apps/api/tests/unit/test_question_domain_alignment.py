@@ -89,3 +89,14 @@ def test_la_plantilla_con_el_numero_y_la_letra_en_lineas_distintas_se_lee() -> N
 def test_un_numero_suelto_no_se_pega_a_un_rotulo_ni_a_un_enunciado() -> None:
     lineas, _ = parse_answer_key("1.\nSupuesto I\n2.\nEl plazo es de diez días\n")
     assert lineas == ()
+
+
+def test_una_respuesta_modificada_se_lee_y_conserva_la_marca() -> None:
+    """La plantilla definitiva de promoción interna (TAI 2025) escribe la 7 como «d MODIFICADA»,
+    debajo de su número: antes se perdía. La marca se conserva como nota de la respuesta."""
+    lineas, incidencias = parse_answer_key("7.\nd MODIFICADA\n8. b (rectificada)\n9.\nModificada\n")
+    assert [(linea.position, linea.correct_option_keys, linea.note) for linea in lineas] == [
+        (7, ("d",), "respuesta modificada"),
+        (8, ("b",), "respuesta rectificada"),
+    ]
+    assert len(incidencias) == 2, "«Modificada» sin letra no es una respuesta: se informa"
