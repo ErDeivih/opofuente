@@ -1,0 +1,80 @@
+import { QueryClientProvider } from '@tanstack/react-query';
+import { render, screen, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { createQueryClient } from '../../src/app/queryClient';
+import { resetApiAvailability } from '../../src/app/apiAvailability';
+import { AppShell } from '../../src/app/AppShell';
+
+/**
+ * Qué se ve cuando la API no está (5 de octubre de 2026).
+ *
+ * Antes, con la API parada, cada tarjeta de cada pantalla decía «Failed to fetch» en inglés con su
+ * botón de reintentar: ocho avisos iguales y ninguno decía qué hacer. Ahora el fallo de red se
+ * reconoce como tal (no es un problema de la API con su cuerpo RFC 9457) y la aplicación enseña
+ * **un solo** aviso, con cómo arrancarla.
+ */
+describe('la API caída', () => {
+  beforeEach(() => {
+    resetApiAvailability();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.reject(new TypeError('Failed to fetch'))),
+    );
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('enseña un aviso único que dice cómo arrancar la aplicación', async () => {
+    render(
+      <QueryClientProvider client={createQueryClient()}>
+        <MemoryRouter>
+          <AppShell>
+            <p>Contenido de la pantalla</p>
+          </AppShell>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    await waitFor(
+      () => {
+        expect(screen.getByTestId('aviso-api-caida')).toBeInTheDocument();
+      },
+      { timeout: 5_000 },
+    );
+    expect(screen.getAllByTestId('aviso-api-caida')).toHaveLength(1);
+    expect(screen.getByText(/La aplicación no responde/i)).toBeInTheDocument();
+    expect(screen.getByText(/scripts\\api\.ps1/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Reintentar' })).toBeInTheDocument();
+    // El contenido de la pantalla sigue ahí: el aviso informa, no sustituye a la aplicación.
+    expect(screen.getByText('Contenido de la pantalla')).toBeInTheDocument();
+  });
+
+  it('con la API levantada no hay ningún aviso', () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() =>
+        Promise.resolve(
+          new Response(JSON.stringify({ opposition_id: 'x', ready: true }), {
+            status: 200,
+            headers: { 'content-type': 'application/json' },
+          }),
+        ),
+      ),
+    );
+    render(
+      <QueryClientProvider client={createQueryClient()}>
+        <MemoryRouter>
+          <AppShell>
+            <p>Contenido de la pantalla</p>
+          </AppShell>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    expect(screen.queryByTestId('aviso-api-caida')).not.toBeInTheDocument();
+  });
+});

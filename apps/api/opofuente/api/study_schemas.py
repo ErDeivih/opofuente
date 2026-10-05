@@ -135,6 +135,17 @@ class SessionConfigurationSchema(BaseModel):
     #: Lo que la composición dice de sí misma: cuántas preguntas de un simulacro se habían visto
     #: hace poco, de qué temas salió la muestra de un diagnóstico (DEBT-012).
     note: str | None = None
+    #: De qué es la sesión, en palabras: el conjunto o el tema. Es lo que hace que la lista de
+    #: sesiones diga «TAI libre 2025 · modelo A» en vez de cinco filas iguales.
+    context_label: str | None = None
+
+
+class SessionDiscardSchema(BaseModel):
+    """Qué se hizo al descartar una sesión: borrarla (no tenía respuestas) o abandonarla."""
+
+    session_id: str
+    action: Literal["deleted", "abandoned"]
+    detail: str
 
 
 class IntervalSchema(BaseModel):

@@ -9736,6 +9736,17 @@
       "SessionConfigurationSchema": {
         "description": "La configuración congelada al crear la sesión.",
         "properties": {
+          "context_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context Label"
+          },
           "feedback": {
             "enum": [
               "immediate",
@@ -9796,6 +9807,34 @@
           "sources"
         ],
         "title": "SessionConfigurationSchema",
+        "type": "object"
+      },
+      "SessionDiscardSchema": {
+        "description": "Qué se hizo al descartar una sesión: borrarla (no tenía respuestas) o abandonarla.",
+        "properties": {
+          "action": {
+            "enum": [
+              "deleted",
+              "abandoned"
+            ],
+            "title": "Action",
+            "type": "string"
+          },
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "action",
+          "detail"
+        ],
+        "title": "SessionDiscardSchema",
         "type": "object"
       },
       "SessionPageSchema": {
@@ -21328,6 +21367,67 @@
       }
     },
     "/api/v1/study-sessions/{session_id}": {
+      "delete": {
+        "description": "Lo que hace falta para no dejar el banco lleno de sesiones de prueba «sin empezar».\n\nNunca borra historial con respuestas: en cuanto hay un intento, la sesión se marca abandonada y\nel historial se conserva. Queda en la auditoría de la aplicación.",
+        "operationId": "discard_study_session_api_v1_study_sessions__session_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionDiscardSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Descarta una sesión: la borra si no tiene respuestas, la abandona si las tiene",
+        "tags": [
+          "estudio"
+        ]
+      },
       "get": {
         "operationId": "get_study_session_api_v1_study_sessions__session_id__get",
         "parameters": [

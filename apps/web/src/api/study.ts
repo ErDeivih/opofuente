@@ -24,6 +24,7 @@ export type SessionSource = components['schemas']['SessionSourceSchema'];
 export type CreateSession = components['schemas']['CreateSessionSchema'];
 export type AnswerRequest = components['schemas']['AnswerRequestSchema'];
 export type NavigateRequest = components['schemas']['NavigateRequestSchema'];
+export type DiscardedSession = components['schemas']['SessionDiscardSchema'];
 
 export type SessionMode = StudySession['mode'];
 export type SessionStatus = StudySession['status'];
@@ -74,6 +75,18 @@ export function createSession(input: CreateSession): Promise<StudySession> {
 
 export function fetchSession(sessionId: string): Promise<StudySession> {
   return apiFetch<StudySession>(`/api/v1/study-sessions/${encodeURIComponent(sessionId)}`);
+}
+
+/**
+ * Descarta una sesión: el servidor la borra si no tiene respuestas y la abandona si las tiene.
+ *
+ * Es lo que limpia la lista de sesiones «sin empezar» que dejan las pruebas y los clics de más, sin
+ * tocar nunca un historial con respuestas.
+ */
+export function discardSession(sessionId: string): Promise<DiscardedSession> {
+  return apiFetch<DiscardedSession>(`/api/v1/study-sessions/${encodeURIComponent(sessionId)}`, {
+    method: 'DELETE',
+  });
 }
 
 export function startSession(sessionId: string): Promise<StudySession> {

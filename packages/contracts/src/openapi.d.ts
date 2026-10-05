@@ -2405,7 +2405,14 @@ export interface paths {
         get: operations["get_study_session_api_v1_study_sessions__session_id__get"];
         put?: never;
         post?: never;
-        delete?: never;
+        /**
+         * Descarta una sesión: la borra si no tiene respuestas, la abandona si las tiene
+         * @description Lo que hace falta para no dejar el banco lleno de sesiones de prueba «sin empezar».
+         *
+         *     Nunca borra historial con respuestas: en cuanto hay un intento, la sesión se marca abandonada y
+         *     el historial se conserva. Queda en la auditoría de la aplicación.
+         */
+        delete: operations["discard_study_session_api_v1_study_sessions__session_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -6204,6 +6211,8 @@ export interface components {
          * @description La configuración congelada al crear la sesión.
          */
         SessionConfigurationSchema: {
+            /** Context Label */
+            context_label?: string | null;
             /**
              * Feedback
              * @enum {string}
@@ -6222,6 +6231,21 @@ export interface components {
             sources: components["schemas"]["SessionSourceSchema"][];
             /** Time Limit Minutes */
             time_limit_minutes?: number | null;
+        };
+        /**
+         * SessionDiscardSchema
+         * @description Qué se hizo al descartar una sesión: borrarla (no tenía respuestas) o abandonarla.
+         */
+        SessionDiscardSchema: {
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "deleted" | "abandoned";
+            /** Detail */
+            detail: string;
+            /** Session Id */
+            session_id: string;
         };
         /** SessionPageSchema */
         SessionPageSchema: {
@@ -14489,6 +14513,55 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SessionSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    discard_study_session_api_v1_study_sessions__session_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionDiscardSchema"];
                 };
             };
             /** @description El recurso no existe. */

@@ -36,6 +36,7 @@ from opofuente.api.study_schemas import (
     ReviewSchema,
     ScoreSchema,
     SessionConfigurationSchema,
+    SessionDiscardSchema,
     SessionPageSchema,
     SessionQuestionSchema,
     SessionRecalculationSchema,
@@ -225,6 +226,7 @@ def _session(view: SessionView) -> SessionSchema:
             time_limit_minutes=view.configuration.time_limit_minutes,
             shuffle=view.configuration.shuffle,
             note=view.configuration.note,
+            context_label=view.configuration.context_label,
             sources=[
                 SessionSourceSchema(
                     question_set_id=fuente.question_set_id,
@@ -342,6 +344,30 @@ def create_study_session(request: CreateSessionSchema, service: StudyServiceDep)
 )
 def get_study_session(session_id: str, service: StudyServiceDep) -> SessionSchema:
     return _session(service.session(session_id))
+
+
+@router.delete(
+    "/study-sessions/{session_id}",
+    response_model=SessionDiscardSchema,
+    responses=RESOURCE_ERRORS,
+    summary="Descarta una sesión: la borra si no tiene respuestas, la abandona si las tiene",
+)
+def discard_study_session(session_id: str, service: StudyServiceDep) -> SessionDiscardSchema:
+    """Lo que hace falta para no dejar el banco lleno de sesiones de prueba «sin empezar».
+
+    Nunca borra historial con respuestas: en cuanto hay un intento, la sesión se marca abandonada y
+    el historial se conserva. Queda en la auditoría de la aplicación.
+    """
+    accion = service.discard_session(session_id)
+    return SessionDiscardSchema(
+        session_id=session_id,
+        action=accion,  # type: ignore[arg-type]
+        detail=(
+            "la sesión no tenía respuestas: se ha borrado"
+            if accion == "deleted"
+            else "la sesión tenía respuestas: se ha marcado abandonada y su historial se conserva"
+        ),
+    )
 
 
 @router.post(

@@ -227,6 +227,12 @@ class SessionConfiguration:
     #: diagnóstico. Se guarda con la sesión porque se congela con ella: la explicación de una
     #: composición no puede cambiar después (DEBT-012).
     note: str | None = None
+    #: De qué es esta sesión, en palabras: «TAI libre 2025 · modelo A», «I.7 · Protección de datos»,
+    #: «Repaso de tus fallos». Se congela con la sesión porque la lista tiene que poder decir de
+    #: qué es cada una sin adivinar: antes solo llevaba el identificador del conjunto y la etiqueta
+    #: de la clave (que llega a listar 21 plantillas), así que cinco sesiones de examen oficial se
+    #: veían como cinco filas idénticas (5 de octubre de 2026).
+    context_label: str | None = None
 
     def __post_init__(self) -> None:
         if self.mode in (SessionMode.OFFICIAL_EXAM, SessionMode.MOCK_EXAM) and (

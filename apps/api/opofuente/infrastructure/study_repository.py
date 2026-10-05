@@ -19,7 +19,7 @@ from datetime import datetime
 from fractions import Fraction
 from uuid import uuid4
 
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session, sessionmaker
 
 from opofuente.application.question_models import OptionView
@@ -150,6 +150,67 @@ class SqlAlchemyStudyRepository:
         with self._session_factory() as session:
             fila = session.get(StudySessionRecord, session_id)
             return None if fila is None else self._session_view(session, fila)
+
+    def discard_session(
+        self, session_id: str, *, now: datetime, actor: str = "local"
+    ) -> str | None:
+        """Descarta una sesión: la **borra** si no tiene respuestas y la **abandona** si las tiene.
+
+        Una sesión sin respuestas es una preparación que no llegó a nada (una prueba, un clic de
+        más): borrarla no pierde historia. En cuanto hay un intento, algo se aprendió y el historial
+        no se toca: se marca `abandoned`, que es el estado que la aplicación ya tiene para eso.
+
+        Devuelve qué se hizo (`"deleted"` o `"abandoned"`), o `None` si la sesión no existe.
+        """
+        with self._session_factory() as session:
+            fila = session.get(StudySessionRecord, session_id)
+            if fila is None:
+                return None
+            intentos = int(
+                session.execute(
+                    select(func.count())
+                    .select_from(AttemptRecord)
+                    .join(
+                        SessionQuestionRecord,
+                        SessionQuestionRecord.id == AttemptRecord.session_question_id,
+                    )
+                    .where(SessionQuestionRecord.session_id == session_id)
+                ).scalar_one()
+            )
+            if intentos:
+                antes = {"status": fila.status, "attempts": intentos}
+                fila.status = "abandoned"
+                self._audit(
+                    session,
+                    actor=actor,
+                    action="study_session.abandoned",
+                    object_type="study_session",
+                    object_id=session_id,
+                    before=antes,
+                    after={"status": "abandoned"},
+                    now=now,
+                )
+                session.commit()
+                return "abandoned"
+
+            self._audit(
+                session,
+                actor=actor,
+                action="study_session.discarded",
+                object_type="study_session",
+                object_id=session_id,
+                before={"status": fila.status, "questions": fila.total_questions},
+                after={},
+                now=now,
+            )
+            # Las preguntas congeladas cuelgan de la sesión (ON DELETE CASCADE en el modelo, pero se
+            # borran aquí también porque SQLite no impone las claves foráneas por defecto).
+            session.execute(
+                delete(SessionQuestionRecord).where(SessionQuestionRecord.session_id == session_id)
+            )
+            session.delete(fila)
+            session.commit()
+            return "deleted"
 
     def list_sessions(
         self,
@@ -842,6 +903,9 @@ class SqlAlchemyStudyRepository:
             # (un
             # simulacro que repitió, de qué temas salió una muestra) no puede cambiar después.
             "note": configuration.note,
+            # De qué es la sesión, en palabras: es lo que hace que la lista diga «TAI libre 2025 ·
+            # modelo A» en vez de cinco filas iguales.
+            "context_label": configuration.context_label,
             "sources": [
                 {
                     "question_set_id": fuente.question_set_id,
@@ -884,6 +948,9 @@ class SqlAlchemyStudyRepository:
             ),
             shuffle=bool(datos.get("shuffle", False)),
             note=(str(datos["note"]) if datos.get("note") is not None else None),
+            context_label=(
+                str(datos["context_label"]) if datos.get("context_label") is not None else None
+            ),
         )
 
     @staticmethod

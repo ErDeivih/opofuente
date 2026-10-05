@@ -35,6 +35,30 @@ export function isApiError<TProblem = ProblemDetail>(
   return error instanceof ApiError && (status === undefined || error.status === status);
 }
 
+/**
+ * La API no responde: no es un error suyo con su motivo, es que no está ahí.
+ *
+ * Se distingue del `ApiError` porque lo que hay que decir es otra cosa («arráncala con
+ * `scripts\api.ps1`») y porque la interfaz lo enseña **una vez arriba**, no en cada tarjeta.
+ */
+export class ApiUnavailableError extends Error {
+  override readonly cause: unknown;
+
+  constructor(cause: unknown) {
+    super('La aplicación no responde: no se puede hablar con la API local.');
+    this.name = 'ApiUnavailableError';
+    this.cause = cause;
+  }
+}
+
+/** ¿Este error es «la API no está»? */
+export function isApiUnavailable(error: unknown): error is ApiUnavailableError {
+  return error instanceof ApiUnavailableError;
+}
+
+export const API_UNAVAILABLE_HELP =
+  'Arráncala con scripts\\api.ps1 (o scripts\\dev.ps1) y vuelve a intentarlo.';
+
 export function apiBaseUrl(): string {
   const configured = import.meta.env.VITE_API_BASE_URL;
   return typeof configured === 'string' && configured.length > 0 ? configured : DEFAULT_BASE_URL;
@@ -51,10 +75,18 @@ export async function apiFetch<T, TProblem = ProblemDetail>(
   path: string,
   init?: RequestInit,
 ): Promise<T> {
-  const response = await fetch(`${apiBaseUrl()}${path}`, {
-    ...init,
-    headers: { Accept: 'application/json', ...init?.headers },
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${apiBaseUrl()}${path}`, {
+      ...init,
+      headers: { Accept: 'application/json', ...init?.headers },
+    });
+  } catch (error) {
+    // Un fallo de red no es un problema de la API con su cuerpo RFC 9457: es que la API no está.
+    // Se lanza como error propio para que la interfaz pueda decir **una vez** qué pasa y cómo
+    // arrancarla, en vez de ocho tarjetas con «Failed to fetch» en inglés (5 de octubre de 2026).
+    throw new ApiUnavailableError(error);
+  }
 
   const contentType = response.headers.get('content-type') ?? '';
 

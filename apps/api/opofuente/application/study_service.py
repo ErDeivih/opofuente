@@ -313,6 +313,7 @@ class StudyService:
                 if request.mode is not SessionMode.MOCK_EXAM
                 else self._nota_del_simulacro(repetidas, total=len(congeladas))
             ),
+            context_label=self._etiqueta_de_fuentes(request.sources),
         )
         plan = assign_positions(congeladas, shuffle=request.shuffle)
         return self._study.create_session(
@@ -442,6 +443,7 @@ class StudyService:
                 sin_respuesta=sin_respuesta,
                 no_practicables=no_practicables,
             ),
+            context_label=self._etiqueta_del_tema(request.curriculum_node_id),
         )
         return self._study.create_session(
             opposition_id=request.opposition_id,
@@ -454,6 +456,34 @@ class StudyService:
             time_limit_minutes=None,
             key_label=" · ".join(etiquetas),
         )
+
+    def _etiqueta_de_fuentes(self, fuentes: Sequence[SourceInput]) -> str | None:
+        """De qué es una sesión montada sobre conjuntos: sus títulos, que es lo que se lee.
+
+        Antes la lista de sesiones solo tenía el identificador del conjunto, así que cinco exámenes
+        oficiales distintos se veían como cinco filas iguales (5 de octubre de 2026).
+        """
+        titulos: list[str] = []
+        for fuente in fuentes:
+            conjunto = self._questions.get_set(fuente.question_set_id)
+            if conjunto is not None and conjunto.title not in titulos:
+                titulos.append(conjunto.title)
+        if not titulos:
+            return None
+        if len(titulos) == 1:
+            return titulos[0]
+        return f"{titulos[0]} y {len(titulos) - 1} conjunto(s) más"
+
+    def _etiqueta_del_tema(self, node_id: str | None) -> str | None:
+        """De qué es una práctica por tema: el código del tema y su título («I.7 · …»)."""
+        if node_id is None:
+            return None
+        nodo = self._profiles.get_node(node_id)
+        if nodo is None:
+            return None
+        titulo = nodo.node.title.strip()
+        codigo = (nodo.node.path or "").strip()
+        return f"{codigo} · {titulo}" if codigo else titulo
 
     @staticmethod
     def _nota_del_tema(
@@ -558,6 +588,7 @@ class StudyService:
             sources=(),
             time_limit_minutes=limite_tiempo,
             shuffle=request.shuffle,
+            context_label="Repaso de tus fallos",
         )
         return self._study.create_session(
             opposition_id=request.opposition_id,
@@ -751,6 +782,7 @@ class StudyService:
             time_limit_minutes=None,
             shuffle=request.shuffle,
             note=muestra.detail,
+            context_label="Diagnóstico por temas",
         )
         return self._study.create_session(
             opposition_id=request.opposition_id,
@@ -820,6 +852,19 @@ class StudyService:
 
     def session(self, session_id: str) -> SessionView:
         return self._session_or_404(session_id)
+
+    def discard_session(self, session_id: str) -> str:
+        """Descarta una sesión: borra la que no tiene respuestas y abandona la que las tiene.
+
+        Es lo que hacía falta para no dejar el banco lleno de sesiones «sin empezar» de las pruebas
+        (5 de octubre de 2026): cinco filas idénticas en Estudiar y un «Continuar estudiando» que
+        apuntaba a una de ellas. Nunca se borra historial con respuestas.
+        """
+        self._session_or_404(session_id)
+        hecho = self._study.discard_session(session_id, now=self._clock.now())
+        if hecho is None:  # pragma: no cover - la sesión existe: se acaba de comprobar
+            raise NotFoundError("sesión de estudio", session_id)
+        return hecho
 
     def start(self, session_id: str) -> SessionView:
         """Inicia la sesión. Arrancar una que ya corre devuelve la misma (es reintentable)."""

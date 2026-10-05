@@ -1,3 +1,4 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
@@ -21,6 +22,7 @@ import {
 } from '../api/queries';
 import { isApiError } from '../api/client';
 import { CAUSE_LABEL } from '../api/reviews';
+import { discardSession } from '../api/study';
 import type { CreateSession, SessionQuestion, StudySession } from '../api/study';
 import { ErrorState } from '../components/ErrorState';
 import { LoadingState } from '../components/LoadingState';
@@ -29,6 +31,7 @@ import { StudyResultPanel } from '../features/study/StudyResultPanel';
 import { StudyRunner } from '../features/study/StudyRunner';
 import { StudySetup } from '../features/study/StudySetup';
 import { modeLabel, statusLabel } from '../features/study/labels';
+import { fechaLegible } from '../lib/fechas';
 
 function describeError(error: unknown): string {
   return error instanceof Error ? error.message : 'Error desconocido';
@@ -65,6 +68,31 @@ export function StudyPage() {
   const sesiones = useStudySessions(activa?.id ?? null);
   const conjuntos = useQuestionSets(activa?.id ?? null);
   const convocatoria = useConvocation(activa?.active_convocation?.id ?? null);
+  // Descartar se pide desde aquí y no desde `queries.ts`: la lista entera se relee al terminar, y
+  // así la mutación vive con la única pantalla que la usa.
+  const cliente = useQueryClient();
+  const descartarSesion = useMutation({
+    mutationFn: (sessionId: string) => discardSession(sessionId),
+    onSuccess: (hecho) => {
+      setAviso(hecho.detail);
+      void cliente.invalidateQueries({ queryKey: ['study'] });
+    },
+    onError: (error) => setAviso(describeError(error)),
+  });
+
+  /** Descartar pide confirmación: borra la sesión si no tiene respuestas (nunca si las tiene). */
+  const descartar = (candidata: StudySession): void => {
+    const nombre = candidata.configuration.context_label ?? modeLabel(candidata.mode);
+    const mensaje =
+      candidata.answered_questions === 0
+        ? `¿Descartar la sesión «${nombre}»? No tiene respuestas: se borra.`
+        : `La sesión «${nombre}» tiene ${candidata.answered_questions} respuesta(s): se marcará ` +
+          'abandonada y su historial se conserva.';
+    if (typeof window !== 'undefined' && !window.confirm(mensaje)) {
+      return;
+    }
+    descartarSesion.mutate(candidata.id);
+  };
 
   // La sesión abierta se **deriva**, como el conjunto en el banco: la elegida y, mientras nadie
   // elija, la última (el servidor las devuelve de la más reciente a la más antigua). Así, recargar
@@ -400,6 +428,7 @@ export function StudyPage() {
             </caption>
             <thead>
               <tr>
+                <th scope="col">De qué es</th>
                 <th scope="col">Modo</th>
                 <th scope="col">Estado</th>
                 <th scope="col">Preguntas</th>
@@ -410,17 +439,24 @@ export function StudyPage() {
             <tbody>
               {sesiones.data?.sessions.map((candidata) => (
                 <tr key={candidata.id} aria-selected={candidata.id === sessionId}>
-                  <th scope="row">{modeLabel(candidata.mode)}</th>
+                  <th scope="row">
+                    {candidata.configuration.context_label ?? modeLabel(candidata.mode)}
+                  </th>
+                  <td className="hint">{modeLabel(candidata.mode)}</td>
                   <td className="hint">{statusLabel(candidata.status)}</td>
                   <td className="hint">
                     {candidata.answered_questions} de {candidata.total_questions}
                   </td>
-                  <td className="hint">{candidata.started_at ?? 'sin empezar'}</td>
+                  <td className="hint">
+                    {candidata.started_at === null
+                      ? 'sin empezar'
+                      : fechaLegible(candidata.started_at)}
+                  </td>
                   <td>
                     <button
                       className="button"
                       type="button"
-                      aria-label={`Abrir la sesión empezada el ${candidata.started_at ?? candidata.created_at}`}
+                      aria-label={`Abrir la sesión «${candidata.configuration.context_label ?? modeLabel(candidata.mode)}» del ${fechaLegible(candidata.started_at ?? candidata.created_at)}`}
                       onClick={() => {
                         setPreparandoOtra(false);
                         setSessionIdElegida(candidata.id);
@@ -428,6 +464,14 @@ export function StudyPage() {
                       }}
                     >
                       Abrir
+                    </button>
+                    <button
+                      className="button button--quiet"
+                      type="button"
+                      aria-label={`Descartar la sesión «${candidata.configuration.context_label ?? modeLabel(candidata.mode)}»`}
+                      onClick={() => descartar(candidata)}
+                    >
+                      Descartar
                     </button>
                   </td>
                 </tr>

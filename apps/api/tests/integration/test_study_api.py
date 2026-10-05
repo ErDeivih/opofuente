@@ -197,6 +197,66 @@ def test_las_fechas_de_la_sesion_vienen_con_su_zona(
         assert valor.endswith(("+00:00", "Z")), f"{etiqueta} sin zona horaria: {valor}"
 
 
+def test_descartar_una_sesion_sin_respuestas_la_borra(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """Una sesión de prueba sin contestar nada se va: es lo que limpia la lista de Estudiar."""
+    set_id = _conjunto(seeded_client, preguntas=4)
+    creada = _crear_sesion(seeded_client, set_id, cantidad=4)
+
+    descartada = seeded_client.delete(
+        f"/api/v1/study-sessions/{creada['id']}", headers=ALLOWED_ORIGIN
+    )
+    assert descartada.status_code == 200, descartada.text
+    cuerpo = descartada.json()
+    assert cuerpo["action"] == "deleted"
+    assert "borrado" in cuerpo["detail"]
+    assert seeded_client.get(f"/api/v1/study-sessions/{creada['id']}").status_code == 404
+    assert seeded_client.get("/api/v1/study-sessions").json()["total"] == 0
+
+
+def test_descartar_una_sesion_con_respuestas_la_abandona_sin_borrar_nada(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """Con una respuesta dentro no se borra historial: se marca abandonada y se conserva."""
+    set_id = _conjunto(seeded_client, preguntas=4)
+    creada = _crear_sesion(seeded_client, set_id, cantidad=4)
+    _arrancar(seeded_client, creada["id"])
+    actual = seeded_client.get(
+        f"/api/v1/study-sessions/{creada['id']}/current-question", headers=ALLOWED_ORIGIN
+    ).json()
+    pregunta = actual["question"]
+    respuesta = seeded_client.post(
+        f"/api/v1/study-sessions/{creada['id']}/answers",
+        json={
+            "question_version_id": pregunta["question_version_id"],
+            "chosen_option_keys": [pregunta["options"][0]["stable_key"]],
+        },
+        headers=ALLOWED_ORIGIN,
+    )
+    assert respuesta.status_code == 201, respuesta.text
+
+    descartada = seeded_client.delete(
+        f"/api/v1/study-sessions/{creada['id']}", headers=ALLOWED_ORIGIN
+    )
+    assert descartada.status_code == 200, descartada.text
+    assert descartada.json()["action"] == "abandoned"
+    detalle = seeded_client.get(f"/api/v1/study-sessions/{creada['id']}").json()
+    assert detalle["status"] == "abandoned"
+    assert detalle["answered_questions"] == 1
+    assert seeded_client.delete("/api/v1/study-sessions/no-existe").status_code == 404
+
+
+def test_la_sesion_dice_de_que_es(seeded_settings: Settings, seeded_client: TestClient) -> None:
+    """La etiqueta de contexto: sin ella, cinco exámenes oficiales son cinco filas iguales."""
+    set_id = _conjunto(seeded_client, preguntas=4, titulo="TAI libre 2025 · modelo A")
+    creada = _crear_sesion(seeded_client, set_id, cantidad=4)
+    assert creada["configuration"]["context_label"] == "TAI libre 2025 · modelo A"
+
+    listado = seeded_client.get("/api/v1/study-sessions").json()
+    assert listado["sessions"][0]["configuration"]["context_label"] == "TAI libre 2025 · modelo A"
+
+
 def test_sin_clave_activa_la_sesion_no_se_crea(
     seeded_settings: Settings, seeded_client: TestClient
 ) -> None:

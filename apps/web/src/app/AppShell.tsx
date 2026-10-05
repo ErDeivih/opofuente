@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom';
 
+import { ApiUnavailableNotice } from '../components/ApiUnavailableNotice';
 import { OppositionSelector } from '../features/profiles/OppositionSelector';
 import { GlobalSearch } from '../features/search/GlobalSearch';
 import { SystemIndicators } from '../features/system/SystemIndicators';
@@ -65,6 +66,7 @@ export function AppShell({ children }: AppShellProps) {
           </ul>
         </nav>
         <main id="contenido" className="app__main" tabIndex={-1}>
+          <ApiUnavailableNotice />
           {children}
         </main>
       </div>
