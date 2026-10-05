@@ -171,6 +171,32 @@ def test_crear_arrancar_y_leer_una_sesion(
     assert listado["sessions"][0]["id"] == creada["id"]
 
 
+def test_las_fechas_de_la_sesion_vienen_con_su_zona(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """Toda fecha que sirve la API lleva su zona.
+
+    Sin ella el navegador la toma por hora local (Madrid, UTC+2): medido el 5 de octubre de 2026, el
+    cronómetro de una práctica empezaba en `2:00:03` y un examen oficial de 120 minutos nacía con el
+    tiempo agotado.
+    """
+    set_id = _conjunto(seeded_client, preguntas=4)
+    creada = _crear_sesion(seeded_client, set_id, cantidad=4)
+    arrancada = _arrancar(seeded_client, creada["id"])
+    detalle = seeded_client.get(f"/api/v1/study-sessions/{creada['id']}").json()
+    listado = seeded_client.get("/api/v1/study-sessions").json()
+
+    for etiqueta, valor in (
+        ("created_at al crear", creada["created_at"]),
+        ("started_at al arrancar", arrancada["started_at"]),
+        ("created_at del detalle", detalle["created_at"]),
+        ("started_at del detalle", detalle["started_at"]),
+        ("created_at del listado", listado["sessions"][0]["created_at"]),
+    ):
+        assert valor is not None, etiqueta
+        assert valor.endswith(("+00:00", "Z")), f"{etiqueta} sin zona horaria: {valor}"
+
+
 def test_sin_clave_activa_la_sesion_no_se_crea(
     seeded_settings: Settings, seeded_client: TestClient
 ) -> None:

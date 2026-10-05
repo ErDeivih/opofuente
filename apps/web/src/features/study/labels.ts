@@ -113,12 +113,25 @@ export function outcomeTone(outcome: string): StatusTone {
   return OUTCOME_TONE[outcome as AttemptOutcome] ?? 'info';
 }
 
+/** El instante de una fecha del servidor, tolerando que venga sin zona.
+ *
+ * La API sirve las fechas en UTC **con su zona** («2026-10-05T10:43:52.793645+00:00»). Si alguna
+ * llega sin ella —datos antiguos, una copia restaurada—, se toma por UTC: leerla como hora local es
+ * lo que hacía que en Madrid el cronómetro de una práctica empezara en `2:00:03` y que un examen
+ * oficial de 120 minutos naciera con el tiempo agotado (5 de octubre de 2026).
+ */
+function comoInstante(valor: string): number {
+  const limpio = valor.trim();
+  const tieneZona = /(?:Z|[+-]\d{2}:?\d{2})$/.test(limpio);
+  return Date.parse(tieneZona ? limpio : `${limpio}Z`);
+}
+
 /** Segundos de una sesión en curso, para el cronómetro de la pantalla. */
 export function elapsedSeconds(startedAt: string | null, now: number): number {
   if (startedAt === null) {
     return 0;
   }
-  const inicio = Date.parse(startedAt);
+  const inicio = comoInstante(startedAt);
   if (Number.isNaN(inicio)) {
     return 0;
   }

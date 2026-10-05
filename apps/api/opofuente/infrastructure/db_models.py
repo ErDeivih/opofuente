@@ -9,7 +9,8 @@ Las entidades de dominio equivalentes, sin SQLAlchemy, están en `opofuente.doma
 
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import UTC, date, datetime
+from typing import Any
 
 from sqlalchemy import (
     Boolean,
@@ -25,7 +26,9 @@ from sqlalchemy import (
     UniqueConstraint,
     text,
 )
+from sqlalchemy.engine import Dialect
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.types import TypeDecorator
 
 from opofuente.infrastructure.db import Base
 
@@ -36,12 +39,47 @@ PART_FORMATS = ("single_choice", "multi_mark_error", "psychotechnical")
 RULE_KINDS = ("boolean", "integer", "fraction", "text")
 
 
+class UtcDateTime(TypeDecorator[datetime]):
+    """Fecha que se guarda en UTC y se **lee con zona**: lo que la API sirve lleva siempre `+00:00`.
+
+    Por qué existe: SQLite no guarda la zona horaria. Se escribía un `datetime` *aware* y se leía
+    *naive*, así que la API servía «2026-10-05T10:43:52.793645» sin zona y el navegador lo
+    interpretaba como hora local de Madrid: el cronómetro de una práctica empezaba en `2:00:03` y un
+    examen oficial de 120 minutos **nacía con el tiempo agotado** (5 de octubre de 2026).
+
+    Al escribir se normaliza a UTC y se guarda sin zona, para no cambiar el formato de lo que ya
+    hay; al leer se le vuelve a poner UTC, que es la zona que la aplicación usa en todas sus fechas
+    internas (01_PRODUCT-SPEC §7).
+    """
+
+    impl = DateTime(timezone=True)
+    cache_ok = True
+
+    def process_bind_param(self, value: datetime | None, dialect: Dialect) -> datetime | None:
+        if value is None:
+            return None
+        if value.tzinfo is None:
+            # Un dato heredado sin zona ya está en UTC: es como se ha guardado siempre.
+            return value
+        return value.astimezone(UTC).replace(tzinfo=None)
+
+    def process_result_value(self, value: datetime | None, dialect: Dialect) -> datetime | None:
+        if value is None:
+            return None
+        if value.tzinfo is None:
+            return value.replace(tzinfo=UTC)
+        return value.astimezone(UTC)
+
+    def process_literal_param(self, value: Any, dialect: Dialect) -> str:
+        raise NotImplementedError("UtcDateTime no se usa en literales de SQL")
+
+
 class AppMetadataRecord(Base):
     __tablename__ = "app_metadata"
 
     key: Mapped[str] = mapped_column(String(64), primary_key=True)
     value: Mapped[str] = mapped_column(Text, nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
 
 
 class OppositionRecord(Base):
@@ -54,8 +92,8 @@ class OppositionRecord(Base):
     active: Mapped[bool] = mapped_column(
         Boolean, nullable=False, server_default=text("0"), default=False
     )
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
 
     convocations: Mapped[list[ConvocationVersionRecord]] = relationship(
         back_populates="opposition",
@@ -90,8 +128,8 @@ class ConvocationVersionRecord(Base):
     supersedes_id: Mapped[str | None] = mapped_column(
         String(36), ForeignKey("convocation_versions.id", ondelete="SET NULL"), nullable=True
     )
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
 
     opposition: Mapped[OppositionRecord] = relationship(back_populates="convocations")
     # `passive_deletes=True`: SQLite ya aplica ON DELETE CASCADE, así que no hay que borrar los
@@ -213,7 +251,7 @@ class SourceArtifactRecord(Base):
     size_bytes: Mapped[int] = mapped_column(Integer, nullable=False)
     media_type: Mapped[str] = mapped_column(String(128), nullable=False)
     storage_key: Mapped[str] = mapped_column(String(255), nullable=False)
-    first_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    first_seen_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
     quarantine_status: Mapped[str] = mapped_column(
         String(16), nullable=False, server_default=text("'none'"), default="none"
     )
@@ -248,9 +286,9 @@ class ArtifactOriginRecord(Base):
     display_location: Mapped[str] = mapped_column(Text, nullable=False)
     source_path_display: Mapped[str | None] = mapped_column(Text, nullable=True)
     original_name: Mapped[str | None] = mapped_column(Text, nullable=True)
-    accessed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    accessed_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
     size_bytes: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    mtime: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    mtime: Mapped[datetime | None] = mapped_column(UtcDateTime(), nullable=True)
 
     artifact: Mapped[SourceArtifactRecord] = relationship(back_populates="origins")
 
@@ -280,9 +318,9 @@ class IngestionBatchRecord(Base):
     )
     manifest_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
     error_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
+    started_at: Mapped[datetime | None] = mapped_column(UtcDateTime(), nullable=True)
+    finished_at: Mapped[datetime | None] = mapped_column(UtcDateTime(), nullable=True)
     job_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
     inventory_batch_id: Mapped[str | None] = mapped_column(
         String(36), ForeignKey("ingestion_batches.id", ondelete="SET NULL"), nullable=True
@@ -315,7 +353,7 @@ class IngestionItemRecord(Base):
     relative_path: Mapped[str] = mapped_column(Text, nullable=False)
     original_name: Mapped[str] = mapped_column(Text, nullable=False)
     size_bytes: Mapped[int] = mapped_column(Integer, nullable=False)
-    mtime: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    mtime: Mapped[datetime | None] = mapped_column(UtcDateTime(), nullable=True)
     media_type: Mapped[str | None] = mapped_column(String(128), nullable=True)
     artifact_id: Mapped[str | None] = mapped_column(
         String(36), ForeignKey("source_artifacts.id", ondelete="SET NULL"), nullable=True
@@ -363,7 +401,7 @@ class ItemRepresentationRecord(Base):
         ForeignKey("extracted_representations.id", ondelete="CASCADE"),
         primary_key=True,
     )
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
 
 
 class ImportIssueRecord(Base):
@@ -386,8 +424,8 @@ class ImportIssueRecord(Base):
     #: carpeta no tienen entrada propia, así que la ruta no se puede recuperar por `item_id`.
     relative_path: Mapped[str | None] = mapped_column(Text, nullable=True)
     details_json: Mapped[str | None] = mapped_column(Text, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
+    resolved_at: Mapped[datetime | None] = mapped_column(UtcDateTime(), nullable=True)
     resolution: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     batch: Mapped[IngestionBatchRecord] = relationship(back_populates="issues")
@@ -428,19 +466,15 @@ class JobRecord(Base):
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
     idempotency_key: Mapped[str | None] = mapped_column(String(128), nullable=True)
     lease_owner: Mapped[str | None] = mapped_column(String(64), nullable=True)
-    lease_expires_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
+    lease_expires_at: Mapped[datetime | None] = mapped_column(UtcDateTime(), nullable=True)
     #: Antes de esta fecha el trabajo no se puede reclamar: es la espera entre reintentos. Sin
     #: ella, un `retry_delay_seconds` escrito en el mensaje no aplazaría nada de verdad.
-    not_before: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    cancel_requested_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    not_before: Mapped[datetime | None] = mapped_column(UtcDateTime(), nullable=True)
+    cancel_requested_at: Mapped[datetime | None] = mapped_column(UtcDateTime(), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
+    started_at: Mapped[datetime | None] = mapped_column(UtcDateTime(), nullable=True)
+    finished_at: Mapped[datetime | None] = mapped_column(UtcDateTime(), nullable=True)
 
 
 # ------------------------------------------------------------------- S03: representaciones
@@ -502,7 +536,7 @@ class ExtractedRepresentationRecord(Base):
     format_version: Mapped[int] = mapped_column(
         Integer, nullable=False, server_default=text("1"), default=1
     )
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
 
     artifact: Mapped[SourceArtifactRecord] = relationship()
 
@@ -563,8 +597,8 @@ class ClassificationProposalRecord(Base):
     engine_name: Mapped[str] = mapped_column(String(64), nullable=False)
     engine_version: Mapped[str] = mapped_column(String(32), nullable=False)
     status: Mapped[str] = mapped_column(String(32), nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
+    decided_at: Mapped[datetime | None] = mapped_column(UtcDateTime(), nullable=True)
     decision_note: Mapped[str | None] = mapped_column(Text, nullable=True)
 
 
@@ -615,8 +649,8 @@ class CurriculumMappingRecord(Base):
         ForeignKey("classification_proposals.id", ondelete="SET NULL"),
         nullable=True,
     )
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
+    approved_at: Mapped[datetime | None] = mapped_column(UtcDateTime(), nullable=True)
 
     node: Mapped[CurriculumNodeRecord] = relationship()
 
@@ -644,8 +678,8 @@ class DossierSnapshotRecord(Base):
         String(36), ForeignKey("curriculum_nodes.id", ondelete="CASCADE"), nullable=False
     )
     content_hash: Mapped[str] = mapped_column(String(64), nullable=False)
-    built_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    built_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
     sources_count: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
     passages_count: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
     payload_json: Mapped[str] = mapped_column(Text, nullable=False)
@@ -675,8 +709,8 @@ class DuplicateClusterRecord(Base):
     relation: Mapped[str] = mapped_column(String(24), nullable=False)
     signature: Mapped[str] = mapped_column(Text, nullable=False)
     status: Mapped[str] = mapped_column(String(16), nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
+    resolved_at: Mapped[datetime | None] = mapped_column(UtcDateTime(), nullable=True)
     resolution_note: Mapped[str | None] = mapped_column(Text, nullable=True)
 
 
@@ -721,7 +755,7 @@ class AuditEventRecord(Base):
     before_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     after_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     correlation_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
 
 
 # ------------------------------------------------- S05: documentos, versiones y derechos
@@ -753,8 +787,8 @@ class RightsStatusRecord(Base):
     review_status: Mapped[str] = mapped_column(
         String(16), nullable=False, server_default=text("'unknown'"), default="unknown"
     )
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
 
 
 class LogicalDocumentRecord(Base):
@@ -783,8 +817,8 @@ class LogicalDocumentRecord(Base):
         String(16), nullable=False, server_default=text("'private_user'"), default="private_user"
     )
     canonical_identifier: Mapped[str | None] = mapped_column(Text, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
 
     versions: Mapped[list[DocumentVersionRecord]] = relationship(
         back_populates="document", cascade="all, delete-orphan", passive_deletes=True
@@ -828,7 +862,7 @@ class DocumentVersionRecord(Base):
     published_at: Mapped[date | None] = mapped_column(Date, nullable=True)
     valid_from: Mapped[date | None] = mapped_column(Date, nullable=True)
     valid_to: Mapped[date | None] = mapped_column(Date, nullable=True)
-    retrieved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    retrieved_at: Mapped[datetime | None] = mapped_column(UtcDateTime(), nullable=True)
     language: Mapped[str | None] = mapped_column(String(16), nullable=True)
     status: Mapped[str] = mapped_column(
         String(16), nullable=False, server_default=text("'candidate'"), default="candidate"
@@ -841,9 +875,9 @@ class DocumentVersionRecord(Base):
     )
     official_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     content_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
-    approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    approved_at: Mapped[datetime | None] = mapped_column(UtcDateTime(), nullable=True)
     approved_by: Mapped[str | None] = mapped_column(String(64), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
 
     document: Mapped[LogicalDocumentRecord] = relationship(back_populates="versions")
     rights: Mapped[RightsStatusRecord | None] = relationship()
@@ -920,7 +954,7 @@ class EvidenceSpanRecord(Base):
     index_status: Mapped[str] = mapped_column(
         String(16), nullable=False, server_default=text("'pending'"), default="pending"
     )
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
     text: Mapped[str] = mapped_column(Text, nullable=False)
     normalized_text: Mapped[str] = mapped_column(Text, nullable=False)
 
@@ -934,8 +968,8 @@ class CollectionRecord(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
     name: Mapped[str] = mapped_column(Text, nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
 
 
 class CollectionItemRecord(Base):
@@ -958,7 +992,7 @@ class CollectionItemRecord(Base):
     subject_type: Mapped[str] = mapped_column(String(24), nullable=False)
     subject_id: Mapped[str] = mapped_column(String(36), nullable=False)
     position: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("1"))
-    added_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    added_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
 
 
 # ----------------------------------------- S06: preguntas, claves, evidencias y explicaciones
@@ -1002,8 +1036,8 @@ class QuestionSetRecord(Base):
     status: Mapped[str] = mapped_column(
         String(16), nullable=False, server_default=text("'draft'"), default="draft"
     )
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
 
 
 class QuestionVersionRecord(Base):
@@ -1064,7 +1098,7 @@ class QuestionVersionRecord(Base):
     supersedes_id: Mapped[str | None] = mapped_column(
         String(36), ForeignKey("question_versions.id", ondelete="SET NULL"), nullable=True
     )
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
     #: Motivo de una corrección local: quien lea la pregunta después tiene que ver por qué cambió.
     note: Mapped[str | None] = mapped_column(Text, nullable=True)
 
@@ -1135,8 +1169,8 @@ class AnswerKeyVersionRecord(Base):
         String(36), ForeignKey("answer_key_versions.id", ondelete="SET NULL"), nullable=True
     )
     published_at: Mapped[date | None] = mapped_column(Date, nullable=True)
-    approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    approved_at: Mapped[datetime | None] = mapped_column(UtcDateTime(), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
 
 
 class AnswerKeyEntryRecord(Base):
@@ -1193,7 +1227,7 @@ class QuestionEvidenceRecord(Base):
     status: Mapped[str] = mapped_column(
         String(16), nullable=False, server_default=text("'proposed'"), default="proposed"
     )
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
 
 
 class QuestionExplanationRecord(Base):
@@ -1235,7 +1269,7 @@ class QuestionExplanationRecord(Base):
     )
     model_name: Mapped[str | None] = mapped_column(Text, nullable=True)
     prompt_template_version: Mapped[str | None] = mapped_column(Text, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
     text: Mapped[str] = mapped_column(Text, nullable=False)
 
 
@@ -1260,8 +1294,8 @@ class QuestionIssueReportRecord(Base):
     status: Mapped[str] = mapped_column(
         String(16), nullable=False, server_default=text("'open'"), default="open"
     )
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
+    reviewed_at: Mapped[datetime | None] = mapped_column(UtcDateTime(), nullable=True)
 
 
 # ---------------------------------------------------------------------------- S07: estudio
@@ -1318,14 +1352,14 @@ class StudySessionRecord(Base):
     #: El resultado que había antes de recalcular con una clave nueva (S08): sirve para explicar el
     #: cambio en lugar de que la puntuación cambie sola.
     previous_result_json: Mapped[str | None] = mapped_column(Text, nullable=True)
-    recalculated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    recalculated_at: Mapped[datetime | None] = mapped_column(UtcDateTime(), nullable=True)
     time_limit_minutes: Mapped[int | None] = mapped_column(Integer, nullable=True)
     total_questions: Mapped[int] = mapped_column(
         Integer, nullable=False, server_default=text("0"), default=0
     )
-    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    started_at: Mapped[datetime | None] = mapped_column(UtcDateTime(), nullable=True)
+    finished_at: Mapped[datetime | None] = mapped_column(UtcDateTime(), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
 
 
 class SessionQuestionRecord(Base):
@@ -1401,7 +1435,7 @@ class AttemptRecord(Base):
     )
     confidence: Mapped[str | None] = mapped_column(String(16), nullable=True)
     client_sequence: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    answered_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    answered_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
 
 
 class AttemptEvaluationRecord(Base):
@@ -1440,7 +1474,7 @@ class AttemptEvaluationRecord(Base):
     supersedes_id: Mapped[str | None] = mapped_column(
         String(36), ForeignKey("attempt_evaluations.id", ondelete="SET NULL"), nullable=True
     )
-    evaluated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    evaluated_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
 
 
 # ---------------------------------------------------------------------------- S09: búsqueda y RAG
@@ -1489,7 +1523,7 @@ class RagQueryRecord(Base):
     )
     model: Mapped[str | None] = mapped_column(Text, nullable=True)
     prompt_template_version: Mapped[str | None] = mapped_column(Text, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
 
 
 class RetrievalHitRecord(Base):
@@ -1552,7 +1586,7 @@ class GeneratedAnswerRecord(Base):
     )
     model: Mapped[str | None] = mapped_column(Text, nullable=True)
     prompt_template_version: Mapped[str | None] = mapped_column(Text, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
 
 
 class AnswerClaimRecord(Base):
@@ -1575,7 +1609,7 @@ class AnswerClaimRecord(Base):
     # El nombre de la columna es `text`, así que aquí no se puede llamar a `text()`: el valor por
     # defecto va como cadena literal, que SQLAlchemy acepta igual.
     support: Mapped[str] = mapped_column(String(16), nullable=False, server_default="'direct'")
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
 
 
 class AnswerClaimEvidenceRecord(Base):
@@ -1636,9 +1670,9 @@ class LearningErrorRecord(Base):
     occurrences: Mapped[int] = mapped_column(
         Integer, nullable=False, server_default=text("1"), default=1
     )
-    first_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    last_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    first_seen_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
+    last_seen_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
+    resolved_at: Mapped[datetime | None] = mapped_column(UtcDateTime(), nullable=True)
 
 
 class ReviewItemRecord(Base):
@@ -1668,7 +1702,7 @@ class ReviewItemRecord(Base):
     learning_error_id: Mapped[str | None] = mapped_column(
         String(36), ForeignKey("learning_errors.id", ondelete="SET NULL"), nullable=True
     )
-    due_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    due_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
     interval_days: Mapped[int] = mapped_column(
         Integer, nullable=False, server_default=text("0"), default=0
     )
@@ -1678,12 +1712,10 @@ class ReviewItemRecord(Base):
     lapses: Mapped[int] = mapped_column(
         Integer, nullable=False, server_default=text("0"), default=0
     )
-    last_reviewed_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
+    last_reviewed_at: Mapped[datetime | None] = mapped_column(UtcDateTime(), nullable=True)
     last_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
 
 
 class ReviewEventRecord(Base):
@@ -1724,13 +1756,13 @@ class ReviewEventRecord(Base):
     confidence: Mapped[str | None] = mapped_column(String(16), nullable=True)
     cause: Mapped[str | None] = mapped_column(String(16), nullable=True)
     note: Mapped[str | None] = mapped_column(Text, nullable=True)
-    previous_due_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    due_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    previous_due_at: Mapped[datetime | None] = mapped_column(UtcDateTime(), nullable=True)
+    due_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
     previous_interval_days: Mapped[int | None] = mapped_column(Integer, nullable=True)
     interval_days: Mapped[int] = mapped_column(Integer, nullable=False)
     repetitions: Mapped[int] = mapped_column(Integer, nullable=False)
     reason: Mapped[str] = mapped_column(Text, nullable=False)
-    occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    occurred_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
 
 
 class DerivedArtifactRecord(Base):
@@ -1776,10 +1808,10 @@ class DerivedArtifactRecord(Base):
         Boolean, nullable=False, server_default=text("0"), default=False
     )
     needs_review_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
-    needs_review_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    needs_review_at: Mapped[datetime | None] = mapped_column(UtcDateTime(), nullable=True)
+    reviewed_at: Mapped[datetime | None] = mapped_column(UtcDateTime(), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
 
 
 class DependencyEdgeRecord(Base):
@@ -1805,7 +1837,7 @@ class DependencyEdgeRecord(Base):
     to_type: Mapped[str] = mapped_column(String(24), nullable=False)
     to_id: Mapped[str] = mapped_column(String(36), nullable=False)
     role: Mapped[str | None] = mapped_column(Text, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
 
 
 class ChangeSetRecord(Base):
@@ -1859,7 +1891,7 @@ class ChangeSetRecord(Base):
         Integer, nullable=False, server_default=text("0"), default=0
     )
     effect_note: Mapped[str] = mapped_column(Text, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    discarded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
+    confirmed_at: Mapped[datetime | None] = mapped_column(UtcDateTime(), nullable=True)
+    discarded_at: Mapped[datetime | None] = mapped_column(UtcDateTime(), nullable=True)
     reviewed_by: Mapped[str | None] = mapped_column(String(64), nullable=True)
