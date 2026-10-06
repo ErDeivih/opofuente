@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
 import { Button } from '../../src/ui/Button';
-import { EmptyState } from '../../src/ui/Card';
+import { EmptyState, StatTile } from '../../src/ui/Card';
 import { Accordion } from '../../src/ui/Disclosure';
 import { OptionButton } from '../../src/ui/OptionButton';
 import { ProgressBar, QuestionGrid } from '../../src/ui/Progress';
@@ -39,10 +39,29 @@ describe('los componentes base', () => {
     expect(alElegir).toHaveBeenCalledOnce();
   });
 
-  it('el progreso se anuncia como barra con su valor', () => {
+  it('el progreso se anuncia como barra con su valor y enseña el porcentaje escrito', () => {
     render(<ProgressBar percent={42} label="Bloque II · Tecnología básica" />);
     const barra = screen.getByRole('progressbar', { name: 'Bloque II · Tecnología básica' });
     expect(barra).toHaveAttribute('aria-valuenow', '42');
+    // Una barra sin número obliga a adivinar el porcentaje (revisión de las capturas).
+    expect(screen.getByText('42 %')).toBeInTheDocument();
+  });
+
+  it('una cifra enseña su etiqueta antes que el número, para que no se pierda debajo', () => {
+    render(<StatTile label="aciertos" value="78 %" hint="Bloque IV" />);
+    const etiqueta = screen.getByText('aciertos');
+    const valor = screen.getByText('78 %');
+    // La etiqueta va antes en el DOM: es lo que la deja arriba y a la vista.
+    expect(etiqueta.compareDocumentPosition(valor)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+
+  it('un botón desactivado se anuncia desactivado', () => {
+    render(
+      <Button variant="primary" disabled>
+        Empezar test
+      </Button>,
+    );
+    expect(screen.getByRole('button', { name: 'Empezar test' })).toBeDisabled();
   });
 
   it('el mapa de preguntas dice el estado de cada casilla y avisa de la que toca', async () => {

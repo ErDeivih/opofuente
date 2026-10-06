@@ -16,11 +16,12 @@ export function ProgressBar({ percent, label }: ProgressBarProps) {
   const valor = Math.max(0, Math.min(100, Math.round(percent)));
   return (
     <div>
-      {label !== undefined && (
-        <div className="hint" style={{ marginBottom: 'var(--s1)' }}>
-          {label}
-        </div>
-      )}
+      {/* El porcentaje va **escrito**: una barra sin número obliga a adivinar si es un 40 % o un 60 %,
+          y en un temario de 33 temas eso importa (revisión de las capturas, 6 de octubre de 2026). */}
+      <div className="ui-progress__head">
+        {label !== undefined && <span className="ui-progress__label">{label}</span>}
+        <span className="ui-progress__value">{valor} %</span>
+      </div>
       <div
         className="ui-progress"
         role="progressbar"

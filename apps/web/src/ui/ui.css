@@ -146,14 +146,23 @@
   gap: var(--s1);
 }
 
+.ui-stat__label {
+  /* La etiqueta, arriba y en versalitas: así no se pierde debajo del número. */
+  color: var(--text-2);
+  font-size: 0.875rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
 .ui-stat__value {
   font-size: 1.6rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
 
-.ui-stat__label {
+.ui-stat__hint {
   color: var(--text-2);
+  font-size: 0.9rem;
 }
 
 .ui-empty {
@@ -169,6 +178,24 @@
 
 /* --- progreso ---------------------------------------------------------------------------------- */
 
+.ui-progress__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--s3);
+  margin-bottom: var(--s1);
+}
+
+.ui-progress__label {
+  color: var(--text-2);
+}
+
+.ui-progress__value {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
 .ui-progress {
   height: 8px;
   background: var(--surface-2);
@@ -183,32 +210,48 @@
 
 .ui-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(34px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(36px, 1fr));
   gap: var(--s2);
 }
 
 .ui-grid__cell {
-  min-height: 34px;
+  min-height: 36px;
   border: 1px solid var(--border);
   border-radius: var(--r-sm);
-  background: var(--surface);
+  background: var(--surface-2);
   color: var(--text-2);
   font: inherit;
   font-variant-numeric: tabular-nums;
   cursor: pointer;
 }
 
-/* El color no es la única señal: cada estado lleva además su forma o su texto. */
+/* El color no es la única señal: cada estado lleva además su forma o su texto. La contestada se
+   rellena y se marca con un punto; la que no se ha tocado queda hundida y en gris claro. */
 .ui-grid__cell--answered {
-  background: var(--accent-soft);
-  border-color: var(--accent);
-  color: var(--text);
+  background: var(--accent);
+  border-color: var(--accent-strong);
+  color: #fff;
+  font-weight: 700;
+  position: relative;
+}
+
+.ui-grid__cell--answered::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 3px;
+  width: 4px;
+  height: 4px;
+  margin-left: -2px;
+  border-radius: 999px;
+  background: #fff;
 }
 
 .ui-grid__cell--doubtful {
-  border-style: dashed;
-  border-color: var(--warn);
+  background: var(--warn-soft);
+  border: 2px dashed var(--warn);
   color: var(--warn);
+  font-weight: 700;
 }
 
 .ui-grid__cell--current {
@@ -223,6 +266,9 @@
   display: flex;
   gap: var(--s1);
   border-bottom: 1px solid var(--border);
+  /* En el móvil las pestañas se desplazan en horizontal en vez de partir los rótulos. */
+  overflow-x: auto;
+  scrollbar-width: thin;
 }
 
 .ui-tabs__tab {
@@ -233,6 +279,7 @@
   border-bottom: 3px solid transparent;
   font: inherit;
   font-weight: 600;
+  white-space: nowrap;
   color: var(--text-2);
   cursor: pointer;
 }

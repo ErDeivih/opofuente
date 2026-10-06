@@ -30,9 +30,11 @@ export interface StatTileProps {
 export function StatTile({ label, value, hint }: StatTileProps) {
   return (
     <div className="ui-stat">
-      <span className="ui-stat__value">{value}</span>
+      {/* La etiqueta va **arriba** y el número debajo: al revés, el número grande se comía la
+          etiqueta y no se sabía de qué era la cifra (revisión de las capturas, 6 de octubre de 2026). */}
       <span className="ui-stat__label">{label}</span>
-      {hint !== undefined && <span className="hint">{hint}</span>}
+      <span className="ui-stat__value">{value}</span>
+      {hint !== undefined && <span className="ui-stat__hint">{hint}</span>}
     </div>
   );
 }
