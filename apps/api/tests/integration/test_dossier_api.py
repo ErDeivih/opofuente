@@ -27,6 +27,10 @@ from opofuente.application.search_service import SearchRequest, SearchService
 from opofuente.config import Settings
 from opofuente.domain.rag import SearchFilters
 from opofuente.infrastructure.db import build_engine, build_session_factory
+from opofuente.infrastructure.dossier_repository import (
+    _TRAMOS_DEL_TEMA,
+    SqlAlchemyDossierRepository,
+)
 from opofuente.infrastructure.search_repository import SqlAlchemySearchRepository
 
 AHORA = datetime(2026, 9, 24, 9, 0, tzinfo=UTC)
@@ -406,6 +410,47 @@ def test_un_nodo_que_no_existe_responde_404(seeded_client: TestClient) -> None:
     )
 
     assert respuesta.status_code == 404
+
+
+def test_los_tramos_del_tema_son_los_mismos_con_las_dos_consultas(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """La consulta partida en dos devuelve lo mismo: mismos tramos, mismos estados, mismo orden.
+
+    Es la prueba que sostiene el cambio de P0.4 (5 de octubre de 2026). La consulta única tardaba
+    **53,6 s** en el tema I.1 de los datos reales, porque el `OR` de cinco condiciones con el que
+    unía los mapeos impedía usar los índices. La nueva lee los mapeos por un lado y los tramos por
+    otro, y empareja los estados en memoria. Si las dos versiones no coinciden, el cambio no vale:
+    el dossier de un tema es lo que se archiva como versión, y un tramo de más o de menos cambia la
+    huella de contenido y con ella el historial.
+    """
+    _programa(seeded_settings)
+
+    engine = build_engine(seeded_settings.data_paths.database)
+    try:
+        fabrica = build_session_factory(engine)
+        repositorio = SqlAlchemyDossierRepository(fabrica)
+        for node_id in ("nodo-tema-d", "nodo-bloque"):
+            with fabrica() as sesion:
+                filas = sesion.execute(text(_TRAMOS_DEL_TEMA), {"node_id": node_id}).all()
+            antiguos = [
+                (
+                    str(fila.evidence_id),
+                    tuple(
+                        sorted({parte for parte in str(fila.mappings or "").split(",") if parte})
+                    ),
+                    str(fila.text),
+                    int(fila.ordinal),
+                )
+                for fila in filas
+            ]
+            nuevos = [
+                (hecho.evidence_id, hecho.mappings, hecho.text, hecho.ordinal)
+                for hecho in repositorio.passages_for_node(node_id)
+            ]
+            assert nuevos == antiguos, f"los tramos de {node_id} no coinciden con la consulta única"
+    finally:
+        engine.dispose()
 
 
 def test_pedir_el_bloque_trae_lo_de_sus_temas_y_tambien_lo_suyo(
