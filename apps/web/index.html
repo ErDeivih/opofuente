@@ -6,7 +6,7 @@
     <meta name="color-scheme" content="light dark" />
     <meta
       name="description"
-      content="Biblioteca personal local para organizar y estudiar material de TAI y Guardia Civil"
+      content="Estudia tu oposición: temario, apuntes, tests y simulacros"
     />
     <!--
       CSP del frontend (09_SECURITY-PRIVACY-AND-RIGHTS §2: «CSP estricta en frontend»).
@@ -26,10 +26,16 @@
 
       Va en el HTML y no solo en la cabecera porque el `preview` de Vite no añade cabeceras; el API sí
       las manda (api/middleware.py) para sus propias respuestas.
+
+      **`frame-ancestors` no va aquí** (6 de octubre de 2026): el navegador ignora esa directiva cuando
+      llega en una `<meta>` —solo vale como cabecera HTTP— y dejaba un error en la consola de **todas**
+      las pantallas. La protección sigue puesta donde sí funciona, en la cabecera que manda el API
+      (`api/middleware.py`), y el día que la web se sirva desde un servidor de verdad tendrá que ir
+      también en su cabecera.
     -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self' http://127.0.0.1:8765 http://localhost:8765 ws://127.0.0.1:5173 ws://localhost:5173; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; object-src 'none'"
+      content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self' http://127.0.0.1:8765 http://localhost:8765 ws://127.0.0.1:5173 ws://localhost:5173; base-uri 'none'; form-action 'none'; object-src 'none'"
     />
     <title>OpoFuente</title>
   </head>

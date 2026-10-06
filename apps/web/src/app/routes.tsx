@@ -1,6 +1,7 @@
 import { Route, Routes } from 'react-router-dom';
 
 import { HomePage } from '../pages/HomePage';
+import { AdminUiPage } from '../pages/AdminUiPage';
 import { ChangesPage } from '../pages/ChangesPage';
 import { ErrorsPage } from '../pages/ErrorsPage';
 import { LibraryPage } from '../pages/LibraryPage';
@@ -27,6 +28,9 @@ export function AppRoutes() {
       <Route path="/errores" element={<ErrorsPage />} />
       <Route path="/cambios" element={<ChangesPage />} />
       <Route path="/ajustes" element={<SettingsPage />} />
+      {/* La página de los componentes: se mira, se compara y se corrige **antes** de construir con
+          ellos las pantallas de test (F3 del rediseño). Sale en `npm run screens`. */}
+      <Route path="/admin/ui" element={<AdminUiPage />} />
       {/* La revisión es la continuación de la bandeja (07_UI-UX §4), no una sección de la barra
           lateral: la navegación del producto la fija y no incluye «Revisión» entre sus secciones. */}
       <Route path="/revision" element={<ReviewPage />} />

@@ -2,6 +2,11 @@
    Objetivo: legibilidad, contraste AA, navegación por teclado y ningún estado que dependa
    solo del color (07_UI-UX §13). */
 
+/* Los cimientos visuales de la zona del alumno: tokens y componentes de `src/ui` (F3 del rediseño).
+   Van primero para que las pantallas nuevas usen `--accent`, `--s4`, `--measure`… y las viejas sigan
+   con sus variables hasta que se rehagan. */
+@import '../ui/ui.css';
+
 :root {
   --color-fondo: #f6f7f9;
   --color-superficie: #ffffff;

@@ -20,7 +20,7 @@ import path from 'node:path';
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
-import { palabrasEnElTexto } from '../palabrasProhibidas';
+import { revisarPantalla } from '../palabrasProhibidas';
 import { escribirInforme, guardarFila, nombreDeFichero } from './informe';
 
 const SALIDA = path.resolve(process.cwd(), '..', '..', 'artifacts', 'screens');
@@ -45,6 +45,7 @@ const RUTAS: readonly { ruta: string; nombre: string }[] = [
   { ruta: '/errores', nombre: 'errores' },
   { ruta: '/buscar?q=constitucion', nombre: 'buscar' },
   { ruta: '/ajustes', nombre: 'ajustes' },
+  { ruta: '/admin/ui', nombre: 'admin-ui' },
 ];
 
 const ANCHOS: readonly { ancho: number; alto: number; etiqueta: string }[] = [
@@ -78,7 +79,19 @@ for (const { ruta, nombre } of RUTAS) {
       const analisis = await new AxeBuilder({ page })
         .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
         .analyze();
-      const contenido = await page.locator('body').innerText();
+      // Dos textos, porque son dos comprobaciones: el de la **interfaz** (todo menos lo que va dentro
+      // de un contenedor `data-contenido`: enunciados, opciones, apuntes, títulos de tema) y el de
+      // **toda** la pantalla. La jerga solo se busca en el primero; las rutas y los bancos, en los dos.
+      const { interfaz, todo } = await page.evaluate(() => {
+        const copia = document.body.cloneNode(true) as HTMLElement;
+        for (const nodo of Array.from(copia.querySelectorAll('[data-contenido]'))) {
+          nodo.remove();
+        }
+        return {
+          interfaz: copia.innerText || copia.textContent || '',
+          todo: document.body.innerText,
+        };
+      });
 
       guardarFila({
         ruta,
@@ -86,7 +99,7 @@ for (const { ruta, nombre } of RUTAS) {
         ms,
         errores,
         violaciones: analisis.violations.map((violacion) => violacion.id),
-        prohibidas: palabrasEnElTexto(contenido),
+        prohibidas: revisarPantalla(interfaz, todo),
       });
     });
   }
