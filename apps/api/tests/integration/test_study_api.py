@@ -1510,3 +1510,37 @@ def test_una_practica_por_tema_deja_fuera_lo_que_la_plantilla_activa_no_responde
         "1 se quedaron fuera porque la plantilla activa no dice su respuesta"
         in (sesion["configuration"]["note"])
     )
+
+
+def test_una_sesion_anterior_a_la_etiqueta_toma_el_titulo_de_su_conjunto(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """Las sesiones creadas antes del 6 de octubre de 2026 no guardaron `context_label`, y la
+    lista enseñaba el modo dos veces («examen oficial · examen oficial»). Su conjunto sí lo sabe.
+    """
+    from sqlalchemy import text
+
+    from opofuente.infrastructure.db import build_engine
+
+    set_id = _conjunto(seeded_client, preguntas=4, titulo="TAI libre 2025 · modelo B")
+    creada = _crear_sesion(seeded_client, set_id, cantidad=4)
+    engine = build_engine(seeded_settings.data_paths.database)
+    try:
+        with engine.begin() as conexion:
+            bruto = conexion.execute(
+                text("SELECT configuration_json FROM study_sessions WHERE id = :id"),
+                {"id": creada["id"]},
+            ).scalar_one()
+            configuracion = json.loads(bruto)
+            configuracion.pop("context_label", None)
+            conexion.execute(
+                text("UPDATE study_sessions SET configuration_json = :c WHERE id = :id"),
+                {"c": json.dumps(configuracion), "id": creada["id"]},
+            )
+    finally:
+        engine.dispose()
+
+    listado = seeded_client.get("/api/v1/study-sessions").json()
+    assert listado["sessions"][0]["configuration"]["context_label"] == "TAI libre 2025 · modelo B"
+    detalle = seeded_client.get(f"/api/v1/study-sessions/{creada['id']}").json()
+    assert detalle["configuration"]["context_label"] == "TAI libre 2025 · modelo B"

@@ -463,9 +463,13 @@ class StudyService:
         Antes la lista de sesiones solo tenía el identificador del conjunto, así que cinco exámenes
         oficiales distintos se veían como cinco filas iguales (5 de octubre de 2026).
         """
+        return self._etiqueta_de_conjuntos([fuente.question_set_id for fuente in fuentes])
+
+    def _etiqueta_de_conjuntos(self, ids: Sequence[str]) -> str | None:
+        """El título de los conjuntos de una sesión, en una línea."""
         titulos: list[str] = []
-        for fuente in fuentes:
-            conjunto = self._questions.get_set(fuente.question_set_id)
+        for identificador in ids:
+            conjunto = self._questions.get_set(identificador)
             if conjunto is not None and conjunto.title not in titulos:
                 titulos.append(conjunto.title)
         if not titulos:
@@ -846,12 +850,30 @@ class StudyService:
         limit: int = 50,
         offset: int = 0,
     ) -> SessionPage:
-        return self._study.list_sessions(
+        pagina = self._study.list_sessions(
             opposition_id=opposition_id, status=status, limit=limit, offset=offset
         )
+        return replace(pagina, sessions=tuple(self._con_etiqueta(s) for s in pagina.sessions))
 
     def session(self, session_id: str) -> SessionView:
-        return self._session_or_404(session_id)
+        return self._con_etiqueta(self._session_or_404(session_id))
+
+    def _con_etiqueta(self, vista: SessionView) -> SessionView:
+        """Pone nombre a una sesión creada antes de que se congelara su etiqueta.
+
+        Las sesiones anteriores al 6 de octubre de 2026 no guardaron `context_label`, y la lista
+        enseñaba el modo dos veces («examen oficial · examen oficial»). Lo que sí guardaron es de
+        qué conjuntos salen sus preguntas: su título es el nombre que se lee.
+        """
+        if vista.configuration.context_label is not None:
+            return vista
+        ids = [fuente.question_set_id for fuente in vista.configuration.sources]
+        if not ids and vista.question_set_id is not None:
+            ids = [vista.question_set_id]
+        etiqueta = self._etiqueta_de_conjuntos(ids)
+        if etiqueta is None:
+            return vista
+        return replace(vista, configuration=replace(vista.configuration, context_label=etiqueta))
 
     def discard_session(self, session_id: str) -> str:
         """Descarta una sesión: borra la que no tiene respuestas y abandona la que las tiene.
