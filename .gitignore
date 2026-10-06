@@ -58,3 +58,6 @@ Desktop.ini
 
 # Volcados de memoria de Node cuando una prueba se queda sin memoria: nunca son fuente.
 Heap.*.heapsnapshot
+
+# Capturas de pantalla del guion de F0 (se generan, no se guardan).
+artifacts/screens/
