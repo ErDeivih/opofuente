@@ -87,36 +87,44 @@
   cursor: pointer;
 }
 
-.ui-button--primary {
+/* El color de cada variante se aplica **solo cuando el botón se puede pulsar** (`:not(:disabled)`).
+   Así el desactivado no depende del orden ni de la especificidad de las reglas: un botón apagado se
+   ve apagado, y no como uno principal a medio gas (revisión de la captura, 6 de octubre de 2026). */
+.ui-button--primary:not(:disabled) {
   background: var(--accent);
   color: #fff;
 }
 
-.ui-button--primary:hover {
+.ui-button--primary:not(:disabled):hover {
   background: var(--accent-strong);
 }
 
-.ui-button--secondary {
+.ui-button--secondary:not(:disabled) {
   background: var(--surface);
   color: var(--text);
   border-color: var(--border);
 }
 
-.ui-button--secondary:hover {
+.ui-button--secondary:not(:disabled):hover {
   background: var(--surface-2);
 }
 
-.ui-button--ghost {
+.ui-button--ghost:not(:disabled) {
   background: transparent;
   color: var(--accent);
 }
 
-.ui-button--ghost:hover {
+.ui-button--ghost:not(:disabled):hover {
   background: var(--accent-soft);
 }
 
 .ui-button:disabled {
-  opacity: 0.55;
+  /* Fondo hundido, borde discontinuo y texto sin peso: tres señales además del color. */
+  background: var(--surface-2);
+  color: var(--text-2);
+  border: 1px dashed var(--border);
+  font-weight: 500;
+  opacity: 1;
   cursor: not-allowed;
 }
 

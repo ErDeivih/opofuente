@@ -41,6 +41,9 @@ export default defineConfig({
     locale: 'es-ES',
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  // Datos nuevos en cada corrida: sin esto `.e2e-data` se llena con lo que van dejando las pasadas
+  // (649 ficheros y 148 MB en un día de trabajo) y la suite empieza a fallar por sus propios restos.
+  globalSetup: './tests/e2e/globalSetup.ts',
   webServer: [
     {
       // Migra el directorio de datos del E2E (nunca el real), siembra los perfiles oficiales
