@@ -56,6 +56,14 @@ SUPPORTED_MODES: tuple[SessionMode, ...] = (
 )
 
 
+#: De quién es el progreso. Hoy hay un solo dueño —la aplicación es local y de un usuario—, pero el
+#: dato existe desde el principio para que el día que haya cuentas nadie tenga que rehacer el
+#: historial de nadie (F2, «preparado para cuentas, sin cuentas todavía»). El valor vive en el
+#: dominio y no en cada repositorio porque el listado de sesiones, la creación y las consultas de
+#: progreso tienen que coincidir: dos valores distintos serían un progreso que no se encuentra.
+OWNER_ID_LOCAL = "local"
+
+
 class SessionStatus(StrEnum):
     """`draft` es una sesión creada y sin congelar; `running`, ya iniciada y cronometrada."""
 

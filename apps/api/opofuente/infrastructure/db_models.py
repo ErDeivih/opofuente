@@ -30,6 +30,7 @@ from sqlalchemy.engine import Dialect
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.types import TypeDecorator
 
+from opofuente.domain.study import OWNER_ID_LOCAL
 from opofuente.infrastructure.db import Base
 
 CONVOCATION_STATUSES = ("draft", "active", "superseded", "archived")
@@ -1338,9 +1339,17 @@ class StudySessionRecord(Base):
             "status <> 'finished' OR finished_at IS NOT NULL", name="ck_session_finished_at"
         ),
         Index("ix_study_sessions_opposition", "opposition_id", "status"),
+        # El listado de sesiones de una persona se filtra por `owner_id` (F2): sin este índice, la
+        # consulta que la zona del alumno hace en cada carga recorre la tabla entera.
+        Index("ix_study_sessions_owner", "owner_id", "status"),
     )
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    #: De quién es esta sesión. `NOT NULL` y con valor por defecto en el servidor: hoy siempre
+    #: `'local'`, y el día que haya cuentas el historial ya está repartido (0027).
+    owner_id: Mapped[str] = mapped_column(
+        String(64), nullable=False, server_default=text("'local'"), default=OWNER_ID_LOCAL
+    )
     opposition_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("oppositions.id", ondelete="RESTRICT"), nullable=False
     )
@@ -1401,6 +1410,11 @@ class SessionQuestionRecord(Base):
     session_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("study_sessions.id", ondelete="CASCADE"), nullable=False
     )
+    #: El dueño de la sesión, copiado (0027): las consultas de progreso del alumno filtran por aquí
+    #: sin atravesar la sesión.
+    owner_id: Mapped[str] = mapped_column(
+        String(64), nullable=False, server_default=text("'local'"), default=OWNER_ID_LOCAL
+    )
     question_version_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("question_versions.id", ondelete="RESTRICT"), nullable=False
     )
@@ -1438,6 +1452,9 @@ class AttemptRecord(Base):
     session_question_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("session_questions.id", ondelete="CASCADE"), nullable=False
     )
+    owner_id: Mapped[str] = mapped_column(
+        String(64), nullable=False, server_default=text("'local'"), default=OWNER_ID_LOCAL
+    )
     chosen_option_keys_json: Mapped[str] = mapped_column(
         Text, nullable=False, server_default=text("'[]'"), default="[]"
     )
@@ -1472,6 +1489,9 @@ class AttemptEvaluationRecord(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
     attempt_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("attempts.id", ondelete="CASCADE"), nullable=False
+    )
+    owner_id: Mapped[str] = mapped_column(
+        String(64), nullable=False, server_default=text("'local'"), default=OWNER_ID_LOCAL
     )
     answer_key_version_id: Mapped[str | None] = mapped_column(
         String(36), ForeignKey("answer_key_versions.id", ondelete="RESTRICT"), nullable=True
@@ -1668,6 +1688,9 @@ class LearningErrorRecord(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
     attempt_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("attempts.id", ondelete="CASCADE"), nullable=False
+    )
+    owner_id: Mapped[str] = mapped_column(
+        String(64), nullable=False, server_default=text("'local'"), default=OWNER_ID_LOCAL
     )
     curriculum_node_id: Mapped[str | None] = mapped_column(
         String(36), ForeignKey("curriculum_nodes.id", ondelete="RESTRICT"), nullable=True

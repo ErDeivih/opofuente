@@ -21,6 +21,7 @@ from opofuente.api.routes import (
     readiness,
     reviews,
     search,
+    student,
     study,
     system,
 )
@@ -44,5 +45,9 @@ api_router.include_router(readiness.router)
 # detrás
 # de una ruta con parámetro que las tape (ADR-018).
 api_router.include_router(dossier.router)
+# La zona del alumno (F2) va **después** del dossier por el mismo motivo y por uno propio: todas sus
+# rutas cuelgan de `/student/*`, y ninguna otra ruta del contrato empieza por ahí, así que no puede
+# tapar a nadie ni quedar tapada.
+api_router.include_router(student.router)
 
 __all__ = ["api_router"]

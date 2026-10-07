@@ -138,3 +138,31 @@ def test_cadenas_vacias_se_convierten_en_none() -> None:
     settings = Settings(tesseract_path="", llm_model="", _env_file=None)
     assert settings.tesseract_path is None
     assert settings.llm_model is None
+
+
+def test_los_valores_por_defecto_de_la_zona_del_alumno() -> None:
+    """F2: por defecto se sirve TAI y **no** se abre la zona al público.
+
+    Los dos valores por defecto son los seguros: el cuerpo que el propietario estudia y el material
+    que él ha reunido. Ninguno de los dos se cambia sin querer.
+    """
+    settings = Settings(_env_file=None)
+
+    assert settings.student_opposition == "tai-age"
+    assert settings.public_mode is False
+
+
+def test_las_dos_variables_del_alumno_se_leen_del_entorno(monkeypatch: pytest.MonkeyPatch) -> None:
+    """`OPOFUENTE_STUDENT_OPPOSITION` y `OPOFUENTE_PUBLIC_MODE`, tal como se escriben en el `.env`.
+
+    `1` tiene que valer por `True`: es como se escribe en un fichero de entorno, y un modo público
+    que no se activara con `1` sería una variable que no hace nada.
+    """
+    monkeypatch.setenv("OPOFUENTE_STUDENT_OPPOSITION", "celador-sacyl")
+    monkeypatch.setenv("OPOFUENTE_PUBLIC_MODE", "1")
+
+    settings = Settings(_env_file=None)
+
+    assert settings.student_opposition == "celador-sacyl"
+    assert settings.public_mode is True
+    assert Settings(_env_file=None, public_mode=False).public_mode is False

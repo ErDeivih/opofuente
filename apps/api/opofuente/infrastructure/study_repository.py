@@ -36,6 +36,7 @@ from opofuente.application.study_models import (
 )
 from opofuente.domain.errors import InvariantViolationError
 from opofuente.domain.study import (
+    OWNER_ID_LOCAL,
     Confidence,
     Feedback,
     FrozenQuestion,
@@ -89,6 +90,7 @@ class SqlAlchemyStudyRepository:
             identificador = _new_id()
             fila = StudySessionRecord(
                 id=identificador,
+                owner_id=OWNER_ID_LOCAL,
                 opposition_id=opposition_id,
                 convocation_version_id=convocation_version_id,
                 question_set_id=question_set_id,
@@ -217,11 +219,19 @@ class SqlAlchemyStudyRepository:
         *,
         opposition_id: str | None = None,
         status: str | None = None,
+        owner_id: str = OWNER_ID_LOCAL,
         limit: int = 50,
         offset: int = 0,
     ) -> SessionPage:
+        """Las sesiones **de esta persona**, filtradas por `owner_id` (F2).
+
+        El filtro no está de adorno aunque hoy el valor sea único: es la consulta que leerá la zona
+        del alumno, y el día que haya cuentas el historial de dos personas no puede salir mezclado
+        porque nadie se acordó de añadir el `WHERE`. Sin `owner_id` explícito se listan las del
+        dueño local, que es el único que existe.
+        """
         with self._session_factory() as session:
-            condiciones = []
+            condiciones = [StudySessionRecord.owner_id == owner_id]
             if opposition_id is not None:
                 condiciones.append(StudySessionRecord.opposition_id == opposition_id)
             if status is not None:
@@ -576,11 +586,17 @@ class SqlAlchemyStudyRepository:
         client_sequence: int | None = None,
         actor: str = "local",
     ) -> AttemptView:
-        """Guarda el intento de una pregunta. El intento se congela: no se reescribe."""
+        """Guarda el intento de una pregunta. El intento se congela: no se reescribe.
+
+        El dueño **se copia de la sesión**, no se pone a `'local'` por comodidad: el intento cuelga
+        de una pregunta congelada que cuelga de una sesión, y el dueño de la sesión es el que manda.
+        Escribir el valor por defecto aquí sería crear progreso huérfano el día que haya cuentas.
+        """
         with self._session_factory() as session:
             fila = AttemptRecord(
                 id=_new_id(),
                 session_question_id=session_question_id,
+                owner_id=self._owner_of_session_question(session, session_question_id),
                 chosen_option_keys_json=json.dumps(list(chosen_option_keys), ensure_ascii=False),
                 elapsed_ms=max(0, elapsed_ms),
                 confidence=confidence.value if confidence is not None else None,
@@ -633,6 +649,9 @@ class SqlAlchemyStudyRepository:
                     AttemptEvaluationRecord(
                         id=_new_id(),
                         attempt_id=attempt_id,
+                        # El dueño es el del intento que se corrige (0027): la evaluación es una
+                        # lectura del mismo progreso, no una fila nueva de nadie.
+                        owner_id=str(intento.owner_id),
                         answer_key_version_id=answer_key_version_id,
                         outcome=outcome,
                         score_numerator=score.numerator,
@@ -665,6 +684,20 @@ class SqlAlchemyStudyRepository:
             )
 
     # ------------------------------------------------------------------ ayudas
+
+    @staticmethod
+    def _owner_of_session_question(session: Session, session_question_id: str) -> str:
+        """El dueño de la sesión de una pregunta congelada (0027).
+
+        Si la pregunta no existe se devuelve el dueño local: el llamante va a fallar igualmente al
+        insertar (la clave foránea no la deja), y aquí no se inventa un error distinto.
+        """
+        propietario = session.execute(
+            select(StudySessionRecord.owner_id)
+            .join(SessionQuestionRecord, SessionQuestionRecord.session_id == StudySessionRecord.id)
+            .where(SessionQuestionRecord.id == session_question_id)
+        ).scalar_one_or_none()
+        return str(propietario) if propietario is not None else OWNER_ID_LOCAL
 
     @staticmethod
     def _question_version_of(session: Session, attempt_id: str) -> str:

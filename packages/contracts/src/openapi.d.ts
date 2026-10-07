@@ -2438,6 +2438,91 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/student/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Inicio: el test a medias, los fallos vencidos y el progreso por bloque
+         * @description Lo que se pinta al entrar. La oposición la pone la configuración, no la petición.
+         *
+         *     No hay parámetro de oposición **a propósito**: la zona del alumno sirve un solo cuerpo
+         *     (`OPOFUENTE_STUDENT_OPPOSITION`) y el filtro vive en el servidor, así que no existe forma de
+         *     pedir el progreso de otro desde aquí.
+         */
+        get: operations["student_overview_api_v1_student_overview_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/student/progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Acierto por bloque y por tema, los cinco más flojos e historial de tests */
+        get: operations["student_progress_api_v1_student_progress_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/student/syllabus": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * El temario: bloques y temas en orden numérico, con lo disponible y el acierto
+         * @description El temario completo. El orden es el de la consulta del programa, que ya es numérico.
+         *
+         *     Aquí no se reordena nada: el orden se arregla en la consulta (`curriculum_order`, pieza 1 de F1)
+         *     y esa misma consulta la usa el panel. Reordenar otra vez en esta capa sería tener dos órdenes
+         *     que pueden divergir, y por eso `IV.1` sale antes que `IV.10` sin que nadie lo toque aquí.
+         */
+        get: operations["student_syllabus_api_v1_student_syllabus_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/student/topics/{codigo}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Un tema por su código legible (IV.10): título, epígrafes, recuentos y progreso
+         * @description Un tema por su código. **Nunca** por su identificador: los UUID no se enseñan al alumno.
+         */
+        get: operations["student_topic_api_v1_student_topics__codigo__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/study-sessions": {
         parameters: {
             query?: never;
@@ -6638,6 +6723,201 @@ export interface components {
         SnoozeReviewSchema: {
             /** Days */
             days: number;
+        };
+        /**
+         * StudentBlockProgressSchema
+         * @description Un bloque del programa con sus temas y el agregado del bloque.
+         */
+        StudentBlockProgressSchema: {
+            /** Accuracy */
+            accuracy?: number | null;
+            /** Answered */
+            answered: number;
+            /** Available Questions */
+            available_questions: number;
+            /** Code */
+            code: string;
+            /** Correct */
+            correct: number;
+            /**
+             * Due Reviews
+             * @default 0
+             */
+            due_reviews: number;
+            /** Position */
+            position: number;
+            /** Title */
+            title: string;
+            /** Topics */
+            topics: components["schemas"]["StudentTopicProgressSchema"][];
+        };
+        /**
+         * StudentEpigraphSchema
+         * @description Un epígrafe del tema: solo su código y su título.
+         */
+        StudentEpigraphSchema: {
+            /** Code */
+            code: string;
+            /** Title */
+            title: string;
+        };
+        /**
+         * StudentOppositionSchema
+         * @description La oposición que sirve la zona del alumno.
+         */
+        StudentOppositionSchema: {
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+        };
+        /**
+         * StudentOverviewSchema
+         * @description Inicio: el test a medias, los fallos vencidos, el progreso por bloque y lo último hecho.
+         */
+        StudentOverviewSchema: {
+            /** Blocks */
+            blocks: components["schemas"]["StudentBlockProgressSchema"][];
+            /** Due Reviews */
+            due_reviews: number;
+            in_progress?: components["schemas"]["StudentSessionSchema"] | null;
+            opposition: components["schemas"]["StudentOppositionSchema"];
+            /** Recent Tests */
+            recent_tests: components["schemas"]["StudentSessionSchema"][];
+        };
+        /**
+         * StudentProgressSchema
+         * @description El progreso: acierto por bloque y por tema, los cinco más flojos e historial.
+         */
+        StudentProgressSchema: {
+            /** Blocks */
+            blocks: components["schemas"]["StudentBlockProgressSchema"][];
+            /** History */
+            history: components["schemas"]["StudentSessionSchema"][];
+            opposition: components["schemas"]["StudentOppositionSchema"];
+            /** Weakest Topics */
+            weakest_topics: components["schemas"]["StudentTopicProgressSchema"][];
+        };
+        /**
+         * StudentScoreSchema
+         * @description Cómo fue un test: aciertos, fallos, blancos y la puntuación directa con su penalización.
+         *
+         *     La puntuación viaja como fracción exacta en texto (`128/3`) **y** como decimal redondeado: el
+         *     decimal es para leerlo, el exacto es el que vale (DEBT-006). `passed` es `None` cuando la
+         *     convocatoria no publica el umbral, en lugar de inventar un aprobado.
+         */
+        StudentScoreSchema: {
+            /** Blank */
+            blank: number;
+            /** Correct */
+            correct: number;
+            /** Maximum */
+            maximum?: number | null;
+            /** Passed */
+            passed?: boolean | null;
+            /** Points */
+            points: string;
+            /** Points Decimal */
+            points_decimal: string;
+            /** Wrong */
+            wrong: number;
+        };
+        /**
+         * StudentSessionSchema
+         * @description Un test del alumno: lo que se pinta en «Continuar», en el historial y al terminar.
+         *
+         *     `title` lo compone la capa del alumno a partir de lo que se eligió; **nunca** es el título del
+         *     conjunto de origen.
+         */
+        StudentSessionSchema: {
+            /** Answered Questions */
+            answered_questions: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Finished At */
+            finished_at?: string | null;
+            /** Id */
+            id: string;
+            /**
+             * Mode
+             * @enum {string}
+             */
+            mode: "practice" | "error_review" | "official_exam" | "mock_exam" | "diagnostic";
+            result?: components["schemas"]["StudentScoreSchema"] | null;
+            /** Started At */
+            started_at?: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "draft" | "running" | "finished" | "abandoned";
+            /** Time Limit Minutes */
+            time_limit_minutes?: number | null;
+            /** Title */
+            title: string;
+            /** Total Questions */
+            total_questions: number;
+        };
+        /**
+         * StudentSyllabusSchema
+         * @description El temario: bloques y temas **en orden numérico** (IV.1 antes de IV.10).
+         */
+        StudentSyllabusSchema: {
+            /** Blocks */
+            blocks: components["schemas"]["StudentBlockProgressSchema"][];
+            opposition: components["schemas"]["StudentOppositionSchema"];
+        };
+        /**
+         * StudentTopicProgressSchema
+         * @description Un tema con lo que tiene y lo que se ha hecho en él.
+         *
+         *     `accuracy` es `None` cuando no hay nada corregido todavía: un tema sin tocar no está
+         *     suspendido.
+         */
+        StudentTopicProgressSchema: {
+            /** Accuracy */
+            accuracy?: number | null;
+            /** Answered */
+            answered: number;
+            /** Available Questions */
+            available_questions: number;
+            /** Code */
+            code: string;
+            /** Correct */
+            correct: number;
+            /**
+             * Due Reviews
+             * @default 0
+             */
+            due_reviews: number;
+            /** Number */
+            number?: number | null;
+            /** Title */
+            title: string;
+        };
+        /**
+         * StudentTopicSchema
+         * @description Un tema por su código legible, con sus epígrafes y su progreso.
+         */
+        StudentTopicSchema: {
+            /** Block Code */
+            block_code: string;
+            /** Block Title */
+            block_title: string;
+            /** Code */
+            code: string;
+            /** Description */
+            description?: string | null;
+            /** Epigraphs */
+            epigraphs: components["schemas"]["StudentEpigraphSchema"][];
+            /** Number */
+            number?: number | null;
+            progress?: components["schemas"]["StudentTopicProgressSchema"] | null;
+            /** Title */
+            title: string;
         };
         /**
          * StudyReadinessSchema
@@ -14780,6 +15060,197 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SettingsSchema"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    student_overview_api_v1_student_overview_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentOverviewSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    student_progress_api_v1_student_progress_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentProgressSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    student_syllabus_api_v1_student_syllabus_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentSyllabusSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    student_topic_api_v1_student_topics__codigo__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Código legible del tema, como `IV.10` (también se acepta `IV-10`). */
+                codigo: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentTopicSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
                 };
             };
             /** @description Error interno inesperado (RFC 9457). */

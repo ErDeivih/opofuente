@@ -46,6 +46,7 @@ from opofuente.application.question_service import QuestionService
 from opofuente.application.readiness_service import ReadinessService
 from opofuente.application.review_service import ReviewService
 from opofuente.application.search_service import SearchService
+from opofuente.application.student_service import StudentService
 from opofuente.application.study_service import StudyService
 from opofuente.application.system_service import SystemService
 from opofuente.config import Settings, get_settings
@@ -81,6 +82,7 @@ from opofuente.infrastructure.readiness_repository import SqlAlchemyReadinessRep
 from opofuente.infrastructure.representation_store import RepresentationStore
 from opofuente.infrastructure.review_repository import SqlAlchemyReviewRepository
 from opofuente.infrastructure.search_repository import SqlAlchemySearchRepository
+from opofuente.infrastructure.student_repository import SqlAlchemyStudentRepository
 from opofuente.infrastructure.study_repository import SqlAlchemyStudyRepository
 from opofuente.infrastructure.url_guard import url_limits_from_settings
 from opofuente.infrastructure.worker_liveness import WorkerLiveness
@@ -288,6 +290,16 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         clock=clock,
         review=review_service,
     )
+    # F2: la zona del alumno. Reutiliza el servicio de estudio para leer las sesiones (que ya
+    # filtra por dueño) y añade lo suyo: el progreso por bloque y por tema, el temario y los
+    # fallos vencidos. El filtro de oposición sale de la configuración, no de la petición.
+    student_service = StudentService(
+        settings=resolved,
+        profiles=SqlAlchemyProfileRepository(session_factory),
+        student=SqlAlchemyStudentRepository(session_factory),
+        study=study_service,
+        clock=clock,
+    )
     # S12: copia, verificación y restauración. La migración y la comprobación van como funciones: al
     # restaurar hay que migrar la base recién colocada y comprobar que quedó sana.
     backup_service = BackupService(
@@ -399,6 +411,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.question_service = question_service
     app.state.auto_study_service = auto_study_service
     app.state.study_service = study_service
+    app.state.student_service = student_service
     app.state.search_service = search_service
     app.state.review_service = review_service
     app.state.export_service = export_service

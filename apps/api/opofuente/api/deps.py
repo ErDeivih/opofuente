@@ -28,6 +28,7 @@ from opofuente.application.question_service import QuestionService
 from opofuente.application.readiness_service import ReadinessService
 from opofuente.application.review_service import ReviewService
 from opofuente.application.search_service import SearchService
+from opofuente.application.student_service import StudentService
 from opofuente.application.study_service import StudyService
 from opofuente.application.system_service import SystemService
 from opofuente.config import Settings
@@ -144,6 +145,11 @@ def get_dossier_service(request: Request) -> DossierService:
     return service
 
 
+def get_student_service(request: Request) -> StudentService:
+    service: StudentService = request.app.state.student_service
+    return service
+
+
 #: Dependencias anotadas (estilo moderno de FastAPI: sin llamadas en valores por defecto).
 AppSettingsDep = Annotated[Settings, Depends(get_app_settings)]
 SystemServiceDep = Annotated[SystemService, Depends(get_system_service)]
@@ -167,3 +173,4 @@ BackupServiceDep = Annotated[BackupService, Depends(get_backup_service)]
 HousekeepingServiceDep = Annotated[HousekeepingService, Depends(get_housekeeping_service)]
 DiagnosticServiceDep = Annotated[DiagnosticService, Depends(get_diagnostic_service)]
 ReadinessServiceDep = Annotated[ReadinessService, Depends(get_readiness_service)]
+StudentServiceDep = Annotated[StudentService, Depends(get_student_service)]

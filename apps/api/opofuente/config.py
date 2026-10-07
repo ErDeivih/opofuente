@@ -120,6 +120,16 @@ class Settings(BaseSettings):
     #: van los embeddings aunque el proveedor estuviera configurado.
     embedding_base_url: str | None = None
 
+    # --- Zona del alumno (F2) -------------------------------------------------
+    #: La oposición que sirve `/api/v1/student/*`. Es un **código**, no un identificador: los
+    #: identificadores son de esta base y no se pueden escribir en un fichero de configuración que
+    #: se copia entre máquinas. El filtro vive aquí, en el servidor: la pantalla del alumno no elige
+    #: oposición (REDISENO-ALUMNO §3.11).
+    student_opposition: str = Field(default="tai-age", min_length=1)
+    #: Con `True`, la API del alumno sirve **solo** conjuntos `public` (los que la administración
+    #: publica). Por defecto `False`: el propietario estudia con su propio material.
+    public_mode: bool = False
+
     tesseract_path: Path | None = None
     #: Idiomas del OCR, en la forma que entiende Tesseract (`spa`, `spa+eng`). Por defecto español,
     #: porque el material de esta aplicación está en español y un OCR en inglés sobre texto español

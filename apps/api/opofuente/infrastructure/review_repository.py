@@ -299,7 +299,8 @@ class SqlAlchemyReviewRepository:
     ) -> ErrorView | None:
         """Declara la causa de un fallo. Si ya estaba declarada, se **corrige**, no se duplica."""
         with self._session_factory() as session:
-            if session.get(AttemptRecord, attempt_id) is None:
+            intento = session.get(AttemptRecord, attempt_id)
+            if intento is None:
                 return None
             existente = session.execute(
                 select(LearningErrorRecord).where(LearningErrorRecord.attempt_id == attempt_id)
@@ -308,6 +309,9 @@ class SqlAlchemyReviewRepository:
                 fila = LearningErrorRecord(
                     id=_new_id(),
                     attempt_id=attempt_id,
+                    # El dueño es el del intento: un fallo no es de quien lo declara, es de quien
+                    # falló, y el intento ya lo dice (0027).
+                    owner_id=str(intento.owner_id),
                     curriculum_node_id=curriculum_node_id,
                     concept_label=concept_label,
                     cause=cause,
