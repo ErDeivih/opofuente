@@ -2,13 +2,34 @@
 
 from __future__ import annotations
 
+from datetime import date
+
 from fastapi.testclient import TestClient
 
 from opofuente.api.errors import PROBLEM_MEDIA_TYPE
+from opofuente.application.profiles_service import ProfilesService
+from opofuente.config import Settings
+from opofuente.domain.profiles import (
+    Convocation,
+    ConvocationStatus,
+    CurriculumNode,
+    ExamPart,
+    NodeType,
+    Opposition,
+    PartFormat,
+    PartKind,
+    Profile,
+)
+from opofuente.infrastructure.clock import SystemClock
+from opofuente.infrastructure.db import build_engine, build_session_factory
+from opofuente.infrastructure.profile_repository import SqlAlchemyProfileRepository
 
 TAI = "tai-age"
 GC = "gc-cabos-guardias"
 CELADOR = "celador-sacyl"
+
+PRUEBA = "prueba-orden"
+PRUEBA_CONVOCATORIA = "prueba-orden-2026"
 
 
 def _opposition_id(client: TestClient, code: str) -> str:
@@ -124,6 +145,116 @@ def test_programa_de_celador_tiene_dieciseis_temas_sin_bloques(seeded_client: Te
     assert body["nodes"][0]["official_code"] == "1"
     assert body["nodes"][0]["title"].startswith("Estructura de la Consejería de Sanidad.")
     assert all(not node["children"] for node in body["nodes"])
+
+
+def _tema(path: str, *, position: int) -> CurriculumNode:
+    return CurriculumNode(
+        node_type=NodeType.TOPIC,
+        official_code=path.split(".")[-1],
+        title=f"Tema {path}",
+        position=position,
+        path=path,
+        depth=1,
+    )
+
+
+def _bloque(code: str, *, position: int, children: tuple[CurriculumNode, ...]) -> CurriculumNode:
+    return CurriculumNode(
+        node_type=NodeType.BLOCK,
+        official_code=code,
+        title=f"Bloque {code}",
+        position=position,
+        path=code,
+        depth=0,
+        children=children,
+    )
+
+
+def _perfil_de_prueba() -> Profile:
+    """Un programa con los temas **numerados en el orden del texto de la ruta**.
+
+    `IV.1` es la fila 1, `IV.10` la 2 y `IV.2` la 3: exactamente lo que sale de un generador que
+    recorre la fuente y numera lo que encuentra. Las posiciones son consecutivas —el programa es
+    válido— y el número oficial del tema solo está en la ruta.
+    """
+    return Profile(
+        opposition=Opposition(code=PRUEBA, name="Oposición de prueba del orden"),
+        convocation=Convocation(
+            code=PRUEBA_CONVOCATORIA,
+            title="Convocatoria de prueba del orden del programa",
+            official_url="https://example.invalid/convocatoria-de-prueba",
+            published_at=date(2026, 1, 2),
+            status=ConvocationStatus.ACTIVE,
+        ),
+        curriculum=(
+            _bloque("I", position=1, children=(_tema("I.1", position=1),)),
+            _bloque(
+                "IV",
+                position=2,
+                children=(
+                    _tema("IV.1", position=1),
+                    _tema("IV.10", position=2),
+                    _tema("IV.2", position=3),
+                ),
+            ),
+        ),
+        parts=(
+            ExamPart(
+                code="unico",
+                name="Ejercicio único",
+                kind=PartKind.TEST,
+                format=PartFormat.SINGLE_CHOICE,
+                position=1,
+                ordinary_items=10,
+                evidence_quote="cita de la convocatoria de prueba",
+            ),
+        ),
+        rules=(),
+    )
+
+
+def _sembrar_programa_de_prueba(settings: Settings) -> None:
+    engine = build_engine(settings.data_paths.database)
+    try:
+        repositorio = SqlAlchemyProfileRepository(build_session_factory(engine))
+        ProfilesService(repositorio, SystemClock()).seed([_perfil_de_prueba()])
+    finally:
+        engine.dispose()
+
+
+def test_el_programa_sale_en_orden_numerico_aunque_la_fila_no_lo_traiga(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """`IV.1`, `IV.2`, `IV.10` — y `I.1` antes que `I.2`—, no `IV.1, IV.10, IV.2`.
+
+    El programa sembrado tiene las posiciones en el orden del **texto** de la ruta (`IV.1` = 1,
+    `IV.10` = 2, `IV.2` = 3), que es lo que hoy decide el orden: la pantalla enseñaba `IV.10` justo
+    detrás de `IV.1`. El orden tiene que salir del número del bloque y del tema que lleva la ruta.
+    """
+    _sembrar_programa_de_prueba(seeded_settings)
+    convocatoria = _convocation(seeded_client, PRUEBA, PRUEBA_CONVOCATORIA)
+
+    body = seeded_client.get(f"/api/v1/convocations/{convocatoria['id']}/curriculum").json()
+
+    assert [bloque["path"] for bloque in body["nodes"]] == ["I", "IV"]
+    assert [tema["path"] for tema in body["nodes"][0]["children"]] == ["I.1"]
+    assert [tema["path"] for tema in body["nodes"][1]["children"]] == ["IV.1", "IV.2", "IV.10"]
+    # El código oficial del tema es el número que se lee: 1, 2 y 10, en ese orden.
+    assert [tema["official_code"] for tema in body["nodes"][1]["children"]] == ["1", "2", "10"]
+
+
+def test_el_programa_real_de_tai_termina_en_iv_diez(seeded_client: TestClient) -> None:
+    """El programa oficial entero, en orden, con `IV.10` al final del bloque IV."""
+    oposicion_id = _opposition_id(seeded_client, TAI)
+    convocatoria = seeded_client.get(f"/api/v1/oppositions/{oposicion_id}/convocations").json()[0]
+    body = seeded_client.get(f"/api/v1/convocations/{convocatoria['id']}/curriculum").json()
+
+    assert [bloque["official_code"] for bloque in body["nodes"]] == ["I", "II", "III", "IV"]
+    for bloque in body["nodes"]:
+        numeros = [int(tema["official_code"]) for tema in bloque["children"]]
+        assert numeros == sorted(numeros), f"el bloque {bloque['path']} no va en orden numérico"
+    assert [tema["path"] for tema in body["nodes"][0]["children"]][:2] == ["I.1", "I.2"]
+    assert [tema["path"] for tema in body["nodes"][3]["children"]][-2:] == ["IV.9", "IV.10"]
 
 
 def test_una_oposicion_puede_tener_dos_convocatorias_con_programas_distintos(

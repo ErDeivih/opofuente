@@ -26,6 +26,7 @@ from opofuente.application.read_models import CoverageNodeView, CoverageView
 from opofuente.domain.classification import MappingStatus, coverage_counts_as_accepted
 from opofuente.domain.documents import VersionStatus
 from opofuente.domain.extraction import Quality
+from opofuente.infrastructure.curriculum_order import curriculum_order
 from opofuente.infrastructure.db_models import (
     ConvocationVersionRecord,
     CurriculumMappingRecord,
@@ -90,7 +91,7 @@ def document_coverage(
                     ConvocationVersionRecord.id == CurriculumNodeRecord.convocation_version_id,
                 )
                 .where(ConvocationVersionRecord.code == convocation_code)
-                .order_by(CurriculumNodeRecord.path)
+                .order_by(*curriculum_order(CurriculumNodeRecord.path))
             )
             .scalars()
             .all()

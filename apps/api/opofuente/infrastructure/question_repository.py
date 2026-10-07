@@ -53,6 +53,7 @@ from opofuente.domain.questions import (
     can_activate,
     question_fingerprint,
 )
+from opofuente.infrastructure.curriculum_order import curriculum_order
 from opofuente.infrastructure.db_models import (
     AnswerKeyEntryRecord,
     AnswerKeyVersionRecord,
@@ -986,7 +987,7 @@ class SqlAlchemyQuestionRepository:
                     CurriculumMappingRecord.subject_type == "question_version",
                     CurriculumMappingRecord.subject_id == question_version_id,
                 )
-                .order_by(CurriculumNodeRecord.path)
+                .order_by(*curriculum_order(CurriculumNodeRecord.path))
             ).all()
             return tuple(_topic_view(mapeo, nodo) for mapeo, nodo in filas)
 

@@ -45,6 +45,7 @@ from opofuente.domain.profiles import (
     RuleKind,
     flatten,
 )
+from opofuente.infrastructure.curriculum_order import curriculum_order
 from opofuente.infrastructure.db_models import (
     ConvocationVersionRecord,
     CurriculumMappingRecord,
@@ -149,11 +150,14 @@ class SqlAlchemyProfileRepository:
             if convocation is None:
                 return None
             opposition = session.get(OppositionRecord, convocation.opposition_id)
+            # El orden del programa se decide **aquí**: por el número del bloque y el del tema
+            # (`IV.1, IV.2, … IV.10`), no por el texto de `path` ni por la fila en que se sembró el
+            # nodo. `_tree` solo cuelga cada fila de su padre, respetando este orden.
             rows = (
                 session.execute(
                     select(CurriculumNodeRecord)
                     .where(CurriculumNodeRecord.convocation_version_id == convocation_id)
-                    .order_by(CurriculumNodeRecord.depth, CurriculumNodeRecord.position)
+                    .order_by(*curriculum_order(CurriculumNodeRecord.path))
                 )
                 .scalars()
                 .all()
@@ -689,12 +693,18 @@ class SqlAlchemyProfileRepository:
         )
 
     def _tree(self, rows: Iterable[CurriculumNodeRecord]) -> tuple[NodeView, ...]:
+        """Monta el árbol **respetando el orden en el que llegan las filas**.
+
+        El orden no se decide aquí: quien consulta (`get_curriculum`) pide los nodos ya ordenados
+        por (bloque, tema) con `curriculum_order`, y este método solo cuelga cada fila de su padre.
+        Volver a ordenar por `position` —como se hacía— devolvía el orden de siembra del documento,
+        que es de donde venía el `IV.10` detrás del `IV.1`.
+        """
         by_parent: dict[str | None, list[CurriculumNodeRecord]] = {}
         for row in rows:
             by_parent.setdefault(row.parent_id, []).append(row)
 
         def build(parent_id: str | None) -> tuple[NodeView, ...]:
-            children = sorted(by_parent.get(parent_id, []), key=lambda row: row.position)
             return tuple(
                 NodeView(
                     id=row.id,
@@ -707,7 +717,7 @@ class SqlAlchemyProfileRepository:
                     depth=row.depth,
                     children=build(row.id),
                 )
-                for row in children
+                for row in by_parent.get(parent_id, [])
             )
 
         return build(None)

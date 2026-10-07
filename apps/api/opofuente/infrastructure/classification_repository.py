@@ -66,6 +66,7 @@ from opofuente.domain.classification import (
 )
 from opofuente.domain.duplicates import TextDocument
 from opofuente.domain.extraction import Quality
+from opofuente.infrastructure.curriculum_order import curriculum_order
 from opofuente.infrastructure.db_models import (
     AuditEventRecord,
     ClassificationProposalRecord,
@@ -322,7 +323,7 @@ class SqlAlchemyClassificationRepository:
             session.execute(
                 select(CurriculumNodeRecord)
                 .where(CurriculumNodeRecord.convocation_version_id == convocation_id)
-                .order_by(CurriculumNodeRecord.path)
+                .order_by(*curriculum_order(CurriculumNodeRecord.path))
             )
             .scalars()
             .all()
@@ -922,7 +923,7 @@ class SqlAlchemyClassificationRepository:
                     CurriculumNodeRecord.id == CurriculumMappingRecord.curriculum_node_id,
                 )
                 .where(*filtros)
-                .order_by(CurriculumNodeRecord.path)
+                .order_by(*curriculum_order(CurriculumNodeRecord.path))
             ).all()
             etiquetas = self._subject_labels(
                 session, [(mapeo.subject_type, mapeo.subject_id) for mapeo, _ in filas]
@@ -982,7 +983,7 @@ class SqlAlchemyClassificationRepository:
                         ConvocationVersionRecord.id == CurriculumNodeRecord.convocation_version_id,
                     )
                     .where(ConvocationVersionRecord.code == convocation_code)
-                    .order_by(CurriculumNodeRecord.path)
+                    .order_by(*curriculum_order(CurriculumNodeRecord.path))
                 )
                 .scalars()
                 .all()
