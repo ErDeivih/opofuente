@@ -2,6 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 
+import { AdminShell } from '../../src/app/AdminShell';
 import { AppShell } from '../../src/app/AppShell';
 import { ProgramPage } from '../../src/pages/ProgramPage';
 import {
@@ -31,7 +32,7 @@ import {
   type StubbedRoute,
 } from './testUtils';
 
-function stubProgramApi() {
+function stubProgramApi(extra: Record<string, StubbedRoute> = {}) {
   return stubApi({
     [`/api/v1/oppositions/${GC_ID}/activate`]: { body: { ...oppositionsFixture[1], active: true } },
     '/api/v1/oppositions': { body: oppositionsFixture },
@@ -45,6 +46,7 @@ function stubProgramApi() {
     '/api/v1/curriculum-nodes/node-i-1': { body: nodeDetailFixture },
     [`/api/v1/convocations/${TAI_CONVOCATION_ID}/curriculum`]: { body: curriculumFixture },
     [`/api/v1/convocations/${TAI_CONVOCATION_ID}`]: { body: convocationFixture },
+    ...extra,
   });
 }
 
@@ -286,12 +288,27 @@ describe('pantalla Programa', () => {
   });
 
   it('cambia de oposición activa a través de la API', async () => {
-    const fetchMock = stubProgramApi();
+    // El selector de oposición es del panel (F1 del rediseño): el alumno prepara TAI y punto, así que
+    // cambiar de oposición se hace desde el marco de administración.
+    const fetchMock = stubProgramApi({
+      '/api/v1/pending-actions': { body: { actions: [], total: 0 } },
+      '/api/v1/reviews/due': {
+        body: {
+          items: [],
+          stats: { active: 0, due: 0, next_due_at: null, lapses: 0 },
+          concepts: [],
+          notes: [],
+        },
+      },
+      '/api/v1/questions?status=conflicting&limit=1': {
+        body: { questions: [], total: 0, limit: 1, offset: 0 },
+      },
+    });
     renderWithProviders(
-      <AppShell>
+      <AdminShell>
         <ProgramPage />
-      </AppShell>,
-      { route: '/programa' },
+      </AdminShell>,
+      { route: '/admin/programa' },
     );
 
     const selector = await screen.findByLabelText('Oposición');

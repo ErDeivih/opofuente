@@ -135,6 +135,19 @@ button:focus-visible,
   font-size: 0.85rem;
 }
 
+/* --- Zona de administración (F1 del rediseño, 6 de octubre de 2026) --------- */
+
+/* El aviso fijo del panel. Va en ámbar —el color de «ojo con esto»— y no en rojo, que está reservado
+   a lo que ha fallado: no es un error, es una advertencia de que esto no es una frontera. */
+.app__aviso-modo {
+  margin: 0;
+  padding: 0.55rem 1.25rem;
+  background: var(--color-aviso-fondo);
+  color: var(--color-aviso);
+  border-bottom: 1px solid var(--color-borde);
+  font-size: 0.9rem;
+}
+
 /* --- Navegación ------------------------------------------------------------ */
 
 .nav {

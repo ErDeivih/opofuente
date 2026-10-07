@@ -3,7 +3,6 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 
 import type { ChangeSet, DerivedArtifact } from '../../src/api/changes';
-import { AppShell } from '../../src/app/AppShell';
 import { AppRoutes } from '../../src/app/routes';
 import {
   capabilitiesFixture,
@@ -139,12 +138,9 @@ function stubCambios(overrides: Record<string, StubbedRoute> = {}) {
 }
 
 function renderCambios() {
-  return renderWithProviders(
-    <AppShell>
-      <AppRoutes />
-    </AppShell>,
-    { route: '/cambios' },
-  );
+  // El marco lo pone la ruta (F1 del rediseño): `/cambios` es una dirección antigua que lleva al
+  // panel, y el panel trae su propio marco.
+  return renderWithProviders(<AppRoutes />, { route: '/cambios' });
 }
 
 describe('cambios: la propuesta', () => {

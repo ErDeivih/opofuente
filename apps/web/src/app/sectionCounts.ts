@@ -1,15 +1,16 @@
 import { useConflictingQuestions, useOppositions, usePendingActions, useReviewQueue } from '../api/queries';
 
 /**
- * Los contadores de la navegación (07_UI-UX §2).
+ * Los contadores del menú de administración (07_UI-UX §2, movidos a `/admin` en F1).
  *
- * La especificación pide cuatro: `[pendientes]` en Bandeja, `[conflictos]` en Preguntas, `[vencidos]`
- * en Errores y `[revisar]` en Cambios. No son decoración: son la respuesta a «¿dónde me espera
- * trabajo?» sin tener que entrar pantalla por pantalla, que es la mitad de la experiencia sencilla.
+ * Son la respuesta a «¿dónde me espera trabajo?» sin tener que entrar pantalla por pantalla: avisos
+ * de importación sin resolver, preguntas en conflicto, repasos vencidos y cambios sin confirmar. Eso
+ * es trabajo del propietario, así que viven en el panel y **no** en la barra del alumno, que solo
+ * tiene que saber qué estudiar.
  *
  * Cada cifra sale de **donde ya se cuenta**: el resumen de pendientes (avisos e importaciones sin
  * resolver y cambios sin confirmar), la cola de repaso —que es la misma que alimenta la tarjeta
- * «Siguiente tarea» de Inicio— y el total que sirve el propio banco. Aquí no se cuenta nada a mano ni
+ * «Repasar fallos» de Inicio— y el total que sirve el propio banco. Aquí no se cuenta nada a mano ni
  * se suman cosas distintas de sitios distintos para que el número cuadre.
  */
 
@@ -20,7 +21,7 @@ export interface SectionCount {
   readonly label: string;
 }
 
-/** Los contadores por ruta de la navegación; solo aparecen las rutas que tienen algo. */
+/** Los contadores por ruta del menú de administración; solo aparecen las rutas que tienen algo. */
 export type SectionCounts = Readonly<Record<string, SectionCount>>;
 
 export function useSectionCounts(): SectionCounts {
@@ -32,16 +33,16 @@ export function useSectionCounts(): SectionCounts {
 
   const contadores: Record<string, SectionCount> = {};
 
-  // Bandeja: lo que pide una mirada en la bandeja son las incidencias de importación sin resolver
-  // —los ficheros que no entraron y por qué—, no los lotes que ya terminaron bien.
+  // Importaciones: lo que pide una mirada son las incidencias de importación sin resolver —los
+  // ficheros que no entraron y por qué—, no los lotes que ya terminaron bien.
   const avisos = pendientes.data?.actions.find((accion) => accion.key === 'importaciones')?.count ?? 0;
   if (avisos > 0) {
-    contadores['/bandeja'] = { count: avisos, label: `${avisos} avisos o errores de importación` };
+    contadores['/admin/importar'] = { count: avisos, label: `${avisos} avisos o errores de importación` };
   }
 
   const enConflicto = conflictos.data?.total ?? 0;
   if (enConflicto > 0) {
-    contadores['/preguntas'] = {
+    contadores['/admin/preguntas'] = {
       count: enConflicto,
       label: `${enConflicto} preguntas en conflicto`,
     };
@@ -49,12 +50,12 @@ export function useSectionCounts(): SectionCounts {
 
   const vencidos = repaso.data?.stats.due ?? 0;
   if (vencidos > 0) {
-    contadores['/errores'] = { count: vencidos, label: `${vencidos} repasos vencidos` };
+    contadores['/admin/errores'] = { count: vencidos, label: `${vencidos} repasos vencidos` };
   }
 
   const cambios = pendientes.data?.actions.find((accion) => accion.key === 'cambios')?.count ?? 0;
   if (cambios > 0) {
-    contadores['/cambios'] = { count: cambios, label: `${cambios} cambios sin confirmar` };
+    contadores['/admin/cambios'] = { count: cambios, label: `${cambios} cambios sin confirmar` };
   }
 
   return contadores;
