@@ -3,7 +3,6 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 
 import type { EvidenceSpan, RagQuery, SearchResult } from '../../src/api/search';
-import { AppShell } from '../../src/app/AppShell';
 import { AppRoutes } from '../../src/app/routes';
 import { SearchPage } from '../../src/pages/SearchPage';
 import {
@@ -144,13 +143,10 @@ function stubBusqueda(overrides: Record<string, StubbedRoute> = {}) {
   });
 }
 
-function renderBuscar(route = '/buscar?q=estado') {
-  return renderWithProviders(
-    <AppShell>
-      <AppRoutes />
-    </AppShell>,
-    { route },
-  );
+function renderBuscar(route = '/admin/buscar?q=estado') {
+  // La búsqueda vive en el panel (F1 del rediseño): su dirección es `/admin/buscar` y su marco, el
+  // de administración, que es quien trae la caja de la cabecera.
+  return renderWithProviders(<AppRoutes />, { route });
 }
 
 /** El cuerpo JSON de la primera petición que contenga el fragmento, con el método si se pide. */
@@ -226,7 +222,7 @@ describe('búsqueda: pantalla', () => {
 describe('preguntar: respuesta con citas', () => {
   it('manda el estilo elegido y enseña la falta de evidencia como resultado, no como error', async () => {
     const fetchMock = stubBusqueda();
-    renderBuscar('/buscar');
+    renderBuscar('/admin/buscar');
 
     await userEvent.type(screen.getByLabelText('Qué buscas'), 'diputados tiene el Congreso');
     await userEvent.click(screen.getByRole('button', { name: 'Preguntar al corpus' }));
@@ -254,7 +250,7 @@ describe('preguntar: respuesta con citas', () => {
 
   it('cada afirmación lleva su cita y avisa cuando una no cita nada', async () => {
     stubBusqueda({ '/api/v1/rag/queries': { body: RESPUESTA_RESPALDADA, status: 201 } });
-    renderBuscar('/buscar?q=España');
+    renderBuscar('/admin/buscar?q=España');
 
     await userEvent.click(screen.getByRole('button', { name: 'Preguntar al corpus' }));
 
@@ -268,7 +264,7 @@ describe('preguntar: respuesta con citas', () => {
 
   it('la recuperación completa se puede abrir y distingue lo usado de lo descartado', async () => {
     const fetchMock = stubBusqueda();
-    renderBuscar('/buscar');
+    renderBuscar('/admin/buscar');
 
     await userEvent.type(screen.getByLabelText('Qué buscas'), 'diputados');
     await userEvent.click(screen.getByRole('button', { name: 'Preguntar al corpus' }));
@@ -303,7 +299,7 @@ describe('preguntar: respuesta con citas', () => {
         contentType: 'application/problem+json',
       },
     });
-    renderBuscar('/buscar?q=estado');
+    renderBuscar('/admin/buscar?q=estado');
 
     await userEvent.click(screen.getByRole('button', { name: 'Preguntar al corpus' }));
 
@@ -315,12 +311,9 @@ describe('preguntar: respuesta con citas', () => {
 describe('búsqueda global de la cabecera', () => {
   it('lleva a la sección de búsqueda con el término en la dirección', async () => {
     const fetchMock = stubBusqueda();
-    renderWithProviders(
-      <AppShell>
-        <AppRoutes />
-      </AppShell>,
-      { route: '/' },
-    );
+    // La caja de la cabecera es del panel (F1 del rediseño): desde él se busca y se aterriza en
+    // `/admin/buscar`, que es la pantalla con los filtros y las citas.
+    renderWithProviders(<AppRoutes />, { route: '/admin/ui' });
 
     await userEvent.type(await screen.findByLabelText('Buscar en el corpus'), 'artículo 1{enter}');
 
@@ -332,23 +325,19 @@ describe('búsqueda global de la cabecera', () => {
 
   it('no navega con el campo vacío', async () => {
     stubBusqueda();
-    renderWithProviders(
-      <AppShell>
-        <AppRoutes />
-      </AppShell>,
-      { route: '/' },
-    );
+    renderWithProviders(<AppRoutes />, { route: '/admin/ui' });
 
     await userEvent.type(await screen.findByLabelText('Buscar en el corpus'), '   {enter}');
     expect(screen.queryByRole('heading', { level: 1, name: 'Buscar y preguntar' })).toBeNull();
-    expect(screen.getByRole('heading', { level: 1, name: 'Inicio' })).toBeInTheDocument();
+    // Sigue donde estaba: en la pantalla del panel desde la que se escribía.
+    expect(screen.getByRole('heading', { level: 1, name: 'Componentes' })).toBeInTheDocument();
   });
 
   it('con el modo histórico pedido se dice en la pantalla y se manda al servidor', async () => {
     const fetchMock = stubBusqueda({
       '/api/v1/search': { body: { ...BUSQUEDA, version_mode: 'explicit_historical' } },
     });
-    renderBuscar('/buscar');
+    renderBuscar('/admin/buscar');
 
     await userEvent.type(screen.getByLabelText('Qué buscas'), 'temario');
     await userEvent.selectOptions(screen.getByLabelText('Versiones'), 'explicit_historical');

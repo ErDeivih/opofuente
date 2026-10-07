@@ -128,6 +128,12 @@
   cursor: not-allowed;
 }
 
+/* El mismo botón vale de enlace cuando lo que hace es **navegar** («Empezar un test» lleva a los
+   tests): misma forma y mismo alto, sin subrayado, para que no haya dos maneras de ver lo mismo. */
+a.ui-button {
+  text-decoration: none;
+}
+
 :focus-visible {
   outline: 3px solid var(--accent);
   outline-offset: 2px;

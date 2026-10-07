@@ -4,9 +4,13 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 /**
  * Búsqueda global de la cabecera (07_UI-UX §2).
  *
- * No busca aquí: lleva a `/buscar?q=…`, que es la pantalla que enseña los fragmentos con su cita, sus
- * filtros y la opción de preguntar al corpus. La cabecera no abre un desplegable con «lo más
- * parecido»: no se enseña un resultado sin su procedencia, y para eso hace falta la sección.
+ * No busca aquí: lleva a `/admin/buscar?q=…`, que es la pantalla que enseña los fragmentos con su
+ * cita, sus filtros y la opción de preguntar sobre el material. La cabecera no abre un desplegable con
+ * «lo más parecido»: no se enseña un resultado sin su procedencia, y para eso hace falta la sección.
+ *
+ * Vive en el **panel** (F1 del rediseño): buscar en el material recopilado es trabajo de
+ * administración. La barra del alumno no la trae, y la dirección antigua `/buscar` sigue llegando a
+ * esta pantalla por la redirección.
  *
  * El campo enseña lo escrito **mientras** se escribe y, en cuanto la dirección cambia (aquí o en la
  * propia pantalla de búsqueda), vuelve a lo que se está buscando: una sola verdad, la dirección.
@@ -23,7 +27,7 @@ export function GlobalSearch() {
     if (termino === '') {
       return;
     }
-    void navigate(`/buscar?q=${encodeURIComponent(termino)}`);
+    void navigate(`/admin/buscar?q=${encodeURIComponent(termino)}`);
   }
 
   return (

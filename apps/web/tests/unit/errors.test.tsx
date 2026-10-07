@@ -3,7 +3,6 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 
 import type { ConceptGroup, LearningErrorDetail, ReviewQueue } from '../../src/api/reviews';
-import { AppShell } from '../../src/app/AppShell';
 import { AppRoutes } from '../../src/app/routes';
 import {
   capabilitiesFixture,
@@ -172,12 +171,9 @@ function stubErrores(overrides: Record<string, StubbedRoute> = {}) {
 }
 
 function renderErrores() {
-  return renderWithProviders(
-    <AppShell>
-      <AppRoutes />
-    </AppShell>,
-    { route: '/errores' },
-  );
+  // El marco lo pone la ruta (F1 del rediseño): `/errores` es una dirección antigua que lleva al
+  // panel, y el panel trae su propio marco.
+  return renderWithProviders(<AppRoutes />, { route: '/errores' });
 }
 
 describe('errores: la cola de hoy', () => {

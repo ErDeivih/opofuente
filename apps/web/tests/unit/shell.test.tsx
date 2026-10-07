@@ -1,276 +1,292 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import { useLocation } from 'react-router-dom';
 
-import { NAV_ITEMS } from '../../src/app/navigation';
+import { AdminShell } from '../../src/app/AdminShell';
 import { AppShell } from '../../src/app/AppShell';
+import {
+  ADMIN_NAV_ITEMS,
+  ROUTE_REDIRECTS,
+  STUDENT_NAV_ITEMS,
+} from '../../src/app/navigation';
 import { AppRoutes } from '../../src/app/routes';
 import { NotFoundPage } from '../../src/pages/NotFoundPage';
-import { HomePage } from '../../src/pages/HomePage';
+import { revisarPantalla } from '../palabrasProhibidas';
 import {
   capabilitiesFixture,
   oppositionsFixture,
-  pendingActionsFixture,
+  pendingActionsEmptyFixture,
   readinessReady,
   renderWithProviders,
   settingsFixture,
   stubApi,
-  studyReadinessFixture,
   type StubbedRoute,
 } from './testUtils';
 
-function stubSystemApi(extra: Record<string, StubbedRoute> = {}) {
+/** Lo que necesita la zona de administración para pintarse: cabecera, avisos y contadores. */
+function stubPanel(extra: Record<string, StubbedRoute> = {}) {
   return stubApi({
     '/api/v1/health/ready': { body: readinessReady },
     '/api/v1/capabilities': { body: capabilitiesFixture },
     '/api/v1/settings': { body: settingsFixture },
     '/api/v1/oppositions': { body: oppositionsFixture },
-    // Inicio lee además la preparación y lo que espera una decisión (S12.6). La clave de la
-    // preparación es más larga que `/api/v1/oppositions`, así que gana para su ruta.
-    '/api/v1/oppositions/opp-tai/readiness': { body: studyReadinessFixture },
-    '/api/v1/pending-actions': { body: pendingActionsFixture },
+    '/api/v1/pending-actions': { body: pendingActionsEmptyFixture },
+    '/api/v1/reviews/due': {
+      body: {
+        items: [],
+        stats: { active: 0, due: 0, next_due_at: null, lapses: 0 },
+        concepts: [],
+        notes: [],
+      },
+    },
+    '/api/v1/questions?status=conflicting&limit=1': {
+      body: { questions: [], total: 0, limit: 1, offset: 0 },
+    },
     ...extra,
   });
 }
 
-function stubAdjustesApi(extra: Record<string, StubbedRoute> = {}) {
-  // Ajustes consulta cinco rutas propias: sin ellas las secciones quedan cargando y la pantalla no
-  // llega a declararse construida.
-  return stubSystemApi({
-    '/api/v1/backups': { body: { backups: [] } },
-    '/api/v1/housekeeping': {
-      body: {
-        usage: [],
-        candidates: [],
-        retention_days: 30,
-        total_bytes: 0,
-        reclaimable_bytes: 0,
-      },
+/** Lo que lee Inicio: los tests, lo que fallaste y tu progreso. */
+function stubInicio(extra: Record<string, StubbedRoute> = {}) {
+  return stubPanel({
+    '/api/v1/study-sessions': {
+      body: { sessions: [], total: 0, limit: 50, offset: 0 },
     },
-    '/api/v1/search/index': { body: { healthy: true, detail: 'completo', missing_entries: 0 } },
-    '/api/v1/diagnostics': {
+    '/api/v1/reviews/mastery': {
       body: {
-        generated_at: '2026-09-19T12:00:00+00:00',
-        version: '0.0.0-test',
-        schema_revision: '0020_changes_and_derivatives',
-        python_version: '3.12.0',
-        platform: 'Windows 11 (python 64 bits)',
-        host: '127.0.0.1',
-        port: 8765,
-        log_level: 'INFO',
-        data_dir_display: '…/datos',
-        database_file_display: '…/datos/opofuente.sqlite3',
-        disk_total_bytes: 1,
-        disk_free_bytes: 1,
-        counts: {},
-        capabilities: capabilitiesFixture.capabilities,
-        degradations: [],
-        checks: readinessReady.checks,
-        limits: settingsFixture.limits,
-        log_tail: [],
-        note: 'Diagnóstico sanitizado',
+        opposition_id: 'opp-tai',
+        nodes_total: 33,
+        nodes_with_estimate: 0,
+        nodes: [],
+        note: 'Sin intentos no hay nada que estimar.',
       },
     },
     ...extra,
   });
 }
 
-describe('navegación', () => {
-  it('contiene las secciones del MVP en orden', () => {
-    expect(NAV_ITEMS.map((item) => item.label)).toEqual([
+/** La dirección en la que está el navegador, para poder comprobar una redirección. */
+function RutaActual() {
+  const { pathname, search } = useLocation();
+  return <p data-testid="ruta">{`${pathname}${search}`}</p>;
+}
+
+/** Lo que se lee en la pantalla: la interfaz (sin el contenido) y todo. */
+function textoDeLaPantalla() {
+  const copia = document.body.cloneNode(true) as HTMLElement;
+  for (const nodo of Array.from(copia.querySelectorAll('[data-contenido]'))) {
+    nodo.remove();
+  }
+  return { interfaz: copia.textContent ?? '', todo: document.body.textContent ?? '' };
+}
+
+describe('los dos mapas de navegación', () => {
+  it('la zona del alumno tiene siete entradas, en orden, y ninguna de la trastienda', () => {
+    expect(STUDENT_NAV_ITEMS.map((item) => item.label)).toEqual([
       'Inicio',
-      'Bandeja',
-      'Programa',
-      'Biblioteca',
-      'Preguntas',
-      'Estudiar',
-      'Errores',
-      'Cambios',
-      'Ajustes',
+      'Temario',
+      'Tests',
+      'Simulacros',
+      'Exámenes',
+      'Fallos',
+      'Progreso',
+    ]);
+    expect(STUDENT_NAV_ITEMS.map((item) => item.path)).toEqual([
+      '/',
+      '/temario',
+      '/tests',
+      '/simulacros',
+      '/examenes',
+      '/fallos',
+      '/progreso',
     ]);
   });
 
-  it('las secciones construidas están implementadas y las demás declaran su slice', () => {
-    const implementadas = NAV_ITEMS.filter((item) => item.slice === null).map((item) => item.label);
-    expect(implementadas).toEqual([
-      'Inicio',
-      'Bandeja',
-      'Programa',
+  it('el panel tiene su propio menú, con las pantallas que se administran', () => {
+    expect(ADMIN_NAV_ITEMS.map((item) => item.label)).toEqual([
+      'Importaciones',
       'Biblioteca',
-      'Preguntas',
-      'Estudiar',
-      'Errores',
+      'Revisión',
       'Cambios',
+      'Errores',
+      'Preguntas',
+      'Programa',
+      'Estudiar',
+      'Buscar',
       'Ajustes',
+      'Componentes',
     ]);
-    // Ninguna sección queda pendiente: el MVP está completo (S00–S12).
-    expect(NAV_ITEMS.filter((item) => item.slice !== null)).toEqual([]);
+    for (const item of ADMIN_NAV_ITEMS) {
+      expect(item.path.startsWith('/admin/')).toBe(true);
+    }
+  });
+
+  it('las dos zonas no comparten ninguna dirección', () => {
+    const alumno = new Set(STUDENT_NAV_ITEMS.map((item) => item.path));
+    for (const item of ADMIN_NAV_ITEMS) {
+      expect(alumno.has(item.path)).toBe(false);
+    }
+  });
+
+  it('cada dirección vieja tiene su destino nuevo', () => {
+    expect(ROUTE_REDIRECTS.map(({ from, to }) => `${from} -> ${to}`)).toEqual([
+      '/bandeja -> /admin/importar',
+      '/biblioteca -> /admin/biblioteca',
+      '/revision -> /admin/revision',
+      '/cambios -> /admin/cambios',
+      '/errores -> /admin/errores',
+      '/preguntas -> /admin/preguntas',
+      '/programa -> /admin/programa',
+      '/estudiar -> /admin/estudiar',
+      '/buscar -> /admin/buscar',
+      '/ajustes -> /admin/ajustes',
+    ]);
   });
 });
 
-describe('shell de la aplicación', () => {
-  it('Ajustes ya está construida: su ruta no anuncia un slice pendiente', async () => {
-    stubAdjustesApi();
-    renderWithProviders(
-      <AppShell>
-        <AppRoutes />
-      </AppShell>,
-      { route: '/ajustes' },
-    );
+describe('el marco del alumno', () => {
+  it('tiene las siete entradas y nada de la trastienda', () => {
+    renderWithProviders(<AppRoutes />, { route: '/temario' });
 
-    expect(await screen.findByRole('heading', { level: 1, name: 'Ajustes' })).toBeInTheDocument();
-    expect(screen.queryByText(/slice S12/)).toBeNull();
-    expect(screen.queryByText('pendiente')).toBeNull();
+    const nav = screen.getByRole('navigation', { name: 'Secciones de la aplicación' });
+    expect(within(nav).getAllByRole('link').map((enlace) => enlace.textContent)).toEqual([
+      'Inicio',
+      'Temario',
+      'Tests',
+      'Simulacros',
+      'Exámenes',
+      'Fallos',
+      'Progreso',
+    ]);
+    // Ni buscar en el material recopilado, ni selector de oposición, ni indicadores del sistema.
+    expect(screen.queryByLabelText('Buscar en el corpus')).toBeNull();
+    expect(screen.queryByLabelText('Oposición')).toBeNull();
+    expect(screen.queryByLabelText('Estado de capacidades clave')).toBeNull();
+    // Y ningún contador: lo que espera trabajo es cosa del panel.
+    expect(document.querySelectorAll('.nav__count')).toHaveLength(0);
   });
 
-  it('Cambios ya está construida: su ruta no anuncia un slice pendiente', async () => {
-    stubSystemApi({
-      '/api/v1/change-sets?limit=100': { body: [] },
-      '/api/v1/derived-artifacts?needs_review=true': { body: [] },
-    });
-    renderWithProviders(
-      <AppShell>
-        <AppRoutes />
-      </AppShell>,
-      { route: '/cambios' },
-    );
+  it('deja una sola puerta al panel, discreta, en el pie', () => {
+    renderWithProviders(<AppRoutes />, { route: '/temario' });
 
-    expect(await screen.findByRole('heading', { level: 1, name: 'Cambios' })).toBeInTheDocument();
-    expect(screen.queryByText(/slice S11/)).toBeNull();
-    expect(screen.queryByText('pendiente')).toBeNull();
+    const administrar = screen.getByRole('link', { name: 'Administrar' });
+    expect(administrar).toHaveAttribute('href', '/admin');
   });
 
-  it('Errores ya está construida: su ruta no anuncia un slice pendiente', async () => {
-    stubSystemApi({
-      '/api/v1/reviews/due?opposition_id=opp-tai': {
-        body: {
-          items: [],
-          stats: { active: 0, due: 0, next_due_at: null, lapses: 0 },
-          concepts: [],
-          notes: ['No hay nada vencido.'],
-        },
-      },
-      '/api/v1/learning-errors?opposition_id=opp-tai': {
-        body: { groups: [], total_errors: 0, open_errors: 0 },
-      },
-    });
-    renderWithProviders(
-      <AppShell>
-        <AppRoutes />
-      </AppShell>,
-      { route: '/errores' },
-    );
+  it('una sección que todavía no está lo dice con su frase, sin jerga de construcción', () => {
+    renderWithProviders(<AppRoutes />, { route: '/simulacros' });
 
-    expect(await screen.findByRole('heading', { level: 1, name: 'Errores' })).toBeInTheDocument();
-    expect(screen.queryByText(/slice S10/)).toBeNull();
-    expect(screen.queryByText('pendiente')).toBeNull();
-  });
-
-  it('Estudiar ya está construida: su ruta no anuncia un slice pendiente', async () => {
-    stubSystemApi({
-      '/api/v1/study-sessions?limit=50&offset=0&opposition_id=opp-tai': {
-        body: { sessions: [], total: 0, limit: 50, offset: 0 },
-      },
-      '/api/v1/question-sets?limit=100&offset=0&opposition_id=opp-tai': {
-        body: { sets: [], total: 0, limit: 100, offset: 0 },
-      },
-    });
-    renderWithProviders(
-      <AppShell>
-        <AppRoutes />
-      </AppShell>,
-      { route: '/estudiar' },
-    );
-
-    expect(await screen.findByRole('heading', { level: 1, name: 'Estudiar' })).toBeInTheDocument();
-    expect(screen.queryByText(/slice S07/)).toBeNull();
-    expect(screen.queryByText('pendiente')).toBeNull();
-  });
-
-  it('la Biblioteca ya está construida: su ruta no anuncia un slice pendiente', async () => {
-    stubSystemApi({
-      '/api/v1/documents?limit=50&offset=0': {
-        body: { documents: [], total: 0, limit: 50, offset: 0 },
-      },
-    });
-    renderWithProviders(
-      <AppShell>
-        <AppRoutes />
-      </AppShell>,
-      { route: '/biblioteca' },
-    );
-
+    expect(screen.getByRole('heading', { level: 1, name: 'Simulacros' })).toBeInTheDocument();
     expect(
-      await screen.findByRole('heading', { level: 1, name: 'Biblioteca' }),
+      screen.getByText(/Un examen completo como el del día.*Llega en la siguiente fase\./),
     ).toBeInTheDocument();
-    expect(screen.queryByText(/slice S05/)).toBeNull();
-    expect(screen.queryByText('pendiente')).toBeNull();
-  });
-
-  it('muestra el estado real del sistema en Inicio', async () => {
-    stubSystemApi();
-    renderWithProviders(
-      <AppShell>
-        <HomePage />
-      </AppShell>,
-      { route: '/' },
-    );
-
-    await waitFor(() => {
-      expect(screen.getByText('listo para trabajar')).toBeInTheDocument();
-    });
-    expect(screen.getByText(/sqlite ok/)).toBeInTheDocument();
-    expect(screen.getByText('directorio de datos escribible')).toBeInTheDocument();
-    expect(screen.getByText(settingsFixture.data_dir)).toBeInTheDocument();
-  });
-
-  it('declara las degradaciones en lugar de esconderlas', async () => {
-    stubSystemApi();
-    renderWithProviders(
-      <AppShell>
-        <HomePage />
-      </AppShell>,
-      { route: '/' },
-    );
-
-    expect(
-      await screen.findByText(
-        /Índice vectorial local: no disponible\. Sin proveedor de embeddings no hay vectores/,
-      ),
-    ).toBeInTheDocument();
-    // La tabla de capacidades declara el estado real: nada se muestra como operativo por error.
-    const tabla = screen.getByRole('table', { name: 'Capacidades de esta instalación' });
-    expect(within(tabla).getAllByText('operativo', { selector: '.badge__text' })).toHaveLength(3);
-    expect(within(tabla).getAllByText('no disponible', { selector: '.badge__text' })).toHaveLength(1);
-    expect(within(tabla).getAllByText('desactivado', { selector: '.badge__text' })).toHaveLength(3);
-    // El indicador de cabecera resume el estado del worker.
-    expect(screen.getByLabelText('Estado de capacidades clave')).toBeInTheDocument();
+    expect(screen.queryByText(/slice/)).toBeNull();
   });
 
   it('el enlace de salto al contenido existe y apunta al main', () => {
-    stubSystemApi();
-    renderWithProviders(
-      <AppShell>
-        <HomePage />
-      </AppShell>,
-      { route: '/' },
-    );
+    renderWithProviders(<AppRoutes />, { route: '/temario' });
 
     const skipLink = screen.getByRole('link', { name: 'Saltar al contenido' });
     expect(skipLink).toHaveAttribute('href', '#contenido');
     expect(document.getElementById('contenido')).not.toBeNull();
   });
 
-  it('una ruta desconocida muestra un aviso claro', () => {
-    renderWithProviders(<NotFoundPage />, { route: '/no-existe' });
-    expect(screen.getByRole('heading', { level: 1, name: 'Página no encontrada' })).toBeInTheDocument();
+  it('no enseña lenguaje interno en el HTML', async () => {
+    stubInicio();
+    renderWithProviders(<AppRoutes />, { route: '/' });
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Inicio' })).toBeInTheDocument();
+    expect(await screen.findByText('Aún no has hecho ningún test.')).toBeInTheDocument();
+
+    const { interfaz, todo } = textoDeLaPantalla();
+    expect(revisarPantalla(interfaz, todo)).toEqual([]);
+  });
+});
+
+describe('el marco de administración', () => {
+  it('avisa de que no hay contraseña y trae la cocina del panel', async () => {
+    stubPanel();
+    renderWithProviders(<AppRoutes />, { route: '/admin/ui' });
+
+    const aviso = screen.getByText(/sin contraseña: solo en este ordenador/);
+    expect(aviso).toHaveTextContent(
+      'Modo administración · sin contraseña: solo en este ordenador',
+    );
+    const nav = screen.getByRole('navigation', { name: 'Secciones de administración' });
+    expect(within(nav).getAllByRole('link')).toHaveLength(ADMIN_NAV_ITEMS.length);
+    // Lo que se fue de la zona del alumno sigue aquí: oposición, búsqueda e indicadores.
+    expect(await screen.findByLabelText('Oposición')).toBeInTheDocument();
+    expect(await screen.findByLabelText('Buscar en el corpus')).toBeInTheDocument();
+    expect(await screen.findByLabelText('Estado de capacidades clave')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Volver a la zona de estudio' })).toHaveAttribute(
+      'href',
+      '/',
+    );
+  });
+
+  it('la dirección decide el marco: cada zona trae el suyo', () => {
+    stubPanel();
+    const alumno = renderWithProviders(<AppRoutes />, { route: '/progreso' });
+    expect(screen.queryByText(/Modo administración/)).toBeNull();
+    alumno.unmount();
+
+    renderWithProviders(<AppRoutes />, { route: '/admin/ui' });
+    expect(screen.getByText(/Modo administración/)).toBeInTheDocument();
+    // El marco del alumno no aparece dentro del panel.
+    expect(screen.queryByRole('navigation', { name: 'Secciones de la aplicación' })).toBeNull();
+  });
+
+  it('una ruta desconocida del panel se declara no encontrada dentro del panel', () => {
+    stubPanel();
+    renderWithProviders(<AppRoutes />, { route: '/admin/no-existe' });
+
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'Página no encontrada' }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Modo administración/)).toBeInTheDocument();
+  });
+});
+
+describe('las direcciones de antes', () => {
+  it('llevan a la nueva ubicación sin perder la consulta', () => {
+    for (const { from, to } of ROUTE_REDIRECTS) {
+      stubPanel();
+      const { unmount } = renderWithProviders(
+        <>
+          <AppRoutes />
+          <RutaActual />
+        </>,
+        { route: `${from}?documento=doc-1` },
+      );
+      expect(screen.getByTestId('ruta')).toHaveTextContent(`${to}?documento=doc-1`);
+      unmount();
+    }
+  });
+
+  it('no dan 404: la pantalla de la nueva ubicación es la que se ve', async () => {
+    stubPanel({
+      '/api/v1/change-sets?limit=100': { body: [] },
+      '/api/v1/derived-artifacts?needs_review=true': { body: [] },
+    });
+    renderWithProviders(<AppRoutes />, { route: '/cambios' });
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Cambios' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Página no encontrada' })).toBeNull();
+  });
+
+  it('una ruta que no existe de verdad sí se declara no encontrada', () => {
+    renderWithProviders(<AppRoutes />, { route: '/no-existe' });
+
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'Página no encontrada' }),
+    ).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Volver a Inicio' })).toBeInTheDocument();
   });
 });
 
-describe('contadores de la navegación', () => {
-  /** Lo que el servidor cuenta para los cuatro contadores de §2. */
+describe('contadores del panel', () => {
   function stubContadores(extra: Record<string, StubbedRoute> = {}) {
-    return stubSystemApi({
+    return stubPanel({
       '/api/v1/pending-actions': {
         body: {
           actions: [
@@ -294,7 +310,7 @@ describe('contadores de la navegación', () => {
           total: 11,
         },
       },
-      '/api/v1/reviews/due?opposition_id=opp-tai': {
+      '/api/v1/reviews/due': {
         body: {
           items: [],
           stats: { active: 9, due: 5, next_due_at: null, lapses: 1 },
@@ -311,23 +327,16 @@ describe('contadores de la navegación', () => {
 
   it('dice cuánto espera en cada sección, con la cifra que cuenta el servidor', async () => {
     stubContadores();
-    renderWithProviders(
-      <AppShell>
-        <HomePage />
-      </AppShell>,
-      { route: '/' },
-    );
+    renderWithProviders(<AppRoutes />, { route: '/admin/ui' });
 
-    // Cuatro contadores: los tres del servidor y el de repaso, que es el de la cola de verdad. El
-    // nombre del enlace dice el número **y** qué es, así que el contador no es decorativo ni mudo.
-    const bandeja = await screen.findByRole('link', {
-      name: 'Bandeja: 7 avisos o errores de importación',
+    // El nombre del enlace dice el número **y** qué es, así que el contador no es decorativo ni mudo.
+    const importaciones = await screen.findByRole('link', {
+      name: 'Importaciones: 7 avisos o errores de importación',
     });
-    expect(bandeja).toHaveTextContent('7');
+    expect(importaciones).toHaveTextContent('7');
     expect(
       screen.getByRole('link', { name: 'Preguntas: 3 preguntas en conflicto' }),
     ).toBeInTheDocument();
-    // El de repaso necesita la oposición activa, que llega en su propia consulta: se espera.
     expect(
       await screen.findByRole('link', { name: 'Errores: 5 repasos vencidos' }),
     ).toBeInTheDocument();
@@ -337,29 +346,45 @@ describe('contadores de la navegación', () => {
   });
 
   it('no enseña ceros: una sección sin nada pendiente no lleva insignia', async () => {
-    stubContadores({
-      '/api/v1/pending-actions': { body: { actions: [], total: 0 } },
-      '/api/v1/reviews/due?opposition_id=opp-tai': {
-        body: {
-          items: [],
-          stats: { active: 0, due: 0, next_due_at: null, lapses: 0 },
-          concepts: [],
-          notes: [],
-        },
-      },
-      '/api/v1/questions?status=conflicting&limit=1': {
-        body: { questions: [], total: 0, limit: 1, offset: 0 },
-      },
+    stubPanel();
+    renderWithProviders(<AppRoutes />, { route: '/admin/ui' });
+
+    expect(await screen.findByLabelText('Estado de capacidades clave')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(document.querySelectorAll('.nav__count')).toHaveLength(0);
     });
-    renderWithProviders(
+  });
+});
+
+describe('la página no encontrada de siempre', () => {
+  it('un aviso claro con la vuelta a Inicio', () => {
+    renderWithProviders(<NotFoundPage />, { route: '/no-existe' });
+
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'Página no encontrada' }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Volver a Inicio' })).toBeInTheDocument();
+  });
+});
+
+describe('los dos marcos existen por separado', () => {
+  it('AppShell es el del alumno y AdminShell el del panel', () => {
+    stubPanel();
+    const alumno = renderWithProviders(
       <AppShell>
-        <HomePage />
+        <p>contenido</p>
       </AppShell>,
       { route: '/' },
     );
+    expect(screen.queryByText(/Modo administración/)).toBeNull();
+    alumno.unmount();
 
-    // Se espera a que la pantalla esté montada antes de comprobar que no hay insignias.
-    expect(await screen.findByText('¿Listo para estudiar?')).toBeInTheDocument();
-    expect(document.querySelectorAll('.nav__count')).toHaveLength(0);
+    renderWithProviders(
+      <AdminShell>
+        <p>contenido</p>
+      </AdminShell>,
+      { route: '/admin/ui' },
+    );
+    expect(screen.getByText(/Modo administración/)).toBeInTheDocument();
   });
 });
