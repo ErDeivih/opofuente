@@ -1725,7 +1725,14 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
+        /**
+         * Cambia quién puede ver un conjunto (personal o public)
+         * @description `personal` es material del propietario; `public`, publicable.
+         *
+         *     Un conjunto **nace** `personal` y solo se hace `public` a propósito, uno a uno: el material que
+         *     el propietario ha reunido no se hace visible por descuido. El actor viaja a la auditoría.
+         */
+        patch: operations["update_question_set_api_v1_question_sets__set_id__patch"];
         trace?: never;
     };
     "/api/v1/question-sets/{set_id}/answer-keys": {
@@ -5167,6 +5174,21 @@ export interface components {
             stem?: string | null;
         };
         /**
+         * PatchQuestionSetSchema
+         * @description Lo que se puede cambiar de un conjunto sin tocar su contenido.
+         *
+         *     Hoy, la **visibilidad**: un conjunto nace `personal` y se hace `public` a propósito, uno a uno.
+         *     Nada más se cambia por aquí — el título y el tipo son la identidad del conjunto, y reescribirlos
+         *     rompería la trazabilidad de las preguntas que cuelgan de él.
+         */
+        PatchQuestionSetSchema: {
+            /**
+             * Distribution
+             * @enum {string}
+             */
+            distribution: "personal" | "public";
+        };
+        /**
          * PendingActionSchema
          * @description Algo que espera a una persona, con la cifra y la pantalla donde se resuelve.
          */
@@ -5568,6 +5590,12 @@ export interface components {
             convocation_version_id?: string | null;
             /** Created At */
             created_at?: string | null;
+            /**
+             * Distribution
+             * @default personal
+             * @enum {string}
+             */
+            distribution: "personal" | "public";
             /** Held At */
             held_at?: string | null;
             /** Id */
@@ -12518,6 +12546,70 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["QuestionSetSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    update_question_set_api_v1_question_sets__set_id__patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-OpoFuente-Actor"?: string | null;
+            };
+            path: {
+                set_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatchQuestionSetSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuestionSetSchema"];
+                };
+            };
+            /** @description Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
                 };
             };
             /** @description El recurso no existe. */

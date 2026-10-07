@@ -180,6 +180,7 @@ const CONJUNTO: QuestionSet = {
   key_count: 1,
   active_key_id: 'key-1',
   is_official: false,
+  distribution: 'personal',
 };
 
 const CONVOCATORIA: ConvocationDetail = {

@@ -38,6 +38,7 @@ const CONJUNTO: QuestionSet = {
   key_count: 1,
   active_key_id: null,
   is_official: true,
+  distribution: 'personal',
 };
 
 const PREGUNTA: Question = {

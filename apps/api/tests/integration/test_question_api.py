@@ -19,6 +19,7 @@ from typing import Any
 
 from fastapi.testclient import TestClient
 
+from opofuente.api.errors import PROBLEM_MEDIA_TYPE
 from opofuente.config import Settings
 
 ALLOWED_ORIGIN = {"Origin": "http://127.0.0.1:5173"}
@@ -95,6 +96,76 @@ def test_un_conjunto_con_tipo_inventado_no_entra(
         headers=ALLOWED_ORIGIN,
     )
     assert respuesta.status_code == 422
+
+
+def test_un_conjunto_nace_personal_y_se_hace_publico_a_proposito(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """La visibilidad de un conjunto no se cambia sola: nace `personal` y se declara `public`.
+
+    El material del propietario no puede volverse publicable por descuido, así que el valor por
+    defecto no es «lo más abierto» sino «lo más cerrado», y el cambio se pide a propósito.
+    """
+    creado = _conjunto(seeded_client)
+    assert creado["distribution"] == "personal"
+    assert (
+        seeded_client.get(f"/api/v1/question-sets/{creado['id']}").json()["distribution"]
+        == "personal"
+    )
+
+    cambiado = seeded_client.patch(
+        f"/api/v1/question-sets/{creado['id']}",
+        json={"distribution": "public"},
+        headers=ALLOWED_ORIGIN,
+    )
+    assert cambiado.status_code == 200, cambiado.text
+    assert cambiado.json()["distribution"] == "public"
+    # Se ha guardado: el detalle y el listado lo sirven igual.
+    assert (
+        seeded_client.get(f"/api/v1/question-sets/{creado['id']}").json()["distribution"]
+        == "public"
+    )
+    listado = seeded_client.get("/api/v1/question-sets").json()["sets"]
+    assert next(fila for fila in listado if fila["id"] == creado["id"])["distribution"] == "public"
+
+    # Y se puede volver a cerrar.
+    cerrado = seeded_client.patch(
+        f"/api/v1/question-sets/{creado['id']}",
+        json={"distribution": "personal"},
+        headers=ALLOWED_ORIGIN,
+    )
+    assert cerrado.status_code == 200
+    assert cerrado.json()["distribution"] == "personal"
+
+
+def test_una_distribucion_inventada_es_un_422_y_no_cambia_nada(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    creado = _conjunto(seeded_client)
+
+    respuesta = seeded_client.patch(
+        f"/api/v1/question-sets/{creado['id']}",
+        json={"distribution": "publico"},
+        headers=ALLOWED_ORIGIN,
+    )
+
+    assert respuesta.status_code == 422
+    assert respuesta.headers["content-type"].startswith(PROBLEM_MEDIA_TYPE)
+    assert (
+        seeded_client.get(f"/api/v1/question-sets/{creado['id']}").json()["distribution"]
+        == "personal"
+    )
+
+
+def test_cambiar_la_visibilidad_de_un_conjunto_que_no_existe_es_un_404(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    respuesta = seeded_client.patch(
+        "/api/v1/question-sets/no-existe",
+        json={"distribution": "public"},
+        headers=ALLOWED_ORIGIN,
+    )
+    assert respuesta.status_code == 404
 
 
 def test_importar_texto_y_leer_las_preguntas_con_su_clave(

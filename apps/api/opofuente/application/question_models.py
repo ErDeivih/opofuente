@@ -96,6 +96,8 @@ class QuestionSetView:
     incomplete_count: int = 0
     key_count: int = 0
     active_key_id: str | None = None
+    #: `personal` (material del propietario) o `public` (publicable). Por defecto, `personal`.
+    distribution: str = "personal"
 
     @property
     def is_official(self) -> bool:

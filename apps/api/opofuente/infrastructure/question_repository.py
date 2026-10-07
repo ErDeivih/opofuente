@@ -48,6 +48,7 @@ from opofuente.domain.questions import (
     Origin,
     ParsedQuestion,
     QuestionSet,
+    SetDistribution,
     SetType,
     can_activate,
     question_fingerprint,
@@ -212,6 +213,38 @@ class SqlAlchemyQuestionRepository:
             if fila is None:
                 return None
             return self._set_view(session, fila)
+
+    def set_distribution(
+        self, set_id: str, distribution: str, *, now: datetime, actor: str = "local"
+    ) -> bool:
+        """Cambia quién puede ver un conjunto. `False` si el conjunto no existe.
+
+        Es un cambio deliberado y se audita: pasar un banco privado a `public` es hacerlo
+        publicable, y tiene que quedar escrito quién lo hizo y cuándo.
+        """
+        if distribution not in {valor.value for valor in SetDistribution}:
+            raise InvariantViolationError(f"«{distribution}» no es una distribución de conjunto")
+        with self._session_factory() as session:
+            fila = session.get(QuestionSetRecord, set_id)
+            if fila is None:
+                return False
+            anterior = str(fila.distribution)
+            if anterior == distribution:
+                return True
+            fila.distribution = distribution
+            fila.updated_at = now
+            self._audit(
+                session,
+                actor=actor,
+                action="question_set.distribution_changed",
+                object_type="question_set",
+                object_id=set_id,
+                before={"distribution": anterior},
+                after={"distribution": distribution},
+                now=now,
+            )
+            session.commit()
+            return True
 
     def set_status(self, set_id: str, status: str, *, now: datetime, actor: str = "local") -> bool:
         with self._session_factory() as session:
@@ -1781,6 +1814,7 @@ class SqlAlchemyQuestionRepository:
             incomplete_count=incompletas,
             key_count=len(claves),
             active_key_id=activa,
+            distribution=str(fila.distribution),
         )
 
     def _question_view(

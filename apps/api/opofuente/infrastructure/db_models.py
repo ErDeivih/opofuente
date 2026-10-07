@@ -1003,6 +1003,11 @@ class QuestionSetRecord(Base):
 
     El **modelo** (A/B) es del conjunto, no de cada pregunta: un examen modelo A es un conjunto con
     su propia plantilla, y por eso `answer_key_versions` no necesita repetir el modelo.
+
+    `distribution` dice **quién puede ver el conjunto**: `personal` (material del propietario, valor
+    por defecto para no cambiar la visibilidad de lo que ya existe) o `public` (publicable, como los
+    exámenes oficiales que publica la administración). Es del conjunto y no de la pregunta: un
+    cuestionario oficial se publica entero.
     """
 
     __tablename__ = "question_sets"
@@ -1015,6 +1020,9 @@ class QuestionSetRecord(Base):
             "status IN ('draft', 'confirmed', 'archived')", name="ck_question_set_status"
         ),
         CheckConstraint("length(trim(title)) > 0", name="ck_question_set_title"),
+        CheckConstraint(
+            "distribution IN ('personal', 'public')", name="ck_question_set_distribution"
+        ),
     )
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
@@ -1035,6 +1043,9 @@ class QuestionSetRecord(Base):
     )
     status: Mapped[str] = mapped_column(
         String(16), nullable=False, server_default=text("'draft'"), default="draft"
+    )
+    distribution: Mapped[str] = mapped_column(
+        String(16), nullable=False, server_default=text("'personal'"), default="personal"
     )
     created_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)

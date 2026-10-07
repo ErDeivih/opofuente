@@ -33,6 +33,9 @@ class QuestionSetSchema(BaseModel):
     key_count: int = 0
     active_key_id: str | None = None
     is_official: bool = False
+    #: `personal` (material del propietario) o `public` (publicable). Nunca nulo: el conjunto
+    #: siempre dice quién puede verlo, y por defecto lo dice «solo su dueño».
+    distribution: Literal["personal", "public"] = "personal"
 
 
 class QuestionSetPageSchema(BaseModel):
@@ -52,6 +55,19 @@ class CreateQuestionSetSchema(BaseModel):
     model_code: str | None = Field(default=None, max_length=8)
     held_at: date | None = None
     source_document_version_id: str | None = None
+
+
+class PatchQuestionSetSchema(BaseModel):
+    """Lo que se puede cambiar de un conjunto sin tocar su contenido.
+
+    Hoy, la **visibilidad**: un conjunto nace `personal` y se hace `public` a propósito, uno a uno.
+    Nada más se cambia por aquí — el título y el tipo son la identidad del conjunto, y reescribirlos
+    rompería la trazabilidad de las preguntas que cuelgan de él.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    distribution: Literal["personal", "public"]
 
 
 class OptionSchema(BaseModel):

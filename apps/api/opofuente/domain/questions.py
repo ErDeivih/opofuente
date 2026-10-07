@@ -41,6 +41,17 @@ class SetStatus(StrEnum):
     ARCHIVED = "archived"
 
 
+class SetDistribution(StrEnum):
+    """Quién puede ver el conjunto: su dueño (`personal`) o cualquiera (`public`).
+
+    El valor por defecto es `personal` y es deliberado: el material que el propietario ha reunido no
+    se hace visible por descuido. `public` se declara a propósito, conjunto a conjunto (F2).
+    """
+
+    PERSONAL = "personal"
+    PUBLIC = "public"
+
+
 class QuestionType(StrEnum):
     SINGLE_CHOICE = "single_choice"
     MULTI_MARK_ERROR = "multi_mark_error"
@@ -1367,6 +1378,7 @@ __all__ = [
     "QuestionStatus",
     "QuestionType",
     "QuestionVersion",
+    "SetDistribution",
     "SetStatus",
     "SetType",
     "can_activate",

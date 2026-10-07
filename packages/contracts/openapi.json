@@ -6905,6 +6905,25 @@
         "title": "PatchQuestionSchema",
         "type": "object"
       },
+      "PatchQuestionSetSchema": {
+        "additionalProperties": false,
+        "description": "Lo que se puede cambiar de un conjunto sin tocar su contenido.\n\nHoy, la **visibilidad**: un conjunto nace `personal` y se hace `public` a propósito, uno a uno.\nNada más se cambia por aquí — el título y el tipo son la identidad del conjunto, y reescribirlos\nrompería la trazabilidad de las preguntas que cuelgan de él.",
+        "properties": {
+          "distribution": {
+            "enum": [
+              "personal",
+              "public"
+            ],
+            "title": "Distribution",
+            "type": "string"
+          }
+        },
+        "required": [
+          "distribution"
+        ],
+        "title": "PatchQuestionSetSchema",
+        "type": "object"
+      },
       "PendingActionSchema": {
         "description": "Algo que espera a una persona, con la cifra y la pantalla donde se resuelve.",
         "properties": {
@@ -7975,6 +7994,15 @@
               }
             ],
             "title": "Created At"
+          },
+          "distribution": {
+            "default": "personal",
+            "enum": [
+              "personal",
+              "public"
+            ],
+            "title": "Distribution",
+            "type": "string"
           },
           "held_at": {
             "anyOf": [
@@ -18681,6 +18709,103 @@
           }
         },
         "summary": "Un conjunto con sus recuentos",
+        "tags": [
+          "preguntas"
+        ]
+      },
+      "patch": {
+        "description": "`personal` es material del propietario; `public`, publicable.\n\nUn conjunto **nace** `personal` y solo se hace `public` a propósito, uno a uno: el material que\nel propietario ha reunido no se hace visible por descuido. El actor viaja a la auditoría.",
+        "operationId": "update_question_set_api_v1_question_sets__set_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "set_id",
+            "required": true,
+            "schema": {
+              "title": "Set Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-OpoFuente-Actor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Opofuente-Actor"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchQuestionSetSchema"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuestionSetSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Cambia quién puede ver un conjunto (personal o public)",
         "tags": [
           "preguntas"
         ]

@@ -58,6 +58,7 @@ from opofuente.domain.questions import (
     QuestionStatus,
     QuestionType,
     QuestionVersion,
+    SetDistribution,
     SetStatus,
     SetType,
     find_question_duplicates,
@@ -204,6 +205,28 @@ class QuestionService:
 
     def set_detail(self, set_id: str) -> QuestionSetView | None:
         return self._questions.get_set(set_id)
+
+    def set_distribution(self, set_id: str, distribution: str, *, actor: str = "local") -> bool:
+        """Cambia quién puede ver un conjunto (`personal` o `public`). `False` si no existe.
+
+        Es la única ruta por la que un banco privado puede volverse publicable, y por eso el actor
+        viaja hasta la auditoría: la visibilidad de un conjunto no es un detalle de presentación.
+        """
+        try:
+            elegida = SetDistribution(distribution)
+        except ValueError as error:
+            raise InvariantViolationError(
+                f"«{distribution}» no es una distribución de conjunto"
+            ) from error
+        cambiado = self._questions.set_distribution(
+            set_id, elegida.value, now=self._clock.now(), actor=actor
+        )
+        if cambiado:
+            logger.info(
+                "questions.set_distribution_changed",
+                extra={"event": "set_distribution_changed", "path": set_id},
+            )
+        return cambiado
 
     def questions_without_topic(self, set_id: str, *, limit: int = 500) -> tuple[str, ...]:
         """Preguntas del conjunto sin tema asignado: las únicas que la catalogación puede tocar."""

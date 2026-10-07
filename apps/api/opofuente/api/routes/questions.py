@@ -40,6 +40,7 @@ from opofuente.api.question_schemas import (
     ParseIssueSchema,
     ParseQuestionSetSchema,
     PatchQuestionSchema,
+    PatchQuestionSetSchema,
     QuestionEvidenceSchema,
     QuestionImportReportSchema,
     QuestionPageSchema,
@@ -110,6 +111,7 @@ def _set(view: QuestionSetView) -> QuestionSetSchema:
         key_count=view.key_count,
         active_key_id=view.active_key_id,
         is_official=view.is_official,
+        distribution=view.distribution,  # type: ignore[arg-type]
     )
 
 
@@ -343,6 +345,32 @@ def create_question_set(
 def get_question_set(set_id: str, service: QuestionServiceDep) -> QuestionSetSchema:
     vista = service.set_detail(set_id)
     if vista is None:
+        raise NotFoundError("conjunto de preguntas", set_id)
+    return _set(vista)
+
+
+@router.patch(
+    "/question-sets/{set_id}",
+    response_model=QuestionSetSchema,
+    responses=WRITE_ERRORS,
+    summary="Cambia quién puede ver un conjunto (personal o public)",
+)
+def update_question_set(
+    set_id: str,
+    request: PatchQuestionSetSchema,
+    service: QuestionServiceDep,
+    actor_header: Annotated[str | None, Header(alias=TOPIC_ACTOR_HEADER)] = None,
+) -> QuestionSetSchema:
+    """`personal` es material del propietario; `public`, publicable.
+
+    Un conjunto **nace** `personal` y solo se hace `public` a propósito, uno a uno: el material que
+    el propietario ha reunido no se hace visible por descuido. El actor viaja a la auditoría.
+    """
+    actor = _topic_actor(declared=None, header=actor_header)
+    if not service.set_distribution(set_id, request.distribution, actor=actor):
+        raise NotFoundError("conjunto de preguntas", set_id)
+    vista = service.set_detail(set_id)
+    if vista is None:  # pragma: no cover - se acaba de cambiar y leer
         raise NotFoundError("conjunto de preguntas", set_id)
     return _set(vista)
 
