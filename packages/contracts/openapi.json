@@ -662,6 +662,43 @@
         "title": "AskRequestSchema",
         "type": "object"
       },
+      "AssignTopicRequestSchema": {
+        "additionalProperties": false,
+        "description": "Asignar un tema a una pregunta.\n\n`actor` distingue quién lo hace y no es adorno: la clasificación automática de miles de\npreguntas tiene que quedar identificada en la auditoría, y `local` es la persona que está.",
+        "properties": {
+          "actor": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor"
+          },
+          "confidence": {
+            "default": 1.0,
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence",
+            "type": "number"
+          },
+          "curriculum_node_id": {
+            "maxLength": 36,
+            "minLength": 1,
+            "title": "Curriculum Node Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "curriculum_node_id"
+        ],
+        "title": "AssignTopicRequestSchema",
+        "type": "object"
+      },
       "AttemptSchema": {
         "description": "Un intento: lo que se marcó y, si ya se corrigió, su desenlace.",
         "properties": {
@@ -8038,6 +8075,133 @@
           "opposition_id"
         ],
         "title": "QuestionSetSchema",
+        "type": "object"
+      },
+      "QuestionTopicAssignmentSchema": {
+        "description": "El mapeo y si **esta** llamada lo creó.\n\n`created` es lo que hace utilizable una ruta idempotente: reintentar la clasificación de un lote\nentero no puede confundir «lo asigné yo ahora» con «ya estaba asignado».",
+        "properties": {
+          "confidence": {
+            "default": 1.0,
+            "title": "Confidence",
+            "type": "number"
+          },
+          "created": {
+            "title": "Created",
+            "type": "boolean"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "curriculum_node_id": {
+            "title": "Curriculum Node Id",
+            "type": "string"
+          },
+          "mapping_id": {
+            "title": "Mapping Id",
+            "type": "string"
+          },
+          "official_code": {
+            "title": "Official Code",
+            "type": "string"
+          },
+          "question_version_id": {
+            "title": "Question Version Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "provisional",
+              "accepted",
+              "rejected"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "mapping_id",
+          "question_version_id",
+          "curriculum_node_id",
+          "official_code",
+          "title",
+          "status",
+          "created"
+        ],
+        "title": "QuestionTopicAssignmentSchema",
+        "type": "object"
+      },
+      "QuestionTopicSchema": {
+        "description": "Un tema del programa asignado a una pregunta, con el estado de su mapeo.\n\n`status` viaja a propósito: `accepted` es un tema decidido y `provisional` es lo que propuso un\nmotor sin que nadie lo haya confirmado. El panel tiene que poder distinguirlos, y el diagnóstico\npor temas solo cuenta lo aceptado.",
+        "properties": {
+          "confidence": {
+            "default": 1.0,
+            "title": "Confidence",
+            "type": "number"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "curriculum_node_id": {
+            "title": "Curriculum Node Id",
+            "type": "string"
+          },
+          "mapping_id": {
+            "title": "Mapping Id",
+            "type": "string"
+          },
+          "official_code": {
+            "title": "Official Code",
+            "type": "string"
+          },
+          "question_version_id": {
+            "title": "Question Version Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "provisional",
+              "accepted",
+              "rejected"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "mapping_id",
+          "question_version_id",
+          "curriculum_node_id",
+          "official_code",
+          "title",
+          "status"
+        ],
+        "title": "QuestionTopicSchema",
         "type": "object"
       },
       "RagQuerySchema": {
@@ -19932,6 +20096,273 @@
           }
         },
         "summary": "Reporta que una pregunta es ambigua, está mal keyada o tiene una errata",
+        "tags": [
+          "preguntas"
+        ]
+      }
+    },
+    "/api/v1/questions/{question_version_id}/topics": {
+      "get": {
+        "description": "Los temas de la pregunta, cada uno con el estado de su mapeo.\n\nSe sirven todos los mapeos, no solo los aceptados: quien administra tiene que ver también lo que\npropuso un motor y nadie ha confirmado. El estado va en cada uno para que la diferencia se lea\nsin adivinar.",
+        "operationId": "list_question_topics_api_v1_questions__question_version_id__topics_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "question_version_id",
+            "required": true,
+            "schema": {
+              "title": "Question Version Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/QuestionTopicSchema"
+                  },
+                  "title": "Response List Question Topics Api V1 Questions  Question Version Id  Topics Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Temas asignados a una pregunta, con el estado de cada mapeo",
+        "tags": [
+          "preguntas"
+        ]
+      },
+      "post": {
+        "description": "Asigna la pregunta al tema indicado y deja el evento de auditoría (`question.mapped`).\n\nEs **idempotente** por `(tema, pregunta)`: repetirla devuelve el mapeo que ya estaba con\n`created=false` y **no** escribe un segundo evento. Es lo que necesita la clasificación de un\nbanco entero, que se reintenta.\n\nQuién lo hace se dice con `actor` en el cuerpo o con la cabecera `X-OpoFuente-Actor` (por\ndefecto `local`): la clasificación automática se identifica («llm:deepseek-flash») y así la\nauditoría distingue a la persona del proceso.\n\nEl destino tiene que ser un **tema**: un bloque o un epígrafe responden 409 con el motivo,\nporque una pregunta colgada de ellos quedaría fuera del diagnóstico por temas creyendo estar\ndentro.",
+        "operationId": "assign_question_topic_api_v1_questions__question_version_id__topics_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "question_version_id",
+            "required": true,
+            "schema": {
+              "title": "Question Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-OpoFuente-Actor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Opofuente-Actor"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignTopicRequestSchema"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuestionTopicAssignmentSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El cambio no encaja con lo que hay (`classification_conflict`), y se dice por qué. Por ejemplo, asignar una pregunta a un nodo del programa que no es un tema."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Asigna un tema a una pregunta y lo deja auditado (idempotente)",
+        "tags": [
+          "preguntas"
+        ]
+      }
+    },
+    "/api/v1/questions/{question_version_id}/topics/{curriculum_node_id}": {
+      "delete": {
+        "description": "Retira el mapeo y deja su evento (`question.unmapped`) con el antes.\n\nQuitar algo que no estaba es un 404: no es una retirada sin efecto, es que no había nada que\nretirar, y decirlo evita creer que se ha deshecho una asignación que sigue puesta en otro sitio.",
+        "operationId": "unassign_question_topic_api_v1_questions__question_version_id__topics__curriculum_node_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "question_version_id",
+            "required": true,
+            "schema": {
+              "title": "Question Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "curriculum_node_id",
+            "required": true,
+            "schema": {
+              "title": "Curriculum Node Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-OpoFuente-Actor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Opofuente-Actor"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Quita el tema de una pregunta y lo deja auditado",
         "tags": [
           "preguntas"
         ]

@@ -316,3 +316,45 @@ class CorrectionOutcomeSchema(BaseModel):
 
     question: QuestionSchema
     key_id: str | None = None
+
+
+class QuestionTopicSchema(BaseModel):
+    """Un tema del programa asignado a una pregunta, con el estado de su mapeo.
+
+    `status` viaja a propósito: `accepted` es un tema decidido y `provisional` es lo que propuso un
+    motor sin que nadie lo haya confirmado. El panel tiene que poder distinguirlos, y el diagnóstico
+    por temas solo cuenta lo aceptado.
+    """
+
+    mapping_id: str
+    question_version_id: str
+    curriculum_node_id: str
+    official_code: str
+    title: str
+    status: Literal["provisional", "accepted", "rejected"]
+    confidence: float = 1.0
+    created_at: datetime | None = None
+
+
+class QuestionTopicAssignmentSchema(QuestionTopicSchema):
+    """El mapeo y si **esta** llamada lo creó.
+
+    `created` es lo que hace utilizable una ruta idempotente: reintentar la clasificación de un lote
+    entero no puede confundir «lo asigné yo ahora» con «ya estaba asignado».
+    """
+
+    created: bool
+
+
+class AssignTopicRequestSchema(BaseModel):
+    """Asignar un tema a una pregunta.
+
+    `actor` distingue quién lo hace y no es adorno: la clasificación automática de miles de
+    preguntas tiene que quedar identificada en la auditoría, y `local` es la persona que está.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    curriculum_node_id: str = Field(min_length=1, max_length=36)
+    confidence: float = Field(default=1.0, ge=0.0, le=1.0)
+    actor: str | None = Field(default=None, min_length=1, max_length=64)

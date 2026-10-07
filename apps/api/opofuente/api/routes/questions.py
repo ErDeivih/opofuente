@@ -11,12 +11,18 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Header, Query
 
 from opofuente.api.deps import AutoStudyServiceDep, QuestionServiceDep
-from opofuente.api.error_responses import INGESTION_WRITE_ERRORS, RESOURCE_ERRORS
+from opofuente.api.error_responses import (
+    CONFLICT_WRITE_ERRORS,
+    INGESTION_WRITE_ERRORS,
+    RESOURCE_ERRORS,
+    WRITE_ERRORS,
+)
 from opofuente.api.question_schemas import (
     AnswerKeySchema,
+    AssignTopicRequestSchema,
     CorrectionOutcomeSchema,
     CreateQuestionSetSchema,
     CsvMappingSchema,
@@ -40,6 +46,8 @@ from opofuente.api.question_schemas import (
     QuestionSchema,
     QuestionSetPageSchema,
     QuestionSetSchema,
+    QuestionTopicAssignmentSchema,
+    QuestionTopicSchema,
     RejectedRowSchema,
     SetExplanationRequestSchema,
 )
@@ -54,6 +62,7 @@ from opofuente.application.question_models import (
     QuestionPage,
     QuestionSetPage,
     QuestionSetView,
+    QuestionTopicView,
     QuestionView,
 )
 from opofuente.domain.errors import ClassificationConflictError, NotFoundError
@@ -63,6 +72,24 @@ router = APIRouter(tags=["preguntas"])
 
 #: Cuántas cosas se devuelven de una vez si la petición no dice otra cosa.
 DEFAULT_LIMIT = 50
+
+#: Cabecera con la que una herramienta se identifica sin tocar el cuerpo. La usa la clasificación
+#: automática, que asigna miles de temas seguidos: pasar el actor en cada cuerpo sería repetirlo.
+TOPIC_ACTOR_HEADER = "X-OpoFuente-Actor"
+
+#: Quién hace el cambio si nadie lo dice: una persona en esta máquina.
+DEFAULT_ACTOR = "local"
+
+
+def _topic_actor(*, declared: str | None, header: str | None) -> str:
+    """Quién ha pedido el cambio, para que la auditoría lo diga.
+
+    Manda lo declarado en el cuerpo (viaja en el propio contrato y es lo más explícito); si no, la
+    cabecera `X-OpoFuente-Actor`; si no, `local`. Un actor en blanco se ignora: en la auditoría es
+    mejor «local» que un hueco.
+    """
+    elegido = (declared or header or "").strip()
+    return elegido or DEFAULT_ACTOR
 
 
 def _set(view: QuestionSetView) -> QuestionSetSchema:
@@ -240,6 +267,23 @@ def _evidence(view: QuestionEvidenceView) -> QuestionEvidenceSchema:
         document_version_id=view.document_version_id,
         section_id=view.section_id,
     )
+
+
+def _topic(vista: QuestionTopicView) -> QuestionTopicSchema:
+    return QuestionTopicSchema(
+        mapping_id=vista.mapping_id,
+        question_version_id=vista.question_version_id,
+        curriculum_node_id=vista.curriculum_node_id,
+        official_code=vista.official_code,
+        title=vista.title,
+        status=vista.status,  # type: ignore[arg-type]
+        confidence=vista.confidence,
+        created_at=vista.created_at,
+    )
+
+
+def _assignment(vista: QuestionTopicView, *, created: bool) -> QuestionTopicAssignmentSchema:
+    return QuestionTopicAssignmentSchema(**_topic(vista).model_dump(), created=created)
 
 
 @router.get(
@@ -577,6 +621,84 @@ def set_question_explanation(
     if guardada is None:
         raise NotFoundError("pregunta", question_id)
     return _explanation(guardada)
+
+
+@router.get(
+    "/questions/{question_version_id}/topics",
+    response_model=list[QuestionTopicSchema],
+    responses=RESOURCE_ERRORS,
+    summary="Temas asignados a una pregunta, con el estado de cada mapeo",
+)
+def list_question_topics(
+    question_version_id: str, service: QuestionServiceDep
+) -> list[QuestionTopicSchema]:
+    """Los temas de la pregunta, cada uno con el estado de su mapeo.
+
+    Se sirven todos los mapeos, no solo los aceptados: quien administra tiene que ver también lo que
+    propuso un motor y nadie ha confirmado. El estado va en cada uno para que la diferencia se lea
+    sin adivinar.
+    """
+    return [_topic(tema) for tema in service.topics(question_version_id)]
+
+
+@router.post(
+    "/questions/{question_version_id}/topics",
+    response_model=QuestionTopicAssignmentSchema,
+    responses=CONFLICT_WRITE_ERRORS,
+    summary="Asigna un tema a una pregunta y lo deja auditado (idempotente)",
+)
+def assign_question_topic(
+    question_version_id: str,
+    request: AssignTopicRequestSchema,
+    service: QuestionServiceDep,
+    actor: Annotated[str | None, Header(alias=TOPIC_ACTOR_HEADER, max_length=64)] = None,
+) -> QuestionTopicAssignmentSchema:
+    """Asigna la pregunta al tema indicado y deja el evento de auditoría (`question.mapped`).
+
+    Es **idempotente** por `(tema, pregunta)`: repetirla devuelve el mapeo que ya estaba con
+    `created=false` y **no** escribe un segundo evento. Es lo que necesita la clasificación de un
+    banco entero, que se reintenta.
+
+    Quién lo hace se dice con `actor` en el cuerpo o con la cabecera `X-OpoFuente-Actor` (por
+    defecto `local`): la clasificación automática se identifica («llm:deepseek-flash») y así la
+    auditoría distingue a la persona del proceso.
+
+    El destino tiene que ser un **tema**: un bloque o un epígrafe responden 409 con el motivo,
+    porque una pregunta colgada de ellos quedaría fuera del diagnóstico por temas creyendo estar
+    dentro.
+    """
+    vista, creado = service.assign_topic(
+        question_version_id,
+        node_id=request.curriculum_node_id,
+        actor=_topic_actor(declared=request.actor, header=actor),
+        confidence=request.confidence,
+    )
+    return _assignment(vista, created=creado)
+
+
+@router.delete(
+    "/questions/{question_version_id}/topics/{curriculum_node_id}",
+    status_code=204,
+    responses=WRITE_ERRORS,
+    summary="Quita el tema de una pregunta y lo deja auditado",
+)
+def unassign_question_topic(
+    question_version_id: str,
+    curriculum_node_id: str,
+    service: QuestionServiceDep,
+    actor: Annotated[str | None, Header(alias=TOPIC_ACTOR_HEADER, max_length=64)] = None,
+) -> None:
+    """Retira el mapeo y deja su evento (`question.unmapped`) con el antes.
+
+    Quitar algo que no estaba es un 404: no es una retirada sin efecto, es que no había nada que
+    retirar, y decirlo evita creer que se ha deshecho una asignación que sigue puesta en otro sitio.
+    """
+    if not service.unassign_topic(
+        question_version_id,
+        node_id=curriculum_node_id,
+        actor=_topic_actor(declared=None, header=actor),
+    ):
+        raise NotFoundError("mapeo de tema", f"{question_version_id}/{curriculum_node_id}")
 
 
 @router.get(

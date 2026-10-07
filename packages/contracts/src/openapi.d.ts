@@ -2032,6 +2032,69 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/questions/{question_version_id}/topics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Temas asignados a una pregunta, con el estado de cada mapeo
+         * @description Los temas de la pregunta, cada uno con el estado de su mapeo.
+         *
+         *     Se sirven todos los mapeos, no solo los aceptados: quien administra tiene que ver también lo que
+         *     propuso un motor y nadie ha confirmado. El estado va en cada uno para que la diferencia se lea
+         *     sin adivinar.
+         */
+        get: operations["list_question_topics_api_v1_questions__question_version_id__topics_get"];
+        put?: never;
+        /**
+         * Asigna un tema a una pregunta y lo deja auditado (idempotente)
+         * @description Asigna la pregunta al tema indicado y deja el evento de auditoría (`question.mapped`).
+         *
+         *     Es **idempotente** por `(tema, pregunta)`: repetirla devuelve el mapeo que ya estaba con
+         *     `created=false` y **no** escribe un segundo evento. Es lo que necesita la clasificación de un
+         *     banco entero, que se reintenta.
+         *
+         *     Quién lo hace se dice con `actor` en el cuerpo o con la cabecera `X-OpoFuente-Actor` (por
+         *     defecto `local`): la clasificación automática se identifica («llm:deepseek-flash») y así la
+         *     auditoría distingue a la persona del proceso.
+         *
+         *     El destino tiene que ser un **tema**: un bloque o un epígrafe responden 409 con el motivo,
+         *     porque una pregunta colgada de ellos quedaría fuera del diagnóstico por temas creyendo estar
+         *     dentro.
+         */
+        post: operations["assign_question_topic_api_v1_questions__question_version_id__topics_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/questions/{question_version_id}/topics/{curriculum_node_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Quita el tema de una pregunta y lo deja auditado
+         * @description Retira el mapeo y deja su evento (`question.unmapped`) con el antes.
+         *
+         *     Quitar algo que no estaba es un 404: no es una retirada sin efecto, es que no había nada que
+         *     retirar, y decirlo evita creer que se ha deshecho una asignación que sigue puesta en otro sitio.
+         */
+        delete: operations["unassign_question_topic_api_v1_questions__question_version_id__topics__curriculum_node_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/rag/queries": {
         parameters: {
             query?: never;
@@ -2840,6 +2903,24 @@ export interface components {
              * @enum {string}
              */
             version_mode: "current" | "explicit_historical";
+        };
+        /**
+         * AssignTopicRequestSchema
+         * @description Asignar un tema a una pregunta.
+         *
+         *     `actor` distingue quién lo hace y no es adorno: la clasificación automática de miles de
+         *     preguntas tiene que quedar identificada en la auditoría, y `local` es la persona que está.
+         */
+        AssignTopicRequestSchema: {
+            /** Actor */
+            actor?: string | null;
+            /**
+             * Confidence
+             * @default 1
+             */
+            confidence: number;
+            /** Curriculum Node Id */
+            curriculum_node_id: string;
         };
         /**
          * AttemptSchema
@@ -5532,6 +5613,71 @@ export interface components {
              * @enum {string}
              */
             status: "draft" | "confirmed" | "archived";
+            /** Title */
+            title: string;
+        };
+        /**
+         * QuestionTopicAssignmentSchema
+         * @description El mapeo y si **esta** llamada lo creó.
+         *
+         *     `created` es lo que hace utilizable una ruta idempotente: reintentar la clasificación de un lote
+         *     entero no puede confundir «lo asigné yo ahora» con «ya estaba asignado».
+         */
+        QuestionTopicAssignmentSchema: {
+            /**
+             * Confidence
+             * @default 1
+             */
+            confidence: number;
+            /** Created */
+            created: boolean;
+            /** Created At */
+            created_at?: string | null;
+            /** Curriculum Node Id */
+            curriculum_node_id: string;
+            /** Mapping Id */
+            mapping_id: string;
+            /** Official Code */
+            official_code: string;
+            /** Question Version Id */
+            question_version_id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "provisional" | "accepted" | "rejected";
+            /** Title */
+            title: string;
+        };
+        /**
+         * QuestionTopicSchema
+         * @description Un tema del programa asignado a una pregunta, con el estado de su mapeo.
+         *
+         *     `status` viaja a propósito: `accepted` es un tema decidido y `provisional` es lo que propuso un
+         *     motor sin que nadie lo haya confirmado. El panel tiene que poder distinguirlos, y el diagnóstico
+         *     por temas solo cuenta lo aceptado.
+         */
+        QuestionTopicSchema: {
+            /**
+             * Confidence
+             * @default 1
+             */
+            confidence: number;
+            /** Created At */
+            created_at?: string | null;
+            /** Curriculum Node Id */
+            curriculum_node_id: string;
+            /** Mapping Id */
+            mapping_id: string;
+            /** Official Code */
+            official_code: string;
+            /** Question Version Id */
+            question_version_id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "provisional" | "accepted" | "rejected";
             /** Title */
             title: string;
         };
@@ -13351,6 +13497,187 @@ export interface operations {
                 content: {
                     "application/problem+json": components["schemas"]["ProblemDetail"];
                 };
+            };
+            /** @description Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    list_question_topics_api_v1_questions__question_version_id__topics_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                question_version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuestionTopicSchema"][];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    assign_question_topic_api_v1_questions__question_version_id__topics_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-OpoFuente-Actor"?: string | null;
+            };
+            path: {
+                question_version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssignTopicRequestSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuestionTopicAssignmentSchema"];
+                };
+            };
+            /** @description Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description El cambio no encaja con lo que hay (`classification_conflict`), y se dice por qué. Por ejemplo, asignar una pregunta a un nodo del programa que no es un tema. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    unassign_question_topic_api_v1_questions__question_version_id__topics__curriculum_node_id__delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-OpoFuente-Actor"?: string | null;
+            };
+            path: {
+                question_version_id: string;
+                curriculum_node_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura. */
             403: {

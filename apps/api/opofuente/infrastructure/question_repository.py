@@ -35,6 +35,7 @@ from opofuente.application.question_models import (
     QuestionPage,
     QuestionSetPage,
     QuestionSetView,
+    QuestionTopicView,
     QuestionView,
     SaveQuestionsOutcome,
 )
@@ -69,6 +70,20 @@ from opofuente.infrastructure.db_models import (
 
 def _new_id() -> str:
     return str(uuid4())
+
+
+def _topic_view(mapeo: CurriculumMappingRecord, nodo: CurriculumNodeRecord) -> QuestionTopicView:
+    """Un mapeo pregunta↔nodo leído como tema: el mapeo, con el nodo que le da nombre y código."""
+    return QuestionTopicView(
+        mapping_id=str(mapeo.id),
+        question_version_id=str(mapeo.subject_id),
+        curriculum_node_id=str(nodo.id),
+        official_code=str(nodo.official_code),
+        title=str(nodo.title),
+        status=str(mapeo.status),
+        confidence=float(mapeo.confidence),
+        created_at=mapeo.created_at,
+    )
 
 
 #: Filtro de las versiones que **son** pregunta del conjunto.
@@ -906,32 +921,77 @@ class SqlAlchemyQuestionRepository:
             return None
         return str(fila.id), int(fila.depth)
 
-    def map_question_to_node(
+    def node_facts(self, node_id: str) -> tuple[str, str, str] | None:
+        """`(tipo, código oficial, título)` del nodo del programa, o `None` si no existe.
+
+        El **tipo** es lo que permite rechazar con motivo un destino que no vale: una pregunta se
+        asigna a un tema, y eso no se puede suponer desde fuera sin leer el nodo.
+        """
+        with self._session_factory() as session:
+            fila = session.get(CurriculumNodeRecord, node_id)
+            if fila is None:
+                return None
+            return str(fila.node_type), str(fila.official_code), str(fila.title)
+
+    def question_topics(self, question_version_id: str) -> tuple[QuestionTopicView, ...] | None:
+        """Los temas de una pregunta, con el estado de cada mapeo, por orden de programa.
+
+        `None` es «la pregunta no existe» y una tupla vacía es «existe y no tiene ningún tema»: son
+        dos cosas distintas y la ruta las contesta distinto (404 y lista vacía).
+        """
+        with self._session_factory() as session:
+            if session.get(QuestionVersionRecord, question_version_id) is None:
+                return None
+            filas = session.execute(
+                select(CurriculumMappingRecord, CurriculumNodeRecord)
+                .join(
+                    CurriculumNodeRecord,
+                    CurriculumNodeRecord.id == CurriculumMappingRecord.curriculum_node_id,
+                )
+                .where(
+                    CurriculumMappingRecord.subject_type == "question_version",
+                    CurriculumMappingRecord.subject_id == question_version_id,
+                )
+                .order_by(CurriculumNodeRecord.path)
+            ).all()
+            return tuple(_topic_view(mapeo, nodo) for mapeo, nodo in filas)
+
+    def assign_question_to_node(
         self,
         question_version_id: str,
         *,
         node_id: str,
         now: datetime,
-        coverage_type: str = "partial",
         actor: str = "local",
-    ) -> str | None:
-        """Asigna una pregunta a un nodo del programa. Idempotente por `(nodo, pregunta)`."""
+        confidence: float = 1.0,
+        coverage_type: str = "partial",
+    ) -> tuple[QuestionTopicView, bool] | None:
+        """Asigna una pregunta a un nodo y devuelve `(tema, creado)`. `None` si algo no existe.
+
+        Idempotente por `(nodo, pregunta)`: si el mapeo ya estaba se devuelve con `creado=False` y
+        **no** se escribe un segundo evento de auditoría. Dos eventos idénticos no son dos hechos, y
+        la clasificación de 7.677 preguntas se reintenta: ensuciar el registro con la misma línea
+        repetida lo haría ilegible justo donde hay que leer qué pasó.
+
+        No comprueba el **tipo** del nodo: la catalogación automática (S12.6) hereda el destino del
+        documento del que salen las preguntas y puede apuntar a un bloque a propósito. Quién decide
+        si un destino vale es el servicio, que sí tiene el motivo que hay que dar.
+        """
         with self._session_factory() as session:
-            pregunta = session.get(QuestionVersionRecord, question_version_id)
-            if pregunta is None:
+            if session.get(QuestionVersionRecord, question_version_id) is None:
                 return None
             nodo = session.get(CurriculumNodeRecord, node_id)
             if nodo is None:
                 return None
             existente = session.execute(
-                select(CurriculumMappingRecord.id).where(
+                select(CurriculumMappingRecord).where(
                     CurriculumMappingRecord.curriculum_node_id == node_id,
                     CurriculumMappingRecord.subject_type == "question_version",
                     CurriculumMappingRecord.subject_id == question_version_id,
                 )
             ).scalar_one_or_none()
             if existente is not None:
-                return str(existente)
+                return _topic_view(existente, nodo), False
             mapeo = CurriculumMappingRecord(
                 id=_new_id(),
                 curriculum_node_id=node_id,
@@ -939,12 +999,15 @@ class SqlAlchemyQuestionRepository:
                 subject_id=question_version_id,
                 coverage_type=coverage_type,
                 depth=int(nodo.depth),
-                confidence=1.0,
+                confidence=confidence,
                 status="accepted",
                 source_proposal_id=None,
                 created_at=now,
                 approved_at=now,
             )
+            # La vista se arma antes de confirmar: el mapeo ya tiene todos sus valores y así la
+            # respuesta no depende de una lectura extra tras el `commit`.
+            vista = _topic_view(mapeo, nodo)
             session.add(mapeo)
             self._audit(
                 session,
@@ -957,7 +1020,74 @@ class SqlAlchemyQuestionRepository:
                 now=now,
             )
             session.commit()
-            return mapeo.id
+            return vista, True
+
+    def unmap_question_from_node(
+        self,
+        question_version_id: str,
+        *,
+        node_id: str,
+        now: datetime,
+        actor: str = "local",
+    ) -> bool:
+        """Quita el tema que la pregunta tenía en ese nodo y lo deja auditado (`question.unmapped`).
+
+        `False` si la pareja no tenía mapeo: quitar lo que no estaba no es un hecho, y auditarlo
+        dejaría en el registro una retirada que no ocurrió.
+        """
+        with self._session_factory() as session:
+            fila = session.execute(
+                select(CurriculumMappingRecord).where(
+                    CurriculumMappingRecord.curriculum_node_id == node_id,
+                    CurriculumMappingRecord.subject_type == "question_version",
+                    CurriculumMappingRecord.subject_id == question_version_id,
+                )
+            ).scalar_one_or_none()
+            if fila is None:
+                return False
+            mapeo_id = str(fila.id)
+            anterior: dict[str, object] = {
+                "node_id": str(fila.curriculum_node_id),
+                "question_version_id": str(fila.subject_id),
+                "status": str(fila.status),
+                "confidence": float(fila.confidence),
+            }
+            session.delete(fila)
+            self._audit(
+                session,
+                actor=actor,
+                action="question.unmapped",
+                object_type="curriculum_mapping",
+                object_id=mapeo_id,
+                before=anterior,
+                after={},
+                now=now,
+            )
+            session.commit()
+            return True
+
+    def map_question_to_node(
+        self,
+        question_version_id: str,
+        *,
+        node_id: str,
+        now: datetime,
+        coverage_type: str = "partial",
+        actor: str = "local",
+    ) -> str | None:
+        """Asigna una pregunta a un nodo del programa y devuelve su identificador de mapeo.
+
+        Es el camino de la catalogación automática: idempotente por `(nodo, pregunta)` y con su
+        evento de auditoría. `None` si la pregunta o el nodo no existen.
+        """
+        asignado = self.assign_question_to_node(
+            question_version_id,
+            node_id=node_id,
+            now=now,
+            actor=actor,
+            coverage_type=coverage_type,
+        )
+        return None if asignado is None else asignado[0].mapping_id
 
     def entry_map(self, set_id: str) -> dict[str, AnswerKeyEntry]:
         """Desenlaces conocidos de cada pregunta, de **todas** las plantillas del conjunto.

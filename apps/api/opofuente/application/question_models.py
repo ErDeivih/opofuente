@@ -291,6 +291,26 @@ class KeySourceLink:
 
 
 @dataclass(frozen=True, slots=True)
+class QuestionTopicView:
+    """Un tema del programa asignado a una pregunta, con el estado de su mapeo.
+
+    `status` no es adorno: `accepted` es un tema que alguien ha decidido (una persona o la
+    catalogación que hereda el programa del documento) y `provisional` es lo que propuso un motor y
+    nadie ha confirmado. El panel tiene que poder distinguirlos, y el diagnóstico por temas solo
+    cuenta lo aceptado.
+    """
+
+    mapping_id: str
+    question_version_id: str
+    curriculum_node_id: str
+    official_code: str
+    title: str
+    status: str
+    confidence: float = 1.0
+    created_at: datetime | None = None
+
+
+@dataclass(frozen=True, slots=True)
 class KeyImportReport:
     """Resultado de alinear una plantilla suelta con las preguntas del conjunto."""
 
@@ -318,6 +338,7 @@ __all__ = [
     "QuestionPage",
     "QuestionSetPage",
     "QuestionSetView",
+    "QuestionTopicView",
     "QuestionView",
     "RejectedRow",
     "SaveQuestionsOutcome",

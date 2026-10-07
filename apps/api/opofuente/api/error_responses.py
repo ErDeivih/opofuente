@@ -82,6 +82,22 @@ WRITE_ERRORS: dict[int | str, dict[str, Any]] = {
     **_FORBIDDEN_ORIGIN,
 }
 
+_CLASSIFICATION_CONFLICT: dict[int | str, dict[str, Any]] = {
+    409: {
+        "model": ProblemDetail,
+        "description": (
+            "El cambio no encaja con lo que hay (`classification_conflict`), y se dice por qué. "
+            "Por ejemplo, asignar una pregunta a un nodo del programa que no es un tema."
+        ),
+    }
+}
+
+#: Errores de una escritura que además puede rechazarse por el destino elegido (409).
+CONFLICT_WRITE_ERRORS: dict[int | str, dict[str, Any]] = {
+    **WRITE_ERRORS,
+    **_CLASSIFICATION_CONFLICT,
+}
+
 #: Errores de las rutas de ingestión que reciben una carpeta del usuario.
 INGESTION_WRITE_ERRORS: dict[int | str, dict[str, Any]] = {
     **WRITE_ERRORS,

@@ -34,15 +34,18 @@ from opofuente.application.question_models import (
     QuestionPage,
     QuestionSetPage,
     QuestionSetView,
+    QuestionTopicView,
     QuestionView,
     RejectedRow,
 )
 from opofuente.domain.errors import (
+    ClassificationConflictError,
     InvalidAnswerError,
     InvariantViolationError,
     MappingMismatchError,
     NotFoundError,
 )
+from opofuente.domain.profiles import NodeType
 from opofuente.domain.questions import (
     AnswerKeyEntry,
     KeyOutcome,
@@ -74,6 +77,11 @@ UNSTORED_COLUMNS = ("tags", "source")
 
 #: Valores que cuentan como «sí» en una columna de reserva.
 _TRUE_VALUES = {"1", "s", "si", "sí", "r", "reserva", "true", "x", "yes"}
+
+#: Cómo se nombra cada nivel del programa cuando hay que explicar por qué no vale como destino. Un
+#: destino rechazado se rechaza **diciendo qué es**: «es un bloque, no un tema», no un identificador
+#: a secas que deja a quien lo escribió sin saber qué eligió mal.
+_NODE_KIND_IN_TEXT = {"block": "un bloque", "epigraph": "un epígrafe"}
 
 
 def _delimiter(text: str) -> str:
@@ -210,6 +218,62 @@ class QuestionService:
         persona: la auditoría tiene que poder distinguirlos.
         """
         return self._questions.map_question_to_node(
+            question_id, node_id=node_id, now=self._clock.now(), actor=actor
+        )
+
+    def topics(self, question_id: str) -> tuple[QuestionTopicView, ...]:
+        """Los temas de una pregunta, con el estado de cada mapeo. 404 si la pregunta no existe.
+
+        Una pregunta sustituida por una corrección **sí** conserva sus temas: sigue en la base, y
+        esconderlos haría que el panel los diera por perdidos.
+        """
+        temas = self._questions.question_topics(question_id)
+        if temas is None:
+            raise NotFoundError("pregunta", question_id)
+        return temas
+
+    def assign_topic(
+        self,
+        question_id: str,
+        *,
+        node_id: str,
+        actor: str = "local",
+        confidence: float = 1.0,
+    ) -> tuple[QuestionTopicView, bool]:
+        """Asigna un tema a una pregunta y devuelve `(tema, creado)`. Idempotente.
+
+        Solo un **tema** vale como destino. Un bloque o un epígrafe agrupan temas: colgar ahí una
+        pregunta la dejaría clasificada donde el diagnóstico por temas no la mira, y contaría como
+        catalogada sin estarlo. Se rechaza con el motivo (409) en lugar de aceptarla en silencio.
+
+        `actor` distingue a la persona (`local`) de la clasificación automática (`llm:…`), que
+        necesita quedar identificada: son miles de asignaciones y hay que poder auditar quién las
+        hizo.
+        """
+        hechos: tuple[str, str, str] | None = self._questions.node_facts(node_id)
+        if hechos is None:
+            raise NotFoundError("nodo del programa", node_id)
+        tipo, codigo, titulo = hechos
+        if tipo != NodeType.TOPIC.value:
+            raise ClassificationConflictError(
+                f"«{codigo} — {titulo}» es {_NODE_KIND_IN_TEXT.get(tipo, tipo)} del programa, "
+                "no un tema: una pregunta se asigna a un tema, y el bloque o el epígrafe agrupan "
+                "temas"
+            )
+        asignado = self._questions.assign_question_to_node(
+            question_id,
+            node_id=node_id,
+            now=self._clock.now(),
+            actor=actor,
+            confidence=confidence,
+        )
+        if asignado is None:
+            raise NotFoundError("pregunta", question_id)
+        return asignado
+
+    def unassign_topic(self, question_id: str, *, node_id: str, actor: str = "local") -> bool:
+        """Quita el tema de una pregunta y lo deja auditado. `False` si no lo tenía."""
+        return self._questions.unmap_question_from_node(
             question_id, node_id=node_id, now=self._clock.now(), actor=actor
         )
 
