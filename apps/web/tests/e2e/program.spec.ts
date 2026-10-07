@@ -2,6 +2,8 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type APIRequestContext } from '@playwright/test';
 
 const API = 'http://127.0.0.1:8765/api/v1';
+/** El origen que sirve el build en las pruebas: las escrituras pasan por el control de `Origin`. */
+const ALLOWED_ORIGIN = { Origin: 'http://127.0.0.1:4173' };
 const GC_NAME = 'Escala de Cabos y Guardias de la Guardia Civil';
 const TAI_NAME = 'Cuerpo de Técnicos Auxiliares de Informática de la Administración del Estado';
 
@@ -22,6 +24,16 @@ interface OppositionListRow {
   code: string;
 }
 
+interface NodoApi {
+  id: string;
+  title: string;
+  children: NodoApi[];
+}
+
+interface ProgramaApi {
+  nodes: NodoApi[];
+}
+
 /** Los tres anchos de referencia de 07_UI-UX §14. */
 const VIEWPORTS = [
   { name: 'escritorio 1440x900', width: 1440, height: 900 },
@@ -32,8 +44,10 @@ const VIEWPORTS = [
 /**
  * Cambiar de oposición o de convocatoria es una escritura y afecta a toda la aplicación, así que cada
  * prueba deja TAI activo y la convocatoria de Celador como está en el fixture al terminar.
- * `.e2e-data` se conserva entre ejecuciones: sin esto, una prueba que falle a mitad dejaría el estado
- * cambiado y haría fallar a las siguientes por un motivo que no es el suyo.
+ *
+ * El directorio de datos del E2E se **rehace** en cada corrida (`globalSetup` lo borra), así que esto
+ * no protege de una corrida a la siguiente: protege a las pruebas que vienen detrás dentro de la
+ * misma corrida, cuando una falla a mitad y deja el estado cambiado.
  */
 test.afterEach(async ({ request }) => {
   const response = await request.get(`${API}/oppositions`);
@@ -81,21 +95,91 @@ test('S01: el Programa muestra las reglas del examen con su cita', async ({ page
   await expect(page.getByText('No consta en la convocatoria')).toBeVisible();
 });
 
+/**
+ * Deja **una** pregunta catalogada en el primer tema del programa de TAI, por la API real.
+ *
+ * La prueba del badge «preguntas: N» necesita un tema con preguntas, y en un directorio de datos
+ * recién creado no hay ninguno: las pruebas que importan y catalogan preguntas (`questions.spec.ts`,
+ * `question-practice.spec.ts`) corren **después** que esta. Antes se leía lo que dejaran aquellas, así
+ * que la prueba pasaba por el orden de los ficheros y no por lo que dice comprobar (y con el
+ * directorio limpio fallaba). Lo que necesita lo fabrica aquí, que es lo único que la hace
+ * independiente del orden.
+ *
+ * Devuelve el título del tema para poder mirar **su** fila y no un badge cualquiera.
+ */
+async function catalogarUnaPreguntaEnElPrimerTemaDeTai(
+  request: APIRequestContext,
+): Promise<string> {
+  const oppositions = (await (await request.get(`${API}/oppositions`)).json()) as OppositionRow[];
+  const tai = oppositions.find((item) => item.code === 'tai-age');
+  expect(tai, 'la siembra tiene que traer la oposición de TAI').toBeDefined();
+
+  const convocatorias = (await (
+    await request.get(`${API}/oppositions/${tai!.id}/convocations`)
+  ).json()) as ConvocationRow[];
+  const programa = (await (
+    await request.get(`${API}/convocations/${convocatorias[0]!.id}/curriculum`)
+  ).json()) as ProgramaApi;
+  const tema = programa.nodes[0]!.children[0]!;
+
+  const sufijo = `${String(Date.now())}-${String(Math.random()).slice(2, 8)}`;
+  const conjunto = (await (
+    await request.post(`${API}/question-sets`, {
+      data: {
+        title: `Programa E2E ${sufijo}`,
+        opposition_id: tai!.id,
+        set_type: 'private_bank',
+        convocation_version_id: convocatorias[0]!.id,
+      },
+      headers: ALLOWED_ORIGIN,
+    })
+  ).json()) as { id: string };
+
+  const importadas = await request.post(`${API}/question-sets/${conjunto.id}/parse`, {
+    data: {
+      kind: 'json',
+      text: JSON.stringify([
+        { stem: `Pregunta del programa ${sufijo}`, options: ['uno', 'dos'], correct: 'uno' },
+      ]),
+    },
+    headers: ALLOWED_ORIGIN,
+  });
+  expect(importadas.ok(), `importar la pregunta: ${String(importadas.status())}`).toBe(true);
+
+  const pagina = (await (
+    await request.get(`${API}/question-sets/${conjunto.id}/questions`)
+  ).json()) as { questions: { id: string }[] };
+  const asignada = await request.post(`${API}/questions/${pagina.questions[0]!.id}/topics`, {
+    data: { curriculum_node_id: tema.id },
+    headers: ALLOWED_ORIGIN,
+  });
+  expect(asignada.ok(), `catalogar la pregunta en el tema: ${String(asignada.status())}`).toBe(true);
+
+  return tema.title;
+}
+
 test('DEBT-027 §5: el Programa enseña preguntas y próximo repaso de cada tema', async ({
   page,
+  request,
 }) => {
-  // Las dos columnas que faltaban, servidas por `/reviews/mastery`. Lo que se comprueba es que la
-  // respuesta **se sirve y se ve**, no una cifra concreta: `.e2e-data` se reutiliza entre corridas y
-  // las preguntas cambian. Esta prueba es también la que habría cazado el defecto de S12.2: la ruta
-  // literal `/reviews/mastery` estaba declarada detrás de `/reviews/{review_id}`, así que contestaba
-  // un 404 y la columna de dominio nunca llegó a pintarse.
+  // Las dos columnas que faltaban, servidas por `/reviews/mastery`. Esta prueba es también la que
+  // habría cazado el defecto de S12.2: la ruta literal `/reviews/mastery` estaba declarada detrás de
+  // `/reviews/{review_id}`, así que contestaba un 404 y la columna de dominio nunca llegó a pintarse.
+  //
+  // El material lo crea la prueba: sin esto, el badge «preguntas: N» dependía de lo que dejaran otras
+  // pruebas que corren después (ver `catalogarUnaPreguntaEnElPrimerTemaDeTai`).
+  const temaCatalogado = await catalogarUnaPreguntaEnElPrimerTemaDeTai(request);
+
   await page.goto('/programa');
 
   await expect(page.getByRole('heading', { level: 1, name: 'Programa' })).toBeVisible();
   // La nota la compone el servidor: solo llega si la ruta contesta de verdad.
   await expect(page.getByText(/con dominio estimado/)).toBeVisible();
-  // Y cada fila lleva sus dos columnas, con valor o diciendo que no hay nada.
-  await expect(page.getByText(/^preguntas: \d+$/).first()).toBeVisible();
+  // La fila del tema que acaba de recibir la pregunta lleva el recuento de verdad: es la prueba de
+  // que la cifra sale del mapeo y no de un cero pintado.
+  const fila = page.getByRole('button', { name: temaCatalogado });
+  await expect(fila.getByText(/^preguntas: \d+$/)).toBeVisible();
+  // Y la otra columna, con la fecha o diciendo que no hay nada programado.
   await expect(
     page
       .getByText(/^(repaso: \d{4}-\d{2}-\d{2}|repaso vencido: \d+|sin repaso programado)$/)
