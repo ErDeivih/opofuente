@@ -22,6 +22,7 @@ from uuid import uuid4
 
 from sqlalchemy import func, select
 from sqlalchemy import text as sql_text
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.sql.elements import ColumnElement
 
@@ -973,6 +974,14 @@ class SqlAlchemyQuestionRepository:
         la clasificación de 7.677 preguntas se reintenta: ensuciar el registro con la misma línea
         repetida lo haría ilegible justo donde hay que leer qué pasó.
 
+        La idempotencia vale también **contra otro escritor**: el worker cataloga al aceptar una
+        versión (S12.6) y una pasada de clasificación de miles de preguntas puede coincidir con él.
+        Cuando eso pasa, la comprobación de arriba no vio la fila y el `INSERT` choca contra
+        `uq_mapping_identity`; eso no es un fallo de quien pidió la asignación —la pareja ya está,
+        que es lo que quería—, así que se relee y se devuelve como existente en lugar de dejar un
+        500 en medio de un lote. El evento que se había escrito se va con el `rollback`: queda el
+        del escritor que ganó, no dos.
+
         No comprueba el **tipo** del nodo: la catalogación automática (S12.6) hereda el destino del
         documento del que salen las preguntas y puede apuntar a un bloque a propósito. Quién decide
         si un destino vale es el servicio, que sí tiene el motivo que hay que dar.
@@ -1019,7 +1028,24 @@ class SqlAlchemyQuestionRepository:
                 after={"node_id": node_id, "question_version_id": question_version_id},
                 now=now,
             )
-            session.commit()
+            try:
+                session.commit()
+            except IntegrityError:
+                # Otro escritor confirmó la misma pareja entre la comprobación y el `INSERT`. Se
+                # relee con la sesión ya limpia; si no está, el choque era de otra cosa y se propaga
+                # en vez de esconderse.
+                session.rollback()
+                repetido = session.execute(
+                    select(CurriculumMappingRecord).where(
+                        CurriculumMappingRecord.curriculum_node_id == node_id,
+                        CurriculumMappingRecord.subject_type == "question_version",
+                        CurriculumMappingRecord.subject_id == question_version_id,
+                    )
+                ).scalar_one_or_none()
+                nodo = session.get(CurriculumNodeRecord, node_id)
+                if repetido is None or nodo is None:
+                    raise
+                return _topic_view(repetido, nodo), False
             return vista, True
 
     def unmap_question_from_node(

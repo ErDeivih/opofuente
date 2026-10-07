@@ -18,13 +18,18 @@ a mano:
 
 from __future__ import annotations
 
+from collections.abc import Callable
+from datetime import UTC, datetime
 from typing import Any
 
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import text
+from sqlalchemy.orm import Session, sessionmaker
 
 from opofuente.config import Settings
-from opofuente.infrastructure.db import build_engine
+from opofuente.infrastructure.db import build_engine, build_session_factory
+from opofuente.infrastructure.question_repository import SqlAlchemyQuestionRepository
 
 ALLOWED_ORIGIN = {"Origin": "http://127.0.0.1:5173"}
 
@@ -145,6 +150,51 @@ def _eventos(settings: Settings) -> list[dict[str, Any]]:
         }
         for fila in filas
     ]
+
+
+class _SesionConCarrera:
+    """Sesión que, justo antes de confirmar, deja ganar a **otro** escritor.
+
+    Delega todo en la sesión de verdad salvo el `commit`, que primero avisa al otro escritor (el
+    worker catalogando, sobre otra conexión). Igual que en `test_classification_races.py` el choque
+    es determinista, pero aquí la fila que compite existe de verdad: el `INSERT` propio choca contra
+    `uq_mapping_identity` de verdad, y lo que se prueba es la recuperación y no un error fingido.
+    """
+
+    def __init__(self, real: Session, adelantarse: Callable[[], None]) -> None:
+        self._real = real
+        self._adelantarse = adelantarse
+
+    def __enter__(self) -> _SesionConCarrera:
+        self._real.__enter__()
+        return self
+
+    def __exit__(self, *args: object) -> object:
+        return self._real.__exit__(*args)
+
+    def __getattr__(self, nombre: str) -> Any:
+        return getattr(self._real, nombre)
+
+    def commit(self) -> None:
+        self._adelantarse()
+        self._real.commit()
+
+
+def _fabrica_con_carrera(
+    real: sessionmaker[Session], adelantarse: Callable[[], None]
+) -> Callable[[], _SesionConCarrera]:
+    """Fábrica de sesiones que hace que el otro escritor se adelante **una** vez."""
+    hecho = {"ya": False}
+
+    def una_vez() -> None:
+        if not hecho["ya"]:
+            hecho["ya"] = True
+            adelantarse()
+
+    def fabrica() -> _SesionConCarrera:
+        return _SesionConCarrera(real(), una_vez)
+
+    return fabrica
 
 
 def test_asignar_un_tema_deja_el_mapeo_y_su_evento_de_auditoria(
@@ -329,3 +379,65 @@ def test_el_actor_de_la_retirada_se_dice_por_cabecera(
 
     assert respuesta.status_code == 204, respuesta.text
     assert _eventos(seeded_settings)[-1]["actor"] == "revision:humano"
+
+
+def test_una_carrera_con_el_worker_no_convierte_la_asignacion_en_un_500(
+    seeded_settings: Settings,
+    seeded_client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Clasificar mientras el worker cataloga (S12.6) no puede dar un 500 en medio de un lote.
+
+    El worker cataloga al aceptar una versión y una pasada de clasificación puede coincidir con él:
+    los dos escriben la **misma** pareja. La comprobación de idempotencia no ve la fila del otro y
+    el `INSERT` choca contra `uq_mapping_identity`. Eso no es un fallo de quien pidió la asignación
+    —la pareja ya está, que es lo que quería—, así que la respuesta tiene que ser la misma que si
+    ya estuviera: 200, el mapeo del que ganó (`created=false`) y **un** solo evento de auditoría,
+    el suyo.
+
+    La carrera se provoca de forma determinista: la fábrica de sesiones del servicio deja que otro
+    escritor (otro motor sobre la misma base, como el worker) confirme el mapeo justo antes de
+    nuestro `commit`. La fila que compite es de verdad, así que el choque también lo es.
+    """
+    conjunto = _conjunto(seeded_client)
+    pregunta = _preguntas(seeded_client, conjunto["id"])[0]
+    tema = _nodo(seeded_client, "topic")
+
+    #: Lo que consiguió el otro escritor, para poder compararlo con lo que responde la API.
+    ganador: dict[str, str] = {}
+    motor_ajeno = build_engine(seeded_settings.data_paths.database)
+    try:
+        ajeno = SqlAlchemyQuestionRepository(build_session_factory(motor_ajeno))
+
+        def el_worker_se_adelanta() -> None:
+            asignado = ajeno.assign_question_to_node(
+                pregunta["id"], node_id=tema["id"], now=datetime.now(UTC), actor="auto"
+            )
+            assert asignado is not None
+            vista, creado = asignado
+            assert creado is True, "el otro escritor crea el mapeo: si no, no hay carrera"
+            ganador["mapping_id"] = vista.mapping_id
+
+        monkeypatch.setattr(
+            seeded_client.app.state.question_service._questions,
+            "_session_factory",
+            _fabrica_con_carrera(seeded_client.app.state.session_factory, el_worker_se_adelanta),
+        )
+
+        respuesta = _asignar(seeded_client, pregunta["id"], tema["id"], actor="llm:deepseek-flash")
+    finally:
+        motor_ajeno.dispose()
+
+    assert respuesta.status_code == 200, (
+        f"el choque de unicidad no puede ser un 500: {respuesta.text}"
+    )
+    assert respuesta.json()["created"] is False, "el mapeo lo creó el que ganó la carrera"
+    assert respuesta.json()["mapping_id"] == ganador["mapping_id"]
+
+    eventos = _eventos(seeded_settings)
+    assert [evento["action"] for evento in eventos] == ["question.mapped"]
+    assert eventos[0]["object_id"] == ganador["mapping_id"]
+    assert eventos[0]["actor"] == "auto", "queda el evento del que ganó, no el del que perdió"
+    assert [item["mapping_id"] for item in _temas(seeded_client, pregunta["id"])] == [
+        ganador["mapping_id"]
+    ], "la carrera no deja un segundo mapeo"
