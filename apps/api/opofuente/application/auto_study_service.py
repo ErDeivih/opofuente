@@ -302,19 +302,32 @@ class AutoStudyService:
 
         Solo se tocan las preguntas **sin** tema: una que ya lo tiene (puesto a mano o traído de una
         columna del material) se respeta, porque pisarla sería cambiar una decisión en silencio.
+
+        Un epígrafe **no sustituye** a su tema (F4): si el documento está asignado a un epígrafe,
+        sus preguntas son también de su tema, y se escribe el mapeo del tema además del epígrafe.
+        Sin él, una pregunta clasificada en un epígrafe no contaría en ningún tema y el tema
+        parecería perder preguntas por haberlas clasificado mejor.
         """
-        nodos = [
-            mapeo.node_id
-            for mapeo in self._library.mappings_of(version_id)
-            if mapeo.status == "accepted"
-        ]
-        if not nodos:
+        nodos: list[str] = []
+        for mapeo in self._library.mappings_of(version_id):
+            if mapeo.status != "accepted":
+                continue
+            nodos.append(mapeo.node_id)
+            tema = self._questions.topic_of_node(mapeo.node_id)
+            if tema is not None:
+                nodos.append(tema)
+        # Sin repetir: un documento asignado al tema y a su epígrafe no puede escribir dos veces lo
+        # mismo, y el recuento del informe tiene que hablar de preguntas, no de mapeos.
+        unicos = list(dict.fromkeys(nodos))
+        if not unicos:
             return 0
         catalogadas = 0
         for pregunta_id in self._questions.questions_without_topic(set_id, limit=500):
-            for node_id in nodos:
+            escrita = False
+            for node_id in unicos:
                 if self._questions.map_question_to_node(pregunta_id, node_id=node_id) is not None:
-                    catalogadas += 1
+                    escrita = True
+            catalogadas += 1 if escrita else 0
         return catalogadas
 
     def _document_type(self, artifact_id: str) -> str | None:

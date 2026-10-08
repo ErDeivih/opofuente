@@ -1693,6 +1693,32 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/question-exclusions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Las preguntas fuera de temario, con su motivo (la cola que revisa el propietario)
+         * @description Las marcas de fuera de temario, de la más nueva a la más antigua.
+         *
+         *     Es donde se **consulta** lo que no es materia del programa: la pregunta, el motivo por el que
+         *     se declaró y quién lo decidió. Va como recurso propio (`/question-exclusions`) y no dentro de la
+         *     pregunta a propósito: una marca no es un tema, y meterla en el mismo sitio invitaría a leerla
+         *     como si lo fuera. La revisión de una marca se hace asignando un tema (que la levanta) o
+         *     dejándola.
+         */
+        get: operations["list_question_exclusions_api_v1_question_exclusions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/question-sets": {
         parameters: {
             query?: never;
@@ -1937,6 +1963,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/questions/topics/bulk": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Asigna temas por lotes: misma ruta auditada, idempotente y fila a fila
+         * @description La versión por lotes de `POST /questions/{id}/topics`, para no hacer 17.000 peticiones.
+         *
+         *     No es un segundo camino de escritura: cada fila entra por el mismo método del servicio, así
+         *     que deja **el mismo mapeo y el mismo evento de auditoría** que la ruta individual. Lo que añade
+         *     es el sobre: un actor para todo el lote y, por fila, o un tema (con su epígrafe) o un fuera de
+         *     temario.
+         *
+         *     Es **idempotente**: repetir un lote no duplica mapeos ni eventos, y cada fila dice si la creó
+         *     esta llamada (`created`) o si ya estaba (`existing`). Una fila mala **no** tumba el lote: se
+         *     devuelve con `outcome="error"` y su motivo, y las demás se aplican. Abortar 200 asignaciones
+         *     porque una pregunta se retiró entre medias obligaría a repetir las 199 buenas.
+         *
+         *     El actor viaja en el cuerpo (`actor`) o en la cabecera `X-OpoFuente-Actor`. La clasificación
+         *     automática se identifica (`llm:deepseek-flash`) y así la auditoría distingue a la persona del
+         *     proceso.
+         */
+        post: operations["assign_question_topics_bulk_api_v1_questions_topics_bulk_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/questions/{question_id}": {
         parameters: {
             query?: never;
@@ -2068,9 +2128,10 @@ export interface paths {
          *     defecto `local`): la clasificación automática se identifica («llm:deepseek-flash») y así la
          *     auditoría distingue a la persona del proceso.
          *
-         *     El destino tiene que ser un **tema**: un bloque o un epígrafe responden 409 con el motivo,
-         *     porque una pregunta colgada de ellos quedaría fuera del diagnóstico por temas creyendo estar
-         *     dentro.
+         *     El destino tiene que ser un **tema**: un bloque responde 409 con el motivo, porque una pregunta
+         *     colgada de él quedaría fuera del diagnóstico por temas creyendo estar dentro. El **epígrafe**
+         *     del tema se puede asignar a la vez (`epigraph_node_id`) y se escribe **además** del tema: el
+         *     epígrafe dice dónde encaja la pregunta y el tema mantiene los recuentos que ya existen.
          */
         post: operations["assign_question_topic_api_v1_questions__question_version_id__topics_post"];
         delete?: never;
@@ -3002,6 +3063,7 @@ export interface components {
          *
          *     `actor` distingue quién lo hace y no es adorno: la clasificación automática de miles de
          *     preguntas tiene que quedar identificada en la auditoría, y `local` es la persona que está.
+         *     `reason` es el motivo y va a la auditoría, que es donde se lee por qué se clasificó así.
          */
         AssignTopicRequestSchema: {
             /** Actor */
@@ -3013,6 +3075,10 @@ export interface components {
             confidence: number;
             /** Curriculum Node Id */
             curriculum_node_id: string;
+            /** Epigraph Node Id */
+            epigraph_node_id?: string | null;
+            /** Reason */
+            reason?: string | null;
         };
         /**
          * AttemptSchema
@@ -3198,6 +3264,98 @@ export interface components {
             question_set_id: string;
             /** Sessions */
             sessions: components["schemas"]["SessionRecalculationSchema"][];
+        };
+        /**
+         * BulkTopicAssignmentReportSchema
+         * @description El lote entero: cada fila con su desenlace y los totales por desenlace.
+         */
+        BulkTopicAssignmentReportSchema: {
+            /**
+             * Already Excluded
+             * @default 0
+             */
+            already_excluded: number;
+            /**
+             * Created
+             * @default 0
+             */
+            created: number;
+            /**
+             * Errors
+             * @default 0
+             */
+            errors: number;
+            /**
+             * Excluded
+             * @default 0
+             */
+            excluded: number;
+            /**
+             * Existing
+             * @default 0
+             */
+            existing: number;
+            /** Results */
+            results: components["schemas"]["BulkTopicAssignmentResultSchema"][];
+        };
+        /**
+         * BulkTopicAssignmentResultSchema
+         * @description Qué ha pasado con **una** fila del lote.
+         *
+         *     `outcome` es el vocabulario que hace utilizable el reintento: `created` (esta llamada lo creó),
+         *     `existing` (ya estaba), `excluded` (marcada fuera de temario ahora), `already_excluded` (ya lo
+         *     estaba) y `error` (la fila no se pudo aplicar, con el motivo en `detail`). Una fila mala **no**
+         *     tumba el lote: se dice cuál y por qué.
+         */
+        BulkTopicAssignmentResultSchema: {
+            assignment?: components["schemas"]["QuestionTopicAssignmentSchema"] | null;
+            /** Detail */
+            detail?: string | null;
+            exclusion?: components["schemas"]["QuestionExclusionSchema"] | null;
+            /**
+             * Outcome
+             * @enum {string}
+             */
+            outcome: "created" | "existing" | "excluded" | "already_excluded" | "error";
+            /** Question Version Id */
+            question_version_id: string;
+        };
+        /**
+         * BulkTopicAssignmentSchema
+         * @description Una fila del lote: o un tema (con su epígrafe, si se sabe) o un fuera de temario.
+         *
+         *     Las dos formas son excluyentes y se comprueba: una fila que dijera las dos cosas dejaría la
+         *     pregunta clasificada y sin clasificar a la vez, y una que no dijera ninguna no pide nada.
+         */
+        BulkTopicAssignmentSchema: {
+            /**
+             * Confidence
+             * @default 1
+             */
+            confidence: number;
+            /** Curriculum Node Id */
+            curriculum_node_id?: string | null;
+            /** Epigraph Node Id */
+            epigraph_node_id?: string | null;
+            /** Exclusion Reason */
+            exclusion_reason?: ("otra_administracion" | "enunciado_roto") | null;
+            /** Question Version Id */
+            question_version_id: string;
+            /** Reason */
+            reason?: string | null;
+        };
+        /**
+         * BulkTopicAssignmentsSchema
+         * @description Un lote de asignaciones con **un** actor.
+         *
+         *     El actor va en el sobre y no en cada fila: un lote lo firma quien lo manda, y repetirlo 200
+         *     veces solo sirve para que alguna fila diga otra cosa que las demás por error.
+         */
+        BulkTopicAssignmentsSchema: {
+            /** Actor */
+            actor?: string | null;
+            /** Assignments */
+            assignments: components["schemas"]["BulkTopicAssignmentSchema"][];
         };
         /** CapabilitiesSchema */
         CapabilitiesSchema: {
@@ -5510,6 +5668,41 @@ export interface components {
             text: string;
         };
         /**
+         * QuestionExclusionPageSchema
+         * @description La cola de fuera de temario: las marcas de una página y cuántas hay en total.
+         */
+        QuestionExclusionPageSchema: {
+            /** Exclusions */
+            exclusions: components["schemas"]["QuestionExclusionSchema"][];
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+            /** Total */
+            total: number;
+        };
+        /**
+         * QuestionExclusionSchema
+         * @description Una pregunta declarada fuera del temario, con su motivo.
+         *
+         *     No lleva código de tema ni nodo: **no es un mapeo**, y por eso no se puede confundir con uno.
+         */
+        QuestionExclusionSchema: {
+            /** Actor */
+            actor: string;
+            /** Created At */
+            created_at?: string | null;
+            /** Note */
+            note?: string | null;
+            /** Question Version Id */
+            question_version_id: string;
+            /**
+             * Reason
+             * @enum {string}
+             */
+            reason: "otra_administracion" | "enunciado_roto";
+        };
+        /**
          * QuestionImportReportSchema
          * @description Lo que ha pasado al importar: ni una fila se pierde, ni un conflicto se esconde.
          *
@@ -5735,6 +5928,9 @@ export interface components {
          *
          *     `created` es lo que hace utilizable una ruta idempotente: reintentar la clasificación de un lote
          *     entero no puede confundir «lo asigné yo ahora» con «ya estaba asignado».
+         *
+         *     `epigraph` viaja cuando se pidió asignar también un epígrafe: se asigna con su tema, y decir
+         *     solo el tema escondería la mitad de lo que se ha escrito.
          */
         QuestionTopicAssignmentSchema: {
             /**
@@ -5748,6 +5944,7 @@ export interface components {
             created_at?: string | null;
             /** Curriculum Node Id */
             curriculum_node_id: string;
+            epigraph?: components["schemas"]["QuestionTopicAssignmentSchema"] | null;
             /** Mapping Id */
             mapping_id: string;
             /** Official Code */
@@ -12686,6 +12883,57 @@ export interface operations {
             };
         };
     };
+    list_question_exclusions_api_v1_question_exclusions_get: {
+        parameters: {
+            query?: {
+                reason?: string | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuestionExclusionPageSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
     list_question_sets_api_v1_question_sets_get: {
         parameters: {
             query?: {
@@ -13450,6 +13698,77 @@ export interface operations {
             };
             /** @description El recurso no existe. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    assign_question_topics_bulk_api_v1_questions_topics_bulk_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-OpoFuente-Actor"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkTopicAssignmentsSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulkTopicAssignmentReportSchema"];
+                };
+            };
+            /** @description Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description El cambio no encaja con lo que hay (`classification_conflict`), y se dice por qué. Por ejemplo, asignar una pregunta a un nodo del programa que no es un tema. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

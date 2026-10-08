@@ -132,6 +132,16 @@ class ClassificationConflictError(OpoFuenteError):
     """
 
 
+class ExternalServiceError(OpoFuenteError):
+    """Un servicio de fuera no ha contestado lo que se le pedía.
+
+    Lo lanza el cliente del modelo de lenguaje de la clasificación (F4): no hay respuesta, la
+    respuesta no es JSON, o trae una forma que no se puede leer. **No** se traduce a un error de la
+    API porque no hay ninguna ruta que llame a un modelo: quien lo usa es un comando de la línea de
+    órdenes, y lo que tiene que hacer es decirlo y parar, no inventar una clasificación.
+    """
+
+
 class UnsafeContentError(OpoFuenteError):
     """El contenido se rechaza por seguridad. La API lo traduce a 400 `unsafe_content`.
 

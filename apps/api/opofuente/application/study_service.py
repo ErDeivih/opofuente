@@ -1449,6 +1449,11 @@ class StudyService:
         En un **simulacro** el banco se ordena antes de elegir: primero las preguntas que no se han
         visto hace poco y después las demás, para que las que entran sean las frescas (DEBT-012). El
         examen oficial **no** reordena: se presenta en el orden de su publicación.
+
+        **Fuera del temario no entra en un examen** (F4): la normativa y la organización propias de
+        otra administración no caen en el examen de TAI, y un simulacro que las metiera mediría
+        otra cosa. En un test por tema y en los apuntes sí cuentan —son material para estudiar—, y
+        por eso el filtro vive aquí y no en el recuento de preguntas.
         """
         conjunto = self._questions.get_set(fuente.question_set_id)
         if conjunto is None:
@@ -1457,6 +1462,9 @@ class StudyService:
         validas = [
             pregunta for pregunta in todas if pregunta.question_type in _SUPPORTED_QUESTION_TYPES
         ]
+        if modo in (SessionMode.OFFICIAL_EXAM, SessionMode.MOCK_EXAM):
+            fuera_del_temario = self._questions.excluded_question_ids(fuente.question_set_id)
+            validas = [pregunta for pregunta in validas if pregunta.id not in fuera_del_temario]
         ordinarias = [pregunta for pregunta in validas if not pregunta.is_reserve]
         reservas = [pregunta for pregunta in validas if pregunta.is_reserve]
 

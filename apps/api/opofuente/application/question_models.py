@@ -13,6 +13,7 @@ from dataclasses import dataclass, field
 from datetime import date, datetime
 
 from opofuente.domain.questions import ParseIssue, QuestionDuplicateGroup
+from opofuente.domain.topic_classification import OutOfSyllabus
 
 
 @dataclass(frozen=True, slots=True)
@@ -313,6 +314,117 @@ class QuestionTopicView:
 
 
 @dataclass(frozen=True, slots=True)
+class TopicMappingOutcome:
+    """Un mapeo pregunta↔nodo **escrito por esta llamada**, y si lo creó ella.
+
+    `created=False` es «ya estaba»: es lo que hace utilizable un lote que se reintenta, porque
+    distingue «lo asigné yo ahora» de «ya estaba asignado».
+    """
+
+    view: QuestionTopicView
+    created: bool
+
+
+@dataclass(frozen=True, slots=True)
+class TopicAssignment:
+    """Lo que deja asignar un tema: el tema y, si se pidió, el epígrafe del tema.
+
+    Se devuelven los dos porque un epígrafe **no sustituye** a su tema: la pregunta cuelga de los
+    dos (el epígrafe dice dónde encaja y el tema mantiene todos los recuentos que ya existen).
+    Devolver solo el epígrafe escondería una escritura que sí ha ocurrido.
+    """
+
+    topic: TopicMappingOutcome
+    epigraph: TopicMappingOutcome | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class QuestionExclusionView:
+    """Una pregunta declarada fuera del temario, con el motivo y quién lo decidió."""
+
+    question_version_id: str
+    reason: str
+    actor: str
+    note: str | None = None
+    created_at: datetime | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class QuestionExclusionOutcome:
+    """La marca de fuera de temario y si **esta** llamada la creó."""
+
+    view: QuestionExclusionView
+    created: bool
+
+
+@dataclass(frozen=True, slots=True)
+class TopicAssignmentRequest:
+    """Una fila de un lote, ya leída: a qué pregunta se le hace qué.
+
+    Es el tipo que comparten la ruta por lotes y el clasificador, y por eso vive aquí y no en el
+    contrato HTTP: la ruta traduce su JSON a esto y el clasificador construye esto directamente. La
+    escritura es la misma —la del servicio— y no hay un segundo camino que se pueda desviar.
+
+    `status` distingue una decisión (`accepted`) de una **propuesta** (`provisional`): lo que el
+    clasificador no tiene claro va a la cola de revisión, no a los recuentos.
+    """
+
+    question_version_id: str
+    curriculum_node_id: str | None = None
+    epigraph_node_id: str | None = None
+    exclusion_reason: OutOfSyllabus | None = None
+    confidence: float = 1.0
+    reason: str | None = None
+    status: str = "accepted"
+
+
+@dataclass(frozen=True, slots=True)
+class TopicAssignmentRow:
+    """Qué ha pasado con una fila: el desenlace, lo que se escribió y, si falló, por qué.
+
+    Una fila mala **no** tumba el lote: se informa con `outcome="error"` y su `detail`, y las demás
+    siguen. Es la misma regla que la importación de preguntas, y por la misma razón: abortar 200
+    asignaciones por una pregunta retirada obliga a repetir las 199 buenas.
+    """
+
+    question_version_id: str
+    outcome: str
+    assignment: TopicAssignment | None = None
+    exclusion: QuestionExclusionOutcome | None = None
+    detail: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class TopicAssignmentBatch:
+    """El lote entero con sus totales, que es lo que se publica y lo que se imprime."""
+
+    rows: tuple[TopicAssignmentRow, ...]
+
+    def _total(self, outcome: str) -> int:
+        return sum(1 for fila in self.rows if fila.outcome == outcome)
+
+    @property
+    def created(self) -> int:
+        return self._total("created")
+
+    @property
+    def existing(self) -> int:
+        return self._total("existing")
+
+    @property
+    def excluded(self) -> int:
+        return self._total("excluded")
+
+    @property
+    def already_excluded(self) -> int:
+        return self._total("already_excluded")
+
+    @property
+    def errors(self) -> int:
+        return self._total("error")
+
+
+@dataclass(frozen=True, slots=True)
 class KeyImportReport:
     """Resultado de alinear una plantilla suelta con las preguntas del conjunto."""
 
@@ -336,6 +448,8 @@ __all__ = [
     "KeySourceLink",
     "OptionView",
     "QuestionEvidenceView",
+    "QuestionExclusionOutcome",
+    "QuestionExclusionView",
     "QuestionImportReport",
     "QuestionPage",
     "QuestionSetPage",
@@ -344,4 +458,9 @@ __all__ = [
     "QuestionView",
     "RejectedRow",
     "SaveQuestionsOutcome",
+    "TopicAssignment",
+    "TopicAssignmentBatch",
+    "TopicAssignmentRequest",
+    "TopicAssignmentRow",
+    "TopicMappingOutcome",
 ]

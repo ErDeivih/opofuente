@@ -67,6 +67,11 @@ from opofuente.domain.jobs import Job, JobStatus, JobType
 from opofuente.domain.profiles import Profile
 from opofuente.domain.rag import CandidateSpan
 from opofuente.domain.system import Capability, CheckResult
+from opofuente.domain.topic_classification import (
+    ClassifiableQuestion,
+    ProposalBatch,
+    Syllabus,
+)
 
 
 @runtime_checkable
@@ -551,3 +556,28 @@ class ReadinessRepository(Protocol):
     def questions(self, *, opposition_id: str) -> QuestionSummary: ...
 
     def pending(self) -> PendingCounts: ...
+
+
+# ------------------------------------------------------------------- F4: clasificar por tema
+
+
+@runtime_checkable
+class TopicProposer(Protocol):
+    """Un motor que propone tema y epígrafe para un lote de preguntas (F4).
+
+    Propone, no decide: devuelve lo que contestó con su confianza, y los umbrales y la escritura son
+    del servicio. Por eso el clasificador se puede probar entero con un doble que no llama a nadie.
+    """
+
+    name: str
+
+    @property
+    def version(self) -> str:
+        """La versión del motor: dos modelos distintos proponen cosas distintas."""
+        ...
+
+    def propose(
+        self, questions: Sequence[ClassifiableQuestion], *, syllabus: Syllabus
+    ) -> ProposalBatch:
+        """Las propuestas del lote y lo que costó pedirlas."""
+        ...

@@ -357,9 +357,13 @@ class QuestionTopicAssignmentSchema(QuestionTopicSchema):
 
     `created` es lo que hace utilizable una ruta idempotente: reintentar la clasificación de un lote
     entero no puede confundir «lo asigné yo ahora» con «ya estaba asignado».
+
+    `epigraph` viaja cuando se pidió asignar también un epígrafe: se asigna con su tema, y decir
+    solo el tema escondería la mitad de lo que se ha escrito.
     """
 
     created: bool
+    epigraph: QuestionTopicAssignmentSchema | None = None
 
 
 class AssignTopicRequestSchema(BaseModel):
@@ -367,10 +371,98 @@ class AssignTopicRequestSchema(BaseModel):
 
     `actor` distingue quién lo hace y no es adorno: la clasificación automática de miles de
     preguntas tiene que quedar identificada en la auditoría, y `local` es la persona que está.
+    `reason` es el motivo y va a la auditoría, que es donde se lee por qué se clasificó así.
     """
 
     model_config = ConfigDict(extra="forbid")
 
     curriculum_node_id: str = Field(min_length=1, max_length=36)
+    #: Epígrafe del tema, si se sabe. Se escribe **además** del tema, nunca en su lugar.
+    epigraph_node_id: str | None = Field(default=None, min_length=1, max_length=36)
     confidence: float = Field(default=1.0, ge=0.0, le=1.0)
     actor: str | None = Field(default=None, min_length=1, max_length=64)
+    reason: str | None = Field(default=None, max_length=500)
+
+
+#: Los motivos por los que una pregunta no es materia del programa vigente. Es el vocabulario de
+#: `domain.topic_classification.OutOfSyllabus` y se declara aquí para que el contrato lo publique.
+ExclusionReasonName = Literal["otra_administracion", "enunciado_roto"]
+
+
+class QuestionExclusionSchema(BaseModel):
+    """Una pregunta declarada fuera del temario, con su motivo.
+
+    No lleva código de tema ni nodo: **no es un mapeo**, y por eso no se puede confundir con uno.
+    """
+
+    question_version_id: str
+    reason: ExclusionReasonName
+    actor: str
+    note: str | None = None
+    created_at: datetime | None = None
+
+
+class QuestionExclusionPageSchema(BaseModel):
+    """La cola de fuera de temario: las marcas de una página y cuántas hay en total."""
+
+    exclusions: list[QuestionExclusionSchema]
+    total: int
+    limit: int
+    offset: int
+
+
+class BulkTopicAssignmentSchema(BaseModel):
+    """Una fila del lote: o un tema (con su epígrafe, si se sabe) o un fuera de temario.
+
+    Las dos formas son excluyentes y se comprueba: una fila que dijera las dos cosas dejaría la
+    pregunta clasificada y sin clasificar a la vez, y una que no dijera ninguna no pide nada.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    question_version_id: str = Field(min_length=1, max_length=36)
+    curriculum_node_id: str | None = Field(default=None, min_length=1, max_length=36)
+    epigraph_node_id: str | None = Field(default=None, min_length=1, max_length=36)
+    exclusion_reason: ExclusionReasonName | None = None
+    confidence: float = Field(default=1.0, ge=0.0, le=1.0)
+    reason: str | None = Field(default=None, max_length=500)
+
+
+class BulkTopicAssignmentsSchema(BaseModel):
+    """Un lote de asignaciones con **un** actor.
+
+    El actor va en el sobre y no en cada fila: un lote lo firma quien lo manda, y repetirlo 200
+    veces solo sirve para que alguna fila diga otra cosa que las demás por error.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    actor: str | None = Field(default=None, min_length=1, max_length=64)
+    assignments: list[BulkTopicAssignmentSchema] = Field(min_length=1, max_length=200)
+
+
+class BulkTopicAssignmentResultSchema(BaseModel):
+    """Qué ha pasado con **una** fila del lote.
+
+    `outcome` es el vocabulario que hace utilizable el reintento: `created` (esta llamada lo creó),
+    `existing` (ya estaba), `excluded` (marcada fuera de temario ahora), `already_excluded` (ya lo
+    estaba) y `error` (la fila no se pudo aplicar, con el motivo en `detail`). Una fila mala **no**
+    tumba el lote: se dice cuál y por qué.
+    """
+
+    question_version_id: str
+    outcome: Literal["created", "existing", "excluded", "already_excluded", "error"]
+    assignment: QuestionTopicAssignmentSchema | None = None
+    exclusion: QuestionExclusionSchema | None = None
+    detail: str | None = None
+
+
+class BulkTopicAssignmentReportSchema(BaseModel):
+    """El lote entero: cada fila con su desenlace y los totales por desenlace."""
+
+    results: list[BulkTopicAssignmentResultSchema]
+    created: int = 0
+    existing: int = 0
+    excluded: int = 0
+    already_excluded: int = 0
+    errors: int = 0

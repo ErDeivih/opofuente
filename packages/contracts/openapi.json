@@ -664,7 +664,7 @@
       },
       "AssignTopicRequestSchema": {
         "additionalProperties": false,
-        "description": "Asignar un tema a una pregunta.\n\n`actor` distingue quién lo hace y no es adorno: la clasificación automática de miles de\npreguntas tiene que quedar identificada en la auditoría, y `local` es la persona que está.",
+        "description": "Asignar un tema a una pregunta.\n\n`actor` distingue quién lo hace y no es adorno: la clasificación automática de miles de\npreguntas tiene que quedar identificada en la auditoría, y `local` es la persona que está.\n`reason` es el motivo y va a la auditoría, que es donde se lee por qué se clasificó así.",
         "properties": {
           "actor": {
             "anyOf": [
@@ -691,6 +691,31 @@
             "minLength": 1,
             "title": "Curriculum Node Id",
             "type": "string"
+          },
+          "epigraph_node_id": {
+            "anyOf": [
+              {
+                "maxLength": 36,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Epigraph Node Id"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
           }
         },
         "required": [
@@ -1223,6 +1248,215 @@
           "sessions"
         ],
         "title": "BulkRecalculationSchema",
+        "type": "object"
+      },
+      "BulkTopicAssignmentReportSchema": {
+        "description": "El lote entero: cada fila con su desenlace y los totales por desenlace.",
+        "properties": {
+          "already_excluded": {
+            "default": 0,
+            "title": "Already Excluded",
+            "type": "integer"
+          },
+          "created": {
+            "default": 0,
+            "title": "Created",
+            "type": "integer"
+          },
+          "errors": {
+            "default": 0,
+            "title": "Errors",
+            "type": "integer"
+          },
+          "excluded": {
+            "default": 0,
+            "title": "Excluded",
+            "type": "integer"
+          },
+          "existing": {
+            "default": 0,
+            "title": "Existing",
+            "type": "integer"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/BulkTopicAssignmentResultSchema"
+            },
+            "title": "Results",
+            "type": "array"
+          }
+        },
+        "required": [
+          "results"
+        ],
+        "title": "BulkTopicAssignmentReportSchema",
+        "type": "object"
+      },
+      "BulkTopicAssignmentResultSchema": {
+        "description": "Qué ha pasado con **una** fila del lote.\n\n`outcome` es el vocabulario que hace utilizable el reintento: `created` (esta llamada lo creó),\n`existing` (ya estaba), `excluded` (marcada fuera de temario ahora), `already_excluded` (ya lo\nestaba) y `error` (la fila no se pudo aplicar, con el motivo en `detail`). Una fila mala **no**\ntumba el lote: se dice cuál y por qué.",
+        "properties": {
+          "assignment": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QuestionTopicAssignmentSchema"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detail"
+          },
+          "exclusion": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QuestionExclusionSchema"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "outcome": {
+            "enum": [
+              "created",
+              "existing",
+              "excluded",
+              "already_excluded",
+              "error"
+            ],
+            "title": "Outcome",
+            "type": "string"
+          },
+          "question_version_id": {
+            "title": "Question Version Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "question_version_id",
+          "outcome"
+        ],
+        "title": "BulkTopicAssignmentResultSchema",
+        "type": "object"
+      },
+      "BulkTopicAssignmentSchema": {
+        "additionalProperties": false,
+        "description": "Una fila del lote: o un tema (con su epígrafe, si se sabe) o un fuera de temario.\n\nLas dos formas son excluyentes y se comprueba: una fila que dijera las dos cosas dejaría la\npregunta clasificada y sin clasificar a la vez, y una que no dijera ninguna no pide nada.",
+        "properties": {
+          "confidence": {
+            "default": 1.0,
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence",
+            "type": "number"
+          },
+          "curriculum_node_id": {
+            "anyOf": [
+              {
+                "maxLength": 36,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Curriculum Node Id"
+          },
+          "epigraph_node_id": {
+            "anyOf": [
+              {
+                "maxLength": 36,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Epigraph Node Id"
+          },
+          "exclusion_reason": {
+            "anyOf": [
+              {
+                "enum": [
+                  "otra_administracion",
+                  "enunciado_roto"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exclusion Reason"
+          },
+          "question_version_id": {
+            "maxLength": 36,
+            "minLength": 1,
+            "title": "Question Version Id",
+            "type": "string"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "required": [
+          "question_version_id"
+        ],
+        "title": "BulkTopicAssignmentSchema",
+        "type": "object"
+      },
+      "BulkTopicAssignmentsSchema": {
+        "additionalProperties": false,
+        "description": "Un lote de asignaciones con **un** actor.\n\nEl actor va en el sobre y no en cada fila: un lote lo firma quien lo manda, y repetirlo 200\nveces solo sirve para que alguna fila diga otra cosa que las demás por error.",
+        "properties": {
+          "actor": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor"
+          },
+          "assignments": {
+            "items": {
+              "$ref": "#/components/schemas/BulkTopicAssignmentSchema"
+            },
+            "maxItems": 200,
+            "minItems": 1,
+            "title": "Assignments",
+            "type": "array"
+          }
+        },
+        "required": [
+          "assignments"
+        ],
+        "title": "BulkTopicAssignmentsSchema",
         "type": "object"
       },
       "CapabilitiesSchema": {
@@ -7585,6 +7819,89 @@
         "title": "QuestionEvidenceSchema",
         "type": "object"
       },
+      "QuestionExclusionPageSchema": {
+        "description": "La cola de fuera de temario: las marcas de una página y cuántas hay en total.",
+        "properties": {
+          "exclusions": {
+            "items": {
+              "$ref": "#/components/schemas/QuestionExclusionSchema"
+            },
+            "title": "Exclusions",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "exclusions",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "QuestionExclusionPageSchema",
+        "type": "object"
+      },
+      "QuestionExclusionSchema": {
+        "description": "Una pregunta declarada fuera del temario, con su motivo.\n\nNo lleva código de tema ni nodo: **no es un mapeo**, y por eso no se puede confundir con uno.",
+        "properties": {
+          "actor": {
+            "title": "Actor",
+            "type": "string"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "question_version_id": {
+            "title": "Question Version Id",
+            "type": "string"
+          },
+          "reason": {
+            "enum": [
+              "otra_administracion",
+              "enunciado_roto"
+            ],
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "question_version_id",
+          "reason",
+          "actor"
+        ],
+        "title": "QuestionExclusionSchema",
+        "type": "object"
+      },
       "QuestionImportReportSchema": {
         "description": "Lo que ha pasado al importar: ni una fila se pierde, ni un conflicto se esconde.\n\nSe llama `QuestionImportReport` y no `ImportReport` porque la ingestión ya tiene su propio\n`ImportReportSchema` (el cuadre del lote): dos modelos con el mismo nombre obligan a FastAPI a\ninventar nombres cualificados en el OpenAPI y rompen los tipos derivados del contrato.",
         "properties": {
@@ -8106,7 +8423,7 @@
         "type": "object"
       },
       "QuestionTopicAssignmentSchema": {
-        "description": "El mapeo y si **esta** llamada lo creó.\n\n`created` es lo que hace utilizable una ruta idempotente: reintentar la clasificación de un lote\nentero no puede confundir «lo asigné yo ahora» con «ya estaba asignado».",
+        "description": "El mapeo y si **esta** llamada lo creó.\n\n`created` es lo que hace utilizable una ruta idempotente: reintentar la clasificación de un lote\nentero no puede confundir «lo asigné yo ahora» con «ya estaba asignado».\n\n`epigraph` viaja cuando se pidió asignar también un epígrafe: se asigna con su tema, y decir\nsolo el tema escondería la mitad de lo que se ha escrito.",
         "properties": {
           "confidence": {
             "default": 1.0,
@@ -8132,6 +8449,16 @@
           "curriculum_node_id": {
             "title": "Curriculum Node Id",
             "type": "string"
+          },
+          "epigraph": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QuestionTopicAssignmentSchema"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "mapping_id": {
             "title": "Mapping Id",
@@ -18965,6 +19292,99 @@
         ]
       }
     },
+    "/api/v1/question-exclusions": {
+      "get": {
+        "description": "Las marcas de fuera de temario, de la más nueva a la más antigua.\n\nEs donde se **consulta** lo que no es materia del programa: la pregunta, el motivo por el que\nse declaró y quién lo decidió. Va como recurso propio (`/question-exclusions`) y no dentro de la\npregunta a propósito: una marca no es un tema, y meterla en el mismo sitio invitaría a leerla\ncomo si lo fuera. La revisión de una marca se hace asignando un tema (que la levanta) o\ndejándola.",
+        "operationId": "list_question_exclusions_api_v1_question_exclusions_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "reason",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Reason"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuestionExclusionPageSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Las preguntas fuera de temario, con su motivo (la cola que revisa el propietario)",
+        "tags": [
+          "preguntas"
+        ]
+      }
+    },
     "/api/v1/question-sets": {
       "get": {
         "operationId": "list_question_sets_api_v1_question_sets_get",
@@ -20175,6 +20595,107 @@
         ]
       }
     },
+    "/api/v1/questions/topics/bulk": {
+      "post": {
+        "description": "La versión por lotes de `POST /questions/{id}/topics`, para no hacer 17.000 peticiones.\n\nNo es un segundo camino de escritura: cada fila entra por el mismo método del servicio, así\nque deja **el mismo mapeo y el mismo evento de auditoría** que la ruta individual. Lo que añade\nes el sobre: un actor para todo el lote y, por fila, o un tema (con su epígrafe) o un fuera de\ntemario.\n\nEs **idempotente**: repetir un lote no duplica mapeos ni eventos, y cada fila dice si la creó\nesta llamada (`created`) o si ya estaba (`existing`). Una fila mala **no** tumba el lote: se\ndevuelve con `outcome=\"error\"` y su motivo, y las demás se aplican. Abortar 200 asignaciones\nporque una pregunta se retiró entre medias obligaría a repetir las 199 buenas.\n\nEl actor viaja en el cuerpo (`actor`) o en la cabecera `X-OpoFuente-Actor`. La clasificación\nautomática se identifica (`llm:deepseek-flash`) y así la auditoría distingue a la persona del\nproceso.",
+        "operationId": "assign_question_topics_bulk_api_v1_questions_topics_bulk_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-OpoFuente-Actor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Opofuente-Actor"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkTopicAssignmentsSchema"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkTopicAssignmentReportSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El cambio no encaja con lo que hay (`classification_conflict`), y se dice por qué. Por ejemplo, asignar una pregunta a un nodo del programa que no es un tema."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Asigna temas por lotes: misma ruta auditada, idempotente y fila a fila",
+        "tags": [
+          "preguntas"
+        ]
+      }
+    },
     "/api/v1/questions/{question_id}": {
       "get": {
         "operationId": "get_question_api_v1_questions__question_id__get",
@@ -20803,7 +21324,7 @@
         ]
       },
       "post": {
-        "description": "Asigna la pregunta al tema indicado y deja el evento de auditoría (`question.mapped`).\n\nEs **idempotente** por `(tema, pregunta)`: repetirla devuelve el mapeo que ya estaba con\n`created=false` y **no** escribe un segundo evento. Es lo que necesita la clasificación de un\nbanco entero, que se reintenta.\n\nQuién lo hace se dice con `actor` en el cuerpo o con la cabecera `X-OpoFuente-Actor` (por\ndefecto `local`): la clasificación automática se identifica («llm:deepseek-flash») y así la\nauditoría distingue a la persona del proceso.\n\nEl destino tiene que ser un **tema**: un bloque o un epígrafe responden 409 con el motivo,\nporque una pregunta colgada de ellos quedaría fuera del diagnóstico por temas creyendo estar\ndentro.",
+        "description": "Asigna la pregunta al tema indicado y deja el evento de auditoría (`question.mapped`).\n\nEs **idempotente** por `(tema, pregunta)`: repetirla devuelve el mapeo que ya estaba con\n`created=false` y **no** escribe un segundo evento. Es lo que necesita la clasificación de un\nbanco entero, que se reintenta.\n\nQuién lo hace se dice con `actor` en el cuerpo o con la cabecera `X-OpoFuente-Actor` (por\ndefecto `local`): la clasificación automática se identifica («llm:deepseek-flash») y así la\nauditoría distingue a la persona del proceso.\n\nEl destino tiene que ser un **tema**: un bloque responde 409 con el motivo, porque una pregunta\ncolgada de él quedaría fuera del diagnóstico por temas creyendo estar dentro. El **epígrafe**\ndel tema se puede asignar a la vez (`epigraph_node_id`) y se escribe **además** del tema: el\nepígrafe dice dónde encaja la pregunta y el tema mantiene los recuentos que ya existen.",
         "operationId": "assign_question_topic_api_v1_questions__question_version_id__topics_post",
         "parameters": [
           {

@@ -33,6 +33,7 @@ from opofuente.application.question_models import (
     KeyEntryView,
     OptionView,
     QuestionEvidenceView,
+    QuestionExclusionView,
     QuestionPage,
     QuestionSetPage,
     QuestionSetView,
@@ -63,6 +64,7 @@ from opofuente.infrastructure.db_models import (
     EvidenceSpanRecord,
     OppositionRecord,
     OptionVersionRecord,
+    QuestionCurriculumExclusionRecord,
     QuestionEvidenceRecord,
     QuestionExplanationRecord,
     QuestionIssueReportRecord,
@@ -86,6 +88,26 @@ def _topic_view(mapeo: CurriculumMappingRecord, nodo: CurriculumNodeRecord) -> Q
         status=str(mapeo.status),
         confidence=float(mapeo.confidence),
         created_at=mapeo.created_at,
+    )
+
+
+def _reason(reason: str | None) -> dict[str, object]:
+    """El motivo, si lo hay, listo para el `after` de la auditoría.
+
+    Un motivo en blanco no se guarda: una clave con un hueco dentro parece un motivo y no lo es.
+    """
+    limpio = (reason or "").strip()
+    return {"reason": limpio} if limpio else {}
+
+
+def _exclusion_view(fila: QuestionCurriculumExclusionRecord) -> QuestionExclusionView:
+    """Una marca de fuera de temario leída como vista: la pregunta, el motivo y quién lo decidió."""
+    return QuestionExclusionView(
+        question_version_id=str(fila.question_version_id),
+        reason=str(fila.reason),
+        actor=str(fila.actor),
+        note=fila.note,
+        created_at=fila.created_at,
     )
 
 
@@ -1000,6 +1022,8 @@ class SqlAlchemyQuestionRepository:
         actor: str = "local",
         confidence: float = 1.0,
         coverage_type: str = "partial",
+        status: str = "accepted",
+        reason: str | None = None,
     ) -> tuple[QuestionTopicView, bool] | None:
         """Asigna una pregunta a un nodo y devuelve `(tema, creado)`. `None` si algo no existe.
 
@@ -1015,6 +1039,12 @@ class SqlAlchemyQuestionRepository:
         que es lo que quería—, así que se relee y se devuelve como existente en lugar de dejar un
         500 en medio de un lote. El evento que se había escrito se va con el `rollback`: queda el
         del escritor que ganó, no dos.
+
+        `status` distingue una decisión de una **propuesta**: `accepted` es un tema decidido
+        (cuenta en todo) y `provisional` es lo que un motor propuso y nadie ha confirmado (cola de
+        revisión, no cuenta en el diagnóstico). `reason` es el motivo en palabras del clasificador
+        y viaja a la auditoría: es donde se lee por qué se asignó, y no forma parte de la identidad
+        del mapeo.
 
         No comprueba el **tipo** del nodo: la catalogación automática (S12.6) hereda el destino del
         documento del que salen las preguntas y puede apuntar a un bloque a propósito. Quién decide
@@ -1043,10 +1073,13 @@ class SqlAlchemyQuestionRepository:
                 coverage_type=coverage_type,
                 depth=int(nodo.depth),
                 confidence=confidence,
-                status="accepted",
+                status=status,
                 source_proposal_id=None,
                 created_at=now,
-                approved_at=now,
+                # La base exige fecha de aprobación en lo aceptado y **solo** en lo aceptado: una
+                # propuesta provisional con fecha de aprobación sería una aprobación que no ha
+                # ocurrido.
+                approved_at=now if status == "accepted" else None,
             )
             # La vista se arma antes de confirmar: el mapeo ya tiene todos sus valores y así la
             # respuesta no depende de una lectura extra tras el `commit`.
@@ -1059,7 +1092,13 @@ class SqlAlchemyQuestionRepository:
                 object_type="curriculum_mapping",
                 object_id=mapeo.id,
                 before={},
-                after={"node_id": node_id, "question_version_id": question_version_id},
+                after={
+                    "node_id": node_id,
+                    "question_version_id": question_version_id,
+                    "status": status,
+                    "confidence": confidence,
+                    **_reason(reason),
+                },
                 now=now,
             )
             try:
@@ -1148,6 +1187,166 @@ class SqlAlchemyQuestionRepository:
             coverage_type=coverage_type,
         )
         return None if asignado is None else asignado[0].mapping_id
+
+    def parent_topic(self, node_id: str) -> tuple[str, str, str] | None:
+        """El **tema** del que cuelga un nodo, subiendo por el árbol. `None` si no hay ninguno.
+
+        Un epígrafe no sustituye a su tema: la pregunta se asigna a los dos, y para eso hay que
+        saber cuál es el tema que lo contiene. Se sube por `parent_id` en lugar de cortar la ruta
+        por puntos: la ruta es del programa y podría cambiar de forma, y el árbol es el que manda.
+        """
+        with self._session_factory() as session:
+            actual = session.get(CurriculumNodeRecord, node_id)
+            while actual is not None and actual.parent_id is not None:
+                actual = session.get(CurriculumNodeRecord, actual.parent_id)
+                if actual is None:
+                    return None
+                if str(actual.node_type) == "topic":
+                    return str(actual.id), str(actual.official_code), str(actual.title)
+        return None
+
+    def exclude_question_from_curriculum(
+        self,
+        question_version_id: str,
+        *,
+        reason: str,
+        now: datetime,
+        actor: str = "local",
+        note: str | None = None,
+    ) -> tuple[QuestionExclusionView, bool] | None:
+        """Declara una pregunta fuera del temario y deja el evento. `None` si la pregunta no existe.
+
+        Idempotente por pregunta: una pregunta está fuera de temario o no lo está. Repetirlo
+        devuelve la marca que ya estaba con `creado=False` y **no** escribe un segundo evento — el
+        lote de clasificación se reintenta y la auditoría tiene que poder leerse.
+
+        La marca **no** sustituye a un mapeo ni lo retira: si la pregunta tuviera un tema aceptado y
+        se declarara fuera de temario, las dos cosas estarían dichas. Quien tiene que decidir entre
+        una y otra es el servicio, que es donde se puede explicar por qué.
+        """
+        with self._session_factory() as session:
+            if session.get(QuestionVersionRecord, question_version_id) is None:
+                return None
+            existente = session.get(QuestionCurriculumExclusionRecord, question_version_id)
+            if existente is not None:
+                return _exclusion_view(existente), False
+            fila = QuestionCurriculumExclusionRecord(
+                question_version_id=question_version_id,
+                reason=reason,
+                note=(note or "").strip() or None,
+                actor=actor,
+                created_at=now,
+            )
+            vista = _exclusion_view(fila)
+            session.add(fila)
+            self._audit(
+                session,
+                actor=actor,
+                action="question.out_of_syllabus",
+                object_type="question_version",
+                object_id=question_version_id,
+                before={},
+                after={"question_version_id": question_version_id, "reason": reason},
+                now=now,
+            )
+            try:
+                session.commit()
+            except IntegrityError:
+                # Otro escritor declaró lo mismo entre la comprobación y el `INSERT`. La marca ya
+                # está, que es lo que se quería; se relee y se devuelve como existente.
+                session.rollback()
+                repetido = session.get(QuestionCurriculumExclusionRecord, question_version_id)
+                if repetido is None:
+                    raise
+                return _exclusion_view(repetido), False
+            return vista, True
+
+    def question_exclusion(self, question_version_id: str) -> QuestionExclusionView | None:
+        """La marca de fuera de temario de una pregunta, o `None` si no la tiene."""
+        with self._session_factory() as session:
+            fila = session.get(QuestionCurriculumExclusionRecord, question_version_id)
+            return None if fila is None else _exclusion_view(fila)
+
+    def excluded_question_ids(self, set_id: str) -> frozenset[str]:
+        """Las preguntas del conjunto declaradas fuera de temario.
+
+        Lo usa la composición de **simulacros y exámenes oficiales**: el examen se parece al real,
+        y la normativa de otra administración no cae en el de TAI. En un test por tema y en los
+        apuntes sí cuentan, y por eso el filtro vive en quien compone y no en el recuento.
+        """
+        with self._session_factory() as session:
+            filas = session.execute(
+                select(QuestionCurriculumExclusionRecord.question_version_id)
+                .join(
+                    QuestionVersionRecord,
+                    QuestionVersionRecord.id
+                    == QuestionCurriculumExclusionRecord.question_version_id,
+                )
+                .where(QuestionVersionRecord.question_set_id == set_id)
+            ).scalars()
+            return frozenset(str(fila) for fila in filas)
+
+    def clear_exclusion(
+        self, question_version_id: str, *, now: datetime, actor: str = "local"
+    ) -> bool:
+        """Levanta la marca de fuera de temario y lo deja auditado. `False` si no la tenía.
+
+        Existe porque las dos cosas no pueden ser verdad a la vez: si alguien asigna un tema a una
+        pregunta marcada fuera de temario, está diciendo que **sí** es de este temario, y dejar la
+        marca puesta la excluiría de los simulacros contradiciendo su propio tema. Lo que no se hace
+        es borrarla en silencio: la retirada es un hecho y va al registro con su autor.
+        """
+        with self._session_factory() as session:
+            fila = session.get(QuestionCurriculumExclusionRecord, question_version_id)
+            if fila is None:
+                return False
+            anterior = {"reason": str(fila.reason)}
+            session.delete(fila)
+            self._audit(
+                session,
+                actor=actor,
+                action="question.in_syllabus",
+                object_type="question_version",
+                object_id=question_version_id,
+                before=anterior,
+                after={},
+                now=now,
+            )
+            session.commit()
+            return True
+
+    def list_exclusions(
+        self,
+        *,
+        reason: str | None = None,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> tuple[tuple[QuestionExclusionView, ...], int]:
+        """Las marcas de fuera de temario, de la más nueva a la más antigua, con el total.
+
+        El total viaja aparte porque la pantalla de revisión lo necesita para decir cuántas quedan:
+        contar en Python lo que se ha traído con un tope daría un número que miente.
+        """
+        filtro = [] if reason is None else [QuestionCurriculumExclusionRecord.reason == reason]
+        with self._session_factory() as session:
+            total = session.execute(
+                select(func.count()).select_from(QuestionCurriculumExclusionRecord).where(*filtro)
+            ).scalar_one()
+            filas = (
+                session.execute(
+                    select(QuestionCurriculumExclusionRecord)
+                    .where(*filtro)
+                    .order_by(
+                        QuestionCurriculumExclusionRecord.created_at.desc(),
+                        QuestionCurriculumExclusionRecord.question_version_id,
+                    )
+                    .limit(limit)
+                    .offset(offset)
+                )
+                .scalars()
+                .all()
+            )
+        return tuple(_exclusion_view(fila) for fila in filas), int(total)
 
     def entry_map(self, set_id: str) -> dict[str, AnswerKeyEntry]:
         """Desenlaces conocidos de cada pregunta, de **todas** las plantillas del conjunto.

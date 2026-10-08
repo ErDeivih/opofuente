@@ -23,6 +23,10 @@ from opofuente.api.error_responses import (
 from opofuente.api.question_schemas import (
     AnswerKeySchema,
     AssignTopicRequestSchema,
+    BulkTopicAssignmentReportSchema,
+    BulkTopicAssignmentResultSchema,
+    BulkTopicAssignmentSchema,
+    BulkTopicAssignmentsSchema,
     CorrectionOutcomeSchema,
     CreateQuestionSetSchema,
     CsvMappingSchema,
@@ -42,6 +46,8 @@ from opofuente.api.question_schemas import (
     PatchQuestionSchema,
     PatchQuestionSetSchema,
     QuestionEvidenceSchema,
+    QuestionExclusionPageSchema,
+    QuestionExclusionSchema,
     QuestionImportReportSchema,
     QuestionPageSchema,
     QuestionSchema,
@@ -59,15 +65,22 @@ from opofuente.application.question_models import (
     IssueReportView,
     OptionView,
     QuestionEvidenceView,
+    QuestionExclusionOutcome,
+    QuestionExclusionView,
     QuestionImportReport,
     QuestionPage,
     QuestionSetPage,
     QuestionSetView,
     QuestionTopicView,
     QuestionView,
+    TopicAssignment,
+    TopicAssignmentBatch,
+    TopicAssignmentRequest,
+    TopicAssignmentRow,
 )
 from opofuente.domain.errors import ClassificationConflictError, NotFoundError
 from opofuente.domain.questions import Origin, QuestionDuplicateGroup
+from opofuente.domain.topic_classification import OutOfSyllabus
 
 router = APIRouter(tags=["preguntas"])
 
@@ -286,6 +299,68 @@ def _topic(vista: QuestionTopicView) -> QuestionTopicSchema:
 
 def _assignment(vista: QuestionTopicView, *, created: bool) -> QuestionTopicAssignmentSchema:
     return QuestionTopicAssignmentSchema(**_topic(vista).model_dump(), created=created)
+
+
+def _topic_assignment(asignacion: TopicAssignment) -> QuestionTopicAssignmentSchema:
+    """Lo que devuelve asignar: el tema y, si se pidió, el epígrafe que se escribió con él."""
+    return QuestionTopicAssignmentSchema(
+        **_topic(asignacion.topic.view).model_dump(),
+        created=asignacion.topic.created,
+        epigraph=(
+            None
+            if asignacion.epigraph is None
+            else _assignment(asignacion.epigraph.view, created=asignacion.epigraph.created)
+        ),
+    )
+
+
+def _exclusion(vista: QuestionExclusionView) -> QuestionExclusionSchema:
+    return QuestionExclusionSchema(
+        question_version_id=vista.question_version_id,
+        reason=vista.reason,  # type: ignore[arg-type]
+        actor=vista.actor,
+        note=vista.note,
+        created_at=vista.created_at,
+    )
+
+
+def _exclusion_outcome(marca: QuestionExclusionOutcome) -> QuestionExclusionSchema:
+    return _exclusion(marca.view)
+
+
+def _bulk_request(peticion: BulkTopicAssignmentSchema) -> TopicAssignmentRequest:
+    """La fila del contrato traducida a lo que entiende el servicio. El servicio decide el resto."""
+    return TopicAssignmentRequest(
+        question_version_id=peticion.question_version_id,
+        curriculum_node_id=peticion.curriculum_node_id,
+        epigraph_node_id=peticion.epigraph_node_id,
+        exclusion_reason=(
+            None if peticion.exclusion_reason is None else OutOfSyllabus(peticion.exclusion_reason)
+        ),
+        confidence=peticion.confidence,
+        reason=peticion.reason,
+    )
+
+
+def _bulk_row(fila: TopicAssignmentRow) -> BulkTopicAssignmentResultSchema:
+    return BulkTopicAssignmentResultSchema(
+        question_version_id=fila.question_version_id,
+        outcome=fila.outcome,  # type: ignore[arg-type]
+        assignment=(None if fila.assignment is None else _topic_assignment(fila.assignment)),
+        exclusion=(None if fila.exclusion is None else _exclusion_outcome(fila.exclusion)),
+        detail=fila.detail,
+    )
+
+
+def _bulk_report(lote: TopicAssignmentBatch) -> BulkTopicAssignmentReportSchema:
+    return BulkTopicAssignmentReportSchema(
+        results=[_bulk_row(fila) for fila in lote.rows],
+        created=lote.created,
+        existing=lote.existing,
+        excluded=lote.excluded,
+        already_excluded=lote.already_excluded,
+        errors=lote.errors,
+    )
 
 
 @router.get(
@@ -691,17 +766,83 @@ def assign_question_topic(
     defecto `local`): la clasificación automática se identifica («llm:deepseek-flash») y así la
     auditoría distingue a la persona del proceso.
 
-    El destino tiene que ser un **tema**: un bloque o un epígrafe responden 409 con el motivo,
-    porque una pregunta colgada de ellos quedaría fuera del diagnóstico por temas creyendo estar
-    dentro.
+    El destino tiene que ser un **tema**: un bloque responde 409 con el motivo, porque una pregunta
+    colgada de él quedaría fuera del diagnóstico por temas creyendo estar dentro. El **epígrafe**
+    del tema se puede asignar a la vez (`epigraph_node_id`) y se escribe **además** del tema: el
+    epígrafe dice dónde encaja la pregunta y el tema mantiene los recuentos que ya existen.
     """
-    vista, creado = service.assign_topic(
+    vista = service.assign_topic(
         question_version_id,
         node_id=request.curriculum_node_id,
+        epigraph_node_id=request.epigraph_node_id,
         actor=_topic_actor(declared=request.actor, header=actor),
         confidence=request.confidence,
+        reason=request.reason,
     )
-    return _assignment(vista, created=creado)
+    return _topic_assignment(vista)
+
+
+@router.post(
+    "/questions/topics/bulk",
+    response_model=BulkTopicAssignmentReportSchema,
+    responses=CONFLICT_WRITE_ERRORS,
+    summary="Asigna temas por lotes: misma ruta auditada, idempotente y fila a fila",
+)
+def assign_question_topics_bulk(
+    request: BulkTopicAssignmentsSchema,
+    service: QuestionServiceDep,
+    actor: Annotated[str | None, Header(alias=TOPIC_ACTOR_HEADER, max_length=64)] = None,
+) -> BulkTopicAssignmentReportSchema:
+    """La versión por lotes de `POST /questions/{id}/topics`, para no hacer 17.000 peticiones.
+
+    No es un segundo camino de escritura: cada fila entra por el mismo método del servicio, así
+    que deja **el mismo mapeo y el mismo evento de auditoría** que la ruta individual. Lo que añade
+    es el sobre: un actor para todo el lote y, por fila, o un tema (con su epígrafe) o un fuera de
+    temario.
+
+    Es **idempotente**: repetir un lote no duplica mapeos ni eventos, y cada fila dice si la creó
+    esta llamada (`created`) o si ya estaba (`existing`). Una fila mala **no** tumba el lote: se
+    devuelve con `outcome="error"` y su motivo, y las demás se aplican. Abortar 200 asignaciones
+    porque una pregunta se retiró entre medias obligaría a repetir las 199 buenas.
+
+    El actor viaja en el cuerpo (`actor`) o en la cabecera `X-OpoFuente-Actor`. La clasificación
+    automática se identifica (`llm:deepseek-flash`) y así la auditoría distingue a la persona del
+    proceso.
+    """
+    lote = service.apply_topic_batch(
+        [_bulk_request(peticion) for peticion in request.assignments],
+        actor=_topic_actor(declared=request.actor, header=actor),
+    )
+    return _bulk_report(lote)
+
+
+@router.get(
+    "/question-exclusions",
+    response_model=QuestionExclusionPageSchema,
+    responses=RESOURCE_ERRORS,
+    summary="Las preguntas fuera de temario, con su motivo (la cola que revisa el propietario)",
+)
+def list_question_exclusions(
+    service: QuestionServiceDep,
+    reason: Annotated[str | None, Query()] = None,
+    limit: Annotated[int, Query(ge=1, le=200)] = DEFAULT_LIMIT,
+    offset: Annotated[int, Query(ge=0)] = 0,
+) -> QuestionExclusionPageSchema:
+    """Las marcas de fuera de temario, de la más nueva a la más antigua.
+
+    Es donde se **consulta** lo que no es materia del programa: la pregunta, el motivo por el que
+    se declaró y quién lo decidió. Va como recurso propio (`/question-exclusions`) y no dentro de la
+    pregunta a propósito: una marca no es un tema, y meterla en el mismo sitio invitaría a leerla
+    como si lo fuera. La revisión de una marca se hace asignando un tema (que la levanta) o
+    dejándola.
+    """
+    marcas, total = service.exclusions(reason=reason, limit=limit, offset=offset)
+    return QuestionExclusionPageSchema(
+        exclusions=[_exclusion(marca) for marca in marcas],
+        total=total,
+        limit=limit,
+        offset=offset,
+    )
 
 
 @router.delete(

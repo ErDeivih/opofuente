@@ -30,6 +30,8 @@ from opofuente.application.question_models import (
     KeyImportReport,
     KeySourceLink,
     QuestionEvidenceView,
+    QuestionExclusionOutcome,
+    QuestionExclusionView,
     QuestionImportReport,
     QuestionPage,
     QuestionSetPage,
@@ -37,6 +39,11 @@ from opofuente.application.question_models import (
     QuestionTopicView,
     QuestionView,
     RejectedRow,
+    TopicAssignment,
+    TopicAssignmentBatch,
+    TopicAssignmentRequest,
+    TopicAssignmentRow,
+    TopicMappingOutcome,
 )
 from opofuente.domain.errors import (
     ClassificationConflictError,
@@ -67,6 +74,7 @@ from opofuente.domain.questions import (
     parse_questions,
     parse_questions_json,
 )
+from opofuente.domain.topic_classification import OutOfSyllabus
 from opofuente.infrastructure.document_repository import SqlAlchemyDocumentRepository
 from opofuente.infrastructure.question_repository import SqlAlchemyQuestionRepository
 
@@ -262,12 +270,26 @@ class QuestionService:
         node_id: str,
         actor: str = "local",
         confidence: float = 1.0,
-    ) -> tuple[QuestionTopicView, bool]:
-        """Asigna un tema a una pregunta y devuelve `(tema, creado)`. Idempotente.
+        epigraph_node_id: str | None = None,
+        status: str = "accepted",
+        reason: str | None = None,
+    ) -> TopicAssignment:
+        """Asigna un tema (y su epígrafe, si se dice) y deja el evento de auditoría. Idempotente.
 
-        Solo un **tema** vale como destino. Un bloque o un epígrafe agrupan temas: colgar ahí una
-        pregunta la dejaría clasificada donde el diagnóstico por temas no la mira, y contaría como
-        catalogada sin estarlo. Se rechaza con el motivo (409) en lugar de aceptarla en silencio.
+        Solo un **tema** vale como destino. Un bloque agrupa temas: colgar ahí una pregunta la
+        dejaría clasificada donde el diagnóstico por temas no la mira, y contaría como catalogada
+        sin estarlo. Se rechaza con el motivo (409) en lugar de aceptarla en silencio.
+
+        El **epígrafe** es un mapeo más, y va acompañado de su tema: el epígrafe dice dónde encaja
+        la pregunta y el tema mantiene los recuentos que ya existen (cobertura, orden, dossier). Si
+        se asignara solo el epígrafe, un tema parecería perder preguntas por haberlas clasificado
+        mejor. Un epígrafe que no es hijo del tema indicado se rechaza: es un error de quien lo
+        manda, no una pregunta que se pueda colgar de dos sitios.
+
+        `status` distingue una **decisión** (`accepted`, la de una persona o la de un clasificador
+        con confianza alta) de una **propuesta** (`provisional`, la cola de revisión del
+        propietario): la propuesta se ve en el panel y no cuenta en el diagnóstico. `reason` es el
+        motivo, y viaja a la auditoría junto con la confianza.
 
         `actor` distingue a la persona (`local`) de la clasificación automática (`llm:…`), que
         necesita quedar identificada: son miles de asignaciones y hay que poder auditar quién las
@@ -283,16 +305,197 @@ class QuestionService:
                 "no un tema: una pregunta se asigna a un tema, y el bloque o el epígrafe agrupan "
                 "temas"
             )
+        # El epígrafe se resuelve **antes** de escribir nada: si el destino no vale, la fila mala de
+        # un lote no deja el tema escrito a medias y un error a continuación.
+        epigrafe_id = (
+            None
+            if epigraph_node_id is None
+            else self._resolve_epigraph(
+                topic_id=node_id, topic_code=codigo, epigraph_node_id=epigraph_node_id
+            )
+        )
         asignado = self._questions.assign_question_to_node(
             question_id,
             node_id=node_id,
             now=self._clock.now(),
             actor=actor,
             confidence=confidence,
+            status=status,
+            reason=reason,
         )
         if asignado is None:
             raise NotFoundError("pregunta", question_id)
-        return asignado
+        epigrafe: TopicMappingOutcome | None = None
+        if epigrafe_id is not None:
+            escrito = self._questions.assign_question_to_node(
+                question_id,
+                node_id=epigrafe_id,
+                now=self._clock.now(),
+                actor=actor,
+                confidence=confidence,
+                status=status,
+                reason=reason,
+            )
+            if escrito is None:  # pragma: no cover - el nodo se acaba de comprobar arriba
+                raise NotFoundError("nodo del programa", epigrafe_id)
+            epigrafe = TopicMappingOutcome(view=escrito[0], created=escrito[1])
+        # Un tema asignado dice que la pregunta **sí** es de este temario: si estaba marcada fuera
+        # de temario, la marca se levanta (con su evento) en vez de dejar dos verdades enfrentadas.
+        self._questions.clear_exclusion(question_id, now=self._clock.now(), actor=actor)
+        return TopicAssignment(
+            topic=TopicMappingOutcome(view=asignado[0], created=asignado[1]), epigraph=epigrafe
+        )
+
+    def _resolve_epigraph(self, *, topic_id: str, topic_code: str, epigraph_node_id: str) -> str:
+        """Comprueba que el epígrafe existe y es hijo de ese tema, y devuelve su identificador."""
+        hechos = self._questions.node_facts(epigraph_node_id)
+        if hechos is None:
+            raise NotFoundError("nodo del programa", epigraph_node_id)
+        tipo, codigo, titulo = hechos
+        if tipo != NodeType.EPIGRAPH.value:
+            raise ClassificationConflictError(
+                f"«{codigo} — {titulo}» es {_NODE_KIND_IN_TEXT.get(tipo, tipo)} del programa, "
+                "no un epígrafe"
+            )
+        padre = self._questions.parent_topic(epigraph_node_id)
+        if padre is None or padre[0] != topic_id:
+            raise ClassificationConflictError(
+                f"el epígrafe «{codigo}» no es del tema «{topic_code}»: una pregunta se cuelga del "
+                "epígrafe y de su tema, no de un epígrafe ajeno"
+            )
+        return epigraph_node_id
+
+    def exclude_from_curriculum(
+        self,
+        question_id: str,
+        *,
+        reason: str,
+        actor: str = "local",
+        note: str | None = None,
+    ) -> QuestionExclusionOutcome:
+        """Declara la pregunta fuera del temario del programa, con su motivo. Idempotente.
+
+        Es el destino de lo que **no** es materia de esta convocatoria: la normativa y la
+        organización propias de otra administración, o un enunciado roto. No se le inventa un tema,
+        y la marca queda donde se puede consultar y revisar.
+        """
+        try:
+            motivo = OutOfSyllabus(reason)
+        except ValueError as error:
+            raise InvariantViolationError(
+                f"«{reason}» no es un motivo de fuera de temario "
+                f"({', '.join(item.value for item in OutOfSyllabus)})"
+            ) from error
+        guardada = self._questions.exclude_question_from_curriculum(
+            question_id,
+            reason=motivo.value,
+            note=note,
+            now=self._clock.now(),
+            actor=actor,
+        )
+        if guardada is None:
+            raise NotFoundError("pregunta", question_id)
+        return QuestionExclusionOutcome(view=guardada[0], created=guardada[1])
+
+    def apply_topic_batch(
+        self, requests: Sequence[TopicAssignmentRequest], *, actor: str = "local"
+    ) -> TopicAssignmentBatch:
+        """Aplica un lote de asignaciones **fila a fila** y devuelve el desenlace de cada una.
+
+        Es el único camino de escritura por lotes: la ruta `POST /questions/topics/bulk` traduce su
+        JSON a `TopicAssignmentRequest` y llama aquí; el clasificador construye los mismos objetos
+        y llama aquí. No hay una segunda escritura que pueda desviarse de la individual, y por eso
+        los mapeos y los eventos son exactamente los mismos.
+
+        Una fila que falla **no** tumba el lote: se registra con su motivo y las demás siguen. Las
+        causas que se recogen son las que puede tener una fila (una pregunta que no existe, un nodo
+        que no es un tema, un epígrafe de otro tema, un motivo de fuera de temario que no existe);
+        un fallo de la base **no** se traga, porque eso no es una fila mala sino un problema del
+        proceso.
+        """
+        filas: list[TopicAssignmentRow] = []
+        for peticion in requests:
+            filas.append(self._apply_topic_row(peticion, actor=actor))
+        return TopicAssignmentBatch(rows=tuple(filas))
+
+    def _apply_topic_row(
+        self, request: TopicAssignmentRequest, *, actor: str
+    ) -> TopicAssignmentRow:
+        """Una fila del lote: fuera de temario o tema (con su epígrafe), nunca las dos cosas."""
+        pregunta = request.question_version_id
+        nodo = request.curriculum_node_id
+        motivo = request.exclusion_reason
+        if nodo is not None and motivo is not None:
+            return TopicAssignmentRow(
+                question_version_id=pregunta,
+                outcome="error",
+                detail="una fila dice un tema o un fuera de temario, no las dos cosas",
+            )
+        if nodo is None and motivo is None:
+            return TopicAssignmentRow(
+                question_version_id=pregunta,
+                outcome="error",
+                detail="una fila tiene que decir un tema o un motivo de fuera de temario",
+            )
+        try:
+            if motivo is not None:
+                marca = self.exclude_from_curriculum(
+                    pregunta,
+                    reason=motivo.value,
+                    actor=actor,
+                    note=request.reason,
+                )
+                return TopicAssignmentRow(
+                    question_version_id=pregunta,
+                    outcome="excluded" if marca.created else "already_excluded",
+                    exclusion=marca,
+                )
+            if nodo is None:  # pragma: no cover - lo dice la comprobación de arriba
+                return TopicAssignmentRow(
+                    question_version_id=pregunta, outcome="error", detail="falta el tema"
+                )
+            asignacion = self.assign_topic(
+                pregunta,
+                node_id=nodo,
+                epigraph_node_id=request.epigraph_node_id,
+                actor=actor,
+                confidence=request.confidence,
+                status=request.status,
+                reason=request.reason,
+            )
+            return TopicAssignmentRow(
+                question_version_id=pregunta,
+                outcome="created" if asignacion.topic.created else "existing",
+                assignment=asignacion,
+            )
+        except (NotFoundError, ClassificationConflictError, InvariantViolationError) as error:
+            return TopicAssignmentRow(
+                question_version_id=pregunta, outcome="error", detail=str(error)
+            )
+
+    def exclusion(self, question_id: str) -> QuestionExclusionView | None:
+        """La marca de fuera de temario de una pregunta, o `None`."""
+        return self._questions.question_exclusion(question_id)
+
+    def exclusions(
+        self, *, reason: str | None = None, limit: int = 50, offset: int = 0
+    ) -> tuple[tuple[QuestionExclusionView, ...], int]:
+        """Las marcas de fuera de temario, con su total: la cola que revisa el propietario."""
+        return self._questions.list_exclusions(reason=reason, limit=limit, offset=offset)
+
+    def topic_of_node(self, node_id: str) -> str | None:
+        """El tema del que cuelga un nodo del programa, o `None` si no cuelga de ninguno.
+
+        Lo usa la catalogación automática (S12.6) para no dejar una pregunta asignada **solo** a un
+        epígrafe: el epígrafe no sustituye a su tema, y sin el mapeo del tema, el tema «perdería»
+        esa pregunta en los recuentos del alumno (F4).
+        """
+        padre = self._questions.parent_topic(node_id)
+        return None if padre is None else padre[0]
+
+    def excluded_question_ids(self, set_id: str) -> frozenset[str]:
+        """Las preguntas de un conjunto marcadas fuera de temario: no entran en un examen."""
+        return self._questions.excluded_question_ids(set_id)
 
     def unassign_topic(self, question_id: str, *, node_id: str, actor: str = "local") -> bool:
         """Quita el tema de una pregunta y lo deja auditado. `False` si no lo tenía."""

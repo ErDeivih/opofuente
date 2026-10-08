@@ -1310,6 +1310,37 @@ class QuestionIssueReportRecord(Base):
     reviewed_at: Mapped[datetime | None] = mapped_column(UtcDateTime(), nullable=True)
 
 
+class QuestionCurriculumExclusionRecord(Base):
+    """Una pregunta declarada **fuera del temario** del programa vigente (F4).
+
+    No es un mapeo y no apunta a ningún nodo: es la marca de que esta pregunta no pertenece a ningún
+    tema de esta convocatoria, con el motivo de por qué. Así es imposible confundirla con un tema
+    —no tiene código oficial ni posición— y las consultas que componen simulacros y exámenes
+    oficiales pueden dejarla fuera mirando la pregunta, no un nodo.
+
+    La clave primaria es la pregunta: una pregunta está fuera de temario o no lo está, y decir dos
+    veces lo mismo no son dos hechos (la segunda escritura no crea nada y no deja evento).
+    """
+
+    __tablename__ = "question_curriculum_exclusions"
+    __table_args__ = (
+        CheckConstraint(
+            "reason IN ('otra_administracion', 'enunciado_roto')",
+            name="ck_question_exclusion_reason",
+        ),
+        CheckConstraint("length(trim(actor)) > 0", name="ck_question_exclusion_actor"),
+        Index("ix_question_exclusions_reason", "reason"),
+    )
+
+    question_version_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("question_versions.id", ondelete="CASCADE"), primary_key=True
+    )
+    reason: Mapped[str] = mapped_column(String(32), nullable=False)
+    note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    actor: Mapped[str] = mapped_column(String(64), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
+
+
 # ---------------------------------------------------------------------------- S07: estudio
 
 

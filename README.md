@@ -72,6 +72,24 @@ herramientas responden. Si las políticas de PowerShell bloquean los scripts, us
 | E2E (Playwright) | `./scripts/e2e.ps1` |
 | Build de producción local | `./scripts/build.ps1` |
 | Exportar OpenAPI y tipos | `./scripts/export-openapi.ps1` |
+| Ver los bancos con preguntas sin tema | `uv run python -m opofuente.tools.clasificar_preguntas --listar` |
+| Clasificar por tema y epígrafe | `uv run python -m opofuente.tools.clasificar_preguntas --bancos 2` |
+
+### Clasificar preguntas por tema y epígrafe (F4)
+
+El clasificador pide a DeepSeek un tema (y un epígrafe, si lo tiene claro) para cada pregunta **sin
+tema**, banco a banco y de mayor a menor, y escribe por el servicio auditado del banco. La clave se
+lee de la variable de entorno y **no** se guarda en ningún sitio; sin ella, el comando para:
+
+```powershell
+$env:DEEPSEEK_API_KEY = "…"                        # jamás en un fichero del repositorio
+uv run python -m opofuente.tools.clasificar_preguntas --bancos 2 --dry-run   # ensayo: no escribe
+uv run python -m opofuente.tools.clasificar_preguntas --bancos 2             # los dos primeros
+```
+
+Lo de confianza alta entra (`accepted`), lo dudoso queda como propuesta provisional en la cola de
+revisión (`GET /api/v1/question-exclusions` lista lo que se declaró fuera de temario) y lo que no es
+materia del programa se marca fuera de temario, que lo deja fuera de simulacros y exámenes oficiales.
 
 Las puertas 17 y 18 necesitan las fuentes oficiales ya descargadas (`fetch-sources.ps1`) y el
 navegador de Playwright (`npx playwright install chromium`).
