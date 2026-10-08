@@ -1,4 +1,4 @@
-import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom';
+import { Navigate, Outlet, Route, Routes, useLocation, useSearchParams } from 'react-router-dom';
 
 import { AdminUiPage } from '../pages/AdminUiPage';
 import { ChangesPage } from '../pages/ChangesPage';
@@ -13,6 +13,7 @@ import { ReviewPage } from '../pages/ReviewPage';
 import { SearchPage } from '../pages/SearchPage';
 import { SettingsPage } from '../pages/SettingsPage';
 import { StudyPage } from '../pages/StudyPage';
+import { TopicReviewPage } from '../pages/TopicReviewPage';
 import { TrayPage } from '../pages/TrayPage';
 import { AdminShell } from './AdminShell';
 import { AppShell } from './AppShell';
@@ -53,6 +54,23 @@ function OldAddress({ to }: { to: string }) {
   return <Navigate to={`${to}${search}${hash}`} replace />;
 }
 
+/**
+ * Las preguntas del banco, con la puerta que la decisión del propietario ya tenía escrita.
+ *
+ * `docs/DECISIONES-Y-SIGUIENTE-TANDA-2026-10.md` §2 manda la cola de temas a
+ * `/admin/preguntas?revisar_tema=1`, y esa dirección tiene que llevar a la cola: la pantalla del
+ * banco sigue siendo `/admin/preguntas` a secas, y con la consulta se va a Clasificación, que es
+ * donde se revisa. Se conserva la dirección documentada en lugar de dejar que dé una pantalla que
+ * no es.
+ */
+function QuestionsRoute() {
+  const [params] = useSearchParams();
+  if (params.get('revisar_tema') === '1') {
+    return <Navigate to="/admin/clasificacion" replace />;
+  }
+  return <QuestionsPage />;
+}
+
 /** Las seis secciones del alumno que todavía no tienen pantalla, con su frase, desde el mapa. */
 const SECCIONES_PENDIENTES = STUDENT_NAV_ITEMS.filter((item) => item.path !== '/');
 
@@ -80,9 +98,10 @@ export function AppRoutes() {
         <Route path="importar" element={<TrayPage />} />
         <Route path="biblioteca" element={<LibraryPage />} />
         <Route path="revision" element={<ReviewPage />} />
+        <Route path="clasificacion" element={<TopicReviewPage />} />
         <Route path="cambios" element={<ChangesPage />} />
         <Route path="errores" element={<ErrorsPage />} />
-        <Route path="preguntas" element={<QuestionsPage />} />
+        <Route path="preguntas" element={<QuestionsRoute />} />
         <Route path="programa" element={<ProgramPage />} />
         <Route path="estudiar" element={<StudyPage />} />
         <Route path="buscar" element={<SearchPage />} />

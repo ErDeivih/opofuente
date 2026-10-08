@@ -50,6 +50,7 @@ from opofuente.domain.topic_classification import (
     TopicProposal,
     decide,
 )
+from opofuente.infrastructure.run_lock import ClassificationRunLock
 from opofuente.infrastructure.topic_classification_repository import (
     SqlAlchemyTopicClassificationRepository,
 )
@@ -111,6 +112,7 @@ class TopicClassificationService:
         profiles: ProfileRepository,
         questions: QuestionService,
         proposer: TopicProposer,
+        lock: ClassificationRunLock,
         actor: str = ACTOR_CLASIFICADOR,
         batch_size: int = LOTE_POR_DEFECTO,
     ) -> None:
@@ -118,6 +120,7 @@ class TopicClassificationService:
         self._profiles = profiles
         self._questions = questions
         self._proposer = proposer
+        self._lock = lock
         self._actor = actor
         self._batch_size = max(1, batch_size)
 
@@ -165,12 +168,32 @@ class TopicClassificationService:
         `banks` corta por número de bancos (los que más preguntas tienen primero) y `limit` por
         número total de preguntas: el propietario quiere parar tras dos bancos para revisar la
         calidad, y las dos formas de cortar tienen que poder decirse.
+
+        La corrida entera va bajo la **marca de corrida**: dos clasificaciones a la vez sobre la
+        misma base se pisan (cada una calcula sus pendientes antes de que la otra escriba y acaban
+        proponiendo dos temas a la misma pregunta). La segunda se niega con el motivo, y la marca se
+        suelta al terminar pase lo que pase.
         """
         syllabus = self.syllabus(code)
         if not syllabus.topics:
             raise UnsupportedError(
                 f"el programa de «{code}» no tiene temas: sin temario no hay nada que asignar"
             )
+        with self._lock.hold():
+            return self._classify_banks(
+                code, syllabus=syllabus, banks=banks, limit=limit, dry_run=dry_run
+            )
+
+    def _classify_banks(
+        self,
+        code: str,
+        *,
+        syllabus: Syllabus,
+        banks: int | None,
+        limit: int | None,
+        dry_run: bool,
+    ) -> ClassificationReport:
+        """El trabajo, ya con la marca tomada: qué bancos y en qué orden."""
         seleccionados = self._classification.banks(
             self.opposition_id(code),
             limit=banks if banks is not None else None,

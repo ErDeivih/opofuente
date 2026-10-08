@@ -315,14 +315,21 @@ class QuestionTopicView:
 
 @dataclass(frozen=True, slots=True)
 class TopicMappingOutcome:
-    """Un mapeo pregunta↔nodo **escrito por esta llamada**, y si lo creó ella.
+    """Un mapeo pregunta↔nodo **escrito por esta llamada**, y qué ha pasado con él.
 
     `created=False` es «ya estaba»: es lo que hace utilizable un lote que se reintenta, porque
     distingue «lo asigné yo ahora» de «ya estaba asignado».
+
+    `promoted` es la tercera cosa que puede pasar y la que necesita la cola de revisión: el mapeo ya
+    estaba, pero como **propuesta** (`provisional`), y esta llamada lo ha **confirmado** (o lo ha
+    vuelto a proponer). No es lo mismo que «ya estaba» —algo se ha escrito y queda auditado— ni que
+    «creado» —la fila existía—, y confundirlas dejaría al propietario sin saber si su decisión se
+    aplicó.
     """
 
     view: QuestionTopicView
     created: bool
+    promoted: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -332,21 +339,105 @@ class TopicAssignment:
     Se devuelven los dos porque un epígrafe **no sustituye** a su tema: la pregunta cuelga de los
     dos (el epígrafe dice dónde encaja y el tema mantiene todos los recuentos que ya existen).
     Devolver solo el epígrafe escondería una escritura que sí ha ocurrido.
+
+    `retired` son las propuestas **que se han retirado** al decidir esta: una pregunta no puede
+    quedarse con dos temas propuestos cuando uno se acepta, y quien decide tiene que ver que las
+    demás se han retirado en la misma operación (si no, parecería que siguen en la cola).
     """
 
     topic: TopicMappingOutcome
     epigraph: TopicMappingOutcome | None = None
+    retired: int = 0
+
+
+@dataclass(frozen=True, slots=True)
+class ProgrammeNodeRef:
+    """Un nodo del programa tal y como lo enseña una propuesta: su código, su ruta y su título.
+
+    Van los **dos** códigos y no uno: el oficial es el número que publica la convocatoria («1» para
+    el primer tema de TAI) y la ruta es la posición legible del árbol («I.1»), que es la que el
+    propietario reconoce al leer la pantalla. Quedarse con uno solo obligaría a elegir entre no
+    reconocer el tema o perder la referencia oficial.
+
+    No lleva el tipo de nodo porque el tema y el epígrafe ya viajan en campos distintos: un campo
+    `node_type` que siempre vale lo mismo según dónde esté es una invitación a leerlo mal.
+    """
+
+    node_id: str
+    official_code: str
+    path: str
+    title: str
+
+
+@dataclass(frozen=True, slots=True)
+class TopicProposalView:
+    """Un **tema candidato** para una pregunta, sin confirmar, con sus epígrafes propuestos.
+
+    No lleva la pregunta dentro: la pregunta es la tarjeta (`QuestionTopicProposalsView`) y esto es
+    una de las respuestas que la máquina le dio. Se separan porque una pregunta puede traer más de
+    un candidato —pasó en la corrida real— y el propietario tiene que verlos **juntos**, en la misma
+    tarjeta, para poder elegir con los dos delante.
+    """
+
+    mapping_id: str
+    topic: ProgrammeNodeRef
+    epigraphs: tuple[ProgrammeNodeRef, ...]
+    confidence: float
+    reason: str | None = None
+    created_at: datetime | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class QuestionTopicProposalsView:
+    """Una pregunta de la cola con **todas** sus propuestas juntas: una tarjeta, no una por mapeo.
+
+    Es la unidad con la que se despacha la cola, y la razón es que el propietario decide sobre la
+    **pregunta**: «esta pregunta es del tema X». Enseñar el mismo enunciado en dos tarjetas invita a
+    decidir dos veces lo mismo y a dejar dos temas aceptados por descuido.
+
+    `accepted` va aparte de `proposals` a propósito: si la pregunta ya tiene un tema decidido, ese
+    manda, y lo que queda son propuestas que sobran (se retiran, no se eligen). Un campo único con
+    estados mezclados no dejaría distinguir «lo que la máquina propone» de «lo que ya estádecidido».
+    """
+
+    question_version_id: str
+    question_set_id: str
+    set_title: str
+    stem: str
+    options: tuple[OptionView, ...]
+    accepted: ProgrammeNodeRef | None
+    proposals: tuple[TopicProposalView, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class TopicProposalPage:
+    """Una página de la cola, contada en **preguntas** (tarjetas), no en propuestas.
+
+    El total que se enseña tiene que ser el de tarjetas: es lo que le queda por despachar, y contar
+    mapeos daría un número que no coincide con lo que se ve.
+    """
+
+    questions: tuple[QuestionTopicProposalsView, ...]
+    total: int
+    limit: int
+    offset: int
 
 
 @dataclass(frozen=True, slots=True)
 class QuestionExclusionView:
-    """Una pregunta declarada fuera del temario, con el motivo y quién lo decidió."""
+    """Una pregunta declarada fuera del temario, con su motivo y quién lo decidió.
+
+    `stem` es el enunciado, y viaja para que la marca se pueda **juzgar**: sin él, lo único que se
+    puede enseñar de una pregunta excluida es un identificador. Es nulo cuando la marca se lee sola
+    (al escribirla), que es justo cuando no hay nada que revisar.
+    """
 
     question_version_id: str
     reason: str
     actor: str
     note: str | None = None
     created_at: datetime | None = None
+    stem: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -367,6 +458,12 @@ class TopicAssignmentRequest:
 
     `status` distingue una decisión (`accepted`) de una **propuesta** (`provisional`): lo que el
     clasificador no tiene claro va a la cola de revisión, no a los recuentos.
+
+    `promote` es lo que hace el propietario cuando despacha la cola: dice que este mapeo **tiene que
+    quedar** en `status` y, si ya estaba como propuesta, se confirma en lugar de dejarlo como
+    estaba. Va aparte de `status` a propósito: el clasificador y la catalogación automática también
+    escriben con `status="accepted"`, y no pueden confirmar una propuesta que nadie ha revisado por
+    el hecho de volver a pasar por el mismo sitio.
     """
 
     question_version_id: str
@@ -376,6 +473,13 @@ class TopicAssignmentRequest:
     confidence: float = 1.0
     reason: str | None = None
     status: str = "accepted"
+    promote: bool = False
+    #: Retirar, al escribir esta fila, las **demás** propuestas de la pregunta. Es lo que hace que
+    #: una pregunta no pueda acabar con dos temas aceptados ni con una propuesta colgando de una
+    #: decisión; va apagado por defecto porque el clasificador no lo necesita (solo escribe
+    #: preguntas sin ninguna propuesta) y la catalogación automática tampoco (hereda el tema del
+    #: documento y no revisa colas).
+    retire_others: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -410,6 +514,12 @@ class TopicAssignmentBatch:
     @property
     def existing(self) -> int:
         return self._total("existing")
+
+    @property
+    def promoted(self) -> int:
+        """Confirmadas: la propuesta que ya estaba y esta llamada ha decidido. Es la cifra que lee
+        el propietario al despachar la cola, y por eso no se suma a `created`."""
+        return self._total("promoted")
 
     @property
     def excluded(self) -> int:
@@ -447,6 +557,7 @@ __all__ = [
     "KeyImportReport",
     "KeySourceLink",
     "OptionView",
+    "ProgrammeNodeRef",
     "QuestionEvidenceView",
     "QuestionExclusionOutcome",
     "QuestionExclusionView",
@@ -454,6 +565,7 @@ __all__ = [
     "QuestionPage",
     "QuestionSetPage",
     "QuestionSetView",
+    "QuestionTopicProposalsView",
     "QuestionTopicView",
     "QuestionView",
     "RejectedRow",
@@ -463,4 +575,6 @@ __all__ = [
     "TopicAssignmentRequest",
     "TopicAssignmentRow",
     "TopicMappingOutcome",
+    "TopicProposalPage",
+    "TopicProposalView",
 ]

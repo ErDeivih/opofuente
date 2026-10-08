@@ -142,6 +142,29 @@ class ExternalServiceError(OpoFuenteError):
     """
 
 
+class ClassificationAlreadyRunningError(OpoFuenteError):
+    """Ya hay una clasificación escribiendo en esta base (F5).
+
+    Existe por un fallo real, no por prudencia: el 8 de octubre de 2026 dos corridas del
+    clasificador escribieron a la vez sobre los datos del propietario y dejaron **cuatro preguntas
+    con dos temas propuestos** y dos propuestas huérfanas, porque cada una calculó su lista de
+    pendientes antes de que la otra escribiera. Un instrumento que escribe en los datos de alguien
+    no puede permitir que dos procesos se pisen: la segunda corrida se niega y dice desde cuándo
+    corre la primera.
+
+    No es un error de la API: no hay ninguna ruta que clasifique. Lo lee quien lanza el comando.
+    """
+
+    def __init__(self, *, started_at: str, opposition_code: str, hint: str) -> None:
+        super().__init__(
+            f"ya hay una clasificación en curso desde {started_at} "
+            f"(oposición «{opposition_code}»): dos corridas a la vez sobre la misma base escriben "
+            f"propuestas duplicadas. {hint}"
+        )
+        self.started_at = started_at
+        self.opposition_code = opposition_code
+
+
 class UnsafeContentError(OpoFuenteError):
     """El contenido se rechaza por seguridad. La API lo traduce a 400 `unsafe_content`.
 

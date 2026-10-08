@@ -26,6 +26,7 @@ from sqlalchemy import text
 
 from opofuente.application.topic_classification_service import TopicClassificationService
 from opofuente.config import Settings, get_settings
+from opofuente.domain.errors import ClassificationAlreadyRunningError, ExternalServiceError
 from opofuente.domain.topic_classification import (
     ClassifiableQuestion,
     OutOfSyllabus,
@@ -35,6 +36,7 @@ from opofuente.domain.topic_classification import (
 )
 from opofuente.infrastructure.db import build_engine
 from opofuente.infrastructure.profile_repository import SqlAlchemyProfileRepository
+from opofuente.infrastructure.run_lock import ClassificationRunLock, current_run
 from opofuente.infrastructure.topic_classification_repository import (
     SqlAlchemyTopicClassificationRepository,
 )
@@ -110,6 +112,18 @@ class _PropositorFalso:
         return {"tema": "I.1", "confianza": 0.9}
 
 
+class _PropositorQueFalla:
+    """Un modelo que no contesta: para probar que un fallo de fuera suelta la marca de corrida."""
+
+    name = "falso"
+    version = "prueba-1"
+
+    def propose(
+        self, questions: Sequence[ClassifiableQuestion], *, syllabus: Syllabus
+    ) -> ProposalBatch:
+        raise ExternalServiceError("el modelo no ha contestado")
+
+
 def _conjunto(client: TestClient, *, titulo: str) -> dict[str, Any]:
     oposiciones = client.get("/api/v1/oppositions").json()
     activa = next(oposicion for oposicion in oposiciones if oposicion["active"])
@@ -133,15 +147,25 @@ def _preguntas(client: TestClient, set_id: str, texto: str = TEXTO) -> list[dict
 
 
 def _clasificador(
-    client: TestClient, propositor: _PropositorFalso, *, batch_size: int = 20
+    client: TestClient,
+    propositor: _PropositorFalso,
+    *,
+    batch_size: int = 20,
+    run_lock: ClassificationRunLock | None = None,
 ) -> TopicClassificationService:
-    """El servicio de verdad, con el modelo de mentira: la escritura es la de la aplicación."""
+    """El servicio de verdad, con el modelo de mentira: la escritura es la de la aplicación.
+
+    La marca de corrida se construye como en el comando (misma base, misma oposición): es la que
+    impide que dos clasificaciones se pisen, y por eso las pruebas la usan de verdad.
+    """
     fabrica = client.app.state.session_factory
     return TopicClassificationService(
         classification=SqlAlchemyTopicClassificationRepository(fabrica),
         profiles=SqlAlchemyProfileRepository(fabrica),
         questions=client.app.state.question_service,
         proposer=propositor,
+        lock=run_lock
+        or ClassificationRunLock(fabrica, opposition_code="tai-age", hours_before_stale=0.0001),
         batch_size=batch_size,
     )
 
@@ -434,3 +458,57 @@ def test_el_comando_lista_los_bancos_sin_necesitar_la_clave(
     salida = capsys.readouterr().out
     assert "Banco que se lista" in salida
     assert "4 sin tema" in salida
+
+
+# --- la marca de corrida: dos clasificaciones a la vez se pisan -----------------------------------
+
+
+def test_dos_corridas_a_la_vez_sobre_la_misma_base_la_segunda_se_niega(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """El fallo real del 8 de octubre: dos corridas propusieron temas a las mismas preguntas.
+
+    La segunda tiene que **negarse**, no escribir encima: cada corrida calcula su lista de
+    pendientes antes de que la otra escriba, así que dos a la vez dejan preguntas con dos temas
+    propuestos.
+    """
+    conjunto = _conjunto(seeded_client, titulo="Banco de las dos corridas")
+    _preguntas(seeded_client, conjunto["id"])
+    fabrica = seeded_client.app.state.session_factory
+    #: La corrida que ya está en marcha: se toma la marca como la toma un proceso vivo.
+    en_marcha = ClassificationRunLock(fabrica, opposition_code="tai-age")
+    segunda = _clasificador(
+        seeded_client,
+        _PropositorFalso(),
+        run_lock=ClassificationRunLock(fabrica, opposition_code="tai-age"),
+    )
+
+    with en_marcha.hold():
+        with pytest.raises(ClassificationAlreadyRunningError) as fallo:
+            segunda.run("tai-age", banks=1)
+        assert "en curso" in str(fallo.value)
+        assert "tai-age" in str(fallo.value)
+
+    # Y cuando la primera suelta la marca, la segunda sí puede: la marca no bloquea para siempre.
+    informe = segunda.run("tai-age", banks=1)
+    assert informe.processed == 4
+    assert current_run(fabrica) is None, "al terminar, la marca se retira"
+
+
+def test_la_marca_se_suelta_aunque_la_corrida_falle(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """Un fallo al llamar al modelo no puede dejar la clasificación bloqueada para siempre."""
+    conjunto = _conjunto(seeded_client, titulo="Banco de la corrida que falla")
+    _preguntas(seeded_client, conjunto["id"])
+    fabrica = seeded_client.app.state.session_factory
+    servicio = _clasificador(
+        seeded_client,
+        _PropositorQueFalla(),
+        run_lock=ClassificationRunLock(fabrica, opposition_code="tai-age"),
+    )
+
+    with pytest.raises(Exception):  # noqa: B017 - el tipo lo prueba el cliente del modelo
+        servicio.run("tai-age", banks=1)
+
+    assert current_run(fabrica) is None, "la marca se suelta en el `finally`, no al terminar bien"
