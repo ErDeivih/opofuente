@@ -1943,6 +1943,36 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/question-topic-conflicts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Las preguntas que cuentan en dos temas aceptados, con quién decidió cada uno
+         * @description Las preguntas que cuentan en **dos o más temas decididos** a la vez.
+         *
+         *     No es una curiosidad: una pregunta en dos temas suma en los dos en todos los recuentos del
+         *     alumno y en la cobertura, así que mientras exista, esas cifras mienten. Vienen de antes de esta
+         *     tanda —la catalogación heredada del documento, las migraciones— y de dos corridas del
+         *     clasificador que se pisaron; por eso cada tema viaja con **quién lo decidió**, que es lo que
+         *     permite juzgar cuál se queda.
+         *
+         *     Se resuelve con la misma ruta por lotes que la cola: una fila con el tema elegido, `status`
+         *     `accepted` y `retire_others` deja la pregunta con ese tema y retira los demás. La aplicación no
+         *     elige: si nadie decide, no se toca nada.
+         */
+        get: operations["list_question_topic_conflicts_api_v1_question_topic_conflicts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/question-topic-proposals": {
         parameters: {
             query?: never;
@@ -3617,6 +3647,25 @@ export interface components {
             open_count: number;
             /** Resolved Count */
             resolved_count: number;
+        };
+        /**
+         * ConflictingTopicSchema
+         * @description Un tema ya decidido de una pregunta que tiene más de uno, con quién lo decidió.
+         *
+         *     `actor` viaja porque cambia cómo se mira: uno heredado de una migración (`local`) y uno
+         *     propuesto por el modelo (`llm:…`) no se juzgan igual. Nulo es «no consta en la auditoría», que
+         *     también hay que poder decir en lugar de inventarse un autor.
+         */
+        ConflictingTopicSchema: {
+            /** Actor */
+            actor?: string | null;
+            /** Confidence */
+            confidence: number;
+            /** Created At */
+            created_at?: string | null;
+            /** Mapping Id */
+            mapping_id: string;
+            topic: components["schemas"]["ProgrammeNodeRefSchema"];
         };
         /** ConvocationDetailSchema */
         ConvocationDetailSchema: {
@@ -6055,6 +6104,42 @@ export interface components {
             status: "provisional" | "accepted" | "rejected";
             /** Title */
             title: string;
+        };
+        /**
+         * QuestionTopicConflictPageSchema
+         * @description Las preguntas en dos temas de una página, y cuántas hay en total.
+         */
+        QuestionTopicConflictPageSchema: {
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+            /** Questions */
+            questions: components["schemas"]["QuestionTopicConflictSchema"][];
+            /** Total */
+            total: number;
+        };
+        /**
+         * QuestionTopicConflictSchema
+         * @description Una pregunta que cuenta en **dos temas aceptados** a la vez, con los dos delante.
+         *
+         *     Es la otra cara de la cola: allí se revisa lo que nadie ha decidido y aquí lo que quedó decidido
+         *     dos veces. Una pregunta en dos temas cuenta en los dos agregados, así que hay que poder dejarla
+         *     con uno —eligiendo cuál— sin que la aplicación decida por su cuenta.
+         */
+        QuestionTopicConflictSchema: {
+            /** Options */
+            options: components["schemas"]["OptionSchema"][];
+            /** Question Set Id */
+            question_set_id: string;
+            /** Question Version Id */
+            question_version_id: string;
+            /** Set Title */
+            set_title: string;
+            /** Stem */
+            stem: string;
+            /** Topics */
+            topics: components["schemas"]["ConflictingTopicSchema"][];
         };
         /**
          * QuestionTopicProposalPageSchema
@@ -13795,6 +13880,56 @@ export interface operations {
                 };
                 content: {
                     "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    list_question_topic_conflicts_api_v1_question_topic_conflicts_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuestionTopicConflictPageSchema"];
                 };
             };
             /** @description El recurso no existe. */

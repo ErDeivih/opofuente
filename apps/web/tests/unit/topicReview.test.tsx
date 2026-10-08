@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 
 import type {
+  ConflictCard,
   TopicAssignmentReport,
   TopicProposalCard,
   Exclusion,
@@ -119,6 +120,33 @@ const marcaFueraDeTemario: Exclusion = {
   stem: 'En LINUX, ¿qué orden se utiliza para crear directorios?',
 };
 
+/** Una pregunta que cuenta en dos temas a la vez: lo que quedó torcido antes de esta tanda. */
+const conflicto: ConflictCard = {
+  question_version_id: 'q-8',
+  question_set_id: 'set-9',
+  set_title: 'TAI ingreso libre 2025 · modelo A (examen oficial INAP)',
+  stem: 'En el formato de ficheros CSV, descrito en RFC 4180, ¿qué regla es correcta?',
+  options: [
+    { id: 'o-8', stable_key: 'a', label: 'a', text: 'Los campos van separados por comas', position: 1 },
+  ],
+  topics: [
+    {
+      mapping_id: 'map-8a',
+      topic: { node_id: TEMA_UNO, official_code: '1', path: 'I.3', title: 'La Constitución' },
+      confidence: 1,
+      actor: 'local',
+      created_at: '2026-09-01T09:00:00Z',
+    },
+    {
+      mapping_id: 'map-8b',
+      topic: { node_id: TEMA_DOS, official_code: '2', path: 'II.3', title: 'Las Cortes Generales' },
+      confidence: 1,
+      actor: 'llm:deepseek-flash',
+      created_at: '2026-10-08T11:15:00Z',
+    },
+  ],
+};
+
 const lote: TopicAssignmentReport = {
   results: [],
   created: 0,
@@ -131,7 +159,10 @@ const lote: TopicAssignmentReport = {
 
 function montar(
   tarjetas: TopicProposalCard[],
-  { marcadas = [] }: { marcadas?: Exclusion[] } = {},
+  {
+    marcadas = [],
+    conflictos = [],
+  }: { marcadas?: Exclusion[]; conflictos?: ConflictCard[] } = {},
 ) {
   const fetchMock = stubApi({
     '/api/v1/oppositions': { body: oppositionsFixture },
@@ -141,6 +172,9 @@ function montar(
     },
     '/api/v1/question-exclusions': {
       body: { exclusions: marcadas, total: marcadas.length, limit: 100, offset: 0 },
+    },
+    '/api/v1/question-topic-conflicts': {
+      body: { questions: conflictos, total: conflictos.length, limit: 100, offset: 0 },
     },
     'POST /api/v1/questions/topics/bulk': { body: lote },
   });
@@ -363,5 +397,34 @@ describe('la cola de clasificación', () => {
 
     expect(await screen.findByText('No queda ninguna propuesta')).toBeInTheDocument();
     expect(screen.getByText(/La cola está despachada/)).toBeInTheDocument();
+  });
+
+  it('una pregunta en dos temas sale con sus dos temas, su autor, y se deja con uno', async () => {
+    const usuario = userEvent.setup();
+    const fetchMock = montar([], { conflictos: [conflicto] });
+
+    const dosTemas = await screen.findByRole('region', { name: /Preguntas en dos temas/ });
+    expect(await within(dosTemas).findByText(/En el formato de ficheros CSV/)).toBeInTheDocument();
+    expect(within(dosTemas).getByText('I.3')).toBeInTheDocument();
+    expect(within(dosTemas).getByText('II.3')).toBeInTheDocument();
+    // Y de quién es cada uno, que es lo que permite juzgar cuál se queda.
+    expect(within(dosTemas).getByText(/a mano o heredado/)).toBeInTheDocument();
+    expect(within(dosTemas).getByText(/propuesto por el modelo \(deepseek-flash\)/)).toBeInTheDocument();
+    // Sin elegir, el botón no escribe: nada se toca por nuestra cuenta.
+    expect(within(dosTemas).getByRole('button', { name: /Dejar este tema/ })).toBeDisabled();
+
+    await usuario.click(within(dosTemas).getByRole('radio', { name: /II\.3/ }));
+    await usuario.click(within(dosTemas).getByRole('button', { name: /Dejar este tema/ }));
+
+    await waitFor(() => {
+      expect(filasEnviadas(fetchMock)).toHaveLength(1);
+    });
+    expect(filasEnviadas(fetchMock)[0]).toMatchObject({
+      question_version_id: 'q-8',
+      curriculum_node_id: TEMA_DOS,
+      status: 'accepted',
+      retire_others: true,
+    });
+    expect(String(filasEnviadas(fetchMock)[0]?.reason)).toContain('un solo tema');
   });
 });

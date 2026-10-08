@@ -27,6 +27,7 @@ from opofuente.api.question_schemas import (
     BulkTopicAssignmentResultSchema,
     BulkTopicAssignmentSchema,
     BulkTopicAssignmentsSchema,
+    ConflictingTopicSchema,
     CorrectionOutcomeSchema,
     CreateQuestionSetSchema,
     CsvMappingSchema,
@@ -55,6 +56,8 @@ from opofuente.api.question_schemas import (
     QuestionSetPageSchema,
     QuestionSetSchema,
     QuestionTopicAssignmentSchema,
+    QuestionTopicConflictPageSchema,
+    QuestionTopicConflictSchema,
     QuestionTopicProposalPageSchema,
     QuestionTopicProposalSchema,
     QuestionTopicProposalsSchema,
@@ -76,6 +79,7 @@ from opofuente.application.question_models import (
     QuestionPage,
     QuestionSetPage,
     QuestionSetView,
+    QuestionTopicConflictView,
     QuestionTopicProposalsView,
     QuestionTopicView,
     QuestionView,
@@ -412,6 +416,26 @@ def _proposal_card(tarjeta: QuestionTopicProposalsView) -> QuestionTopicProposal
         options=[_option(opcion) for opcion in tarjeta.options],
         accepted=None if tarjeta.accepted is None else _node_ref(tarjeta.accepted),
         proposals=[_proposal(propuesta) for propuesta in tarjeta.proposals],
+    )
+
+
+def _conflict(conflicto: QuestionTopicConflictView) -> QuestionTopicConflictSchema:
+    return QuestionTopicConflictSchema(
+        question_version_id=conflicto.question_version_id,
+        question_set_id=conflicto.question_set_id,
+        set_title=conflicto.set_title,
+        stem=conflicto.stem,
+        options=[_option(opcion) for opcion in conflicto.options],
+        topics=[
+            ConflictingTopicSchema(
+                mapping_id=tema.mapping_id,
+                topic=_node_ref(tema.topic),
+                confidence=tema.confidence,
+                actor=tema.actor,
+                created_at=tema.created_at,
+            )
+            for tema in conflicto.topics
+        ],
     )
 
 
@@ -927,6 +951,38 @@ def list_question_topic_proposals(
     propuestas, total = service.topic_proposals(limit=limit, offset=offset)
     return QuestionTopicProposalPageSchema(
         questions=[_proposal_card(tarjeta) for tarjeta in propuestas],
+        total=total,
+        limit=limit,
+        offset=offset,
+    )
+
+
+@router.get(
+    "/question-topic-conflicts",
+    response_model=QuestionTopicConflictPageSchema,
+    responses=RESOURCE_ERRORS,
+    summary="Las preguntas que cuentan en dos temas aceptados, con quién decidió cada uno",
+)
+def list_question_topic_conflicts(
+    service: QuestionServiceDep,
+    limit: Annotated[int, Query(ge=1, le=200)] = DEFAULT_LIMIT,
+    offset: Annotated[int, Query(ge=0)] = 0,
+) -> QuestionTopicConflictPageSchema:
+    """Las preguntas que cuentan en **dos o más temas decididos** a la vez.
+
+    No es una curiosidad: una pregunta en dos temas suma en los dos en todos los recuentos del
+    alumno y en la cobertura, así que mientras exista, esas cifras mienten. Vienen de antes de esta
+    tanda —la catalogación heredada del documento, las migraciones— y de dos corridas del
+    clasificador que se pisaron; por eso cada tema viaja con **quién lo decidió**, que es lo que
+    permite juzgar cuál se queda.
+
+    Se resuelve con la misma ruta por lotes que la cola: una fila con el tema elegido, `status`
+    `accepted` y `retire_others` deja la pregunta con ese tema y retira los demás. La aplicación no
+    elige: si nadie decide, no se toca nada.
+    """
+    conflictos, total = service.topic_conflicts(limit=limit, offset=offset)
+    return QuestionTopicConflictPageSchema(
+        questions=[_conflict(conflicto) for conflicto in conflictos],
         total=total,
         limit=limit,
         offset=offset,

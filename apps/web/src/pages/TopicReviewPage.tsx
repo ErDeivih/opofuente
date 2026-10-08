@@ -20,11 +20,13 @@ import {
   useCurriculum,
   useOppositions,
   useQuestionExclusions,
+  useTopicConflicts,
   useTopicProposals,
 } from '../api/queries';
 import { EmptyState } from '../components/EmptyState';
 import { ErrorState } from '../components/ErrorState';
 import { LoadingState } from '../components/LoadingState';
+import { ConflictList } from '../features/topicReview/ConflictList';
 import { ExclusionList } from '../features/topicReview/ExclusionList';
 import { ProposalCard } from '../features/topicReview/ProposalCard';
 import { indexProgramme } from '../features/topicReview/programme';
@@ -95,6 +97,7 @@ export function TopicReviewPage() {
   const [offset, setOffset] = useState(0);
   const proposals = useTopicProposals(offset);
   const exclusions = useQuestionExclusions(0);
+  const conflicts = useTopicConflicts(0);
   const oppositions = useOppositions();
   const active = oppositions.data?.find((opposition) => opposition.active) ?? null;
   const convocationId = active?.active_convocation?.id ?? null;
@@ -294,6 +297,11 @@ export function TopicReviewPage() {
         objetivo instanceof HTMLElement &&
         objetivo.closest('select, input, textarea, [contenteditable="true"]') !== null;
       if (enUnCampo && event.key !== 'Escape') {
+        return;
+      }
+      // Las otras listas de la pantalla tienen sus propios controles (opciones, botones): los atajos
+      // de la cola solo valen cuando el foco no está dentro de ellas.
+      if (objetivo instanceof HTMLElement && objetivo.closest('.conflicts') !== null) {
         return;
       }
       const tecla = event.key.toLowerCase();
@@ -543,6 +551,58 @@ export function TopicReviewPage() {
               }}
             />
           </>
+        )}
+      </section>
+
+      <section className="card" aria-labelledby="dos-temas">
+        <h2 id="dos-temas">
+          Preguntas en dos temas{' '}
+          <span className="hint">
+            {conflicts.data === undefined || conflicts.data.total === 0
+              ? '· ninguna'
+              : `· ${String(conflicts.data.total)}`}
+          </span>
+        </h2>
+        <p className="hint">
+          Preguntas que cuentan en <strong>dos temas decididos</strong> a la vez: suman en los dos en
+          el progreso y en la cobertura, así que esas cifras mienten mientras estén así. Vienen de la
+          catalogación heredada, de las migraciones y de dos corridas del clasificador que se
+          pisaron. Cada tema dice quién lo escribió, porque no se juzga igual un tema heredado que
+          uno del modelo. <strong>Elígelo tú</strong>: hasta que no decidas, no se toca nada.
+        </p>
+        {conflicts.isPending && <LoadingState label="Cargando las preguntas en dos temas…" />}
+        {conflicts.isError && (
+          <ErrorState
+            title="No se pudieron cargar las preguntas en dos temas"
+            message={describeError(conflicts.error)}
+            onRetry={() => {
+              void conflicts.refetch();
+            }}
+          />
+        )}
+        {conflicts.isSuccess && (
+          <ConflictList
+            conflicts={conflicts.data.questions}
+            busy={apply.isPending}
+            onKeep={({ questionVersionId, topicNodeId, topicPath }) => {
+              apply.mutate(
+                [
+                  {
+                    question_version_id: questionVersionId,
+                    curriculum_node_id: topicNodeId,
+                    confidence: 1,
+                    reason: `se queda con un solo tema: ${topicPath} (lo decide el propietario)`,
+                    status: 'accepted',
+                    // Deja la pregunta con **ese** tema: los demás mapeos de tema y sus epígrafes se
+                    // retiran, con su evento. El tema elegido ya estaba aceptado, así que la fila no
+                    // lo vuelve a escribir: solo limpia.
+                    retire_others: true,
+                  },
+                ],
+                { onSuccess: setReport },
+              );
+            }}
+          />
         )}
       </section>
     </>

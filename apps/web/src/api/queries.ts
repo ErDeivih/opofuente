@@ -141,7 +141,9 @@ import { fetchPendingActions, fetchStudyReadiness } from './readiness';
 import {
   applyTopicDecisions,
   fetchExclusions,
+  fetchTopicConflicts,
   fetchTopicProposals,
+  CONFLICTS_LIMIT,
   EXCLUSIONS_LIMIT,
   PROPOSALS_LIMIT,
   type TopicAssignmentRow,
@@ -259,6 +261,9 @@ export const queryKeys = {
      temario, y marcar fuera de temario retira las propuestas de esa pregunta. */
   topicProposals: (offset = 0) => ['topic-review', 'proposals', offset] as const,
   questionExclusions: (offset = 0) => ['topic-review', 'exclusions', offset] as const,
+  /* Las preguntas que cuentan en dos temas cuelgan de la misma raíz: resolver una con un tema
+     retira los demás mapeos y deja de estar en las dos listas a la vez. */
+  topicConflicts: (offset = 0) => ['topic-review', 'conflicts', offset] as const,
 };
 
 export function useReadiness() {
@@ -1592,6 +1597,19 @@ export function useQuestionExclusions(offset = 0) {
   return useQuery({
     queryKey: queryKeys.questionExclusions(offset),
     queryFn: () => fetchExclusions(offset, EXCLUSIONS_LIMIT),
+  });
+}
+
+/**
+ * Las preguntas que cuentan en dos temas aceptados a la vez.
+ *
+ * Es lo que quedó decidido dos veces antes de esta tanda. La lista se lee; resolverla es una decisión
+ * del propietario, y por eso no hay nada que la toque sola.
+ */
+export function useTopicConflicts(offset = 0) {
+  return useQuery({
+    queryKey: queryKeys.topicConflicts(offset),
+    queryFn: () => fetchTopicConflicts(offset, CONFLICTS_LIMIT),
   });
 }
 

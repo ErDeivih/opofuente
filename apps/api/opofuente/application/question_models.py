@@ -424,6 +424,50 @@ class TopicProposalPage:
 
 
 @dataclass(frozen=True, slots=True)
+class ConflictingTopicView:
+    """Un tema **ya decidido** de una pregunta que tiene más de uno, con quién lo decidió.
+
+    El actor no es adorno: un tema heredado de una migración y uno propuesto por el modelo se miran
+    distinto, y sin esa información la lista de conflictos no se puede juzgar. Es nulo cuando el
+    mapeo no tiene evento de auditoría, que también hay que poder decir.
+    """
+
+    mapping_id: str
+    topic: ProgrammeNodeRef
+    confidence: float
+    actor: str | None = None
+    created_at: datetime | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class QuestionTopicConflictView:
+    """Una pregunta que cuenta en **dos temas aceptados** a la vez, con los dos delante.
+
+    Es la otra cara de la moneda de la cola: allí se revisa lo que nadie ha decidido y aquí lo que
+    quedó decidido dos veces —catalogación heredada, migraciones y dos corridas que se pisaron—. Una
+    pregunta en dos temas cuenta en los dos agregados y ensucia el progreso, así que hay que poder
+    dejarla con uno, **eligiendo** cuál: la aplicación no lo decide sola.
+    """
+
+    question_version_id: str
+    question_set_id: str
+    set_title: str
+    stem: str
+    options: tuple[OptionView, ...]
+    topics: tuple[ConflictingTopicView, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class TopicConflictPage:
+    """Una página de preguntas en dos temas, contada en preguntas."""
+
+    questions: tuple[QuestionTopicConflictView, ...]
+    total: int
+    limit: int
+    offset: int
+
+
+@dataclass(frozen=True, slots=True)
 class QuestionExclusionView:
     """Una pregunta declarada fuera del temario, con su motivo y quién lo decidió.
 
@@ -551,6 +595,7 @@ class KeyImportReport:
 
 __all__ = [
     "AnswerKeyView",
+    "ConflictingTopicView",
     "CsvColumnMapping",
     "IssueReportView",
     "KeyEntryView",
@@ -565,6 +610,7 @@ __all__ = [
     "QuestionPage",
     "QuestionSetPage",
     "QuestionSetView",
+    "QuestionTopicConflictView",
     "QuestionTopicProposalsView",
     "QuestionTopicView",
     "QuestionView",
@@ -574,6 +620,7 @@ __all__ = [
     "TopicAssignmentBatch",
     "TopicAssignmentRequest",
     "TopicAssignmentRow",
+    "TopicConflictPage",
     "TopicMappingOutcome",
     "TopicProposalPage",
     "TopicProposalView",

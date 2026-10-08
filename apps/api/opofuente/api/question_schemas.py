@@ -480,6 +480,46 @@ class QuestionTopicProposalPageSchema(BaseModel):
     offset: int
 
 
+class ConflictingTopicSchema(BaseModel):
+    """Un tema ya decidido de una pregunta que tiene más de uno, con quién lo decidió.
+
+    `actor` viaja porque cambia cómo se mira: uno heredado de una migración (`local`) y uno
+    propuesto por el modelo (`llm:…`) no se juzgan igual. Nulo es «no consta en la auditoría», que
+    también hay que poder decir en lugar de inventarse un autor.
+    """
+
+    mapping_id: str
+    topic: ProgrammeNodeRefSchema
+    confidence: float
+    actor: str | None = None
+    created_at: datetime | None = None
+
+
+class QuestionTopicConflictSchema(BaseModel):
+    """Una pregunta que cuenta en **dos temas aceptados** a la vez, con los dos delante.
+
+    Es la otra cara de la cola: allí se revisa lo que nadie ha decidido y aquí lo que quedó decidido
+    dos veces. Una pregunta en dos temas cuenta en los dos agregados, así que hay que poder dejarla
+    con uno —eligiendo cuál— sin que la aplicación decida por su cuenta.
+    """
+
+    question_version_id: str
+    question_set_id: str
+    set_title: str
+    stem: str
+    options: list[OptionSchema]
+    topics: list[ConflictingTopicSchema]
+
+
+class QuestionTopicConflictPageSchema(BaseModel):
+    """Las preguntas en dos temas de una página, y cuántas hay en total."""
+
+    questions: list[QuestionTopicConflictSchema]
+    total: int
+    limit: int
+    offset: int
+
+
 class BulkTopicAssignmentSchema(BaseModel):
     """Una fila del lote: o un tema (con su epígrafe, si se sabe) o un fuera de temario.
 

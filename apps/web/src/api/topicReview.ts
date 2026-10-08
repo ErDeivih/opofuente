@@ -20,6 +20,9 @@ export type TopicAssignmentResult = components['schemas']['BulkTopicAssignmentRe
 export type TopicAssignmentRow = components['schemas']['BulkTopicAssignmentSchema'];
 export type ExclusionPage = components['schemas']['QuestionExclusionPageSchema'];
 export type Exclusion = components['schemas']['QuestionExclusionSchema'];
+export type ConflictPage = components['schemas']['QuestionTopicConflictPageSchema'];
+export type ConflictCard = components['schemas']['QuestionTopicConflictSchema'];
+export type ConflictingTopic = components['schemas']['ConflictingTopicSchema'];
 
 /** El vocabulario del fuera de temario, tal y como lo publica el servidor. */
 export type ExclusionReason = Exclusion['reason'];
@@ -29,6 +32,9 @@ export const PROPOSALS_LIMIT = 50;
 
 /** Cuántas marcas de fuera de temario se leen de una vez. */
 export const EXCLUSIONS_LIMIT = 100;
+
+/** Cuántas preguntas en dos temas se leen de una vez. */
+export const CONFLICTS_LIMIT = 100;
 
 /**
  * El motivo de un fuera de temario en palabras, para poder marcarlo sin abrir nada.
@@ -71,6 +77,41 @@ export function applyTopicDecisions(rows: TopicAssignmentRow[]): Promise<TopicAs
 export function fetchExclusions(offset = 0, limit = EXCLUSIONS_LIMIT): Promise<ExclusionPage> {
   const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
   return apiFetch<ExclusionPage>(`/api/v1/question-exclusions?${params.toString()}`);
+}
+
+/**
+ * Las preguntas que cuentan en dos temas aceptados a la vez.
+ *
+ * Es la lectura de lo que quedó torcido antes de esta tanda (catalogación heredada, migraciones y
+ * las dos corridas que se pisaron). Una pregunta en dos temas suma en los dos en todos los
+ * recuentos, así que hay que poder dejarla con uno —eligiendo— y **no tocar nada** si nadie decide.
+ */
+export function fetchTopicConflicts(offset = 0, limit = CONFLICTS_LIMIT): Promise<ConflictPage> {
+  const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+  return apiFetch<ConflictPage>(`/api/v1/question-topic-conflicts?${params.toString()}`);
+}
+
+/**
+ * El actor de un mapeo, en palabras.
+ *
+ * Saber que un tema viene de una migración y no del modelo cambia cómo se mira, y es lo que permite
+ * decidir cuál de los dos se queda: por eso la lista lo enseña en lugar de dar por hecho que todo
+ * lo escribió la máquina.
+ */
+export function actorLabel(actor: string | null | undefined): string {
+  if (actor === null || actor === undefined || actor === '') {
+    return 'sin registro de quién lo escribió';
+  }
+  if (actor.startsWith('llm:')) {
+    return `propuesto por el modelo (${actor.slice(4)})`;
+  }
+  if (actor === 'auto') {
+    return 'heredado del documento (la aplicación sola)';
+  }
+  if (actor === 'local') {
+    return 'a mano o heredado (una persona en esta máquina)';
+  }
+  return actor;
 }
 
 /** Un tema o epígrafe como destino: lo que se manda al escribir es su identificador. */

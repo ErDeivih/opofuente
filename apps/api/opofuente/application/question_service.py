@@ -36,6 +36,7 @@ from opofuente.application.question_models import (
     QuestionPage,
     QuestionSetPage,
     QuestionSetView,
+    QuestionTopicConflictView,
     QuestionTopicProposalsView,
     QuestionTopicView,
     QuestionView,
@@ -375,30 +376,51 @@ class QuestionService:
             epigraph=epigrafe,
             # Las demás propuestas de esta pregunta sobran: se retiran **después** de escribir lo
             # elegido, para que un fallo al escribir no deje la pregunta sin nada.
-            retired=self.retire_other_proposals(question_id, actor=actor, reason=reason)
-            if retire_others
-            else 0,
+            retired=(
+                self.retire_other_topics(
+                    question_id,
+                    keep_node_ids=frozenset(
+                        {node_id} if epigrafe_id is None else {node_id, epigrafe_id}
+                    ),
+                    actor=actor,
+                    reason=reason,
+                )
+                if retire_others
+                else 0
+            ),
         )
 
-    def retire_other_proposals(
-        self, question_id: str, *, actor: str = "local", reason: str | None = None
+    def retire_other_topics(
+        self,
+        question_id: str,
+        *,
+        keep_node_ids: frozenset[str],
+        actor: str = "local",
+        reason: str | None = None,
     ) -> int:
-        """Retira las propuestas que le quedan a una pregunta. Devuelve cuántas ha retirado.
+        """Deja la pregunta con **un solo tema** y retira lo demás. Devuelve cuánto ha retirado.
 
-        Es la otra mitad de aceptar: la pregunta ya tiene su tema (el que se acaba de escribir, o el
-        que ya tenía) y las propuestas que sobran se marcan `rejected` en lugar de quedarse ahí. No
-        se borran: la marca impide que el clasificador vuelva a proponer lo mismo en la pasada
-        siguiente, que es justo lo que llenaría la cola de trabajo ya hecho.
+        La pregunta se queda con lo que está en `keep_node_ids` (el tema elegido y, si se acaba de
+        escribir, su epígrafe) y con los epígrafes de ese tema; todo lo demás —otras propuestas y
+        **otros temas ya aceptados**— se marca `rejected`, con su evento.
 
-        Se puede llamar sin escribir ningún tema —una pregunta que ya tenía uno aceptado y arrastra
-        propuestas de otra corrida— y entonces solo retira.
+        Lo segundo es lo que hace falta para lo que quedó torcido antes de esta tanda: una pregunta
+        con dos temas aceptados cuenta en los dos agregados, y dejarla con uno es una decisión del
+        propietario, no de la aplicación. Aquí solo se ejecuta la que él ha tomado.
         """
-        return self._questions.reject_question_proposals(
+        return self._questions.reject_other_mappings(
             question_id,
+            keep_node_ids=keep_node_ids,
             now=self._clock.now(),
             actor=actor,
-            reason=reason or "retirada al decidir el tema de la pregunta",
+            reason=reason or "la pregunta se queda con un solo tema: lo decide el propietario",
         )
+
+    def topic_conflicts(
+        self, *, limit: int = 50, offset: int = 0
+    ) -> tuple[tuple[QuestionTopicConflictView, ...], int]:
+        """Las preguntas que cuentan en dos o más temas aceptados, con quién decidió cada uno."""
+        return self._questions.list_topic_conflicts(limit=limit, offset=offset)
 
     def _resolve_epigraph(self, *, topic_id: str, topic_code: str, epigraph_node_id: str) -> str:
         """Comprueba que el epígrafe existe y es hijo de ese tema, y devuelve su identificador."""
@@ -501,8 +523,10 @@ class QuestionService:
                 )
                 if request.retire_others:
                     # «Esta pregunta no es de este temario» decide la pregunta igual que asignarle
-                    # un tema: las propuestas que tuviera sobran y se retiran con ella.
-                    self.retire_other_proposals(pregunta, actor=actor, reason=request.reason)
+                    # un tema: las propuestas y los temas que tuviera sobran y se retiran con ella.
+                    self.retire_other_topics(
+                        pregunta, keep_node_ids=frozenset(), actor=actor, reason=request.reason
+                    )
                 return TopicAssignmentRow(
                     question_version_id=pregunta,
                     outcome="excluded" if marca.created else "already_excluded",

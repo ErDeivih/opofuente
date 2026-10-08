@@ -20,6 +20,10 @@ from __future__ import annotations
 from typing import Any
 
 from fastapi.testclient import TestClient
+from sqlalchemy import text
+
+from opofuente.config import Settings
+from opofuente.infrastructure.db import build_engine
 
 ALLOWED_ORIGIN = {"Origin": "http://127.0.0.1:5173"}
 
@@ -111,6 +115,36 @@ def _cola(client: TestClient, **parametros: Any) -> dict[str, Any]:
     respuesta = client.get("/api/v1/question-topic-proposals", params=parametros)
     assert respuesta.status_code == 200, respuesta.text
     return dict(respuesta.json())
+
+
+def _conflictos(client: TestClient, **parametros: Any) -> dict[str, Any]:
+    respuesta = client.get("/api/v1/question-topic-conflicts", params=parametros)
+    assert respuesta.status_code == 200, respuesta.text
+    return dict(respuesta.json())
+
+
+def _retiradas(settings: Settings) -> list[dict[str, Any]]:
+    """Las retiradas de mapeos, leídas de la auditoría (que la API no publica)."""
+    engine = build_engine(settings.data_paths.database)
+    try:
+        with engine.connect() as conexion:
+            filas = conexion.execute(
+                text(
+                    "SELECT actor, object_id, before_json, after_json FROM audit_events "
+                    "WHERE action = 'question.proposal_retired' ORDER BY created_at, id"
+                )
+            ).all()
+    finally:
+        engine.dispose()
+    return [
+        {
+            "actor": str(fila[0]),
+            "object_id": str(fila[1]),
+            "before": str(fila[2]),
+            "after": str(fila[3]),
+        }
+        for fila in filas
+    ]
 
 
 def _decisiones(client: TestClient, filas: list[dict[str, Any]]) -> dict[str, Any]:
@@ -365,3 +399,94 @@ def test_la_cola_ordena_de_lo_mas_dudoso_a_lo_menos_y_pagina_por_preguntas(
     assert [len(primera_pagina["questions"]), len(segunda_pagina["questions"])] == [2, 1]
     assert segunda_pagina["total"] == 3, "el total es el de la cola entera, no el de la página"
     assert segunda_pagina["questions"][0]["proposals"][0]["confidence"] == 0.7
+
+
+def test_una_pregunta_con_dos_temas_sale_en_la_lista_con_su_actor_y_se_deja_con_uno(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """Lo que quedó torcido antes de esta tanda: una pregunta que cuenta en dos temas.
+
+    Es lo que dejaron la catalogación heredada, las migraciones y las dos corridas que se pisaron.
+    La lista tiene que enseñar **los dos temas con quién los decidió** —un tema de una migración y
+    uno del modelo no se juzgan igual— y el propietario tiene que poder dejar uno solo; la
+    aplicación no elige por su cuenta.
+    """
+    conjunto = _conjunto(seeded_client, titulo="Banco de los dos temas")
+    pregunta = _preguntas(seeded_client, conjunto["id"])[0]
+    temas = _temas_del_programa(seeded_client)
+    primero = _proponer(
+        seeded_client,
+        question_version_id=pregunta["id"],
+        node_id=temas["I.1"]["id"],
+        confidence=1.0,
+        reason="heredado del documento",
+        status="accepted",
+    )
+    segundo = _proponer(
+        seeded_client,
+        question_version_id=pregunta["id"],
+        node_id=temas["I.2"]["id"],
+        confidence=0.8,
+        reason="propuesta del modelo que se confirmó",
+        status="accepted",
+    )
+
+    conflictos = _conflictos(seeded_client)
+
+    assert conflictos["total"] == 1
+    tarjeta = conflictos["questions"][0]
+    assert tarjeta["question_version_id"] == pregunta["id"]
+    assert tarjeta["stem"].startswith("La Constitucion")
+    assert [tema["topic"]["path"] for tema in tarjeta["topics"]] == ["I.1", "I.2"]
+    assert [tema["mapping_id"] for tema in tarjeta["topics"]] == [
+        primero["assignment"]["mapping_id"],
+        segundo["assignment"]["mapping_id"],
+    ]
+    # El actor sale de la auditoría: el primero lo firmó el lote (el modelo) y el segundo también,
+    # pero con otra confianza, así que la lista permite distinguir qué pasó en cada uno.
+    assert [tema["actor"] for tema in tarjeta["topics"]] == ["llm:deepseek-flash"] * 2
+
+    # Y se resuelve eligiendo: se deja I.2 y se retira I.1, con su evento.
+    elegido = next(tema for tema in tarjeta["topics"] if tema["topic"]["path"] == "I.2")
+    resultado = _decisiones(
+        seeded_client,
+        [
+            {
+                "question_version_id": pregunta["id"],
+                "curriculum_node_id": elegido["topic"]["node_id"],
+                "status": "accepted",
+                "retire_others": True,
+                "reason": "se queda con I.2",
+            }
+        ],
+    )
+
+    assert resultado["results"][0]["assignment"]["retired"] == 1
+    assert _conflictos(seeded_client)["total"] == 0, "ya no cuenta en dos temas"
+    mapeos = seeded_client.get(f"/api/v1/questions/{pregunta['id']}/topics").json()
+    assert {(mapeo["title"], mapeo["status"]) for mapeo in mapeos} == {
+        (temas["I.1"]["title"], "rejected"),
+        (temas["I.2"]["title"], "accepted"),
+    }
+    # Y queda auditado: quién lo retiró, de qué estado a cuál y con qué motivo.
+    retiradas = _retiradas(seeded_settings)
+    assert len(retiradas) == 1
+    assert retiradas[0]["actor"] == "local", "lo decide el propietario, no la máquina"
+    assert retiradas[0]["object_id"] == primero["assignment"]["mapping_id"]
+    assert '"status": "accepted"' in retiradas[0]["before"]
+    assert '"status": "rejected"' in retiradas[0]["after"]
+    assert "se queda con I.2" in retiradas[0]["after"]
+
+    # Nada se toca si nadie decide: la lista es de lectura.
+    otra = _preguntas(seeded_client, _conjunto(seeded_client, titulo="Banco intacto")["id"])[0]
+    for ruta in ("I.1", "I.2"):
+        _proponer(
+            seeded_client,
+            question_version_id=otra["id"],
+            node_id=temas[ruta]["id"],
+            confidence=1.0,
+            reason="heredado",
+            status="accepted",
+        )
+    assert _conflictos(seeded_client)["total"] == 1
+    assert len(seeded_client.get(f"/api/v1/questions/{otra['id']}/topics").json()) == 2
