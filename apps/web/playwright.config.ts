@@ -21,6 +21,25 @@ const repoRoot = path.resolve(here, '..', '..');
  */
 const e2eDataDir = process.env.OPOFUENTE_E2E_DATA_DIR ?? path.join(repoRoot, '.e2e-data');
 
+/**
+ * Datos nuevos en cada corrida: sin esto `.e2e-data` se llena con lo que van dejando las pasadas
+ * (649 ficheros y 148 MB en un día de trabajo; 230 propuestas pendientes en la cola de revisión el
+ * 8 de octubre de 2026) y la suite empieza a fallar por sus propios restos: la prueba de
+ * accesibilidad de `review.spec.ts` pasó de 1,5 s a 39 s analizando el DOM acumulado y se quedó sin
+ * tiempo por la mochila de las pasadas anteriores.
+ *
+ * La limpieza va **en el primer servidor** y no en un `globalSetup` a propósito: Playwright arranca
+ * los `webServer` antes de `globalSetup` —comprobado midiéndolo—, así que para entonces la API ya
+ * tiene abierto `opofuente.sqlite3` y borrar el directorio falla con `EPERM`. Aquí ocurre antes de
+ * migrar nada, que es cuando de verdad está vacío. Con un directorio propio
+ * (`OPOFUENTE_E2E_DATA_DIR`) no se borra nada: quien lo pone quiere conservar lo que haya.
+ */
+const limpiezaDatos =
+  process.env.OPOFUENTE_E2E_DATA_DIR === undefined
+    ? 'node -e "require(\'node:fs\').rmSync(process.env.OPOFUENTE_DATA_DIR, ' +
+      '{ recursive: true, force: true, maxRetries: 5, retryDelay: 200 })" && '
+    : '';
+
 /** Entorno del sistema sin variables sin definir, para pasarlo a los procesos hijos. */
 const inheritedEnv: Record<string, string> = Object.fromEntries(
   Object.entries(process.env).filter((entry): entry is [string, string] => {
@@ -41,14 +60,12 @@ export default defineConfig({
     locale: 'es-ES',
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
-  // Datos nuevos en cada corrida: sin esto `.e2e-data` se llena con lo que van dejando las pasadas
-  // (649 ficheros y 148 MB en un día de trabajo) y la suite empieza a fallar por sus propios restos.
-  globalSetup: './tests/e2e/globalSetup.ts',
   webServer: [
     {
-      // Migra el directorio de datos del E2E (nunca el real), siembra los perfiles oficiales
-      // (la siembra es idempotente) y arranca la API en loopback.
+      // Borra el directorio de datos del E2E de la pasada anterior, migra el de esta (nunca el real),
+      // siembra los perfiles oficiales (la siembra es idempotente) y arranca la API en loopback.
       command:
+        limpiezaDatos +
         'uv run alembic upgrade head && uv run python -m opofuente.tools.seed_profiles && uv run python -m uvicorn opofuente.main:app --host 127.0.0.1 --port 8765',
       cwd: repoRoot,
       url: 'http://127.0.0.1:8765/api/v1/health/live',

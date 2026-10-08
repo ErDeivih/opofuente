@@ -8,12 +8,14 @@
   },
   "transformations": [
     "Solo se usa el ANEXO V del BOE; los demás anexos convocan otros cuerpos.",
-    "Los bloques son los encabezados «I.» a «IV.» del apartado «3. Programa.» y los temas son los párrafos numerados que cuelgan de cada bloque. El programa de TAI no publica epígrafes: el texto de cada tema se conserva íntegro como título del nodo."
+    "Los bloques son los encabezados «I.» a «IV.» del apartado «3. Programa.» y los temas son los párrafos numerados que cuelgan de cada bloque.",
+    "Los epígrafes se derivan del título oficial de cada tema: la convocatoria los publica dentro del párrafo del tema, separados por puntos, no como líneas propias. Se corta por esos puntos y el punto se conserva en el epígrafe, de modo que los epígrafes de un tema, unidos por un espacio, reproducen su título oficial sin perder un carácter.",
+    "El corte exige que el punto vaya seguido de espacio: un punto pegado a la palabra no corta, así que «plataforma.NET» (tema III.5) se queda entero."
   ],
   "counts": {
     "blocks": 4,
     "topics": 33,
-    "epigraphs": 0
+    "epigraphs": 134
   },
   "nodes": [
     {
@@ -31,7 +33,44 @@
           "position": 1,
           "path": "I.1",
           "depth": 1,
-          "children": []
+          "children": [
+            {
+              "node_type": "epigraph",
+              "official_code": "I.1.1",
+              "title": "La Constitución Española de 1978.",
+              "position": 1,
+              "path": "I.1.1",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "I.1.2",
+              "title": "Derechos y deberes fundamentales.",
+              "position": 2,
+              "path": "I.1.2",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "I.1.3",
+              "title": "Su garantía y suspensión.",
+              "position": 3,
+              "path": "I.1.3",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "I.1.4",
+              "title": "La Corona: funciones constitucionales del Rey.",
+              "position": 4,
+              "path": "I.1.4",
+              "depth": 2,
+              "children": []
+            }
+          ]
         },
         {
           "node_type": "topic",
@@ -40,7 +79,35 @@
           "position": 2,
           "path": "I.2",
           "depth": 1,
-          "children": []
+          "children": [
+            {
+              "node_type": "epigraph",
+              "official_code": "I.2.1",
+              "title": "Las Cortes Generales: atribuciones del Congreso de los Diputados y del Senado.",
+              "position": 1,
+              "path": "I.2.1",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "I.2.2",
+              "title": "El Tribunal Constitucional: composición y atribuciones.",
+              "position": 2,
+              "path": "I.2.2",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "I.2.3",
+              "title": "El Defensor del Pueblo.",
+              "position": 3,
+              "path": "I.2.3",
+              "depth": 2,
+              "children": []
+            }
+          ]
         },
         {
           "node_type": "topic",
@@ -49,7 +116,35 @@
           "position": 3,
           "path": "I.3",
           "depth": 1,
-          "children": []
+          "children": [
+            {
+              "node_type": "epigraph",
+              "official_code": "I.3.1",
+              "title": "El Gobierno: composición, nombramiento y cese.",
+              "position": 1,
+              "path": "I.3.1",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "I.3.2",
+              "title": "Las funciones del Gobierno.",
+              "position": 2,
+              "path": "I.3.2",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "I.3.3",
+              "title": "Relaciones entre el Gobierno y las Cortes Generales.",
+              "position": 3,
+              "path": "I.3.3",
+              "depth": 2,
+              "children": []
+            }
+          ]
         },
         {
           "node_type": "topic",
@@ -58,7 +153,35 @@
           "position": 4,
           "path": "I.4",
           "depth": 1,
-          "children": []
+          "children": [
+            {
+              "node_type": "epigraph",
+              "official_code": "I.4.1",
+              "title": "El texto refundido del Estatuto Básico del Empleo Público y demás normativa de aplicación: derechos y deberes, formas de provisión de puestos, promoción interna y carrera profesional; situaciones administrativas, incompatibilidades y régimen sancionador.",
+              "position": 1,
+              "path": "I.4.1",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "I.4.2",
+              "title": "La Ley 19/2013, de 9 de diciembre, de transparencia, acceso a la información pública y buen gobierno.",
+              "position": 2,
+              "path": "I.4.2",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "I.4.3",
+              "title": "La Agenda 2030 y los Objetivos de Desarrollo Sostenible.",
+              "position": 3,
+              "path": "I.4.3",
+              "depth": 2,
+              "children": []
+            }
+          ]
         },
         {
           "node_type": "topic",
@@ -67,7 +190,35 @@
           "position": 5,
           "path": "I.5",
           "depth": 1,
-          "children": []
+          "children": [
+            {
+              "node_type": "epigraph",
+              "official_code": "I.5.1",
+              "title": "Políticas de igualdad y contra la violencia de género.",
+              "position": 1,
+              "path": "I.5.1",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "I.5.2",
+              "title": "Políticas de igualdad de trato y no discriminación de las personas LGTBI.",
+              "position": 2,
+              "path": "I.5.2",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "I.5.3",
+              "title": "Discapacidad y dependencia: régimen jurídico.",
+              "position": 3,
+              "path": "I.5.3",
+              "depth": 2,
+              "children": []
+            }
+          ]
         },
         {
           "node_type": "topic",
@@ -76,7 +227,44 @@
           "position": 6,
           "path": "I.6",
           "depth": 1,
-          "children": []
+          "children": [
+            {
+              "node_type": "epigraph",
+              "official_code": "I.6.1",
+              "title": "La sociedad de la información.",
+              "position": 1,
+              "path": "I.6.1",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "I.6.2",
+              "title": "Identidad y firma electrónica: régimen jurídico.",
+              "position": 2,
+              "path": "I.6.2",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "I.6.3",
+              "title": "El DNI electrónico.",
+              "position": 3,
+              "path": "I.6.3",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "I.6.4",
+              "title": "La Agenda Digital para España.",
+              "position": 4,
+              "path": "I.6.4",
+              "depth": 2,
+              "children": []
+            }
+          ]
         },
         {
           "node_type": "topic",
@@ -85,7 +273,26 @@
           "position": 7,
           "path": "I.7",
           "depth": 1,
-          "children": []
+          "children": [
+            {
+              "node_type": "epigraph",
+              "official_code": "I.7.1",
+              "title": "La protección de datos personales y su régimen jurídico: principios, derechos y obligaciones.",
+              "position": 1,
+              "path": "I.7.1",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "I.7.2",
+              "title": "Derechos digitales.",
+              "position": 2,
+              "path": "I.7.2",
+              "depth": 2,
+              "children": []
+            }
+          ]
         },
         {
           "node_type": "topic",
@@ -94,7 +301,44 @@
           "position": 8,
           "path": "I.8",
           "depth": 1,
-          "children": []
+          "children": [
+            {
+              "node_type": "epigraph",
+              "official_code": "I.8.1",
+              "title": "Acceso electrónico de los ciudadanos a los servicios públicos y normativa de desarrollo.",
+              "position": 1,
+              "path": "I.8.1",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "I.8.2",
+              "title": "La gestión electrónica de los procedimientos administrativos: registros, notificaciones y uso de medios electrónicos.",
+              "position": 2,
+              "path": "I.8.2",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "I.8.3",
+              "title": "Esquema Nacional de Seguridad y de Interoperabilidad.",
+              "position": 3,
+              "path": "I.8.3",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "I.8.4",
+              "title": "Normas técnicas de Interoperabilidad.",
+              "position": 4,
+              "path": "I.8.4",
+              "depth": 2,
+              "children": []
+            }
+          ]
         },
         {
           "node_type": "topic",
@@ -103,7 +347,26 @@
           "position": 9,
           "path": "I.9",
           "depth": 1,
-          "children": []
+          "children": [
+            {
+              "node_type": "epigraph",
+              "official_code": "I.9.1",
+              "title": "Instrumentos para el acceso electrónico a las Administraciones públicas: sedes electrónicas, canales y puntos de acceso, identificación y autenticación.",
+              "position": 1,
+              "path": "I.9.1",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "I.9.2",
+              "title": "Infraestructuras y servicios comunes en materia de administración electrónica.",
+              "position": 2,
+              "path": "I.9.2",
+              "depth": 2,
+              "children": []
+            }
+          ]
         }
       ]
     },
@@ -122,7 +385,53 @@
           "position": 1,
           "path": "II.1",
           "depth": 1,
-          "children": []
+          "children": [
+            {
+              "node_type": "epigraph",
+              "official_code": "II.1.1",
+              "title": "Informática básica.",
+              "position": 1,
+              "path": "II.1.1",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "II.1.2",
+              "title": "Representación y comunicación de la información: elementos constitutivos de un sistema de información.",
+              "position": 2,
+              "path": "II.1.2",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "II.1.3",
+              "title": "Características y funciones.",
+              "position": 3,
+              "path": "II.1.3",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "II.1.4",
+              "title": "Arquitectura de ordenadores.",
+              "position": 4,
+              "path": "II.1.4",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "II.1.5",
+              "title": "Componentes internos de los equipos microinformáticos.",
+              "position": 5,
+              "path": "II.1.5",
+              "depth": 2,
+              "children": []
+            }
+          ]
         },
         {
           "node_type": "topic",
@@ -131,7 +440,44 @@
           "position": 2,
           "path": "II.2",
           "depth": 1,
-          "children": []
+          "children": [
+            {
+              "node_type": "epigraph",
+              "official_code": "II.2.1",
+              "title": "Periféricos: conectividad y administración.",
+              "position": 1,
+              "path": "II.2.1",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "II.2.2",
+              "title": "Elementos de impresión.",
+              "position": 2,
+              "path": "II.2.2",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "II.2.3",
+              "title": "Elementos de almacenamiento.",
+              "position": 3,
+              "path": "II.2.3",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "II.2.4",
+              "title": "Elementos de visualización y digitalización.",
+              "position": 4,
+              "path": "II.2.4",
+              "depth": 2,
+              "children": []
+            }
+          ]
         },
         {
           "node_type": "topic",
@@ -140,7 +486,44 @@
           "position": 3,
           "path": "II.3",
           "depth": 1,
-          "children": []
+          "children": [
+            {
+              "node_type": "epigraph",
+              "official_code": "II.3.1",
+              "title": "Tipos abstractos y Estructuras de datos.",
+              "position": 1,
+              "path": "II.3.1",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "II.3.2",
+              "title": "Organizaciones de ficheros.",
+              "position": 2,
+              "path": "II.3.2",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "II.3.3",
+              "title": "Algoritmos.",
+              "position": 3,
+              "path": "II.3.3",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "II.3.4",
+              "title": "Formatos de información y ficheros.",
+              "position": 4,
+              "path": "II.3.4",
+              "depth": 2,
+              "children": []
+            }
+          ]
         },
         {
           "node_type": "topic",
@@ -149,7 +532,53 @@
           "position": 4,
           "path": "II.4",
           "depth": 1,
-          "children": []
+          "children": [
+            {
+              "node_type": "epigraph",
+              "official_code": "II.4.1",
+              "title": "Sistemas operativos.",
+              "position": 1,
+              "path": "II.4.1",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "II.4.2",
+              "title": "Características y elementos constitutivos.",
+              "position": 2,
+              "path": "II.4.2",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "II.4.3",
+              "title": "Sistemas Windows.",
+              "position": 3,
+              "path": "II.4.3",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "II.4.4",
+              "title": "Sistemas Unix y Linux.",
+              "position": 4,
+              "path": "II.4.4",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "II.4.5",
+              "title": "Sistemas operativos para dispositivos móviles.",
+              "position": 5,
+              "path": "II.4.5",
+              "depth": 2,
+              "children": []
+            }
+          ]
         },
         {
           "node_type": "topic",
@@ -158,7 +587,17 @@
           "position": 5,
           "path": "II.5",
           "depth": 1,
-          "children": []
+          "children": [
+            {
+              "node_type": "epigraph",
+              "official_code": "II.5.1",
+              "title": "Sistemas de gestión de bases de datos relacionales, orientados a objetos y NoSQL: características y componentes.",
+              "position": 1,
+              "path": "II.5.1",
+              "depth": 2,
+              "children": []
+            }
+          ]
         }
       ]
     },
@@ -177,7 +616,62 @@
           "position": 1,
           "path": "III.1",
           "depth": 1,
-          "children": []
+          "children": [
+            {
+              "node_type": "epigraph",
+              "official_code": "III.1.1",
+              "title": "Modelado de datos, metodologías y reglas.",
+              "position": 1,
+              "path": "III.1.1",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "III.1.2",
+              "title": "Entidades, atributos y relaciones.",
+              "position": 2,
+              "path": "III.1.2",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "III.1.3",
+              "title": "Diseño de bases de datos.",
+              "position": 3,
+              "path": "III.1.3",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "III.1.4",
+              "title": "Diseño lógico y físico.",
+              "position": 4,
+              "path": "III.1.4",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "III.1.5",
+              "title": "El modelo lógico relacional.",
+              "position": 5,
+              "path": "III.1.5",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "III.1.6",
+              "title": "Normalización.",
+              "position": 6,
+              "path": "III.1.6",
+              "depth": 2,
+              "children": []
+            }
+          ]
         },
         {
           "node_type": "topic",
@@ -186,7 +680,80 @@
           "position": 2,
           "path": "III.2",
           "depth": 1,
-          "children": []
+          "children": [
+            {
+              "node_type": "epigraph",
+              "official_code": "III.2.1",
+              "title": "Lenguajes de programación.",
+              "position": 1,
+              "path": "III.2.1",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "III.2.2",
+              "title": "Representación de tipos de datos.",
+              "position": 2,
+              "path": "III.2.2",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "III.2.3",
+              "title": "Operadores.",
+              "position": 3,
+              "path": "III.2.3",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "III.2.4",
+              "title": "Instrucciones condicionales.",
+              "position": 4,
+              "path": "III.2.4",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "III.2.5",
+              "title": "Bucles y recursividad.",
+              "position": 5,
+              "path": "III.2.5",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "III.2.6",
+              "title": "Procedimientos, funciones y parámetros.",
+              "position": 6,
+              "path": "III.2.6",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "III.2.7",
+              "title": "Vectores y registros.",
+              "position": 7,
+              "path": "III.2.7",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "III.2.8",
+              "title": "Estructura de un programa.",
+              "position": 8,
+              "path": "III.2.8",
+              "depth": 2,
+              "children": []
+            }
+          ]
         },
         {
           "node_type": "topic",
@@ -195,7 +762,44 @@
           "position": 3,
           "path": "III.3",
           "depth": 1,
-          "children": []
+          "children": [
+            {
+              "node_type": "epigraph",
+              "official_code": "III.3.1",
+              "title": "Lenguajes de interrogación de bases de datos.",
+              "position": 1,
+              "path": "III.3.1",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "III.3.2",
+              "title": "Estándar ANSI SQL.",
+              "position": 2,
+              "path": "III.3.2",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "III.3.3",
+              "title": "Procedimientos almacenados.",
+              "position": 3,
+              "path": "III.3.3",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "III.3.4",
+              "title": "Eventos y disparadores.",
+              "position": 4,
+              "path": "III.3.4",
+              "depth": 2,
+              "children": []
+            }
+          ]
         },
         {
           "node_type": "topic",
@@ -204,7 +808,44 @@
           "position": 4,
           "path": "III.4",
           "depth": 1,
-          "children": []
+          "children": [
+            {
+              "node_type": "epigraph",
+              "official_code": "III.4.1",
+              "title": "Diseño y programación orientada a objetos.",
+              "position": 1,
+              "path": "III.4.1",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "III.4.2",
+              "title": "Elementos y componentes software: objetos, clases, herencia, métodos, sobrecarga.",
+              "position": 2,
+              "path": "III.4.2",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "III.4.3",
+              "title": "Ventajas e inconvenientes.",
+              "position": 3,
+              "path": "III.4.3",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "III.4.4",
+              "title": "Patrones de diseño y lenguaje de modelado unificado (UML).",
+              "position": 4,
+              "path": "III.4.4",
+              "depth": 2,
+              "children": []
+            }
+          ]
         },
         {
           "node_type": "topic",
@@ -213,7 +854,35 @@
           "position": 5,
           "path": "III.5",
           "depth": 1,
-          "children": []
+          "children": [
+            {
+              "node_type": "epigraph",
+              "official_code": "III.5.1",
+              "title": "Arquitectura Java EE/Jakarta EE y plataforma.NET: componentes, persistencia y seguridad.",
+              "position": 1,
+              "path": "III.5.1",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "III.5.2",
+              "title": "Características, elementos, lenguajes y funciones en ambos entornos.",
+              "position": 2,
+              "path": "III.5.2",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "III.5.3",
+              "title": "Desarrollo de interfaces.",
+              "position": 3,
+              "path": "III.5.3",
+              "depth": 2,
+              "children": []
+            }
+          ]
         },
         {
           "node_type": "topic",
@@ -222,7 +891,26 @@
           "position": 6,
           "path": "III.6",
           "depth": 1,
-          "children": []
+          "children": [
+            {
+              "node_type": "epigraph",
+              "official_code": "III.6.1",
+              "title": "Arquitectura de sistemas cliente/servidor y multicapas: componentes y operación.",
+              "position": 1,
+              "path": "III.6.1",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "III.6.2",
+              "title": "Arquitecturas de servicios web y protocolos asociados.",
+              "position": 2,
+              "path": "III.6.2",
+              "depth": 2,
+              "children": []
+            }
+          ]
         },
         {
           "node_type": "topic",
@@ -231,7 +919,53 @@
           "position": 7,
           "path": "III.7",
           "depth": 1,
-          "children": []
+          "children": [
+            {
+              "node_type": "epigraph",
+              "official_code": "III.7.1",
+              "title": "Aplicaciones web.",
+              "position": 1,
+              "path": "III.7.1",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "III.7.2",
+              "title": "Desarrollo web front-end y en servidor, multiplataforma y multidispositivo.",
+              "position": 2,
+              "path": "III.7.2",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "III.7.3",
+              "title": "Lenguajes: HTML, XML y sus derivaciones.",
+              "position": 3,
+              "path": "III.7.3",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "III.7.4",
+              "title": "Navegadores y lenguajes de programación web.",
+              "position": 4,
+              "path": "III.7.4",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "III.7.5",
+              "title": "Lenguajes de script.",
+              "position": 5,
+              "path": "III.7.5",
+              "depth": 2,
+              "children": []
+            }
+          ]
         },
         {
           "node_type": "topic",
@@ -240,7 +974,44 @@
           "position": 8,
           "path": "III.8",
           "depth": 1,
-          "children": []
+          "children": [
+            {
+              "node_type": "epigraph",
+              "official_code": "III.8.1",
+              "title": "Accesibilidad, diseño universal y usabilidad.",
+              "position": 1,
+              "path": "III.8.1",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "III.8.2",
+              "title": "Acceso y usabilidad de las tecnologías, productos y servicios relacionados con la sociedad de la información.",
+              "position": 2,
+              "path": "III.8.2",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "III.8.3",
+              "title": "Confidencialidad y disponibilidad de la información en puestos de usuario final.",
+              "position": 3,
+              "path": "III.8.3",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "III.8.4",
+              "title": "Conceptos de seguridad en el desarrollo de los sistemas.",
+              "position": 4,
+              "path": "III.8.4",
+              "depth": 2,
+              "children": []
+            }
+          ]
         },
         {
           "node_type": "topic",
@@ -249,7 +1020,62 @@
           "position": 9,
           "path": "III.9",
           "depth": 1,
-          "children": []
+          "children": [
+            {
+              "node_type": "epigraph",
+              "official_code": "III.9.1",
+              "title": "Repositorios: estructura y actualización.",
+              "position": 1,
+              "path": "III.9.1",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "III.9.2",
+              "title": "Generación de código y documentación.",
+              "position": 2,
+              "path": "III.9.2",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "III.9.3",
+              "title": "Metodologías de desarrollo.",
+              "position": 3,
+              "path": "III.9.3",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "III.9.4",
+              "title": "Pruebas.",
+              "position": 4,
+              "path": "III.9.4",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "III.9.5",
+              "title": "Programas para control de versiones.",
+              "position": 5,
+              "path": "III.9.5",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "III.9.6",
+              "title": "Plataformas de desarrollo colaborativo de software.",
+              "position": 6,
+              "path": "III.9.6",
+              "depth": 2,
+              "children": []
+            }
+          ]
         }
       ]
     },
@@ -268,7 +1094,26 @@
           "position": 1,
           "path": "IV.1",
           "depth": 1,
-          "children": []
+          "children": [
+            {
+              "node_type": "epigraph",
+              "official_code": "IV.1.1",
+              "title": "Administración del Sistema operativo y software de base.",
+              "position": 1,
+              "path": "IV.1.1",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "IV.1.2",
+              "title": "Actualización, mantenimiento y reparación del sistema operativo.",
+              "position": 2,
+              "path": "IV.1.2",
+              "depth": 2,
+              "children": []
+            }
+          ]
         },
         {
           "node_type": "topic",
@@ -277,7 +1122,53 @@
           "position": 2,
           "path": "IV.2",
           "depth": 1,
-          "children": []
+          "children": [
+            {
+              "node_type": "epigraph",
+              "official_code": "IV.2.1",
+              "title": "Administración de bases de datos.",
+              "position": 1,
+              "path": "IV.2.1",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "IV.2.2",
+              "title": "Sistemas de almacenamiento y su virtualización.",
+              "position": 2,
+              "path": "IV.2.2",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "IV.2.3",
+              "title": "Políticas, sistemas y procedimientos de backup y su recuperación.",
+              "position": 3,
+              "path": "IV.2.3",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "IV.2.4",
+              "title": "Backup de sistemas físicos y virtuales.",
+              "position": 4,
+              "path": "IV.2.4",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "IV.2.5",
+              "title": "Virtualización de sistemas y virtualización de puestos de usuario.",
+              "position": 5,
+              "path": "IV.2.5",
+              "depth": 2,
+              "children": []
+            }
+          ]
         },
         {
           "node_type": "topic",
@@ -286,7 +1177,26 @@
           "position": 3,
           "path": "IV.3",
           "depth": 1,
-          "children": []
+          "children": [
+            {
+              "node_type": "epigraph",
+              "official_code": "IV.3.1",
+              "title": "Administración de servidores de correo electrónico sus protocolos.",
+              "position": 1,
+              "path": "IV.3.1",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "IV.3.2",
+              "title": "Administración de contenedores y microservicios.",
+              "position": 2,
+              "path": "IV.3.2",
+              "depth": 2,
+              "children": []
+            }
+          ]
         },
         {
           "node_type": "topic",
@@ -295,7 +1205,44 @@
           "position": 4,
           "path": "IV.4",
           "depth": 1,
-          "children": []
+          "children": [
+            {
+              "node_type": "epigraph",
+              "official_code": "IV.4.1",
+              "title": "Administración de redes de área local.",
+              "position": 1,
+              "path": "IV.4.1",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "IV.4.2",
+              "title": "Gestión de usuarios.",
+              "position": 2,
+              "path": "IV.4.2",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "IV.4.3",
+              "title": "Gestión de dispositivos.",
+              "position": 3,
+              "path": "IV.4.3",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "IV.4.4",
+              "title": "Monitorización y control de tráfico.",
+              "position": 4,
+              "path": "IV.4.4",
+              "depth": 2,
+              "children": []
+            }
+          ]
         },
         {
           "node_type": "topic",
@@ -304,7 +1251,89 @@
           "position": 5,
           "path": "IV.5",
           "depth": 1,
-          "children": []
+          "children": [
+            {
+              "node_type": "epigraph",
+              "official_code": "IV.5.1",
+              "title": "Conceptos de seguridad de los sistemas de información.",
+              "position": 1,
+              "path": "IV.5.1",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "IV.5.2",
+              "title": "Seguridad física.",
+              "position": 2,
+              "path": "IV.5.2",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "IV.5.3",
+              "title": "Seguridad lógica.",
+              "position": 3,
+              "path": "IV.5.3",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "IV.5.4",
+              "title": "Amenazas y vulnerabilidades.",
+              "position": 4,
+              "path": "IV.5.4",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "IV.5.5",
+              "title": "Técnicas criptográficas y protocolos seguros.",
+              "position": 5,
+              "path": "IV.5.5",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "IV.5.6",
+              "title": "Mecanismos de firma digital.",
+              "position": 6,
+              "path": "IV.5.6",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "IV.5.7",
+              "title": "Infraestructura física de un CPD: acondicionamiento y equipamiento.",
+              "position": 7,
+              "path": "IV.5.7",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "IV.5.8",
+              "title": "Sistemas de gestión de incidencias.",
+              "position": 8,
+              "path": "IV.5.8",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "IV.5.9",
+              "title": "Control remoto de puestos de usuario.",
+              "position": 9,
+              "path": "IV.5.9",
+              "depth": 2,
+              "children": []
+            }
+          ]
         },
         {
           "node_type": "topic",
@@ -313,7 +1342,71 @@
           "position": 6,
           "path": "IV.6",
           "depth": 1,
-          "children": []
+          "children": [
+            {
+              "node_type": "epigraph",
+              "official_code": "IV.6.1",
+              "title": "Comunicaciones.",
+              "position": 1,
+              "path": "IV.6.1",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "IV.6.2",
+              "title": "Medios de transmisión.",
+              "position": 2,
+              "path": "IV.6.2",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "IV.6.3",
+              "title": "Modos de comunicación.",
+              "position": 3,
+              "path": "IV.6.3",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "IV.6.4",
+              "title": "Equipos terminales y equipos de interconexión y conmutación.",
+              "position": 4,
+              "path": "IV.6.4",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "IV.6.5",
+              "title": "Redes de comunicaciones.",
+              "position": 5,
+              "path": "IV.6.5",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "IV.6.6",
+              "title": "Redes de conmutación y redes de difusión.",
+              "position": 6,
+              "path": "IV.6.6",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "IV.6.7",
+              "title": "Comunicaciones móviles e inalámbricas.",
+              "position": 7,
+              "path": "IV.6.7",
+              "depth": 2,
+              "children": []
+            }
+          ]
         },
         {
           "node_type": "topic",
@@ -322,7 +1415,26 @@
           "position": 7,
           "path": "IV.7",
           "depth": 1,
-          "children": []
+          "children": [
+            {
+              "node_type": "epigraph",
+              "official_code": "IV.7.1",
+              "title": "El modelo TCP/IP y el modelo de referencia de interconexión de sistemas abiertos (OSI) de ISO.",
+              "position": 1,
+              "path": "IV.7.1",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "IV.7.2",
+              "title": "Protocolos TCP/IP.",
+              "position": 2,
+              "path": "IV.7.2",
+              "depth": 2,
+              "children": []
+            }
+          ]
         },
         {
           "node_type": "topic",
@@ -331,7 +1443,44 @@
           "position": 8,
           "path": "IV.8",
           "depth": 1,
-          "children": []
+          "children": [
+            {
+              "node_type": "epigraph",
+              "official_code": "IV.8.1",
+              "title": "Internet: arquitectura de red.",
+              "position": 1,
+              "path": "IV.8.1",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "IV.8.2",
+              "title": "Origen, evolución y estado actual.",
+              "position": 2,
+              "path": "IV.8.2",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "IV.8.3",
+              "title": "Principales servicios.",
+              "position": 3,
+              "path": "IV.8.3",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "IV.8.4",
+              "title": "Protocolos HTTP, HTTPS y SSL/TLS.",
+              "position": 4,
+              "path": "IV.8.4",
+              "depth": 2,
+              "children": []
+            }
+          ]
         },
         {
           "node_type": "topic",
@@ -340,7 +1489,53 @@
           "position": 9,
           "path": "IV.9",
           "depth": 1,
-          "children": []
+          "children": [
+            {
+              "node_type": "epigraph",
+              "official_code": "IV.9.1",
+              "title": "Seguridad y protección en redes de comunicaciones.",
+              "position": 1,
+              "path": "IV.9.1",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "IV.9.2",
+              "title": "Seguridad perimetral.",
+              "position": 2,
+              "path": "IV.9.2",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "IV.9.3",
+              "title": "Acceso remoto seguro a redes.",
+              "position": 3,
+              "path": "IV.9.3",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "IV.9.4",
+              "title": "Redes privadas virtuales (VPN).",
+              "position": 4,
+              "path": "IV.9.4",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "IV.9.5",
+              "title": "Seguridad en el puesto del usuario.",
+              "position": 5,
+              "path": "IV.9.5",
+              "depth": 2,
+              "children": []
+            }
+          ]
         },
         {
           "node_type": "topic",
@@ -349,7 +1544,53 @@
           "position": 10,
           "path": "IV.10",
           "depth": 1,
-          "children": []
+          "children": [
+            {
+              "node_type": "epigraph",
+              "official_code": "IV.10.1",
+              "title": "Redes locales.",
+              "position": 1,
+              "path": "IV.10.1",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "IV.10.2",
+              "title": "Tipología.",
+              "position": 2,
+              "path": "IV.10.2",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "IV.10.3",
+              "title": "Técnicas de transmisión.",
+              "position": 3,
+              "path": "IV.10.3",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "IV.10.4",
+              "title": "Métodos de acceso.",
+              "position": 4,
+              "path": "IV.10.4",
+              "depth": 2,
+              "children": []
+            },
+            {
+              "node_type": "epigraph",
+              "official_code": "IV.10.5",
+              "title": "Dispositivos de interconexión.",
+              "position": 5,
+              "path": "IV.10.5",
+              "depth": 2,
+              "children": []
+            }
+          ]
         }
       ]
     }

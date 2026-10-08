@@ -73,7 +73,17 @@ let base = '';
 let marca = '';
 let ficheros: string[] = [];
 
-/** Texto sintético que menciona el programa sembrado; el primer fichero cita un título de tema. */
+/**
+ * Texto sintético que menciona el programa sembrado; el primer fichero cita un título de tema.
+ *
+ * La cita es **parcial a propósito**, desde que el temario de TAI publica epígrafes (134 nodos
+ * hijos de los 33 temas): si el fichero reprodujera un epígrafe entero —«La Constitución Española de
+ * 1978.»—, el motor de temas lo daría por seguro (confianza ≥ 0,75), aplicaría el mapeo solo y
+ * dejaría la cola sin ninguna propuesta pendiente de ese eje, que es justo lo que esta prueba
+ * necesita para ejercitar «corregir un tema». Citando el título del tema sin completar ningún
+ * epígrafe, la propuesta cae en la banda media (0,63 y 0,67: los dos motores) y espera revisión, que
+ * es el caso que se quiere probar.
+ */
 function contenido(nombre: string): string {
   const cabecera = `Marcador de la pasada: ${marca}.\n`;
   if (nombre === 'revision-1') {
@@ -82,7 +92,7 @@ function contenido(nombre: string): string {
       'Apuntes de legislación sobre la Ley 39/2015.\n' +
       'Boletín Oficial del Estado. Resolución de 12 de enero de 2026.\n' +
       'Uso privado: prohibida su reproducción sin autorización.\n' +
-      'La Constitución Española de 1978 desarrolla los derechos y deberes fundamentales.\n'
+      'La Constitución Española: derechos, deberes y garantías.\n'
     );
   }
   if (nombre === 'revision-2') {

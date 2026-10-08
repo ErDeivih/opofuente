@@ -67,6 +67,13 @@ _ANNEX_CLASSES = frozenset({"anexo_num", "anexo", "aparienciaTitulo"})
 #: estabilización, no. La raya y el guion son caracteres distintos y el patrón admite los dos.
 _EN_DASH = "\u2013"
 _TOPIC = re.compile(rf"^Tema\s+(\d+)\.\s*[{_EN_DASH}-]?\s*(.+)$")
+#: Corte de los epígrafes del programa de TAI. La convocatoria **no** publica los epígrafes como
+#: líneas propias: el título oficial de cada tema es un párrafo con los enunciados separados por
+#: puntos. El corte es «punto seguido de espacio», así que un punto **pegado** a la palabra no
+#: corta: `plataforma.NET` (tema III.5) se queda entero, que es el caso que el propietario señaló
+#: al revisar la partición. El punto se conserva en el epígrafe, de modo que los epígrafes de un
+#: tema, unidos por un espacio, reproducen su título oficial sin perder un carácter.
+_SENTENCE_BREAK = re.compile(r"(?<=\.)\s+")
 
 
 def normalize(value: str) -> str:
@@ -343,6 +350,17 @@ def verify_quotes(
 # --------------------------------------------------------------------------- programas
 
 
+def tai_epigraphs(topic_title: str) -> list[str]:
+    """Epígrafes de un tema de TAI: su título oficial cortado por los enunciados.
+
+    La regla es la de `_SENTENCE_BREAK` y no hay otra: el programa de TAI publica cada tema en un
+    solo párrafo, con los epígrafes separados por puntos, y el corte es ese punto. Los epígrafes
+    salen **con** su punto, así que unirlos con un espacio devuelve el título oficial tal cual;
+    eso es lo que comprueba `tai_curriculum` antes de aceptarlos.
+    """
+    return [chunk.strip() for chunk in _SENTENCE_BREAK.split(topic_title) if chunk.strip()]
+
+
 def tai_curriculum(path: Path) -> list[dict[str, Any]]:
     paragraphs = xml_paragraphs(path)
     start, end = annex_range(paragraphs, "ANEXO V")
@@ -376,15 +394,36 @@ def tai_curriculum(path: Path) -> list[dict[str, Any]]:
         if topic_match and blocks:
             block = blocks[-1]
             position = len(block["children"]) + 1
+            topic_path = f"{block['official_code']}.{position}"
+            title = topic_match.group(2).strip()
+            epigraphs = tai_epigraphs(title)
+            # La partición no puede perder texto: si la unión de los epígrafes no devuelve el título
+            # oficial, la regla de corte se ha comido algo y el fixture no se escribe.
+            if not epigraphs or " ".join(epigraphs) != title:
+                raise InvariantViolationError(
+                    f"el título del tema {topic_path} no se reconstruye a partir de sus epígrafes: "
+                    f"{title!r}"
+                )
             block["children"].append(
                 {
                     "node_type": "topic",
                     "official_code": topic_match.group(1),
-                    "title": topic_match.group(2).strip(),
+                    "title": title,
                     "position": position,
-                    "path": f"{block['official_code']}.{position}",
+                    "path": topic_path,
                     "depth": 1,
-                    "children": [],
+                    "children": [
+                        {
+                            "node_type": "epigraph",
+                            "official_code": f"{topic_path}.{index}",
+                            "title": epigraph,
+                            "position": index,
+                            "path": f"{topic_path}.{index}",
+                            "depth": 2,
+                            "children": [],
+                        }
+                        for index, epigraph in enumerate(epigraphs, start=1)
+                    ],
                 }
             )
     return blocks
@@ -611,8 +650,13 @@ TRANSFORMATIONS: dict[str, list[str]] = {
     "tai-age-2025": [
         "Solo se usa el ANEXO V del BOE; los demás anexos convocan otros cuerpos.",
         "Los bloques son los encabezados «I.» a «IV.» del apartado «3. Programa.» y los temas son "
-        "los párrafos numerados que cuelgan de cada bloque. El programa de TAI no publica "
-        "epígrafes: el texto de cada tema se conserva íntegro como título del nodo.",
+        "los párrafos numerados que cuelgan de cada bloque.",
+        "Los epígrafes se derivan del título oficial de cada tema: la convocatoria los publica "
+        "dentro del párrafo del tema, separados por puntos, no como líneas propias. Se corta por "
+        "esos puntos y el punto se conserva en el epígrafe, de modo que los epígrafes de un tema, "
+        "unidos por un espacio, reproducen su título oficial sin perder un carácter.",
+        "El corte exige que el punto vaya seguido de espacio: un punto pegado a la palabra no "
+        "corta, así que «plataforma.NET» (tema III.5) se queda entero.",
     ],
     "gc-cabos-guardias-2026": [
         "Los temas son los veinticinco «TEMA n.-» del PDF oficial del temario.",

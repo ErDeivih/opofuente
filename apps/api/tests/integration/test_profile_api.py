@@ -102,7 +102,7 @@ def test_detalle_de_convocatoria_con_partes_y_reglas(seeded_client: TestClient) 
     }
 
 
-def test_programa_de_tai_tiene_cuatro_bloques_y_treinta_y_tres_temas(
+def test_programa_de_tai_tiene_cuatro_bloques_treinta_y_tres_temas_y_sus_epigrafes(
     seeded_client: TestClient,
 ) -> None:
     oposicion_id = _opposition_id(seeded_client, TAI)
@@ -111,12 +111,36 @@ def test_programa_de_tai_tiene_cuatro_bloques_y_treinta_y_tres_temas(
     assert response.status_code == 200
     body = response.json()
 
-    assert body["counts"] == {"block": 4, "topic": 33, "epigraph": 0}
+    assert body["counts"] == {"block": 4, "topic": 33, "epigraph": 134}
     assert len(body["nodes"]) == 4
     temas = [tema for bloque in body["nodes"] for tema in bloque["children"]]
     assert len(temas) == 33
     assert body["nodes"][0]["official_code"] == "I"
     assert temas[0]["path"] == "I.1"
+    # Los epígrafes llegan colgando de su tema, con su ruta y su nivel, y en orden.
+    epigrafes = [epigrafe for tema in temas for epigrafe in tema["children"]]
+    assert len(epigrafes) == 134
+    assert all(epigrafe["node_type"] == "epigraph" for epigrafe in epigrafes)
+    assert all(epigrafe["depth"] == 2 for epigrafe in epigrafes)
+    assert [epigrafe["path"] for epigrafe in temas[0]["children"]] == [
+        "I.1.1",
+        "I.1.2",
+        "I.1.3",
+        "I.1.4",
+    ]
+    # `IV.10` va después de `IV.9` y sus epígrafes, en orden numérico: `IV.10.3` antes de `IV.10.4`.
+    iv = body["nodes"][3]
+    assert [tema["path"] for tema in iv["children"]][-2:] == ["IV.9", "IV.10"]
+    tema_iv10 = next(tema for tema in iv["children"] if tema["path"] == "IV.10")
+    assert [epigrafe["path"] for epigrafe in tema_iv10["children"]] == [
+        f"IV.10.{numero}" for numero in range(1, 6)
+    ]
+    # `.NET` entero: la partición no parte el punto que va pegado a la palabra.
+    iii = body["nodes"][2]
+    tema_iii5 = next(tema for tema in iii["children"] if tema["path"] == "III.5")
+    assert tema_iii5["children"][0]["title"] == (
+        "Arquitectura Java EE/Jakarta EE y plataforma.NET: componentes, persistencia y seguridad."
+    )
 
 
 def test_programa_de_guardia_civil_tiene_veinticinco_temas(seeded_client: TestClient) -> None:

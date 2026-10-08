@@ -76,6 +76,19 @@ herramientas responden. Si las políticas de PowerShell bloquean los scripts, us
 Las puertas 17 y 18 necesitan las fuentes oficiales ya descargadas (`fetch-sources.ps1`) y el
 navegador de Playwright (`npx playwright install chromium`).
 
+Tres cosas que ya han costado una corrida entera, dichas donde se buscan:
+
+- **no** las metas en una tubería de PowerShell (`./scripts/gates.ps1 2>&1 | Tee-Object …`): el
+  `stderr` de `uv` se vuelve error terminante y la puerta 11 falla con código −1 sin estar rota. Para
+  guardar el registro, redirige con `Start-Process -RedirectStandardOutput`/`-RedirectStandardError`
+  —los `OK:` van por `Write-Host`— y **nunca** con `>`;
+- la puerta 17 necesita `data/sources/` en **ese** árbol: está ignorado por git, así que un clon
+  nuevo no lo trae y la puerta falla con «faltan fuentes locales» pareciendo un fallo del código
+  (`./scripts/fetch-sources.ps1`);
+- la puerta 18 necesita el puerto **8765 libre**: Playwright no reutiliza un servidor que ya escuche
+  (DEBT-021), así que con una API arrancada la suite aborta. Compruébalo con
+  `Get-NetTCPConnection -State Listen -LocalPort 8765` antes de lanzarlas.
+
 Direcciones por defecto: API en `http://127.0.0.1:8765` (documentación en
 `http://127.0.0.1:8765/api/v1/docs`), web de desarrollo en `http://127.0.0.1:5173`.
 

@@ -438,7 +438,7 @@ def test_la_respuesta_de_programa_cumple_el_esquema(seeded_client: TestClient) -
     body = seeded_client.get(f"/api/v1/convocations/{convocation_id}/curriculum").json()
 
     assert set(body) == {"convocation_id", "convocation_code", "opposition_code", "counts", "nodes"}
-    assert body["counts"] == {"block": 4, "topic": 33, "epigraph": 0}
+    assert body["counts"] == {"block": 4, "topic": 33, "epigraph": 134}
     primer_nodo = body["nodes"][0]
     assert set(primer_nodo) >= {"id", "node_type", "official_code", "title", "path", "depth"}
 

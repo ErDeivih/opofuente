@@ -45,9 +45,9 @@ const VIEWPORTS = [
  * Cambiar de oposición o de convocatoria es una escritura y afecta a toda la aplicación, así que cada
  * prueba deja TAI activo y la convocatoria de Celador como está en el fixture al terminar.
  *
- * El directorio de datos del E2E se **rehace** en cada corrida (`globalSetup` lo borra), así que esto
- * no protege de una corrida a la siguiente: protege a las pruebas que vienen detrás dentro de la
- * misma corrida, cuando una falla a mitad y deja el estado cambiado.
+ * El directorio de datos del E2E se **rehace** en cada corrida (el servidor de la API lo borra antes
+ * de migrarlo), así que esto no protege de una corrida a la siguiente: protege a las pruebas que
+ * vienen detrás dentro de la misma corrida, cuando una falla a mitad y deja el estado cambiado.
  */
 test.afterEach(async ({ request }) => {
   const response = await request.get(`${API}/oppositions`);
@@ -285,7 +285,10 @@ test('S13: abrir un tema enseña su dossier, y guardarlo es un POST de verdad', 
   await page.getByRole('button', { name: /La Constitución Española/ }).click();
 
   // La ficha del tema ya no dice dónde se calcula la cobertura: enseña lo que el corpus dice de él.
-  await expect(page.getByRole('heading', { name: 'El tema' })).toBeVisible();
+  // `exact` es necesario: en Playwright el `name` de un rol casa por subcadena, y «El tema» está
+  // contenido en «Preguntas del tema» (el `<h3>` del panel de dossier), que aparece en cuanto el
+  // dossier termina de leerse. Sin `exact`, la prueba dependía de que la respuesta llegara tarde.
+  await expect(page.getByRole('heading', { name: 'El tema', exact: true })).toBeVisible();
   await expect(page.getByText('I.1', { exact: true })).toBeVisible();
   await expect(page.getByText(/leído el \d{4}-\d{2}-\d{2}/)).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Versiones guardadas' })).toBeVisible();

@@ -2,7 +2,8 @@
 
 Estas pruebas defienden los criterios de aceptación de S01 sobre los datos sembrados:
 
-- TAI tiene exactamente 4 bloques y 33 temas;
+- TAI tiene exactamente 4 bloques, 33 temas y los 134 epígrafes que se derivan del título oficial de
+  cada tema (la convocatoria no los publica como líneas propias);
 - Guardia Civil tiene 25 temas y sus partes escritas configuradas;
 - Celador (SACYL) tiene 16 temas sin bloques y un ejercicio único de 70 preguntas más 7 de reserva;
 - todo dato numérico tiene su cita, y lo que la convocatoria no publica se queda sin valor.
@@ -32,6 +33,7 @@ from opofuente.tools.build_profile_fixtures import (
     content_fingerprint,
     load_manifest,
     refresh_content_hashes,
+    tai_epigraphs,
     verify_sources,
 )
 
@@ -103,12 +105,14 @@ def test_manifiesto_declara_las_fuentes_y_sus_derechos() -> None:
     assert sources["celador-2022-cuestionario-pdf"]["rights_status"] == "unknown"
 
 
-def test_tai_tiene_cuatro_bloques_y_treinta_y_tres_temas(profiles) -> None:
+def test_tai_tiene_cuatro_bloques_treinta_y_tres_temas_y_ciento_treinta_y_cuatro_epigrafes(
+    profiles,
+) -> None:
     curriculum = profiles["tai-age-2025"].curriculum
     assert count_by_type(curriculum) == {
         NodeType.BLOCK: 4,
         NodeType.TOPIC: 33,
-        NodeType.EPIGRAPH: 0,
+        NodeType.EPIGRAPH: 134,
     }
     bloques = list(curriculum)
     assert [node.official_code for node in bloques] == ["I", "II", "III", "IV"]
@@ -117,6 +121,113 @@ def test_tai_tiene_cuatro_bloques_y_treinta_y_tres_temas(profiles) -> None:
         assert posiciones == list(range(1, len(bloque.children) + 1))
         assert all(hijo.node_type is NodeType.TOPIC for hijo in bloque.children)
     assert sum(len(node.children) for node in bloques) == 33
+
+    # Cada tema tiene sus epígrafes, colgando de él, numerados desde 1 y con la ruta del padre.
+    for bloque in bloques:
+        for tema in bloque.children:
+            hijos = list(tema.children)
+            assert hijos, f"el tema {tema.path} no tiene epígrafes"
+            assert all(hijo.node_type is NodeType.EPIGRAPH for hijo in hijos)
+            assert all(hijo.depth == tema.depth + 1 for hijo in hijos)
+            assert [hijo.position for hijo in hijos] == list(range(1, len(hijos) + 1))
+            assert [hijo.path for hijo in hijos] == [
+                f"{tema.path}.{numero}" for numero in range(1, len(hijos) + 1)
+            ]
+            # El código oficial del epígrafe es su ruta: es el que se enseña y el que se cita.
+            assert [hijo.official_code for hijo in hijos] == [hijo.path for hijo in hijos]
+
+
+#: Cuántos epígrafes tiene cada tema de TAI, tal y como los publica el BOE.
+#: Se fija el reparto entero a propósito: si el texto oficial cambia y la partición se mueve, la
+#: prueba lo dice; un recuento global podría seguir cuadrando por casualidad.
+EPIGRAFES_POR_TEMA_TAI = {
+    "I.1": 4,
+    "I.2": 3,
+    "I.3": 3,
+    "I.4": 3,
+    "I.5": 3,
+    "I.6": 4,
+    "I.7": 2,
+    "I.8": 4,
+    "I.9": 2,
+    "II.1": 5,
+    "II.2": 4,
+    "II.3": 4,
+    "II.4": 5,
+    "II.5": 1,
+    "III.1": 6,
+    "III.2": 8,
+    "III.3": 4,
+    "III.4": 4,
+    "III.5": 3,
+    "III.6": 2,
+    "III.7": 5,
+    "III.8": 4,
+    "III.9": 6,
+    "IV.1": 2,
+    "IV.2": 5,
+    "IV.3": 2,
+    "IV.4": 4,
+    "IV.5": 9,
+    "IV.6": 7,
+    "IV.7": 2,
+    "IV.8": 4,
+    "IV.9": 5,
+    "IV.10": 5,
+}
+
+
+def test_tai_reparte_sus_epigrafes_por_tema(profiles) -> None:
+    curriculum = profiles["tai-age-2025"].curriculum
+    reparto = {tema.path: len(tema.children) for bloque in curriculum for tema in bloque.children}
+    assert reparto == EPIGRAFES_POR_TEMA_TAI
+    assert sum(reparto.values()) == 134
+
+
+def test_los_epigrafes_de_tai_reconstruyen_el_titulo_oficial_de_su_tema(profiles) -> None:
+    """Los epígrafes salen del título oficial, no de una lista escrita a mano.
+
+    La convocatoria publica cada tema como un solo párrafo con los enunciados separados por puntos.
+    El corte conserva el punto, así que unir los epígrafes con un espacio devuelve el título oficial
+    carácter a carácter: si alguien escribiera un epígrafe a mano, esta prueba lo caza.
+    """
+    curriculum = profiles["tai-age-2025"].curriculum
+    for bloque in curriculum:
+        for tema in bloque.children:
+            assert " ".join(hijo.title for hijo in tema.children) == tema.title
+
+
+def test_la_particion_no_rompe_el_punto_de_plataforma_net(profiles) -> None:
+    """El caso que el propietario señaló al revisar la partición: «plataforma.NET» no se parte.
+
+    El corte es «punto seguido de espacio»; el punto de `.NET` va pegado a la palabra, así que no
+    corta. Si alguien cambiara la regla por «cualquier punto», este tema daría cuatro epígrafes y
+    uno de ellos empezaría por «NET».
+    """
+    curriculum = profiles["tai-age-2025"].curriculum
+    bloque_iii = next(bloque for bloque in curriculum if bloque.official_code == "III")
+    tema = next(tema for tema in bloque_iii.children if tema.path == "III.5")
+    assert [hijo.title for hijo in tema.children] == [
+        "Arquitectura Java EE/Jakarta EE y plataforma.NET: componentes, persistencia y seguridad.",
+        "Características, elementos, lenguajes y funciones en ambos entornos.",
+        "Desarrollo de interfaces.",
+    ]
+    titulos = [
+        hijo.title for bloque in curriculum for tema in bloque.children for hijo in tema.children
+    ]
+    assert not [titulo for titulo in titulos if titulo.startswith("NET")]
+
+
+def test_la_derivacion_de_epigrafes_corta_por_enunciados_y_no_por_cualquier_punto() -> None:
+    """La regla de corte, sola: la que usa el constructor para los 134 epígrafes de TAI."""
+    assert tai_epigraphs("Plataforma.NET: componentes. Desarrollo de interfaces.") == [
+        "Plataforma.NET: componentes.",
+        "Desarrollo de interfaces.",
+    ]
+    # Un epígrafe corto es un epígrafe: «Algoritmos.» es así en el título oficial.
+    assert tai_epigraphs("Algoritmos.") == ["Algoritmos."]
+    # Un título sin puntos no se queda sin epígrafes.
+    assert tai_epigraphs("Redes locales") == ["Redes locales"]
 
 
 def test_guardia_civil_tiene_veinticinco_temas_con_bloques_y_epigrafes(profiles) -> None:

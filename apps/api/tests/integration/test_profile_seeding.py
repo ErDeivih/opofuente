@@ -59,7 +59,7 @@ def test_recuentos_sembrados_coinciden_con_los_fixtures(
     seeded_settings: Settings, session_factory
 ) -> None:
     esperados = {
-        "tai-age-2025": {NodeType.BLOCK: 4, NodeType.TOPIC: 33, NodeType.EPIGRAPH: 0},
+        "tai-age-2025": {NodeType.BLOCK: 4, NodeType.TOPIC: 33, NodeType.EPIGRAPH: 134},
         "gc-cabos-guardias-2026": {NodeType.TOPIC: 25},
         "celador-sacyl-2022": {NodeType.BLOCK: 0, NodeType.TOPIC: 16, NodeType.EPIGRAPH: 0},
         # Dos convocatorias de la misma oposición, cada una con su programa sembrado.
@@ -285,7 +285,7 @@ def test_borrar_una_convocatoria_arrastra_su_contenido_pero_no_la_oposicion(
         ).scalar_one()
         convocation_id = convocation.id
 
-        assert _count(session, CurriculumNodeRecord, convocation_id) == 37
+        assert _count(session, CurriculumNodeRecord, convocation_id) == 171
         assert _count(session, ExamPartRecord, convocation_id) == 3
         assert _count(session, ExamRuleRecord, convocation_id) == 8
 
@@ -347,7 +347,61 @@ def test_las_rutas_del_programa_sembrado_son_unicas_en_su_convocatoria(
     assert len(por_convocatoria) == 4
     for convocation_id, paths in por_convocatoria.items():
         assert len(paths) == len(set(paths)), f"rutas repetidas en {convocation_id}"
-    assert len(rows) == 37 + 198 + 16 + 16
+    # TAI (4 + 33 + 134), Guardia Civil (48 + 25 + 125) y los 16 y 16 temas de las dos de Celador.
+    assert len(rows) == 171 + 198 + 16 + 16
+
+
+def test_tai_siembra_sus_epigrafes_en_orden_numerico(
+    seeded_settings: Settings, session_factory
+) -> None:
+    """Los 134 epígrafes de TAI llegan a la base como hijos de su tema y en el orden del programa.
+
+    El orden lo decide `curriculum_order` en SQL, por el número de cada segmento de la ruta: `IV.10`
+    va detrás de `IV.9` (no de `IV.1`, que es lo que saldría ordenando el texto) y `IV.10.4` detrás
+    de `IV.10.3`. Se comprueba contra la base sembrada, que es donde el orden importa.
+    """
+    with session_factory() as session:
+        convocatoria = session.execute(
+            select(ConvocationVersionRecord).where(ConvocationVersionRecord.code == "tai-age-2025")
+        ).scalar_one()
+        convocation_id = convocatoria.id
+
+    repositorio = SqlAlchemyProfileRepository(session_factory)
+    vista = repositorio.get_curriculum(convocation_id)
+    assert vista is not None
+    assert vista.counts["epigraph"] == 134
+    assert [bloque.path for bloque in vista.nodes] == ["I", "II", "III", "IV"]
+
+    iv = next(bloque for bloque in vista.nodes if bloque.path == "IV")
+    assert [tema.path for tema in iv.children][-2:] == ["IV.9", "IV.10"]
+    tema_iv10 = next(tema for tema in iv.children if tema.path == "IV.10")
+    assert [epigrafe.path for epigrafe in tema_iv10.children] == [
+        f"IV.10.{numero}" for numero in range(1, 6)
+    ]
+    assert [epigrafe.position for epigrafe in tema_iv10.children] == [1, 2, 3, 4, 5]
+
+    # Cada tema con sus epígrafes, en orden y sin que se pierda ninguno.
+    for bloque in vista.nodes:
+        for tema in bloque.children:
+            assert tema.children, f"el tema {tema.path} no tiene epígrafes"
+            assert [epigrafe.path for epigrafe in tema.children] == [
+                f"{tema.path}.{numero}" for numero in range(1, len(tema.children) + 1)
+            ]
+    assert sum(len(tema.children) for bloque in vista.nodes for tema in bloque.children) == 134
+
+    # `.NET` no se ha partido: el punto va pegado a la palabra, así que no cierra enunciado.
+    iii = next(bloque for bloque in vista.nodes if bloque.path == "III")
+    tema_iii5 = next(tema for tema in iii.children if tema.path == "III.5")
+    assert tema_iii5.children[0].title == (
+        "Arquitectura Java EE/Jakarta EE y plataforma.NET: componentes, persistencia y seguridad."
+    )
+    titulos = [
+        epigrafe.title
+        for bloque in vista.nodes
+        for tema in bloque.children
+        for epigrafe in tema.children
+    ]
+    assert not [titulo for titulo in titulos if titulo.startswith("NET")]
 
 
 def test_un_nodo_con_material_asignado_no_se_retira_al_sembrar(
