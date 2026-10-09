@@ -57,9 +57,11 @@ import {
   fetchVersionMappings,
   fetchVersions,
   markSupersedes,
+  promoteArtifact,
   removeFromCollection,
   removeMapping,
   type CoverageType,
+  type PromoteArtifactInput,
   type SubjectType,
 } from './library';
 import {
@@ -843,6 +845,72 @@ export function useAcceptVersion() {
   });
 }
 
+export interface PromoteArtifactsInput {
+  artifacts: PromoteArtifactInput[];
+  /** Se llama después de cada artefacto: la pantalla puede decir por dónde va sin adivinar. */
+  onProgress?: (hechos: number, total: number) => void;
+}
+
+export interface PromoteArtifactsResult {
+  /** Artefactos que han creado documento o versión nueva. */
+  creados: number;
+  /** Artefactos que ya eran versión de un documento y se han dejado como estaban. */
+  yaEstaban: number;
+  /** Artefactos que no se han podido promocionar, con el motivo que ha dado el servidor. */
+  fallos: { artifactId: string; motivo: string }[];
+  /** Documentos tocados, para poder enlazarlos y aceptarlos después. */
+  documentos: string[];
+}
+
+/**
+ * Pasa a la biblioteca **en lote** los artefactos elegidos, uno detrás de otro.
+ *
+ * En serie y no en paralelo, a propósito: la API es la de este equipo, y un fallo tiene que poder
+ * atribuirse a **un** artefacto concreto (con su motivo) en vez de a una tanda entera. Además la
+ * promoción es idempotente, así que volver a lanzar lo que falló no duplica nada.
+ *
+ * No acepta nada: solo trae el material a la biblioteca en estado candidato. Lo que cuenta para
+ * estudiar lo decide una persona, versión a versión (ADR-009).
+ */
+export function usePromoteArtifacts() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: PromoteArtifactsInput): Promise<PromoteArtifactsResult> => {
+      const resultado: PromoteArtifactsResult = {
+        creados: 0,
+        yaEstaban: 0,
+        fallos: [],
+        documentos: [],
+      };
+      let hechos = 0;
+      for (const artifact of input.artifacts) {
+        try {
+          const salida = await promoteArtifact(artifact);
+          if (salida.created_document || salida.created_version) {
+            resultado.creados += 1;
+          } else {
+            resultado.yaEstaban += 1;
+          }
+          if (salida.document_id !== null && salida.document_id !== undefined) {
+            resultado.documentos.push(salida.document_id);
+          }
+        } catch (error) {
+          resultado.fallos.push({
+            artifactId: artifact.artifactId,
+            motivo: error instanceof Error ? error.message : 'Error desconocido',
+          });
+        }
+        hechos += 1;
+        input.onProgress?.(hechos, input.artifacts.length);
+      }
+      return resultado;
+    },
+    onSuccess: () => {
+      invalidateLibrary(queryClient);
+    },
+  });
+}
+
 export interface MarkSupersedesInput {
   documentId: string;
   versionId: string;
@@ -1135,6 +1203,7 @@ export function useStudySessions(oppositionId: string | null) {
     queryFn: () => fetchSessions(oppositionId),
   });
 }
+
 
 export function useStudySession(sessionId: string | null) {
   return useQuery({

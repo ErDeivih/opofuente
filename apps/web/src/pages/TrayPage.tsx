@@ -22,6 +22,7 @@ import { ErrorState } from '../components/ErrorState';
 import { LoadingState } from '../components/LoadingState';
 import { StatusBadge } from '../components/StatusBadge';
 import { IntakeActions } from '../features/ingestion/IntakeActions';
+import { PromotePanel } from '../features/ingestion/PromotePanel';
 import {
   BATCH_STATUS_TONE,
   ITEM_STATUS,
@@ -433,6 +434,16 @@ export function TrayPage() {
           {representations.isSuccess && (
             <TextViewer representations={representations.data} />
           )}
+        </section>
+      )}
+
+      {/* El paso que faltaba entre la bandeja y la biblioteca (07_UI-UX §4 y §6): hasta ahora se
+          podía copiar y clasificar material, y la biblioteca seguía vacía porque promocionar
+          —que es lo que la llena— solo existía en la API. */}
+      {batchId !== null && (
+        <section className="card" aria-labelledby="a-la-biblioteca">
+          <h2 id="a-la-biblioteca">Pasar a la biblioteca</h2>
+          <PromotePanel batchId={batchId} />
         </section>
       )}
 
