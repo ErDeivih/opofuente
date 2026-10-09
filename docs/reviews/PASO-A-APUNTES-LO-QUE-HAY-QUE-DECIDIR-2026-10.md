@@ -44,10 +44,18 @@ Las 440 de diferencia son exactamente las de la reimportación de los exámenes 
 
 ## 4. Hallazgo 1: el epígrafe no existe para TAI
 
-`curriculum_nodes` tiene **125 nodos de tipo epígrafe y los 125 son de Celador**. La convocatoria de TAI
+`curriculum_nodes` tiene **125 nodos de tipo epígrafe y los 125 son de Guardia Civil**
+(`gc-cabos-guardias-2026`; comprobado contra la base y contra el fixture). **Celador tiene cero y TAI
+tiene cero.** La convocatoria de TAI
 tiene 4 bloques y 33 temas, y **cero epígrafes**; los mapeos de pregunta no guardan `epigraph_index`. El
 paso A.3 del plan **no se puede ejecutar tal cual**: hay que crear los epígrafes. Ya están derivados del
 título oficial (que los separa por puntos): **134 epígrafes** para los 33 temas.
+
+> **Corrección (7-oct-2026, ronda 43).** Este apartado decía que los 125 epígrafes eran «de Celador».
+> Era falso: lo copié del informe del trabajo de apuntes sin comprobarlo contra la base, y el agente que
+> está creando los 134 lo cazó. Los 125 son de Guardia Civil. La conclusión del apartado no cambia —TAI
+> no tiene ninguno y hay que crearlos—, pero queda dicho de dónde salió el error: **una cifra que va a un
+> documento se comprueba contra los datos, no se hereda del informe de otro.**
 
 ## 5. Hallazgo 2: cerca de un cuarto del banco no es del programa
 
