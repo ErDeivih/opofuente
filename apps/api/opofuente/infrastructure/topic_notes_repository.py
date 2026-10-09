@@ -47,6 +47,7 @@ from opofuente.domain.topic_notes import (
 from opofuente.infrastructure.db_models import (
     AnswerKeyEntryRecord,
     AnswerKeyVersionRecord,
+    AuditEventRecord,
     CurriculumMappingRecord,
     CurriculumNodeRecord,
     OptionVersionRecord,
@@ -671,6 +672,64 @@ class SqlAlchemyTopicNotesRepository:
                 delete(TopicFactRecord).where(TopicFactRecord.curriculum_node_id == node_id)
             )
             session.commit()
+
+    def forget_facts(
+        self,
+        node_id: str,
+        fact_ids: Sequence[str],
+        *,
+        actor: str,
+        reason: str,
+        now: datetime,
+    ) -> int:
+        """Tira los hechos indicados del tema y escribe un evento de auditoría por cada uno.
+
+        Un hecho cuyo tema ya no es el suyo no se queda: sostendría un apartado del que no es y
+        volvería a escribirse. Se borra por identificador (nunca por consulta a ciegas) y el evento
+        dice **cuál**, **quién** y **por qué**, con el texto delante: la auditoría de una pérdida de
+        trabajo tiene que poder leerse sin la base.
+        """
+        if not fact_ids:
+            return 0
+        borrados = 0
+        with self._session_factory() as session:
+            for tanda in _tandas(list(fact_ids)):
+                filas = (
+                    session.execute(
+                        select(TopicFactRecord).where(
+                            TopicFactRecord.curriculum_node_id == node_id,
+                            TopicFactRecord.id.in_(tanda),
+                        )
+                    )
+                    .scalars()
+                    .all()
+                )
+                for fila in filas:
+                    session.add(
+                        AuditEventRecord(
+                            id=str(uuid4()),
+                            actor=actor,
+                            action="topic_fact.forgotten",
+                            object_type="topic_fact",
+                            object_id=str(fila.id),
+                            before_json=json.dumps(
+                                {
+                                    "curriculum_node_id": str(fila.curriculum_node_id),
+                                    "text": str(fila.text),
+                                    "epigraph_code": str(fila.epigraph_code),
+                                    "source_group_ids": json.loads(str(fila.source_group_ids)),
+                                },
+                                ensure_ascii=False,
+                            ),
+                            after_json=json.dumps({"reason": reason}, ensure_ascii=False),
+                            correlation_id=None,
+                            created_at=now,
+                        )
+                    )
+                    session.delete(fila)
+                    borrados += 1
+            session.commit()
+        return borrados
 
 
 def huella_de_hecho(texto: str) -> str:

@@ -32,6 +32,7 @@ from opofuente.config import Settings, get_settings
 from opofuente.domain.errors import ExternalServiceError
 from opofuente.domain.notes_quality import (
     PARRAFOS_REPETIDOS,
+    marcas_internas,
 )
 from opofuente.domain.rag import normalise
 from opofuente.domain.topic_notes import (
@@ -348,14 +349,19 @@ def test_los_apuntes_se_escriben_y_se_comprueban_pregunta_a_pregunta(
     assert len(hechos) == 2
     assert all(hecho.source_groups and hecho.source_questions for hecho in hechos)
 
-    # Un apartado con texto, con su anclaje y con los hechos dentro.
+    # Un apartado por **materia** (el índice aprobado), con texto, con su anclaje y con sus hechos:
+    # la pregunta del modelo OSI va a su apartado y la del vocabulario al suyo, no las dos al mismo.
     apartados = repositorio.sections(informe.node_id)
-    assert len(apartados) == 1
-    assert apartados[0].anchor.startswith("iv-7")
-    assert "siete capas" in apartados[0].body_markdown
-    assert len(apartados[0].facts) == 2
+    assert [apartado.key for apartado in apartados] == ["osi-capas", "conceptos-del-modelo"]
+    assert sum(len(apartado.facts) for apartado in apartados) == 2
+    assert all(apartado.body_markdown for apartado in apartados)
+    assert any("siete capas" in apartado.body_markdown for apartado in apartados)
+    todo_el_texto = "\n\n".join(apartado.body_markdown for apartado in apartados)
 
     # Y el rastro pregunta a pregunta: cada una apunta a su párrafo con la frase que lo justifica.
+    # La cita se copia de los apuntes del **epígrafe** (el modelo los ve juntos: la comprobación va
+    # por epígrafe y todos sus apartados son el texto), así que lo que se exige es que la frase esté
+    # en los apuntes, que es lo que se verifica de verdad.
     comprobadas = {
         comprobada.question_version_id: comprobada
         for comprobada in repositorio.checks(informe.node_id)
@@ -365,7 +371,7 @@ def test_los_apuntes_se_escriben_y_se_comprueban_pregunta_a_pregunta(
         assert comprobada.coverage.value == "covered"
         assert comprobada.key_status is KeyStatus.ACTIVE
         assert comprobada.quote is not None
-        assert comprobada.quote in apartados[0].body_markdown, "la cita se copió de los apuntes"
+        assert comprobada.quote in todo_el_texto, "la cita se copió de los apuntes"
 
 
 def test_volver_a_ejecutar_no_vuelve_a_pedir_lo_que_ya_esta(
@@ -447,30 +453,57 @@ def test_una_clave_señalada_por_el_paso_b_se_cuenta_como_incidencia_de_la_pregu
 def test_si_el_esquema_se_mueve_los_apartados_viejos_no_se_quedan(
     seeded_settings: Settings, seeded_client: TestClient
 ) -> None:
-    """Cuando entran hechos que mueven los trozos, el tema se rehace: un solo texto por subapartado.
+    """Cuando un apartado guardado ya no está en el plan, el tema se rehace: un texto por apartado.
 
-    Sin esto, el tema acabaría con el apartado del ensayo parcial **y** los del plan nuevo: el mismo
-    contenido dos veces y la comprobación mirando los dos.
+    Con el **índice aprobado** las claves de los apartados son las de sus materias, así que no se
+    mueven al entrar hechos nuevos: el plan crece y los textos que ya estaban se conservan. Lo que
+    sí deja apartados fuera del plan es un **cambio de catálogo** (una materia que se parte o
+    desaparece), y eso se prueba aquí plantando el apartado viejo a mano: es lo que dejó la corrida
+    anterior de este tema (26 apartados con claves `iv-7-1-1…`).
+
+    Sin esto, el tema acabaría con los apartados viejos **y** los del plan nuevo: el mismo contenido
+    dos veces y la comprobación mirando los dos.
     """
     repositorio, _preguntas_del_tema, node_id = _escenario(
         seeded_client, titulo="Apuntes con el esquema movido"
     )
-    # Un ensayo con un solo grupo: crea el apartado `iv-7-1` (un trozo, con su texto).
-    _servicio(seeded_client, _ModeloFalso(hechos_por_grupo=20)).run(
-        "IV.7", now=SystemClock().now(), limite_grupos=1
+    # Un apartado de una corrida con otro esquema: su clave no está en el plan del índice.
+    repositorio.save_sections(
+        node_id,
+        [
+            NoteSection(
+                key="iv-7-1-1",
+                epigraph_code="IV.7.1",
+                title="Modelo OSI y modelo TCP/IP: capas y protocolos",
+                anchor="iv-7-1-1",
+                position=1,
+                facts=(),
+            )
+        ],
+        now=SystemClock().now(),
     )
-    assert [apartado.key for apartado in repositorio.sections(node_id)] == ["iv-7-1"]
-    assert repositorio.sections(node_id)[0].body_markdown
+    repositorio.save_section_body(
+        repositorio.sections(node_id)[0],
+        title=None,
+        body="## Uno\n\nTexto de la corrida anterior que ya no vale para este plan.",
+        needs_review_reason=None,
+        model="falso",
+        now=SystemClock().now(),
+    )
+    assert [apartado.key for apartado in repositorio.sections(node_id)] == ["iv-7-1-1"]
 
-    # Ahora el otro grupo, con hechos de sobra: el epígrafe pasa de 20 a 45 hechos y se parte en
-    # trozos, así que la clave del apartado que había deja de existir.
-    informe = _servicio(seeded_client, _ModeloFalso(hechos_por_grupo=25)).run(
+    # La corrida con el plan del índice: el apartado viejo sobra y se rehace todo.
+    informe = _servicio(seeded_client, _ModeloFalso(hechos_por_grupo=2)).run(
         "IV.7", now=SystemClock().now()
     )
 
     claves = [apartado.key for apartado in repositorio.sections(node_id)]
-    assert claves == ["iv-7-1-1", "iv-7-1-2"], "solo quedan los apartados del plan nuevo"
+    assert claves == ["osi-capas", "conceptos-del-modelo"], "solo quedan los del plan del índice"
     assert "el esquema se movió" in informe.notes
+    assert all(
+        "corrida anterior" not in apartado.body_markdown
+        for apartado in repositorio.sections(node_id)
+    )
     assert all(comprobada.coverage.value == "covered" for comprobada in repositorio.checks(node_id))
 
 
@@ -481,18 +514,19 @@ def test_cada_pregunta_apunta_al_apartado_que_tiene_sus_hechos(
 
     Es el fallo que tuvo esta pieza: al comprobar se usaban los hechos del paso B, que todavía no
     sabían a qué apartado pertenecían, y todas las preguntas de un epígrafe acababan apuntando a su
-    primer apartado. Con cuarenta hechos por grupo y un grupo por llamada, cada grupo llena un
-    apartado distinto: si el enlace estuviera mal, los dos apuntarían al primero.
+    primer apartado. Con el índice aprobado cada pregunta va a la materia de su enunciado, así que
+    las dos de este escenario acaban en apartados distintos: si el enlace estuviera mal, las dos
+    apuntarían al mismo.
     """
     repositorio, _preguntas_del_tema, node_id = _escenario(
         seeded_client, titulo="Apuntes con dos apartados en un epígrafe"
     )
-    informe = _servicio(seeded_client, _ModeloFalso(hechos_por_grupo=40), lote_hechos=1).run(
+    informe = _servicio(seeded_client, _ModeloFalso(hechos_por_grupo=3), lote_hechos=1).run(
         "IV.7", now=SystemClock().now()
     )
 
     apartados = repositorio.sections(node_id)
-    assert [apartado.key for apartado in apartados] == ["iv-7-1-1", "iv-7-1-2"]
+    assert [apartado.key for apartado in apartados] == ["osi-capas", "conceptos-del-modelo"]
     por_firma = {
         firma: hecho.section_key
         for hecho in repositorio.facts(node_id)
@@ -535,16 +569,22 @@ def test_una_letra_distinta_de_la_clave_es_un_conflicto_y_no_una_pregunta_cubier
     assert all(comprobada.note is Motivo.LETRA_NO_COINCIDE for comprobada in comprobadas)
     assert all(comprobada.attempts == 2 for comprobada in comprobadas), "se le da la vuelta"
 
-    # Y el tema lo cuenta donde se lee: cubiertas 0, en conflicto 2, con sus preguntas.
+    # Y el tema lo cuenta donde se lee: cubiertas 0, en conflicto 2, con sus preguntas repartidas
+    # entre los dos apartados del índice que les tocan.
     dossier = seeded_client.get(f"/api/v1/curriculum-nodes/{node_id}/dossier").json()
     assert dossier["notes"]["covered"] == 0
     assert dossier["notes"]["conflicts"] == 2
     assert dossier["notes"]["questions_total"] == 2
-    apartado = dossier["notes"]["sections"][0]
-    assert apartado["conflicts"] == 2
-    assert sorted(apartado["conflict_question_ids"]) == sorted(
-        pregunta["id"] for pregunta in preguntas
+    assert [apartado["key"] for apartado in dossier["notes"]["sections"]] == [
+        "osi-capas",
+        "conceptos-del-modelo",
+    ]
+    en_conflicto = sorted(
+        identificador
+        for apartado in dossier["notes"]["sections"]
+        for identificador in apartado["conflict_question_ids"]
     )
+    assert en_conflicto == sorted(pregunta["id"] for pregunta in preguntas)
 
 
 def test_con_la_clave_activa_una_letra_distinta_tambien_es_conflicto(
@@ -591,7 +631,13 @@ def test_un_tema_con_marcas_internas_y_encabezados_repetidos_no_se_da_por_bueno(
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """El comando con `--exigir-calidad` no archiva un tema que no pasa: no se da por bueno."""
+    """El comando con `--exigir-calidad` no archiva un tema que no pasa: no se da por bueno.
+
+    El doble escribe **dos** defectos: las marcas internas del encargo (`[fact N]`) y el apartado
+    titulándose dos veces. Las marcas ya no llegan al texto —se quitan al guardar
+    (`limpiar_andamios`)—, así que lo que decide es el encabezado repetido; y se comprueba también
+    que las marcas no están, que es la mitad del arreglo.
+    """
     _repositorio, _preguntas_del_tema, node_id = _escenario(
         seeded_client, titulo="Apuntes con la forma rota"
     )
@@ -608,8 +654,13 @@ def test_un_tema_con_marcas_internas_y_encabezados_repetidos_no_se_da_por_bueno(
 
     salida = capsys.readouterr()
     assert codigo == 3, "un tema que no pasa las comprobaciones no se da por bueno"
-    assert "marca(s) interna(s)" in salida.out
     assert "encabezado(s) repetidos" in salida.out
+    assert "marca(s) interna(s)" not in salida.out, "las marcas del encargo no llegan al texto"
+    escritos = SqlAlchemyTopicNotesRepository(seeded_client.app.state.session_factory).sections(
+        node_id
+    )
+    assert all(marcas_internas(apartado.body_markdown) == () for apartado in escritos)
+    assert all("fact " not in apartado.body_markdown for apartado in escritos)
     versiones = seeded_client.get(f"/api/v1/curriculum-nodes/{node_id}/dossier/versions").json()
     assert versiones == [], "no se archiva la versión de un tema que no pasa"
 
@@ -695,11 +746,13 @@ def test_los_apuntes_van_dentro_de_la_version_del_tema(
     dossier = seeded_client.get(f"/api/v1/curriculum-nodes/{node_id}/dossier").json()
     assert dossier["notes"] is not None
     assert dossier["notes"]["covered"] == 2
-    assert dossier["notes"]["sections_total"] == 1
+    assert dossier["notes"]["sections_total"] == 2
     assert dossier["notes"]["prompt_template_version"]
-    apartado = dossier["notes"]["sections"][0]
-    assert apartado["anchor"] == repositorio.sections(node_id)[0].anchor
-    assert len(apartado["question_ids"]) == 2
+    apartados = dossier["notes"]["sections"]
+    assert [apartado["anchor"] for apartado in apartados] == [
+        apartado.key for apartado in repositorio.sections(node_id)
+    ]
+    assert sum(len(apartado["question_ids"]) for apartado in apartados) == 2
 
     archivado = seeded_client.post(f"/api/v1/curriculum-nodes/{node_id}/dossier/versions")
     assert archivado.status_code == 201, archivado.text
@@ -710,7 +763,9 @@ def test_los_apuntes_van_dentro_de_la_version_del_tema(
         f"/api/v1/curriculum-nodes/{node_id}/dossier/versions/{version_id}"
     ).json()
     assert guardada["notes"]["covered"] == 2
-    assert "siete capas" in guardada["notes"]["sections"][0]["body_markdown"]
+    assert any(
+        "siete capas" in apartado["body_markdown"] for apartado in guardada["notes"]["sections"]
+    )
 
     # La versión guardada se lee **como se leyó**: reescribir el apartado después no la cambia.
     apartado_actual = repositorio.sections(node_id)[0]
@@ -726,8 +781,14 @@ def test_los_apuntes_van_dentro_de_la_version_del_tema(
     otra_vez = seeded_client.get(
         f"/api/v1/curriculum-nodes/{node_id}/dossier/versions/{version_id}"
     ).json()
-    assert "siete capas" in otra_vez["notes"]["sections"][0]["body_markdown"]
-    assert "Otra cosa" not in otra_vez["notes"]["sections"][0]["body_markdown"]
+    guardados = {
+        apartado["anchor"]: apartado["body_markdown"] for apartado in guardada["notes"]["sections"]
+    }
+    releidos = {
+        apartado["anchor"]: apartado["body_markdown"] for apartado in otra_vez["notes"]["sections"]
+    }
+    assert releidos == guardados
+    assert "Otra cosa" not in releidos[apartado_actual.anchor]
 
 
 def test_el_comando_guarda_la_version_al_terminar(

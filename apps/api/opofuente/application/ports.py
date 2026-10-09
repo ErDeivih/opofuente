@@ -698,6 +698,24 @@ class TopicNotesRepository(TopicNotesReader, Protocol):
         resultado."""
         ...
 
+    def forget_facts(
+        self,
+        node_id: str,
+        fact_ids: Sequence[str],
+        *,
+        actor: str,
+        reason: str,
+        now: datetime,
+    ) -> int:
+        """Tira unos hechos del tema y lo deja auditado. Devuelve cuántos ha tirado.
+
+        Es para lo que se va del tema: los hechos de una pregunta **mal clasificada**, que se lleva
+        la cola de clasificación. Dejarlos aquí sería sostener un apartado del que ya no son, y el
+        propietario lo pidió así: «sus datos se van con ellas». Se borran uno a uno (no por lote a
+        ciegas) y queda el evento con quién lo hizo y por qué.
+        """
+        ...
+
 
 #: El actor con el que se firma lo que escribe la máquina en los apuntes.
 ACTOR_APUNTES = "llm:deepseek-flash"

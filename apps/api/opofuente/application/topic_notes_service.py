@@ -51,7 +51,8 @@ from opofuente.domain.errors import (
     OpoFuenteError,
     UnsupportedError,
 )
-from opofuente.domain.notes_quality import revisar_apuntes
+from opofuente.domain.notes_quality import limpiar_andamios, revisar_apuntes
+from opofuente.domain.topic_index import IndiceDelTema, catalogo, indice_de, plan_de
 from opofuente.domain.topic_notes import (
     LOTE_COMPROBACION,
     LOTE_HECHOS,
@@ -225,6 +226,16 @@ class TopicNotesService:
         """El esquema del tema. Se recalcula entero: es determinista y el texto ya escrito se
         conserva.
 
+        Si el tema tiene **catálogo de materias**, el esquema es su **índice aprobado** (paso C del
+        plan, revisado por el propietario): un apartado por materia, en el orden en que se
+        estudia, y
+        los hechos repetidos agrupados en uno solo con la unión de sus preguntas. Si no lo tiene, se
+        cae al esquema por epígrafes en trozos de cuarenta, que es lo que había.
+
+        Un hecho sin apartado **para la corrida**: sin cajones de revisión, un hecho que no es de
+        ninguna materia del tema es una pregunta mal clasificada, y escribir apuntes alrededor sería
+        taparlo. Se dice cuántos son y se sale.
+
         Volver a calcularlo es lo que permite que un hecho nuevo (de una pregunta clasificada
         después) encuentre su sitio sin tocar los apartados que ya estaban: los que existían
         conservan su texto porque su clave no cambia.
@@ -234,7 +245,15 @@ class TopicNotesService:
         mismo contenido y comprobar contra los dos. Rehacerlo cuesta volver a comprobar, y es lo
         correcto: el tema queda con **un solo** texto por subapartado.
         """
-        planes = esquema(nodo.epigraphs, hechos)
+        planes, indice = self._plan_del_tema(nodo, hechos)
+        if indice is not None and (indice.sin_materia or indice.grupos_sin_materia):
+            raise UnsupportedError(
+                f"el tema «{nodo.code}» tiene {len(indice.sin_materia)} hecho(s) y "
+                f"{len(indice.grupos_sin_materia)} grupo(s) de preguntas que no son de ninguna de "
+                "sus materias: son preguntas mal clasificadas, y sin cajones de revisión hay que "
+                "resolverlas en la cola de clasificación antes de escribir los apuntes. "
+                "`--esquema` las enseña con su texto"
+            )
         informe.sections = self._informe_apartados(planes)
         if dry_run:
             return list(planes)
@@ -247,6 +266,21 @@ class TopicNotesService:
             )
             self._repository.forget_sections(nodo.node_id)
         return list(self._repository.save_sections(nodo.node_id, planes, now=now))
+
+    def _plan_del_tema(
+        self, nodo: NotesNode, hechos: Sequence[Hecho]
+    ) -> tuple[tuple[NoteSection, ...], IndiceDelTema | None]:
+        """El plan de redacción: el índice aprobado si el tema lo tiene, y si no el de epígrafes."""
+        if catalogo(nodo.code) is None:
+            return esquema(nodo.epigraphs, hechos), None
+        indice = indice_de(
+            topic_code=nodo.code,
+            topic_title=nodo.title,
+            epigraphs=nodo.epigraphs,
+            hechos=hechos,
+            grupos=self._repository.question_groups(nodo.node_id),
+        )
+        return plan_de(indice), indice
 
     # ------------------------------------------------------------------ paso D: la redacción
 
@@ -296,7 +330,9 @@ class TopicNotesService:
                 self._repository.save_section_body(
                     apartado,
                     title=resultado.titulo,
-                    body=resultado.markdown,
+                    # El redactor numera los hechos que recibe y a veces cita ese número dentro del
+                    # texto: es andamio, no apuntes, y se quita antes de guardar.
+                    body=limpiar_andamios(resultado.markdown),
                     needs_review_reason=motivo,
                     model=self._model.version,
                     now=now,
@@ -514,7 +550,7 @@ class TopicNotesService:
             seccion = self._repository.save_section_body(
                 seccion,
                 title=None,
-                body=anadido.markdown,
+                body=limpiar_andamios(anadido.markdown),
                 needs_review_reason=seccion.needs_review_reason,
                 model=self._model.version,
                 now=now,

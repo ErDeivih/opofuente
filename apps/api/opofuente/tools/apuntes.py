@@ -40,6 +40,7 @@ from opofuente.application.topic_notes_models import TopicNotesReport
 from opofuente.application.topic_notes_service import TopicNotesService
 from opofuente.config import Settings, get_settings
 from opofuente.domain.errors import OpoFuenteError
+from opofuente.domain.notes_quality import limpiar_andamios, marcas_internas
 from opofuente.domain.topic_index import catalogo, indice_de
 from opofuente.infrastructure.clock import SystemClock
 from opofuente.infrastructure.db import build_engine, build_session_factory
@@ -100,6 +101,16 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
             "no da el tema por bueno si no pasa las comprobaciones de forma (encabezados "
             "repetidos, marcas internas, tablas sin cabecera, párrafos repetidos y extensión): no "
             "archiva la versión y sale con código 3"
+        ),
+    )
+    parser.add_argument(
+        "--limpiar-andamios",
+        dest="limpiar_andamios",
+        action="store_true",
+        help=(
+            "quita del texto ya escrito las marcas internas que el redactor copió de su encargo "
+            "(`[Hecho 3]` y compañía) y no llama a nadie: es una limpieza, no una redacción. No se "
+            "archiva versión"
         ),
     )
     parser.add_argument(
@@ -172,6 +183,12 @@ def main(argv: Sequence[str] | None = None) -> int:
             # El esquema antes de redactar: tampoco llama a nadie ni necesita clave.
             for tema in temas:
                 print("\n".join(_esquema(notas, tema)))
+                print()
+            return 0
+        if args.limpiar_andamios:
+            # Limpieza del texto ya escrito: no llama a nadie y no archiva versión.
+            for tema in temas:
+                print("\n".join(_limpiar_andamios(notas, tema)))
                 print()
             return 0
 
@@ -270,6 +287,42 @@ def _esquema(notas: SqlAlchemyTopicNotesRepository, code: str) -> tuple[str, ...
     except (KeyError, ValueError) as error:
         return (f"[{code}] el catálogo de materias no cuadra con el temario: {error}",)
     return indice.lines()
+
+
+def _limpiar_andamios(notas: SqlAlchemyTopicNotesRepository, code: str) -> tuple[str, ...]:
+    """Quita las marcas internas del texto **ya escrito** del tema. No llama a nadie.
+
+    Es la misma limpieza que se aplica al guardar un apartado nuevo (`limpiar_andamios`), para el
+    texto que se escribió antes de que existiera: el redactor copia a veces el número del hecho que
+    se le da (`[[Hecho 36]]`) y eso es andamio, no apuntes. Se dice cuántas marcas había y cuántas
+    quedan; si no había ninguna, no se toca nada (ni la fecha del apartado).
+    """
+    node_id = notas.node_id(code)
+    if node_id is None:
+        return (f"[{code}] no existe ese tema en el programa",)
+    lineas = [f"[{code}] limpieza de marcas internas"]
+    total = 0
+    tocados = 0
+    for apartado in notas.sections(node_id):
+        marcas = marcas_internas(apartado.body_markdown)
+        limpio = limpiar_andamios(apartado.body_markdown)
+        # Se toca lo que de verdad cambia, no solo lo que tiene marcas: la limpieza también retira
+        # los corchetes que quedaron alrededor de una marca ya quitada (`[]`), y eso no es marca.
+        if limpio == apartado.body_markdown:
+            continue
+        notas.save_section_body(
+            apartado,
+            title=None,
+            body=limpio,
+            needs_review_reason=apartado.needs_review_reason,
+            model=None,
+            now=SystemClock().now(),
+        )
+        total += len(marcas)
+        tocados += 1
+        lineas.append(f"    {apartado.key}: {len(marcas)} marca(s) quitada(s)")
+    lineas.append(f"    {total} marca(s) en {tocados} apartado(s)")
+    return tuple(lineas)
 
 
 def _listar(notas: SqlAlchemyTopicNotesRepository, code: str) -> tuple[str, ...]:

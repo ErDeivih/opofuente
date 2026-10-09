@@ -152,9 +152,15 @@ class BackupService:
                 database=instantanea,
                 progress=progress,
             )
-        except OSError as error:
+        except Exception as error:
+            # Cualquier fallo —y no solo un `OSError`— deja un archivo a medias: un ZIP que revienta
+            # al cerrar una entrada grande deja el fichero escrito y a medio cerrar, y eso en el
+            # directorio de copias es una copia que parece estar y no se puede restaurar. Se retira
+            # siempre antes de propagar el error.
             destino.unlink(missing_ok=True)
-            raise BackupError(f"la copia no se pudo escribir: {error}") from error
+            if isinstance(error, OSError):
+                raise BackupError(f"la copia no se pudo escribir: {error}") from error
+            raise
         finally:
             shutil.rmtree(instantanea_dir, ignore_errors=True)
         return self._view(manifiesto, size_bytes=destino.stat().st_size)

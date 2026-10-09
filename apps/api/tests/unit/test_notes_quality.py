@@ -24,6 +24,7 @@ from opofuente.domain.notes_quality import (
     TABLAS_SIN_CABECERA,
     encabezados,
     hechos_distintos,
+    limpiar_andamios,
     marcas_internas,
     parecido,
     parrafos,
@@ -205,6 +206,68 @@ def test_las_palabras_que_solo_empiezan_por_fact_no_son_marcas() -> None:
 
 def test_el_comentario_de_fuentes_a_la_vista_tambien_es_una_marca() -> None:
     assert marcas_internas("<!-- fuentes: BOE -->") == ("<!-- fuentes",)
+
+
+def test_limpiar_andamios_quita_las_marcas_y_deja_la_frase_legible() -> None:
+    """Lo que el redactor copia de su encargo (el número del hecho) no son apuntes.
+
+    El caso es el de IV.7: `[[Hecho 36]]` en medio de un párrafo de encaminamiento.
+    """
+    texto = (
+        "…reenvían tramas basándose en direcciones MAC. [[Hecho 36]] La **ruta por defecto** es la "
+        "entrada que se usa para reenviar los paquetes."
+    )
+
+    limpio = limpiar_andamios(texto)
+
+    assert marcas_internas(limpio) == ()
+    assert "  " not in limpio, "el hueco de la marca no puede quedar como dos espacios"
+    assert "MAC. La" in limpio, "la frase sigue leyéndose"
+    assert "reenvían tramas basándose en direcciones MAC" in limpio
+
+
+def test_limpiar_andamios_no_toca_un_texto_limpio() -> None:
+    texto = "El modelo OSI tiene siete capas.\n\n| Capa | Función |\n| --- | --- |\n| 1 | Bits |\n"
+
+    assert limpiar_andamios(texto) == texto
+
+
+def test_el_apartado_que_se_titula_parafraseandose_no_cuenta_como_repetido() -> None:
+    """El redactor titula con el mismo texto que se le dio, a veces con una palabra cambiada.
+
+    Es el caso de `dhcp` en IV.7: su cuerpo empieza por «DHCP y configuración automática» y el
+    apartado se llama «DHCP y la configuración automática». Eso es titulares, no repetirse; la
+    **segunda** vez que aparece sí cuenta.
+    """
+    apartado = _Apartado(
+        key="dhcp",
+        title="DHCP y la configuración automática",
+        anchor="dhcp",
+        body_markdown=(
+            "## DHCP y configuración automática\n\nLo que hace DHCP.\n"
+            "\n## Formas de asignación\n\nManual y dinámica.\n"
+        ),
+    )
+
+    revision = revisar_apuntes([apartado])
+
+    assert revision.pasa, [hallazgo.line() for hallazgo in revision.hallazgos]
+
+
+def test_el_apartado_que_repite_su_titulo_dentro_si_mismo_si_cuenta() -> None:
+    apartado = _Apartado(
+        key="dhcp",
+        title="DHCP y la configuración automática",
+        anchor="dhcp",
+        body_markdown=(
+            "## DHCP y la configuración automática\n\nLo que hace DHCP.\n"
+            "\n## DHCP y la configuración automática\n\nOtra vez.\n"
+        ),
+    )
+
+    revision = revisar_apuntes([apartado])
+
+    assert ENCABEZADOS_REPETIDOS in {hallazgo.codigo for hallazgo in revision.hallazgos}
 
 
 # --- las tablas -----------------------------------------------------------------------------------

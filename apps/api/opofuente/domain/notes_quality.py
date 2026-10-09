@@ -201,12 +201,22 @@ def _encabezados_del_apartado(apartado: ApartadoDeApuntes) -> tuple[tuple[str, s
 
     Un apartado empieza por su propio título: eso no es repetirlo. La **segunda** vez que aparece sí
     se cuenta, porque es el apartado repitiéndose dentro de sí mismo.
+
+    La comparación es la **misma** que la de los repetidos (igual o parecido ≥
+    `SIMILITUD_ENCABEZADO`), y no la igualdad exacta: el redactor titula casi siempre con el mismo
+    texto que se le dio, pero a veces lo parafrasea un poco («DHCP y **la** configuración
+    automática»), y con la igualdad exacta ese saludo al lector contaba como un encabezado repetido
+    —dos apartados de IV.7 salían por esto— mientras que la segunda aparición de verdad se sigue
+    contando en los dos casos.
     """
     propio = _normalizado(apartado.title)
     salida: list[tuple[str, str]] = []
     visto_el_suyo = False
     for _, titulo in encabezados(apartado.body_markdown):
-        if not visto_el_suyo and _normalizado(titulo) == propio:
+        limpio = _normalizado(titulo)
+        if not visto_el_suyo and (
+            limpio == propio or parecido(limpio, propio) >= SIMILITUD_ENCABEZADO
+        ):
             visto_el_suyo = True
             continue
         salida.append((apartado.key, titulo))
@@ -322,6 +332,31 @@ def _celdas(linea: str) -> list[str]:
 def marcas_internas(texto: str) -> tuple[str, ...]:
     """Las marcas de andamio que se han quedado a la vista en el texto, tal cual aparecen."""
     return tuple(casado.group(0) for casado in _MARCA.finditer(texto))
+
+
+def limpiar_andamios(texto: str) -> str:
+    """El texto de los apuntes sin las marcas de andamio que el redactor copia de su encargo.
+
+    El redactor recibe los hechos numerados (`1. [tecnico] …`) y a veces cita ese número dentro del
+    texto (`… no disponen de dicha tabla. [[Hecho 36]] La ruta por defecto …`). Ese número no es
+    parte de los apuntes: es la referencia al encargo, y en el texto del opositor es basura. Se
+    quitan **las marcas**, nunca el contenido, y se deja el hueco con un solo espacio para que la
+    frase quede legible.
+
+    Va aquí, junto a la comprobación que las cuenta (`marcas_internas`), porque son la misma cosa
+    vista desde los dos lados: lo que se mide y lo que se arregla tienen que ser la misma expresión.
+    """
+    sin_marcas = _MARCA.sub(" ", texto)
+    # El redactor envuelve la marca en sus propios corchetes (`[[Hecho 36]]`): al quitar la marca
+    # queda `[ ]`, que tampoco se lee y se retira con ella.
+    sin_marcas = re.sub(r"\[\s*\]", "", sin_marcas)
+    # El hueco que deja la marca no puede quedar como dos espacios ni como un espacio antes de un
+    # signo: se aprieta el texto, sin tocar los saltos de línea (son los que separan los párrafos).
+    lineas = [
+        re.sub(r"[ \t]{2,}", " ", re.sub(r"[ \t]+([.,;:)])", r"\1", linea))
+        for linea in sin_marcas.split("\n")
+    ]
+    return "\n".join(lineas)
 
 
 def hechos_distintos(hechos: Sequence[Hecho]) -> int:
@@ -560,6 +595,7 @@ __all__ = [
     "TablaRota",
     "encabezados",
     "hechos_distintos",
+    "limpiar_andamios",
     "marcas_internas",
     "parecido",
     "parrafos",

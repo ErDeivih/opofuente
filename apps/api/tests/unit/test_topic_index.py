@@ -2,11 +2,17 @@
 
 Lo que se comprueba es lo que tiene que sostener el índice para que sirva de algo:
 
-- **todo hecho cae en un apartado y en uno solo** (nada se pierde por el camino);
+- **todo hecho cae en un apartado y en uno solo** (nada se pierde por el camino) y **ninguna
+  pregunta se queda sin el hecho que la ancla** en su apartado, ni antes ni después de agrupar los
+  repetidos;
+- **los hechos repetidos se agrupan**: se queda uno por grupo, con la unión de las preguntas de todo
+  el grupo, y dos hechos con siglas o cifras distintas **no** se agrupan aunque se parezcan;
 - el reparto es **determinista**: los mismos hechos dan el mismo índice;
 - **la tabla de puertos tiene un solo sitio** y está marcado;
 - un hecho que habla de dos materias va a la que menciona **antes** (DNS y el puerto 53 es DNS);
-- un hecho que no es de ninguna materia del tema cae en el cajón, y se dice cuántos;
+- un hecho que no es de ninguna materia del tema **no cae en ningún cajón**: se cuenta y se dice, y
+  se va con sus preguntas a la cola de clasificación;
+- el modelo OSI se reparte en sus cuatro partes por lo que dice cada hecho;
 - el orden del índice es el del temario, no el de reparto.
 """
 
@@ -20,8 +26,12 @@ from opofuente.domain.notes_quality import CABECERAS_REPETIDAS, revisar_apuntes
 from opofuente.domain.topic_index import (
     Materia,
     catalogo,
+    deduplicar,
+    etiquetas,
+    grupos_equivalentes,
     indice_de,
     materia_de,
+    plan_de,
     repartir_grupos,
     repartir_hechos,
     validar_catalogo,
@@ -57,14 +67,20 @@ def _materias() -> tuple[Materia, ...]:
     return materias
 
 
-def _hecho(texto: str, *, epigrafe: str = "IV.7.2") -> Hecho:
+def _hecho(
+    texto: str,
+    *,
+    epigrafe: str = "IV.7.2",
+    grupos: tuple[str, ...] = (),
+    fact_id: str = "",
+) -> Hecho:
     return Hecho(
         text=texto,
         kind=FactKind.TECNICO,
         epigraph_code=epigrafe,
-        source_groups=(),
+        source_groups=grupos,
         source_questions=(),
-        fact_id=texto[:12],
+        fact_id=fact_id or texto[:12],
     )
 
 
@@ -88,35 +104,68 @@ def _grupo(identificador: str, enunciado: str, *, epigrafe: str = "IV.7.2") -> Q
 # --- el catálogo ----------------------------------------------------------------------------------
 
 
-def test_el_catalogo_de_iv7_cubre_sus_dos_epigrafes_y_tiene_un_cajon_por_epigrafe() -> None:
-    materias = catalogo("IV.7")
-    assert materias is not None
+def test_el_catalogo_de_iv7_cubre_sus_dos_epigrafes_y_no_tiene_cajones() -> None:
+    """Los dos cajones de revisión **no se quedan** en el tema: lo que no es de aquí se va."""
+    materias = _materias()
     validar_catalogo("IV.7", materias)
 
     assert {materia.epigraph_code for materia in materias} == {"IV.7.1", "IV.7.2"}
-    for epigrafe in ("IV.7.1", "IV.7.2"):
-        cajones = [m for m in materias if m.epigraph_code == epigrafe and m.es_cajon]
-        assert len(cajones) == 1, f"{epigrafe} tiene que tener un cajón y solo uno"
+    assert [materia.key for materia in materias if materia.es_cajon] == []
+
+
+def test_el_modelo_osi_esta_partido_en_sus_cuatro_partes() -> None:
+    """Qué es OSI, las siete capas, las unidades de datos y los dispositivos: cuatro apartados."""
+    materias = _materias()
+    osi = [materia.key for materia in materias if materia.familia == "osi"]
+
+    assert osi == ["osi-que-es", "osi-capas", "osi-unidades", "osi-dispositivos"]
+    assert not any(materia.key == "osi-modelo" for materia in materias)
+
+
+def test_el_acceso_remoto_y_el_directorio_son_dos_apartados() -> None:
+    """El apartado 20 se parte: Telnet/SSH/RDP por un lado y LDAP/SNMP por otro."""
+    claves = [materia.key for materia in _materias()]
+
+    assert "acceso-remoto" in claves
+    assert "directorio-y-gestion" in claves
+    assert "gestion" not in claves
+
+
+def test_los_protocolos_que_no_son_tcp_ip_no_van_a_otros_protocolos() -> None:
+    """IPX/SPX y NetBEUI no son de la familia TCP/IP: se nombran al comparar familias."""
+    materias = _materias()
+    otros = next(materia for materia in materias if materia.key == "otros-protocolos")
+    arquitectura = next(materia for materia in materias if materia.key == "tcpip-arquitectura")
+
+    assert not any("ipx" in patron for patron in otros.patrones)
+    assert not any("netbeui" in patron for patron in otros.patrones)
+    assert any("ipx" in patron for patron in arquitectura.patrones)
 
 
 def test_la_tabla_de_puertos_tiene_un_solo_sitio_y_esta_marcado() -> None:
-    materias = catalogo("IV.7")
-    assert materias is not None
-
-    con_tabla = [materia for materia in materias if materia.tabla_unica]
+    con_tabla = [materia for materia in _materias() if materia.tabla_unica]
 
     assert len(con_tabla) == 1, "una tabla que sale dos veces es justo lo que hay que impedir"
     assert con_tabla[0].key == "puertos"
 
 
-def test_un_catalogo_sin_cajon_se_rechaza_antes_de_repartir() -> None:
+def test_un_catalogo_con_dos_cajones_en_el_mismo_epigrafe_se_rechaza() -> None:
+    dos_cajones = (
+        Materia(key="uno", epigraph_code="IV.7.1", title="Uno", resumen=""),
+        Materia(key="dos", epigraph_code="IV.7.1", title="Dos", resumen=""),
+    )
+    with pytest.raises(ValueError, match="cajones"):
+        validar_catalogo("IV.7", dos_cajones)
+
+
+def test_un_catalogo_sin_cajon_es_valido() -> None:
+    """Sin cajón no hay dónde esconder lo que no casa: se cuenta y se dice (el caso de IV.7)."""
     sin_cajon = (
         Materia(
             key="uno", epigraph_code="IV.7.1", title="Uno", resumen="", patrones=(r"\balgo\b",)
         ),
     )
-    with pytest.raises(ValueError, match="cajones"):
-        validar_catalogo("IV.7", sin_cajon)
+    validar_catalogo("IV.7", sin_cajon)
 
 
 def test_un_catalogo_con_la_misma_clave_dos_veces_se_rechaza() -> None:
@@ -134,13 +183,161 @@ def test_un_tema_sin_catalogo_no_tiene_indice() -> None:
         indice_de(topic_code="I.1", topic_title="La Constitución", epigraphs=EPIGRAFES)
 
 
+# --- la deduplicación de los hechos repetidos -----------------------------------------------------
+
+
+def test_dos_hechos_iguales_con_otras_palabras_son_uno() -> None:
+    """El defecto del modelo OSI: la misma capa explicada cinco veces con otras palabras."""
+    hechos = [
+        _hecho(
+            "La capa de presentación del modelo OSI se ocupa de la representación, el formato y la "
+            "sintaxis de los datos: codificación estándar, compresión y cifrado.",
+            epigrafe="IV.7.1",
+        ),
+        _hecho(
+            "La capa de presentación del modelo OSI se ocupa de la representación de los datos: "
+            "codificación y conversión de formatos, compresión y cifrado.",
+            epigrafe="IV.7.1",
+        ),
+    ]
+
+    quedan = deduplicar(hechos)
+
+    assert len(quedan) == 1
+    assert "presentación" in quedan[0].text
+
+
+def test_el_hecho_que_se_queda_conserva_las_preguntas_de_todo_el_grupo() -> None:
+    """Lo que hace que ninguna pregunta se quede sin anclaje: la unión de sus preguntas."""
+    hechos = [
+        _hecho(
+            "La capa de presentación se ocupa de la representación, el formato y la sintaxis de "
+            "los datos: codificación, compresión y cifrado.",
+            grupos=("firma-uno",),
+            epigrafe="IV.7.1",
+        ),
+        _hecho(
+            "La capa de presentación se ocupa de la representación de los datos: codificación y "
+            "conversión de formatos, compresión y cifrado.",
+            grupos=("firma-dos",),
+            epigrafe="IV.7.1",
+        ),
+    ]
+
+    quedan = deduplicar(hechos)
+
+    assert len(quedan) == 1
+    assert set(quedan[0].source_groups) == {"firma-uno", "firma-dos"}
+
+
+def test_dos_hechos_con_siglas_distintas_no_se_agrupan() -> None:
+    """`LLC` no es `MAC` y `TPDU` no es `APDU`: la guarda de las etiquetas."""
+    llc = _hecho(
+        "La subcapa LLC se encarga del control del enlace lógico y de la construcción de tramas.",
+        epigrafe="IV.7.1",
+    )
+    mac = _hecho(
+        "La subcapa MAC se encarga del control de acceso al medio físico, no del enlace lógico.",
+        epigrafe="IV.7.1",
+    )
+    tpdu = _hecho(
+        "La unidad de datos intercambiada en la capa de transporte es la TPDU.",
+        epigrafe="IV.7.1",
+    )
+    apdu = _hecho(
+        "La unidad de datos de la capa de aplicación del modelo OSI es la APDU.",
+        epigrafe="IV.7.1",
+    )
+
+    assert etiquetas(llc.text) == frozenset({"llc"})
+    assert etiquetas(mac.text) == frozenset({"mac"})
+    assert len(grupos_equivalentes([llc, mac])) == 2
+    assert len(grupos_equivalentes([tpdu, apdu])) == 2
+
+
+def test_dos_hechos_con_cifras_distintas_no_se_agrupan() -> None:
+    """Un hecho del puerto 53 no es uno del 80, aunque se digan con las mismas palabras."""
+    cincuenta_y_tres = _hecho("El servidor DNS escucha en el puerto 53 de la red local.")
+    ochenta = _hecho("El servidor HTTP escucha en el puerto 80 de la red local.")
+
+    assert "#53" in etiquetas(cincuenta_y_tres.text)
+    assert "#80" in etiquetas(ochenta.text)
+    assert len(grupos_equivalentes([cincuenta_y_tres, ochenta])) == 2
+
+
+def test_la_deduplicacion_no_quita_ninguna_pregunta_de_su_apartado() -> None:
+    """La prueba que pidió el propietario: ninguna pregunta pierde su apartado al deduplicar."""
+    grupos = [
+        _grupo("q1", "¿Qué hace la capa de presentación del modelo OSI?"),
+        _grupo("q2", "¿De qué se encarga la capa de presentación?"),
+    ]
+    hechos = [
+        _hecho(
+            "La capa de presentación se ocupa de la representación, el formato y la sintaxis de "
+            "los datos: codificación, compresión y cifrado.",
+            grupos=(grupos[0].signature,),
+            epigrafe="IV.7.1",
+        ),
+        _hecho(
+            "La capa de presentación se ocupa de la representación de los datos: codificación y "
+            "conversión de formatos, compresión y cifrado.",
+            grupos=(grupos[1].signature,),
+            epigrafe="IV.7.1",
+        ),
+    ]
+
+    sin_dedup = indice_de(
+        topic_code="IV.7",
+        topic_title="TCP/IP",
+        epigraphs=EPIGRAFES,
+        hechos=hechos,
+        grupos=grupos,
+        umbral_equivalencia=2.0,
+    )
+    con_dedup = indice_de(
+        topic_code="IV.7",
+        topic_title="TCP/IP",
+        epigraphs=EPIGRAFES,
+        hechos=hechos,
+        grupos=grupos,
+    )
+
+    assert con_dedup.hechos < sin_dedup.hechos, "los repetidos se tienen que agrupar"
+    assert con_dedup.grupos_sin_anclaje == ()
+    for apartado in con_dedup.reparto:
+        firmas = {grupo.signature for grupo in apartado.grupos}
+        ancladas = apartado.firmas_de_grupo
+        assert firmas <= ancladas, f"una pregunta de «{apartado.materia.key}» se quedó sin hecho"
+
+
+def test_el_indice_dice_cuantos_hechos_habia_y_cuantos_quedan() -> None:
+    hechos = [
+        _hecho(
+            "El orden de las capas del modelo OSI, de abajo arriba, es: física, enlace de datos, "
+            "red, transporte, sesión, presentación y aplicación.",
+            epigrafe="IV.7.1",
+        ),
+        _hecho(
+            "Las siete capas del modelo OSI, de abajo hacia arriba, son: física, enlace de datos, "
+            "red, transporte, sesión, presentación y aplicación.",
+            epigrafe="IV.7.1",
+        ),
+    ]
+
+    indice = indice_de(topic_code="IV.7", topic_title="TCP/IP", epigraphs=EPIGRAFES, hechos=hechos)
+
+    assert indice.hechos_originales == 2
+    assert indice.hechos == 1
+    assert len(indice.fusionados) == 1
+    assert any("de 2" in linea and "1 repetido" in linea for linea in indice.lines())
+
+
 # --- el reparto -----------------------------------------------------------------------------------
 
 
 def test_un_hecho_va_a_la_materia_que_menciona_antes() -> None:
     """«DHCP es un protocolo … el servidor DNS» es un hecho de DHCP, no de DNS."""
-    materias = catalogo("IV.7")
-    assert materias is not None
+    materias = _materias()
 
     dhcp = materia_de(
         "DHCP es un protocolo de aplicación que reparte la configuración, entre ella el DNS.",
@@ -153,52 +350,42 @@ def test_un_hecho_va_a_la_materia_que_menciona_antes() -> None:
         materias,
     )
 
-    assert dhcp.key == "dhcp"
-    assert dns.key == "dns"
+    assert dhcp is not None and dhcp.key == "dhcp"
+    assert dns is not None and dns.key == "dns"
 
 
 def test_un_hecho_que_habla_de_un_protocolo_y_de_su_puerto_es_del_protocolo() -> None:
-    materias = catalogo("IV.7")
-    assert materias is not None
-
     correo = materia_de(
         "POP3 utiliza el puerto 110 sin cifrado y el 995 con SSL/TLS.",
         "IV.7.2",
-        materias,
+        _materias(),
     )
-    assert correo.key == "correo"
+
+    assert correo is not None and correo.key == "correo"
 
 
-def test_cada_hecho_cae_en_un_solo_apartado_y_ninguno_se_pierde() -> None:
-    hechos = [
-        _hecho("La dirección IPv6 ::1/128 es la de loopback."),
-        _hecho("La máscara /27 divide la red en bloques de 32 direcciones."),
-        _hecho("ARP obtiene la dirección MAC a partir de la dirección IP."),
-        _hecho("POP3 utiliza el puerto 110.", epigrafe="IV.7.2"),
-        _hecho("El modelo OSI tiene siete capas.", epigrafe="IV.7.1"),
-        _hecho("La integridad referencial exige que la clave ajena exista en la primaria."),
-    ]
-    indice = indice_de(topic_code="IV.7", topic_title="TCP/IP", epigraphs=EPIGRAFES, hechos=hechos)
+def test_el_reparto_del_modelo_osi_es_por_asunto_y_no_por_la_primera_palabra() -> None:
+    """Cada hecho del OSI va a su parte: la unidad, el dispositivo, la capa o el modelo."""
+    materias = _materias()
 
-    repartidos = [hecho for apartado in indice.reparto for hecho in apartado.hechos]
-    assert len(repartidos) == len(hechos)
-    assert {id(hecho) for hecho in repartidos} == {id(hecho) for hecho in hechos}
-    assert indice.hechos == len(hechos)
+    ejemplos = {
+        "osi-unidades": "En el modelo OSI, la PDU de la capa de enlace de datos es la trama.",
+        "osi-dispositivos": (
+            "Los switches o conmutadores conmutan tramas en la capa 2 del modelo OSI, no en la 3."
+        ),
+        "osi-capas": "La capa de sesión (capa 5 del modelo OSI) controla el diálogo entre pares.",
+        "osi-que-es": (
+            "Para ISO, un sistema abierto es el que cumple las normas OSI al comunicarse."
+        ),
+    }
 
-
-def test_el_reparto_es_el_mismo_si_se_vuelve_a_calcular() -> None:
-    hechos = [
-        _hecho("ICMP avisa con un mensaje de tiempo excedido cuando el TTL llega a cero."),
-        _hecho("El puerto 53 corresponde a DNS."),
-        _hecho("UDP no garantiza el orden de los mensajes."),
-    ]
-    uno = indice_de(topic_code="IV.7", topic_title="TCP/IP", epigraphs=EPIGRAFES, hechos=hechos)
-    otro = indice_de(topic_code="IV.7", topic_title="TCP/IP", epigraphs=EPIGRAFES, hechos=hechos)
-
-    assert uno.lines() == otro.lines()
+    for clave, texto in ejemplos.items():
+        materia = materia_de(texto, "IV.7.1", materias)
+        assert materia is not None and materia.key == clave, f"«{texto[:40]}» no es de {clave}"
 
 
-def test_un_hecho_de_otro_bloque_cae_en_el_cajon_y_se_cuenta() -> None:
+def test_un_hecho_de_otro_bloque_no_cae_en_ningun_apartado_y_se_dice() -> None:
+    """Sin cajones: un hecho de otro bloque se cuenta, se enseña y para la corrida."""
     hechos = [
         _hecho("La máscara /24 deja 254 direcciones utilizables."),
         _hecho("El acoplamiento de control se da cuando los parámetros son de control."),
@@ -208,18 +395,47 @@ def test_un_hecho_de_otro_bloque_cae_en_el_cajon_y_se_cuenta() -> None:
     assert [hecho.text for hecho in indice.sin_materia] == [
         "El acoplamiento de control se da cuando los parámetros son de control."
     ]
-    assert any("Otros contenidos" in linea for linea in indice.lines())
+    assert indice.hechos == 1
+    assert any("NO tienen apartado" in linea for linea in indice.lines())
+    assert not any("Otros contenidos" in linea for linea in indice.lines())
+
+
+def test_un_hecho_cuyas_preguntas_no_son_del_tema_se_va_con_ellas() -> None:
+    """«Sus datos se van con ellas»: el hecho de una pregunta mal clasificada no se queda."""
+    grupo = _grupo("q1", "El acoplamiento de control se da entre módulos.")
+    hecho = _hecho(
+        "El acoplamiento de control se da cuando los parámetros que se pasan son de control.",
+        grupos=(grupo.signature,),
+    )
+    indice = indice_de(
+        topic_code="IV.7",
+        topic_title="TCP/IP",
+        epigraphs=EPIGRAFES,
+        hechos=[hecho],
+        grupos=[grupo],
+    )
+
+    assert indice.hechos == 0
+    assert [suyo.text for suyo in indice.sin_materia] == [hecho.text]
+    assert len(indice.grupos_sin_materia) == 1
 
 
 def test_un_hecho_con_el_epigrafe_que_no_era_va_a_la_materia_donde_se_estudia() -> None:
     """El modelo etiquetó una capa de OSI como IV.7.2: su sitio es el modelo OSI, y se dice."""
-    hechos = [
-        _hecho("La capa de presentación se encarga del cifrado y del formato.", epigrafe="IV.7.2")
-    ]
-    indice = indice_de(topic_code="IV.7", topic_title="TCP/IP", epigraphs=EPIGRAFES, hechos=hechos)
+    indice = indice_de(
+        topic_code="IV.7",
+        topic_title="TCP/IP",
+        epigraphs=EPIGRAFES,
+        hechos=[
+            _hecho(
+                "La capa de presentación se encarga del cifrado y del formato.",
+                epigrafe="IV.7.2",
+            )
+        ],
+    )
 
     por_materia = {apartado.materia.key: apartado for apartado in indice.reparto}
-    assert len(por_materia["osi-modelo"].hechos) == 1
+    assert len(por_materia["osi-capas"].hechos) == 1
     assert len(indice.fuera_de_su_epigrafe) == 1
     assert any("otro epígrafe" in linea for linea in indice.lines())
 
@@ -234,6 +450,34 @@ def test_un_hecho_de_un_epigrafe_que_no_esta_en_el_catalogo_se_dice() -> None:
         )
 
 
+def test_el_reparto_no_depende_de_la_deduplicacion() -> None:
+    """Dos hechos equivalentes se reparten por su texto: agruparlos no mueve a nadie de sitio."""
+    hechos = [
+        _hecho("El puerto 53 corresponde a DNS."),
+        _hecho("El servidor DNS escucha en el puerto 53."),
+    ]
+
+    sin_dedup = indice_de(
+        topic_code="IV.7",
+        topic_title="TCP/IP",
+        epigraphs=EPIGRAFES,
+        hechos=hechos,
+        umbral_equivalencia=2.0,
+    )
+    con_dedup = indice_de(
+        topic_code="IV.7", topic_title="TCP/IP", epigraphs=EPIGRAFES, hechos=hechos
+    )
+
+    def claves(indice: object) -> dict[str, int]:
+        return {
+            apartado.materia.key: len(apartado.hechos)
+            for apartado in indice.reparto  # type: ignore[attr-defined]
+            if apartado.hechos
+        }
+
+    assert set(claves(sin_dedup)) == set(claves(con_dedup))
+
+
 # --- las preguntas y el orden ---------------------------------------------------------------------
 
 
@@ -241,10 +485,11 @@ def test_las_preguntas_se_reparten_por_su_enunciado_y_no_por_sus_opciones() -> N
     """Las opciones traen los distractores: clasificar por ellas manda la pregunta a otro sitio."""
     grupo = _grupo("q1", "¿Qué protocolo resuelve los nombres de dominio?")
 
-    reparto = repartir_grupos([grupo], _materias())
+    reparto, sin_materia = repartir_grupos([grupo], _materias())
 
     assert len(reparto["dns"]) == 1
     assert all(not reparto[clave] for clave in reparto if clave != "dns")
+    assert sin_materia == []
 
 
 def test_el_indice_va_en_el_orden_del_temario_y_cuenta_sus_preguntas() -> None:
@@ -253,9 +498,9 @@ def test_el_indice_va_en_el_orden_del_temario_y_cuenta_sus_preguntas() -> None:
         _hecho("DNS utiliza el puerto 53 para las consultas."),
         _hecho("El puerto 829 corresponde a CMP."),
     ]
-    reparto = repartir_hechos(hechos, _materias())
+    reparto, _sin_materia = repartir_hechos(hechos, _materias())
 
-    assert reparto["gestion"], "SSH es de la materia de acceso remoto"
+    assert reparto["acceso-remoto"], "SSH es de la materia de acceso remoto"
     assert reparto["dns"], "el hecho habla de DNS"
     assert reparto["puertos"], "un número de puerto sin protocolo del tema es de la tabla"
 
@@ -263,7 +508,7 @@ def test_el_indice_va_en_el_orden_del_temario_y_cuenta_sus_preguntas() -> None:
         topic_code="IV.7",
         topic_title="TCP/IP",
         epigraphs=EPIGRAFES,
-        hechos=hechos,
+        hechos=[*hechos, _hecho("La sincronización de tiempo se hace con NTP.")],
         grupos=[_grupo("q1", "¿Qué protocolo resuelve los nombres de dominio?")],
     )
 
@@ -272,9 +517,38 @@ def test_el_indice_va_en_el_orden_del_temario_y_cuenta_sus_preguntas() -> None:
     # La tabla de puertos se enseña antes que DNS (es el orden del temario) y, aun así, el hecho de
     # DNS está en DNS: el orden del índice y el del reparto son dos decisiones distintas.
     assert claves.index("puertos") < claves.index("dns")
+    assert claves.index("acceso-remoto") < claves.index("directorio-y-gestion")
     assert len(next(a for a in indice.reparto if a.materia.key == "dns").hechos) == 1
     assert indice.preguntas == 1
     assert any("grupo(s) de preguntas" in linea for linea in indice.lines())
+
+
+def test_el_plan_de_redaccion_es_un_apartado_por_materia_y_solo_las_que_tienen_hechos() -> None:
+    """Lo que se redacta sale del índice aprobado: ni trozos de cuarenta ni apartados vacíos."""
+    hechos = [
+        _hecho("El puerto 53 corresponde a DNS."),
+        _hecho("El puerto 80 corresponde a HTTP."),
+    ]
+    indice = indice_de(topic_code="IV.7", topic_title="TCP/IP", epigraphs=EPIGRAFES, hechos=hechos)
+
+    plan = plan_de(indice)
+
+    assert [seccion.key for seccion in plan] == ["puertos"]
+    assert [seccion.position for seccion in plan] == [1]
+    assert len(plan[0].facts) == 2
+
+
+def test_el_plan_parte_una_materia_muy_grande_en_trozos_numerados_de_la_misma_materia() -> None:
+    hechos = [
+        _hecho(f"El puerto {numero} está registrado en la IANA.") for numero in range(1024, 1030)
+    ]
+    indice = indice_de(topic_code="IV.7", topic_title="TCP/IP", epigraphs=EPIGRAFES, hechos=hechos)
+
+    plan = plan_de(indice, max_hechos_por_apartado=3)
+
+    assert [seccion.key for seccion in plan] == ["puertos-1", "puertos-2"]
+    assert all(seccion.epigraph_code == "IV.7.2" for seccion in plan)
+    assert sum(len(seccion.facts) for seccion in plan) == len(hechos)
 
 
 def test_el_indice_no_repite_la_cabecera_de_sus_apartados() -> None:

@@ -11,7 +11,7 @@ toca. No llama a nadie: clasifica por las palabras del propio texto, con el voca
 así que el índice se puede calcular, leer y discutir antes de escribir una sola línea (que es lo
 que se pidió: ver el esquema antes de redactar).
 
-Cinco reglas, y las cinco se ven en el resultado:
+Siete reglas, y las siete se ven en el resultado:
 
 1. **cada hecho y cada pregunta van a una sola materia**: la que los menciona antes (y, a igualdad,
    la de `prioridad` más baja). Se mira primero entre las materias del epígrafe del hecho y, si en
@@ -20,13 +20,25 @@ Cinco reglas, y las cinco se ven en el resultado:
 2. **el reparto mira primero lo particular**: un hecho que habla de DNS *y* del puerto 53 es un
    hecho de DNS, no de la tabla de puertos. Por eso cada materia tiene su `prioridad` de reparto,
    aparte del orden en que se enseña el índice;
-3. **nada se queda sin apartado**: cada epígrafe tiene su cajón («Otros contenidos…»), donde caen
-   los hechos que no son de ninguna de sus materias ni de las del otro epígrafe. En IV.7 son 22:
-   preguntas de otros bloques (integridad referencial, diagramas de flujo de datos, Métrica v3, el
-   registro de Windows, normativa) que se clasificaron en este tema. Se enseñan, no se esconden;
-4. **la tabla de puertos tiene un solo sitio**: la materia de puertos es la única marcada con
+3. **los hechos repetidos se agrupan y se queda uno por grupo** (`deduplicar`): 998 hechos para 554
+   preguntas eran demasiados, sobre todo en el modelo OSI (199 para 125). El que se queda conserva
+   **la unión de las preguntas** de todo su grupo, así que ninguna pregunta pierde su anclaje. La
+   equivalencia se mide con el parecido de Dice **ponderado por IDF** (lo que distingue un hecho es
+   su vocabulario poco frecuente, no «capa» y «modelo») y con una guarda: dos hechos con **siglas o
+   cifras distintas** no son el mismo hecho aunque se parezcan en todo lo demás (`LLC` no es `MAC`,
+   `TPDU` no es `APDU`, y un hecho del puerto 53 no es uno del 80);
+4. **el modelo OSI se reparte en cuatro partes** —qué es OSI y qué es un sistema abierto, las siete
+   capas una a una, las unidades de datos y el encapsulado (con LLC y MAC dentro de la capa de
+   enlace) y los dispositivos que trabajan en cada capa— por lo que dice cada hecho, no por dónde
+   caiga la primera palabra: se mira primero si nombra un dispositivo, después una unidad de datos,
+   después una capa concreta y, si no dice nada de eso, es del modelo;
+5. **no hay cajones de revisión**: lo que no es de ninguna materia del tema **no se enseña como un
+   apartado más**. Se cuenta, se dice con su texto y **para la corrida**: un hecho sin apartado es
+   una pregunta mal clasificada, y eso se arregla en la cola de clasificación, no escribiendo
+   apuntes alrededor;
+6. **la tabla de puertos tiene un solo sitio**: la materia de puertos es la única marcada con
    `tabla_unica`, y su apartado es donde vive esa tabla;
-5. **el índice va en el orden oficial**: primero los epígrafes del temario y, dentro de cada uno,
+7. **el índice va en el orden oficial**: primero los epígrafes del temario y, dentro de cada uno,
    las materias en el orden en que se estudian. Ese orden está escrito aparte, en una lista de
    claves (`_ORDEN_IV7`), y es distinto del de reparto: si no lo fuera, la tabla de puertos se
    llevaría las preguntas de DNS.
@@ -34,15 +46,34 @@ Cinco reglas, y las cinco se ven en el resultado:
 
 from __future__ import annotations
 
+import math
 import re
-from collections.abc import Sequence
+from collections.abc import Collection, Mapping, Sequence
 from dataclasses import dataclass, field
 
 from opofuente.domain.rag import normalise
-from opofuente.domain.topic_notes import Hecho, QuestionGroup
+from opofuente.domain.topic_notes import (
+    Hecho,
+    NoteSection,
+    QuestionGroup,
+    terminos_significativos,
+)
 
 #: Prioridad de reparto por defecto: se mira después de las materias con prioridad propia.
 PRIORIDAD_POR_DEFECTO = 100
+
+#: Umbral de equivalencia entre dos hechos: parecido de Dice ponderado por IDF. Se midió sobre los
+#: 998 hechos reales de IV.7 antes de elegirlo: con 0,4 desaparecen 261 hechos repetidos (el 26 %) y
+#: los cuatro casos de control que no se pueden fusionar (LLC/MAC, TPDU/APDU, FTP/DNS y
+#: ASCII/EBCDIC)
+#: siguen separados. Bajarlo más empieza a juntar hechos que dicen cosas distintas.
+UMBRAL_EQUIVALENCIA = 0.4
+
+#: Una sigla (`LLC`, `MAC`, `TPDU`, `RFC`) o una cifra (`53`, `7498`, `7`) en el texto **original**.
+#: Es la guarda de la deduplicación: dos hechos que no comparten estas etiquetas no son el mismo
+#: hecho, aunque se digan con las mismas palabras de relleno.
+_SIGLA = re.compile(r"\b[A-Z][A-Z0-9]{1,7}\b")
+_CIFRA = re.compile(r"\b\d+\b")
 
 
 @dataclass(frozen=True, slots=True)
@@ -68,6 +99,10 @@ class Materia:
     prioridad: int = PRIORIDAD_POR_DEFECTO
     #: Si es la materia donde vive una tabla que no puede estar en dos sitios (la de puertos).
     tabla_unica: bool = False
+    #: La familia a la que pertenece la materia, si sus hermanas comparten vocabulario y hay que
+    #: repartir entre ellas por asunto y no por la primera palabra que casa (el modelo OSI). Vacío
+    #: es una materia normal: se decide por sus patrones.
+    familia: str = ""
 
     @property
     def es_cajon(self) -> bool:
@@ -77,22 +112,45 @@ class Materia:
 
 @dataclass(frozen=True, slots=True)
 class RepartoMateria:
-    """Lo que le ha tocado a una materia: sus hechos y los grupos de preguntas de su materia."""
+    """Lo que le ha tocado a una materia: sus hechos, los que se han fusionado y sus preguntas.
+
+    `hechos` es lo que se va a redactar (ya deduplicado) y `fusionados` son los hechos que se
+    quedaron por el camino al agrupar los equivalentes: se guardan para poder decir **cuántos había
+    y cuántos quedan** en cada apartado, que es la cuenta que pidió el propietario. No se pierden:
+    su contenido y sus preguntas están en el hecho que se queda.
+    """
 
     materia: Materia
     hechos: tuple[Hecho, ...]
     grupos: tuple[QuestionGroup, ...]
+    fusionados: tuple[Hecho, ...] = ()
 
     @property
     def preguntas(self) -> int:
         return sum(len(grupo.questions) for grupo in self.grupos)
 
+    @property
+    def hechos_antes(self) -> int:
+        """Los hechos que había en este apartado antes de agrupar los repetidos."""
+        return len(self.hechos) + len(self.fusionados)
+
+    @property
+    def firmas_de_grupo(self) -> frozenset[str]:
+        """Las firmas de las preguntas que anclan los hechos de este apartado."""
+        return frozenset(firma for hecho in self.hechos for firma in hecho.source_groups)
+
     def lineas(self) -> tuple[str, ...]:
         """El apartado del índice: una línea con su cuenta y otra con lo que entra."""
         marcas = " · una sola tabla en todo el tema" if self.materia.tabla_unica else ""
+        repetidos = (
+            ""
+            if not self.fusionados
+            else f" (de {self.hechos_antes}; {len(self.fusionados)} repetido(s) agrupado(s))"
+        )
         return (
-            f"    {self.materia.key} · {self.materia.title} — {len(self.hechos)} hecho(s), "
-            f"{len(self.grupos)} grupo(s) de preguntas ({self.preguntas} pregunta(s){marcas})",
+            f"    {self.materia.key} · {self.materia.title} — {len(self.hechos)} hecho(s)"
+            f"{repetidos}, {len(self.grupos)} grupo(s) de preguntas "
+            f"({self.preguntas} pregunta(s){marcas})",
             f"        {self.materia.resumen}",
         )
 
@@ -105,11 +163,16 @@ class IndiceDelTema:
     topic_title: str
     epigraphs: tuple[tuple[str, str], ...]
     reparto: tuple[RepartoMateria, ...] = ()
-    #: Hechos que han caído en el cajón de su epígrafe (no son de ninguna de sus materias).
+    #: Hechos que no son de **ninguna** materia del tema. No se enseña ningún cajón con ellos: se
+    #: cuentan y se dicen, porque son preguntas mal clasificadas (van a la cola de clasificación).
     sin_materia: tuple[Hecho, ...] = field(default=())
     #: Hechos que se han ido a una materia del **otro** epígrafe porque es donde se estudian: el
-    #: modelo les puso el epígrafe que no era, y eso es lo que hay que revisar.
+    #: modelo les puso el epígrafe que no era, y eso se mueve sin preguntar.
     fuera_de_su_epigrafe: tuple[Hecho, ...] = field(default=())
+    #: Grupos de preguntas que no han casado con ninguna materia.
+    grupos_sin_materia: tuple[QuestionGroup, ...] = field(default=())
+    #: Hechos que había en el tema antes de agrupar los repetidos.
+    hechos_originales: int = 0
 
     @property
     def hechos(self) -> int:
@@ -135,7 +198,9 @@ class IndiceDelTema:
         """El índice en texto: es lo que se enseña y se discute antes de redactar."""
         lineas = [
             f"Índice por materias de [{self.topic_code}] {self.topic_title}",
-            f"    {self.apartados} apartado(s) · {self.hechos} hecho(s) · {self.preguntas} "
+            f"    {self.apartados} apartado(s) · {self.hechos} hecho(s) de "
+            f"{self.hechos_originales} "
+            f"({len(self.fusionados)} repetido(s) agrupado(s)) · {self.preguntas} "
             f"pregunta(s) en {self.grupos} grupo(s) · {len(self.epigraphs)} epígrafe(s) oficiales",
         ]
         actual = ""
@@ -147,16 +212,172 @@ class IndiceDelTema:
             lineas.extend(apartado.lineas())
         if self.sin_materia:
             lineas.append(
-                f"    AVISO: {len(self.sin_materia)} hecho(s) caen en «Otros contenidos»: no son "
-                "de ninguna materia del tema (preguntas de otros bloques que se clasificaron aquí) "
-                "y se revisan antes de redactar"
+                f"    AVISO: {len(self.sin_materia)} hecho(s) no son de ninguna materia del tema y "
+                "NO tienen apartado (no hay cajón): son preguntas mal clasificadas y van a la cola "
+                "de clasificación antes de redactar"
+            )
+            for hecho in self.sin_materia[:10]:
+                lineas.append(f"      · {hecho.text[:110]}")
+            if len(self.sin_materia) > 10:
+                lineas.append(f"      · … y {len(self.sin_materia) - 10} más")
+        if self.grupos_sin_materia:
+            lineas.append(
+                f"    AVISO: {len(self.grupos_sin_materia)} grupo(s) de preguntas "
+                f"({sum(len(g.questions) for g in self.grupos_sin_materia)} pregunta(s)) no son de "
+                "ninguna materia del tema"
             )
         if self.fuera_de_su_epigrafe:
             lineas.append(
-                f"      · {len(self.fuera_de_su_epigrafe)} hecho(s) más van a una materia del otro "
-                "epígrafe porque es donde se estudian: el epígrafe que traían era el que no era"
+                f"      · {len(self.fuera_de_su_epigrafe)} hecho(s) van a una materia del otro "
+                "epígrafe porque es donde se estudian: el epígrafe que traían era el que no era, y "
+                "se mueven a su sitio"
             )
         return tuple(lineas)
+
+    @property
+    def fusionados(self) -> tuple[Hecho, ...]:
+        """Los hechos que se agruparon con otro: los que había de más."""
+        return tuple(hecho for apartado in self.reparto for hecho in apartado.fusionados)
+
+    @property
+    def grupos_sin_anclaje(self) -> tuple[str, ...]:
+        """Las firmas de pregunta cuyo apartado no tiene ningún hecho suyo.
+
+        Es la prueba de que la deduplicación no dejó ninguna pregunta sin anclaje: el hecho que se
+        queda conserva la unión de las preguntas, así que este conjunto tiene que estar vacío.
+        """
+        faltan: list[str] = []
+        for apartado in self.reparto:
+            ancladas = apartado.firmas_de_grupo
+            faltan.extend(
+                grupo.signature for grupo in apartado.grupos if grupo.signature not in ancladas
+            )
+        return tuple(faltan)
+
+
+# --- la deduplicación -------------------------------------------------------------------------
+
+
+def etiquetas(texto: str) -> frozenset[str]:
+    """Las siglas y las cifras de un hecho: lo que no se puede perder al fusionarlo con otro.
+
+    `LLC` no es `MAC`, `TPDU` no es `APDU`, `7498` no es `9001` y el puerto 53 no es el 80. Las
+    cifras se marcan con `#` delante para que no se confundan con una sigla que sea un número
+    suelto.
+    """
+    siglas = {encontrada.lower() for encontrada in _SIGLA.findall(texto)}
+    cifras = {f"#{encontrada}" for encontrada in _CIFRA.findall(texto)}
+    return frozenset(siglas | cifras)
+
+
+def _pesos_idf(conjuntos: Sequence[frozenset[str]]) -> dict[str, float]:
+    """Cuánto pesa cada término: un término que sale en todos los hechos de la materia pesa poco.
+
+    Es lo que hace que la deduplicación mire lo que **distingue** un hecho («presentación»,
+    «sesión», «FTP») y no el relleno que comparten todos («capa», «modelo», «OSI»).
+    """
+    total = len(conjuntos)
+    frecuencia: dict[str, int] = {}
+    for terminos in conjuntos:
+        for termino in terminos:
+            frecuencia[termino] = frecuencia.get(termino, 0) + 1
+    return {termino: math.log(1.0 + total / veces) for termino, veces in frecuencia.items()}
+
+
+def _dice(uno: frozenset[str], otro: frozenset[str], peso: dict[str, float]) -> float:
+    """Parecido de Dice ponderado: 1.0 es el mismo vocabulario, 0.0 no comparten nada."""
+    if not uno or not otro:
+        return 0.0
+    comunes = sum(peso[termino] for termino in uno & otro)
+    total = sum(peso[termino] for termino in uno) + sum(peso[termino] for termino in otro)
+    return 0.0 if not total else 2 * comunes / total
+
+
+def grupos_equivalentes(
+    hechos: Sequence[Hecho], *, umbral: float = UMBRAL_EQUIVALENCIA
+) -> tuple[tuple[Hecho, ...], ...]:
+    """Los hechos agrupados por lo que dicen, en el orden en que llegan.
+
+    Se agrupa **contra el representante** de cada grupo y no contra cualquiera de sus miembros: si
+    se agrupara contra cualquiera, dos hechos que no se parecen acabarían en el mismo grupo por
+    cadena (uno habla de FTP y DNS, y por ahí se juntan «FTP es de usuario» con «DNS es de soporte»,
+    que son dos hechos distintos). El representante es el hecho **más completo** del grupo —el que
+    tiene más términos significativos—, para que al quedarse uno se pierda lo menos posible.
+    """
+    if not hechos:
+        return ()
+    conjuntos = [frozenset(terminos_significativos(hecho.text)) for hecho in hechos]
+    marcas = [etiquetas(hecho.text) for hecho in hechos]
+    peso = _pesos_idf(conjuntos)
+    grupos: list[list[int]] = []
+    representantes: list[int] = []
+    por_termino: dict[str, list[int]] = {}
+    for posicion, terminos in enumerate(conjuntos):
+        candidatos: dict[int, None] = {}
+        for termino in terminos:
+            for grupo in por_termino.get(termino, ()):
+                candidatos[grupo] = None
+        elegido: int | None = None
+        mejor = 0.0
+        for grupo in candidatos:
+            representante = representantes[grupo]
+            suyas, ajenas = marcas[posicion], marcas[representante]
+            # La guarda: si cada uno tiene una sigla o una cifra que el otro no tiene, no son el
+            # mismo hecho. Se exige que uno de los dos conjuntos esté contenido en el otro.
+            if not (suyas <= ajenas or ajenas <= suyas):
+                continue
+            parecido = _dice(terminos, conjuntos[representante], peso)
+            if parecido >= umbral and parecido > mejor:
+                elegido, mejor = grupo, parecido
+        if elegido is None:
+            grupos.append([posicion])
+            representantes.append(posicion)
+            for termino in terminos:
+                por_termino.setdefault(termino, []).append(len(grupos) - 1)
+            continue
+        grupos[elegido].append(posicion)
+        # El representante pasa a ser el más completo del grupo: el que se queda tiene que poder
+        # sostener lo que decían los demás.
+        if len(terminos) > len(conjuntos[representantes[elegido]]):
+            representantes[elegido] = posicion
+    return tuple(tuple(hechos[miembro] for miembro in grupo) for grupo in grupos)
+
+
+def deduplicar(
+    hechos: Sequence[Hecho], *, umbral: float = UMBRAL_EQUIVALENCIA
+) -> tuple[Hecho, ...]:
+    """Un hecho por grupo de hechos equivalentes, **con la unión de sus preguntas**.
+
+    Lo que se conserva del grupo, y por qué:
+
+    - **las preguntas de todos** (`source_groups` y `source_questions`): es lo que hace que ninguna
+      pregunta se quede sin el hecho que la ancla. Perder la pregunta de un hecho absorbido sería
+      dejar una pregunta sin apartado, que es justo lo que no puede pasar;
+    - **el texto del más completo**, con su tipo y su nota;
+    - `doubtful` se enciende si **cualquiera** del grupo lo estaba: una clave que contradice la
+      norma
+      no deja de contradecirla porque otro hecho del grupo se dijera mejor.
+    """
+    salida: list[Hecho] = []
+    for grupo in grupos_equivalentes(hechos, umbral=umbral):
+        representante = max(grupo, key=lambda hecho: len(terminos_significativos(hecho.text)))
+        grupos_origen = sorted({firma for hecho in grupo for firma in hecho.source_groups})
+        preguntas = sorted({pregunta for hecho in grupo for pregunta in hecho.source_questions})
+        notas = [hecho.note for hecho in grupo if hecho.note]
+        salida.append(
+            Hecho(
+                text=representante.text,
+                kind=representante.kind,
+                epigraph_code=representante.epigraph_code,
+                source_groups=tuple(grupos_origen),
+                source_questions=tuple(preguntas),
+                doubtful=any(hecho.doubtful for hecho in grupo),
+                note=None if not notas else "; ".join(dict.fromkeys(notas)),
+                fact_id=representante.fact_id,
+                section_key=representante.section_key,
+            )
+        )
+    return tuple(salida)
 
 
 def _mejor_materia(limpio: str, candidatas: Sequence[Materia]) -> Materia | None:
@@ -183,26 +404,66 @@ def _mejor_materia(limpio: str, candidatas: Sequence[Materia]) -> Materia | None
     return None if mejor is None else mejor[2]
 
 
-def materia_de(texto: str, epigraph_code: str | None, materias: Sequence[Materia]) -> Materia:
-    """A qué materia va un texto.
+def _materia_osi(limpio: str, materias: Sequence[Materia]) -> Materia | None:
+    """A qué de las cuatro partes del modelo OSI va un hecho, por lo que el hecho dice.
+
+    Es un reparto **por asunto**, no por posición ni por prioridad, porque las cuatro partes hablan
+    de lo mismo y comparten vocabulario: casi todos los hechos del OSI nombran una capa, y muchos
+    nombran además la unidad de datos que maneja. Lo que decide es lo primero que el hecho
+    **nombra como sujeto**, en este orden:
+
+    1. **el dispositivo** (un `switch`, un `router`, un `hub`): el hecho es de la parte de los
+       dispositivos que trabajan en cada capa, aunque diga «conmuta tramas»;
+    2. **la unidad de datos** (`PDU`, `trama`, `paquete`, `segmento`, `bit`), el encapsulado y las
+       subcapas `LLC` y `MAC`, que van dentro de la capa de enlace;
+    3. **la capa concreta** (por su nombre o por su número): es la parte de las siete capas, una a
+       una, con su función;
+    4. y si no nombra nada de eso, el hecho es del **modelo**: qué es OSI y qué es un sistema
+       abierto.
+
+    Solo se llama cuando el reparto normal **ya ha decidido que el texto es de la familia OSI**: si
+    se llamara siempre, «la trama se envía al puerto 53» acabaría en las unidades de datos del OSI,
+    que es justo lo que no puede pasar.
+    """
+    de_la_familia = [materia for materia in materias if materia.familia == FAMILIA_OSI]
+    if not de_la_familia:
+        return None
+    for clave, patrones in _REGLAS_OSI:
+        if any(re.search(patron, limpio) for patron in patrones):
+            elegida = next((materia for materia in de_la_familia if materia.key == clave), None)
+            if elegida is not None:
+                return elegida
+    return None
+
+
+def materia_de(
+    texto: str, epigraph_code: str | None, materias: Sequence[Materia]
+) -> Materia | None:
+    """A qué materia va un texto, o `None` si no es de ninguna.
 
     Se busca primero entre las materias **de su epígrafe** (un hecho de IV.7.1 se queda en IV.7.1)
     y, si en el suyo no casa con ninguna, se busca en el catálogo entero: hay hechos a los que el
     modelo puso el epígrafe que no era (9 en IV.7: capas de OSI etiquetadas como IV.7.2), y su
-    contenido manda, porque su sitio es donde se estudia. Esos se cuentan aparte y se dicen. Lo que
-    no casa con nada —preguntas de otros bloques— cae en el cajón de su epígrafe.
+    contenido manda, porque su sitio es donde se estudia. Esos se cuentan aparte y se mueven.
+
+    Dos pasos más, y los dos importan:
+
+    - si la materia que ha ganado es de una **familia** (el modelo OSI), se vuelve a decidir entre
+      sus hermanas por asunto (`_materia_osi`): sus cuatro partes comparten vocabulario y decidir
+      por la primera palabra que casa sería echarlo a suertes;
+    - lo que no casa con nada devuelve `None`, y **no** hay cajón que lo recoja: un hecho sin
+      materia es una pregunta mal clasificada, y se dice en vez de esconderse.
     """
     suyas = tuple(materia for materia in materias if materia.epigraph_code == epigraph_code)
     limpio = normalise(texto)
     encontrada = _mejor_materia(limpio, suyas) if suyas else None
     if encontrada is None:
         encontrada = _mejor_materia(limpio, tuple(m for m in materias if not m.es_cajon))
+    if encontrada is not None and encontrada.familia:
+        return _materia_osi(limpio, materias) or encontrada
     if encontrada is not None:
         return encontrada
-    return next(
-        (materia for materia in suyas if materia.es_cajon),
-        next(materia for materia in materias if materia.es_cajon),
-    )
+    return next((materia for materia in suyas if materia.es_cajon), None)
 
 
 def _texto_de_grupo(grupo: QuestionGroup) -> str:
@@ -211,30 +472,110 @@ def _texto_de_grupo(grupo: QuestionGroup) -> str:
     return grupo.representative.stem
 
 
-def repartir_hechos(hechos: Sequence[Hecho], materias: Sequence[Materia]) -> dict[str, list[Hecho]]:
-    """Los hechos de cada materia, por su clave. Los cajones se llevan lo que no casa con nada."""
+def repartir_hechos(
+    hechos: Sequence[Hecho],
+    materias: Sequence[Materia],
+    *,
+    materia_por_grupo: Mapping[str, str] | None = None,
+    grupos_sin_materia: Collection[str] = (),
+) -> tuple[dict[str, list[Hecho]], list[Hecho]]:
+    """Los hechos de cada materia, por su clave, y los que no son de ninguna.
+
+    Manda **la pregunta de la que sale el hecho**, no su texto: un hecho es una frase escrita para
+    contestar unas preguntas concretas, así que su sitio es el de esas preguntas. Si se repartiera
+    por su texto, el enunciado y el hecho podrían acabar en apartados distintos y la pregunta se
+    quedaría sin el hecho que la ancla en su propio apartado (116 preguntas en IV.7 antes de esto).
+
+    El texto decide en dos casos, y solo en dos: un hecho **sin** pregunta de origen (lo escribió el
+    modelo para un lote que no identificó) y un hecho cuyas preguntas van a materias distintas
+    (porque el propio hecho habla de dos cosas).
+
+    Y un hecho cuyas preguntas **no son de este tema** (`grupos_sin_materia`) se va con ellas: si la
+    pregunta está mal clasificada y va a la cola, su hecho no puede quedarse aquí a sostener un
+    apartado del que ya no es. Es lo que pidió el propietario: «sus datos se van con ellas».
+
+    Después hay una **segunda pasada, de sobrantes**: un hecho que va con sus preguntas pero cuyo
+    texto es de otra materia del tema se mueve a la suya, **siempre que su pregunta siga teniendo
+    algún hecho donde está**. Es lo que deja el apartado de acceso remoto con los hechos de Telnet,
+    SSH y RDP aunque salieran de la misma pregunta que los de SNMP: el hecho de Telnet se va a su
+    sitio y la pregunta no se queda sin nada, que es la condición que hace segura la mudanza.
+    """
     por_clave: dict[str, list[Hecho]] = {materia.key: [] for materia in materias}
+    por_grupo = materia_por_grupo or {}
+    ajenas = set(grupos_sin_materia)
+    sin_materia: list[Hecho] = []
+    de_su_texto: dict[str, str] = {}
     for hecho in hechos:
-        por_clave[materia_de(hecho.text, hecho.epigraph_code, materias).key].append(hecho)
-    return por_clave
+        if hecho.source_groups and all(firma in ajenas for firma in hecho.source_groups):
+            sin_materia.append(hecho)
+            continue
+        destinos = {por_grupo[firma] for firma in hecho.source_groups if firma in por_grupo}
+        clave = next(iter(destinos)) if len(destinos) == 1 else None
+        if clave is None:
+            materia = materia_de(hecho.text, hecho.epigraph_code, materias)
+            if materia is None:
+                sin_materia.append(hecho)
+                continue
+            clave = materia.key
+        else:
+            propia = materia_de(hecho.text, hecho.epigraph_code, materias)
+            if propia is not None and propia.key != clave:
+                de_su_texto[hecho.fact_id] = propia.key
+        por_clave[clave].append(hecho)
+
+    if de_su_texto:
+        cuenta: dict[str, int] = {}
+        for hecho in hechos:
+            for firma in hecho.source_groups:
+                clave = por_grupo.get(firma)
+                if clave is not None:
+                    cuenta[firma] = cuenta.get(firma, 0) + 1
+        for hecho in hechos:
+            destino = de_su_texto.get(hecho.fact_id)
+            if destino is None:
+                continue
+            suyo = next(
+                (por_grupo[firma] for firma in hecho.source_groups if firma in por_grupo), None
+            )
+            if suyo is None:
+                continue
+            # Solo se muda si la pregunta sigue anclada en su apartado sin este hecho.
+            if all(
+                cuenta.get(firma, 0) > 1
+                for firma in hecho.source_groups
+                if por_grupo.get(firma) == suyo
+            ):
+                por_clave[suyo].remove(hecho)
+                por_clave[destino].append(hecho)
+                for firma in hecho.source_groups:
+                    if por_grupo.get(firma) == suyo:
+                        cuenta[firma] -= 1
+    return por_clave, sin_materia
 
 
 def repartir_grupos(
     grupos: Sequence[QuestionGroup], materias: Sequence[Materia]
-) -> dict[str, list[QuestionGroup]]:
-    """Los grupos de preguntas de cada materia, por su clave."""
+) -> tuple[dict[str, list[QuestionGroup]], list[QuestionGroup]]:
+    """Los grupos de preguntas de cada materia, por su clave, y los que no son de ninguna."""
     por_clave: dict[str, list[QuestionGroup]] = {materia.key: [] for materia in materias}
+    sin_materia: list[QuestionGroup] = []
     for grupo in grupos:
         epigrafe = grupo.epigraph_code or grupo.representative.epigraph_code
-        por_clave[materia_de(_texto_de_grupo(grupo), epigrafe, materias).key].append(grupo)
-    return por_clave
+        materia = materia_de(_texto_de_grupo(grupo), epigrafe, materias)
+        if materia is None:
+            sin_materia.append(grupo)
+            continue
+        por_clave[materia.key].append(grupo)
+    return por_clave, sin_materia
 
 
 def validar_catalogo(topic_code: str, materias: Sequence[Materia]) -> None:
     """Un catálogo mal formado se dice antes de repartir nada, no se descubre en el resultado.
 
-    Dos invariantes: cada epígrafe con materias tiene **un solo** cajón, y el cajón no tiene
-    patrones (si los tuviera, dejaría de recoger lo que no casa con nada).
+    Dos invariantes: no hay claves de materia repetidas, y **como mucho** hay un cajón por epígrafe
+    (si lo hay, no puede tener patrones: dejaría de recoger lo que no casa con nada). Un catálogo
+    **sin** cajón es válido y es el de IV.7: no hay apartado de revisión, y lo que no case con
+    ninguna materia se cuenta y se dice.
     """
     por_epigrafe: dict[str, list[Materia]] = {}
     for materia in materias:
@@ -244,10 +585,10 @@ def validar_catalogo(topic_code: str, materias: Sequence[Materia]) -> None:
         raise ValueError(f"el catálogo de {topic_code} tiene claves de materia repetidas")
     for epigrafe, suyas in por_epigrafe.items():
         cajones = [materia for materia in suyas if materia.es_cajon]
-        if len(cajones) != 1:
+        if len(cajones) > 1:
             raise ValueError(
-                f"el epígrafe {epigrafe} de {topic_code} tiene {len(cajones)} cajones y tiene que "
-                "tener exactamente uno"
+                f"el epígrafe {epigrafe} de {topic_code} tiene {len(cajones)} cajones y no puede "
+                "tener más de uno"
             )
 
 
@@ -258,11 +599,20 @@ def indice_de(
     epigraphs: Sequence[tuple[str, str]],
     hechos: Sequence[Hecho] = (),
     grupos: Sequence[QuestionGroup] = (),
+    umbral_equivalencia: float = UMBRAL_EQUIVALENCIA,
 ) -> IndiceDelTema:
     """El índice del tema con el catálogo de sus epígrafes. Falla si el tema no tiene catálogo.
 
     Un catálogo de materias es una decisión de contenido: inventarlo a medias para un tema que no se
     ha definido sería escribir apuntes a ciegas. Los temas sin catálogo se dicen, no se inventan.
+
+    El orden de los pasos importa: **primero se reparte** (cada hecho y cada grupo a su materia, con
+    el texto tal como está) y **después se agrupan los repetidos dentro de cada materia**. Al revés,
+    la deduplicación decidiría a qué apartado va cada pregunta —dos hechos equivalentes pueden
+    repartirse por su texto— y una pregunta podría cambiar de apartado por haber juntado dos hechos.
+    Así, el reparto es el mismo con deduplicación y sin ella, y lo único que cambia es cuántos
+    hechos
+    hay que redactar.
     """
     materias = catalogo(topic_code)
     if materias is None:
@@ -275,36 +625,214 @@ def indice_de(
                 f"la materia «{materia.key}» apunta al epígrafe {materia.epigraph_code}, que no "
                 f"está en el temario de {topic_code}"
             )
-    por_materia_hechos = repartir_hechos(hechos, materias)
-    por_materia_grupos = repartir_grupos(grupos, materias)
-    reparto = tuple(
-        RepartoMateria(
-            materia=materia,
-            hechos=tuple(por_materia_hechos[materia.key]),
-            grupos=tuple(por_materia_grupos[materia.key]),
-        )
+    por_materia_grupos, grupos_sin_materia = repartir_grupos(grupos, materias)
+    materia_por_grupo = {
+        grupo.signature: materia.key
         for materia in materias
+        for grupo in por_materia_grupos[materia.key]
+    }
+    por_materia_hechos, sin_materia = repartir_hechos(
+        hechos,
+        materias,
+        materia_por_grupo=materia_por_grupo,
+        grupos_sin_materia={grupo.signature for grupo in grupos_sin_materia},
     )
-    sin_materia = tuple(
-        hecho for apartado in reparto if apartado.materia.es_cajon for hecho in apartado.hechos
-    )
+    reparto: list[RepartoMateria] = []
+    for materia in materias:
+        originales = tuple(por_materia_hechos[materia.key])
+        quedan = deduplicar(originales, umbral=umbral_equivalencia)
+        # Lo que se agrupa se guarda aparte, para poder decir cuántos había y cuántos quedan.
+        conservados = {hecho.fact_id for hecho in quedan}
+        reparto.append(
+            RepartoMateria(
+                materia=materia,
+                hechos=quedan,
+                grupos=tuple(por_materia_grupos[materia.key]),
+                fusionados=tuple(hecho for hecho in originales if hecho.fact_id not in conservados),
+            )
+        )
+    definitivo = tuple(reparto)
     return IndiceDelTema(
         topic_code=topic_code,
         topic_title=topic_title,
         epigraphs=tuple(epigraphs),
-        reparto=reparto,
-        sin_materia=sin_materia,
+        reparto=definitivo,
+        sin_materia=tuple(sin_materia),
         fuera_de_su_epigrafe=tuple(
             hecho
-            for apartado in reparto
-            if not apartado.materia.es_cajon
+            for apartado in definitivo
             for hecho in apartado.hechos
             if hecho.epigraph_code != apartado.materia.epigraph_code
         ),
+        grupos_sin_materia=tuple(grupos_sin_materia),
+        hechos_originales=len(hechos),
     )
 
 
+def plan_de(
+    indice: IndiceDelTema,
+    *,
+    max_hechos_por_apartado: int = 0,
+) -> tuple[NoteSection, ...]:
+    """El plan de redacción del índice: un apartado por materia, en el orden en que se estudia.
+
+    Es lo que convierte el índice aprobado en lo que se redacta. Tres decisiones:
+
+    - **un apartado por materia**, con sus hechos ya agrupados: es el índice que el propietario
+      aprobó, no los trozos de cuarenta hechos que salían de los lotes;
+    - **las materias sin hechos no generan apartado**: un apartado vacío es un hueco, y los huecos
+      los declara el índice, no el texto;
+    - `max_hechos_por_apartado` (0 = sin tope) parte una materia muy grande en trozos numerados
+      **de la misma materia**, que es lo único que se puede partir sin volver a repetir el tema.
+      Los trozos comparten las tres primeras palabras del título a propósito: son el mismo apartado
+      y se leen seguidos.
+    """
+    apartados: list[NoteSection] = []
+    posicion = 1
+    for reparto in indice.reparto:
+        if not reparto.hechos:
+            continue
+        if max_hechos_por_apartado <= 0 or len(reparto.hechos) <= max_hechos_por_apartado:
+            trozos = [reparto.hechos]
+        else:
+            trozos = [
+                reparto.hechos[inicio : inicio + max_hechos_por_apartado]
+                for inicio in range(0, len(reparto.hechos), max_hechos_por_apartado)
+            ]
+        for numero, trozo in enumerate(trozos, start=1):
+            sufijo = "" if len(trozos) == 1 else f" ({numero}/{len(trozos)})"
+            clave = reparto.materia.key if len(trozos) == 1 else f"{reparto.materia.key}-{numero}"
+            apartados.append(
+                NoteSection(
+                    key=clave,
+                    epigraph_code=reparto.materia.epigraph_code,
+                    title=f"{reparto.materia.title}{sufijo}",
+                    anchor=clave,
+                    position=posicion,
+                    facts=tuple(trozo),
+                )
+            )
+            posicion += 1
+    return tuple(apartados)
+
+
 # --- el catálogo de IV.7 --------------------------------------------------------------------------
+
+#: La clave de la familia del modelo OSI. Sus cuatro materias comparten los patrones que dicen «esto
+#: es del modelo OSI» y se reparten después por asunto (`_REGLAS_OSI`): si cada una tuviera patrones
+#: propios, la que ganara sería la de siempre (la primera por prioridad) y las otras tres quedarían
+#: vacías.
+FAMILIA_OSI = "osi"
+
+#: Lo que dice que un texto es del modelo OSI: la sigla, la norma de la que sale, el sistema abierto
+#: y las palabras que solo aparecen hablando de sus capas.
+_PATRONES_OSI: tuple[str, ...] = (
+    r"\bosi\b",
+    r"\biso\b",
+    r"sistema abierto",
+    r"interoperabilidad",
+    r"\bsubcapa",
+    r"\bllc\b",
+    r"\bpdu\b",
+    r"\bencapsul",
+    r"capa (1|2|3|4|5|6|7|fisica|enlace|de enlace|red|transporte|sesion|presentacion|aplicacion)",
+    r"nivel (1|2|3|4|5|6|7|fisico|de enlace|red|transporte|sesion|presentacion|aplicacion)",
+    r"\bpresentacion\b",
+    r"\bsesion\b",
+    r"\bcapas?\b",
+    r"\bnivel(es)?\b",
+    # Los dispositivos que trabajan en cada capa: su apartado es parte del modelo (d), así que sus
+    # palabras también dicen «esto es del OSI» (el `hub` que se define «en la interconexión»).
+    r"\bhubs?\b",
+    r"\bswitches?\b",
+    r"\bconmutador",
+    r"\brepetidor",
+    r"\bbridge\b|\bpuente",
+    r"\bpasarela",
+    # El vocabulario del nivel de aplicación del modelo (`ASE`, contexto de aplicación), que es
+    # donde se estudia.
+    r"\bases\b",
+    r"contexto de aplicacion",
+)
+
+#: Las cuatro partes del modelo OSI, en el orden en que se miran. Las tres primeras tienen su
+#: vocabulario; lo que no casa con ninguna es del **modelo** (qué es OSI y qué es un sistema
+#: abierto), que es la materia `osi-que-es` y no una regla más: así no hay un quinto destino que
+#: nadie haya aprobado.
+#:
+#: El orden es el de la pregunta que decide: ¿nombra un dispositivo? ¿nombra una unidad de datos o
+#: una subcapa? ¿nombra una capa concreta? Un `switch` que «conmuta tramas» es un hecho de
+#: dispositivos, no de unidades, y por eso los dispositivos se miran antes.
+_REGLAS_OSI: tuple[tuple[str, tuple[str, ...]], ...] = (
+    (
+        "osi-dispositivos",
+        (
+            r"\bswitches?\b",
+            r"\bconmutador",
+            r"\brouters?\b",
+            r"\bencaminador",
+            r"\bhubs?\b",
+            r"\bconcentrador",
+            r"\brepetidor",
+            r"\bbridge\b|\bpuente",
+            r"\bgateway\b|\bpasarela",
+            r"\bmodems?\b",
+            r"punto de acceso",
+            r"tarjeta de red",
+            r"\bnic\b",
+            r"dispositivos? (de|que|utilizados)",
+        ),
+    ),
+    (
+        "osi-unidades",
+        (
+            r"\bpdu\b",
+            r"unidad(es)? de datos",
+            r"\bencapsul",
+            r"\bsubcapas?\b|\bsubniveles?\b",
+            r"\bllc\b",
+            r"\bmac\b",
+            r"\btramas?\b|\bframes?\b",
+            r"\bsegmentos?\b",
+            r"\bpaquetes?\b|\bdatagramas?\b",
+            r"\bbytes?\b",
+            r"\btdpu\b|\bapdu\b|\bbpdu\b",
+        ),
+    ),
+    (
+        "osi-que-es",
+        (
+            r"sistema abierto",
+            r"iso 7498",
+            r"modelo de referencia",
+            r"\binteroperabilidad\b",
+            r"\bmodular\b",
+            r"independencia entre capas",
+            r"no debe afectar",
+            r"transparente para el resto",
+            r"dividir la red en capas",
+            r"sistemas cerrados",
+            r"estandar de comunicaciones",
+            r"open systems? interconnection",
+        ),
+    ),
+    (
+        "osi-capas",
+        (
+            r"\bnivel(es)?\b",
+            r"capa (1|2|3|4|5|6|7|fisica|enlace|de enlace|red|transporte|sesion|presentacion|"
+            r"aplicacion)",
+            r"nivel (1|2|3|4|5|6|7|fisico|de enlace|red|transporte|sesion|presentacion|aplicacion)",
+            r"\bpresentacion\b",
+            r"\bsesion\b",
+            r"\baplicacion\b",
+            r"\btransporte\b",
+            r"\benlace\b",
+            r"capa fisica|\bfisica\b",
+            r"\bcapas?\b",
+        ),
+    ),
+)
 
 #: IV.7, por epígrafes y **en el orden en que se estudia** (el que se enseña). El orden del reparto
 #: es otro y va en `prioridad`: un hecho que habla de POP3 y del puerto 110 es un hecho de correo,
@@ -314,11 +842,12 @@ _MATERIAS_IV7: tuple[Materia, ...] = (
     Materia(
         key="tcpip-arquitectura",
         epigraph_code="IV.7.1",
-        title="La arquitectura TCP/IP: capas, protocolos y su comparación con OSI",
+        title="La arquitectura TCP/IP: capas, protocolos y familias",
         resumen=(
             "Qué es TCP/IP como familia de protocolos, sus cuatro capas (acceso a la red, "
-            "internet, transporte y aplicación), qué protocolos van en cada una, protocolos de "
-            "usuario y de soporte, y la correspondencia capa a capa con el modelo OSI."
+            "internet, transporte y aplicación), qué protocolos van en cada una, los protocolos de "
+            "usuario y de soporte, la correspondencia capa a capa con el modelo OSI y las familias "
+            "que **no** son TCP/IP (IPX/SPX y NetBEUI), que se nombran solo al compararlas."
         ),
         patrones=(
             r"tcp ip",
@@ -327,43 +856,68 @@ _MATERIAS_IV7: tuple[Materia, ...] = (
             r"acceso a la red",
             r"protocolos? de (usuario|soporte)",
             r"\benrutable\b",
-            r"familia de protocolos",
+            r"familia de protocolos|familias de protocolos",
             r"\bcuatro capas\b",
             r"\bconectividad extremo a extremo\b",
+            # Las familias que no son TCP/IP: van aquí porque aquí es donde se comparan familias,
+            # que es lo único que se dice de ellas.
+            r"\bipx\b|\bspx\b",
+            r"netbeui|netbios",
         ),
         prioridad=10,
     ),
     Materia(
-        key="osi-modelo",
+        key="osi-que-es",
         epigraph_code="IV.7.1",
-        title="El modelo OSI de ISO: las siete capas y sus unidades de datos",
+        title="El modelo OSI y el sistema abierto",
         resumen=(
-            "El modelo de referencia de ISO: qué es un sistema abierto, el orden y la función de "
-            "las siete capas (física, enlace, red, transporte, sesión, presentación y aplicación), "
-            "las subcapas LLC y MAC, la PDU de cada nivel (bit, trama, paquete, segmento), el "
-            "encapsulado y los dispositivos que operan en cada capa."
+            "Qué es el modelo de referencia OSI (ISO 7498), qué es un sistema abierto según ISO, "
+            "para qué sirve dividir la comunicación en capas (sistema modular e independencia "
+            "entre capas), la comunicación vertical y horizontal (virtual) y la interoperabilidad."
         ),
-        patrones=(
-            r"\bosi\b",
-            r"\biso\b",
-            r"sistema abierto",
-            r"\bsubcapa",
-            r"\bllc\b",
-            r"\bmac\b",
-            r"\bpdu\b",
-            r"\btramas?\b",
-            r"\bsegmentos?\b",
-            r"\bpaquetes?\b",
-            r"capa (1|2|3|4|5|6|7|fisica|enlace|de enlace|red|transporte|sesion|presentacion|"
-            r"aplicacion)",
-            r"nivel (1|2|3|4|5|6|7|fisico|de enlace|red|transporte|sesion|presentacion|aplicacion)",
-            r"\bpresentacion\b",
-            r"\bsesion\b",
-            r"\bencapsul",
-            r"\binteroperabilidad\b",
-            r"\bcapas?\b",
+        patrones=_PATRONES_OSI,
+        prioridad=21,
+        familia=FAMILIA_OSI,
+    ),
+    Materia(
+        key="osi-capas",
+        epigraph_code="IV.7.1",
+        title="Las siete capas del modelo OSI, una a una",
+        resumen=(
+            "El nombre, el número y la función de cada una de las siete capas: física, enlace de "
+            "datos, red, transporte, sesión, presentación y aplicación. Incluye el orden de las "
+            "capas y qué hace cada nivel."
         ),
-        prioridad=20,
+        patrones=_PATRONES_OSI,
+        prioridad=22,
+        familia=FAMILIA_OSI,
+    ),
+    Materia(
+        key="osi-unidades",
+        epigraph_code="IV.7.1",
+        title="Unidades de datos y encapsulado: la subcapa LLC y la MAC",
+        resumen=(
+            "La unidad de datos (PDU) de cada capa —bit, trama, paquete, segmento— y el "
+            "encapsulado. Las dos subcapas de la capa de enlace de datos: LLC (Logical Link "
+            "Control) y MAC (Media Access Control)."
+        ),
+        patrones=_PATRONES_OSI,
+        prioridad=23,
+        familia=FAMILIA_OSI,
+    ),
+    Materia(
+        key="osi-dispositivos",
+        epigraph_code="IV.7.1",
+        title="Qué dispositivos trabajan en cada capa",
+        resumen=(
+            "En qué capa del modelo OSI opera cada dispositivo de interconexión: el repetidor y el "
+            "concentrador (hub) en la capa física, el conmutador (switch) y el puente (bridge) en "
+            "la de enlace, el encaminador (router) en la de red y la pasarela (gateway) en las "
+            "superiores."
+        ),
+        patrones=_PATRONES_OSI,
+        prioridad=24,
+        familia=FAMILIA_OSI,
     ),
     Materia(
         key="conceptos-del-modelo",
@@ -385,6 +939,11 @@ _MATERIAS_IV7: tuple[Materia, ...] = (
             r"\bduplex\b",
             r"\bcheckpoints?\b",
             r"\bpuntos de (verificacion|sincronizacion)\b",
+            # «¿Cómo se llaman los puntos insertados en la corriente de datos para permitir la
+            # recuperación tras una interrupción?»: son los puntos de comprobación de la capa de
+            # sesión, y el enunciado no usa ninguna de las dos palabras.
+            r"puntos insertados en la corriente",
+            r"recuperacion tras una interrupcion",
             r"\bmodular\b",
         ),
         prioridad=90,
@@ -531,12 +1090,25 @@ _MATERIAS_IV7: tuple[Materia, ...] = (
         prioridad=17,
     ),
     Materia(
-        key="gestion",
+        key="acceso-remoto",
         epigraph_code="IV.7.2",
-        title="Gestión de red: SNMP, directorio y acceso remoto",
+        title="Acceso remoto: Telnet, SSH y RDP",
         resumen=(
-            "SNMP y sus versiones (v1, v2c, v3 con seguridad), la MIB y las PDU, los puertos 161 y "
-            "162, el acceso a servicios de directorio (LDAP) y el acceso remoto (Telnet y SSH)."
+            "Cómo se entra a un equipo o a un servicio a distancia: Telnet en el 23/TCP (sin "
+            "cifrado), SSH en el 22/TCP (con cifrado, autenticación y túneles) y RDP en el "
+            "3389/TCP, con lo que aporta cada uno frente a los otros."
+        ),
+        patrones=(r"\btelnet\b", r"\bssh\b", r"\brdp\b", r"acceso remoto", r"escritorio remoto"),
+        prioridad=18,
+    ),
+    Materia(
+        key="directorio-y-gestion",
+        epigraph_code="IV.7.2",
+        title="Directorio y gestión: LDAP y SNMP",
+        resumen=(
+            "El acceso a servicios de directorio (LDAP y el 389/TCP, sobre el modelo X.500) y la "
+            "gestión y monitorización de la red con SNMP: sus versiones (v1, v2c, v3 con "
+            "seguridad), la MIB, las PDU y los puertos 161 y 162."
         ),
         patrones=(
             r"\bsnmp",
@@ -544,10 +1116,9 @@ _MATERIAS_IV7: tuple[Materia, ...] = (
             r"gestion de red",
             r"\bmonitorizacion\b",
             r"\bldap\b",
-            r"\btelnet\b",
-            r"\bssh\b",
-            r"\brdp\b",
+            r"\bx 500\b|\bx500\b",
             r"gestion osi",
+            r"servicios? de directorio",
         ),
         prioridad=18,
     ),
@@ -576,6 +1147,15 @@ _MATERIAS_IV7: tuple[Materia, ...] = (
             r"bits? (de hosts?|para hosts?)",
             r"bloques de \d+",
             r"\bhosts?\b",
+            # «¿A qué red pertenece el equipo 10.31.93.25/29?»: el enunciado trae la dirección con
+            # su prefijo, y la normalización quita los puntos y la barra, así que se busca la forma
+            # normalizada (`10 31 93 25 29`).
+            r"a que red pertenece",
+            r"\b\d{1,3}( \d{1,3}){3} \d{1,2}\b",
+            # «Se va a abrir un nuevo Centro de Salud… ha dado el siguiente direccionamiento»: el
+            # enunciado no dice «subred», dice «direccionamiento» y pide repartirlo.
+            r"direccionamiento",
+            r"tipo de direccion",
         ),
         prioridad=20,
     ),
@@ -601,6 +1181,9 @@ _MATERIAS_IV7: tuple[Materia, ...] = (
             r"reservad",
             r"127 0 0",
             r"no asignable",
+            # «¿Cuál de estas direcciones es de Internet?»: se pregunta por una dirección pública
+            # frente a las privadas, y el enunciado no usa la palabra «pública».
+            r"es de internet|direcciones? de internet",
         ),
         prioridad=21,
     ),
@@ -622,6 +1205,9 @@ _MATERIAS_IV7: tuple[Materia, ...] = (
             r"retransmis",
             r"control de flujo",
             r"control de congestion",
+            # La sonda que comprueba que la conexión sigue viva: es de TCP aunque el enunciado no
+            # diga «TCP».
+            r"keep ?alive",
         ),
         prioridad=25,
     ),
@@ -633,7 +1219,19 @@ _MATERIAS_IV7: tuple[Materia, ...] = (
             "El protocolo no orientado a conexión: qué no garantiza (entrega, orden, duplicados), "
             "su cabecera de 8 bytes y para qué se usa frente a TCP."
         ),
-        patrones=(r"\budp\b", r"no orientado a conexion", r"\bdatagramas?\b"),
+        patrones=(
+            r"\budp\b",
+            r"no orientado a conexion",
+            r"\bdatagramas?\b",
+            # «…se observan pequeños cortes intermitentes en el audio. El sistema no retransmite los
+            # paquetes perdidos»: el enunciado describe UDP (latencia antes que fiabilidad) sin
+            # nombrarlo.
+            r"no retransmit",
+            r"paquetes perdidos",
+            r"baja latencia",
+            r"tiempo real",
+            r"fiabilidad total",
+        ),
         prioridad=26,
     ),
     Materia(
@@ -653,6 +1251,9 @@ _MATERIAS_IV7: tuple[Materia, ...] = (
             # «RIPng» es RIP: sin quitar el límite de palabra, la pregunta de RIPng se quedaba sin
             # materia y caía en el cajón de revisión.
             r"\brip",
+            # «RlPng»: el OCR del banco cambia la `I` por una `l` minúscula, y sin esto la pregunta
+            # de RIPng se quedaba sin apartado.
+            r"\brlpng\b|\brlp\b",
             r"\bbgp",
             r"\bttl\b",
             r"\bsaltos?\b",
@@ -720,11 +1321,17 @@ _MATERIAS_IV7: tuple[Materia, ...] = (
             r"\bchecksum\b",
             r"campo (tos|ihl|identificacion|offset|desplazamiento)",
             r"fragmentacion|fragmentos?",
+            # «Respecto al campo Fragment offset»: el enunciado nombra el campo en inglés y sin la
+            # palabra «fragmentación», y sin este patrón la pregunta se quedaba sin materia.
+            r"fragment offset",
             r"\bmtu\b|\bmss\b",
             # «¿A qué clase pertenece la red 172.17.8.0/21?»: el enunciado nombra la clase y no la
             # dirección, así que sin este patrón la pregunta se quedaba sin materia.
             r"\bclase\b",
             r"bits? mas significativos",
+            # «172 en binario es 10101100…»: la conversión de una dirección a binario es de la
+            # dirección, no del cálculo de subredes.
+            r"en binario",
             r"\bip\b",
         ),
         prioridad=50,
@@ -732,13 +1339,13 @@ _MATERIAS_IV7: tuple[Materia, ...] = (
     Materia(
         key="otros-protocolos",
         epigraph_code="IV.7.2",
-        title="Otros protocolos y servicios de aplicación del tema",
+        title="Otros protocolos",
         resumen=(
-            "Protocolos TCP/IP que aparecen en las preguntas del tema y no son de las materias "
+            "Los protocolos TCP/IP que aparecen en las preguntas del tema y no son de las materias "
             "anteriores: NTP (hora), IPP (impresión), RSVP (reservas), Kerberos y RADIUS "
-            "(autenticación), CoAP (dispositivos limitados), los protocolos heredados (IPX/SPX, "
-            "NetBEUI/NetBIOS) y los que se confunden con ellos. **Propuesta**: si no convence, "
-            "estos hechos se reparten entre la materia de puertos y el cajón de revisión."
+            "(autenticación), CoAP (dispositivos limitados) y los que se confunden con ellos. "
+            "IPX/SPX y NetBEUI **no son de la familia TCP/IP**: se nombran en el apartado de la "
+            "arquitectura TCP/IP, y solo al comparar familias de protocolos."
         ),
         patrones=(
             r"\bntp\b",
@@ -747,9 +1354,7 @@ _MATERIAS_IV7: tuple[Materia, ...] = (
             r"\bkerberos\b",
             r"\bradius\b",
             r"\bcoap\b",
-            r"\bipx\b",
-            r"\bspx\b",
-            r"netbeui|netbios",
+            r"protocolo de tiempo|sincronizacion de tiempo",
             r"\bwhois\b",
             r"\bx11\b",
             r"\bsdp\b",
@@ -761,28 +1366,6 @@ _MATERIAS_IV7: tuple[Materia, ...] = (
         ),
         prioridad=45,
     ),
-    Materia(
-        key="otros-iv-7-1",
-        epigraph_code="IV.7.1",
-        title="Otros contenidos de IV.7.1 (revisar)",
-        resumen=(
-            "Hechos del epígrafe que no son de ninguna de sus materias. Se revisan antes de "
-            "redactar: si son de otro bloque, la pregunta está mal clasificada."
-        ),
-        prioridad=PRIORIDAD_POR_DEFECTO,
-    ),
-    Materia(
-        key="otros",
-        epigraph_code="IV.7.2",
-        title="Otros contenidos de IV.7.2 (revisar)",
-        resumen=(
-            "Hechos que están en el tema pero no son de ninguna de sus materias: preguntas de "
-            "otros bloques (bases de datos, diagramas de flujo de datos, Métrica v3, normativa) "
-            "que se clasificaron aquí. Se revisan antes de redactar; no se escriben como si "
-            "fueran TCP/IP."
-        ),
-        prioridad=PRIORIDAD_POR_DEFECTO,
-    ),
 )
 
 #: El orden en que se **enseña** el índice de IV.7: el del temario, que es el del propietario. Las
@@ -790,9 +1373,11 @@ _MATERIAS_IV7: tuple[Materia, ...] = (
 #: una decisión aparte del orden de reparto (`prioridad`), que mira primero lo particular.
 _ORDEN_IV7 = (
     "tcpip-arquitectura",
-    "osi-modelo",
+    "osi-que-es",
+    "osi-capas",
+    "osi-unidades",
+    "osi-dispositivos",
     "conceptos-del-modelo",
-    "otros-iv-7-1",
     "direccionamiento-ipv4",
     "subredes",
     "direcciones-especiales",
@@ -808,10 +1393,10 @@ _ORDEN_IV7 = (
     "web",
     "correo",
     "ficheros",
-    "gestion",
+    "acceso-remoto",
+    "directorio-y-gestion",
     "herramientas",
     "otros-protocolos",
-    "otros",
 )
 
 
@@ -844,12 +1429,17 @@ def catalogo(topic_code: str) -> tuple[Materia, ...] | None:
 
 __all__ = [
     "PRIORIDAD_POR_DEFECTO",
+    "UMBRAL_EQUIVALENCIA",
     "IndiceDelTema",
     "Materia",
     "RepartoMateria",
     "catalogo",
+    "deduplicar",
+    "etiquetas",
+    "grupos_equivalentes",
     "indice_de",
     "materia_de",
+    "plan_de",
     "repartir_grupos",
     "repartir_hechos",
     "validar_catalogo",
