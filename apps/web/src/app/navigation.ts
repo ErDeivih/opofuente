@@ -77,6 +77,12 @@ export const ADMIN_NAV_ITEMS: readonly NavItem[] = [
     summary: 'Propuestas de clasificación esperando una decisión.',
   },
   {
+    path: '/admin/clasificacion',
+    label: 'Clasificación',
+    summary:
+      'Las preguntas dudosas del clasificador: dales tema o márcalas fuera, con el teclado.',
+  },
+  {
     path: '/admin/cambios',
     label: 'Cambios',
     summary: 'Versiones sustituidas y derivados que necesitan revisión.',
@@ -129,6 +135,7 @@ export const ROUTE_REDIRECTS: readonly { readonly from: string; readonly to: str
   { from: '/bandeja', to: '/admin/importar' },
   { from: '/biblioteca', to: '/admin/biblioteca' },
   { from: '/revision', to: '/admin/revision' },
+  { from: '/clasificacion', to: '/admin/clasificacion' },
   { from: '/cambios', to: '/admin/cambios' },
   { from: '/errores', to: '/admin/errores' },
   { from: '/preguntas', to: '/admin/preguntas' },

@@ -36,6 +36,8 @@ from opofuente.application.question_models import (
     QuestionPage,
     QuestionSetPage,
     QuestionSetView,
+    QuestionTopicConflictView,
+    QuestionTopicProposalsView,
     QuestionTopicView,
     QuestionView,
     RejectedRow,
@@ -91,6 +93,19 @@ _TRUE_VALUES = {"1", "s", "si", "sí", "r", "reserva", "true", "x", "yes"}
 #: destino rechazado se rechaza **diciendo qué es**: «es un bloque, no un tema», no un identificador
 #: a secas que deja a quien lo escribió sin saber qué eligió mal.
 _NODE_KIND_IN_TEXT = {"block": "un bloque", "epigraph": "un epígrafe"}
+
+
+def _mapping_outcome(vista: QuestionTopicView, estado: str) -> TopicMappingOutcome:
+    """El desenlace que devolvió el repositorio, traducido al modelo del servicio.
+
+    El repositorio habla el vocabulario del lote (`created` / `existing` / `promoted`) porque es el
+    que se publica fila a fila; aquí se convierte en dos banderas, que es lo que necesita quien
+    escribe: `created` es «lo creó esta llamada» y `promoted` es «ya estaba y esta llamada lo
+    decidió». Son excluyentes, y por eso no se puede reducir a un booleano sin perder una.
+    """
+    return TopicMappingOutcome(
+        view=vista, created=estado == "created", promoted=estado == "promoted"
+    )
 
 
 def _delimiter(text: str) -> str:
@@ -273,6 +288,8 @@ class QuestionService:
         epigraph_node_id: str | None = None,
         status: str = "accepted",
         reason: str | None = None,
+        promote: bool = False,
+        retire_others: bool = False,
     ) -> TopicAssignment:
         """Asigna un tema (y su epígrafe, si se dice) y deja el evento de auditoría. Idempotente.
 
@@ -290,6 +307,16 @@ class QuestionService:
         con confianza alta) de una **propuesta** (`provisional`, la cola de revisión del
         propietario): la propuesta se ve en el panel y no cuenta en el diagnóstico. `reason` es el
         motivo, y viaja a la auditoría junto con la confianza.
+
+        `promote` es lo que hace el propietario al despachar la cola: si el mapeo ya estaba como
+        propuesta, se **confirma** en lugar de dejarlo como estaba. Sin él, volver a escribir la
+        misma pareja es «ya estaba» y no cambia nada —que es lo que necesitan la clasificación por
+        lotes y la catalogación automática, que se reintentan.
+
+        `retire_others` cierra la misma decisión por el otro lado: una pregunta no puede quedarse
+        con dos temas propuestos cuando uno se acepta, así que las **demás** propuestas de esa
+        pregunta se retiran (marcadas, no borradas) en la misma operación. Sin esto, aceptar una
+        dejaría la otra en la cola y la misma pregunta volvería a aparecer.
 
         `actor` distingue a la persona (`local`) de la clasificación automática (`llm:…`), que
         necesita quedar identificada: son miles de asignaciones y hay que poder auditar quién las
@@ -322,6 +349,7 @@ class QuestionService:
             confidence=confidence,
             status=status,
             reason=reason,
+            promote=promote,
         )
         if asignado is None:
             raise NotFoundError("pregunta", question_id)
@@ -335,16 +363,64 @@ class QuestionService:
                 confidence=confidence,
                 status=status,
                 reason=reason,
+                promote=promote,
             )
             if escrito is None:  # pragma: no cover - el nodo se acaba de comprobar arriba
                 raise NotFoundError("nodo del programa", epigrafe_id)
-            epigrafe = TopicMappingOutcome(view=escrito[0], created=escrito[1])
+            epigrafe = _mapping_outcome(*escrito)
         # Un tema asignado dice que la pregunta **sí** es de este temario: si estaba marcada fuera
         # de temario, la marca se levanta (con su evento) en vez de dejar dos verdades enfrentadas.
         self._questions.clear_exclusion(question_id, now=self._clock.now(), actor=actor)
         return TopicAssignment(
-            topic=TopicMappingOutcome(view=asignado[0], created=asignado[1]), epigraph=epigrafe
+            topic=_mapping_outcome(*asignado),
+            epigraph=epigrafe,
+            # Las demás propuestas de esta pregunta sobran: se retiran **después** de escribir lo
+            # elegido, para que un fallo al escribir no deje la pregunta sin nada.
+            retired=(
+                self.retire_other_topics(
+                    question_id,
+                    keep_node_ids=frozenset(
+                        {node_id} if epigrafe_id is None else {node_id, epigrafe_id}
+                    ),
+                    actor=actor,
+                    reason=reason,
+                )
+                if retire_others
+                else 0
+            ),
         )
+
+    def retire_other_topics(
+        self,
+        question_id: str,
+        *,
+        keep_node_ids: frozenset[str],
+        actor: str = "local",
+        reason: str | None = None,
+    ) -> int:
+        """Deja la pregunta con **un solo tema** y retira lo demás. Devuelve cuánto ha retirado.
+
+        La pregunta se queda con lo que está en `keep_node_ids` (el tema elegido y, si se acaba de
+        escribir, su epígrafe) y con los epígrafes de ese tema; todo lo demás —otras propuestas y
+        **otros temas ya aceptados**— se marca `rejected`, con su evento.
+
+        Lo segundo es lo que hace falta para lo que quedó torcido antes de esta tanda: una pregunta
+        con dos temas aceptados cuenta en los dos agregados, y dejarla con uno es una decisión del
+        propietario, no de la aplicación. Aquí solo se ejecuta la que él ha tomado.
+        """
+        return self._questions.reject_other_mappings(
+            question_id,
+            keep_node_ids=keep_node_ids,
+            now=self._clock.now(),
+            actor=actor,
+            reason=reason or "la pregunta se queda con un solo tema: lo decide el propietario",
+        )
+
+    def topic_conflicts(
+        self, *, limit: int = 50, offset: int = 0
+    ) -> tuple[tuple[QuestionTopicConflictView, ...], int]:
+        """Las preguntas que cuentan en dos o más temas aceptados, con quién decidió cada uno."""
+        return self._questions.list_topic_conflicts(limit=limit, offset=offset)
 
     def _resolve_epigraph(self, *, topic_id: str, topic_code: str, epigraph_node_id: str) -> str:
         """Comprueba que el epígrafe existe y es hijo de ese tema, y devuelve su identificador."""
@@ -445,6 +521,12 @@ class QuestionService:
                     actor=actor,
                     note=request.reason,
                 )
+                if request.retire_others:
+                    # «Esta pregunta no es de este temario» decide la pregunta igual que asignarle
+                    # un tema: las propuestas y los temas que tuviera sobran y se retiran con ella.
+                    self.retire_other_topics(
+                        pregunta, keep_node_ids=frozenset(), actor=actor, reason=request.reason
+                    )
                 return TopicAssignmentRow(
                     question_version_id=pregunta,
                     outcome="excluded" if marca.created else "already_excluded",
@@ -462,10 +544,21 @@ class QuestionService:
                 confidence=request.confidence,
                 status=request.status,
                 reason=request.reason,
+                promote=request.promote,
+                retire_others=request.retire_others,
             )
+            # El desenlace lo dice el **tema**, no el epígrafe: la fila hizo una cosa, y el epígrafe
+            # va escrito con él. Si el tema ya estaba y el epígrafe se acaba de confirmar, lo que
+            # pasó con la fila sigue siendo «ya estaba», que es lo que se puede reintentar.
+            if asignacion.topic.promoted:
+                desenlace = "promoted"
+            elif asignacion.topic.created:
+                desenlace = "created"
+            else:
+                desenlace = "existing"
             return TopicAssignmentRow(
                 question_version_id=pregunta,
-                outcome="created" if asignacion.topic.created else "existing",
+                outcome=desenlace,
                 assignment=asignacion,
             )
         except (NotFoundError, ClassificationConflictError, InvariantViolationError) as error:
@@ -482,6 +575,17 @@ class QuestionService:
     ) -> tuple[tuple[QuestionExclusionView, ...], int]:
         """Las marcas de fuera de temario, con su total: la cola que revisa el propietario."""
         return self._questions.list_exclusions(reason=reason, limit=limit, offset=offset)
+
+    def topic_proposals(
+        self, *, limit: int = 50, offset: int = 0
+    ) -> tuple[tuple[QuestionTopicProposalsView, ...], int]:
+        """La cola de revisión: una tarjeta por pregunta, con sus propuestas dentro, y su total.
+
+        La escribe el clasificador con confianza media, no cuenta en ningún recuento del alumno, y
+        se despacha aceptando una propuesta (que confirma el mapeo y retira las demás), cambiándole
+        el tema, declarando la pregunta fuera de temario o dejándola estar.
+        """
+        return self._questions.list_topic_proposals(limit=limit, offset=offset)
 
     def topic_of_node(self, node_id: str) -> str | None:
         """El tema del que cuelga un nodo del programa, o `None` si no cuelga de ninguno.

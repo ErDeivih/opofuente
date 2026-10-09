@@ -139,6 +139,16 @@ import {
 import { fetchCapabilities, fetchReadiness, fetchSettings } from './system';
 import { fetchPendingActions, fetchStudyReadiness } from './readiness';
 import {
+  applyTopicDecisions,
+  fetchExclusions,
+  fetchTopicConflicts,
+  fetchTopicProposals,
+  CONFLICTS_LIMIT,
+  EXCLUSIONS_LIMIT,
+  PROPOSALS_LIMIT,
+  type TopicAssignmentRow,
+} from './topicReview';
+import {
   createBackup,
   executeRestore,
   fetchBackups,
@@ -246,6 +256,14 @@ export const queryKeys = {
   housekeeping: () => ['maintenance', 'housekeeping'] as const,
   indexHealth: () => ['maintenance', 'index'] as const,
   diagnostic: () => ['maintenance', 'diagnostic'] as const,
+  /* F5: la cola de revisión de la clasificación. La cola y las exclusiones cuelgan de la misma
+     raíz porque decidir una propuesta cambia las dos: aceptar un tema levanta la marca de fuera de
+     temario, y marcar fuera de temario retira las propuestas de esa pregunta. */
+  topicProposals: (offset = 0) => ['topic-review', 'proposals', offset] as const,
+  questionExclusions: (offset = 0) => ['topic-review', 'exclusions', offset] as const,
+  /* Las preguntas que cuentan en dos temas cuelgan de la misma raíz: resolver una con un tema
+     retira los demás mapeos y deja de estar en las dos listas a la vez. */
+  topicConflicts: (offset = 0) => ['topic-review', 'conflicts', offset] as const,
 };
 
 export function useReadiness() {
@@ -1555,6 +1573,63 @@ export function usePurge() {
       // Retirar material cambia lo que la biblioteca y la bandeja pueden contar.
       void queryClient.invalidateQueries({ queryKey: ['library'] });
       void queryClient.invalidateQueries({ queryKey: ['tray'] });
+    },
+  });
+}
+
+/* ------------------------------------------- F5: la cola de revisión de la clasificación */
+
+/**
+ * La cola de propuestas de tema sin confirmar, paginada por **pregunta** (una tarjeta por pregunta).
+ *
+ * Sin `staleTime`: la cola es el trabajo del propietario y se despacha de un tirón; una lectura
+ * cacheada le enseñaría propuestas que acaba de decidir.
+ */
+export function useTopicProposals(offset = 0) {
+  return useQuery({
+    queryKey: queryKeys.topicProposals(offset),
+    queryFn: () => fetchTopicProposals(offset, PROPOSALS_LIMIT),
+  });
+}
+
+/** Las preguntas declaradas fuera de temario, con su motivo: la otra mitad de la pantalla. */
+export function useQuestionExclusions(offset = 0) {
+  return useQuery({
+    queryKey: queryKeys.questionExclusions(offset),
+    queryFn: () => fetchExclusions(offset, EXCLUSIONS_LIMIT),
+  });
+}
+
+/**
+ * Las preguntas que cuentan en dos temas aceptados a la vez.
+ *
+ * Es lo que quedó decidido dos veces antes de esta tanda. La lista se lee; resolverla es una decisión
+ * del propietario, y por eso no hay nada que la toque sola.
+ */
+export function useTopicConflicts(offset = 0) {
+  return useQuery({
+    queryKey: queryKeys.topicConflicts(offset),
+    queryFn: () => fetchTopicConflicts(offset, CONFLICTS_LIMIT),
+  });
+}
+
+/**
+ * Aplica un lote de decisiones y recarga la cola entera.
+ *
+ * Decidir cambia **las dos** listas: una propuesta aceptada sale de la cola, y una pregunta marcada
+ * fuera de temario entra en las exclusiones (y al revés, asignar un tema levanta la marca). Por eso
+ * se invalida la raíz `topic-review` completa y no una de las dos.
+ */
+export function useApplyTopicDecisions() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (rows: TopicAssignmentRow[]) => applyTopicDecisions(rows),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['topic-review'] });
+      // Y lo que el alumno puede practicar cambia con ello: la cobertura por temas la sirve el
+      // mismo mapeo, así que dejarla cacheada enseñaría el banco de antes de decidir.
+      void queryClient.invalidateQueries({ queryKey: ['profiles'] });
+      void queryClient.invalidateQueries({ queryKey: ['questions'] });
     },
   });
 }

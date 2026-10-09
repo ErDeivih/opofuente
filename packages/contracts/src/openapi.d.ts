@@ -1943,6 +1943,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/question-topic-conflicts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Las preguntas que cuentan en dos temas aceptados, con quién decidió cada uno
+         * @description Las preguntas que cuentan en **dos o más temas decididos** a la vez.
+         *
+         *     No es una curiosidad: una pregunta en dos temas suma en los dos en todos los recuentos del
+         *     alumno y en la cobertura, así que mientras exista, esas cifras mienten. Vienen de antes de esta
+         *     tanda —la catalogación heredada del documento, las migraciones— y de dos corridas del
+         *     clasificador que se pisaron; por eso cada tema viaja con **quién lo decidió**, que es lo que
+         *     permite juzgar cuál se queda.
+         *
+         *     Se resuelve con la misma ruta por lotes que la cola: una fila con el tema elegido, `status`
+         *     `accepted` y `retire_others` deja la pregunta con ese tema y retira los demás. La aplicación no
+         *     elige: si nadie decide, no se toca nada.
+         */
+        get: operations["list_question_topic_conflicts_api_v1_question_topic_conflicts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/question-topic-proposals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Las propuestas de tema sin confirmar, con la pregunta (la cola de revisión del panel)
+         * @description Lo que el clasificador propuso con dudas (`provisional`) y nadie ha decidido todavía.
+         *
+         *     Es la lectura de la cola que despacha el propietario con el teclado, y por eso trae la pregunta
+         *     **entera** —enunciado y opciones— junto al tema y los epígrafes propuestos, la confianza y el
+         *     motivo del modelo: sin el texto delante, una propuesta no se puede juzgar, y sin la confianza no
+         *     se sabe cuánto dudó quien la hizo.
+         *
+         *     Va como recurso propio y no dentro de `GET /questions/{id}/topics` porque una propuesta no es
+         *     «los temas de una pregunta»: es **una cola**, se pagina como tal, y su total lo cuenta el
+         *     servidor. Van de la más dudosa a la menos, y el motivo sale de la auditoría, que es donde vive.
+         *
+         *     Se despacha con `POST /questions/topics/bulk`: una fila por propuesta con su `status`
+         *     (`accepted`) la confirma, otra con otro tema la corrige, y `exclusion_reason` la deja fuera de
+         *     temario. No hay una ruta de escritura propia para esto a propósito: la propuesta se decide por
+         *     el mismo camino auditado por el que se asignan los temas.
+         */
+        get: operations["list_question_topic_proposals_api_v1_question_topic_proposals_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/questions": {
         parameters: {
             query?: never;
@@ -3295,6 +3359,11 @@ export interface components {
              * @default 0
              */
             existing: number;
+            /**
+             * Promoted
+             * @default 0
+             */
+            promoted: number;
             /** Results */
             results: components["schemas"]["BulkTopicAssignmentResultSchema"][];
         };
@@ -3303,9 +3372,14 @@ export interface components {
          * @description Qué ha pasado con **una** fila del lote.
          *
          *     `outcome` es el vocabulario que hace utilizable el reintento: `created` (esta llamada lo creó),
-         *     `existing` (ya estaba), `excluded` (marcada fuera de temario ahora), `already_excluded` (ya lo
-         *     estaba) y `error` (la fila no se pudo aplicar, con el motivo en `detail`). Una fila mala **no**
-         *     tumba el lote: se dice cuál y por qué.
+         *     `existing` (ya estaba tal cual), `promoted` (ya estaba como **propuesta** y esta llamada la ha
+         *     confirmado), `excluded` (marcada fuera de temario ahora), `already_excluded` (ya lo estaba) y
+         *     `error` (la fila no se pudo aplicar, con el motivo en `detail`). Una fila mala **no** tumba el
+         *     lote: se dice cuál y por qué.
+         *
+         *     `promoted` y `created` son distintos a propósito: la cola de revisión se despacha confirmando
+         *     propuestas, y un informe que contara las confirmaciones como «ya estaban» dejaría al propietario
+         *     sin saber si su decisión se aplicó.
          */
         BulkTopicAssignmentResultSchema: {
             assignment?: components["schemas"]["QuestionTopicAssignmentSchema"] | null;
@@ -3316,7 +3390,7 @@ export interface components {
              * Outcome
              * @enum {string}
              */
-            outcome: "created" | "existing" | "excluded" | "already_excluded" | "error";
+            outcome: "created" | "existing" | "promoted" | "excluded" | "already_excluded" | "error";
             /** Question Version Id */
             question_version_id: string;
         };
@@ -3326,6 +3400,13 @@ export interface components {
          *
          *     Las dos formas son excluyentes y se comprueba: una fila que dijera las dos cosas dejaría la
          *     pregunta clasificada y sin clasificar a la vez, y una que no dijera ninguna no pide nada.
+         *
+         *     `status` es opcional **a propósito**, y su ausencia significa algo: una fila sin `status` no
+         *     toca lo que ya existe (crear si falta, y nada más), que es lo que necesita una clasificación por
+         *     lotes que se reintenta. Una fila **con** `status` dice qué tiene que quedar: si la pregunta ya
+         *     tenía una propuesta (`provisional`) a ese tema, se confirma —o se vuelve a proponer— y eso queda
+         *     auditado. Es lo que hace el propietario al despachar la cola desde la pantalla de revisión, y
+         *     por eso la confirmación viaja en el lote: no una petición por pregunta.
          */
         BulkTopicAssignmentSchema: {
             /**
@@ -3343,6 +3424,13 @@ export interface components {
             question_version_id: string;
             /** Reason */
             reason?: string | null;
+            /**
+             * Retire Others
+             * @default false
+             */
+            retire_others: boolean;
+            /** Status */
+            status?: ("provisional" | "accepted") | null;
         };
         /**
          * BulkTopicAssignmentsSchema
@@ -3559,6 +3647,25 @@ export interface components {
             open_count: number;
             /** Resolved Count */
             resolved_count: number;
+        };
+        /**
+         * ConflictingTopicSchema
+         * @description Un tema ya decidido de una pregunta que tiene más de uno, con quién lo decidió.
+         *
+         *     `actor` viaja porque cambia cómo se mira: uno heredado de una migración (`local`) y uno
+         *     propuesto por el modelo (`llm:…`) no se juzgan igual. Nulo es «no consta en la auditoría», que
+         *     también hay que poder decir en lugar de inventarse un autor.
+         */
+        ConflictingTopicSchema: {
+            /** Actor */
+            actor?: string | null;
+            /** Confidence */
+            confidence: number;
+            /** Created At */
+            created_at?: string | null;
+            /** Mapping Id */
+            mapping_id: string;
+            topic: components["schemas"]["ProgrammeNodeRefSchema"];
         };
         /** ConvocationDetailSchema */
         ConvocationDetailSchema: {
@@ -5555,6 +5662,23 @@ export interface components {
             type: string;
         };
         /**
+         * ProgrammeNodeRefSchema
+         * @description Un nodo del programa dentro de una propuesta: sus dos códigos y su título.
+         *
+         *     `official_code` es el número que publica la convocatoria («1») y `path` la posición legible del
+         *     árbol («I.1»), que es la que el propietario reconoce en la pantalla.
+         */
+        ProgrammeNodeRefSchema: {
+            /** Node Id */
+            node_id: string;
+            /** Official Code */
+            official_code: string;
+            /** Path */
+            path: string;
+            /** Title */
+            title: string;
+        };
+        /**
          * PromoteRequestSchema
          * @description Promociona un artefacto. `document_id` añade una versión a un documento que ya existe.
          */
@@ -5756,6 +5880,8 @@ export interface components {
          * @description Una pregunta declarada fuera del temario, con su motivo.
          *
          *     No lleva código de tema ni nodo: **no es un mapeo**, y por eso no se puede confundir con uno.
+         *     Sí lleva el enunciado, que es lo que permite juzgar si la marca estaba bien puesta; al escribir
+         *     la marca va nulo, porque ahí no hay nada que revisar.
          */
         QuestionExclusionSchema: {
             /** Actor */
@@ -5771,6 +5897,8 @@ export interface components {
              * @enum {string}
              */
             reason: "otra_administracion" | "enunciado_roto";
+            /** Stem */
+            stem?: string | null;
         };
         /**
          * QuestionImportReportSchema
@@ -5999,8 +6127,16 @@ export interface components {
          *     `created` es lo que hace utilizable una ruta idempotente: reintentar la clasificación de un lote
          *     entero no puede confundir «lo asigné yo ahora» con «ya estaba asignado».
          *
+         *     `promoted` es la tercera cosa que puede pasar, y la que necesita la cola de revisión: el mapeo
+         *     ya estaba, pero como **propuesta**, y esta llamada la ha confirmado. No es «creado» —la fila
+         *     existía— ni «ya estaba» —algo se ha escrito y queda auditado—.
+         *
          *     `epigraph` viaja cuando se pidió asignar también un epígrafe: se asigna con su tema, y decir
          *     solo el tema escondería la mitad de lo que se ha escrito.
+         *
+         *     `retired` son las propuestas **de esa pregunta** que se han retirado en la misma operación: una
+         *     pregunta no puede quedarse con dos temas propuestos cuando uno se acepta, y quien decide tiene
+         *     que ver que las demás ya no están.
          */
         QuestionTopicAssignmentSchema: {
             /**
@@ -6019,8 +6155,18 @@ export interface components {
             mapping_id: string;
             /** Official Code */
             official_code: string;
+            /**
+             * Promoted
+             * @default false
+             */
+            promoted: boolean;
             /** Question Version Id */
             question_version_id: string;
+            /**
+             * Retired
+             * @default 0
+             */
+            retired: number;
             /**
              * Status
              * @enum {string}
@@ -6028,6 +6174,100 @@ export interface components {
             status: "provisional" | "accepted" | "rejected";
             /** Title */
             title: string;
+        };
+        /**
+         * QuestionTopicConflictPageSchema
+         * @description Las preguntas en dos temas de una página, y cuántas hay en total.
+         */
+        QuestionTopicConflictPageSchema: {
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+            /** Questions */
+            questions: components["schemas"]["QuestionTopicConflictSchema"][];
+            /** Total */
+            total: number;
+        };
+        /**
+         * QuestionTopicConflictSchema
+         * @description Una pregunta que cuenta en **dos temas aceptados** a la vez, con los dos delante.
+         *
+         *     Es la otra cara de la cola: allí se revisa lo que nadie ha decidido y aquí lo que quedó decidido
+         *     dos veces. Una pregunta en dos temas cuenta en los dos agregados, así que hay que poder dejarla
+         *     con uno —eligiendo cuál— sin que la aplicación decida por su cuenta.
+         */
+        QuestionTopicConflictSchema: {
+            /** Options */
+            options: components["schemas"]["OptionSchema"][];
+            /** Question Set Id */
+            question_set_id: string;
+            /** Question Version Id */
+            question_version_id: string;
+            /** Set Title */
+            set_title: string;
+            /** Stem */
+            stem: string;
+            /** Topics */
+            topics: components["schemas"]["ConflictingTopicSchema"][];
+        };
+        /**
+         * QuestionTopicProposalPageSchema
+         * @description La cola de propuestas, contada en **preguntas** (tarjetas): las de una página y el total.
+         */
+        QuestionTopicProposalPageSchema: {
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+            /** Questions */
+            questions: components["schemas"]["QuestionTopicProposalsSchema"][];
+            /** Total */
+            total: number;
+        };
+        /**
+         * QuestionTopicProposalSchema
+         * @description Un tema candidato para una pregunta, sin confirmar, con sus epígrafes propuestos.
+         *
+         *     No lleva la pregunta dentro: la pregunta es la tarjeta (`QuestionTopicProposalsSchema`) y esto
+         *     es una de las respuestas que la máquina le dio.
+         */
+        QuestionTopicProposalSchema: {
+            /** Confidence */
+            confidence: number;
+            /** Created At */
+            created_at?: string | null;
+            /** Epigraphs */
+            epigraphs: components["schemas"]["ProgrammeNodeRefSchema"][];
+            /** Mapping Id */
+            mapping_id: string;
+            /** Reason */
+            reason?: string | null;
+            topic: components["schemas"]["ProgrammeNodeRefSchema"];
+        };
+        /**
+         * QuestionTopicProposalsSchema
+         * @description Una pregunta de la cola con **todas** sus propuestas juntas: una tarjeta, no una por mapeo.
+         *
+         *     Es la unidad con la que se despacha: el propietario decide sobre la pregunta —«esta pregunta es
+         *     del tema X»—, así que el mismo enunciado no puede salir dos veces. `accepted` va aparte de
+         *     `proposals`: si la pregunta ya tiene tema decidido, ese manda y lo que queda son propuestas que
+         *     se retiran.
+         */
+        QuestionTopicProposalsSchema: {
+            accepted?: components["schemas"]["ProgrammeNodeRefSchema"] | null;
+            /** Options */
+            options: components["schemas"]["OptionSchema"][];
+            /** Proposals */
+            proposals: components["schemas"]["QuestionTopicProposalSchema"][];
+            /** Question Set Id */
+            question_set_id: string;
+            /** Question Version Id */
+            question_version_id: string;
+            /** Set Title */
+            set_title: string;
+            /** Stem */
+            stem: string;
         };
         /**
          * QuestionTopicSchema
@@ -13710,6 +13950,106 @@ export interface operations {
                 };
                 content: {
                     "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    list_question_topic_conflicts_api_v1_question_topic_conflicts_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuestionTopicConflictPageSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    list_question_topic_proposals_api_v1_question_topic_proposals_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuestionTopicProposalPageSchema"];
                 };
             };
             /** @description El recurso no existe. */
