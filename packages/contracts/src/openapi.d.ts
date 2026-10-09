@@ -4158,6 +4158,75 @@ export interface components {
             /** Reason */
             reason?: string | null;
         };
+        /**
+         * DossierNoteSectionSchema
+         * @description Un apartado de los apuntes redactados, con el rastro de las preguntas que cubre.
+         *
+         *     `question_ids` son identificadores de pregunta, y eso es deliberado: esta pantalla es la del
+         *     **propietario** (la ficha del tema en el programa), no la del alumno, y poder cruzar un apartado
+         *     con sus preguntas es justo lo que hace falta para revisarlos. La zona del alumno tiene su propia
+         *     ruta y su propio contrato, sin identificadores.
+         */
+        DossierNoteSectionSchema: {
+            /**
+             * Anchor
+             * @description Anclaje estable del apartado, para enlazar desde una pregunta.
+             */
+            anchor: string;
+            /** Body Markdown */
+            body_markdown: string;
+            /** Covered */
+            covered: number;
+            /** Doubtful */
+            doubtful: number;
+            /** Doubtful Question Ids */
+            doubtful_question_ids: string[];
+            /** Epigraph Code */
+            epigraph_code: string;
+            /** Facts Total */
+            facts_total: number;
+            /** Gap Question Ids */
+            gap_question_ids: string[];
+            /** Gaps */
+            gaps: number;
+            /** Key */
+            key: string;
+            /** Needs Review Reason */
+            needs_review_reason?: string | null;
+            /** Question Ids */
+            question_ids: string[];
+            /** Title */
+            title: string;
+        };
+        /**
+         * DossierNotesSchema
+         * @description Los apuntes de un tema: los que se escriben a partir de sus preguntas y se comprueban con
+         *     ellas.
+         *
+         *     Van dentro del dossier porque el tema es una unidad de lectura y de versionado: al guardar una
+         *     versión se guarda el tema entero, citas **y** apuntes, y una versión antigua se lee como se
+         *     leyó.
+         */
+        DossierNotesSchema: {
+            /** Covered */
+            covered: number;
+            /** Doubtful */
+            doubtful: number;
+            /** Gaps */
+            gaps: number;
+            /** Generated At */
+            generated_at?: string | null;
+            /** Model */
+            model?: string | null;
+            /** Prompt Template Version */
+            prompt_template_version: string;
+            /** Questions Total */
+            questions_total: number;
+            /** Sections */
+            sections: components["schemas"]["DossierNoteSectionSchema"][];
+            /** Sections Total */
+            sections_total: number;
+        };
         /** DossierPassageSchema */
         DossierPassageSchema: {
             /** Citation Label */
@@ -4204,6 +4273,7 @@ export interface components {
             holes: components["schemas"]["DossierHoleSchema"][];
             /** Node Id */
             node_id: string;
+            notes?: components["schemas"]["DossierNotesSchema"] | null;
             /** Passages Total */
             passages_total: number;
             /** Path */

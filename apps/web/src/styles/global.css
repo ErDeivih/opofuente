@@ -940,6 +940,50 @@ button:focus-visible,
   font-weight: 600;
 }
 
+/* --- Los apuntes redactados del tema (pasos B-E) ----------------------------- */
+
+/* Cada apartado, separado y con su título: los apuntes de un tema son largos y hay que poder
+   recorrerlos sin perderse. */
+.notes__section {
+  border-top: 1px solid var(--color-borde);
+  padding-top: 0.6rem;
+  margin-top: 0.9rem;
+}
+
+.notes__title {
+  margin: 0 0 0.2rem;
+  font-size: 1rem;
+}
+
+.notes__heading {
+  margin: 0.8rem 0 0.3rem;
+  font-size: 0.95rem;
+}
+
+.notes__list {
+  margin: 0.3rem 0 0.5rem;
+  padding-left: 1.2rem;
+}
+
+/* Las tablas de los apuntes (comparaciones de conceptos que se confunden) tienen que caber en la
+   pantalla del móvil sin romper la página. */
+.notes__table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.5rem 0;
+  font-size: 0.9rem;
+  display: block;
+  overflow-x: auto;
+}
+
+.notes__table th,
+.notes__table td {
+  border: 1px solid var(--color-borde);
+  padding: 0.3rem 0.5rem;
+  text-align: left;
+  vertical-align: top;
+}
+
 @media (max-width: 640px) {
   .app__header,
   .app__body,

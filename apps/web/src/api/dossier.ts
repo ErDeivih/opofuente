@@ -8,6 +8,8 @@ export type DossierPassage = components['schemas']['DossierPassageSchema'];
 export type DossierHole = components['schemas']['DossierHoleSchema'];
 export type DossierVersion = components['schemas']['DossierVersionSchema'];
 export type DossierArchive = components['schemas']['DossierArchiveSchema'];
+export type DossierNotes = components['schemas']['DossierNotesSchema'];
+export type DossierNoteSection = components['schemas']['DossierNoteSectionSchema'];
 
 /** El tema: lo que el corpus dice de él, citado, con sus huecos y con qué se construyó (S13). */
 export function fetchDossier(nodeId: string): Promise<Dossier> {
@@ -97,4 +99,31 @@ export function mappingText(mappings: string[], provisional: boolean): string {
     return 'sin mapeo declarado';
   }
   return provisional ? 'asignación sin confirmar' : 'asignación confirmada';
+}
+
+/**
+ * La cabecera de los apuntes redactados: cuántos apartados, cuántas preguntas cubren y con qué se
+ * escribieron. Se enseña **lo que se comprobó**, no una promesa: el número de preguntas que los
+ * apuntes contestan sale de la comprobación mecánica del servidor.
+ */
+export function notesSummary(notes: DossierNotes): string {
+  const partes = [
+    `${String(notes.sections_total)} ${notes.sections_total === 1 ? 'apartado' : 'apartados'}`,
+    `${String(notes.covered)} de ${String(notes.questions_total)} preguntas cubiertas`,
+  ];
+  if (notes.doubtful > 0) {
+    partes.push(`${String(notes.doubtful)} para revisar`);
+  }
+  if (notes.model !== null && notes.model !== undefined) {
+    partes.push(`escritos con ${notes.model}`);
+  }
+  return partes.join(' · ');
+}
+
+/** Lo que se dice de un apartado que el propietario tiene que mirar. */
+export function sectionReviewText(section: DossierNoteSection): string | null {
+  if (section.needs_review_reason !== null && section.needs_review_reason !== undefined) {
+    return section.needs_review_reason;
+  }
+  return null;
 }

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import type { Dossier, DossierPassage, DossierSource } from '../../api/dossier';
 import { holeText, mappingText, passageCitation, sourceHref, versionStatusText } from '../../api/dossier';
 import { StatusBadge } from '../../components/StatusBadge';
+import { TopicNotes } from './TopicNotes';
 
 export interface TopicDossierProps {
   dossier: Dossier;
@@ -79,6 +80,8 @@ export function TopicDossier({
       {dossier.sources.map((fuente) => (
         <SourceBlock key={fuente.version_id} source={fuente} />
       ))}
+
+      {dossier.notes !== null && dossier.notes !== undefined && <TopicNotes notes={dossier.notes} />}
 
       <section aria-labelledby="dossier-lectura">
         <h3 id="dossier-lectura">Esta lectura</h3>

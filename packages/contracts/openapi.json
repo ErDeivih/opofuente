@@ -3643,6 +3643,175 @@
         "title": "DossierHoleSchema",
         "type": "object"
       },
+      "DossierNoteSectionSchema": {
+        "description": "Un apartado de los apuntes redactados, con el rastro de las preguntas que cubre.\n\n`question_ids` son identificadores de pregunta, y eso es deliberado: esta pantalla es la del\n**propietario** (la ficha del tema en el programa), no la del alumno, y poder cruzar un apartado\ncon sus preguntas es justo lo que hace falta para revisarlos. La zona del alumno tiene su propia\nruta y su propio contrato, sin identificadores.",
+        "properties": {
+          "anchor": {
+            "description": "Anclaje estable del apartado, para enlazar desde una pregunta.",
+            "title": "Anchor",
+            "type": "string"
+          },
+          "body_markdown": {
+            "title": "Body Markdown",
+            "type": "string"
+          },
+          "covered": {
+            "minimum": 0.0,
+            "title": "Covered",
+            "type": "integer"
+          },
+          "doubtful": {
+            "minimum": 0.0,
+            "title": "Doubtful",
+            "type": "integer"
+          },
+          "doubtful_question_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Doubtful Question Ids",
+            "type": "array"
+          },
+          "epigraph_code": {
+            "title": "Epigraph Code",
+            "type": "string"
+          },
+          "facts_total": {
+            "minimum": 0.0,
+            "title": "Facts Total",
+            "type": "integer"
+          },
+          "gap_question_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Gap Question Ids",
+            "type": "array"
+          },
+          "gaps": {
+            "minimum": 0.0,
+            "title": "Gaps",
+            "type": "integer"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "needs_review_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Needs Review Reason"
+          },
+          "question_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Question Ids",
+            "type": "array"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "epigraph_code",
+          "title",
+          "anchor",
+          "body_markdown",
+          "facts_total",
+          "covered",
+          "gaps",
+          "doubtful",
+          "question_ids",
+          "gap_question_ids",
+          "doubtful_question_ids"
+        ],
+        "title": "DossierNoteSectionSchema",
+        "type": "object"
+      },
+      "DossierNotesSchema": {
+        "description": "Los apuntes de un tema: los que se escriben a partir de sus preguntas y se comprueban con\nellas.\n\nVan dentro del dossier porque el tema es una unidad de lectura y de versionado: al guardar una\nversión se guarda el tema entero, citas **y** apuntes, y una versión antigua se lee como se\nleyó.",
+        "properties": {
+          "covered": {
+            "minimum": 0.0,
+            "title": "Covered",
+            "type": "integer"
+          },
+          "doubtful": {
+            "minimum": 0.0,
+            "title": "Doubtful",
+            "type": "integer"
+          },
+          "gaps": {
+            "minimum": 0.0,
+            "title": "Gaps",
+            "type": "integer"
+          },
+          "generated_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated At"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "prompt_template_version": {
+            "title": "Prompt Template Version",
+            "type": "string"
+          },
+          "questions_total": {
+            "minimum": 0.0,
+            "title": "Questions Total",
+            "type": "integer"
+          },
+          "sections": {
+            "items": {
+              "$ref": "#/components/schemas/DossierNoteSectionSchema"
+            },
+            "title": "Sections",
+            "type": "array"
+          },
+          "sections_total": {
+            "minimum": 0.0,
+            "title": "Sections Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "prompt_template_version",
+          "sections_total",
+          "questions_total",
+          "covered",
+          "gaps",
+          "doubtful",
+          "sections"
+        ],
+        "title": "DossierNotesSchema",
+        "type": "object"
+      },
       "DossierPassageSchema": {
         "properties": {
           "citation_label": {
@@ -3758,6 +3927,16 @@
           "node_id": {
             "title": "Node Id",
             "type": "string"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DossierNotesSchema"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "passages_total": {
             "minimum": 0.0,

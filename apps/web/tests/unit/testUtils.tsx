@@ -897,6 +897,60 @@ export const dossierHolesFixture: Dossier = {
   ],
 };
 
+/**
+ * Un tema con apuntes redactados: dos apartados, uno con material de apoyo y otro sin él, y una
+ * pregunta que no quedó cubierta. Es el caso que tiene que poder leerse en la ficha del tema sin
+ * confundir lo comprobado con lo que está pendiente de revisar.
+ */
+export const dossierNotesFixture: Dossier = {
+  ...dossierFixture,
+  notes: {
+    generated_at: '2026-10-08T09:00:00Z',
+    model: 'deepseek-flash',
+    prompt_template_version: 'apuntes-1',
+    sections_total: 2,
+    questions_total: 3,
+    covered: 2,
+    gaps: 0,
+    doubtful: 1,
+    sections: [
+      {
+        key: 'i-1-1',
+        epigraph_code: 'I.1.1',
+        title: 'La Constitución Española de 1978',
+        anchor: 'i-1-1',
+        body_markdown:
+          '## Qué es\n\nLa Constitución es la **norma suprema** del ordenamiento.\n\n' +
+          '| Órgano | Función |\n|---|---|\n| Cortes | Legislar |\n| Gobierno | Ejecutar |\n\n' +
+          '<!-- revisar: sin material de apoyo -->',
+        needs_review_reason: null,
+        facts_total: 4,
+        covered: 2,
+        gaps: 0,
+        doubtful: 0,
+        question_ids: ['q-1', 'q-2'],
+        gap_question_ids: [],
+        doubtful_question_ids: [],
+      },
+      {
+        key: 'i-1-4',
+        epigraph_code: 'I.1.4',
+        title: 'La Corona',
+        anchor: 'i-1-4',
+        body_markdown: 'El Rey es el Jefe del Estado.',
+        needs_review_reason: 'sin material de apoyo',
+        facts_total: 2,
+        covered: 0,
+        gaps: 0,
+        doubtful: 1,
+        question_ids: [],
+        gap_question_ids: [],
+        doubtful_question_ids: ['q-3'],
+      },
+    ],
+  },
+};
+
 export const dossierVersionsFixture: DossierVersion[] = [
   {
     id: 'ver-2',
