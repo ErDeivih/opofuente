@@ -218,7 +218,7 @@ def test_con_clave_activa_hacen_falta_la_frase_y_la_letra() -> None:
         section=seccion,
         attempts=2,
     )
-    assert repetida.coverage is Coverage.DUDOSA
+    assert repetida.coverage is Coverage.CONFLICTO, "con clave activa, la letra decide"
     assert repetida.note is Motivo.LETRA_NO_COINCIDE
 
 
@@ -247,14 +247,69 @@ def test_sin_frase_es_hueco_a_la_primera_y_duda_a_la_segunda() -> None:
     assert segunda.note is Motivo.SIN_FRASE_EN_LOS_APUNTES
 
 
-def test_sin_clave_clara_manda_la_frase_y_la_letra_no_decide() -> None:
-    """Una clave en borrador puede estar desalineada: convertiría un acierto en un hueco."""
-    apuntes = "El derecho de petición se reconoce en el artículo 29 de la Constitución."
-    grupo = _grupo(_pregunta("q1", letras=("a",), estado=KeyStatus.DRAFT))
+def test_con_clave_en_borrador_la_frase_cubre_solo_si_la_letra_coincide() -> None:
+    """La revisión del propietario cambió este criterio, y eran 96 preguntas de los tres pilotos.
 
+    Antes, con clave en borrador mandaba la frase y la letra del modelo no decidía: una pregunta que
+    los apuntes contestaban «b» con la plantilla diciendo «a» contaba como cubierta. Una letra
+    distinta de la clave no es una cobertura: es un conflicto (o la clave está mal, o los apuntes) y
+    va a la cola de revisión. La frase verificada sigue siendo obligatoria.
+    """
+    apuntes = "El derecho de petición se reconoce en el artículo 29 de la Constitución."
+    frase = "se reconoce en el artículo 29 de la Constitución"
+
+    coincide = evaluar(
+        grupo=_grupo(_pregunta("q1", letras=("a",), estado=KeyStatus.DRAFT)),
+        check=QuoteCheck("f", "a", frase),
+        apuntes=apuntes,
+        section=_seccion(),
+        attempts=1,
+    )
+    assert coincide.coverage is Coverage.CUBIERTA
+
+    primera = evaluar(
+        grupo=_grupo(_pregunta("q2", letras=("a",), estado=KeyStatus.DRAFT)),
+        check=QuoteCheck("f", "b", frase),
+        apuntes=apuntes,
+        section=_seccion(),
+        attempts=1,
+    )
+    assert primera.coverage is Coverage.HUECO, "a la primera se le da la vuelta del añadido"
+
+    final = evaluar(
+        grupo=_grupo(_pregunta("q3", letras=("a",), estado=KeyStatus.DRAFT)),
+        check=QuoteCheck("f", "b", frase),
+        apuntes=apuntes,
+        section=_seccion(),
+        attempts=2,
+    )
+    assert final.coverage is Coverage.CONFLICTO
+    assert final.note is Motivo.LETRA_NO_COINCIDE
+    assert final.quote is None, "un conflicto no es una pregunta cubierta: no se guarda como cita"
+
+
+def test_con_la_frase_y_sin_letra_del_modelo_es_un_conflicto_con_clave() -> None:
+    """No decir la letra no puede contar como decir la buena: con clave, la letra tiene que valer.
+
+    Es el otro lado de la regla nueva: sin letra no se puede afirmar que coincida.
+    """
+    apuntes = "El derecho de petición se reconoce en el artículo 29 de la Constitución."
     resultado = evaluar(
-        grupo=grupo,
-        check=QuoteCheck("f", "b", "se reconoce en el artículo 29 de la Constitución"),
+        grupo=_grupo(_pregunta("q1", letras=("a",), estado=KeyStatus.DRAFT)),
+        check=QuoteCheck("f", None, "se reconoce en el artículo 29 de la Constitución"),
+        apuntes=apuntes,
+        section=_seccion(),
+        attempts=2,
+    )
+    assert resultado.coverage is Coverage.CONFLICTO
+    assert resultado.note is Motivo.LETRA_NO_COINCIDE
+
+
+def test_sin_ninguna_clave_manda_la_frase_porque_no_hay_letra_que_comparar() -> None:
+    apuntes = "El derecho de petición se reconoce en el artículo 29 de la Constitución."
+    resultado = evaluar(
+        grupo=_grupo(_pregunta("q1", letras=(), estado=KeyStatus.NINGUNA)),
+        check=QuoteCheck("f", None, "se reconoce en el artículo 29 de la Constitución"),
         apuntes=apuntes,
         section=_seccion(),
         attempts=1,

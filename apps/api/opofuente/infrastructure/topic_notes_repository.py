@@ -606,9 +606,11 @@ class SqlAlchemyTopicNotesRepository:
                 covered=_cuenta(suyos, Coverage.CUBIERTA),
                 gaps=_cuenta(suyos, Coverage.HUECO),
                 doubtful=_cuenta(suyos, Coverage.DUDOSA),
+                conflicts=_cuenta(suyos, Coverage.CONFLICTO),
                 question_ids=_preguntas(suyos, Coverage.CUBIERTA),
                 gap_question_ids=_preguntas(suyos, Coverage.HUECO),
                 doubtful_question_ids=_preguntas(suyos, Coverage.DUDOSA),
+                conflict_question_ids=_preguntas(suyos, Coverage.CONFLICTO),
             )
             for apartado in secciones
             for suyos in (por_ancla.get(apartado.anchor, []),)

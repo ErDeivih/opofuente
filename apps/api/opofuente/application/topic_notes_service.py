@@ -51,6 +51,7 @@ from opofuente.domain.errors import (
     OpoFuenteError,
     UnsupportedError,
 )
+from opofuente.domain.notes_quality import revisar_apuntes
 from opofuente.domain.topic_notes import (
     LOTE_COMPROBACION,
     LOTE_HECHOS,
@@ -143,6 +144,14 @@ class TopicNotesService:
         secciones = self._paso_esquema(nodo, hechos, informe, now=now, dry_run=dry_run)
         self._paso_redaccion(nodo, secciones, informe, now=now, dry_run=dry_run)
         self._paso_comprobacion(nodo, grupos, informe, now=now, dry_run=dry_run)
+        # La revisión de forma se mide sobre el texto que ha quedado guardado, y con **todos** los
+        # hechos del tema: es la comprobación que decide si estos apuntes se pueden dar por buenos
+        # (encabezados repetidos, marcas internas, tablas sin cabecera, párrafos repetidos y
+        # extensión frente a los hechos que tiene el tema).
+        informe.revision = revisar_apuntes(
+            self._repository.sections(node_id) if not dry_run else secciones,
+            hechos,
+        )
         # El informe se cierra leyendo lo que quedó **guardado**: midiéndolo con la lista de
         # apartados anterior a la redacción, los tamaños saldrían a cero y el informe mentiría.
         informe.sections = self._informe_apartados(

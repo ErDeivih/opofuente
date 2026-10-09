@@ -4282,6 +4282,13 @@ export interface components {
             anchor: string;
             /** Body Markdown */
             body_markdown: string;
+            /** Conflict Question Ids */
+            conflict_question_ids: string[];
+            /**
+             * Conflicts
+             * @description Preguntas que este apartado contesta con una letra distinta de su clave: van a revisión, no cuentan como cubiertas.
+             */
+            conflicts: number;
             /** Covered */
             covered: number;
             /** Doubtful */
@@ -4315,6 +4322,11 @@ export interface components {
          *     leyó.
          */
         DossierNotesSchema: {
+            /**
+             * Conflicts
+             * @description Preguntas cuya letra según los apuntes no coincide con la clave. No son cobertura: son la cola de revisión de la comprobación (paso E).
+             */
+            conflicts: number;
             /** Covered */
             covered: number;
             /** Doubtful */

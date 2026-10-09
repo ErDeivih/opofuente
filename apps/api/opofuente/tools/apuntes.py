@@ -10,9 +10,13 @@ Al final guarda el tema como versión (el mecanismo de versiones del dossier, qu
 Uso:
     # ver lo que hay en un tema, sin llamar a nadie
     uv run python -m opofuente.tools.apuntes --tema IV.7 --listar
+    # el indice por materias del tema, sin llamar a nadie (el esquema, antes de redactar)
+    uv run python -m opofuente.tools.apuntes --tema IV.7 --esquema
     # escribir los apuntes del tema (llama al modelo)
     $env:DEEPSEEK_API_KEY = "…"
     uv run python -m opofuente.tools.apuntes --tema IV.7
+    # escribir, pero no dar el tema por bueno si no pasa las comprobaciones de forma
+    uv run python -m opofuente.tools.apuntes --tema IV.7 --exigir-calidad
     # los tres pilotos, de una vez
     uv run python -m opofuente.tools.apuntes --tema IV.7 --tema I.6 --tema I.1
 
@@ -20,7 +24,8 @@ La clave se lee de `DEEPSEEK_API_KEY`. **No** se escribe en ningún fichero del 
 log, ni en este comando: si no está, el comando lo dice y para. Una corrida sin clave gastaría horas
 de trabajo para nada.
 
-Códigos de salida: 0 bien · 1 fallo al escribir los apuntes · 2 falta la clave.
+Códigos de salida: 0 bien · 1 fallo al escribir los apuntes · 2 falta la clave · 3 el tema no pasa
+las comprobaciones de forma (con `--exigir-calidad`, no se archiva la versión).
 """
 
 from __future__ import annotations
@@ -35,6 +40,7 @@ from opofuente.application.topic_notes_models import TopicNotesReport
 from opofuente.application.topic_notes_service import TopicNotesService
 from opofuente.config import Settings, get_settings
 from opofuente.domain.errors import OpoFuenteError
+from opofuente.domain.topic_index import catalogo, indice_de
 from opofuente.infrastructure.clock import SystemClock
 from opofuente.infrastructure.db import build_engine, build_session_factory
 from opofuente.infrastructure.dossier_repository import SqlAlchemyDossierRepository
@@ -77,6 +83,24 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
         "--listar",
         action="store_true",
         help="enseña lo que hay en el tema (preguntas, hechos y apartados) sin llamar al modelo",
+    )
+    parser.add_argument(
+        "--esquema",
+        action="store_true",
+        help=(
+            "enseña el índice por materias del tema (el esquema antes de redactar): qué apartados "
+            "tendrá y qué hechos van en cada uno, sin llamar al modelo"
+        ),
+    )
+    parser.add_argument(
+        "--exigir-calidad",
+        dest="exigir_calidad",
+        action="store_true",
+        help=(
+            "no da el tema por bueno si no pasa las comprobaciones de forma (encabezados "
+            "repetidos, marcas internas, tablas sin cabecera, párrafos repetidos y extensión): no "
+            "archiva la versión y sale con código 3"
+        ),
     )
     parser.add_argument(
         "--dry-run",
@@ -144,6 +168,12 @@ def main(argv: Sequence[str] | None = None) -> int:
             for tema in temas:
                 print("\n".join(_listar(notas, tema)))
             return 0
+        if args.esquema:
+            # El esquema antes de redactar: tampoco llama a nadie ni necesita clave.
+            for tema in temas:
+                print("\n".join(_esquema(notas, tema)))
+                print()
+            return 0
 
         api_key = os.environ.get(VARIABLE_DE_LA_CLAVE, "")
         if not api_key.strip():
@@ -169,6 +199,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         if args.dry_run:
             print("ENSAYO: se llama al modelo y NO se escribe nada.\n")
         total = 0.0
+        sin_calidad: list[str] = []
         for tema in temas:
             informe = servicio.run(
                 tema,
@@ -176,21 +207,69 @@ def main(argv: Sequence[str] | None = None) -> int:
                 dry_run=args.dry_run,
                 limite_grupos=args.limite,
             )
-            if args.version and not args.dry_run:
+            pasa = informe.revision is None or informe.revision.pasa
+            if args.version and not args.dry_run and (pasa or not args.exigir_calidad):
                 archivado = dossier_service.archive(informe.node_id)
                 if archivado is not None:
                     informe.version_created = archivado[1]
+            if not pasa:
+                sin_calidad.append(informe.topic_code)
             print("\n".join(informe.lines()))
             print()
             total += informe.estimated_cost_usd
         if len(temas) > 1:
             print(f"Coste estimado de los {len(temas)} temas: {total:.4f} $ (precios de valle).")
+        if sin_calidad:
+            print(
+                "NO pasan las comprobaciones de forma: "
+                + ", ".join(sin_calidad)
+                + (
+                    ". No se ha archivado la versión: un tema con encabezados repetidos, marcas "
+                    "internas, tablas sin cabecera, párrafos repetidos o extensión de sobra no se "
+                    "da por bueno."
+                    if args.exigir_calidad
+                    else ". Se archiva igual porque no se pidió --exigir-calidad."
+                ),
+                file=sys.stderr,
+            )
+            if args.exigir_calidad:
+                return 3
         return 0
     except OpoFuenteError as error:
         print(f"No se han podido escribir los apuntes: {error}", file=sys.stderr)
         return 1
     finally:
         engine.dispose()
+
+
+def _esquema(notas: SqlAlchemyTopicNotesRepository, code: str) -> tuple[str, ...]:
+    """El índice por materias del tema: el esquema antes de redactar, sin llamar a nadie.
+
+    Es el paso C del plan tal como lo pidió el propietario: ver el árbol de apartados antes de que
+    se escriba nada. Los hechos y las preguntas salen de la base; el reparto, del catálogo del tema.
+    """
+    node_id = notas.node_id(code)
+    if node_id is None:
+        return (f"[{code}] no existe ese tema en el programa",)
+    nodo = notas.node(node_id)
+    if nodo is None:
+        return (f"[{code}] no es un tema del programa",)
+    if catalogo(code) is None:
+        return (
+            f"[{code}] todavía no tiene catálogo de materias: el índice de este tema está sin "
+            "definir (se define antes de redactar, no se inventa)",
+        )
+    try:
+        indice = indice_de(
+            topic_code=code,
+            topic_title=nodo.title,
+            epigraphs=nodo.epigraphs,
+            hechos=notas.facts(node_id),
+            grupos=notas.question_groups(node_id),
+        )
+    except (KeyError, ValueError) as error:
+        return (f"[{code}] el catálogo de materias no cuadra con el temario: {error}",)
+    return indice.lines()
 
 
 def _listar(notas: SqlAlchemyTopicNotesRepository, code: str) -> tuple[str, ...]:

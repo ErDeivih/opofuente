@@ -3727,6 +3727,19 @@
             "title": "Body Markdown",
             "type": "string"
           },
+          "conflict_question_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Conflict Question Ids",
+            "type": "array"
+          },
+          "conflicts": {
+            "description": "Preguntas que este apartado contesta con una letra distinta de su clave: van a revisión, no cuentan como cubiertas.",
+            "minimum": 0.0,
+            "title": "Conflicts",
+            "type": "integer"
+          },
           "covered": {
             "minimum": 0.0,
             "title": "Covered",
@@ -3802,9 +3815,11 @@
           "covered",
           "gaps",
           "doubtful",
+          "conflicts",
           "question_ids",
           "gap_question_ids",
-          "doubtful_question_ids"
+          "doubtful_question_ids",
+          "conflict_question_ids"
         ],
         "title": "DossierNoteSectionSchema",
         "type": "object"
@@ -3812,6 +3827,12 @@
       "DossierNotesSchema": {
         "description": "Los apuntes de un tema: los que se escriben a partir de sus preguntas y se comprueban con\nellas.\n\nVan dentro del dossier porque el tema es una unidad de lectura y de versionado: al guardar una\nversión se guarda el tema entero, citas **y** apuntes, y una versión antigua se lee como se\nleyó.",
         "properties": {
+          "conflicts": {
+            "description": "Preguntas cuya letra según los apuntes no coincide con la clave. No son cobertura: son la cola de revisión de la comprobación (paso E).",
+            "minimum": 0.0,
+            "title": "Conflicts",
+            "type": "integer"
+          },
           "covered": {
             "minimum": 0.0,
             "title": "Covered",
@@ -3879,6 +3900,7 @@
           "covered",
           "gaps",
           "doubtful",
+          "conflicts",
           "sections"
         ],
         "title": "DossierNotesSchema",

@@ -2048,7 +2048,9 @@ class QuestionNoteAnchorRecord(Base):
         CheckConstraint(
             "key_status IN ('active', 'draft', 'ninguna')", name="ck_anchor_key_status"
         ),
-        CheckConstraint("result IN ('covered', 'gap', 'doubtful')", name="ck_anchor_result"),
+        CheckConstraint(
+            "result IN ('covered', 'gap', 'doubtful', 'conflict')", name="ck_anchor_result"
+        ),
         CheckConstraint("attempts >= 1", name="ck_anchor_attempts"),
         UniqueConstraint(
             "question_version_id", "curriculum_node_id", name="uq_anchor_question_node"

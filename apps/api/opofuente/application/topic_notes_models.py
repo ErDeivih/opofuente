@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from opofuente.domain.notes_quality import RevisionApuntes
 from opofuente.domain.topic_notes import (
     Coverage,
     Motivo,
@@ -20,7 +21,7 @@ from opofuente.domain.topic_notes import (
 #: Nombres legibles de los motivos, para el informe. El código se guarda; la frase se imprime.
 MOTIVO_TEXTO: dict[Motivo, str] = {
     Motivo.SIN_FRASE_EN_LOS_APUNTES: "no hay ninguna frase en los apuntes que la justifique",
-    Motivo.LETRA_NO_COINCIDE: "la frase está, pero la clave dice otra opción",
+    Motivo.LETRA_NO_COINCIDE: "en conflicto: la frase está, pero la clave dice otra opción",
     Motivo.CLAVE_CONTRADICE_LA_NORMA: "la clave contradice la norma o el material",
     Motivo.CLAVE_SIN_DEFINIR: "la pregunta no tiene clave con la que comprobarla",
 }
@@ -56,7 +57,13 @@ class SectionReport:
 
 @dataclass(slots=True)
 class CoverageReport:
-    """El recuento de la comprobación, con los dos motivos de duda separados."""
+    """El recuento de la comprobación, con los dos motivos de duda separados.
+
+    `conflicts` va aparte de `covered` y de las dudas a propósito: es la cuenta que destapó la
+    revisión del propietario (96 preguntas de los tres pilotos que se contaban como cubiertas
+    diciendo otra letra que su clave). Una pregunta en conflicto **no** está cubierta y va a la cola
+    de revisión, con la clave delante.
+    """
 
     groups: int = 0
     covered: int = 0
@@ -64,6 +71,9 @@ class CoverageReport:
     covered_tras_anadido: int = 0
     covered_con_clave_activa: int = 0
     covered_sin_clave: int = 0
+    conflicts: int = 0
+    conflicts_con_clave_activa: int = 0
+    conflicts_con_clave_borrador: int = 0
     huecos_apuntes: int = 0
     huecos_clave: int = 0
     dudosas_apuntes: int = 0
@@ -76,7 +86,13 @@ class CoverageReport:
 
     @property
     def finales(self) -> int:
-        return self.covered + self.dudosas_apuntes + self.dudosas_clave
+        return self.covered + self.dudosas_apuntes + self.dudosas_clave + self.conflicts
+
+    @property
+    def en_revision(self) -> int:
+        """Las que el propietario tiene que mirar: dudas por los apuntes, dudas por la clave y
+        conflictos de letra."""
+        return self.dudosas_apuntes + self.dudosas_clave + self.conflicts
 
     def add(
         self, coverage: Coverage, note: Motivo | None, *, attempts: int, clave_activa: bool
@@ -93,6 +109,14 @@ class CoverageReport:
                 self.covered_sin_clave += 1
         elif coverage is Coverage.HUECO:
             return
+        elif coverage is Coverage.CONFLICTO:
+            self.conflicts += 1
+            if clave_activa:
+                self.conflicts_con_clave_activa += 1
+            else:
+                self.conflicts_con_clave_borrador += 1
+            if note is not None:
+                self.por_motivo[note] = self.por_motivo.get(note, 0) + 1
         else:
             if note is not None:
                 self.por_motivo[note] = self.por_motivo.get(note, 0) + 1
@@ -117,6 +141,7 @@ class TopicNotesReport:
     hechos_dudosos: int = 0
     sections: tuple[SectionReport, ...] = ()
     coverage: CoverageReport = field(default_factory=CoverageReport)
+    revision: RevisionApuntes | None = None
     ledger: TokenLedger = field(default_factory=TokenLedger)
     failed_batches: int = 0
     dry_run: bool = False
@@ -153,17 +178,22 @@ class TopicNotesReport:
         lineas.append(
             f"    comprobadas {cobertura.finales} de {cobertura.groups} · cubiertas "
             f"{cobertura.covered} ({cobertura.covered_primera_vuelta} a la primera, "
-            f"{cobertura.covered_tras_anadido} tras añadir) · sin contestar por los apuntes "
-            f"{cobertura.dudosas_apuntes} · incidencias de clave {cobertura.dudosas_clave} "
-            f"(+{cobertura.incidencias_clave_marcada} con la clave señalada)"
+            f"{cobertura.covered_tras_anadido} tras añadir) · en conflicto con la clave "
+            f"{cobertura.conflicts} ({cobertura.conflicts_con_clave_activa} con clave activa) · "
+            f"sin contestar por los apuntes {cobertura.dudosas_apuntes} · incidencias de clave "
+            f"{cobertura.dudosas_clave} (+{cobertura.incidencias_clave_marcada} con la clave "
+            "señalada)"
         )
         if cobertura.groups:
             porcentaje = 100.0 * cobertura.covered / cobertura.groups
             lineas.append(
                 f"    cobertura {porcentaje:.1f} % · con clave activa "
                 f"{cobertura.covered_con_clave_activa} · "
-                f"sin clave clara {cobertura.covered_sin_clave}"
+                f"sin clave clara {cobertura.covered_sin_clave} · a revisión "
+                f"{cobertura.en_revision}"
             )
+        if self.revision is not None:
+            lineas.extend(self.revision.lines())
         for motivo, cuantos in sorted(cobertura.por_motivo.items(), key=lambda fila: -fila[1]):
             lineas.append(f"      {cuantos:>5} · {MOTIVO_TEXTO.get(motivo, motivo.value)}")
         if self.hechos_sin_integrar:

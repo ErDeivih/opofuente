@@ -30,6 +30,9 @@ from fastapi.testclient import TestClient
 from opofuente.application.topic_notes_service import TopicNotesService
 from opofuente.config import Settings, get_settings
 from opofuente.domain.errors import ExternalServiceError
+from opofuente.domain.notes_quality import (
+    PARRAFOS_REPETIDOS,
+)
 from opofuente.domain.rag import normalise
 from opofuente.domain.topic_notes import (
     ComprobacionBatch,
@@ -38,6 +41,7 @@ from opofuente.domain.topic_notes import (
     HechosBatch,
     KeyStatus,
     MaterialPassage,
+    Motivo,
     NoteSection,
     QuestionGroup,
     QuoteCheck,
@@ -127,7 +131,11 @@ class _ModeloFalso:
         topic_title: str,
         material: Sequence[MaterialPassage],
     ) -> RedaccionBatch:
-        cuerpo = f"## {section.title}\n\n" + "\n".join(f"- {hecho.text}" for hecho in section.facts)
+        # Cada hecho, su párrafo: es lo que hace el modelo de verdad, y es lo que deja ver la
+        # repetición (el mismo texto con otro número de grupo delante).
+        cuerpo = f"## {section.title}\n\n" + "\n\n".join(
+            f"- {hecho.text}" for hecho in section.facts
+        )
         return RedaccionBatch(
             titulo=section.title, markdown=cuerpo, input_tokens=200, output_tokens=100
         )
@@ -228,13 +236,19 @@ def _asignar_tema(client: TestClient, pregunta_id: str, *, tema: str, epigrafe: 
 
 
 def _escenario(
-    client: TestClient, *, tema: str = "IV.7", epigrafe: str = "IV.7.1", titulo: str
+    client: TestClient,
+    *,
+    tema: str = "IV.7",
+    epigrafe: str = "IV.7.1",
+    titulo: str,
+    activar: bool = True,
 ) -> tuple[SqlAlchemyTopicNotesRepository, list[dict[str, Any]], str]:
-    """Un conjunto con dos preguntas clasificadas en un tema, con su clave activa."""
+    """Un conjunto con dos preguntas clasificadas en un tema, con su clave activa o en borrador."""
     conjunto = _conjunto(client, titulo=titulo)
     preguntas = _preguntas(client, conjunto["id"])
     assert len(preguntas) == 2
-    _activar_clave(client, conjunto["id"])
+    if activar:
+        _activar_clave(client, conjunto["id"])
     for pregunta in preguntas:
         _asignar_tema(client, pregunta["id"], tema=tema, epigrafe=epigrafe)
     fabrica = client.app.state.session_factory
@@ -269,6 +283,34 @@ class _ModeloQueFalla(_ModeloFalso):
             raise ExternalServiceError("el modelo respondió 502")
         return super().hechos(
             grupos, topic_code=topic_code, topic_title=topic_title, epigraphs=epigraphs
+        )
+
+
+class _ModeloQueEscribeMal(_ModeloFalso):
+    """Un modelo que deja la forma rota: marcas internas y el título del apartado repetido.
+
+    Es un doble del defecto de IV.7 (50 marcas `[fact N]` en el texto) y del de los apartados
+    partidos (el mismo título otra vez dentro del mismo texto). Ninguna llamada sale de aquí.
+    """
+
+    def redactar(
+        self,
+        section: NoteSection,
+        *,
+        topic_code: str,
+        topic_title: str,
+        material: Sequence[MaterialPassage],
+    ) -> RedaccionBatch:
+        cuerpo = (
+            f"## {section.title}\n\n"
+            + "\n".join(
+                f"- {hecho.text} [fact {numero}]"
+                for numero, hecho in enumerate(section.facts, start=1)
+            )
+            + f"\n\n## {section.title}\n"
+        )
+        return RedaccionBatch(
+            titulo=section.title, markdown=cuerpo, input_tokens=10, output_tokens=10
         )
 
 
@@ -464,6 +506,161 @@ def test_cada_pregunta_apunta_al_apartado_que_tiene_sus_hechos(
         ancla = comprobadas[grupo.representative.question_version_id]
         assert ancla.anchor == por_firma[grupo.signature]
     assert informe.coverage.covered == 2
+
+
+def test_una_letra_distinta_de_la_clave_es_un_conflicto_y_no_una_pregunta_cubierta(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """La revisión del propietario: 96 preguntas contaban como cubiertas diciendo otra letra.
+
+    Con la clave en borrador mandaba solo la frase, y una pregunta que los apuntes contestan «a»
+    cuando su plantilla dice «b» no está cubierta: está en conflicto, y va a la cola de revisión con
+    nota propia. Aquí se recorre el camino entero (hueco → añadido → conflicto) con un doble.
+    """
+    repositorio, preguntas, node_id = _escenario(
+        seeded_client, titulo="Apuntes con la letra cambiada", activar=False
+    )
+    modelo = _ModeloFalso(letra="a")  # la plantilla dice «b»
+
+    informe = _servicio(seeded_client, modelo).run("IV.7", now=SystemClock().now())
+
+    assert informe.coverage.covered == 0, "una letra distinta de la clave no es cobertura"
+    assert informe.coverage.conflicts == 2
+    assert informe.coverage.conflicts_con_clave_borrador == 2
+    assert informe.coverage.dudosas_apuntes == 0
+    assert informe.coverage.en_revision == 2
+
+    comprobadas = repositorio.checks(node_id)
+    assert {comprobada.coverage.value for comprobada in comprobadas} == {"conflict"}
+    assert all(comprobada.note is Motivo.LETRA_NO_COINCIDE for comprobada in comprobadas)
+    assert all(comprobada.attempts == 2 for comprobada in comprobadas), "se le da la vuelta"
+
+    # Y el tema lo cuenta donde se lee: cubiertas 0, en conflicto 2, con sus preguntas.
+    dossier = seeded_client.get(f"/api/v1/curriculum-nodes/{node_id}/dossier").json()
+    assert dossier["notes"]["covered"] == 0
+    assert dossier["notes"]["conflicts"] == 2
+    assert dossier["notes"]["questions_total"] == 2
+    apartado = dossier["notes"]["sections"][0]
+    assert apartado["conflicts"] == 2
+    assert sorted(apartado["conflict_question_ids"]) == sorted(
+        pregunta["id"] for pregunta in preguntas
+    )
+
+
+def test_con_la_clave_activa_una_letra_distinta_tambien_es_conflicto(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """Con clave activa el resultado ya no era «cubierta»: ahora se llama por su nombre."""
+    repositorio, _preguntas_del_tema, node_id = _escenario(
+        seeded_client, titulo="Apuntes con clave activa y letra cambiada"
+    )
+    modelo = _ModeloFalso(letra="a")
+
+    informe = _servicio(seeded_client, modelo).run("IV.7", now=SystemClock().now())
+
+    assert informe.coverage.conflicts == 2
+    assert informe.coverage.conflicts_con_clave_activa == 2
+    assert {comprobada.coverage.value for comprobada in repositorio.checks(node_id)} == {"conflict"}
+
+
+def test_el_informe_mide_la_forma_de_los_apuntes_y_lo_dice(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """La revisión de forma va en el informe de la corrida: sin ella no se sabe qué se ha escrito.
+
+    El doble escribe la misma frase para cada grupo, que es exactamente el defecto de los pilotos
+    (cada apartado, la redacción de su lote): la revisión tiene que verlo y decirlo.
+    """
+    _repositorio, _preguntas_del_tema, _node_id = _escenario(
+        seeded_client, titulo="Apuntes que se miden"
+    )
+
+    informe = _servicio(seeded_client, _ModeloFalso()).run("IV.7", now=SystemClock().now())
+
+    assert informe.revision is not None
+    assert informe.revision.palabras > 0
+    assert PARRAFOS_REPETIDOS in {hallazgo.codigo for hallazgo in informe.revision.hallazgos}
+    lineas = informe.lines()
+    assert any("revision de forma: NO PASA" in linea for linea in lineas)
+    assert any("de los párrafos se parecen a otro anterior" in linea for linea in lineas)
+
+
+def test_un_tema_con_marcas_internas_y_encabezados_repetidos_no_se_da_por_bueno(
+    seeded_settings: Settings,
+    seeded_client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """El comando con `--exigir-calidad` no archiva un tema que no pasa: no se da por bueno."""
+    _repositorio, _preguntas_del_tema, node_id = _escenario(
+        seeded_client, titulo="Apuntes con la forma rota"
+    )
+    modelo = _ModeloQueEscribeMal()
+    monkeypatch.setenv(apuntes.VARIABLE_DE_LA_CLAVE, "clave-de-prueba")
+    monkeypatch.setenv("OPOFUENTE_DATA_DIR", str(seeded_settings.data_dir))
+    get_settings.cache_clear()
+    monkeypatch.setattr(apuntes, "DeepSeekNotesModel", lambda **_: modelo, raising=True)
+    try:
+        codigo = apuntes.main(["--tema", "IV.7", "--paralelo", "1", "--exigir-calidad"])
+    finally:
+        get_settings.cache_clear()
+        os.environ.pop("OPOFUENTE_DATA_DIR", None)
+
+    salida = capsys.readouterr()
+    assert codigo == 3, "un tema que no pasa las comprobaciones no se da por bueno"
+    assert "marca(s) interna(s)" in salida.out
+    assert "encabezado(s) repetidos" in salida.out
+    versiones = seeded_client.get(f"/api/v1/curriculum-nodes/{node_id}/dossier/versions").json()
+    assert versiones == [], "no se archiva la versión de un tema que no pasa"
+
+
+def test_el_comando_enseña_el_indice_por_materias_sin_la_clave(
+    seeded_settings: Settings,
+    seeded_client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """El esquema antes de redactar: se lee sin llamar a nadie y sin clave (es el paso C)."""
+    _repositorio, _preguntas_del_tema, _node_id = _escenario(
+        seeded_client, titulo="Apuntes que se esquematizan"
+    )
+    _servicio(seeded_client, _ModeloFalso()).run("IV.7", now=SystemClock().now())
+    monkeypatch.delenv(apuntes.VARIABLE_DE_LA_CLAVE, raising=False)
+    monkeypatch.setenv("OPOFUENTE_DATA_DIR", str(seeded_settings.data_dir))
+    get_settings.cache_clear()
+    try:
+        codigo = apuntes.main(["--tema", "IV.7", "--esquema"])
+    finally:
+        get_settings.cache_clear()
+        os.environ.pop("OPOFUENTE_DATA_DIR", None)
+
+    salida = capsys.readouterr().out
+    assert codigo == 0
+    assert "Índice por materias de [IV.7]" in salida
+    assert "Protocolos TCP/IP" in salida, "el índice enseña sus apartados con su materia"
+    assert "una sola tabla en todo el tema" in salida
+
+
+def test_el_esquema_de_un_tema_sin_catalogo_lo_dice_sin_inventarlo(
+    seeded_settings: Settings,
+    seeded_client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    _repositorio, _preguntas_del_tema, _node_id = _escenario(
+        seeded_client, titulo="Apuntes de un tema sin catálogo"
+    )
+    monkeypatch.setenv("OPOFUENTE_DATA_DIR", str(seeded_settings.data_dir))
+    get_settings.cache_clear()
+    try:
+        codigo = apuntes.main(["--tema", "I.1", "--esquema"])
+    finally:
+        get_settings.cache_clear()
+        os.environ.pop("OPOFUENTE_DATA_DIR", None)
+
+    salida = capsys.readouterr().out
+    assert codigo == 0
+    assert "todavía no tiene catálogo de materias" in salida
 
 
 # --- la versión del tema -------------------------------------------------------------------------

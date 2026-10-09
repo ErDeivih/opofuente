@@ -27,6 +27,18 @@ export function TopicNotes({ notes }: TopicNotesProps) {
     <section aria-labelledby="dossier-apuntes">
       <h3 id="dossier-apuntes">Apuntes redactados del tema</h3>
       <p className="hint">{notesSummary(notes)}</p>
+      {notes.conflicts > 0 && (
+        <p>
+          <StatusBadge tone="warning">conflicto</StatusBadge>{' '}
+          <span className="hint">
+            {String(notes.conflicts)}{' '}
+            {notes.conflicts === 1
+              ? 'pregunta la contestan los apuntes con una letra distinta de su clave'
+              : 'preguntas las contestan los apuntes con una letra distinta de su clave'}
+            : o la clave está mal o los apuntes, así que se revisan en vez de darse por cubiertas.
+          </span>
+        </p>
+      )}
       {notes.doubtful > 0 && (
         <p>
           <StatusBadge tone="warning">revisar</StatusBadge>{' '}
@@ -49,7 +61,7 @@ function NoteSectionBlock({ section }: { section: DossierNoteSection }) {
   const marcas = revisionMarks(section.body_markdown);
   const aviso = sectionReviewText(section);
   const cubiertas = section.covered;
-  const noCubiertas = section.gaps + section.doubtful;
+  const noCubiertas = section.gaps + section.doubtful + section.conflicts;
 
   return (
     <article className="notes__section" aria-label={section.title}>

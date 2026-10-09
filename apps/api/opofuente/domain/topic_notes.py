@@ -23,14 +23,12 @@ sabidas,
    hay,
    es lo que hay. Lo que no se puede comprobar no se da por cubierto.
 
-Vocabulario del resultado, y es el del informe: **cubierta** (la frase está y la letra coincide con
-la
-clave, cuando la clave es clara), **hueco** (no está: se añade lo que falta y se vuelve a comprobar)
-y
-**dudosa** (la clave contradice el material, la clave no está clara, o tras dos vueltas la frase
-sigue
-sin aparecer). El paso E del plan llama «incidencia» al estado final que aquí se guarda como
-`dudosa`.
+Vocabulario del resultado, y es el del informe: **cubierta** (la frase está y la letra coincide
+con la clave; sin ninguna clave, basta la frase), **hueco** (no está: se añade lo que falta y se
+vuelve a comprobar), **conflicto** (la frase está y la letra **no** coincide con la clave, activa o
+en borrador: o la clave está mal o los apuntes, y eso se revisa, no se da por bueno) y **dudosa**
+(la clave contradice el material, la clave no está clara, o tras dos vueltas la frase sigue sin
+aparecer). El paso E del plan llama «incidencia» al estado final que aquí se guarda como `dudosa`.
 """
 
 from __future__ import annotations
@@ -103,9 +101,10 @@ class KeyStatus(StrEnum):
     """Qué se puede decir de la respuesta correcta de una pregunta.
 
     Es la diferencia que decide si la letra del modelo se puede usar como criterio: con una clave
-    **activa** sí (es la que corrige los tests); con una **en borrador** solo se anota, porque hay
-    conjuntos cuya plantilla está desalineada y una clave mala convertiría un acierto en un hueco;
-    **sin ninguna** entrada no hay letra contra la que comparar.
+    **activa** sí (es la que corrige los tests); con una **en borrador** también se compara —una
+    letra distinta de la clave es un conflicto, no una cobertura—, pero se anota su estado, porque
+    hay conjuntos cuya plantilla está desalineada y el conflicto puede ser de la clave; **sin
+    ninguna** entrada no hay letra contra la que comparar y manda la frase.
     """
 
     ACTIVE = "active"
@@ -118,11 +117,19 @@ class KeyStatus(StrEnum):
 
 
 class Coverage(StrEnum):
-    """El resultado final de una pregunta frente a los apuntes. Es lo que cuenta el informe."""
+    """El resultado final de una pregunta frente a los apuntes. Es lo que cuenta el informe.
+
+    `conflict` es el que faltaba y el que destapó la revisión del propietario: **una letra distinta
+    de la clave no es una pregunta cubierta**. Los apuntes contestan «b» y la plantilla dice «a»; o
+    la clave está mal o los apuntes, y ninguna de las dos cosas se arregla dando la pregunta por
+    buena. Con clave **activa** el resultado ya terminaba en duda; con clave **en borrador** entraba
+    como cubierta, y eran 96 preguntas de los tres pilotos contadas de más.
+    """
 
     CUBIERTA = "covered"
     HUECO = "gap"
     DUDOSA = "doubtful"
+    CONFLICTO = "conflict"
 
 
 class Motivo(StrEnum):
@@ -594,13 +601,24 @@ def evaluar(
 
     El orden importa:
 
-    1. **sin respuesta del modelo** o sin frase que aparezca en el texto → hueco;
-    2. si la clave está marcada como contradictoria por el paso B, la letra **no** decide: la clave
-       que se sabe mala no puede convertir un acierto en un fallo. Queda cubierta si la frase está,
-       y
-       el motivo viaja con ella (es una incidencia de la pregunta, no de los apuntes);
-    3. con **clave activa**, la letra tiene que coincidir además de estar la frase;
-    4. con clave **en borrador o sin definir**, manda la frase: la letra se guarda, pero no decide.
+    1. si el paso B marcó la clave como contraria a la norma, la letra **no** decide nunca: la clave
+       que se sabe mala no puede convertir un acierto en un fallo, y la pregunta queda como
+       incidencia de la pregunta (con la frase o sin ella);
+    2. **sin frase** que aparezca en el texto → hueco (y, agotadas las vueltas, duda con su motivo):
+       lo que no se puede citar no se da por cubierto;
+    3. con la frase verificada y **clave** (activa o en borrador), la letra tiene que coincidir: si
+       no coincide —o si el modelo no dijo ninguna— el resultado es **conflicto**, no cobertura;
+    4. con la frase verificada y **sin ninguna clave** no hay letra contra la que comparar, así que
+       manda la frase.
+
+    La regla 3 es la que cambió. Antes, una clave en borrador daba por cubierta cualquier pregunta
+    con la frase, aunque el modelo hubiera contestado otra letra: 96 preguntas de los tres pilotos
+    contaban como cubiertas diciendo lo contrario que su plantilla, y una letra distinta de la clave
+    es justo lo que hay que mirar (o la clave está mal, o los apuntes), no lo que se da por bueno.
+
+    A la primera vuelta un desacuerdo de letra se queda en **hueco** —el añadido puede ser lo que
+    falta para que la respuesta correcta se vea—; agotadas las vueltas es un **conflicto**, porque
+    escribir más no arregla una clave que dice otra cosa.
 
     Al agotar las vueltas, un hueco se convierte en **dudosa**: el plan llama incidencia a lo que
     sigue fallando tras dos vueltas, y distinguirlo de «cubierta» es lo que evita dar por bueno un
@@ -613,26 +631,6 @@ def evaluar(
     correctas = grupo.correct_keys
     letra_ok = bool(correctas) and letra is not None and letra.strip().lower() in correctas
 
-    if frase_ok and (clave_dudosa or not clave.clara):
-        if clave_dudosa:
-            return _resultado(
-                grupo,
-                section,
-                Coverage.DUDOSA,
-                Motivo.CLAVE_CONTRADICE_LA_NORMA,
-                cita,
-                letra,
-                correctas,
-                clave,
-                attempts,
-            )
-        return _resultado(
-            grupo, section, Coverage.CUBIERTA, None, cita, letra, correctas, clave, attempts
-        )
-    if frase_ok and letra_ok:
-        return _resultado(
-            grupo, section, Coverage.CUBIERTA, None, cita, letra, correctas, clave, attempts
-        )
     if clave_dudosa:
         return _resultado(
             grupo,
@@ -645,21 +643,36 @@ def evaluar(
             clave,
             attempts,
         )
+    if frase_ok:
+        if not correctas or letra_ok:
+            return _resultado(
+                grupo, section, Coverage.CUBIERTA, None, cita, letra, correctas, clave, attempts
+            )
+        if attempts < VUELTAS_MAXIMAS:
+            return _resultado(
+                grupo, section, Coverage.HUECO, None, cita, letra, correctas, clave, attempts
+            )
+        return _resultado(
+            grupo,
+            section,
+            Coverage.CONFLICTO,
+            Motivo.LETRA_NO_COINCIDE,
+            cita,
+            letra,
+            correctas,
+            clave,
+            attempts,
+        )
     if attempts < VUELTAS_MAXIMAS:
         return _resultado(
             grupo, section, Coverage.HUECO, None, cita, letra, correctas, clave, attempts
         )
-    if not clave.clara:
-        motivo = Motivo.CLAVE_SIN_DEFINIR if not correctas else Motivo.SIN_FRASE_EN_LOS_APUNTES
-        return _resultado(
-            grupo, section, Coverage.DUDOSA, motivo, cita, letra, correctas, clave, attempts
-        )
-    if frase_ok and not letra_ok:
+    if not correctas:
         return _resultado(
             grupo,
             section,
             Coverage.DUDOSA,
-            Motivo.LETRA_NO_COINCIDE,
+            Motivo.CLAVE_SIN_DEFINIR,
             cita,
             letra,
             correctas,
@@ -779,8 +792,9 @@ class SectionNotes:
 
     `question_ids` son las preguntas que este apartado **cubre** (frase verificada y letra de
     acuerdo
-    con la clave cuando la clave es clara). Es el rastro que pide el propietario: qué preguntas
-    sostiene cada apartado, sin tener que volver a comprobarlas.
+    con la clave cuando la clave existe). Es el rastro que pide el propietario: qué preguntas
+    sostiene cada apartado, sin tener que volver a comprobarlas. `conflict_question_ids` es aparte a
+    propósito: una pregunta en conflicto no está cubierta y se revisa.
     """
 
     key: str
@@ -793,9 +807,11 @@ class SectionNotes:
     covered: int = 0
     gaps: int = 0
     doubtful: int = 0
+    conflicts: int = 0
     question_ids: tuple[str, ...] = ()
     gap_question_ids: tuple[str, ...] = ()
     doubtful_question_ids: tuple[str, ...] = ()
+    conflict_question_ids: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -814,7 +830,8 @@ class TopicNotes:
     @property
     def questions_total(self) -> int:
         return sum(
-            apartado.covered + apartado.gaps + apartado.doubtful for apartado in self.sections
+            apartado.covered + apartado.gaps + apartado.doubtful + apartado.conflicts
+            for apartado in self.sections
         )
 
     @property
@@ -828,6 +845,11 @@ class TopicNotes:
     @property
     def doubtful(self) -> int:
         return sum(apartado.doubtful for apartado in self.sections)
+
+    @property
+    def conflicts(self) -> int:
+        """Preguntas que los apuntes contestan con otra letra que su clave: van a revisión."""
+        return sum(apartado.conflicts for apartado in self.sections)
 
 
 def notes_signature(notes: TopicNotes | None) -> dict[str, Any]:
@@ -850,6 +872,7 @@ def notes_signature(notes: TopicNotes | None) -> dict[str, Any]:
                     "covered": sorted(apartado.question_ids),
                     "gaps": sorted(apartado.gap_question_ids),
                     "doubtful": sorted(apartado.doubtful_question_ids),
+                    "conflict": sorted(apartado.conflict_question_ids),
                 }
                 for apartado in notes.sections
             ],
@@ -870,6 +893,7 @@ def notes_document(notes: TopicNotes | None) -> dict[str, Any] | None:
         "covered": notes.covered,
         "gaps": notes.gaps,
         "doubtful": notes.doubtful,
+        "conflicts": notes.conflicts,
         "sections": [
             {
                 "key": apartado.key,
@@ -882,9 +906,11 @@ def notes_document(notes: TopicNotes | None) -> dict[str, Any] | None:
                 "covered": apartado.covered,
                 "gaps": apartado.gaps,
                 "doubtful": apartado.doubtful,
+                "conflicts": apartado.conflicts,
                 "question_ids": list(apartado.question_ids),
                 "gap_question_ids": list(apartado.gap_question_ids),
                 "doubtful_question_ids": list(apartado.doubtful_question_ids),
+                "conflict_question_ids": list(apartado.conflict_question_ids),
             }
             for apartado in notes.sections
         ],
@@ -916,9 +942,11 @@ def notes_from_document(datos: Mapping[str, Any] | None) -> TopicNotes | None:
                 covered=_entero(apartado.get("covered")),
                 gaps=_entero(apartado.get("gaps")),
                 doubtful=_entero(apartado.get("doubtful")),
+                conflicts=_entero(apartado.get("conflicts")),
                 question_ids=_textos(apartado.get("question_ids")),
                 gap_question_ids=_textos(apartado.get("gap_question_ids")),
                 doubtful_question_ids=_textos(apartado.get("doubtful_question_ids")),
+                conflict_question_ids=_textos(apartado.get("conflict_question_ids")),
             )
             for apartado in _diccionarios(datos.get("sections"))
         ),
