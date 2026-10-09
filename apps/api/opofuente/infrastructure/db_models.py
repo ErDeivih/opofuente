@@ -1960,3 +1960,124 @@ class ChangeSetRecord(Base):
     confirmed_at: Mapped[datetime | None] = mapped_column(UtcDateTime(), nullable=True)
     discarded_at: Mapped[datetime | None] = mapped_column(UtcDateTime(), nullable=True)
     reviewed_by: Mapped[str | None] = mapped_column(String(64), nullable=True)
+
+
+class TopicFactRecord(Base):
+    """Un hecho de los apuntes de un tema, con las preguntas de las que salió (paso B).
+
+    `text_hash` es la huella normalizada del texto y hay un índice único por tema: volver a pasar
+    por
+    el mismo lote no duplica los hechos, que es lo que hace que una corrida se pueda reanudar.
+    """
+
+    __tablename__ = "topic_facts"
+    __table_args__ = (
+        CheckConstraint("kind IN ('normativo', 'tecnico')", name="ck_topic_fact_kind"),
+        CheckConstraint("length(trim(text)) > 0", name="ck_topic_fact_text"),
+        CheckConstraint("length(text_hash) = 64", name="ck_topic_fact_hash"),
+        UniqueConstraint("curriculum_node_id", "text_hash", name="uq_topic_fact_text"),
+        Index("ix_topic_facts_node", "curriculum_node_id"),
+        Index("ix_topic_facts_subsection", "curriculum_node_id", "subsection_key"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    curriculum_node_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("curriculum_nodes.id", ondelete="CASCADE"), nullable=False
+    )
+    epigraph_code: Mapped[str] = mapped_column(Text, nullable=False)
+    subsection_key: Mapped[str | None] = mapped_column(Text, nullable=True)
+    #: Va **antes** de `text` a propósito: la columna `text` tapa el `text()` de SQLAlchemy dentro
+    #: del cuerpo de la clase, y el `server_default` de aquí dejaría de ser una llamada.
+    doubtful: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default=text("0"), default=False
+    )
+    text: Mapped[str] = mapped_column(Text, nullable=False)
+    text_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    kind: Mapped[str] = mapped_column(String(16), nullable=False)
+    note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    source_group_ids: Mapped[str] = mapped_column(Text, nullable=False)
+    source_question_ids: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
+
+
+class TopicNoteSectionRecord(Base):
+    """Un apartado de los apuntes de un tema: su texto, su anclaje y sus hechos (paso C y D)."""
+
+    __tablename__ = "topic_note_sections"
+    __table_args__ = (
+        CheckConstraint("status IN ('pending', 'reviewed')", name="ck_note_section_status"),
+        CheckConstraint("position >= 1", name="ck_note_section_position"),
+        CheckConstraint("length(trim(subsection_key)) > 0", name="ck_note_section_key"),
+        CheckConstraint("length(trim(anchor)) > 0", name="ck_note_section_anchor"),
+        UniqueConstraint("curriculum_node_id", "subsection_key", name="uq_note_section_key"),
+        Index("ix_note_sections_node_position", "curriculum_node_id", "position"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    curriculum_node_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("curriculum_nodes.id", ondelete="CASCADE"), nullable=False
+    )
+    subsection_key: Mapped[str] = mapped_column(Text, nullable=False)
+    epigraph_code: Mapped[str] = mapped_column(Text, nullable=False)
+    title: Mapped[str] = mapped_column(Text, nullable=False)
+    anchor: Mapped[str] = mapped_column(Text, nullable=False)
+    position: Mapped[int] = mapped_column(Integer, nullable=False)
+    body_markdown: Mapped[str] = mapped_column(
+        Text, nullable=False, server_default=text("''"), default=""
+    )
+    status: Mapped[str] = mapped_column(
+        String(16), nullable=False, server_default=text("'pending'"), default="pending"
+    )
+    needs_review_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    model: Mapped[str | None] = mapped_column(Text, nullable=True)
+    prompt_template_version: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
+
+
+class QuestionNoteAnchorRecord(Base):
+    """El enlace de una pregunta con el párrafo de los apuntes que la contesta (paso E).
+
+    Una fila por pregunta y tema. `quoted_sentence` es la frase que se verificó **contra el texto**
+    de
+    los apuntes: es lo que permite abrir el párrafo exacto desde la pregunta.
+    """
+
+    __tablename__ = "question_note_anchors"
+    __table_args__ = (
+        CheckConstraint(
+            "key_status IN ('active', 'draft', 'ninguna')", name="ck_anchor_key_status"
+        ),
+        CheckConstraint("result IN ('covered', 'gap', 'doubtful')", name="ck_anchor_result"),
+        CheckConstraint("attempts >= 1", name="ck_anchor_attempts"),
+        UniqueConstraint(
+            "question_version_id", "curriculum_node_id", name="uq_anchor_question_node"
+        ),
+        Index("ix_anchors_node_result", "curriculum_node_id", "result"),
+        Index("ix_anchors_section", "section_id"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    question_version_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("question_versions.id", ondelete="CASCADE"), nullable=False
+    )
+    curriculum_node_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("curriculum_nodes.id", ondelete="CASCADE"), nullable=False
+    )
+    section_id: Mapped[str | None] = mapped_column(
+        String(36),
+        ForeignKey("topic_note_sections.id", ondelete="CASCADE"),
+        nullable=True,
+    )
+    anchor: Mapped[str] = mapped_column(Text, nullable=False)
+    group_signature: Mapped[str] = mapped_column(String(64), nullable=False)
+    quoted_sentence: Mapped[str | None] = mapped_column(Text, nullable=True)
+    answer_letter: Mapped[str | None] = mapped_column(String(4), nullable=True)
+    expected_letters: Mapped[str | None] = mapped_column(Text, nullable=True)
+    key_status: Mapped[str] = mapped_column(String(16), nullable=False)
+    result: Mapped[str] = mapped_column(String(16), nullable=False)
+    note: Mapped[str | None] = mapped_column(String(48), nullable=True)
+    attempts: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default=text("1"), default=1
+    )
+    checked_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)

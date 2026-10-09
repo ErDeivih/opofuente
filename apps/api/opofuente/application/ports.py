@@ -43,6 +43,7 @@ from opofuente.application.readiness_models import (
     PendingCounts,
     QuestionSummary,
 )
+from opofuente.application.topic_notes_models import NotesNode
 from opofuente.domain.artifacts import OriginType, Sha256, StoredArtifact
 from opofuente.domain.classification import (
     ClassificationSubject,
@@ -71,6 +72,17 @@ from opofuente.domain.topic_classification import (
     ClassifiableQuestion,
     ProposalBatch,
     Syllabus,
+)
+from opofuente.domain.topic_notes import (
+    ComprobacionBatch,
+    Hecho,
+    HechosBatch,
+    MaterialPassage,
+    NotesCheck,
+    NoteSection,
+    QuestionGroup,
+    RedaccionBatch,
+    TopicNotes,
 )
 
 
@@ -580,4 +592,171 @@ class TopicProposer(Protocol):
         self, questions: Sequence[ClassifiableQuestion], *, syllabus: Syllabus
     ) -> ProposalBatch:
         """Las propuestas del lote y lo que costó pedirlas."""
+        ...
+
+
+# ------------------------------------------- apuntes guiados por preguntas (pasos B-E del plan)
+
+
+@runtime_checkable
+class TopicNotesReader(Protocol):
+    """Los apuntes redactados de un tema, leídos para meterlos en su dossier.
+
+    Es un puerto aparte del repositorio entero a propósito: quien solo monta el dossier de un tema
+    (la
+    API, al abrir un tema) no necesita saber escribir hechos ni apartados.
+    """
+
+    def notes_for_node(self, node_id: str) -> TopicNotes | None:
+        """Los apuntes del tema tal como están hoy, o `None` si todavía no se han escrito."""
+        ...
+
+
+@runtime_checkable
+class TopicNotesRepository(TopicNotesReader, Protocol):
+    """Lo que los apuntes necesitan de la base: las preguntas del tema y lo que se va escribiendo.
+
+    Todas las escrituras son idempotentes por su clave natural (tema + hecho, tema + apartado,
+    pregunta + tema), porque una corrida de apuntes se reanuda: lo que ya está escrito no se repite
+    y
+    lo que falta se escribe. Es lo que permite parar y volver a empezar sin pagar dos veces.
+    """
+
+    def node_id(self, code: str) -> str | None:
+        """El nodo del tema por su código legible (`IV.7`). `None` si no existe."""
+        ...
+
+    def node(self, node_id: str) -> NotesNode | None:
+        """El tema con sus epígrafes oficiales, en orden. `None` si el nodo no es un tema."""
+        ...
+
+    def question_groups(self, node_id: str) -> tuple[QuestionGroup, ...]:
+        """Los grupos de preguntas del tema (y de sus epígrafes), con su clave y su estado."""
+        ...
+
+    def facts(self, node_id: str) -> tuple[Hecho, ...]:
+        """Los hechos guardados del tema, en orden de creación."""
+        ...
+
+    def save_facts(
+        self, node_id: str, hechos: Sequence[Hecho], *, now: datetime
+    ) -> tuple[Hecho, ...]:
+        """Guarda los hechos nuevos (los que ya estaban no se duplican).
+
+        Devuelve los hechos guardados **en el mismo orden** que llegaron y con su identificador: es
+        lo
+        que permite repartirlos por apartados después, y sin el identificador no se pueden ni
+        asignar
+        ni volver a leer.
+        """
+        ...
+
+    def sections(self, node_id: str) -> tuple[NoteSection, ...]:
+        """Los apartados del tema, en orden, con sus hechos y su texto."""
+        ...
+
+    def save_sections(
+        self, node_id: str, sections: Sequence[NoteSection], *, now: datetime
+    ) -> tuple[NoteSection, ...]:
+        """Crea o actualiza los apartados del esquema y reparte los hechos. Devuelve los
+        guardados."""
+        ...
+
+    def save_section_body(
+        self,
+        section: NoteSection,
+        *,
+        title: str | None,
+        body: str,
+        needs_review_reason: str | None,
+        model: str | None,
+        now: datetime,
+        append: bool = False,
+    ) -> NoteSection:
+        """Escribe el texto de un apartado (o le añade un párrafo, con `append=True`).
+
+        `model` es el modelo que lo escribió: va con el apartado para que la versión del tema pueda
+        decir con qué se redactó, que es lo que permite comparar dos corridas.
+        """
+        ...
+
+    def checks(self, node_id: str) -> tuple[NotesCheck, ...]:
+        """Los resultados de comprobación guardados del tema, para reanudar sin repetir llamadas."""
+        ...
+
+    def forget_sections(self, node_id: str) -> int:
+        """Tira los apartados del tema y sus enlaces, y deja los hechos sin repartir.
+
+        Se usa cuando el esquema se mueve: los apartados que había ya no corresponden a ningún
+        subapartado del plan nuevo, y su texto y sus comprobaciones se vuelven a calcular. Los
+        **hechos se conservan**: son el trabajo caro y siguen siendo verdad.
+        """
+        ...
+
+    def save_checks(self, node_id: str, results: Sequence[NotesCheck], *, now: datetime) -> int:
+        """Guarda el resultado de comprobar unas preguntas. Cada pregunta tiene un solo
+        resultado."""
+        ...
+
+
+#: El actor con el que se firma lo que escribe la máquina en los apuntes.
+ACTOR_APUNTES = "llm:deepseek-flash"
+
+
+@runtime_checkable
+class NotesModel(Protocol):
+    """Un motor que saca hechos de las preguntas, redacta apartados y los comprueba (pasos B, D y
+    E).
+
+    No decide nada del producto: devuelve lo que contestó y el servicio aplica las reglas —qué se
+    guarda, qué se da por cubierto y qué queda como incidencia—. Por eso los apuntes se pueden
+    probar
+    enteros con un doble que no llama a nadie (y sin gastar).
+
+    Los cuatro métodos son las cuatro llamadas del plan: `hechos` (paso B), `redactar` (paso D),
+    `comprobar` (paso E) y `anadir` (la vuelta de huecos del paso E).
+    """
+
+    name: str
+
+    @property
+    def version(self) -> str:
+        """La versión del motor: dos modelos distintos escriben apuntes distintos."""
+        ...
+
+    def hechos(
+        self,
+        grupos: Sequence[QuestionGroup],
+        *,
+        topic_code: str,
+        topic_title: str,
+        epigraphs: Sequence[tuple[str, str]],
+    ) -> HechosBatch:
+        """Los hechos de un lote de grupos y lo que costó pedirlos."""
+        ...
+
+    def redactar(
+        self,
+        section: NoteSection,
+        *,
+        topic_code: str,
+        topic_title: str,
+        material: Sequence[MaterialPassage],
+    ) -> RedaccionBatch:
+        """El texto de un apartado, con todos sus hechos dentro."""
+        ...
+
+    def comprobar(self, grupos: Sequence[QuestionGroup], *, apuntes: str) -> ComprobacionBatch:
+        """Si los apuntes contestan a esas preguntas, con la frase exacta que lo justifica."""
+        ...
+
+    def anadir(
+        self, section: NoteSection, grupos: Sequence[QuestionGroup], hechos: Sequence[Hecho]
+    ) -> RedaccionBatch:
+        """Lo que falta en un apartado para contestar las preguntas que no cubre.
+
+        Los hechos son los del paso B para esas mismas preguntas: el añadido se apoya en ellos y no
+        en
+        lo que el modelo recuerde.
+        """
         ...

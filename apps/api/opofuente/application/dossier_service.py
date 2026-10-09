@@ -21,7 +21,7 @@ from __future__ import annotations
 import json
 from datetime import date, datetime
 
-from opofuente.application.ports import Clock, DossierRepository
+from opofuente.application.ports import Clock, DossierRepository, TopicNotesReader
 from opofuente.application.read_models import DossierVersionView
 from opofuente.domain.dossier import (
     TopicDossier,
@@ -32,11 +32,24 @@ from opofuente.domain.dossier import (
 
 
 class DossierService:
-    """El tema como unidad de lectura: qué dice el corpus de él, citado y declarado."""
+    """El tema como unidad de lectura: qué dice el corpus de él, citado y declarado.
 
-    def __init__(self, repository: DossierRepository, clock: Clock) -> None:
+    El tema es **una** unidad de lectura y **una** de versionado: lo que se archiva al guardar una
+    versión son las citas del corpus **y los apuntes redactados** (`domain.topic_notes`), que se
+    leen
+    de su propio repositorio. Por eso el servicio depende de los dos: el corpus se calcula y los
+    apuntes se leen, y los dos viajan juntos en el documento que se guarda.
+    """
+
+    def __init__(
+        self,
+        repository: DossierRepository,
+        clock: Clock,
+        notes: TopicNotesReader | None = None,
+    ) -> None:
         self._repository = repository
         self._clock = clock
+        self._notes = notes
 
     def build(self, node_id: str) -> TopicDossier | None:
         """El dossier de hoy. `None` si el nodo no existe."""
@@ -54,6 +67,7 @@ class DossierService:
             facts=self._repository.passages_for_node(node_id),
             mappings_total=len(self._repository.mappings_for_node(node_id)),
             reference_date=_fecha_de_referencia(momento),
+            notes=None if self._notes is None else self._notes.notes_for_node(node_id),
         )
         return self._con_versiones(dossier)
 
@@ -127,6 +141,9 @@ def _con_version(
         content_hash=dossier.content_hash,
         version_id=version_id,
         previous_version_id=anterior,
+        # Los apuntes viajan con la versión: perderlos aquí dejaría la versión sin lo que se
+        # escribió.
+        notes=dossier.notes,
     )
 
 

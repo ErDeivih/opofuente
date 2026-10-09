@@ -17,7 +17,11 @@ Lo que **no** está aquí todavía, y por qué:
   decisión de diseño del arquitecto, no de esta capa.
 - `GET /student/official-exams`: hoy los exámenes oficiales solo se listan por conjunto de preguntas
   con su identificador a la vista, que es justo lo que esta capa no puede enseñar.
-- `GET /student/topics/{codigo}/notes`: depende de `topic_notes`, que todavía no existe (F4).
+- `GET /student/topics/{codigo}/notes`: los apuntes redactados ya existen (`topic_note_sections` y
+  `question_note_anchors`, pasos B-E del plan de apuntes) y viajan dentro de la versión del tema,
+  que es lo que sirve la ficha del programa. Lo que falta es la **pantalla de lectura** del alumno
+  (capítulos por epígrafe, índice, buscador y «Ver en apuntes» al párrafo): es el paso 5 del plan y
+  necesita su propio contrato, sin identificadores ni rutas de la trastienda.
 """
 
 from __future__ import annotations

@@ -36,6 +36,12 @@ from typing import Any
 
 from opofuente.domain.classification import MappingStatus
 from opofuente.domain.rag import VersionMode, corpus_eligible
+from opofuente.domain.topic_notes import (
+    TopicNotes,
+    notes_document,
+    notes_from_document,
+    notes_signature,
+)
 
 #: Versión del formato del dossier guardado. Si cambia la forma en que se archiva, sube: una versión
 #: guardada se lee con la versión con la que se escribió (misma regla que las representaciones).
@@ -149,7 +155,14 @@ class Source:
 
 @dataclass(frozen=True, slots=True)
 class TopicDossier:
-    """El tema tal como el sistema puede sostenerlo hoy: fuentes, citas, huecos y qué se usó."""
+    """El tema tal como el sistema puede sostenerlo hoy: fuentes, citas, huecos y qué se usó.
+
+    `notes` son los apuntes **redactados** del tema (los que se escriben a partir de sus preguntas,
+    `domain.topic_notes`). Van dentro del dossier porque el tema es **una** unidad de lectura y
+    **una** de versionado: lo que se archiva al guardar una versión es el tema entero —las citas y
+    lo
+    que se escribió sobre ellas—, y una versión antigua se lee como se leyó.
+    """
 
     node_id: str
     path: str
@@ -163,6 +176,7 @@ class TopicDossier:
     content_hash: str = ""
     version_id: str | None = None
     previous_version_id: str | None = None
+    notes: TopicNotes | None = None
 
     @property
     def passages_total(self) -> int:
@@ -236,6 +250,7 @@ def build_dossier(
     facts: tuple[PassageFacts, ...],
     mappings_total: int = 0,
     reference_date: date | None = None,
+    notes: TopicNotes | None = None,
 ) -> TopicDossier:
     """Monta el dossier de un tema a partir de los tramos que le llegan.
 
@@ -350,7 +365,9 @@ def build_dossier(
             holes=huecos,
             accepted_sources=aceptadas,
             provisional_sources=provisionales,
+            notes=notes,
         ),
+        notes=notes,
     )
 
 
@@ -393,12 +410,15 @@ def dossier_signature(
     holes: tuple[Hole, ...],
     accepted_sources: int,
     provisional_sources: int,
+    notes: TopicNotes | None = None,
 ) -> str:
     """Huella del contenido del dossier: dos lecturas con la misma huella son el mismo dossier.
 
-    Se calcula sobre lo que el usuario lee (fuentes, citas, procedencia y huecos) y **no** sobre la
-    fecha: volver a mirar el mismo tema no crea una versión nueva. Eso es lo que permite decir «esto
-    es lo que sabía antes y esto lo que sé ahora» sin ruido.
+    Se calcula sobre lo que el usuario lee (fuentes, citas, procedencia, huecos **y los apuntes
+    redactados**) y **no** sobre la fecha: volver a mirar el mismo tema no crea una versión nueva.
+    Eso
+    es lo que permite decir «esto es lo que sabía antes y esto lo que sé ahora» sin ruido, y lo que
+    hace que unos apuntes reescritos sí sean una versión nueva.
     """
     cuerpo = {
         "sources": [
@@ -427,6 +447,7 @@ def dossier_signature(
         "accepted_sources": accepted_sources,
         "provisional_sources": provisional_sources,
     }
+    cuerpo.update(notes_signature(notes))
     serializado = json.dumps(cuerpo, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(serializado.encode("utf-8")).hexdigest()
 
@@ -485,6 +506,7 @@ def dossier_document(dossier: TopicDossier) -> dict[str, Any]:
             {"code": hueco.code.value, "count": hueco.count, "reason": hueco.reason}
             for hueco in dossier.holes
         ],
+        "notes": notes_document(dossier.notes),
     }
 
 
@@ -517,6 +539,9 @@ def dossier_from_document(datos: Mapping[str, Any]) -> TopicDossier:
         version_id=None if datos.get("version_id") is None else str(datos["version_id"]),
         previous_version_id=(
             None if datos.get("previous_version_id") is None else str(datos["previous_version_id"])
+        ),
+        notes=notes_from_document(
+            datos.get("notes") if isinstance(datos.get("notes"), Mapping) else None
         ),
     )
 

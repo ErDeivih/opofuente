@@ -33,6 +33,65 @@ class DossierHoleSchema(BaseModel):
     reason: str | None = None
 
 
+class DossierNoteSectionSchema(BaseModel):
+    """Un apartado de los apuntes redactados, con el rastro de las preguntas que cubre.
+
+    `question_ids` son identificadores de pregunta, y eso es deliberado: esta pantalla es la del
+    **propietario** (la ficha del tema en el programa), no la del alumno, y poder cruzar un apartado
+    con sus preguntas es justo lo que hace falta para revisarlos. La zona del alumno tiene su propia
+    ruta y su propio contrato, sin identificadores.
+    """
+
+    key: str
+    epigraph_code: str
+    title: str
+    anchor: str = Field(
+        description="Anclaje estable del apartado, para enlazar desde una pregunta."
+    )
+    body_markdown: str
+    facts_total: int = Field(ge=0)
+    needs_review_reason: str | None = None
+    covered: int = Field(ge=0)
+    gaps: int = Field(ge=0)
+    doubtful: int = Field(ge=0)
+    question_ids: list[str]
+    gap_question_ids: list[str]
+    doubtful_question_ids: list[str]
+
+
+class DossierNotesSchema(BaseModel):
+    """Los apuntes de un tema: los que se escriben a partir de sus preguntas y se comprueban con
+    ellas.
+
+    Van dentro del dossier porque el tema es una unidad de lectura y de versionado: al guardar una
+    versión se guarda el tema entero, citas **y** apuntes, y una versión antigua se lee como se
+    leyó.
+    """
+
+    generated_at: datetime | None = None
+    model: str | None = None
+    prompt_template_version: str
+    sections_total: int = Field(ge=0)
+    questions_total: int = Field(ge=0)
+    covered: int = Field(ge=0)
+    gaps: int = Field(ge=0)
+    doubtful: int = Field(ge=0)
+    sections: list[DossierNoteSectionSchema]
+
+    @model_validator(mode="after")
+    def _coherente(self) -> DossierNotesSchema:
+        """Los totales se comprueban contra lo servido: un total que no cuadra es un dato falso."""
+        if self.sections_total != len(self.sections):
+            raise ValueError("sections_total no cuadra con los apartados servidos")
+        if self.covered != sum(apartado.covered for apartado in self.sections):
+            raise ValueError("covered no cuadra con los apartados servidos")
+        if self.questions_total != sum(
+            apartado.covered + apartado.gaps + apartado.doubtful for apartado in self.sections
+        ):
+            raise ValueError("questions_total no cuadra con las preguntas comprobadas")
+        return self
+
+
 class DossierPassageSchema(BaseModel):
     evidence_id: str
     text: str = Field(description="Texto literal del tramo: la cita, tal cual se guardó.")
@@ -81,6 +140,9 @@ class DossierSchema(BaseModel):
     empty: bool
     sources: list[DossierSourceSchema]
     holes: list[DossierHoleSchema]
+    #: Los apuntes redactados del tema, si los tiene: `null` es «este tema todavía no tiene apuntes
+    #: escritos», que no es lo mismo que unos apuntes vacíos.
+    notes: DossierNotesSchema | None = None
 
     @model_validator(mode="after")
     def _coherente(self) -> DossierSchema:

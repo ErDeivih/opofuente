@@ -84,6 +84,7 @@ from opofuente.infrastructure.review_repository import SqlAlchemyReviewRepositor
 from opofuente.infrastructure.search_repository import SqlAlchemySearchRepository
 from opofuente.infrastructure.student_repository import SqlAlchemyStudentRepository
 from opofuente.infrastructure.study_repository import SqlAlchemyStudyRepository
+from opofuente.infrastructure.topic_notes_repository import SqlAlchemyTopicNotesRepository
 from opofuente.infrastructure.url_guard import url_limits_from_settings
 from opofuente.infrastructure.worker_liveness import WorkerLiveness
 from opofuente.workers.job_worker import JobWorker
@@ -270,10 +271,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         repository=SqlAlchemyReadinessRepository(session_factory),
     )
     # S13: el dossier del tema. Se calcula desde el corpus cada vez que se pide y se archiva cuando
-    # alguien lo pide: la verdad está en las fuentes, no en una copia.
+    # alguien lo pide: la verdad está en las fuentes, no en una copia. Los apuntes redactados (pasos
+    # B-E) se leen de su tabla y viajan dentro del mismo documento, así que se versionan con él.
     dossier_service = DossierService(
         repository=SqlAlchemyDossierRepository(session_factory),
         clock=clock,
+        notes=SqlAlchemyTopicNotesRepository(session_factory),
     )
     export_service = ExportService(
         questions=SqlAlchemyQuestionRepository(session_factory),
