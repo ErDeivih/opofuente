@@ -67,6 +67,16 @@ from opofuente.domain.topic_notes import (
 #: Prioridad de reparto por defecto: se mira después de las materias con prioridad propia.
 PRIORIDAD_POR_DEFECTO = 100
 
+#: Tope de hechos por apartado del §2.2.3: un apartado que pase de aquí se parte en trozos de la
+#: misma materia. No es un tope de comodidad: el texto de un apartado viaja entero en la llamada que
+#: lo redacta y en la que lo comprueba, y un apartado de cuatrocientos hechos no cabe en el encargo.
+MAX_HECHOS_POR_APARTADO = 150
+
+#: Los códigos de hallazgo de la revisión de un índice. Vocabulario cerrado: el informe los cuenta y
+#: la prueba los usa.
+APARTADO_MUY_GRANDE = "apartado_muy_grande"
+TITULO_REPETIDO = "titulo_repetido"
+
 #: Umbral de equivalencia entre dos hechos: parecido de Dice ponderado por IDF. Se midió sobre los
 #: 998 hechos reales de IV.7 antes de elegirlo: con 0,4 desaparecen 261 hechos repetidos (el 26 %) y
 #: los cuatro casos de control que no se pueden fusionar (LLC/MAC, TPDU/APDU, FTP/DNS y
@@ -167,6 +177,66 @@ class RepartoMateria:
 
 
 @dataclass(frozen=True, slots=True)
+class HallazgoDelIndice:
+    """Un defecto del índice, con su cuenta y dónde está, para poder ir a arreglarlo."""
+
+    codigo: str
+    cuenta: int
+    detalle: str
+    donde: tuple[str, ...] = ()
+
+    def line(self) -> str:
+        sitios = "" if not self.donde else f" · en {', '.join(self.donde[:5])}"
+        if len(self.donde) > 5:
+            sitios += f" y {len(self.donde) - 5} más"
+        return f"{self.detalle}{sitios}"
+
+
+@dataclass(frozen=True, slots=True)
+class RevisionIndice:
+    """Lo que se comprueba de un índice **antes** de redactar con él (§2.2.3).
+
+    Tres comprobaciones, y la tercera se cuenta aparte a propósito:
+
+    1. **ningún apartado con más de `MAX_HECHOS_POR_APARTADO` hechos**: se parte y deja de ser un
+       hallazgo (`plan_de` lo hace);
+    2. **ningún título repetido**: dos apartados con el mismo nombre son el mismo apartado dos
+    veces;
+    3. **cada hecho en un apartado**: lo que no casa con ninguna materia del catálogo es una
+    pregunta
+       mal situada, y **no** se recoge en un cajón. Se cuenta aquí y, en la corrida, va a la bandeja
+       del propietario con su motivo. No invalida el índice —el defecto es de la pregunta, no del
+       árbol—, pero tiene que estar dicho: por eso vive en su propio campo y no entre los hallazgos.
+    """
+
+    apartados: int
+    hechos: int
+    hechos_sin_materia: int
+    grupos_sin_materia: int
+    preguntas_sin_materia: int
+    hallazgos: tuple[HallazgoDelIndice, ...] = ()
+
+    @property
+    def pasa(self) -> bool:
+        """¿El árbol está bien formado? Lo que no cabe en él se cuenta aparte."""
+        return not self.hallazgos
+
+    def lines(self) -> tuple[str, ...]:
+        cabecera = (
+            f"    revision del indice: {'PASA' if self.pasa else 'NO PASA'} · "
+            f"{self.apartados} apartado(s) · {self.hechos} hecho(s) · "
+            f"{self.grupos_sin_materia} grupo(s) y {self.hechos_sin_materia} hecho(s) sin materia"
+        )
+        lineas = [cabecera, *(f"      · {hallazgo.line()}" for hallazgo in self.hallazgos)]
+        if self.grupos_sin_materia:
+            lineas.append(
+                f"      · {self.preguntas_sin_materia} pregunta(s) no las situa ninguna materia "
+                "del indice y NO hay cajon para ellas: van a la bandeja del propietario"
+            )
+        return tuple(lineas)
+
+
+@dataclass(frozen=True, slots=True)
 class IndiceDelTema:
     """El índice completo: el tema, sus epígrafes y el reparto de hechos y preguntas."""
 
@@ -188,6 +258,11 @@ class IndiceDelTema:
     #: la que salen, para no perderlos. Se cuentan y se dicen: son los que el vocabulario del
     #: catálogo no reconoce, y el sitio donde se estudian es el de su pregunta.
     hechos_por_su_pregunta: int = 0
+    #: Grupos cuyo **enunciado** no reconocía ninguna materia y se han colocado por el texto de sus
+    #: hechos (la materia que reconocen más de sus hechos). Es lo que resuelve las preguntas cortas
+    #: («Una de las siguientes afirmaciones es falsa»), que no dicen de qué hablan pero cuyos hechos
+    #: sí. Se cuentan porque es una decisión de reparto y tiene que poder revisarse.
+    grupos_por_sus_hechos: int = 0
 
     @property
     def hechos(self) -> int:
@@ -222,6 +297,11 @@ class IndiceDelTema:
             lineas.append(
                 f"    {self.hechos_por_su_pregunta} hecho(s) no reconocen ninguna materia por sus "
                 "palabras y van al apartado de la pregunta de la que salen (no se pierden)"
+            )
+        if self.grupos_por_sus_hechos:
+            lineas.append(
+                f"    {self.grupos_por_sus_hechos} grupo(s) de preguntas no dicen de qué hablan "
+                "por su enunciado y se han situado por el texto de sus hechos"
             )
         actual = ""
         for apartado in self.reparto:
@@ -570,20 +650,68 @@ def repartir_hechos(
     return por_clave, sin_materia, por_su_pregunta
 
 
+def _materia_por_sus_hechos(hechos: Sequence[Hecho], materias: Sequence[Materia]) -> Materia | None:
+    """A qué materia va un texto que no reconoce ninguna, según **lo que dicen sus hechos**.
+
+    Hay preguntas que no dicen de qué hablan: «Una de las siguientes afirmaciones es falsa», «Los
+    acuerdos adoptados, para ser válidos», «El Decreto de la disolución contendrá». Su enunciado no
+    nombra ni un artículo ni una institución, así que ningún patrón las va a coger —y forzar
+    patrones
+    para cada muletilla de examen sería escribir un diccionario de comodines, no un índice—. Lo que
+    sí
+    sabe de qué hablan son **sus hechos**: se escribieron a partir de sus opciones y su clave, y un
+    hecho sobre el artículo 127 es de la materia donde se estudia el artículo 127.
+
+    La decisión es la **mayoría** de los hechos del grupo, y a igualdad la materia que va antes en
+    el
+    catálogo: determinista, para que dos corridas den el mismo índice. Si ningún hecho reconoce
+    nada,
+    esto devuelve `None` y la pregunta va a la bandeja del propietario —que es lo correcto: si ni el
+    enunciado ni los hechos dicen de qué va, no es que el índice esté mal, es que la pregunta
+    necesita
+    que alguien la mire—.
+    """
+    votos: dict[str, int] = {}
+    for hecho in hechos:
+        hallada = materia_de(hecho.text, hecho.epigraph_code, materias)
+        if hallada is not None:
+            votos[hallada.key] = votos.get(hallada.key, 0) + 1
+    if not votos:
+        return None
+    orden = {materia.key: posicion for posicion, materia in enumerate(materias)}
+    ganadora = min(votos.items(), key=lambda par: (-par[1], orden.get(par[0], len(orden))))[0]
+    return next((materia for materia in materias if materia.key == ganadora), None)
+
+
 def repartir_grupos(
-    grupos: Sequence[QuestionGroup], materias: Sequence[Materia]
-) -> tuple[dict[str, list[QuestionGroup]], list[QuestionGroup]]:
-    """Los grupos de preguntas de cada materia, por su clave, y los que no son de ninguna."""
+    grupos: Sequence[QuestionGroup],
+    materias: Sequence[Materia],
+    *,
+    hechos_por_grupo: Mapping[str, Sequence[Hecho]] | None = None,
+) -> tuple[dict[str, list[QuestionGroup]], list[QuestionGroup], int]:
+    """Los grupos de cada materia, por su clave, los que no son de ninguna y cuántos por sus hechos.
+
+    La materia la decide el **enunciado** (es lo que se lee en el índice). Solo cuando el enunciado
+    no
+    reconoce ninguna se mira lo que dicen los hechos de ese grupo (`_materia_por_sus_hechos`): una
+    pregunta corta es de donde vive lo que sus hechos afirman.
+    """
     por_clave: dict[str, list[QuestionGroup]] = {materia.key: [] for materia in materias}
     sin_materia: list[QuestionGroup] = []
+    por_sus_hechos = 0
     for grupo in grupos:
         epigrafe = grupo.epigraph_code or grupo.representative.epigraph_code
         materia = materia_de(_texto_de_grupo(grupo), epigrafe, materias)
+        if materia is None and hechos_por_grupo:
+            suyos = hechos_por_grupo.get(grupo.signature, ())
+            materia = _materia_por_sus_hechos(suyos, materias) if suyos else None
+            if materia is not None:
+                por_sus_hechos += 1
         if materia is None:
             sin_materia.append(grupo)
             continue
         por_clave[materia.key].append(grupo)
-    return por_clave, sin_materia
+    return por_clave, sin_materia, por_sus_hechos
 
 
 def validar_catalogo(topic_code: str, materias: Sequence[Materia]) -> None:
@@ -642,7 +770,9 @@ def indice_de(
                 f"la materia «{materia.key}» apunta al epígrafe {materia.epigraph_code}, que no "
                 f"está en el temario de {topic_code}"
             )
-    por_materia_grupos, grupos_sin_materia = repartir_grupos(grupos, materias)
+    por_materia_grupos, grupos_sin_materia, por_sus_hechos = repartir_grupos(
+        grupos, materias, hechos_por_grupo=_hechos_por_grupo(hechos)
+    )
     materia_por_grupo = {
         grupo.signature: materia.key
         for materia in materias
@@ -684,6 +814,77 @@ def indice_de(
         grupos_sin_materia=tuple(grupos_sin_materia),
         hechos_originales=len(hechos),
         hechos_por_su_pregunta=len(por_su_pregunta),
+        grupos_por_sus_hechos=por_sus_hechos,
+    )
+
+
+def _hechos_por_grupo(hechos: Sequence[Hecho]) -> dict[str, list[Hecho]]:
+    """Los hechos indexados por el grupo de preguntas del que salen.
+
+    Es lo que permite decidir de qué habla una pregunta que no lo dice: sus hechos sí lo dicen. Un
+    hecho que sale de varias preguntas aparece en todas, que es lo correcto: sostiene a las tres.
+    """
+    indice: dict[str, list[Hecho]] = {}
+    for hecho in hechos:
+        for firma in hecho.source_groups:
+            indice.setdefault(firma, []).append(hecho)
+    return indice
+
+
+def revisar_indice(
+    indice: IndiceDelTema,
+    planes: Sequence[NoteSection] | None = None,
+    *,
+    max_hechos_por_apartado: int = MAX_HECHOS_POR_APARTADO,
+) -> RevisionIndice:
+    """Las comprobaciones del índice del §2.2.3, antes de redactar con él.
+
+    Se miden sobre el **plan de redacción** —lo que se va a escribir, ya partido— y no sobre el
+    catálogo: un apartado de trescientos hechos no es un defecto si el plan lo parte en dos, y
+    medirlo antes de partir daría por roto un árbol que está bien. Si no se le pasa el plan, lo
+    calcula él mismo con el mismo tope, para que medir y redactar no puedan discrepar.
+
+    Las tres cosas que mira están en el documento del objetivo: cada hecho en un apartado, ningún
+    apartado por encima del tope y ningún título repetido.
+    """
+    apartados = (
+        tuple(planes)
+        if planes is not None
+        else plan_de(indice, max_hechos_por_apartado=max_hechos_por_apartado)
+    )
+    hallazgos: list[HallazgoDelIndice] = []
+    grandes = [apartado for apartado in apartados if len(apartado.facts) > max_hechos_por_apartado]
+    if grandes:
+        hallazgos.append(
+            HallazgoDelIndice(
+                APARTADO_MUY_GRANDE,
+                len(grandes),
+                f"{len(grandes)} apartado(s) con más de {max_hechos_por_apartado} hechos sin "
+                "partir: no caben en una llamada ni para redactarlos ni para comprobarlos",
+                tuple(f"{a.key}: {len(a.facts)}" for a in grandes),
+            )
+        )
+    titulos: dict[str, list[str]] = {}
+    for apartado in apartados:
+        titulos.setdefault(apartado.title, []).append(apartado.key)
+    repetidos = {titulo: claves for titulo, claves in titulos.items() if len(claves) > 1}
+    if repetidos:
+        hallazgos.append(
+            HallazgoDelIndice(
+                TITULO_REPETIDO,
+                len(repetidos),
+                f"{len(repetidos)} título(s) repetido(s) entre apartados del índice",
+                tuple(f"«{titulo}» en {', '.join(claves)}" for titulo, claves in repetidos.items()),
+            )
+        )
+    preguntas = sum(len(grupo.questions) for grupo in indice.grupos_sin_materia)
+    return RevisionIndice(
+        apartados=len(apartados),
+        hechos=sum(len(apartado.facts) for apartado in apartados),
+        hechos_sin_materia=len(indice.sin_materia),
+        grupos_sin_materia=len(indice.grupos_sin_materia),
+        preguntas_sin_materia=preguntas,
+        hallazgos=tuple(hallazgos),
     )
 
 
@@ -1462,15 +1663,24 @@ def _en_orden_de_estudio(materias: Sequence[Materia], orden: Sequence[str]) -> t
 #: el Reglamento europeo eIDAS, la Ley 6/2020, el DNIe y los planes de agenda digital), así que cada
 #: bloque normativo tiene su materia y dentro de ella se sigue la estructura de esa ley.
 #:
+#: I.1 **sí** es normativo y su índice es la estructura de la Constitución: el Título Preliminar,
+#: los capítulos del Título I, la garantía y la suspensión (Título I, arts. 53 a 55) y la Corona
+#: (Título II); los órganos que la Constitución crea (Cortes, Gobierno, Poder Judicial, Tribunal
+#: Constitucional, organización territorial y economía) viven en `I.1.1`, que es el epígrafe de la
+#: Constitución entera, porque no tienen epígrafe propio en el temario.
+#:
 #: Los catálogos de otros temas se importan **aquí abajo** y no arriba: cada uno dice sus materias
 #: con la clase `Materia` de este módulo, así que importarlo antes de que esté definida sería un
 #: ciclo.
+from opofuente.domain.catalogo_i_1 import MATERIAS as MATERIAS_I1  # noqa: E402
+from opofuente.domain.catalogo_i_1 import ORDEN as ORDEN_I1  # noqa: E402
 from opofuente.domain.catalogo_i_6 import MATERIAS as MATERIAS_I6  # noqa: E402
 from opofuente.domain.catalogo_i_6 import ORDEN as ORDEN_I6  # noqa: E402
 
 _CATALOGOS: dict[str, tuple[Materia, ...]] = {
     "IV.7": _en_orden_de_estudio(_MATERIAS_IV7, _ORDEN_IV7),
     "I.6": _en_orden_de_estudio(MATERIAS_I6, ORDEN_I6),
+    "I.1": _en_orden_de_estudio(MATERIAS_I1, ORDEN_I1),
 }
 
 
@@ -1490,11 +1700,16 @@ def es_la_tabla_de_puertos(topic_code: str, clave: str) -> bool:
 
 
 __all__ = [
+    "APARTADO_MUY_GRANDE",
+    "MAX_HECHOS_POR_APARTADO",
     "PRIORIDAD_POR_DEFECTO",
+    "TITULO_REPETIDO",
     "UMBRAL_EQUIVALENCIA",
+    "HallazgoDelIndice",
     "IndiceDelTema",
     "Materia",
     "RepartoMateria",
+    "RevisionIndice",
     "catalogo",
     "deduplicar",
     "etiquetas",
@@ -1504,5 +1719,6 @@ __all__ = [
     "plan_de",
     "repartir_grupos",
     "repartir_hechos",
+    "revisar_indice",
     "validar_catalogo",
 ]

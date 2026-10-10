@@ -12,6 +12,8 @@ Uso:
     uv run python -m opofuente.tools.apuntes --tema IV.7 --listar
     # el indice por materias del tema, sin llamar a nadie (el esquema, antes de redactar)
     uv run python -m opofuente.tools.apuntes --tema IV.7 --esquema
+    # cómo está el tema **guardado**, sin llamar a nadie: cobertura y forma, medidas
+    uv run python -m opofuente.tools.apuntes --tema IV.7 --medir
     # escribir los apuntes del tema (llama al modelo)
     $env:DEEPSEEK_API_KEY = "…"
     uv run python -m opofuente.tools.apuntes --tema IV.7
@@ -34,6 +36,7 @@ import argparse
 import os
 import sys
 from collections.abc import Sequence
+from typing import NoReturn
 
 from opofuente.application.dossier_service import DossierService
 from opofuente.application.topic_notes_models import TopicNotesReport
@@ -42,10 +45,18 @@ from opofuente.config import Settings, get_settings
 from opofuente.domain.errors import OpoFuenteError
 from opofuente.domain.notes_quality import limpiar_andamios, marcas_internas, revisar_apuntes
 from opofuente.domain.puertos import limpiar_tabla_de_puertos
-from opofuente.domain.topic_index import catalogo, es_la_tabla_de_puertos, indice_de
+from opofuente.domain.topic_index import (
+    MAX_HECHOS_POR_APARTADO,
+    catalogo,
+    es_la_tabla_de_puertos,
+    indice_de,
+    plan_de,
+    revisar_indice,
+)
 from opofuente.infrastructure.clock import SystemClock
 from opofuente.infrastructure.db import build_engine, build_session_factory
 from opofuente.infrastructure.dossier_repository import SqlAlchemyDossierRepository
+from opofuente.infrastructure.run_lock import CLAVE_APUNTES, ClassificationRunLock
 from opofuente.infrastructure.topic_notes_client import (
     BASE_URL_POR_DEFECTO,
     MODELO_POR_DEFECTO,
@@ -58,6 +69,37 @@ VARIABLE_DE_LA_CLAVE = "DEEPSEEK_API_KEY"
 
 #: Los tres temas del piloto que fijó el propietario (`DECISIONES-Y-SIGUIENTE-TANDA` §6).
 PILOTOS = ("IV.7", "I.6", "I.1")
+
+
+class _ModeloQueNoSeUsa:
+    """El motor de `--medir`: mide lo guardado y **no** llama a nadie.
+
+    Existe para que medir un tema no pueda costar dinero ni por accidente: si algún camino de la
+    medida acabara pidiendo algo al modelo, esto lo dice en vez de gastar. Es la misma garantía que
+    el `--listar` y el `--esquema`, pero con el tipo del puerto para que el servicio esté completo.
+    """
+
+    name = "sin-modelo"
+
+    @property
+    def version(self) -> str:
+        return "sin-modelo"
+
+    @staticmethod
+    def _no() -> NoReturn:
+        raise RuntimeError("`--medir` no llama al modelo: la medida se hace sobre lo guardado")
+
+    def hechos(self, *_args: object, **_kwargs: object) -> NoReturn:
+        self._no()
+
+    def redactar(self, *_args: object, **_kwargs: object) -> NoReturn:
+        self._no()
+
+    def comprobar(self, *_args: object, **_kwargs: object) -> NoReturn:
+        self._no()
+
+    def anadir(self, *_args: object, **_kwargs: object) -> NoReturn:
+        self._no()
 
 
 def _use_utf8_stdout() -> None:
@@ -80,6 +122,15 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
         default=None,
         metavar="CODIGO",
         help=f"tema del programa, repetible (por defecto, los pilotos: {', '.join(PILOTOS)})",
+    )
+    parser.add_argument(
+        "--medir",
+        action="store_true",
+        help=(
+            "mide el tema **guardado** sin llamar a nadie: la cobertura de sus comprobaciones "
+            "(con los dos denominadores de la puerta) y las comprobaciones de forma. Es el número "
+            "que va al informe, medido y no heredado"
+        ),
     )
     parser.add_argument(
         "--listar",
@@ -127,12 +178,16 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     parser.add_argument(
         "--olvidar-apartado",
         dest="olvidar_apartado",
+        action="append",
         default=None,
         metavar="CLAVE",
         help=(
             "borra el texto de un apartado para que la próxima corrida lo vuelva a redactar (y "
             "vuelva a comprobar sus preguntas): es la corrección de un apartado que no pasa la "
-            "revisión de forma, sin rehacer el tema entero. No llama al modelo"
+            "revisión de forma, sin rehacer el tema entero. Repetible: con la opción varias veces"
+            "se "
+            "olvidan varios apartados de una vez, que es como se rehace un tema que no pasa la "
+            "puerta de extensión. No llama al modelo"
         ),
     )
     parser.add_argument(
@@ -201,6 +256,19 @@ def main(argv: Sequence[str] | None = None) -> int:
             for tema in temas:
                 print("\n".join(_listar(notas, tema)))
             return 0
+        if args.medir:
+            # La medida del tema guardado: tampoco llama a nadie ni necesita clave. Una cifra que va
+            # a un documento se mide, no se hereda, y medirla no puede costar dinero.
+            servicio = TopicNotesService(
+                repository=notas,
+                dossier=SqlAlchemyDossierRepository(session_factory),
+                model=_ModeloQueNoSeUsa(),
+                workers=1,
+            )
+            for tema in temas:
+                print("\n".join(servicio.medir(tema).lines()))
+                print()
+            return 0
         if args.esquema:
             # El esquema antes de redactar: tampoco llama a nadie ni necesita clave.
             for tema in temas:
@@ -220,9 +288,10 @@ def main(argv: Sequence[str] | None = None) -> int:
                 print()
             return 0
         if args.olvidar_apartado:
-            # Deja un apartado sin texto para que la próxima corrida lo rehaga.
+            # Deja apartados sin texto para que la próxima corrida los rehaga.
             for tema in temas:
-                print("\n".join(_olvidar_apartado(notas, tema, args.olvidar_apartado)))
+                for clave in args.olvidar_apartado:
+                    print("\n".join(_olvidar_apartado(notas, tema, clave)))
                 print()
             return 0
 
@@ -252,42 +321,53 @@ def main(argv: Sequence[str] | None = None) -> int:
         total = 0.0
         sin_calidad: list[str] = []
         sin_cobertura: list[str] = []
-        for tema in temas:
-            informe = servicio.run(
-                tema,
-                now=reloj.now(),
-                dry_run=args.dry_run,
-                limite_grupos=args.limite,
-            )
-            # La puerta de un tema son **dos**: las cinco comprobaciones de forma y la cobertura
-            # (§2.3). Antes solo se miraba la primera, y por eso un tema podía quedar publicado con
-            # el 85 % de las preguntas sin contestar. Ahora las dos deciden.
-            pasa_forma = informe.revision is None or informe.revision.pasa
-            pasa_cobertura = informe.coverage.pasa_cobertura
-            pasa = pasa_forma and pasa_cobertura
-            if args.version and not args.dry_run and (pasa or not args.exigir_calidad):
-                archivado = dossier_service.archive(informe.node_id)
-                if archivado is not None:
-                    informe.version_created = archivado[1]
-            elif args.version and not args.dry_run and not pasa:
-                # Un tema que no pasa no se queda publicado: si había una versión archivada (de
-                # una corrida anterior, cuando la puerta no se miraba), se retira con su motivo.
-                # Es reversible: en cuanto el tema pase, el comando la archiva otra vez.
-                retirada = dossier_service.retire(
-                    informe.node_id,
-                    reason=(
-                        f"la corrida de {informe.topic_code} no pasa la puerta "
-                        f"({'forma' if not pasa_forma else 'cobertura'}): el tema queda en borrador"
-                    ),
+        # La marca de corrida: escribir apuntes es lo más caro del proyecto y el 10 de octubre de
+        # 2026 se lanzaron dos corridas a la vez sobre I.6. La segunda no escribe: se niega y dice
+        # desde cuándo corre la primera. Es la misma marca que usa el clasificador, con su clave.
+        marca = ClassificationRunLock(
+            session_factory,
+            opposition_code=", ".join(temas),
+            clave=CLAVE_APUNTES,
+            que="corrida de apuntes",
+        )
+        with marca.hold():
+            for tema in temas:
+                informe = servicio.run(
+                    tema,
+                    now=reloj.now(),
+                    dry_run=args.dry_run,
+                    limite_grupos=args.limite,
                 )
-                informe.version_retired = retirada
-            if not pasa_forma:
-                sin_calidad.append(informe.topic_code)
-            if not pasa_cobertura:
-                sin_cobertura.append(informe.topic_code)
-            print("\n".join(informe.lines()))
-            print()
-            total += informe.estimated_cost_usd
+                # La puerta de un tema son **dos**: las cinco comprobaciones de forma y la cobertura
+                # (§2.3). Antes solo se miraba la primera, y por eso un tema podía quedar publicado
+                # con el 85 % de las preguntas sin contestar. Ahora las dos deciden.
+                pasa_forma = informe.revision is None or informe.revision.pasa
+                pasa_cobertura = informe.coverage.pasa_cobertura
+                pasa = pasa_forma and pasa_cobertura
+                if args.version and not args.dry_run and (pasa or not args.exigir_calidad):
+                    archivado = dossier_service.archive(informe.node_id)
+                    if archivado is not None:
+                        informe.version_created = archivado[1]
+                elif args.version and not args.dry_run and not pasa:
+                    # Un tema que no pasa no se queda publicado: si había una versión archivada (de
+                    # una corrida anterior, cuando la puerta no se miraba), se retira con su motivo.
+                    # Es reversible: en cuanto el tema pase, el comando la archiva otra vez.
+                    retirada = dossier_service.retire(
+                        informe.node_id,
+                        reason=(
+                            f"la corrida de {informe.topic_code} no pasa la puerta "
+                            f"({'forma' if not pasa_forma else 'cobertura'}): el tema queda en "
+                            "borrador"
+                        ),
+                    )
+                    informe.version_retired = retirada
+                if not pasa_forma:
+                    sin_calidad.append(informe.topic_code)
+                if not pasa_cobertura:
+                    sin_cobertura.append(informe.topic_code)
+                print("\n".join(informe.lines()))
+                print()
+                total += informe.estimated_cost_usd
         if len(temas) > 1:
             print(f"Coste estimado de los {len(temas)} temas: {total:.4f} $ (precios de valle).")
         if sin_calidad:
@@ -353,7 +433,15 @@ def _esquema(notas: SqlAlchemyTopicNotesRepository, code: str) -> tuple[str, ...
         )
     except (KeyError, ValueError) as error:
         return (f"[{code}] el catálogo de materias no cuadra con el temario: {error}",)
-    return indice.lines()
+    # El índice y **su revisión**, que es lo que decide si se puede redactar con él: sin esto, la
+    # única forma de saber si el árbol cuadra era lanzar la corrida y esperar a que se quejara. Se
+    # mide sobre el plan (con los apartados ya partidos), que es lo que se va a escribir.
+    return (
+        *indice.lines(),
+        *revisar_indice(
+            indice, plan_de(indice, max_hechos_por_apartado=MAX_HECHOS_POR_APARTADO)
+        ).lines(),
+    )
 
 
 def _limpiar_andamios(notas: SqlAlchemyTopicNotesRepository, code: str) -> tuple[str, ...]:

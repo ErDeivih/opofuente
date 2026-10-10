@@ -60,17 +60,21 @@ from opofuente.domain.notes_quality import (
 )
 from opofuente.domain.puertos import limpiar_tabla_de_puertos
 from opofuente.domain.topic_index import (
+    MAX_HECHOS_POR_APARTADO,
     IndiceDelTema,
     catalogo,
     es_la_tabla_de_puertos,
     indice_de,
     plan_de,
+    revisar_indice,
 )
 from opofuente.domain.topic_notes import (
     LOTE_COMPROBACION,
     LOTE_HECHOS,
     SIN_MATERIAL,
+    TEXTO_SIN_MATERIA,
     VUELTAS_CON_HUECOS,
+    CategoriaIncidencia,
     Coverage,
     Hecho,
     HechosBatch,
@@ -162,14 +166,14 @@ class TopicNotesService:
         )
 
         hechos = self._paso_hechos(nodo, grupos, informe, now=now, dry_run=dry_run)
-        secciones = self._paso_esquema(nodo, hechos, informe, now=now, dry_run=dry_run)
+        secciones, indice = self._paso_esquema(nodo, hechos, informe, now=now, dry_run=dry_run)
         self._paso_redaccion(nodo, secciones, informe, now=now, dry_run=dry_run)
-        self._paso_comprobacion(nodo, grupos, informe, now=now, dry_run=dry_run)
+        self._paso_comprobacion(nodo, grupos, informe, now=now, dry_run=dry_run, indice=indice)
         # La última vuelta del paso E: lo que sigue sin cubrirse se intenta rellenar **una vez más**
         # (el hueco de verdad, no el que ya se intentó) y lo que quede va a la bandeja del
         # propietario con su categoría. Es el §2.1.4: antes de cerrar un tema, rellenar lo que se
         # pueda y no dejar dudas sin dueño.
-        self._paso_huecos(nodo, grupos, informe, now=now, dry_run=dry_run)
+        self._paso_huecos(nodo, grupos, informe, now=now, dry_run=dry_run, indice=indice)
         # La revisión de forma se mide sobre el texto que ha quedado guardado, y con **todos** los
         # hechos del tema: es la comprobación que decide si estos apuntes se pueden dar por buenos
         # (encabezados repetidos, marcas internas, tablas sin cabecera, párrafos repetidos y
@@ -184,6 +188,120 @@ class TopicNotesService:
             self._repository.sections(node_id) if not dry_run else secciones
         )
         return informe
+
+    def medir(self, code: str) -> TopicNotesReport:
+        """Mide el tema **guardado**, sin llamar a nadie.
+
+        Es lo que permite decir una cifra sin volver a pagarla: la cobertura sale de las
+        comprobaciones guardadas y del **mismo recuento** que hace una corrida
+        (`_paso_comprobacion`), y la revisión de forma, del texto que hay hoy en la base. Sin esto,
+        la única forma de saber cómo está un tema era volver a ejecutarlo —y volver a pagarlo—, y
+        una cifra que va a un documento se mide, no se hereda.
+
+        Dos cosas que hace igual que la corrida y por eso se puede comparar con ella: cuenta la
+        puerta **pregunta a pregunta** con los dos denominadores, y marca como no utilizables las
+        claves que el paso B señaló (`doubtful`). Lo único que no puede reconstruir es el texto
+        contra el que se comprobó cada cita: eso lo dice la huella, y aquí solo se enseña si sigue
+        valiendo para el texto de hoy.
+        """
+        node_id = self._repository.node_id(code)
+        if node_id is None:
+            raise NotFoundError("tema del programa", code)
+        nodo = self._repository.node(node_id)
+        if nodo is None:
+            raise UnsupportedError(f"«{code}» no es un tema del programa")
+        grupos = self._repository.question_groups(node_id)
+        hechos = self._repository.facts(node_id)
+        informe = TopicNotesReport(
+            topic_code=nodo.code,
+            topic_title=nodo.title,
+            node_id=node_id,
+            groups=len(grupos),
+            questions=sum(len(grupo.questions) for grupo in grupos),
+            facts=len(hechos),
+        )
+        secciones = list(self._repository.sections(node_id))
+        guardadas = self._repository.checks(node_id)
+        # El índice también se mide: es lo primero que decide si el tema se puede redactar, y sin
+        # esto habría que volver a ejecutar el tema entero para saber si el árbol cuadra.
+        planes, indice = self._plan_del_tema(nodo, hechos)
+        if indice is not None:
+            informe.indice = revisar_indice(indice, planes)
+            informe.sin_materia = sum(len(grupo.questions) for grupo in indice.grupos_sin_materia)
+            informe.sections = self._informe_apartados(planes)
+        comprobables = self._comprobables(nodo, grupos, secciones)
+        informe.coverage.groups = len(comprobables)
+        informe.coverage.preguntas = informe.questions
+        hechos_por_firma = _hechos_por_firma(hechos)
+        dudosos_de_la_clave = {
+            firma
+            for firma, suyos in hechos_por_firma.items()
+            if any(hecho.doubtful for hecho in suyos)
+        }
+        por_firma = {resultado.group_signature: resultado for resultado in guardadas}
+        # Las que el índice no puede situar cuentan en la puerta como no cubiertas, igual que en la
+        # corrida: si aquí no se contaran, la medida del comando sería mejor que la del informe.
+        for grupo in _grupos_sin_materia(indice):
+            informe.coverage.add(
+                Coverage.HUECO,
+                None,
+                attempts=1,
+                clave_activa=grupo.key_status.clara,
+                preguntas=len(grupo.questions),
+                clave_utilizable=grupo.signature not in dudosos_de_la_clave,
+                tiene_clave=grupo.key_status is not KeyStatus.NINGUNA,
+            )
+        vigentes = 0
+        for grupo, apartados in comprobables:
+            resultado = por_firma.get(grupo.signature)
+            if resultado is None:
+                continue
+            if resultado.text_sha256 == _huella_de(secciones, apartados):
+                vigentes += 1
+            informe.coverage.add(
+                resultado.coverage,
+                resultado.note,
+                attempts=resultado.attempts,
+                clave_activa=resultado.key_status.clara,
+                preguntas=len(grupo.questions),
+                clave_utilizable=grupo.signature not in dudosos_de_la_clave,
+                tiene_clave=resultado.key_status is not KeyStatus.NINGUNA,
+            )
+            if grupo.signature in dudosos_de_la_clave:
+                informe.coverage.incidencias_clave_marcada += 1
+        informe.coverage.comprobaciones_vigentes = vigentes
+        for incidencia in self._repository.incidents(node_id):
+            informe.coverage.incidencias += 1
+            informe.coverage.por_categoria[incidencia.category] = (
+                informe.coverage.por_categoria.get(incidencia.category, 0) + 1
+            )
+        informe.revision = revisar_apuntes(secciones, hechos)
+        informe.sections = self._informe_apartados(secciones)
+        return informe
+
+    def _comprobables(
+        self,
+        nodo: NotesNode,
+        grupos: Sequence[QuestionGroup],
+        secciones: Sequence[NoteSection],
+    ) -> list[tuple[QuestionGroup, tuple[NoteSection, ...]]]:
+        """Los grupos que se pueden comprobar: los que tienen algún apartado con texto.
+
+        Es la misma lista que arma `_paso_comprobacion`, y tiene que serlo: si aquí se contaran
+        otras preguntas, la medida del comando y la del informe de una corrida no cuadrarían.
+        """
+        por_clave = {apartado.key: apartado for apartado in secciones}
+        hechos_por_firma = _hechos_por_firma(self._repository.facts(nodo.node_id))
+        epigrafe_por_defecto = nodo.epigraphs[0][0] if nodo.epigraphs else ""
+        comprobables: list[tuple[QuestionGroup, tuple[NoteSection, ...]]] = []
+        for grupo in grupos:
+            apartados = _apartados_de(
+                grupo, secciones, por_clave, hechos_por_firma, epigrafe_por_defecto
+            )
+            if not apartados or not any(a.body_markdown.strip() for a in apartados):
+                continue
+            comprobables.append((grupo, apartados))
+        return comprobables
 
     # ------------------------------------------------------------------ paso B: los hechos
 
@@ -247,7 +365,7 @@ class TopicNotesService:
         *,
         now: datetime,
         dry_run: bool,
-    ) -> list[NoteSection]:
+    ) -> tuple[list[NoteSection], IndiceDelTema | None]:
         """El esquema del tema. Se recalcula entero: es determinista y el texto ya escrito se
         conserva.
 
@@ -257,9 +375,12 @@ class TopicNotesService:
         los hechos repetidos agrupados en uno solo con la unión de sus preguntas. Si no lo tiene, se
         cae al esquema por epígrafes en trozos de cuarenta, que es lo que había.
 
-        Un hecho sin apartado **para la corrida**: sin cajones de revisión, un hecho que no es de
-        ninguna materia del tema es una pregunta mal clasificada, y escribir apuntes alrededor sería
-        taparlo. Se dice cuántos son y se sale.
+        **Lo que no se puede situar no para la corrida**: una pregunta que no casa con ninguna
+        materia ni por su enunciado ni por el texto de sus hechos no se mete en un cajón de «otros»
+        (eso sería taparla) y tampoco tumba el tema entero. Se cuenta en el informe y va a la
+        bandeja del propietario con su motivo, en `_paso_huecos`. Antes esto salía con
+        `UnsupportedError` y el tema no se podía redactar **por diez preguntas de dos mil**; el
+        propietario se enteraba de que había un problema, pero no de cuáles eran esas diez.
 
         Volver a calcularlo es lo que permite que un hecho nuevo (de una pregunta clasificada
         después) encuentre su sitio sin tocar los apartados que ya estaban: los que existían
@@ -271,17 +392,11 @@ class TopicNotesService:
         correcto: el tema queda con **un solo** texto por subapartado.
         """
         planes, indice = self._plan_del_tema(nodo, hechos)
-        if indice is not None and (indice.sin_materia or indice.grupos_sin_materia):
-            raise UnsupportedError(
-                f"el tema «{nodo.code}» tiene {len(indice.sin_materia)} hecho(s) y "
-                f"{len(indice.grupos_sin_materia)} grupo(s) de preguntas que no son de ninguna de "
-                "sus materias: son preguntas mal clasificadas, y sin cajones de revisión hay que "
-                "resolverlas en la cola de clasificación antes de escribir los apuntes. "
-                "`--esquema` las enseña con su texto"
-            )
+        if indice is not None:
+            informe.indice = revisar_indice(indice, planes)
         informe.sections = self._informe_apartados(planes)
         if dry_run:
-            return list(planes)
+            return list(planes), indice
         guardadas = self._repository.sections(nodo.node_id)
         sobran = {apartado.key for apartado in guardadas} - {plan.key for plan in planes}
         # Y no basta con que la clave siga: si a un apartado le han **salido** hechos, su texto se
@@ -297,12 +412,18 @@ class TopicNotesService:
                 "se vuelve a escribir). Han perdido hechos: " + ", ".join(sorted(mudos)[:8])
             )
             self._repository.forget_sections(nodo.node_id)
-        return list(self._repository.save_sections(nodo.node_id, planes, now=now))
+        return list(self._repository.save_sections(nodo.node_id, planes, now=now)), indice
 
     def _plan_del_tema(
         self, nodo: NotesNode, hechos: Sequence[Hecho]
     ) -> tuple[tuple[NoteSection, ...], IndiceDelTema | None]:
-        """El plan de redacción: el índice aprobado si el tema lo tiene, y si no el de epígrafes."""
+        """El plan de redacción: el índice aprobado si el tema lo tiene, y si no el de epígrafes.
+
+        El índice se parte por el tope de hechos del §2.2.3 (`MAX_HECHOS_POR_APARTADO`): un apartado
+        de cuatrocientos hechos no cabe en una llamada —ni la que lo redacta ni la que lo comprueba—
+        y se corta en trozos **de la misma materia**, que es lo único que se puede partir sin volver
+        a repetir el tema.
+        """
         if catalogo(nodo.code) is None:
             return esquema(nodo.epigraphs, hechos), None
         indice = indice_de(
@@ -312,7 +433,7 @@ class TopicNotesService:
             hechos=hechos,
             grupos=self._repository.question_groups(nodo.node_id),
         )
-        return plan_de(indice), indice
+        return plan_de(indice, max_hechos_por_apartado=MAX_HECHOS_POR_APARTADO), indice
 
     # ------------------------------------------------------------------ paso D: la redacción
 
@@ -394,6 +515,7 @@ class TopicNotesService:
         *,
         now: datetime,
         dry_run: bool,
+        indice: IndiceDelTema | None = None,
     ) -> None:
         """Comprueba cada grupo contra el texto de su epígrafe y vuelve una vez sobre los huecos.
 
@@ -406,18 +528,30 @@ class TopicNotesService:
         if dry_run:
             return
         secciones = list(self._repository.sections(nodo.node_id))
-        por_clave = {apartado.key: apartado for apartado in secciones}
         hechos_por_firma = _hechos_por_firma(self._repository.facts(nodo.node_id))
-        epigrafe_por_defecto = nodo.epigraphs[0][0]
-        comprobables: list[tuple[QuestionGroup, tuple[NoteSection, ...]]] = []
-        for grupo in grupos:
-            apartados = _apartados_de(
-                grupo, secciones, por_clave, hechos_por_firma, epigrafe_por_defecto
-            )
-            if not apartados or not any(a.body_markdown.strip() for a in apartados):
-                continue
-            comprobables.append((grupo, apartados))
+        comprobables = self._comprobables(nodo, grupos, secciones)
         informe.coverage.groups = len(comprobables)
+        # Las preguntas que el índice **no puede situar** no tienen apartado, así que no son
+        # «comprobables», y sin contarlas la puerta de cobertura se mediría sobre un conjunto del
+        # que se han caído justo las que peor están. Se cuentan como no cubiertas —tienen clave
+        # utilizable y los apuntes no las contestan porque no hay dónde—; su incidencia va a la
+        # bandeja en `_paso_huecos`.
+        dudosos_de_la_clave = {
+            firma
+            for firma, suyos in hechos_por_firma.items()
+            if any(hecho.doubtful for hecho in suyos)
+        }
+        for grupo in _grupos_sin_materia(indice):
+            informe.coverage.add(
+                Coverage.HUECO,
+                None,
+                attempts=1,
+                clave_activa=grupo.key_status.clara,
+                preguntas=len(grupo.questions),
+                clave_utilizable=grupo.signature not in dudosos_de_la_clave,
+                tiene_clave=grupo.key_status is not KeyStatus.NINGUNA,
+            )
+            informe.sin_materia += len(grupo.questions)
 
         previos = {
             resultado.group_signature: resultado
@@ -460,11 +594,6 @@ class TopicNotesService:
                 self._segunda_vuelta(nodo, huecos, hechos_por_firma, previos, informe, now=now)
             )
 
-        dudosos_de_la_clave = {
-            firma
-            for firma, suyos in hechos_por_firma.items()
-            if any(hecho.doubtful for hecho in suyos)
-        }
         for grupo, _apartados in comprobables:
             resultado = finales.get(grupo.signature)
             if resultado is None:
@@ -672,6 +801,7 @@ class TopicNotesService:
         *,
         now: datetime,
         dry_run: bool,
+        indice: IndiceDelTema | None = None,
     ) -> None:
         """La última vuelta del paso E: rellenar los huecos y **categorizar el resto**.
 
@@ -690,6 +820,12 @@ class TopicNotesService:
 
         El bucle de huecos se hace sobre las comprobaciones **guardadas**, no sobre las de esta
         corrida: así reanudar el comando tras un corte no pierde lo que ya estaba comprobado.
+
+        Y va también a la bandeja lo que **el índice no puede situar**: una pregunta que no casa con
+        ninguna materia ni por su enunciado ni por el texto de sus hechos no tiene apartado donde
+        contestarse, así que su incidencia es lo único que se le puede dar al propietario. No se
+        mete
+        en un cajón de «otros»: se le dice cuál es y por qué.
         """
         if dry_run:
             return
@@ -732,6 +868,9 @@ class TopicNotesService:
             for resultado in finales.values()
             if (categoria := categoria_de(resultado.coverage, resultado.note)) is not None
         )
+        # Y lo que el índice no puede situar, con su motivo propio: no es un hueco de los apuntes
+        # (no hay apartado donde escribirlo) ni una clave sospechosa.
+        incidencias = (*incidencias, *_incidencias_sin_materia(_grupos_sin_materia(indice)))
         informe.coverage.incidencias = len(incidencias)
         for incidencia in incidencias:
             informe.coverage.por_categoria[incidencia.category] = (
@@ -879,6 +1018,39 @@ class TopicNotesService:
             )
             for apartado in secciones
         )
+
+
+def _grupos_sin_materia(indice: IndiceDelTema | None) -> tuple[QuestionGroup, ...]:
+    """Las preguntas que el índice **no puede situar**: ni por su enunciado ni por sus hechos."""
+    return () if indice is None else indice.grupos_sin_materia
+
+
+def _incidencias_sin_materia(
+    grupos: Sequence[QuestionGroup],
+) -> tuple[IncidenciaDeApuntes, ...]:
+    """Las incidencias de las preguntas que no caben en ninguna materia del tema.
+
+    Una fila **por pregunta** y no por grupo: la bandeja del propietario tiene una fila por pregunta
+    (es su clave natural) y una pregunta repetida en dos bancos tiene que poder despacharse dos
+    veces. El detalle lleva el enunciado y el motivo, que es lo que él necesita para decidir: sin
+    apartado no hay frase de los apuntes que enseñar, y sin frase no se puede inventar una.
+    """
+    return tuple(
+        IncidenciaDeApuntes(
+            question_version_id=pregunta.question_version_id,
+            group_signature=grupo.signature,
+            category=CategoriaIncidencia.PREGUNTA_AMBIGUA,
+            reason=Motivo.SIN_MATERIA_EN_EL_INDICE,
+            detail=(
+                f"{TEXTO_SIN_MATERIA}\n"
+                f"pregunta: {grupo.representative.stem.strip()[:300]}\n"
+                f"clave: {', '.join(grupo.correct_keys) or 'sin clave'} "
+                f"({grupo.key_status.value})"
+            ),
+        )
+        for grupo in grupos
+        for pregunta in grupo.questions
+    )
 
 
 def _apartados_que_pierden_hechos(

@@ -28,6 +28,7 @@ import pytest
 
 from opofuente.domain.notes_quality import CABECERAS_REPETIDAS, revisar_apuntes
 from opofuente.domain.topic_index import (
+    APARTADO_MUY_GRANDE,
     Materia,
     catalogo,
     deduplicar,
@@ -38,6 +39,7 @@ from opofuente.domain.topic_index import (
     plan_de,
     repartir_grupos,
     repartir_hechos,
+    revisar_indice,
     validar_catalogo,
 )
 from opofuente.domain.topic_notes import (
@@ -182,9 +184,179 @@ def test_un_catalogo_con_la_misma_clave_dos_veces_se_rechaza() -> None:
 
 
 def test_un_tema_sin_catalogo_no_tiene_indice() -> None:
-    assert catalogo("I.1") is None
+    """I.2 todavía no tiene catálogo: sin catálogo no hay índice, y eso se dice, no se inventa."""
+    assert catalogo("I.2") is None
     with pytest.raises(KeyError):
-        indice_de(topic_code="I.1", topic_title="La Constitución", epigraphs=EPIGRAFES)
+        indice_de(topic_code="I.2", topic_title="La Constitución", epigraphs=EPIGRAFES)
+
+
+# --- el catálogo de I.1 (la estructura de la norma) -----------------------------------------------
+
+
+def test_el_catalogo_de_i_1_sigue_la_estructura_de_la_constitucion() -> None:
+    """I.1 es normativo: sus apartados son la norma (Título Preliminar, Título I, garantía, Corona).
+
+    Los órganos que la Constitución crea (Cortes, Gobierno, Poder Judicial, Tribunal Constitucional,
+    organización territorial y economía) no tienen epígrafe propio en el temario: van a `I.1.1`, que
+    es el epígrafe de la Constitución entera. Es la decisión que ya estaba tomada y que este
+    aplica.
+    """
+    materias = catalogo("I.1")
+    assert materias is not None
+    validar_catalogo("I.1", materias)
+
+    assert {materia.epigraph_code for materia in materias} == {
+        "I.1.1",
+        "I.1.2",
+        "I.1.3",
+        "I.1.4",
+    }
+    assert len(materias) == 15
+    # Los órganos viven en I.1.1, que es el epígrafe de la Constitución entera.
+    de_la_constitucion = {materia.key for materia in materias if materia.epigraph_code == "I.1.1"}
+    assert de_la_constitucion == {
+        "constitucion-caracteres",
+        "titulo-preliminar",
+        "cortes-generales",
+        "gobierno-y-administracion",
+        "relaciones-gobierno-cortes",
+        "poder-judicial",
+        "economia-y-hacienda",
+        "organizacion-territorial",
+    }
+    # La Corona es su propio epígrafe, y la garantía y la suspensión el suyo.
+    assert [m.key for m in materias if m.epigraph_code == "I.1.4"] == ["corona"]
+    assert [m.key for m in materias if m.epigraph_code == "I.1.3"] == [
+        "garantias-y-defensor",
+        "suspension-de-derechos",
+    ]
+    # Y ninguno se recoge en un cajón de «otros»: lo que no case se dice, no se esconde.
+    assert [materia.key for materia in materias if materia.es_cajon] == []
+
+
+def test_las_autonomicas_se_llaman_de_las_dos_maneras_y_las_dos_cuentan() -> None:
+    """`Autónomas` y `autonómicas` son la misma cosa, y el patrón tiene que aceptar las dos.
+
+    La normalización del proyecto quita los acentos, así que un patrón escrito solo con
+    «autonómicas» deja sin materia a todas las preguntas que digan «Comunidades Autónomas» —que es
+    como lo escribe media oposición, y como lo escribía el banco real—.
+    """
+    materias = catalogo("I.1")
+    assert materias is not None
+
+    por_las_autonomicas = materia_de(
+        "¿Cuántas Comunidades Autónomas son históricas en España?", None, materias
+    )
+    por_lo_autonomico = materia_de(
+        "El Estado se organiza territorialmente en municipios y entes autonómicos.", None, materias
+    )
+
+    assert por_las_autonomicas is not None
+    assert por_las_autonomicas.key == "organizacion-territorial"
+    assert por_lo_autonomico is not None
+    assert por_lo_autonomico.key == "organizacion-territorial"
+
+
+# --- las preguntas que no dicen de qué hablan -----------------------------------------------------
+
+
+def test_una_pregunta_que_no_dice_de_que_habla_va_a_la_materia_de_sus_hechos() -> None:
+    """«Una de las siguientes afirmaciones es falsa» no dice de qué va; sus hechos sí.
+
+    Es la mitad del arreglo de I.1: 209 de sus grupos son enunciados cortos sin artículo ni
+    institución, y forzar un patrón por cada muletilla de examen sería escribir un diccionario de
+    comodines. Lo que sabe de qué hablan son sus hechos, así que manda la mayoría de ellos.
+    """
+    grupo = _grupo("q1", "Una de las siguientes afirmaciones es falsa:")
+    hechos = [
+        _hecho("DNS utiliza el puerto 53 para las consultas.", grupos=(grupo.signature,)),
+        _hecho(
+            "El registro MX de DNS identifica el servidor de correo.", grupos=(grupo.signature,)
+        ),
+        _hecho("SSH usa el puerto 22.", grupos=(grupo.signature,)),
+    ]
+
+    reparto, sin_materia, por_sus_hechos = repartir_grupos(
+        [grupo],
+        _materias(),
+        hechos_por_grupo={grupo.signature: hechos},
+    )
+
+    assert sin_materia == []
+    assert por_sus_hechos == 1
+    assert [g.signature for g in reparto["dns"]] == [grupo.signature]
+
+
+def test_un_grupo_sin_enunciado_ni_hechos_que_reconozcan_nada_se_queda_sin_materia() -> None:
+    """Si ni el enunciado ni los hechos dicen de qué va, no se inventa: va a la bandeja.
+
+    Lo que **no** puede pasar es que acabe en un cajón de «otros»: la pregunta necesita que el
+    propietario la mire, y eso se le dice.
+    """
+    grupo = _grupo("q1", "Señale la respuesta correcta:")
+    hechos = [_hecho("El plazo de resolución es de tres meses.", grupos=(grupo.signature,))]
+
+    reparto, sin_materia, por_sus_hechos = repartir_grupos(
+        [grupo],
+        _materias(),
+        hechos_por_grupo={grupo.signature: hechos},
+    )
+
+    assert sin_materia == [grupo]
+    assert por_sus_hechos == 0
+    assert all(not suyos for suyos in reparto.values())
+
+
+# --- las comprobaciones del índice (§2.2.3) -------------------------------------------------------
+
+
+def test_el_indice_mide_un_apartado_de_mas_de_ciento_cincuenta_hechos() -> None:
+    """Un apartado de trescientos hechos no cabe en una llamada: el plan lo parte y deja de serlo.
+
+    La comprobación se mide sobre el **plan** y no sobre el catálogo, así que lo que denuncia es un
+    apartado que no se ha partido; con el plan que usa la corrida, pasa.
+    """
+    hechos = [
+        _hecho(f"DNS utiliza el puerto {53 + indice} para las consultas.", grupos=("f",))
+        for indice in range(200)
+    ]
+    indice = indice_de(
+        topic_code="IV.7",
+        topic_title="Modelo TCP/IP",
+        epigraphs=EPIGRAFES,
+        hechos=hechos,
+        grupos=[_grupo("q1", "¿Qué protocolo resuelve los nombres de dominio?")],
+        umbral_equivalencia=1.1,
+    )
+    sin_partir = plan_de(indice, max_hechos_por_apartado=0)
+    partido = plan_de(indice, max_hechos_por_apartado=150)
+
+    revision_sin_partir = revisar_indice(indice, sin_partir)
+    revision_partido = revisar_indice(indice, partido)
+
+    assert [hallazgo.codigo for hallazgo in revision_sin_partir.hallazgos] == [APARTADO_MUY_GRANDE]
+    assert not revision_sin_partir.pasa
+    assert revision_partido.pasa
+    assert len(partido) == 2, "200 hechos con tope 150 son dos apartados de la misma materia"
+
+
+def test_el_indice_cuenta_las_preguntas_que_no_puede_situar() -> None:
+    """Lo que no cabe en el árbol no invalida el árbol, pero se cuenta: va a la bandeja."""
+    grupo = _grupo("q1", "Señale la respuesta correcta:")
+    indice = indice_de(
+        topic_code="IV.7",
+        topic_title="Modelo TCP/IP",
+        epigraphs=EPIGRAFES,
+        hechos=[],
+        grupos=[grupo],
+    )
+
+    revision = revisar_indice(indice, ())
+
+    assert revision.pasa, "el árbol está bien; el defecto es de la pregunta"
+    assert revision.grupos_sin_materia == 1
+    assert revision.preguntas_sin_materia == 1
+    assert "bandeja del propietario" in "\n".join(revision.lines())
 
 
 # --- la deduplicación de los hechos repetidos -----------------------------------------------------
@@ -618,11 +790,12 @@ def test_las_preguntas_se_reparten_por_su_enunciado_y_no_por_sus_opciones() -> N
     """Las opciones traen los distractores: clasificar por ellas manda la pregunta a otro sitio."""
     grupo = _grupo("q1", "¿Qué protocolo resuelve los nombres de dominio?")
 
-    reparto, sin_materia = repartir_grupos([grupo], _materias())
+    reparto, sin_materia, por_sus_hechos = repartir_grupos([grupo], _materias())
 
     assert len(reparto["dns"]) == 1
     assert all(not reparto[clave] for clave in reparto if clave != "dns")
     assert sin_materia == []
+    assert por_sus_hechos == 0, "este grupo se sitúa por su enunciado, no por sus hechos"
 
 
 def test_el_indice_va_en_el_orden_del_temario_y_cuenta_sus_preguntas() -> None:

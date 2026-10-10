@@ -143,7 +143,7 @@ class ExternalServiceError(OpoFuenteError):
 
 
 class ClassificationAlreadyRunningError(OpoFuenteError):
-    """Ya hay una clasificación escribiendo en esta base (F5).
+    """Ya hay una corrida larga escribiendo en esta base (F5).
 
     Existe por un fallo real, no por prudencia: el 8 de octubre de 2026 dos corridas del
     clasificador escribieron a la vez sobre los datos del propietario y dejaron **cuatro preguntas
@@ -152,12 +152,17 @@ class ClassificationAlreadyRunningError(OpoFuenteError):
     no puede permitir que dos procesos se pisen: la segunda corrida se niega y dice desde cuándo
     corre la primera.
 
+    `que` es el nombre de la corrida («clasificación», «apuntes»): la mecánica es la misma y el
+    mensaje tiene que decir cuál de las dos está en marcha, no siempre la clasificación.
+
     No es un error de la API: no hay ninguna ruta que clasifique. Lo lee quien lanza el comando.
     """
 
-    def __init__(self, *, started_at: str, opposition_code: str, hint: str) -> None:
+    def __init__(
+        self, *, started_at: str, opposition_code: str, hint: str, que: str = "clasificación"
+    ) -> None:
         super().__init__(
-            f"ya hay una clasificación en curso desde {started_at} "
+            f"ya hay una {que} en curso desde {started_at} "
             f"(oposición «{opposition_code}»): dos corridas a la vez sobre la misma base escriben "
             f"propuestas duplicadas. {hint}"
         )

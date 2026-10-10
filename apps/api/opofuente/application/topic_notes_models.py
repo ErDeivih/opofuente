@@ -12,6 +12,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from opofuente.domain.notes_quality import RevisionApuntes
+from opofuente.domain.topic_index import RevisionIndice
 from opofuente.domain.topic_notes import (
     COBERTURA_MINIMA,
     CategoriaIncidencia,
@@ -26,6 +27,9 @@ MOTIVO_TEXTO: dict[Motivo, str] = {
     Motivo.LETRA_NO_COINCIDE: "en conflicto: la frase está, pero la clave dice otra opción",
     Motivo.CLAVE_CONTRADICE_LA_NORMA: "la clave contradice la norma o el material",
     Motivo.CLAVE_SIN_DEFINIR: "la pregunta no tiene clave con la que comprobarla",
+    Motivo.SIN_MATERIA_EN_EL_INDICE: (
+        "la pregunta no cabe en ninguna materia del índice: no hay apartado donde contestarla"
+    ),
 }
 
 #: Y los de las categorías de la bandeja del propietario (§2.1.4).
@@ -106,6 +110,11 @@ class CoverageReport:
     preguntas_cubiertas_con_clave: int = 0
     preguntas_con_clave_utilizable: int = 0
     preguntas_cubiertas_con_clave_utilizable: int = 0
+
+    #: Cuántas de las comprobaciones guardadas siguen valiendo para el texto de hoy (su huella es
+    #: la del apartado que se comprobó). Solo lo rellena `medir`: una corrida vuelve a comprobar las
+    #: que no valen, así que al terminar no queda ninguna caduca.
+    comprobaciones_vigentes: int = 0
 
     @property
     def cobertura_con_clave(self) -> float:
@@ -222,6 +231,10 @@ class TopicNotesReport:
     version_created: bool | None = None
     #: Si la versión que había se ha retirado por no pasar la puerta: el tema vuelve a borrador.
     version_retired: bool | None = None
+    #: La revisión del índice del tema (§2.2.3), que se mide **antes** de redactar con él.
+    indice: RevisionIndice | None = None
+    #: Preguntas que el índice no puede situar y que van a la bandeja del propietario con su motivo.
+    sin_materia: int = 0
     notes: str = ""
 
     @property
@@ -283,6 +296,8 @@ class TopicNotesReport:
                 f"{cobertura.preguntas_con_clave} = {100 * cobertura.cobertura_con_clave:.1f} % "
                 "sobre todas las que tienen clave (activa o en borrador)"
             )
+        if self.indice is not None:
+            lineas.extend(self.indice.lines())
         if self.revision is not None:
             lineas.extend(self.revision.lines())
         for motivo, cuantos in sorted(cobertura.por_motivo.items(), key=lambda fila: -fila[1]):

@@ -29,7 +29,10 @@ from fastapi.testclient import TestClient
 
 from opofuente.application.topic_notes_service import TopicNotesService
 from opofuente.config import Settings, get_settings
-from opofuente.domain.errors import ExternalServiceError
+from opofuente.domain.errors import (
+    ClassificationAlreadyRunningError,
+    ExternalServiceError,
+)
 from opofuente.domain.notes_quality import (
     PARRAFOS_REPETIDOS,
     marcas_internas,
@@ -37,6 +40,7 @@ from opofuente.domain.notes_quality import (
 )
 from opofuente.domain.rag import normalise
 from opofuente.domain.topic_notes import (
+    CategoriaIncidencia,
     ComprobacionBatch,
     FactKind,
     Hecho,
@@ -51,10 +55,25 @@ from opofuente.domain.topic_notes import (
 )
 from opofuente.infrastructure.clock import SystemClock
 from opofuente.infrastructure.dossier_repository import SqlAlchemyDossierRepository
+from opofuente.infrastructure.run_lock import (
+    CLAVE_APUNTES,
+    ClassificationRunLock,
+    current_run,
+)
 from opofuente.infrastructure.topic_notes_repository import SqlAlchemyTopicNotesRepository
 from opofuente.tools import apuntes
 
 ALLOWED_ORIGIN = {"Origin": "http://127.0.0.1:5173"}
+
+#: Una pregunta que no dice de qué habla: ni nombra un artículo, ni una institución, ni un protocolo
+#: Es la forma real de 209 grupos de I.1 («Una de las siguientes afirmaciones es falsa»), y la única
+#: salida honesta cuando ni su enunciado ni sus hechos la sitúan es la bandeja del propietario.
+TEXTO_SIN_MATERIA = (
+    "1. Una de las siguientes afirmaciones es falsa:\n"
+    "a) La primera\n"
+    "b) La segunda\n"
+    "Respuesta correcta: b\n"
+)
 
 TEXTO = (
     "1. ¿Cuántas capas tiene el modelo OSI?\n"
@@ -194,10 +213,10 @@ def _conjunto(client: TestClient, *, titulo: str) -> dict[str, Any]:
     return dict(respuesta.json())
 
 
-def _preguntas(client: TestClient, set_id: str) -> list[dict[str, Any]]:
+def _preguntas(client: TestClient, set_id: str, *, texto: str = TEXTO) -> list[dict[str, Any]]:
     respuesta = client.post(
         f"/api/v1/question-sets/{set_id}/parse",
-        json={"kind": "questions", "text": TEXTO},
+        json={"kind": "questions", "text": texto},
         headers=ALLOWED_ORIGIN,
     )
     assert respuesta.status_code == 200, respuesta.text
@@ -263,6 +282,34 @@ def _escenario(
     node_id = repositorio.node_id(tema)
     assert node_id is not None
     return repositorio, preguntas, node_id
+
+
+class _ModeloQueNoDiceNada(_ModeloFalso):
+    """Un modelo cuyos hechos tampoco dicen de qué hablan: ni la pregunta ni el hecho sitúan nada.
+
+    Es el otro caso de I.1, el que no se arregla con patrones: cuando ni el enunciado ni los hechos
+    nombran una materia, no hay a qué agarrarse y la pregunta es del propietario.
+    """
+
+    def hechos(
+        self,
+        grupos: Sequence[QuestionGroup],
+        *,
+        topic_code: str,
+        topic_title: str,
+        epigraphs: Sequence[tuple[str, str]],
+    ) -> HechosBatch:
+        hechos = tuple(
+            Hecho(
+                text="El plazo para resolver es de tres meses desde la solicitud.",
+                kind=FactKind.TECNICO,
+                epigraph_code=epigraphs[0][0],
+                source_groups=(grupo.signature,),
+                source_questions=grupo.question_ids,
+            )
+            for grupo in grupos
+        )
+        return HechosBatch(hechos=hechos, input_tokens=10, output_tokens=10)
 
 
 class _ModeloQueFalla(_ModeloFalso):
@@ -844,7 +891,9 @@ def test_el_esquema_de_un_tema_sin_catalogo_lo_dice_sin_inventarlo(
     monkeypatch.setenv("OPOFUENTE_DATA_DIR", str(seeded_settings.data_dir))
     get_settings.cache_clear()
     try:
-        codigo = apuntes.main(["--tema", "I.1", "--esquema"])
+        # I.2 todavía no tiene catálogo de materias (I.1 sí desde esta tanda): el índice de un tema
+        # se define antes de redactar y no se inventa.
+        codigo = apuntes.main(["--tema", "I.2", "--esquema"])
     finally:
         get_settings.cache_clear()
         os.environ.pop("OPOFUENTE_DATA_DIR", None)
@@ -954,6 +1003,80 @@ def test_el_comando_guarda_la_version_al_terminar(
     assert versiones, "el comando tiene que dejar la versión guardada"
 
 
+# --- las preguntas que el índice no puede situar --------------------------------------------------
+
+
+def test_una_pregunta_que_no_cabe_en_el_indice_va_a_la_bandeja_y_no_para_la_corrida(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """Lo que no se puede situar no tumba el tema ni se esconde: se le enseña al propietario.
+
+    Antes esto salía con `UnsupportedError`: el tema no se podía redactar **por una pregunta**, y el
+    propietario se enteraba de que había un problema pero no de cuál era la pregunta. Ahora el árbol
+    se escribe con lo que sí se puede situar, la que no cabe va a la bandeja con su motivo (sin
+    cajón de «otros») y la puerta de cobertura la cuenta como no cubierta en vez de dejarla fuera.
+    """
+    conjunto = _conjunto(seeded_client, titulo="El banco de la pregunta que no cabe")
+    preguntas = _preguntas(seeded_client, conjunto["id"], texto=TEXTO_SIN_MATERIA)
+    assert len(preguntas) == 1
+    _activar_clave(seeded_client, conjunto["id"])
+    _asignar_tema(seeded_client, preguntas[0]["id"], tema="IV.7", epigrafe="IV.7.1")
+    fabrica = seeded_client.app.state.session_factory
+    repositorio = SqlAlchemyTopicNotesRepository(fabrica)
+    node_id = repositorio.node_id("IV.7")
+    assert node_id is not None
+
+    informe = _servicio(seeded_client, _ModeloQueNoDiceNada()).run("IV.7", now=SystemClock().now())
+
+    assert informe.indice is not None
+    assert informe.indice.grupos_sin_materia == 1, "la pregunta no cabe en ninguna materia"
+    assert informe.indice.pasa, "el árbol está bien formado: el defecto es de la pregunta"
+    assert informe.sin_materia == 1
+    # No se cuela por el borde: tiene clave y los apuntes no la contestan, así que cuenta en contra.
+    assert informe.coverage.preguntas_con_clave == 1
+    assert informe.coverage.preguntas_cubiertas_con_clave == 0
+    # Y está en la bandeja, con su motivo y sin cajón: no hay ningún apartado «otros».
+    incidencias = repositorio.incidents(node_id)
+    assert [incidencia.reason for incidencia in incidencias] == [Motivo.SIN_MATERIA_EN_EL_INDICE]
+    assert incidencias[0].category is CategoriaIncidencia.PREGUNTA_AMBIGUA
+    assert "afirmaciones es falsa" in incidencias[0].detail
+    assert all("otros" not in apartado.key for apartado in repositorio.sections(node_id))
+
+
+# --- la marca de corrida --------------------------------------------------------------------------
+
+
+def test_dos_corridas_de_apuntes_a_la_vez_no_se_pisan(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """Escribir apuntes es lo más caro del proyecto: la segunda corrida se niega.
+
+    El 10 de octubre de 2026 se lanzaron dos a la vez sobre I.6 y hubo que matar la segunda. La
+    es la misma que usa el clasificador, con su propia clave: la clasificación y los apuntes no se
+    bloquean el uno al otro, pero dos corridas de apuntes sí.
+    """
+    fabrica = seeded_client.app.state.session_factory
+    en_marcha = ClassificationRunLock(
+        fabrica, opposition_code="I.6", clave=CLAVE_APUNTES, que="corrida de apuntes"
+    )
+    segunda = ClassificationRunLock(
+        fabrica, opposition_code="I.1", clave=CLAVE_APUNTES, que="corrida de apuntes"
+    )
+
+    with en_marcha.hold():
+        # La marca de los apuntes no bloquea a la clasificación: son dos trabajos distintos.
+        with ClassificationRunLock(fabrica, opposition_code="tai-age").hold():
+            pass
+        with pytest.raises(ClassificationAlreadyRunningError) as fallo:
+            segunda.acquire()
+        assert "apuntes" in str(fallo.value)
+        assert "en curso" in str(fallo.value)
+        assert CLAVE_APUNTES in str(fallo.value)
+        assert current_run(fabrica, clave=CLAVE_APUNTES) is not None
+
+    assert current_run(fabrica, clave=CLAVE_APUNTES) is None, "al terminar, la marca se retira"
+
+
 # --- el comando ----------------------------------------------------------------------------------
 
 
@@ -1002,6 +1125,61 @@ def test_el_comando_lista_lo_que_hay_sin_necesitar_la_clave(
     assert "IV.7" in salida
     assert "hechos guardados: 2" in salida
     assert repositorio.node_id("IV.7") is not None
+
+
+def test_el_comando_mide_el_tema_guardado_sin_llamar_a_nadie(
+    seeded_settings: Settings,
+    seeded_client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """`--medir` da las cifras del tema sin clave y sin llamar al modelo: medir no cuesta dinero.
+
+    Es lo que permite escribir en un informe la cobertura y la forma de un tema **medidas** y no
+    heredadas de la corrida que las escribió: la cobertura sale de las comprobaciones guardadas y la
+    forma, del texto que hay hoy en la base.
+    """
+    _escenario(seeded_client, titulo="Apuntes que se miden")
+    _servicio(seeded_client, _ModeloFalso()).run("IV.7", now=SystemClock().now())
+    monkeypatch.delenv(apuntes.VARIABLE_DE_LA_CLAVE, raising=False)
+    monkeypatch.setenv("OPOFUENTE_DATA_DIR", str(seeded_settings.data_dir))
+    get_settings.cache_clear()
+    try:
+        codigo = apuntes.main(["--tema", "IV.7", "--medir"])
+    finally:
+        get_settings.cache_clear()
+        os.environ.pop("OPOFUENTE_DATA_DIR", None)
+
+    salida = capsys.readouterr().out
+    assert codigo == 0
+    assert "puerta de cobertura" in salida
+    assert "revision de forma" in salida
+    assert "revision del indice" in salida
+    assert "coste estimado 0.0000 $" in salida, "medir no gasta: el informe tiene que decirlo"
+
+
+def test_el_comando_enseña_el_indice_y_su_revision_sin_la_clave(
+    seeded_settings: Settings,
+    seeded_client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """`--esquema` dice si el árbol cuadra **antes** de pagar una corrida por él."""
+    _escenario(seeded_client, titulo="El índice que se revisa")
+    _servicio(seeded_client, _ModeloFalso()).run("IV.7", now=SystemClock().now())
+    monkeypatch.delenv(apuntes.VARIABLE_DE_LA_CLAVE, raising=False)
+    monkeypatch.setenv("OPOFUENTE_DATA_DIR", str(seeded_settings.data_dir))
+    get_settings.cache_clear()
+    try:
+        codigo = apuntes.main(["--tema", "IV.7", "--esquema"])
+    finally:
+        get_settings.cache_clear()
+        os.environ.pop("OPOFUENTE_DATA_DIR", None)
+
+    salida = capsys.readouterr().out
+    assert codigo == 0
+    assert "Índice por materias" in salida
+    assert "revision del indice: PASA" in salida
 
 
 def test_un_tema_sin_preguntas_clasificadas_lo_dice_y_no_sigue(

@@ -154,12 +154,22 @@ class Motivo(StrEnum):
 
     Los dos primeros motivos son de los **apuntes** (hay que añadir o reescribir); los dos últimos,
     de la **clave** (la pregunta se revisa en el panel, no se arregla escribiendo más).
+
+    `SIN_MATERIA_EN_EL_INDICE` es el quinto y no es ninguno de los dos: la pregunta no se puede
+    situar en ninguna materia del tema ni por su enunciado ni por el texto de sus hechos, así que no
+    hay apartado en el que escribirla. Antes esto **paraba la corrida** diciendo que era una
+    pregunta
+    mal clasificada; ahora va a la bandeja del propietario con su motivo, que es lo que se pidió: lo
+    que no se puede situar se le enseña a él, no se esconde en un cajón de «otros» ni bloquea el
+    tema
+    entero por diez preguntas.
     """
 
     SIN_FRASE_EN_LOS_APUNTES = "sin_frase_en_los_apuntes"
     LETRA_NO_COINCIDE = "letra_no_coincide"
     CLAVE_CONTRADICE_LA_NORMA = "clave_contradice_la_norma"
     CLAVE_SIN_DEFINIR = "clave_sin_definir"
+    SIN_MATERIA_EN_EL_INDICE = "sin_materia_en_el_indice"
 
     @property
     def es_de_los_apuntes(self) -> bool:
@@ -190,6 +200,9 @@ CATEGORIA_POR_MOTIVO: dict[Motivo, CategoriaIncidencia] = {
     Motivo.LETRA_NO_COINCIDE: CategoriaIncidencia.CLAVE_SOSPECHOSA,
     Motivo.CLAVE_CONTRADICE_LA_NORMA: CategoriaIncidencia.NORMA_CAMBIADA,
     Motivo.CLAVE_SIN_DEFINIR: CategoriaIncidencia.PREGUNTA_AMBIGUA,
+    # Una pregunta que no se puede situar en el índice se arregla reescribiéndola o asignándola a
+    # mano: es trabajo del propietario sobre la pregunta, no sobre los apuntes.
+    Motivo.SIN_MATERIA_EN_EL_INDICE: CategoriaIncidencia.PREGUNTA_AMBIGUA,
 }
 
 
@@ -239,7 +252,20 @@ TEXTO_DE_CATEGORIA: dict[CategoriaIncidencia, str] = {
         "la clave contradice la norma o el material de estudio: hay que comprobar qué dice hoy la "
         "norma"
     ),
+    CategoriaIncidencia.PREGUNTA_AMBIGUA: (
+        "la pregunta no tiene clave con la que comprobarla: no se puede decidir si los apuntes la "
+        "contestan"
+    ),
 }
+
+#: Lo que se le dice al propietario cuando la pregunta no cabe en **ninguna** materia del tema: ni
+#: su enunciado ni sus hechos dicen de qué habla. No es un hueco de los apuntes —no hay apartado
+#: donde escribirla— ni una clave sospechosa: es una pregunta que necesita que él decida dónde va.
+TEXTO_SIN_MATERIA = (
+    "la pregunta no se puede situar en ninguna materia del tema ni por su enunciado ni por el "
+    "texto de sus hechos: no hay apartado de apuntes donde contestarla, así que hay que "
+    "reescribirla o asignarle un tema a mano (no se ha metido en ningún cajón de «otros»)"
+)
 
 
 def detalle_de_incidencia(resultado: NotesCheck, grupo: QuestionGroup | None) -> str:
