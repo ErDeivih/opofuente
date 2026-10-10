@@ -106,6 +106,10 @@ SIN_MATERIAL = "sin material de apoyo"
 #: Lo que se marca en un apartado al que le han llegado hechos nuevos después de escribirlo.
 HECHOS_NUEVOS = "hechos nuevos sin integrar"
 
+#: Mínimo de palabras de un añadido. Un añadido de cero palabras no rellena nada, y el bucle de
+#: huecos existe para rellenar: por debajo de esto no se baja, aunque el apartado esté en su tope.
+MINIMO_PALABRAS_ANADIDO = 60
+
 
 class FactKind(StrEnum):
     """Si el hecho cita una norma o no. Se guarda porque el propietario revisa distinto cada uno."""
@@ -1338,6 +1342,13 @@ def build_user_prompt_anadir(
 
     Los hechos van **obligatorios**: son los del paso B para esas mismas preguntas, así que el
     añadido no se apoya en lo que el modelo recuerde, sino en lo que ya se escribió y se comprueba.
+
+    Y el añadido lleva **su tope**: lo que le queda al apartado para llegar a `40 x hechos` (§2.3),
+    nunca menos de `MINIMO_PALABRAS_ANADIDO` (un párrafo tiene que poder decir algo). Sin esto, el
+    añadido escribía sin límite y el tema acababa por encima del tope de extensión justo por
+    rellenar sus huecos: I.6 quedó en 18.795 palabras de 13.840 después de cuatro añadidos, con el
+    texto ya bien. El tope se saca del apartado (sus hechos y lo que ya tiene escrito) y no de un
+    parámetro, para que valga en los dos sitios donde se escribe un añadido.
     """
     ya = section.body_markdown.strip()
     if len(ya) > maximo_caracteres:
@@ -1352,13 +1363,27 @@ def build_user_prompt_anadir(
         "\n".join(f"{numero}. {hecho.text}" for numero, hecho in enumerate(hechos, start=1))
         or "(no hay hechos nuevos: escribe a partir de la norma, sin inventar)"
     )
+    tope = tope_del_anadido(section)
     return (
         f"Apartado: {section.title}\n\n"
         f"LO QUE YA DICEN LOS APUNTES (final del apartado):\n{ya or '(vacío)'}\n\n"
         f"HECHOS QUE FALTAN (obligatorios, intégralos en el añadido):\n{obligatorios}\n\n"
         "PREGUNTAS QUE LOS APUNTES NO CONTESTAN:\n" + "\n\n".join(bloques) + "\n\nEscribe lo que "
-        "falta, sin repetir lo que ya está."
+        f"falta, sin repetir lo que ya está. **Como mucho {tope} palabras**: es lo que le queda al "
+        "apartado para no pasar de 40 por cada hecho suyo. Si no cabe todo, di primero lo que "
+        "contesta a las preguntas de arriba."
     )
+
+
+def tope_del_anadido(section: NoteSection) -> int:
+    """Cuántas palabras le quedan al apartado antes de pasarse de `40 x hechos` (§2.3).
+
+    Nunca menos de `MINIMO_PALABRAS_ANADIDO`: un añadido de cero palabras no rellena nada, y el
+    objetivo del bucle de huecos es justo lo contrario. El hueco que quede por encima de eso se
+    declara (va a la bandeja del propietario con su categoría), no se tapa escribiendo de más.
+    """
+    tope = MAX_PALABRAS_POR_HECHO * max(len(section.facts), 1)
+    return max(MINIMO_PALABRAS_ANADIDO, tope - len(section.body_markdown.split()))
 
 
 def serializar_hechos(hechos: Sequence[Hecho]) -> str:
@@ -1388,6 +1413,7 @@ __all__ = [
     "LOTE_HECHOS",
     "MAX_HECHOS_POR_APARTADO",
     "MINIMO_CITA",
+    "MINIMO_PALABRAS_ANADIDO",
     "SIN_MATERIAL",
     "VERSION_PLANTILLA",
     "VUELTAS_MAXIMAS",
@@ -1430,5 +1456,6 @@ __all__ = [
     "serializar_hechos",
     "slug",
     "terminos_significativos",
+    "tope_del_anadido",
     "verificar_cita",
 ]
