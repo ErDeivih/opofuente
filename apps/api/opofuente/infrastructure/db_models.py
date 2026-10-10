@@ -2083,3 +2083,52 @@ class QuestionNoteAnchorRecord(Base):
         Integer, nullable=False, server_default=text("1"), default=1
     )
     checked_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
+
+
+class NotesIncidentRecord(Base):
+    """Una pregunta que los apuntes no cubren, en la bandeja del propietario (§2.1.4).
+
+    La bandeja es lo que queda **después** de intentar rellenar el hueco: las dudosas y los
+    conflictos de letra, cada uno con su categoría (a quién le toca arreglarlo), su motivo y la
+    frase verificada que lo prueba cuando la hay.
+
+    Una fila por pregunta y tema (`uq_notes_incident_question_node`): volver a comprobar el tema
+    actualiza la incidencia en vez de añadir otra copia, que es lo que hace que la bandeja se pueda
+    vaciar de verdad.
+    """
+
+    __tablename__ = "notes_incidents"
+    __table_args__ = (
+        CheckConstraint(
+            "category IN ('hueco_sin_material', 'clave_sospechosa', 'pregunta_ambigua', "
+            "'norma_cambiada')",
+            name="ck_notes_incident_category",
+        ),
+        CheckConstraint("coverage IN ('doubtful', 'conflict')", name="ck_notes_incident_coverage"),
+        CheckConstraint("length(trim(detail)) > 0", name="ck_notes_incident_detail"),
+        CheckConstraint("attempts >= 1", name="ck_notes_incident_attempts"),
+        UniqueConstraint(
+            "question_version_id", "curriculum_node_id", name="uq_notes_incident_question_node"
+        ),
+        Index("ix_notes_incidents_node_category", "curriculum_node_id", "category"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    curriculum_node_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("curriculum_nodes.id", ondelete="CASCADE"), nullable=False
+    )
+    question_version_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("question_versions.id", ondelete="CASCADE"), nullable=False
+    )
+    group_signature: Mapped[str] = mapped_column(String(64), nullable=False)
+    category: Mapped[str] = mapped_column(String(24), nullable=False)
+    coverage: Mapped[str] = mapped_column(String(16), nullable=False)
+    reason: Mapped[str] = mapped_column(String(48), nullable=False)
+    section_key: Mapped[str | None] = mapped_column(Text, nullable=True)
+    anchor: Mapped[str | None] = mapped_column(Text, nullable=True)
+    phrase: Mapped[str | None] = mapped_column(Text, nullable=True)
+    detail: Mapped[str] = mapped_column(Text, nullable=False)
+    attempts: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default=text("1"), default=1
+    )
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)

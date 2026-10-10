@@ -13,6 +13,7 @@ from dataclasses import dataclass, field
 
 from opofuente.domain.notes_quality import RevisionApuntes
 from opofuente.domain.topic_notes import (
+    CategoriaIncidencia,
     Coverage,
     Motivo,
     TokenLedger,
@@ -24,6 +25,14 @@ MOTIVO_TEXTO: dict[Motivo, str] = {
     Motivo.LETRA_NO_COINCIDE: "en conflicto: la frase está, pero la clave dice otra opción",
     Motivo.CLAVE_CONTRADICE_LA_NORMA: "la clave contradice la norma o el material",
     Motivo.CLAVE_SIN_DEFINIR: "la pregunta no tiene clave con la que comprobarla",
+}
+
+#: Y los de las categorías de la bandeja del propietario (§2.1.4).
+CATEGORIA_TEXTO: dict[CategoriaIncidencia, str] = {
+    CategoriaIncidencia.HUECO_SIN_MATERIAL: "huecos sin material (los apuntes no tienen el dato)",
+    CategoriaIncidencia.CLAVE_SOSPECHOSA: "claves sospechosas (los apuntes dicen otra letra)",
+    CategoriaIncidencia.PREGUNTA_AMBIGUA: "preguntas ambiguas (sin clave con la que comprobar)",
+    CategoriaIncidencia.NORMA_CAMBIADA: "norma cambiada (la clave contradice la norma)",
 }
 
 
@@ -82,6 +91,11 @@ class CoverageReport:
     #: la
     #: norma o al material. Son incidencias de la pregunta, no de los apuntes.
     incidencias_clave_marcada: int = 0
+    #: Lo que queda en la bandeja del propietario tras el bucle de huecos (§2.1.4), por categoría.
+    incidencias: int = 0
+    por_categoria: dict[CategoriaIncidencia, int] = field(default_factory=dict)
+    #: Huecos de material a los que se les ha dado la tercera vuelta de añadido.
+    huecos_rellenados: int = 0
     por_motivo: dict[Motivo, int] = field(default_factory=dict)
 
     @property
@@ -144,6 +158,11 @@ class TopicNotesReport:
     revision: RevisionApuntes | None = None
     ledger: TokenLedger = field(default_factory=TokenLedger)
     failed_batches: int = 0
+    #: Lo que se ha hecho con la tabla de puertos: notas de distractor retiradas y pares que se
+    #: confunden de verdad recogidos aparte (§2.1.2). Se cuenta porque el arreglo tiene que poder
+    #: revisarse.
+    notas_de_puertos_retiradas: int = 0
+    confusiones_de_puertos: int = 0
     dry_run: bool = False
     version_created: bool | None = None
     notes: str = ""
@@ -196,6 +215,23 @@ class TopicNotesReport:
             lineas.extend(self.revision.lines())
         for motivo, cuantos in sorted(cobertura.por_motivo.items(), key=lambda fila: -fila[1]):
             lineas.append(f"      {cuantos:>5} · {MOTIVO_TEXTO.get(motivo, motivo.value)}")
+        if self.notas_de_puertos_retiradas or self.confusiones_de_puertos:
+            lineas.append(
+                f"    tabla de puertos: {self.notas_de_puertos_retiradas} nota(s) de distractor "
+                f"retirada(s) · {self.confusiones_de_puertos} confusión(es) que caen en su bloque"
+            )
+        if self.coverage.huecos_rellenados:
+            lineas.append(
+                f"    bucle de huecos: {self.coverage.huecos_rellenados} apartado(s) con "
+                "una vuelta más de añadido"
+            )
+        for categoria, cuantas in sorted(
+            self.coverage.por_categoria.items(), key=lambda fila: -fila[1]
+        ):
+            lineas.append(
+                f"      {cuantas:>5} · bandeja del propietario: "
+                f"{CATEGORIA_TEXTO.get(categoria, categoria.value)}"
+            )
         if self.hechos_sin_integrar:
             lineas.append(
                 f"    hechos que no se encontraron en el texto: {self.hechos_sin_integrar}"
@@ -229,6 +265,7 @@ class TopicNotesReport:
 
 
 __all__ = [
+    "CATEGORIA_TEXTO",
     "MOTIVO_TEXTO",
     "CoverageReport",
     "NotesNode",

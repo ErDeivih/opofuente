@@ -13,13 +13,18 @@ que se pidió: ver el esquema antes de redactar).
 
 Siete reglas, y las siete se ven en el resultado:
 
-1. **cada hecho y cada pregunta van a una sola materia**: la que los menciona antes (y, a igualdad,
-   la de `prioridad` más baja). Se mira primero entre las materias del epígrafe del hecho y, si en
-   el suyo no casa con ninguna, en el catálogo entero: hay hechos a los que el modelo puso el
-   epígrafe que no era (9 en IV.7), y su contenido manda. Esos se cuentan y se dicen;
+1. **cada hecho va al apartado de lo que afirma**, y cada pregunta a la materia que menciona antes
+   (y, a igualdad, la de `prioridad` más baja). Un hecho sobre la cabecera de IPv6 es de IPv6
+   **aunque salga de una pregunta sobre UDP**: es lo que impide que el apartado de UDP hable de la
+   cabecera de IPv6, de ARP y de ICMP. Y como un hecho puede salir de varias preguntas (y una
+   pregunta tener sus hechos en varios apartados), el ancla pregunta→apuntes admite **varios**
+   apartados. Se mira primero entre las materias del epígrafe del hecho y, si en el suyo no casa con
+   ninguna, en el catálogo entero: hay hechos a los que el modelo puso el epígrafe que no era (9 en
+   IV.7), y su contenido manda. Esos se cuentan y se dicen;
 2. **el reparto mira primero lo particular**: un hecho que habla de DNS *y* del puerto 53 es un
    hecho de DNS, no de la tabla de puertos. Por eso cada materia tiene su `prioridad` de reparto,
-   aparte del orden en que se enseña el índice;
+   aparte del orden en que se enseña el índice (y por eso se miran antes los protocolos que la tabla
+   de puertos, aunque la tabla se enseñe antes);
 3. **los hechos repetidos se agrupan y se queda uno por grupo** (`deduplicar`): 998 hechos para 554
    preguntas eran demasiados, sobre todo en el modelo OSI (199 para 125). El que se queda conserva
    **la unión de las preguntas** de todo su grupo, así que ninguna pregunta pierde su anclaje. La
@@ -93,6 +98,12 @@ class Materia:
     title: str
     resumen: str
     patrones: tuple[str, ...] = ()
+    #: Patrones que **solo deciden si ninguna materia tiene uno propio**. Son las palabras que
+    #: aparecen hablando de cualquier cosa del tema (`datagrama`, `IP` suelta): si contaran igual
+    #: que las demás, «En la cabecera del datagrama IPv4, el campo Fragment Offset…» acabaría en
+    #: UDP —que es de lo que se quejó el propietario— por mencionar «datagrama» antes que «IPv4».
+    #: Una materia tiene que tener al menos un patrón propio; los débiles son un segundo intento.
+    patrones_debiles: tuple[str, ...] = ()
     #: Orden de **reparto** (no el del índice): más bajo, se mira antes. Sirve para que lo
     #: particular gane a lo general (DNS antes que la tabla de puertos) sin cambiar el orden en que
     #: se enseña.
@@ -173,6 +184,10 @@ class IndiceDelTema:
     grupos_sin_materia: tuple[QuestionGroup, ...] = field(default=())
     #: Hechos que había en el tema antes de agrupar los repetidos.
     hechos_originales: int = 0
+    #: Hechos que no reconocían ninguna materia y se han colocado en el apartado de la pregunta de
+    #: la que salen, para no perderlos. Se cuentan y se dicen: son los que el vocabulario del
+    #: catálogo no reconoce, y el sitio donde se estudian es el de su pregunta.
+    hechos_por_su_pregunta: int = 0
 
     @property
     def hechos(self) -> int:
@@ -203,6 +218,11 @@ class IndiceDelTema:
             f"({len(self.fusionados)} repetido(s) agrupado(s)) · {self.preguntas} "
             f"pregunta(s) en {self.grupos} grupo(s) · {len(self.epigraphs)} epígrafe(s) oficiales",
         ]
+        if self.hechos_por_su_pregunta:
+            lineas.append(
+                f"    {self.hechos_por_su_pregunta} hecho(s) no reconocen ninguna materia por sus "
+                "palabras y van al apartado de la pregunta de la que salen (no se pierden)"
+            )
         actual = ""
         for apartado in self.reparto:
             if apartado.materia.epigraph_code != actual:
@@ -241,18 +261,31 @@ class IndiceDelTema:
 
     @property
     def grupos_sin_anclaje(self) -> tuple[str, ...]:
-        """Las firmas de pregunta cuyo apartado no tiene ningún hecho suyo.
+        """Las firmas de pregunta con **algún hecho sin apartado**.
 
-        Es la prueba de que la deduplicación no dejó ninguna pregunta sin anclaje: el hecho que se
-        queda conserva la unión de las preguntas, así que este conjunto tiene que estar vacío.
+        Es la prueba del §2.1.1, y es distinta de la que había: antes se pedía «ninguna pregunta sin
+        hecho en su apartado», y con el reparto por materia una pregunta puede tener sus hechos en
+        **varios** apartados (el de UDP y el de IPv6) sin que ninguno sea «el suyo». Lo que no puede
+        pasar es que un hecho del tema se quede sin apartado: eso es un hecho huérfano y se cuenta.
         """
+        ancladas = {firma for apartado in self.reparto for firma in apartado.firmas_de_grupo}
         faltan: list[str] = []
-        for apartado in self.reparto:
-            ancladas = apartado.firmas_de_grupo
-            faltan.extend(
-                grupo.signature for grupo in apartado.grupos if grupo.signature not in ancladas
-            )
+        for hecho in self.sin_materia:
+            for firma in hecho.source_groups:
+                if firma not in ancladas and firma not in faltan:
+                    faltan.append(firma)
         return tuple(faltan)
+
+    def apartados_de(self, firma: str) -> tuple[str, ...]:
+        """Los apartados donde están los hechos de una pregunta, en orden de lectura.
+
+        El ancla pregunta→apuntes admite **varios** apartados: una pregunta sobre UDP puede tener el
+        hecho de UDP en su apartado y el de la cabecera IPv6 en el de IPv6, y los dos son suyos. El
+        enlace del alumno abre el primero; la comprobación del paso E recibe la unión.
+        """
+        return tuple(
+            apartado.materia.key for apartado in self.reparto if firma in apartado.firmas_de_grupo
+        )
 
 
 # --- la deduplicación -------------------------------------------------------------------------
@@ -386,22 +419,32 @@ def _mejor_materia(limpio: str, candidatas: Sequence[Materia]) -> Materia | None
     Es lo que hace que «DHCP es un protocolo … el servidor DNS» sea un hecho de DHCP y no de DNS: un
     hecho habla de su materia primero y de las demás después, para compararlas. Sin esa regla,
     cualquier mención de un distractor se llevaría el hecho.
+
+    Y se hace **en dos pasadas**: primero los patrones propios de cada materia y, solo si ninguno
+    casa, los débiles. Es la otra mitad de lo mismo: «datagrama» y una «IP» suelta aparecen hablando
+    de media asignatura, así que no pueden ganarle a «IPv4» o a «127.0.0.1», que son de una materia
+    concreta y de una sola. Sin las dos pasadas, el apartado de UDP se llevaba la cabecera de IPv4 y
+    la dirección de loopback por mencionar «datagrama» antes.
     """
-    mejor: tuple[int, int, Materia] | None = None
-    for materia in sorted(candidatas, key=lambda materia: materia.prioridad):
-        if not materia.patrones:
-            continue
-        posiciones = [
-            casado.start()
-            for patron in materia.patrones
-            if (casado := re.search(patron, limpio)) is not None
-        ]
-        if not posiciones:
-            continue
-        candidato = (min(posiciones), materia.prioridad, materia)
-        if mejor is None or candidato[:2] < mejor[:2]:
-            mejor = candidato
-    return None if mejor is None else mejor[2]
+    for propios in (True, False):
+        mejor: tuple[int, int, Materia] | None = None
+        for materia in sorted(candidatas, key=lambda materia: materia.prioridad):
+            patrones = materia.patrones if propios else materia.patrones_debiles
+            if not patrones:
+                continue
+            posiciones = [
+                casado.start()
+                for patron in patrones
+                if (casado := re.search(patron, limpio)) is not None
+            ]
+            if not posiciones:
+                continue
+            candidato = (min(posiciones), materia.prioridad, materia)
+            if mejor is None or candidato[:2] < mejor[:2]:
+                mejor = candidato
+        if mejor is not None:
+            return mejor[2]
+    return None
 
 
 def _materia_osi(limpio: str, materias: Sequence[Materia]) -> Materia | None:
@@ -478,79 +521,53 @@ def repartir_hechos(
     *,
     materia_por_grupo: Mapping[str, str] | None = None,
     grupos_sin_materia: Collection[str] = (),
-) -> tuple[dict[str, list[Hecho]], list[Hecho]]:
+) -> tuple[dict[str, list[Hecho]], list[Hecho], list[Hecho]]:
     """Los hechos de cada materia, por su clave, y los que no son de ninguna.
 
-    Manda **la pregunta de la que sale el hecho**, no su texto: un hecho es una frase escrita para
-    contestar unas preguntas concretas, así que su sitio es el de esas preguntas. Si se repartiera
-    por su texto, el enunciado y el hecho podrían acabar en apartados distintos y la pregunta se
-    quedaría sin el hecho que la ancla en su propio apartado (116 preguntas en IV.7 antes de esto).
+    Manda **el texto del hecho**: cada hecho va al apartado de lo que afirma. Un hecho sobre la
+    cabecera de IPv6 va a IPv6 aunque venga de una pregunta sobre UDP, y esa es toda la diferencia
+    con el reparto anterior —que iba por la pregunta de la que sale—, que metía en el apartado de
+    UDP la cabecera de IPv6, la fragmentación, 127.0.0.1, ARP del router e ICMP frente a SMTP.
 
-    El texto decide en dos casos, y solo en dos: un hecho **sin** pregunta de origen (lo escribió el
-    modelo para un lote que no identificó) y un hecho cuyas preguntas van a materias distintas
-    (porque el propio hecho habla de dos cosas).
+    El texto decide siempre que reconozca una materia. Solo cuando no reconoce **ninguna** se cae a
+    la pregunta de la que sale, y solo para no perder el hecho: un hecho de una pregunta del tema es
+    del tema aunque sus palabras no casen con el vocabulario del catálogo, y su sitio es donde se
+    estudia esa pregunta. Esos se cuentan (`hechos_por_su_pregunta`) y se dicen.
+
+    Un hecho cuyas preguntas van a materias distintas no se mueve a un cajón: va a la materia que
+    reconocen sus palabras y, si no reconoce ninguna, a la primera de sus preguntas en el orden del
+    catálogo (determinista, no «la que salga»). El ancla pregunta→apuntes admite varios apartados,
+    así que repartir los hechos de una pregunta entre dos apartados no deja a nadie sin anclaje.
 
     Y un hecho cuyas preguntas **no son de este tema** (`grupos_sin_materia`) se va con ellas: si la
     pregunta está mal clasificada y va a la cola, su hecho no puede quedarse aquí a sostener un
     apartado del que ya no es. Es lo que pidió el propietario: «sus datos se van con ellas».
-
-    Después hay una **segunda pasada, de sobrantes**: un hecho que va con sus preguntas pero cuyo
-    texto es de otra materia del tema se mueve a la suya, **siempre que su pregunta siga teniendo
-    algún hecho donde está**. Es lo que deja el apartado de acceso remoto con los hechos de Telnet,
-    SSH y RDP aunque salieran de la misma pregunta que los de SNMP: el hecho de Telnet se va a su
-    sitio y la pregunta no se queda sin nada, que es la condición que hace segura la mudanza.
     """
     por_clave: dict[str, list[Hecho]] = {materia.key: [] for materia in materias}
     por_grupo = materia_por_grupo or {}
     ajenas = set(grupos_sin_materia)
+    # El orden del catálogo, para desempatar de forma determinista cuando un hecho no reconoce nada.
+    orden = {materia.key: posicion for posicion, materia in enumerate(materias)}
     sin_materia: list[Hecho] = []
-    de_su_texto: dict[str, str] = {}
+    por_su_pregunta: list[Hecho] = []
     for hecho in hechos:
         if hecho.source_groups and all(firma in ajenas for firma in hecho.source_groups):
             sin_materia.append(hecho)
             continue
-        destinos = {por_grupo[firma] for firma in hecho.source_groups if firma in por_grupo}
-        clave = next(iter(destinos)) if len(destinos) == 1 else None
-        if clave is None:
-            materia = materia_de(hecho.text, hecho.epigraph_code, materias)
-            if materia is None:
-                sin_materia.append(hecho)
-                continue
-            clave = materia.key
-        else:
-            propia = materia_de(hecho.text, hecho.epigraph_code, materias)
-            if propia is not None and propia.key != clave:
-                de_su_texto[hecho.fact_id] = propia.key
-        por_clave[clave].append(hecho)
-
-    if de_su_texto:
-        cuenta: dict[str, int] = {}
-        for hecho in hechos:
-            for firma in hecho.source_groups:
-                clave = por_grupo.get(firma)
-                if clave is not None:
-                    cuenta[firma] = cuenta.get(firma, 0) + 1
-        for hecho in hechos:
-            destino = de_su_texto.get(hecho.fact_id)
-            if destino is None:
-                continue
-            suyo = next(
-                (por_grupo[firma] for firma in hecho.source_groups if firma in por_grupo), None
-            )
-            if suyo is None:
-                continue
-            # Solo se muda si la pregunta sigue anclada en su apartado sin este hecho.
-            if all(
-                cuenta.get(firma, 0) > 1
-                for firma in hecho.source_groups
-                if por_grupo.get(firma) == suyo
-            ):
-                por_clave[suyo].remove(hecho)
-                por_clave[destino].append(hecho)
-                for firma in hecho.source_groups:
-                    if por_grupo.get(firma) == suyo:
-                        cuenta[firma] -= 1
-    return por_clave, sin_materia
+        propia = materia_de(hecho.text, hecho.epigraph_code, materias)
+        if propia is not None:
+            por_clave[propia.key].append(hecho)
+            continue
+        destinos = sorted(
+            {por_grupo[firma] for firma in hecho.source_groups if firma in por_grupo},
+            key=lambda clave: orden.get(clave, len(orden)),
+        )
+        if destinos:
+            por_clave[destinos[0]].append(hecho)
+            por_su_pregunta.append(hecho)
+            continue
+        sin_materia.append(hecho)
+    return por_clave, sin_materia, por_su_pregunta
 
 
 def repartir_grupos(
@@ -631,7 +648,7 @@ def indice_de(
         for materia in materias
         for grupo in por_materia_grupos[materia.key]
     }
-    por_materia_hechos, sin_materia = repartir_hechos(
+    por_materia_hechos, sin_materia, por_su_pregunta = repartir_hechos(
         hechos,
         materias,
         materia_por_grupo=materia_por_grupo,
@@ -666,6 +683,7 @@ def indice_de(
         ),
         grupos_sin_materia=tuple(grupos_sin_materia),
         hechos_originales=len(hechos),
+        hechos_por_su_pregunta=len(por_su_pregunta),
     )
 
 
@@ -1003,6 +1021,14 @@ _MATERIAS_IV7: tuple[Materia, ...] = (
             r"time exceeded",
             r"destino inalcanzable",
             r"destination unreachable",
+            # «¿Qué protocolo permite reportar al origen, errores en el procesamiento o envío de
+            # datagramas IP?»: es ICMP sin nombrarlo, y sin estos patrones el hecho acababa en UDP
+            # por decir «datagramas».
+            r"reportar.*errores",
+            r"informar.*errores",
+            r"notificacion de errores",
+            r"errores en el (procesamiento|envio)",
+            r"mensajes? de (control|error)",
         ),
         prioridad=12,
     ),
@@ -1198,7 +1224,9 @@ _MATERIAS_IV7: tuple[Materia, ...] = (
         ),
         patrones=(
             r"\btcp\b",
-            r"orientado a conexion",
+            # «IP es un protocolo **no** orientado a conexión» también trae las palabras: TCP solo
+            # se queda con las que no llevan el «no» delante.
+            r"(?<!no )orientado a conexion",
             r"\bsyn\b",
             r"\backs?\b",
             r"ventana (de |de congestion|congestion)",
@@ -1221,8 +1249,6 @@ _MATERIAS_IV7: tuple[Materia, ...] = (
         ),
         patrones=(
             r"\budp\b",
-            r"no orientado a conexion",
-            r"\bdatagramas?\b",
             # «…se observan pequeños cortes intermitentes en el audio. El sistema no retransmite los
             # paquetes perdidos»: el enunciado describe UDP (latencia antes que fiabilidad) sin
             # nombrarlo.
@@ -1232,6 +1258,13 @@ _MATERIAS_IV7: tuple[Materia, ...] = (
             r"tiempo real",
             r"fiabilidad total",
         ),
+        # `datagrama` y «no orientado a conexión» no son de UDP: el primero está en la cabecera de
+        # IPv4, en la de IPv6 y en la definición de la propia palabra, y el segundo es también IP
+        # («IP es un protocolo no orientado a conexión y de mejor esfuerzo»). Deciden **solo si
+        # ninguna materia concreta lo hace**: así la pregunta «Se denomina “datagrama” al paquete de
+        # datos en la capa de:» sigue cayendo aquí —es de UDP—, pero los hechos de IP y de la
+        # cabecera de IPv4 ya no.
+        patrones_debiles=(r"\bdatagramas?\b", r"no orientado a conexion"),
         prioridad=26,
     ),
     Materia(
@@ -1311,6 +1344,10 @@ _MATERIAS_IV7: tuple[Materia, ...] = (
         patrones=(
             r"\bipv4\b",
             r"direcciones? ip\b",
+            # «El protocolo IP es un protocolo no orientado a conexión y de mejor esfuerzo»: es del
+            # protocolo de red, y sin estos dos el hecho se lo llevaba TCP por decir «conexión».
+            r"protocolo ip\b",
+            r"^ip\b",
             r"primer octeto",
             r"\boctetos?\b",
             r"cabecera ip",
@@ -1332,8 +1369,10 @@ _MATERIAS_IV7: tuple[Materia, ...] = (
             # «172 en binario es 10101100…»: la conversión de una dirección a binario es de la
             # dirección, no del cálculo de subredes.
             r"en binario",
-            r"\bip\b",
         ),
+        # Una «IP» suelta aparece en media asignatura (ICMP, ARP, UDP…): decide solo si ninguna otra
+        # materia tiene un patrón propio en el texto, y así no se lleva los hechos de los demás.
+        patrones_debiles=(r"\bip\b",),
         prioridad=50,
     ),
     Materia(
@@ -1417,14 +1456,37 @@ def _en_orden_de_estudio(materias: Sequence[Materia], orden: Sequence[str]) -> t
 
 
 #: Los catálogos definidos. Un tema sin catálogo no tiene índice: se dice, no se inventa.
+#:
+#: I.6 es un tema **por materias** y no por la estructura de una norma: no hay una sola ley detrás
+#: (la LSSI, la propiedad intelectual del software, la Administración electrónica, la Ley 59/2003,
+#: el Reglamento europeo eIDAS, la Ley 6/2020, el DNIe y los planes de agenda digital), así que cada
+#: bloque normativo tiene su materia y dentro de ella se sigue la estructura de esa ley.
+#:
+#: Los catálogos de otros temas se importan **aquí abajo** y no arriba: cada uno dice sus materias
+#: con la clase `Materia` de este módulo, así que importarlo antes de que esté definida sería un
+#: ciclo.
+from opofuente.domain.catalogo_i_6 import MATERIAS as MATERIAS_I6  # noqa: E402
+from opofuente.domain.catalogo_i_6 import ORDEN as ORDEN_I6  # noqa: E402
+
 _CATALOGOS: dict[str, tuple[Materia, ...]] = {
     "IV.7": _en_orden_de_estudio(_MATERIAS_IV7, _ORDEN_IV7),
+    "I.6": _en_orden_de_estudio(MATERIAS_I6, ORDEN_I6),
 }
 
 
 def catalogo(topic_code: str) -> tuple[Materia, ...] | None:
     """El catálogo de materias de un tema, o `None` si todavía no está definido."""
     return _CATALOGOS.get(topic_code)
+
+
+def es_la_tabla_de_puertos(topic_code: str, clave: str) -> bool:
+    """¿Este apartado es la tabla única del tema? Lo dice el catálogo, no el título del apartado.
+
+    Es la marca `tabla_unica` del índice: un tema puede tener apartados con tablas, pero solo uno es
+    «la tabla de puertos» y solo ese lleva las instrucciones de familias y la limpieza de sus notas.
+    """
+    materias = catalogo(topic_code)
+    return any(materia.key == clave and materia.tabla_unica for materia in (materias or ()))
 
 
 __all__ = [

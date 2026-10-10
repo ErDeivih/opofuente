@@ -40,8 +40,9 @@ from opofuente.application.topic_notes_models import TopicNotesReport
 from opofuente.application.topic_notes_service import TopicNotesService
 from opofuente.config import Settings, get_settings
 from opofuente.domain.errors import OpoFuenteError
-from opofuente.domain.notes_quality import limpiar_andamios, marcas_internas
-from opofuente.domain.topic_index import catalogo, indice_de
+from opofuente.domain.notes_quality import limpiar_andamios, marcas_internas, revisar_apuntes
+from opofuente.domain.puertos import limpiar_tabla_de_puertos
+from opofuente.domain.topic_index import catalogo, es_la_tabla_de_puertos, indice_de
 from opofuente.infrastructure.clock import SystemClock
 from opofuente.infrastructure.db import build_engine, build_session_factory
 from opofuente.infrastructure.dossier_repository import SqlAlchemyDossierRepository
@@ -111,6 +112,27 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
             "quita del texto ya escrito las marcas internas que el redactor copió de su encargo "
             "(`[Hecho 3]` y compañía) y no llama a nadie: es una limpieza, no una redacción. No se "
             "archiva versión"
+        ),
+    )
+    parser.add_argument(
+        "--limpiar-puertos",
+        dest="limpiar_puertos",
+        action="store_true",
+        help=(
+            "vuelve a pasar la limpieza de la tabla de puertos al texto **ya escrito** (la parte "
+            "por familias, le quita las notas de distractor y recoge las confusiones de verdad) y "
+            "enseña la revisión de forma del tema. No llama al modelo y no archiva versión"
+        ),
+    )
+    parser.add_argument(
+        "--olvidar-apartado",
+        dest="olvidar_apartado",
+        default=None,
+        metavar="CLAVE",
+        help=(
+            "borra el texto de un apartado para que la próxima corrida lo vuelva a redactar (y "
+            "vuelva a comprobar sus preguntas): es la corrección de un apartado que no pasa la "
+            "revisión de forma, sin rehacer el tema entero. No llama al modelo"
         ),
     )
     parser.add_argument(
@@ -189,6 +211,18 @@ def main(argv: Sequence[str] | None = None) -> int:
             # Limpieza del texto ya escrito: no llama a nadie y no archiva versión.
             for tema in temas:
                 print("\n".join(_limpiar_andamios(notas, tema)))
+                print()
+            return 0
+        if args.limpiar_puertos:
+            # La tabla de puertos del texto ya escrito: tampoco llama a nadie.
+            for tema in temas:
+                print("\n".join(_limpiar_puertos(notas, tema)))
+                print()
+            return 0
+        if args.olvidar_apartado:
+            # Deja un apartado sin texto para que la próxima corrida lo rehaga.
+            for tema in temas:
+                print("\n".join(_olvidar_apartado(notas, tema, args.olvidar_apartado)))
                 print()
             return 0
 
@@ -323,6 +357,76 @@ def _limpiar_andamios(notas: SqlAlchemyTopicNotesRepository, code: str) -> tuple
         lineas.append(f"    {apartado.key}: {len(marcas)} marca(s) quitada(s)")
     lineas.append(f"    {total} marca(s) en {tocados} apartado(s)")
     return tuple(lineas)
+
+
+def _limpiar_puertos(notas: SqlAlchemyTopicNotesRepository, code: str) -> tuple[str, ...]:
+    """Vuelve a pasar la limpieza de la tabla de puertos al texto ya escrito. No llama a nadie.
+
+    Es la misma limpieza que se aplica al guardar (`limpiar_tabla_de_puertos`), para el texto que
+    se escribió antes de que existiera: parte la tabla por familias, le quita las notas que solo
+    dicen lo que un puerto **no** es y recoge las confusiones de verdad en su bloque. Se dice
+    cuántas notas se han retirado y se enseña la revisión de forma del tema, que es la puerta que
+    esto arregla.
+    """
+    node_id = notas.node_id(code)
+    if node_id is None:
+        return (f"[{code}] no existe ese tema en el programa",)
+    lineas = [f"[{code}] limpieza de la tabla de puertos"]
+    for apartado in notas.sections(node_id):
+        if not es_la_tabla_de_puertos(code, apartado.key):
+            continue
+        limpieza = limpiar_tabla_de_puertos(apartado.body_markdown)
+        if limpieza.texto == apartado.body_markdown:
+            lineas.append("    no había nada que limpiar")
+            continue
+        notas.save_section_body(
+            apartado,
+            title=None,
+            body=limpieza.texto,
+            needs_review_reason=apartado.needs_review_reason,
+            model=None,
+            now=SystemClock().now(),
+        )
+        lineas.append(
+            f"    {apartado.key}: {limpieza.notas_retiradas} nota(s) de distractor retirada(s) · "
+            f"{len(limpieza.confusiones)} confusión(es) que caen"
+        )
+    lineas.extend(
+        f"    {linea}"
+        for linea in revisar_apuntes(notas.sections(node_id), notas.facts(node_id)).lines()
+    )
+    return tuple(lineas)
+
+
+def _olvidar_apartado(
+    notas: SqlAlchemyTopicNotesRepository, code: str, clave: str
+) -> tuple[str, ...]:
+    """Deja un apartado sin texto para que la próxima corrida lo redacte otra vez.
+
+    Es la corrección de **un** apartado que no pasa la revisión de forma (una tabla rota, un
+    encabezado repetido), sin rehacer el tema entero ni volver a pagar por los demás. No se borran
+    sus hechos ni sus comprobaciones: la corrida siguiente escribe su texto y las vuelve a
+    comprobar.
+    """
+    node_id = notas.node_id(code)
+    if node_id is None:
+        return (f"[{code}] no existe ese tema en el programa",)
+    for apartado in notas.sections(node_id):
+        if apartado.key != clave:
+            continue
+        notas.save_section_body(
+            apartado,
+            title=None,
+            body="",
+            needs_review_reason=None,
+            model=None,
+            now=SystemClock().now(),
+        )
+        return (
+            f"[{code}] {clave}: texto borrado ({len(apartado.body_markdown)} caracteres). La "
+            "próxima corrida lo redacta otra vez y vuelve a comprobar sus preguntas.",
+        )
+    return (f"[{code}] no hay ningún apartado con la clave {clave}",)
 
 
 def _listar(notas: SqlAlchemyTopicNotesRepository, code: str) -> tuple[str, ...]:

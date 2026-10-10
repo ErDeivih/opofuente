@@ -107,9 +107,13 @@ class _ModeloFalso:
         self.lotes_hechos.append([grupo.signature for grupo in grupos])
         hechos = tuple(
             Hecho(
+                # El hecho empieza por **su pregunta**, que es lo que hace el modelo de verdad: así
+                # el reparto por materia (§2.1.1) manda cada hecho al apartado de lo que afirma, y
+                # cada pregunta de este escenario tiene el suyo.
                 text=(
-                    f"Hecho {numero} del grupo {grupo.signature[:6]}: el modelo OSI tiene siete "
-                    f"capas y se estudia por niveles."
+                    f"Hecho {numero} del grupo {grupo.signature[:6]}: "
+                    f"{grupo.representative.stem.strip()} tiene siete capas y se estudia por "
+                    "niveles."
                 ),
                 kind=FactKind.TECNICO,
                 epigraph_code=epigraphs[0][0],
@@ -131,6 +135,7 @@ class _ModeloFalso:
         topic_code: str,
         topic_title: str,
         material: Sequence[MaterialPassage],
+        es_tabla_de_puertos: bool = False,
     ) -> RedaccionBatch:
         # Cada hecho, su párrafo: es lo que hace el modelo de verdad, y es lo que deja ver la
         # repetición (el mismo texto con otro número de grupo delante).
@@ -287,6 +292,34 @@ class _ModeloQueFalla(_ModeloFalso):
         )
 
 
+class _ModeloQueRepite(_ModeloFalso):
+    """Un modelo que escribe el **mismo párrafo** en cada apartado: el defecto de los pilotos.
+
+    Es lo que salía cuando cada apartado era la redacción de su lote puesto detrás de otro: el mismo
+    texto, otro número de grupo delante. La revisión de forma tiene que verlo.
+    """
+
+    def redactar(
+        self,
+        section: NoteSection,
+        *,
+        topic_code: str,
+        topic_title: str,
+        material: Sequence[MaterialPassage],
+        es_tabla_de_puertos: bool = False,
+    ) -> RedaccionBatch:
+        cuerpo = (
+            f"## {section.title}\n\n"
+            "El modelo de referencia OSI divide la comunicación en siete capas y cada una tiene su "
+            "función propia; esta explicación se escribe igual en todos los apartados, que "
+            "es exactamente el defecto que mide la revisión de forma.\n\n"
+            + "\n\n".join(f"- {hecho.text}" for hecho in section.facts)
+        )
+        return RedaccionBatch(
+            titulo=section.title, markdown=cuerpo, input_tokens=10, output_tokens=10
+        )
+
+
 class _ModeloQueEscribeMal(_ModeloFalso):
     """Un modelo que deja la forma rota: marcas internas y el título del apartado repetido.
 
@@ -301,6 +334,7 @@ class _ModeloQueEscribeMal(_ModeloFalso):
         topic_code: str,
         topic_title: str,
         material: Sequence[MaterialPassage],
+        es_tabla_de_puertos: bool = False,
     ) -> RedaccionBatch:
         cuerpo = (
             f"## {section.title}\n\n"
@@ -429,6 +463,14 @@ def test_lo_que_no_se_puede_contestar_queda_señalado_y_no_cubierto(
         comprobada.coverage.value == "doubtful"
         for comprobada in repositorio.checks(informe.node_id)
     )
+    # Y lo que no se ha podido rellenar queda en la bandeja del propietario **con su categoría**:
+    # es la última vuelta del §2.1.4, y sin ella el resto se perdía al cerrar la terminal.
+    incidencias = repositorio.incidents(informe.node_id)
+    assert len(incidencias) == 2
+    assert {incidencia.category.value for incidencia in incidencias} == {"hueco_sin_material"}
+    assert all(incidencia.reason is Motivo.SIN_FRASE_EN_LOS_APUNTES for incidencia in incidencias)
+    assert all("no contienen el dato" in incidencia.detail for incidencia in incidencias)
+    assert informe.coverage.incidencias == 2
 
 
 def test_una_clave_señalada_por_el_paso_b_se_cuenta_como_incidencia_de_la_pregunta(
@@ -568,6 +610,13 @@ def test_una_letra_distinta_de_la_clave_es_un_conflicto_y_no_una_pregunta_cubier
     assert {comprobada.coverage.value for comprobada in comprobadas} == {"conflict"}
     assert all(comprobada.note is Motivo.LETRA_NO_COINCIDE for comprobada in comprobadas)
     assert all(comprobada.attempts == 2 for comprobada in comprobadas), "se le da la vuelta"
+    # El conflicto llega a la bandeja **categorizado** y con la frase que lo demuestra: es lo que el
+    # propietario necesita para decidir si el que está mal es la clave o los apuntes.
+    incidencias = repositorio.incidents(node_id)
+    assert len(incidencias) == 2
+    assert {incidencia.category.value for incidencia in incidencias} == {"clave_sospechosa"}
+    assert all(incidencia.phrase for incidencia in incidencias)
+    assert all("otra letra que su clave" in incidencia.detail for incidencia in incidencias)
 
     # Y el tema lo cuenta donde se lee: cubiertas 0, en conflicto 2, con sus preguntas repartidas
     # entre los dos apartados del índice que les tocan.
@@ -608,14 +657,14 @@ def test_el_informe_mide_la_forma_de_los_apuntes_y_lo_dice(
 ) -> None:
     """La revisión de forma va en el informe de la corrida: sin ella no se sabe qué se ha escrito.
 
-    El doble escribe la misma frase para cada grupo, que es exactamente el defecto de los pilotos
+    El doble escribe la misma frase en cada apartado, que es exactamente el defecto de los pilotos
     (cada apartado, la redacción de su lote): la revisión tiene que verlo y decirlo.
     """
     _repositorio, _preguntas_del_tema, _node_id = _escenario(
         seeded_client, titulo="Apuntes que se miden"
     )
 
-    informe = _servicio(seeded_client, _ModeloFalso()).run("IV.7", now=SystemClock().now())
+    informe = _servicio(seeded_client, _ModeloQueRepite()).run("IV.7", now=SystemClock().now())
 
     assert informe.revision is not None
     assert informe.revision.palabras > 0

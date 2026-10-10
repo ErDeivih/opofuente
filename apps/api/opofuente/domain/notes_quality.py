@@ -33,8 +33,14 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Protocol
 
+from opofuente.domain.puertos import (
+    familias_de_la_tabla,
+    notas_sin_sentido,
+    puertos_repetidos,
+    tablas_de_puertos,
+)
 from opofuente.domain.rag import normalise
-from opofuente.domain.topic_notes import Hecho
+from opofuente.domain.topic_notes import MAX_PALABRAS_POR_HECHO, Hecho
 
 #: Dos encabezados se consideran el mismo si, normalizados, se parecen más que esto.
 SIMILITUD_ENCABEZADO = 0.8
@@ -45,8 +51,9 @@ SIMILITUD_PARRAFO = 0.6
 #: Tope de párrafos casi repetidos de otro: el 5 % del informe del propietario.
 MAX_PARRAFOS_REPETIDOS = 0.05
 
-#: Palabras del tema por hecho distinto. El tope de densidad del informe (40).
-MAX_PALABRAS_POR_HECHO = 40
+#: Palabras del tema por hecho distinto. El tope de densidad del informe (40). Se importa del
+#: dominio de los apuntes —y no se repite aquí— porque el redactor lo necesita **antes** de
+#: escribir: dos constantes con el mismo valor acabarían diciendo cosas distintas.
 
 #: Un párrafo de menos de estas palabras no cuenta para la repetición: «Sí.» y «Ver arriba.» se
 #: parecen a cualquier cosa y no dicen nada de la redacción.
@@ -66,6 +73,10 @@ MARCAS_INTERNAS = "marcas_internas"
 TABLAS_SIN_CABECERA = "tablas_sin_cabecera"
 PARRAFOS_REPETIDOS = "parrafos_repetidos"
 DENSIDAD = "densidad"
+#: Las dos comprobaciones que pidió el propietario sobre la tabla de puertos: las notas que solo
+#: dicen lo que un puerto **no** es salen de la tabla, y la tabla se parte por familias.
+NOTAS_DE_PUERTOS = "notas_de_puertos"
+FAMILIAS_DE_PUERTOS = "tablas_puertos_sin_familias"
 
 #: Lo que no puede quedar a la vista en el texto de los apuntes. `[fact 23]` es el que se coló en
 #: IV.7; el resto son las variantes con las que el mismo andamio aparece (`[hecho 3]`, `[fuente 7]`,
@@ -451,6 +462,39 @@ def revisar_apuntes(
                 tuple(f"{rota.donde}:{rota.fila} {rota.motivo}" for rota in rotas),
             )
         )
+
+    # La tabla de puertos, que es una comprobación de contenido y no de forma: el propietario
+    # levantó los dos defectos que mide esto. Se aplica a cualquier tema que tenga una tabla con
+    # una columna de puerto, no solo a IV.7: la comprobación es del texto, no del tema.
+    for apartado in apartados:
+        tablas = tablas_de_puertos(apartado.body_markdown)
+        if not tablas:
+            continue
+        malas = notas_sin_sentido(apartado.body_markdown)
+        if malas:
+            hallazgos.append(
+                Hallazgo(
+                    NOTAS_DE_PUERTOS,
+                    len(malas),
+                    f"{len(malas)} nota(s) de la tabla de puertos solo dicen lo que un puerto "
+                    "**no** es: vienen de los distractores de una pregunta, no de una confusión "
+                    "de estudio (la columna de notas explica el puerto)",
+                    tuple(malas[:8]),
+                )
+            )
+        familias = familias_de_la_tabla(apartado.body_markdown)
+        repetidos_en_tablas = puertos_repetidos(apartado.body_markdown)
+        if len(tablas) < 2 or "" in familias or repetidos_en_tablas:
+            hallazgos.append(
+                Hallazgo(
+                    FAMILIAS_DE_PUERTOS,
+                    max(1, len(repetidos_en_tablas)),
+                    f"la tabla de puertos de {apartado.key} no está partida por familias: "
+                    f"{len(tablas)} tabla(s), familias reconocidas {familias or 'ninguna'}, "
+                    f"{len(repetidos_en_tablas)} puerto(s) repetidos entre tablas",
+                    tuple(f"{apartado.key}:{puerto}" for puerto in repetidos_en_tablas[:8]),
+                )
+            )
 
     bloques = parrafos(texto)
     comparables = [bloque for bloque in bloques if len(bloque.split()) >= MINIMO_PALABRAS_PARRAFO]

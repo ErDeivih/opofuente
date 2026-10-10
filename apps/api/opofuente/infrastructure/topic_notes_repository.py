@@ -31,9 +31,11 @@ from opofuente.domain.rag import normalise
 from opofuente.domain.topic_notes import (
     HECHOS_NUEVOS,
     VERSION_PLANTILLA,
+    CategoriaIncidencia,
     Coverage,
     FactKind,
     Hecho,
+    IncidenciaDeApuntes,
     KeyStatus,
     Motivo,
     NotesCheck,
@@ -50,6 +52,7 @@ from opofuente.infrastructure.db_models import (
     AuditEventRecord,
     CurriculumMappingRecord,
     CurriculumNodeRecord,
+    NotesIncidentRecord,
     OptionVersionRecord,
     QuestionNoteAnchorRecord,
     QuestionVersionRecord,
@@ -565,6 +568,85 @@ class SqlAlchemyTopicNotesRepository:
                 fila.checked_at = now
             session.commit()
         return len(results)
+
+    # ------------------------------------------------------------------ la bandeja del propietario
+
+    def save_incidents(
+        self, node_id: str, incidents: Sequence[IncidenciaDeApuntes], *, now: datetime
+    ) -> int:
+        """Guarda en la bandeja las preguntas que los apuntes no cubren, con su categoría.
+
+        Una fila por pregunta y tema: volver a comprobar el tema **actualiza** la incidencia (puede
+        cambiar de categoría o dejar de estar) y la retira si esa pregunta ya está cubierta. Sin
+        eso, la bandeja crecería con cada corrida y dejaría de ser una bandeja.
+
+        Devuelve cuántas quedan dentro después de la escritura.
+        """
+        with self._session_factory() as session:
+            existentes: dict[str, NotesIncidentRecord] = {}
+            for existente in session.execute(
+                select(NotesIncidentRecord).where(NotesIncidentRecord.curriculum_node_id == node_id)
+            ).scalars():
+                existentes[str(existente.question_version_id)] = existente
+            vistas: set[str] = set()
+            for incidencia in incidents:
+                vistas.add(incidencia.question_version_id)
+                fila = existentes.get(incidencia.question_version_id)
+                if fila is None:
+                    fila = NotesIncidentRecord(
+                        id=str(uuid4()),
+                        question_version_id=incidencia.question_version_id,
+                        curriculum_node_id=node_id,
+                        group_signature=incidencia.group_signature,
+                        category=incidencia.category.value,
+                        coverage=Coverage.DUDOSA.value,
+                        reason=incidencia.reason.value,
+                        created_at=now,
+                    )
+                    session.add(fila)
+                    existentes[incidencia.question_version_id] = fila
+                fila.group_signature = incidencia.group_signature
+                fila.category = incidencia.category.value
+                # El desenlace que la bandeja enseña: un conflicto de letra es un conflicto, no una
+                # duda. Se deduce del motivo, que es lo único que distingue los dos casos.
+                fila.coverage = (
+                    Coverage.CONFLICTO.value
+                    if incidencia.reason is Motivo.LETRA_NO_COINCIDE
+                    else Coverage.DUDOSA.value
+                )
+                fila.reason = incidencia.reason.value
+                fila.section_key = incidencia.section_key or None
+                fila.anchor = incidencia.anchor or None
+                fila.phrase = incidencia.phrase
+                fila.detail = incidencia.detail
+            # Lo que ya no está en la lista se ha resuelto: sale de la bandeja.
+            for question_id, fila in existentes.items():
+                if question_id not in vistas:
+                    session.delete(fila)
+            session.commit()
+        return len(vistas)
+
+    def incidents(self, node_id: str) -> tuple[IncidenciaDeApuntes, ...]:
+        """La bandeja del tema: lo que espera el criterio del propietario, por categoría."""
+        with self._session_factory() as session:
+            filas = session.execute(
+                select(NotesIncidentRecord)
+                .where(NotesIncidentRecord.curriculum_node_id == node_id)
+                .order_by(NotesIncidentRecord.category, NotesIncidentRecord.created_at)
+            ).scalars()
+            return tuple(
+                IncidenciaDeApuntes(
+                    question_version_id=str(fila.question_version_id),
+                    group_signature=str(fila.group_signature),
+                    category=CategoriaIncidencia(str(fila.category)),
+                    reason=Motivo(str(fila.reason)),
+                    detail=str(fila.detail),
+                    section_key="" if fila.section_key is None else str(fila.section_key),
+                    anchor="" if fila.anchor is None else str(fila.anchor),
+                    phrase=fila.phrase,
+                )
+                for fila in filas
+            )
 
     # ------------------------------------------------------------------ lo que se publica
 

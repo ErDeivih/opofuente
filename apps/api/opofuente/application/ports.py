@@ -77,6 +77,7 @@ from opofuente.domain.topic_notes import (
     ComprobacionBatch,
     Hecho,
     HechosBatch,
+    IncidenciaDeApuntes,
     MaterialPassage,
     NotesCheck,
     NoteSection,
@@ -698,6 +699,20 @@ class TopicNotesRepository(TopicNotesReader, Protocol):
         resultado."""
         ...
 
+    def save_incidents(
+        self, node_id: str, incidents: Sequence[IncidenciaDeApuntes], *, now: datetime
+    ) -> int:
+        """Deja en la bandeja del propietario las preguntas que los apuntes no cubren (§2.1.4).
+
+        Una fila por pregunta y tema: lo que ya está cubierto sale de la bandeja, y volver a
+        comprobar el tema actualiza la incidencia en vez de añadir otra copia.
+        """
+        ...
+
+    def incidents(self, node_id: str) -> tuple[IncidenciaDeApuntes, ...]:
+        """La bandeja del tema: las incidencias con su categoría, para el panel."""
+        ...
+
     def forget_facts(
         self,
         node_id: str,
@@ -760,8 +775,14 @@ class NotesModel(Protocol):
         topic_code: str,
         topic_title: str,
         material: Sequence[MaterialPassage],
+        es_tabla_de_puertos: bool = False,
     ) -> RedaccionBatch:
-        """El texto de un apartado, con todos sus hechos dentro."""
+        """El texto de un apartado, con todos sus hechos dentro.
+
+        `es_tabla_de_puertos` añade a las instrucciones la organización por familias y la regla de
+        las notas (que explican el puerto, no lo que no es). Es un dato del apartado, no del tema, y
+        el motor no tiene por qué saber de qué catálogo sale.
+        """
         ...
 
     def comprobar(self, grupos: Sequence[QuestionGroup], *, apuntes: str) -> ComprobacionBatch:

@@ -33,7 +33,7 @@ from __future__ import annotations
 
 import logging
 import time
-from collections.abc import Callable, Iterable, Sequence
+from collections.abc import Callable, Collection, Iterable, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from functools import partial
@@ -52,18 +52,30 @@ from opofuente.domain.errors import (
     UnsupportedError,
 )
 from opofuente.domain.notes_quality import limpiar_andamios, revisar_apuntes
-from opofuente.domain.topic_index import IndiceDelTema, catalogo, indice_de, plan_de
+from opofuente.domain.puertos import limpiar_tabla_de_puertos
+from opofuente.domain.topic_index import (
+    IndiceDelTema,
+    catalogo,
+    es_la_tabla_de_puertos,
+    indice_de,
+    plan_de,
+)
 from opofuente.domain.topic_notes import (
     LOTE_COMPROBACION,
     LOTE_HECHOS,
     SIN_MATERIAL,
+    VUELTAS_CON_HUECOS,
     Coverage,
     Hecho,
     HechosBatch,
+    IncidenciaDeApuntes,
+    Motivo,
     NotesCheck,
     NoteSection,
     QuestionGroup,
     RedaccionBatch,
+    categoria_de,
+    detalle_de_incidencia,
     esquema,
     evaluar,
     hechos_integrados,
@@ -145,6 +157,11 @@ class TopicNotesService:
         secciones = self._paso_esquema(nodo, hechos, informe, now=now, dry_run=dry_run)
         self._paso_redaccion(nodo, secciones, informe, now=now, dry_run=dry_run)
         self._paso_comprobacion(nodo, grupos, informe, now=now, dry_run=dry_run)
+        # La última vuelta del paso E: lo que sigue sin cubrirse se intenta rellenar **una vez más**
+        # (el hueco de verdad, no el que ya se intentó) y lo que quede va a la bandeja del
+        # propietario con su categoría. Es el §2.1.4: antes de cerrar un tema, rellenar lo que se
+        # pueda y no dejar dudas sin dueño.
+        self._paso_huecos(nodo, grupos, informe, now=now, dry_run=dry_run)
         # La revisión de forma se mide sobre el texto que ha quedado guardado, y con **todos** los
         # hechos del tema: es la comprobación que decide si estos apuntes se pueden dar por buenos
         # (encabezados repetidos, marcas internas, tablas sin cabecera, párrafos repetidos y
@@ -259,10 +276,17 @@ class TopicNotesService:
             return list(planes)
         guardadas = self._repository.sections(nodo.node_id)
         sobran = {apartado.key for apartado in guardadas} - {plan.key for plan in planes}
-        if sobran:
+        # Y no basta con que la clave siga: si a un apartado le han **salido** hechos, su texto se
+        # escribió con otros y dejarlo sería enseñar lo que ya no le toca. Es lo que pasó al
+        # repartir
+        # por materia (§2.1.1): la clave `udp` no cambió, pero el apartado de UDP hablaba de la
+        # cabecera de IPv6, de ARP y de ICMP, y su texto tenía que rehacerse.
+        mudos = _apartados_que_pierden_hechos(guardadas, planes)
+        if sobran or mudos:
             informe.add_notes(
-                f"el esquema se movió: {len(sobran)} apartado(s) que ya no están en el plan se "
-                "rehacen, con sus comprobaciones (el texto se vuelve a escribir)"
+                f"el esquema se movió: {len(sobran)} apartado(s) que ya no están en el plan y "
+                f"{len(mudos)} que han perdido hechos se rehacen, con sus comprobaciones (el texto "
+                "se vuelve a escribir). Han perdido hechos: " + ", ".join(sorted(mudos)[:8])
             )
             self._repository.forget_sections(nodo.node_id)
         return list(self._repository.save_sections(nodo.node_id, planes, now=now))
@@ -302,6 +326,10 @@ class TopicNotesService:
             apartado.key: seleccionar_material(apartado.facts, material)
             for apartado in sin_escribir
         }
+        tablas = {
+            apartado.key: es_la_tabla_de_puertos(nodo.code, apartado.key)
+            for apartado in sin_escribir
+        }
         trabajos: list[Callable[[], RedaccionBatch]] = [
             partial(
                 self._model.redactar,
@@ -309,6 +337,7 @@ class TopicNotesService:
                 topic_code=nodo.code,
                 topic_title=nodo.title,
                 material=selecciones[apartado.key],
+                es_tabla_de_puertos=tablas[apartado.key],
             )
             for apartado in sin_escribir
         ]
@@ -327,12 +356,17 @@ class TopicNotesService:
             )
             anotaciones[apartado.key] = (faltan, motivo)
             if not dry_run:
+                # El redactor numera los hechos que recibe y a veces cita ese número dentro del
+                # texto: es andamio, no apuntes, y se quita antes de guardar (`limpiar_andamios`).
+                # Y si el apartado es la tabla de puertos, se parte por familias y se le quitan las
+                # notas que solo dicen lo que un puerto no es (`limpiar_tabla_de_puertos`).
+                cuerpo = _enderezar(
+                    nodo.code, apartado.key, limpiar_andamios(resultado.markdown), informe
+                )
                 self._repository.save_section_body(
                     apartado,
                     title=resultado.titulo,
-                    # El redactor numera los hechos que recibe y a veces cita ese número dentro del
-                    # texto: es andamio, no apuntes, y se quita antes de guardar.
-                    body=limpiar_andamios(resultado.markdown),
+                    body=cuerpo,
                     needs_review_reason=motivo,
                     model=self._model.version,
                     now=now,
@@ -367,14 +401,14 @@ class TopicNotesService:
         por_clave = {apartado.key: apartado for apartado in secciones}
         hechos_por_firma = _hechos_por_firma(self._repository.facts(nodo.node_id))
         epigrafe_por_defecto = nodo.epigraphs[0][0]
-        comprobables: list[tuple[QuestionGroup, NoteSection]] = []
+        comprobables: list[tuple[QuestionGroup, tuple[NoteSection, ...]]] = []
         for grupo in grupos:
-            apartado = _apartado_de(
+            apartados = _apartados_de(
                 grupo, secciones, por_clave, hechos_por_firma, epigrafe_por_defecto
             )
-            if apartado is None or not apartado.body_markdown.strip():
+            if not apartados or not any(a.body_markdown.strip() for a in apartados):
                 continue
-            comprobables.append((grupo, apartado))
+            comprobables.append((grupo, apartados))
         informe.coverage.groups = len(comprobables)
 
         previos = {
@@ -407,7 +441,7 @@ class TopicNotesService:
             for firma, suyos in hechos_por_firma.items()
             if any(hecho.doubtful for hecho in suyos)
         }
-        for grupo, _apartado in comprobables:
+        for grupo, _apartados in comprobables:
             resultado = finales.get(grupo.signature)
             if resultado is None:
                 continue
@@ -426,21 +460,30 @@ class TopicNotesService:
         self,
         nodo: NotesNode,
         secciones: Sequence[NoteSection],
-        objetivo: Sequence[tuple[QuestionGroup, NoteSection]],
+        objetivo: Sequence[tuple[QuestionGroup, tuple[NoteSection, ...]]],
         hechos_por_firma: dict[str, list[Hecho]],
         informe: TopicNotesReport,
         *,
         now: datetime,
         attempts: int,
     ) -> dict[str, NotesCheck]:
-        """Comprueba un conjunto de grupos, agrupados por epígrafe y en lotes, y guarda el
-        resultado."""
-        por_epigrafe: dict[str, list[tuple[QuestionGroup, NoteSection]]] = {}
-        for grupo, apartado in objetivo:
-            por_epigrafe.setdefault(apartado.epigraph_code, []).append((grupo, apartado))
+        """Comprueba un conjunto de grupos, agrupados por el texto que les toca, y guarda el
+        resultado.
+
+        El texto que recibe cada pregunta es la **unión de los apartados donde están sus hechos**
+        (más el resto de sus epígrafes, que es lo que abarata la llamada): con el reparto por
+        materia, una pregunta sobre UDP puede tener un hecho en UDP y otro en IPv6, y los dos tienen
+        que poder justificar su respuesta.
+        """
+        por_epigrafes: dict[
+            frozenset[str], list[tuple[QuestionGroup, tuple[NoteSection, ...]]]
+        ] = {}
+        for grupo, apartados in objetivo:
+            clave = frozenset(apartado.epigraph_code for apartado in apartados)
+            por_epigrafes.setdefault(clave, []).append((grupo, apartados))
         resultados: dict[str, NotesCheck] = {}
-        for epigrafe, suyos in por_epigrafe.items():
-            apuntes, verificable = _texto_de_epigrafe(secciones, epigrafe)
+        for epigrafes, suyos in por_epigrafes.items():
+            apuntes, verificable = _texto_de_epigrafes(secciones, epigrafes)
             for lote in _trozos(suyos, self._lote_comprobacion):
                 grupos_lote = [grupo for grupo, _ in lote]
                 resultado = self._llamada(
@@ -457,12 +500,14 @@ class TopicNotesService:
                 )
                 respuestas = {check.group_signature: check for check in resultado.checks}
                 pendientes: list[NotesCheck] = []
-                for grupo, apartado in lote:
+                for grupo, apartados in lote:
                     evaluado = evaluar(
                         grupo=grupo,
                         check=respuestas.get(grupo.signature),
                         apuntes=verificable,
-                        section=apartado,
+                        # El ancla es el **primero** de sus apartados: el enlace del alumno abre
+                        # ahí, y los demás se abren desde el mismo índice del tema.
+                        section=apartados[0],
                         attempts=attempts,
                         clave_dudosa=any(
                             hecho.doubtful for hecho in hechos_por_firma.get(grupo.signature, ())
@@ -476,7 +521,7 @@ class TopicNotesService:
     def _segunda_vuelta(
         self,
         nodo: NotesNode,
-        huecos: Sequence[tuple[QuestionGroup, NoteSection]],
+        huecos: Sequence[tuple[QuestionGroup, tuple[NoteSection, ...]]],
         hechos_por_firma: dict[str, list[Hecho]],
         previos: dict[str, NotesCheck],
         informe: TopicNotesReport,
@@ -491,8 +536,10 @@ class TopicNotesService:
         las preguntas que no tienen ninguno, que son las que el modelo no contestó en el paso B.
         """
         por_apartado: dict[str, list[QuestionGroup]] = {}
-        for grupo, apartado in huecos:
-            por_apartado.setdefault(apartado.key, []).append(grupo)
+        for grupo, apartados in huecos:
+            # El añadido se escribe en el **primer** apartado de sus hechos: es donde el alumno va a
+            # leer el añadido, y los demás siguen enlazados por el índice.
+            por_apartado.setdefault(apartados[0].key, []).append(grupo)
         secciones = {apartado.key: apartado for apartado in self._repository.sections(nodo.node_id)}
         resultados: dict[str, NotesCheck] = {}
         for clave, grupos in por_apartado.items():
@@ -550,7 +597,9 @@ class TopicNotesService:
             seccion = self._repository.save_section_body(
                 seccion,
                 title=None,
-                body=limpiar_andamios(anadido.markdown),
+                body=_enderezar(
+                    nodo.code, seccion.key, limpiar_andamios(anadido.markdown), informe
+                ),
                 needs_review_reason=seccion.needs_review_reason,
                 model=self._model.version,
                 now=now,
@@ -560,7 +609,7 @@ class TopicNotesService:
                 self._comprobar(
                     nodo,
                     [*secciones.values(), seccion],
-                    [(grupo, seccion) for grupo in grupos],
+                    [(grupo, (seccion,)) for grupo in grupos],
                     hechos_por_firma,
                     informe,
                     now=now,
@@ -568,6 +617,146 @@ class TopicNotesService:
                 )
             )
         return resultados
+
+    # ------------------------------------------------------------------ el bucle de huecos
+
+    def _paso_huecos(
+        self,
+        nodo: NotesNode,
+        grupos: Sequence[QuestionGroup],
+        informe: TopicNotesReport,
+        *,
+        now: datetime,
+        dry_run: bool,
+    ) -> None:
+        """La última vuelta del paso E: rellenar los huecos y **categorizar el resto**.
+
+        Es el §2.1.4 del objetivo, y son dos trabajos:
+
+        1. **rellenar**: las preguntas que quedaron sin frase en los apuntes son, por definición, un
+           hueco de material (el modelo dijo «NO ESTÁ» después de dos vueltas). Se les da una vuelta
+           más de añadido —con sus hechos, que el paso B ya escribió— y se vuelve a comprobar. Es la
+           tercera y última: más vueltas sobre el mismo hueco no lo rellenan, lo tapan.
+        2. **categorizar**: lo que siga sin cubrirse va a la bandeja del propietario con la
+           categoría que dice **quién lo arregla** (hueco de material, clave sospechosa, pregunta
+           ambigua o
+           norma cambiada), el motivo del motor y la frase verificada cuando la hay. Un conflicto de
+           letra **siempre** trae su frase: es lo que el propietario necesita para decidir si el que
+           está mal es la clave o los apuntes.
+
+        El bucle de huecos se hace sobre las comprobaciones **guardadas**, no sobre las de esta
+        corrida: así reanudar el comando tras un corte no pierde lo que ya estaba comprobado.
+        """
+        if dry_run:
+            return
+        secciones = {apartado.key: apartado for apartado in self._repository.sections(nodo.node_id)}
+        por_firma = {grupo.signature: grupo for grupo in grupos}
+        hechos_por_firma = _hechos_por_firma(self._repository.facts(nodo.node_id))
+        guardadas = {
+            resultado.group_signature: resultado
+            for resultado in self._repository.checks(nodo.node_id)
+        }
+        finales = {firma: resultado for firma, resultado in guardadas.items() if firma in por_firma}
+
+        huecos = {
+            firma: resultado
+            for firma, resultado in finales.items()
+            if resultado.coverage is Coverage.DUDOSA
+            and resultado.note is Motivo.SIN_FRASE_EN_LOS_APUNTES
+        }
+        if huecos:
+            self._rellenar_huecos(
+                nodo, huecos, por_firma, secciones, hechos_por_firma, informe, now=now
+            )
+            finales = {
+                resultado.group_signature: resultado
+                for resultado in self._repository.checks(nodo.node_id)
+                if resultado.group_signature in por_firma
+            }
+
+        incidencias = tuple(
+            IncidenciaDeApuntes(
+                question_version_id=resultado.question_version_id,
+                group_signature=resultado.group_signature,
+                category=categoria,
+                reason=resultado.note or Motivo.SIN_FRASE_EN_LOS_APUNTES,
+                detail=detalle_de_incidencia(resultado, por_firma.get(resultado.group_signature)),
+                section_key=resultado.section_key,
+                anchor=resultado.anchor,
+                phrase=resultado.quote,
+            )
+            for resultado in finales.values()
+            if (categoria := categoria_de(resultado.coverage, resultado.note)) is not None
+        )
+        informe.coverage.incidencias = len(incidencias)
+        for incidencia in incidencias:
+            informe.coverage.por_categoria[incidencia.category] = (
+                informe.coverage.por_categoria.get(incidencia.category, 0) + 1
+            )
+        # Las incidencias se escriben siempre, aunque la lista venga vacía: la bandeja tiene que
+        # reflejar el tema de hoy, y una incidencia resuelta deja de estar.
+        self._repository.save_incidents(nodo.node_id, incidencias, now=now)
+
+    def _rellenar_huecos(
+        self,
+        nodo: NotesNode,
+        huecos: dict[str, NotesCheck],
+        por_firma: dict[str, QuestionGroup],
+        secciones: dict[str, NoteSection],
+        hechos_por_firma: dict[str, list[Hecho]],
+        informe: TopicNotesReport,
+        *,
+        now: datetime,
+    ) -> None:
+        """Una vuelta más de añadido para los huecos de material, y otra comprobación.
+
+        Se agrupa por apartado porque el añadido se escribe **una vez por apartado**: escribir un
+        párrafo por pregunta sería repetir la misma explicación diez veces.
+        """
+        por_apartado: dict[str, list[QuestionGroup]] = {}
+        for resultado in huecos.values():
+            grupo = por_firma.get(resultado.group_signature)
+            if grupo is None:
+                continue
+            clave = resultado.section_key or next(iter(secciones), "")
+            por_apartado.setdefault(clave, []).append(grupo)
+        for clave, grupos in por_apartado.items():
+            seccion = secciones.get(clave)
+            if seccion is None:
+                continue
+            faltantes = [
+                hecho for grupo in grupos for hecho in hechos_por_firma.get(grupo.signature, ())
+            ]
+            anadido = self._llamada(
+                partial(self._model.anadir, seccion, grupos, faltantes), informe
+            )
+            if anadido is None:
+                continue
+            self._contar(
+                informe, anadido.input_tokens, anadido.output_tokens, anadido.cache_hit_tokens
+            )
+            informe.coverage.huecos_rellenados += 1
+            seccion = self._repository.save_section_body(
+                seccion,
+                title=None,
+                body=_enderezar(
+                    nodo.code, seccion.key, limpiar_andamios(anadido.markdown), informe
+                ),
+                needs_review_reason=seccion.needs_review_reason,
+                model=self._model.version,
+                now=now,
+                append=True,
+            )
+            secciones[clave] = seccion
+            self._comprobar(
+                nodo,
+                list(self._repository.sections(nodo.node_id)),
+                [(grupo, (seccion,)) for grupo in grupos],
+                hechos_por_firma,
+                informe,
+                now=now,
+                attempts=VUELTAS_CON_HUECOS,
+            )
 
     # ------------------------------------------------------------------ utilidades
 
@@ -643,6 +832,51 @@ class TopicNotesService:
         )
 
 
+def _apartados_que_pierden_hechos(
+    guardadas: Sequence[NoteSection], planes: Sequence[NoteSection]
+) -> frozenset[str]:
+    """Las claves de los apartados a los que les han **salido** hechos desde que se escribieron.
+
+    Es la condición para rehacer su texto y no solo repartir sus hechos: un texto escrito con unos
+    hechos y leído con otros es un texto que explica lo que ya no le toca. Añadir hechos **no**
+    cuenta
+    aquí: eso lo arregla el añadido del paso E y la marca `hechos nuevos sin integrar`, sin volver a
+    pagar la redacción del tema entero (es el caso de las preguntas que se clasifican después).
+    """
+    del_plan = {plan.key: {hecho.fact_id for hecho in plan.facts} for plan in planes}
+    return frozenset(
+        apartado.key
+        for apartado in guardadas
+        if {hecho.fact_id for hecho in apartado.facts} - del_plan.get(apartado.key, set())
+    )
+
+
+def _es_la_tabla_del_catalogo(topic_code: str, clave: str) -> bool:
+    """¿Este apartado es la tabla única del tema? Lo dice el catálogo, no el título del apartado.
+
+    Es la marca `tabla_unica` del índice: un tema puede tener apartados con tablas, pero solo uno es
+    «la tabla de puertos» y solo ese lleva las instrucciones de familias.
+    """
+    materias = catalogo(topic_code)
+    return any(materia.key == clave and materia.tabla_unica for materia in (materias or ()))
+
+
+def _enderezar(topic_code: str, clave: str, cuerpo: str, informe: TopicNotesReport) -> str:
+    """La última mano al texto de un apartado antes de guardarlo.
+
+    Hoy solo hace algo en la tabla de puertos: la parte por familias, le quita las notas que solo
+    dicen lo que un puerto **no** es y recoge las confusiones de verdad en su bloque. Se cuenta lo
+    que se ha hecho (`notas_de_puertos_retiradas` y `confusiones_de_puertos`) porque un arreglo que
+    no se puede medir no se puede revisar.
+    """
+    if not es_la_tabla_de_puertos(topic_code, clave):
+        return cuerpo
+    limpieza = limpiar_tabla_de_puertos(cuerpo)
+    informe.notas_de_puertos_retiradas += limpieza.notas_retiradas
+    informe.confusiones_de_puertos = len(limpieza.confusiones)
+    return limpieza.texto
+
+
 def _trozos[T](elementos: Sequence[T], tamano: int) -> Iterable[Sequence[T]]:
     for inicio in range(0, len(elementos), tamano):
         yield elementos[inicio : inicio + tamano]
@@ -657,30 +891,44 @@ def _hechos_por_firma(hechos: Sequence[Hecho]) -> dict[str, list[Hecho]]:
     return indice
 
 
-def _apartado_de(
+def _apartados_de(
     grupo: QuestionGroup,
     secciones: Sequence[NoteSection],
     por_clave: dict[str, NoteSection],
     hechos_por_firma: dict[str, list[Hecho]],
     epigrafe_por_defecto: str,
-) -> NoteSection | None:
-    """En qué apartado cae un grupo: el de sus hechos y, si no tiene, el primero de su epígrafe."""
+) -> tuple[NoteSection, ...]:
+    """En qué apartados caen los hechos de un grupo, en orden de lectura.
+
+    **Varios**, y esa es la diferencia con el reparto por pregunta: como cada hecho va al apartado
+    de lo que afirma (§2.1.1), los hechos de una misma pregunta pueden estar repartidos —el de UDP
+    en su apartado y el de la cabecera de IPv6 en el de IPv6—, y su ancla son todos. El enlace del
+    alumno abre el primero; la comprobación recibe la unión de todos.
+
+    Si no tiene ningún hecho con apartado, cae al primero de su epígrafe, que es lo que había.
+    """
     suyos = hechos_por_firma.get(grupo.signature, ())
+    vistos: list[NoteSection] = []
     for hecho in suyos:
         apartado = por_clave.get(hecho.section_key)
-        if apartado is not None:
-            return apartado
+        if apartado is not None and apartado not in vistos:
+            vistos.append(apartado)
+    if vistos:
+        return tuple(sorted(vistos, key=lambda apartado: apartado.position))
     epigrafe = grupo.epigraph_code or next(
         (hecho.epigraph_code for hecho in suyos), epigrafe_por_defecto
     )
-    return next(
+    por_defecto = next(
         (apartado for apartado in secciones if apartado.epigraph_code == epigrafe),
         secciones[0] if secciones else None,
     )
+    return () if por_defecto is None else (por_defecto,)
 
 
-def _texto_de_epigrafe(secciones: Sequence[NoteSection], epigrafe: str) -> tuple[str, str]:
-    """El texto de un epígrafe para comprobar, en dos formas: la del modelo y la verificable.
+def _texto_de_epigrafes(
+    secciones: Sequence[NoteSection], epigrafes: Collection[str]
+) -> tuple[str, str]:
+    """El texto de unos epígrafes para comprobar, en dos formas: la del modelo y la verificable.
 
     La primera lleva delante el anclaje y el título de cada apartado para que el modelo sepa dónde
     está; la segunda es el mismo texto **sin esos encabezados**, y es contra la que se verifica la
@@ -696,7 +944,7 @@ def _texto_de_epigrafe(secciones: Sequence[NoteSection], epigrafe: str) -> tuple
             apartado.body_markdown,
         )
         for apartado in secciones
-        if apartado.epigraph_code == epigrafe and apartado.body_markdown.strip()
+        if apartado.epigraph_code in epigrafes and apartado.body_markdown.strip()
     ]
     return ("\n\n".join(parte[0] for parte in partes), "\n\n".join(parte[1] for parte in partes))
 

@@ -2,14 +2,18 @@
 
 Lo que se comprueba es lo que tiene que sostener el índice para que sirva de algo:
 
-- **todo hecho cae en un apartado y en uno solo** (nada se pierde por el camino) y **ninguna
-  pregunta se queda sin el hecho que la ancla** en su apartado, ni antes ni después de agrupar los
-  repetidos;
+- **todo hecho cae en un apartado** (nada se pierde por el camino) y un hecho **va al apartado de lo
+  que afirma**, no al de la pregunta de la que sale: el apartado de UDP no habla de la cabecera de
+  IPv6, ni de ARP, ni de ICMP;
+- una pregunta puede tener sus hechos en **varios** apartados: el ancla pregunta→apuntes los admite
+  todos;
 - **los hechos repetidos se agrupan**: se queda uno por grupo, con la unión de las preguntas de todo
   el grupo, y dos hechos con siglas o cifras distintas **no** se agrupan aunque se parezcan;
 - el reparto es **determinista**: los mismos hechos dan el mismo índice;
 - **la tabla de puertos tiene un solo sitio** y está marcado;
-- un hecho que habla de dos materias va a la que menciona **antes** (DNS y el puerto 53 es DNS);
+- un hecho que habla de dos materias va a la que menciona **antes** (DNS y el puerto 53 es DNS), y
+  una palabra que aparece en media asignatura (`datagrama`, una `IP` suelta) no le gana a una que es
+  de una materia y de una sola;
 - un hecho que no es de ninguna materia del tema **no cae en ningún cajón**: se cuenta y se dice, y
   se va con sus preguntas a la cola de clasificación;
 - el modelo OSI se reparte en sus cuatro partes por lo que dice cada hecho;
@@ -332,6 +336,135 @@ def test_el_indice_dice_cuantos_hechos_habia_y_cuantos_quedan() -> None:
     assert any("de 2" in linea and "1 repetido" in linea for linea in indice.lines())
 
 
+# --- el reparto por materia y no por pregunta ------------------------------------------------
+
+
+def _indice_con_udp() -> tuple[object, QuestionGroup]:
+    """El caso del propietario: una pregunta sobre UDP cuyos hechos hablan de otras materias.
+
+    Es el defecto que se arregla: el reparto iba por **la pregunta de la que sale el hecho**, así
+    que el apartado de UDP acabó hablando de la cabecera de IPv6, de ARP y de ICMP —los
+    distractores de esa pregunta— en vez de lo que afirma cada hecho.
+    """
+    grupo = _grupo(
+        "q-udp", "¿Cuál de las siguientes afirmaciones es correcta respecto del protocolo UDP?"
+    )
+    firma = grupo.signature
+    hechos = [
+        _hecho(
+            "UDP es un protocolo no orientado a conexión que no garantiza la entrega ni el orden.",
+            grupos=(firma,),
+        ),
+        _hecho("La cabecera básica de IPv6 tiene longitud fija de 40 bytes.", grupos=(firma,)),
+        _hecho(
+            "ARP se usa para obtener la dirección MAC del router, no la del sistema final.",
+            grupos=(firma,),
+        ),
+        _hecho(
+            "ICMP permite reportar al origen errores en el procesamiento o envío de datagramas IP.",
+            grupos=(firma,),
+        ),
+    ]
+    indice = indice_de(
+        topic_code="IV.7",
+        topic_title="TCP/IP",
+        epigraphs=EPIGRAFES,
+        hechos=hechos,
+        grupos=[grupo],
+    )
+    return indice, grupo
+
+
+def test_un_hecho_va_al_apartado_de_su_materia_y_no_al_de_su_pregunta() -> None:
+    """La prueba del propietario: el apartado de UDP **no** habla de IPv6, de ARP ni de ICMP."""
+    indice, _grupo_udp = _indice_con_udp()
+    por_clave = {apartado.materia.key: apartado for apartado in indice.reparto}  # type: ignore[attr-defined]
+
+    udp = [hecho.text for hecho in por_clave["udp"].hechos]
+    assert len(udp) == 1
+    assert "UDP es un protocolo no orientado a conexión" in udp[0]
+    for ajeno in ("IPv6", "ARP", "ICMP"):
+        assert not any(ajeno in texto for texto in udp), (
+            f"el apartado de UDP sigue hablando de {ajeno}: el hecho va donde se afirma, no donde "
+            "se pregunta"
+        )
+    assert [hecho.text for hecho in por_clave["ipv6"].hechos] == [
+        "La cabecera básica de IPv6 tiene longitud fija de 40 bytes."
+    ]
+    assert [hecho.text for hecho in por_clave["arp"].hechos] == [
+        "ARP se usa para obtener la dirección MAC del router, no la del sistema final."
+    ]
+    assert [hecho.text for hecho in por_clave["icmp"].hechos] == [
+        "ICMP permite reportar al origen errores en el procesamiento o envío de datagramas IP."
+    ]
+
+
+def test_una_pregunta_puede_anclarse_en_varios_apartados() -> None:
+    """El ancla pregunta→apuntes admite varios: sus hechos están repartidos por materia."""
+    indice, grupo = _indice_con_udp()
+
+    apartados = indice.apartados_de(grupo.signature)  # type: ignore[attr-defined]
+
+    assert set(apartados) == {"udp", "ipv6", "arp", "icmp"}, (
+        "el ancla de una pregunta reúne los apartados donde están sus hechos, no solo uno"
+    )
+    assert apartados.index("ipv6") < apartados.index("icmp"), "y van en orden de lectura"
+
+
+def test_ninguna_pregunta_se_queda_con_un_hecho_sin_apartado() -> None:
+    """La prueba del §2.1.1, tal como quedó: «ninguna pregunta con algún hecho sin apartado»."""
+    indice, grupo = _indice_con_udp()
+
+    assert indice.grupos_sin_anclaje == ()  # type: ignore[attr-defined]
+    # Y un hecho de otro bloque, sin apartado, sí se cuenta: es un hecho huérfano.
+    ajeno = _grupo("q-ajeno", "El acoplamiento de control se da entre módulos.")
+    suelto = _hecho(
+        "El acoplamiento de control se da cuando los parámetros que se pasan son de control.",
+        grupos=(ajeno.signature,),
+    )
+    indice_suelto = indice_de(
+        topic_code="IV.7",
+        topic_title="TCP/IP",
+        epigraphs=EPIGRAFES,
+        hechos=[*indice.reparto[0].hechos, suelto],  # type: ignore[attr-defined]
+        grupos=[grupo, ajeno],
+    )
+
+    assert indice_suelto.grupos_sin_anclaje == (ajeno.signature,)
+
+
+def test_una_palabra_que_esta_en_media_asignatura_no_le_gana_a_la_de_una_materia() -> None:
+    """`datagrama` y una `IP` suelta son débiles: la cabecera de IPv4 no es un hecho de UDP."""
+    materias = _materias()
+
+    cabecera = materia_de(
+        "En la cabecera del datagrama IPv4, el campo Posición del Fragmento tiene 13 bits.",
+        "IV.7.2",
+        materias,
+    )
+    localhost = materia_de(
+        "Un datagrama dirigido a una dirección 127.x.x.x se devuelve al remitente: 127.0.0.1 es "
+        "localhost.",
+        "IV.7.2",
+        materias,
+    )
+    # Y el débil sigue sirviendo cuando no hay nada propio: la pregunta del término «datagrama».
+    termino = materia_de(
+        "Se denomina datagrama al paquete de datos en la capa de:", "IV.7.2", materias
+    )
+    # Y lo que sí es de IP, y no de ninguna materia concreta, cae en IPv4.
+    protocolo_ip = materia_de(
+        "El protocolo IP es un protocolo no orientado a conexión y de mejor esfuerzo.",
+        "IV.7.2",
+        materias,
+    )
+
+    assert cabecera is not None and cabecera.key == "direccionamiento-ipv4"
+    assert localhost is not None and localhost.key == "direcciones-especiales"
+    assert termino is not None and termino.key == "udp"
+    assert protocolo_ip is not None and protocolo_ip.key == "direccionamiento-ipv4"
+
+
 # --- el reparto -----------------------------------------------------------------------------------
 
 
@@ -498,7 +631,7 @@ def test_el_indice_va_en_el_orden_del_temario_y_cuenta_sus_preguntas() -> None:
         _hecho("DNS utiliza el puerto 53 para las consultas."),
         _hecho("El puerto 829 corresponde a CMP."),
     ]
-    reparto, _sin_materia = repartir_hechos(hechos, _materias())
+    reparto, _sin_materia, _por_su_pregunta = repartir_hechos(hechos, _materias())
 
     assert reparto["acceso-remoto"], "SSH es de la materia de acceso remoto"
     assert reparto["dns"], "el hecho habla de DNS"

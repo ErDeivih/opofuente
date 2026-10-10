@@ -42,6 +42,7 @@ from datetime import datetime
 from enum import StrEnum
 from typing import Any, Protocol
 
+from opofuente.domain.puertos import familias_para_el_prompt
 from opofuente.domain.rag import STOPWORDS, normalise
 from opofuente.domain.topic_classification import (
     PRECIO_ENTRADA_USD_POR_MILLON,
@@ -49,8 +50,14 @@ from opofuente.domain.topic_classification import (
 )
 
 #: Versión de las plantillas de instrucciones. Va con cada apartado guardado: un texto escrito con
-#: otras instrucciones no es comparable con el que salga de estas.
-VERSION_PLANTILLA = "apuntes-1"
+#: otras instrucciones no es comparable con el que salga de estas. Sube cuando cambie lo que se le
+#: pide al redactor: la v2 añade el **tope de extensión** del apartado.
+VERSION_PLANTILLA = "apuntes-2"
+
+#: Tope de extensión de un apartado: palabras por **hecho distinto**. Es la puerta de densidad del
+#: §2.3, y vive aquí —y no solo en la revisión de forma— porque el redactor tiene que saberlo
+#: **antes** de escribir: `notes_quality` la importa de aquí y el encargo la dice en palabras.
+MAX_PALABRAS_POR_HECHO = 40
 
 #: Preguntas por llamada al pedir hechos (el paso B del plan mide ≈20).
 LOTE_HECHOS = 20
@@ -79,8 +86,11 @@ MAX_MATERIAL_CARACTERES = 24_000
 #: y, al final, el propietario.
 MINIMO_TERMINOS_INTEGRADOS = 0.6
 
-#: Vueltas de comprobación. La primera es la comprobación entera; la segunda, solo los huecos.
+#: Vueltas de comprobación. La primera es la comprobación entera; la segunda, solo los huecos; y la
+#: tercera —`VUELTAS_CON_HUECOS`— el **bucle de huecos** del §2.1.4, que se hace una sola vez sobre
+#: lo que quedó sin frase en los apuntes. Más vueltas sobre el mismo hueco no lo rellenan: lo tapan.
 VUELTAS_MAXIMAS = 2
+VUELTAS_CON_HUECOS = 3
 
 #: Lo que se marca en un apartado escrito sin material de apoyo. Es lo que el propietario busca al
 #: revisar, y el redactor escribe la misma marca dentro del párrafo.
@@ -148,6 +158,102 @@ class Motivo(StrEnum):
     def es_de_los_apuntes(self) -> bool:
         """¿El motivo se arregla escribiendo mejor los apuntes?"""
         return self in (Motivo.SIN_FRASE_EN_LOS_APUNTES, Motivo.LETRA_NO_COINCIDE)
+
+
+class CategoriaIncidencia(StrEnum):
+    """La categoría con la que una pregunta que no queda cubierta va a la bandeja del propietario.
+
+    Es el vocabulario del §2.1.4 del objetivo, y son cuatro porque son cuatro trabajos distintos: al
+    primero se le escribe más material, al segundo se le revisa la clave, al tercero hay que
+    reescribir la pregunta y al cuarto hay que comprobar qué dice hoy la norma. Una incidencia sin
+    categoría no se puede despachar, y por eso «conflictos de letra sin categorizar» es una puerta.
+    """
+
+    HUECO_SIN_MATERIAL = "hueco_sin_material"
+    CLAVE_SOSPECHOSA = "clave_sospechosa"
+    PREGUNTA_AMBIGUA = "pregunta_ambigua"
+    NORMA_CAMBIADA = "norma_cambiada"
+
+
+#: Qué categoría le toca a cada motivo. El motivo dice **qué pasó**; la categoría, **quién lo
+#: arregla**. Un hueco es trabajo de los apuntes; una letra que no coincide, de la clave; una clave
+#: que contradice la norma, de la norma; y una pregunta sin clave no se puede juzgar.
+CATEGORIA_POR_MOTIVO: dict[Motivo, CategoriaIncidencia] = {
+    Motivo.SIN_FRASE_EN_LOS_APUNTES: CategoriaIncidencia.HUECO_SIN_MATERIAL,
+    Motivo.LETRA_NO_COINCIDE: CategoriaIncidencia.CLAVE_SOSPECHOSA,
+    Motivo.CLAVE_CONTRADICE_LA_NORMA: CategoriaIncidencia.NORMA_CAMBIADA,
+    Motivo.CLAVE_SIN_DEFINIR: CategoriaIncidencia.PREGUNTA_AMBIGUA,
+}
+
+
+@dataclass(frozen=True, slots=True)
+class IncidenciaDeApuntes:
+    """Una pregunta que los apuntes no cubren, con su categoría, su motivo y la frase que lo prueba.
+
+    `frase` es la cita **verificada** de los apuntes cuando la hay (el conflicto de letra la
+    tiene: es la frase que sostiene otra opción que la clave). Sin ella, la incidencia sigue siendo
+    válida: hay huecos que no tienen frase porque el dato no está escrito.
+    """
+
+    question_version_id: str
+    group_signature: str
+    category: CategoriaIncidencia
+    reason: Motivo
+    detail: str
+    section_key: str = ""
+    anchor: str = ""
+    phrase: str | None = None
+
+
+def categoria_de(coverage: Coverage, motivo: Motivo | None) -> CategoriaIncidencia | None:
+    """La categoría de una pregunta que no quedó cubierta, o `None` si sí lo quedó."""
+    if coverage is Coverage.CUBIERTA or coverage is Coverage.HUECO:
+        return None
+    if motivo is None:
+        return CategoriaIncidencia.PREGUNTA_AMBIGUA
+    return CATEGORIA_POR_MOTIVO.get(motivo, CategoriaIncidencia.PREGUNTA_AMBIGUA)
+
+
+#: Qué se le dice al propietario de cada categoría: es lo que va a leer en la bandeja.
+TEXTO_DE_CATEGORIA: dict[CategoriaIncidencia, str] = {
+    CategoriaIncidencia.HUECO_SIN_MATERIAL: (
+        "los apuntes no contienen el dato ni se ha podido rellenar en las tres vueltas: falta "
+        "material de estudio para esta pregunta"
+    ),
+    CategoriaIncidencia.CLAVE_SOSPECHOSA: (
+        "los apuntes sí contestan la pregunta, y con otra letra que su clave: hay que mirar "
+        "cuál de las dos está mal"
+    ),
+    CategoriaIncidencia.PREGUNTA_AMBIGUA: (
+        "la pregunta no tiene clave con la que comprobarla: no se puede decidir si los apuntes la "
+        "contestan"
+    ),
+    CategoriaIncidencia.NORMA_CAMBIADA: (
+        "la clave contradice la norma o el material de estudio: hay que comprobar qué dice hoy la "
+        "norma"
+    ),
+}
+
+
+def detalle_de_incidencia(resultado: NotesCheck, grupo: QuestionGroup | None) -> str:
+    """La frase que el propietario lee en la bandeja: qué pasa, con qué pregunta y con qué prueba.
+
+    No es un volcado: es la pregunta, la letra que dieron los apuntes frente a la clave, y la frase
+    verificada cuando la hay. Con eso se puede decidir sin abrir la base.
+    """
+    categoria = categoria_de(resultado.coverage, resultado.note)
+    partes = [TEXTO_DE_CATEGORIA.get(categoria, "sin categoría") if categoria else "sin categoría"]
+    if grupo is not None:
+        partes.append(f"pregunta: {grupo.representative.stem.strip()[:300]}")
+        esperadas = ", ".join(grupo.correct_keys) or "sin clave"
+        partes.append(
+            f"clave: {esperadas} ({grupo.key_status.value}) · los apuntes dicen: "
+            f"{resultado.letter or 'no contestan'}"
+        )
+    if resultado.quote:
+        partes.append(f"frase de los apuntes: «{resultado.quote[:400]}»")
+    partes.append(f"vueltas: {resultado.attempts}")
+    return "\n".join(partes)
 
 
 # --- las preguntas y sus grupos -------------------------------------------------------------------
@@ -721,6 +827,14 @@ def _resultado(
     key_status: KeyStatus,
     attempts: int,
 ) -> NotesCheck:
+    """El resultado de una pregunta, con la cita **solo** cuando está verificada.
+
+    La cita se guarda cuando la pregunta está cubierta (es el enlace al párrafo que la contesta) y
+    cuando está en **conflicto**: ahí la frase es la prueba que el propietario necesita para decidir
+    si el que está mal es la clave o los apuntes (§2.1.4, «con la frase que lo demuestra»). Lo
+    que no
+    se guarda nunca es una cita sin verificar: el modelo la copia a veces de memoria.
+    """
     return NotesCheck(
         question_version_id=grupo.representative.question_version_id,
         group_signature=grupo.signature,
@@ -728,7 +842,7 @@ def _resultado(
         anchor=section.anchor,
         coverage=coverage,
         note=note,
-        quote=quote if coverage is Coverage.CUBIERTA else None,
+        quote=quote if coverage in (Coverage.CUBIERTA, Coverage.CONFLICTO) else None,
         letter=letter,
         expected=expected,
         key_status=key_status,
@@ -1109,9 +1223,19 @@ def build_user_prompt_hechos(grupos: Sequence[QuestionGroup]) -> str:
     return "Escribe los hechos de estas preguntas:\n\n" + "\n\n".join(bloques)
 
 
-def build_user_prompt_redactar(section: NoteSection, material: Sequence[MaterialPassage]) -> str:
+def build_user_prompt_redactar(
+    section: NoteSection,
+    material: Sequence[MaterialPassage],
+    *,
+    es_tabla_de_puertos: bool = False,
+) -> str:
     """El encargo de un apartado: el título, los hechos obligatorios y el material que los
-    sostiene."""
+    sostiene.
+
+    Si el apartado es la tabla de puertos, se le añaden las instrucciones de sus **familias** y la
+    regla de la columna de notas: es un apartado con una forma propia y decirlo aquí (y no en las
+    instrucciones generales) es lo que hace que el resto de apartados no cargue con esas reglas.
+    """
     hechos = "\n".join(
         f"{numero}. [{hecho.kind.value}] {hecho.text}"
         for numero, hecho in enumerate(section.facts, start=1)
@@ -1124,13 +1248,20 @@ def build_user_prompt_redactar(section: NoteSection, material: Sequence[Material
         )
     else:
         cuerpo_material = "(no hay material del tema que trate estos hechos)"
+    propio = f"\n\n{familias_para_el_prompt()}" if es_tabla_de_puertos else ""
+    # El tope de extensión, dicho en el encargo y no solo comprobado después: un apartado se mide en
+    # `40 x hechos distintos` (la puerta de densidad del §2.3) y el redactor tiene que saberlo antes
+    # de escribir, no descubrirlo en el informe. I.6 salió con 82 palabras por hecho y no pasó.
+    tope = MAX_PALABRAS_POR_HECHO * max(len(section.facts), 1)
     return (
         f"Apartado: {section.title}\n"
         f"Epígrafe oficial: {section.epigraph_code}\n\n"
         f"HECHOS OBLIGATORIOS ({len(section.facts)}):\n{hechos}\n\n"
         f"MATERIAL DEL OPOSITOR (citas de su biblioteca; úsalo como apoyo, no lo copies entero):\n"
-        f"{cuerpo_material}\n\n"
-        "Escribe el apartado."
+        f"{cuerpo_material}{propio}\n\n"
+        f"Escribe el apartado. No pases de unas {tope} palabras en total (son "
+        f"{MAX_PALABRAS_POR_HECHO} por cada uno de los {len(section.facts)} hechos): lo que no sea "
+        "explicar un hecho, no va."
     )
 
 

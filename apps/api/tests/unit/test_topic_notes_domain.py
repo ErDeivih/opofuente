@@ -285,7 +285,11 @@ def test_con_clave_en_borrador_la_frase_cubre_solo_si_la_letra_coincide() -> Non
     )
     assert final.coverage is Coverage.CONFLICTO
     assert final.note is Motivo.LETRA_NO_COINCIDE
-    assert final.quote is None, "un conflicto no es una pregunta cubierta: no se guarda como cita"
+    # La frase **sí** se guarda en un conflicto, y con el mismo texto que se verificó: es la prueba
+    # que el propietario necesita para decidir si el que está mal es la clave o los apuntes
+    # (§2.1.4, «con la frase que lo demuestra»). Lo que sigue sin guardarse nunca es una cita sin
+    # verificar.
+    assert final.quote == frase
 
 
 def test_con_la_frase_y_sin_letra_del_modelo_es_un_conflicto_con_clave() -> None:
