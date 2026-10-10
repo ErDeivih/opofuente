@@ -565,6 +565,10 @@ class SqlAlchemyTopicNotesRepository:
                 fila.result = resultado.coverage.value
                 fila.note = None if resultado.note is None else resultado.note.value
                 fila.attempts = resultado.attempts
+                # La huella del texto contra el que se verificó esta cita: es lo que permite saber,
+                # en la corrida siguiente, si la comprobación sigue valiendo o el apartado se ha
+                # reescrito y hay que volver a comprobarlo.
+                fila.text_sha256 = resultado.text_sha256
                 fila.checked_at = now
             session.commit()
         return len(results)
@@ -892,6 +896,7 @@ def _check(fila: QuestionNoteAnchorRecord) -> NotesCheck:
         expected=_letras(fila.expected_letters),
         key_status=KeyStatus(str(fila.key_status)),
         attempts=int(fila.attempts),
+        text_sha256=fila.text_sha256,
     )
 
 

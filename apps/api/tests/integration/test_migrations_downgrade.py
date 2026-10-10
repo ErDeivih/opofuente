@@ -31,6 +31,11 @@ from opofuente.infrastructure.migrations import alembic_config, run_migrations, 
 #: desaparecer al hacerlo. El orden es el de la cadena, de la más nueva a la más antigua.
 ESCALONES: tuple[tuple[str, str, tuple[str, ...]], ...] = (
     (
+        "0032_huella_del_texto_comprobado",
+        "0031_incidencias_apuntes",
+        (),
+    ),
+    (
         "0031_incidencias_apuntes",
         "0030_ancla_en_conflicto",
         ("notes_incidents",),

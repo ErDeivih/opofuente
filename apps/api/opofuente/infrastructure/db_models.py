@@ -2041,6 +2041,12 @@ class QuestionNoteAnchorRecord(Base):
     Una fila por pregunta y tema. `quoted_sentence` es la frase que se verificó **contra el texto**
     de
     los apuntes: es lo que permite abrir el párrafo exacto desde la pregunta.
+
+    `text_sha256` es la huella de **ese** texto. Sin ella, volver a ejecutar el tema reutilizaba la
+    comprobación aunque el apartado se hubiera reescrito, y la cita guardada dejaba de estar en los
+    apuntes: la bandeja del propietario enseñaba frases que ya no existen en el texto. Con la
+    huella,
+    una comprobación se reutiliza solo si el texto que el modelo leyó es el de hoy.
     """
 
     __tablename__ = "question_note_anchors"
@@ -2082,6 +2088,10 @@ class QuestionNoteAnchorRecord(Base):
     attempts: Mapped[int] = mapped_column(
         Integer, nullable=False, server_default=text("1"), default=1
     )
+    #: La huella del texto contra el que se verificó la cita. Nula en las filas escritas antes de
+    #: que existiera: esas se vuelven a comprobar, que es lo correcto con una comprobación de la que
+    #: no se sabe a qué texto corresponde.
+    text_sha256: Mapped[str | None] = mapped_column(String(64), nullable=True)
     checked_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
 
 

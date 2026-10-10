@@ -701,6 +701,17 @@ def verificar_cita(cita: str | None, apuntes: str) -> bool:
     return limpia in normalise(_sin_marcas(apuntes))
 
 
+def huella_de_texto(texto: str) -> str:
+    """La huella del texto que se comprobó: es la clave de la caché del paso E.
+
+    Una comprobación guardada **solo** vale para el texto contra el que se verificó. Comparar la
+    huella es lo que impide reutilizar la cita de un apartado que después se ha reescrito: sin esto,
+    la bandeja del propietario enseñaba frases que ya no están en los apuntes (le pasó a I.6, cuyo
+    texto se rehizo después de comprobarlo).
+    """
+    return hashlib.sha256(texto.encode("utf-8")).hexdigest()
+
+
 def evaluar(
     *,
     grupo: QuestionGroup,
@@ -821,6 +832,9 @@ class NotesCheck:
     expected: tuple[str, ...]
     key_status: KeyStatus
     attempts: int
+    #: Huella del texto contra el que se verificó `quote`. Es lo que decide si esta comprobación se
+    #: puede reutilizar en la corrida siguiente: solo si el texto es el mismo.
+    text_sha256: str | None = None
 
 
 def _resultado(

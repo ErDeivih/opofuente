@@ -428,6 +428,60 @@ def test_volver_a_ejecutar_no_vuelve_a_pedir_lo_que_ya_esta(
     assert len(repositorio.facts(informe.node_id)) == 2, "y no duplica los hechos"
 
 
+def test_una_comprobacion_caduca_cuando_el_apartado_se_reescribe(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """La cita se guarda con la huella del texto que se verificó: si el texto cambia, se
+    recomprueba.
+
+    Es el defecto que dejó a I.6 con sus 45 claves sospechosas citando frases que **no están** en
+    sus
+    apuntes: el texto se rehízo después de comprobarlo y la comprobación se reutilizaba por la
+    firma
+    del grupo, así que la bandeja del propietario enseñaba una prueba que nadie puede encontrar en
+    el
+    tema. Aquí se reescribe el apartado y se exige que la corrida siguiente vuelva a comprobar y que
+    la cita guardada esté en el texto **de hoy**.
+    """
+    repositorio, _preguntas_del_tema, node_id = _escenario(
+        seeded_client, titulo="Apuntes que se reescriben"
+    )
+    _servicio(seeded_client, _ModeloFalso()).run("IV.7", now=SystemClock().now())
+    secciones = repositorio.sections(node_id)
+    assert len(secciones) == 2
+    cita_vieja = repositorio.checks(node_id)[0].quote
+    assert cita_vieja is not None
+
+    # Se reescriben **todos** los apartados del epígrafe: la comprobación va por epígrafe, así que
+    # cambiar uno solo dejaría el texto que el modelo leyó casi igual.
+    for seccion in secciones:
+        repositorio.save_section_body(
+            seccion,
+            title=None,
+            body=(
+                f"## {seccion.title}\n\n"
+                f"El apartado «{seccion.key}» se ha reescrito entero y ya no dice lo que decía: "
+                "habla de otra cosa, con una frase larga que antes no estaba escrita aquí."
+            ),
+            needs_review_reason=None,
+            model=None,
+            now=SystemClock().now(),
+        )
+    nuevo_texto = "\n\n".join(apartado.body_markdown for apartado in repositorio.sections(node_id))
+    assert cita_vieja not in nuevo_texto, "el texto de la cita vieja ya no está"
+
+    segundo = _ModeloFalso()
+    _servicio(seeded_client, segundo).run("IV.7", now=SystemClock().now())
+
+    assert segundo.veces, "con el texto cambiado hay que volver a comprobar, no reutilizar la cita"
+    guardadas = repositorio.checks(node_id)
+    assert guardadas, "la comprobación se guarda"
+    for comprobada in guardadas:
+        assert comprobada.text_sha256 is not None, "la comprobación guarda la huella de su texto"
+        assert comprobada.quote is not None
+        assert comprobada.quote in nuevo_texto, "la cita vuelve a estar en los apuntes de hoy"
+
+
 def test_un_hueco_se_arregla_con_un_anadido(
     seeded_settings: Settings, seeded_client: TestClient
 ) -> None:

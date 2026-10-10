@@ -35,6 +35,7 @@ import logging
 import time
 from collections.abc import Callable, Collection, Iterable, Sequence
 from concurrent.futures import ThreadPoolExecutor
+from dataclasses import replace
 from datetime import datetime
 from functools import partial
 from typing import TypeVar
@@ -85,6 +86,7 @@ from opofuente.domain.topic_notes import (
     esquema,
     evaluar,
     hechos_integrados,
+    huella_de_texto,
     indexar_material,
     seleccionar_material,
 )
@@ -421,16 +423,32 @@ class TopicNotesService:
             resultado.group_signature: resultado
             for resultado in self._repository.checks(nodo.node_id)
         }
+        # Una comprobación guardada vale **para el texto contra el que se verificó**, y para ningún
+        # otro. Antes se reutilizaba por la firma del grupo, así que un apartado reescrito seguía
+        # con la cita vieja —una frase que ya no está en los apuntes— y la bandeja del propietario
+        # la enseñaba como prueba de un conflicto (pasó con I.6: su texto se rehízo después de
+        # comprobarlo y las 45 claves sospechosas quedaron con frases que nadie encuentra).
+        # Las filas escritas antes de que existiera la huella no la tienen: se vuelven a comprobar,
+        # que es lo correcto cuando no se sabe a qué texto corresponden.
+        a_recomprobar = {
+            grupo.signature
+            for grupo, apartados in comprobables
+            if (previo := previos.get(grupo.signature)) is None
+            or previo.text_sha256 != _huella_de(secciones, apartados)
+        }
         resultados = self._comprobar(
             nodo,
             secciones,
-            [pareja for pareja in comprobables if pareja[0].signature not in previos],
+            [pareja for pareja in comprobables if pareja[0].signature in a_recomprobar],
             hechos_por_firma,
             informe,
             now=now,
             attempts=1,
         )
-        finales = {**previos, **resultados}
+        finales = {
+            **{firma: previo for firma, previo in previos.items() if firma not in a_recomprobar},
+            **resultados,
+        }
 
         huecos = [
             pareja
@@ -516,6 +534,10 @@ class TopicNotesService:
                 )
                 respuestas = {check.group_signature: check for check in resultado.checks}
                 pendientes: list[NotesCheck] = []
+                # La huella del texto que el modelo acaba de leer: viaja con cada comprobación y es
+                # lo que permite saber, en la corrida siguiente, si esta comprobación sigue valiendo
+                # o si el apartado se ha reescrito y hay que volver a comprobarlo.
+                huella = huella_de_texto(verificable)
                 for grupo, apartados in lote:
                     evaluado = evaluar(
                         grupo=grupo,
@@ -529,6 +551,7 @@ class TopicNotesService:
                             hecho.doubtful for hecho in hechos_por_firma.get(grupo.signature, ())
                         ),
                     )
+                    evaluado = replace(evaluado, text_sha256=huella)
                     resultados[grupo.signature] = evaluado
                     pendientes.extend(_expandir(evaluado, grupo))
                 self._repository.save_checks(nodo.node_id, pendientes, now=now)
@@ -954,6 +977,20 @@ def _apartados_de(
     return () if por_defecto is None else (por_defecto,)
 
 
+def _huella_de(secciones: Sequence[NoteSection], apartados: Sequence[NoteSection]) -> str:
+    """La huella del texto con el que se comprueba un grupo: la unión de los apartados de sus
+    hechos.
+
+    Es la **misma lectura** que hace `_comprobar` (`_texto_de_epigrafes`), y tiene que serlo: si
+    aquí
+    se calculara sobre otro texto, la huella no diría nada sobre lo que se verificó, y una
+    comprobación se daría por buena —o se repetiría— por un motivo falso.
+    """
+    return huella_de_texto(
+        _texto_de_epigrafes(secciones, {apartado.epigraph_code for apartado in apartados})[1]
+    )
+
+
 def _texto_de_epigrafes(
     secciones: Sequence[NoteSection], epigrafes: Collection[str]
 ) -> tuple[str, str]:
@@ -997,6 +1034,7 @@ def _expandir(resultado: NotesCheck, grupo: QuestionGroup) -> tuple[NotesCheck, 
             expected=resultado.expected,
             key_status=resultado.key_status,
             attempts=resultado.attempts,
+            text_sha256=resultado.text_sha256,
         )
         for question_id in grupo.question_ids
     )
