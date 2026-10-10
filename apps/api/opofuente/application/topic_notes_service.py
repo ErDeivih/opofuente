@@ -51,7 +51,12 @@ from opofuente.domain.errors import (
     OpoFuenteError,
     UnsupportedError,
 )
-from opofuente.domain.notes_quality import limpiar_andamios, revisar_apuntes
+from opofuente.domain.notes_quality import (
+    limpiar_andamios,
+    quitar_encabezado_repetido,
+    revisar_apuntes,
+    sin_encabezados_repetidos,
+)
 from opofuente.domain.puertos import limpiar_tabla_de_puertos
 from opofuente.domain.topic_index import (
     IndiceDelTema,
@@ -69,6 +74,7 @@ from opofuente.domain.topic_notes import (
     Hecho,
     HechosBatch,
     IncidenciaDeApuntes,
+    KeyStatus,
     Motivo,
     NotesCheck,
     NoteSection,
@@ -450,10 +456,20 @@ class TopicNotesService:
                 resultado.note,
                 attempts=resultado.attempts,
                 clave_activa=resultado.key_status.clara,
+                # La puerta se cuenta **pregunta a pregunta**: una pregunta repetida en dos bancos
+                # cuenta dos veces, y el §2.3 habla de preguntas.
+                preguntas=len(grupo.questions),
+                # Y el denominador que decide excluye las claves que el paso B marcó: una respuesta
+                # que contradice la norma no es una respuesta con la que se pueda acertar.
+                clave_utilizable=grupo.signature not in dudosos_de_la_clave,
+                # Las que no tienen ninguna clave no entran en la puerta (no hay letra con la que
+                # acertar): se cuentan aparte, y el informe dice cuántas son.
+                tiene_clave=resultado.key_status is not KeyStatus.NINGUNA,
             )
             if grupo.signature in dudosos_de_la_clave:
                 # El paso B señaló la clave: la pregunta se revisa aunque los apuntes la contesten.
                 informe.coverage.incidencias_clave_marcada += 1
+        informe.coverage.preguntas = informe.questions
         informe.sections = self._informe_apartados(secciones, {})
 
     def _comprobar(
@@ -598,7 +614,12 @@ class TopicNotesService:
                 seccion,
                 title=None,
                 body=_enderezar(
-                    nodo.code, seccion.key, limpiar_andamios(anadido.markdown), informe
+                    nodo.code,
+                    seccion.key,
+                    quitar_encabezado_repetido(
+                        seccion.body_markdown, limpiar_andamios(anadido.markdown)
+                    ),
+                    informe,
                 ),
                 needs_review_reason=seccion.needs_review_reason,
                 model=self._model.version,
@@ -740,7 +761,12 @@ class TopicNotesService:
                 seccion,
                 title=None,
                 body=_enderezar(
-                    nodo.code, seccion.key, limpiar_andamios(anadido.markdown), informe
+                    nodo.code,
+                    seccion.key,
+                    quitar_encabezado_repetido(
+                        seccion.body_markdown, limpiar_andamios(anadido.markdown)
+                    ),
+                    informe,
                 ),
                 needs_review_reason=seccion.needs_review_reason,
                 model=self._model.version,
@@ -869,6 +895,9 @@ def _enderezar(topic_code: str, clave: str, cuerpo: str, informe: TopicNotesRepo
     que se ha hecho (`notas_de_puertos_retiradas` y `confusiones_de_puertos`) porque un arreglo que
     no se puede medir no se puede revisar.
     """
+    # Un encabezado que repite otro del mismo apartado es un apartado dentro de otro: se quita el
+    # encabezado y se queda su texto (es lo que mide la puerta de encabezados repetidos).
+    cuerpo = sin_encabezados_repetidos(cuerpo)
     if not es_la_tabla_de_puertos(topic_code, clave):
         return cuerpo
     limpieza = limpiar_tabla_de_puertos(cuerpo)

@@ -519,6 +519,14 @@ class DossierRepository(Protocol):
         """Las versiones guardadas, de la más nueva a la más antigua, sin su contenido."""
         ...
 
+    def retire_snapshot(self, node_id: str, *, reason: str, now: datetime) -> bool:
+        """Retira la última versión del tema y lo deja auditado.
+
+        Es lo contrario de `save_snapshot`, y existe porque un tema que no pasa la puerta de
+        cobertura **no puede quedar publicado**: se va la lectura guardada, no el contenido.
+        """
+        ...
+
 
 @runtime_checkable
 class VectorSearch(Protocol):

@@ -28,6 +28,7 @@ from opofuente.domain.notes_quality import (
     marcas_internas,
     parecido,
     parrafos,
+    quitar_encabezado_repetido,
     revisar_apuntes,
     tablas_rotas,
     trigramas,
@@ -466,3 +467,41 @@ def test_el_informe_de_la_revision_dice_lo_que_no_pasa_y_donde() -> None:
 
     assert "NO PASA" in lineas[0]
     assert any(MARCAS_INTERNAS[:8] in linea or "[fact 23]" in linea for linea in lineas[1:])
+
+
+def test_al_anadido_se_le_quita_el_encabezado_que_el_apartado_ya_tiene() -> None:
+    """El defecto que se vio en IV.7: el añadido titulaba con un encabezado que ya estaba.
+
+    La plantilla del añadido le pide empezar con `### ` y un título corto, y el redactor titula con
+    el nombre de un subapartado que ya existe. El tema acababa con «Cabecera IPv6» dos veces y la
+    revisión de encabezados repetidos lo decía, con razón. Se quita **el encabezado**, no su texto.
+    """
+    ya_escrito = (
+        "## 5. La cabecera IPv6\n\nLa cabecera básica tiene 40 bytes.\n\n"
+        "### Cabecera IPv6\n\nEl campo Hop Limit sustituye al TTL."
+    )
+    anadido = "### Cabecera IPv6\n\nEl campo Traffic Class ocupa 8 bits y sustituye al ToS de IPv4."
+
+    limpio = quitar_encabezado_repetido(ya_escrito, anadido)
+
+    assert not limpio.startswith("###")
+    assert "Traffic Class ocupa 8 bits" in limpio
+    revision = revisar_apuntes(
+        [_Apartado("iv7-ipv6", "IPv6", "iv7-ipv6", ya_escrito + "\n\n" + limpio)]
+    )
+    assert ENCABEZADOS_REPETIDOS not in {hallazgo.codigo for hallazgo in revision.hallazgos}
+
+
+def test_un_anadido_con_un_encabezado_nuevo_se_queda_como_esta() -> None:
+    """Si el título del añadido no estaba, es un subapartado nuevo y se queda."""
+    ya_escrito = "## 5. La cabecera IPv6\n\nLa cabecera básica tiene 40 bytes."
+    anadido = "### Fragmentación y MTU\n\nIPv6 no fragmenta en los routers."
+
+    assert quitar_encabezado_repetido(ya_escrito, anadido) == anadido
+
+
+def test_sin_texto_previo_no_se_toca_nada() -> None:
+    """Un añadido sobre un apartado vacío no tiene nada con lo que chocar."""
+    anadido = "### Cabecera IPv6\n\nEl campo Hop Limit sustituye al TTL."
+
+    assert quitar_encabezado_repetido("", anadido) == anadido

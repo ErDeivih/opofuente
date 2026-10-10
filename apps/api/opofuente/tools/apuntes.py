@@ -251,6 +251,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             print("ENSAYO: se llama al modelo y NO se escribe nada.\n")
         total = 0.0
         sin_calidad: list[str] = []
+        sin_cobertura: list[str] = []
         for tema in temas:
             informe = servicio.run(
                 tema,
@@ -258,13 +259,32 @@ def main(argv: Sequence[str] | None = None) -> int:
                 dry_run=args.dry_run,
                 limite_grupos=args.limite,
             )
-            pasa = informe.revision is None or informe.revision.pasa
+            # La puerta de un tema son **dos**: las cinco comprobaciones de forma y la cobertura
+            # (§2.3). Antes solo se miraba la primera, y por eso un tema podía quedar publicado con
+            # el 85 % de las preguntas sin contestar. Ahora las dos deciden.
+            pasa_forma = informe.revision is None or informe.revision.pasa
+            pasa_cobertura = informe.coverage.pasa_cobertura
+            pasa = pasa_forma and pasa_cobertura
             if args.version and not args.dry_run and (pasa or not args.exigir_calidad):
                 archivado = dossier_service.archive(informe.node_id)
                 if archivado is not None:
                     informe.version_created = archivado[1]
-            if not pasa:
+            elif args.version and not args.dry_run and not pasa:
+                # Un tema que no pasa no se queda publicado: si había una versión archivada (de
+                # una corrida anterior, cuando la puerta no se miraba), se retira con su motivo.
+                # Es reversible: en cuanto el tema pase, el comando la archiva otra vez.
+                retirada = dossier_service.retire(
+                    informe.node_id,
+                    reason=(
+                        f"la corrida de {informe.topic_code} no pasa la puerta "
+                        f"({'forma' if not pasa_forma else 'cobertura'}): el tema queda en borrador"
+                    ),
+                )
+                informe.version_retired = retirada
+            if not pasa_forma:
                 sin_calidad.append(informe.topic_code)
+            if not pasa_cobertura:
+                sin_cobertura.append(informe.topic_code)
             print("\n".join(informe.lines()))
             print()
             total += informe.estimated_cost_usd
@@ -283,8 +303,21 @@ def main(argv: Sequence[str] | None = None) -> int:
                 ),
                 file=sys.stderr,
             )
-            if args.exigir_calidad:
-                return 3
+        if sin_cobertura:
+            print(
+                "NO pasan la puerta de cobertura "
+                "(90 % de las preguntas con clave utilizable): "
+                + ", ".join(sin_cobertura)
+                + (
+                    ". No se ha archivado la versión y, si había una, se ha retirado: el tema "
+                    "queda en borrador con su motivo."
+                    if args.exigir_calidad
+                    else ". Se archiva igual porque no se pidió --exigir-calidad."
+                ),
+                file=sys.stderr,
+            )
+        if args.exigir_calidad and (sin_calidad or sin_cobertura):
+            return 3
         return 0
     except OpoFuenteError as error:
         print(f"No se han podido escribir los apuntes: {error}", file=sys.stderr)

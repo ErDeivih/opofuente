@@ -207,27 +207,63 @@ def _normalizado(texto: str) -> str:
     return re.sub(r"\s+", " ", normalise(texto)).strip()
 
 
+#: Lo que **distingue** un encabezado de otro que se le parece: las cifras, las siglas y los números
+#: romanos. «Cabecera IPv6» y «Cabecera IPv4» se parecen 0,83 por trigramas —comparten casi todo— y
+#: son dos apartados distintos: la cifra que los separa es justo lo que los distingue. Sin esta
+#: guarda, la puerta de encabezados repetidos marcaba un tema que estaba bien.
+#:
+#: Las cifras se buscan **sin frontera de palabra** a propósito: en «IPv4» la cifra va pegada a las
+#: letras y `\b\d+\b` no la vería.
+_DISTINTIVO = re.compile(r"\d+|[A-Z]{2,}|(?<![A-Za-z])[IVXLC]+(?![A-Za-z])")
+
+
+def distintivos(titulo: str) -> frozenset[str]:
+    """Las cifras, siglas y números romanos de un título, en su texto original."""
+    return frozenset(casado.group(0) for casado in _DISTINTIVO.finditer(titulo))
+
+
+def mismo_encabezado(uno: str, otro: str) -> bool:
+    """¿Estos dos encabezados son el mismo? Se compara igual en la puerta y al arreglar.
+
+    Dos encabezados son el mismo cuando, normalizados, son iguales o se parecen ≥
+    `SIMILITUD_ENCABEZADO` **y no cambian sus cifras o sus siglas**. La segunda mitad es la guarda
+    que evita el falso positivo: «Cabecera IPv6» frente a «Cabecera IPv4» no son el mismo apartado
+    aunque compartan casi todas las letras.
+    """
+    if distintivos(uno) != distintivos(otro):
+        return False
+    limpio_uno, limpio_otro = _normalizado(uno), _normalizado(otro)
+    return limpio_uno == limpio_otro or parecido(limpio_uno, limpio_otro) >= SIMILITUD_ENCABEZADO
+
+
+def parece_el_mismo_titulo(uno: str, otro: str) -> bool:
+    """¿El apartado se está titulando a sí mismo? Aquí **no** se mira la guarda de las cifras.
+
+    Es más permisivo que `mismo_encabezado` a propósito: el primer encabezado de un apartado es cómo
+    se titula, y el redactor lo parafrasea a veces («Encaminamiento: rutas, protocolos y puerta de
+    enlace» frente a «Encaminamiento IP: rutas, protocolos y puerta de enlace»). Eso es un saludo al
+    lector, no un apartado dentro de otro; la **segunda** aparición sí se cuenta en los dos casos.
+    """
+    limpio_uno, limpio_otro = _normalizado(uno), _normalizado(otro)
+    return limpio_uno == limpio_otro or parecido(limpio_uno, limpio_otro) >= SIMILITUD_ENCABEZADO
+
+
 def _encabezados_del_apartado(apartado: ApartadoDeApuntes) -> tuple[tuple[str, str], ...]:
     """Los encabezados del texto del apartado, sin la primera vez que se titula a sí mismo.
 
     Un apartado empieza por su propio título: eso no es repetirlo. La **segunda** vez que aparece sí
     se cuenta, porque es el apartado repitiéndose dentro de sí mismo.
 
-    La comparación es la **misma** que la de los repetidos (igual o parecido ≥
-    `SIMILITUD_ENCABEZADO`), y no la igualdad exacta: el redactor titula casi siempre con el mismo
-    texto que se le dio, pero a veces lo parafrasea un poco («DHCP y **la** configuración
-    automática»), y con la igualdad exacta ese saludo al lector contaba como un encabezado repetido
-    —dos apartados de IV.7 salían por esto— mientras que la segunda aparición de verdad se sigue
-    contando en los dos casos.
+    La comparación es la de «el apartado se titula a sí mismo» (`parece_el_mismo_titulo`), que es
+    más permisiva que la de los repetidos: el redactor parafrasea el título que se le dio —«DHCP y
+    **la** configuración automática»— y eso no es un apartado dentro de otro; con la igualdad
+    exacta, dos apartados de IV.7 salían por esto. La **segunda** aparición sí se cuenta.
     """
-    propio = _normalizado(apartado.title)
+    propio = apartado.title
     salida: list[tuple[str, str]] = []
     visto_el_suyo = False
     for _, titulo in encabezados(apartado.body_markdown):
-        limpio = _normalizado(titulo)
-        if not visto_el_suyo and (
-            limpio == propio or parecido(limpio, propio) >= SIMILITUD_ENCABEZADO
-        ):
+        if not visto_el_suyo and parece_el_mismo_titulo(titulo, propio):
             visto_el_suyo = True
             continue
         salida.append((apartado.key, titulo))
@@ -343,6 +379,61 @@ def _celdas(linea: str) -> list[str]:
 def marcas_internas(texto: str) -> tuple[str, ...]:
     """Las marcas de andamio que se han quedado a la vista en el texto, tal cual aparecen."""
     return tuple(casado.group(0) for casado in _MARCA.finditer(texto))
+
+
+def quitar_encabezado_repetido(ya_escrito: str, anadido: str) -> str:
+    """Le quita al añadido el encabezado que el apartado **ya tiene**.
+
+    El añadido empieza por `### ` y un título corto (lo pide su plantilla). Si ese título ya está en
+    el apartado —el redactor titula con el nombre del apartado, o con el de un subapartado que ya
+    existía—, el tema acaba con el mismo encabezado dos veces y la revisión de forma lo dice, con
+    razón: es un apartado dentro de otro. Se quita **el encabezado del añadido**, nunca su texto.
+
+    Se compara con el mismo criterio con el que la revisión cuenta los repetidos (normalizado y
+    parecido ≥ `SIMILITUD_ENCABEZADO`), porque medir y arreglar con dos criterios distintos sería
+    volver a tener el defecto.
+    """
+    if not anadido.strip() or not ya_escrito.strip():
+        return anadido
+    anteriores = [titulo for _nivel, titulo in encabezados(ya_escrito)]
+    lineas = anadido.split("\n")
+    for posicion, linea in enumerate(lineas):
+        casado = _ENCABEZADO.match(linea)
+        if casado is None:
+            if linea.strip():
+                break
+            continue
+        suyo = casado.group(2).strip()
+        if suyo and any(mismo_encabezado(anterior, suyo) for anterior in anteriores):
+            return "\n".join([*lineas[:posicion], *lineas[posicion + 1 :]]).lstrip("\n")
+        break
+    return anadido
+
+
+def sin_encabezados_repetidos(texto: str) -> str:
+    """Quita los encabezados que repiten otro encabezado del **mismo** texto, y deja el primero.
+
+    Es la otra mitad de lo que mide `ENCABEZADOS_REPETIDOS`, y hace falta porque el defecto no solo
+    lo trae el añadido: el redactor titula el apartado con su nombre y luego vuelve a titular dentro
+    con el mismo (`## 5. La cabecera IPv6` y, más abajo, `### Cabecera IPv6`). Eso es un apartado
+    dentro de otro, y la revisión lo dice con razón. Se quita **el encabezado repetido**, nunca el
+    texto que lleva debajo: el contenido se lee igual y deja de haber dos apartados con el mismo
+    nombre.
+    """
+    vistos: list[str] = []
+    salida: list[str] = []
+    for linea in texto.split("\n"):
+        casado = _ENCABEZADO.match(linea)
+        if casado is None:
+            salida.append(linea)
+            continue
+        suyo = casado.group(2).strip()
+        if suyo and any(mismo_encabezado(anterior, suyo) for anterior in vistos):
+            continue
+        if suyo:
+            vistos.append(suyo)
+        salida.append(linea)
+    return "\n".join(salida)
 
 
 def limpiar_andamios(texto: str) -> str:
@@ -543,16 +634,12 @@ def _titulos_repetidos(titulos: Sequence[tuple[str, str]]) -> tuple[tuple[str, s
     vistos: list[str] = []
     repetidos: list[tuple[str, str]] = []
     for clave, titulo in titulos:
-        limpio = _normalizado(titulo)
-        if not limpio:
+        if not _normalizado(titulo):
             continue
-        if any(
-            anterior == limpio or parecido(anterior, limpio) >= SIMILITUD_ENCABEZADO
-            for anterior in vistos
-        ):
+        if any(mismo_encabezado(anterior, titulo) for anterior in vistos):
             repetidos.append((clave, titulo))
             continue
-        vistos.append(limpio)
+        vistos.append(titulo)
     return tuple(repetidos)
 
 
@@ -643,7 +730,9 @@ __all__ = [
     "marcas_internas",
     "parecido",
     "parrafos",
+    "quitar_encabezado_repetido",
     "revisar_apuntes",
+    "sin_encabezados_repetidos",
     "tablas_rotas",
     "trigramas",
 ]

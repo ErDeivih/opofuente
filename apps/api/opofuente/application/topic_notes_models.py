@@ -13,6 +13,7 @@ from dataclasses import dataclass, field
 
 from opofuente.domain.notes_quality import RevisionApuntes
 from opofuente.domain.topic_notes import (
+    COBERTURA_MINIMA,
     CategoriaIncidencia,
     Coverage,
     Motivo,
@@ -97,6 +98,33 @@ class CoverageReport:
     #: Huecos de material a los que se les ha dado la tercera vuelta de añadido.
     huecos_rellenados: int = 0
     por_motivo: dict[Motivo, int] = field(default_factory=dict)
+    #: La puerta de cobertura, contada **pregunta a pregunta** y con los dos denominadores (§2.3):
+    #: `preguntas_con_clave` (activa o en borrador) y `preguntas_con_clave_utilizable` (las mismas
+    #: sin las que el motor ha marcado como contrarias a la norma). El que decide es el segundo.
+    preguntas: int = 0
+    preguntas_con_clave: int = 0
+    preguntas_cubiertas_con_clave: int = 0
+    preguntas_con_clave_utilizable: int = 0
+    preguntas_cubiertas_con_clave_utilizable: int = 0
+
+    @property
+    def cobertura_con_clave(self) -> float:
+        """Cubiertas sobre **todas** las que tienen clave (activa o en borrador)."""
+        if not self.preguntas_con_clave:
+            return 0.0
+        return self.preguntas_cubiertas_con_clave / self.preguntas_con_clave
+
+    @property
+    def cobertura_con_clave_utilizable(self) -> float:
+        """Cubiertas sobre las que tienen clave utilizable. **Es el número de la puerta.**"""
+        if not self.preguntas_con_clave_utilizable:
+            return 0.0
+        return self.preguntas_cubiertas_con_clave_utilizable / self.preguntas_con_clave_utilizable
+
+    @property
+    def pasa_cobertura(self) -> bool:
+        """¿Llega al umbral del §2.3? Se mide siempre; decide el denominador utilizable."""
+        return self.cobertura_con_clave_utilizable >= COBERTURA_MINIMA
 
     @property
     def finales(self) -> int:
@@ -109,8 +137,35 @@ class CoverageReport:
         return self.dudosas_apuntes + self.dudosas_clave + self.conflicts
 
     def add(
-        self, coverage: Coverage, note: Motivo | None, *, attempts: int, clave_activa: bool
+        self,
+        coverage: Coverage,
+        note: Motivo | None,
+        *,
+        attempts: int,
+        clave_activa: bool,
+        preguntas: int = 1,
+        clave_utilizable: bool = True,
+        tiene_clave: bool = True,
     ) -> None:
+        """Suma un grupo de preguntas al recuento.
+
+        `preguntas` es cuántas preguntas trae el grupo: los recuentos de «grupo» son los que se leen
+        en el informe, pero la **puerta de cobertura se cuenta pregunta a pregunta** (una pregunta
+        repetida en dos bancos cuenta dos veces, y la puerta del §2.3 habla de preguntas).
+
+        `tiene_clave` es falso cuando la pregunta no tiene ninguna clave: la puerta no la cuenta
+        (no hay letra con la que acertar). `clave_utilizable` es falso cuando el paso B marcó la
+        clave como contraria a la norma: esas preguntas cuentan en (a) y **no** en el denominador
+        que decide, porque no tienen una respuesta con la que se pueda acertar.
+        """
+        if tiene_clave:
+            self.preguntas_con_clave += preguntas
+            if coverage is Coverage.CUBIERTA:
+                self.preguntas_cubiertas_con_clave += preguntas
+            if clave_utilizable:
+                self.preguntas_con_clave_utilizable += preguntas
+                if coverage is Coverage.CUBIERTA:
+                    self.preguntas_cubiertas_con_clave_utilizable += preguntas
         if coverage is Coverage.CUBIERTA:
             self.covered += 1
             if attempts > 1:
@@ -122,7 +177,7 @@ class CoverageReport:
             else:
                 self.covered_sin_clave += 1
         elif coverage is Coverage.HUECO:
-            return
+            pass
         elif coverage is Coverage.CONFLICTO:
             self.conflicts += 1
             if clave_activa:
@@ -165,6 +220,8 @@ class TopicNotesReport:
     confusiones_de_puertos: int = 0
     dry_run: bool = False
     version_created: bool | None = None
+    #: Si la versión que había se ha retirado por no pasar la puerta: el tema vuelve a borrador.
+    version_retired: bool | None = None
     notes: str = ""
 
     @property
@@ -206,10 +263,25 @@ class TopicNotesReport:
         if cobertura.groups:
             porcentaje = 100.0 * cobertura.covered / cobertura.groups
             lineas.append(
-                f"    cobertura {porcentaje:.1f} % · con clave activa "
+                f"    cobertura {porcentaje:.1f} % de los grupos · con clave activa "
                 f"{cobertura.covered_con_clave_activa} · "
                 f"sin clave clara {cobertura.covered_sin_clave} · a revisión "
                 f"{cobertura.en_revision}"
+            )
+        # La puerta del §2.3, con **los dos denominadores escritos** y siempre —también cuando el
+        # tema se queda en borrador—: el número que decide es el de la clave utilizable, porque una
+        # pregunta cuya respuesta marcada contradice la norma no tiene respuesta con la que acertar.
+        if cobertura.preguntas_con_clave:
+            lineas.append(
+                f"    puerta de cobertura {'PASA' if cobertura.pasa_cobertura else 'NO PASA'} "
+                f"(umbral {100 * COBERTURA_MINIMA:.0f} %): "
+                f"{cobertura.preguntas_cubiertas_con_clave_utilizable}/"
+                f"{cobertura.preguntas_con_clave_utilizable} = "
+                f"{100 * cobertura.cobertura_con_clave_utilizable:.1f} % sobre las que tienen "
+                "clave "
+                f"utilizable · {cobertura.preguntas_cubiertas_con_clave}/"
+                f"{cobertura.preguntas_con_clave} = {100 * cobertura.cobertura_con_clave:.1f} % "
+                "sobre todas las que tienen clave (activa o en borrador)"
             )
         if self.revision is not None:
             lineas.extend(self.revision.lines())
@@ -257,6 +329,10 @@ class TopicNotesReport:
             lineas.append(
                 "    versión del tema: "
                 + ("guardada (nueva)" if self.version_created else "ya estaba guardada")
+            )
+        if self.version_retired:
+            lineas.append(
+                "    versión del tema: RETIRADA (el tema no pasa la puerta y queda en borrador)"
             )
         lineas.extend(f"    {linea}" for linea in self.ledger.lines())
         if self.notes:

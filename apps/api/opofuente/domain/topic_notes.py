@@ -92,6 +92,13 @@ MINIMO_TERMINOS_INTEGRADOS = 0.6
 VUELTAS_MAXIMAS = 2
 VUELTAS_CON_HUECOS = 3
 
+#: Cobertura mínima para publicar un tema: preguntas cubiertas sobre las que tienen **clave
+#: utilizable**. Es la puerta del §2.3, y el denominador importa tanto como el umbral: una pregunta
+#: cuya respuesta marcada contradice la norma no tiene una respuesta con la que se pueda acertar,
+#: así que contarla en contra de los apuntes sería culpar al texto de un fallo del banco. El número
+#: se mide y se enseña **siempre**, también cuando el tema queda en borrador.
+COBERTURA_MINIMA = 0.90
+
 #: Lo que se marca en un apartado escrito sin material de apoyo. Es lo que el propietario busca al
 #: revisar, y el redactor escribe la misma marca dentro del párrafo.
 SIN_MATERIAL = "sin material de apoyo"
