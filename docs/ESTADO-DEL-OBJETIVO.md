@@ -135,4 +135,20 @@ están bien:
 4. Quedan pendientes de la tanda anterior, por este orden: las **frases que demuestran cada conflicto
    de I.6** en la bandeja, y la **primera pantalla de la app** (los tests de varios temas y el
    simulacro real, con el caso de 50 aciertos, 15 fallos y 15 en blanco = 28,125 sobre 50).
-5. Los **30 temas restantes** y los bloques B y C, sin empezar.
+5. **El bloque de la app empieza por una decisión, no por código.** El §4 de
+   `DECISIONES-Y-SIGUIENTE-TANDA-2026-10.md` pide `StudyService.compose(spec)` + `POST
+   /student/tests` y `/student/mock-exams`, con la prueba del **28,125**. Comprobado antes de
+   escribirlo:
+   - el motor de puntuación **ya existe** (`PartRule` + `score_part`, `exact_score` con `Fraction`), y
+     `direct` da `A − E·p` (con 50 aciertos y 15 fallos: 45), que **no** es 28,125; el 28,125 sale de
+     **escalar** esa directa a la banda de la parte: `50 × 45/80 = 28,125`;
+   - el perfil de TAI (`fixtures/profiles/tai-age-2025.profile.json`) trae `primera_parte` con
+     `ordinary_items: 80`, `score_max: 50`, `pass_score: 25` y `wrong_penalty_fraction: 1/3`, pero
+     **`options_per_question: null`** —y dice por qué: el anexo V no publica cuántas alternativas
+     tiene cada pregunta—, así que **no** se puede usar `ScoringKind.SCALED` (que resta
+     `E/(N−1)`) sin inventarse el número de opciones;
+   - por tanto hace falta una forma de puntuación **«estimada» explícita** (la directa escalada a la
+     banda de la parte, con su nota de que es una estimación y no la calificación oficial, que sigue
+     declarada como no disponible). Es una decisión de diseño, con su prueba del 28,125, y es el
+     primer paso del bloque.
+6. Los **30 temas restantes** y los bloques B y C, sin empezar.

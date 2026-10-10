@@ -33,6 +33,7 @@ from opofuente.domain.errors import ExternalServiceError
 from opofuente.domain.notes_quality import (
     PARRAFOS_REPETIDOS,
     marcas_internas,
+    revisar_apuntes,
 )
 from opofuente.domain.rag import normalise
 from opofuente.domain.topic_notes import (
@@ -674,18 +675,19 @@ def test_el_informe_mide_la_forma_de_los_apuntes_y_lo_dice(
     assert any("de los párrafos se parecen a otro anterior" in linea for linea in lineas)
 
 
-def test_un_tema_con_marcas_internas_y_encabezados_repetidos_no_se_da_por_bueno(
+def test_las_marcas_y_el_encabezado_repetido_los_arregla_el_motor_al_guardar(
     seeded_settings: Settings,
     seeded_client: TestClient,
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """El comando con `--exigir-calidad` no archiva un tema que no pasa: no se da por bueno.
+    """Los dos defectos que el doble escribe los quita el motor: el tema pasa y se archiva.
 
-    El doble escribe **dos** defectos: las marcas internas del encargo (`[fact N]`) y el apartado
-    titulándose dos veces. Las marcas ya no llegan al texto —se quitan al guardar
-    (`limpiar_andamios`)—, así que lo que decide es el encabezado repetido; y se comprueba también
-    que las marcas no están, que es la mitad del arreglo.
+    Antes esta prueba esperaba un 3: el tema no pasaba por las marcas internas del encargo
+    (`[fact N]`) y por el apartado titulándose dos veces. Los dos se arreglan **al guardar**
+    (`limpiar_andamios` quita las marcas y `sin_encabezados_repetidos` el encabezado repetido), así
+    que lo que se comprueba es el arreglo: en el texto guardado no hay marcas ni encabezados
+    repetidos, y el tema se da por bueno porque de verdad lo está.
     """
     _repositorio, _preguntas_del_tema, node_id = _escenario(
         seeded_client, titulo="Apuntes con la forma rota"
@@ -702,14 +704,49 @@ def test_un_tema_con_marcas_internas_y_encabezados_repetidos_no_se_da_por_bueno(
         os.environ.pop("OPOFUENTE_DATA_DIR", None)
 
     salida = capsys.readouterr()
-    assert codigo == 3, "un tema que no pasa las comprobaciones no se da por bueno"
-    assert "encabezado(s) repetidos" in salida.out
+    assert codigo == 0, "el motor quita los dos defectos, así que el tema pasa"
     assert "marca(s) interna(s)" not in salida.out, "las marcas del encargo no llegan al texto"
+    assert "encabezado(s) repetidos" not in salida.out, "el encabezado repetido se quita al guardar"
     escritos = SqlAlchemyTopicNotesRepository(seeded_client.app.state.session_factory).sections(
         node_id
     )
     assert all(marcas_internas(apartado.body_markdown) == () for apartado in escritos)
     assert all("fact " not in apartado.body_markdown for apartado in escritos)
+    revision = revisar_apuntes(escritos)
+    assert revision.pasa
+    versiones = seeded_client.get(f"/api/v1/curriculum-nodes/{node_id}/dossier/versions").json()
+    assert versiones, "un tema que pasa la puerta sí archiva su versión"
+
+
+def test_un_tema_con_parrafos_repetidos_no_se_da_por_bueno(
+    seeded_settings: Settings,
+    seeded_client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Lo que el motor **no** puede arreglar solo sigue sin darse por bueno, y no archiva.
+
+    El doble escribe el mismo párrafo en cada apartado, que es el defecto de los pilotos. Eso no se
+    arregla quitando una marca ni un encabezado: hay que reescribir, y por eso el tema sale con 3 y
+    sin versión archivada.
+    """
+    _repositorio, _preguntas_del_tema, node_id = _escenario(
+        seeded_client, titulo="Apuntes que se repiten"
+    )
+    modelo = _ModeloQueRepite()
+    monkeypatch.setenv(apuntes.VARIABLE_DE_LA_CLAVE, "clave-de-prueba")
+    monkeypatch.setenv("OPOFUENTE_DATA_DIR", str(seeded_settings.data_dir))
+    get_settings.cache_clear()
+    monkeypatch.setattr(apuntes, "DeepSeekNotesModel", lambda **_: modelo, raising=True)
+    try:
+        codigo = apuntes.main(["--tema", "IV.7", "--paralelo", "1", "--exigir-calidad"])
+    finally:
+        get_settings.cache_clear()
+        os.environ.pop("OPOFUENTE_DATA_DIR", None)
+
+    salida = capsys.readouterr()
+    assert codigo == 3, "un tema que no pasa las comprobaciones no se da por bueno"
+    assert "de los párrafos se parecen a otro anterior" in salida.out
     versiones = seeded_client.get(f"/api/v1/curriculum-nodes/{node_id}/dossier/versions").json()
     assert versiones == [], "no se archiva la versión de un tema que no pasa"
 
