@@ -360,7 +360,9 @@ def _respuestas_de_alumno(zona: ZonaAlumno) -> dict[str, Any]:
     """**Cada** respuesta de `/student/*` con datos sembrados, incluida una de error.
 
     El 404 entra a propósito: un mensaje de error también es una respuesta, y es donde más fácil se
-    cuela un identificador interno al decir qué no se ha encontrado.
+    cuela un identificador interno al decir qué no se ha encontrado. Y el test en curso entra
+    entero —montarlo, arrancarlo, contestarlo y cerrarlo— porque es la pantalla que más datos
+    enseña: si algo se colara, se colaría aquí.
     """
     rutas = {
         "overview": "/api/v1/student/overview",
@@ -376,6 +378,49 @@ def _respuestas_de_alumno(zona: ZonaAlumno) -> dict[str, Any]:
         respuesta = zona.client.get(ruta)
         assert respuesta.status_code in (200, 404), f"{ruta}: {respuesta.status_code}"
         respuestas[nombre] = respuesta.json()
+
+    creado = zona.client.post(
+        "/api/v1/student/tests",
+        json={"nodes": ["IV.1"], "count": 2, "filter": "all", "feedback": "immediate"},
+        headers=ALLOWED_ORIGIN,
+    )
+    assert creado.status_code == 201, creado.text
+    respuestas["tests"] = creado.json()
+    sesion = str(creado.json()["id"])
+
+    arrancado = zona.client.post(f"/api/v1/student/sessions/{sesion}/start", headers=ALLOWED_ORIGIN)
+    assert arrancado.status_code == 200, arrancado.text
+    respuestas["sessions/start"] = arrancado.json()
+
+    en_curso = zona.client.get(f"/api/v1/student/sessions/{sesion}")
+    assert en_curso.status_code == 200, en_curso.text
+    respuestas["sessions/en-curso"] = en_curso.json()
+    assert respuestas["sessions/en-curso"]["question"] is not None, "hay una pregunta que contestar"
+    primera = respuestas["sessions/en-curso"]["question"]["options"][0]["key"]
+
+    contestado = zona.client.post(
+        f"/api/v1/student/sessions/{sesion}/answers",
+        json={"position": 1, "chosen": [primera], "elapsed_ms": 1200},
+        headers=ALLOWED_ORIGIN,
+    )
+    assert contestado.status_code == 200, contestado.text
+    respuestas["sessions/answers"] = contestado.json()
+
+    cerrado = zona.client.post(f"/api/v1/student/sessions/{sesion}/finish", headers=ALLOWED_ORIGIN)
+    assert cerrado.status_code == 200, cerrado.text
+    respuestas["sessions/finish"] = cerrado.json()
+
+    simulacro = zona.client.post(
+        "/api/v1/student/mock-exams",
+        json={"variant": "short", "case_block": "III"},
+        headers=ALLOWED_ORIGIN,
+    )
+    assert simulacro.status_code == 201, simulacro.text
+    respuestas["mock-exams"] = simulacro.json()
+
+    respuestas["sessions/inexistente"] = zona.client.get(
+        "/api/v1/student/sessions/00000000-0000-0000-0000-000000000000"
+    ).json()
     return respuestas
 
 

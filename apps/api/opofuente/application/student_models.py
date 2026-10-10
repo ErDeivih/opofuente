@@ -63,6 +63,9 @@ class StudentSessionView:
     finished_at: datetime | None
     created_at: datetime
     result: StudentScoreView | None = None
+    #: De dónde salieron las preguntas del supuesto práctico cuando no eran material de supuesto:
+    #: se dice (`"bloque"`), no se calla. `None` cuando no hay supuesto o cuando lo es de verdad.
+    practical_case_origin: str | None = None
 
     @property
     def finished(self) -> bool:
@@ -140,6 +143,49 @@ class StudentTopicView:
 
 
 @dataclass(frozen=True, slots=True)
+class StudentTestRequest:
+    """Lo que pide el alumno cuando monta un test: sus temas, cuántas y con qué filtro.
+
+    Los temas viajan por su **código legible** (`IV.10`, `III.1`) porque es lo que el alumno ve; la
+    traducción a nodos del programa la hace esta capa, no la pantalla.
+    """
+
+    nodes: tuple[str, ...]
+    count: int
+    filter: str = "all"
+    feedback: str = "immediate"
+    timed: bool = False
+    owner_id: str = "local"
+
+
+@dataclass(frozen=True, slots=True)
+class StudentMockExamRequest:
+    """Lo que pide el alumno cuando monta un simulacro: variante y bloque del supuesto.
+
+    `case_block` solo se usa en el simulacro completo: hay que elegir III o IV, y de los dos
+    supuestos se monta **el elegido**, no los dos.
+    """
+
+    variant: str = "full"
+    case_block: str = "III"
+    owner_id: str = "local"
+
+
+@dataclass(frozen=True, slots=True)
+class StudentAnswerRequest:
+    """La respuesta a una pregunta del test, **por su posición en la hoja**.
+
+    La posición es lo que el alumno tiene delante (la fila 12 de la hoja), y evita que un
+    identificador de pregunta salga por esta capa.
+    """
+
+    position: int
+    chosen_option_keys: tuple[str, ...]
+    elapsed_ms: int = 0
+    confidence: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
 class StudentProgressView:
     """El progreso: acierto por bloque y por tema, los cinco más flojos e historial.
 
@@ -151,3 +197,107 @@ class StudentProgressView:
     blocks: tuple[StudentBlockProgressView, ...]
     weakest_topics: tuple[StudentTopicProgressView, ...] = ()
     history: tuple[StudentSessionView, ...] = ()
+
+
+# --- el test en curso y su resultado (la pantalla con la hoja de respuestas) ----------------------
+
+
+@dataclass(frozen=True, slots=True)
+class StudentOptionView:
+    """Una opción de una pregunta: su letra (`a`) y su texto. Nada más."""
+
+    key: str
+    text: str
+
+
+@dataclass(frozen=True, slots=True)
+class StudentCorrectionView:
+    """La corrección de una pregunta respondida, **cuando se puede enseñar**.
+
+    `outcome` es `correct`, `wrong` o `blank`; `correct_option_keys` las letras de la plantilla. No
+    hay campo para la explicación ni para la evidencia: la zona del alumno no las tiene.
+    """
+
+    outcome: str
+    correct_option_keys: tuple[str, ...] = ()
+    reason: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class StudentQuestionView:
+    """La pregunta que se está contestando.
+
+    Viaja **por su posición** y no por su identificador: la dirección de una pregunta en un test es
+    el número de su fila en la hoja de respuestas, y esa es la que el alumno ve. Contestar se pide
+    por posición, así que ningún UUID de pregunta sale de esta capa (F2 §4).
+    """
+
+    position: int
+    is_reserve: bool
+    stem: str
+    question_type: str
+    options: tuple[StudentOptionView, ...]
+    answered: bool
+    chosen_option_keys: tuple[str, ...] = ()
+    confidence: str | None = None
+    correction: StudentCorrectionView | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class StudentSheetRowView:
+    """Una fila de la hoja de respuestas: qué se marcó en esa posición y cómo quedó."""
+
+    position: int
+    answered: bool
+    chosen_option_keys: tuple[str, ...] = ()
+    confidence: str | None = None
+    outcome: str | None = None
+    correct_option_keys: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class StudentRunView:
+    """El test en curso: la sesión, la pregunta que toca y la hoja de respuestas entera."""
+
+    session: StudentSessionView
+    total: int
+    answered: int
+    pending: int
+    finished: bool
+    position: int | None = None
+    question: StudentQuestionView | None = None
+    sheet: tuple[StudentSheetRowView, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class StudentPartScoreView:
+    """La nota de una parte del test, con la forma con la que se calculó.
+
+    `kind` es `estimated`, `direct`, `scaled` o `pass_fail`, y `score_max`/`pass_score` son de la
+    banda publicada de la parte. `passed` es `None` cuando la convocatoria no publica el umbral o
+    cuando la cifra es una estimación: la calificación oficial no se declara.
+    """
+
+    part_code: str | None
+    part_name: str | None
+    kind: str
+    correct: int
+    wrong: int
+    blank: int
+    score: str
+    score_decimal: str
+    score_max: float | None = None
+    pass_score: float | None = None
+    passed: bool | None = None
+    verdict_note: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class StudentResultView:
+    """El resultado de un test: la sesión, la nota por parte y el total."""
+
+    session: StudentSessionView
+    parts: tuple[StudentPartScoreView, ...]
+    total: StudentPartScoreView
+    official_available: bool
+    official_note: str | None = None

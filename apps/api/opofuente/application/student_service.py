@@ -22,24 +22,49 @@ import re
 from dataclasses import dataclass
 
 from opofuente.application.ports import Clock
-from opofuente.application.read_models import NodeView, OppositionSummary
+from opofuente.application.read_models import (
+    ConvocationDetail,
+    NodeView,
+    OppositionSummary,
+)
 from opofuente.application.student_models import (
+    StudentAnswerRequest,
     StudentBlockProgressView,
+    StudentCorrectionView,
     StudentEpigraphView,
+    StudentMockExamRequest,
     StudentOppositionView,
+    StudentOptionView,
     StudentOverviewView,
+    StudentPartScoreView,
     StudentProgressView,
+    StudentQuestionView,
+    StudentResultView,
+    StudentRunView,
     StudentScoreView,
     StudentSessionView,
+    StudentSheetRowView,
+    StudentTestRequest,
     StudentTopicProgressView,
     StudentTopicView,
 )
-from opofuente.application.study_models import SessionResultView, SessionView
-from opofuente.application.study_service import StudyService
+from opofuente.application.study_models import (
+    PartScoreView,
+    SessionQuestionView,
+    SessionResultView,
+    SessionView,
+)
+from opofuente.application.study_service import (
+    AnswerInput,
+    CompositionSpec,
+    PartSpec,
+    RunnerView,
+    StudyService,
+)
 from opofuente.config import Settings
 from opofuente.domain.errors import NotFoundError, UnsupportedError
 from opofuente.domain.profiles import NodeType
-from opofuente.domain.study import OWNER_ID_LOCAL, SessionStatus
+from opofuente.domain.study import OWNER_ID_LOCAL, Confidence, Feedback, SessionMode, SessionStatus
 from opofuente.infrastructure.profile_repository import SqlAlchemyProfileRepository
 from opofuente.infrastructure.student_repository import SqlAlchemyStudentRepository
 
@@ -414,6 +439,308 @@ class StudentService:
                 return StudentService._sesion(vista)
         return None
 
+    # ------------------------------------------------------------------ montar y correr un test
+
+    def create_test(self, request: StudentTestRequest) -> StudentSessionView:
+        """Monta un test de los temas elegidos, por la composición declarada de `StudyService`.
+
+        Es fino a propósito: traduce el formulario del alumno a un `CompositionSpec` y no decide
+        nada de cómo se corrige. La clave que se congela, la penalización y las reservas salen del
+        **mismo** camino que en cualquier otra sesión; si esta capa tuviera su propia composición,
+        habría dos verdades sobre cómo se corrige un test.
+        """
+        if request.count <= 0:
+            raise UnsupportedError("un test de cero preguntas no tiene sentido")
+        if request.filter not in ("all", "unseen", "failed", "flagged"):
+            raise UnsupportedError(
+                f"«{request.filter}» no es un filtro de test: se elige entre todas, no vistas, "
+                "falladas o dudosas"
+            )
+        if request.feedback not in ("immediate", "at_end"):
+            raise UnsupportedError(
+                f"«{request.feedback}» no es una forma de corregir: al momento o al final"
+            )
+        oposicion = self._opposition()
+        if not request.nodes:
+            raise UnsupportedError(
+                "un test necesita al menos un tema: elige de dónde salen sus preguntas"
+            )
+        nodos = tuple(self._nodo_por_codigo(oposicion, codigo) for codigo in request.nodes)
+        # La parte de test de la convocatoria: es la que dice con qué penalización se corrige el
+        # material de estos temas. Sin ella (una convocatoria que no publica ninguna), el test se
+        # congela sin parte declarada y se corrige en directo, que es lo honesto.
+        parte_del_test = self._parte_de_test(oposicion)
+        resultado = self._study.compose(
+            CompositionSpec(
+                parts=(
+                    PartSpec(
+                        code=parte_del_test or "test",
+                        node_ids=nodos,
+                        count=request.count,
+                    ),
+                ),
+                mode=SessionMode.PRACTICE,
+                filter=request.filter,  # type: ignore[arg-type]
+                owner_id=request.owner_id,
+                feedback=Feedback(request.feedback),
+                # Un test con tiempo lleva reloj: el límite lo elige quien estudia porque **no** es
+                # un examen, y por eso se dice en la etiqueta (en un examen lo fija la
+                # convocatoria).
+                time_limit_minutes=(
+                    StudentService._minutos_de_test(request.count) if request.timed else None
+                ),
+                label=self._etiqueta_del_test(oposicion, nodos),
+            ),
+            opposition_id=oposicion.id,
+        )
+        return StudentService._sesion(resultado.session)
+
+    def create_mock_exam(self, request: StudentMockExamRequest) -> StudentSessionView:
+        """Monta el simulacro con el perfil del examen: 80 + 5 y su supuesto de 20 + 5.
+
+        Tres decisiones, y las tres se ven aquí:
+
+        1. **el perfil lo pone la convocatoria**, no el formulario: 80 preguntas de la primera parte
+           y 20 del supuesto, con sus 5 reservas cada una, y los 120 minutos del ejercicio;
+        2. **el supuesto es el bloque elegido** (III o IV) y solo uno: los dos supuestos son
+           excluyentes, y montar los dos sería un simulacro que no existe;
+        3. si las preguntas del supuesto salen de los temas del bloque —que es lo que hay—, la
+           sesión lo **declara** (`practical_case_origin`): no se llama «supuesto práctico» a veinte
+           preguntas de tema sin decirlo.
+
+        La variante corta son 40 preguntas y 48 minutos, sin supuesto: es la del diseño, y su
+        etiqueta lo dice porque no es el perfil del examen.
+        """
+        if request.variant not in ("full", "short"):
+            raise UnsupportedError(
+                f"«{request.variant}» no es una variante de simulacro: completo o corto"
+            )
+        if request.case_block not in ("III", "IV"):
+            raise UnsupportedError(
+                f"«{request.case_block}» no es un bloque de supuesto: se elige III o IV"
+            )
+        oposicion = self._opposition()
+        curriculum = self._curriculum(oposicion)
+        temas = self._temas_con_codigo(curriculum)
+        if not temas:
+            raise UnsupportedError(
+                "el programa no tiene temas: sin ellos no hay simulacro que montar"
+            )
+        bloques = {
+            bloque.path.upper(): tuple(tema.id for tema in bloque.children)
+            for bloque in curriculum
+            if bloque.node_type is NodeType.BLOCK
+        }
+        del_supuesto = bloques.get(request.case_block.upper(), ())
+        if not del_supuesto:
+            raise NotFoundError("bloque del programa", request.case_block)
+
+        completo = request.variant == "full"
+        partes: tuple[PartSpec, ...]
+        if completo:
+            partes = (
+                PartSpec(
+                    code="primera_parte",
+                    node_ids=tuple(tema.id for tema in temas),
+                    count=80,
+                    reserve=5,
+                ),
+                PartSpec(
+                    code="segunda_parte",
+                    node_ids=del_supuesto,
+                    count=20,
+                    reserve=5,
+                    alternative_group="supuesto",
+                ),
+            )
+            etiqueta = f"Simulacro con supuesto del bloque {request.case_block.upper()}"
+            fuente_del_supuesto: str | None = "bloque"
+        else:
+            partes = (
+                PartSpec(
+                    code="primera_parte",
+                    node_ids=tuple(tema.id for tema in temas),
+                    count=40,
+                ),
+            )
+            etiqueta = "Simulacro corto"
+            fuente_del_supuesto = None
+
+        resultado = self._study.compose(
+            CompositionSpec(
+                parts=partes,
+                mode=SessionMode.MOCK_EXAM,
+                owner_id=request.owner_id,
+                exam_like=True,
+                public_only=self._publico(),
+                time_limit_minutes=None if completo else 48,
+                label=etiqueta,
+                note=StudentService._nota_del_simulacro(completo=completo),
+                practical_case_origin=fuente_del_supuesto,
+            ),
+            opposition_id=oposicion.id,
+        )
+        return StudentService._sesion(resultado.session)
+
+    def run(self, session_id: str) -> StudentRunView:
+        """El test en curso: la sesión, la pregunta que toca y la hoja de respuestas entera."""
+        sesion = self._sesion_del_alumno(session_id)
+        vista = self._study.runner_view(session_id)
+        return StudentService._run(vista, sesion)
+
+    def start(self, session_id: str) -> StudentRunView:
+        """Arranca el test (arrancar uno que ya corre no cambia nada) y devuelve su estado."""
+        self._sesion_del_alumno(session_id)
+        self._study.start(session_id)
+        return self.run(session_id)
+
+    def answer(self, session_id: str, request: StudentAnswerRequest) -> StudentRunView:
+        """Contesta la pregunta de una **posición** de la hoja y devuelve el test como queda.
+
+        La respuesta se pide por la fila de la hoja y no por el identificador de la pregunta: es lo
+        que el alumno tiene delante, y así ningún identificador de pregunta sale de esta capa. La
+        traducción a la pregunta concreta la hace este método, sobre la composición **congelada** de
+        la sesión (no sobre el banco de hoy).
+        """
+        self._sesion_del_alumno(session_id)
+        if request.confidence not in (None, "low", "medium", "high"):
+            raise UnsupportedError(
+                f"«{request.confidence}» no es una confianza: alta, media o baja"
+            )
+        vista = self._study.runner_view(session_id)
+        pregunta = next(
+            (candidata for candidata in vista.questions if candidata.position == request.position),
+            None,
+        )
+        if pregunta is None:
+            raise NotFoundError("pregunta del test", str(request.position))
+        self._study.answer(
+            session_id,
+            AnswerInput(
+                question_version_id=pregunta.question_version_id,
+                chosen_option_keys=request.chosen_option_keys,
+                elapsed_ms=request.elapsed_ms,
+                confidence=(
+                    Confidence(request.confidence) if request.confidence is not None else None
+                ),
+            ),
+        )
+        return self.run(session_id)
+
+    def finish(self, session_id: str) -> StudentResultView:
+        """Termina el test y devuelve su resultado, con la nota de cada parte."""
+        self._sesion_del_alumno(session_id)
+        resultado = self._study.finish(session_id)
+        return StudentResultView(
+            session=StudentService._sesion(self._study.session(session_id)),
+            parts=tuple(StudentService._parte(parte) for parte in resultado.parts),
+            total=StudentService._parte(resultado.total),
+            official_available=resultado.official_available,
+            official_note=resultado.official_note,
+        )
+
+    # ------------------------------------------------------------------ ayudas del test
+
+    def _parte_de_test(self, oposicion: OppositionSummary) -> str | None:
+        """El código de la parte de test de la convocatoria: la que corrige el material de un test.
+
+        El material de los temas es el de la parte de cuestionario de la convocatoria, y su
+        penalización (un tercio en TAI) es la que la convocatoria publica para ese material: un test
+        que no la aplicara daría una cifra que no es la de este examen. Se elige por lo que publica
+        —una parte de test con penalización— y no por su nombre, que cambia de una convocatoria a
+        otra. Si no hay ninguna, se devuelve `None` y el test se corrige sin penalización: no se
+        inventa la de una parte que no existe.
+        """
+        convocatoria = self._convocatoria(oposicion)
+        for parte in convocatoria.parts:
+            if (
+                parte.kind == "test"
+                and parte.format == "single_choice"
+                and parte.wrong_penalty_fraction is not None
+            ):
+                return parte.code
+        return None
+
+    def _convocatoria(self, oposicion: OppositionSummary) -> ConvocationDetail:
+        """La convocatoria vigente de la oposición servida."""
+        identificador = self._convocation_id(oposicion)
+        convocatoria = self._profiles.get_convocation(identificador)
+        if convocatoria is None:
+            raise NotFoundError("convocatoria", identificador)
+        return convocatoria
+
+    def _nodo_por_codigo(self, oposicion: OppositionSummary, codigo: str) -> str:
+        """El nodo del programa de un tema, por su código legible (`IV.10` o `IV-10`)."""
+        buscado = _normalizar_codigo(codigo)
+        for tema in self._temas_con_codigo(self._curriculum(oposicion)):
+            if tema.path.upper() == buscado:
+                return tema.id
+        raise NotFoundError("tema del programa", buscado)
+
+    @staticmethod
+    def _temas_con_codigo(curriculum: tuple[NodeView, ...]) -> tuple[NodeView, ...]:
+        """Los temas del programa, en orden, saltándose los bloques."""
+        return tuple(
+            tema
+            for bloque in curriculum
+            if bloque.node_type is NodeType.BLOCK
+            for tema in bloque.children
+        )
+
+    def _sesion_del_alumno(self, session_id: str) -> StudentSessionView:
+        """La sesión, comprobando que es de la oposición que sirve esta zona.
+
+        Una sesión de otra oposición **no existe** para el alumno: se responde lo mismo que si no
+        estuviera, porque decir «es de otro cuerpo» ya sería contarle algo que no le toca. Y en modo
+        público tiene que poder demostrarse que sale de conjuntos publicables, que es la misma regla
+        con la que se decide qué sesiones se listan.
+        """
+        oposicion = self._opposition()
+        vista = self._study.session(session_id)
+        if vista.opposition_id != oposicion.id:
+            raise NotFoundError("sesión de estudio", session_id)
+        if self._publico() and not self._de_conjuntos_publicables(
+            vista, self._student.public_set_ids(oposicion.id)
+        ):
+            raise NotFoundError("sesión de estudio", session_id)
+        return StudentService._sesion(vista)
+
+    def _etiqueta_del_test(self, oposicion: OppositionSummary, nodos: tuple[str, ...]) -> str:
+        """De qué es el test: sus temas, en orden, y cuántos son."""
+        rutas = {
+            nodo.id: (nodo.path or "").strip()
+            for nodo in self._temas_con_codigo(self._curriculum(oposicion))
+        }
+        codigos = [codigo for codigo in (rutas.get(nodo, "") for nodo in nodos) if codigo]
+        if not codigos:
+            return "Test"
+        if len(codigos) <= 3:
+            return f"Test de {', '.join(codigos)}"
+        return f"Test de {len(codigos)} temas"
+
+    @staticmethod
+    def _minutos_de_test(preguntas: int) -> int:
+        """El reloj de un test con tiempo: dos minutos por pregunta, redondeado a cinco.
+
+        Es una regla de la aplicación y por eso la sesión lo dice: el tiempo de un examen lo fija la
+        convocatoria, y un test con reloj no es un examen.
+        """
+        return max(5, ((preguntas * 2 + 4) // 5) * 5)
+
+    @staticmethod
+    def _nota_del_simulacro(*, completo: bool) -> str:
+        """Lo que el simulacro dice de sí mismo: tiene el perfil del examen y no es un examen."""
+        perfil = (
+            "simulacro con el perfil del examen: primera parte de 80 preguntas más 5 de reserva y "
+            "supuesto práctico de 20 más 5, con el tiempo y la penalización de la convocatoria"
+            if completo
+            else "simulacro corto de 40 preguntas, sin supuesto práctico"
+        )
+        return (
+            f"{perfil}. No es un examen oficial, y su nota por parte es una **estimación** (la "
+            "puntuación directa escalada a la banda de cada parte), no la calificación oficial."
+        )
+
     # ------------------------------------------------------------------ traducción a vista
 
     @staticmethod
@@ -429,21 +756,6 @@ class StudentService:
         return f"{nombre} · {vista.total_questions} preguntas"
 
     @staticmethod
-    def _resultado(resultado: SessionResultView | None) -> StudentScoreView | None:
-        if resultado is None:
-            return None
-        total = resultado.total
-        return StudentScoreView(
-            correct=total.correct,
-            wrong=total.wrong,
-            blank=total.blank,
-            points=total.score.fraction,
-            points_decimal=total.score.decimal,
-            maximum=total.score_max,
-            passed=total.passed,
-        )
-
-    @staticmethod
     def _sesion(vista: SessionView) -> StudentSessionView:
         return StudentSessionView(
             id=vista.id,
@@ -457,4 +769,91 @@ class StudentService:
             finished_at=vista.finished_at,
             created_at=vista.created_at,
             result=StudentService._resultado(vista.result),
+            practical_case_origin=vista.configuration.practical_case_origin,
+        )
+
+    @staticmethod
+    def _run(vista: RunnerView, sesion: StudentSessionView) -> StudentRunView:
+        """El estado del test en curso, con la hoja de respuestas entera."""
+        return StudentRunView(
+            session=sesion,
+            total=vista.total,
+            answered=vista.answered,
+            pending=vista.pending,
+            finished=vista.finished,
+            position=None if vista.current is None else vista.current.position,
+            question=None if vista.current is None else StudentService._pregunta(vista.current),
+            sheet=tuple(StudentService._fila(pregunta) for pregunta in vista.questions),
+        )
+
+    @staticmethod
+    def _pregunta(pregunta: SessionQuestionView) -> StudentQuestionView:
+        return StudentQuestionView(
+            position=pregunta.position,
+            is_reserve=pregunta.is_reserve,
+            stem=pregunta.stem,
+            question_type=pregunta.question_type,
+            options=tuple(
+                StudentOptionView(key=opcion.stable_key, text=opcion.text)
+                for opcion in pregunta.options
+            ),
+            answered=pregunta.answered,
+            chosen_option_keys=tuple(pregunta.chosen_option_keys),
+            confidence=None if pregunta.confidence is None else pregunta.confidence.value,
+            correction=(
+                None
+                if pregunta.correction is None
+                else StudentCorrectionView(
+                    outcome=pregunta.correction.outcome,
+                    correct_option_keys=tuple(pregunta.correction.correct_option_keys),
+                    reason=pregunta.correction.reason,
+                )
+            ),
+        )
+
+    @staticmethod
+    def _fila(pregunta: SessionQuestionView) -> StudentSheetRowView:
+        return StudentSheetRowView(
+            position=pregunta.position,
+            answered=pregunta.answered,
+            chosen_option_keys=tuple(pregunta.chosen_option_keys),
+            confidence=None if pregunta.confidence is None else pregunta.confidence.value,
+            outcome=None if pregunta.correction is None else pregunta.correction.outcome,
+            correct_option_keys=(
+                ()
+                if pregunta.correction is None
+                else tuple(pregunta.correction.correct_option_keys)
+            ),
+        )
+
+    @staticmethod
+    def _parte(parte: PartScoreView) -> StudentPartScoreView:
+        return StudentPartScoreView(
+            part_code=parte.part_code,
+            part_name=parte.part_name,
+            kind=parte.kind,
+            correct=parte.correct,
+            wrong=parte.wrong,
+            blank=parte.blank,
+            score=parte.score.fraction,
+            score_decimal=parte.score.decimal,
+            score_max=parte.score_max,
+            pass_score=parte.pass_score,
+            passed=parte.passed,
+            verdict_note=parte.verdict_note,
+        )
+
+    @staticmethod
+    def _resultado(resultado: SessionResultView | None) -> StudentScoreView | None:
+        if resultado is None:
+            return None
+        total = resultado.total
+        return StudentScoreView(
+            correct=total.correct,
+            wrong=total.wrong,
+            blank=total.blank,
+            points=total.score.fraction,
+            points_decimal=total.score.decimal,
+            maximum=total.score_max,
+            passed=total.passed,
         )

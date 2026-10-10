@@ -19,10 +19,27 @@ Dos cosas que sí viajan y son deliberadas:
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
 from opofuente.api.study_schemas import SessionModeName, SessionStatusName
+
+#: Cómo se corrige un test: al momento o al final. Es el vocabulario del dominio, no uno nuevo.
+StudentFeedbackName = Literal["immediate", "at_end"]
+
+#: Con qué se eligen las preguntas de un test.
+StudentFilterName = Literal["all", "unseen", "failed", "flagged"]
+
+#: Qué se puede marcar de una pregunta al contestarla: la confianza, que es la marca de «dudosa».
+StudentConfidenceName = Literal["low", "medium", "high"]
+
+#: El desenlace de una pregunta ya corregida.
+StudentOutcomeName = Literal["correct", "wrong", "blank"]
+
+#: Las variantes del simulacro y el bloque de su supuesto.
+StudentMockVariantName = Literal["full", "short"]
+StudentCaseBlockName = Literal["III", "IV"]
 
 
 class StudentOppositionSchema(BaseModel):
@@ -67,6 +84,8 @@ class StudentSessionSchema(BaseModel):
     finished_at: datetime | None = None
     created_at: datetime
     result: StudentScoreSchema | None = None
+    #: De dónde salió el supuesto práctico cuando no era material de supuesto: se dice (`bloque`).
+    practical_case_origin: str | None = None
 
 
 class StudentTopicProgressSchema(BaseModel):
@@ -144,3 +163,123 @@ class StudentProgressSchema(BaseModel):
     blocks: list[StudentBlockProgressSchema]
     weakest_topics: list[StudentTopicProgressSchema]
     history: list[StudentSessionSchema]
+
+
+# --- el test en curso: la hoja de respuestas y su corrección -------------------------------------
+#
+# Aquí se ve otra vez la regla de la fase, y con más motivo que en ningún sitio: la pregunta viaja
+# por su **posición en la hoja** (la fila 12), no por su identificador, y una respuesta correcta se
+# llama `correct` y no `correct_option_keys` —el nombre que tiene dentro de la casa— porque estas
+# respuestas son las que más fácil se cuelan por una pantalla. Los nombres de esta capa son los de
+# la hoja de respuestas: posición, opciones, lo marcado.
+
+
+class StudentOptionSchema(BaseModel):
+    """Una opción: su letra (`a`) y su texto."""
+
+    key: str
+    text: str
+
+
+class StudentCorrectionSchema(BaseModel):
+    """La corrección de una pregunta respondida, cuando se puede enseñar."""
+
+    outcome: StudentOutcomeName
+    correct: list[str] = Field(default_factory=list, description="Letras de la plantilla.")
+    reason: str | None = None
+
+
+class StudentQuestionSchema(BaseModel):
+    """La pregunta que se está contestando, por su posición en la hoja."""
+
+    position: int = Field(ge=1)
+    is_reserve: bool
+    stem: str
+    question_type: str
+    options: list[StudentOptionSchema]
+    answered: bool
+    chosen: list[str] = Field(default_factory=list)
+    confidence: StudentConfidenceName | None = None
+    correction: StudentCorrectionSchema | None = None
+
+
+class StudentSheetRowSchema(BaseModel):
+    """Una fila de la hoja de respuestas: qué se marcó en esa posición y cómo quedó."""
+
+    position: int = Field(ge=1)
+    answered: bool
+    chosen: list[str] = Field(default_factory=list)
+    confidence: StudentConfidenceName | None = None
+    outcome: StudentOutcomeName | None = None
+    correct: list[str] = Field(default_factory=list)
+
+
+class StudentRunSchema(BaseModel):
+    """El test en curso: la sesión, la pregunta que toca y la hoja de respuestas entera."""
+
+    session: StudentSessionSchema
+    total: int = Field(ge=0)
+    answered: int = Field(ge=0)
+    pending: int = Field(ge=0)
+    finished: bool
+    position: int | None = Field(default=None, ge=1)
+    question: StudentQuestionSchema | None = None
+    sheet: list[StudentSheetRowSchema]
+
+
+class StudentPartScoreSchema(BaseModel):
+    """La nota de una parte, con la forma con la que se calculó.
+
+    `kind` dice cómo se corrigió (`estimated` cuando la puntuación es la directa escalada a la banda
+    de la parte) y `verdict_note` lo explica en palabras: una estimación no es la calificación
+    oficial, y `passed` se queda en `None` para no declarar un aprobado que nadie ha calculado.
+    """
+
+    part_code: str | None = None
+    part_name: str | None = None
+    kind: str
+    correct: int = Field(ge=0)
+    wrong: int = Field(ge=0)
+    blank: int = Field(ge=0)
+    score: str
+    score_decimal: str
+    score_max: float | None = None
+    pass_score: float | None = None
+    passed: bool | None = None
+    verdict_note: str | None = None
+
+
+class StudentResultSchema(BaseModel):
+    """El resultado de un test: la sesión terminada, la nota por parte y el total."""
+
+    session: StudentSessionSchema
+    parts: list[StudentPartScoreSchema]
+    total: StudentPartScoreSchema
+    official_available: bool
+    official_note: str | None = None
+
+
+class StudentTestRequestSchema(BaseModel):
+    """Lo que manda la pantalla para montar un test: sus temas, cuántas y con qué filtro."""
+
+    nodes: list[str] = Field(min_length=1, description="Códigos de tema, como `IV.10`.")
+    count: int = Field(ge=1, le=200)
+    filter: StudentFilterName = "all"
+    feedback: StudentFeedbackName = "immediate"
+    timed: bool = False
+
+
+class StudentMockExamRequestSchema(BaseModel):
+    """Lo que manda la pantalla para montar un simulacro: variante y bloque del supuesto."""
+
+    variant: StudentMockVariantName = "full"
+    case_block: StudentCaseBlockName = "III"
+
+
+class StudentAnswerRequestSchema(BaseModel):
+    """La respuesta a una pregunta, **por su fila en la hoja de respuestas**."""
+
+    position: int = Field(ge=1)
+    chosen: list[str] = Field(default_factory=list)
+    elapsed_ms: int = Field(default=0, ge=0)
+    confidence: StudentConfidenceName | None = None

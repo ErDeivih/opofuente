@@ -16,6 +16,7 @@ from fractions import Fraction
 
 import pytest
 
+from opofuente.config import project_root
 from opofuente.domain.errors import InvariantViolationError, SessionStateError
 from opofuente.domain.study import (
     OFFICIAL_UNAVAILABLE_NOTE,
@@ -41,6 +42,7 @@ from opofuente.domain.study import (
     score_part,
     verdict_for,
 )
+from opofuente.infrastructure.fixture_loader import load_profiles
 
 TERCIO = Fraction(1, 3)
 
@@ -603,6 +605,114 @@ def test_una_parte_de_tai_no_declara_superada() -> None:
 
     assert veredicto.passed is None
     assert "baremos" in (veredicto.reason or "")
+
+
+# --- la puntuación «estimada» (el caso del propietario: 28,125) -----------------------------------
+
+
+def _parte_de_tai(codigo: str) -> PartRule:
+    """La parte de TAI tal como la publica **su perfil**, leída del fixture y no de memoria.
+
+    Es lo que hace verdad la decisión: el número de alternativas por pregunta
+    (`options_per_question`) viene **nulo** del anexo V, y por eso la parte se puntúa con la
+    estimación y no con la fórmula de Guardia Civil.
+    """
+    perfil = next(
+        profile
+        for profile in load_profiles(project_root() / "fixtures" / "profiles")
+        if profile.convocation.code == "tai-age-2025"
+    )
+    parte = next(candidata for candidata in perfil.parts if candidata.code == codigo)
+    assert parte.options_per_question is None, "el anexo V no publica las alternativas"
+    assert parte.wrong_penalty_fraction is not None
+    return PartRule(
+        code=parte.code,
+        name=parte.name,
+        ordinary_items=parte.ordinary_items,
+        score_min=parte.score_min,
+        score_max=parte.score_max,
+        pass_score=parte.pass_score,
+        penalty=exact_fraction(parte.wrong_penalty_fraction),
+        kind=ScoringKind.ESTIMATED,
+    )
+
+
+def test_la_puntuacion_estimada_de_tai_da_28_125_exacto() -> None:
+    """El caso del propietario: 50 aciertos y 15 fallos en la primera parte → `225/8`.
+
+    La directa ya existía y da 45 (`50 - 15/3`). Lo que faltaba es **escalarla a la banda de la
+    parte**, que es lo que el propietario pidió: `50 · 45/80 = 225/8 = 28,125`, exacto con
+    `Fraction` (nada de `float`).
+    """
+    regla = _parte_de_tai("primera_parte")
+
+    directa = exact_score(50, 15, regla.penalty)
+    estimada = score_part(regla, correct=50, wrong=15)
+
+    assert directa == Fraction(45)
+    assert estimada == Fraction(225, 8)
+    assert estimada == Fraction("28.125")
+    assert decimal_text(estimada) == "28.1250"
+    assert estimada != directa, "escalar no es lo mismo que no escalar: son dos cifras distintas"
+
+
+def test_la_estimacion_no_se_declara_aprobado_y_lo_dice() -> None:
+    """Una estimación no es la calificación oficial: se dice si llega al mínimo y no se aprueba."""
+    regla = _parte_de_tai("primera_parte")
+    estimada = score_part(regla, correct=50, wrong=15)
+
+    veredicto = verdict_for(regla, estimada, wrong=15)
+
+    assert veredicto.passed is None, "la calificación oficial sale de los baremos, que no están"
+    aviso = veredicto.reason or ""
+    assert "estimación" in aviso
+    assert "28.1250" in aviso
+    assert "llega al mínimo publicado" in aviso, (
+        "25 es alcanzable y se dice, sin declararlo aprobado"
+    )
+    assert "baremos" in aviso
+
+    # Y por debajo del mínimo se dice igual, también sin declarar nada.
+    baja = score_part(regla, correct=30, wrong=30)
+    assert verdict_for(regla, baja, wrong=30).passed is None
+    assert "no llega al mínimo publicado" in (verdict_for(regla, baja, wrong=30).reason or "")
+
+
+def test_la_formula_de_guardia_civil_no_se_puede_usar_en_tai() -> None:
+    """`E/(N-1)` necesita la `N`, y TAI no la publica: construir la parte escalada **falla**.
+
+    Es la razón de que exista la estimación, y se comprueba con el perfil real: sin
+    `options_per_question` no hay forma de descontar por alternativa, y un número inventado (4)
+    corregiría con un dato que nadie ha publicado.
+    """
+    parte = _parte_de_tai("primera_parte")
+
+    with pytest.raises(InvariantViolationError):
+        PartRule(
+            code=parte.code,
+            ordinary_items=parte.ordinary_items,
+            score_max=parte.score_max,
+            pass_score=parte.pass_score,
+            penalty=parte.penalty,
+            kind=ScoringKind.SCALED,
+        )
+
+    # Y con las dos cifras publicadas, la estimación sí se puede construir y da el mismo número que
+    # el propietario calculó a mano.
+    assert score_part(parte, correct=50, wrong=15) == Fraction(225, 8)
+
+
+def test_la_segunda_parte_de_tai_tambien_se_estima() -> None:
+    """El supuesto práctico son 20 preguntas sobre 50: `50/20 · (A - E/3)`.
+
+    Con 15 aciertos y 3 fallos: `2,5 · 14 = 35` sobre 50, que es la «nota por parte» de la segunda
+    parte del simulacro.
+    """
+    regla = _parte_de_tai("segunda_parte")
+
+    assert (regla.ordinary_items, regla.score_max) == (20, 50)
+    assert score_part(regla, correct=15, wrong=3) == Fraction(35)
+    assert verdict_for(regla, Fraction(35), wrong=3).passed is None
 
 
 def test_los_veredictos_no_se_reparten_entre_partes_del_total() -> None:
