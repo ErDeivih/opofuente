@@ -75,6 +75,19 @@ TEXTO_SIN_MATERIA = (
     "Respuesta correcta: b\n"
 )
 
+#: Dos preguntas del **mismo epígrafe** y de materias distintas: es lo que deja ver si la
+#: comprobación manda el epígrafe entero o solo los apartados de la pregunta.
+TEXTO_DOS_MATERIAS = (
+    "1. ¿Qué resuelve los nombres de dominio?\n"
+    "a) SMTP\n"
+    "b) DNS\n"
+    "Respuesta correcta: b\n"
+    "2. ¿Qué se usa para transferir páginas web?\n"
+    "a) HTTP\n"
+    "b) FTP\n"
+    "Respuesta correcta: a\n"
+)
+
 TEXTO = (
     "1. ¿Cuántas capas tiene el modelo OSI?\n"
     "a) Cuatro\n"
@@ -282,6 +295,37 @@ def _escenario(
     node_id = repositorio.node_id(tema)
     assert node_id is not None
     return repositorio, preguntas, node_id
+
+
+class _ModeloConHechosCortos(_ModeloFalso):
+    """Un modelo cuyos hechos dicen **solo** lo que dice su pregunta.
+
+    El doble de siempre escribe el mismo relleno en todos sus hechos («tiene siete capas y se
+    estudia
+    por niveles»), y con dos preguntas distintas eso los hace casi iguales: la deduplicación los
+    agrupa en uno y las dos preguntas acaban ancladas al mismo apartado. Para ver de qué apartado
+    recibe el texto cada pregunta, sus hechos no pueden parecerse.
+    """
+
+    def hechos(
+        self,
+        grupos: Sequence[QuestionGroup],
+        *,
+        topic_code: str,
+        topic_title: str,
+        epigraphs: Sequence[tuple[str, str]],
+    ) -> HechosBatch:
+        hechos = tuple(
+            Hecho(
+                text=grupo.representative.stem.strip(),
+                kind=FactKind.TECNICO,
+                epigraph_code=epigraphs[0][0],
+                source_groups=(grupo.signature,),
+                source_questions=grupo.question_ids,
+            )
+            for grupo in grupos
+        )
+        return HechosBatch(hechos=hechos, input_tokens=10, output_tokens=10)
 
 
 class _ModeloQueNoDiceNada(_ModeloFalso):
@@ -1043,6 +1087,72 @@ def test_una_pregunta_que_no_cabe_en_el_indice_va_a_la_bandeja_y_no_para_la_corr
     assert all("otros" not in apartado.key for apartado in repositorio.sections(node_id))
 
 
+def test_la_comprobacion_recibe_la_union_de_sus_apartados_y_lo_que_quepa_del_epigrafe(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """El texto que se comprueba es la unión de **sus** apartados y, si cabe, el resto del epígrafe.
+
+    Las dos mitades importan: la unión es lo que pide el §2.1.1 y lo que hace que el encargo de I.1
+    (nueve apartados de hasta 150 hechos por epígrafe) quepa en la ventana del modelo; el resto del
+    epígrafe es lo que abarata la llamada por caché y lo que permite justificar una respuesta con
+    frase del apartado hermano. Con dos apartados pequeños, la extensión entra y el texto los lleva
+    los dos.
+    """
+    conjunto = _conjunto(seeded_client, titulo="La comprobación que no manda de más")
+    preguntas = _preguntas(seeded_client, conjunto["id"], texto=TEXTO_DOS_MATERIAS)
+    assert len(preguntas) == 2
+    _activar_clave(seeded_client, conjunto["id"])
+    for pregunta in preguntas:
+        _asignar_tema(seeded_client, pregunta["id"], tema="IV.7", epigrafe="IV.7.2")
+    modelo = _ModeloConHechosCortos()
+
+    informe = _servicio(seeded_client, modelo).run("IV.7", now=SystemClock().now())
+
+    # Un apartado por materia, y cada pregunta con los hechos que son suyos.
+    assert [apartado.key for apartado in informe.sections] == ["dns", "web"]
+    con_dns = next(texto for texto in modelo.apuntes_vistos if "nombres de dominio" in texto)
+    assert "## dns ·" in con_dns
+    assert "## web ·" in con_dns, "el epígrafe cabe entero: la llamada se abarata con él"
+
+
+def test_el_texto_de_la_comprobacion_se_corta_por_presupuesto() -> None:
+    """Cuando el epígrafe no cabe, se manda la unión de los apartados de la pregunta y nada más.
+
+    Es lo que hace posible medir I.1: su primer epígrafe son nueve apartados de hasta 150 hechos
+    (≈300.000 caracteres), y mandarlo entero no cabe en la ventana del modelo. El corte es
+    determinista (por tamaño y orden de lectura), así que el mismo tema da el mismo texto y la misma
+    huella.
+    """
+    from opofuente.application.topic_notes_service import _texto_de_apartados
+
+    secciones = (
+        NoteSection(
+            key="dns",
+            epigraph_code="IV.7.2",
+            title="DNS",
+            anchor="dns",
+            position=1,
+            body_markdown="El DNS resuelve los nombres de dominio y usa el puerto 53.",
+        ),
+        NoteSection(
+            key="web",
+            epigraph_code="IV.7.2",
+            title="HTTP y HTTPS",
+            anchor="web",
+            position=2,
+            body_markdown="HTTP es el protocolo de transferencia de hipertexto y usa el 80/TCP.",
+        ),
+    )
+
+    entero, verificable = _texto_de_apartados(secciones, {"dns"})
+    ajustado, _ = _texto_de_apartados(secciones, {"dns"}, presupuesto=10)
+
+    assert "## dns ·" in entero and "## web ·" in entero
+    assert "## web ·" not in ajustado, "sin presupuesto, solo lo que es de la pregunta"
+    assert "## dns ·" in ajustado
+    assert verificable.startswith("El DNS resuelve los nombres de dominio")
+
+
 # --- la marca de corrida --------------------------------------------------------------------------
 
 
@@ -1052,6 +1162,7 @@ def test_dos_corridas_de_apuntes_a_la_vez_no_se_pisan(
     """Escribir apuntes es lo más caro del proyecto: la segunda corrida se niega.
 
     El 10 de octubre de 2026 se lanzaron dos a la vez sobre I.6 y hubo que matar la segunda. La
+    marca
     es la misma que usa el clasificador, con su propia clave: la clasificación y los apuntes no se
     bloquean el uno al otro, pero dos corridas de apuntes sí.
     """

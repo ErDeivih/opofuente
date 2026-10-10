@@ -102,6 +102,13 @@ logger = logging.getLogger("opofuente.application.topic_notes_service")
 INTENTOS_POR_LLAMADA = 3
 ESPERA_ENTRE_INTENTOS = 2.0
 
+#: Presupuesto de caracteres del texto que se manda a comprobar una pregunta. La unión de sus
+#: apartados va siempre; el resto de sus epígrafes, mientras quepa aquí. El número no es de
+#: epígrafe entero de un tema normativo no cabe en la ventana del modelo (el primer epígrafe de I.1
+#: son ≈300.000 caracteres) y un apartado con sus hermanos pequeños sí, que es el caso de I.6
+#: (≈50.000 en su epígrafe más largo).
+PRESUPUESTO_CARACTERES_COMPROBACION = 60_000
+
 T = TypeVar("T")
 
 
@@ -634,19 +641,27 @@ class TopicNotesService:
         resultado.
 
         El texto que recibe cada pregunta es la **unión de los apartados donde están sus hechos**
-        (más el resto de sus epígrafes, que es lo que abarata la llamada): con el reparto por
-        materia, una pregunta sobre UDP puede tener un hecho en UDP y otro en IPv6, y los dos tienen
-        que poder justificar su respuesta.
+        (§2.1.1): con el reparto por materia, una pregunta sobre UDP puede tener un hecho en UDP y
+        otro en IPv6, y los dos tienen que poder justificar su respuesta.
+
+        Antes se mandaba el **epígrafe entero** de esos apartados, «que es lo que abarataba la
+        llamada» (la parte repetida se cobra a precio de caché). Se dejó de hacer por dos razones
+        medidas, no por gusto: el encargo de I.1 —nueve apartados de hasta 150 hechos en su primer
+        epígrafe— no cabe en la ventana del modelo (≈80.000 tokens frente a 64.000), y mandar texto
+        que no es de la pregunta invita a citar una frase de un apartado que no es el suyo. Lo que
+        se
+        manda es exactamente lo que dice el §2.1.1, y el ahorro de caché se recupera porque las
+        preguntas de un mismo apartado siguen viajando juntas en el mismo lote.
         """
-        por_epigrafes: dict[
+        por_apartados: dict[
             frozenset[str], list[tuple[QuestionGroup, tuple[NoteSection, ...]]]
         ] = {}
         for grupo, apartados in objetivo:
-            clave = frozenset(apartado.epigraph_code for apartado in apartados)
-            por_epigrafes.setdefault(clave, []).append((grupo, apartados))
+            clave = frozenset(apartado.key for apartado in apartados)
+            por_apartados.setdefault(clave, []).append((grupo, apartados))
         resultados: dict[str, NotesCheck] = {}
-        for epigrafes, suyos in por_epigrafes.items():
-            apuntes, verificable = _texto_de_epigrafes(secciones, epigrafes)
+        for claves, suyos in por_apartados.items():
+            apuntes, verificable = _texto_de_apartados(secciones, claves)
             for lote in _trozos(suyos, self._lote_comprobacion):
                 grupos_lote = [grupo for grupo, _ in lote]
                 resultado = self._llamada(
@@ -1153,36 +1168,65 @@ def _huella_de(secciones: Sequence[NoteSection], apartados: Sequence[NoteSection
     """La huella del texto con el que se comprueba un grupo: la unión de los apartados de sus
     hechos.
 
-    Es la **misma lectura** que hace `_comprobar` (`_texto_de_epigrafes`), y tiene que serlo: si
-    aquí
-    se calculara sobre otro texto, la huella no diría nada sobre lo que se verificó, y una
+    Es la **misma lectura** que hace `_comprobar` (`_texto_de_apartados`), y tiene que serlo: si
+    aquí se calculara sobre otro texto, la huella no diría nada sobre lo que se verificó, y una
     comprobación se daría por buena —o se repetiría— por un motivo falso.
     """
     return huella_de_texto(
-        _texto_de_epigrafes(secciones, {apartado.epigraph_code for apartado in apartados})[1]
+        _texto_de_apartados(secciones, {apartado.key for apartado in apartados})[1]
     )
 
 
-def _texto_de_epigrafes(
-    secciones: Sequence[NoteSection], epigrafes: Collection[str]
+def _texto_de_apartados(
+    secciones: Sequence[NoteSection],
+    claves: Collection[str],
+    *,
+    presupuesto: int = PRESUPUESTO_CARACTERES_COMPROBACION,
 ) -> tuple[str, str]:
-    """El texto de unos epígrafes para comprobar, en dos formas: la del modelo y la verificable.
+    """El texto de unos apartados para comprobar, en dos formas: la del modelo y la verificable.
 
     La primera lleva delante el anclaje y el título de cada apartado para que el modelo sepa dónde
     está; la segunda es el mismo texto **sin esos encabezados**, y es contra la que se verifica la
     frase copiada. La diferencia importa: un encabezado lo escribimos nosotros, no es una frase de
-    los
-    apuntes, y no puede justificar una respuesta. Lo que el modelo lee y lo que se comprueba salen
-    de
-    la misma lectura, así que no pueden divergir.
+    los apuntes, y no puede justificar una respuesta. Lo que el modelo lee y lo que se comprueba
+    salen de la misma lectura, así que no pueden divergir.
+
+    El texto es la **unión de los apartados de la pregunta** (§2.1.1) y, mientras quepa en el
+    presupuesto, **el resto de sus epígrafes**. Las dos partes importan y por eso están juntas:
+
+    - la unión es lo que pide el objetivo, y es lo que hace que el encargo quepa en la ventana del
+      modelo: el primer epígrafe de I.1 son nueve apartados de hasta 150 hechos (≈300.000
+      caracteres) y no entra en modo alguno;
+    - el resto del epígrafe es lo que **abarataba** la llamada (la parte repetida se cobra a precio
+      de caché) y lo que permite justificar una respuesta con una frase de un apartado hermano: el
+      hecho va al apartado de lo que afirma, y una pregunta puede estar contestada en el apartado de
+      al lado sin dejar de ser su epígrafe. Medido en I.6, quitarlo se llevó la cobertura del 63,6 %
+      a menos de la mitad.
+
+    El corte es por tamaño y por orden de lectura, así que es determinista: el mismo tema da el
+    texto y la misma huella.
     """
+    propios = [a for a in secciones if a.key in claves and a.body_markdown.strip()]
+    epigrafes = {apartado.epigraph_code for apartado in propios}
+    elegidos = {apartado.key: apartado for apartado in propios}
+    total = sum(len(apartado.body_markdown) for apartado in propios)
+    for apartado in secciones:
+        if apartado.key in elegidos or apartado.epigraph_code not in epigrafes:
+            continue
+        if not apartado.body_markdown.strip():
+            continue
+        largura = len(apartado.body_markdown)
+        if total + largura > presupuesto:
+            continue
+        elegidos[apartado.key] = apartado
+        total += largura
+    ordenados = sorted(elegidos.values(), key=lambda apartado: apartado.position)
     partes = [
         (
             f"## {apartado.anchor} · {apartado.title}\n\n{apartado.body_markdown}",
             apartado.body_markdown,
         )
-        for apartado in secciones
-        if apartado.epigraph_code in epigrafes and apartado.body_markdown.strip()
+        for apartado in ordenados
     ]
     return ("\n\n".join(parte[0] for parte in partes), "\n\n".join(parte[1] for parte in partes))
 
