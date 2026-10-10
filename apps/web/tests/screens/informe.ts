@@ -20,6 +20,12 @@ export interface FilaDeCaptura {
   violaciones: string[];
   prohibidas: Encontrado[];
   alto?: number;
+  /**
+   * El nombre del PNG, sin extensión. Se guarda **calculado** y no se deduce de la ruta al escribir
+   * el informe: una ruta con identificador dentro (`/test/<uuid>`) daría un fichero distinto en cada
+   * corrida y el enlace del informe apuntaría a un PNG que no existe.
+   */
+  fichero?: string;
 }
 
 const SALIDA = path.resolve(process.cwd(), '..', '..', 'artifacts', 'screens');
@@ -83,7 +89,8 @@ export function escribirInforme(): void {
 
   lineas.push('', '## PNG', '');
   for (const fila of filas) {
-    lineas.push(`- [${fila.ruta} · ${fila.ancho}](${nombreDeFichero(fila.ruta, fila.ancho)}.png)`);
+    const fichero = fila.fichero ?? nombreDeFichero(fila.ruta, fila.ancho);
+    lineas.push(`- [${fila.ruta} · ${fila.ancho}](${fichero}.png)`);
   }
 
   // Los errores de consola, con su texto: una pantalla que carga con un error en la consola está

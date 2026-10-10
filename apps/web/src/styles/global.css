@@ -1185,3 +1185,282 @@ kbd {
   display: block;
   padding: 0.2rem 0;
 }
+/* --- El test en curso con la hoja de respuestas (diseño v0) --------------------------------------
+ *
+ * Los tokens de la «hoja de respuestas» son **nuevos** y conviven con los de arriba: el panel de
+ * administración sigue con los suyos, y cambiar los de toda la aplicación es el paso del sistema de
+ * diseño (§3.7 del objetivo), que no es esta tanda. Aquí viven los colores con los que se pinta la
+ * hoja: papel, tinta y el azul de lectura óptica.
+ */
+.test-marco {
+  --hoja-papel: #f4f6f9;
+  --hoja-superficie: #ffffff;
+  --hoja-tinta: #18202b;
+  --hoja-tinta-suave: #5a6472;
+  --hoja-linea: #d5dce6;
+  --hoja-azul: #2347c5;
+  --hoja-azul-suave: #e7ecfb;
+  --hoja-acierto: #15734a;
+  --hoja-acierto-suave: #e3f2ea;
+  --hoja-fallo: #b42318;
+  --hoja-fallo-suave: #fbe8e6;
+  --hoja-dudosa: #9a6200;
+  --hoja-dudosa-suave: #fbf0d9;
+
+  background: var(--hoja-papel);
+  color: var(--hoja-tinta);
+  min-height: 100vh;
+  padding: 1.25rem clamp(0.75rem, 3vw, 2.5rem) 3rem;
+}
+
+.test-cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  align-items: baseline;
+  border-bottom: 1px solid var(--hoja-linea);
+  padding-bottom: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.test-cabecera__progreso {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.test-cabecera__titulo {
+  margin: 0;
+  color: var(--hoja-tinta-suave);
+}
+
+.test-cabecera__acciones {
+  margin-left: auto;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.test-cabecera__hoja-boton {
+  display: none;
+}
+
+.test-cuerpo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2rem;
+  align-items: start;
+  max-width: 1080px;
+}
+
+.test-pregunta__numero {
+  margin: 0 0 0.25rem;
+  color: var(--hoja-tinta-suave);
+  font-variant-numeric: tabular-nums;
+}
+
+.test-pregunta__enunciado {
+  font-size: 1.25rem;
+  line-height: 1.5;
+  margin: 0 0 1.25rem;
+}
+
+.test-opciones {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.test-opcion {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 2rem 1fr auto;
+  gap: 0.75rem;
+  align-items: center;
+  text-align: left;
+  background: var(--hoja-superficie);
+  color: inherit;
+  border: 1px solid var(--hoja-linea);
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  font: inherit;
+  cursor: pointer;
+}
+
+.test-opcion:focus-visible,
+.hoja__numero:focus-visible {
+  outline: 3px solid var(--hoja-azul);
+  outline-offset: 2px;
+}
+
+.test-opcion--elegida {
+  border-color: var(--hoja-azul);
+  background: var(--hoja-azul-suave);
+}
+
+.test-opcion--correcta {
+  border-color: var(--hoja-acierto);
+  background: var(--hoja-acierto-suave);
+}
+
+.test-opcion--fallada {
+  border-color: var(--hoja-fallo);
+  background: var(--hoja-fallo-suave);
+}
+
+.test-opcion__letra {
+  font-weight: 700;
+  color: var(--hoja-azul);
+}
+
+.test-opcion__tecla {
+  color: var(--hoja-tinta-suave);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.test-opcion__marca {
+  margin: 0.2rem 0 0.4rem 2.75rem;
+  font-size: 0.9rem;
+  color: var(--hoja-tinta-suave);
+}
+
+.test-ayuda {
+  margin-top: 1rem;
+  color: var(--hoja-tinta-suave);
+  font-size: 0.9rem;
+}
+
+.test-hoja {
+  background: var(--hoja-superficie);
+  border: 1px solid var(--hoja-linea);
+  border-radius: 6px;
+  padding: 0.75rem 1rem 1rem;
+  min-width: 12rem;
+}
+
+.test-hoja__titulo {
+  font-size: 1rem;
+  margin: 0 0 0.5rem;
+}
+
+.hoja {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.3rem;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.hoja__fila {
+  display: grid;
+  grid-template-columns: 2rem 1fr;
+  gap: 0.35rem;
+  align-items: center;
+  border-radius: 4px;
+  padding: 0.1rem 0.2rem;
+}
+
+.hoja__fila[data-actual='si'] {
+  background: var(--hoja-azul-suave);
+  box-shadow: inset 3px 0 0 var(--hoja-azul);
+}
+
+.hoja__numero {
+  background: none;
+  border: 0;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  color: var(--hoja-tinta-suave);
+  cursor: pointer;
+  padding: 0.1rem;
+}
+
+.hoja__casillas {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.hoja__casilla {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 1px solid var(--hoja-linea);
+  border-radius: 3px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--hoja-tinta-suave);
+}
+
+.hoja__casilla--marcada {
+  background: var(--hoja-azul);
+  border-color: var(--hoja-azul);
+  color: #ffffff;
+}
+
+.hoja__casilla--dudosa {
+  background: var(--hoja-dudosa-suave);
+  border: 2px solid var(--hoja-dudosa);
+  color: var(--hoja-dudosa);
+}
+
+.hoja__casilla--correcta {
+  background: var(--hoja-acierto);
+  border-color: var(--hoja-acierto);
+  color: #ffffff;
+}
+
+.hoja__casilla--fallada {
+  background: var(--hoja-fallo);
+  border-color: var(--hoja-fallo);
+  color: #ffffff;
+}
+
+.hoja__vacia {
+  color: var(--hoja-tinta-suave);
+  margin: 0;
+}
+
+.test-resultado {
+  margin-top: 2rem;
+  border-top: 1px solid var(--hoja-linea);
+  padding-top: 1rem;
+  max-width: 1080px;
+}
+
+.test-parts {
+  list-style: none;
+  margin: 0.5rem 0;
+  padding: 0;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.test-parts__aviso,
+.test-resultado__aviso {
+  color: var(--hoja-tinta-suave);
+}
+
+@media (max-width: 900px) {
+  .test-cuerpo {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .test-cabecera__hoja-boton {
+    display: inline-flex;
+  }
+
+  .test-hoja {
+    display: none;
+  }
+
+  .test-hoja--abierta {
+    display: block;
+  }
+}

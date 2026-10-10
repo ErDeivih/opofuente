@@ -15,6 +15,7 @@ import { SettingsPage } from '../pages/SettingsPage';
 import { StudyPage } from '../pages/StudyPage';
 import { TopicReviewPage } from '../pages/TopicReviewPage';
 import { TrayPage } from '../pages/TrayPage';
+import { StudentTestRunner } from '../features/study/StudentTestRunner';
 import { AdminShell } from './AdminShell';
 import { AppShell } from './AppShell';
 import { ROUTE_REDIRECTS, STUDENT_NAV_ITEMS } from './navigation';
@@ -77,6 +78,15 @@ const SECCIONES_PENDIENTES = STUDENT_NAV_ITEMS.filter((item) => item.path !== '/
 export function AppRoutes() {
   return (
     <Routes>
+      {/* --- El test en curso: modo examen ------------------------------------ */}
+      {/*
+        Va **fuera** del marco del alumno a propósito: en modo test desaparece la navegación (el
+        diseño lo pide: «modo test = modo examen»), y el marco es justo lo que la pinta. Colgarlo de
+        `StudentZone` habría dejado el carril a la vista o habría obligado a esconderlo con una
+        bandera dentro del marco, que es una segunda forma de decidir lo mismo.
+      */}
+      <Route path="/test/:id" element={<StudentTestRunner />} />
+
       {/* --- Zona del alumno -------------------------------------------------- */}
       <Route element={<StudentZone />}>
         <Route path="/" element={<HomePage />} />
