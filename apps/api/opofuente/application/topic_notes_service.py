@@ -131,9 +131,9 @@ PRESUPUESTO_CARACTERES_COMPROBACION = 60_000
 #: La media de las cinco es este número, redondeado hacia arriba.
 #:
 #: **Y lo que hay que saber al leer la previsión**: la media esconde un recorrido de casi el 60 %
-#: (de 0,0055 $ a 0,0087 $ por llamada), y los dos temas **normativos** densos —I.2 e I.4— caen en la
-#: parte alta, porque una llamada de estos temas devuelve mucho más texto (I.4: 11.518 tokens de
-#: salida por llamada, el doble que la media de las tres antiguas). Por eso la cota de arriba de
+#: (de 0,0055 $ a 0,0087 $ por llamada), y los dos temas **normativos** densos —I.2 e I.4— caen en
+#: la parte alta, porque una llamada de estos temas devuelve mucho más texto (I.4: 11.518 tokens
+#: de salida por llamada, el doble que la media de las tres antiguas). Por eso la cota de arriba de
 #: `--prever` es un **suelo** para un tema así y no un techo: I.4 se previó en 1,03 $ y costó
 #: 1,4625 $. Con el tope de 1,20 $ por tema, la decisión se toma sobre la cota de arriba **más un
 #: tercio** cuando el tema es normativo y denso.
