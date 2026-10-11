@@ -479,7 +479,9 @@ def sin_encabezados_repetidos(texto: str) -> str:
     return "\n".join(salida)
 
 
-def sin_encabezados_repetidos_en_el_tema(textos: Sequence[str]) -> tuple[str, ...]:
+def sin_encabezados_repetidos_en_el_tema(
+    textos: Sequence[str], titulos: Sequence[str] = ()
+) -> tuple[str, ...]:
     """Quita de cada apartado los encabezados que ya han salido en otro **anterior** del tema.
 
     Es la misma reparación que `sin_encabezados_repetidos`, pero sobre el tema entero: la puerta de
@@ -490,6 +492,13 @@ def sin_encabezados_repetidos_en_el_tema(textos: Sequence[str]) -> tuple[str, ..
     su propio índice —`## 2. Composición de las Cámaras` en el primero y `### 2. Composición de las
     Cámaras` en el segundo—, con hechos distintos debajo de cada uno.
 
+    `titulos` (opcional, uno por texto y en el mismo orden) son los títulos de los apartados. Hace
+    falta porque **el título de un apartado es un encabezado más** para la puerta: en I.2, el
+    apartado `cortes-funciones` llevaba dentro un `### Defensor del Pueblo` y el tema tiene además
+    un apartado titulado «El Defensor del Pueblo», así que la puerta veía el mismo nombre dos veces
+    y con razón. Un encabezado del cuerpo que repite el título de **otro** apartado se quita; el
+    propio no, que ese es cómo se titula.
+
     Se quita **el encabezado**, nunca el texto que lleva debajo: lo que se lee sigue siendo todo. La
     causa (que cada trozo escriba su propio índice) se arregla escribiéndolos en orden y diciéndole
     al
@@ -498,7 +507,12 @@ def sin_encabezados_repetidos_en_el_tema(textos: Sequence[str]) -> tuple[str, ..
     """
     vistos: list[str] = []
     salida: list[str] = []
-    for texto in textos:
+    for posicion, texto in enumerate(textos):
+        # Los títulos de los **demás** apartados, que son encabezados del tema aunque vivan fuera de
+        # este texto. El suyo no: su primer encabezado es su propio título.
+        ajenos = [
+            titulo for otra, titulo in enumerate(titulos) if otra != posicion and titulo.strip()
+        ]
         lineas: list[str] = []
         for linea in texto.split("\n"):
             casado = _ENCABEZADO.match(linea)
@@ -506,7 +520,9 @@ def sin_encabezados_repetidos_en_el_tema(textos: Sequence[str]) -> tuple[str, ..
                 lineas.append(linea)
                 continue
             titulo = casado.group(2).strip()
-            if titulo and any(mismo_encabezado(anterior, titulo) for anterior in vistos):
+            if titulo and any(
+                mismo_encabezado(anterior, titulo) for anterior in (*vistos, *ajenos)
+            ):
                 continue
             if titulo:
                 vistos.append(titulo)

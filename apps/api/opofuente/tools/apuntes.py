@@ -607,7 +607,8 @@ def _limpiar_forma(notas: SqlAlchemyTopicNotesRepository, code: str) -> tuple[st
         return (f"[{code}] no existe ese tema en el programa",)
     apartados = list(notas.sections(node_id))
     sin_repetidos = sin_encabezados_repetidos_en_el_tema(
-        [apartado.body_markdown for apartado in apartados]
+        [apartado.body_markdown for apartado in apartados],
+        titulos=[apartado.title for apartado in apartados],
     )
     lineas = [f"[{code}] limpieza de forma"]
     tocados = 0

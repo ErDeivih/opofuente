@@ -114,6 +114,22 @@ ESPERA_ENTRE_INTENTOS = 2.0
 #: (≈50.000 en su epígrafe más largo).
 PRESUPUESTO_CARACTERES_COMPROBACION = 60_000
 
+#: Lo que costó, de media, **una llamada** al modelo. Es lo que convierte una previsión de llamadas
+#: en una previsión de dinero, que es la cifra con la que se decide si un tema cabe en el tope de la
+#: tanda (1,20 $) o si hay que reducirle el alcance.
+#:
+#: No es una tarifa inventada: se mide sobre las tres corridas grandes que hay registradas en
+#: `docs/ESTADO-DEL-OBJETIVO.md` §1, con los tokens que devolvió cada llamada y la tabla de precios
+#: del proyecto (entrada 0,15 $/M y salida 0,60 $/M):
+#:
+#: - I.1 (355 llamadas, 1,9593 $) → 0,00552 $ por llamada;
+#: - IV.7, la corrida del reparto por materia (92 llamadas, 0,5955 $) → 0,00647 $ por llamada;
+#: - I.6, la reescritura con el tope del añadido (74 llamadas, 0,5116 $) → 0,00691 $ por llamada.
+#:
+#: La media de las tres es este número. Es una media de corridas **distintas**, así que se dice
+#: «estimado» y se dan las llamadas, que sí son deterministas: quien decide puede mirar las dos.
+COSTE_MEDIO_POR_LLAMADA_USD = 0.0063
+
 T = TypeVar("T")
 
 
@@ -541,8 +557,101 @@ class TopicNotesService:
         conservados = sorted(con_texto - set(reciclados) - set(fuera))
         if conservados:
             lineas.append(f"    {len(conservados)} apartado(s) se conservan tal cual")
+        lineas.extend(
+            self._prevision_de_llamadas(
+                nodo,
+                hechos,
+                planes,
+                reciclados=reciclados,
+                vacios=vacios,
+                indice=indice,
+            )
+        )
         if indice is not None:
             lineas.extend(revisar_indice(indice, planes).lines())
+        return tuple(lineas)
+
+    def _prevision_de_llamadas(
+        self,
+        nodo: NotesNode,
+        hechos: Sequence[Hecho],
+        planes: Sequence[NoteSection],
+        *,
+        reciclados: Sequence[str],
+        vacios: Sequence[str],
+        indice: IndiceDelTema | None,
+    ) -> tuple[str, ...]:
+        """Cuántas llamadas y cuánto dinero costaría la corrida, **sin llamar a nadie**.
+
+        Decir qué apartados se conservan y cuáles se rehacen no basta para decidir si un tema cabe
+        en el tope de la tanda: falta el número que se paga. Se calcula de lo que ya está en la
+        base, que por eso es determinista:
+
+        - **hechos** (paso B): los grupos que no tienen ningún hecho guardado, en lotes de
+          `lote_hechos`;
+        - **redacción** (paso D): una llamada por apartado sin texto, más una por apartado que se
+          recicla porque ha perdido hechos (su texto se escribió con otros);
+        - **comprobación** (paso E): los grupos que se pueden comprobar —los situados en el índice,
+          que son los que tendrán un apartado con texto—, en lotes de `lote_comprobacion`.
+
+        Y lo que **no** se puede saber antes de escribir: el **bucle de huecos**. Depende de lo que
+        conteste el modelo al comprobar, así que se da como cota superior (un añadido por apartado
+        y otra pasada de comprobación). Las dos cifras van dichas y no se funden en una: una cota no
+        es un resultado.
+
+        Y un caso que se dice en vez de taparse: un tema **sin hechos** no tiene plan. El índice se
+        reparte con el texto de los hechos, así que sin ellos no hay nada que repartir y el plan
+        sale vacío —medido: I.2 recién estrenado daba «0 apartado(s)»—. La redacción no se puede
+        prever hasta que el paso B escriba los hechos, pero la cota de abajo sí: el catálogo, porque
+        cada materia del catálogo es al menos un apartado. Se dice cuál de las dos cosas se usa,
+        que es lo que impide confundir una previsión con un cero.
+        """
+        grupos = self._repository.question_groups(nodo.node_id)
+        firmas_con_hechos = {firma for hecho in hechos for firma in hecho.source_groups}
+        pendientes = sum(1 for grupo in grupos if grupo.signature not in firmas_con_hechos)
+        llamadas_hechos = -(-pendientes // self._lote_hechos)
+        a_redactar = len(set(vacios) | set(reciclados))
+        aviso_plan_vacio = ""
+        if not planes and pendientes:
+            # Sin hechos no hay plan y la redacción no se puede prever. La cota de abajo es el
+            # catálogo: se redacta al menos un apartado por materia (y más si alguna no cabe en su
+            # llamada y se parte).
+            materias = catalogo(nodo.code) or ()
+            a_redactar = len(materias)
+            aviso_plan_vacio = (
+                f"        (el plan está vacío porque el tema todavía no tiene hechos: la redacción "
+                f"no se puede prever hasta que el paso B los escriba. La cota de abajo es el "
+                f"catálogo, {len(materias)} materia(s), que es al menos un apartado cada una)"
+            )
+        sin_materia = len(indice.grupos_sin_materia) if indice is not None else 0
+        comprobables = max(0, len(grupos) - sin_materia)
+        llamadas_comprobacion = -(-comprobables // self._lote_comprobacion)
+        minimo = llamadas_hechos + a_redactar + llamadas_comprobacion
+        # El bucle de huecos solo llama por los apartados que tienen huecos, y como mucho son todos.
+        apartados_previstos = len(planes) or a_redactar
+        maximo = minimo + apartados_previstos + llamadas_comprobacion
+        lineas = [
+            "    prevision de llamadas (sin llamar a nadie):",
+            f"        hechos: {llamadas_hechos} llamada(s) para {pendientes} grupo(s) sin hechos "
+            f"(lotes de {self._lote_hechos})",
+            f"        redaccion: {a_redactar} llamada(s) para los apartados sin texto "
+            f"({len(vacios)} vacio(s) y {len(reciclados)} reciclado(s))",
+        ]
+        if aviso_plan_vacio:
+            lineas.append(aviso_plan_vacio)
+        lineas.extend(
+            (
+                f"        comprobacion: {llamadas_comprobacion} llamada(s) para {comprobables} "
+                f"grupo(s) (lotes de {self._lote_comprobacion})",
+                f"        bucle de huecos: hasta {apartados_previstos} anadido(s) y "
+                f"{llamadas_comprobacion} recomprobacion(es), que dependen de lo que conteste el "
+                "modelo",
+                f"        total: {minimo} llamada(s) como minimo y {maximo} como maximo",
+                f"        coste estimado: {minimo * COSTE_MEDIO_POR_LLAMADA_USD:.2f} $ como minimo "
+                f"y {maximo * COSTE_MEDIO_POR_LLAMADA_USD:.2f} $ como maximo "
+                f"({COSTE_MEDIO_POR_LLAMADA_USD:.4f} $ por llamada, la media medida)",
+            )
+        )
         return tuple(lineas)
 
     # ------------------------------------------------------------------ paso D: la redacción

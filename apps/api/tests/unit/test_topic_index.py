@@ -184,10 +184,16 @@ def test_un_catalogo_con_la_misma_clave_dos_veces_se_rechaza() -> None:
 
 
 def test_un_tema_sin_catalogo_no_tiene_indice() -> None:
-    """I.2 todavía no tiene catálogo: sin catálogo no hay índice, y eso se dice, no se inventa."""
-    assert catalogo("I.2") is None
+    """I.9 todavía no tiene catálogo: sin catálogo no hay índice, y eso se dice, no se inventa.
+
+    El tema del ejemplo es uno de los que siguen sin catálogo: cuando se le escriba el suyo, esta
+    prueba tiene que cambiar de tema y **no** de expectativa —lo que comprueba es que un tema sin
+    catálogo no tiene índice, no cuál es ese tema—. IV.2 e I.2 fueron el ejemplo antes de que se les
+    definiera el suyo, que es exactamente lo que le pasará a este.
+    """
+    assert catalogo("I.9") is None
     with pytest.raises(KeyError):
-        indice_de(topic_code="I.2", topic_title="La Constitución", epigraphs=EPIGRAFES)
+        indice_de(topic_code="I.9", topic_title="La Constitución", epigraphs=EPIGRAFES)
 
 
 # --- el catálogo de I.1 (la estructura de la norma) -----------------------------------------------

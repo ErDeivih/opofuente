@@ -993,9 +993,11 @@ def test_el_esquema_de_un_tema_sin_catalogo_lo_dice_sin_inventarlo(
     monkeypatch.setenv("OPOFUENTE_DATA_DIR", str(seeded_settings.data_dir))
     get_settings.cache_clear()
     try:
-        # I.2 todavía no tiene catálogo de materias (I.1 sí desde esta tanda): el índice de un tema
-        # se define antes de redactar y no se inventa.
-        codigo = apuntes.main(["--tema", "I.2", "--esquema"])
+        # I.9 todavía no tiene catálogo de materias (I.1, I.2, I.6, IV.2 y IV.7 sí): el índice de un
+        # tema se define antes de redactar y no se inventa. La prueba usa un tema del programa que
+        # siga sin catálogo, y por eso el nombre cambia cuando se le escribe uno: I.2 y luego IV.2
+        # fueron el ejemplo hasta que se les definió el suyo.
+        codigo = apuntes.main(["--tema", "I.9", "--esquema"])
     finally:
         get_settings.cache_clear()
         os.environ.pop("OPOFUENTE_DATA_DIR", None)
@@ -1349,6 +1351,74 @@ def test_el_comando_enseña_el_indice_y_su_revision_sin_la_clave(
     assert codigo == 0
     assert "Índice por materias" in salida
     assert "revision del indice: PASA" in salida
+
+
+def test_el_comando_prever_dice_lo_que_costaria_la_corrida_antes_de_pagarla(
+    seeded_settings: Settings,
+    seeded_client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """`--prever` dice **cuántas llamadas** y **cuánto dinero** costaría la corrida, sin llamar.
+
+    Es la regla del bloque de apuntes: prever antes de pagar. Decir qué apartados se conservan y
+    cuáles se rehacen no basta para decidir si un tema cabe en el tope de la tanda: falta el número
+    que se paga. La previsión es un **mínimo** (hechos, redacción y comprobación, que son
+    deterministas) y un **máximo** (lo que añadiría el bucle de huecos, que depende de lo que
+    conteste el modelo), y las dos cifras van dichas para que nadie confunda una cota con un
+    resultado.
+    """
+    _escenario(seeded_client, titulo="Lo que costaría la corrida")
+    monkeypatch.delenv(apuntes.VARIABLE_DE_LA_CLAVE, raising=False)
+    monkeypatch.setenv("OPOFUENTE_DATA_DIR", str(seeded_settings.data_dir))
+    get_settings.cache_clear()
+    try:
+        codigo = apuntes.main(["--tema", "IV.7", "--prever"])
+    finally:
+        get_settings.cache_clear()
+        os.environ.pop("OPOFUENTE_DATA_DIR", None)
+
+    salida = capsys.readouterr().out
+    assert codigo == 0
+    assert "prevision de llamadas" in salida
+    # Sin hechos guardados, el paso B tiene que pedirlos: la previsión lo dice.
+    assert "hechos: 1 llamada(s)" in salida, salida
+    # Y sin hechos no hay plan: la cota de abajo de la redacción es el catálogo de IV.7, que tiene
+    # 25 materias, y la previsión dice que está usando esa cota en vez de callarse el cero.
+    assert "redaccion: 25 llamada(s)" in salida, salida
+    assert "el plan está vacío porque el tema todavía no tiene hechos" in salida, salida
+    assert "coste estimado" in salida
+    assert "como minimo" in salida and "como maximo" in salida
+
+
+def test_la_prevision_baja_cuando_el_tema_ya_esta_escrito(
+    seeded_settings: Settings,
+    seeded_client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Lo ya escrito y ya comprobado **no** se vuelve a pagar, y la previsión tiene que verlo.
+
+    Es la mitad que evita pagar dos veces por lo mismo sin enterarse: con el tema terminado, las
+    llamadas de hechos y de redacción son cero y solo queda la comprobación, que también se
+    reutiliza si el texto no ha cambiado. Una previsión que no bajara al repetir la corrida no
+    valdría para decidir.
+    """
+    _escenario(seeded_client, titulo="La previsión que baja")
+    _servicio(seeded_client, _ModeloFalso()).run("IV.7", now=SystemClock().now())
+    monkeypatch.delenv(apuntes.VARIABLE_DE_LA_CLAVE, raising=False)
+    monkeypatch.setenv("OPOFUENTE_DATA_DIR", str(seeded_settings.data_dir))
+    get_settings.cache_clear()
+    try:
+        codigo = apuntes.main(["--tema", "IV.7", "--prever"])
+    finally:
+        get_settings.cache_clear()
+        os.environ.pop("OPOFUENTE_DATA_DIR", None)
+
+    salida = capsys.readouterr().out
+    assert codigo == 0
+    assert "hechos: 0 llamada(s)" in salida, salida
+    assert "redaccion: 0 llamada(s)" in salida, salida
 
 
 def test_un_tema_sin_preguntas_clasificadas_lo_dice_y_no_sigue(

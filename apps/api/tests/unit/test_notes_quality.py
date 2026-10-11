@@ -32,6 +32,7 @@ from opofuente.domain.notes_quality import (
     parrafos,
     quitar_encabezado_repetido,
     revisar_apuntes,
+    sin_encabezados_repetidos_en_el_tema,
     tablas_rotas,
     trigramas,
 )
@@ -166,6 +167,35 @@ def test_muchos_apartados_con_la_misma_cabecera_es_un_hallazgo() -> None:
     assert "protocolos tcp ip" in cabeceras.line()
     # Los tres títulos son distintos: la comprobación de encabezado repetido, sola, no los vería.
     assert ENCABEZADOS_REPETIDOS not in {hallazgo.codigo for hallazgo in revision.hallazgos}
+
+
+def test_un_encabezado_del_cuerpo_que_repite_el_titulo_de_otro_apartado_se_quita() -> None:
+    """La puerta mide los encabezados de **todo** el tema, y el título de un apartado es uno más.
+
+    Medido en I.2: el apartado `cortes-funciones` llevaba dentro un `### Defensor del Pueblo` (el
+    epígrafe de las atribuciones que la Constitución da a las Cortes sobre él) y el tema tiene
+    además un apartado titulado «El Defensor del Pueblo». Para la puerta son el mismo encabezado dos
+    veces, y con razón: son dos apartados con el mismo nombre. Se quita **el encabezado del cuerpo**
+    —el texto que lleva debajo se queda— porque el nombre del apartado lo pone el esquema, no el
+    redactor.
+    """
+    textos = (
+        "## Composición y funciones\n\nLas Cortes nombran al Defensor del Pueblo.\n"
+        "\n### Defensor del Pueblo\n\nSu designación corresponde a las Cortes.\n",
+        "## Qué es\n\nEs un alto comisionado de las Cortes Generales.\n",
+    )
+    titulos = ("Atribuciones de las Cortes Generales", "El Defensor del Pueblo")
+
+    limpios = sin_encabezados_repetidos_en_el_tema(textos, titulos=titulos)
+
+    assert "Defensor del Pueblo" not in [titulo for _nivel, titulo in encabezados(limpios[0])], (
+        limpios[0]
+    )
+    # El texto que llevaba debajo sigue ahí: se quita el encabezado, no el contenido.
+    assert "Su designación corresponde a las Cortes." in limpios[0]
+    # Y el título del propio apartado no se toca.
+    assert "## Composición y funciones" in limpios[0]
+    assert limpios[1] == textos[1]
 
 
 def test_dos_apartados_con_la_misma_cabecera_no_son_un_hallazgo() -> None:
