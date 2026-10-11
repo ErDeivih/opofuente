@@ -3,7 +3,38 @@
 Lo que conviene que sepas y **no** hace falta que contestes para que el trabajo siga. Lo que sí
 necesita tu criterio está marcado como **«Decide tú»**.
 
-## 11 oct 2026 — I.2 (las Cortes, el Tribunal Constitucional y el Defensor del Pueblo) ya se lee
+## 11 oct 2026 — I.2 ya se lee; I.4 se queda en borrador con su motivo, y dos cosas del motor
+
+**Lo que cambia para ti:**
+
+1. **I.2 (las Cortes, el Tribunal Constitucional y el Defensor del Pueblo) está publicado y se lee.**
+   Contesta al **95,2 %** de las 703 preguntas que tienen una clave con la que se puede acertar (sobre
+   todas las que tienen clave, el 80,1 %), y pasa las dos puertas. Son 16 apartados y 1.233 hechos. Su
+   bandeja te deja **99 incidencias**: 73 de norma cambiada, 19 de clave sospechosa, 6 de hueco sin
+   material y 1 de pregunta ambigua.
+2. **I.4 (el EBEP, la Ley 19/2013 de transparencia y la Agenda 2030) se queda en borrador, y no por
+   falta de texto**: contesta al **88,9 %** y el listón es el 90 % —le faltan 7 preguntas—. Su forma
+   **sí pasa** y sus 15 apartados están escritos, así que lo tienes en el panel con el motivo escrito.
+   De sus 546 grupos, 62 están sin cubrir y **31 de ellos tienen en los apuntes la frase que sostiene
+   otra opción distinta de la clave**: igual que en I.6, buena parte del hueco es tu criterio sobre
+   las claves (47 de sus 55 incidencias son de la clave, no del texto). **No he bajado el listón para
+   que pasara.**
+3. **Tu bandeja** va por **270 incidencias** con I.2 (99) e I.4 (55) sumadas a las de I.1, IV.7 e I.6.
+4. **Dos cosas del motor que interesaban**, las dos con prueba que falla antes:
+   - **`--prever` ahora dice lo que cuesta**, no solo lo que rehace: llamadas de hechos, de redacción
+     y de comprobación, la cota de arriba del bucle de huecos y los euros. En I.2 acertó la cota de
+     arriba (dijo 195, hizo 194); en I.4 se quedó corto en dinero (dijo 1,03 $, costó 1,46 $) porque
+     ese tema devuelve el doble de texto por llamada. Ya está corregida la tabla, con las cinco
+     corridas medidas dentro.
+   - **Un tope de tiempo para la corrida entera** (`--tiempo-maximo`): sin él, una corrida larga solo
+     se puede parar matando el proceso. Ahora para de llamar sola, lo escrito se conserva y volver a
+     lanzarla sigue desde ahí. (El tope **por llamada**, 300 s, ya estaba.)
+5. **Y una cosa que conté mal y corrijo aquí**: a mitad de la tanda de I.4 parecía que la corrida
+   estaba colgada. Se miró y **no lo estaba** —el proceso que se miraba era el lanzador, que siempre
+   marca 0 s de CPU—: seguía escribiendo y con la conexión a la API abierta. Lo dejo escrito para que
+   nadie más saque esa conclusión de ese dato.
+
+### I.2 y la tanda, con detalle
 
 **Lo que cambia para ti:** hay un tema más en la zona del alumno. **I.2** contesta al **95,2 %** de
 las 703 preguntas que tienen una clave con la que se puede acertar (sobre todas las que tienen clave,

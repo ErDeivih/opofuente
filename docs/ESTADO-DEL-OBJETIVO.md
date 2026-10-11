@@ -1,4 +1,4 @@
-# Estado del objetivo largo (TAI: los 33 temas y la app de estudio)
+﻿# Estado del objetivo largo (TAI: los 33 temas y la app de estudio)
 
 **Autoridad:** `docs/GOAL-DEEPSEEK-TRABAJO-LARGO-2026-10.md` · **Presupuesto de API:** 40 $ · **Se
 avisa cada 10 $** · Última actualización: **11 oct 2026 (tanda f15: se eligen los temas por valor
@@ -44,7 +44,9 @@ tokens que devolvió cada llamada; el coste es la estimación con la tabla de pr
 | **Acumulado medido de f14** | | | **0** | **0** | **0** | **0,0000 $** |
 | 11-oct | I.2 | la redacción completa del tema (paso B a bucle de huecos) | 194 | 2.149.315 | 1.493.911 | 1,2187 $ |
 | 11-oct | I.2 | `--medir`, `--limpiar-forma` y `--publicar` (solo lectura y limpieza) | 0 | 0 | 0 | 0,0000 $ |
-| **Acumulado medido de f15** | | | **194** | **2.149.315** | **1.493.911** | **1,2187 $** |
+| 11-oct | I.4 | la redacción completa del tema (paso B a bucle de huecos) | 169 | 1.963.599 | 1.946.630 | 1,4625 $ |
+| 11-oct | I.4 | `--medir`, `--limpiar-forma` y `--publicar` (solo lectura y limpieza) | 0 | 0 | 0 | 0,0000 $ |
+| **Acumulado medido de f15** | | | **363** | **4.112.914** | **3.440.541** | **2,6812 $** |
 
 *(f13 no llama al modelo a propósito: es el bloque de interfaz y de la ruta de escritura de los
 avisos. f14 tampoco: es interfaz y consultas de lectura sobre la base; lo único que se ejecuta son las
@@ -64,7 +66,7 @@ Tres avisos para que nadie sume mal:
   salida se perdió al matar el proceso): es del orden de la corrida siguiente, **≈0,40 $**;
 - **el acumulado del objetivo no se puede dar.** Lo anterior a f10 no está en ninguna fuente. Con lo
   medido (≈1,31 $ de f10 + 0,4411 $ de f11 + 3,0816 $ de f12 + ≈0,40 $ de la corrida matada + 0,00 $
-  de f13 + 0,00 $ de f14 + 1,2187 $ de f15 = **≈6,45 $**) el aviso de los 10 $ **sigue sin
+  de f13 + 0,00 $ de f14 + 2,6812 $ de f15 = **≈7,91 $**) el aviso de los 10 $ **sigue sin
   cruzarse**.
 
 **Y una corrección de método**: el informe de una corrida contaba la cobertura **antes** del bucle de
@@ -80,7 +82,8 @@ guardado y `--prever` dice lo que costaría una corrida **antes** de pagarla.
 | **I.6** | **borrador con su motivo** (versión retirada) | 346 → 299 | 13 | **187/258 = 72,5 % NO PASA** | 187/283 = 66,1 % | 20 (`clave_sospechosa`) | 20 | **PASA las cinco** (13.174 palabras de 13.840; repetidos 0,6 %) |
 | **I.1** | **publicado** (versión archivada, con la marca «Versión generada · en revisión») | 3.511 → 1.724 redactados | 21 | **1.965/1.995 = 98,5 % PASA** | 1.965/2.035 = 96,6 % | 15 | 10 | **PASA las cinco** (60.400 palabras de 140.440; repetidos 2,2 %) |
 | **I.2** | **publicado** (versión archivada, con la marca «Versión generada · en revisión») | 1.233 → 696 redactados | 16 | **669/703 = 95,2 % PASA** | 669/835 = 80,1 % | 19 | 6 | **PASA las cinco** (24.061 palabras de 49.320; repetidos 2,9 %) |
-| resto (29) | sin empezar | | | | | | | |
+| **I.4** | **borrador con su motivo** | 1.056 → 721 redactados | 15 | **497/559 = 88,9 % NO PASA** | 497/579 = 85,8 % | 31 | 3 | **PASA las cinco** (27.787 palabras de 42.240; repetidos 4,2 %) |
+| resto (28) | sin empezar | | | | | | | |
 
 *(Cifras de **esta** tanda, medidas con `apuntes --medir` sobre la base real —no heredadas de la
 corrida que las escribió—. Las tres filas son del 10-oct: IV.7 es la única que no se ha tocado. La
@@ -330,6 +333,45 @@ delante, la regla se endurece para los temas siguientes: **se escribe entero el 
 previsto quepa en el tope**, y el que no, se deja para otra tanda o se le reduce el alcance. El
 detalle está en `DECISIONES-TOMADAS-EN-EL-OBJETIVO.md`.
 
+### I.4 (602 preguntas, 546 grupos), escrito y medido el 11-oct: **se queda en borrador**
+
+Se eligió por la misma regla —es el 4.º por valor, 577 preguntas con clave— y **después de que su
+previsión máxima (1,03 $) cupiera en el tope**, que es la regla endurecida tras lo de I.2.
+
+| Qué se midió | Valor |
+|---|---|
+| Cobertura (clave utilizable) | **497/559 = 88,9 % NO PASA** (umbral 90 %) |
+| Cobertura (todas las que tienen clave) | 497/579 = 85,8 % |
+| Hechos | 1.056 (de 15 apartados) |
+| Forma | **PASA** · 27.787 palabras de 42.240 · repetidos 4,2 % |
+| Índice | PASA · 15 apartados · 2 grupos y 4 hechos sin materia |
+| Bandeja del propietario | **55 incidencias**: 30 `clave_sospechosa`, 17 `norma_cambiada`, 5 `pregunta_ambigua`, 3 `hueco_sin_material` |
+| Llamadas y coste | **169 llamadas · 1,4625 $** |
+
+**El motivo escrito del borrador**: contesta al 88,9 % de las 559 preguntas con clave utilizable y el
+listón del §2.3 es el 90 %. **No se toca el listón**: le faltan 7 preguntas cubiertas y 62 de sus 546
+grupos están sin cubrir, de los cuales 31 tienen la frase en los apuntes sosteniendo **otra letra**
+que la clave y 3 no tienen frase. Como en I.6, buena parte del hueco es criterio del propietario
+sobre las claves (47 de sus 55 incidencias son de la clave, no del texto), así que el tema queda en
+borrador y visible en el panel, con esta frase.
+
+**Y aquí la previsión falló, medido:**
+
+| | `--prever` dijo | La corrida hizo |
+|---|---|---|
+| Llamadas | 96 como mínimo y 164 como máximo | **169** |
+| Coste | 0,60 $ como mínimo y 1,03 $ como máximo | **1,4625 $** |
+
+La cota de llamadas se quedó corta por 5 (169 frente a 164) y la de **dinero por un 42 %**. La causa
+está medida: I.4 devolvió **11.518 tokens de salida por llamada** donde la media de las tres corridas
+antiguas era 5.700, así que su llamada costó 0,00865 $ y no los 0,0063 $ de la tabla. Con eso:
+
+- `COSTE_MEDIO_POR_LLAMADA_USD` sube a **0,0068 $** (la media de las **cinco** corridas medidas) y su
+  docstring lleva las cinco, el recorrido de 0,0055 a 0,0087 y el aviso de que para un tema
+  normativo denso la cota de arriba de `--prever` es un **suelo**, no un techo;
+- y la decisión del tope de 1,20 $ por tema se toma sobre esa cota **más un tercio** cuando el tema
+  es normativo y denso.
+
 ### La tabla que decide qué tema se escribe primero (medida sobre la base real, 11-oct)
 
 No es el orden del temario ni el de ningún documento: es, por cada tema, **cuántas preguntas tienen
@@ -341,7 +383,7 @@ mide con `valor_por_tema.py` sobre la base real y se ordena por esa columna.
 | 1 | I.1 | 2.008 | 2.043 | 2.035 | **1.995** | 3.511 | hecho (publicado) |
 | 2 | I.2 | 685 | 845 | 835 | **835** | 1.233 | **hecho en f15 (publicado)** |
 | 3 | IV.2 | 770 | 807 | 797 | **797** | 0 | índice escrito (f15), sin redactar |
-| 4 | I.4 | 546 | 602 | 577 | **577** | 0 | sin empezar |
+| 4 | I.4 | 546 | 602 | 577 | **577** | 1.056 | **borrador en f15 (88,9 %)** |
 | 5 | II.4 | 501 | 577 | 566 | **566** | 0 | sin empezar |
 | 6 | I.8 | 442 | 606 | 566 | **566** | 0 | sin empezar |
 | 7 | I.7 | 377 | 586 | 550 | **550** | 0 | sin empezar |

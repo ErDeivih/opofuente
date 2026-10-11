@@ -118,17 +118,26 @@ PRESUPUESTO_CARACTERES_COMPROBACION = 60_000
 #: en una previsión de dinero, que es la cifra con la que se decide si un tema cabe en el tope de la
 #: tanda (1,20 $) o si hay que reducirle el alcance.
 #:
-#: No es una tarifa inventada: se mide sobre las tres corridas grandes que hay registradas en
+#: No es una tarifa inventada: se mide sobre las **cinco** corridas grandes que hay registradas en
 #: `docs/ESTADO-DEL-OBJETIVO.md` §1, con los tokens que devolvió cada llamada y la tabla de precios
 #: del proyecto (entrada 0,15 $/M y salida 0,60 $/M):
 #:
 #: - I.1 (355 llamadas, 1,9593 $) → 0,00552 $ por llamada;
-#: - IV.7, la corrida del reparto por materia (92 llamadas, 0,5955 $) → 0,00647 $ por llamada;
-#: - I.6, la reescritura con el tope del añadido (74 llamadas, 0,5116 $) → 0,00691 $ por llamada.
+#: - IV.7, la corrida del reparto por materia (92 llamadas, 0,5955 $) → 0,00647 $;
+#: - I.6, la reescritura con el tope del añadido (74 llamadas, 0,5116 $) → 0,00691 $;
+#: - I.2 (194 llamadas, 1,2187 $) → 0,00628 $;
+#: - I.4 (169 llamadas, 1,4625 $) → 0,00865 $.
 #:
-#: La media de las tres es este número. Es una media de corridas **distintas**, así que se dice
-#: «estimado» y se dan las llamadas, que sí son deterministas: quien decide puede mirar las dos.
-COSTE_MEDIO_POR_LLAMADA_USD = 0.0063
+#: La media de las cinco es este número, redondeado hacia arriba.
+#:
+#: **Y lo que hay que saber al leer la previsión**: la media esconde un recorrido de casi el 60 %
+#: (de 0,0055 $ a 0,0087 $ por llamada), y los dos temas **normativos** densos —I.2 e I.4— caen en la
+#: parte alta, porque una llamada de estos temas devuelve mucho más texto (I.4: 11.518 tokens de
+#: salida por llamada, el doble que la media de las tres antiguas). Por eso la cota de arriba de
+#: `--prever` es un **suelo** para un tema así y no un techo: I.4 se previó en 1,03 $ y costó
+#: 1,4625 $. Con el tope de 1,20 $ por tema, la decisión se toma sobre la cota de arriba **más un
+#: tercio** cuando el tema es normativo y denso.
+COSTE_MEDIO_POR_LLAMADA_USD = 0.0068
 
 T = TypeVar("T")
 
