@@ -99,6 +99,93 @@ export interface StudentReport {
   created_at: string;
 }
 
+/** El progreso: bloques, los cinco temas más flojos, el historial y cuántos tests hay hechos. */
+export interface StudentProgress {
+  opposition: StudentOppositionRef;
+  blocks: StudentBlockProgress[];
+  weakest_topics: StudentTopicProgress[];
+  history: StudentSession[];
+  /** Tests **terminados** de esta persona: no los que caben en el historial. */
+  tests_finished: number;
+}
+
+/** Una parte del simulacro, con lo que publica el perfil del examen y nada más. */
+export interface StudentMockExamPart {
+  code: string;
+  name: string;
+  ordinary_items: number | null;
+  reserve_items: number | null;
+  score_max: number | null;
+  pass_score: number | null;
+  penalty: string | null;
+  time_minutes: number | null;
+}
+
+/** Una variante del simulacro: qué cae, cuánto dura y qué es lo que **no** es. */
+export interface StudentMockExamVariant {
+  variant: 'full' | 'short';
+  title: string;
+  time_limit_minutes: number | null;
+  parts: StudentMockExamPart[];
+  note: string | null;
+}
+
+export interface StudentMockCaseTopic {
+  code: string;
+  title: string;
+  available_questions: number;
+}
+
+export interface StudentMockCaseBlock {
+  code: string;
+  title: string;
+  topics: StudentMockCaseTopic[];
+}
+
+/** El simulacro antes de montarlo: sus dos variantes y los bloques del supuesto. */
+export interface StudentMockExamPlan {
+  opposition: StudentOppositionRef;
+  full: StudentMockExamVariant;
+  short: StudentMockExamVariant;
+  case_blocks: StudentMockCaseBlock[];
+}
+
+/** Un examen oficial importado, por su sitio en la lista. */
+export interface StudentOfficialExam {
+  position: number;
+  title: string;
+  held_at: string | null;
+  questions: number;
+  ready: boolean;
+}
+
+export interface StudentOfficialExams {
+  exams: StudentOfficialExam[];
+}
+
+/** Una pregunta fallada: qué decía, de qué era, cuándo y cuántas veces. */
+export interface StudentMistake {
+  stem: string;
+  topics: { code: string; title: string }[];
+  last_failed_at: string;
+  times_failed: number;
+  due: boolean;
+}
+
+export interface StudentMistakeTopic {
+  code: string;
+  title: string;
+  failed: number;
+  due: number;
+}
+
+export interface StudentMistakes {
+  total: number;
+  due_total: number;
+  questions: StudentMistake[];
+  topics: StudentMistakeTopic[];
+}
+
 /** Inicio: el test a medias, los fallos vencidos, el progreso por bloque y lo último hecho. */
 export function getStudentOverview(): Promise<StudentOverview> {
   return apiFetch<StudentOverview>('/api/v1/student/overview');
@@ -107,6 +194,35 @@ export function getStudentOverview(): Promise<StudentOverview> {
 /** El temario: bloques y temas en orden numérico, con lo disponible y el acierto. */
 export function getStudentSyllabus(): Promise<StudentSyllabus> {
   return apiFetch<StudentSyllabus>('/api/v1/student/syllabus');
+}
+
+/** El progreso: acierto por bloque y por tema, los cinco más flojos y el historial de tests. */
+export function getStudentProgress(): Promise<StudentProgress> {
+  return apiFetch<StudentProgress>('/api/v1/student/progress');
+}
+
+/**
+ * Qué va a caer en el simulacro, leído del perfil del examen.
+ *
+ * Es lo que permite elegir sabiendo qué se elige: las partes con sus preguntas y sus reservas, el
+ * tiempo, la penalización y los temas de cada bloque del supuesto. Nada de esto se escribe a mano en
+ * la pantalla; si el perfil no publica un dato, llega `null` y se dice que no está.
+ */
+export function getStudentMockExamPlan(): Promise<StudentMockExamPlan> {
+  return apiFetch<StudentMockExamPlan>('/api/v1/student/mock-exams');
+}
+
+/**
+ * Los exámenes oficiales importados. Una lista vacía es un estado, no un error: quiere decir que
+ * todavía no se ha importado ninguno, y la pantalla lo dice con esas palabras.
+ */
+export function getStudentOfficialExams(): Promise<StudentOfficialExams> {
+  return apiFetch<StudentOfficialExams>('/api/v1/student/official-exams');
+}
+
+/** Las preguntas que fallaste la última vez, con su tema, su fecha y cuántas veces. */
+export function getStudentMistakes(): Promise<StudentMistakes> {
+  return apiFetch<StudentMistakes>('/api/v1/student/mistakes');
 }
 
 /** Un tema por su código: título, epígrafes, recuentos y progreso. */

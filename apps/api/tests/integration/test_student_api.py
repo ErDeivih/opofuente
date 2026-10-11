@@ -441,6 +441,9 @@ def _respuestas_de_alumno(zona: ZonaAlumno) -> dict[str, Any]:
         "topics/IV.1/notes": "/api/v1/student/topics/IV.1/notes",
         "topics/IV.10/notes": "/api/v1/student/topics/IV.10/notes",
         "progress": "/api/v1/student/progress",
+        "mock-exams/plan": "/api/v1/student/mock-exams",
+        "official-exams": "/api/v1/student/official-exams",
+        "mistakes": "/api/v1/student/mistakes",
         "topics/inexistente": "/api/v1/student/topics/XX.99",
         "topics/inexistente/notes": "/api/v1/student/topics/XX.99/notes",
     }
@@ -495,6 +498,13 @@ def _respuestas_de_alumno(zona: ZonaAlumno) -> dict[str, Any]:
     cerrado = zona.client.post(f"/api/v1/student/sessions/{sesion}/finish", headers=ALLOWED_ORIGIN)
     assert cerrado.status_code == 200, cerrado.text
     respuestas["sessions/finish"] = cerrado.json()
+
+    # El resultado del test terminado (F14) es la respuesta más larga de esta capa: cada pregunta
+    # con sus opciones, lo que se marcó, la correcta y su tema. Si algo se colara, se colaría aquí.
+    resultado = zona.client.get(f"/api/v1/student/sessions/{sesion}/result")
+    assert resultado.status_code == 200, resultado.text
+    respuestas["sessions/result"] = resultado.json()
+    assert respuestas["sessions/result"]["questions"], "el resultado tiene preguntas que enseñar"
 
     simulacro = zona.client.post(
         "/api/v1/student/mock-exams",

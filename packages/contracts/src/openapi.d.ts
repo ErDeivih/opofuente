@@ -2586,6 +2586,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/student/mistakes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Las preguntas que fallaste la última vez, con su tema, su fecha y cuántas veces
+         * @description Los fallos, y de aquí sale un test.
+         *
+         *     Cada fila dice **de qué tema** era la pregunta —el dato que convierte la lista en algo que se
+         *     puede usar— y el reparto por tema es lo que permite pedir un test solo con los fallos de un
+         *     tema. Ese test lo compone el motor con el filtro de falladas, sobre los intentos de verdad: esta
+         *     lista es para mirar, no la fuente de la composición.
+         */
+        get: operations["student_mistakes_api_v1_student_mistakes_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/student/mock-exams": {
         parameters: {
             query?: never;
@@ -2593,7 +2618,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * El simulacro antes de montarlo: sus variantes, sus partes y el bloque del supuesto
+         * @description Qué va a caer en el simulacro, leído del perfil del examen.
+         *
+         *     Es la ruta que hace que se pueda elegir **sabiendo qué se elige**: cuántas preguntas tiene cada
+         *     parte, cuántas de reserva, cuánto dura, con qué se corrige (la penalización publicada) y qué
+         *     temas entran en cada uno de los dos bloques del supuesto. Nada de esto se escribe a mano en la
+         *     pantalla: sale de la convocatoria, y lo que la convocatoria no publica viaja como `null`.
+         */
+        get: operations["student_mock_exam_plan_api_v1_student_mock_exams_get"];
         put?: never;
         /**
          * Monta el simulacro con el perfil del examen y el bloque elegido para el supuesto
@@ -2603,6 +2637,54 @@ export interface paths {
          *     bloque, la sesión lo dice (`practical_case_origin`).
          */
         post: operations["student_create_mock_exam_api_v1_student_mock_exams_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/student/official-exams": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Los exámenes oficiales importados (hoy, ninguno: la lista vacía se dice)
+         * @description Los exámenes oficiales que hay importados de esta oposición.
+         *
+         *     Una lista vacía es un **estado**, no un error: quiere decir que todavía no se ha importado
+         *     ninguno, y la pantalla lo dice con esas palabras en vez de quedarse en blanco o de enseñar otra
+         *     cosa con el nombre de «examen oficial».
+         */
+        get: operations["student_official_exams_api_v1_student_official_exams_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/student/official-exams/{posicion}/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Monta el examen oficial que ocupa esa posición de la lista
+         * @description El examen se pide por su **sitio en la lista**, no por un identificador.
+         *
+         *     Es la misma regla que la hoja de respuestas: lo que el alumno tiene delante es la fila, y por
+         *     eso
+         *     la fila es la dirección. Así la zona del alumno sigue sin enseñar de dónde salen las preguntas.
+         */
+        post: operations["student_create_official_exam_api_v1_student_official_exams__posicion__sessions_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2701,6 +2783,32 @@ export interface paths {
         put?: never;
         /** Termina el test y devuelve el resultado con la nota de cada parte */
         post: operations["student_finish_api_v1_student_sessions__sesion__finish_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/student/sessions/{sesion}/result": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * El resultado de un test terminado: la nota por parte, el tiempo y pregunta a pregunta
+         * @description El resultado entero de un test terminado, con lo que hace falta para repasar.
+         *
+         *     Cada pregunta con tus opciones, lo que marcaste, cuál era la correcta y **de qué tema era**, más
+         *     el desglose por tema. Es la pantalla que contesta a «qué he fallado y por dónde lo repaso», que
+         *     es
+         *     para lo que sirve un resultado; de un test sin terminar, el motor dice que no hay resultado y la
+         *     respuesta lo repite en lugar de enseñar medio resultado.
+         */
+        get: operations["student_session_result_api_v1_student_sessions__sesion__result_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -7560,6 +7668,110 @@ export interface components {
             title: string;
         };
         /**
+         * StudentMistakeSchema
+         * @description Una pregunta fallada: qué decía, de qué era, cuándo y cuántas veces.
+         */
+        StudentMistakeSchema: {
+            /** Due */
+            due: boolean;
+            /**
+             * Last Failed At
+             * Format: date-time
+             */
+            last_failed_at: string;
+            /** Stem */
+            stem: string;
+            /** Times Failed */
+            times_failed: number;
+            /** Topics */
+            topics?: components["schemas"]["StudentTopicRefSchema"][];
+        };
+        /**
+         * StudentMistakeTopicSchema
+         * @description Los fallos de un tema: es con lo que se pide un test solo de esos fallos.
+         */
+        StudentMistakeTopicSchema: {
+            /** Code */
+            code: string;
+            /** Due */
+            due: number;
+            /** Failed */
+            failed: number;
+            /** Title */
+            title: string;
+        };
+        /**
+         * StudentMistakesSchema
+         * @description Los fallos: los totales, los que se enseñan y su reparto por tema.
+         */
+        StudentMistakesSchema: {
+            /** Due Total */
+            due_total: number;
+            /** Questions */
+            questions: components["schemas"]["StudentMistakeSchema"][];
+            /** Topics */
+            topics: components["schemas"]["StudentMistakeTopicSchema"][];
+            /** Total */
+            total: number;
+        };
+        /**
+         * StudentMockCaseBlockSchema
+         * @description Un bloque del que se puede elegir el supuesto (III o IV).
+         */
+        StudentMockCaseBlockSchema: {
+            /** Code */
+            code: string;
+            /** Title */
+            title: string;
+            /** Topics */
+            topics: components["schemas"]["StudentMockCaseTopicSchema"][];
+        };
+        /**
+         * StudentMockCaseTopicSchema
+         * @description Un tema del bloque del supuesto, con sus preguntas disponibles hoy.
+         */
+        StudentMockCaseTopicSchema: {
+            /** Available Questions */
+            available_questions: number;
+            /** Code */
+            code: string;
+            /** Title */
+            title: string;
+        };
+        /**
+         * StudentMockExamPartSchema
+         * @description Una parte del simulacro, con lo que publica el perfil del examen y nada más.
+         */
+        StudentMockExamPartSchema: {
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+            /** Ordinary Items */
+            ordinary_items?: number | null;
+            /** Pass Score */
+            pass_score?: number | null;
+            /** Penalty */
+            penalty?: string | null;
+            /** Reserve Items */
+            reserve_items?: number | null;
+            /** Score Max */
+            score_max?: number | null;
+            /** Time Minutes */
+            time_minutes?: number | null;
+        };
+        /**
+         * StudentMockExamPlanSchema
+         * @description El simulacro antes de montarlo: las dos variantes y los bloques del supuesto.
+         */
+        StudentMockExamPlanSchema: {
+            /** Case Blocks */
+            case_blocks: components["schemas"]["StudentMockCaseBlockSchema"][];
+            full: components["schemas"]["StudentMockExamVariantSchema"];
+            opposition: components["schemas"]["StudentOppositionSchema"];
+            short: components["schemas"]["StudentMockExamVariantSchema"];
+        };
+        /**
          * StudentMockExamRequestSchema
          * @description Lo que manda la pantalla para montar un simulacro: variante y bloque del supuesto.
          */
@@ -7573,6 +7785,25 @@ export interface components {
             /**
              * Variant
              * @default full
+             * @enum {string}
+             */
+            variant: "full" | "short";
+        };
+        /**
+         * StudentMockExamVariantSchema
+         * @description Una variante del simulacro: qué cae, cuánto dura y qué es lo que **no** es.
+         */
+        StudentMockExamVariantSchema: {
+            /** Note */
+            note?: string | null;
+            /** Parts */
+            parts: components["schemas"]["StudentMockExamPartSchema"][];
+            /** Time Limit Minutes */
+            time_limit_minutes?: number | null;
+            /** Title */
+            title: string;
+            /**
+             * Variant
              * @enum {string}
              */
             variant: "full" | "short";
@@ -7621,6 +7852,30 @@ export interface components {
              * @enum {string}
              */
             state: "published" | "draft" | "none";
+        };
+        /**
+         * StudentOfficialExamSchema
+         * @description Un examen oficial, por su sitio en la lista: título, fecha, tamaño y si se puede hacer.
+         */
+        StudentOfficialExamSchema: {
+            /** Held At */
+            held_at?: string | null;
+            /** Position */
+            position: number;
+            /** Questions */
+            questions: number;
+            /** Ready */
+            ready: boolean;
+            /** Title */
+            title: string;
+        };
+        /**
+         * StudentOfficialExamsSchema
+         * @description Los exámenes oficiales importados. Una lista vacía es un estado, no un error.
+         */
+        StudentOfficialExamsSchema: {
+            /** Exams */
+            exams: components["schemas"]["StudentOfficialExamSchema"][];
         };
         /**
          * StudentOppositionSchema
@@ -7693,6 +7948,9 @@ export interface components {
         /**
          * StudentProgressSchema
          * @description El progreso: acierto por bloque y por tema, los cinco más flojos e historial.
+         *
+         *     `tests_finished` es el número de tests **terminados** de esta persona, no los que caben en el
+         *     historial: la cifra se lee al lado de una lista de veinte y tiene que ser la de verdad.
          */
         StudentProgressSchema: {
             /** Blocks */
@@ -7700,6 +7958,8 @@ export interface components {
             /** History */
             history: components["schemas"]["StudentSessionSchema"][];
             opposition: components["schemas"]["StudentOppositionSchema"];
+            /** Tests Finished */
+            tests_finished: number;
             /** Weakest Topics */
             weakest_topics: components["schemas"]["StudentTopicProgressSchema"][];
         };
@@ -7764,6 +8024,37 @@ export interface components {
             status: "open" | "reviewed" | "dismissed";
         };
         /**
+         * StudentResultQuestionSchema
+         * @description Una pregunta corregida: sus opciones, lo que se marcó, la correcta y de qué era.
+         */
+        StudentResultQuestionSchema: {
+            /** Chosen */
+            chosen?: string[];
+            /** Correct */
+            correct?: string[];
+            /** Elapsed Ms */
+            elapsed_ms?: number | null;
+            /** Is Reserve */
+            is_reserve: boolean;
+            /** Options */
+            options: components["schemas"]["StudentOptionSchema"][];
+            /**
+             * Outcome
+             * @enum {string}
+             */
+            outcome: "correct" | "wrong" | "blank" | "void";
+            /** Part Code */
+            part_code?: string | null;
+            /** Part Name */
+            part_name?: string | null;
+            /** Position */
+            position: number;
+            /** Stem */
+            stem: string;
+            /** Topics */
+            topics?: components["schemas"]["StudentTopicRefSchema"][];
+        };
+        /**
          * StudentResultSchema
          * @description El resultado de un test: la sesión terminada, la nota por parte y el total.
          */
@@ -7776,6 +8067,26 @@ export interface components {
             parts: components["schemas"]["StudentPartScoreSchema"][];
             session: components["schemas"]["StudentSessionSchema"];
             total: components["schemas"]["StudentPartScoreSchema"];
+        };
+        /**
+         * StudentResultTopicSchema
+         * @description Cómo fue el test en un tema: aciertos, fallos, blancos y el porcentaje que sale de ellos.
+         */
+        StudentResultTopicSchema: {
+            /** Accuracy */
+            accuracy?: number | null;
+            /** Blank */
+            blank: number;
+            /** Code */
+            code: string;
+            /** Correct */
+            correct: number;
+            /** Graded */
+            graded: number;
+            /** Title */
+            title: string;
+            /** Wrong */
+            wrong: number;
         };
         /**
          * StudentRunSchema
@@ -7820,6 +8131,26 @@ export interface components {
             points_decimal: string;
             /** Wrong */
             wrong: number;
+        };
+        /**
+         * StudentSessionResultSchema
+         * @description El resultado de un test terminado, con el tiempo empleado y las preguntas una a una.
+         */
+        StudentSessionResultSchema: {
+            /** Duration Seconds */
+            duration_seconds?: number | null;
+            /** Official Available */
+            official_available: boolean;
+            /** Official Note */
+            official_note?: string | null;
+            /** Parts */
+            parts: components["schemas"]["StudentPartScoreSchema"][];
+            /** Questions */
+            questions: components["schemas"]["StudentResultQuestionSchema"][];
+            session: components["schemas"]["StudentSessionSchema"];
+            /** Topics */
+            topics: components["schemas"]["StudentResultTopicSchema"][];
+            total: components["schemas"]["StudentPartScoreSchema"];
         };
         /**
          * StudentSessionSchema
@@ -7951,6 +8282,16 @@ export interface components {
             notes_state: "published" | "draft" | "none";
             /** Number */
             number?: number | null;
+            /** Title */
+            title: string;
+        };
+        /**
+         * StudentTopicRefSchema
+         * @description Un tema por su código legible: la respuesta a «¿de qué era esto?».
+         */
+        StudentTopicRefSchema: {
+            /** Code */
+            code: string;
             /** Title */
             title: string;
         };
@@ -16405,6 +16746,100 @@ export interface operations {
             };
         };
     };
+    student_mistakes_api_v1_student_mistakes_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentMistakesSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    student_mock_exam_plan_api_v1_student_mock_exams_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentMockExamPlanSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
     student_create_mock_exam_api_v1_student_mock_exams_post: {
         parameters: {
             query?: never;
@@ -16417,6 +16852,103 @@ export interface operations {
                 "application/json": components["schemas"]["StudentMockExamRequestSchema"];
             };
         };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentSessionSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    student_official_exams_api_v1_student_official_exams_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentOfficialExamsSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    student_create_official_exam_api_v1_student_official_exams__posicion__sessions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Su sitio en la lista de exámenes oficiales (el primero, el segundo). */
+                posicion: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             201: {
@@ -16671,6 +17203,55 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StudentResultSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    student_session_result_api_v1_student_sessions__sesion__result_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sesion: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentSessionResultSchema"];
                 };
             };
             /** @description El recurso no existe. */

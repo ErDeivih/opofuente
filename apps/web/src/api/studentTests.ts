@@ -106,12 +106,57 @@ export interface StudentPartScore {
   verdict_note: string | null;
 }
 
+/**
+ * El desenlace de una pregunta del resultado. `void` no es un fallo del alumno: es una pregunta que
+ * la plantilla no corrige (anulada, sin entrada o en conflicto) y la pantalla lo dice así.
+ */
+export type StudentResultOutcome = 'correct' | 'wrong' | 'blank' | 'void';
+
+/** Un tema por su código legible: la respuesta a «¿de qué era esto?». */
+export interface StudentTopicRef {
+  code: string;
+  title: string;
+}
+
+/** Una pregunta corregida, con lo que se marcó, la correcta y su tema. */
+export interface StudentResultQuestion {
+  position: number;
+  is_reserve: boolean;
+  part_code: string | null;
+  part_name: string | null;
+  stem: string;
+  options: StudentOption[];
+  chosen: string[];
+  correct: string[];
+  outcome: StudentResultOutcome;
+  elapsed_ms: number | null;
+  topics: StudentTopicRef[];
+}
+
+/** Cómo fue el test en un tema: es el desglose que dice qué hay que repasar. */
+export interface StudentResultTopic {
+  code: string;
+  title: string;
+  correct: number;
+  wrong: number;
+  blank: number;
+  graded: number;
+  accuracy: number | null;
+}
+
 export interface StudentResult {
   session: StudentSession;
   parts: StudentPartScore[];
   total: StudentPartScore;
   official_available: boolean;
   official_note: string | null;
+}
+
+/** El resultado entero de un test terminado: la nota por parte, el tiempo y cada pregunta. */
+export interface StudentSessionResult extends StudentResult {
+  duration_seconds: number | null;
+  questions: StudentResultQuestion[];
+  topics: StudentResultTopic[];
 }
 
 export interface NewTest {
@@ -128,6 +173,33 @@ export function createStudentTest(body: NewTest): Promise<StudentSession> {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
+  });
+}
+
+/** El simulacro: variante completa o corta, y el bloque del supuesto en la completa. */
+export interface NewMockExam {
+  variant: 'full' | 'short';
+  case_block: 'III' | 'IV';
+}
+
+/** Monta el simulacro con el perfil del examen y el bloque elegido para el supuesto. */
+export function createStudentMockExam(body: NewMockExam): Promise<StudentSession> {
+  return apiFetch<StudentSession>('/api/v1/student/mock-exams', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+}
+
+/**
+ * Monta el examen oficial que ocupa esa posición de la lista.
+ *
+ * Se pide por su **sitio en la lista** —el primero, el segundo—, igual que una respuesta se pide por
+ * su fila: así esta capa sigue sin enseñar de dónde salen las preguntas de un test.
+ */
+export function createStudentOfficialExam(position: number): Promise<StudentSession> {
+  return apiFetch<StudentSession>(`/api/v1/student/official-exams/${String(position)}/sessions`, {
+    method: 'POST',
   });
 }
 
@@ -163,4 +235,14 @@ export function finishStudentRun(sessionId: string): Promise<StudentResult> {
   return apiFetch<StudentResult>(`/api/v1/student/sessions/${sessionId}/finish`, {
     method: 'POST',
   });
+}
+
+/**
+ * El resultado entero de un test terminado: partes, tiempo y pregunta a pregunta.
+ *
+ * Es una lectura y no lo que devuelve «Terminar»: así la pantalla de resultado se puede abrir y
+ * recargar sin volver a cerrar nada, y el resultado es el que se guardó al cerrar el test.
+ */
+export function getStudentResult(sessionId: string): Promise<StudentSessionResult> {
+  return apiFetch<StudentSessionResult>(`/api/v1/student/sessions/${sessionId}/result`);
 }

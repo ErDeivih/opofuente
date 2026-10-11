@@ -13,6 +13,11 @@ import { SearchPage } from '../pages/SearchPage';
 import { SettingsPage } from '../pages/SettingsPage';
 import { StudyPage } from '../pages/StudyPage';
 import { StudentHomePage } from '../pages/student/StudentHomePage';
+import { MistakesPage } from '../pages/student/MistakesPage';
+import { MockExamPage } from '../pages/student/MockExamPage';
+import { OfficialExamsPage } from '../pages/student/OfficialExamsPage';
+import { ProgressPage } from '../pages/student/ProgressPage';
+import { ResultPage } from '../pages/student/ResultPage';
 import { SyllabusPage } from '../pages/student/SyllabusPage';
 import { TopicNotesPage } from '../pages/student/TopicNotesPage';
 import { TopicReviewPage } from '../pages/TopicReviewPage';
@@ -75,14 +80,21 @@ function QuestionsRoute() {
 }
 
 /**
- * Las secciones del alumno que todavía no tienen pantalla, con su frase, desde el mapa.
+ * La única sección del alumno que todavía no tiene pantalla: **Tests**.
  *
- * Temario ya **no** está aquí: desde F13 tiene su pantalla (el índice del programa) y su ficha de
- * tema con los apuntes. Lo que queda —Tests, Simulacros, Exámenes, Fallos y Progreso— llega en el
- * bloque siguiente, y hasta entonces cada una dice qué hará.
+ * Simulacros, Exámenes, Fallos y Progreso ya la tienen desde F14, y cada una dice lo suyo; lo que
+ * queda —elegir temas, cuántas preguntas y cómo se corrigen— llegará con su bloque, y hasta entonces
+ * esa entrada dice qué hará en lugar de quedarse en blanco. La lista sale del mapa de navegación para
+ * que no haya dos listas de «lo que falta» que puedan divergir.
  */
 const SECCIONES_PENDIENTES = STUDENT_NAV_ITEMS.filter(
-  (item) => item.path !== '/' && item.path !== '/temario',
+  (item) =>
+    item.path !== '/' &&
+    item.path !== '/temario' &&
+    item.path !== '/simulacros' &&
+    item.path !== '/examenes' &&
+    item.path !== '/fallos' &&
+    item.path !== '/progreso',
 );
 
 export function AppRoutes() {
@@ -106,6 +118,16 @@ export function AppRoutes() {
           la zona del alumno. Nunca un identificador de nodo.
         */}
         <Route path="/temario/:codigo" element={<TopicNotesPage />} />
+        {/*
+          El cierre del ciclo de estudio (F14): el resultado de un test, el simulacro, los exámenes
+          oficiales, los fallos y el progreso. El resultado se abre por el identificador de la sesión
+          —es la dirección del propio test— y todo lo demás por su nombre.
+        */}
+        <Route path="/resultado/:id" element={<ResultPage />} />
+        <Route path="/simulacros" element={<MockExamPage />} />
+        <Route path="/examenes" element={<OfficialExamsPage />} />
+        <Route path="/fallos" element={<MistakesPage />} />
+        <Route path="/progreso" element={<ProgressPage />} />
         {SECCIONES_PENDIENTES.map((item) => (
           <Route
             key={item.path}

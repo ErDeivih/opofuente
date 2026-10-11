@@ -18,7 +18,7 @@ Dos cosas que sí viajan y son deliberadas:
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
@@ -166,12 +166,17 @@ class StudentTopicSchema(BaseModel):
 
 
 class StudentProgressSchema(BaseModel):
-    """El progreso: acierto por bloque y por tema, los cinco más flojos e historial."""
+    """El progreso: acierto por bloque y por tema, los cinco más flojos e historial.
+
+    `tests_finished` es el número de tests **terminados** de esta persona, no los que caben en el
+    historial: la cifra se lee al lado de una lista de veinte y tiene que ser la de verdad.
+    """
 
     opposition: StudentOppositionSchema
     blocks: list[StudentBlockProgressSchema]
     weakest_topics: list[StudentTopicProgressSchema]
     history: list[StudentSessionSchema]
+    tests_finished: int = Field(ge=0)
 
 
 # --- el test en curso: la hoja de respuestas y su corrección -------------------------------------
@@ -363,3 +368,164 @@ class StudentReportSchema(BaseModel):
     )
     status: StudentReportStatusName
     created_at: datetime
+
+
+# --- el resultado de un test, pregunta a pregunta (F14) ------------------------------------------
+#
+# La misma regla de siempre, y aquí se ve por qué importa: la pregunta viaja por su **posición**, su
+# opción correcta se llama `correct` —no `correct_option_keys`, que es el nombre de dentro— y de
+# dónde salió la pregunta **no aparece**. Lo que sí aparece, y es la razón de ser de esta pantalla,
+# es el **tema** de cada pregunta y el desglose por tema: con eso se sabe qué repasar.
+
+#: El desenlace que esta capa pronuncia. `void` no es un fallo del alumno: es una pregunta que la
+#: plantilla no corrige (anulada, sin entrada o en conflicto), y se dice así en lugar de contarla.
+StudentResultOutcomeName = Literal["correct", "wrong", "blank", "void"]
+
+
+class StudentTopicRefSchema(BaseModel):
+    """Un tema por su código legible: la respuesta a «¿de qué era esto?»."""
+
+    code: str
+    title: str
+
+
+class StudentResultQuestionSchema(BaseModel):
+    """Una pregunta corregida: sus opciones, lo que se marcó, la correcta y de qué era."""
+
+    position: int = Field(ge=1)
+    is_reserve: bool
+    part_code: str | None = None
+    part_name: str | None = None
+    stem: str
+    options: list[StudentOptionSchema]
+    chosen: list[str] = Field(default_factory=list)
+    correct: list[str] = Field(default_factory=list)
+    outcome: StudentResultOutcomeName
+    elapsed_ms: int | None = Field(default=None, ge=0)
+    topics: list[StudentTopicRefSchema] = Field(default_factory=list)
+
+
+class StudentResultTopicSchema(BaseModel):
+    """Cómo fue el test en un tema: aciertos, fallos, blancos y el porcentaje que sale de ellos."""
+
+    code: str
+    title: str
+    correct: int = Field(ge=0)
+    wrong: int = Field(ge=0)
+    blank: int = Field(ge=0)
+    graded: int = Field(ge=0)
+    accuracy: float | None = Field(default=None, ge=0, le=1)
+
+
+class StudentSessionResultSchema(BaseModel):
+    """El resultado de un test terminado, con el tiempo empleado y las preguntas una a una."""
+
+    session: StudentSessionSchema
+    parts: list[StudentPartScoreSchema]
+    total: StudentPartScoreSchema
+    official_available: bool
+    official_note: str | None = None
+    duration_seconds: int | None = Field(default=None, ge=0)
+    questions: list[StudentResultQuestionSchema]
+    topics: list[StudentResultTopicSchema]
+
+
+# --- el simulacro antes de montarlo (F14) --------------------------------------------------------
+
+
+class StudentMockExamPartSchema(BaseModel):
+    """Una parte del simulacro, con lo que publica el perfil del examen y nada más."""
+
+    code: str
+    name: str
+    ordinary_items: int | None = Field(default=None, ge=0)
+    reserve_items: int | None = Field(default=None, ge=0)
+    score_max: float | None = None
+    pass_score: float | None = None
+    penalty: str | None = None
+    time_minutes: int | None = Field(default=None, ge=0)
+
+
+class StudentMockExamVariantSchema(BaseModel):
+    """Una variante del simulacro: qué cae, cuánto dura y qué es lo que **no** es."""
+
+    variant: StudentMockVariantName
+    title: str
+    time_limit_minutes: int | None = Field(default=None, ge=0)
+    parts: list[StudentMockExamPartSchema]
+    note: str | None = None
+
+
+class StudentMockCaseTopicSchema(BaseModel):
+    """Un tema del bloque del supuesto, con sus preguntas disponibles hoy."""
+
+    code: str
+    title: str
+    available_questions: int = Field(ge=0)
+
+
+class StudentMockCaseBlockSchema(BaseModel):
+    """Un bloque del que se puede elegir el supuesto (III o IV)."""
+
+    code: str
+    title: str
+    topics: list[StudentMockCaseTopicSchema]
+
+
+class StudentMockExamPlanSchema(BaseModel):
+    """El simulacro antes de montarlo: las dos variantes y los bloques del supuesto."""
+
+    opposition: StudentOppositionSchema
+    full: StudentMockExamVariantSchema
+    short: StudentMockExamVariantSchema
+    case_blocks: list[StudentMockCaseBlockSchema]
+
+
+# --- los exámenes oficiales importados (F14) -----------------------------------------------------
+
+
+class StudentOfficialExamSchema(BaseModel):
+    """Un examen oficial, por su sitio en la lista: título, fecha, tamaño y si se puede hacer."""
+
+    position: int = Field(ge=1)
+    title: str
+    held_at: date | None = None
+    questions: int = Field(ge=0)
+    ready: bool
+
+
+class StudentOfficialExamsSchema(BaseModel):
+    """Los exámenes oficiales importados. Una lista vacía es un estado, no un error."""
+
+    exams: list[StudentOfficialExamSchema]
+
+
+# --- los fallos (F14) ----------------------------------------------------------------------------
+
+
+class StudentMistakeSchema(BaseModel):
+    """Una pregunta fallada: qué decía, de qué era, cuándo y cuántas veces."""
+
+    stem: str
+    topics: list[StudentTopicRefSchema] = Field(default_factory=list)
+    last_failed_at: datetime
+    times_failed: int = Field(ge=0)
+    due: bool
+
+
+class StudentMistakeTopicSchema(BaseModel):
+    """Los fallos de un tema: es con lo que se pide un test solo de esos fallos."""
+
+    code: str
+    title: str
+    failed: int = Field(ge=0)
+    due: int = Field(ge=0)
+
+
+class StudentMistakesSchema(BaseModel):
+    """Los fallos: los totales, los que se enseñan y su reparto por tema."""
+
+    total: int = Field(ge=0)
+    due_total: int = Field(ge=0)
+    questions: list[StudentMistakeSchema]
+    topics: list[StudentMistakeTopicSchema]

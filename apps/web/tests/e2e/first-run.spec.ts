@@ -179,8 +179,10 @@ for (const viewport of VIEWPORTS) {
 
     // Las pantallas del alumno que ya están construidas. La de los apuntes de un tema necesita que el
     // tema tenga texto —y la suite arranca con los datos vacíos—, así que aquí se comprueban Inicio y
-    // el temario: el desborde que se cuela por un título largo o una tabla ancha se ve igual.
-    for (const ruta of ['/', '/temario']) {
+    // el temario: el desborde que se cuela por un título largo o una tabla ancha se ve igual. Desde
+    // F14 entran las cuatro pantallas que cierran el ciclo de estudio, que es donde hay filas con
+    // código, título, cifras y acción: a 390 px es justo lo que se sale si no se apila.
+    for (const ruta of ['/', '/temario', '/simulacros', '/examenes', '/fallos', '/progreso']) {
       await page.goto(ruta);
       await expect(
         page.getByRole('heading', { level: 1 }),

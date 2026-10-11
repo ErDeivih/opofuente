@@ -49,6 +49,8 @@ const RUTAS: readonly { ruta: string; nombre: string }[] = [
   { ruta: '/temario', nombre: 'temario' },
   { ruta: '/temario/IV.7', nombre: 'tema-apuntes' },
   { ruta: '/temario/I.6', nombre: 'tema-borrador' },
+  { ruta: '/simulacros', nombre: 'simulacros' },
+  { ruta: '/examenes', nombre: 'examenes' },
   { ruta: '/programa', nombre: 'programa' },
   { ruta: '/estudiar', nombre: 'estudiar' },
   { ruta: '/preguntas', nombre: 'preguntas' },
@@ -150,6 +152,182 @@ for (const { ancho, alto, etiqueta } of ANCHOS) {
     const sesion = await montarTestDeAlumno();
     await retratar(page, `/test/${sesion}`, '/test-en-curso', ancho, alto, etiqueta);
   });
+}
+
+/**
+ * El resultado, los fallos y el progreso, con un test **terminado** de verdad (F14).
+ *
+ * Estas tres pantallas no enseñan nada sin datos: un resultado sin preguntas contestadas no tiene
+ * desglose por tema, y la lista de fallos y el progreso salen vacíos. Se siembra por la API —un
+ * conjunto con sus preguntas, su plantilla activa, su catalogación y un test contestado y cerrado—
+ * porque inventarse la pantalla con datos falsos no demuestra que funcione con los de verdad.
+ */
+for (const { ruta, fichero } of [
+  { ruta: '/fallos', fichero: '/fallos' },
+  { ruta: '/progreso', fichero: '/progreso' },
+] as const) {
+  for (const { ancho, alto, etiqueta } of ANCHOS) {
+    test(`${ruta} a ${ancho} px`, async ({ page }) => {
+      await zonaSembrada();
+      await retratar(page, ruta, fichero, ancho, alto, etiqueta);
+    });
+  }
+}
+
+for (const { ancho, alto, etiqueta } of ANCHOS) {
+  test(`resultado a ${ancho} px`, async ({ page }) => {
+    const { sesion } = await zonaSembrada();
+    await retratar(page, `/resultado/${sesion}`, '/resultado', ancho, alto, etiqueta);
+  });
+}
+
+/** La zona del alumno con datos: se siembra una vez y se reutiliza en las tres capturas. */
+let sembrado: Promise<{ sesion: string }> | null = null;
+
+function zonaSembrada(): Promise<{ sesion: string }> {
+  sembrado ??= sembrarUnTestTerminado();
+  return sembrado;
+}
+
+/** Un test de cuatro preguntas en dos temas, contestado y terminado: devuelve su identificador. */
+async function sembrarUnTestTerminado(): Promise<{ sesion: string }> {
+  const cabeceras = { 'Content-Type': 'application/json', Origin: ORIGEN };
+  const leer = async <T>(respuesta: Response): Promise<T> => {
+    if (!respuesta.ok) {
+      throw new Error(`la API respondió ${respuesta.status} al sembrar el test`);
+    }
+    return (await respuesta.json()) as T;
+  };
+
+  const oposiciones = await leer<{ id: string; active: boolean; active_convocation: { id: string } | null }[]>(
+    await fetch(`${API}/api/v1/oppositions`),
+  );
+  const activa = oposiciones.find((oposicion) => oposicion.active);
+  if (activa?.active_convocation == null) {
+    throw new Error('no hay oposición activa con convocatoria: no se puede sembrar la zona');
+  }
+
+  const conjunto = await leer<{ id: string }>(
+    await fetch(`${API}/api/v1/question-sets`, {
+      method: 'POST',
+      headers: cabeceras,
+      body: JSON.stringify({
+        title: `Capturas del cierre ${String(Date.now())}`,
+        opposition_id: activa.id,
+        set_type: 'private_bank',
+        convocation_version_id: activa.active_convocation.id,
+      }),
+    }),
+  );
+
+  const texto = [
+    '1. El modelo TCP/IP tiene cuatro capas.',
+    'a) Verdadero',
+    'b) Falso',
+    'Respuesta correcta: a',
+    '2. La sede electronica se regula en la Ley 39/2015.',
+    'a) Verdadero',
+    'b) Falso',
+    'Respuesta correcta: a',
+    '3. El Esquema Nacional de Seguridad se regula en el Real Decreto 311/2022.',
+    'a) Verdadero',
+    'b) Falso',
+    'Respuesta correcta: a',
+    '4. El plazo del procedimiento administrativo comun es de diez dias habiles.',
+    'a) Verdadero',
+    'b) Falso',
+    'Respuesta correcta: a',
+    '',
+  ].join('\n');
+  await leer<unknown>(
+    await fetch(`${API}/api/v1/question-sets/${conjunto.id}/parse`, {
+      method: 'POST',
+      headers: cabeceras,
+      body: JSON.stringify({ kind: 'questions', text: texto }),
+    }),
+  );
+
+  const claves = await leer<{ id: string }[]>(
+    await fetch(`${API}/api/v1/question-sets/${conjunto.id}/answer-keys`),
+  );
+  const clave = claves[0];
+  if (clave === undefined) {
+    throw new Error('el conjunto no trae plantilla: sin ella no hay test que retratar');
+  }
+  await leer<unknown>(
+    await fetch(`${API}/api/v1/question-sets/${conjunto.id}/answer-keys/${clave.id}/activate`, {
+      method: 'POST',
+      headers: cabeceras,
+    }),
+  );
+
+  const programa = await leer<{ nodes: NodoPrograma[] }>(
+    await fetch(`${API}/api/v1/convocations/${activa.active_convocation.id}/curriculum`),
+  );
+  const planos = aplanar(programa.nodes);
+  const temas = ['IV.1', 'IV.10']
+    .map((path) => planos.find((nodo) => nodo.path === path))
+    .filter((nodo): nodo is NodoPrograma => nodo !== undefined);
+  if (temas.length === 0) {
+    throw new Error('el programa no tiene los temas de la captura');
+  }
+  const preguntas = await leer<{ questions: { id: string }[] }>(
+    await fetch(`${API}/api/v1/questions?set_id=${conjunto.id}&limit=10`),
+  );
+  for (const [indice, pregunta] of preguntas.questions.entries()) {
+    const tema = temas[indice % temas.length];
+    if (tema !== undefined) {
+      await leer<unknown>(
+        await fetch(`${API}/api/v1/questions/${pregunta.id}/topics`, {
+          method: 'POST',
+          headers: cabeceras,
+          body: JSON.stringify({ curriculum_node_id: tema.id }),
+        }),
+      );
+    }
+  }
+
+  const sesion = await leer<{ id: string }>(
+    await fetch(`${API}/api/v1/student/tests`, {
+      method: 'POST',
+      headers: cabeceras,
+      body: JSON.stringify({
+        nodes: temas.map((tema) => tema.path),
+        count: preguntas.questions.length,
+        filter: 'all',
+        feedback: 'immediate',
+      }),
+    }),
+  );
+  await leer<unknown>(
+    await fetch(`${API}/api/v1/student/sessions/${sesion.id}/start`, {
+      method: 'POST',
+      headers: cabeceras,
+    }),
+  );
+  // Una acierta y tres fallan: así el resultado tiene los dos desenlaces y el desglose por tema dice
+  // algo. La `a` es la correcta en las cuatro.
+  const cuantas = preguntas.questions.length;
+  for (let posicion = 1; posicion <= cuantas; posicion += 1) {
+    await leer<unknown>(
+      await fetch(`${API}/api/v1/student/sessions/${sesion.id}/answers`, {
+        method: 'POST',
+        headers: cabeceras,
+        body: JSON.stringify({
+          position: posicion,
+          chosen: [posicion === 1 ? 'a' : 'b'],
+          elapsed_ms: 1200 * posicion,
+        }),
+      }),
+    );
+  }
+  await leer<unknown>(
+    await fetch(`${API}/api/v1/student/sessions/${sesion.id}/finish`, {
+      method: 'POST',
+      headers: cabeceras,
+    }),
+  );
+  return { sesion: sesion.id };
 }
 
 /** Monta un test de tres preguntas de un tema y lo deja empezado: devuelve su identificador. */

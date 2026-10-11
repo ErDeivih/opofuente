@@ -16,7 +16,7 @@ Dos convenciones que se repiten y conviene leer una vez:
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime
 
 from opofuente.domain.topic_notes import NotesState
 
@@ -199,12 +199,16 @@ class StudentProgressView:
 
     «Los más flojos» solo mira temas **empezados**: un tema sin responder no es un punto débil, es
     un tema sin empezar, y colarlo en la lista empujaría fuera al que de verdad hay que repasar.
+
+    `tests_finished` cuenta los tests **terminados** de esta persona en esta oposición, no los que
+    caben en el historial: es la cifra que se lee junto al historial y tiene que ser la de verdad.
     """
 
     opposition: StudentOppositionView
     blocks: tuple[StudentBlockProgressView, ...]
     weakest_topics: tuple[StudentTopicProgressView, ...] = ()
     history: tuple[StudentSessionView, ...] = ()
+    tests_finished: int = 0
 
 
 # --- el test en curso y su resultado (la pantalla con la hoja de respuestas) ----------------------
@@ -365,3 +369,231 @@ class StudentReportView:
     reason: str
     status: str
     created_at: datetime
+
+
+# --- el resultado de un test, pregunta a pregunta (F14) ------------------------------------------
+
+
+@dataclass(frozen=True, slots=True)
+class StudentTopicRefView:
+    """Un tema, por su código legible: es la respuesta a «¿de qué era esto?».
+
+    Existe para las pantallas que dicen **por qué tema** se ha fallado. No lleva el identificador
+    del
+    nodo: el código (`IV.7`) es la dirección del alumno en toda la zona.
+    """
+
+    code: str
+    title: str
+
+
+@dataclass(frozen=True, slots=True)
+class StudentResultQuestionView:
+    """Una pregunta ya corregida, con las tres cosas que el alumno necesita ver juntas.
+
+    Sus opciones, lo que marcó, cuál era la correcta y —esto es lo que convierte la lista en algo
+    útil— **de qué tema era**, para poder ir a repasarlo. `outcome` es `correct`, `wrong` o `blank`.
+
+    `topics` es una tupla porque una pregunta puede estar catalogada en dos temas (D7): enseñar uno
+    sería elegir por el alumno cuál de los dos repasa.
+    """
+
+    position: int
+    is_reserve: bool
+    part_code: str | None
+    part_name: str | None
+    stem: str
+    options: tuple[StudentOptionView, ...]
+    chosen_option_keys: tuple[str, ...] = ()
+    correct_option_keys: tuple[str, ...] = ()
+    outcome: str = "blank"
+    elapsed_ms: int | None = None
+    topics: tuple[StudentTopicRefView, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class StudentResultTopicView:
+    """Cómo fue el test **en un tema**: es el desglose que dice qué hay que repasar.
+
+    `graded` es el denominador del acierto (aciertos, fallos y blancos) y `accuracy` es `None`
+    cuando no hay nada corregido en ese tema: un tema sin preguntas en el test no está suspendido.
+    """
+
+    code: str
+    title: str
+    correct: int
+    wrong: int
+    blank: int
+
+    @property
+    def graded(self) -> int:
+        return self.correct + self.wrong + self.blank
+
+    @property
+    def accuracy(self) -> float | None:
+        return None if self.graded == 0 else self.correct / self.graded
+
+
+@dataclass(frozen=True, slots=True)
+class StudentSessionResultView:
+    """El resultado de un test terminado, listo para leerse entero.
+
+    Es el hermano de `StudentResultView` (lo que devuelve terminar) con lo que la pantalla de
+    resultado necesita además: **el tiempo empleado** y las preguntas una a una con su tema. La
+    puntuación no se recalcula aquí: son las mismas partes y el mismo total que se guardaron al
+    cerrar la sesión.
+    """
+
+    session: StudentSessionView
+    parts: tuple[StudentPartScoreView, ...]
+    total: StudentPartScoreView
+    official_available: bool
+    official_note: str | None = None
+    duration_seconds: int | None = None
+    questions: tuple[StudentResultQuestionView, ...] = ()
+    topics: tuple[StudentResultTopicView, ...] = ()
+
+
+# --- el simulacro: qué va a caer antes de empezarlo (F14) ----------------------------------------
+
+
+@dataclass(frozen=True, slots=True)
+class StudentMockExamPartView:
+    """Una parte del simulacro, tal como la publica el perfil del examen.
+
+    Todos los números salen de la convocatoria: cuántas preguntas ordinarias, cuántas de reserva, la
+    banda de puntuación, el mínimo y la penalización. Lo que el perfil no publica va en `None`, que
+    es distinto de cero.
+    """
+
+    code: str
+    name: str
+    ordinary_items: int | None
+    reserve_items: int | None
+    score_max: float | None
+    pass_score: float | None
+    penalty: str | None
+    time_minutes: int | None
+
+
+@dataclass(frozen=True, slots=True)
+class StudentMockExamVariantView:
+    """Una variante del simulacro con lo que se sabe de ella **antes** de empezar.
+
+    `note` es la frase que dice lo que el simulacro es y lo que no: tiene el perfil del examen, no
+    es
+    un examen oficial y su nota por parte es una estimación. Viaja con la variante porque es lo que
+    hay que leer antes de pulsar «empezar», no después.
+    """
+
+    variant: str
+    title: str
+    time_limit_minutes: int | None
+    parts: tuple[StudentMockExamPartView, ...]
+    note: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class StudentMockCaseTopicView:
+    """Un tema del bloque del supuesto, con las preguntas que hoy tiene disponibles."""
+
+    code: str
+    title: str
+    available_questions: int
+
+
+@dataclass(frozen=True, slots=True)
+class StudentMockCaseBlockView:
+    """Un bloque del que se puede elegir el supuesto (III o IV), con sus temas.
+
+    Los dos supuestos son **excluyentes**: se elige uno. Enseñar los dos bloques con sus temas es lo
+    que permite elegir sabiendo qué va a caer.
+    """
+
+    code: str
+    title: str
+    topics: tuple[StudentMockCaseTopicView, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class StudentMockExamPlanView:
+    """El simulacro antes de montarlo: las dos variantes y los bloques del supuesto."""
+
+    opposition: StudentOppositionView
+    full: StudentMockExamVariantView
+    short: StudentMockExamVariantView
+    case_blocks: tuple[StudentMockCaseBlockView, ...] = ()
+
+
+# --- los exámenes oficiales importados (F14) -----------------------------------------------------
+
+
+@dataclass(frozen=True, slots=True)
+class StudentOfficialExamView:
+    """Un examen oficial importado, tal como se ofrece: su sitio en la lista, su fecha y su tamaño.
+
+    `position` es la **dirección del alumno** dentro de la lista (el primero, el segundo), igual que
+    la fila de la hoja de respuestas es la dirección de una pregunta: así la pantalla puede pedir
+    «hazme este» sin que viaje de dónde salieron sus preguntas.
+    """
+
+    position: int
+    title: str
+    held_at: date | None
+    questions: int
+    ready: bool
+
+
+@dataclass(frozen=True, slots=True)
+class StudentOfficialExamsView:
+    """Los exámenes oficiales importados de esta oposición.
+
+    Una lista vacía **no es un error**: es que todavía no se ha importado ninguno, y la pantalla lo
+    dice con esas palabras en vez de quedarse en blanco.
+    """
+
+    exams: tuple[StudentOfficialExamView, ...] = ()
+
+
+# --- los fallos (F14) ----------------------------------------------------------------------------
+
+
+@dataclass(frozen=True, slots=True)
+class StudentMistakeView:
+    """Una pregunta fallada: su enunciado, de qué era, cuándo y cuántas veces.
+
+    `times_failed` cuenta los fallos de verdad (evaluaciones con desenlace `wrong` de los intentos
+    de
+    esta persona), no los intentos. `due` es si ya toca repasarla.
+    """
+
+    stem: str
+    topics: tuple[StudentTopicRefView, ...]
+    last_failed_at: datetime
+    times_failed: int
+    due: bool
+
+
+@dataclass(frozen=True, slots=True)
+class StudentMistakeTopicView:
+    """Los fallos de un tema, que es con lo que se monta un test solo de fallos."""
+
+    code: str
+    title: str
+    failed: int
+    due: int
+
+
+@dataclass(frozen=True, slots=True)
+class StudentMistakesView:
+    """Los fallos: la página que se lee, los totales y su reparto por tema.
+
+    `total` y `due_total` cuentan **todos** los fallos, no los que caben en la página; `topics` es
+    el
+    reparto que permite decir «monta un test solo con los fallos de este tema».
+    """
+
+    total: int
+    due_total: int
+    questions: tuple[StudentMistakeView, ...] = ()
+    topics: tuple[StudentMistakeTopicView, ...] = ()

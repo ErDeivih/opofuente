@@ -11802,6 +11802,281 @@
         "title": "StudentEpigraphSchema",
         "type": "object"
       },
+      "StudentMistakeSchema": {
+        "description": "Una pregunta fallada: qué decía, de qué era, cuándo y cuántas veces.",
+        "properties": {
+          "due": {
+            "title": "Due",
+            "type": "boolean"
+          },
+          "last_failed_at": {
+            "format": "date-time",
+            "title": "Last Failed At",
+            "type": "string"
+          },
+          "stem": {
+            "title": "Stem",
+            "type": "string"
+          },
+          "times_failed": {
+            "minimum": 0.0,
+            "title": "Times Failed",
+            "type": "integer"
+          },
+          "topics": {
+            "items": {
+              "$ref": "#/components/schemas/StudentTopicRefSchema"
+            },
+            "title": "Topics",
+            "type": "array"
+          }
+        },
+        "required": [
+          "stem",
+          "last_failed_at",
+          "times_failed",
+          "due"
+        ],
+        "title": "StudentMistakeSchema",
+        "type": "object"
+      },
+      "StudentMistakeTopicSchema": {
+        "description": "Los fallos de un tema: es con lo que se pide un test solo de esos fallos.",
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "due": {
+            "minimum": 0.0,
+            "title": "Due",
+            "type": "integer"
+          },
+          "failed": {
+            "minimum": 0.0,
+            "title": "Failed",
+            "type": "integer"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "title",
+          "failed",
+          "due"
+        ],
+        "title": "StudentMistakeTopicSchema",
+        "type": "object"
+      },
+      "StudentMistakesSchema": {
+        "description": "Los fallos: los totales, los que se enseñan y su reparto por tema.",
+        "properties": {
+          "due_total": {
+            "minimum": 0.0,
+            "title": "Due Total",
+            "type": "integer"
+          },
+          "questions": {
+            "items": {
+              "$ref": "#/components/schemas/StudentMistakeSchema"
+            },
+            "title": "Questions",
+            "type": "array"
+          },
+          "topics": {
+            "items": {
+              "$ref": "#/components/schemas/StudentMistakeTopicSchema"
+            },
+            "title": "Topics",
+            "type": "array"
+          },
+          "total": {
+            "minimum": 0.0,
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "total",
+          "due_total",
+          "questions",
+          "topics"
+        ],
+        "title": "StudentMistakesSchema",
+        "type": "object"
+      },
+      "StudentMockCaseBlockSchema": {
+        "description": "Un bloque del que se puede elegir el supuesto (III o IV).",
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "topics": {
+            "items": {
+              "$ref": "#/components/schemas/StudentMockCaseTopicSchema"
+            },
+            "title": "Topics",
+            "type": "array"
+          }
+        },
+        "required": [
+          "code",
+          "title",
+          "topics"
+        ],
+        "title": "StudentMockCaseBlockSchema",
+        "type": "object"
+      },
+      "StudentMockCaseTopicSchema": {
+        "description": "Un tema del bloque del supuesto, con sus preguntas disponibles hoy.",
+        "properties": {
+          "available_questions": {
+            "minimum": 0.0,
+            "title": "Available Questions",
+            "type": "integer"
+          },
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "title",
+          "available_questions"
+        ],
+        "title": "StudentMockCaseTopicSchema",
+        "type": "object"
+      },
+      "StudentMockExamPartSchema": {
+        "description": "Una parte del simulacro, con lo que publica el perfil del examen y nada más.",
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "ordinary_items": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ordinary Items"
+          },
+          "pass_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pass Score"
+          },
+          "penalty": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Penalty"
+          },
+          "reserve_items": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reserve Items"
+          },
+          "score_max": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score Max"
+          },
+          "time_minutes": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Minutes"
+          }
+        },
+        "required": [
+          "code",
+          "name"
+        ],
+        "title": "StudentMockExamPartSchema",
+        "type": "object"
+      },
+      "StudentMockExamPlanSchema": {
+        "description": "El simulacro antes de montarlo: las dos variantes y los bloques del supuesto.",
+        "properties": {
+          "case_blocks": {
+            "items": {
+              "$ref": "#/components/schemas/StudentMockCaseBlockSchema"
+            },
+            "title": "Case Blocks",
+            "type": "array"
+          },
+          "full": {
+            "$ref": "#/components/schemas/StudentMockExamVariantSchema"
+          },
+          "opposition": {
+            "$ref": "#/components/schemas/StudentOppositionSchema"
+          },
+          "short": {
+            "$ref": "#/components/schemas/StudentMockExamVariantSchema"
+          }
+        },
+        "required": [
+          "opposition",
+          "full",
+          "short",
+          "case_blocks"
+        ],
+        "title": "StudentMockExamPlanSchema",
+        "type": "object"
+      },
       "StudentMockExamRequestSchema": {
         "description": "Lo que manda la pantalla para montar un simulacro: variante y bloque del supuesto.",
         "properties": {
@@ -11825,6 +12100,60 @@
           }
         },
         "title": "StudentMockExamRequestSchema",
+        "type": "object"
+      },
+      "StudentMockExamVariantSchema": {
+        "description": "Una variante del simulacro: qué cae, cuánto dura y qué es lo que **no** es.",
+        "properties": {
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "parts": {
+            "items": {
+              "$ref": "#/components/schemas/StudentMockExamPartSchema"
+            },
+            "title": "Parts",
+            "type": "array"
+          },
+          "time_limit_minutes": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Limit Minutes"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "variant": {
+            "enum": [
+              "full",
+              "short"
+            ],
+            "title": "Variant",
+            "type": "string"
+          }
+        },
+        "required": [
+          "variant",
+          "title",
+          "parts"
+        ],
+        "title": "StudentMockExamVariantSchema",
         "type": "object"
       },
       "StudentNoteSectionSchema": {
@@ -11916,6 +12245,66 @@
           "sections"
         ],
         "title": "StudentNotesSchema",
+        "type": "object"
+      },
+      "StudentOfficialExamSchema": {
+        "description": "Un examen oficial, por su sitio en la lista: título, fecha, tamaño y si se puede hacer.",
+        "properties": {
+          "held_at": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Held At"
+          },
+          "position": {
+            "minimum": 1.0,
+            "title": "Position",
+            "type": "integer"
+          },
+          "questions": {
+            "minimum": 0.0,
+            "title": "Questions",
+            "type": "integer"
+          },
+          "ready": {
+            "title": "Ready",
+            "type": "boolean"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "position",
+          "title",
+          "questions",
+          "ready"
+        ],
+        "title": "StudentOfficialExamSchema",
+        "type": "object"
+      },
+      "StudentOfficialExamsSchema": {
+        "description": "Los exámenes oficiales importados. Una lista vacía es un estado, no un error.",
+        "properties": {
+          "exams": {
+            "items": {
+              "$ref": "#/components/schemas/StudentOfficialExamSchema"
+            },
+            "title": "Exams",
+            "type": "array"
+          }
+        },
+        "required": [
+          "exams"
+        ],
+        "title": "StudentOfficialExamsSchema",
         "type": "object"
       },
       "StudentOppositionSchema": {
@@ -12110,7 +12499,7 @@
         "type": "object"
       },
       "StudentProgressSchema": {
-        "description": "El progreso: acierto por bloque y por tema, los cinco más flojos e historial.",
+        "description": "El progreso: acierto por bloque y por tema, los cinco más flojos e historial.\n\n`tests_finished` es el número de tests **terminados** de esta persona, no los que caben en el\nhistorial: la cifra se lee al lado de una lista de veinte y tiene que ser la de verdad.",
         "properties": {
           "blocks": {
             "items": {
@@ -12129,6 +12518,11 @@
           "opposition": {
             "$ref": "#/components/schemas/StudentOppositionSchema"
           },
+          "tests_finished": {
+            "minimum": 0.0,
+            "title": "Tests Finished",
+            "type": "integer"
+          },
           "weakest_topics": {
             "items": {
               "$ref": "#/components/schemas/StudentTopicProgressSchema"
@@ -12141,7 +12535,8 @@
           "opposition",
           "blocks",
           "weakest_topics",
-          "history"
+          "history",
+          "tests_finished"
         ],
         "title": "StudentProgressSchema",
         "type": "object"
@@ -12280,6 +12675,105 @@
         "title": "StudentReportSchema",
         "type": "object"
       },
+      "StudentResultQuestionSchema": {
+        "description": "Una pregunta corregida: sus opciones, lo que se marcó, la correcta y de qué era.",
+        "properties": {
+          "chosen": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Chosen",
+            "type": "array"
+          },
+          "correct": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Correct",
+            "type": "array"
+          },
+          "elapsed_ms": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Elapsed Ms"
+          },
+          "is_reserve": {
+            "title": "Is Reserve",
+            "type": "boolean"
+          },
+          "options": {
+            "items": {
+              "$ref": "#/components/schemas/StudentOptionSchema"
+            },
+            "title": "Options",
+            "type": "array"
+          },
+          "outcome": {
+            "enum": [
+              "correct",
+              "wrong",
+              "blank",
+              "void"
+            ],
+            "title": "Outcome",
+            "type": "string"
+          },
+          "part_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Part Code"
+          },
+          "part_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Part Name"
+          },
+          "position": {
+            "minimum": 1.0,
+            "title": "Position",
+            "type": "integer"
+          },
+          "stem": {
+            "title": "Stem",
+            "type": "string"
+          },
+          "topics": {
+            "items": {
+              "$ref": "#/components/schemas/StudentTopicRefSchema"
+            },
+            "title": "Topics",
+            "type": "array"
+          }
+        },
+        "required": [
+          "position",
+          "is_reserve",
+          "stem",
+          "options",
+          "outcome"
+        ],
+        "title": "StudentResultQuestionSchema",
+        "type": "object"
+      },
       "StudentResultSchema": {
         "description": "El resultado de un test: la sesión terminada, la nota por parte y el total.",
         "properties": {
@@ -12319,6 +12813,62 @@
           "official_available"
         ],
         "title": "StudentResultSchema",
+        "type": "object"
+      },
+      "StudentResultTopicSchema": {
+        "description": "Cómo fue el test en un tema: aciertos, fallos, blancos y el porcentaje que sale de ellos.",
+        "properties": {
+          "accuracy": {
+            "anyOf": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accuracy"
+          },
+          "blank": {
+            "minimum": 0.0,
+            "title": "Blank",
+            "type": "integer"
+          },
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "correct": {
+            "minimum": 0.0,
+            "title": "Correct",
+            "type": "integer"
+          },
+          "graded": {
+            "minimum": 0.0,
+            "title": "Graded",
+            "type": "integer"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "wrong": {
+            "minimum": 0.0,
+            "title": "Wrong",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "code",
+          "title",
+          "correct",
+          "wrong",
+          "blank",
+          "graded"
+        ],
+        "title": "StudentResultTopicSchema",
         "type": "object"
       },
       "StudentRunSchema": {
@@ -12444,6 +12994,75 @@
           "points_decimal"
         ],
         "title": "StudentScoreSchema",
+        "type": "object"
+      },
+      "StudentSessionResultSchema": {
+        "description": "El resultado de un test terminado, con el tiempo empleado y las preguntas una a una.",
+        "properties": {
+          "duration_seconds": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Seconds"
+          },
+          "official_available": {
+            "title": "Official Available",
+            "type": "boolean"
+          },
+          "official_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Official Note"
+          },
+          "parts": {
+            "items": {
+              "$ref": "#/components/schemas/StudentPartScoreSchema"
+            },
+            "title": "Parts",
+            "type": "array"
+          },
+          "questions": {
+            "items": {
+              "$ref": "#/components/schemas/StudentResultQuestionSchema"
+            },
+            "title": "Questions",
+            "type": "array"
+          },
+          "session": {
+            "$ref": "#/components/schemas/StudentSessionSchema"
+          },
+          "topics": {
+            "items": {
+              "$ref": "#/components/schemas/StudentResultTopicSchema"
+            },
+            "title": "Topics",
+            "type": "array"
+          },
+          "total": {
+            "$ref": "#/components/schemas/StudentPartScoreSchema"
+          }
+        },
+        "required": [
+          "session",
+          "parts",
+          "total",
+          "official_available",
+          "questions",
+          "topics"
+        ],
+        "title": "StudentSessionResultSchema",
         "type": "object"
       },
       "StudentSessionSchema": {
@@ -12775,6 +13394,25 @@
           "correct"
         ],
         "title": "StudentTopicProgressSchema",
+        "type": "object"
+      },
+      "StudentTopicRefSchema": {
+        "description": "Un tema por su código legible: la respuesta a «¿de qué era esto?».",
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "title"
+        ],
+        "title": "StudentTopicRefSchema",
         "type": "object"
       },
       "StudentTopicSchema": {
@@ -24375,7 +25013,109 @@
         "summary": "Configuración efectiva sanitizada (sin secretos)"
       }
     },
+    "/api/v1/student/mistakes": {
+      "get": {
+        "description": "Los fallos, y de aquí sale un test.\n\nCada fila dice **de qué tema** era la pregunta —el dato que convierte la lista en algo que se\npuede usar— y el reparto por tema es lo que permite pedir un test solo con los fallos de un\ntema. Ese test lo compone el motor con el filtro de falladas, sobre los intentos de verdad: esta\nlista es para mirar, no la fuente de la composición.",
+        "operationId": "student_mistakes_api_v1_student_mistakes_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudentMistakesSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Las preguntas que fallaste la última vez, con su tema, su fecha y cuántas veces",
+        "tags": [
+          "alumno"
+        ]
+      }
+    },
     "/api/v1/student/mock-exams": {
+      "get": {
+        "description": "Qué va a caer en el simulacro, leído del perfil del examen.\n\nEs la ruta que hace que se pueda elegir **sabiendo qué se elige**: cuántas preguntas tiene cada\nparte, cuántas de reserva, cuánto dura, con qué se corrige (la penalización publicada) y qué\ntemas entran en cada uno de los dos bloques del supuesto. Nada de esto se escribe a mano en la\npantalla: sale de la convocatoria, y lo que la convocatoria no publica viaja como `null`.",
+        "operationId": "student_mock_exam_plan_api_v1_student_mock_exams_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudentMockExamPlanSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "El simulacro antes de montarlo: sus variantes, sus partes y el bloque del supuesto",
+        "tags": [
+          "alumno"
+        ]
+      },
       "post": {
         "description": "El simulacro del perfil: 80 + 5 y el supuesto de 20 + 5 del bloque III o del IV.\n\nLos dos supuestos son excluyentes y se monta el elegido. Si sus preguntas salen de los temas del\nbloque, la sesión lo dice (`practical_case_origin`).",
         "operationId": "student_create_mock_exam_api_v1_student_mock_exams_post",
@@ -24432,6 +25172,124 @@
           }
         },
         "summary": "Monta el simulacro con el perfil del examen y el bloque elegido para el supuesto",
+        "tags": [
+          "alumno"
+        ]
+      }
+    },
+    "/api/v1/student/official-exams": {
+      "get": {
+        "description": "Los exámenes oficiales que hay importados de esta oposición.\n\nUna lista vacía es un **estado**, no un error: quiere decir que todavía no se ha importado\nninguno, y la pantalla lo dice con esas palabras en vez de quedarse en blanco o de enseñar otra\ncosa con el nombre de «examen oficial».",
+        "operationId": "student_official_exams_api_v1_student_official_exams_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudentOfficialExamsSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Los exámenes oficiales importados (hoy, ninguno: la lista vacía se dice)",
+        "tags": [
+          "alumno"
+        ]
+      }
+    },
+    "/api/v1/student/official-exams/{posicion}/sessions": {
+      "post": {
+        "description": "El examen se pide por su **sitio en la lista**, no por un identificador.\n\nEs la misma regla que la hoja de respuestas: lo que el alumno tiene delante es la fila, y por\neso\nla fila es la dirección. Así la zona del alumno sigue sin enseñar de dónde salen las preguntas.",
+        "operationId": "student_create_official_exam_api_v1_student_official_exams__posicion__sessions_post",
+        "parameters": [
+          {
+            "description": "Su sitio en la lista de exámenes oficiales (el primero, el segundo).",
+            "in": "path",
+            "name": "posicion",
+            "required": true,
+            "schema": {
+              "description": "Su sitio en la lista de exámenes oficiales (el primero, el segundo).",
+              "minimum": 1,
+              "title": "Posicion",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudentSessionSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Monta el examen oficial que ocupa esa posición de la lista",
         "tags": [
           "alumno"
         ]
@@ -24734,6 +25592,69 @@
           }
         },
         "summary": "Termina el test y devuelve el resultado con la nota de cada parte",
+        "tags": [
+          "alumno"
+        ]
+      }
+    },
+    "/api/v1/student/sessions/{sesion}/result": {
+      "get": {
+        "description": "El resultado entero de un test terminado, con lo que hace falta para repasar.\n\nCada pregunta con tus opciones, lo que marcaste, cuál era la correcta y **de qué tema era**, más\nel desglose por tema. Es la pantalla que contesta a «qué he fallado y por dónde lo repaso», que\nes\npara lo que sirve un resultado; de un test sin terminar, el motor dice que no hay resultado y la\nrespuesta lo repite en lugar de enseñar medio resultado.",
+        "operationId": "student_session_result_api_v1_student_sessions__sesion__result_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "sesion",
+            "required": true,
+            "schema": {
+              "title": "Sesion",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudentSessionResultSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "El resultado de un test terminado: la nota por parte, el tiempo y pregunta a pregunta",
         "tags": [
           "alumno"
         ]

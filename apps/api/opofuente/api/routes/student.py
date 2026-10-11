@@ -32,9 +32,19 @@ from opofuente.api.student_schemas import (
     StudentBlockProgressSchema,
     StudentCorrectionSchema,
     StudentEpigraphSchema,
+    StudentMistakeSchema,
+    StudentMistakesSchema,
+    StudentMistakeTopicSchema,
+    StudentMockCaseBlockSchema,
+    StudentMockCaseTopicSchema,
+    StudentMockExamPartSchema,
+    StudentMockExamPlanSchema,
     StudentMockExamRequestSchema,
+    StudentMockExamVariantSchema,
     StudentNoteSectionSchema,
     StudentNotesSchema,
+    StudentOfficialExamSchema,
+    StudentOfficialExamsSchema,
     StudentOppositionSchema,
     StudentOptionSchema,
     StudentOverviewSchema,
@@ -43,33 +53,50 @@ from opofuente.api.student_schemas import (
     StudentQuestionSchema,
     StudentReportRequestSchema,
     StudentReportSchema,
+    StudentResultQuestionSchema,
     StudentResultSchema,
+    StudentResultTopicSchema,
     StudentRunSchema,
     StudentScoreSchema,
+    StudentSessionResultSchema,
     StudentSessionSchema,
     StudentSheetRowSchema,
     StudentSyllabusSchema,
     StudentTestRequestSchema,
     StudentTopicProgressSchema,
+    StudentTopicRefSchema,
     StudentTopicSchema,
 )
 from opofuente.application.student_models import (
     StudentAnswerRequest,
     StudentBlockProgressView,
+    StudentMistakesView,
+    StudentMistakeTopicView,
+    StudentMistakeView,
+    StudentMockCaseBlockView,
+    StudentMockExamPartView,
+    StudentMockExamPlanView,
     StudentMockExamRequest,
+    StudentMockExamVariantView,
     StudentNotesView,
+    StudentOfficialExamsView,
+    StudentOfficialExamView,
     StudentOppositionView,
     StudentOverviewView,
     StudentPartScoreView,
     StudentProgressView,
     StudentQuestionView,
     StudentReportView,
+    StudentResultQuestionView,
+    StudentResultTopicView,
     StudentResultView,
     StudentRunView,
     StudentScoreView,
+    StudentSessionResultView,
     StudentSessionView,
     StudentTestRequest,
     StudentTopicProgressView,
+    StudentTopicRefView,
     StudentTopicView,
 )
 
@@ -228,6 +255,140 @@ def _block(view: StudentBlockProgressView) -> StudentBlockProgressSchema:
     )
 
 
+def _topic_ref(view: StudentTopicRefView) -> StudentTopicRefSchema:
+    return StudentTopicRefSchema(code=view.code, title=view.title)
+
+
+def _result_question(view: StudentResultQuestionView) -> StudentResultQuestionSchema:
+    return StudentResultQuestionSchema(
+        position=view.position,
+        is_reserve=view.is_reserve,
+        part_code=view.part_code,
+        part_name=view.part_name,
+        stem=view.stem,
+        options=[StudentOptionSchema(key=opcion.key, text=opcion.text) for opcion in view.options],
+        chosen=list(view.chosen_option_keys),
+        correct=list(view.correct_option_keys),
+        outcome=view.outcome,  # type: ignore[arg-type]
+        elapsed_ms=view.elapsed_ms,
+        topics=[_topic_ref(tema) for tema in view.topics],
+    )
+
+
+def _result_topic(view: StudentResultTopicView) -> StudentResultTopicSchema:
+    return StudentResultTopicSchema(
+        code=view.code,
+        title=view.title,
+        correct=view.correct,
+        wrong=view.wrong,
+        blank=view.blank,
+        graded=view.graded,
+        accuracy=view.accuracy,
+    )
+
+
+def _session_result(view: StudentSessionResultView) -> StudentSessionResultSchema:
+    return StudentSessionResultSchema(
+        session=_session(view.session),
+        parts=[_part(parte) for parte in view.parts],
+        total=_part(view.total),
+        official_available=view.official_available,
+        official_note=view.official_note,
+        duration_seconds=view.duration_seconds,
+        questions=[_result_question(pregunta) for pregunta in view.questions],
+        topics=[_result_topic(tema) for tema in view.topics],
+    )
+
+
+def _mock_part(view: StudentMockExamPartView) -> StudentMockExamPartSchema:
+    return StudentMockExamPartSchema(
+        code=view.code,
+        name=view.name,
+        ordinary_items=view.ordinary_items,
+        reserve_items=view.reserve_items,
+        score_max=view.score_max,
+        pass_score=view.pass_score,
+        penalty=view.penalty,
+        time_minutes=view.time_minutes,
+    )
+
+
+def _mock_variant(view: StudentMockExamVariantView) -> StudentMockExamVariantSchema:
+    return StudentMockExamVariantSchema(
+        variant=view.variant,  # type: ignore[arg-type]
+        title=view.title,
+        time_limit_minutes=view.time_limit_minutes,
+        parts=[_mock_part(parte) for parte in view.parts],
+        note=view.note,
+    )
+
+
+def _mock_case_block(view: StudentMockCaseBlockView) -> StudentMockCaseBlockSchema:
+    return StudentMockCaseBlockSchema(
+        code=view.code,
+        title=view.title,
+        topics=[
+            StudentMockCaseTopicSchema(
+                code=tema.code,
+                title=tema.title,
+                available_questions=tema.available_questions,
+            )
+            for tema in view.topics
+        ],
+    )
+
+
+def _mock_plan(view: StudentMockExamPlanView) -> StudentMockExamPlanSchema:
+    return StudentMockExamPlanSchema(
+        opposition=_opposition(view.opposition),
+        full=_mock_variant(view.full),
+        short=_mock_variant(view.short),
+        case_blocks=[_mock_case_block(bloque) for bloque in view.case_blocks],
+    )
+
+
+def _official_exam(view: StudentOfficialExamView) -> StudentOfficialExamSchema:
+    return StudentOfficialExamSchema(
+        position=view.position,
+        title=view.title,
+        held_at=view.held_at,
+        questions=view.questions,
+        ready=view.ready,
+    )
+
+
+def _official_exams(view: StudentOfficialExamsView) -> StudentOfficialExamsSchema:
+    return StudentOfficialExamsSchema(exams=[_official_exam(examen) for examen in view.exams])
+
+
+def _mistake(view: StudentMistakeView) -> StudentMistakeSchema:
+    return StudentMistakeSchema(
+        stem=view.stem,
+        topics=[_topic_ref(tema) for tema in view.topics],
+        last_failed_at=view.last_failed_at,
+        times_failed=view.times_failed,
+        due=view.due,
+    )
+
+
+def _mistake_topic(view: StudentMistakeTopicView) -> StudentMistakeTopicSchema:
+    return StudentMistakeTopicSchema(
+        code=view.code,
+        title=view.title,
+        failed=view.failed,
+        due=view.due,
+    )
+
+
+def _mistakes(view: StudentMistakesView) -> StudentMistakesSchema:
+    return StudentMistakesSchema(
+        total=view.total,
+        due_total=view.due_total,
+        questions=[_mistake(fallo) for fallo in view.questions],
+        topics=[_mistake_topic(tema) for tema in view.topics],
+    )
+
+
 @router.get(
     "/overview",
     response_model=StudentOverviewSchema,
@@ -358,7 +519,90 @@ def student_progress(service: StudentServiceDep) -> StudentProgressSchema:
         blocks=[_block(bloque) for bloque in view.blocks],
         weakest_topics=[_topic_progress(tema) for tema in view.weakest_topics],
         history=[_session(sesion) for sesion in view.history],
+        tests_finished=view.tests_finished,
     )
+
+
+# --- el simulacro: qué va a caer antes de montarlo ------------------------------------------------
+
+
+@router.get(
+    "/mock-exams",
+    response_model=StudentMockExamPlanSchema,
+    responses=RESOURCE_ERRORS,
+    summary="El simulacro antes de montarlo: sus variantes, sus partes y el bloque del supuesto",
+)
+def student_mock_exam_plan(service: StudentServiceDep) -> StudentMockExamPlanSchema:
+    """Qué va a caer en el simulacro, leído del perfil del examen.
+
+    Es la ruta que hace que se pueda elegir **sabiendo qué se elige**: cuántas preguntas tiene cada
+    parte, cuántas de reserva, cuánto dura, con qué se corrige (la penalización publicada) y qué
+    temas entran en cada uno de los dos bloques del supuesto. Nada de esto se escribe a mano en la
+    pantalla: sale de la convocatoria, y lo que la convocatoria no publica viaja como `null`.
+    """
+    return _mock_plan(service.mock_exam_plan())
+
+
+# --- los exámenes oficiales importados ------------------------------------------------------------
+
+
+@router.get(
+    "/official-exams",
+    response_model=StudentOfficialExamsSchema,
+    responses=RESOURCE_ERRORS,
+    summary="Los exámenes oficiales importados (hoy, ninguno: la lista vacía se dice)",
+)
+def student_official_exams(service: StudentServiceDep) -> StudentOfficialExamsSchema:
+    """Los exámenes oficiales que hay importados de esta oposición.
+
+    Una lista vacía es un **estado**, no un error: quiere decir que todavía no se ha importado
+    ninguno, y la pantalla lo dice con esas palabras en vez de quedarse en blanco o de enseñar otra
+    cosa con el nombre de «examen oficial».
+    """
+    return _official_exams(service.official_exams())
+
+
+@router.post(
+    "/official-exams/{posicion}/sessions",
+    response_model=StudentSessionSchema,
+    status_code=status.HTTP_201_CREATED,
+    responses=RESOURCE_ERRORS,
+    summary="Monta el examen oficial que ocupa esa posición de la lista",
+)
+def student_create_official_exam(
+    service: StudentServiceDep,
+    posicion: int = Path(
+        ge=1,
+        description="Su sitio en la lista de exámenes oficiales (el primero, el segundo).",
+    ),
+) -> StudentSessionSchema:
+    """El examen se pide por su **sitio en la lista**, no por un identificador.
+
+    Es la misma regla que la hoja de respuestas: lo que el alumno tiene delante es la fila, y por
+    eso
+    la fila es la dirección. Así la zona del alumno sigue sin enseñar de dónde salen las preguntas.
+    """
+    return _session(service.create_official_exam(posicion))
+
+
+# --- los fallos: tus preguntas falladas, con su tema ----------------------------------------------
+
+
+@router.get(
+    "/mistakes",
+    response_model=StudentMistakesSchema,
+    responses=RESOURCE_ERRORS,
+    summary="Las preguntas que fallaste la última vez, con su tema, su fecha y cuántas veces",
+)
+def student_mistakes(service: StudentServiceDep) -> StudentMistakesSchema:
+    """Los fallos, y de aquí sale un test.
+
+    Cada fila dice **de qué tema** era la pregunta —el dato que convierte la lista en algo que se
+    puede usar— y el reparto por tema es lo que permite pedir un test solo con los fallos de un
+    tema. Ese test lo compone el motor con el filtro de falladas, sobre los intentos de verdad: esta
+    lista es para mirar, no la fuente de la composición.
+    """
+    return _mistakes(service.mistakes())
 
 
 # --- el test: montarlo, correrlo y cerrarlo ------------------------------------------------------
@@ -484,3 +728,23 @@ def student_finish(service: StudentServiceDep, sesion: str = Path()) -> StudentR
         official_available=view.official_available,
         official_note=view.official_note,
     )
+
+
+@router.get(
+    "/sessions/{sesion}/result",
+    response_model=StudentSessionResultSchema,
+    responses=RESOURCE_ERRORS,
+    summary="El resultado de un test terminado: la nota por parte, el tiempo y pregunta a pregunta",
+)
+def student_session_result(
+    service: StudentServiceDep, sesion: str = Path()
+) -> StudentSessionResultSchema:
+    """El resultado entero de un test terminado, con lo que hace falta para repasar.
+
+    Cada pregunta con tus opciones, lo que marcaste, cuál era la correcta y **de qué tema era**, más
+    el desglose por tema. Es la pantalla que contesta a «qué he fallado y por dónde lo repaso», que
+    es
+    para lo que sirve un resultado; de un test sin terminar, el motor dice que no hay resultado y la
+    respuesta lo repite en lugar de enseñar medio resultado.
+    """
+    return _session_result(service.result(sesion))

@@ -173,11 +173,13 @@ describe('el marco del alumno', () => {
   });
 
   it('una sección que todavía no está lo dice con su frase, sin jerga de construcción', () => {
-    renderWithProviders(<AppRoutes />, { route: '/simulacros' });
+    // La única que queda sin pantalla es Tests: Simulacros, Exámenes, Fallos y Progreso la tienen
+    // desde F14, y cada una enseña lo suyo en lugar de una frase.
+    renderWithProviders(<AppRoutes />, { route: '/tests' });
 
-    expect(screen.getByRole('heading', { level: 1, name: 'Simulacros' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'Tests' })).toBeInTheDocument();
     expect(
-      screen.getByText(/Un examen completo como el del día.*Llega en la siguiente fase\./),
+      screen.getByText(/Tú eliges los temas.*Llega en la siguiente fase\./),
     ).toBeInTheDocument();
     expect(screen.queryByText(/slice/)).toBeNull();
   });

@@ -1,20 +1,19 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 
 import {
   answerStudentQuestion,
   finishStudentRun,
   getStudentRun,
   startStudentRun,
-  type StudentResult,
   type StudentRun,
 } from '../../api/studentTests';
 import { isApiError } from '../../api/client';
 import { EmptyState } from '../../components/EmptyState';
 import { LoadingState } from '../../components/LoadingState';
 import { AnswerSheet } from './AnswerSheet';
-import { LETRAS_POR_DEFECTO, textoDeOutcome } from './answerSheetModel';
+import { LETRAS_POR_DEFECTO } from './answerSheetModel';
 
 /**
  * El test en curso, con la hoja de respuestas (diseño v0, §1 de `DISENO-V0-Y-STITCH-2026-10.md`).
@@ -29,10 +28,10 @@ import { LETRAS_POR_DEFECTO, textoDeOutcome } from './answerSheetModel';
  */
 export function StudentTestRunner() {
   const { id = '' } = useParams<{ id: string }>();
+  const navegar = useNavigate();
   const cliente = useQueryClient();
   const [arrancado, setArrancado] = useState(false);
   const [hojaAbierta, setHojaAbierta] = useState(false);
-  const [resultado, setResultado] = useState<StudentResult | null>(null);
 
   const run = useQuery({
     queryKey: ['student-run', id],
@@ -70,9 +69,11 @@ export function StudentTestRunner() {
 
   const cerrar = useMutation({
     mutationFn: () => finishStudentRun(id),
-    onSuccess: (datos) => {
-      setResultado(datos);
+    onSuccess: () => {
       void cliente.invalidateQueries({ queryKey: ['student-run', id] });
+      // Terminar lleva a la pantalla de resultado, que lo lee entero de la sesión (F14): lo que hay
+      // que poder ver es cada pregunta con su tema, y eso es otra pantalla.
+      void navegar(`/resultado/${id}`);
     },
   });
 
@@ -281,33 +282,6 @@ export function StudentTestRunner() {
           <AnswerSheet filas={estado.sheet} actual={estado.position} letras={letras} />
         </aside>
       </div>
-
-      {resultado !== null && (
-        <section className="test-resultado" aria-label="Resultado">
-          <h2>Resultado</h2>
-          <p>
-            {resultado.total.correct} bien · {resultado.total.wrong} mal ·{' '}
-            {resultado.total.blank} en blanco
-          </p>
-          <ul className="test-parts">
-            {resultado.parts.map((parte) => (
-              <li key={parte.part_code ?? 'total'}>
-                <strong>{parte.part_name ?? 'Total'}</strong>: {parte.score_decimal}
-                {parte.score_max === null ? '' : ` sobre ${String(parte.score_max)}`}
-                {parte.verdict_note === null ? null : (
-                  <span className="test-parts__aviso"> {parte.verdict_note}</span>
-                )}
-              </li>
-            ))}
-          </ul>
-          {resultado.official_note === null ? null : (
-            <p className="test-resultado__aviso">{resultado.official_note}</p>
-          )}
-          <p>
-            {estado.sheet.map((fila) => `${String(fila.position)}: ${textoDeOutcome(fila.outcome)}`).join(' · ')}
-          </p>
-        </section>
-      )}
     </main>
   );
 }

@@ -1,10 +1,9 @@
 # Estado del objetivo largo (TAI: los 33 temas y la app de estudio)
 
 **Autoridad:** `docs/GOAL-DEEPSEEK-TRABAJO-LARGO-2026-10.md` · **Presupuesto de API:** 40 $ · **Se
-avisa cada 10 $** · Última actualización: **11 oct 2026 (tanda f13: la zona del alumno estrena el
-diseño —Inicio, Temario y los apuntes en tres columnas—, los tokens viven en un solo sitio y el botón
-«Esto está mal» guarda el aviso de verdad, auditado y en la ruta que leerá la bandeja del
-propietario; sin gastar API)**.
+avisa cada 10 $** · Última actualización: **11 oct 2026 (tanda f14: se cierra el ciclo de estudio
+—Resultado, Simulacro, Exámenes oficiales, Fallos y Progreso— con sus consultas, sus pruebas, sus
+capturas a dos anchos y las puertas 18/18; sin gastar API)**.
 
 > **De las fechas:** la tanda anterior se etiquetó «11 oct» en este fichero, pero **su reloj, sus
 > ficheros y sus marcas de base son del 10 de octubre** (la corrida de I.6 acabó a las 18:09 del
@@ -40,10 +39,13 @@ tokens que devolvió cada llamada; el coste es la estimación con la tabla de pr
 | **Acumulado medido de f12** | | | **510** | **6.315.334** | **3.557.147** | **3,0816 $** |
 | 11-oct | — | f13: la interfaz (tokens, Inicio, Temario, apuntes y el aviso del alumno) | 0 | 0 | 0 | 0,0000 $ |
 | **Acumulado medido de f13** | | | **0** | **0** | **0** | **0,0000 $** |
+| 11-oct | — | f14: el cierre del ciclo de estudio (Resultado, Simulacro, Exámenes, Fallos y Progreso) | 0 | 0 | 0 | 0,0000 $ |
+| **Acumulado medido de f14** | | | **0** | **0** | **0** | **0,0000 $** |
 
 *(f13 no llama al modelo a propósito: es el bloque de interfaz y de la ruta de escritura de los
-avisos. Las únicas llamadas de esta tanda fueron las de las herramientas locales —pytest, Playwright,
-eslint—, que no cuestan.)*
+avisos. f14 tampoco: es interfaz y consultas de lectura sobre la base; lo único que se ejecuta son las
+herramientas locales —ruff, mypy, pytest, Vitest, Playwright—, que no cuestan. Las únicas llamadas de
+las dos tandas fueron las de esas herramientas.)*
 
 Tres avisos para que nadie sume mal:
 
@@ -248,6 +250,33 @@ apuntes **caben** en vez de desplazarse dentro de una caja: el contenedor con sc
 `tabindex` que eslint prohíbe y dejaría una violación de axe (`scrollable-region-focusable`) o
 contenido escondido tras un desplazamiento.
 
+## 4c. El cierre del ciclo de estudio (f14)
+
+Lo que se ha construido en este bloque, y lo que se ha medido de cada cosa. **No ha gastado API**: no
+se ha llamado a ningún modelo (es interfaz y consultas de lectura sobre la base).
+
+| Qué | Dónde | Cómo se comprueba |
+|---|---|---|
+| **El resultado de un test, pregunta a pregunta y por tema** | `GET /student/sessions/{id}/result`; `apps/web/src/pages/student/ResultPage.tsx` (`/resultado/:id`) | `test_student_result_api.py`: cada pregunta con su tema, sus opciones, lo que se marcó y la correcta, el tiempo por pregunta y el desglose por tema cuadrando con lo contestado; de un test sin terminar, 409 con su motivo. La prueba de contrato del alumno recorre **también** esta respuesta (es la más larga de la capa) buscando lo prohibido |
+| **Cómo se enseña la estimación** | El aviso sale del **dominio** (`ESTIMATED_SCORE_NOTE` y `estimated_verdict_note`) y la pantalla lo pinta tal cual, con su énfasis | `studentResultado.test.tsx` (6 pruebas): el aviso «…esto no es la calificación oficial», la nota por parte con su banda y su mínimo, el tiempo, el desglose por tema con el porcentaje escrito, la pregunta que la plantilla no corrige (`void`, «No se corrige») y las dos salidas |
+| **El plan del simulacro antes de montarlo** | `GET /student/mock-exams` (lee la convocatoria); `MockExamPage.tsx` (`/simulacros`) | `test_student_result_api.py`: 80 + 5 y 20 + 5, la banda 0-50, el mínimo 25, la penalización `1/3` y los 120 minutos **leídos del perfil**; los bloques III y IV con sus temas; y la variante corta con las cifras de la aplicación (40 y 48 min, **sin** reservas). Otra prueba monta el simulacro y comprueba que el tiempo que prometía el plan es el que tiene la sesión |
+| **Los exámenes oficiales importados** | `GET /student/official-exams` y `POST /student/official-exams/{posicion}/sessions`; `OfficialExamsPage.tsx` (`/examenes`) | `test_student_result_api.py`: con un examen importado (80 + 5 y su plantilla enlazada) se lista y se monta (201, modo `official_exam`, 85 preguntas y 120 minutos); una posición que no existe es 404; **sin** ninguno, la lista sale vacía y no se rellena. `studentExamenes.test.tsx` (4) comprueba las dos pantallas, incluido el «Todavía no hay exámenes oficiales importados» |
+| **Los fallos, y el test que sale de ellos** | `GET /student/mistakes`; `MistakesPage.tsx` (`/fallos`) | `test_student_result_api.py`: tres fallos con su tema, su fecha y cuántas veces; el reparto por tema suma; aplazar un repaso baja el «para repasar hoy»; una pregunta fallada y después acertada **deja de estar** (manda el último intento, igual que el filtro `failed`). `studentFallos.test.tsx` (5) comprueba el test con todos los fallos y el de un solo tema, y que sin fallos no se ofrece ninguno |
+| **El progreso, con el porcentaje escrito** | `GET /student/progress` (con `tests_finished`); `ProgressPage.tsx` (`/progreso`) | `test_student_result_api.py`: `tests_finished` cuenta los tests **terminados** (no los que caben en el historial de 20). `studentProgreso.test.tsx` (4): el porcentaje escrito por bloque y por tema, los aciertos, «Sin empezar» en lo que no se ha tocado, los más flojos y la evolución con enlace al resultado |
+| **El cierre, con capturas a dos anchos** | `apps/web/tests/screens/screens.spec.ts` (42 capturas) | `artifacts/screens/`: `resultado`, `simulacros`, `examenes`, `fallos` y `progreso`, en escritorio y móvil, **las diez con 0 violaciones de axe y 0 palabras prohibidas**. El resultado, los fallos y el progreso se capturan sobre un test **terminado de verdad**, montado por la API (conjunto, plantilla, catalogación, respuestas y cierre) antes de entrar |
+| **Que no se desborde a 390 px** | `apps/web/tests/e2e/first-run.spec.ts`: la puerta de responsividad recorre ahora también `/simulacros`, `/examenes`, `/fallos` y `/progreso` | Las filas de estas pantallas (código, título, cifras y acción) se apilan en móvil con `minmax(0, 1fr)` y `overflow-wrap: anywhere`; ninguna hoja escribe un color a mano (la prueba de tokens de F13 lo sigue comprobando). **Medido en las capturas**: las diez imágenes de móvil miden exactamente **390 px de ancho** (una captura de página completa con desplazamiento horizontal saldría más ancha), y las de escritorio, 1280 |
+
+**Puertas: 18/18**, ejecutadas en **33:01 minutos** sobre este árbol (1.396 pruebas de backend entre
+unitarias —741—, integración —626— y contrato —29—, 318 de componentes, 61 E2E —con la puerta de
+responsividad ampliada a las cuatro pantallas nuevas— y las 18 puertas del `gates.ps1`). El registro
+está en `F:\temp-opofuente\gates-f14-alumno.txt`.
+
+**Y una prueba que falla antes**: las cinco pantallas se escribieron **después** de sus pruebas. La
+primera pasada de `npm run test:web` falló en los cinco ficheros nuevos con «Failed to resolve import
+… Does the file exist?» —es decir, las pruebas no encontraban las pantallas, que es exactamente lo que
+tienen que decir— y la segunda pasó con 318/318. Lo mismo en el backend: `test_student_result_api.py`
+se escribió contra las rutas nuevas y falló hasta que estuvieron.
+
 ## 5. Lo que queda abierto
 
 1. **El acumulado de gasto anterior a f10 no existe** y ya no se puede medir. Desde aquí se anota una
@@ -265,16 +294,20 @@ contenido escondido tras un desplazamiento.
    y se vuelve a escribir. Las 90 secciones que se rehicieron en la corrida de I.1 eran las del índice
    **anterior** (escritas el 9-oct, antes de que existiera el catálogo): una migración de una vez, no
    un trabajo repetido.
-6. **La zona del alumno va por la mitad**: desde f13 están la pantalla del test (f11), **Inicio**,
+6. **La zona del alumno está casi entera**: desde f13 están la pantalla del test (f11), **Inicio**,
    **Temario** y **Tema con apuntes** —con el **sistema de diseño aplicado** (§3.7: tokens en un
    fichero único y las dos fuentes autoalojadas) y el aviso «Esto está mal» guardando de verdad por su
-   ruta auditada—. Faltan **Resultado, Simulacros, Exámenes oficiales, Fallos y Progreso** (pasos 3, 6
-   y 7 del §3), y dentro del tema, las pestañas «Preguntas» y «Mi progreso» —hoy son enlaces a su
-   dirección, que llega en el bloque siguiente—, el buscador dentro del tema y la marca de leído del
-   índice. La **bandeja del propietario** para los avisos del alumno tiene su ruta de lectura
-   (`GET /notes-reports`) pero no su pantalla: es el bloque C.
-7. **`GET /student/official-exams`**: los exámenes del INAP tienen que importarse antes (D10) para
-   poder listarse con su nota. Hoy listarlos sería listar conjuntos internos.
+   ruta auditada—, y desde f14 **Resultado, Simulacros, Exámenes oficiales, Fallos y Progreso** (§4c).
+   Faltan la pantalla de **Tests** (elegir temas, cuántas preguntas y cómo se corrigen: pasos 3 y 4 del
+   §3) y, dentro del tema, las pestañas «Preguntas» y «Mi progreso» —hoy son enlaces a su dirección—,
+   el buscador dentro del tema y la marca de leído del índice. La **bandeja del propietario** para los
+   avisos del alumno tiene su ruta de lectura (`GET /notes-reports`) pero no su pantalla: es el bloque C.
+7. **Los exámenes del INAP**: la pantalla existe y lee de la API, y hoy sale **vacía** porque no hay
+   ninguno importado (D10). Lo que falta es la importación, no la pantalla: cuando los 32 PDF de
+   `F:\OpoFuente\fuentes\inap-tai\` entren con su manifiesto, saldrán en la lista con su fecha, su
+   número de preguntas y su botón, y el que no tenga plantilla activa dirá que todavía no se puede
+   hacer en lugar de ofrecer un examen que falla. La ruta `POST /student/official-exams/{posicion}/sessions`
+   ya está probada con un examen de verdad montado por la API (§4c)
 8. Los **30 temas restantes** y los bloques C (panel) y D (datos: copias, epígrafes, INAP) siguen sin
    empezar, con D5 (copias verificadas) como primer paso del §6 del objetivo.
 9. **Tres violaciones de accesibilidad en el panel** (`scrollable-region-focusable` en `/cambios` y en

@@ -19,8 +19,9 @@ pantalla tardara más cuanta más gente estudiara.
 
 from __future__ import annotations
 
-from collections.abc import Mapping
-from datetime import datetime
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
+from datetime import date, datetime
 from typing import Any
 
 from sqlalchemy import Select, func, select
@@ -28,6 +29,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from opofuente.domain.topic_notes import NotesState
 from opofuente.infrastructure.db_models import (
+    AnswerKeyVersionRecord,
     AttemptEvaluationRecord,
     AttemptRecord,
     CurriculumMappingRecord,
@@ -44,6 +46,57 @@ from opofuente.infrastructure.db_models import (
 #: dentro. Un blanco no es un acierto, y dejarlo fuera subiría el porcentaje sin haber acertado
 #: nada.
 OUTCOMES_QUE_CUENTAN: tuple[str, ...] = ("correct", "wrong", "blank")
+
+#: El desenlace que convierte una pregunta en un fallo para la lista de fallos.
+OUTCOME_FALLADO = "wrong"
+
+
+@dataclass(frozen=True, slots=True)
+class MistakeRow:
+    """Una pregunta que esta persona falló **la última vez** que la contestó.
+
+    El identificador de la pregunta está aquí porque es lo que cruza sus temas y lo que pide el
+    recuento; el servicio lo usa y **no lo publica**: la capa del alumno no tiene dónde ponerlo.
+    """
+
+    question_version_id: str
+    stem: str
+    last_failed_at: datetime
+    times_failed: int
+    due: bool
+
+
+@dataclass(frozen=True, slots=True)
+class MistakesView:
+    """Los fallos de esta persona: la página que se enseña, los totales y el reparto por tema.
+
+    `total` y `due_total` se cuentan sobre **todos** los fallos, no sobre la página: un
+    «12 fallos» que en realidad son 300 porque solo se contaron los veinte que caben sería una
+    cifra que miente. `topics` es el mismo recuento repartido por nodo del programa —`{nodo:
+    (fallos, vencidos)}`—, que es con lo que la pantalla ofrece montar un test solo de los fallos de
+    un tema.
+    """
+
+    rows: tuple[MistakeRow, ...]
+    total: int
+    due_total: int
+    topics: Mapping[str, tuple[int, int]]
+
+
+@dataclass(frozen=True, slots=True)
+class OfficialExamRow:
+    """Un examen oficial importado, tal como la zona del alumno lo puede ofrecer.
+
+    `ready` es si se puede **hacer** hoy: tener preguntas y una plantilla activa. Un examen a medio
+    importar se enseña igual —existe— pero dice que todavía no se puede correr, en vez de ofrecer un
+    botón que responde con un error.
+    """
+
+    question_set_id: str
+    title: str
+    held_at: date | None
+    questions: int
+    ready: bool
 
 
 def _solo_publicos[Fila: tuple[Any, ...]](
@@ -313,3 +366,261 @@ class SqlAlchemyStudentRepository:
             str(nodo): (NotesState.PUBLISHED if str(nodo) in publicados else NotesState.DRAFT)
             for nodo in con_apartados
         }
+
+    # ------------------------------------------------------------------ los fallos (F14)
+
+    def mistakes(
+        self,
+        opposition_id: str,
+        owner_id: str,
+        *,
+        now: datetime,
+        public_only: bool,
+        limit: int,
+    ) -> MistakesView:
+        """Las preguntas que esta persona falló **la última vez**, de la más reciente a la más
+        vieja.
+
+        Cuatro decisiones, y las cuatro se ven en la consulta:
+
+        1. **manda la última vez que la contestó**, no cualquier intento: una pregunta fallada y
+           después acertada no es un fallo, y la lista tiene que decir lo mismo que el filtro de
+           falladas con el que se monta un test (`_pasa_el_filtro`), o la pantalla ofrecería repasar
+           preguntas que el test no pondría;
+        2. **manda la evaluación vigente** de cada intento: recalcular con otra plantilla añade una
+           evaluación nueva sin borrar la anterior (invariante 7), así que sumarlas contaría dos
+           veces el mismo intento;
+        3. **`times_failed` cuenta fallos de verdad**, no intentos: la cifra que el alumno lee
+           («la has fallado 3 veces») sale de las evaluaciones con desenlace `wrong` de sus
+           propios intentos;
+        4. **el vencimiento se mira contra `review_items`**, que es la cola de repaso, y se calcula
+           para **todos** los fallos aunque solo se devuelva una página: el «N para repasar hoy»
+           de la pantalla tiene que cuadrar con lo que hay, no con lo que cabe.
+        """
+        vigente = (
+            select(AttemptEvaluationRecord.id)
+            .where(AttemptEvaluationRecord.attempt_id == AttemptRecord.id)
+            .order_by(
+                AttemptEvaluationRecord.evaluated_at.desc(),
+                AttemptEvaluationRecord.id.desc(),
+            )
+            .limit(1)
+            # `correlate` explícito, como en `outcome_counts`: sin él SQLAlchemy autocorrelaciona la
+            # tabla de dentro y la subconsulta se queda sin `FROM`.
+            .correlate(AttemptRecord)
+            .scalar_subquery()
+        )
+        # La última vez que esta persona vio la pregunta: la sesión más reciente en la que salió.
+        presentacion = (
+            select(SessionQuestionRecord.id)
+            .join(StudySessionRecord, StudySessionRecord.id == SessionQuestionRecord.session_id)
+            .where(
+                SessionQuestionRecord.question_version_id == QuestionVersionRecord.id,
+                StudySessionRecord.opposition_id == opposition_id,
+                StudySessionRecord.owner_id == owner_id,
+            )
+            .order_by(
+                StudySessionRecord.created_at.desc(),
+                StudySessionRecord.id.desc(),
+                SessionQuestionRecord.position.desc(),
+            )
+            .limit(1)
+            .correlate(QuestionVersionRecord)
+            .scalar_subquery()
+        )
+        consulta = (
+            select(QuestionVersionRecord.id, QuestionVersionRecord.stem)
+            .select_from(QuestionVersionRecord)
+            .join(QuestionSetRecord, QuestionSetRecord.id == QuestionVersionRecord.question_set_id)
+            .join(AttemptRecord, AttemptRecord.session_question_id == presentacion)
+            .join(AttemptEvaluationRecord, AttemptEvaluationRecord.attempt_id == AttemptRecord.id)
+            .where(
+                QuestionSetRecord.opposition_id == opposition_id,
+                AttemptEvaluationRecord.outcome == OUTCOME_FALLADO,
+                AttemptEvaluationRecord.id == vigente,
+            )
+            .order_by(AttemptRecord.answered_at.desc(), QuestionVersionRecord.id.asc())
+        )
+        with self._session_factory() as session:
+            filas = session.execute(_solo_publicos(consulta, public_only)).all()
+            identificadores = [str(fila[0]) for fila in filas]
+            vencidas: set[str] = set()
+            por_nodo: dict[str, list[int]] = {}
+            cuenta_de_fallos: dict[str, tuple[int, datetime]] = {}
+            if identificadores:
+                vencidas = {
+                    str(pregunta)
+                    for pregunta in session.execute(
+                        select(ReviewItemRecord.question_version_id).where(
+                            ReviewItemRecord.question_version_id.in_(identificadores),
+                            ReviewItemRecord.opposition_id == opposition_id,
+                            ReviewItemRecord.due_at <= now,
+                        )
+                    ).scalars()
+                }
+                mapeos = session.execute(
+                    select(
+                        CurriculumMappingRecord.curriculum_node_id,
+                        CurriculumMappingRecord.subject_id,
+                    ).where(
+                        CurriculumMappingRecord.subject_type == "question_version",
+                        CurriculumMappingRecord.status == "accepted",
+                        CurriculumMappingRecord.subject_id.in_(identificadores),
+                    )
+                ).all()
+                for nodo, pregunta in mapeos:
+                    cuenta = por_nodo.setdefault(str(nodo), [0, 0])
+                    cuenta[0] += 1
+                    if str(pregunta) in vencidas:
+                        cuenta[1] += 1
+                # Los fallos de cada pregunta y cuándo fue el último: se piden solo para la página,
+                # porque son los que se enseñan (los totales se cuentan sin esto).
+                pagina = identificadores[:limit]
+                repetidos = session.execute(
+                    select(
+                        SessionQuestionRecord.question_version_id,
+                        func.count(func.distinct(AttemptEvaluationRecord.id)),
+                        func.max(AttemptEvaluationRecord.evaluated_at),
+                    )
+                    .select_from(AttemptEvaluationRecord)
+                    .join(AttemptRecord, AttemptRecord.id == AttemptEvaluationRecord.attempt_id)
+                    .join(
+                        SessionQuestionRecord,
+                        SessionQuestionRecord.id == AttemptRecord.session_question_id,
+                    )
+                    .join(
+                        StudySessionRecord,
+                        StudySessionRecord.id == SessionQuestionRecord.session_id,
+                    )
+                    .where(
+                        SessionQuestionRecord.question_version_id.in_(pagina),
+                        StudySessionRecord.opposition_id == opposition_id,
+                        StudySessionRecord.owner_id == owner_id,
+                        AttemptEvaluationRecord.outcome == OUTCOME_FALLADO,
+                        AttemptEvaluationRecord.id == vigente,
+                    )
+                    .group_by(SessionQuestionRecord.question_version_id)
+                ).all()
+                for pregunta, cuantos, ultima in repetidos:
+                    cuenta_de_fallos[str(pregunta)] = (int(cuantos), ultima)
+        rows: list[MistakeRow] = []
+        for fila in filas[:limit]:
+            identificador = str(fila[0])
+            fallos, ultima = cuenta_de_fallos.get(identificador, (0, None))
+            if ultima is None:  # pragma: no cover - toda fila de la página tiene su cuenta
+                continue
+            rows.append(
+                MistakeRow(
+                    question_version_id=identificador,
+                    stem=str(fila[1]),
+                    times_failed=fallos,
+                    last_failed_at=ultima,
+                    due=identificador in vencidas,
+                )
+            )
+        return MistakesView(
+            rows=tuple(rows),
+            total=len(filas),
+            due_total=len(vencidas),
+            topics={nodo: (cuenta[0], cuenta[1]) for nodo, cuenta in por_nodo.items()},
+        )
+
+    def topics_of_questions(
+        self, question_version_ids: Sequence[str]
+    ) -> Mapping[str, tuple[str, ...]]:
+        """Los temas **aceptados** de cada pregunta: `{pregunta: (nodo, …)}`.
+
+        Una pregunta puede estar en dos temas (D7): por eso el valor es una tupla y no un nodo
+        suelto.
+        Elegir uno aquí sería inventar cuál manda, y la pantalla de fallos lo que tiene que decir es
+        por qué temas se puede repasar esa pregunta.
+        """
+        if not question_version_ids:
+            return {}
+        with self._session_factory() as session:
+            filas = session.execute(
+                select(
+                    CurriculumMappingRecord.subject_id,
+                    CurriculumMappingRecord.curriculum_node_id,
+                ).where(
+                    CurriculumMappingRecord.subject_type == "question_version",
+                    CurriculumMappingRecord.status == "accepted",
+                    CurriculumMappingRecord.subject_id.in_(list(question_version_ids)),
+                )
+            ).all()
+        por_pregunta: dict[str, list[str]] = {}
+        for pregunta, nodo in filas:
+            por_pregunta.setdefault(str(pregunta), []).append(str(nodo))
+        return {pregunta: tuple(nodos) for pregunta, nodos in por_pregunta.items()}
+
+    # ------------------------------------------------------- los exámenes oficiales (F14)
+
+    def official_exams(
+        self, opposition_id: str, *, public_only: bool
+    ) -> tuple[OfficialExamRow, ...]:
+        """Los exámenes oficiales importados de esta oposición, con lo que hace falta para hacer
+        uno.
+
+        Qué es un examen oficial aquí **no se decide en esta capa**: es un conjunto cuyo tipo lo
+        dice
+        (`official_exam`), que es como lo deja el importador del INAP. Si no hay ninguno importado,
+        la
+        lista sale vacía y la pantalla lo dice; no se rellena con bancos de práctica disfrazados.
+
+        `questions` cuenta las preguntas **vigentes** (una versión sustituida ya no se practica) y
+        `ready` mira la plantilla activa: sin ella el examen no se puede corregir, y ofrecerlo sería
+        ofrecer un examen que no se puede terminar.
+        """
+        preguntas = (
+            select(func.count(func.distinct(QuestionVersionRecord.id)))
+            .where(
+                QuestionVersionRecord.question_set_id == QuestionSetRecord.id,
+                QuestionVersionRecord.status != "superseded",
+            )
+            .correlate(QuestionSetRecord)
+            .scalar_subquery()
+        )
+        plantillas = (
+            select(func.count())
+            .select_from(AnswerKeyVersionRecord)
+            .where(
+                AnswerKeyVersionRecord.question_set_id == QuestionSetRecord.id,
+                AnswerKeyVersionRecord.status == "active",
+            )
+            .correlate(QuestionSetRecord)
+            .scalar_subquery()
+        )
+        consulta = (
+            select(
+                QuestionSetRecord.id,
+                QuestionSetRecord.title,
+                QuestionSetRecord.held_at,
+                preguntas,
+                plantillas,
+            )
+            .where(
+                QuestionSetRecord.opposition_id == opposition_id,
+                QuestionSetRecord.set_type == "official_exam",
+                QuestionSetRecord.status != "archived",
+            )
+            # Los que tienen fecha, del más antiguo al más nuevo, y delante los que no la tienen:
+            # una fecha ausente no puede ordenar como si fuera 1970. El título desempata para que
+            # dos corridas den la misma lista (y, con ella, las mismas posiciones).
+            .order_by(
+                QuestionSetRecord.held_at.is_(None),
+                QuestionSetRecord.held_at.asc(),
+                QuestionSetRecord.title.asc(),
+            )
+        )
+        with self._session_factory() as session:
+            filas = session.execute(_solo_publicos(consulta, public_only)).all()
+        return tuple(
+            OfficialExamRow(
+                question_set_id=str(fila[0]),
+                title=str(fila[1]),
+                held_at=fila[2],
+                questions=int(fila[3]),
+                ready=int(fila[4]) > 0 and int(fila[3]) > 0,
+            )
+            for fila in filas
+        )

@@ -19,7 +19,7 @@ conjunto de origen: el nombre del banco del propietario es justo lo que no puede
 from __future__ import annotations
 
 import re
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 
 from opofuente.application.ports import Clock
@@ -33,9 +33,19 @@ from opofuente.application.student_models import (
     StudentBlockProgressView,
     StudentCorrectionView,
     StudentEpigraphView,
+    StudentMistakesView,
+    StudentMistakeTopicView,
+    StudentMistakeView,
+    StudentMockCaseBlockView,
+    StudentMockCaseTopicView,
+    StudentMockExamPartView,
+    StudentMockExamPlanView,
     StudentMockExamRequest,
+    StudentMockExamVariantView,
     StudentNoteSectionView,
     StudentNotesView,
+    StudentOfficialExamsView,
+    StudentOfficialExamView,
     StudentOppositionView,
     StudentOptionView,
     StudentOverviewView,
@@ -43,17 +53,22 @@ from opofuente.application.student_models import (
     StudentProgressView,
     StudentQuestionView,
     StudentReportView,
+    StudentResultQuestionView,
+    StudentResultTopicView,
     StudentResultView,
     StudentRunView,
     StudentScoreView,
+    StudentSessionResultView,
     StudentSessionView,
     StudentSheetRowView,
     StudentTestRequest,
     StudentTopicProgressView,
+    StudentTopicRefView,
     StudentTopicView,
 )
 from opofuente.application.study_models import (
     PartScoreView,
+    ScoreView,
     SessionQuestionView,
     SessionResultView,
     SessionView,
@@ -61,19 +76,31 @@ from opofuente.application.study_models import (
 from opofuente.application.study_service import (
     AnswerInput,
     CompositionSpec,
+    CreateSessionInput,
     PartSpec,
     RunnerView,
+    SourceInput,
     StudyService,
 )
 from opofuente.config import Settings
 from opofuente.domain.errors import NotFoundError, UnsupportedError
 from opofuente.domain.notes_reports import normalise_reason
-from opofuente.domain.profiles import NodeType
-from opofuente.domain.study import OWNER_ID_LOCAL, Confidence, Feedback, SessionMode, SessionStatus
+from opofuente.domain.profiles import ExamPart, NodeType
+from opofuente.domain.study import (
+    OWNER_ID_LOCAL,
+    Confidence,
+    Feedback,
+    SessionMode,
+    SessionStatus,
+    exact_fraction,
+)
 from opofuente.domain.topic_notes import NoteSection, NotesState
 from opofuente.infrastructure.notes_report_repository import SqlAlchemyNotesReportRepository
 from opofuente.infrastructure.profile_repository import SqlAlchemyProfileRepository
-from opofuente.infrastructure.student_repository import SqlAlchemyStudentRepository
+from opofuente.infrastructure.student_repository import (
+    OfficialExamRow,
+    SqlAlchemyStudentRepository,
+)
 from opofuente.infrastructure.topic_notes_repository import SqlAlchemyTopicNotesRepository
 
 #: Cuántas sesiones se miran para decidir qué está «a medias» y qué entra en el historial. Es una
@@ -88,6 +115,31 @@ RECENT_TESTS_LIMIT = 5
 
 #: Cuántos temas flojos se destacan (REDISENO §3.9: «los 5 temas más flojos»).
 WEAKEST_LIMIT = 5
+
+#: Cuántas preguntas falladas entran en la lista de fallos. Es una página, no un listado: los
+#: totales que la enmarcan se cuentan aparte y sobre todos los fallos.
+MISTAKES_LIMIT = 50
+
+#: La parte del examen que corrige el material de un cuestionario: la que publica la penalización.
+#: Es la misma que usa el motor para un test, y aquí sirve para saber con qué se corregirá un examen
+#: oficial importado.
+PARTE_DE_CUESTIONARIO = "primera_parte"
+
+#: La parte del supuesto práctico del simulacro completo.
+PARTE_DEL_SUPUESTO = "segunda_parte"
+
+#: Los desenlaces que esta capa puede pronunciar. `annulled`, `excluded` y `conflicting` no son
+#: fallos ni aciertos: la plantilla no corrige esa pregunta, y decirlo con `void` es más honesto que
+#: contarla como blanco o como error.
+OUTCOMES_DE_ALUMNO: frozenset[str] = frozenset({"correct", "wrong", "blank"})
+
+#: La variante corta del simulacro: 40 preguntas y 48 minutos. Son cifras de la **aplicación**,
+#: no de la convocatoria, y por eso la variante se llama «corto» y lo dice: no es el perfil.
+SIMULACRO_CORTO_PREGUNTAS = 40
+SIMULACRO_CORTO_MINUTOS = 48
+
+#: Los bloques de los que se puede elegir el supuesto práctico (el perfil de TAI publica dos).
+BLOQUES_DEL_SUPUESTO: frozenset[str] = frozenset({"III", "IV"})
 
 #: El nombre que se le da a cada modo. Es lo que el alumno lee en su historial; el del conjunto de
 #: origen no se usa nunca.
@@ -288,6 +340,7 @@ class StudentService:
             history=tuple(
                 self._sesion(vista) for vista in self._sesiones(oposicion.id) if vista.is_finished
             )[:HISTORY_LIMIT],
+            tests_finished=self._tests_hechos(oposicion),
         )
 
     # ------------------------------------------------------- los apuntes: leerlos y avisar
@@ -744,6 +797,231 @@ class StudentService:
             official_note=resultado.official_note,
         )
 
+    # --------------------------------------------------- el resultado: qué fallaste y de qué (F14)
+
+    def result(self, session_id: str) -> StudentSessionResultView:
+        """El resultado de un test terminado, pregunta a pregunta y **por tema**.
+
+        Solo de un test terminado: el resultado se calcula al cerrar la sesión, y una pantalla de
+        resultado con la mitad de las preguntas sin corregir sería una pantalla a medias sin
+        decirlo.
+        El motor lo comprueba antes (`result`), así que el error que sale dice que hay que
+        terminarlo.
+
+        Las preguntas se piden a la **revisión** de la sesión, que es donde vive la corrección
+        congelada
+        con la plantilla de ese día: recalcular aquí con la plantilla de hoy cambiaría lo que el
+        alumno
+        vio, y la puntuación que se enseña es la que se guardó al cerrar.
+        """
+        oposicion = self._opposition()
+        self._sesion_del_alumno(session_id)
+        calculado = self._study.result(session_id)
+        revision = self._study.review(session_id)
+        sesion = StudentService._sesion(self._study.session(session_id))
+        catalogo = self._catalogo_de_temas(oposicion)
+        temas = self._temas_de_preguntas(
+            [entrada.question_version_id for entrada in revision.entries], catalogo
+        )
+        partes = {
+            parte.code: parte.name for parte in self._convocatoria(oposicion).parts if parte.name
+        }
+        preguntas = tuple(
+            StudentService._pregunta_corregida(entrada, partes, temas)
+            for entrada in revision.entries
+        )
+        return StudentSessionResultView(
+            session=sesion,
+            parts=tuple(StudentService._parte(parte) for parte in calculado.parts),
+            total=StudentService._parte(calculado.total),
+            official_available=calculado.official_available,
+            official_note=calculado.official_note,
+            duration_seconds=StudentService._duracion(sesion),
+            questions=preguntas,
+            topics=StudentService._desglose_por_tema(preguntas),
+        )
+
+    # --------------------------------------------------- el simulacro antes de montarlo (F14)
+
+    def mock_exam_plan(self) -> StudentMockExamPlanView:
+        """Qué va a caer en el simulacro, **antes** de montarlo.
+
+        Todo lo que se enseña sale del perfil del examen: las partes con sus preguntas ordinarias y
+        sus
+        reservas, la banda de puntuación, el mínimo, la penalización y el tiempo. Lo que el perfil
+        no
+        publica va en `None`, que es distinto de cero; y **no se añade nada** que la convocatoria no
+        diga: si mañana cambia el perfil, esta pantalla cambia con él.
+
+        La variante corta **no es el examen**, y lo dice: sus 40 preguntas y sus 48 minutos son de
+        la
+        aplicación, no de la convocatoria.
+        """
+        oposicion = self._opposition()
+        convocatoria = self._convocatoria(oposicion)
+        cifras = self._agregado(oposicion).cifras
+        curriculum = self._curriculum(oposicion)
+
+        primera = StudentService._parte_del_perfil(convocatoria, PARTE_DE_CUESTIONARIO)
+        supuesto = StudentService._parte_del_perfil(convocatoria, PARTE_DEL_SUPUESTO)
+        completas = tuple(
+            StudentService._plan_de_parte(convocatoria, parte)
+            for parte in (primera, supuesto)
+            if parte is not None
+        )
+        corta = (
+            ()
+            if primera is None
+            else (StudentService._plan_de_parte(convocatoria, primera, corta=True),)
+        )
+        return StudentMockExamPlanView(
+            opposition=self.opposition_view(),
+            full=StudentMockExamVariantView(
+                variant="full",
+                title="Simulacro completo",
+                time_limit_minutes=(
+                    None
+                    if primera is None
+                    else StudentService._tiempo_de_parte(convocatoria, primera)
+                ),
+                parts=completas,
+                note=StudentService._nota_del_simulacro(completo=True),
+            ),
+            short=StudentMockExamVariantView(
+                variant="short",
+                title="Simulacro corto",
+                time_limit_minutes=SIMULACRO_CORTO_MINUTOS,
+                parts=corta,
+                note=StudentService._nota_del_simulacro(completo=False),
+            ),
+            case_blocks=tuple(
+                StudentMockCaseBlockView(
+                    code=bloque.path,
+                    title=bloque.title,
+                    topics=tuple(
+                        StudentMockCaseTopicView(
+                            code=tema.path,
+                            title=tema.title,
+                            available_questions=StudentService._de(tema, cifras).available,
+                        )
+                        for tema in bloque.children
+                    ),
+                )
+                for bloque in curriculum
+                if bloque.node_type is NodeType.BLOCK
+                and bloque.path.upper() in BLOQUES_DEL_SUPUESTO
+            ),
+        )
+
+    # --------------------------------------------------- los exámenes oficiales (F14)
+
+    def official_exams(self) -> StudentOfficialExamsView:
+        """Los exámenes oficiales importados de esta oposición.
+
+        Hoy no hay ninguno importado (su importación es otro bloque) y la lista sale **vacía**, no
+        inventada: no se rellenan con bancos de práctica ni con las sesiones ya hechas, porque
+        llamar
+        «examen oficial» a otra cosa es justo lo que no se puede hacer. La pantalla, con una lista
+        vacía, dice que todavía no hay exámenes oficiales importados.
+
+        `position` es la dirección del alumno en esa lista (el primero, el segundo): la zona del
+        alumno
+        no enseña de dónde salen las preguntas de un test (F2 §4), así que un examen se pide por su
+        sitio, como una fila de la hoja de respuestas.
+        """
+        return StudentOfficialExamsView(
+            exams=tuple(
+                StudentOfficialExamView(
+                    position=posicion,
+                    title=fila.title,
+                    held_at=fila.held_at,
+                    questions=fila.questions,
+                    ready=fila.ready,
+                )
+                for posicion, fila in enumerate(self._examenes_oficiales(), start=1)
+            )
+        )
+
+    def create_official_exam(self, position: int) -> StudentSessionView:
+        """Monta el examen oficial que ocupa esa posición de la lista.
+
+        Se corrige como el cuestionario de la convocatoria —su penalización y su tiempo— y se cierra
+        al terminar, como un examen: la corrección mientras se contesta filtraría la solución.
+        """
+        oposicion = self._opposition()
+        examenes = self._examenes_oficiales()
+        if position < 1 or position > len(examenes):
+            raise NotFoundError("examen oficial", str(position))
+        examen = examenes[position - 1]
+        if not examen.ready:
+            raise UnsupportedError(
+                "ese examen todavía no se puede hacer: le falta la plantilla con la que se corrige"
+            )
+        parte = self._parte_de_test(oposicion)
+        if parte is None:
+            raise UnsupportedError(
+                "la convocatoria no publica cómo se corrige el cuestionario: sin esa regla no se "
+                "puede montar un examen oficial"
+            )
+        vista = self._study.create_session(
+            CreateSessionInput(
+                opposition_id=oposicion.id,
+                mode=SessionMode.OFFICIAL_EXAM,
+                sources=(SourceInput(question_set_id=examen.question_set_id, part_code=parte),),
+            )
+        )
+        return StudentService._sesion(vista)
+
+    # --------------------------------------------------- los fallos (F14)
+
+    def mistakes(self) -> StudentMistakesView:
+        """Las preguntas que falló la última vez que las contestó, con su tema y sus fallos.
+
+        De aquí sale un test: los temas que aparecen con sus fallos se le pueden pedir a la ruta que
+        monta un test con el filtro de falladas, que **vuelve a elegir** sobre los intentos de
+        verdad
+        en lugar de sobre esta lista. La lista es para mirar y entender; el test lo compone el
+        motor.
+        """
+        oposicion = self._opposition()
+        fallos = self._student.mistakes(
+            oposicion.id,
+            self._owner_id,
+            now=self._clock.now(),
+            public_only=self._publico(),
+            limit=MISTAKES_LIMIT,
+        )
+        catalogo = self._catalogo_de_temas(oposicion)
+        referencias = self._temas_de_preguntas(
+            [fila.question_version_id for fila in fallos.rows], catalogo
+        )
+        return StudentMistakesView(
+            total=fallos.total,
+            due_total=fallos.due_total,
+            questions=tuple(
+                StudentMistakeView(
+                    stem=fila.stem,
+                    topics=referencias.get(fila.question_version_id, ()),
+                    last_failed_at=fila.last_failed_at,
+                    times_failed=fila.times_failed,
+                    due=fila.due,
+                )
+                for fila in fallos.rows
+            ),
+            topics=tuple(
+                StudentMistakeTopicView(
+                    code=tema.path,
+                    title=tema.title,
+                    failed=fallos.topics[tema.id][0],
+                    due=fallos.topics[tema.id][1],
+                )
+                # El orden es el del programa, no el de un diccionario: los bloques y los temas se
+                # leen como se leen en el temario.
+                for tema in self._temas_con_codigo(self._curriculum(oposicion))
+                if tema.id in fallos.topics
+            ),
+        )
+
     # ------------------------------------------------------------------ ayudas del test
 
     def _parte_de_test(self, oposicion: OppositionSummary) -> str | None:
@@ -831,6 +1109,227 @@ class StudentService:
         convocatoria, y un test con reloj no es un examen.
         """
         return max(5, ((preguntas * 2 + 4) // 5) * 5)
+
+    # ------------------------------------------------------ ayudas del simulacro y del resultado
+
+    @staticmethod
+    def _parte_del_perfil(convocatoria: ConvocationDetail, code: str) -> ExamPart | None:
+        """La parte del perfil del examen con ese código, si la convocatoria la publica.
+
+        `None` cuando no está: un perfil que no la declara no se completa a mano. La ausencia se
+        enseña como ausencia, y el motor montará el simulacro con lo que sí haya.
+        """
+        for parte in convocatoria.parts:
+            if parte.code == code:
+                return parte
+        return None
+
+    @staticmethod
+    def _tiempo_de_parte(convocatoria: ConvocationDetail, parte: ExamPart) -> int | None:
+        """El tiempo de una parte: el suyo y, si ella no lo dice, el del grupo que la contiene.
+
+        Es la regla que aplica el motor al montar la sesión (en TAI los 120 minutos están en el
+        ejercicio único, no en cada parte) y esta pantalla la necesita **antes** de montar nada. Que
+        las dos coincidan no se deja al cuidado de nadie: hay una prueba que monta el simulacro y
+        comprueba que el tiempo que prometía el plan es el que tiene la sesión.
+        """
+        if parte.time_minutes is not None:
+            return parte.time_minutes
+        if parte.parent_code is None:
+            return None
+        padre = StudentService._parte_del_perfil(convocatoria, parte.parent_code)
+        return None if padre is None else padre.time_minutes
+
+    @staticmethod
+    def _plan_de_parte(
+        convocatoria: ConvocationDetail, parte: ExamPart, *, corta: bool = False
+    ) -> StudentMockExamPartView:
+        """Una parte del simulacro tal como se anuncia: con lo que publica el perfil y nada más.
+
+        En la variante corta se anuncian las 40 preguntas de la aplicación y su tiempo, y **no** sus
+        reservas: la variante corta no lleva ninguna, y decir «5 de reserva» sería prometer
+        preguntas
+        que no van a caer.
+        """
+        return StudentMockExamPartView(
+            code=parte.code,
+            name=parte.name,
+            ordinary_items=SIMULACRO_CORTO_PREGUNTAS if corta else parte.ordinary_items,
+            reserve_items=None if corta else parte.reserve_items,
+            score_max=parte.score_max,
+            pass_score=parte.pass_score,
+            penalty=StudentService._penalizacion_de(parte),
+            time_minutes=(
+                SIMULACRO_CORTO_MINUTOS
+                if corta
+                else StudentService._tiempo_de_parte(convocatoria, parte)
+            ),
+        )
+
+    @staticmethod
+    def _penalizacion_de(parte: ExamPart) -> str | None:
+        """La penalización publicada, como fracción legible (`1/3`). `None` si no publica ninguna.
+
+        Se lee del perfil y se enseña con la misma aritmética exacta que usa la corrección: un
+        tercio
+        no es `0.3333`, y la pantalla no puede decir una cifra y corregir con otra.
+        """
+        if parte.wrong_penalty_fraction is None:
+            return None
+        return ScoreView(exact_fraction(parte.wrong_penalty_fraction)).fraction
+
+    def _examenes_oficiales(self) -> tuple[OfficialExamRow, ...]:
+        """Los exámenes oficiales importados, ya filtrados por lo que esta zona puede enseñar."""
+        return self._student.official_exams(self._opposition().id, public_only=self._publico())
+
+    def _catalogo_de_temas(self, oposicion: OppositionSummary) -> dict[str, tuple[int, str, str]]:
+        """Los temas del programa por su identificador: `{nodo: (orden, código, título)}`.
+
+        El orden es el del programa y sirve para ordenar los temas de una pregunta: una pregunta con
+        dos temas (D7) se lee siempre en el mismo orden, y no en el que devuelva la consulta.
+        """
+        return {
+            tema.id: (posicion, tema.path, tema.title)
+            for posicion, tema in enumerate(self._temas_con_codigo(self._curriculum(oposicion)))
+        }
+
+    def _temas_de_preguntas(
+        self,
+        preguntas: Sequence[str],
+        catalogo: Mapping[str, tuple[int, str, str]],
+    ) -> dict[str, tuple[StudentTopicRefView, ...]]:
+        """De qué temas es cada pregunta, en el orden del programa.
+
+        Un tema que no esté en el catálogo se cae en silencio: es un mapeo a un nodo de otra
+        convocatoria, y enseñarlo sería dar una dirección que en esta zona no lleva a ningún sitio.
+        """
+        if not preguntas:
+            return {}
+        mapeos = self._student.topics_of_questions(list(preguntas))
+        devueltos: dict[str, tuple[StudentTopicRefView, ...]] = {}
+        for pregunta, nodos in mapeos.items():
+            ordenados = sorted(
+                (catalogo[nodo] for nodo in nodos if nodo in catalogo), key=lambda fila: fila[0]
+            )
+            if ordenados:
+                devueltos[pregunta] = tuple(
+                    StudentTopicRefView(code=codigo, title=titulo)
+                    for _, codigo, titulo in ordenados
+                )
+        return devueltos
+
+    @staticmethod
+    def _pregunta_corregida(
+        entrada: SessionQuestionView,
+        partes: Mapping[str, str],
+        temas: Mapping[str, tuple[StudentTopicRefView, ...]],
+    ) -> StudentResultQuestionView:
+        """Una pregunta de la revisión, con su corrección y sin nada que no se pueda enseñar."""
+        correccion = entrada.correction
+        return StudentResultQuestionView(
+            position=entrada.position,
+            is_reserve=entrada.is_reserve,
+            part_code=entrada.part_code,
+            part_name=None if entrada.part_code is None else partes.get(entrada.part_code),
+            stem=entrada.stem,
+            options=tuple(
+                StudentOptionView(key=opcion.stable_key, text=opcion.text)
+                for opcion in entrada.options
+            ),
+            chosen_option_keys=tuple(entrada.chosen_option_keys),
+            correct_option_keys=(
+                () if correccion is None else tuple(correccion.correct_option_keys)
+            ),
+            outcome=StudentService._outcome(correccion.outcome if correccion else None),
+            elapsed_ms=entrada.elapsed_ms,
+            topics=temas.get(entrada.question_version_id, ()),
+        )
+
+    @staticmethod
+    def _outcome(desenlace: str | None) -> str:
+        """El desenlace, en el vocabulario de esta capa.
+
+        Una pregunta que la plantilla no corrige (anulada, sin entrada o en conflicto) no es un
+        blanco ni un fallo del alumno: se dice `void`, que es lo que la pantalla enseña como «no se
+        corrige».
+        """
+        if desenlace is None:
+            return "void"
+        return desenlace if desenlace in OUTCOMES_DE_ALUMNO else "void"
+
+    @staticmethod
+    def _desglose_por_tema(
+        preguntas: Sequence[StudentResultQuestionView],
+    ) -> tuple[StudentResultTopicView, ...]:
+        """Cómo fue el test en cada tema, sumando las preguntas que se pueden corregir.
+
+        Una pregunta sin tema **no entra** en ningún desglose: inventarle uno escondería que hay
+        preguntas del banco sin catalogar, que es justo lo que el propietario tiene que ver en su
+        panel. Las que la plantilla no corrige (`void`) tampoco cuentan: no son ni acierto ni fallo.
+        """
+        acumulado: dict[str, list[int]] = {}
+        titulos: dict[str, str] = {}
+        orden: list[str] = []
+        for pregunta in preguntas:
+            if pregunta.outcome == "void":
+                continue
+            for tema in pregunta.topics:
+                if tema.code not in acumulado:
+                    acumulado[tema.code] = [0, 0, 0]
+                    titulos[tema.code] = tema.title
+                    orden.append(tema.code)
+                cuenta = acumulado[tema.code]
+                if pregunta.outcome == "correct":
+                    cuenta[0] += 1
+                elif pregunta.outcome == "wrong":
+                    cuenta[1] += 1
+                else:
+                    cuenta[2] += 1
+        return tuple(
+            StudentResultTopicView(
+                code=codigo,
+                title=titulos[codigo],
+                correct=acumulado[codigo][0],
+                wrong=acumulado[codigo][1],
+                blank=acumulado[codigo][2],
+            )
+            for codigo in orden
+        )
+
+    @staticmethod
+    def _duracion(sesion: StudentSessionView) -> int | None:
+        """Cuánto duró el test, en segundos, o `None` si no se puede afirmar.
+
+        Sin hora de arranque o de cierre no se inventa un cero: una sesión que no llegó a arrancar
+        no
+        tardó cero segundos, tardó lo que tardó en no arrancar.
+        """
+        if sesion.started_at is None or sesion.finished_at is None:
+            return None
+        return max(0, int((sesion.finished_at - sesion.started_at).total_seconds()))
+
+    def _tests_hechos(self, oposicion: OppositionSummary) -> int:
+        """Cuántos tests ha **terminado** esta persona en esta oposición.
+
+        El total lo cuenta la consulta de sesiones (que ya filtra por dueño): traer la lista entera
+        para contarla en memoria sería leer cientos de filas para escribir un número.
+
+        En modo público la cifra se cuenta sobre lo que se puede enseñar —la misma regla que el
+        historial— y por eso se queda dentro de la ventana de sesiones que se miran: decir un total
+        que
+        incluye sesiones que la pantalla no enseña sería contradecirse en la misma pantalla.
+        """
+        pagina = self._study.list_sessions(
+            opposition_id=oposicion.id,
+            status=SessionStatus.FINISHED.value,
+            limit=SESSION_SCAN_LIMIT,
+        )
+        if not self._publico():
+            return pagina.total
+        publicables = self._student.public_set_ids(oposicion.id)
+        return sum(
+            1 for vista in pagina.sessions if self._de_conjuntos_publicables(vista, publicables)
+        )
 
     @staticmethod
     def _nota_del_simulacro(*, completo: bool) -> str:

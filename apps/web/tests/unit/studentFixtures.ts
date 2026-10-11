@@ -10,7 +10,14 @@
  */
 
 import type { StudentOverview, StudentSyllabus, StudentTopic } from '../../src/api/studentStudy';
-import type { StudentNotes } from '../../src/api/studentStudy';
+import type {
+  StudentMistakes,
+  StudentMockExamPlan,
+  StudentNotes,
+  StudentOfficialExams,
+  StudentProgress,
+} from '../../src/api/studentStudy';
+import type { StudentSessionResult } from '../../src/api/studentTests';
 
 export const TEMA_CON_APUNTES = 'IV.1';
 export const TEMA_EN_BORRADOR = 'IV.7';
@@ -212,3 +219,296 @@ export const notesFixture: StudentNotes = {
 
 /** Los mismos apuntes, ya publicados: es lo que lleva la marca «Versión generada · en revisión». */
 export const notesPublishedFixture: StudentNotes = { ...notesFixture, state: 'published' };
+
+/* ------------------------------------------------------------------ F14: el cierre del ciclo */
+
+/**
+ * El resultado de un test terminado: cuatro preguntas de dos temas, una bien y tres mal.
+ *
+ * Lleva **de todo** a propósito: una pregunta de cada tema fallada, la acertada en un tema distinto
+ * del de las falladas (para que el desglose no se pueda escribir por posición), una reserva y una
+ * pregunta que la plantilla no corrige (`void`), que es el caso que la pantalla tiene que saber
+ * contar sin llamarlo fallo.
+ */
+export const sessionResultFixture: StudentSessionResult = {
+  session: {
+    id: 'ses-9',
+    mode: 'practice',
+    status: 'finished',
+    title: 'Test · 4 preguntas',
+    total_questions: 4,
+    answered_questions: 4,
+    time_limit_minutes: null,
+    started_at: '2026-10-11T09:00:00Z',
+    finished_at: '2026-10-11T09:12:30Z',
+    created_at: '2026-10-11T08:59:00Z',
+    result: {
+      correct: 1,
+      wrong: 2,
+      blank: 0,
+      points: '1/3',
+      points_decimal: '0,33',
+      maximum: null,
+      passed: null,
+    },
+    practical_case_origin: null,
+  },
+  parts: [
+    {
+      part_code: 'primera_parte',
+      part_name: 'Primera parte: cuestionario de conocimientos',
+      kind: 'estimated',
+      correct: 1,
+      wrong: 2,
+      blank: 0,
+      score: '1/3',
+      score_decimal: '0,33',
+      score_max: 50,
+      pass_score: 25,
+      passed: null,
+      verdict_note:
+        'La estimación de «Primera parte: cuestionario de conocimientos» es 0,33 sobre 50.00. ' +
+        'Es una **estimación**: la puntuación directa (aciertos menos errores por su penalización) ' +
+        'escalada a la banda que publica la convocatoria para esta parte. La calificación oficial ' +
+        '0-50 resulta de los baremos que fija la Comisión de Selección, y esa tabla no está ' +
+        'importada: esto no es la calificación oficial.',
+    },
+  ],
+  total: {
+    part_code: null,
+    part_name: null,
+    kind: 'estimated',
+    correct: 1,
+    wrong: 2,
+    blank: 0,
+    score: '1/3',
+    score_decimal: '0,33',
+    score_max: null,
+    pass_score: null,
+    passed: null,
+    verdict_note: null,
+  },
+  official_available: false,
+  official_note:
+    'La calificación oficial 0-50 resulta de transformar la puntuación directa con los baremos que ' +
+    'fija la Comisión de Selección, y esa tabla no está importada: se muestra la puntuación directa ' +
+    'y no se declara aprobado ni suspenso.',
+  duration_seconds: 750,
+  questions: [
+    {
+      position: 1,
+      is_reserve: false,
+      part_code: 'primera_parte',
+      part_name: 'Primera parte: cuestionario de conocimientos',
+      stem: '¿Cuántas capas tiene el modelo OSI?',
+      options: [
+        { key: 'a', text: 'Cuatro' },
+        { key: 'b', text: 'Siete' },
+      ],
+      chosen: ['b'],
+      correct: ['a'],
+      outcome: 'wrong',
+      elapsed_ms: 2400,
+      topics: [{ code: 'IV.7', title: 'El modelo TCP/IP y el modelo de referencia OSI de ISO.' }],
+    },
+    {
+      position: 2,
+      is_reserve: false,
+      part_code: 'primera_parte',
+      part_name: 'Primera parte: cuestionario de conocimientos',
+      stem: 'El puerto 443 corresponde a HTTPS.',
+      options: [
+        { key: 'a', text: 'Verdadero' },
+        { key: 'b', text: 'Falso' },
+      ],
+      chosen: ['a'],
+      correct: ['a'],
+      outcome: 'correct',
+      elapsed_ms: 900,
+      topics: [{ code: 'IV.1', title: 'Instalación y configuración de sistemas operativos.' }],
+    },
+    {
+      position: 3,
+      is_reserve: false,
+      part_code: 'primera_parte',
+      part_name: 'Primera parte: cuestionario de conocimientos',
+      stem: 'El puerto 22 se usa para SSH.',
+      options: [
+        { key: 'a', text: 'Verdadero' },
+        { key: 'b', text: 'Falso' },
+      ],
+      chosen: ['b'],
+      correct: ['a'],
+      outcome: 'wrong',
+      elapsed_ms: 1500,
+      topics: [
+        { code: 'IV.7', title: 'El modelo TCP/IP y el modelo de referencia OSI de ISO.' },
+        { code: 'IV.1', title: 'Instalación y configuración de sistemas operativos.' },
+      ],
+    },
+    {
+      position: 4,
+      is_reserve: true,
+      part_code: 'primera_parte',
+      part_name: 'Primera parte: cuestionario de conocimientos',
+      stem: 'Una pregunta que la plantilla anuló.',
+      options: [
+        { key: 'a', text: 'Verdadero' },
+        { key: 'b', text: 'Falso' },
+      ],
+      chosen: ['a'],
+      correct: [],
+      outcome: 'void',
+      elapsed_ms: 300,
+      topics: [{ code: 'IV.7', title: 'El modelo TCP/IP y el modelo de referencia OSI de ISO.' }],
+    },
+  ],
+  topics: [
+    {
+      code: 'IV.7',
+      title: 'El modelo TCP/IP y el modelo de referencia OSI de ISO.',
+      correct: 0,
+      wrong: 2,
+      blank: 0,
+      graded: 2,
+      accuracy: 0,
+    },
+    {
+      code: 'IV.1',
+      title: 'Instalación y configuración de sistemas operativos.',
+      correct: 1,
+      wrong: 1,
+      blank: 0,
+      graded: 2,
+      accuracy: 0.5,
+    },
+  ],
+};
+
+/** El simulacro tal como lo declara el perfil de TAI: 80 + 5 y 20 + 5, en 120 minutos. */
+export const mockPlanFixture: StudentMockExamPlan = {
+  opposition: { code: 'tai-age', name: 'Cuerpo de Técnicos Auxiliares de Informática' },
+  full: {
+    variant: 'full',
+    title: 'Simulacro completo',
+    time_limit_minutes: 120,
+    parts: [
+      {
+        code: 'primera_parte',
+        name: 'Primera parte: cuestionario de conocimientos',
+        ordinary_items: 80,
+        reserve_items: 5,
+        score_max: 50,
+        pass_score: 25,
+        penalty: '1/3',
+        time_minutes: 120,
+      },
+      {
+        code: 'segunda_parte',
+        name: 'Segunda parte: supuesto práctico',
+        ordinary_items: 20,
+        reserve_items: 5,
+        score_max: 50,
+        pass_score: 25,
+        penalty: '1/3',
+        time_minutes: 120,
+      },
+    ],
+    note:
+      'simulacro con el perfil del examen: primera parte de 80 preguntas más 5 de reserva y supuesto ' +
+      'práctico de 20 más 5, con el tiempo y la penalización de la convocatoria. No es un examen ' +
+      'oficial, y su nota por parte es una **estimación** (la puntuación directa escalada a la banda ' +
+      'de cada parte), no la calificación oficial.',
+  },
+  short: {
+    variant: 'short',
+    title: 'Simulacro corto',
+    time_limit_minutes: 48,
+    parts: [
+      {
+        code: 'primera_parte',
+        name: 'Primera parte: cuestionario de conocimientos',
+        ordinary_items: 40,
+        reserve_items: null,
+        score_max: 50,
+        pass_score: 25,
+        penalty: '1/3',
+        time_minutes: 48,
+      },
+    ],
+    note: 'simulacro corto de 40 preguntas, sin supuesto práctico. No es un examen oficial.',
+  },
+  case_blocks: [
+    {
+      code: 'III',
+      title: 'Bloque III: técnicas de gestión',
+      topics: [
+        { code: 'III.1', title: 'Gestión de proyectos.', available_questions: 12 },
+        { code: 'III.2', title: 'Documentación técnica.', available_questions: 0 },
+      ],
+    },
+    {
+      code: 'IV',
+      title: 'Bloque IV: sistemas y comunicaciones',
+      topics: [{ code: 'IV.7', title: 'El modelo TCP/IP.', available_questions: 30 }],
+    },
+  ],
+};
+
+/** La lista de exámenes oficiales **vacía**, que es el estado de hoy: no hay ninguno importado. */
+export const officialExamsVacioFixture: StudentOfficialExams = { exams: [] };
+
+/** Y con un examen importado, que es lo que la pantalla tiene que saber ofrecer. */
+export const officialExamsFixture: StudentOfficialExams = {
+  exams: [
+    {
+      position: 1,
+      title: 'TAI ingreso libre 2025 · examen oficial',
+      held_at: '2025-11-22',
+      questions: 85,
+      ready: true,
+    },
+    {
+      position: 2,
+      title: 'TAI ingreso libre 2024 · examen oficial',
+      held_at: '2024-10-06',
+      questions: 85,
+      ready: false,
+    },
+  ],
+};
+
+/** Los fallos: dos preguntas de dos temas, una de ellas vencida. */
+export const mistakesFixture: StudentMistakes = {
+  total: 2,
+  due_total: 1,
+  questions: [
+    {
+      stem: '¿Cuántas capas tiene el modelo OSI?',
+      topics: [{ code: 'IV.7', title: 'El modelo TCP/IP.' }],
+      last_failed_at: '2026-10-11T09:05:00Z',
+      times_failed: 3,
+      due: true,
+    },
+    {
+      stem: 'El puerto 22 se usa para SSH.',
+      topics: [{ code: 'IV.1', title: 'Instalación de sistemas operativos.' }],
+      last_failed_at: '2026-10-10T18:00:00Z',
+      times_failed: 1,
+      due: false,
+    },
+  ],
+  topics: [
+    { code: 'IV.7', title: 'El modelo TCP/IP.', failed: 1, due: 1 },
+    { code: 'IV.1', title: 'Instalación de sistemas operativos.', failed: 1, due: 0 },
+  ],
+};
+
+/** El progreso con dos bloques, tests hechos y un tema flojo. */
+export const progressFixture: StudentProgress = {
+  opposition: { code: 'tai-age', name: 'Cuerpo de Técnicos Auxiliares de Informática' },
+  blocks: syllabusFixture.blocks,
+  weakest_topics: [syllabusFixture.blocks[1]!.topics[0]!],
+  history: [overviewFixture.recent_tests[0]!],
+  tests_finished: 14,
+};

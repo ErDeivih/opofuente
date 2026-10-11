@@ -3,6 +3,51 @@
 Lo que conviene que sepas y **no** hace falta que contestes para que el trabajo siga. Lo que sí
 necesita tu criterio está marcado como **«Decide tú»**.
 
+## 11 oct 2026 — El ciclo de estudio se cierra: resultado, simulacro, exámenes, fallos y progreso
+
+**Lo que cambia para ti:** ya puedes hacer un test y **ver qué has fallado y de qué tema era**, montar
+un simulacro con el perfil de verdad, ver los exámenes oficiales que haya importados, repasar tus
+fallos —y montar un test solo con ellos— y mirar tu progreso por bloque y por tema. Las cinco
+pantallas están en la zona del alumno, con capturas en escritorio y móvil.
+
+1. **Resultado** (al terminar un test): la nota, el desglose **por parte** —en un simulacro, la
+   primera parte y el supuesto, cada una con su banda—, el **tiempo** empleado, el desglose **por
+   tema** con el porcentaje escrito, y las preguntas una a una con **tu respuesta, la correcta y su
+   tema**. Desde ahí, «Repetir este test» (vuelve a montarlo con los mismos temas) o «Repasar IV.7»
+   para ir a los apuntes de ese tema. Las preguntas que la plantilla no corrige (anuladas o en
+   conflicto) salen como «No se corrige» y **no** cuentan como fallo tuyo.
+2. **La nota es una estimación**, y lo dice con el texto largo del motor, no con una frase mía:
+   «Es una **estimación**: la puntuación directa (aciertos menos errores por su penalización) escalada
+   a la banda que publica la convocatoria para esta parte. La calificación oficial 0-50 resulta de los
+   baremos que fija la Comisión de Selección, y esa tabla no está importada: esto no es la calificación
+   oficial.» Cuando importes el baremo oficial, ese aviso cambiará solo.
+3. **Simulacro real**: eliges variante (completa o corta) y, si es completa, el **bloque del supuesto
+   (III o IV)**. Antes de empezar se ve **qué va a caer**: 80 preguntas más 5 de reserva y un supuesto
+   de 20 más 5, los 120 minutos y la penalización de un tercio —todo leído de la convocatoria, nada
+   escrito a mano—, más los temas de cada bloque del supuesto con las preguntas que tienen hoy.
+4. **Exámenes oficiales**: la pantalla está montada y **lee de la aplicación**, pero **todavía no hay
+   ninguno importado** (es el bloque del INAP: los 32 PDF están descargados en
+   `F:\OpoFuente\fuentes\inap-tai\`). Mientras no los haya, dice con esas palabras «Todavía no hay
+   exámenes oficiales importados» y explica de dónde saldrán, en vez de rellenar la lista con bancos
+   de práctica. Cuando estén importados saldrán con su fecha, su número de preguntas y un botón para
+   hacerlos, y el que esté a medias dirá por qué no se puede hacer todavía.
+5. **Fallos**: tus preguntas falladas —las que fallaste **la última vez** que las contestaste—, con su
+   tema, la fecha, **cuántas veces** las has fallado y si ya toca repasarlas. De aquí sale un test:
+   «Test con mis fallos» (con todos) o «Solo los de IV.7» (por tema), y el motor vuelve a elegir sobre
+   tus intentos de verdad, no sobre la lista.
+6. **Progreso**: por bloque y por tema, con el **porcentaje escrito**, los aciertos, **cuántos tests
+   has hecho** (el número de verdad, no los que caben en la lista), lo que hay que repasar y **lo que
+   no has empezado** —un tema sin tocar dice «Sin empezar», no un 0 % que parecería un suspenso—, y la
+   evolución: cada test terminado, con su nota y su enlace al resultado.
+
+**Lo que queda fuera, y por qué:** la pantalla de **Tests** (elegir temas y cuántas preguntas) sigue
+pendiente y su entrada dice qué hará; dentro del tema, las pestañas «Preguntas» y «Mi progreso», el
+buscador y la marca de leído tampoco entran aquí. **No se ha tocado nada del panel** de administración,
+ni los apuntes de los 30 temas, ni la importación del INAP, ni la entrega antigua.
+
+**Lo que no gasta nada:** este bloque **no ha llamado a ningún modelo**. Es interfaz y consultas a tu
+base.
+
 ## 11 oct 2026 — Inicio, Temario y los apuntes ya se leen; y el botón «Esto está mal» funciona
 
 **Lo que cambia para ti:**
