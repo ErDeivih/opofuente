@@ -1,74 +1,51 @@
 /*
- * Los cimientos visuales de la zona del alumno (F3 del rediseño, 6 de octubre de 2026).
+ * Los componentes de la zona del alumno (F3 del rediseño; tokens del diseño desde F13).
  *
- * La dirección es de Claude y está pensada para **leer muchas horas**: superficie clara y tranquila, un
- * único color de acento para la navegación y la acción principal, y verde y rojo **reservados solo**
- * para acertar y fallar (si el progreso fuera verde, un 40 % parecería un error).
+ * Los valores **no se escriben aquí**: se toman de `src/styles/tokens.css`, que es el único sitio
+ * donde vive el diseño (§3.7 del objetivo). Los nombres `--bg`, `--accent`, `--r-md`… se conservan
+ * porque son los que usan los componentes de esta carpeta, pero ya son alias: cambiar el azul en
+ * `tokens.css` lo cambia en todas partes, que es justo lo que no pasaba antes.
  *
- * Nada de fuentes externas: la CSP no deja cargarlas y las del sistema se leen bien. Nada de
- * Tailwind ni de librería de componentes: CSS propio con estos tokens.
+ * Lo que se ha quitado, y por qué: la **sombra** de las tarjetas (el diseño construye la jerarquía
+ * con líneas de 1px y espacio, no con una sombra igual para todo) y el juego de colores oscuros. El
+ * concepto es «la hoja de respuestas» impresa: papel claro. Un modo oscuro propio sería otro diseño,
+ * y no es el aprobado.
  */
 
 :root {
   /* superficie y texto */
-  --bg: #f7f6f3;
-  --surface: #ffffff;
-  --surface-2: #f0eee9;
-  --text: #1d1d1b;
-  --text-2: #5b5a55;
-  --border: #e2dfd8;
+  --bg: var(--papel);
+  --surface: var(--hoja);
+  --surface-2: var(--desactivado-fondo);
+  --text: var(--tinta);
+  --text-2: var(--tinta-suave);
+  --border: var(--linea);
   /* acento único (navegación, botón principal, foco) */
-  --accent: #2f5bd3;
-  --accent-strong: #2449ad;
-  --accent-soft: #e8eefc;
+  --accent: var(--azul);
+  --accent-strong: var(--azul-oscuro);
+  --accent-soft: var(--azul-suave);
   /* solo para corrección */
-  --ok: #1f7a4d;
-  --ok-soft: #e4f3ea;
-  --ko: #b3261e;
-  --ko-soft: #fbe9e7;
-  --warn: #8a5a00;
-  --warn-soft: #fbf1dc;
+  --ok: var(--acierto);
+  --ok-soft: var(--acierto-suave);
+  --ko: var(--fallo);
+  --ko-soft: var(--fallo-suave);
+  --warn: var(--dudosa);
+  --warn-soft: var(--dudosa-suave);
   /* forma */
-  --r-sm: 6px;
-  --r-md: 10px;
-  --r-lg: 14px;
-  --shadow-1: 0 1px 2px rgb(0 0 0 / 0.06);
-  --shadow-2: 0 4px 16px rgb(0 0 0 / 0.08);
-  --s1: 4px;
-  --s2: 8px;
-  --s3: 12px;
-  --s4: 16px;
-  --s5: 24px;
-  --s6: 32px;
-  --s7: 48px;
-  /* tipografía (fuentes del sistema: la CSP no deja cargar externas, y no hace falta) */
-  --font: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --fs-body: 1.0625rem;
-  --fs-stem: 1.25rem;
-  --fs-h1: 1.75rem;
-  --fs-h2: 1.3rem;
-  --lh: 1.55;
-  --measure: 70ch; /* ancho máximo de lectura en apuntes y enunciados */
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #151515;
-    --surface: #1e1e1d;
-    --surface-2: #262624;
-    --text: #ecebe7;
-    --text-2: #a9a79f;
-    --border: #34332f;
-    --accent: #7f9cff;
-    --accent-strong: #a3b8ff;
-    --accent-soft: #232c45;
-    --ok: #5cc28c;
-    --ok-soft: #173225;
-    --ko: #ff8a80;
-    --ko-soft: #3a1d1a;
-    --warn: #e3b660;
-    --warn-soft: #352a12;
-  }
+  --r-sm: var(--radio-sm);
+  --r-md: var(--radio);
+  --r-lg: var(--radio);
+  --shadow-2: var(--sombra-superpuesta);
+  /* El espaciado no se re-declara: `--s1`…`--s7` ya son los tokens del diseño y estos componentes
+     los usan con el mismo nombre (4 · 8 · 12 · 16 · 24 · 36 · 56). */
+  /* tipografía (autoalojada: la CSP no deja cargar externas) */
+  --font: var(--fuente-interfaz);
+  --fs-body: var(--t-cuerpo);
+  --fs-stem: var(--t-enunciado);
+  --fs-h1: var(--t-portada);
+  --fs-h2: var(--t-titulo);
+  --lh: var(--lh-cuerpo);
+  --measure: var(--medida-texto); /* ancho máximo de lectura en apuntes y enunciados */
 }
 
 /* --- botones ----------------------------------------------------------------------------------- */
@@ -92,7 +69,7 @@
    ve apagado, y no como uno principal a medio gas (revisión de la captura, 6 de octubre de 2026). */
 .ui-button--primary:not(:disabled) {
   background: var(--accent);
-  color: #fff;
+  color: var(--sobre-acento);
 }
 
 .ui-button--primary:not(:disabled):hover {
@@ -141,11 +118,12 @@ a.ui-button {
 
 /* --- tarjetas y cifras ------------------------------------------------------------------------- */
 
+/* Sin sombra: la jerarquía la hacen la línea de 1px y el espacio (diseño §1, «lo que no queremos»:
+   cada cosa en una tarjeta redondeada igual con la misma sombra). */
 .ui-card {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--r-lg);
-  box-shadow: var(--shadow-1);
   padding: var(--s5);
 }
 
@@ -160,16 +138,16 @@ a.ui-button {
   gap: var(--s1);
 }
 
+/* La etiqueta, encima del número y en su caja: nada de versalitas. El diseño lo prohíbe
+   explícitamente («rótulos en MAYÚSCULAS encima de los títulos»), y en una app que se lee durante
+   horas una etiqueta en mayúsculas sostenidas se lee peor, no mejor. */
 .ui-stat__label {
-  /* La etiqueta, arriba y en versalitas: así no se pierde debajo del número. */
   color: var(--text-2);
-  font-size: 0.875rem;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
+  font-size: var(--t-sm);
 }
 
 .ui-stat__value {
-  font-size: 1.6rem;
+  font-size: var(--fs-h2);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
@@ -244,7 +222,7 @@ a.ui-button {
 .ui-grid__cell--answered {
   background: var(--accent);
   border-color: var(--accent-strong);
-  color: #fff;
+  color: var(--sobre-acento);
   font-weight: 700;
   position: relative;
 }
@@ -258,7 +236,7 @@ a.ui-button {
   height: 4px;
   margin-left: -2px;
   border-radius: 999px;
-  background: #fff;
+  background: var(--sobre-acento);
 }
 
 .ui-grid__cell--doubtful {
@@ -330,7 +308,7 @@ a.ui-button {
 }
 
 .ui-modal::backdrop {
-  background: rgb(0 0 0 / 0.45);
+  background: var(--velo);
 }
 
 .ui-modal {

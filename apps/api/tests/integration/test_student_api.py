@@ -21,12 +21,16 @@ from __future__ import annotations
 import json
 from collections.abc import Iterator
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
 
 from opofuente.config import Settings
+from opofuente.domain.topic_notes import Coverage, KeyStatus, NotesCheck, NoteSection
+from opofuente.infrastructure.db import build_engine, build_session_factory
+from opofuente.infrastructure.topic_notes_repository import SqlAlchemyTopicNotesRepository
 from opofuente.main import create_app
 
 ALLOWED_ORIGIN = {"Origin": "http://127.0.0.1:5173"}
@@ -227,6 +231,62 @@ def _asignar(client: TestClient, pregunta_id: str, node_id: str) -> None:
     assert respuesta.status_code in (200, 201), respuesta.text
 
 
+def _escribir_apuntes(settings: Settings, node_id: str, pregunta_id: str) -> None:
+    """Escribe un apartado de apuntes con una pregunta anclada, por la ruta de verdad.
+
+    La prueba de contrato de esta fase recorre **todas** las respuestas de `/student/*` buscando lo
+    que no puede salir. Los apuntes del tema (F13) son la respuesta más larga de la zona del alumno,
+    así que tienen que estar ahí con texto de verdad: comprobar que un texto vacío no lleva una ruta
+    no demuestra nada.
+    """
+    ahora = datetime.now(UTC)
+    engine = build_engine(settings.data_paths.database)
+    try:
+        notas = SqlAlchemyTopicNotesRepository(build_session_factory(engine))
+        (apartado,) = notas.save_sections(
+            node_id,
+            [
+                NoteSection(
+                    key="udp",
+                    epigraph_code="IV.1.1",
+                    title="UDP: datagramas sin conexión",
+                    anchor="udp",
+                    position=1,
+                )
+            ],
+            now=ahora,
+        )
+        notas.save_section_body(
+            apartado,
+            title=None,
+            body="El datagrama UDP no tiene conexión ni acuse de recibo.",
+            needs_review_reason=None,
+            model="modelo-de-la-prueba",
+            now=ahora,
+        )
+        notas.save_checks(
+            node_id,
+            [
+                NotesCheck(
+                    question_version_id=pregunta_id,
+                    group_signature="firma-de-la-prueba",
+                    section_key=apartado.key,
+                    anchor=apartado.anchor,
+                    coverage=Coverage.CUBIERTA,
+                    note=None,
+                    quote="El datagrama UDP no tiene conexión ni acuse de recibo",
+                    letter="a",
+                    expected=("a",),
+                    key_status=KeyStatus.ACTIVE,
+                    attempts=1,
+                )
+            ],
+            now=ahora,
+        )
+    finally:
+        engine.dispose()
+
+
 def _responder(client: TestClient, session_id: str, veces: int) -> None:
     """Responde `veces` preguntas de la sesión, una detrás de otra, para que haya progreso real."""
     for _ in range(veces):
@@ -299,6 +359,14 @@ def zona(seeded_settings: Settings) -> Iterator[ZonaAlumno]:
         preguntas_propias = _preguntas(client, set_propio)
         for indice, path in enumerate(TEMAS_CON_PREGUNTAS):
             _asignar(client, str(preguntas_propias[indice]["id"]), str(temas_alumno[path]["id"]))
+        # Y apuntes escritos en IV.1, con una pregunta anclada: la pantalla de lectura existe (F13)
+        # y su respuesta es la más larga de la zona del alumno, así que entra en la prueba de
+        # contrato.
+        _escribir_apuntes(
+            seeded_settings,
+            str(temas_alumno["IV.1"]["id"]),
+            str(preguntas_propias[0]["id"]),
+        )
         preguntas_ajenas = _preguntas(client, set_ajeno)
         path_ajeno = next(iter(temas_ajenos))
         _asignar(client, str(preguntas_ajenas[0]["id"]), str(temas_ajenos[path_ajeno]["id"]))
@@ -370,14 +438,32 @@ def _respuestas_de_alumno(zona: ZonaAlumno) -> dict[str, Any]:
         "topics/IV.1": "/api/v1/student/topics/IV.1",
         "topics/IV-10": "/api/v1/student/topics/IV-10",
         "topics/I.1": "/api/v1/student/topics/I.1",
+        "topics/IV.1/notes": "/api/v1/student/topics/IV.1/notes",
+        "topics/IV.10/notes": "/api/v1/student/topics/IV.10/notes",
         "progress": "/api/v1/student/progress",
         "topics/inexistente": "/api/v1/student/topics/XX.99",
+        "topics/inexistente/notes": "/api/v1/student/topics/XX.99/notes",
     }
     respuestas: dict[str, Any] = {}
     for nombre, ruta in rutas.items():
         respuesta = zona.client.get(ruta)
         assert respuesta.status_code in (200, 404), f"{ruta}: {respuesta.status_code}"
         respuestas[nombre] = respuesta.json()
+
+    # El aviso «esto está mal» (F13) también es una respuesta de esta capa: su cuerpo no puede
+    # llevar nada de la trastienda, y el rechazo (un apartado que no existe) entra como el 404.
+    aviso = zona.client.post(
+        "/api/v1/student/topics/IV.1/reports",
+        json={"section_key": "udp", "reason": "La cabecera de UDP no es de 12 bytes."},
+        headers=ALLOWED_ORIGIN,
+    )
+    assert aviso.status_code == 201, aviso.text
+    respuestas["topics/IV.1/reports"] = aviso.json()
+    respuestas["topics/IV.1/reports/sin-apartado"] = zona.client.post(
+        "/api/v1/student/topics/IV.1/reports",
+        json={"section_key": "no-existe", "reason": "Esto está mal."},
+        headers=ALLOWED_ORIGIN,
+    ).json()
 
     creado = zona.client.post(
         "/api/v1/student/tests",

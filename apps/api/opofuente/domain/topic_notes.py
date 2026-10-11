@@ -118,6 +118,25 @@ class FactKind(StrEnum):
     TECNICO = "tecnico"
 
 
+class NotesState(StrEnum):
+    """Qué se puede decir de los apuntes de un tema **en la zona del alumno**.
+
+    Son tres estados y no dos porque «no tiene apuntes» y «los tiene sin publicar» se leen distinto:
+    al primero no se puede entrar a leer, y el segundo se lee igual que el publicado pero **diciendo
+    que es un borrador** (el tema no pasó las dos puertas del §2.3 y su versión no se archivó).
+
+    Lo decide el par (¿hay apartados escritos?, ¿hay versión archivada?):
+
+    - sin apartados: `NONE`, y la pantalla dice que todavía no hay apuntes de ese tema;
+    - con apartados y sin versión: `DRAFT`;
+    - con apartados y con versión: `PUBLISHED`.
+    """
+
+    NONE = "none"
+    DRAFT = "draft"
+    PUBLISHED = "published"
+
+
 class KeyStatus(StrEnum):
     """Qué se puede decir de la respuesta correcta de una pregunta.
 

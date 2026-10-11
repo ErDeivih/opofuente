@@ -1,7 +1,8 @@
 """Consultas del progreso del alumno (F2).
 
-Es un repositorio **de lectura** y solo tiene las cuatro consultas agregadas que la zona del alumno
-necesita. Todas comparten tres filtros, y los tres son la razón de que este fichero exista:
+Es un repositorio **de lectura** y tiene las consultas agregadas que la zona del alumno necesita más
+una de estado (qué temas tienen sus apuntes publicados). Todas las del progreso comparten tres
+filtros, y los tres son la razón de que este fichero exista:
 
 1. **la oposición**, siempre: el progreso de otro cuerpo no aparece por aquí ni en forma de cuenta
    (es el requisito de aislamiento de la fase);
@@ -25,15 +26,18 @@ from typing import Any
 from sqlalchemy import Select, func, select
 from sqlalchemy.orm import Session, sessionmaker
 
+from opofuente.domain.topic_notes import NotesState
 from opofuente.infrastructure.db_models import (
     AttemptEvaluationRecord,
     AttemptRecord,
     CurriculumMappingRecord,
+    DossierSnapshotRecord,
     QuestionSetRecord,
     QuestionVersionRecord,
     ReviewItemRecord,
     SessionQuestionRecord,
     StudySessionRecord,
+    TopicNoteSectionRecord,
 )
 
 #: Los desenlaces que cuentan para el porcentaje de acierto: los tres que puntúan, con el blanco
@@ -281,3 +285,31 @@ class SqlAlchemyStudentRepository:
         for nodo, _pregunta in mapeos:
             por_nodo[str(nodo)] = por_nodo.get(str(nodo), 0) + 1
         return len(vencidos), por_nodo
+
+    def notes_states(self) -> Mapping[str, NotesState]:
+        """El estado de los apuntes de cada tema que **tiene apartados escritos**.
+
+        Un tema que no aparece aquí no tiene apuntes (`NotesState.NONE`), y quien pregunta lo dice
+        con su valor por defecto: devolver una fila «sin apuntes» por cada nodo del programa sería
+        escribir 33 ceros para contar tres temas.
+
+        Lo que separa el borrador del publicado no es el texto —los tres temas redactados lo
+        tienen—, sino la **versión archivada**: el tema que pasa las dos puertas del §2.3 archiva su
+        versión y es lo que la marca «Versión generada · en revisión» señala al alumno. Un tema con
+        texto y sin versión se lee igual, y la pantalla dice que está en borrador.
+        """
+        with self._session_factory() as session:
+            con_apartados = set(
+                session.execute(
+                    select(TopicNoteSectionRecord.curriculum_node_id).distinct()
+                ).scalars()
+            )
+            publicados = set(
+                session.execute(
+                    select(DossierSnapshotRecord.curriculum_node_id).distinct()
+                ).scalars()
+            )
+        return {
+            str(nodo): (NotesState.PUBLISHED if str(nodo) in publicados else NotesState.DRAFT)
+            for nodo in con_apartados
+        }

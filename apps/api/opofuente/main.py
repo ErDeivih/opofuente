@@ -41,6 +41,7 @@ from opofuente.application.ingestion_service import IngestionService
 from opofuente.application.intake_service import IntakeService
 from opofuente.application.job_service import JobService
 from opofuente.application.library_service import LibraryService
+from opofuente.application.notes_report_service import NotesReportsService
 from opofuente.application.profiles_service import ProfilesService
 from opofuente.application.question_service import QuestionService
 from opofuente.application.readiness_service import ReadinessService
@@ -73,6 +74,7 @@ from opofuente.infrastructure.housekeeping_repository import SqlAlchemyHousekeep
 from opofuente.infrastructure.ingestion_repository import SqlAlchemyIngestionRepository
 from opofuente.infrastructure.job_repository import SqlAlchemyJobRepository
 from opofuente.infrastructure.migrations import database_revision, run_migrations, script_head
+from opofuente.infrastructure.notes_report_repository import SqlAlchemyNotesReportRepository
 from opofuente.infrastructure.observability import setup_logging
 from opofuente.infrastructure.ocr import tesseract_from_settings
 from opofuente.infrastructure.probes import DatabaseProbe, DataDirectoryProbe
@@ -272,12 +274,19 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     # S13: el dossier del tema. Se calcula desde el corpus cada vez que se pide y se archiva cuando
     # alguien lo pide: la verdad está en las fuentes, no en una copia. Los apuntes redactados (pasos
-    # B-E) se leen de su tabla y viajan dentro del mismo documento, así que se versionan con él.
+    # B-E) se leen de su tabla y viajan dentro del mismo documento, así que se versionan con él. El
+    # repositorio de apuntes se comparte con la zona del alumno (F13), que lee los mismos apartados
+    # para la pantalla de lectura: dos instancias serían dos formas de leer lo mismo.
+    notes_repository = SqlAlchemyTopicNotesRepository(session_factory)
     dossier_service = DossierService(
         repository=SqlAlchemyDossierRepository(session_factory),
         clock=clock,
-        notes=SqlAlchemyTopicNotesRepository(session_factory),
+        notes=notes_repository,
     )
+    # F13: los avisos del alumno sobre los apuntes. Se escriben desde su zona, auditados, y los lee
+    # la bandeja del propietario (decisión D2 del objetivo).
+    notes_reports_repository = SqlAlchemyNotesReportRepository(session_factory)
+    notes_reports_service = NotesReportsService(notes_reports_repository)
     export_service = ExportService(
         questions=SqlAlchemyQuestionRepository(session_factory),
         documents=SqlAlchemyDocumentRepository(session_factory, representations),
@@ -294,14 +303,17 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         review=review_service,
     )
     # F2: la zona del alumno. Reutiliza el servicio de estudio para leer las sesiones (que ya
-    # filtra por dueño) y añade lo suyo: el progreso por bloque y por tema, el temario y los
-    # fallos vencidos. El filtro de oposición sale de la configuración, no de la petición.
+    # filtra por dueño) y añade lo suyo: el progreso por bloque y por tema, el temario, los fallos
+    # vencidos y —desde F13— los apuntes del tema y el aviso «esto está mal». El filtro de oposición
+    # sale de la configuración, no de la petición.
     student_service = StudentService(
         settings=resolved,
         profiles=SqlAlchemyProfileRepository(session_factory),
         student=SqlAlchemyStudentRepository(session_factory),
         study=study_service,
         clock=clock,
+        notes=notes_repository,
+        reports=notes_reports_repository,
     )
     # S12: copia, verificación y restauración. La migración y la comprobación van como funciones: al
     # restaurar hay que migrar la base recién colocada y comprobar que quedó sana.
@@ -424,6 +436,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.diagnostic_service = diagnostic_service
     app.state.readiness_service = readiness_service
     app.state.dossier_service = dossier_service
+    app.state.notes_reports_service = notes_reports_service
 
     # El orden importa: el último añadido es el más externo, así que el identificador de
     # correlación envuelve también los rechazos por Origin.

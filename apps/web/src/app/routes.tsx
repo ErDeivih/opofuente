@@ -4,7 +4,6 @@ import { AdminUiPage } from '../pages/AdminUiPage';
 import { ChangesPage } from '../pages/ChangesPage';
 import { ComingSoonPage } from '../pages/ComingSoonPage';
 import { ErrorsPage } from '../pages/ErrorsPage';
-import { HomePage } from '../pages/HomePage';
 import { LibraryPage } from '../pages/LibraryPage';
 import { NotFoundPage } from '../pages/NotFoundPage';
 import { ProgramPage } from '../pages/ProgramPage';
@@ -13,6 +12,9 @@ import { ReviewPage } from '../pages/ReviewPage';
 import { SearchPage } from '../pages/SearchPage';
 import { SettingsPage } from '../pages/SettingsPage';
 import { StudyPage } from '../pages/StudyPage';
+import { StudentHomePage } from '../pages/student/StudentHomePage';
+import { SyllabusPage } from '../pages/student/SyllabusPage';
+import { TopicNotesPage } from '../pages/student/TopicNotesPage';
 import { TopicReviewPage } from '../pages/TopicReviewPage';
 import { TrayPage } from '../pages/TrayPage';
 import { StudentTestRunner } from '../features/study/StudentTestRunner';
@@ -72,8 +74,16 @@ function QuestionsRoute() {
   return <QuestionsPage />;
 }
 
-/** Las seis secciones del alumno que todavía no tienen pantalla, con su frase, desde el mapa. */
-const SECCIONES_PENDIENTES = STUDENT_NAV_ITEMS.filter((item) => item.path !== '/');
+/**
+ * Las secciones del alumno que todavía no tienen pantalla, con su frase, desde el mapa.
+ *
+ * Temario ya **no** está aquí: desde F13 tiene su pantalla (el índice del programa) y su ficha de
+ * tema con los apuntes. Lo que queda —Tests, Simulacros, Exámenes, Fallos y Progreso— llega en el
+ * bloque siguiente, y hasta entonces cada una dice qué hará.
+ */
+const SECCIONES_PENDIENTES = STUDENT_NAV_ITEMS.filter(
+  (item) => item.path !== '/' && item.path !== '/temario',
+);
 
 export function AppRoutes() {
   return (
@@ -89,7 +99,13 @@ export function AppRoutes() {
 
       {/* --- Zona del alumno -------------------------------------------------- */}
       <Route element={<StudentZone />}>
-        <Route path="/" element={<HomePage />} />
+        <Route path="/" element={<StudentHomePage />} />
+        <Route path="/temario" element={<SyllabusPage />} />
+        {/*
+          La ficha del tema con sus apuntes: el código legible (`IV.7`) es la dirección, como en toda
+          la zona del alumno. Nunca un identificador de nodo.
+        */}
+        <Route path="/temario/:codigo" element={<TopicNotesPage />} />
         {SECCIONES_PENDIENTES.map((item) => (
           <Route
             key={item.path}

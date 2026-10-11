@@ -1,0 +1,101 @@
+/*
+ * Los tokens del diseño de OpoFuente (F13, §3.7 del objetivo).
+ *
+ * **Este es el único sitio donde se escribe un valor del diseño.** Las demás hojas (`ui.css`,
+ * `global.css`) toman de aquí sus colores, su tipografía y su forma; si un color aparece escrito a
+ * mano en otra hoja, es un desvío del diseño esperando a que alguien cambie el original. Hay una
+ * prueba (`tests/unit/tokens.test.ts`) que lo comprueba: ni un `#` de color fuera de este fichero.
+ *
+ * El concepto es **«la hoja de respuestas»** del examen oficial (`docs/DISENO-V0-Y-STITCH-2026-10.md`
+ * §1 y el sistema de diseño de Stitch): papel blanco frío —no crema—, tinta oscura, un solo azul de
+ * lectura óptica para lo que se marca y para la acción principal, y verde y rojo **reservados a
+ * corregir**. Nada de tarjetas flotantes con la misma sombra, ni degradados, ni mayúsculas
+ * sostenidas: la jerarquía la hacen las líneas de 1px y el espacio.
+ */
+
+:root {
+  /* --- Papel, hoja y tinta ---------------------------------------------------------------- */
+  --papel: #f4f6f9; /* fondo de la aplicación (blanco frío, NO crema) */
+  --hoja: #ffffff; /* superficies: apuntes, enunciados, la hoja */
+  --tinta: #18202b; /* texto principal */
+  --tinta-suave: #5a6472; /* texto secundario */
+  --linea: #d5dce6; /* bordes y separadores de 1px */
+  --linea-suave: #e4e9f0; /* separadores dentro de una tabla */
+
+  /* --- El acento único: el azul de hoja óptica ------------------------------------------- */
+  --azul: #2347c5; /* navegación activa, acción principal, foco y casillas marcadas */
+  --azul-suave: #e7ecfb; /* fondo de lo seleccionado */
+  --azul-oscuro: #1e3eaf; /* el mismo azul, un paso más oscuro, solo al pasar por encima */
+
+  /* --- Corrección: SOLO para acertar y fallar -------------------------------------------- */
+  --acierto: #15734a;
+  --acierto-suave: #e3f2ea;
+  --fallo: #b42318;
+  --fallo-suave: #fbe8e6;
+  /* --- La duda: SOLO para la marca de dudosa --------------------------------------------- */
+  --dudosa: #9a6200;
+  --dudosa-suave: #fbf0d9;
+
+  /* Texto sobre un fondo lleno (el azul de la acción, el verde y el rojo de la corrección, la
+     casilla marcada de la hoja): es la hoja en blanco la que se lee encima de la tinta. */
+  --sobre-acento: #ffffff;
+  /* El velo del diálogo: lo único que oscurece lo de debajo, y solo cuando hay algo superpuesto. */
+  --velo: rgba(0, 0, 0, 0.45);
+
+  /* --- Tipografía -------------------------------------------------------------------------
+   * Dos familias, las dos autoalojadas con `@fontsource` (la CSP no deja cargar fuentes de fuera).
+   * La de interfaz distingue l/I/1 y O/0, que es lo que hace falta para leer siglas durante horas;
+   * la de apuntes es serif, para el texto largo.
+   */
+  --fuente-interfaz: 'Atkinson Hyperlegible Next', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --fuente-apuntes: 'Source Serif 4 Variable', 'Source Serif 4', Georgia, serif;
+  --fuente-codigo: 'Cascadia Mono', Consolas, 'Courier New', monospace;
+
+  /* Escala del diseño: 14 · 17 · 20 · 24 · 32. */
+  --t-sm: 0.875rem;
+  --t-cuerpo: 1.0625rem;
+  --t-enunciado: 1.25rem;
+  --t-titulo: 1.5rem;
+  --t-portada: 2rem;
+  /* Los apuntes se leen en serif y un punto más grandes (18px): son la pantalla de lectura larga. */
+  --t-apuntes: 1.125rem;
+
+  --lh-cuerpo: 1.5;
+  --lh-apuntes: 1.65;
+  --medida-apuntes: 68ch; /* ancho de lectura de los apuntes */
+  --medida-texto: 70ch; /* ancho de lectura de la interfaz */
+
+  /* --- Espacio: rejilla de 8px, con el 4px para lo que va pegado -------------------------- */
+  --s1: 0.25rem;
+  --s2: 0.5rem;
+  --s3: 0.75rem;
+  --s4: 1rem;
+  --s5: 1.5rem;
+  --s6: 2.25rem;
+  --s7: 3.5rem;
+
+  /* --- Forma: radios pequeños y disciplinados -------------------------------------------- */
+  --radio-sm: 4px; /* casillas de la hoja y campos */
+  --radio: 6px; /* botones y contenedores */
+  --radio-etiqueta: 2px; /* etiquetas */
+  --radio-pildora: 999px; /* solo el contador de dudosas */
+
+  /* La única sombra permitida: elementos que de verdad se superponen (la hoja en móvil, un
+     diálogo). Nada de una sombra igual para cada tarjeta. */
+  --sombra-superpuesta: 0 4px 16px rgba(24, 32, 43, 0.1);
+
+  /* --- Estados ----------------------------------------------------------------------------
+   * El foco es visible y azul, con separación: es lo que permite estudiar con el teclado. El
+   * desactivado se hunde y pierde el color, así que no depende solo del color para distinguirse.
+   */
+  --foco: 2px solid var(--azul);
+  --foco-separacion: 2px;
+  --desactivado-texto: var(--tinta-suave);
+  --desactivado-fondo: #eef1f6;
+
+  /* --- Composición ----------------------------------------------------------------------- */
+  --ancho-contenido: 1080px; /* el contenido del alumno, alineado a la izquierda */
+  --ancho-carril: 15rem; /* el carril de navegación de escritorio */
+  --alto-barra-inferior: 3.5rem; /* la barra de móvil */
+  --objetivo-tactil: 44px; /* mínimo de lo que se toca con el dedo */
+}

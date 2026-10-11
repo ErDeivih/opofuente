@@ -176,13 +176,23 @@ test('E2E-00 la zona del alumno no enseña la cocina en ninguna de sus pantallas
 for (const viewport of VIEWPORTS) {
   test(`E2E-00 responsive sin scroll horizontal (${viewport.name})`, async ({ page }) => {
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
-    await page.goto('/');
-    await expect(page.getByRole('heading', { level: 1, name: 'Inicio' })).toBeVisible();
 
-    const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
-    expect(scrollWidth, `scroll horizontal en ${viewport.name}`).toBeLessThanOrEqual(
-      viewport.width + 1,
-    );
+    // Las pantallas del alumno que ya están construidas. La de los apuntes de un tema necesita que el
+    // tema tenga texto —y la suite arranca con los datos vacíos—, así que aquí se comprueban Inicio y
+    // el temario: el desborde que se cuela por un título largo o una tabla ancha se ve igual.
+    for (const ruta of ['/', '/temario']) {
+      await page.goto(ruta);
+      await expect(
+        page.getByRole('heading', { level: 1 }),
+        `${ruta} debería tener su título`,
+      ).toBeVisible();
+
+      const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
+      expect(
+        scrollWidth,
+        `scroll horizontal en ${ruta} (${viewport.name})`,
+      ).toBeLessThanOrEqual(viewport.width + 1);
+    }
   });
 }
 

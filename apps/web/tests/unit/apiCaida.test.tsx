@@ -1,12 +1,12 @@
 import { QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createQueryClient } from '../../src/app/queryClient';
 import { resetApiAvailability } from '../../src/app/apiAvailability';
 import { AppShell } from '../../src/app/AppShell';
-import { HomePage } from '../../src/pages/HomePage';
+import { StudentHomePage } from '../../src/pages/student/StudentHomePage';
 
 /**
  * Qué se ve cuando la API no está (5 de octubre de 2026).
@@ -31,12 +31,12 @@ describe('la API caída', () => {
 
   it('enseña un aviso único que dice cómo arrancar la aplicación', async () => {
     // El aviso lo dispara la primera consulta que falla, así que la prueba monta una pantalla que lee
-    // de la API: la zona del alumno, que desde F1 no lleva contadores en el marco.
+    // de la API: Inicio del alumno, que desde F13 lee `/student/overview`.
     render(
       <QueryClientProvider client={createQueryClient()}>
         <MemoryRouter>
           <AppShell>
-            <HomePage />
+            <StudentHomePage />
           </AppShell>
         </MemoryRouter>
       </QueryClientProvider>,
@@ -49,13 +49,13 @@ describe('la API caída', () => {
       { timeout: 5_000 },
     );
     expect(screen.getAllByTestId('aviso-api-caida')).toHaveLength(1);
-    expect(screen.getByText(/La aplicación no responde/i)).toBeInTheDocument();
-    expect(screen.getByText(/scripts\\api\.ps1/)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Reintentar' })).toBeInTheDocument();
+    const aviso = screen.getByTestId('aviso-api-caida');
+    expect(within(aviso).getByText(/La aplicación no responde/i)).toBeInTheDocument();
+    expect(within(aviso).getByText(/scripts\\api\.ps1/)).toBeInTheDocument();
+    // El aviso trae **su** botón de reintentar (la pantalla, además, conserva el suyo).
+    expect(within(aviso).getByRole('button', { name: 'Reintentar' })).toBeInTheDocument();
     // El contenido de la pantalla sigue ahí, con lo suyo: el aviso informa, no sustituye a la app.
-    expect(
-      await screen.findByText('No se pudieron cargar tus tests: la aplicación no responde.'),
-    ).toBeInTheDocument();
+    expect(await screen.findByText('No se pudo cargar tu Inicio')).toBeInTheDocument();
   });
 
   it('con la API levantada no hay ningún aviso', () => {

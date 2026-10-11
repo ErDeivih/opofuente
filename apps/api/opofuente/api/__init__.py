@@ -16,6 +16,7 @@ from opofuente.api.routes import (
     housekeeping,
     ingestion,
     library,
+    notes_reports,
     profiles,
     questions,
     readiness,
@@ -49,5 +50,8 @@ api_router.include_router(dossier.router)
 # rutas cuelgan de `/student/*`, y ninguna otra ruta del contrato empieza por ahí, así que no puede
 # tapar a nadie ni quedar tapada.
 api_router.include_router(student.router)
+# La bandeja de avisos del alumno (F13) es del propietario y cuelga de `/notes-reports`, un prefijo
+# que no comparte con nadie: va al final, con las demás rutas que no pueden quedar tapadas.
+api_router.include_router(notes_reports.router)
 
 __all__ = ["api_router"]

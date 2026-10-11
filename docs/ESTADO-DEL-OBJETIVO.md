@@ -1,14 +1,15 @@
 # Estado del objetivo largo (TAI: los 33 temas y la app de estudio)
 
 **Autoridad:** `docs/GOAL-DEEPSEEK-TRABAJO-LARGO-2026-10.md` · **Presupuesto de API:** 40 $ · **Se
-avisa cada 10 $** · Última actualización: **10 oct 2026 (tanda f12: el índice de I.1 cuadra y I.1
-queda publicado con el 98,5 % de cobertura, I.6 pasa por fin la puerta de forma y sube al 72,5 %, y el
-motor aprende a decir lo que va a costar una corrida antes de pagarla)**.
+avisa cada 10 $** · Última actualización: **11 oct 2026 (tanda f13: la zona del alumno estrena el
+diseño —Inicio, Temario y los apuntes en tres columnas—, los tokens viven en un solo sitio y el botón
+«Esto está mal» guarda el aviso de verdad, auditado y en la ruta que leerá la bandeja del
+propietario; sin gastar API)**.
 
 > **De las fechas:** la tanda anterior se etiquetó «11 oct» en este fichero, pero **su reloj, sus
 > ficheros y sus marcas de base son del 10 de octubre** (la corrida de I.6 acabó a las 18:09 del
-> 10-oct). Esta tanda usa la fecha del reloj de la máquina. No es que el tiempo vaya hacia atrás: las
-> etiquetas iban por delante.
+> 10-oct). Las etiquetas iban por delante. Esta tanda (f13) sí es del **11 de octubre**: empezó a las
+> 11:20 y el reloj de la máquina marca 14:22 al escribir estas líneas.
 
 ## 1. Gasto de API, una línea por corrida
 
@@ -37,6 +38,12 @@ tokens que devolvió cada llamada; el coste es la estimación con la tabla de pr
 | 10-oct | I.1 | la redacción con el índice nuevo: 21 apartados, 2.043 preguntas | 355 | 4.787.376 | 2.068.573 | 1,9593 $ |
 | 10-oct | I.1 + I.6 | `--medir`, `--esquema`, `--prever`, `--limpiar-forma` y `--publicar` (solo lectura) | 0 | 0 | 0 | 0,0000 $ |
 | **Acumulado medido de f12** | | | **510** | **6.315.334** | **3.557.147** | **3,0816 $** |
+| 11-oct | — | f13: la interfaz (tokens, Inicio, Temario, apuntes y el aviso del alumno) | 0 | 0 | 0 | 0,0000 $ |
+| **Acumulado medido de f13** | | | **0** | **0** | **0** | **0,0000 $** |
+
+*(f13 no llama al modelo a propósito: es el bloque de interfaz y de la ruta de escritura de los
+avisos. Las únicas llamadas de esta tanda fueron las de las herramientas locales —pytest, Playwright,
+eslint—, que no cuestan.)*
 
 Tres avisos para que nadie sume mal:
 
@@ -50,8 +57,8 @@ Tres avisos para que nadie sume mal:
   rellenarlas escribiendo de más— y se paró antes de que acabara. Su gasto **no está medido** (la
   salida se perdió al matar el proceso): es del orden de la corrida siguiente, **≈0,40 $**;
 - **el acumulado del objetivo no se puede dar.** Lo anterior a f10 no está en ninguna fuente. Con lo
-  medido (≈1,31 $ de f10 + 0,4411 $ de f11 + 3,0816 $ de f12 + ≈0,40 $ de la corrida matada =
-  **≈5,23 $**) el aviso de los 10 $ **sigue sin cruzarse**.
+  medido (≈1,31 $ de f10 + 0,4411 $ de f11 + 3,0816 $ de f12 + ≈0,40 $ de la corrida matada + 0,00 $
+  de f13 = **≈5,23 $**) el aviso de los 10 $ **sigue sin cruzarse**.
 
 **Y una corrección de método**: el informe de una corrida contaba la cobertura **antes** del bucle de
 huecos, así que decía menos de la que el tema acababa teniendo (en I.1: 1.947 de 1.995 en el informe,
@@ -193,6 +200,54 @@ Lo que se ha construido, y lo que se ha medido de cada cosa:
 | **La capa del alumno** para montar y correr el test | `POST /student/tests`, `POST /student/mock-exams`, `GET/POST /student/sessions/{id}[/start|/answers|/finish]` | `test_student_api.py` (la prueba de contrato recorre **todas** las respuestas nuevas buscando lo prohibido) y `studentTest.test.tsx` en la web |
 | **La pantalla del test en curso** con la hoja de respuestas (v0) | `apps/web/src/features/study/StudentTestRunner.tsx` + `AnswerSheet.tsx`, ruta `/test/:id` | 5 pruebas de componente (teclado, hoja por estados, corrección al final que **no** se enseña) y dos capturas en `artifacts/screens/test-en-curso-{escritorio,movil}.png` (axe 0, palabras prohibidas 0) |
 
+## 4b. El bloque de la lectura del alumno (f13)
+
+Lo que se ha construido en este bloque, y lo que se ha medido de cada cosa. **No ha gastado API**: no
+se ha llamado a ningún modelo (es interfaz y la ruta de escritura de los avisos).
+
+| Qué | Dónde | Cómo se comprueba |
+|---|---|---|
+| **Los tokens del diseño en un sitio único y aplicados de verdad** | `apps/web/src/styles/tokens.css` (color, tipografía, escala, espaciado, radios, sombra y estados) y las dos fuentes autoalojadas en `main.tsx` | `tests/unit/tokens.test.ts`: los 14 colores con su valor exacto, la escala 14·17·20·24·32, los radios, la sombra superpuesta y el foco; y **ninguna otra hoja declara un color a mano** (la prueba lee `ui.css` y `global.css` y falla si aparece un `#`) |
+| **La hoja de respuestas no se estropea** | `.test-marco` pasa a tomar sus tokens del fichero del diseño (mismos valores que tenía) | Las 5 pruebas de `studentTest.test.tsx` siguen pasando y la captura `test-en-curso-*` sale con **axe 0 y palabras prohibidas 0** |
+| **El marco del diseño**: carril de siete entradas con icono en escritorio y barra inferior de cinco en móvil | `apps/web/src/app/AppShell.tsx` + `apps/web/src/ui/Icons.tsx` (SVG en línea: la CSP no deja fuentes de iconos) | `shell.test.tsx` (siete entradas, una sola puerta al panel, salto al contenido) y `first-run.spec.ts` en la puerta E2E |
+| **Inicio**: qué toca (seguir el test, repasar fallos), el progreso por bloque con el porcentaje escrito y los temas con apuntes con su estado | `apps/web/src/pages/student/StudentHomePage.tsx`, `GET /student/overview` | `studentInicio.test.tsx` (6 pruebas) y capturas `inicio-{escritorio,movil}.png` (axe 0, prohibidas 0) |
+| **Temario**: índice del programa con el número romano en el margen, orden numérico, buscador por título y código, estado de cada tema y sus dos salidas | `apps/web/src/pages/student/SyllabusPage.tsx`, `GET /student/syllabus` | `studentTemario.test.tsx` (5) y capturas `temario-{escritorio,movil}.png` (axe 0, prohibidas 0) |
+| **Tema con apuntes**: tres columnas (índice navegable, lectura en serif y nota al margen dentro de su apartado), tablas con cabecera, «Esto está mal» por apartado y el estado del tema | `apps/web/src/pages/student/TopicNotesPage.tsx`, `features/student/NotesBody.tsx`, `GET /student/topics/{codigo}/notes` | `studentApuntes.test.tsx` (8) y capturas `tema-apuntes-*` (IV.7, publicado) y `tema-borrador-*` (I.6, borrador), las cuatro con axe 0 y prohibidas 0 |
+| **Un tema en borrador se lee y lo dice** (D2/D12) y uno sin apuntes no es un error | `GET /student/topics/{codigo}/notes` con `state` = `published` \| `draft` \| `none`, y `notes_state` en cada tema del temario y de Inicio | `test_student_notes_api.py` (los tres estados y el 404 del tema que no está); `studentApuntes.test.tsx` (borrador, publicado y sin apuntes) |
+| **«Esto está mal» guarda de verdad** (D2): tabla `notes_reports` (migración `0033_avisos_del_alumno`) con su **evento de auditoría en la misma escritura**, el anclaje puesto por el servidor y el motivo en una línea | `POST /student/topics/{codigo}/reports`, `domain/notes_reports.py`, `infrastructure/notes_report_repository.py` | `test_student_notes_api.py` (el aviso, su ancla, su auditoría, el 422 sin motivo y el 404 de un apartado ajeno) y `test_migrations_0033.py` (los `CHECK` y la vuelta atrás) |
+| **El aviso llega al propietario** | `GET /notes-reports` (bandeja, con filtro por estado y por tema) | `test_student_notes_api.py`: el aviso sale con su tema y su apartado, y sigue saliendo —con el título vacío— si el apartado se reescribió |
+
+**Puertas: 18/18**, ejecutadas en **31:47 minutos** sobre este árbol (1.387 pruebas de backend entre
+unitarias e integración, 294 de componentes, la suite E2E entera y las 18 puertas del `gates.ps1`).
+El registro está en `F:\temp-opofuente\gates-f13-alumno.txt`. La primera pasada **falló en la puerta
+18** (el desborde de 43 px que se cuenta abajo); se arregló la pantalla —no la prueba— y se volvió a
+pasar entera.
+
+### El desborde de 43 px del panel, y por qué está escrito aquí
+
+La puerta 18 (responsividad del E2E) falló al aplicar el diseño: en la **bandeja del panel**
+(`/admin/importar`), a 390 px, la página medía **433 px**. El culpable eran dos
+`<input type="file">` de «Suelta aquí ficheros o carpetas» / «O elige una carpeta»: **393 px** cada
+uno. Un control de formulario con `width: auto` **no se encoge** —toma su ancho intrínseco, el del
+`size` por defecto más el botón del selector— y se salía de su caja.
+
+La causa raíz fue **de este bloque**: puse el **cuerpo de 17 px del diseño en toda la aplicación**
+(antes 16 px) y la familia nueva es más ancha; el panel está maquetado a 16 px y esos dos controles
+se pasaron 43 px. Se arregla en dos sitios y se queda escrito por si vuelve:
+
+1. **el cuerpo de 17 px es de la zona del alumno** (`.marco-alumno`); la base de la aplicación sigue
+   en 16 px, así que el panel no cambia de medidas en un bloque que no es el suyo (§3.7 es el
+   rediseño **del alumno**);
+2. **`.form__input { max-width: 100% }`**: un control de formulario no puede salirse de su caja, sea
+   cual sea la tipografía.
+
+Medido con los datos reales a 390 px después del arreglo: `/bandeja` **390** (era 433), `/` **390**,
+`/temario` **390**, `/temario/IV.7` **390**, `/temario/I.6` **390** (era 416 por la cadena
+«fallecimiento/incapacidad/extinción/pérdida» de sus apuntes, que ahora se parte). Las tablas de los
+apuntes **caben** en vez de desplazarse dentro de una caja: el contenedor con scroll exigiría un
+`tabindex` que eslint prohíbe y dejaría una violación de axe (`scrollable-region-focusable`) o
+contenido escondido tras un desplazamiento.
+
 ## 5. Lo que queda abierto
 
 1. **El acumulado de gasto anterior a f10 no existe** y ya no se puede medir. Desde aquí se anota una
@@ -210,12 +265,20 @@ Lo que se ha construido, y lo que se ha medido de cada cosa:
    y se vuelve a escribir. Las 90 secciones que se rehicieron en la corrida de I.1 eran las del índice
    **anterior** (escritas el 9-oct, antes de que existiera el catálogo): una migración de una vez, no
    un trabajo repetido.
-6. **La pantalla del test es la primera de la zona del alumno**: faltan Inicio, Temario, Tema con
-   apuntes, Resultado, Simulacros, Exámenes oficiales, Fallos y Progreso (§3 del objetivo, pasos 3–6),
-   y los **tokens del diseño** (§3.7: las fuentes autoalojadas y el cambio de los colores de toda la
-   aplicación). En f11 solo se han añadido los tokens de la hoja como tokens **nuevos**, sin tocar los
-   del panel.
-6. **`GET /student/official-exams`**: los exámenes del INAP tienen que importarse antes (D10) para
+6. **La zona del alumno va por la mitad**: desde f13 están la pantalla del test (f11), **Inicio**,
+   **Temario** y **Tema con apuntes** —con el **sistema de diseño aplicado** (§3.7: tokens en un
+   fichero único y las dos fuentes autoalojadas) y el aviso «Esto está mal» guardando de verdad por su
+   ruta auditada—. Faltan **Resultado, Simulacros, Exámenes oficiales, Fallos y Progreso** (pasos 3, 6
+   y 7 del §3), y dentro del tema, las pestañas «Preguntas» y «Mi progreso» —hoy son enlaces a su
+   dirección, que llega en el bloque siguiente—, el buscador dentro del tema y la marca de leído del
+   índice. La **bandeja del propietario** para los avisos del alumno tiene su ruta de lectura
+   (`GET /notes-reports`) pero no su pantalla: es el bloque C.
+7. **`GET /student/official-exams`**: los exámenes del INAP tienen que importarse antes (D10) para
    poder listarse con su nota. Hoy listarlos sería listar conjuntos internos.
-7. Los **30 temas restantes** y los bloques C (panel) y D (datos: copias, epígrafes, INAP) siguen sin
+8. Los **30 temas restantes** y los bloques C (panel) y D (datos: copias, epígrafes, INAP) siguen sin
    empezar, con D5 (copias verificadas) como primer paso del §6 del objetivo.
+9. **Tres violaciones de accesibilidad en el panel** (`scrollable-region-focusable` en `/cambios` y en
+   `/buscar` a 390 px) que aparecen al fotografiar las pantallas del propietario **con los datos
+   reales**: son regiones que se desplazan y no se pueden recorrer con el teclado. No son de este
+   bloque —las pantallas del alumno salen a 0— y se arreglan con el mismo remedio que se aplicó a las
+   tablas de los apuntes (`tabindex` y nombre), pero tocan el panel: quedan anotadas para él.

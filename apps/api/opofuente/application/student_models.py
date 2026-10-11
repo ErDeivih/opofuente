@@ -18,6 +18,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 
+from opofuente.domain.topic_notes import NotesState
+
 
 @dataclass(frozen=True, slots=True)
 class StudentOppositionView:
@@ -74,7 +76,12 @@ class StudentSessionView:
 
 @dataclass(frozen=True, slots=True)
 class StudentTopicProgressView:
-    """Un tema con lo que el alumno tiene y lo que ha hecho en él."""
+    """Un tema con lo que el alumno tiene y lo que ha hecho en él.
+
+    `notes_state` es lo único que no es progreso y está aquí a propósito: el temario y el inicio
+    pintan cada tema con su estado de apuntes, y separarlo en un diccionario aparte obligaría a
+    cruzar dos listas por código en la pantalla para acabar diciendo lo mismo.
+    """
 
     code: str
     number: int | None
@@ -84,6 +91,7 @@ class StudentTopicProgressView:
     correct: int
     accuracy: float | None
     due_reviews: int = 0
+    notes_state: str = NotesState.NONE.value
 
     @property
     def started(self) -> bool:
@@ -301,3 +309,59 @@ class StudentResultView:
     total: StudentPartScoreView
     official_available: bool
     official_note: str | None = None
+
+
+# --- los apuntes del tema: la pantalla de lectura (F13) ------------------------------------------
+
+
+@dataclass(frozen=True, slots=True)
+class StudentNoteSectionView:
+    """Un apartado de los apuntes, tal como se lee en la pantalla del alumno.
+
+    `number` es su lugar en el índice (1..N) y `anchor` su dirección estable dentro de la página:
+    con ella el índice lleva al párrafo y el aviso «esto está mal» apunta a un sitio concreto.
+
+    `questions_covered` es lo único que se dice de las preguntas: **cuántas** de este tema se
+    contestan con este apartado. No viaja ningún identificador de pregunta —el contrato de esta capa
+    no tiene sitio para él— y la cifra es real: sale de las anclas comprobadas del tema. Es la nota
+    al margen que el diseño pide junto al párrafo, con un dato en vez de una frase inventada sobre
+    exámenes.
+    """
+
+    key: str
+    number: int
+    title: str
+    epigraph_code: str
+    anchor: str
+    body_markdown: str
+    questions_covered: int = 0
+
+
+@dataclass(frozen=True, slots=True)
+class StudentNotesView:
+    """Los apuntes de un tema: cómo están y sus apartados en orden de lectura.
+
+    `state` es `published`, `draft` o `none` (`domain.topic_notes.NotesState`). Un tema en borrador
+    **se sirve igual** que uno publicado: la decisión D2/D12 es que se pueda leer y que se diga que
+    está en revisión, no que se esconda. Un tema sin apuntes no es un error: es una lista vacía con
+    su estado, y la pantalla lo dice.
+    """
+
+    code: str
+    state: str
+    generated_at: datetime | None = None
+    sections: tuple[StudentNoteSectionView, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class StudentReportView:
+    """Lo que se guarda cuando el alumno marca un apartado como «esto está mal» (D2).
+
+    Devuelve lo que escribió y dónde, sin identificadores internos: el alumno acaba de pulsar el
+    botón y lo que necesita saber es que ha quedado guardado en ese apartado.
+    """
+
+    section_key: str
+    reason: str
+    status: str
+    created_at: datetime

@@ -3,6 +3,39 @@
 Lo que conviene que sepas y **no** hace falta que contestes para que el trabajo siga. Lo que sí
 necesita tu criterio está marcado como **«Decide tú»**.
 
+## 11 oct 2026 — Inicio, Temario y los apuntes ya se leen; y el botón «Esto está mal» funciona
+
+**Lo que cambia para ti:**
+
+1. **La zona del alumno tiene ya el diseño aplicado** (el de `DISENO-V0-Y-STITCH`, que aprobaste en
+   D12): papel blanco frío, un solo azul para la acción, Atkinson Hyperlegible Next para la interfaz
+   y Source Serif 4 para leer los apuntes —las dos fuentes van dentro de la aplicación, no se
+   descargan de internet—. Todo el color, el tipo y la forma viven en **un fichero**
+   (`apps/web/src/styles/tokens.css`), y hay una prueba que impide que otra hoja vuelva a escribir un
+   color a mano. Si un día quieres cambiar el azul, se cambia ahí y cambia en toda la aplicación.
+2. **Inicio** enseña lo que toca hacer (el test a medias, los fallos que tocan repasar), cómo vas por
+   bloque —con el porcentaje escrito, no solo la barra— y qué apuntes puedes leer, con su estado.
+3. **Temario** es el índice del programa, con los temas en orden numérico (IV.7 antes de IV.10), su
+   número de preguntas, su barra de acierto y **un buscador** por título o por código.
+4. **Tema con apuntes**: el texto en tres columnas —índice de apartados a la izquierda, lectura en el
+   centro, notas al margen a la derecha—, con las tablas bien formadas y el índice navegable.
+5. **Los temas en borrador se ven y se leen**, con la marca «Borrador». No se esconden: leerlos es
+   justo lo que hace falta para que me digas qué está mal. Los publicados llevan la marca «Versión
+   generada · en revisión».
+6. **El botón «Esto está mal»** está en cada apartado de los apuntes. Pide el motivo en una línea y lo
+   guarda de verdad (con su ancla y su evento de auditoría, no en un registro de pantalla). **Hoy lo
+   puedes ver abriendo `http://127.0.0.1:8765/api/v1/notes-reports` con la aplicación arrancada**: ahí
+   sale cada aviso con su tema, su apartado y tu texto. La bandeja con pantalla —con filtros y con el
+   botón de despacharlo— es el bloque siguiente (el panel de administración), y cuando llegue saldrá
+   en ella.
+
+**Lo que todavía no está** (y no lo he fingido): las pantallas de **Resultado, Simulacro, Exámenes
+oficiales, Fallos y Progreso** son el bloque siguiente. Las pestañas del tema «Preguntas» y «Mi
+progreso» llevan a su dirección, que hoy dice que llegará; el buscador dentro del tema y la marca de
+«leído» en el índice tampoco están todavía.
+
+**Nada de esto ha gastado API**: este bloque es de interfaz y de la ruta de escritura de los avisos.
+
 ## 10 oct 2026 — I.1 ya se puede leer, I.6 contesta a tres de cada cuatro, y el motor ya no paga de más
 
 **Lo que cambia para ti:**

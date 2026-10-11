@@ -104,6 +104,21 @@ export function escribirInforme(): void {
     }
     lineas.push('');
   }
+
+  // Y las violaciones de accesibilidad **por su nombre**: «1 violación» no se puede arreglar; el
+  // identificador de la regla sí dice qué está mal.
+  const conViolaciones = filas.filter((fila) => fila.violaciones.length > 0);
+  lineas.push('', `## Violaciones de accesibilidad (${conViolaciones.length} capturas)`, '');
+  if (conViolaciones.length === 0) {
+    lineas.push('Ninguna: axe no encuentra violaciones A/AA en ninguna pantalla.');
+  }
+  for (const fila of conViolaciones) {
+    lineas.push(`### ${fila.ruta} · ${fila.ancho}`, '');
+    for (const violacion of fila.violaciones) {
+      lineas.push(`- ${violacion}`);
+    }
+    lineas.push('');
+  }
   writeFileSync(path.join(SALIDA, 'report.md'), `${lineas.join('\n')}\n`, 'utf8');
   rmSync(FILAS, { recursive: true, force: true });
 }

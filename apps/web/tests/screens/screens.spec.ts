@@ -46,6 +46,9 @@ test.afterAll(() => {
 /** Las rutas que se visitan, con el nombre con el que se guarda cada captura. */
 const RUTAS: readonly { ruta: string; nombre: string }[] = [
   { ruta: '/', nombre: 'inicio' },
+  { ruta: '/temario', nombre: 'temario' },
+  { ruta: '/temario/IV.7', nombre: 'tema-apuntes' },
+  { ruta: '/temario/I.6', nombre: 'tema-borrador' },
   { ruta: '/programa', nombre: 'programa' },
   { ruta: '/estudiar', nombre: 'estudiar' },
   { ruta: '/preguntas', nombre: 'preguntas' },

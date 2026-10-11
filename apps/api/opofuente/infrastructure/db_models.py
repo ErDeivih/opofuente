@@ -2142,3 +2142,45 @@ class NotesIncidentRecord(Base):
         Integer, nullable=False, server_default=text("1"), default=1
     )
     created_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
+
+
+class NotesReportRecord(Base):
+    """Un aviso del alumno sobre un apartado de los apuntes («esto está mal», decisión D2).
+
+    No es una comprobación del motor —eso es `notes_incidents`—: es una persona leyendo que dice
+    «aquí hay un error» y escribe el motivo en una línea. Por eso no tiene categoría ni frase
+    verificada: tiene el texto de quien lo reporta, la dirección del párrafo (`section_key` y
+    `anchor`) y el estado con el que el propietario lo despachará.
+
+    `status` cambia cuando el panel lo revise (`reviewed`) o lo descarte (`dismissed`); hasta
+    entonces el aviso está `open`. No hay índice único: dos avisos sobre el mismo apartado son dos
+    avisos, y borrarlos porque se parecen sería perder lo que dijo el segundo.
+    """
+
+    __tablename__ = "notes_reports"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('open', 'reviewed', 'dismissed')", name="ck_note_report_status"
+        ),
+        CheckConstraint("length(trim(reason)) > 0", name="ck_note_report_reason"),
+        CheckConstraint("length(trim(section_key)) > 0", name="ck_note_report_section"),
+        CheckConstraint("length(trim(anchor)) > 0", name="ck_note_report_anchor"),
+        Index("ix_notes_reports_status_created", "status", "created_at"),
+        Index("ix_notes_reports_node_status", "curriculum_node_id", "status"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    curriculum_node_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("curriculum_nodes.id", ondelete="CASCADE"), nullable=False
+    )
+    #: Quién estudia y lo reporta. Hoy es `local`; está puesto para que el aviso no sea anónimo el
+    #: día que haya cuentas, y para poder filtrar por persona sin migrar la tabla.
+    owner_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    section_key: Mapped[str] = mapped_column(Text, nullable=False)
+    anchor: Mapped[str] = mapped_column(Text, nullable=False)
+    reason: Mapped[str] = mapped_column(Text, nullable=False)
+    status: Mapped[str] = mapped_column(
+        String(16), nullable=False, server_default=text("'open'"), default="open"
+    )
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
+    reviewed_at: Mapped[datetime | None] = mapped_column(UtcDateTime(), nullable=True)

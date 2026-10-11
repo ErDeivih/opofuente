@@ -2,30 +2,32 @@
    Objetivo: legibilidad, contraste AA, navegación por teclado y ningún estado que dependa
    solo del color (07_UI-UX §13). */
 
-/* Los cimientos visuales de la zona del alumno: tokens y componentes de `src/ui` (F3 del rediseño).
-   Van primero para que las pantallas nuevas usen `--accent`, `--s4`, `--measure`… y las viejas sigan
-   con sus variables hasta que se rehagan. */
+/* Los tokens del diseño van primero y son la única fuente de color, tipo y forma (F13, §3.7 del
+   objetivo). Los nombres `--color-*` de esta hoja y los `--bg`/`--accent` de `ui/ui.css` se
+   conservan porque son los que usan las pantallas, pero ya son **alias**: aquí no se escribe un
+   valor del diseño, solo el nombre con el que lo pide cada zona. */
+@import './tokens.css';
 @import '../ui/ui.css';
 
 :root {
-  --color-fondo: #f6f7f9;
-  --color-superficie: #ffffff;
-  --color-borde: #d3d7de;
-  --color-texto: #16191d;
-  --color-texto-suave: #4b525c;
-  --color-acento: #1f4e79;
-  --color-acento-suave: #e7eef6;
-  --color-ok: #14603a;
-  --color-ok-fondo: #e3f3e9;
-  --color-aviso: #7a4a00;
-  --color-aviso-fondo: #fdf0d9;
-  --color-bloqueo: #8a1f1f;
-  --color-bloqueo-fondo: #fbe6e6;
-  --color-info: #38424f;
-  --color-info-fondo: #eceff3;
-  --radio: 8px;
-  --espacio: 1rem;
-  --ancho-maximo: 1200px;
+  --color-fondo: var(--papel);
+  --color-superficie: var(--hoja);
+  --color-borde: var(--linea);
+  --color-texto: var(--tinta);
+  --color-texto-suave: var(--tinta-suave);
+  --color-acento: var(--azul);
+  --color-acento-suave: var(--azul-suave);
+  --color-ok: var(--acierto);
+  --color-ok-fondo: var(--acierto-suave);
+  --color-aviso: var(--dudosa);
+  --color-aviso-fondo: var(--dudosa-suave);
+  --color-bloqueo: var(--fallo);
+  --color-bloqueo-fondo: var(--fallo-suave);
+  --color-info: var(--tinta-suave);
+  --color-info-fondo: var(--desactivado-fondo);
+  --radio: var(--radio-sm);
+  --espacio: var(--s4);
+  --ancho-maximo: var(--ancho-contenido);
   color-scheme: light;
 }
 
@@ -42,9 +44,12 @@ body {
 body {
   background: var(--color-fondo);
   color: var(--color-texto);
-  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
-  font-size: 16px;
-  line-height: 1.55;
+  font-family: var(--fuente-interfaz);
+  /* 16px en la base de la aplicación: es la medida con la que está maquetado el panel (sus tablas y
+     sus formularios se construyeron con ella) y este bloque no es el suyo. La zona del alumno —que sí
+     es de este bloque— usa el cuerpo del diseño (17px) en su marco (`.marco-alumno`). */
+  font-size: 1rem;
+  line-height: var(--lh-cuerpo);
 }
 
 a {
@@ -97,9 +102,8 @@ button:focus-visible,
 }
 
 .app__brand-name {
-  font-size: 1.15rem;
+  font-size: var(--t-cuerpo);
   font-weight: 700;
-  letter-spacing: 0.01em;
 }
 
 .app__brand-note {
@@ -231,7 +235,7 @@ button:focus-visible,
 
 .page__header h1 {
   margin: 0 0 0.25rem;
-  font-size: 1.6rem;
+  font-size: var(--t-titulo);
 }
 
 .page__lead {
@@ -374,10 +378,9 @@ button:focus-visible,
 }
 
 .table thead th {
-  font-size: 0.78rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  font-size: var(--t-sm);
   color: var(--color-texto-suave);
+  font-weight: 700;
 }
 
 .facts {
@@ -559,9 +562,7 @@ button:focus-visible,
 
 .tree__level {
   color: var(--color-texto-suave);
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
+  font-size: var(--t-sm);
 }
 
 /* --- Detalle de nodo y examen --------------------------------------------- */
@@ -658,6 +659,10 @@ button:focus-visible,
   font: inherit;
   flex: 1 1 22rem;
   min-width: 0;
+  /* Un control de formulario con `width: auto` **no** se encoge: toma su ancho intrínseco (el del
+     `size` por defecto más el botón del selector de ficheros) y se sale de su caja si no cabe. Con el
+     tope al 100 % de su contenedor, un selector de ficheros en un móvil de 390 px cabe. */
+  max-width: 100%;
   padding: 0.35rem 0.5rem;
   border: 1px solid var(--color-borde);
   border-radius: var(--radio);
@@ -1187,28 +1192,29 @@ kbd {
 }
 /* --- El test en curso con la hoja de respuestas (diseño v0) --------------------------------------
  *
- * Los tokens de la «hoja de respuestas» son **nuevos** y conviven con los de arriba: el panel de
- * administración sigue con los suyos, y cambiar los de toda la aplicación es el paso del sistema de
- * diseño (§3.7 del objetivo), que no es esta tanda. Aquí viven los colores con los que se pinta la
- * hoja: papel, tinta y el azul de lectura óptica.
+ * La hoja de respuestas ya funciona y **no se toca**: sus tokens (`--hoja-*`) siguen aquí con los
+ * mismos nombres porque la pantalla los usa, pero su valor ahora sale de `tokens.css`, que es donde
+ * vive el diseño. Los colores son los mismos que tenía (papel, tinta y el azul de lectura óptica),
+ * así que la pantalla se ve igual que antes y el día que el azul cambie cambiará también aquí.
  */
 .test-marco {
-  --hoja-papel: #f4f6f9;
-  --hoja-superficie: #ffffff;
-  --hoja-tinta: #18202b;
-  --hoja-tinta-suave: #5a6472;
-  --hoja-linea: #d5dce6;
-  --hoja-azul: #2347c5;
-  --hoja-azul-suave: #e7ecfb;
-  --hoja-acierto: #15734a;
-  --hoja-acierto-suave: #e3f2ea;
-  --hoja-fallo: #b42318;
-  --hoja-fallo-suave: #fbe8e6;
-  --hoja-dudosa: #9a6200;
-  --hoja-dudosa-suave: #fbf0d9;
+  --hoja-papel: var(--papel);
+  --hoja-superficie: var(--hoja);
+  --hoja-tinta: var(--tinta);
+  --hoja-tinta-suave: var(--tinta-suave);
+  --hoja-linea: var(--linea);
+  --hoja-azul: var(--azul);
+  --hoja-azul-suave: var(--azul-suave);
+  --hoja-acierto: var(--acierto);
+  --hoja-acierto-suave: var(--acierto-suave);
+  --hoja-fallo: var(--fallo);
+  --hoja-fallo-suave: var(--fallo-suave);
+  --hoja-dudosa: var(--dudosa);
+  --hoja-dudosa-suave: var(--dudosa-suave);
 
   background: var(--hoja-papel);
   color: var(--hoja-tinta);
+  font-family: var(--fuente-interfaz);
   min-height: 100vh;
   padding: 1.25rem clamp(0.75rem, 3vw, 2.5rem) 3rem;
 }
@@ -1401,7 +1407,7 @@ kbd {
 .hoja__casilla--marcada {
   background: var(--hoja-azul);
   border-color: var(--hoja-azul);
-  color: #ffffff;
+  color: var(--sobre-acento);
 }
 
 .hoja__casilla--dudosa {
@@ -1413,13 +1419,13 @@ kbd {
 .hoja__casilla--correcta {
   background: var(--hoja-acierto);
   border-color: var(--hoja-acierto);
-  color: #ffffff;
+  color: var(--sobre-acento);
 }
 
 .hoja__casilla--fallada {
   background: var(--hoja-fallo);
   border-color: var(--hoja-fallo);
-  color: #ffffff;
+  color: var(--sobre-acento);
 }
 
 .hoja__vacia {
@@ -1462,5 +1468,807 @@ kbd {
 
   .test-hoja--abierta {
     display: block;
+  }
+}
+
+/* =====================================================================================
+ * F13 — La zona del alumno con el diseño aplicado
+ *
+ * Todo lo que hay debajo toma sus valores de `tokens.css`: aquí no se escribe un color, un tamaño de
+ * letra ni un radio a mano. Las tres piezas nuevas son el marco (carril y barra inferior), el
+ * índice del temario y la pantalla de lectura de los apuntes en tres columnas.
+ * ===================================================================================== */
+
+/* --- El marco del alumno ------------------------------------------------------------- */
+
+.marco-alumno {
+  min-height: 100vh;
+  background: var(--papel);
+  color: var(--tinta);
+  font-family: var(--fuente-interfaz);
+  /* El cuerpo del diseño (17px) es de esta zona: aquí se lee y se escribe. */
+  font-size: var(--t-cuerpo);
+  line-height: var(--lh-cuerpo);
+}
+
+.marco-alumno__cuerpo {
+  display: flex;
+  align-items: stretch;
+  min-height: 100vh;
+}
+
+.carril {
+  flex: 0 0 var(--ancho-carril);
+  width: var(--ancho-carril);
+  background: var(--hoja);
+  border-right: 1px solid var(--linea);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+
+.carril__marca {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  margin: 0;
+  padding: var(--s4) var(--s5);
+  border-bottom: 1px solid var(--linea);
+  min-height: var(--s7);
+}
+
+.carril__punto {
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radio-pildora);
+  background: var(--azul);
+  flex: 0 0 auto;
+}
+
+.carril__nombre {
+  font-weight: 700;
+  font-size: var(--t-cuerpo);
+}
+
+.carril__etiqueta {
+  margin-left: auto;
+  border: 1px solid var(--linea);
+  border-radius: var(--radio-etiqueta);
+  padding: 0 var(--s1);
+  font-size: var(--t-sm);
+  color: var(--tinta-suave);
+}
+
+.carril__navegacion {
+  padding: var(--s3);
+}
+
+.carril__lista,
+.barra-inferior__lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.carril__enlace {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  min-height: var(--objetivo-tactil);
+  padding: 0 var(--s3);
+  border-radius: var(--radio);
+  color: var(--tinta-suave);
+  text-decoration: none;
+  font-size: var(--t-sm);
+}
+
+.carril__enlace:hover {
+  background: var(--papel);
+  color: var(--tinta);
+}
+
+/* La sección activa se marca con el azul de la hoja y con un punto, no solo con color. */
+.carril__enlace--activo {
+  background: var(--azul-suave);
+  color: var(--azul);
+  font-weight: 700;
+}
+
+.carril__enlace--activo::after {
+  content: '';
+  width: 6px;
+  height: 6px;
+  margin-left: auto;
+  border-radius: var(--radio-pildora);
+  background: var(--azul);
+}
+
+.nav-icono {
+  flex: 0 0 auto;
+}
+
+.carril__pie,
+.marco-alumno__pie {
+  border-top: 1px solid var(--linea);
+  padding: var(--s4) var(--s5);
+  margin: 0;
+  font-size: var(--t-sm);
+}
+
+.marco-alumno__columna {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* La cabecera del móvil: en escritorio la marca vive en el carril, y esta no se pinta. */
+.marco-alumno__cabecera {
+  display: none;
+  align-items: center;
+  gap: var(--s3);
+  padding: var(--s3) var(--s4);
+  background: var(--hoja);
+  border-bottom: 1px solid var(--linea);
+}
+
+.marco-alumno__contenido {
+  flex: 1;
+  min-width: 0;
+  padding: var(--s6) clamp(var(--s4), 3vw, var(--s6)) var(--s7);
+}
+
+/* El contenido se alinea a la izquierda con un ancho máximo: es una pantalla de trabajo, no una
+   portada centrada. */
+.marco-alumno__lienzo {
+  max-width: var(--ancho-contenido);
+}
+
+.barra-inferior {
+  display: none;
+}
+
+.pagina__cabecera {
+  margin-bottom: var(--s5);
+}
+
+.pagina__titulo {
+  margin: 0 0 var(--s2);
+  font-size: var(--t-portada);
+  line-height: 1.15;
+}
+
+.pagina__entrada {
+  margin: 0;
+  color: var(--tinta-suave);
+  max-width: var(--medida-texto);
+}
+
+.pagina__cabecera p.tema__bloque {
+  margin: 0 0 var(--s2);
+  color: var(--tinta-suave);
+  font-size: var(--t-sm);
+}
+
+/* --- Las secciones de Inicio ---------------------------------------------------------- */
+
+.bloque {
+  border-top: 1px solid var(--linea);
+  padding-top: var(--s5);
+  margin-bottom: var(--s6);
+}
+
+.bloque__titulo {
+  margin: 0 0 var(--s3);
+  font-size: var(--t-titulo);
+}
+
+.bloque__texto {
+  margin: 0 0 var(--s3);
+  max-width: var(--medida-texto);
+}
+
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+  margin: 0;
+}
+
+.barras {
+  list-style: none;
+  margin: 0 0 var(--s4);
+  padding: 0;
+  display: grid;
+  gap: var(--s3);
+  max-width: var(--medida-texto);
+}
+
+.barras__fila,
+.barras--bloque {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--s3);
+}
+
+.barras__numeral {
+  font-weight: 700;
+  font-size: var(--t-enunciado);
+  color: var(--tinta-suave);
+  min-width: 2rem;
+}
+
+.barras__titulo {
+  min-width: 0;
+}
+
+.barras__barra {
+  display: block;
+  height: 4px;
+  background: var(--linea);
+  border-radius: var(--radio-pildora);
+  overflow: hidden;
+  min-width: 4rem;
+}
+
+.barras__relleno {
+  display: block;
+  height: 100%;
+  background: var(--azul);
+}
+
+.barras__cifra {
+  font-variant-numeric: tabular-nums;
+  color: var(--tinta-suave);
+  white-space: nowrap;
+}
+
+.barras__sin-datos {
+  color: var(--tinta-suave);
+  font-size: var(--t-sm);
+}
+
+/* --- Listas de temas y de tests ------------------------------------------------------- */
+
+.lista-temas,
+.lista-tests {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-width: var(--medida-texto);
+}
+
+.lista-temas__fila,
+.lista-tests__fila {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--s2) var(--s3);
+  padding: var(--s3) 0;
+  border-bottom: 1px solid var(--linea-suave);
+}
+
+.lista-temas__enlace,
+.lista-tests__enlace {
+  color: var(--tinta);
+  text-decoration: none;
+}
+
+.lista-temas__enlace:hover,
+.lista-tests__enlace:hover {
+  text-decoration: underline;
+}
+
+.lista-temas__codigo {
+  font-weight: 700;
+  color: var(--azul);
+  margin-right: var(--s2);
+}
+
+.lista-tests__cifra {
+  margin-left: auto;
+  color: var(--tinta-suave);
+  font-size: var(--t-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+/* La marca del material: borrador o versión generada. Es una etiqueta pequeña, no un aviso. */
+.marca {
+  display: inline-block;
+  border: 1px solid var(--linea);
+  border-radius: var(--radio-etiqueta);
+  padding: 0 var(--s2);
+  font-size: var(--t-sm);
+  color: var(--tinta-suave);
+  white-space: nowrap;
+}
+
+.marca--borrador {
+  border-color: var(--dudosa);
+  color: var(--dudosa);
+  background: var(--dudosa-suave);
+}
+
+.marca--vacia {
+  border-style: dashed;
+}
+
+/* --- El temario ----------------------------------------------------------------------- */
+
+.buscador {
+  margin-bottom: var(--s5);
+}
+
+.buscador__etiqueta {
+  display: block;
+  margin-bottom: var(--s1);
+  color: var(--tinta-suave);
+  font-size: var(--t-sm);
+}
+
+.buscador__campo {
+  width: 100%;
+  max-width: 24rem;
+  min-height: var(--objetivo-tactil);
+  padding: 0 var(--s3);
+  font: inherit;
+  color: var(--tinta);
+  background: var(--hoja);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio-sm);
+}
+
+.temario {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.temario__bloque {
+  display: grid;
+  grid-template-columns: 3rem minmax(0, 1fr);
+  gap: var(--s4);
+  padding: var(--s5) 0;
+  border-top: 1px solid var(--linea);
+}
+
+.temario__romano {
+  margin: 0;
+  font-size: var(--t-titulo);
+  font-weight: 700;
+  color: var(--tinta-suave);
+  font-variant-numeric: tabular-nums;
+}
+
+.temario__titulo-bloque {
+  margin: 0 0 var(--s4);
+  font-size: var(--t-enunciado);
+}
+
+.temario__temas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.tema-fila {
+  padding: var(--s4) 0;
+  border-top: 1px solid var(--linea-suave);
+}
+
+.tema-fila:first-child {
+  border-top: none;
+}
+
+.tema-fila__titulo {
+  margin: 0 0 var(--s2);
+  max-width: var(--medida-texto);
+  overflow-wrap: anywhere;
+}
+
+.tema-fila__codigo {
+  font-weight: 700;
+  color: var(--azul);
+  font-variant-numeric: tabular-nums;
+}
+
+.tema-fila__datos {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s2) var(--s3);
+  margin: 0 0 var(--s3);
+  color: var(--tinta-suave);
+  font-size: var(--t-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.tema-fila__cifra {
+  font-weight: 700;
+  color: var(--tinta);
+}
+
+.tema-fila__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+  margin: 0;
+  align-items: center;
+}
+
+.tema-fila__sin-apuntes,
+.tema-fila__sin-datos {
+  color: var(--tinta-suave);
+  font-size: var(--t-sm);
+}
+
+/* --- Las pestañas del tema ------------------------------------------------------------ */
+
+.pestanas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s5);
+  border-bottom: 1px solid var(--linea);
+  margin-bottom: var(--s5);
+}
+
+.pestanas__pestana {
+  padding: 0 0 var(--s3);
+  border-bottom: 2px solid transparent;
+  color: var(--tinta-suave);
+  text-decoration: none;
+  font-size: var(--t-sm);
+}
+
+.pestanas__pestana:hover {
+  color: var(--tinta);
+}
+
+.pestanas__pestana--activa {
+  color: var(--azul);
+  border-bottom-color: var(--azul);
+  font-weight: 700;
+}
+
+.tema__estado {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s3);
+  margin: var(--s3) 0 0;
+}
+
+.tema__preguntas {
+  color: var(--tinta-suave);
+  font-size: var(--t-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.tema__codigo {
+  color: var(--tinta-suave);
+}
+
+/* --- La lectura de los apuntes: tres columnas ----------------------------------------- */
+
+.apuntes {
+  display: grid;
+  grid-template-columns: minmax(12rem, 14rem) minmax(0, 1fr);
+  gap: var(--s6);
+  align-items: start;
+  /* Las palabras largas que no se pueden partir con un espacio —«fallecimiento/incapacidad/…»,
+     un `HKEY_LOCAL_MACHINE\...`, una URL— se parten antes de desbordar la columna. `anywhere`
+     (y no `break-word`) porque además reduce el ancho **mínimo** del bloque: es lo que hace que la
+     pantalla no se desplace en horizontal en el móvil. */
+  overflow-wrap: anywhere;
+}
+
+.apuntes__indice {
+  position: sticky;
+  top: var(--s5);
+  background: var(--hoja);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  padding: var(--s4);
+}
+
+.apuntes__indice-titulo {
+  margin: 0 0 var(--s3);
+  padding-bottom: var(--s3);
+  border-bottom: 1px solid var(--linea);
+  font-size: var(--t-sm);
+}
+
+.apuntes__indice-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--s1);
+}
+
+.apuntes__indice-enlace {
+  display: block;
+  padding: var(--s1) var(--s2);
+  border-left: 2px solid transparent;
+  border-radius: var(--radio-sm);
+  color: var(--tinta-suave);
+  text-decoration: none;
+  font-size: var(--t-sm);
+  line-height: 1.35;
+}
+
+.apuntes__indice-enlace:hover {
+  background: var(--papel);
+  color: var(--tinta);
+}
+
+.apuntes__indice-enlace:focus-visible {
+  outline: var(--foco);
+  outline-offset: var(--foco-separacion);
+}
+
+.apuntes__lectura {
+  background: var(--hoja);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  padding: var(--s5) var(--s6) var(--s6);
+}
+
+/* Cada apartado es su propia rejilla: el texto a la izquierda y su nota al margen a la derecha, de
+   modo que la nota cae **a la altura de su párrafo** y en el móvil justo debajo. */
+.apartado {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 15rem;
+  gap: var(--s4) var(--s5);
+  padding-top: var(--s5);
+  margin-top: var(--s5);
+  border-top: 1px solid var(--linea-suave);
+}
+
+.apartado:first-child {
+  border-top: none;
+  margin-top: 0;
+  padding-top: 0;
+}
+
+.apartado__titulo {
+  grid-column: 1;
+  margin: 0;
+  font-size: var(--t-titulo);
+}
+
+.apartado__numero {
+  color: var(--tinta-suave);
+  font-variant-numeric: tabular-nums;
+}
+
+.apartado__cuerpo {
+  grid-column: 1;
+  max-width: var(--medida-apuntes);
+  font-family: var(--fuente-apuntes);
+  font-size: var(--t-apuntes);
+  line-height: var(--lh-apuntes);
+}
+
+.apartado__lateral {
+  grid-column: 2;
+  grid-row: 2 / span 2;
+  display: grid;
+  gap: var(--s4);
+  align-content: start;
+}
+
+.apuntes__prosa p {
+  margin: 0 0 var(--s4);
+}
+
+.apuntes__epigrafe {
+  margin: var(--s5) 0 var(--s3);
+  font-family: var(--fuente-interfaz);
+  font-size: var(--t-enunciado);
+}
+
+.apuntes__lista {
+  margin: 0 0 var(--s4) var(--s5);
+  padding: 0;
+}
+
+.apuntes__lista li {
+  margin-bottom: var(--s1);
+}
+
+.apuntes__cita {
+  margin: 0 0 var(--s4);
+  padding-left: var(--s4);
+  border-left: 2px solid var(--linea);
+  color: var(--tinta-suave);
+}
+
+/* Las tablas de los apuntes: cabecera con línea de 1px y filas separadas, sin cebra. **Caben** en el
+   móvil: las celdas parten las palabras largas (`overflow-wrap: anywhere` reduce el ancho mínimo de
+   la tabla), así que no hace falta una región que se desplace en horizontal —que sería inalcanzable
+   con el teclado sin añadir un `tabindex` a un elemento no interactivo—. */
+.apuntes__tabla-marco {
+  margin: 0 0 var(--s5);
+}
+
+.apuntes__tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--fuente-interfaz);
+  font-size: var(--t-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.apuntes__tabla th,
+.apuntes__tabla td {
+  text-align: left;
+  vertical-align: top;
+  padding: var(--s2) var(--s3);
+  border-bottom: 1px solid var(--linea-suave);
+  overflow-wrap: anywhere;
+}
+
+.apuntes__tabla thead th {
+  color: var(--tinta-suave);
+  font-weight: 700;
+  border-bottom: 1px solid var(--linea);
+}
+
+.apuntes__tabla code,
+.apuntes__prosa code {
+  font-family: var(--fuente-codigo);
+  font-size: 0.95em;
+}
+
+/* La nota al margen: un filo azul, sin caja de color, como el diseño. */
+.nota-margen {
+  border-left: 2px solid var(--azul);
+  padding-left: var(--s3);
+}
+
+.nota-margen__rotulo {
+  margin: 0 0 var(--s1);
+  color: var(--azul);
+  font-family: var(--fuente-interfaz);
+  font-size: var(--t-sm);
+  font-weight: 700;
+}
+
+.nota-margen__texto {
+  margin: 0;
+  color: var(--tinta-suave);
+  font-family: var(--fuente-apuntes);
+  font-size: var(--t-cuerpo);
+  line-height: var(--lh-cuerpo);
+}
+
+/* --- El aviso «esto está mal» --------------------------------------------------------- */
+
+.apartado__aviso {
+  margin: 0;
+}
+
+.aviso-form {
+  display: grid;
+  gap: var(--s2);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  padding: var(--s3);
+  background: var(--papel);
+}
+
+.aviso-form__etiqueta {
+  font-size: var(--t-sm);
+  color: var(--tinta-suave);
+}
+
+.aviso-form__campo {
+  width: 100%;
+  min-height: var(--objetivo-tactil);
+  padding: 0 var(--s3);
+  font: inherit;
+  color: var(--tinta);
+  background: var(--hoja);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio-sm);
+}
+
+.aviso-form__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+}
+
+.aviso-form__error {
+  margin: 0;
+  color: var(--fallo);
+  font-size: var(--t-sm);
+}
+
+.aviso-enviado {
+  margin: 0;
+  color: var(--acierto);
+  font-size: var(--t-sm);
+}
+
+/* --- El móvil (390 px): barra inferior y todo a una columna ---------------------------- */
+
+@media (max-width: 1023px) {
+  .carril {
+    display: none;
+  }
+
+  .marco-alumno__cabecera {
+    display: flex;
+  }
+
+  .marco-alumno__contenido {
+    padding-bottom: calc(var(--alto-barra-inferior) + var(--s5));
+  }
+
+  .barra-inferior {
+    display: block;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 20;
+    background: var(--hoja);
+    border-top: 1px solid var(--linea);
+  }
+
+  .barra-inferior__lista {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  .barra-inferior__enlace {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--s1);
+    min-height: var(--alto-barra-inferior);
+    color: var(--tinta-suave);
+    text-decoration: none;
+    font-size: var(--t-sm);
+  }
+
+  .barra-inferior__enlace--activo {
+    color: var(--azul);
+    font-weight: 700;
+  }
+
+  .apuntes {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--s4);
+  }
+
+  .apuntes__indice {
+    position: static;
+  }
+
+  .apuntes__lectura {
+    padding: var(--s4) var(--s4) var(--s5);
+  }
+
+  /* La nota al margen cae debajo de su párrafo, que es lo que pide el diseño en el móvil. */
+  .apartado {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .apartado__lateral {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .temario__bloque {
+    grid-template-columns: 2rem minmax(0, 1fr);
+    gap: var(--s2);
   }
 }

@@ -21,9 +21,10 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from opofuente.api.study_schemas import SessionModeName, SessionStatusName
+from opofuente.domain.notes_reports import MAX_REASON_CHARS, normalise_reason
 
 #: Cómo se corrige un test: al momento o al final. Es el vocabulario del dominio, no uno nuevo.
 StudentFeedbackName = Literal["immediate", "at_end"]
@@ -40,6 +41,12 @@ StudentOutcomeName = Literal["correct", "wrong", "blank"]
 #: Las variantes del simulacro y el bloque de su supuesto.
 StudentMockVariantName = Literal["full", "short"]
 StudentCaseBlockName = Literal["III", "IV"]
+
+#: Cómo están los apuntes de un tema, tal como se le cuenta al alumno.
+StudentNotesStateName = Literal["published", "draft", "none"]
+
+#: En qué punto está un aviso del alumno sobre los apuntes.
+StudentReportStatusName = Literal["open", "reviewed", "dismissed"]
 
 
 class StudentOppositionSchema(BaseModel):
@@ -92,7 +99,8 @@ class StudentTopicProgressSchema(BaseModel):
     """Un tema con lo que tiene y lo que se ha hecho en él.
 
     `accuracy` es `None` cuando no hay nada corregido todavía: un tema sin tocar no está
-    suspendido.
+    suspendido. `notes_state` es lo que permite pintar en el temario si sus apuntes están
+    publicados, en borrador o sin escribir.
     """
 
     code: str
@@ -103,6 +111,7 @@ class StudentTopicProgressSchema(BaseModel):
     correct: int = Field(ge=0)
     accuracy: float | None = Field(default=None, ge=0, le=1)
     due_reviews: int = Field(default=0, ge=0)
+    notes_state: StudentNotesStateName = "none"
 
 
 class StudentBlockProgressSchema(BaseModel):
@@ -283,3 +292,74 @@ class StudentAnswerRequestSchema(BaseModel):
     chosen: list[str] = Field(default_factory=list)
     elapsed_ms: int = Field(default=0, ge=0)
     confidence: StudentConfidenceName | None = None
+
+
+# --- los apuntes del tema: leerlos y avisar de un error (F13) -------------------------------------
+
+
+class StudentNoteSectionSchema(BaseModel):
+    """Un apartado de los apuntes, con su sitio en el índice y su dirección en la página.
+
+    `anchor` es lo que convierte el índice en navegable: el enlace del índice lleva al párrafo y el
+    aviso del alumno apunta a él. `questions_covered` es el dato que acompaña al párrafo («N
+    preguntas de este tema se contestan aquí»), y es un recuento real de las comprobaciones del
+    tema, no una afirmación sobre exámenes.
+    """
+
+    number: int = Field(ge=1)
+    key: str
+    title: str
+    epigraph_code: str
+    anchor: str = Field(min_length=1)
+    body_markdown: str
+    questions_covered: int = Field(ge=0)
+
+
+class StudentNotesSchema(BaseModel):
+    """Los apuntes de un tema: cómo están y sus apartados en orden de lectura.
+
+    Un tema en `draft` se sirve **igual** que uno en `published`: la marca distingue uno de otro y
+    el alumno puede leer los dos. Un tema en `none` no trae apartados, y eso no es un error.
+    """
+
+    code: str
+    state: StudentNotesStateName
+    generated_at: datetime | None = None
+    sections: list[StudentNoteSectionSchema]
+
+
+class StudentReportRequestSchema(BaseModel):
+    """Lo que manda la pantalla cuando el alumno marca «esto está mal» en un apartado.
+
+    El motivo es **una línea** y es obligatorio: se recorta, no puede quedar vacío y tiene su tope
+    (`MAX_REASON_CHARS`). El apartado se manda por su clave, no por su anclaje: el anclaje lo pone
+    el servidor a partir del apartado que existe hoy.
+    """
+
+    section_key: str = Field(min_length=1, max_length=200)
+    reason: str = Field(min_length=1)
+
+    @field_validator("reason")
+    @classmethod
+    def _motivo_en_una_linea(cls, valor: str) -> str:
+        """El motivo, tal como se guarda. Un texto que no vale sale como 422 con su campo.
+
+        La regla vive en el dominio (`normalise_reason`) y aquí solo se traduce a la validación del
+        contrato: así la pantalla recibe `field_errors` con el motivo del rechazo en lugar de un
+        500 por un texto que nadie puede arreglar.
+        """
+        try:
+            return normalise_reason(valor)
+        except ValueError as error:
+            raise ValueError(str(error)) from error
+
+
+class StudentReportSchema(BaseModel):
+    """El aviso ya guardado: dónde, qué se escribió y cuándo."""
+
+    section_key: str
+    reason: str = Field(
+        description=f"El motivo, en una línea (máximo {MAX_REASON_CHARS} caracteres)."
+    )
+    status: StudentReportStatusName
+    created_at: datetime

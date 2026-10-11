@@ -46,19 +46,16 @@ function stubPanel(extra: Record<string, StubbedRoute> = {}) {
   });
 }
 
-/** Lo que lee Inicio: los tests, lo que fallaste y tu progreso. */
+/** Lo que lee Inicio desde F13: el resumen del alumno (sin tests, sin fallos y sin progreso). */
 function stubInicio(extra: Record<string, StubbedRoute> = {}) {
   return stubPanel({
-    '/api/v1/study-sessions': {
-      body: { sessions: [], total: 0, limit: 50, offset: 0 },
-    },
-    '/api/v1/reviews/mastery': {
+    '/api/v1/student/overview': {
       body: {
-        opposition_id: 'opp-tai',
-        nodes_total: 33,
-        nodes_with_estimate: 0,
-        nodes: [],
-        note: 'Sin intentos no hay nada que estimar.',
+        opposition: { code: 'tai-age', name: 'Cuerpo de Técnicos Auxiliares de Informática' },
+        in_progress: null,
+        due_reviews: 0,
+        blocks: [],
+        recent_tests: [],
       },
     },
     ...extra,

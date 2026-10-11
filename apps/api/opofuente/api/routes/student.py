@@ -1,18 +1,19 @@
 """Rutas de la zona del alumno (F2, `08_API-CONTRACT` §10 ampliado).
 
-Cuatro rutas de **lectura** y cinco de **test**, y ninguna más. Lo que devuelven lo declaran
+Cinco rutas de **lectura** y seis de **escritura**, y ninguna más. Lo que devuelven lo declaran
 `student_schemas.py`, que no tiene campo para la evidencia, el conjunto, la clave, la versión ni la
 ruta.
 
 Lo que **no** está aquí todavía, y por qué:
 
-- `GET /student/topics/{codigo}/notes`: los apuntes redactados ya existen (`topic_note_sections` y
-  `question_note_anchors`, pasos B-E del plan de apuntes) y viajan dentro de la versión del tema,
-  que es lo que sirve la ficha del programa. Lo que falta es la **pantalla de lectura** del alumno
-  (capítulos por epígrafe, índice, buscador y «Ver en apuntes» al párrafo): es el paso 5 del plan y
-  necesita su propio contrato, sin identificadores ni rutas de la trastienda.
 - `GET /student/official-exams`: los exámenes oficiales del INAP necesitan su importación (D10 del
   objetivo) antes de poder listarse con su nota; listarlos hoy sería listar conjuntos internos.
+
+Los **apuntes del tema** sí están desde F13: `GET /student/topics/{codigo}/notes` sirve el texto con
+su estado (publicado, borrador o sin escribir) y **sin** ningún identificador de pregunta —lo que
+viaja es el recuento de preguntas que contesta cada apartado—, y `POST
+/student/topics/{codigo}/reports` guarda el aviso «esto está mal» por la ruta auditada (decisión
+D2).
 
 El test en curso **sí** está: `POST /student/tests` y `POST /student/mock-exams` montan la sesión
 por la composición declarada de `StudyService` (`compose`), y las cuatro rutas de
@@ -25,19 +26,23 @@ from __future__ import annotations
 from fastapi import APIRouter, Path, status
 
 from opofuente.api.deps import StudentServiceDep
-from opofuente.api.error_responses import RESOURCE_ERRORS
+from opofuente.api.error_responses import RESOURCE_ERRORS, WRITE_ERRORS
 from opofuente.api.student_schemas import (
     StudentAnswerRequestSchema,
     StudentBlockProgressSchema,
     StudentCorrectionSchema,
     StudentEpigraphSchema,
     StudentMockExamRequestSchema,
+    StudentNoteSectionSchema,
+    StudentNotesSchema,
     StudentOppositionSchema,
     StudentOptionSchema,
     StudentOverviewSchema,
     StudentPartScoreSchema,
     StudentProgressSchema,
     StudentQuestionSchema,
+    StudentReportRequestSchema,
+    StudentReportSchema,
     StudentResultSchema,
     StudentRunSchema,
     StudentScoreSchema,
@@ -52,11 +57,13 @@ from opofuente.application.student_models import (
     StudentAnswerRequest,
     StudentBlockProgressView,
     StudentMockExamRequest,
+    StudentNotesView,
     StudentOppositionView,
     StudentOverviewView,
     StudentPartScoreView,
     StudentProgressView,
     StudentQuestionView,
+    StudentReportView,
     StudentResultView,
     StudentRunView,
     StudentScoreView,
@@ -174,6 +181,36 @@ def _topic_progress(view: StudentTopicProgressView) -> StudentTopicProgressSchem
         correct=view.correct,
         accuracy=view.accuracy,
         due_reviews=view.due_reviews,
+        notes_state=view.notes_state,  # type: ignore[arg-type]
+    )
+
+
+def _notes(view: StudentNotesView) -> StudentNotesSchema:
+    return StudentNotesSchema(
+        code=view.code,
+        state=view.state,  # type: ignore[arg-type]
+        generated_at=view.generated_at,
+        sections=[
+            StudentNoteSectionSchema(
+                number=apartado.number,
+                key=apartado.key,
+                title=apartado.title,
+                epigraph_code=apartado.epigraph_code,
+                anchor=apartado.anchor,
+                body_markdown=apartado.body_markdown,
+                questions_covered=apartado.questions_covered,
+            )
+            for apartado in view.sections
+        ],
+    )
+
+
+def _report(view: StudentReportView) -> StudentReportSchema:
+    return StudentReportSchema(
+        section_key=view.section_key,
+        reason=view.reason,
+        status=view.status,  # type: ignore[arg-type]
+        created_at=view.created_at,
     )
 
 
@@ -262,6 +299,50 @@ def student_topic(
         ],
         progress=None if view.progress is None else _topic_progress(view.progress),
     )
+
+
+@router.get(
+    "/topics/{codigo}/notes",
+    response_model=StudentNotesSchema,
+    responses=RESOURCE_ERRORS,
+    summary="Los apuntes de un tema: su texto en orden de lectura y si están en borrador",
+)
+def student_topic_notes(
+    service: StudentServiceDep,
+    codigo: str = Path(
+        description="Código legible del tema, como `IV.10` (también se acepta `IV-10`).",
+        examples=["IV.10"],
+    ),
+) -> StudentNotesSchema:
+    """Los apuntes del tema, tal como se leen.
+
+    Un tema **en borrador se sirve igual** que uno publicado: el estado viaja con el texto
+    (`draft`) y la pantalla lo dice. No se esconden apuntes por no haber pasado una puerta —para eso
+    está la marca— y un tema sin apuntes devuelve su estado y una lista vacía, no un 404: el tema
+    existe y lo que falta es el texto.
+    """
+    return _notes(service.notes(codigo))
+
+
+@router.post(
+    "/topics/{codigo}/reports",
+    response_model=StudentReportSchema,
+    status_code=status.HTTP_201_CREATED,
+    responses=WRITE_ERRORS,
+    summary="Avisa de que un apartado de los apuntes está mal («esto está mal»)",
+)
+def student_report_notes(
+    service: StudentServiceDep,
+    request: StudentReportRequestSchema,
+    codigo: str = Path(description="Código legible del tema, como `IV.10`.", examples=["IV.10"]),
+) -> StudentReportSchema:
+    """Guarda el aviso del alumno sobre un apartado de los apuntes (decisión D2).
+
+    No es un registro de pantalla: entra en `notes_reports` y **en la auditoría**, en la misma
+    transacción, y es lo que el propietario verá en su bandeja. El motivo es obligatorio y de una
+    línea; el apartado se identifica por su clave y el anclaje lo pone el servidor.
+    """
+    return _report(service.report(codigo, request.section_key, request.reason))
 
 
 @router.get(

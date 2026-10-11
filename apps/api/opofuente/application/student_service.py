@@ -19,6 +19,7 @@ conjunto de origen: el nombre del banco del propietario es justo lo que no puede
 from __future__ import annotations
 
 import re
+from collections.abc import Mapping
 from dataclasses import dataclass
 
 from opofuente.application.ports import Clock
@@ -33,12 +34,15 @@ from opofuente.application.student_models import (
     StudentCorrectionView,
     StudentEpigraphView,
     StudentMockExamRequest,
+    StudentNoteSectionView,
+    StudentNotesView,
     StudentOppositionView,
     StudentOptionView,
     StudentOverviewView,
     StudentPartScoreView,
     StudentProgressView,
     StudentQuestionView,
+    StudentReportView,
     StudentResultView,
     StudentRunView,
     StudentScoreView,
@@ -63,10 +67,14 @@ from opofuente.application.study_service import (
 )
 from opofuente.config import Settings
 from opofuente.domain.errors import NotFoundError, UnsupportedError
+from opofuente.domain.notes_reports import normalise_reason
 from opofuente.domain.profiles import NodeType
 from opofuente.domain.study import OWNER_ID_LOCAL, Confidence, Feedback, SessionMode, SessionStatus
+from opofuente.domain.topic_notes import NoteSection, NotesState
+from opofuente.infrastructure.notes_report_repository import SqlAlchemyNotesReportRepository
 from opofuente.infrastructure.profile_repository import SqlAlchemyProfileRepository
 from opofuente.infrastructure.student_repository import SqlAlchemyStudentRepository
+from opofuente.infrastructure.topic_notes_repository import SqlAlchemyTopicNotesRepository
 
 #: Cuántas sesiones se miran para decidir qué está «a medias» y qué entra en el historial. Es una
 #: ventana, no un listado: la pantalla enseña una tarjeta y cinco filas.
@@ -166,6 +174,8 @@ class StudentService:
         student: SqlAlchemyStudentRepository,
         study: StudyService,
         clock: Clock,
+        notes: SqlAlchemyTopicNotesRepository,
+        reports: SqlAlchemyNotesReportRepository,
         owner_id: str = OWNER_ID_LOCAL,
     ) -> None:
         self._settings = settings
@@ -173,6 +183,8 @@ class StudentService:
         self._student = student
         self._study = study
         self._clock = clock
+        self._notes = notes
+        self._reports = reports
         self._owner_id = owner_id
 
     @property
@@ -240,6 +252,7 @@ class StudentService:
         curriculum = self._curriculum(oposicion)
         buscado = _normalizar_codigo(codigo)
         cifras = self._agregado(oposicion).cifras
+        estados = self._student.notes_states()
         for bloque in curriculum:
             if bloque.node_type is not NodeType.BLOCK:
                 continue
@@ -258,7 +271,9 @@ class StudentService:
                         StudentEpigraphView(code=hijo.path, title=hijo.title)
                         for hijo in tema.children
                     ),
-                    progress=self._progreso_del_tema(tema.path, tema.title, datos),
+                    progress=self._progreso_del_tema(
+                        tema.path, tema.title, datos, self._estado_de(estados, tema.id)
+                    ),
                 )
         raise NotFoundError("tema del programa", buscado)
 
@@ -274,6 +289,79 @@ class StudentService:
                 self._sesion(vista) for vista in self._sesiones(oposicion.id) if vista.is_finished
             )[:HISTORY_LIMIT],
         )
+
+    # ------------------------------------------------------- los apuntes: leerlos y avisar
+
+    def notes(self, codigo: str) -> StudentNotesView:
+        """Los apuntes de un tema, para la pantalla de lectura.
+
+        Un tema **en borrador se sirve igual** que uno publicado: la decisión D2 es que el alumno
+        pueda leerlo y que se le diga que está en revisión, no que se le esconda. Lo único que
+        cambia es el estado que viaja con el texto, y la pantalla lo pinta.
+
+        Un tema sin apuntes tampoco es un error: devuelve su estado (`none`) y una lista vacía. El
+        tema existe —si no, `_nodo_por_codigo` habría lanzado el 404— y lo que falta es el texto.
+        """
+        oposicion = self._opposition()
+        node_id = self._nodo_por_codigo(oposicion, codigo)
+        apartados = self._notes.notes_for_node(node_id)
+        return StudentNotesView(
+            code=_normalizar_codigo(codigo),
+            state=self._estado_de(self._student.notes_states(), node_id),
+            generated_at=None if apartados is None else apartados.generated_at,
+            sections=(
+                ()
+                if apartados is None
+                else tuple(
+                    StudentNoteSectionView(
+                        key=apartado.key,
+                        number=numero,
+                        title=apartado.title,
+                        epigraph_code=apartado.epigraph_code,
+                        anchor=apartado.anchor,
+                        body_markdown=apartado.body_markdown,
+                        questions_covered=apartado.covered,
+                    )
+                    for numero, apartado in enumerate(apartados.sections, start=1)
+                )
+            ),
+        )
+
+    def report(self, codigo: str, section_key: str, reason: str) -> StudentReportView:
+        """Guarda el aviso del alumno sobre un apartado, por la ruta auditada (D2).
+
+        El anclaje lo pone el **servidor**, no la petición: se busca el apartado por su clave en los
+        apuntes del tema y se guarda el anclaje que ese apartado tiene hoy. Si la pantalla mandara
+        la dirección, un cliente podría escribir un aviso apuntando a un párrafo que no es el suyo.
+        """
+        oposicion = self._opposition()
+        node_id = self._nodo_por_codigo(oposicion, codigo)
+        apartado = self._apartado(node_id, section_key)
+        aviso = self._reports.save(
+            node_id=node_id,
+            owner_id=self._owner_id,
+            section_key=apartado.key,
+            anchor=apartado.anchor,
+            reason=normalise_reason(reason),
+            now=self._clock.now(),
+        )
+        return StudentReportView(
+            section_key=aviso.section_key,
+            reason=aviso.reason,
+            status=aviso.status.value,
+            created_at=aviso.created_at,
+        )
+
+    def _apartado(self, node_id: str, section_key: str) -> NoteSection:
+        """El apartado de ese tema, por su clave.
+
+        Si no está, no existe: un 404 antes que guardar un aviso huérfano apuntando a un párrafo que
+        este tema no tiene.
+        """
+        for apartado in self._notes.sections(node_id):
+            if apartado.key == section_key:
+                return apartado
+        raise NotFoundError("apartado de los apuntes del tema", section_key)
 
     # ------------------------------------------------------------------ ayudas de lectura
 
@@ -293,6 +381,7 @@ class StudentService:
         pueden divergir, que es exactamente lo que aquel arreglo vino a quitar.
         """
         cifras = agregado.cifras
+        estados = self._student.notes_states()
         bloques: list[StudentBlockProgressView] = []
         for bloque in self._curriculum(oposicion):
             if bloque.node_type is not NodeType.BLOCK:
@@ -301,7 +390,11 @@ class StudentService:
             total = self._de(bloque, cifras)
             for tema in bloque.children:
                 datos_tema = self._de(tema, cifras)
-                temas.append(self._progreso_del_tema(tema.path, tema.title, datos_tema))
+                temas.append(
+                    self._progreso_del_tema(
+                        tema.path, tema.title, datos_tema, self._estado_de(estados, tema.id)
+                    )
+                )
                 total = total + datos_tema
             bloques.append(
                 StudentBlockProgressView(
@@ -355,7 +448,18 @@ class StudentService:
         return cifras.get(nodo.id, _Cifras())
 
     @staticmethod
-    def _progreso_del_tema(codigo: str, titulo: str, datos: _Cifras) -> StudentTopicProgressView:
+    def _estado_de(estados: Mapping[str, NotesState], node_id: str) -> str:
+        """El estado de los apuntes de un nodo: el que traiga el mapa o «sin apuntes».
+
+        El mapa solo trae los temas con apartados escritos (son tres de treinta y tres), así que lo
+        que no está se dice con su valor por defecto en lugar de con un cero por tema.
+        """
+        return estados.get(node_id, NotesState.NONE).value
+
+    @staticmethod
+    def _progreso_del_tema(
+        codigo: str, titulo: str, datos: _Cifras, notes_state: str
+    ) -> StudentTopicProgressView:
         return StudentTopicProgressView(
             code=codigo,
             number=_numero_de(codigo),
@@ -365,6 +469,7 @@ class StudentService:
             correct=datos.correct,
             accuracy=datos.accuracy,
             due_reviews=datos.due,
+            notes_state=notes_state,
         )
 
     def _mas_flojos(

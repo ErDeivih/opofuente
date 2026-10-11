@@ -23,6 +23,7 @@ from opofuente.application.ingestion_service import IngestionService
 from opofuente.application.intake_service import IntakeService
 from opofuente.application.job_service import JobService
 from opofuente.application.library_service import LibraryService
+from opofuente.application.notes_report_service import NotesReportsService
 from opofuente.application.profiles_service import ProfilesService
 from opofuente.application.question_service import QuestionService
 from opofuente.application.readiness_service import ReadinessService
@@ -150,6 +151,12 @@ def get_student_service(request: Request) -> StudentService:
     return service
 
 
+def get_notes_reports_service(request: Request) -> NotesReportsService:
+    """La bandeja de avisos del alumno, que es del propietario: la lee el panel."""
+    service: NotesReportsService = request.app.state.notes_reports_service
+    return service
+
+
 #: Dependencias anotadas (estilo moderno de FastAPI: sin llamadas en valores por defecto).
 AppSettingsDep = Annotated[Settings, Depends(get_app_settings)]
 SystemServiceDep = Annotated[SystemService, Depends(get_system_service)]
@@ -174,3 +181,4 @@ HousekeepingServiceDep = Annotated[HousekeepingService, Depends(get_housekeeping
 DiagnosticServiceDep = Annotated[DiagnosticService, Depends(get_diagnostic_service)]
 ReadinessServiceDep = Annotated[ReadinessService, Depends(get_readiness_service)]
 StudentServiceDep = Annotated[StudentService, Depends(get_student_service)]
+NotesReportsServiceDep = Annotated[NotesReportsService, Depends(get_notes_reports_service)]

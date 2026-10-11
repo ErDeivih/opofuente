@@ -6802,6 +6802,108 @@
         "title": "NodeType",
         "type": "string"
       },
+      "NoteReportListSchema": {
+        "description": "Los avisos y cuántos siguen sin despachar.\n\nEl recuento va aparte de la lista aunque se pueda contar de ella: la lista viene filtrada y\nlimitada (por estado y por tema), y el número que el propietario necesita ver es el de\npendientes de verdad, no el de la página que está mirando.",
+        "properties": {
+          "pending": {
+            "description": "Avisos en estado `open`, con independencia del filtro.",
+            "minimum": 0.0,
+            "title": "Pending",
+            "type": "integer"
+          },
+          "reports": {
+            "items": {
+              "$ref": "#/components/schemas/NoteReportSchema"
+            },
+            "title": "Reports",
+            "type": "array"
+          }
+        },
+        "required": [
+          "pending",
+          "reports"
+        ],
+        "title": "NoteReportListSchema",
+        "type": "object"
+      },
+      "NoteReportSchema": {
+        "description": "Un aviso del alumno: qué apartado, qué dice y cuándo llegó.\n\n`section_title` es `None` cuando el apartado ya no existe —los apuntes se reescriben—: el aviso\nse sigue enseñando, y ese hueco es justo lo que hay que mirar.",
+        "properties": {
+          "anchor": {
+            "title": "Anchor",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "reviewed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewed At"
+          },
+          "section_key": {
+            "title": "Section Key",
+            "type": "string"
+          },
+          "section_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Section Title"
+          },
+          "status": {
+            "enum": [
+              "open",
+              "reviewed",
+              "dismissed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "topic_code": {
+            "title": "Topic Code",
+            "type": "string"
+          },
+          "topic_title": {
+            "title": "Topic Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "topic_code",
+          "topic_title",
+          "section_key",
+          "anchor",
+          "reason",
+          "status",
+          "created_at"
+        ],
+        "title": "NoteReportSchema",
+        "type": "object"
+      },
       "OcrSettingsSchema": {
         "properties": {
           "tesseract_available": {
@@ -11725,6 +11827,97 @@
         "title": "StudentMockExamRequestSchema",
         "type": "object"
       },
+      "StudentNoteSectionSchema": {
+        "description": "Un apartado de los apuntes, con su sitio en el índice y su dirección en la página.\n\n`anchor` es lo que convierte el índice en navegable: el enlace del índice lleva al párrafo y el\naviso del alumno apunta a él. `questions_covered` es el dato que acompaña al párrafo («N\npreguntas de este tema se contestan aquí»), y es un recuento real de las comprobaciones del\ntema, no una afirmación sobre exámenes.",
+        "properties": {
+          "anchor": {
+            "minLength": 1,
+            "title": "Anchor",
+            "type": "string"
+          },
+          "body_markdown": {
+            "title": "Body Markdown",
+            "type": "string"
+          },
+          "epigraph_code": {
+            "title": "Epigraph Code",
+            "type": "string"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "number": {
+            "minimum": 1.0,
+            "title": "Number",
+            "type": "integer"
+          },
+          "questions_covered": {
+            "minimum": 0.0,
+            "title": "Questions Covered",
+            "type": "integer"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "number",
+          "key",
+          "title",
+          "epigraph_code",
+          "anchor",
+          "body_markdown",
+          "questions_covered"
+        ],
+        "title": "StudentNoteSectionSchema",
+        "type": "object"
+      },
+      "StudentNotesSchema": {
+        "description": "Los apuntes de un tema: cómo están y sus apartados en orden de lectura.\n\nUn tema en `draft` se sirve **igual** que uno en `published`: la marca distingue uno de otro y\nel alumno puede leer los dos. Un tema en `none` no trae apartados, y eso no es un error.",
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "generated_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated At"
+          },
+          "sections": {
+            "items": {
+              "$ref": "#/components/schemas/StudentNoteSectionSchema"
+            },
+            "title": "Sections",
+            "type": "array"
+          },
+          "state": {
+            "enum": [
+              "published",
+              "draft",
+              "none"
+            ],
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "state",
+          "sections"
+        ],
+        "title": "StudentNotesSchema",
+        "type": "object"
+      },
       "StudentOppositionSchema": {
         "description": "La oposición que sirve la zona del alumno.",
         "properties": {
@@ -12027,6 +12220,64 @@
           "answered"
         ],
         "title": "StudentQuestionSchema",
+        "type": "object"
+      },
+      "StudentReportRequestSchema": {
+        "description": "Lo que manda la pantalla cuando el alumno marca «esto está mal» en un apartado.\n\nEl motivo es **una línea** y es obligatorio: se recorta, no puede quedar vacío y tiene su tope\n(`MAX_REASON_CHARS`). El apartado se manda por su clave, no por su anclaje: el anclaje lo pone\nel servidor a partir del apartado que existe hoy.",
+        "properties": {
+          "reason": {
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          },
+          "section_key": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Section Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "section_key",
+          "reason"
+        ],
+        "title": "StudentReportRequestSchema",
+        "type": "object"
+      },
+      "StudentReportSchema": {
+        "description": "El aviso ya guardado: dónde, qué se escribió y cuándo.",
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "reason": {
+            "description": "El motivo, en una línea (máximo 300 caracteres).",
+            "title": "Reason",
+            "type": "string"
+          },
+          "section_key": {
+            "title": "Section Key",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "open",
+              "reviewed",
+              "dismissed"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "section_key",
+          "reason",
+          "status",
+          "created_at"
+        ],
+        "title": "StudentReportSchema",
         "type": "object"
       },
       "StudentResultSchema": {
@@ -12450,7 +12701,7 @@
         "type": "object"
       },
       "StudentTopicProgressSchema": {
-        "description": "Un tema con lo que tiene y lo que se ha hecho en él.\n\n`accuracy` es `None` cuando no hay nada corregido todavía: un tema sin tocar no está\nsuspendido.",
+        "description": "Un tema con lo que tiene y lo que se ha hecho en él.\n\n`accuracy` es `None` cuando no hay nada corregido todavía: un tema sin tocar no está\nsuspendido. `notes_state` es lo que permite pintar en el temario si sus apuntes están\npublicados, en borrador o sin escribir.",
         "properties": {
           "accuracy": {
             "anyOf": [
@@ -12489,6 +12740,16 @@
             "minimum": 0.0,
             "title": "Due Reviews",
             "type": "integer"
+          },
+          "notes_state": {
+            "default": "none",
+            "enum": [
+              "published",
+              "draft",
+              "none"
+            ],
+            "title": "Notes State",
+            "type": "string"
           },
           "number": {
             "anyOf": [
@@ -20061,6 +20322,115 @@
         ]
       }
     },
+    "/api/v1/notes-reports": {
+      "get": {
+        "description": "Los avisos, del más nuevo al más viejo.\n\n`pending` cuenta los que están sin despachar **sin mirar el filtro**: es el número que el\npropietario necesita ver aunque esté mirando los de un solo tema.",
+        "operationId": "list_note_reports_api_v1_notes_reports_get",
+        "parameters": [
+          {
+            "description": "Filtra por estado; sin él salen todos.",
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "open",
+                    "reviewed",
+                    "dismissed"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filtra por estado; sin él salen todos.",
+              "title": "Status"
+            }
+          },
+          {
+            "description": "Código legible del tema, como `IV.7`, para ver solo los de un tema.",
+            "in": "query",
+            "name": "topic",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Código legible del tema, como `IV.7`, para ver solo los de un tema.",
+              "title": "Topic"
+            }
+          },
+          {
+            "description": "Cuántos avisos se devuelven como mucho.",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 200,
+              "description": "Cuántos avisos se devuelven como mucho.",
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoteReportListSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Los avisos del alumno sobre los apuntes, para la bandeja del propietario",
+        "tags": [
+          "panel"
+        ]
+      }
+    },
     "/api/v1/oppositions": {
       "get": {
         "operationId": "list_oppositions_api_v1_oppositions_get",
@@ -24608,6 +24978,162 @@
           }
         },
         "summary": "Un tema por su código legible (IV.10): título, epígrafes, recuentos y progreso",
+        "tags": [
+          "alumno"
+        ]
+      }
+    },
+    "/api/v1/student/topics/{codigo}/notes": {
+      "get": {
+        "description": "Los apuntes del tema, tal como se leen.\n\nUn tema **en borrador se sirve igual** que uno publicado: el estado viaja con el texto\n(`draft`) y la pantalla lo dice. No se esconden apuntes por no haber pasado una puerta —para eso\nestá la marca— y un tema sin apuntes devuelve su estado y una lista vacía, no un 404: el tema\nexiste y lo que falta es el texto.",
+        "operationId": "student_topic_notes_api_v1_student_topics__codigo__notes_get",
+        "parameters": [
+          {
+            "description": "Código legible del tema, como `IV.10` (también se acepta `IV-10`).",
+            "in": "path",
+            "name": "codigo",
+            "required": true,
+            "schema": {
+              "description": "Código legible del tema, como `IV.10` (también se acepta `IV-10`).",
+              "examples": [
+                "IV.10"
+              ],
+              "title": "Codigo",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudentNotesSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Los apuntes de un tema: su texto en orden de lectura y si están en borrador",
+        "tags": [
+          "alumno"
+        ]
+      }
+    },
+    "/api/v1/student/topics/{codigo}/reports": {
+      "post": {
+        "description": "Guarda el aviso del alumno sobre un apartado de los apuntes (decisión D2).\n\nNo es un registro de pantalla: entra en `notes_reports` y **en la auditoría**, en la misma\ntransacción, y es lo que el propietario verá en su bandeja. El motivo es obligatorio y de una\nlínea; el apartado se identifica por su clave y el anclaje lo pone el servidor.",
+        "operationId": "student_report_notes_api_v1_student_topics__codigo__reports_post",
+        "parameters": [
+          {
+            "description": "Código legible del tema, como `IV.10`.",
+            "in": "path",
+            "name": "codigo",
+            "required": true,
+            "schema": {
+              "description": "Código legible del tema, como `IV.10`.",
+              "examples": [
+                "IV.10"
+              ],
+              "title": "Codigo",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StudentReportRequestSchema"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudentReportSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Avisa de que un apartado de los apuntes está mal («esto está mal»)",
         "tags": [
           "alumno"
         ]
