@@ -32,6 +32,7 @@ igual
 from __future__ import annotations
 
 import logging
+import re
 import time
 from collections.abc import Callable, Collection, Iterable, Sequence
 from concurrent.futures import ThreadPoolExecutor
@@ -42,6 +43,7 @@ from typing import TypeVar
 
 from opofuente.application.ports import DossierRepository, NotesModel, TopicNotesRepository
 from opofuente.application.topic_notes_models import (
+    CoverageReport,
     NotesNode,
     SectionReport,
     TopicNotesReport,
@@ -53,7 +55,9 @@ from opofuente.domain.errors import (
     UnsupportedError,
 )
 from opofuente.domain.notes_quality import (
+    encabezados,
     limpiar_andamios,
+    nombrar_columnas_sin_titulo,
     quitar_encabezado_repetido,
     revisar_apuntes,
     sin_encabezados_repetidos,
@@ -80,6 +84,7 @@ from opofuente.domain.topic_notes import (
     HechosBatch,
     IncidenciaDeApuntes,
     KeyStatus,
+    MaterialPassage,
     Motivo,
     NotesCheck,
     NoteSection,
@@ -189,6 +194,20 @@ class TopicNotesService:
             self._repository.sections(node_id) if not dry_run else secciones,
             hechos,
         )
+        # El recuento de la cobertura se rehace **desde lo guardado** al terminar: el bucle de
+        # huecos
+        # vuelve a comprobar grupos y guarda resultados nuevos, y sin esto el informe de la corrida
+        # decía menos cobertura de la que el tema acababa teniendo (I.1: 1.947 de 1.995 en el
+        # informe,
+        # 1.965 de 1.995 en la base).
+        self._recontar_cobertura(
+            nodo,
+            grupos,
+            informe,
+            hechos,
+            list(self._repository.sections(node_id)) if not dry_run else list(secciones),
+            indice,
+        )
         # El informe se cierra leyendo lo que quedó **guardado**: midiéndolo con la lista de
         # apartados anterior a la redacción, los tamaños saldrían a cero y el informe mentiría.
         informe.sections = self._informe_apartados(
@@ -228,7 +247,6 @@ class TopicNotesService:
             facts=len(hechos),
         )
         secciones = list(self._repository.sections(node_id))
-        guardadas = self._repository.checks(node_id)
         # El índice también se mide: es lo primero que decide si el tema se puede redactar, y sin
         # esto habría que volver a ejecutar el tema entero para saber si el árbol cuadra.
         planes, indice = self._plan_del_tema(nodo, hechos)
@@ -236,8 +254,31 @@ class TopicNotesService:
             informe.indice = revisar_indice(indice, planes)
             informe.sin_materia = sum(len(grupo.questions) for grupo in indice.grupos_sin_materia)
             informe.sections = self._informe_apartados(planes)
-        comprobables = self._comprobables(nodo, grupos, secciones)
-        informe.coverage.groups = len(comprobables)
+        self._recontar_cobertura(nodo, grupos, informe, hechos, secciones, indice)
+        informe.revision = revisar_apuntes(secciones, hechos)
+        informe.sections = self._informe_apartados(secciones)
+        return informe
+
+    def _recontar_cobertura(
+        self,
+        nodo: NotesNode,
+        grupos: Sequence[QuestionGroup],
+        informe: TopicNotesReport,
+        hechos: Sequence[Hecho],
+        secciones: Sequence[NoteSection],
+        indice: IndiceDelTema | None,
+    ) -> None:
+        """Vuelve a contar la cobertura **desde lo guardado**, sobre un informe recién empezado.
+
+        Es el mismo recuento que hace `_paso_comprobacion` mientras comprueba, pero leído del estado
+        final. Hace falta porque el bucle de huecos **vuelve a comprobar** grupos y guarda el
+        resultado nuevo sin rehacer aquel recuento: el informe de una corrida acababa diciendo menos
+        cobertura de la que el tema tenía de verdad (I.1: el informe dijo 1.947 de 1.995 y el tema
+        quedó en 1.965 de 1.995, un 98,5 %). Una cifra que va a un documento se mide, no se hereda —
+        ni siquiera de la propia corrida.
+        """
+        informe.coverage = CoverageReport()
+        informe.coverage.groups = len(self._comprobables(nodo, grupos, secciones))
         informe.coverage.preguntas = informe.questions
         hechos_por_firma = _hechos_por_firma(hechos)
         dudosos_de_la_clave = {
@@ -245,9 +286,12 @@ class TopicNotesService:
             for firma, suyos in hechos_por_firma.items()
             if any(hecho.doubtful for hecho in suyos)
         }
-        por_firma = {resultado.group_signature: resultado for resultado in guardadas}
-        # Las que el índice no puede situar cuentan en la puerta como no cubiertas, igual que en la
-        # corrida: si aquí no se contaran, la medida del comando sería mejor que la del informe.
+        por_firma = {
+            resultado.group_signature: resultado
+            for resultado in self._repository.checks(nodo.node_id)
+        }
+        # Las que el índice no puede situar cuentan como no cubiertas, igual que en la corrida: si
+        # aquí no se contaran, la medida del comando sería mejor que la del informe.
         for grupo in _grupos_sin_materia(indice):
             informe.coverage.add(
                 Coverage.HUECO,
@@ -259,7 +303,7 @@ class TopicNotesService:
                 tiene_clave=grupo.key_status is not KeyStatus.NINGUNA,
             )
         vigentes = 0
-        for grupo, apartados in comprobables:
+        for grupo, apartados in self._comprobables(nodo, grupos, secciones):
             resultado = por_firma.get(grupo.signature)
             if resultado is None:
                 continue
@@ -277,14 +321,14 @@ class TopicNotesService:
             if grupo.signature in dudosos_de_la_clave:
                 informe.coverage.incidencias_clave_marcada += 1
         informe.coverage.comprobaciones_vigentes = vigentes
-        for incidencia in self._repository.incidents(node_id):
+        # Y la bandeja del propietario, contada **desde la base**: es lo que él va a ver, y lo que
+        # el
+        # informe enseña tiene que ser eso, no lo que la corrida creía haber escrito.
+        for incidencia in self._repository.incidents(nodo.node_id):
             informe.coverage.incidencias += 1
             informe.coverage.por_categoria[incidencia.category] = (
                 informe.coverage.por_categoria.get(incidencia.category, 0) + 1
             )
-        informe.revision = revisar_apuntes(secciones, hechos)
-        informe.sections = self._informe_apartados(secciones)
-        return informe
 
     def _comprobables(
         self,
@@ -355,8 +399,14 @@ class TopicNotesService:
                 guardados.extend(resultado.hechos)
                 informe.facts_new += len(resultado.hechos)
                 continue
+            antes = len(guardados)
             guardados.extend(self._repository.save_facts(nodo.node_id, resultado.hechos, now=now))
-            informe.facts_new += len(guardados)
+            # Lo que ha traído esta corrida, **no** el total acumulado: `guardados` crece lote a
+            # lote
+            # y sumar su longitud cada vez daba una cifra que no era la de los hechos nuevos (la
+            # corrida de I.1 del 10-oct dijo «3.511 nuevos» cuando el tema ya tenía 3.509 y solo dos
+            # preguntas necesitaban hechos). Una cifra que va a un informe se cuenta, no se acumula.
+            informe.facts_new += len(guardados) - antes
         if not dry_run:
             guardados = list(self._repository.facts(nodo.node_id))
         informe.facts = len(guardados)
@@ -442,6 +492,59 @@ class TopicNotesService:
         )
         return plan_de(indice, max_hechos_por_apartado=MAX_HECHOS_POR_APARTADO), indice
 
+    def prever(self, code: str) -> tuple[str, ...]:
+        """Qué le haría una corrida al tema, **sin llamar a nadie**: el plan y lo que se rehace.
+
+        Existe para no pagar dos veces por lo mismo sin enterarse. El plan de una corrida se calcula
+        **una vez** y no cambia mientras se escribe (se planifica, se escribe con ese plan), pero
+        entre dos corridas sí puede cambiar —una pregunta nueva, un hecho que llega, el índice
+        redefinido— y entonces el texto de los apartados que se mueven **se tira y se vuelve a
+        escribir**: es lo correcto (un texto escrito con unos hechos no vale para otros) y cuesta
+        dinero. Verlo antes de lanzar la corrida es lo que permite decidir si toca pagarlo ahora.
+        """
+        node_id = self._repository.node_id(code)
+        if node_id is None:
+            raise NotFoundError("tema del programa", code)
+        nodo = self._repository.node(node_id)
+        if nodo is None:
+            raise UnsupportedError(f"«{code}» no es un tema del programa")
+        hechos = self._repository.facts(node_id)
+        planes, indice = self._plan_del_tema(nodo, hechos)
+        guardadas = self._repository.sections(node_id)
+        con_texto = {apartado.key for apartado in guardadas if apartado.body_markdown.strip()}
+        fuera = sorted({apartado.key for apartado in guardadas} - {plan.key for plan in planes})
+        reciclados = sorted(_apartados_que_pierden_hechos(guardadas, planes))
+        vacios = [plan.key for plan in planes if plan.key not in con_texto]
+        lineas = [
+            f"[{code}] lo que haría una corrida, medido sin llamar a nadie:",
+            f"    el plan tiene {len(planes)} apartado(s); hay {len(guardadas)} escrito(s)",
+        ]
+        if fuera:
+            lineas.append(
+                f"    {len(fuera)} apartado(s) escritos que ya no están en el plan se tiran: "
+                + ", ".join(fuera[:8])
+            )
+        if reciclados:
+            lineas.append(
+                f"    {len(reciclados)} apartado(s) se vuelven a redactar y a comprobar (≈"
+                f"{len(reciclados)} llamada(s) de redacción): " + ", ".join(reciclados[:8])
+            )
+        if vacios:
+            lineas.append(
+                f"    {len(vacios)} apartado(s) sin texto: se redactan (≈{len(vacios)} "
+                "llamada(s)): " + ", ".join(vacios[:8])
+            )
+        if not fuera and not reciclados and not vacios:
+            lineas.append(
+                "    no se rehace nada: los apartados escritos siguen siendo los del plan"
+            )
+        conservados = sorted(con_texto - set(reciclados) - set(fuera))
+        if conservados:
+            lineas.append(f"    {len(conservados)} apartado(s) se conservan tal cual")
+        if indice is not None:
+            lineas.extend(revisar_indice(indice, planes).lines())
+        return tuple(lineas)
+
     # ------------------------------------------------------------------ paso D: la redacción
 
     def _paso_redaccion(
@@ -453,7 +556,18 @@ class TopicNotesService:
         now: datetime,
         dry_run: bool,
     ) -> None:
-        """Escribe los apartados que no tienen texto. Todos sus hechos van dentro."""
+        """Escribe los apartados que no tienen texto. Todos sus hechos van dentro.
+
+        Los trozos de una **misma materia** se escriben **en orden**, y cada uno recibe los
+        encabezados que ya han puesto los anteriores. Es lo que evita que las dos mitades de una
+        materia partida escriban el mismo índice: en I.1, las Cortes Generales (286 hechos) se
+        parten
+        en dos llamadas porque no caben en una, y las dos escribieron «2. Composición de las
+        Cámaras» y «3. Estatuto de los parlamentarios» —dos apartados con el mismo nombre dentro del
+        tema—. Las materias distintas siguen escribiéndose a la vez: lo que se serializa es lo que
+        de
+        verdad depende de lo anterior.
+        """
         material = indexar_material(self._dossier.passages_for_node(nodo.node_id))
         sin_escribir = [apartado for apartado in secciones if not apartado.body_markdown.strip()]
         if not sin_escribir:
@@ -466,51 +580,92 @@ class TopicNotesService:
             apartado.key: es_la_tabla_de_puertos(nodo.code, apartado.key)
             for apartado in sin_escribir
         }
-        trabajos: list[Callable[[], RedaccionBatch]] = [
-            partial(
-                self._model.redactar,
-                apartado,
-                topic_code=nodo.code,
-                topic_title=nodo.title,
-                material=selecciones[apartado.key],
-                es_tabla_de_puertos=tablas[apartado.key],
-            )
-            for apartado in sin_escribir
+        # Los trozos de la misma materia, en orden de lectura; el trabajo de cada grupo devuelve sus
+        # resultados y **no escribe**: la escritura la hace el hilo principal, como las demás.
+        grupos: dict[str, list[NoteSection]] = {}
+        for apartado in sin_escribir:
+            grupos.setdefault(_materia_de(apartado.key), []).append(apartado)
+        trabajos: list[Callable[[], list[tuple[NoteSection, RedaccionBatch]] | None]] = [
+            partial(self._redactar_trozos, nodo, trozos, selecciones, tablas)
+            for trozos in grupos.values()
         ]
         resultados = self._en_paralelo(trabajos)
         anotaciones: dict[str, tuple[tuple[str, ...], str | None]] = {}
-        for apartado, resultado in zip(sin_escribir, resultados, strict=True):
+        for resultado in resultados:
             if resultado is None:
                 informe.failed_batches += 1
                 continue
-            self._contar(
-                informe, resultado.input_tokens, resultado.output_tokens, resultado.cache_hit_tokens
-            )
-            faltan = hechos_integrados(apartado.facts, resultado.markdown)
-            motivo = _motivo_de_revision(
-                sin_material=not selecciones[apartado.key], faltan=faltan, hechos=apartado.facts
-            )
-            anotaciones[apartado.key] = (faltan, motivo)
-            if not dry_run:
-                # El redactor numera los hechos que recibe y a veces cita ese número dentro del
-                # texto: es andamio, no apuntes, y se quita antes de guardar (`limpiar_andamios`).
-                # Y si el apartado es la tabla de puertos, se parte por familias y se le quitan las
-                # notas que solo dicen lo que un puerto no es (`limpiar_tabla_de_puertos`).
-                cuerpo = _enderezar(
-                    nodo.code, apartado.key, limpiar_andamios(resultado.markdown), informe
+            for apartado, redactado in resultado:
+                self._contar(
+                    informe,
+                    redactado.input_tokens,
+                    redactado.output_tokens,
+                    redactado.cache_hit_tokens,
                 )
-                self._repository.save_section_body(
-                    apartado,
-                    title=resultado.titulo,
-                    body=cuerpo,
-                    needs_review_reason=motivo,
-                    model=self._model.version,
-                    now=now,
+                faltan = hechos_integrados(apartado.facts, redactado.markdown)
+                motivo = _motivo_de_revision(
+                    sin_material=not selecciones[apartado.key],
+                    faltan=faltan,
+                    hechos=apartado.facts,
                 )
+                anotaciones[apartado.key] = (faltan, motivo)
+                if not dry_run:
+                    # El redactor numera los hechos que recibe y a veces cita ese número dentro del
+                    # texto: es andamio, no apuntes, y se quita antes de guardar
+                    # (`limpiar_andamios`). Y si el apartado es la tabla de puertos, se parte por
+                    # familias y se le quitan las notas que solo dicen lo que un puerto no es
+                    # (`limpiar_tabla_de_puertos`).
+                    cuerpo = _enderezar(
+                        nodo.code, apartado.key, limpiar_andamios(redactado.markdown), informe
+                    )
+                    self._repository.save_section_body(
+                        apartado,
+                        title=redactado.titulo,
+                        body=cuerpo,
+                        needs_review_reason=motivo,
+                        model=self._model.version,
+                        now=now,
+                    )
         informe.sections = self._informe_apartados(
             self._repository.sections(nodo.node_id) if not dry_run else secciones,
             anotaciones,
         )
+
+    def _redactar_trozos(
+        self,
+        nodo: NotesNode,
+        trozos: Sequence[NoteSection],
+        selecciones: dict[str, tuple[MaterialPassage, ...]],
+        tablas: dict[str, bool],
+    ) -> list[tuple[NoteSection, RedaccionBatch]] | None:
+        """Redacta en orden los trozos de una materia, diciéndole a cada uno lo que ya está puesto.
+
+        Devuelve los resultados (no escribe) o `None` si alguna llamada se agota: entonces el grupo
+        entero queda sin escribir y la corrida siguiente lo reintenta. Cortar por el trozo que falla
+        dejaría la materia a medias sin decirlo.
+        """
+        escritos: list[tuple[NoteSection, RedaccionBatch]] = []
+        usados: list[str] = []
+        for apartado in trozos:
+            resultado = self._modelo_o_nada(
+                partial(
+                    self._model.redactar,
+                    replace(apartado, encabezados_ya_usados=tuple(usados)),
+                    topic_code=nodo.code,
+                    topic_title=nodo.title,
+                    material=selecciones[apartado.key],
+                    es_tabla_de_puertos=tablas[apartado.key],
+                )
+            )
+            if resultado is None:
+                return None
+            escritos.append((apartado, resultado))
+            usados.extend(titulo for _, titulo in encabezados(resultado.markdown))
+        return escritos
+
+    def _modelo_o_nada(self, trabajo: Callable[[], T]) -> T | None:
+        """Una llamada al modelo sin contar el fallo: lo cuenta quien la agrupa."""
+        return self._seguro(trabajo)
 
     # ------------------------------------------------------------------ paso E: la comprobación
 
@@ -1035,6 +1190,17 @@ class TopicNotesService:
         )
 
 
+def _materia_de(clave: str) -> str:
+    """La materia de un apartado, sin el número del trozo: `cortes-generales-2` →
+    `cortes-generales`.
+
+    Es cómo se sabe qué apartados son trozos de la misma materia y tienen que escribirse en orden:
+    el
+    plan los numera así (`plan_de`) cuando una materia no cabe en una llamada.
+    """
+    return re.sub(r"-\d+$", "", clave)
+
+
 def _grupos_sin_materia(indice: IndiceDelTema | None) -> tuple[QuestionGroup, ...]:
     """Las preguntas que el índice **no puede situar**: ni por su enunciado ni por sus hechos."""
     return () if indice is None else indice.grupos_sin_materia
@@ -1100,14 +1266,19 @@ def _es_la_tabla_del_catalogo(topic_code: str, clave: str) -> bool:
 def _enderezar(topic_code: str, clave: str, cuerpo: str, informe: TopicNotesReport) -> str:
     """La última mano al texto de un apartado antes de guardarlo.
 
-    Hoy solo hace algo en la tabla de puertos: la parte por familias, le quita las notas que solo
-    dicen lo que un puerto **no** es y recoge las confusiones de verdad en su bloque. Se cuenta lo
-    que se ha hecho (`notas_de_puertos_retiradas` y `confusiones_de_puertos`) porque un arreglo que
-    no se puede medir no se puede revisar.
+    Hace tres cosas, y las tres son reparaciones de forma que mide `revisar_apuntes`:
+
+    - un encabezado que repite otro del mismo apartado es un apartado dentro de otro: se quita el
+      encabezado y se queda su texto (`sin_encabezados_repetidos`);
+    - una tabla cuya cabecera deja una columna sin nombre no se puede leer: se le pone el nombre que
+      le falta (`nombrar_columnas_sin_titulo`), que es lo que I.1 tenía en cuatro tablas;
+    - y, si el apartado es la tabla de puertos, se parte por familias y se le quitan las notas que
+      solo dicen lo que un puerto **no** es (`limpiar_tabla_de_puertos`).
+
+    Se cuenta lo que se ha hecho (`notas_de_puertos_retiradas` y `confusiones_de_puertos`) porque un
+    arreglo que no se puede medir no se puede revisar.
     """
-    # Un encabezado que repite otro del mismo apartado es un apartado dentro de otro: se quita el
-    # encabezado y se queda su texto (es lo que mide la puerta de encabezados repetidos).
-    cuerpo = sin_encabezados_repetidos(cuerpo)
+    cuerpo = nombrar_columnas_sin_titulo(sin_encabezados_repetidos(cuerpo))
     if not es_la_tabla_de_puertos(topic_code, clave):
         return cuerpo
     limpieza = limpiar_tabla_de_puertos(cuerpo)

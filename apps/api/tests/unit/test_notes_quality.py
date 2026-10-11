@@ -20,12 +20,14 @@ from opofuente.domain.notes_quality import (
     MARCAS_INTERNAS,
     MAX_PALABRAS_POR_HECHO,
     MINIMO_PALABRAS_PARRAFO,
+    NOMBRE_COLUMNA_SIN_TITULO,
     PARRAFOS_REPETIDOS,
     TABLAS_SIN_CABECERA,
     encabezados,
     hechos_distintos,
     limpiar_andamios,
     marcas_internas,
+    nombrar_columnas_sin_titulo,
     parecido,
     parrafos,
     quitar_encabezado_repetido,
@@ -309,6 +311,30 @@ def test_una_fila_con_mas_celdas_que_la_cabecera_es_una_columna_sin_nombre() -> 
     assert len(rotas) == 2, "las dos filas enseñan una columna que nadie ha titulado"
     assert all("3 celda(s) y una cabecera de 2 columna(s)" in rota.motivo for rota in rotas)
     assert [rota.fila for rota in rotas] == [3, 4]
+
+
+def test_una_columna_de_tabla_sin_titulo_se_nombra_y_deja_de_estar_rota() -> None:
+    """La tabla de comparación se escribe con la primera columna sin titular, y así no se lee.
+
+    Es el defecto que tenía I.1 en cuatro apartados: `| | Ordinario (art. 167) | Agravado (art. 168)
+    |` con los conceptos debajo. La reparación toca **la cabecera** y solo la celda vacía: una
+    columna que sí tiene nombre se queda como está, y los datos no se tocan.
+    """
+    con_hueco = (
+        "| | Ordinario (art. 167) | Agravado (art. 168) |\n"
+        "|---|---|---|\n"
+        "| Supuestos | Cualquier reforma | Revisión total |\n"
+    )
+    entera = "| Concepto | Puerto | Servicio |\n|---|---|---|\n| Correo | 25 | SMTP |\n"
+    assert tablas_rotas("constitucion-caracteres-1", con_hueco), "de entrada está rota"
+
+    reparada = nombrar_columnas_sin_titulo(con_hueco)
+
+    assert not tablas_rotas("constitucion-caracteres-1", reparada)
+    assert NOMBRE_COLUMNA_SIN_TITULO in reparada
+    assert "| Supuestos | Cualquier reforma | Revisión total |" in reparada, "los datos no se tocan"
+    assert nombrar_columnas_sin_titulo(entera) == entera, "una tabla que está bien no se toca"
+    assert nombrar_columnas_sin_titulo("Sin tablas por aquí.") == "Sin tablas por aquí."
 
 
 def test_una_tabla_bien_hecha_no_se_marca() -> None:

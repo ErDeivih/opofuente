@@ -376,6 +376,49 @@ def _celdas(linea: str) -> list[str]:
     return [celda.strip() for celda in linea.strip().strip("|").split("|")]
 
 
+#: Lo que se le pone a la columna de una tabla cuando su cabecera no la nombra. Es la columna que
+#: lleva **el concepto que se compara** en las tablas de dos o más columnas («| | Ordinario |
+#: Agravado
+#: |» y debajo «| Supuestos | … | … |»): nombrarla no inventa nada, dice lo que la columna es.
+NOMBRE_COLUMNA_SIN_TITULO = "Concepto"
+
+
+def nombrar_columnas_sin_titulo(texto: str) -> str:
+    """Pone nombre a la columna de una tabla cuya cabecera la deja en blanco.
+
+    Es el arreglo de lo que mide `tablas_rotas`: una tabla de comparación se escribe con la primera
+    celda de la cabecera vacía (la columna de los conceptos que se comparan) y así la tabla no se
+    puede leer —la revisión de forma la cuenta, con razón—. Se toca **la cabecera**, nunca los
+    datos, y solo la celda vacía: una columna que sí tiene nombre se queda como está.
+
+    Va aquí, junto a la comprobación que lo cuenta, porque son la misma cosa vista desde los dos
+    lados: lo que se mide y lo que se arregla tienen que hablar del mismo texto. Y un texto sin nada
+    que arreglar sale **igual**, byte a byte: por eso se parte por `\\n` y no por `splitlines`.
+    """
+    lineas = texto.split("\n")
+    salida: list[str] = []
+    indice = 0
+    while indice < len(lineas):
+        if not _FILA_TABLA.match(lineas[indice]):
+            salida.append(lineas[indice])
+            indice += 1
+            continue
+        inicio = indice
+        while indice < len(lineas) and _FILA_TABLA.match(lineas[indice]):
+            indice += 1
+        bloque = lineas[inicio:indice]
+        if (
+            len(bloque) >= 2
+            and _SEPARADOR_TABLA.match(bloque[1])
+            and "|" in bloque[1]
+            and any(not celda for celda in _celdas(bloque[0]))
+        ):
+            celdas = [celda or NOMBRE_COLUMNA_SIN_TITULO for celda in _celdas(bloque[0])]
+            bloque[0] = "| " + " | ".join(celdas) + " |"
+        salida.extend(bloque)
+    return "\n".join(salida)
+
+
 def marcas_internas(texto: str) -> tuple[str, ...]:
     """Las marcas de andamio que se han quedado a la vista en el texto, tal cual aparecen."""
     return tuple(casado.group(0) for casado in _MARCA.finditer(texto))
@@ -434,6 +477,42 @@ def sin_encabezados_repetidos(texto: str) -> str:
             vistos.append(suyo)
         salida.append(linea)
     return "\n".join(salida)
+
+
+def sin_encabezados_repetidos_en_el_tema(textos: Sequence[str]) -> tuple[str, ...]:
+    """Quita de cada apartado los encabezados que ya han salido en otro **anterior** del tema.
+
+    Es la misma reparación que `sin_encabezados_repetidos`, pero sobre el tema entero: la puerta de
+    encabezados repetidos mira **todo** el tema (`revisar_apuntes`), y una reparación que solo mira
+    dentro de un apartado no puede arreglar lo que la puerta mide entre dos. Le pasó a I.1: una
+    materia de 286 hechos se parte en dos llamadas porque no cabe en una, y los dos trozos
+    escribieron
+    su propio índice —`## 2. Composición de las Cámaras` en el primero y `### 2. Composición de las
+    Cámaras` en el segundo—, con hechos distintos debajo de cada uno.
+
+    Se quita **el encabezado**, nunca el texto que lleva debajo: lo que se lee sigue siendo todo. La
+    causa (que cada trozo escriba su propio índice) se arregla escribiéndolos en orden y diciéndole
+    al
+    segundo lo que ya está puesto; esto es la limpieza del texto escrito antes de que existiera ese
+    arreglo.
+    """
+    vistos: list[str] = []
+    salida: list[str] = []
+    for texto in textos:
+        lineas: list[str] = []
+        for linea in texto.split("\n"):
+            casado = _ENCABEZADO.match(linea)
+            if casado is None:
+                lineas.append(linea)
+                continue
+            titulo = casado.group(2).strip()
+            if titulo and any(mismo_encabezado(anterior, titulo) for anterior in vistos):
+                continue
+            if titulo:
+                vistos.append(titulo)
+            lineas.append(linea)
+        salida.append("\n".join(lineas))
+    return tuple(salida)
 
 
 def limpiar_andamios(texto: str) -> str:
@@ -715,6 +794,7 @@ __all__ = [
     "MAX_PARRAFOS_REPETIDOS",
     "MINIMO_MISMA_CABECERA",
     "MINIMO_PALABRAS_PARRAFO",
+    "NOMBRE_COLUMNA_SIN_TITULO",
     "PALABRAS_DE_CABECERA",
     "PARRAFOS_REPETIDOS",
     "SIMILITUD_ENCABEZADO",
@@ -728,11 +808,13 @@ __all__ = [
     "hechos_distintos",
     "limpiar_andamios",
     "marcas_internas",
+    "nombrar_columnas_sin_titulo",
     "parecido",
     "parrafos",
     "quitar_encabezado_repetido",
     "revisar_apuntes",
     "sin_encabezados_repetidos",
+    "sin_encabezados_repetidos_en_el_tema",
     "tablas_rotas",
     "trigramas",
 ]

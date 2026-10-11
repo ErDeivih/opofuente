@@ -3,6 +3,48 @@
 Lo que conviene que sepas y **no** hace falta que contestes para que el trabajo siga. Lo que sí
 necesita tu criterio está marcado como **«Decide tú»**.
 
+## 10 oct 2026 — I.1 ya se puede leer, I.6 contesta a tres de cada cuatro, y el motor ya no paga de más
+
+**Lo que cambia para ti:**
+
+1. **I.1 está publicado** (La Constitución Española de 1978, con sus derechos, su garantía y
+   suspensión y La Corona). Está en la zona del alumno con la marca «Versión generada · en revisión».
+   Contesta al **98,5 %** de lo que el banco pregunta (1.965 de 1.995 con clave utilizable), y su
+   índice cuadra por fin: 21 apartados, 1.724 hechos redactados y **ninguna pregunta sin sitio**.
+   Antes no se podía ni empezar: 295 de sus 2.006 preguntas no casaban con ninguna materia.
+
+2. **I.6 sigue en borrador, y ahora con el número que lo explica.** Contesta al **72,5 %** (antes
+   64,3 %), pero **no puede llegar al 90 %**: de sus 258 preguntas con clave utilizable, **41** tienen
+   en los apuntes una frase que sostiene **otra opción** que la clave, y 30 no tienen frase. Si se
+   rellenaran todos los huecos de material el techo sería el **84,1 %** — medido, no estimado. Lo que
+   falta no es texto: son claves. **Decide tú:** esas 41 están en tu bandeja con la frase que las
+   sostiene, para que digas cuál de las dos está mal (la clave o los apuntes).
+
+3. **Lo que ya está bien en I.6** (y costó dos intentos): su texto pasó de 18.666 palabras a
+   **13.174** donde el tope son 13.840, sus párrafos repetidos del 12,9 % al **0,6 %**, y **la puerta
+   de forma pasa por primera vez**. El motivo del exceso era el motor: al rellenar los huecos, los
+   añadidos escribían sin contar con el tope del apartado.
+
+4. **Su bandeja ya no enseña frases que no existen.** Al reescribir los apuntes, cada comprobación
+   caduca y se vuelve a comprobar: **41 de 41** anclas de conflicto y **20 de 20** frases de la
+   bandeja están **de verdad** en los apuntes de hoy. Es lo que arregló la tanda anterior y ahora se
+   ha comprobado después de reescribir el tema entero.
+
+**Dos cosas que deberías saber sobre el gasto y el trabajo:**
+
+- **El motor ya no paga dos veces sin enterarse.** `apuntes --prever` dice, **sin llamar a nadie**,
+  qué apartados se conservan, cuáles se vuelven a redactar y cuáles se tiran; y `apuntes --publicar`
+  publica midiendo lo guardado, sin volver a pagar una corrida. Dentro de una corrida el plan se
+  calcula **una vez** y no cambia mientras se escribe.
+- **Las 90 secciones que se rehicieron en I.1 no eran trabajo repetido**: eran las del índice
+  **anterior**, escritas el 9 de octubre antes de que existiera el catálogo (el tema se redactó una
+  vez, con el índice nuevo: 21 apartados). La línea del informe que dice «90 apartados que ya no están
+  en el plan» se refiere a eso, y ahora se ve **antes** de lanzar la corrida.
+
+**Gasto:** medido en esta tanda **3,0816 $** (I.1 1,9593 + I.6 1,1223), más **≈0,40 $** de una corrida
+que se mató a propósito al ver que iba por mal camino. El acumulado del objetivo es **≈5,23 $**: **no**
+se ha cruzado el aviso de los 10 $.
+
 ## 11 oct 2026 — Tu 28,125 ya está en la aplicación, y la bandeja de I.6 ya enseña pruebas de verdad
 
 **Los tres asuntos de esta tanda, y lo que cambia para ti:**
@@ -61,11 +103,12 @@ atrás están escritas en `docs/DECISIONES-TOMADAS-EN-EL-OBJETIVO.md`.
 - **IV.7**: publicado. El apartado de UDP ya no habla de IPv6, de ARP ni de ICMP (16 hechos con
   material ajeno → 8, todos de UDP); la tabla de puertos va en cuatro tablas por familia, sin los
   avisos «No es DynamoDB» (24 retirados) y con las confusiones de verdad en «Confusiones que caen».
-- **I.6**: en borrador, y **con el motivo escrito**: contesta al 64,3 % de lo que se le pregunta, y 58
-  de sus 81 incidencias son de la clave, no de los apuntes. No se arregla escribiendo más.
-- **I.1**: **no se ha redactado** a propósito: su índice por materias no pasa sus propias
-  comprobaciones (295 de sus 2.006 preguntas no casan con ninguna materia). Antes de escribir, el
-  índice tiene que cuadrar.
+- **I.6**: en borrador, y **con el motivo escrito**: contesta al **72,5 %** de lo que se le pregunta y
+  su techo medido es el 84,1 %. De sus 63 incidencias, 40 son de la clave (20 `norma_cambiada` y 20
+  `clave_sospechosa`), no de los apuntes. No se arregla escribiendo más. Su forma ya pasa: 13.174
+  palabras de 13.840 y 0,6 % de párrafos repetidos.
+- **I.1**: **publicado**. Su índice cuadra (21 apartados, 1.724 hechos, 0 sin materia) y contesta al
+  98,5 % de sus 1.995 preguntas con clave utilizable. Sus 61 incidencias están en tu bandeja.
 - **Tu bandeja** ya tiene lo que no se pudo resolver solo: 55 incidencias en IV.7 y 81 en I.6, cada una
   con su categoría (clave sospechosa, norma cambiada, hueco sin material, pregunta ambigua), su motivo
   y, cuando la hay, **la frase de los apuntes que lo demuestra**.

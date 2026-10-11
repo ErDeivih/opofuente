@@ -471,6 +471,12 @@ class NoteSection:
 
     `key` y `anchor` son lo mismo a propósito: el anclaje es la clave del subapartado, así que se
     puede enlazar una pregunta a un párrafo sin resolver nada por el camino.
+
+    `encabezados_ya_usados` son los títulos que ya están puestos **en los otros trozos de su misma
+    materia**: una materia que no cabe en una llamada se parte, y sin esto cada trozo escribe su
+    propio índice y los dos escriben el mismo (le pasó a I.1: «2. Composición de las Cámaras» en los
+    dos trozos de las Cortes Generales). Va en el apartado y no en la firma del motor, para no
+    cambiar el puerto por un dato del reparto.
     """
 
     key: str
@@ -482,6 +488,7 @@ class NoteSection:
     body_markdown: str = ""
     needs_review_reason: str | None = None
     section_id: str = ""
+    encabezados_ya_usados: tuple[str, ...] = ()
 
 
 def slug(codigo: str) -> str:
@@ -1300,6 +1307,16 @@ def build_user_prompt_redactar(
     else:
         cuerpo_material = "(no hay material del tema que trate estos hechos)"
     propio = f"\n\n{familias_para_el_prompt()}" if es_tabla_de_puertos else ""
+    # Los encabezados que ya están puestos en los otros trozos de esta misma materia: partir una
+    # materia en dos llamadas (no cabe en una) hace que cada trozo escriba su propio índice, y sin
+    # esto los dos escriben el mismo. La puerta de encabezados repetidos lo dice con razón.
+    ya_puestos = ""
+    if section.encabezados_ya_usados:
+        lista = "\n".join(f"- {titulo}" for titulo in section.encabezados_ya_usados)
+        ya_puestos = (
+            f"\n\nENCABEZADOS QUE YA ESTÁN PUESTOS EN LOS OTROS TROZOS DE ESTA MATERIA (no los "
+            f"repitas: este apartado es la continuación de esa misma materia):\n{lista}"
+        )
     # El tope de extensión, dicho en el encargo y no solo comprobado después: un apartado se mide en
     # `40 x hechos distintos` (la puerta de densidad del §2.3) y el redactor tiene que saberlo antes
     # de escribir, no descubrirlo en el informe. I.6 salió con 82 palabras por hecho y no pasó.
@@ -1309,7 +1326,7 @@ def build_user_prompt_redactar(
         f"Epígrafe oficial: {section.epigraph_code}\n\n"
         f"HECHOS OBLIGATORIOS ({len(section.facts)}):\n{hechos}\n\n"
         f"MATERIAL DEL OPOSITOR (citas de su biblioteca; úsalo como apoyo, no lo copies entero):\n"
-        f"{cuerpo_material}{propio}\n\n"
+        f"{cuerpo_material}{propio}{ya_puestos}\n\n"
         f"Escribe el apartado. No pases de unas {tope} palabras en total (son "
         f"{MAX_PALABRAS_POR_HECHO} por cada uno de los {len(section.facts)} hechos): lo que no sea "
         "explicar un hecho, no va."

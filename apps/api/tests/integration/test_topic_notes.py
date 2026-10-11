@@ -88,6 +88,20 @@ TEXTO_DOS_MATERIAS = (
     "Respuesta correcta: a\n"
 )
 
+#: Dos preguntas de la **misma materia** (DNS): es lo que hace falta para que una materia se parta
+#: en
+#: trozos, porque el tope de hechos por apartado se aplica dentro de cada materia.
+TEXTO_DOS_DE_DNS = (
+    "1. ¿Qué resuelve los nombres de dominio?\n"
+    "a) SMTP\n"
+    "b) DNS\n"
+    "Respuesta correcta: b\n"
+    "2. ¿Qué registro de DNS identifica el servidor de correo?\n"
+    "a) A\n"
+    "b) MX\n"
+    "Respuesta correcta: b\n"
+)
+
 TEXTO = (
     "1. ¿Cuántas capas tiene el modelo OSI?\n"
     "a) Cuatro\n"
@@ -127,6 +141,10 @@ class _ModeloFalso:
         self.lotes_hechos: list[list[str]] = []
         self.veces: dict[str, int] = {}
         self.apuntes_vistos: list[str] = []
+        #: Lo que el servicio le dijo a cada trozo que ya estaba puesto en su materia: es lo que
+        #: hace
+        #: que el segundo trozo de una materia partida no escriba el mismo índice que el primero.
+        self.encabezados_previos: dict[str, tuple[str, ...]] = {}
 
     # --- paso B
     def hechos(
@@ -172,6 +190,7 @@ class _ModeloFalso:
     ) -> RedaccionBatch:
         # Cada hecho, su párrafo: es lo que hace el modelo de verdad, y es lo que deja ver la
         # repetición (el mismo texto con otro número de grupo delante).
+        self.encabezados_previos[section.key] = section.encabezados_ya_usados
         cuerpo = f"## {section.title}\n\n" + "\n\n".join(
             f"- {hecho.text}" for hecho in section.facts
         )
@@ -305,6 +324,12 @@ class _ModeloConHechosCortos(_ModeloFalso):
     por niveles»), y con dos preguntas distintas eso los hace casi iguales: la deduplicación los
     agrupa en uno y las dos preguntas acaban ancladas al mismo apartado. Para ver de qué apartado
     recibe el texto cada pregunta, sus hechos no pueden parecerse.
+
+    Cada hecho lleva además su número, y eso impide que la deduplicación los agrupe (la guarda de
+    siglas y cifras): es lo que permite tener muchos hechos distintos dentro de una misma materia.
+    La
+    sigla lleva también el número de la pregunta (`D1N7`, `D2N7`) porque, si no, el hecho 7 de una
+    pregunta y el 7 de la otra se parecen demasiado y la guarda los deja fusionarse.
     """
 
     def hechos(
@@ -317,13 +342,14 @@ class _ModeloConHechosCortos(_ModeloFalso):
     ) -> HechosBatch:
         hechos = tuple(
             Hecho(
-                text=grupo.representative.stem.strip(),
+                text=f"{grupo.representative.stem.strip()} D{indice}N{numero}",
                 kind=FactKind.TECNICO,
                 epigraph_code=epigraphs[0][0],
                 source_groups=(grupo.signature,),
                 source_questions=grupo.question_ids,
             )
-            for grupo in grupos
+            for indice, grupo in enumerate(grupos, start=1)
+            for numero in range(1, self.hechos_por_grupo + 1)
         )
         return HechosBatch(hechos=hechos, input_tokens=10, output_tokens=10)
 
@@ -589,6 +615,38 @@ def test_un_hueco_se_arregla_con_un_anadido(
     apartado = repositorio.sections(informe.node_id)[0]
     assert "### Añadido" in apartado.body_markdown
     assert all(comprobada.attempts == 2 for comprobada in repositorio.checks(informe.node_id))
+
+
+def test_los_trozos_de_una_materia_se_escriben_en_orden_y_sin_repetir_encabezados(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """Un trozo que continúa una materia sabe qué encabezados ha puesto el trozo anterior.
+
+    Es lo que pasó en I.1: las Cortes Generales (286 hechos) no caben en una llamada y se parten en
+    dos; escritas a la vez, cada mitad escribió su propio índice y el tema acabó con «2. Composición
+    de las Cámaras» y «3. Estatuto de los parlamentarios» **dos veces**. Los trozos de una misma
+    materia van en orden y el segundo recibe lo que ya está puesto; las materias distintas siguen
+    escribiéndose en paralelo.
+    """
+    conjunto = _conjunto(seeded_client, titulo="Los trozos de una materia partida")
+    preguntas = _preguntas(seeded_client, conjunto["id"], texto=TEXTO_DOS_DE_DNS)
+    assert len(preguntas) == 2
+    _activar_clave(seeded_client, conjunto["id"])
+    for pregunta in preguntas:
+        _asignar_tema(seeded_client, pregunta["id"], tema="IV.7", epigrafe="IV.7.2")
+    # 80 hechos por pregunta y dos preguntas de la misma materia: 160 hechos, más del tope de 150,
+    # así
+    # que la materia se parte en dos trozos.
+    modelo = _ModeloConHechosCortos(hechos_por_grupo=80)
+
+    informe = _servicio(seeded_client, modelo).run("IV.7", now=SystemClock().now())
+
+    claves = [apartado.key for apartado in informe.sections]
+    assert claves == ["dns-1", "dns-2"], f"la materia tiene que partirse en dos: {claves}"
+    assert modelo.encabezados_previos.get("dns-1") == (), "el primero no continúa nada"
+    assert modelo.encabezados_previos.get("dns-2"), (
+        "el trozo de continuación tiene que recibir los encabezados ya puestos"
+    )
 
 
 def test_lo_que_no_se_puede_contestar_queda_señalado_y_no_cubierto(

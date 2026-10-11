@@ -1,9 +1,14 @@
 # Estado del objetivo largo (TAI: los 33 temas y la app de estudio)
 
 **Autoridad:** `docs/GOAL-DEEPSEEK-TRABAJO-LARGO-2026-10.md` · **Presupuesto de API:** 40 $ · **Se
-avisa cada 10 $** · Última actualización: **11 oct 2026 (tanda f11: la bandeja de I.6 con sus frases
-verificadas, la puntuación estimada y la composición única —`compose`— con el test de varios temas, el
-simulacro y su pantalla)**.
+avisa cada 10 $** · Última actualización: **10 oct 2026 (tanda f12: el índice de I.1 cuadra y I.1
+queda publicado con el 98,5 % de cobertura, I.6 pasa por fin la puerta de forma y sube al 72,5 %, y el
+motor aprende a decir lo que va a costar una corrida antes de pagarla)**.
+
+> **De las fechas:** la tanda anterior se etiquetó «11 oct» en este fichero, pero **su reloj, sus
+> ficheros y sus marcas de base son del 10 de octubre** (la corrida de I.6 acabó a las 18:09 del
+> 10-oct). Esta tanda usa la fecha del reloj de la máquina. No es que el tiempo vaya hacia atrás: las
+> etiquetas iban por delante.
 
 ## 1. Gasto de API, una línea por corrida
 
@@ -26,6 +31,12 @@ tokens que devolvió cada llamada; el coste es la estimación con la tabla de pr
 | **Acumulado medido de f10** | | | **180** | **2.824.967** | **1.475.574** | **1,3090 $** |
 | 11-oct | I.6 | recomprobación con la huella del texto (la bandeja) | 45 | 518.452 | 605.550 | 0,4411 $ |
 | **Acumulado medido de f11** | | | **45** | **518.452** | **605.550** | **0,4411 $** |
+| 10-oct | I.6 | corrida de reescritura (matada al ver que la lectura por apartados se quedaba corta) | — | — | — | **≈0,40 $ (no medido)** |
+| 10-oct | I.6 | la reescritura con la lectura por apartados y su presupuesto | 81 | 800.724 | 817.710 | 0,6107 $ |
+| 10-oct | I.6 | la reescritura con el tope del añadido: **la forma pasa** | 74 | 727.234 | 670.864 | 0,5116 $ |
+| 10-oct | I.1 | la redacción con el índice nuevo: 21 apartados, 2.043 preguntas | 355 | 4.787.376 | 2.068.573 | 1,9593 $ |
+| 10-oct | I.1 + I.6 | `--medir`, `--esquema`, `--prever`, `--limpiar-forma` y `--publicar` (solo lectura) | 0 | 0 | 0 | 0,0000 $ |
+| **Acumulado medido de f12** | | | **510** | **6.315.334** | **3.557.147** | **3,0816 $** |
 
 Tres avisos para que nadie sume mal:
 
@@ -34,25 +45,42 @@ Tres avisos para que nadie sume mal:
   f10 es **≈1,31 $**, no una cifra exacta;
 - **dos corridas de f11 se lanzaron a la vez por error** y una se mató a los tres minutos, antes de
   escribir nada en la base ni de llamar al modelo con resultado: el gasto de f11 es el de la tabla;
+- **una corrida de f12 se mató a propósito** (la primera reescritura de I.6): se vio en la base que la
+  lectura por apartados estaba dejando 114 preguntas sin frase —y que el bucle de huecos iba a
+  rellenarlas escribiendo de más— y se paró antes de que acabara. Su gasto **no está medido** (la
+  salida se perdió al matar el proceso): es del orden de la corrida siguiente, **≈0,40 $**;
 - **el acumulado del objetivo no se puede dar.** Lo anterior a f10 no está en ninguna fuente. Con lo
-  medido (≈1,31 $ de f10 + 0,4411 $ de f11 = **≈1,75 $**) el aviso de los 10 $ **no se ha cruzado**.
+  medido (≈1,31 $ de f10 + 0,4411 $ de f11 + 3,0816 $ de f12 + ≈0,40 $ de la corrida matada =
+  **≈5,23 $**) el aviso de los 10 $ **sigue sin cruzarse**.
+
+**Y una corrección de método**: el informe de una corrida contaba la cobertura **antes** del bucle de
+huecos, así que decía menos de la que el tema acababa teniendo (en I.1: 1.947 de 1.995 en el informe,
+**1.965 de 1.995** en la base). Ahora la corrida vuelve a contar al terminar, `--medir` mide lo
+guardado y `--prever` dice lo que costaría una corrida **antes** de pagarla.
 
 ## 2. Los 33 temas
 
 | Tema | Estado | Hechos | Apartados | Puerta de cobertura (clave utilizable) | Sobre todas las claves | Conflictos | Dudosas de apuntes | Forma |
 |---|---|---|---|---|---|---|---|---|
 | **IV.7** | **publicado** (versión archivada) | 958 → 724 redactados | 25 | **430/449 = 95,8 % PASA** | 430/511 = 84,1 % | 17 | 0 | **PASA las cinco** |
-| **I.6** | **borrador con su motivo** (versión retirada) | 346 → 299 | 13 | **166/258 = 64,3 % NO PASA** | 166/283 = 58,7 % | 28 | 25 | **NO PASA** (18.666 palabras de 13.840; repetidos 12,9 %) |
-| **I.1** | **índice en borrador: no se redacta** | 3.509 | 15 (borrador) | — | — | — | — | no pasa las comprobaciones del índice |
+| **I.6** | **borrador con su motivo** (versión retirada) | 346 → 299 | 13 | **187/258 = 72,5 % NO PASA** | 187/283 = 66,1 % | 20 (`clave_sospechosa`) | 20 | **PASA las cinco** (13.174 palabras de 13.840; repetidos 0,6 %) |
+| **I.1** | **publicado** (versión archivada, con la marca «Versión generada · en revisión») | 3.511 → 1.724 redactados | 21 | **1.965/1.995 = 98,5 % PASA** | 1.965/2.035 = 96,6 % | 15 | 10 | **PASA las cinco** (60.400 palabras de 140.440; repetidos 2,2 %) |
 | resto (30) | sin empezar | | | | | | | |
 
-*(Cifras de I.6 medidas el 11-oct en su propia corrida, sobre la base real. **El texto de I.6 cambió
-entre la corrida de f10 y esta**: al empezar f11 sus apartados sumaban 79.495 caracteres y su
-comprobación citaba frases que ya no estaban en ellos; la corrida de f11 los encontró reescritos
-—111.000 caracteres, escritos por otra tanda que trabaja en la misma base, como avisa el §4— y
-recomprobó las 191 preguntas contra ese texto. Por eso las cifras de I.6 no son las de f10: no es que
-el tema haya empeorado, es que **el texto que se mide es otro**. La puerta de forma, además, ahora no
-la pasa.)*
+*(Cifras de **esta** tanda, medidas con `apuntes --medir` sobre la base real —no heredadas de la
+corrida que las escribió—. Las tres filas son del 10-oct: IV.7 es la única que no se ha tocado. La
+fila de I.6 de la tanda anterior (64,3 %) describía un texto que ya no existe: I.6 se ha vuelto a
+redactar entero con el tope de extensión del §2.3 y con la deduplicación, y su texto pasó de 111.000
+caracteres a **83.815**.)*
+
+### Lo que le falta a I.6 y por qué no es cuestión de escribir más
+
+I.6 contesta al 72,5 % de lo que se le pregunta y **no puede llegar al 90 %**: de las 258 preguntas
+con clave utilizable, 41 tienen una frase en los apuntes que sostiene **otra opción** que su clave (el
+propietario tiene que decidir cuál de las dos está mal) y 30 no tienen frase. Si se rellenaran **todos**
+los huecos de material, el techo sería **217/258 = 84,1 %** — medido, no estimado. Por eso el tema
+queda en borrador con su motivo escrito, y no por falta de redacción: 58 de sus 63 incidencias son de
+la clave, no de los apuntes.
 
 ### La puerta de cobertura: qué número decide y sobre qué conjunto
 
@@ -71,8 +99,9 @@ denominador escrito:
 borrador). Medido hoy:
 
 - **IV.7**: 430 de 449 = **95,8 %** con (b) → **PASA** y se publica. Con (a), 430 de 511 = 84,1 %.
-- **I.6**: 166 de 258 = **64,3 %** con (b) → **NO PASA**. Con (a), 166 de 283 = 58,7 %. No llega con
-  ninguno de los dos.
+- **I.6**: 187 de 258 = **72,5 %** con (b) → **NO PASA**. Con (a), 187 de 283 = 66,1 %.
+- **I.1**: 1.965 de 1.995 = **98,5 %** con (b) → **PASA** y se publica. Con (a), 1.965 de 2.035 =
+  96,6 %.
 
 Antes de cablearla, la puerta existía en el documento y **no en el código**: `--exigir-calidad` solo
 miraba las cinco comprobaciones de forma, así que un tema con el 85 % podía quedar archivado. Ahora
@@ -93,23 +122,35 @@ Y la bandeja del propietario de IV.7: **55 incidencias con su categoría** (40 `
 sostiene cuando la hay. **Todas las preguntas no cubiertas tienen categoría**, que es la otra mitad
 del §2.3.
 
-### I.6 (191 grupos, 303 preguntas), medido el 11-oct
+### I.6 (191 grupos, 303 preguntas), vuelto a redactar y medido el 10-oct
 
-Cobertura **64,3 % con (b)** y 58,7 % con (a); **28 conflictos de letra**, 25 preguntas sin frase en
-los apuntes, 20 incidencias de clave marcada por el paso B y 8 sin clave con la que comprobar; banda
-de la bandeja: **81 incidencias** (38 `clave_sospechosa`, 20 `norma_cambiada`, 15
-`hueco_sin_material` y 8 `pregunta_ambigua`). La puerta de forma **no la pasa** (18.666 palabras de
-13.840; párrafos repetidos 12,9 %). **Se queda en borrador**, y con estos números no es por las
-frases: 58 de sus 81 incidencias son de la clave, no de los apuntes.
+Cobertura **72,5 % con (b)** y 66,1 % con (a); **20 grupos en conflicto de letra** (41 preguntas),
+20 preguntas sin frase en los apuntes, 36 incidencias de clave marcada por el paso B y 1 sin clave con
+la que comprobar; la bandeja tiene **63 incidencias** (20 `clave_sospechosa`, 20 `norma_cambiada`, 20
+`hueco_sin_material` y 3 `pregunta_ambigua`). La puerta de forma **ahora sí la pasa**: 13.174 palabras
+de 13.840 (el tope es 40 × 346 hechos distintos) y 0,6 % de párrafos repetidos. **Se queda en
+borrador** por la cobertura, y no por las frases: su techo medido es 84,1 %.
 
-**Y lo que faltaba de la tanda anterior ya está: la frase que demuestra cada conflicto.** Medido
-después de la corrida, con la misma comprobación que usa el motor (`verificar_cita` contra el texto de
-los apuntes por epígrafe):
+**Y las frases de sus conflictos siguen siendo frases de verdad después de reescribirlo.** La
+migración `0032` guarda la huella del texto comprobado, así que al rehacer un apartado su comprobación
+caduca y **se vuelve a comprobar**: la bandeja no hereda citas de un texto que ya no existe. Medido
+con la misma comprobación que usa el motor (`verificar_cita`, y con el texto que el motor le da a esa
+pregunta: la unión de sus apartados más lo que quepa de sus epígrafes):
 
-| Qué se mide | Antes de f11 | Después de f11 |
+| Qué se mide | Antes de reescribir | Después de reescribir |
 |---|---|---|
-| Frases de la bandeja (`clave_sospechosa`) que están **de verdad** en los apuntes de hoy | **2 de 45** | **38 de 38** |
-| Anclas de conflicto cuya cita está en los apuntes de hoy | **2 de 88** | **70 de 70** |
+| Anclas de conflicto cuya cita está en los apuntes de hoy | 66 de 70 | **41 de 41** |
+| Frases de la bandeja (`clave_sospechosa`) que están en los apuntes de hoy | 35 de 38 | **20 de 20** |
+
+### I.1 (2.008 grupos, 2.043 preguntas), redactado y publicado el 10-oct
+
+Su índice **por fin cuadra**: 21 apartados, 1.724 hechos redactados y **0 hechos y 0 preguntas sin
+materia**. De los 2.008 grupos, 209 no dicen de qué hablan por su enunciado («Una de las siguientes
+afirmaciones es falsa») y se han situado por el texto de sus hechos; no ha hecho falta ni un cajón de
+«otros» ni mandar ninguna pregunta a la bandeja por no caber. La puerta de cobertura pasa con
+**1.965/1.995 = 98,5 %** y la de forma también (60.400 palabras de 140.440 y 2,2 % de repetidos). Su
+bandeja tiene **61 incidencias** (35 `norma_cambiada`, 15 `clave_sospechosa`, 10 `hueco_sin_material`
+y 1 `pregunta_ambigua`).
 
 ## 3. Los arreglos del motor (§2.1), con su prueba
 
@@ -119,6 +160,12 @@ los apuntes por epígrafe):
 | 2. La tabla de puertos, **por familias y sin avisos de opciones falsas** | 47 filas seguidas con «No es DynamoDB», «No es MySQL»… | 4 tablas por familia, ordenadas, sin notas de distractor, y las confusiones de verdad en «Confusiones que caen» | `test_una_tabla_de_puertos_se_parte_por_familias`, `test_las_notas_que_solo_dicen_lo_que_un_puerto_no_es_se_van`, `test_la_puerta_de_forma_exige_la_tabla_partida_y_sin_notas_de_distractor` |
 | 3. **Bucle de huecos** y bandeja del propietario | El resto se contaba en el informe y se perdía al cerrar la terminal | Una vuelta más de añadido para los huecos y, lo que siga sin resolverse, a la bandeja con su categoría y su frase | `test_lo_que_queda_sin_cubrir_recibe_la_categoria_de_quien_lo_arregla`, `test_el_detalle_de_una_clave_sospechosa_lleva_la_frase_que_lo_demuestra` |
 | 4. **(f11) Una comprobación caduca cuando el apartado se reescribe** | La comprobación se guardaba con la cita y **se reutilizaba por la firma del grupo**: si el texto se rehacía, la bandeja seguía enseñando una frase que ya no estaba en los apuntes | Cada comprobación guarda la **huella** (`sha256`) del texto contra el que se verificó (migración `0032`), y solo se reutiliza si el texto de hoy tiene esa huella. Una fila sin huella (las de antes) se vuelve a comprobar | `test_una_comprobacion_caduca_cuando_el_apartado_se_reescribe` (falla con la regla vieja: la segunda corrida no volvía a comprobar) |
+| 5. **(f12) Lo que no cabe en ninguna materia va a la bandeja del propietario, no al cajón y no para la corrida** | El tema **no se podía redactar**: `_paso_esquema` salía con `UnsupportedError` por 10 preguntas de 2.000, y sin decir cuáles | El árbol se escribe con lo que sí se puede situar; cada pregunta que no cabe va a la bandeja con `Motivo.SIN_MATERIA_EN_EL_INDICE` y su enunciado, y **cuenta en la puerta de cobertura** como no cubierta (si se cayera del denominador, la puerta se mediría sobre un conjunto del que se han ido las que peor están) | `test_una_pregunta_que_no_cabe_en_el_indice_va_a_la_bandeja_y_no_para_la_corrida` |
+| 6. **(f12) Un grupo que no dice de qué habla se sitúa por el texto de sus hechos** | 296 grupos de I.1 sin materia: «Una de las siguientes afirmaciones es falsa» no casa con ningún patrón y no se puede escribir un comodín por cada muletilla de examen | Manda la materia que reconocen **más** de sus hechos (desempate por el orden del catálogo, para que dos corridas den el mismo índice). De 296 quedan **0** | `test_una_pregunta_que_no_dice_de_que_habla_va_a_la_materia_de_sus_hechos`, `test_un_grupo_sin_enunciado_ni_hechos_que_reconozcan_nada_se_queda_sin_materia` |
+| 7. **(f12) El añadido de un apartado lleva su tope de palabras** | El apartado se redactaba con el tope del §2.3 y luego los añadidos le metían encima todo lo que hiciera falta: I.6 pasó de 12.300 palabras a **18.795** donde el tope son 13.840 | El encargo del añadido dice **cuántas palabras le quedan al apartado** (`tope_del_anadido`), nunca menos de 60: lo que no quepa se declara en la bandeja en vez de taparse escribiendo de más. I.6 quedó en **13.174** y su forma pasó | `test_el_anadido_lleva_su_tope_de_palabras_en_el_encargo` |
+| 8. **(f12) Los trozos de una materia se escriben en orden y el segundo sabe lo que ya está puesto** | Una materia que no cabe en una llamada se partía, y cada trozo escribía **su propio índice**: I.1 acabó con «2. Composición de las Cámaras» y «3. Estatuto de los parlamentarios» dos veces | El segundo trozo recibe los encabezados del primero y no los repite; las materias distintas siguen escribiéndose a la vez | `test_los_trozos_de_una_materia_se_escriben_en_orden_y_sin_repetir_encabezados` |
+| 9. **(f12) La comprobación recibe la unión de los apartados de la pregunta, y lo que quepa de su epígrafe** | Recibía el **epígrafe entero**: el de I.1 son nueve apartados de 150 hechos (≈300.000 caracteres) y no cabe en la ventana del modelo —el tema no se podía comprobar— | La unión de sus apartados (§2.1.1) más el resto de sus epígrafes mientras quepa en 60.000 caracteres. El corte es determinista y la huella se calcula con la misma función | `test_la_comprobacion_recibe_la_union_de_sus_apartados_y_lo_que_quepa_del_epigrafe`, `test_el_texto_de_la_comprobacion_se_corta_por_presupuesto` |
+| 10. **(f12) Una columna de tabla sin titular se nombra** | La tabla de comparación se escribe con la primera celda de la cabecera vacía y así no se lee: I.1 tenía **cuatro** así | `nombrar_columnas_sin_titulo` le pone nombre a esa columna (y solo a esa). Los datos no se tocan | `test_una_columna_de_tabla_sin_titulo_se_nombra_y_deja_de_estar_rota` |
 
 Medido en IV.7: **24 notas de distractor retiradas**, **22 confusiones** en su bloque, **4 familias**,
 **0 puertos repetidos** y **0 notas sin sentido**. El apartado de UDP pasó de 16 hechos —con la
@@ -150,13 +197,20 @@ Lo que se ha construido, y lo que se ha medido de cada cosa:
 
 1. **El acumulado de gasto anterior a f10 no existe** y ya no se puede medir. Desde aquí se anota una
    línea por corrida (§1).
-2. **I.1 no se puede redactar todavía.** Su índice por materias está en borrador y **no pasa sus
-   propias comprobaciones**.
+2. **I.1 está publicado** con el 98,5 % de cobertura y la forma pasando. Su índice cuadra: 21
+   apartados, 1.724 hechos y **0 sin materia**.
 3. **La puerta «hechos fuera de su materia (≤ 3 %)»** del §2.3 sigue sin implementar.
-4. **I.6 está en borrador con dos motivos**: la cobertura (64,3 %) y ahora también la forma (18.666
-   palabras de 13.840, repetidos 12,9 %). Su texto lo rehizo otra tanda mientras esta trabajaba: hay
-   que decidir si se vuelve a redactar con el tope de extensión del §2.1 o si se deja como está.
-5. **La pantalla del test es la primera de la zona del alumno**: faltan Inicio, Temario, Tema con
+4. **I.6 está en borrador por la cobertura (72,5 %), y su techo medido es el 84,1 %**: 41 preguntas de
+   las 258 tienen en los apuntes una frase que sostiene otra opción que su clave y 30 no tienen frase.
+   **No se arregla escribiendo más**: es criterio del propietario sobre las claves. Su forma ya pasa.
+5. **`prever` antes de pagar**: `apuntes --prever` dice lo que le haría una corrida al tema (qué
+   apartados se conservan, cuáles se vuelven a redactar y cuáles se tiran) **sin llamar a nadie**. El
+   plan de una corrida se calcula una vez y no cambia mientras se escribe; entre corridas sí puede
+   cambiar —una pregunta nueva, un hecho que llega, el índice redefinido— y entonces ese texto se tira
+   y se vuelve a escribir. Las 90 secciones que se rehicieron en la corrida de I.1 eran las del índice
+   **anterior** (escritas el 9-oct, antes de que existiera el catálogo): una migración de una vez, no
+   un trabajo repetido.
+6. **La pantalla del test es la primera de la zona del alumno**: faltan Inicio, Temario, Tema con
    apuntes, Resultado, Simulacros, Exámenes oficiales, Fallos y Progreso (§3 del objetivo, pasos 3–6),
    y los **tokens del diseño** (§3.7: las fuentes autoalojadas y el cambio de los colores de toda la
    aplicación). En f11 solo se han añadido los tokens de la hoja como tokens **nuevos**, sin tocar los
