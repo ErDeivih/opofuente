@@ -372,9 +372,7 @@ antiguas era 5.700, así que su llamada costó 0,00865 $ y no los 0,0063 $ de la
 - y la decisión del tope de 1,20 $ por tema se toma sobre esa cota **más un tercio** cuando el tema
   es normativo y denso.
 
-### La tabla que decide qué tema se escribe primero (medida sobre la base real, 11-oct)
-
-No es el orden del temario ni el de ningún documento: es, por cada tema, **cuántas preguntas tienen
+### La tabla que decide qué tema se escribe primero (medida sobre la base real, 11-oct)No es el orden del temario ni el de ningún documento: es, por cada tema, **cuántas preguntas tienen
 una clave con la que se puede acertar** —el número que decide si el apunte sirve para aprobar—. Se
 mide con `valor_por_tema.py` sobre la base real y se ordena por esa columna.
 
@@ -418,6 +416,11 @@ mide con `valor_por_tema.py` sobre la base real y se ordena por esa columna.
 **sin** las que el paso B marca como contrarias a la norma. En los tres temas ya escritos se ve el
 efecto: I.1 baja de 2.035 a 1.995, IV.7 de 511 a 449 e I.6 de 283 a 258. En los 30 sin empezar no hay
 hechos todavía, así que coincide con «con clave»: es el techo, y bajará cuando el paso B los lea.)*
+
+**Puertas: 18/18**, ejecutadas en **41:25 minutos** sobre este árbol (742 pruebas unitarias de
+backend, 630 de integración, 29 de contrato, 318 de componentes —34 ficheros—, 61 E2E de Playwright y
+las 18 puertas del `gates.ps1`). El registro está en `F:\temp-opofuente\gates-f15-apuntes.txt`. **La
+primera pasada no falló ninguna puerta**, así que no hubo que arreglar nada para que pasaran.
 
 ## 5. Lo que queda abierto
 
