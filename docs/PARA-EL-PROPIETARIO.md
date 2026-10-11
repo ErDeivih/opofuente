@@ -19,7 +19,7 @@ necesita tu criterio está marcado como **«Decide tú»**.
    otra opción distinta de la clave**: igual que en I.6, buena parte del hueco es tu criterio sobre
    las claves (47 de sus 55 incidencias son de la clave, no del texto). **No he bajado el listón para
    que pasara.**
-3. **Tu bandeja** va por **270 incidencias** con I.2 (99) e I.4 (55) sumadas a las de I.1, IV.7 e I.6.
+3. **Tu bandeja** va por **333 incidencias** —medidas en la base, no sumadas de informes—: I.2 99, I.6 63, I.1 61, I.4 55 y IV.7 55. Las categorías están en el §3 de cada `docs/apuntes/INFORME-<tema>.md`.
 4. **Dos cosas del motor que interesaban**, las dos con prueba que falla antes:
    - **`--prever` ahora dice lo que cuesta**, no solo lo que rehace: llamadas de hechos, de redacción
      y de comprobación, la cota de arriba del bucle de huecos y los euros. En I.2 acertó la cota de
@@ -49,8 +49,8 @@ revisión». Son 16 apartados y 1.233 hechos.
 2. **Tu bandeja tiene 99 incidencias nuevas de I.2**: 73 de **norma cambiada** (la clave contradice
    la norma o el material: ahí el que hay que revisar es la clave), 19 de **clave sospechosa** (los
    apuntes dicen otra letra y llevan la frase que lo demuestra), 6 de **hueco sin material** y 1 de
-   **pregunta ambigua** (sin clave con la que comprobar). Con I.1 (61) y IV.7 (55), la bandeja va por
-   215.
+   **pregunta ambigua** (sin clave con la que comprobar). Con eso, la bandeja va por 215 incidencias
+   (el total medido de la tanda entera, con I.4 dentro, está en el punto 3 de la sección de arriba).
 3. **Lo que costó, y lo que se dijo antes de pagarlo**: la corrida hizo **194 llamadas y 1,2187 $**.
    La previsión que el motor da **antes** de gastar un céntimo decía 115–195 llamadas y 0,72–1,23 $,
    así que acertó la cota de arriba. Lo caro no fue escribir: fueron los 73 conflictos de clave, que
