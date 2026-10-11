@@ -1,10 +1,10 @@
-﻿# Estado del objetivo largo (TAI: los 33 temas y la app de estudio)
+# Estado del objetivo largo (TAI: los 33 temas y la app de estudio)
 
 **Autoridad:** `docs/GOAL-DEEPSEEK-TRABAJO-LARGO-2026-10.md` · **Presupuesto de API:** 40 $ · **Se
-avisa cada 10 $** · Última actualización: **11 oct 2026 (tanda f15: se eligen los temas por valor
-medido —cuántas preguntas con clave utilizable tiene cada uno—, se escriben el índice y los apuntes
-de **I.2** con su tope de gasto por tema, y se añaden al motor la previsión de coste de `--prever` y
-la limpieza del encabezado que repite el título de otro apartado)**.
+avisa cada 10 $** · Última actualización: **11 oct 2026 (tanda f15: los temas se eligen por valor
+medido —cuántas preguntas con clave utilizable—, se escriben **I.2** —publicado— e **I.4** —en
+borrador con su motivo—, y el motor gana la previsión de coste de `--prever`, la limpieza del
+encabezado que repite el título de otro apartado y un **tope de tiempo para la corrida entera**)**.
 
 > **De las fechas:** la tanda anterior se etiquetó «11 oct» en este fichero, pero **su reloj, sus
 > ficheros y sus marcas de base son del 10 de octubre** (la corrida de I.6 acabó a las 18:09 del
@@ -450,10 +450,26 @@ hechos todavía, así que coincide con «con clave»: es el techo, y bajará cua
    número de preguntas y su botón, y el que no tenga plantilla activa dirá que todavía no se puede
    hacer en lugar de ofrecer un examen que falla. La ruta `POST /student/official-exams/{posicion}/sessions`
    ya está probada con un examen de verdad montado por la API (§4c)
-8. Los **29 temas restantes** y los bloques C (panel) y D (datos: copias, epígrafes, INAP) siguen sin
+8. Los **28 temas restantes** y los bloques C (panel) y D (datos: copias, epígrafes, INAP) siguen sin
    empezar, con D5 (copias verificadas) como primer paso del §6 del objetivo. En f15 se les ha puesto
    **orden de valor**: la tabla de preguntas con clave utilizable de cada tema es la que decide qué se
-   escribe primero, y está abajo.
+   escribe primero, y está abajo. **IV.2 (el 3.º, 797 preguntas con clave) tiene ya su índice escrito
+   y probado** (`domain/catalogo_iv_2.py`, 13 apartados, 761 de sus 770 grupos situados por el
+   enunciado): la próxima tanda empieza redactándolo, sin volver a decidir el árbol.
+9. **Dos listones que no coinciden entre el documento y el código**, medidos en I.4 y anotados sin
+   tocarlos (el §1.2 pide no relajar la puerta):
+   - **párrafos casi repetidos**: el §2.3 pide **≤ 3 %** y el código lleva el tope al **5 %**
+     (`MAX_PARRAFOS_REPETIDOS = 0.05`). I.4 está en 4,2 %: pasa el código y no el documento. O se baja
+     el del código al 3 % (y entonces I.4, I.1 —2,2 %— y IV.7 siguen pasando, pero hay que volver a
+     medir todos) o se sube el del documento al 5 %;
+   - **hechos fuera de su materia (≤ 3 %)**: sigue **sin implementar** (era el punto 3 de esta lista
+     desde f12).
+10. **Una lección de medida que conviene no volver a aprender**: a mitad de la corrida de I.4 pareció
+   que estaba colgada. **No lo estaba.** El proceso que se miraba era el **lanzador `uv`**, que marca
+   0 s de CPU siempre porque solo espera; el que trabaja es su **nieto**. La comprobación que sirve es
+   el conteo en la base (278 → 544 comprobaciones en 10 min) y la conexión TCP del nieto a la API. Y
+   de ahí salió el hueco real: no había **tope de tiempo para la corrida entera**, y ya lo hay
+   (`--tiempo-maximo`, `0` = sin tope), con su prueba de un modelo que tarda más que el tope.
 9. **Tres violaciones de accesibilidad en el panel** (`scrollable-region-focusable` en `/cambios` y en
    `/buscar` a 390 px) que aparecen al fotografiar las pantallas del propietario **con los datos
    reales**: son regiones que se desplazan y no se pueden recorrer con el teclado. No son de este
