@@ -21,6 +21,7 @@ había:
 from __future__ import annotations
 
 import os
+import time
 from collections.abc import Sequence
 from typing import Any
 
@@ -465,6 +466,39 @@ class _ModeloQueEscribeMal(_ModeloFalso):
         return RedaccionBatch(
             titulo=section.title, markdown=cuerpo, input_tokens=10, output_tokens=10
         )
+
+
+class _ModeloQueTarda(_ModeloFalso):
+    """Un modelo que tarda lo que se le diga y cuenta cuántas veces le han llamado.
+
+    Es el doble con el que se prueba el tope de tiempo de la corrida: con él se ve que la llamada en
+    curso termina y que **no se empieza otra**, que es lo que un tope tiene que hacer.
+    """
+
+    def __init__(self, *, segundos: float, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+        self.segundos = segundos
+        self.llamadas = 0
+
+    def _tarda(self) -> None:
+        self.llamadas += 1
+        time.sleep(self.segundos)
+
+    def hechos(self, *args: Any, **kwargs: Any) -> HechosBatch:
+        self._tarda()
+        return super().hechos(*args, **kwargs)
+
+    def redactar(self, *args: Any, **kwargs: Any) -> RedaccionBatch:
+        self._tarda()
+        return super().redactar(*args, **kwargs)
+
+    def comprobar(self, *args: Any, **kwargs: Any) -> ComprobacionBatch:
+        self._tarda()
+        return super().comprobar(*args, **kwargs)
+
+    def anadir(self, *args: Any, **kwargs: Any) -> RedaccionBatch:
+        self._tarda()
+        return super().anadir(*args, **kwargs)
 
 
 def _servicio(client: TestClient, modelo: _ModeloFalso, **kwargs: Any) -> TopicNotesService:
@@ -1419,6 +1453,49 @@ def test_la_prevision_baja_cuando_el_tema_ya_esta_escrito(
     assert codigo == 0
     assert "hechos: 0 llamada(s)" in salida, salida
     assert "redaccion: 0 llamada(s)" in salida, salida
+
+
+def test_una_corrida_se_para_sola_cuando_se_agota_su_tiempo(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """Un tope de tiempo para la corrida **entera**: para de llamar y dice lo que deja a medias.
+
+    El tope por llamada ya estaba (`--tiempo`, 300 s por defecto, y el cliente lo pasa a la conexión
+    HTTP). Lo que no existía es el de la corrida entera, y una corrida de un tema son cientos de
+    llamadas encadenadas: sin él, la que se atasca cuesta tiempo y dinero sin que nadie la pare.
+
+    Se comprueba con un modelo que tarda más que el tope: la llamada **en curso** termina (no se
+    corta a mitad, que dejaría el lote a medias), la siguiente **no se empieza**, y el informe lo
+    dice. Lo escrito se queda escrito: volver a lanzar el comando sigue desde ahí.
+    """
+    _escenario(seeded_client, titulo="El tope de tiempo de la corrida")
+    # La primera llamada empieza (el tope aún no se ha agotado) y tarda más que el tope: al
+    # terminar, el tope ya pasó, así que la segunda **no** se empieza. Los números están elegidos
+    # para que eso sea así pase lo que pase con la máquina: el tope (0,5 s) es mayor que el trabajo
+    # de preparar la corrida y menor que lo que tarda la primera llamada (1 s).
+    modelo = _ModeloQueTarda(segundos=1.0)
+
+    informe = _servicio(seeded_client, modelo).run(
+        "IV.7", now=SystemClock().now(), maximo_segundos=0.5
+    )
+
+    assert modelo.llamadas == 1, (
+        f"con el tiempo agotado no se empieza otra llamada: se hicieron {modelo.llamadas}"
+    )
+    assert "tiempo" in informe.notes, informe.notes
+
+
+def test_una_corrida_sin_tope_de_tiempo_no_se_corta(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """Sin tope (el valor por defecto) la corrida hace todo su trabajo, como siempre."""
+    _escenario(seeded_client, titulo="Sin tope de tiempo")
+    modelo = _ModeloQueTarda(segundos=0.0)
+
+    informe = _servicio(seeded_client, modelo).run("IV.7", now=SystemClock().now())
+
+    assert modelo.llamadas > 1, "sin tope no se corta nada"
+    assert "tiempo" not in informe.notes, informe.notes
 
 
 def test_un_tema_sin_preguntas_clasificadas_lo_dice_y_no_sigue(

@@ -268,6 +268,19 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
         metavar="SEGUNDOS",
         help="tiempo máximo por llamada (por defecto 300)",
     )
+    parser.add_argument(
+        "--tiempo-maximo",
+        dest="tiempo_maximo",
+        type=float,
+        default=0.0,
+        metavar="SEGUNDOS",
+        help=(
+            "tope de tiempo de la corrida **entera**, sumando todas las llamadas (0 = sin tope, el "
+            "valor por defecto). Al agotarse no se empieza ninguna llamada más: lo escrito se "
+            "queda "
+            "escrito y volver a lanzar el comando sigue desde ahí"
+        ),
+    )
     return parser.parse_args(list(argv))
 
 
@@ -416,6 +429,9 @@ def main(argv: Sequence[str] | None = None) -> int:
                     now=reloj.now(),
                     dry_run=args.dry_run,
                     limite_grupos=args.limite,
+                    # El tope de la corrida entera: sin él, una corrida atascada gasta tiempo y
+                    # dinero sin que nadie la pare. 0 (el valor por defecto) es «sin tope».
+                    maximo_segundos=args.tiempo_maximo if args.tiempo_maximo > 0 else None,
                 )
                 pasa_forma, pasa_cobertura = _decidir_y_archivar(
                     informe,

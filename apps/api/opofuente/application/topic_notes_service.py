@@ -133,6 +133,16 @@ COSTE_MEDIO_POR_LLAMADA_USD = 0.0063
 T = TypeVar("T")
 
 
+class _TiempoDeLaCorridaAgotadoError(Exception):
+    """Se acabó el tiempo de la corrida: no se empieza ninguna llamada más.
+
+    No es un `OpoFuenteError` a propósito. Un error de esos lo traga `_seguro` y la corrida sigue
+    con el lote siguiente, que es lo correcto para un fallo de red puntual y lo **contrario** de lo
+    que se quiere aquí: si el tope de tiempo se tragara como un fallo, la corrida seguiría gastando
+    llamada a llamada hasta el final. Esta excepción sube hasta `run`, que la cuenta y para.
+    """
+
+
 class TopicNotesService:
     """Escribe y comprueba los apuntes de un tema. No escribe por SQL: todo pasa por el
     repositorio."""
@@ -153,6 +163,19 @@ class TopicNotesService:
         self._workers = max(1, workers)
         self._lote_hechos = max(1, lote_hechos)
         self._lote_comprobacion = max(1, lote_comprobacion)
+        #: Cuándo se agota el tiempo de **esta** corrida (`time.monotonic()`), o `None` sin tope.
+        #: Se pone al arrancar `run` y se consulta antes de cada llamada al modelo.
+        self._se_acaba_a_las: float | None = None
+
+    def _agotado(self) -> bool:
+        """¿Se ha pasado el tope de tiempo de la corrida?
+
+        Se mira **antes** de cada llamada y no dentro: lo que hay que evitar es empezar llamadas
+        nuevas, no cortar a mitad la que está en curso (cortarla dejaría un lote pagado y sin
+        escribir). Con el tope agotado, la corrida deja de llamar y dice lo que ha dejado a medias;
+        lo ya escrito se queda escrito y volver a lanzar el comando sigue desde ahí.
+        """
+        return self._se_acaba_a_las is not None and time.monotonic() >= self._se_acaba_a_las
 
     # ------------------------------------------------------------------ la corrida
 
@@ -163,8 +186,19 @@ class TopicNotesService:
         now: datetime,
         dry_run: bool = False,
         limite_grupos: int | None = None,
+        maximo_segundos: float | None = None,
     ) -> TopicNotesReport:
-        """Escribe y comprueba los apuntes del tema. `dry_run` llama al modelo y no escribe nada."""
+        """Escribe y comprueba los apuntes del tema. `dry_run` llama al modelo y no escribe nada.
+
+        `maximo_segundos` es el tope de tiempo de la corrida **entera** (el de cada llamada es del
+        cliente, `--tiempo`). Al agotarse, la llamada en curso termina y **no se empieza ninguna
+        otra**: lo escrito se queda escrito, el informe dice lo que ha quedado a medias y volver a
+        lanzar el comando sigue desde ahí. Sin tope (`None`, el valor por defecto) la corrida hace
+        todo su trabajo, como siempre.
+        """
+        self._se_acaba_a_las = (
+            None if maximo_segundos is None else time.monotonic() + max(0.0, maximo_segundos)
+        )
         node_id = self._repository.node_id(code)
         if node_id is None:
             raise NotFoundError("tema del programa", code)
@@ -193,23 +227,42 @@ class TopicNotesService:
             dry_run=dry_run,
         )
 
-        hechos = self._paso_hechos(nodo, grupos, informe, now=now, dry_run=dry_run)
-        secciones, indice = self._paso_esquema(nodo, hechos, informe, now=now, dry_run=dry_run)
-        self._paso_redaccion(nodo, secciones, informe, now=now, dry_run=dry_run)
-        self._paso_comprobacion(nodo, grupos, informe, now=now, dry_run=dry_run, indice=indice)
-        # La última vuelta del paso E: lo que sigue sin cubrirse se intenta rellenar **una vez más**
-        # (el hueco de verdad, no el que ya se intentó) y lo que quede va a la bandeja del
-        # propietario con su categoría. Es el §2.1.4: antes de cerrar un tema, rellenar lo que se
-        # pueda y no dejar dudas sin dueño.
-        self._paso_huecos(nodo, grupos, informe, now=now, dry_run=dry_run, indice=indice)
+        # Se declaran antes del `try` para que el tope de tiempo pueda cortar la corrida en
+        # cualquier paso: sin esto, cortarla antes de la redacción dejaría el informe sin poder
+        # cerrarse (y el informe es lo que dice qué ha quedado a medias).
+        hechos: list[Hecho] = []
+        secciones: list[NoteSection] = []
+        indice: IndiceDelTema | None = None
+        try:
+            hechos = self._paso_hechos(nodo, grupos, informe, now=now, dry_run=dry_run)
+            secciones, indice = self._paso_esquema(nodo, hechos, informe, now=now, dry_run=dry_run)
+            self._paso_redaccion(nodo, secciones, informe, now=now, dry_run=dry_run)
+            self._paso_comprobacion(nodo, grupos, informe, now=now, dry_run=dry_run, indice=indice)
+            # La última vuelta del paso E: lo que sigue sin cubrirse se intenta rellenar **una vez
+            # más** (el hueco de verdad, no el que ya se intentó) y lo que quede va a la bandeja del
+            # propietario con su categoría. Es el §2.1.4: antes de cerrar un tema, rellenar lo
+            # que se pueda y no dejar dudas sin dueño.
+            self._paso_huecos(nodo, grupos, informe, now=now, dry_run=dry_run, indice=indice)
+        except _TiempoDeLaCorridaAgotadoError:
+            # El tope de tiempo: se para de llamar y se dice. No se tira nada de lo escrito: el
+            # informe que sigue mide lo que hay en la base y la corrida siguiente sigue desde ahí.
+            informe.add_notes(
+                f"se agotó el tiempo de la corrida ({maximo_segundos:g} s): no se han hecho las "
+                "llamadas que quedaban. Lo escrito está guardado y volver a lanzar el comando "
+                "sigue "
+                "desde ahí"
+            )
+        # El final del informe se mide **desde la base**, no desde las listas de la corrida: si el
+        # tope de tiempo la cortó a mitad, esas listas no existen y lo que hay que contar es lo que
+        # quedó escrito. Con la corrida entera el resultado es el mismo, porque cada paso guarda lo
+        # suyo antes de devolverlo.
+        hechos = list(self._repository.facts(node_id)) if not dry_run else hechos
+        secciones = list(self._repository.sections(node_id)) if not dry_run else secciones
         # La revisión de forma se mide sobre el texto que ha quedado guardado, y con **todos** los
         # hechos del tema: es la comprobación que decide si estos apuntes se pueden dar por buenos
         # (encabezados repetidos, marcas internas, tablas sin cabecera, párrafos repetidos y
         # extensión frente a los hechos que tiene el tema).
-        informe.revision = revisar_apuntes(
-            self._repository.sections(node_id) if not dry_run else secciones,
-            hechos,
-        )
+        informe.revision = revisar_apuntes(secciones, hechos)
         # El recuento de la cobertura se rehace **desde lo guardado** al terminar: el bucle de
         # huecos
         # vuelve a comprobar grupos y guarda resultados nuevos, y sin esto el informe de la corrida
@@ -221,14 +274,12 @@ class TopicNotesService:
             grupos,
             informe,
             hechos,
-            list(self._repository.sections(node_id)) if not dry_run else list(secciones),
+            secciones,
             indice,
         )
         # El informe se cierra leyendo lo que quedó **guardado**: midiéndolo con la lista de
         # apartados anterior a la redacción, los tamaños saldrían a cero y el informe mentiría.
-        informe.sections = self._informe_apartados(
-            self._repository.sections(node_id) if not dry_run else secciones
-        )
+        informe.sections = self._informe_apartados(secciones)
         return informe
 
     def medir(self, code: str) -> TopicNotesReport:
@@ -1253,6 +1304,10 @@ class TopicNotesService:
         ejecutar el comando lo reintenta.
         """
         for intento in range(1, INTENTOS_POR_LLAMADA + 1):
+            # El tope de tiempo de la corrida se mira **antes** de cada intento: cuando se agota, la
+            # excepción sube sin que la trague el `except` de abajo, que es para los fallos de red.
+            if self._agotado():
+                raise _TiempoDeLaCorridaAgotadoError
             try:
                 return trabajo()
             except ExternalServiceError as error:
