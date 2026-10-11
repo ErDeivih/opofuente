@@ -1676,6 +1676,8 @@ from opofuente.domain.catalogo_i_1 import MATERIAS as MATERIAS_I1  # noqa: E402
 from opofuente.domain.catalogo_i_1 import ORDEN as ORDEN_I1  # noqa: E402
 from opofuente.domain.catalogo_i_2 import MATERIAS as MATERIAS_I2  # noqa: E402
 from opofuente.domain.catalogo_i_2 import ORDEN as ORDEN_I2  # noqa: E402
+from opofuente.domain.catalogo_i_4 import MATERIAS as MATERIAS_I4  # noqa: E402
+from opofuente.domain.catalogo_i_4 import ORDEN as ORDEN_I4  # noqa: E402
 from opofuente.domain.catalogo_i_6 import MATERIAS as MATERIAS_I6  # noqa: E402
 from opofuente.domain.catalogo_i_6 import ORDEN as ORDEN_I6  # noqa: E402
 from opofuente.domain.catalogo_iv_2 import MATERIAS as MATERIAS_IV2  # noqa: E402
@@ -1687,6 +1689,7 @@ _CATALOGOS: dict[str, tuple[Materia, ...]] = {
     "I.6": _en_orden_de_estudio(MATERIAS_I6, ORDEN_I6),
     "I.1": _en_orden_de_estudio(MATERIAS_I1, ORDEN_I1),
     "I.2": _en_orden_de_estudio(MATERIAS_I2, ORDEN_I2),
+    "I.4": _en_orden_de_estudio(MATERIAS_I4, ORDEN_I4),
 }
 
 

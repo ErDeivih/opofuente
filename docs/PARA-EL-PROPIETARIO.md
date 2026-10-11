@@ -3,6 +3,36 @@
 Lo que conviene que sepas y **no** hace falta que contestes para que el trabajo siga. Lo que sí
 necesita tu criterio está marcado como **«Decide tú»**.
 
+## 11 oct 2026 — I.2 (las Cortes, el Tribunal Constitucional y el Defensor del Pueblo) ya se lee
+
+**Lo que cambia para ti:** hay un tema más en la zona del alumno. **I.2** contesta al **95,2 %** de
+las 703 preguntas que tienen una clave con la que se puede acertar (sobre todas las que tienen clave,
+el 80,1 %), y pasa las dos puertas, así que se ha publicado con la marca «Versión generada · en
+revisión». Son 16 apartados y 1.233 hechos.
+
+1. **Y una decisión tuya que se ve en el texto**: este tema se llevó preguntas de **otras partes de
+   la Constitución** (la Corona, el Gobierno, los derechos, la organización territorial, el Poder
+   Judicial y la Ley de transparencia) —son del orden de una de cada tres de sus 546 grupos—. Como
+   esas preguntas **caen en este bloque** y tú estudias por temas, tienen su apartado propio en el
+   índice en vez de un cajón de «otros». Si prefieres que no estén, dímelo y se quitan.
+2. **Tu bandeja tiene 99 incidencias nuevas de I.2**: 73 de **norma cambiada** (la clave contradice
+   la norma o el material: ahí el que hay que revisar es la clave), 19 de **clave sospechosa** (los
+   apuntes dicen otra letra y llevan la frase que lo demuestra), 6 de **hueco sin material** y 1 de
+   **pregunta ambigua** (sin clave con la que comprobar). Con I.1 (61) y IV.7 (55), la bandeja va por
+   215.
+3. **Lo que costó, y lo que se dijo antes de pagarlo**: la corrida hizo **194 llamadas y 1,2187 $**.
+   La previsión que el motor da **antes** de gastar un céntimo decía 115–195 llamadas y 0,72–1,23 $,
+   así que acertó la cota de arriba. Lo caro no fue escribir: fueron los 73 conflictos de clave, que
+   obligan a volver a comprobar y a añadir. **Y se pasó 0,0187 $ del tope por tema (1,20 $)**; a
+   partir de ahora solo se escribe entero el tema cuya previsión **máxima** quepa en el tope. Por eso
+   **IV.2**, que es el siguiente por valor (797 preguntas con clave), se queda para la próxima tanda:
+   su previsión máxima es 1,38 $. Su índice ya está escrito y probado, así que la próxima tanda
+   empieza redactándolo.
+4. **Y una cosa del motor que interesaba**: los temas de apuntes ya no se eligen por el orden del
+   temario sino **por cuántas preguntas con clave tiene cada uno**, medido sobre tu base. La tabla de
+   los 33 está en `ESTADO-DEL-OBJETIVO.md`; los tres primeros que quedan son IV.2 (797), I.4 (577) e
+   II.4 (566).
+
 ## 11 oct 2026 — El ciclo de estudio se cierra: resultado, simulacro, exámenes, fallos y progreso
 
 **Lo que cambia para ti:** ya puedes hacer un test y **ver qué has fallado y de qué tema era**, montar

@@ -1,9 +1,10 @@
 # Estado del objetivo largo (TAI: los 33 temas y la app de estudio)
 
 **Autoridad:** `docs/GOAL-DEEPSEEK-TRABAJO-LARGO-2026-10.md` · **Presupuesto de API:** 40 $ · **Se
-avisa cada 10 $** · Última actualización: **11 oct 2026 (tanda f14: se cierra el ciclo de estudio
-—Resultado, Simulacro, Exámenes oficiales, Fallos y Progreso— con sus consultas, sus pruebas, sus
-capturas a dos anchos y las puertas 18/18; sin gastar API)**.
+avisa cada 10 $** · Última actualización: **11 oct 2026 (tanda f15: se eligen los temas por valor
+medido —cuántas preguntas con clave utilizable tiene cada uno—, se escriben el índice y los apuntes
+de **I.2** con su tope de gasto por tema, y se añaden al motor la previsión de coste de `--prever` y
+la limpieza del encabezado que repite el título de otro apartado)**.
 
 > **De las fechas:** la tanda anterior se etiquetó «11 oct» en este fichero, pero **su reloj, sus
 > ficheros y sus marcas de base son del 10 de octubre** (la corrida de I.6 acabó a las 18:09 del
@@ -41,6 +42,9 @@ tokens que devolvió cada llamada; el coste es la estimación con la tabla de pr
 | **Acumulado medido de f13** | | | **0** | **0** | **0** | **0,0000 $** |
 | 11-oct | — | f14: el cierre del ciclo de estudio (Resultado, Simulacro, Exámenes, Fallos y Progreso) | 0 | 0 | 0 | 0,0000 $ |
 | **Acumulado medido de f14** | | | **0** | **0** | **0** | **0,0000 $** |
+| 11-oct | I.2 | la redacción completa del tema (paso B a bucle de huecos) | 194 | 2.149.315 | 1.493.911 | 1,2187 $ |
+| 11-oct | I.2 | `--medir`, `--limpiar-forma` y `--publicar` (solo lectura y limpieza) | 0 | 0 | 0 | 0,0000 $ |
+| **Acumulado medido de f15** | | | **194** | **2.149.315** | **1.493.911** | **1,2187 $** |
 
 *(f13 no llama al modelo a propósito: es el bloque de interfaz y de la ruta de escritura de los
 avisos. f14 tampoco: es interfaz y consultas de lectura sobre la base; lo único que se ejecuta son las
@@ -60,7 +64,8 @@ Tres avisos para que nadie sume mal:
   salida se perdió al matar el proceso): es del orden de la corrida siguiente, **≈0,40 $**;
 - **el acumulado del objetivo no se puede dar.** Lo anterior a f10 no está en ninguna fuente. Con lo
   medido (≈1,31 $ de f10 + 0,4411 $ de f11 + 3,0816 $ de f12 + ≈0,40 $ de la corrida matada + 0,00 $
-  de f13 = **≈5,23 $**) el aviso de los 10 $ **sigue sin cruzarse**.
+  de f13 + 0,00 $ de f14 + 1,2187 $ de f15 = **≈6,45 $**) el aviso de los 10 $ **sigue sin
+  cruzarse**.
 
 **Y una corrección de método**: el informe de una corrida contaba la cobertura **antes** del bucle de
 huecos, así que decía menos de la que el tema acababa teniendo (en I.1: 1.947 de 1.995 en el informe,
@@ -74,7 +79,8 @@ guardado y `--prever` dice lo que costaría una corrida **antes** de pagarla.
 | **IV.7** | **publicado** (versión archivada) | 958 → 724 redactados | 25 | **430/449 = 95,8 % PASA** | 430/511 = 84,1 % | 17 | 0 | **PASA las cinco** |
 | **I.6** | **borrador con su motivo** (versión retirada) | 346 → 299 | 13 | **187/258 = 72,5 % NO PASA** | 187/283 = 66,1 % | 20 (`clave_sospechosa`) | 20 | **PASA las cinco** (13.174 palabras de 13.840; repetidos 0,6 %) |
 | **I.1** | **publicado** (versión archivada, con la marca «Versión generada · en revisión») | 3.511 → 1.724 redactados | 21 | **1.965/1.995 = 98,5 % PASA** | 1.965/2.035 = 96,6 % | 15 | 10 | **PASA las cinco** (60.400 palabras de 140.440; repetidos 2,2 %) |
-| resto (30) | sin empezar | | | | | | | |
+| **I.2** | **publicado** (versión archivada, con la marca «Versión generada · en revisión») | 1.233 → 696 redactados | 16 | **669/703 = 95,2 % PASA** | 669/835 = 80,1 % | 19 | 6 | **PASA las cinco** (24.061 palabras de 49.320; repetidos 2,9 %) |
+| resto (29) | sin empezar | | | | | | | |
 
 *(Cifras de **esta** tanda, medidas con `apuntes --medir` sobre la base real —no heredadas de la
 corrida que las escribió—. Las tres filas son del 10-oct: IV.7 es la única que no se ha tocado. La
@@ -277,6 +283,100 @@ primera pasada de `npm run test:web` falló en los cinco ficheros nuevos con «F
 tienen que decir— y la segunda pasó con 318/318. Lo mismo en el backend: `test_student_result_api.py`
 se escribió contra las rutas nuevas y falló hasta que estuvieron.
 
+## 4d. La tanda de apuntes con el gasto bajo control (f15)
+
+Esta tanda vuelve al bloque A (los apuntes) con una regla nueva, la que manda en todo el bloque:
+**prever antes de pagar**. Lo que se ha construido y lo que se ha medido:
+
+| Qué | Dónde | Cómo se comprueba |
+|---|---|---|
+| **Elegir los temas por valor, medido y no heredado** | `F:\temp-opofuente\f15-scratch\valor_por_tema.py` (lectura de la base real; su tabla está abajo) | La tabla de las 33 filas sale de la base: por cada tema, sus grupos, sus preguntas y **cuántas tienen clave utilizable** (las que tienen clave, sin las que el paso B marca como contrarias a la norma). No es el orden del temario |
+| **`--prever` dice lo que cuesta, no solo lo que rehace** | `application/topic_notes_service.py` (`_prevision_de_llamadas`) | `test_el_comando_prever_dice_lo_que_costaria_la_corrida_antes_de_pagarla` y `test_la_prevision_baja_cuando_el_tema_ya_esta_escrito`. Las dos **fallan antes** del arreglo |
+| **El índice de un tema se ensaya antes de gastar** | `F:\temp-opofuente\f15-scratch\ensayo_reparto.py` (lectura) y `--esquema` | Ensayo del reparto: I.2 situaba 631 de sus 685 grupos por el enunciado y IV.2, 761 de 770; lo que no casa se sitúa por el texto de sus hechos. Tres patrones estaban mal y se vieron aquí, no en la factura |
+| **Un encabezado del cuerpo que repite el título de otro apartado se quita** | `domain/notes_quality.py` (`sin_encabezados_repetidos_en_el_tema` con `titulos`) y `--limpiar-forma` | `test_un_encabezado_del_cuerpo_que_repite_el_titulo_de_otro_apartado_se_quita` (falla antes). Es lo que dejaba a I.2 con la forma en NO PASA: `cortes-funciones` llevaba un `### Defensor del Pueblo` dentro y el tema tiene su apartado «El Defensor del Pueblo» |
+
+### I.2 (845 preguntas, 685 grupos), escrito y publicado el 11-oct
+
+Se eligió **el primero por valor de los 30 que quedan**: 835 preguntas con clave utilizable, medido
+sobre la base. Su índice se definió antes (`domain/catalogo_i_2.py`, 16 apartados) y se ensayó antes
+de gastar un céntimo.
+
+| Qué se midió | Valor |
+|---|---|
+| Cobertura (clave utilizable) | **669/703 = 95,2 % PASA** |
+| Cobertura (todas las que tienen clave) | 669/835 = 80,1 % |
+| Hechos | 1.233 (de 16 apartados) |
+| Forma | **PASA** · 24.061 palabras de 49.320 · repetidos 2,9 % |
+| Índice | PASA · 16 apartados · **0 grupos y 0 hechos sin materia** |
+| Bandeja del propietario | **99 incidencias**: 73 `norma_cambiada`, 19 `clave_sospechosa`, 6 `hueco_sin_material`, 1 `pregunta_ambigua` |
+| Llamadas y coste | **194 llamadas · 1,2187 $** |
+
+**Lo que `--prever` dijo y lo que costó**, que es lo que pidió el propietario:
+
+| | `--prever` dijo | La corrida hizo |
+|---|---|---|
+| Llamadas | 115 como mínimo y 195 como máximo | **194** |
+| Coste | 0,72 $ como mínimo y 1,23 $ como máximo | **1,2187 $** |
+
+La previsión **acertó la cota de arriba** (194 frente a 195; 1,2187 $ frente a 1,23 $) y falló la de
+abajo por 79 llamadas: el bucle de huecos se llevó casi todo lo que separa el mínimo del máximo
+(73 preguntas con la clave contradiciendo la norma, 19 en conflicto y 6 sin frase en los apuntes). Es
+una corrida de las caras del rango, no de las baratas.
+
+**Y una cosa que se dice porque no salió como se esperaba**: el tope por tema del bloque es **1,20 $**
+y esta corrida hizo **1,2187 $**, 0,0187 $ por encima. La previsión ya lo avisaba —su máximo era
+1,23 $— y la decisión fue seguir porque su **mínimo** (0,72 $) cabía de sobra; con el resultado
+delante, la regla se endurece para los temas siguientes: **se escribe entero el tema cuyo máximo
+previsto quepa en el tope**, y el que no, se deja para otra tanda o se le reduce el alcance. El
+detalle está en `DECISIONES-TOMADAS-EN-EL-OBJETIVO.md`.
+
+### La tabla que decide qué tema se escribe primero (medida sobre la base real, 11-oct)
+
+No es el orden del temario ni el de ningún documento: es, por cada tema, **cuántas preguntas tienen
+una clave con la que se puede acertar** —el número que decide si el apunte sirve para aprobar—. Se
+mide con `valor_por_tema.py` sobre la base real y se ordena por esa columna.
+
+| # | Tema | Grupos | Preguntas | Con clave | **Clave utilizable** | Hechos | Estado |
+|---|---|---|---|---|---|---|---|
+| 1 | I.1 | 2.008 | 2.043 | 2.035 | **1.995** | 3.511 | hecho (publicado) |
+| 2 | I.2 | 685 | 845 | 835 | **835** | 1.233 | **hecho en f15 (publicado)** |
+| 3 | IV.2 | 770 | 807 | 797 | **797** | 0 | índice escrito (f15), sin redactar |
+| 4 | I.4 | 546 | 602 | 577 | **577** | 0 | sin empezar |
+| 5 | II.4 | 501 | 577 | 566 | **566** | 0 | sin empezar |
+| 6 | I.8 | 442 | 606 | 566 | **566** | 0 | sin empezar |
+| 7 | I.7 | 377 | 586 | 550 | **550** | 0 | sin empezar |
+| 8 | IV.5 | 423 | 460 | 452 | **452** | 0 | sin empezar |
+| 9 | IV.7 | 474 | 528 | 511 | **449** | 958 | hecho (publicado) |
+| 10 | III.4 | 411 | 434 | 433 | **433** | 0 | sin empezar |
+| 11 | III.9 | 372 | 435 | 429 | **429** | 0 | sin empezar |
+| 12 | I.5 | 347 | 415 | 404 | **404** | 0 | sin empezar |
+| 13 | IV.6 | 324 | 354 | 340 | **340** | 0 | sin empezar |
+| 14 | III.7 | 279 | 344 | 332 | **332** | 0 | sin empezar |
+| 15 | III.1 | 287 | 324 | 318 | **318** | 0 | sin empezar |
+| 16 | III.5 | 262 | 277 | 276 | **276** | 0 | sin empezar |
+| 17 | IV.9 | 247 | 279 | 264 | **264** | 0 | sin empezar |
+| 18 | I.6 | 191 | 303 | 283 | **258** | 346 | borrador (techo medido 84,1 %) |
+| 19 | IV.8 | 237 | 253 | 252 | **252** | 0 | sin empezar |
+| 20 | II.1 | 235 | 256 | 248 | **248** | 0 | sin empezar |
+| 21 | IV.1 | 233 | 236 | 234 | **234** | 0 | sin empezar |
+| 22 | II.3 | 185 | 226 | 224 | **224** | 0 | sin empezar |
+| 23 | III.3 | 188 | 214 | 214 | **214** | 0 | sin empezar |
+| 24 | II.5 | 162 | 200 | 196 | **196** | 0 | sin empezar |
+| 25 | IV.10 | 192 | 199 | 194 | **194** | 0 | sin empezar |
+| 26 | II.2 | 180 | 187 | 184 | **184** | 0 | sin empezar |
+| 27 | III.8 | 153 | 185 | 182 | **182** | 0 | sin empezar |
+| 28 | I.3 | 168 | 183 | 182 | **182** | 0 | sin empezar |
+| 29 | IV.4 | 167 | 174 | 168 | **168** | 0 | sin empezar |
+| 30 | IV.3 | 142 | 165 | 163 | **163** | 0 | sin empezar |
+| 31 | III.2 | 157 | 168 | 162 | **162** | 0 | sin empezar |
+| 32 | III.6 | 148 | 165 | 161 | **161** | 0 | sin empezar |
+| 33 | I.9 | 136 | 145 | 137 | **137** | 0 | sin empezar |
+
+*(La columna «clave utilizable» sale de la base: son las preguntas con clave activa o en borrador
+**sin** las que el paso B marca como contrarias a la norma. En los tres temas ya escritos se ve el
+efecto: I.1 baja de 2.035 a 1.995, IV.7 de 511 a 449 e I.6 de 283 a 258. En los 30 sin empezar no hay
+hechos todavía, así que coincide con «con clave»: es el techo, y bajará cuando el paso B los lea.)*
+
 ## 5. Lo que queda abierto
 
 1. **El acumulado de gasto anterior a f10 no existe** y ya no se puede medir. Desde aquí se anota una
@@ -308,8 +408,10 @@ se escribió contra las rutas nuevas y falló hasta que estuvieron.
    número de preguntas y su botón, y el que no tenga plantilla activa dirá que todavía no se puede
    hacer en lugar de ofrecer un examen que falla. La ruta `POST /student/official-exams/{posicion}/sessions`
    ya está probada con un examen de verdad montado por la API (§4c)
-8. Los **30 temas restantes** y los bloques C (panel) y D (datos: copias, epígrafes, INAP) siguen sin
-   empezar, con D5 (copias verificadas) como primer paso del §6 del objetivo.
+8. Los **29 temas restantes** y los bloques C (panel) y D (datos: copias, epígrafes, INAP) siguen sin
+   empezar, con D5 (copias verificadas) como primer paso del §6 del objetivo. En f15 se les ha puesto
+   **orden de valor**: la tabla de preguntas con clave utilizable de cada tema es la que decide qué se
+   escribe primero, y está abajo.
 9. **Tres violaciones de accesibilidad en el panel** (`scrollable-region-focusable` en `/cambios` y en
    `/buscar` a 390 px) que aparecen al fotografiar las pantallas del propietario **con los datos
    reales**: son regiones que se desplazan y no se pueden recorrer con el teclado. No son de este
