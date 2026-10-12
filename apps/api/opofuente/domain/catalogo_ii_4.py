@@ -381,7 +381,7 @@ MATERIAS: tuple[Materia, ...] = (
     Materia(
         key="unix-comandos-y-shell",
         epigraph_code="II.4.4",
-        title="Unix y Linux: el shell y los comandos",
+        title="El shell y los comandos de Unix y Linux",
         resumen=(
             "El intérprete de órdenes y lo que se hace con él: los shells (sh, bash, csh, ksh y "
             "zsh), las variables de entorno y de shell, las comillas y los comodines, la "
@@ -418,7 +418,7 @@ MATERIAS: tuple[Materia, ...] = (
     Materia(
         key="unix-permisos-y-usuarios",
         epigraph_code="II.4.4",
-        title="Unix y Linux: usuarios, grupos y permisos",
+        title="Usuarios, grupos y permisos en Unix y Linux",
         resumen=(
             "Quién puede hacer qué: las cuentas de usuario y los grupos, el usuario root y el "
             "superusuario, los ficheros de cuentas (/etc/passwd, /etc/shadow y /etc/group), el "
@@ -446,7 +446,7 @@ MATERIAS: tuple[Materia, ...] = (
     Materia(
         key="unix-sistema-de-ficheros",
         epigraph_code="II.4.4",
-        title="Unix y Linux: el sistema de ficheros y el almacenamiento",
+        title="El sistema de ficheros y el almacenamiento en Unix y Linux",
         resumen=(
             "Cómo se organizan los datos: la jerarquía de directorios y su estándar (la raíz y sus "
             "directorios /bin, /sbin, /etc, /dev, /proc, /var, /home, /usr, /lib y /tmp), los "
@@ -476,7 +476,7 @@ MATERIAS: tuple[Materia, ...] = (
     Materia(
         key="unix-arranque-y-procesos",
         epigraph_code="II.4.4",
-        title="Unix y Linux: arranque, procesos y servicios",
+        title="Arranque, procesos y servicios de Unix y Linux",
         resumen=(
             "Cómo arranca y cómo se ejecuta: el arranque (BIOS o UEFI, el gestor de arranque GRUB "
             "o LILO, el núcleo, init y systemd, los niveles de ejecución o runlevels y los "
@@ -507,7 +507,7 @@ MATERIAS: tuple[Materia, ...] = (
     Materia(
         key="unix-familia-y-distribuciones",
         epigraph_code="II.4.4",
-        title="Unix y Linux: la familia, las distribuciones y los paquetes",
+        title="La familia de Unix y Linux: distribuciones y paquetes",
         resumen=(
             "De dónde viene y con qué se instala: la historia de Unix (System V y BSD), el "
             "proyecto GNU y el software libre y de código abierto, las licencias (GPL), las "

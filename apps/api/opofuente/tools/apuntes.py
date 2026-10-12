@@ -44,12 +44,14 @@ from opofuente.application.topic_notes_service import TopicNotesService
 from opofuente.config import Settings, get_settings
 from opofuente.domain.errors import OpoFuenteError
 from opofuente.domain.notes_quality import (
+    escapar_tuberias_en_celdas,
     limpiar_andamios,
     marcas_internas,
     nombrar_columnas_sin_titulo,
     revisar_apuntes,
     sin_encabezados_repetidos,
     sin_encabezados_repetidos_en_el_tema,
+    titulos_que_cambian,
 )
 from opofuente.domain.puertos import limpiar_tabla_de_puertos
 from opofuente.domain.topic_index import (
@@ -610,7 +612,11 @@ def _limpiar_forma(notas: SqlAlchemyTopicNotesRepository, code: str) -> tuple[st
     otro
        anterior (la puerta los cuenta en todo el tema, así que la reparación también);
     2. **encabezados repetidos dentro del mismo apartado** (`sin_encabezados_repetidos`);
-    3. **columnas de tabla sin titular**: se les pone nombre (`nombrar_columnas_sin_titulo`).
+    3. **columnas de tabla sin titular**: se les pone nombre (`nombrar_columnas_sin_titulo`);
+    4. **tuberías dentro de un `código` en una celda de tabla**: se escapan
+       (`escapar_tuberias_en_celdas`), porque sin el escape la fila se parte en una celda de más y
+       la tabla deja de leerse. Es lo que le pasaba a II.4 con la tabla de operadores del shell,
+       cuyo operador `` | `` es, él mismo, una tubería.
 
     Existe por el texto escrito antes de que existieran: I.1 tenía cuatro tablas de comparación con
     la
@@ -626,31 +632,63 @@ def _limpiar_forma(notas: SqlAlchemyTopicNotesRepository, code: str) -> tuple[st
         [apartado.body_markdown for apartado in apartados],
         titulos=[apartado.title for apartado in apartados],
     )
+    titulos = dict(titulos_que_cambian(apartados, _titulos_del_indice(notas, node_id, code)))
     lineas = [f"[{code}] limpieza de forma"]
     tocados = 0
     for apartado, primero in zip(apartados, sin_repetidos, strict=True):
         antes = apartado.body_markdown
+        nuevo_titulo = titulos.get(apartado.key)
         if not antes.strip():
             continue
-        cuerpo = nombrar_columnas_sin_titulo(sin_encabezados_repetidos(primero))
-        if cuerpo == antes:
+        cuerpo = nombrar_columnas_sin_titulo(
+            escapar_tuberias_en_celdas(sin_encabezados_repetidos(primero))
+        )
+        if cuerpo == antes and nuevo_titulo is None:
             continue
         notas.save_section_body(
             apartado,
-            title=None,
+            title=nuevo_titulo,
             body=cuerpo,
             needs_review_reason=apartado.needs_review_reason,
             model=None,
             now=SystemClock().now(),
         )
         tocados += 1
-        lineas.append(f"    {apartado.key}: {len(antes)} → {len(cuerpo)} caracteres")
+        if nuevo_titulo is None:
+            lineas.append(f"    {apartado.key}: {len(antes)} → {len(cuerpo)} caracteres")
+        else:
+            lineas.append(f"    {apartado.key}: título «{apartado.title}» → «{nuevo_titulo}»")
     lineas.append(f"    {tocados} apartado(s) tocado(s)")
     lineas.extend(
         f"    {linea}"
         for linea in revisar_apuntes(notas.sections(node_id), notas.facts(node_id)).lines()
     )
     return tuple(lineas)
+
+
+def _titulos_del_indice(
+    notas: SqlAlchemyTopicNotesRepository, node_id: str, code: str
+) -> dict[str, str]:
+    """El título que le toca a cada apartado según **su índice**, sin llamar a nadie.
+
+    Sale del mismo camino que usa la corrida para planificar (`indice_de` y `plan_de`), así que el
+    título que pone la limpieza de forma es exactamente el que pondría volver a escribir el tema. Si
+    el tema todavía no tiene catálogo, no hay nada que decir y se devuelve vacío.
+    """
+    if catalogo(code) is None:
+        return {}
+    nodo = notas.node(node_id)
+    if nodo is None:
+        return {}
+    indice = indice_de(
+        topic_code=code,
+        topic_title=nodo.title,
+        epigraphs=nodo.epigraphs,
+        hechos=notas.facts(node_id),
+        grupos=notas.question_groups(node_id),
+    )
+    planes = plan_de(indice, max_hechos_por_apartado=MAX_HECHOS_POR_APARTADO)
+    return {plan.key: plan.title for plan in planes}
 
 
 def _limpiar_puertos(notas: SqlAlchemyTopicNotesRepository, code: str) -> tuple[str, ...]:

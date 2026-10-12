@@ -29,7 +29,7 @@ entero. El umbral de cada comprobación es una constante de este módulo y se di
 from __future__ import annotations
 
 import re
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Protocol
 
@@ -372,8 +372,21 @@ def tablas_rotas(donde: str, texto: str) -> tuple[TablaRota, ...]:
     return tuple(rotas)
 
 
+#: La tubería que separa celdas: la que **no** viene escapada. `\|` es contenido y se queda dentro
+#: de su celda (el `\` lo consume el renderizador y el lector ve la tubería).
+_SEPARADOR_DE_CELDA = re.compile(r"(?<!\\)\|")
+
+
 def _celdas(linea: str) -> list[str]:
-    return [celda.strip() for celda in linea.strip().strip("|").split("|")]
+    """Las celdas de una fila de tabla, contando la tubería escapada como contenido.
+
+    Una celda puede llevar una tubería **dentro**: el material del tema escribe el operador `` | ``
+    del shell en una tabla de operadores, y ahí esa tubería es lo que se compara, no un separador.
+    Sin esta regla la fila parecía tener tres celdas donde la cabecera tiene dos, y la revisión lo
+    contaba (con razón: la tabla se lee mal) pero la reparación no podía arreglarlo, porque
+    `_celdas` volvía a partir por la tubería escapada.
+    """
+    return [celda.strip() for celda in _SEPARADOR_DE_CELDA.split(linea.strip().strip("|"))]
 
 
 #: Lo que se le pone a la columna de una tabla cuando su cabecera no la nombra. Es la columna que
@@ -417,6 +430,49 @@ def nombrar_columnas_sin_titulo(texto: str) -> str:
             bloque[0] = "| " + " | ".join(celdas) + " |"
         salida.extend(bloque)
     return "\n".join(salida)
+
+
+def escapar_tuberias_en_celdas(texto: str) -> str:
+    """Escapa la tubería que va **dentro de un `código`** en una fila de tabla.
+
+    Es el otro lado de lo que mide `tablas_rotas`, y salió de II.4: el tema tiene una tabla de los
+    operadores del shell y uno de ellos **es** la tubería (`` | ``). Escrita tal cual, la fila se
+    parte en una celda de más y la tabla deja de leerse —el renderizador pinta una columna que la
+    cabecera no titula—, que es exactamente lo que la revisión cuenta.
+
+    Se toca **solo** la tubería que está entre dos acentos graves de una fila de tabla: fuera de una
+    tabla no hay nada que arreglar (una tubería suelta en un párrafo es un carácter más) y una
+    tubería que ya viene escapada se queda como está. Los datos no se tocan: el lector sigue viendo
+    la misma tubería, porque `\\|` en una celda se renderiza como `|`.
+    """
+    lineas = texto.split("\n")
+    for numero, linea in enumerate(lineas):
+        if not _FILA_TABLA.match(linea) or "`" not in linea:
+            continue
+        partes = linea.split("`")
+        for posicion in range(1, len(partes), 2):
+            partes[posicion] = _SEPARADOR_DE_CELDA.sub(r"\\|", partes[posicion])
+        lineas[numero] = "`".join(partes)
+    return "\n".join(lineas)
+
+
+def titulos_que_cambian(
+    apartados: Sequence[ApartadoDeApuntes], titulos_del_indice: Mapping[str, str]
+) -> tuple[tuple[str, str], ...]:
+    """Los apartados cuyo título guardado **no** es el de su índice, con el que les toca.
+
+    El título de un apartado lo decide su índice (el catálogo del tema) y la revisión de forma
+    cuenta los que comparten las tres primeras palabras. Cuando el catálogo cambia un título, la
+    base se queda con el viejo, y hasta ahora la única forma de ponerlo al día era **volver a
+    pagar** una corrida entera: el esquema se recalcula al escribir y el título se actualiza
+    entonces, pero la limpieza de forma solo tocaba el cuerpo. Esto es la mitad que faltaba. Es una
+    reparación, no una invención: el título que se pone es el del índice, no uno nuevo.
+    """
+    return tuple(
+        (apartado.key, titulos_del_indice[apartado.key])
+        for apartado in apartados
+        if titulos_del_indice.get(apartado.key, apartado.title) != apartado.title
+    )
 
 
 def marcas_internas(texto: str) -> tuple[str, ...]:
@@ -821,6 +877,7 @@ __all__ = [
     "RevisionApuntes",
     "TablaRota",
     "encabezados",
+    "escapar_tuberias_en_celdas",
     "hechos_distintos",
     "limpiar_andamios",
     "marcas_internas",
@@ -832,5 +889,6 @@ __all__ = [
     "sin_encabezados_repetidos",
     "sin_encabezados_repetidos_en_el_tema",
     "tablas_rotas",
+    "titulos_que_cambian",
     "trigramas",
 ]

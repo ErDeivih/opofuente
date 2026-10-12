@@ -56,6 +56,7 @@ from opofuente.domain.errors import (
 )
 from opofuente.domain.notes_quality import (
     encabezados,
+    escapar_tuberias_en_celdas,
     limpiar_andamios,
     nombrar_columnas_sin_titulo,
     quitar_encabezado_repetido,
@@ -1439,19 +1440,24 @@ def _es_la_tabla_del_catalogo(topic_code: str, clave: str) -> bool:
 def _enderezar(topic_code: str, clave: str, cuerpo: str, informe: TopicNotesReport) -> str:
     """La última mano al texto de un apartado antes de guardarlo.
 
-    Hace tres cosas, y las tres son reparaciones de forma que mide `revisar_apuntes`:
+    Hace cuatro cosas, y las cuatro son reparaciones de forma que mide `revisar_apuntes`:
 
     - un encabezado que repite otro del mismo apartado es un apartado dentro de otro: se quita el
       encabezado y se queda su texto (`sin_encabezados_repetidos`);
     - una tabla cuya cabecera deja una columna sin nombre no se puede leer: se le pone el nombre que
       le falta (`nombrar_columnas_sin_titulo`), que es lo que I.1 tenía en cuatro tablas;
+    - una tubería dentro de un `código` en una celda de tabla parte la fila en una celda de más y la
+      tabla deja de leerse: se escapa (`escapar_tuberias_en_celdas`), que es lo que le pasó a II.4
+      con la tabla de operadores del shell, cuyo operador `` | `` es él mismo una tubería;
     - y, si el apartado es la tabla de puertos, se parte por familias y se le quitan las notas que
       solo dicen lo que un puerto **no** es (`limpiar_tabla_de_puertos`).
 
     Se cuenta lo que se ha hecho (`notas_de_puertos_retiradas` y `confusiones_de_puertos`) porque un
     arreglo que no se puede medir no se puede revisar.
     """
-    cuerpo = nombrar_columnas_sin_titulo(sin_encabezados_repetidos(cuerpo))
+    cuerpo = nombrar_columnas_sin_titulo(
+        escapar_tuberias_en_celdas(sin_encabezados_repetidos(cuerpo))
+    )
     if not es_la_tabla_de_puertos(topic_code, clave):
         return cuerpo
     limpieza = limpiar_tabla_de_puertos(cuerpo)

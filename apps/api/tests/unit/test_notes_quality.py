@@ -24,6 +24,7 @@ from opofuente.domain.notes_quality import (
     PARRAFOS_REPETIDOS,
     TABLAS_SIN_CABECERA,
     encabezados,
+    escapar_tuberias_en_celdas,
     hechos_distintos,
     limpiar_andamios,
     marcas_internas,
@@ -34,6 +35,7 @@ from opofuente.domain.notes_quality import (
     revisar_apuntes,
     sin_encabezados_repetidos_en_el_tema,
     tablas_rotas,
+    titulos_que_cambian,
     trigramas,
 )
 from opofuente.domain.topic_notes import FactKind, Hecho
@@ -371,6 +373,64 @@ def test_una_tabla_bien_hecha_no_se_marca() -> None:
     texto = "| Puerto | Servicio |\n|---|---|\n| 53 | DNS |\n"
 
     assert tablas_rotas("iv-7-2-1", texto) == ()
+
+
+def test_el_titulo_de_un_apartado_se_vuelve_a_poner_desde_su_indice() -> None:
+    """El título de un apartado lo decide su índice, y la limpieza de forma lo vuelve a poner.
+
+    Es la mitad que faltaba: la revisión cuenta los apartados que comparten las tres primeras
+    palabras del título, pero la limpieza de forma solo tocaba el cuerpo, así que un catálogo con
+    los títulos cambiados dejaba la base con los viejos y la única salida era pagar otra corrida.
+    """
+    guardados = (
+        _Apartado("unix-comandos-y-shell", "Unix y Linux: el shell y los comandos", "a", "texto"),
+        _Apartado(
+            "unix-permisos-y-usuarios", "Usuarios, grupos y permisos en Unix y Linux", "b", "texto"
+        ),
+    )
+    del_indice = {
+        "unix-comandos-y-shell": "El shell y los comandos de Unix y Linux",
+        "unix-permisos-y-usuarios": "Usuarios, grupos y permisos en Unix y Linux",
+    }
+
+    assert titulos_que_cambian(guardados, del_indice) == (
+        ("unix-comandos-y-shell", "El shell y los comandos de Unix y Linux"),
+    )
+    assert titulos_que_cambian(guardados, {}) == (), "sin índice no se inventa ningún título"
+
+
+def test_una_tuberia_escapada_cuenta_como_una_celda_y_no_como_un_separador() -> None:
+    """Una celda puede llevar una tubería dentro, y entonces viene escapada.
+
+    La tabla de operadores del shell tiene una fila cuyo contenido **es** la tubería. Escrita con el
+    escape, la fila tiene dos celdas y no tres: si el medidor parte por la tubería escapada, cuenta
+    una columna que la cabecera no titula y marca rota una tabla que se lee bien.
+    """
+    texto = "| Operador | Efecto |\n|---|---|\n| `\\|` | Tubería |\n"
+
+    assert tablas_rotas("ii-4-unix-comandos-y-shell", texto) == ()
+
+
+def test_la_tuberia_que_va_dentro_de_un_codigo_de_una_celda_se_escapa_y_la_tabla_se_arregla() -> (
+    None
+):
+    """La reparación del otro lado: la tubería sin escapar de una celda de tabla.
+
+    Es el defecto que trajo II.4: la fila se partía en una celda de más y la tabla no se podía leer.
+    La reparación toca **la celda**, no los datos: el lector sigue viendo la misma tubería, porque
+    `\\|` se renderiza como `|`. Lo que no está entre acentos graves no se toca.
+    """
+    rota = "| Operador | Efecto |\n|---|---|\n| `|` | Tubería |\n"
+    fuera_de_tabla = "El operador `|` encadena dos comandos.\n"
+    ya_escapada = "| Operador | Efecto |\n|---|---|\n| `\\|` | Tubería |\n"
+    assert tablas_rotas("ii-4-unix-comandos-y-shell", rota), "de entrada está rota"
+
+    reparada = escapar_tuberias_en_celdas(rota)
+
+    assert not tablas_rotas("ii-4-unix-comandos-y-shell", reparada)
+    assert "| `\\|` | Tubería |" in reparada
+    assert escapar_tuberias_en_celdas(fuera_de_tabla) == fuera_de_tabla, "fuera de una tabla no hay"
+    assert escapar_tuberias_en_celdas(ya_escapada) == ya_escapada, "no se escapa dos veces"
 
 
 # --- los párrafos repetidos -----------------------------------------------------------------------
