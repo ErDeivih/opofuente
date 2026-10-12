@@ -2,9 +2,10 @@
 
 **Autoridad:** `docs/GOAL-DEEPSEEK-TRABAJO-LARGO-2026-10.md` · **Presupuesto de API:** 40 $ · **Se
 avisa cada 10 $** · Última actualización: **12 oct 2026 (tanda f17: vuelve el bloque A —los
-apuntes— por la tabla de valor, con el tope medido. **IV.2 queda escrito y publicado** con la mejor
-cobertura medida hasta hoy —757/758 = 99,9 %— y por 0,7585 $, y los índices de **II.4** e **I.8** se
-escriben y se ensayan antes de gastar un céntimo. Acumulado ≈8,67 $ de 40)**.
+apuntes— por la tabla de valor, con el tope medido. **IV.2 e II.4 quedan escritos y publicados**
+(99,9 % y 95,9 % sobre clave utilizable) e **I.8 en borrador con dos motivos**; los índices de los
+tres se escriben y se ensayan antes de gastar un céntimo, y dos arreglos de forma ahorran una corrida
+entera. **Aviso de los 10 $ cruzado**: acumulado ≈10,58 $ de 40)**.
 
 > **De las fechas:** la tanda anterior se etiquetó «11 oct» en este fichero, pero **su reloj, sus
 > ficheros y sus marcas de base son del 10 de octubre** (la corrida de I.6 acabó a las 18:09 del
@@ -52,8 +53,17 @@ tokens que devolvió cada llamada; el coste es la estimación con la tabla de pr
 | **Acumulado medido de f16** | | | **0** | **0** | **0** | **0,0000 $** |
 | 12-oct | IV.2 | la redacción completa del tema (paso B a bucle de huecos) | 182 | 1.829.341 | 806.759 | 0,7585 $ |
 | 12-oct | II.4 | la redacción completa del tema (paso B a bucle de huecos) | 166 | 1.567.294 | 777.151 | 0,7014 $ |
-| 12-oct | IV.2 + II.4 | `--esquema`, `--prever`, `--medir`, `--limpiar-forma` y `--publicar` (solo lectura y limpieza) | 0 | 0 | 0 | 0,0000 $ |
-| **Acumulado medido de f17 (en curso)** | | | **348** | **3.396.635** | **1.583.910** | **1,4599 $** |
+| 12-oct | I.8 | la redacción completa del tema, **parada en su tope de tiempo** (389 de 442 grupos comprobados) | 142 | 1.480.794 | 1.649.566 | 1,2119 $ |
+| 12-oct | IV.2, II.4 y I.8 | `--esquema`, `--prever`, `--medir`, `--limpiar-forma` y `--publicar` (solo lectura y limpieza) | 0 | 0 | 0 | 0,0000 $ |
+| **Acumulado medido de f17** | | | **490** | **4.877.429** | **3.233.476** | **2,6718 $** |
+
+> **AVISO DE LOS 10 $: cruzado en esta tanda.** Con la corrida de I.8 el acumulado medido del
+> objetivo pasa de **8,67 $** (al cerrar II.4) a **10,58 $** de los 40 $, contando lo anterior:
+> ≈1,31 $ (f10) + 0,4411 $ (f11) + 3,0816 $ + ≈0,40 $ (f12) + 0,00 $ (f13) + 0,00 $ (f14) +
+> 2,6812 $ (f15) + 0,00 $ (f16) + **2,6718 $ (f17)** = **≈10,58 $**. Quedan **≈29,4 $** y el precio
+> medido de un tema está entre **0,70 $** (técnico, IV.2 y II.4) y **1,21 $** (normativo denso, I.8).
+> **A este precio quedan entre 24 y 41 temas, así que el objetivo entero entra en el presupuesto**,
+> pero el aviso se anota donde manda la decisión D3.
 
 *(f13 no llama al modelo a propósito: es el bloque de interfaz y de la ruta de escritura de los
 avisos. f14 tampoco: es interfaz y consultas de lectura sobre la base; lo único que se ejecuta son las
@@ -74,9 +84,8 @@ Tres avisos para que nadie sume mal:
   salida se perdió al matar el proceso): es del orden de la corrida siguiente, **≈0,40 $**;
 - **el acumulado del objetivo no se puede dar.** Lo anterior a f10 no está en ninguna fuente. Con lo
   medido (≈1,31 $ de f10 + 0,4411 $ de f11 + 3,0816 $ de f12 + ≈0,40 $ de la corrida matada + 0,00 $
-  de f13 + 0,00 $ de f14 + 2,6812 $ de f15 + 0,00 $ de f16 + 0,7585 $ de f17 = **≈8,67 $**) el aviso
-  de los 10 $ **sigue sin cruzarse** al cerrar la redacción de IV.2; se cruzará con el tema siguiente
-  (II.4), que es cuando hay que anotarlo.
+  de f13 + 0,00 $ de f14 + 2,6812 $ de f15 + 0,00 $ de f16 + 2,6718 $ de f17 = **≈10,58 $**) **el
+  aviso de los 10 $ se ha cruzado en f17** y queda anotado arriba, en la tabla de gasto.
 
 **Y una corrección de método**: el informe de una corrida contaba la cobertura **antes** del bucle de
 huecos, así que decía menos de la que el tema acababa teniendo (en I.1: 1.947 de 1.995 en el informe,
@@ -94,7 +103,8 @@ guardado y `--prever` dice lo que costaría una corrida **antes** de pagarla.
 | **I.4** | **borrador con su motivo** | 1.056 → 721 redactados | 15 | **497/559 = 88,9 % NO PASA** | 497/579 = 85,8 % | 31 | 3 | **PASA las cinco** (27.787 palabras de 42.240; repetidos 4,2 %) |
 | **IV.2** | **publicado** (versión archivada, con la marca «Versión generada · en revisión») | 1.543 → 1.126 redactados | 16 | **757/758 = 99,9 % PASA** | 757/797 = 95,0 % | 1 | 0 | **PASA las cinco** (32.567 palabras de 61.720; repetidos **0,2 %**) |
 | **II.4** | **publicado** (versión archivada, con la marca «Versión generada · en revisión») | 1.046 → 848 redactados | 17 | **443/462 = 95,9 % PASA** | 443/568 = 78,0 % | 11 | 0 | **PASA las cinco, tras la limpieza** (26.367 palabras de 41.840; repetidos 0,3 %) |
-| resto (26) | sin empezar | | | | | | | |
+| **I.8** | **borrador con su motivo** (2 motivos: cobertura 82,0 % y corrida parada por su tope de tiempo con 53 grupos sin comprobar) | 815 → 617 redactados | 18 | **423/516 = 82,0 % NO PASA** | 423/571 = 74,1 % | 7 | 9 | **PASA las cinco** (23.285 palabras de 32.600; repetidos 0,3 %) |
+| resto (25) | sin empezar | | | | | | | |
 
 *(Cifras de **esta** tanda, medidas con `apuntes --medir` sobre la base real —no heredadas de la
 corrida que las escribió—. Las tres filas son del 10-oct: IV.7 es la única que no se ha tocado. La
@@ -646,6 +656,44 @@ forma se cierra **sin volver a llamar al modelo**.
 grupos, 419 quedaron cubiertos con letra y cita (403 a la primera, 16 tras añadir) y los 82 que
 quedan «a revisión» lo están porque **su clave** no se puede usar, no porque falte el texto.
 
+### I.8 (606 preguntas, 442 grupos), escrito el 12-oct: **se queda en borrador, con dos motivos**
+
+Es el **sexto por valor** (566 preguntas con clave). Su índice se escribió y se ensayó en esta tanda
+(`domain/catalogo_i_8.py`, 18 apartados estructurados por las normas del tema, 426 de 442 grupos
+situados por el enunciado).
+
+| Qué se midió | Valor |
+|---|---|
+| Cobertura (clave utilizable) | **423/516 = 82,0 % NO PASA** (umbral 90 %) |
+| Cobertura (todas las que tienen clave) | 423/571 = 74,1 % |
+| Hechos | 815 antes de deduplicar → **617** redactados (191 repetidos agrupados) |
+| Apartados | **18** |
+| Forma | **PASA** · 23.285 palabras de 32.600 · repetidos 0,3 % |
+| Índice | PASA · 18 apartados · 617 hechos · **4 grupos y 7 hechos sin materia** |
+| Bandeja del propietario | **60 incidencias**: 43 `norma_cambiada`, 9 `hueco_sin_material`, 7 `clave_sospechosa`, 1 `pregunta_ambigua` |
+| Llamadas y coste | **142 llamadas · 1,2119 $** · 84 minutos, **parada por su tope de tiempo** |
+
+**Los dos motivos del borrador, escritos como manda D2:**
+
+1. **la cobertura es el 82,0 %** de las 516 preguntas con clave utilizable (listón 90 %): le faltan
+   41 preguntas cubiertas. **No se toca el listón**;
+2. **la corrida no terminó**: el tope de tiempo (5.000 s) la paró con **389 de los 442 grupos
+   comprobados**, así que el 82,0 % es un **suelo**, no el techo. Lo dice el propio informe:
+   «se agotó el tiempo de la corrida: no se han hecho las llamadas que quedaban. Lo escrito está
+   guardado y volver a lanzar el comando sigue desde ahí».
+
+**No se ha reanudado en esta tanda a propósito, y el porqué es la medida que faltaba**: la corrida
+costó **1,2119 $** de un tope de **1,32 $** (la cota de arriba de `--prever`, 0,99 $, más un tercio).
+Quedaban 0,11 $ de margen y reanudar cuesta más que eso. **El tope se respetó** —ni el dinero ni el
+tiempo se pasaron— y lo escrito se conservó, que es exactamente para lo que está el mecanismo.
+
+**Y esta corrida es la demostración de que la regla del tope está bien puesta**: la cota de arriba de
+`--prever` (0,99 $) no habría bastado, y el tope «duro» de 1,20 $ de f15 **se habría cruzado**
+(1,2119 $). Con la cota **más un tercio**, la corrida se quedó dentro. La causa está medida: I.8
+devolvió **11.617 tokens de salida por llamada** (la media de la tabla es ~8.000), así que su llamada
+costó **0,00853 $**. Es el segundo tema normativo y denso de la serie —tras I.4, con 0,00865 $— y se
+comporta exactamente como la regla supone.
+
 ## 5. Lo que queda abierto
 
 1. **El acumulado de gasto anterior a f10 no existe** y ya no se puede medir. Desde aquí se anota una
@@ -679,18 +727,18 @@ quedan «a revisión» lo están porque **su clave** no se puede usar, no porque
    número de preguntas y su botón, y el que no tenga plantilla activa dirá que todavía no se puede
    hacer en lugar de ofrecer un examen que falla. La ruta `POST /student/official-exams/{posicion}/sessions`
    ya está probada con un examen de verdad montado por la API (§4c)
-8. Los **27 temas restantes** y el bloque D (datos: copias, epígrafes, INAP) siguen sin empezar, con
+8. Los **25 temas restantes** y el bloque D (datos: copias, epígrafes, INAP) siguen sin empezar, con
    D5 (copias verificadas) como primer paso del §6 del objetivo. El **bloque C ha empezado** en f16 con
    sus dos primeras pantallas (la bandeja de avisos del alumno y «No son preguntas», §4e); le faltan
    la **bandeja única con las incidencias del motor**, la **ficha de pregunta**, los **apuntes** y el
    **temario** del §4 del objetivo. En f15 se les ha puesto
    **orden de valor** a los temas: la tabla de preguntas con clave utilizable de cada tema es la que
-   decide qué se escribe primero, y está abajo. **IV.2 (el 3.º, 797 preguntas con clave) quedó escrito
-   y publicado en f17** (§4f). Y los dos siguientes por esa misma tabla —**II.4 (566)** e **I.8
-   (566)**— **ya tienen su índice escrito y ensayado antes de gastar** (`domain/catalogo_ii_4.py`, 17
-   apartados, 481 de 501 grupos situados por el enunciado; `domain/catalogo_i_8.py`, 18 apartados
-   estructurados por las normas del tema, 426 de 442): la próxima tanda empieza redactándolos, sin
-   volver a decidir el árbol ni volver a ensayar el reparto.
+   decide qué se escribe primero, y está abajo. **IV.2 (el 3.º) e II.4 (el 5.º) quedaron escritos y
+   publicados en f17**; **I.8 (el 6.º) quedó en borrador** con sus dos motivos y **es reanudable**:
+   lo escrito está en la base y volver a lanzarlo sigue desde donde se paró, sin volver a pagar por
+   lo que ya está (§4f). Los tres tienen su índice escrito y ensayado. El séptimo por valor es **I.7
+   (550)**, que **todavía no tiene catálogo**: lo primero de la próxima tanda es escribirlo y
+   ensayarlo, como se hizo con estos tres.
 9. **Dos listones que no coinciden entre el documento y el código**, medidos en I.4 y anotados sin
    tocarlos (el §1.2 pide no relajar la puerta):
    - **párrafos casi repetidos**: el §2.3 pide **≤ 3 %** y el código lleva el tope al **5 %**

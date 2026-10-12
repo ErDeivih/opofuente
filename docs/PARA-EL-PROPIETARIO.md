@@ -26,22 +26,32 @@ necesita tu criterio está marcado como **«Decide tú»**.
    bandeja todavía no tiene pantalla** (es la mitad que le falta al bloque C). Mientras tanto están
    guardadas y se pueden contar.
 5. **Los dos temas costaron 0,7585 $ y 0,7014 $** (las previsiones eran 0,88–1,49 $ y 0,63–1,07 $): los
-   dos por dentro de su tope. Llevas **≈9,37 $ de los 40 $** y el tema siguiente (I.8) es el que
-   cruzará el **aviso de los 10 $**, que quedará anotado aquí y en el estado del objetivo.
-6. **Y una cosa que se ahorró, dicha porque es la primera vez que pasa**: la corrida de II.4 terminó
+   dos por dentro de su tope. **I.8 quedó en borrador** (ver el punto 6) y costó 1,2119 $.
+6. **I.8 (acceso electrónico, ENS, ENI y NTI) NO se publica: queda en borrador con dos motivos
+   escritos, y lo puedes leer igual** (el borrador se ve en el panel, como I.4 e I.6):
+   - contesta al **82,0 %** de las 516 preguntas con clave utilizable y el listón es el 90 %;
+   - y su corrida **no terminó**: **el tope de tiempo que le puse la paró** con 389 de sus 442 grupos
+     comprobados, así que ese 82,0 % es un **suelo**, no su techo. Lo escrito está guardado y el tema
+     **se puede reanudar sin volver a pagar por lo que ya está**.
+   La corrida costó 1,2119 $ de un tope de 1,32 $, así que **no quedaba margen para reanudarla sin
+   salirse del tope**: por eso se para aquí y se anota, en vez de seguir gastando.
+7. **Llevas ≈10,58 $ de los 40 $** (tanda f17: 2,6718 $ por los tres temas). Es el **primer aviso de
+   los 10 $**, y queda anotado en el estado del objetivo como manda la decisión D3. Quedan ≈29,4 $, y
+   el precio medido de un tema está entre 0,70 $ (técnico) y 1,21 $ (normativo denso).
+8. **Y una cosa que se ahorró, dicha porque es la primera vez que pasa**: la corrida de II.4 terminó
    con la forma en NO PASA (una tabla con una celda de más y cuatro apartados con el mismo principio
    de título) y se arregló **sin volver a pagar**, con dos reparaciones de forma que ahora sabe hacer
    el motor. La alternativa era una corrida más de entre 0,34 $ y 0,80 $. La tabla era la de los
    operadores del shell: el operador «tubería» es él mismo una tubería y rompía la tabla.
 
-**Lo que sigue** (el orden lo decide tu tabla de valor, no el del temario): el siguiente es **I.8**
-(acceso electrónico, ENS, ENI y NTI), cuyo **índice ya está escrito y ensayado** sin gastar un
-céntimo (18 apartados, 426 de 442 grupos situados por el enunciado). Después, por esa misma tabla,
-I.7, IV.5, III.4…
+**Lo que sigue** (el orden lo decide tu tabla de valor, no el del temario): el séptimo es **I.7**
+(550 preguntas con clave), que **todavía no tiene índice**: lo primero es escribirlo y ensayarlo sin
+gastar, como se ha hecho con II.4 e I.8. Y **I.8 se puede reanudar** cuando quieras priorizarlo, con
+lo que ya está escrito.
 
 **Decide tú:** nada nuevo. Lo que ya esperaba tu decisión sigue esperándola (las dos bandejas del
 motor, el listón de párrafos repetidos del §5.9 del estado y el criterio sobre las claves de I.6,
-I.4, IV.2 y II.4).
+I.4, IV.2, II.4 e I.8).
 
 ## 11 oct 2026 — ya puedes ver lo que marcas en los apuntes (y una cosa que tienes que hacer tú)
 
