@@ -479,20 +479,29 @@ reloj de la máquina saltó a mitad (la suite de integración se atribuye **12:0
 es imposible, y el contador de las puertas dice 11:24 min), así que aquí no se da ninguna duración
 como medida. Lo que sí es del registro son los códigos de salida y los recuentos.
 
-Las puertas se intentaron **tres veces**, y las dos primeras fallaron por cosas que se arreglaron (y
-que quedan contadas aquí porque un fallo de puerta que se repite es información):
+Las puertas hicieron falta **cinco intentos**, y se cuentan todos porque un fallo de puerta que se
+repite es información:
 
-1. la puerta 1 (`ruff format --check`): dos ficheros de prueba nuevos sin formatear. Se pasó
-   `ruff format` y se repitió;
-2. la puerta 18 (E2E): `test_changes.py`… no: **`topic-review.spec.ts`**, con
+1. **intento 1**: se **paró a propósito** en la puerta 7, para meter el arreglo del ancla (abajo) antes
+   de gastar otra corrida entera;
+2. **intento 2**: falló la **puerta 1** (`ruff format --check`): dos ficheros de prueba nuevos sin
+   formatear. Se pasó `ruff format` y se repitió;
+3. **intento 3**: falló la **puerta 7** con `test_changes.py` — **ajeno y no reproducible**; se cuenta
+   con su evidencia más abajo;
+4. **intento 4**: falló la **puerta 18** (E2E) con
    `strict mode violation: getByRole('region', { name: 'Fuera de temario' }).getByLabel('Tema')
-   resolved to 2 elements`. La causa era **mía**: la prueba nueva de «No son preguntas» dejaba su
-   marca de fuera de temario en la base compartida de la suite, y la región de la cola de
-   clasificación pinta **un selector «Tema» por fila**: dos filas, dos controles iguales, y Playwright
+   resolved to 2 elements`. La causa era **mía**: la prueba nueva de «No son preguntas» dejaba su marca
+   de fuera de temario en la base compartida de la suite, y la región de la cola de clasificación pinta
+   **un selector «Tema» por fila**: dos filas, dos controles con el mismo nombre accesible, y Playwright
    —con razón— no elige. La prueba nueva ahora **levanta su marca al terminar** (asignándole un tema,
-   que es como la levanta la aplicación) y comprueba que no deja ninguna. **No se tocó el localizador
-   de la otra prueba ni se relajó nada**; su registro está en
-   `F:\temp-opofuente\gates-f16-panel-intento2-fallo-e2e-topic-review.txt`.
+   que es como la levanta la aplicación) y comprueba que no deja ninguna. **No se tocó el localizador de
+   la otra prueba ni se relajó nada**; su registro está en
+   `F:\temp-opofuente\gates-f16-panel-intento2-fallo-e2e-topic-review.txt`;
+5. **intento 5**: **18/18**, con el registro en `F:\temp-opofuente\gates-f16-panel.txt`.
+
+Lo único que cambió en el árbol **después** de la corrida que dio 18/18 es esta propia línea del
+registro (documentación): ninguna puerta lee `docs/*.md`.
+
 **Y una prueba que falla antes**: el dominio, la migración, la ruta de despacho y la búsqueda se
 escribieron **antes** que su implementación. Con el código de `main` y solo las pruebas nuevas: **7
 rojas** (las 5 del despacho y la búsqueda de la bandeja, las 2 de exclusiones) y **1 error de

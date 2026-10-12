@@ -35,7 +35,14 @@ necesita tu criterio está marcado como **«Decide tú»**.
 **Lo que verás cuando entres:** dos entradas nuevas en el menú del panel, **Avisos** y **No son
 preguntas**, entre «Clasificación» y «Cambios». Las capturas de las dos, en escritorio y móvil, están
 en `artifacts/screens/` (`admin-avisos-*` y `admin-no-son-preguntas-*`), sin violaciones de
-accesibilidad.
+accesibilidad. Las puertas de calidad dan **18/18**.
+
+**Y el enlace al apartado, que no funcionaba y ya funciona:** el enlace decía la dirección del
+apartado (`/temario/IV.7#apartado-…`) pero el navegador **no bajaba** hasta él, porque los apuntes
+llegan un momento después de abrir la página. Se midió (el apartado estaba a 5.894 px y la página
+seguía arriba del todo) y se arregló: ahora se baja al apartado al llegar desde el panel, y también
+desde el índice del tema. Es lo único que se ha tocado del marco del alumno, y no se ha tocado
+ninguna de sus pantallas ni sus tokens.
 
 **Y una cosa honesta sobre el detector de palabras prohibidas:** en las capturas del panel sale
 «Celador». **No lo pone ninguna de las dos pantallas nuevas**: lo pone el selector de oposición del
