@@ -74,8 +74,21 @@ export function applyTopicDecisions(rows: TopicAssignmentRow[]): Promise<TopicAs
 }
 
 /** Los temas y epígrafes del programa vigente, para poder cambiar el destino a mano. */
-export function fetchExclusions(offset = 0, limit = EXCLUSIONS_LIMIT): Promise<ExclusionPage> {
-  const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+export function fetchExclusions(
+  input: { offset?: number; limit?: number; reason?: ExclusionReason | null; q?: string } = {},
+): Promise<ExclusionPage> {
+  const params = new URLSearchParams({
+    limit: String(input.limit ?? EXCLUSIONS_LIMIT),
+    offset: String(input.offset ?? 0),
+  });
+  if (input.reason !== null && input.reason !== undefined) {
+    params.set('reason', input.reason);
+  }
+  // La búsqueda por enunciado es de la sección «No son preguntas» (F16, decisión D6): con cientos
+  // de marcas, recorrerlas a ojo no es una forma de encontrar la que se busca.
+  if (input.q !== undefined && input.q.trim() !== '') {
+    params.set('q', input.q.trim());
+  }
   return apiFetch<ExclusionPage>(`/api/v1/question-exclusions?${params.toString()}`);
 }
 

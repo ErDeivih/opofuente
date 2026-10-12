@@ -6,6 +6,8 @@ import { ComingSoonPage } from '../pages/ComingSoonPage';
 import { ErrorsPage } from '../pages/ErrorsPage';
 import { LibraryPage } from '../pages/LibraryPage';
 import { NotFoundPage } from '../pages/NotFoundPage';
+import { NoSonPreguntasPage } from '../pages/NoSonPreguntasPage';
+import { NoteReportsPage } from '../pages/NoteReportsPage';
 import { ProgramPage } from '../pages/ProgramPage';
 import { QuestionsPage } from '../pages/QuestionsPage';
 import { ReviewPage } from '../pages/ReviewPage';
@@ -26,6 +28,7 @@ import { StudentTestRunner } from '../features/study/StudentTestRunner';
 import { AdminShell } from './AdminShell';
 import { AppShell } from './AppShell';
 import { ROUTE_REDIRECTS, STUDENT_NAV_ITEMS } from './navigation';
+import { useApartadoDeLaDireccion } from './apartadoDeLaDireccion';
 
 /**
  * El marco de cada zona (F1 del rediseño, 6 de octubre de 2026).
@@ -33,8 +36,15 @@ import { ROUTE_REDIRECTS, STUDENT_NAV_ITEMS } from './navigation';
  * Cada zona trae el suyo y se decide **por la dirección**, no por una bandera: quien entra en
  * `/admin/…` está administrando y ve el panel; quien entra en cualquier otra, estudia y ve la barra
  * del alumno. Así una pantalla nueva no puede quedarse sin marco ni coger el de la otra zona.
+ *
+ * El marco del alumno además **lleva la vista al apartado que dice la dirección** cuando hay ancla
+ * (`useApartadoDeLaDireccion`): es lo que hace que el enlace de la bandeja del panel —«Ver el
+ * apartado en los apuntes»— deje el apartado a la vista, en lugar de la página por su principio.
+ * Los apuntes llegan por la API después del primer pintado, así que el ancla del navegador sola no
+ * basta; se mide en la prueba de extremo a extremo del aviso.
  */
 function StudentZone() {
+  useApartadoDeLaDireccion();
   return (
     <AppShell>
       <Outlet />
@@ -147,6 +157,11 @@ export function AppRoutes() {
         <Route path="biblioteca" element={<LibraryPage />} />
         <Route path="revision" element={<ReviewPage />} />
         <Route path="clasificacion" element={<TopicReviewPage />} />
+        {/* El bloque C del objetivo (F16): la bandeja de lo que avisa el alumno y lo que el motor
+            dejó fuera de los tests (D6). Se separan a propósito: una se **despacha**, la otra se
+            **mira**, y mezclarlas invitaría a tocar desde ahí lo que solo se consulta. */}
+        <Route path="avisos" element={<NoteReportsPage />} />
+        <Route path="no-son-preguntas" element={<NoSonPreguntasPage />} />
         <Route path="cambios" element={<ChangesPage />} />
         <Route path="errores" element={<ErrorsPage />} />
         <Route path="preguntas" element={<QuestionsRoute />} />

@@ -1,4 +1,10 @@
-import { useConflictingQuestions, useOppositions, usePendingActions, useReviewQueue } from '../api/queries';
+import {
+  useConflictingQuestions,
+  useNoteReportCounters,
+  useOppositions,
+  usePendingActions,
+  useReviewQueue,
+} from '../api/queries';
 
 /**
  * Los contadores del menú de administración (07_UI-UX §2, movidos a `/admin` en F1).
@@ -30,6 +36,7 @@ export function useSectionCounts(): SectionCounts {
   const pendientes = usePendingActions();
   const repaso = useReviewQueue(active?.id ?? null);
   const conflictos = useConflictingQuestions();
+  const avisosApendientes = useNoteReportCounters();
 
   const contadores: Record<string, SectionCount> = {};
 
@@ -56,6 +63,16 @@ export function useSectionCounts(): SectionCounts {
   const cambios = pendientes.data?.actions.find((accion) => accion.key === 'cambios')?.count ?? 0;
   if (cambios > 0) {
     contadores['/admin/cambios'] = { count: cambios, label: `${cambios} cambios sin confirmar` };
+  }
+
+  // Los avisos del alumno (F16): lo que ha marcado como error en los apuntes y nadie ha mirado. Solo
+  // los `open`: un aviso «en curso» ya está en la mano de alguien y no espera una decisión.
+  const avisosAlumno = avisosApendientes.data?.pending ?? 0;
+  if (avisosAlumno > 0) {
+    contadores['/admin/avisos'] = {
+      count: avisosAlumno,
+      label: `${avisosAlumno} avisos de los apuntes sin mirar`,
+    };
   }
 
   return contadores;

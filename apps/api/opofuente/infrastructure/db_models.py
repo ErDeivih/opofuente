@@ -2152,15 +2152,23 @@ class NotesReportRecord(Base):
     verificada: tiene el texto de quien lo reporta, la dirección del párrafo (`section_key` y
     `anchor`) y el estado con el que el propietario lo despachará.
 
-    `status` cambia cuando el panel lo revise (`reviewed`) o lo descarte (`dismissed`); hasta
-    entonces el aviso está `open`. No hay índice único: dos avisos sobre el mismo apartado son dos
-    avisos, y borrarlos porque se parecen sería perder lo que dijo el segundo.
+    `status` cambia cuando el propietario lo despacha desde el panel: `in_progress` mientras lo
+    tiene en la mano, `reviewed` cuando lo ha arreglado y `dismissed` cuando decide que no era un
+    error (migración `0034`). Hasta entonces el aviso está `open`. `resolution_note` es lo que el
+    propietario escribe de lo que ha hecho: opcional, en una línea, y nula mientras no haya escrito
+    nada. No hay índice único: dos avisos sobre el mismo apartado son dos avisos, y borrarlos porque
+    se parecen sería perder lo que dijo el segundo.
     """
 
     __tablename__ = "notes_reports"
     __table_args__ = (
         CheckConstraint(
-            "status IN ('open', 'reviewed', 'dismissed')", name="ck_note_report_status"
+            "status IN ('open', 'in_progress', 'reviewed', 'dismissed')",
+            name="ck_note_report_status",
+        ),
+        CheckConstraint(
+            "resolution_note IS NULL OR length(trim(resolution_note)) > 0",
+            name="ck_note_report_note",
         ),
         CheckConstraint("length(trim(reason)) > 0", name="ck_note_report_reason"),
         CheckConstraint("length(trim(section_key)) > 0", name="ck_note_report_section"),
@@ -2184,3 +2192,5 @@ class NotesReportRecord(Base):
     )
     created_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
     reviewed_at: Mapped[datetime | None] = mapped_column(UtcDateTime(), nullable=True)
+    #: Qué se ha hecho con el aviso, en una línea, escrito por el propietario al despacharlo.
+    resolution_note: Mapped[str | None] = mapped_column(Text, nullable=True)

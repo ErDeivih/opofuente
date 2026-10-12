@@ -83,6 +83,16 @@ export const ADMIN_NAV_ITEMS: readonly NavItem[] = [
       'Las preguntas dudosas del clasificador: dales tema o márcalas fuera, con el teclado.',
   },
   {
+    path: '/admin/avisos',
+    label: 'Avisos',
+    summary: 'Lo que el alumno marca como error en los apuntes, con su apartado, para despacharlo.',
+  },
+  {
+    path: '/admin/no-son-preguntas',
+    label: 'No son preguntas',
+    summary: 'Los enunciados que no se pueden contestar y las preguntas de otras administraciones.',
+  },
+  {
     path: '/admin/cambios',
     label: 'Cambios',
     summary: 'Versiones sustituidas y derivados que necesitan revisión.',

@@ -10,6 +10,11 @@ Cuatro cosas que se prueban aquí y que son las que hacen que la pantalla de lec
    anclaje, y con su **evento de auditoría** en la misma escritura (nada de un `console.log`);
 4. **el propietario lo ve**: `GET /notes-reports` devuelve el aviso con su tema y su apartado, y el
    anclaje guardado es el del servidor, no el que mandó la petición.
+
+Y desde F16 (el bloque C del objetivo), la quinta: **el propietario lo despacha**. La bandeja tiene
+su ruta de escritura (`PATCH /notes-reports/{id}`), con su evento de auditoría en la misma
+transacción, la nota de lo que se ha hecho y los cuatro estados que el modelo tiene. Es lo que
+convierte «el propietario lo ve» en «el propietario lo resuelve».
 """
 
 from __future__ import annotations
@@ -476,3 +481,203 @@ def test_un_aviso_de_un_apartado_borrado_sigue_en_la_bandeja_con_su_motivo(
     assert aviso["section_title"] is None, "el apartado ya no existe y se dice"
     assert aviso["reason"] == "Aquí faltaba IPv6."
     assert aviso["anchor"] == "redes-tcpip"
+
+
+# ---------------------------------------------------------------- 4. el propietario lo despacha
+
+
+def _avisar(client: TestClient, *, section_key: str, reason: str) -> dict[str, Any]:
+    """Manda un aviso como el alumno y devuelve el aviso creado."""
+    creado = client.post(
+        f"/api/v1/student/topics/{TEMA}/reports",
+        json={"section_key": section_key, "reason": reason},
+        headers=ALLOWED_ORIGIN,
+    )
+    assert creado.status_code == 201, creado.text
+    return client.get("/api/v1/notes-reports").json()["reports"][0]
+
+
+def _despachos(settings: Settings) -> list[tuple[Any, ...]]:
+    """Los eventos de despacho, con su objeto: actor, acción, objeto e identificador."""
+    engine = build_engine(settings.data_paths.database)
+    try:
+        with engine.connect() as conexion:
+            return list(
+                conexion.execute(
+                    text(
+                        "SELECT actor, action, object_type, object_id, before_json, after_json "
+                        "FROM audit_events WHERE action = 'notes.report_updated' "
+                        "ORDER BY created_at"
+                    )
+                ).all()
+            )
+    finally:
+        engine.dispose()
+
+
+def test_el_propietario_despacha_el_aviso_con_su_nota_y_su_evento(
+    alumno: tuple[TestClient, Settings, dict[str, Any]],
+) -> None:
+    """El despacho de verdad: el estado, la nota y el evento, en la misma escritura."""
+    client, settings, _tema = alumno
+    aviso = _avisar(client, section_key="redes-tcpip", reason="La tabla mezcla capas y protocolos.")
+
+    respuesta = client.patch(
+        f"/api/v1/notes-reports/{aviso['id']}",
+        json={"status": "reviewed", "note": "  Arreglado en la versión\ndel 12-oct.  "},
+        headers=ALLOWED_ORIGIN,
+    )
+
+    assert respuesta.status_code == 200, respuesta.text
+    cuerpo = respuesta.json()
+    assert cuerpo["status"] == "reviewed"
+    assert cuerpo["resolution_note"] == "Arreglado en la versión del 12-oct.", (
+        "la nota es una línea"
+    )
+    assert cuerpo["reviewed_at"] is not None, "cerrar un aviso deja su fecha"
+    assert cuerpo["topic_code"] == TEMA, "el despacho devuelve el aviso con su tema resuelto"
+    assert cuerpo["section_title"] == APARTADOS[0][2]
+
+    assert _avisos(settings)[0][3] == "reviewed", (
+        "el estado está en la fila, no solo en la respuesta"
+    )
+
+    eventos = _despachos(settings)
+    assert len(eventos) == 1
+    actor, accion, objeto, object_id, antes, despues = eventos[0]
+    assert (actor, accion, objeto) == ("local", "notes.report_updated", "note_report")
+    assert str(object_id) == aviso["id"], "el evento apunta al aviso que se ha despachado"
+    assert json.loads(str(antes))["status"] == "open"
+    assert json.loads(str(despues))["status"] == "reviewed"
+    assert json.loads(str(despues))["has_note"] is True
+    assert "12-oct" not in str(despues), (
+        "la auditoría guarda referencias, no la nota del propietario"
+    )
+
+
+def test_el_aviso_pasa_por_en_curso_antes_de_resolverse_y_eso_se_cuenta(
+    alumno: tuple[TestClient, Settings, dict[str, Any]],
+) -> None:
+    """«Lo he visto y estoy en ello»: el estado que faltaba, y lo que hace al contador."""
+    client, _settings_sin_version, _tema = alumno
+    aviso = _avisar(client, section_key="redes-tcpip", reason="Falta la máscara /26.")
+
+    assert client.get("/api/v1/notes-reports").json()["pending"] == 1
+
+    en_curso = client.patch(
+        f"/api/v1/notes-reports/{aviso['id']}",
+        json={"status": "in_progress"},
+        headers=ALLOWED_ORIGIN,
+    )
+    assert en_curso.status_code == 200, en_curso.text
+    assert en_curso.json()["status"] == "in_progress"
+    assert en_curso.json()["reviewed_at"] is None, "en curso no es estar despachado"
+
+    bandeja = client.get("/api/v1/notes-reports").json()
+    assert bandeja["pending"] == 0, "un aviso en curso ya no espera a nadie"
+    assert bandeja["in_progress"] == 1
+    assert bandeja["total"] == 1
+    assert (
+        client.get("/api/v1/notes-reports?status=in_progress").json()["reports"][0]["id"]
+        == aviso["id"]
+    )
+    assert client.get("/api/v1/notes-reports?status=open").json()["reports"] == []
+
+
+def test_reabrir_un_aviso_borra_la_fecha_de_revision_y_conserva_la_nota(
+    alumno: tuple[TestClient, Settings, dict[str, Any]],
+) -> None:
+    """La fecha dice cuándo se despachó: un aviso abierto con fecha de revisión sería mentira."""
+    client, _settings_sin_version, _tema = alumno
+    aviso = _avisar(client, section_key="redes-tcpip", reason="El ejemplo está al revés.")
+
+    cerrado = client.patch(
+        f"/api/v1/notes-reports/{aviso['id']}",
+        json={"status": "dismissed", "note": "No era un error: el ejemplo es correcto."},
+        headers=ALLOWED_ORIGIN,
+    )
+    assert cerrado.json()["reviewed_at"] is not None
+
+    abierto = client.patch(
+        f"/api/v1/notes-reports/{aviso['id']}",
+        json={"status": "open"},
+        headers=ALLOWED_ORIGIN,
+    )
+    assert abierto.status_code == 200, abierto.text
+    assert abierto.json()["status"] == "open"
+    assert abierto.json()["reviewed_at"] is None, "reabrir borra la fecha"
+    assert abierto.json()["resolution_note"] == "No era un error: el ejemplo es correcto.", (
+        "lo que se hizo no se tira al reabrir"
+    )
+
+
+def test_despachar_un_aviso_que_no_existe_es_un_404_y_no_escribe_nada(
+    alumno: tuple[TestClient, Settings, dict[str, Any]],
+) -> None:
+    """La bandeja se maneja con identificadores de verdad: uno inventado no es un despacho."""
+    client, settings, _tema = alumno
+
+    respuesta = client.patch(
+        "/api/v1/notes-reports/no-existe",
+        json={"status": "reviewed"},
+        headers=ALLOWED_ORIGIN,
+    )
+
+    assert respuesta.status_code == 404, respuesta.text
+    assert respuesta.json()["code"] == "not_found"
+    assert _despachos(settings) == [], "un despacho rechazado no deja evento"
+
+
+def test_el_actor_del_despacho_viaja_en_la_cabecera_y_una_nota_larga_se_rechaza(
+    alumno: tuple[TestClient, Settings, dict[str, Any]],
+) -> None:
+    """Quién despacha se audita; y una nota que no cabe no se guarda a medias."""
+    client, settings, _tema = alumno
+    aviso = _avisar(client, section_key="redes-tcpip", reason="Falta la máscara /26.")
+
+    larga = client.patch(
+        f"/api/v1/notes-reports/{aviso['id']}",
+        json={"status": "reviewed", "note": "x" * 301},
+        headers=ALLOWED_ORIGIN,
+    )
+    assert larga.status_code == 422, larga.text
+    assert _despachos(settings) == [], "una nota rechazada no deja el estado cambiado"
+
+    con_cabecera = client.patch(
+        f"/api/v1/notes-reports/{aviso['id']}",
+        json={"status": "in_progress"},
+        headers={**ALLOWED_ORIGIN, "X-OpoFuente-Actor": "propietario"},
+    )
+    assert con_cabecera.status_code == 200, con_cabecera.text
+    assert _despachos(settings)[0][0] == "propietario", "la auditoría distingue a quien escribe"
+
+
+def test_la_bandeja_filtra_por_estado_tema_y_busqueda(
+    alumno: tuple[TestClient, Settings, dict[str, Any]],
+) -> None:
+    """Encontrar un aviso entre cientos: por estado, por tema y por lo que dice."""
+    client, _settings_sin_version, _tema = alumno
+    puertos = _avisar(
+        client, section_key="puertos-familias", reason="El puerto de LDAPS no es 389."
+    )
+    _avisar(client, section_key="redes-tcpip", reason="La tabla mezcla capas y protocolos.")
+    client.patch(
+        f"/api/v1/notes-reports/{puertos['id']}",
+        json={"status": "reviewed", "note": "Corregido."},
+        headers=ALLOWED_ORIGIN,
+    )
+
+    por_estado = client.get("/api/v1/notes-reports?status=reviewed").json()
+    assert por_estado["total"] == 1
+    assert por_estado["reports"][0]["id"] == puertos["id"]
+    assert por_estado["pending"] == 1, "el contador de pendientes no mira el filtro"
+
+    por_tema = client.get(f"/api/v1/notes-reports?topic={TEMA}").json()
+    assert por_tema["total"] == 2
+    assert client.get("/api/v1/notes-reports?topic=IV.10").json()["total"] == 0
+
+    # Por lo que escribió el alumno y por el título del apartado, que es lo que se recuerda.
+    assert client.get("/api/v1/notes-reports?q=LDAPS").json()["total"] == 1
+    assert client.get("/api/v1/notes-reports?q=mezcla").json()["total"] == 1
+    assert client.get("/api/v1/notes-reports?q=puertos").json()["total"] == 1
+    assert client.get("/api/v1/notes-reports?q=no-existe-esta-palabra").json()["total"] == 0

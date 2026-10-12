@@ -1,10 +1,9 @@
 # Estado del objetivo largo (TAI: los 33 temas y la app de estudio)
 
 **Autoridad:** `docs/GOAL-DEEPSEEK-TRABAJO-LARGO-2026-10.md` · **Presupuesto de API:** 40 $ · **Se
-avisa cada 10 $** · Última actualización: **11 oct 2026 (tanda f15: los temas se eligen por valor
-medido —cuántas preguntas con clave utilizable—, se escriben **I.2** —publicado— e **I.4** —en
-borrador con su motivo—, y el motor gana la previsión de coste de `--prever`, la limpieza del
-encabezado que repite el título de otro apartado y un **tope de tiempo para la corrida entera**)**.
+avisa cada 10 $** · Última actualización: **11 oct 2026 (tanda f16: arranca el bloque C —el panel— con
+la **bandeja de avisos del alumno** —se ven, se despachan y se auditan— y la sección **«No son
+preguntas»** de la decisión D6. Sin gasto de API: es interfaz, consultas y una migración)**.
 
 > **De las fechas:** la tanda anterior se etiquetó «11 oct» en este fichero, pero **su reloj, sus
 > ficheros y sus marcas de base son del 10 de octubre** (la corrida de I.6 acabó a las 18:09 del
@@ -47,11 +46,14 @@ tokens que devolvió cada llamada; el coste es la estimación con la tabla de pr
 | 11-oct | I.4 | la redacción completa del tema (paso B a bucle de huecos) | 169 | 1.963.599 | 1.946.630 | 1,4625 $ |
 | 11-oct | I.4 | `--medir`, `--limpiar-forma` y `--publicar` (solo lectura y limpieza) | 0 | 0 | 0 | 0,0000 $ |
 | **Acumulado medido de f15** | | | **363** | **4.112.914** | **3.440.541** | **2,6812 $** |
+| 11-oct | — | f16: la bandeja de avisos del alumno y «No son preguntas» (bloque C) | 0 | 0 | 0 | 0,0000 $ |
+| **Acumulado medido de f16** | | | **0** | **0** | **0** | **0,0000 $** |
 
 *(f13 no llama al modelo a propósito: es el bloque de interfaz y de la ruta de escritura de los
 avisos. f14 tampoco: es interfaz y consultas de lectura sobre la base; lo único que se ejecuta son las
-herramientas locales —ruff, mypy, pytest, Vitest, Playwright—, que no cuestan. Las únicas llamadas de
-las dos tandas fueron las de esas herramientas.)*
+herramientas locales —ruff, mypy, pytest, Vitest, Playwright—, que no cuestan. f16, igual: interfaz,
+una migración y consultas de lectura. Las únicas llamadas de las tres tandas fueron las de esas
+herramientas.)*
 
 Tres avisos para que nadie sume mal:
 
@@ -66,8 +68,8 @@ Tres avisos para que nadie sume mal:
   salida se perdió al matar el proceso): es del orden de la corrida siguiente, **≈0,40 $**;
 - **el acumulado del objetivo no se puede dar.** Lo anterior a f10 no está en ninguna fuente. Con lo
   medido (≈1,31 $ de f10 + 0,4411 $ de f11 + 3,0816 $ de f12 + ≈0,40 $ de la corrida matada + 0,00 $
-  de f13 + 0,00 $ de f14 + 2,6812 $ de f15 = **≈7,91 $**) el aviso de los 10 $ **sigue sin
-  cruzarse**.
+  de f13 + 0,00 $ de f14 + 2,6812 $ de f15 + 0,00 $ de f16 = **≈7,91 $**) el aviso de los 10 $ **sigue
+  sin cruzarse**.
 
 **Y una corrección de método**: el informe de una corrida contaba la cobertura **antes** del bucle de
 huecos, así que decía menos de la que el tema acababa teniendo (en I.1: 1.947 de 1.995 en el informe,
@@ -422,6 +424,112 @@ backend, 630 de integración, 29 de contrato, 318 de componentes —34 ficheros�
 las 18 puertas del `gates.ps1`). El registro está en `F:\temp-opofuente\gates-f15-apuntes.txt`. **La
 primera pasada no falló ninguna puerta**, así que no hubo que arreglar nada para que pasaran.
 
+## 4e. El bloque C arranca: la bandeja de avisos y «No son preguntas» (f16)
+
+Lo que se ha construido en esta tanda, y lo que se ha medido de cada cosa. **No ha gastado API**: es
+interfaz, una migración y consultas de lectura sobre la base.
+
+| Qué | Dónde | Cómo se comprueba |
+|---|---|---|
+| **El aviso se puede despachar** (era lo que faltaba: el alumno marcaba y el propietario no tenía dónde mirarlo) | `PATCH /notes-reports/{id}` con `{status, note}` y el actor en el cuerpo o en `X-OpoFuente-Actor` | `test_el_propietario_despacha_el_aviso_con_su_nota_y_su_evento`: el estado, la nota y el **evento de auditoría** (`notes.report_updated`, objeto `note_report`) en la misma escritura, y la auditoría **sin** el texto de la nota |
+| **El estado que faltaba**: `in_progress` («lo he visto y estoy en ello») y la **nota** de lo que se ha hecho | Migración `0034_avisos_en_curso_y_nota` (columna `resolution_note` + `CHECK` de los cuatro estados), `domain/notes_reports.py`, `db_models.py` | `test_migrations_0034.py`: los cuatro estados entran y uno inventado no, la nota en blanco no entra, las restricciones y los índices de `0033` sobreviven a la recreación de la tabla, y la vuelta atrás devuelve los tres estados y deja «en curso» otra vez pendiente |
+| **Qué cuenta como despachado lo decide el dominio** | `reviewed_at_for`: cerrar deja fecha, reabrir la borra; la nota no se tira al reabrir | `test_cerrar_un_aviso_deja_fecha_y_reabrirlo_la_borra`, `test_reabrir_un_aviso_borra_la_fecha_de_revision_y_conserva_la_nota` |
+| **Los números de la bandeja, contados en la base** | Los cuatro contadores y el `total` del filtro viajan con la lista (`pending` sigue siendo solo `open`) | `test_la_bandeja_filtra_por_estado_tema_y_busqueda`: por estado, por tema y por texto, y el contador de pendientes **no** mira el filtro |
+| **La pantalla de la bandeja**: tema, apartado, motivo del alumno, fecha, estado, **enlace al apartado exacto**, filtros y búsqueda, y los cuatro botones con su nota | `apps/web/src/pages/NoteReportsPage.tsx` (`/admin/avisos`), `features/avisos/NoteReportRow.tsx`, el contador en el menú (`app/sectionCounts.ts`) | `noteReports.test.tsx` (6) y las capturas `admin-avisos-{escritorio,movil}.png` |
+| **El enlace al apartado deja el apartado a la vista** —y hacía falta un arreglo: el ancla del navegador **no** basta, porque los apuntes llegan por la API después del primer pintado | `app/apartadoDeLaDireccion.ts` (`useApartadoDeLaDireccion`), montado en el marco del alumno (`StudentZone`, `app/routes.tsx`) | Medido con Playwright **antes** del arreglo: apartado a 5.894 px y `scrollY` en **0**. `apartadoDeLaDireccion.test.tsx` (4) y la prueba de extremo a extremo «el enlace al apartado deja el apartado a la vista» (apartado detrás de 120 párrafos, `toBeInViewport` y `scrollY > 1000`) |
+| **La sección «No son preguntas»** (D6): los enunciados rotos y las de otra administración, con su motivo, quién lo decidió y un buscador; **sin** borrar ni editar nada | `apps/web/src/pages/NoSonPreguntasPage.tsx` (`/admin/no-son-preguntas`) y `q` en `GET /question-exclusions` | `noSonPreguntas.test.tsx` (5), `test_los_enunciados_fuera_de_temario_se_pueden_buscar_y_contar_por_motivo` y las capturas `admin-no-son-preguntas-{escritorio,movil}.png` |
+| **Las cifras por motivo, dichas desde la base** | `totals_by_reason` en la respuesta de exclusiones, contado con un `GROUP BY` y no contando la página | La captura de «No son preguntas» dice **769** de enunciado roto y **325** de otra administración, medidos en la base |
+
+**Lo que se ha medido en los datos reales del propietario** (solo lectura, y con una **copia** para
+retratar):
+
+- `notes_reports` (los avisos del alumno): **0 filas**, y la tabla **no existe** en su base, que está
+  en la revisión **`0032`**: las migraciones `0033` y `0034` **no se han aplicado nunca** a sus datos.
+  Es decir: el botón «Esto está mal» guarda en la copia y en las pruebas, pero en su base falla hoy
+  por falta de tabla. Se aplica con `scripts/migrate.ps1` (ver `PARA-EL-PROPIETARIO.md`).
+- `question_curriculum_exclusions` (lo que no son preguntas): **769 `enunciado_roto` + 325
+  `otra_administracion`**, contados en la base. El documento decía «754 + los nuevos»: son 769.
+- `notes_incidents` (la bandeja del motor): **333**, y **no tiene ni ruta ni pantalla**: es la primera
+  mitad del §4.1 del objetivo («una sola bandeja con todo lo que necesita su criterio»), y queda
+  fuera de esta tanda, que era la mitad del alumno.
+- Las **333** y las **769 + 325** son cosas distintas: el número «333 avisos» de la nota del
+  propietario es la bandeja **del motor**, no la del alumno. La bandeja del alumno nace **vacía**.
+
+**Las capturas** (`artifacts/screens/`): `admin-avisos-{escritorio,movil}.png` y
+`admin-no-son-preguntas-{escritorio,movil}.png`, con **0 violaciones de axe** y **0 errores de
+consola** en las cuatro, y **390 px exactos** de ancho en las dos de móvil (medido en el PNG: una
+captura de página completa más ancha que el viewport sería un desplazamiento horizontal). Salen de
+una **copia** de la base real (`F:\temp-opofuente\f16-datos`, nunca la suya): la de avisos lleva un
+aviso **creado por la ruta del alumno** sobre los apuntes reales de IV.7 —al no haber ninguno en la
+base, y no inventarse filas a mano— y la de «No son preguntas», los **769** enunciados rotos reales.
+
+**Y un hallazgo del detector de palabras prohibidas**: en el panel, y con los datos reales, sale
+**una** palabra: **«Celador»**, y no la pone ninguna de las dos pantallas nuevas —viene del **selector
+de oposición** del marco del panel, que enseña las oposiciones del propietario—. La regla está escrita
+para la **zona del alumno** («esta zona es solo de TAI») y la propia puerta del rediseño la aplica
+solo a `STUDENT_NAV_ITEMS`; el panel la enseña a propósito. Lo que sí era de estas pantallas —los
+títulos del programa del filtro de tema, que llevaban «representación» y «versiones» a la interfaz—
+está arreglado marcándolos como contenido, y la prueba E2E lo comprueba: **0 jerga interna** en las
+dos pantallas a los dos anchos.
+
+**Puertas: 18/18**, ejecutadas sobre este árbol: **747** unitarias de backend, **641** de integración,
+**29** de contrato, **333** de componentes (37 ficheros) y **67** de extremo a extremo. El registro
+está en `F:\temp-opofuente\gates-f16-panel.txt`. **De los tiempos de esta corrida no me fío**: el
+reloj de la máquina saltó a mitad (la suite de integración se atribuye **12:03:33** de duración, que
+es imposible, y el contador de las puertas dice 11:24 min), así que aquí no se da ninguna duración
+como medida. Lo que sí es del registro son los códigos de salida y los recuentos.
+
+Las puertas se intentaron **tres veces**, y las dos primeras fallaron por cosas que se arreglaron (y
+que quedan contadas aquí porque un fallo de puerta que se repite es información):
+
+1. la puerta 1 (`ruff format --check`): dos ficheros de prueba nuevos sin formatear. Se pasó
+   `ruff format` y se repitió;
+2. la puerta 18 (E2E): `test_changes.py`… no: **`topic-review.spec.ts`**, con
+   `strict mode violation: getByRole('region', { name: 'Fuera de temario' }).getByLabel('Tema')
+   resolved to 2 elements`. La causa era **mía**: la prueba nueva de «No son preguntas» dejaba su
+   marca de fuera de temario en la base compartida de la suite, y la región de la cola de
+   clasificación pinta **un selector «Tema» por fila**: dos filas, dos controles iguales, y Playwright
+   —con razón— no elige. La prueba nueva ahora **levanta su marca al terminar** (asignándole un tema,
+   que es como la levanta la aplicación) y comprueba que no deja ninguna. **No se tocó el localizador
+   de la otra prueba ni se relajó nada**; su registro está en
+   `F:\temp-opofuente\gates-f16-panel-intento2-fallo-e2e-topic-review.txt`.
+**Y una prueba que falla antes**: el dominio, la migración, la ruta de despacho y la búsqueda se
+escribieron **antes** que su implementación. Con el código de `main` y solo las pruebas nuevas: **7
+rojas** (las 5 del despacho y la búsqueda de la bandeja, las 2 de exclusiones) y **1 error de
+colección** (el test del dominio no encontraba `CLOSED_STATUSES`). Con la implementación puesta, esos
+ficheros pasan **36 de 36**; el registro del rojo está en `F:\temp-opofuente\f16-scratch\rojo-antes.txt`.
+
+**Y un rojo que no era de esta tanda** (se anota, no se toca): en la primera corrida de las puertas,
+la 7 falló **una vez** en`test_changes.py::test_una_version_nueva_propone_un_cambio_con_su_diff_y_sus_afectados`
+(`assert cambio["sections_changed"] == 1` dio **0**, en `test_changes.py:145`). No es de esta tanda y
+no se ha tocado la prueba:
+
+- es del bloque de cambios, y el diff de esta tanda **no toca ni un fichero** de ese camino
+  (`change_*`, `document_*`, `extraction*`, `ingestion*`, `jobs*`): lo que se toca es `notes_reports`,
+  el `q` de las exclusiones y la interfaz del panel;
+- **corrió antes que ninguna prueba nueva**: en la suite, `test_changes.py` está al **6 %** y las
+  nuevas entran al **50 %** (`test_migrations_0034`), **69 %** (`test_question_topics_bulk_api`) y
+  **80 %** (`test_student_notes_api`). Lo único común son los módulos importados;
+- **pasa en aislamiento** (`1 passed`) y **el fichero entero** (`9 passed`) en este mismo árbol;
+- y **vuelve a pasar en la corrida completa** siguiente (`test_changes.py .........`, 9 de 9), en el
+  mismo punto de la suite.
+
+Es decir: una prueba **inestable bajo carga** —esa corrida de la suite de integración fue la más lenta
+de las tres, con la máquina ocupada por otros proyectos—, no un fallo del código de esta tanda: en la
+corrida siguiente el mismo fichero pasó entero (`test_changes.py .........`). El registro de la corrida
+que falló se guarda en `F:\temp-opofuente\gates-f16-panel-intento1-fallo-test_changes.txt`.
+
+**Lo que se queda fuera, y por qué**:
+
+1. **la bandeja del motor** (las 333 incidencias `notes_incidents`: claves sospechosas, huecos,
+   normas cambiadas) sigue **sin ruta y sin pantalla**: el §4.1 del objetivo la pide **en la misma
+   bandeja** que los avisos del alumno, y eso es una tanda propia (con la ficha de pregunta, los
+   apuntes y el temario del bloque C). Esta tanda era la mitad del alumno;
+2. **la aplicación de las migraciones a su base**: no se ha tocado —las copias son la tarea D5, que
+   esta tanda tiene prohibida—, y por eso queda dicho arriba y en `PARA-EL-PROPIETARIO.md`;
+3. **las tres violaciones de accesibilidad del panel** que el §5.9 dejó anotadas (`/cambios` y
+   `/buscar` a 390 px): son de otras pantallas y siguen ahí. Las dos de esta tanda salen a **0**.
+
 ## 5. Lo que queda abierto
 
 1. **El acumulado de gasto anterior a f10 no existe** y ya no se puede medir. Desde aquí se anota una
@@ -446,19 +554,24 @@ primera pasada no falló ninguna puerta**, así que no hubo que arreglar nada pa
    Faltan la pantalla de **Tests** (elegir temas, cuántas preguntas y cómo se corrigen: pasos 3 y 4 del
    §3) y, dentro del tema, las pestañas «Preguntas» y «Mi progreso» —hoy son enlaces a su dirección—,
    el buscador dentro del tema y la marca de leído del índice. La **bandeja del propietario** para los
-   avisos del alumno tiene su ruta de lectura (`GET /notes-reports`) pero no su pantalla: es el bloque C.
+   avisos del alumno ya tiene **ruta y pantalla** desde f16 (`/admin/avisos`, §4e): se ven, se
+   despachan y se auditan. Lo que sigue sin pantalla es la **bandeja del motor** (`notes_incidents`,
+   las 333 incidencias), que no tiene ni ruta.
 7. **Los exámenes del INAP**: la pantalla existe y lee de la API, y hoy sale **vacía** porque no hay
    ninguno importado (D10). Lo que falta es la importación, no la pantalla: cuando los 32 PDF de
    `F:\OpoFuente\fuentes\inap-tai\` entren con su manifiesto, saldrán en la lista con su fecha, su
    número de preguntas y su botón, y el que no tenga plantilla activa dirá que todavía no se puede
    hacer en lugar de ofrecer un examen que falla. La ruta `POST /student/official-exams/{posicion}/sessions`
    ya está probada con un examen de verdad montado por la API (§4c)
-8. Los **28 temas restantes** y los bloques C (panel) y D (datos: copias, epígrafes, INAP) siguen sin
-   empezar, con D5 (copias verificadas) como primer paso del §6 del objetivo. En f15 se les ha puesto
-   **orden de valor**: la tabla de preguntas con clave utilizable de cada tema es la que decide qué se
-   escribe primero, y está abajo. **IV.2 (el 3.º, 797 preguntas con clave) tiene ya su índice escrito
-   y probado** (`domain/catalogo_iv_2.py`, 13 apartados, 761 de sus 770 grupos situados por el
-   enunciado): la próxima tanda empieza redactándolo, sin volver a decidir el árbol.
+8. Los **28 temas restantes** y el bloque D (datos: copias, epígrafes, INAP) siguen sin empezar, con
+   D5 (copias verificadas) como primer paso del §6 del objetivo. El **bloque C ha empezado** en f16 con
+   sus dos primeras pantallas (la bandeja de avisos del alumno y «No son preguntas», §4e); le faltan
+   la **bandeja única con las incidencias del motor**, la **ficha de pregunta**, los **apuntes** y el
+   **temario** del §4 del objetivo. En f15 se les ha puesto
+   **orden de valor** a los temas: la tabla de preguntas con clave utilizable de cada tema es la que
+   decide qué se escribe primero, y está abajo. **IV.2 (el 3.º, 797 preguntas con clave) tiene ya su
+   índice escrito y probado** (`domain/catalogo_iv_2.py`, 13 apartados, 761 de sus 770 grupos situados
+   por el enunciado): la próxima tanda empieza redactándolo, sin volver a decidir el árbol.
 9. **Dos listones que no coinciden entre el documento y el código**, medidos en I.4 y anotados sin
    tocarlos (el §1.2 pide no relajar la puerta):
    - **párrafos casi repetidos**: el §2.3 pide **≤ 3 %** y el código lleva el tope al **5 %**
@@ -475,6 +588,6 @@ primera pasada no falló ninguna puerta**, así que no hubo que arreglar nada pa
    (`--tiempo-maximo`, `0` = sin tope), con su prueba de un modelo que tarda más que el tope.
 9. **Tres violaciones de accesibilidad en el panel** (`scrollable-region-focusable` en `/cambios` y en
    `/buscar` a 390 px) que aparecen al fotografiar las pantallas del propietario **con los datos
-   reales**: son regiones que se desplazan y no se pueden recorrer con el teclado. No son de este
-   bloque —las pantallas del alumno salen a 0— y se arreglan con el mismo remedio que se aplicó a las
+   reales**: son regiones que se desplazan y no se pueden recorrer con el teclado. No son de f16 —las
+   dos pantallas de la bandeja salen a **0**, con datos reales— y se arreglan con el mismo remedio que se aplicó a las
    tablas de los apuntes (`tabindex` y nombre), pero tocan el panel: quedan anotadas para él.

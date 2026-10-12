@@ -571,10 +571,18 @@ class QuestionService:
         return self._questions.question_exclusion(question_id)
 
     def exclusions(
-        self, *, reason: str | None = None, limit: int = 50, offset: int = 0
+        self, *, reason: str | None = None, q: str | None = None, limit: int = 50, offset: int = 0
     ) -> tuple[tuple[QuestionExclusionView, ...], int]:
-        """Las marcas de fuera de temario, con su total: la cola que revisa el propietario."""
-        return self._questions.list_exclusions(reason=reason, limit=limit, offset=offset)
+        """Las marcas de fuera de temario, con su total: la cola que revisa el propietario.
+
+        `q` busca en el enunciado de la pregunta excluida, que es lo que permite encontrar una entre
+        cientos (F16, la sección «No son preguntas»).
+        """
+        return self._questions.list_exclusions(reason=reason, q=q, limit=limit, offset=offset)
+
+    def exclusions_by_reason(self) -> dict[str, int]:
+        """Cuántas preguntas hay fuera de temario por motivo: las cifras de la sección del panel."""
+        return self._questions.count_exclusions_by_reason()
 
     def topic_proposals(
         self, *, limit: int = 50, offset: int = 0

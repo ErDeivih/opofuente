@@ -1,30 +1,42 @@
-"""La bandeja del propietario: los avisos del alumno sobre los apuntes (F13, decisión D2).
+"""La bandeja del propietario: los avisos del alumno sobre los apuntes (F13 y F16, decisión D2).
 
-Una sola ruta de lectura y ninguna de escritura: el aviso lo escribe el alumno desde su zona
-(`POST /student/topics/{codigo}/reports`) y aquí se lee. Despacharlos —marcarlos revisados o
-descartarlos— es el panel de administración (bloque C), y esa ruta llegará con su pantalla: dejar
-hoy un `PATCH` sin pantalla que lo use sería contrato muerto.
+El aviso lo escribe el alumno desde su zona (`POST /student/topics/{codigo}/reports`); aquí el
+propietario lo **lee** y lo **despacha**. Las dos mitades están en este fichero porque son la misma
+bandeja: una ruta de lectura sin ruta de escritura dejaba al propietario mirando lo que el alumno
+marca sin poder decir qué ha hecho con ello, que es lo que le pasa hoy.
 
-Lo que esta ruta garantiza es que el aviso **no se queda dentro de la aplicación**: el propietario
-puede leer hoy lo que el alumno ha marcado, con su tema, su apartado y su motivo.
+Lo que esta ruta garantiza:
+
+- el aviso **no se queda dentro de la aplicación**: sale con su tema, su apartado, su motivo y su
+  fecha;
+- el **despacho es auditado**: `PATCH /notes-reports/{id}` escribe el estado, la nota y su evento en
+  la misma transacción, y el actor viaja en el cuerpo o en la cabecera `X-OpoFuente-Actor` como en
+  el resto de escrituras del panel;
+- el **apartado exacto** viaja con el aviso (`section_key` y `anchor`), que es lo que permite abrir
+  los apuntes en el punto del que habla en lugar de buscarlo a mano.
 """
 
 from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Header, Path, Query
 
 from opofuente.api.deps import NotesReportsServiceDep
-from opofuente.api.error_responses import RESOURCE_ERRORS
+from opofuente.api.error_responses import RESOURCE_ERRORS, WRITE_ERRORS
 from opofuente.api.notes_report_schemas import (
     NoteReportListSchema,
     NoteReportSchema,
     NoteReportStatusName,
+    NoteReportUpdateSchema,
 )
+from opofuente.application.notes_report_service import ACTOR_PROPIETARIO
 from opofuente.domain.notes_reports import NoteReport, NoteReportStatus
 
 router = APIRouter(tags=["panel"])
+
+#: La cabecera con la que el panel dice quién escribe, igual que en la clasificación.
+ACTOR_HEADER = "X-OpoFuente-Actor"
 
 
 def _aviso(aviso: NoteReport) -> NoteReportSchema:
@@ -39,7 +51,19 @@ def _aviso(aviso: NoteReport) -> NoteReportSchema:
         status=aviso.status.value,
         created_at=aviso.created_at,
         reviewed_at=aviso.reviewed_at,
+        resolution_note=aviso.resolution_note,
     )
+
+
+def _actor(*, declared: str | None, header: str | None) -> str:
+    """Quién despacha: lo que dice el cuerpo, si no la cabecera y, si no, la persona local.
+
+    Un actor en blanco se ignora: en la auditoría es peor un actor vacío que el de por defecto.
+    """
+    for candidato in (declared, header):
+        if candidato is not None and candidato.strip() != "":
+            return candidato.strip()
+    return ACTOR_PROPIETARIO
 
 
 @router.get(
@@ -58,6 +82,13 @@ def list_note_reports(
         str | None,
         Query(description="Código legible del tema, como `IV.7`, para ver solo los de un tema."),
     ] = None,
+    q: Annotated[
+        str | None,
+        Query(
+            max_length=200,
+            description="Busca en el motivo del alumno y en el título del apartado.",
+        ),
+    ] = None,
     limit: Annotated[
         int,
         Query(ge=1, le=1000, description="Cuántos avisos se devuelven como mucho."),
@@ -65,15 +96,45 @@ def list_note_reports(
 ) -> NoteReportListSchema:
     """Los avisos, del más nuevo al más viejo.
 
-    `pending` cuenta los que están sin despachar **sin mirar el filtro**: es el número que el
-    propietario necesita ver aunque esté mirando los de un solo tema.
+    `pending` cuenta los que están **sin despachar** (`open`) sin mirar el filtro: es el número que
+    el propietario necesita ver aunque esté mirando los de un solo tema. Los otros tres recuentos y
+    el `total` del filtro salen de la base, no de la página que se devuelve.
     """
-    avisos = service.list_reports(
-        status=None if status is None else NoteReportStatus(status),
-        topic_code=topic,
-        limit=limit,
-    )
+    estado = None if status is None else NoteReportStatus(status)
+    avisos = service.list_reports(status=estado, topic_code=topic, q=q, limit=limit)
+    contados = service.status_counts()
     return NoteReportListSchema(
-        pending=service.count_open(),
+        pending=contados[NoteReportStatus.OPEN],
+        in_progress=contados[NoteReportStatus.IN_PROGRESS],
+        reviewed=contados[NoteReportStatus.REVIEWED],
+        dismissed=contados[NoteReportStatus.DISMISSED],
+        total=service.total(status=estado, topic_code=topic, q=q),
         reports=[_aviso(aviso) for aviso in avisos],
     )
+
+
+@router.patch(
+    "/notes-reports/{report_id}",
+    response_model=NoteReportSchema,
+    responses=WRITE_ERRORS,
+    summary="Despacha un aviso: en curso, resuelto o descartado, con la nota de lo que se ha hecho",
+)
+def update_note_report(
+    service: NotesReportsServiceDep,
+    body: NoteReportUpdateSchema,
+    report_id: str = Path(description="Identificador del aviso, tal como lo devuelve la bandeja."),
+    actor: Annotated[str | None, Header(alias=ACTOR_HEADER)] = None,
+) -> NoteReportSchema:
+    """Cambia el estado de un aviso y, si se escribe, deja la nota de lo que se ha hecho.
+
+    No hay ruta para borrar un aviso: lo que el alumno marcó como mal no se tira, se despacha. Un
+    aviso que no existe es un 404 con su identificador, y una nota de más de una línea se recorta
+    antes de guardarse.
+    """
+    aviso = service.update_report(
+        report_id,
+        status=NoteReportStatus(body.status),
+        note=body.note,
+        actor=_actor(declared=body.actor, header=actor),
+    )
+    return _aviso(aviso)

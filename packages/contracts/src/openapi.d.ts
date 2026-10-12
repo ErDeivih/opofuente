@@ -1596,8 +1596,9 @@ export interface paths {
          * Los avisos del alumno sobre los apuntes, para la bandeja del propietario
          * @description Los avisos, del más nuevo al más viejo.
          *
-         *     `pending` cuenta los que están sin despachar **sin mirar el filtro**: es el número que el
-         *     propietario necesita ver aunque esté mirando los de un solo tema.
+         *     `pending` cuenta los que están **sin despachar** (`open`) sin mirar el filtro: es el número que
+         *     el propietario necesita ver aunque esté mirando los de un solo tema. Los otros tres recuentos y
+         *     el `total` del filtro salen de la base, no de la página que se devuelve.
          */
         get: operations["list_note_reports_api_v1_notes_reports_get"];
         put?: never;
@@ -1606,6 +1607,30 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v1/notes-reports/{report_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Despacha un aviso: en curso, resuelto o descartado, con la nota de lo que se ha hecho
+         * @description Cambia el estado de un aviso y, si se escribe, deja la nota de lo que se ha hecho.
+         *
+         *     No hay ruta para borrar un aviso: lo que el alumno marcó como mal no se tira, se despacha. Un
+         *     aviso que no existe es un 404 con su identificador, y una nota de más de una línea se recorta
+         *     antes de guardarse.
+         */
+        patch: operations["update_note_report_api_v1_notes_reports__report_id__patch"];
         trace?: never;
     };
     "/api/v1/oppositions": {
@@ -1732,6 +1757,9 @@ export interface paths {
          *     pregunta a propósito: una marca no es un tema, y meterla en el mismo sitio invitaría a leerla
          *     como si lo fuera. La revisión de una marca se hace asignando un tema (que la levanta) o
          *     dejándola.
+         *
+         *     `q` filtra por el enunciado: la sección «No son preguntas» del panel (F16, decisión D6) enseña
+         *     los enunciados rotos, y con 769 en la base hay que poder buscar el que se tiene en la cabeza.
          */
         get: operations["list_question_exclusions_api_v1_question_exclusions_get"];
         put?: never;
@@ -5711,13 +5739,24 @@ export interface components {
         NodeType: "block" | "topic" | "epigraph";
         /**
          * NoteReportListSchema
-         * @description Los avisos y cuántos siguen sin despachar.
+         * @description Los avisos, cuántos siguen sin despachar y cuántos hay en cada estado.
          *
-         *     El recuento va aparte de la lista aunque se pueda contar de ella: la lista viene filtrada y
-         *     limitada (por estado y por tema), y el número que el propietario necesita ver es el de
-         *     pendientes de verdad, no el de la página que está mirando.
+         *     Los recuentos van aparte de la lista aunque se puedan contar de ella: la lista viene filtrada y
+         *     limitada (por estado, por tema y por búsqueda), y los números que el propietario necesita ver
+         *     son los de la bandeja entera, no los de la página que está mirando. `pending` es solo `open`:
+         *     un aviso «en curso» ya no espera a nadie, y por eso no cuenta ahí.
          */
         NoteReportListSchema: {
+            /**
+             * Dismissed
+             * @description Avisos descartados: no eran un error.
+             */
+            dismissed: number;
+            /**
+             * In Progress
+             * @description Avisos que el propietario tiene en la mano.
+             */
+            in_progress: number;
             /**
              * Pending
              * @description Avisos en estado `open`, con independencia del filtro.
@@ -5725,13 +5764,25 @@ export interface components {
             pending: number;
             /** Reports */
             reports: components["schemas"]["NoteReportSchema"][];
+            /**
+             * Reviewed
+             * @description Avisos resueltos.
+             */
+            reviewed: number;
+            /**
+             * Total
+             * @description Avisos que devuelve el filtro, contados en la base.
+             */
+            total: number;
         };
         /**
          * NoteReportSchema
-         * @description Un aviso del alumno: qué apartado, qué dice y cuándo llegó.
+         * @description Un aviso del alumno: qué apartado, qué dice, cuándo llegó y cómo acabó.
          *
          *     `section_title` es `None` cuando el apartado ya no existe —los apuntes se reescriben—: el aviso
-         *     se sigue enseñando, y ese hueco es justo lo que hay que mirar.
+         *     se sigue enseñando, y ese hueco es justo lo que hay que mirar. `resolution_note` es lo que el
+         *     propietario escribió de lo que hizo, y `reviewed_at` cuándo lo cerró (vuelve a estar vacío si lo
+         *     reabre).
          */
         NoteReportSchema: {
             /** Anchor */
@@ -5745,6 +5796,8 @@ export interface components {
             id: string;
             /** Reason */
             reason: string;
+            /** Resolution Note */
+            resolution_note?: string | null;
             /** Reviewed At */
             reviewed_at?: string | null;
             /** Section Key */
@@ -5755,11 +5808,31 @@ export interface components {
              * Status
              * @enum {string}
              */
-            status: "open" | "reviewed" | "dismissed";
+            status: "open" | "in_progress" | "reviewed" | "dismissed";
             /** Topic Code */
             topic_code: string;
             /** Topic Title */
             topic_title: string;
+        };
+        /**
+         * NoteReportUpdateSchema
+         * @description Lo único que se puede cambiar de un aviso: en qué punto está y qué se ha hecho.
+         *
+         *     `note` es potestativa a propósito. El motivo del alumno es obligatorio porque un aviso sin él no
+         *     se puede arreglar; la nota del propietario no, porque hay avisos que se cierran sin nada que
+         *     escribir. Cuando viene, es **una línea** (el servidor la recorta) y sustituye a la que hubiera;
+         *     cuando no viene, la que hubiera se queda.
+         */
+        NoteReportUpdateSchema: {
+            /** Actor */
+            actor?: string | null;
+            /** Note */
+            note?: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "open" | "in_progress" | "reviewed" | "dismissed";
         };
         /** OcrSettingsSchema */
         OcrSettingsSchema: {
@@ -6228,6 +6301,10 @@ export interface components {
         /**
          * QuestionExclusionPageSchema
          * @description La cola de fuera de temario: las marcas de una página y cuántas hay en total.
+         *
+         *     `totals_by_reason` cuenta **cada** motivo en la base, sin mirar el filtro de la petición: es lo
+         *     que permite que la sección «No son preguntas» del panel (F16, decisión D6) diga cuántos
+         *     enunciados rotos hay sin leerlos para contarlos. Un motivo sin ninguna marca no aparece.
          */
         QuestionExclusionPageSchema: {
             /** Exclusions */
@@ -6238,6 +6315,10 @@ export interface components {
             offset: number;
             /** Total */
             total: number;
+            /** Totals By Reason */
+            totals_by_reason?: {
+                [key: string]: number;
+            };
         };
         /**
          * QuestionExclusionSchema
@@ -13824,9 +13905,11 @@ export interface operations {
         parameters: {
             query?: {
                 /** @description Filtra por estado; sin él salen todos. */
-                status?: ("open" | "reviewed" | "dismissed") | null;
+                status?: ("open" | "in_progress" | "reviewed" | "dismissed") | null;
                 /** @description Código legible del tema, como `IV.7`, para ver solo los de un tema. */
                 topic?: string | null;
+                /** @description Busca en el motivo del alumno y en el título del apartado. */
+                q?: string | null;
                 /** @description Cuántos avisos se devuelven como mucho. */
                 limit?: number;
             };
@@ -13843,6 +13926,71 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["NoteReportListSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    update_note_report_api_v1_notes_reports__report_id__patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-OpoFuente-Actor"?: string | null;
+            };
+            path: {
+                /** @description Identificador del aviso, tal como lo devuelve la bandeja. */
+                report_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NoteReportUpdateSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteReportSchema"];
+                };
+            };
+            /** @description Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
                 };
             };
             /** @description El recurso no existe. */
@@ -14141,6 +14289,8 @@ export interface operations {
         parameters: {
             query?: {
                 reason?: string | null;
+                /** @description Busca en el enunciado de la pregunta excluida. */
+                q?: string | null;
                 limit?: number;
                 offset?: number;
             };

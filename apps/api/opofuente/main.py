@@ -284,9 +284,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         notes=notes_repository,
     )
     # F13: los avisos del alumno sobre los apuntes. Se escriben desde su zona, auditados, y los lee
-    # la bandeja del propietario (decisión D2 del objetivo).
+    # la bandeja del propietario (decisión D2 del objetivo). Desde F16 el propietario también los
+    # despacha desde esa bandeja, con su evento y su nota (bloque C).
     notes_reports_repository = SqlAlchemyNotesReportRepository(session_factory)
-    notes_reports_service = NotesReportsService(notes_reports_repository)
+    notes_reports_service = NotesReportsService(notes_reports_repository, clock=clock)
     export_service = ExportService(
         questions=SqlAlchemyQuestionRepository(session_factory),
         documents=SqlAlchemyDocumentRepository(session_factory, representations),

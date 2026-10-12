@@ -3,6 +3,47 @@
 Lo que conviene que sepas y **no** hace falta que contestes para que el trabajo siga. Lo que sí
 necesita tu criterio está marcado como **«Decide tú»**.
 
+## 11 oct 2026 — ya puedes ver lo que marcas en los apuntes (y una cosa que tienes que hacer tú)
+
+**Lo que cambia para ti:**
+
+1. **El botón «Esto está mal» ya tiene bandeja.** Hasta ahora el aviso se guardaba y **no había dónde
+   verlo**: estudiabas, marcabas lo que estaba mal y no podías mirarlo. Ahora está en el panel,
+   **Avisos** (`/admin/avisos`): cada aviso con su tema, su apartado, **el motivo que escribiste**, la
+   fecha y su estado. Se puede ir al **apartado exacto** de los apuntes con un clic, filtrar por
+   estado y por tema, buscar por lo que dice, y **despacharlo**: en curso, resuelto o descartado, con
+   la nota de lo que has hecho (por ejemplo «arreglado en la versión del 12-oct»). Cada cambio queda
+   auditado, como cuando lo escribes tú.
+   En el menú del panel, **Avisos** lleva un contador con los que **nadie ha mirado todavía**.
+2. **«No son preguntas»** (`/admin/no-son-preguntas`): los enunciados que no se pueden contestar y las
+   preguntas de otra administración, con el motivo por el que están fuera y un buscador. En tu base
+   hay **769 enunciados rotos** y **325 de otra administración** (medidos, no heredados). No entran en
+   tests, simulacros ni comprobaciones —eso ya era así— y **siguen en la base**: esta pantalla solo
+   los enseña, **no borra ni edita nada**.
+3. **Una cosa que tienes que hacer tú** (no la he hecho yo a propósito, porque las copias son otra
+   tarea y tu base es tuya): **tu base está en la revisión `0032` y le faltan las migraciones `0033`
+   y `0034`**. O sea: la tabla de los avisos **no existe todavía en tus datos**, y el botón «Esto está
+   mal» de tus apuntes **falla hoy** al guardar. Se arregla con `scripts\migrate.ps1` (crea la tabla y
+   el estado «en curso»; no toca ni una pregunta, ni un apunte, ni una clasificación, y se puede
+   deshacer). Cuando lo pases, la bandeja arranca **vacía** —no hay ningún aviso tuyo guardado— y se
+   irá llenando con lo que marques.
+4. **Y una cifra que hay que no confundir**: los **333 avisos** de tu bandeja del motor (claves
+   sospechosas, huecos sin material, normas cambiadas) son **otra cosa** y **todavía no tienen
+   pantalla**: su bandeja no tiene ni ruta. Es la mitad que falta del bloque del panel y va en su
+   propia tanda, junto con la ficha de pregunta y el temario.
+
+**Lo que verás cuando entres:** dos entradas nuevas en el menú del panel, **Avisos** y **No son
+preguntas**, entre «Clasificación» y «Cambios». Las capturas de las dos, en escritorio y móvil, están
+en `artifacts/screens/` (`admin-avisos-*` y `admin-no-son-preguntas-*`), sin violaciones de
+accesibilidad.
+
+**Y una cosa honesta sobre el detector de palabras prohibidas:** en las capturas del panel sale
+«Celador». **No lo pone ninguna de las dos pantallas nuevas**: lo pone el selector de oposición del
+marco del panel, que enseña tus oposiciones. La regla («esta zona es solo de TAI») está escrita para
+la zona del alumno, y así la aplica la puerta del rediseño. Si alguna vez quieres que el panel no
+enseñe el nombre de las otras oposiciones hasta que lo pidas, dímelo: es un cambio del marco, no de
+estas pantallas.
+
 ## 11 oct 2026 — I.2 ya se lee; I.4 se queda en borrador con su motivo, y dos cosas del motor
 
 **Lo que cambia para ti:**

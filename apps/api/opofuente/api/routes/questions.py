@@ -901,6 +901,10 @@ def assign_question_topics_bulk(
 def list_question_exclusions(
     service: QuestionServiceDep,
     reason: Annotated[str | None, Query()] = None,
+    q: Annotated[
+        str | None,
+        Query(max_length=200, description="Busca en el enunciado de la pregunta excluida."),
+    ] = None,
     limit: Annotated[int, Query(ge=1, le=200)] = DEFAULT_LIMIT,
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> QuestionExclusionPageSchema:
@@ -911,13 +915,17 @@ def list_question_exclusions(
     pregunta a propósito: una marca no es un tema, y meterla en el mismo sitio invitaría a leerla
     como si lo fuera. La revisión de una marca se hace asignando un tema (que la levanta) o
     dejándola.
+
+    `q` filtra por el enunciado: la sección «No son preguntas» del panel (F16, decisión D6) enseña
+    los enunciados rotos, y con 769 en la base hay que poder buscar el que se tiene en la cabeza.
     """
-    marcas, total = service.exclusions(reason=reason, limit=limit, offset=offset)
+    marcas, total = service.exclusions(reason=reason, q=q, limit=limit, offset=offset)
     return QuestionExclusionPageSchema(
         exclusions=[_exclusion(marca) for marca in marcas],
         total=total,
         limit=limit,
         offset=offset,
+        totals_by_reason=service.exclusions_by_reason(),
     )
 
 

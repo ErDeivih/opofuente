@@ -62,6 +62,10 @@ const RUTAS: readonly { ruta: string; nombre: string }[] = [
   { ruta: '/buscar?q=constitucion', nombre: 'buscar' },
   { ruta: '/ajustes', nombre: 'ajustes' },
   { ruta: '/admin/ui', nombre: 'admin-ui' },
+  /* El bloque C del panel (F16): lo que el motor dejó fuera de los tests. Lee las marcas de fuera de
+     temario que ya estén en los datos —con los del propietario, los 769 enunciados rotos— y se
+     retrata tal cual. La bandeja de avisos va aparte, más abajo: necesita que haya un aviso dentro. */
+  { ruta: '/admin/no-son-preguntas', nombre: 'no-son-preguntas' },
 ];
 
 const ANCHOS: readonly { ancho: number; alto: number; etiqueta: string }[] = [
@@ -151,6 +155,21 @@ for (const { ancho, alto, etiqueta } of ANCHOS) {
   test(`test-en-curso a ${ancho} px`, async ({ page }) => {
     const sesion = await montarTestDeAlumno();
     await retratar(page, `/test/${sesion}`, '/test-en-curso', ancho, alto, etiqueta);
+  });
+}
+
+/**
+ * La bandeja de avisos del alumno, con un aviso dentro (F16).
+ *
+ * Se siembra por la ruta del alumno —la misma que usa el botón «Esto está mal»— sobre los apuntes
+ * reales del tema que los tenga, porque una bandeja vacía no demuestra nada de lo que hay que ver:
+ * el tema, el apartado, el motivo del alumno, su fecha y los botones de despacho. Si los datos no
+ * traen ningún tema con apuntes, la captura sale con su estado vacío y así se dice en el informe.
+ */
+for (const { ancho, alto, etiqueta } of ANCHOS) {
+  test(`avisos a ${ancho} px`, async ({ page }) => {
+    await prepararAvisos();
+    await retratar(page, '/admin/avisos', '/admin/avisos', ancho, alto, etiqueta);
   });
 }
 
@@ -331,8 +350,7 @@ async function sembrarUnTestTerminado(): Promise<{ sesion: string }> {
 }
 
 /** Monta un test de tres preguntas de un tema y lo deja empezado: devuelve su identificador. */
-async function montarTestDeAlumno(): Promise<string> {
-  const cabeceras = { 'Content-Type': 'application/json', Origin: ORIGEN };
+async function montarTestDeAlumno(): Promise<string> {  const cabeceras = { 'Content-Type': 'application/json', Origin: ORIGEN };
   const leer = async <T>(respuesta: Response): Promise<T> => {
     if (!respuesta.ok) {
       throw new Error(`la API respondió ${respuesta.status} al montar el test`);
@@ -450,4 +468,49 @@ interface NodoPrograma {
 
 function aplanar(nodos: NodoPrograma[]): NodoPrograma[] {
   return nodos.flatMap((nodo) => [nodo, ...aplanar(nodo.children ?? [])]);
+}
+
+/**
+ * La bandeja de avisos, con un aviso de verdad dentro (F16).
+ *
+ * La captura de esta pantalla vacía no enseña nada: lo que hay que ver es un aviso con su tema, su
+ * apartado, su motivo, su fecha y sus botones. El aviso **no se inventa**: se manda por la ruta del
+ * alumno (`POST /student/topics/{codigo}/reports`), que es la que usaría el propietario estudiando, y
+ * sobre los apuntes reales de un tema que ya los tenga escritos.
+ *
+ * Si en estos datos no hay ningún tema con apuntes —la suite del E2E arranca vacía— la captura sale
+ * con el estado «ningún aviso esperando», que es lo que hay. Y es **idempotente**: si el aviso de la
+ * captura ya está en la bandeja, no se manda otra vez.
+ */
+const AVISO_DE_LA_CAPTURA = 'El puerto de LDAPS del ejemplo no es 389: la captura dice 636.';
+
+async function prepararAvisos(): Promise<void> {
+  const cabeceras = { 'Content-Type': 'application/json', Origin: ORIGEN };
+  const ya = await fetch(`${API}/api/v1/notes-reports?limit=200`);
+  if (ya.ok) {
+    const bandeja = (await ya.json()) as { reports: { reason: string }[] };
+    if (bandeja.reports.some((aviso) => aviso.reason === AVISO_DE_LA_CAPTURA)) {
+      return;
+    }
+  }
+
+  for (const codigo of ['IV.7', 'I.1', 'I.2', 'I.6', 'I.4']) {
+    const respuesta = await fetch(`${API}/api/v1/student/topics/${codigo}/notes`);
+    if (!respuesta.ok) {
+      continue;
+    }
+    const apuntes = (await respuesta.json()) as {
+      sections: { key: string; title: string }[];
+    };
+    const apartado = apuntes.sections[0];
+    if (apartado === undefined) {
+      continue;
+    }
+    await fetch(`${API}/api/v1/student/topics/${codigo}/reports`, {
+      method: 'POST',
+      headers: cabeceras,
+      body: JSON.stringify({ section_key: apartado.key, reason: AVISO_DE_LA_CAPTURA }),
+    });
+    return;
+  }
 }

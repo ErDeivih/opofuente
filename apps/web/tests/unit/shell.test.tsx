@@ -105,6 +105,10 @@ describe('los dos mapas de navegación', () => {
       'Biblioteca',
       'Revisión',
       'Clasificación',
+      // Las dos entradas que estrena el bloque C (F16): lo que avisa el alumno —que se despacha— y lo
+      // que el motor dejó fuera de los tests —que solo se mira—.
+      'Avisos',
+      'No son preguntas',
       'Cambios',
       'Errores',
       'Preguntas',

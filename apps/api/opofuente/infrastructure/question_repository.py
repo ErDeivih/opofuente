@@ -1434,6 +1434,7 @@ class SqlAlchemyQuestionRepository:
         self,
         *,
         reason: str | None = None,
+        q: str | None = None,
         limit: int = 50,
         offset: int = 0,
     ) -> tuple[tuple[QuestionExclusionView, ...], int]:
@@ -1445,11 +1446,26 @@ class SqlAlchemyQuestionRepository:
         Y el **enunciado** viaja con cada marca: sin él, lo único que se puede enseñar de una
         pregunta excluida es un identificador, y un identificador no se puede juzgar. Es la misma
         razón por la que la cola de propuestas trae la pregunta entera.
+
+        `q` busca en el enunciado (F16, la sección «No son preguntas»): con 769 enunciados rotos en
+        la base, recorrerlos a ojo no es una forma de encontrar el que se busca. `LIKE` sin
+        `lower()` a propósito: SQLite ya compara sin distinguir mayúsculas en ASCII, y envolver la
+        columna en una función impediría cualquier uso de índice. Lo que no iguala son los
+        acentos, y eso lo dice la pantalla.
         """
         filtro = [] if reason is None else [QuestionCurriculumExclusionRecord.reason == reason]
+        if q is not None:
+            filtro.append(QuestionVersionRecord.stem.like(f"%{q.strip()}%"))
         with self._session_factory() as session:
             total = session.execute(
-                select(func.count()).select_from(QuestionCurriculumExclusionRecord).where(*filtro)
+                select(func.count())
+                .select_from(QuestionCurriculumExclusionRecord)
+                .join(
+                    QuestionVersionRecord,
+                    QuestionVersionRecord.id
+                    == QuestionCurriculumExclusionRecord.question_version_id,
+                )
+                .where(*filtro)
             ).scalar_one()
             filas = session.execute(
                 select(QuestionCurriculumExclusionRecord, QuestionVersionRecord.stem)
@@ -1467,6 +1483,21 @@ class SqlAlchemyQuestionRepository:
                 .offset(offset)
             ).all()
         return tuple(_exclusion_view(fila, stem) for fila, stem in filas), int(total)
+
+    def count_exclusions_by_reason(self) -> dict[str, int]:
+        """Cuántas preguntas hay fuera de temario **por cada motivo**, sin traerse las filas.
+
+        Es lo que permite que la sección «No son preguntas» diga cuántos enunciados rotos hay —la
+        cifra que va al informe del propietario— sin leer 769 filas para contarlas. Los motivos que
+        no tengan ninguna marca no salen: el vocabulario cerrado lo conoce quien pinta la pantalla.
+        """
+        with self._session_factory() as session:
+            filas = session.execute(
+                select(QuestionCurriculumExclusionRecord.reason, func.count()).group_by(
+                    QuestionCurriculumExclusionRecord.reason
+                )
+            ).all()
+        return {str(motivo): int(total) for motivo, total in filas}
 
     def list_topic_proposals(
         self, *, limit: int, offset: int

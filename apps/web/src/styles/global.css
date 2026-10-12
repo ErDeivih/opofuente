@@ -2734,3 +2734,193 @@ kbd {
     justify-self: start;
   }
 }
+
+/* --- El bloque C del panel (F16): los avisos del alumno y lo que no son preguntas ---------------
+ *
+ * Las dos pantallas son de **lista larga y texto**: un aviso es un párrafo que alguien escribió y un
+ * enunciado roto es un texto que hay que leer. Por eso la forma la da la línea de 1px entre filas y
+ * el espacio, no la caja de color: el color está reservado a los estados, que además llevan su
+ * palabra al lado.
+ */
+
+.avisos__resumen {
+  margin: 0 0 var(--s4);
+}
+
+/* Los filtros por estado: un grupo de botones con su cifra. El activo se marca con el azul suave y
+   con `aria-pressed`, no solo con color. */
+.filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+  margin-bottom: var(--s4);
+}
+
+.filtro {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  min-height: var(--objetivo-tactil);
+  padding: 0 var(--s3);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  background: var(--hoja);
+  color: var(--tinta);
+  font: inherit;
+  cursor: pointer;
+}
+
+.filtro:hover {
+  border-color: var(--azul);
+}
+
+.filtro--activo {
+  border-color: var(--azul);
+  background: var(--azul-suave);
+  color: var(--azul);
+}
+
+.filtro__cuenta {
+  font-variant-numeric: tabular-nums;
+  color: var(--tinta-suave);
+}
+
+.filtro--activo .filtro__cuenta {
+  color: var(--azul);
+}
+
+/* El buscador de estas dos pantallas: el campo crece y los botones se quedan a su tamaño. Es lo que
+   hace que a 390 px no haya nada que se salga de su caja.
+ *
+ * La clase **no** es `.buscador`: esa es la del buscador del Temario del alumno (línea 1802) y
+ * reutilizarla desde aquí cambiaría la maquetación de una pantalla que no es de este bloque. */
+.busqueda-panel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--s2);
+  margin-bottom: var(--s2);
+}
+
+.busqueda-panel .form__label {
+  flex-basis: 100%;
+  margin-bottom: 0;
+}
+
+.busqueda-panel .form__input {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+
+.avisos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.avisos__fila {
+  padding: var(--s4) 0;
+  border-top: 1px solid var(--linea-suave);
+}
+
+.avisos__fila:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+.avisos__cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s2);
+}
+
+.avisos__origen {
+  margin: 0;
+  font-weight: 600;
+}
+
+.avisos__tema {
+  margin-right: var(--s2);
+  font-variant-numeric: tabular-nums;
+}
+
+.avisos__apartado {
+  margin: var(--s2) 0 0;
+  overflow-wrap: anywhere;
+}
+
+.avisos__apartado-perdido {
+  color: var(--dudosa);
+}
+
+/* El enlace al apartado va **subrayado desde el principio**, no solo al pasar por encima: está
+   dentro de un párrafo de texto y axe (`link-in-text-block`) exige que se distinga por algo más que
+   el color. Es la misma regla que protege a quien no distingue el azul del negro. */
+.avisos__enlace {
+  color: var(--azul);
+  text-decoration: underline;
+}
+
+.avisos__enlace:hover {
+  text-decoration: underline;
+}
+
+/* El motivo del alumno, en su texto y con la raya del margen: es una cita, no un párrafo nuestro. */
+.avisos__motivo {
+  margin: var(--s2) 0 0;
+  padding-left: var(--s3);
+  border-left: 2px solid var(--linea);
+  color: var(--tinta);
+  overflow-wrap: anywhere;
+}
+
+.avisos__meta,
+.avisos__nota {
+  margin: var(--s2) 0 0;
+  overflow-wrap: anywhere;
+}
+
+.avisos__nota {
+  color: var(--tinta);
+}
+
+.avisos__acciones {
+  margin-top: var(--s3);
+}
+
+.avisos__botones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+  margin-top: var(--s2);
+}
+
+.excluidas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.excluidas__fila {
+  padding: var(--s4) 0;
+  border-top: 1px solid var(--linea-suave);
+}
+
+.excluidas__fila:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+.excluidas__enunciado {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.excluidas__meta {
+  margin: var(--s2) 0 0;
+  color: var(--tinta-suave);
+  font-size: var(--t-sm);
+  overflow-wrap: anywhere;
+}

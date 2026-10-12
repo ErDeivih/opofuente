@@ -350,6 +350,9 @@ def test_el_lote_declara_fuera_de_temario_con_su_motivo_y_se_puede_consultar(
         "/api/v1/question-exclusions", params={"reason": "enunciado_roto"}
     ).json()
     assert por_motivo["total"] == 0, "el filtro por motivo filtra de verdad"
+    assert por_motivo["totals_by_reason"] == {"otra_administracion": 1}, (
+        "los recuentos por motivo no dependen del filtro de la petición"
+    )
 
     # Repetirlo no duplica la marca ni el evento: la pregunta ya está declarada.
     repetida = _lote(
@@ -517,3 +520,54 @@ def test_un_lote_vacio_o_demasiado_largo_se_rechaza_entero(
     )
 
     assert respuesta.status_code == 422, respuesta.text
+
+
+def test_los_enunciados_fuera_de_temario_se_pueden_buscar_y_contar_por_motivo(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """La sección «No son preguntas» (D6) se lee buscando: con cientos de marcas, a ojo no."""
+    conjunto = _conjunto(seeded_client)
+    primera, segunda, tercera = _preguntas(seeded_client, conjunto["id"])
+
+    _lote(
+        seeded_client,
+        [
+            {
+                "question_version_id": primera["id"],
+                "exclusion_reason": "enunciado_roto",
+                "reason": "el enunciado es un trozo de norma",
+            },
+            {
+                "question_version_id": segunda["id"],
+                "exclusion_reason": "enunciado_roto",
+                "reason": "el enunciado es un trozo de norma",
+            },
+            {
+                "question_version_id": tercera["id"],
+                "exclusion_reason": "otra_administracion",
+                "reason": "ley autonómica",
+            },
+        ],
+        actor=ACTOR_LLM,
+    )
+
+    todas = seeded_client.get("/api/v1/question-exclusions").json()
+    assert todas["total"] == 3
+    assert todas["totals_by_reason"] == {"enunciado_roto": 2, "otra_administracion": 1}
+
+    # La búsqueda va por el enunciado, y se combina con el motivo en lugar de sustituirlo.
+    palabra = "Constitucion"
+    encontrados = seeded_client.get(
+        "/api/v1/question-exclusions",
+        params={"reason": "enunciado_roto", "q": palabra},
+    ).json()
+    assert encontrados["total"] >= 1
+    assert all(palabra.lower() in str(fila["stem"]).lower() for fila in encontrados["exclusions"])
+    assert all(fila["reason"] == "enunciado_roto" for fila in encontrados["exclusions"])
+
+    assert (
+        seeded_client.get(
+            "/api/v1/question-exclusions", params={"q": "una-frase-que-no-esta-en-ningun-enunciado"}
+        ).json()["total"]
+        == 0
+    )

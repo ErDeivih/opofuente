@@ -6803,8 +6803,20 @@
         "type": "string"
       },
       "NoteReportListSchema": {
-        "description": "Los avisos y cuántos siguen sin despachar.\n\nEl recuento va aparte de la lista aunque se pueda contar de ella: la lista viene filtrada y\nlimitada (por estado y por tema), y el número que el propietario necesita ver es el de\npendientes de verdad, no el de la página que está mirando.",
+        "description": "Los avisos, cuántos siguen sin despachar y cuántos hay en cada estado.\n\nLos recuentos van aparte de la lista aunque se puedan contar de ella: la lista viene filtrada y\nlimitada (por estado, por tema y por búsqueda), y los números que el propietario necesita ver\nson los de la bandeja entera, no los de la página que está mirando. `pending` es solo `open`:\nun aviso «en curso» ya no espera a nadie, y por eso no cuenta ahí.",
         "properties": {
+          "dismissed": {
+            "description": "Avisos descartados: no eran un error.",
+            "minimum": 0.0,
+            "title": "Dismissed",
+            "type": "integer"
+          },
+          "in_progress": {
+            "description": "Avisos que el propietario tiene en la mano.",
+            "minimum": 0.0,
+            "title": "In Progress",
+            "type": "integer"
+          },
           "pending": {
             "description": "Avisos en estado `open`, con independencia del filtro.",
             "minimum": 0.0,
@@ -6817,17 +6829,33 @@
             },
             "title": "Reports",
             "type": "array"
+          },
+          "reviewed": {
+            "description": "Avisos resueltos.",
+            "minimum": 0.0,
+            "title": "Reviewed",
+            "type": "integer"
+          },
+          "total": {
+            "description": "Avisos que devuelve el filtro, contados en la base.",
+            "minimum": 0.0,
+            "title": "Total",
+            "type": "integer"
           }
         },
         "required": [
           "pending",
+          "in_progress",
+          "reviewed",
+          "dismissed",
+          "total",
           "reports"
         ],
         "title": "NoteReportListSchema",
         "type": "object"
       },
       "NoteReportSchema": {
-        "description": "Un aviso del alumno: qué apartado, qué dice y cuándo llegó.\n\n`section_title` es `None` cuando el apartado ya no existe —los apuntes se reescriben—: el aviso\nse sigue enseñando, y ese hueco es justo lo que hay que mirar.",
+        "description": "Un aviso del alumno: qué apartado, qué dice, cuándo llegó y cómo acabó.\n\n`section_title` es `None` cuando el apartado ya no existe —los apuntes se reescriben—: el aviso\nse sigue enseñando, y ese hueco es justo lo que hay que mirar. `resolution_note` es lo que el\npropietario escribió de lo que hizo, y `reviewed_at` cuándo lo cerró (vuelve a estar vacío si lo\nreabre).",
         "properties": {
           "anchor": {
             "title": "Anchor",
@@ -6845,6 +6873,17 @@
           "reason": {
             "title": "Reason",
             "type": "string"
+          },
+          "resolution_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolution Note"
           },
           "reviewed_at": {
             "anyOf": [
@@ -6876,6 +6915,7 @@
           "status": {
             "enum": [
               "open",
+              "in_progress",
               "reviewed",
               "dismissed"
             ],
@@ -6902,6 +6942,52 @@
           "created_at"
         ],
         "title": "NoteReportSchema",
+        "type": "object"
+      },
+      "NoteReportUpdateSchema": {
+        "additionalProperties": false,
+        "description": "Lo único que se puede cambiar de un aviso: en qué punto está y qué se ha hecho.\n\n`note` es potestativa a propósito. El motivo del alumno es obligatorio porque un aviso sin él no\nse puede arreglar; la nota del propietario no, porque hay avisos que se cierran sin nada que\nescribir. Cuando viene, es **una línea** (el servidor la recorta) y sustituye a la que hubiera;\ncuando no viene, la que hubiera se queda.",
+        "properties": {
+          "actor": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "status": {
+            "enum": [
+              "open",
+              "in_progress",
+              "reviewed",
+              "dismissed"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "NoteReportUpdateSchema",
         "type": "object"
       },
       "OcrSettingsSchema": {
@@ -8225,7 +8311,7 @@
         "type": "object"
       },
       "QuestionExclusionPageSchema": {
-        "description": "La cola de fuera de temario: las marcas de una página y cuántas hay en total.",
+        "description": "La cola de fuera de temario: las marcas de una página y cuántas hay en total.\n\n`totals_by_reason` cuenta **cada** motivo en la base, sin mirar el filtro de la petición: es lo\nque permite que la sección «No son preguntas» del panel (F16, decisión D6) diga cuántos\nenunciados rotos hay sin leerlos para contarlos. Un motivo sin ninguna marca no aparece.",
         "properties": {
           "exclusions": {
             "items": {
@@ -8245,6 +8331,13 @@
           "total": {
             "title": "Total",
             "type": "integer"
+          },
+          "totals_by_reason": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Totals By Reason",
+            "type": "object"
           }
         },
         "required": [
@@ -20962,7 +21055,7 @@
     },
     "/api/v1/notes-reports": {
       "get": {
-        "description": "Los avisos, del más nuevo al más viejo.\n\n`pending` cuenta los que están sin despachar **sin mirar el filtro**: es el número que el\npropietario necesita ver aunque esté mirando los de un solo tema.",
+        "description": "Los avisos, del más nuevo al más viejo.\n\n`pending` cuenta los que están **sin despachar** (`open`) sin mirar el filtro: es el número que\nel propietario necesita ver aunque esté mirando los de un solo tema. Los otros tres recuentos y\nel `total` del filtro salen de la base, no de la página que se devuelve.",
         "operationId": "list_note_reports_api_v1_notes_reports_get",
         "parameters": [
           {
@@ -20975,6 +21068,7 @@
                 {
                   "enum": [
                     "open",
+                    "in_progress",
                     "reviewed",
                     "dismissed"
                   ],
@@ -21004,6 +21098,25 @@
               ],
               "description": "Código legible del tema, como `IV.7`, para ver solo los de un tema.",
               "title": "Topic"
+            }
+          },
+          {
+            "description": "Busca en el motivo del alumno y en el título del apartado.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Busca en el motivo del alumno y en el título del apartado.",
+              "title": "Q"
             }
           },
           {
@@ -21064,6 +21177,107 @@
           }
         },
         "summary": "Los avisos del alumno sobre los apuntes, para la bandeja del propietario",
+        "tags": [
+          "panel"
+        ]
+      }
+    },
+    "/api/v1/notes-reports/{report_id}": {
+      "patch": {
+        "description": "Cambia el estado de un aviso y, si se escribe, deja la nota de lo que se ha hecho.\n\nNo hay ruta para borrar un aviso: lo que el alumno marcó como mal no se tira, se despacha. Un\naviso que no existe es un 404 con su identificador, y una nota de más de una línea se recorta\nantes de guardarse.",
+        "operationId": "update_note_report_api_v1_notes_reports__report_id__patch",
+        "parameters": [
+          {
+            "description": "Identificador del aviso, tal como lo devuelve la bandeja.",
+            "in": "path",
+            "name": "report_id",
+            "required": true,
+            "schema": {
+              "description": "Identificador del aviso, tal como lo devuelve la bandeja.",
+              "title": "Report Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-OpoFuente-Actor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Opofuente-Actor"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NoteReportUpdateSchema"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoteReportSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Despacha un aviso: en curso, resuelto o descartado, con la nota de lo que se ha hecho",
         "tags": [
           "panel"
         ]
@@ -21389,7 +21603,7 @@
     },
     "/api/v1/question-exclusions": {
       "get": {
-        "description": "Las marcas de fuera de temario, de la más nueva a la más antigua.\n\nEs donde se **consulta** lo que no es materia del programa: la pregunta, el motivo por el que\nse declaró y quién lo decidió. Va como recurso propio (`/question-exclusions`) y no dentro de la\npregunta a propósito: una marca no es un tema, y meterla en el mismo sitio invitaría a leerla\ncomo si lo fuera. La revisión de una marca se hace asignando un tema (que la levanta) o\ndejándola.",
+        "description": "Las marcas de fuera de temario, de la más nueva a la más antigua.\n\nEs donde se **consulta** lo que no es materia del programa: la pregunta, el motivo por el que\nse declaró y quién lo decidió. Va como recurso propio (`/question-exclusions`) y no dentro de la\npregunta a propósito: una marca no es un tema, y meterla en el mismo sitio invitaría a leerla\ncomo si lo fuera. La revisión de una marca se hace asignando un tema (que la levanta) o\ndejándola.\n\n`q` filtra por el enunciado: la sección «No son preguntas» del panel (F16, decisión D6) enseña\nlos enunciados rotos, y con 769 en la base hay que poder buscar el que se tiene en la cabeza.",
         "operationId": "list_question_exclusions_api_v1_question_exclusions_get",
         "parameters": [
           {
@@ -21406,6 +21620,25 @@
                 }
               ],
               "title": "Reason"
+            }
+          },
+          {
+            "description": "Busca en el enunciado de la pregunta excluida.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Busca en el enunciado de la pregunta excluida.",
+              "title": "Q"
             }
           },
           {

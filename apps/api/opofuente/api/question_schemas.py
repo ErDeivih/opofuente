@@ -416,12 +416,18 @@ class QuestionExclusionSchema(BaseModel):
 
 
 class QuestionExclusionPageSchema(BaseModel):
-    """La cola de fuera de temario: las marcas de una página y cuántas hay en total."""
+    """La cola de fuera de temario: las marcas de una página y cuántas hay en total.
+
+    `totals_by_reason` cuenta **cada** motivo en la base, sin mirar el filtro de la petición: es lo
+    que permite que la sección «No son preguntas» del panel (F16, decisión D6) diga cuántos
+    enunciados rotos hay sin leerlos para contarlos. Un motivo sin ninguna marca no aparece.
+    """
 
     exclusions: list[QuestionExclusionSchema]
     total: int
     limit: int
     offset: int
+    totals_by_reason: dict[str, int] = Field(default_factory=dict)
 
 
 class ProgrammeNodeRefSchema(BaseModel):

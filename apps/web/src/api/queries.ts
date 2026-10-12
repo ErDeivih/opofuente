@@ -63,6 +63,12 @@ import {
   type SubjectType,
 } from './library';
 import {
+  fetchNoteReports,
+  updateNoteReport,
+  type NoteReportStatus,
+  type NoteReportUpdate,
+} from './notesReports';
+import {
   activateConvocation,
   activateOpposition,
   fetchConvocation,
@@ -140,12 +146,13 @@ import { fetchCapabilities, fetchReadiness, fetchSettings } from './system';
 import { fetchPendingActions, fetchStudyReadiness } from './readiness';
 import {
   applyTopicDecisions,
+  CONFLICTS_LIMIT,
+  EXCLUSIONS_LIMIT,
   fetchExclusions,
   fetchTopicConflicts,
   fetchTopicProposals,
-  CONFLICTS_LIMIT,
-  EXCLUSIONS_LIMIT,
   PROPOSALS_LIMIT,
+  type ExclusionReason,
   type TopicAssignmentRow,
 } from './topicReview';
 import {
@@ -260,10 +267,15 @@ export const queryKeys = {
      raíz porque decidir una propuesta cambia las dos: aceptar un tema levanta la marca de fuera de
      temario, y marcar fuera de temario retira las propuestas de esa pregunta. */
   topicProposals: (offset = 0) => ['topic-review', 'proposals', offset] as const,
-  questionExclusions: (offset = 0) => ['topic-review', 'exclusions', offset] as const,
+  questionExclusions: (offset = 0, q = '') =>
+    ['topic-review', 'exclusions', offset, q] as const,
   /* Las preguntas que cuentan en dos temas cuelgan de la misma raíz: resolver una con un tema
      retira los demás mapeos y deja de estar en las dos listas a la vez. */
   topicConflicts: (offset = 0) => ['topic-review', 'conflicts', offset] as const,
+  /* F16: la bandeja de avisos del alumno, que es del propietario. Cada combinación de filtros es su
+     propia entrada: cambiar de estado o de tema no puede enseñar lo que ya estaba cacheado. */
+  noteReports: (status: string, topic: string, q: string) =>
+    ['note-reports', status, topic, q] as const,
 };
 
 export function useReadiness() {
@@ -1596,7 +1608,25 @@ export function useTopicProposals(offset = 0) {
 export function useQuestionExclusions(offset = 0) {
   return useQuery({
     queryKey: queryKeys.questionExclusions(offset),
-    queryFn: () => fetchExclusions(offset, EXCLUSIONS_LIMIT),
+    queryFn: () => fetchExclusions({ offset, limit: EXCLUSIONS_LIMIT }),
+  });
+}
+
+/**
+ * Los enunciados que no son preguntas, con su motivo y buscables (F16, decisión D6).
+ *
+ * Es la sección «No son preguntas» del panel: lo que el motor dejó fuera de los tests —enunciados
+ * rotos y preguntas de otra administración—, que **se queda en la base** y el propietario tiene que
+ * poder mirar. No hay ninguna mutación colgando de aquí: esta pantalla no borra ni edita nada.
+ */
+export function useExcludedQuestions(
+  reason: ExclusionReason | null,
+  q = '',
+  offset = 0,
+) {
+  return useQuery({
+    queryKey: queryKeys.questionExclusions(offset, `${reason ?? ''}:${q}`),
+    queryFn: () => fetchExclusions({ offset, limit: EXCLUSIONS_LIMIT, reason, q }),
   });
 }
 
@@ -1710,3 +1740,61 @@ export function useConflictingQuestions() {
     staleTime: 30_000,
   });
 }
+
+/**
+ * Los avisos del alumno sobre los apuntes: la bandeja del propietario (F13 y F16).
+ *
+ * Sin `staleTime`: es el trabajo del propietario y acaba de despachar lo que tiene delante, así que
+ * una lectura cacheada le devolvería el estado anterior a su propia decisión.
+ *
+ * El contador de pendientes se lee de **esta misma consulta** —el `pending` de la respuesta cuenta
+ * los `open` sin mirar el filtro—, así que el número del menú y el de la pantalla no pueden decir
+ * cosas distintas.
+ */
+export function useNoteReports(
+  status: NoteReportStatus | null = null,
+  topic: string | null = null,
+  q = '',
+) {
+  return useQuery({
+    queryKey: queryKeys.noteReports(status ?? '', topic ?? '', q),
+    queryFn: () => fetchNoteReports({ status, topic, q }),
+  });
+}
+
+/**
+ * Cuántos avisos esperan al propietario, para el contador del menú.
+ *
+ * Pide **una** fila (`limit: 1`): los recuentos viajan en la misma respuesta que la lista, así que
+ * el contador no necesita traerse los avisos. Es la misma consulta que alimenta la bandeja —y por
+ * eso el número del menú y el de la pantalla no pueden decir cosas distintas—, y por eso mismo
+ * `despachar un aviso` invalida las dos.
+ */
+export function useNoteReportCounters() {
+  return useQuery({
+    queryKey: ['note-reports', 'contadores'] as const,
+    queryFn: () => fetchNoteReports({ limit: 1 }),
+    staleTime: 30_000,
+  });
+}
+
+/**
+ * Despacha un aviso y recarga la bandeja entera.
+ *
+ * Se invalida la raíz `note-reports` completa y no la entrada que se está mirando: el estado del
+ * aviso cambia los cuatro contadores y puede sacarlo del filtro activo, así que dejar cacheadas las
+ * otras combinaciones enseñaría avisos que ya no están donde se dice.
+ */
+export function useUpdateNoteReport() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { id: string; status: NoteReportStatus; note?: string | null }) =>
+      updateNoteReport(input.id, { status: input.status, note: input.note ?? null }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['note-reports'] });
+    },
+  });
+}
+
+/** Reexporta el tipo del estado para que las pantallas no importen del contrato a mano. */
+export type { NoteReportStatus, NoteReportUpdate };
