@@ -3,6 +3,36 @@
 Lo que conviene que sepas y **no** hace falta que contestes para que el trabajo siga. Lo que sí
 necesita tu criterio está marcado como **«Decide tú»**.
 
+## 12 oct 2026 — IV.2 ya se lee, y es el tema que mejor contesta de los seis escritos
+
+**Lo que cambia para ti:**
+
+1. **IV.2** (Administración de bases de datos, almacenamiento, backup y virtualización) **ya está en la
+   zona del alumno**, con la marca «Versión generada · en revisión». Es el **tercer tema por valor** de
+   los que quedaban (797 preguntas con clave) y el que **mejor contesta** de todos los escritos hasta
+   hoy: **757 de 758 preguntas** con clave utilizable, el **99,9 %** (el listón es el 90 %). Sobre
+   todas las que tienen clave, 757 de 797 = 95,0 %. Son 16 apartados y 32.567 palabras.
+2. **Lo que cuesta leerlo**: en IV.2 **no hay ni una pregunta cuyo dato no esté en el texto**. De sus
+   770 grupos, 734 quedan cubiertos con su letra y su cita (714 a la primera y 20 después de añadir
+   material), y el resto —36— está «a revisión» porque **la clave** no se puede usar, no porque falte
+   el texto. Es lo contrario de I.6, y es lo bueno que tiene este tema.
+3. **En tu bandeja del motor hay 36 incidencias nuevas de IV.2** (35 claves que contradicen la norma y
+   1 que sostiene otra letra que la clave, con la frase que lo demuestra). Necesitan tu criterio, y
+   **esa bandeja todavía no tiene pantalla** (es la mitad que le falta al bloque C). Mientras tanto
+   están guardadas y se pueden contar.
+4. **El tema costó 0,7585 $** —menos de lo previsto (la previsión era 0,88–1,49 $)— y tardó 45
+   minutos. Llevas **≈8,67 $ de los 40 $**. El aviso de los 10 $ se cruzará con el tema siguiente, y
+   quedará anotado.
+
+**Lo que sigue** (el orden lo decide tu tabla de valor, no el del temario): los dos siguientes son
+**II.4** (sistemas operativos) e **I.8** (acceso electrónico, ENS, ENI y NTI). Sus **índices ya están
+escritos y ensayados** sin gastar un céntimo, así que lo que viene es redactarlos: primero II.4 y
+después I.8, cada uno con su previsión enseñada antes de pagar y su informe con los dos denominadores.
+
+**Decide tú:** nada nuevo. Lo que ya esperaba tu decisión sigue esperándola (las dos bandejas del
+motor, el listón de párrafos repetidos del §5.9 del estado y el criterio sobre las claves de I.6,
+I.4 y ahora IV.2).
+
 ## 11 oct 2026 — ya puedes ver lo que marcas en los apuntes (y una cosa que tienes que hacer tú)
 
 **Lo que cambia para ti:**
