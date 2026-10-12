@@ -1,94 +1,144 @@
-# Estado de la sesión, para retomar sin preguntar (11-oct-2026)
+# Estado de la sesión, para retomar sin preguntar (12-oct-2026)
 
-Escrito y actualizado por DeepSeek. Lo que hay, lo que está en rama y lo que falta, con las cifras medidas.
+Escrito por DeepSeek al **parar el bucle a petición del propietario**. Aquí está lo que hay, lo que está a
+medias y lo primero que hay que hacer al volver. Todo lo que va con cifra está **medido**, no heredado.
 
-## 1. Dónde está todo
+---
 
-`main` = **`029d9ad`** (tandas f15, f16 y f17 dentro) · datos reales migrados a **`0034`** (las migraciones
-`0033` y `0034` se aplicaron el 12-oct: **el botón «Esto está mal» del alumno ya guarda**) · **gasto medido
-≈10,58 $ de 40** —el aviso de los 10 $ **está cruzado**— · F: con **≈20 GB libres**.
+## 1. Punto de partida al volver
 
-**Precio real de un tema, medido en f17: 0,70–1,21 $** (II.4 0,7014 $ · IV.2 0,7585 $ · I.8 1,2119 $). Es
-menos de lo que se temía (1,2–1,5 $), porque **el 70 % de los tokens de entrada vienen de caché**. Con ese
-precio, los 26 temas que faltan **sí caben** en los ≈29,4 $ que quedan, si la media se mantiene: hay que
-seguir midiendo, no prometerlo.
+```
+main = b33a22b        (tandas f14, f15, f16 y f17 dentro; 48 ficheros sucios son del OTRO agente: no tocar)
+base real = F:\OpoFuente\datos\opofuente.sqlite3    · revisión 0034
+copias verificadas = 20261010-153147-1b6311.zip y 20261010-110733-6e5035.zip  (las dos buenas)
+gasto de API = ≈10,58 $ de 40    (el aviso de los 10 $ ya está cruzado y anotado)
+F: libre = ≈20 GB
+```
 
-En `main` está: la hora, las sesiones limpias, los apuntes por tema en 2 s, las capturas con su detector de
-palabras, **F1 las dos zonas**, la ruta auditada de asignar tema, el **orden numérico**, `distribution` en
-los datos reales, la **capa `/api/v1/student/*`**, los **134 epígrafes**, **la clasificación** (1,45 $),
-**la cola de revisión con teclado**, **la puerta de cobertura cableada** —mide, lo dice y decide—, **el
-motor de tests** (puntuación estimada, `compose`, simulacro, rutas), **la zona del alumno completa** con
-sus tokens y sus nueve pantallas, y **la tanda de apuntes f15**.
+**Lo primero, sin excepción:** hay una rama **con trabajo a medias y sin commitear**, ver §4.
 
-## 2. Apuntes: el precio real, que es la cifra que gobierna lo que queda
+---
 
-| Tema | Cobertura (clave utilizable) | Forma | Estado | Coste |
-|---|---|---|---|---|
-| **IV.7** | 95,8 % (430/449) | pasa | publicado | ≈0,37 $ |
-| **I.1** | 98,5 % (1.965/1.995) | pasa | publicado | 1,9593 $ |
-| **I.2** | **95,2 % (669/703)** | pasa · 24.061/49.320 palabras | **publicado** | **1,2187 $** (194 llamadas) |
-| **I.6** | 72,5 % (187/258) · techo 84,1 % | pasa | borrador, motivo escrito | 1,1223 $ |
-| **I.4** | **88,9 % (497/559)** — le faltan 7 preguntas | pasa · repetidos 4,2 % | **borrador, motivo escrito** | **1,4625 $** (169 llamadas) |
+## 2. Lo que está entregado y funcionando
 
-**Un tema cuesta entre 1,2 y 1,5 $.** Quedan **26 temas**: a ese precio son **31–38 $**, y con los 7,91 $
-gastados el total aterrizaría en **39–46 $** → **el techo de 40 $ va a apretar**. Decisión tomada: seguir
-**por orden de valor medido** (tabla de los 33 en `ESTADO-DEL-OBJETIVO.md` §4d: I.1 1.995, I.2 835,
-**IV.2 797**, I.4 577, **II.4 566**, **I.8 566**…), avisar a los 10 $ y **parar al llegar a 40 $** con todo
-documentado. Si el propietario quiere los 33 enteros, hay que subir el presupuesto: es decisión suya.
+- **Zona del alumno completa** (bloque B): Inicio, Temario, Tema con apuntes, Test en curso con hoja de
+  respuestas, Resultado, Simulacro, Exámenes oficiales, Fallos, Progreso. Verificada a 390 px, 0 fallos de
+  accesibilidad, con sus capturas. **Falta solo la pantalla de Tests** (elegir temas y cuántas).
+- **Panel (bloque C), empezado y con dos pantallas en `main`**:
+  - `/admin/avisos` — **la bandeja del alumno** (lo que él marca con «Esto está mal»): se ve, se despacha
+    con nota y se audita. Migraciones `0033`/`0034`.
+  - `/admin/no-son-preguntas` — los enunciados rotos con su motivo: **769 `enunciado_roto` + 325
+    `otra_administracion`**, contados en la base.
+- **Apuntes (bloque A): 5 temas publicados y 3 en borrador con motivo medido.**
 
-**Lo que hace barato seguir**: `--prever` dice llamadas y euros antes de pagar; `--limpiar-forma` y
-`--publicar` no cuestan nada; el trabajo de un tema que queda en borrador **se conserva** y volver a
-lanzarlo continúa desde ahí. **IV.2 ya tiene su índice escrito, ensayado y commiteado** (761 de sus 770
-grupos situados por el enunciado): la próxima tanda empieza redactándolo.
+| Tema | Cobertura (clave utilizable) | Estado |
+|---|---|---|
+| IV.7 · I.1 · I.2 · **IV.2** · **II.4** | 95,8 % · 98,5 % · 95,2 % · **99,9 %** · **95,9 %** | **publicados** |
+| I.6 | 72,5 % (techo medido 84,1 %) | borrador |
+| I.4 | 88,9 % (le faltan 7 preguntas) | borrador |
+| I.8 | **82,0 % (suelo: la corrida se paró a 389/442 grupos)** | borrador, **reanudable** |
 
-**La previsión de I.4 falló un 42 %** y la causa está medida: devolvió 11.518 tokens de salida por llamada
-frente a los 5.700 de media. La constante subió a 0,0068 $ (media de cinco corridas) y la regla decide con
-la cota de arriba **más un tercio** en temas normativos y densos.
+- **Datos (bloque D), hecho**: base migrada a `0034` (**el botón «Esto está mal» ya guarda**, verificado en
+  la tabla); **12,2 GB liberados** con las cinco copias comprobadas (todas buenas, ninguna cortada);
+  **32 exámenes del INAP descargados y verificados** con manifiesto en `F:\OpoFuente\fuentes\inap-tai\`.
 
-## 3. Dos discrepancias anotadas, sin tocar
+---
 
-1. **Párrafos casi repetidos**: el §2.3 del objetivo pide **≤3 %**; el código aplica **≤5 %** (y su
-   comentario dice que el 5 % viene de un informe del propietario). I.4 está en **4,2 %**: pasa el código y
-   no el documento. **Bajar un listón para que algo pase está prohibido**; subirlo cambiando el código sin
-   decírselo, también. Es una línea del propietario.
-2. La puerta **«hechos fuera de su materia (≤3 %)» sigue sin implementar**.
+## 3. El precio real de un tema (lo que gobierna lo que queda)
 
-## 4. En marcha y lo que falta
+**0,70 $ un tema técnico · 1,21 $ uno normativo y denso.** El 70 % de los tokens de entrada vienen de
+**caché**. Con ese precio, **los 25 temas que faltan caben en los ≈29,4 $ que quedan**: no hay que subir el
+presupuesto. (Las tres estimaciones anteriores de esta sesión fueron demasiado agoreras; esta está medida.)
 
-- **En rama**: `f16-panel-bandeja` (el panel: **la bandeja del propietario** y **«No son preguntas»**),
-  con migración `0034` para el estado «en curso» y la nota de qué se ha hecho.
-- **Panel (C)**: falta el resto — revisar apuntes, y las incidencias del motor ya tienen pantalla.
-- **La pantalla de Tests** (elegir temas y cuántas): su entrada ya existe y dice qué hará.
-- **27 temas de apuntes** (26 menos IV.2, que tiene el índice listo).
-- **Los exámenes del INAP (D10)**: **32 PDF verificados** en `F:\OpoFuente\fuentes\inap-tai\` con su
-  `MANIFIESTO.md`. **Falta construirlos**: `origin_scope` **no existe en el código** (columna + migración +
-  esquemas + relleno + uso en el simulacro) y solo después importar (`distribution=public`). Avisos: los 4
-  exámenes de TAI 2025 **ya se importaron** (migración `0026`, 8 filas para 4 exámenes) y los 3
-  cuestionarios de 2018 **necesitan OCR** (Tesseract no está instalado; sí los datos de idioma).
-- **Los 30 hechos con `epigraph_code` mal guardado (D4)**: `topic_facts.reassign_epigraph`, actor
-  `f10:epigrafes`.
-- **La entrega antigua** `s14-promover-sin-guardar` (D11): una pasada por las puertas; si 18/18, fusionar;
-  si no, a `DEBT.md` y no volver.
+Herramientas que hay que usar **en este orden** y que ya existen: `--esquema`/ensayo del reparto (0 $),
+`--prever` (0 $, dice llamadas **y euros**), la corrida con `--tiempo-maximo`, `--limpiar-forma` (0 $,
+repara títulos y tuberías), `--publicar` (0 $, mide lo guardado). **Nunca repetir una corrida por un
+defecto de forma**: la limpieza es gratis y ya ha publicado un tema así (II.4).
 
-## 5. Reglas y trampas que no hay que volver a aprender
+---
+
+## 4. LO QUE ESTÁ A MEDIAS (esto es lo primero al volver)
+
+**Rama `f18-panel-incidencias`, creada desde `8d831af`, con ~15 ficheros SIN COMMITEAR.** El bloque es
+**la bandeja del motor**: las incidencias que el propio sistema detecta al escribir los apuntes y que hoy
+solo se ven abriendo la API. El agente fue parado a mitad.
+
+Lo que ya está hecho en el árbol (sin commitear): migración **`0035_incidencias_despachables.py`**,
+`api/notes_incident_schemas.py`, cambios en `api/__init__.py`, `api/deps.py`, `main.py`,
+`infrastructure/db_models.py` y el contrato `packages/contracts/openapi.json`. **Falta la pantalla**, sus
+pruebas, las capturas y las puertas.
+
+**Decisión ya tomada y razonada por el agente** (reversible, §1.2): `notes_incidents` **no tiene estados**,
+así que `0035` añade `status`, `resolution_note` y `reviewed_at` **con el mismo vocabulario que la bandeja
+de avisos** (`open`/`in_progress`/`reviewed`/`dismissed`), con CHECK e índice y **sin tocar el motor**: su
+escritor ignora las columnas nuevas, así que la decisión del propietario **sobrevive a una corrida que
+vuelva a señalar lo mismo**. Limitación que él mismo anotó: si el motor resuelve la incidencia, la fila se
+borra y con ella la nota (el evento de auditoría la conserva).
+
+**Cifras medidas de esa bandeja** (leídas de la base real, `mode=ro`):
+
+```
+total 453 · norma_cambiada 291 · clave_sospechosa 110 · hueco_sin_material 40 · pregunta_ambigua 12
+por motivo: clave_contradice_la_norma 291 · letra_no_coincide 110 · sin_frase_en_los_apuntes 40 ·
+            clave_sin_definir 8 · sin_materia_en_el_indice 4
+por tema: I.2 99 · II.4 84 · I.6 63 · I.1 61 · IV.7 55 · I.4 55 · IV.2 36
+```
+
+`section_key` está **vacío en las 453**, pero **el ancla casa en 449/453** con la de `topic_note_sections`:
+el enlace al apartado exacto se hace por el ancla, como en la bandeja de avisos.
+
+**Al volver, en este orden:** (1) entrar en `opofuente-clasif`, comprobar la rama y **commitear lo que hay**
+(o descartarlo diciendo por qué) para no perder el reconocimiento; (2) terminar la pantalla con sus pruebas
+que fallan antes; (3) capturas con **la copia** de la base (`F:\temp-opofuente\f18-datos`, 2,7 GB, se puede
+borrar), **nunca la real**; (4) puertas 18/18 con registro en `gates-f18-panel-incidencias.txt`; (5) fusionar.
+
+---
+
+## 5. Lo que queda, por orden de valor
+
+1. **Los 25 temas de apuntes** (bloque A). El 7.º por valor es **I.7 (550 con clave utilizable)** y **no
+   tiene catálogo**: lo primero es escribirlo y ensayarlo (0 $). Después, la tabla de valor §4d.
+2. **I.8 se puede reanudar** sin volver a pagar por lo escrito (faltan 53 grupos por comprobar + el bucle).
+3. **La pantalla de Tests** del alumno (elegir temas y cuántas): su entrada ya existe y dice qué hará.
+4. **El resto del panel**: la ficha de pregunta, la revisión de apuntes, el temario del panel.
+5. **D10 · los exámenes del INAP**: están descargados, pero **`origin_scope` NO existe en el código**
+   (columna + migración + esquemas + relleno + uso en el simulacro) y hay que construirlo antes de
+   importar. Avisos: los 4 exámenes de TAI 2025 **ya se importaron** en su día (migración `0026`, 8 filas
+   para 4 exámenes) y **3 cuestionarios de 2018 necesitan OCR** (Tesseract no está instalado).
+6. **D4** · los 30 hechos con `epigraph_code` mal guardado: `topic_facts.reassign_epigraph`, actor
+   `f10:epigrafes`.
+7. **D11** · la entrega antigua `s14-promover-sin-guardar`: una pasada por las puertas; si 18/18, fusionar;
+   si no, a `DEBT.md` y no volver.
+8. **Copia verificada nueva** en la revisión actual (`0034`): las dos que se conservan son anteriores, y
+   eso se dijo al propietario. Hacerla cuando ningún bloque esté escribiendo la base.
+
+**Dos discrepancias anotadas y sin tocar** (son decisión del propietario): el §2.3 pide **≤3 %** de
+párrafos casi repetidos y el código aplica **≤5 %** (lo medido no aprieta: 0,2–0,3 %); y la puerta
+**«hechos fuera de su materia (≤3 %)» sigue sin implementar**.
+
+---
+
+## 6. Reglas y trampas que no hay que volver a aprender
 
 - **Cinco trampas de las puertas**: nada de tuberías para `gates.ps1`; el registro con
-  `Start-Process -RedirectStandardOutput` y **nunca** con `>`; `data\sources` en todo árbol nuevo; el
-  puerto 8765 libre para la E2E; y **`DEEPSEEK_API_KEY` no se hereda al proceso hijo** (leerla del ámbito
-  de usuario en cada comando).
-- **Una cifra que va a un documento se mide, no se hereda.** De ahí salieron los errores de esta sesión y
-  de ahí salieron sus remedios: la cola agrupada por pregunta, la guarda de corrida y el total de la
-  bandeja **contado en la base** (333), no sumado de informes.
-- **Una puerta que existe en un documento y no en el código no es una puerta.** Y una que existe en el
-  código con otro número que el documento, tampoco: hay que decidir cuál manda.
-- **Arreglar la pantalla, no la prueba.** Cuando la puerta de responsividad falló por 43 px, el arreglo fue
-  la causa (17 px de cuerpo aplicados a toda la app), no el spec. Y cuando Playwright se negó a elegir
-  entre **dos controles con el mismo nombre accesible** en una región, eso es un defecto de accesibilidad,
-  no un capricho del test.
-- **Un contador que avanza es la única prueba de que algo trabaja.** Un lanzador (`uv`) marca 0 s de CPU
-  siempre: mirarlo llevó a creer colgada una corrida que estaba escribiendo (278→544 comprobaciones en
-  10 min, con la conexión a la API abierta). Lo que se mide es **el avance**, no un proceso.
-- **Una prueba que falla a veces y se reintenta deja de avisar.** Nada de reintentar hasta el verde.
-- **Una sola corrida a la vez** (marcas `apuntes_en_curso` / `clasificacion_en_curso`).
-- Copia **verificada** antes de cualquier escritura masiva; escribir solo por rutas auditadas; **18/18 para
-  fusionar**.
+  `Start-Process -RedirectStandardOutput`, **nunca** con `>`; `data\sources` en todo árbol nuevo; el puerto
+  8765 libre para la E2E; **`DEEPSEEK_API_KEY` no se hereda al proceso hijo** (leerla del ámbito de usuario
+  en cada comando).
+- **El avance se mide con el contador que el motor escribe**, no con un proceso ni con un fichero:
+  - en la **primera** mitad de una corrida de apuntes, `topic_note_sections` (apartados) y `topic_facts`;
+  - en la **segunda**, **`question_note_anchors`** (anclas). Mirar los apartados ahí hace creer que está
+    parada cuando está comprobando;
+  - **`corrida-<tema>.out.txt` está a 0 B toda la corrida** (el comando no vacía la salida hasta el final):
+    **no es una señal**. El lanzador `uv` marca 0 s de CPU **siempre**: tampoco lo es.
+- **Una cifra que va a un documento se mide, no se hereda.** De ahí salieron tres errores en esta sesión y
+  sus remedios: la cola agrupada por pregunta, la guarda de corrida (`apuntes_en_curso`) y las cifras
+  contadas en la base (333 incidencias, 769+325 enunciados rotos, 453 incidencias del motor).
+- **Arreglar el código o la pantalla, no la prueba.** Y nada de reintentar hasta el verde: si una prueba
+  falla a veces, se demuestra **ajena e inestable** con evidencia (pasando en aislamiento, su fichero
+  entero y la corrida siguiente) y se anota; fue el caso de `test_changes.py` en f16.
+- **Un fallo de puerta se cuenta siempre, con su causa**, aunque se arregle después.
+- Copia **verificada** antes de cualquier escritura masiva; escribir en los datos **solo por rutas
+  auditadas**; **un bloque a la vez**; **18/18 para fusionar**.
+- **No commitear en `main` mientras un bloque tenga su rama abierta**: obliga a fusionar con merge en vez
+  de avance rápido (pasó al documentar la sesión). Y en `opofuente-main` hay **48 ficheros sin commitear
+  del otro agente**: no se tocan ni se commitean.
