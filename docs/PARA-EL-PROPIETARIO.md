@@ -3,7 +3,7 @@
 Lo que conviene que sepas y **no** hace falta que contestes para que el trabajo siga. Lo que sí
 necesita tu criterio está marcado como **«Decide tú»**.
 
-## 12 oct 2026 — IV.2 ya se lee, y es el tema que mejor contesta de los seis escritos
+## 12 oct 2026 — IV.2 y II.4 ya se leen, y hay dos temas nuevos que contestan de cada cinco preguntas
 
 **Lo que cambia para ti:**
 
@@ -12,26 +12,36 @@ necesita tu criterio está marcado como **«Decide tú»**.
    los que quedaban (797 preguntas con clave) y el que **mejor contesta** de todos los escritos hasta
    hoy: **757 de 758 preguntas** con clave utilizable, el **99,9 %** (el listón es el 90 %). Sobre
    todas las que tienen clave, 757 de 797 = 95,0 %. Son 16 apartados y 32.567 palabras.
-2. **Lo que cuesta leerlo**: en IV.2 **no hay ni una pregunta cuyo dato no esté en el texto**. De sus
-   770 grupos, 734 quedan cubiertos con su letra y su cita (714 a la primera y 20 después de añadir
-   material), y el resto —36— está «a revisión» porque **la clave** no se puede usar, no porque falte
-   el texto. Es lo contrario de I.6, y es lo bueno que tiene este tema.
-3. **En tu bandeja del motor hay 36 incidencias nuevas de IV.2** (35 claves que contradicen la norma y
-   1 que sostiene otra letra que la clave, con la frase que lo demuestra). Necesitan tu criterio, y
-   **esa bandeja todavía no tiene pantalla** (es la mitad que le falta al bloque C). Mientras tanto
-   están guardadas y se pueden contar.
-4. **El tema costó 0,7585 $** —menos de lo previsto (la previsión era 0,88–1,49 $)— y tardó 45
-   minutos. Llevas **≈8,67 $ de los 40 $**. El aviso de los 10 $ se cruzará con el tema siguiente, y
-   quedará anotado.
+2. **II.4** (sistemas operativos, Windows, Unix y Linux y móviles) **también se lee** desde hoy. Es el
+   **quinto por valor** (566 preguntas con clave) y contesta al **95,9 %** de lo que se le puede
+   preguntar (443 de 462). Sobre todas las que tienen clave, 443 de 568 = 78,0 %: en este tema el
+   banco tiene 282 preguntas con una **clave que contradice el material**, y eso no lo arregla el
+   texto. Son 17 apartados y 26.367 palabras.
+3. **Lo que cuesta leerlos**: en **los dos** temas, «sin contestar por los apuntes: **0**». En IV.2,
+   734 de sus 770 grupos quedan cubiertos con su letra y su cita; en II.4, 419 de 501. Los que quedan
+   «a revisión» lo están porque **su clave** no se puede usar, no porque falte el dato. Es lo
+   contrario de I.6, y es lo bueno que tienen estos dos.
+4. **En tu bandeja del motor hay 36 incidencias nuevas de IV.2 y 82 de II.4** (IV.2: 35 claves que
+   contradicen la norma y 1 que sostiene otra letra; II.4: 71 y 11). Necesitan tu criterio, y **esa
+   bandeja todavía no tiene pantalla** (es la mitad que le falta al bloque C). Mientras tanto están
+   guardadas y se pueden contar.
+5. **Los dos temas costaron 0,7585 $ y 0,7014 $** (las previsiones eran 0,88–1,49 $ y 0,63–1,07 $): los
+   dos por dentro de su tope. Llevas **≈9,37 $ de los 40 $** y el tema siguiente (I.8) es el que
+   cruzará el **aviso de los 10 $**, que quedará anotado aquí y en el estado del objetivo.
+6. **Y una cosa que se ahorró, dicha porque es la primera vez que pasa**: la corrida de II.4 terminó
+   con la forma en NO PASA (una tabla con una celda de más y cuatro apartados con el mismo principio
+   de título) y se arregló **sin volver a pagar**, con dos reparaciones de forma que ahora sabe hacer
+   el motor. La alternativa era una corrida más de entre 0,34 $ y 0,80 $. La tabla era la de los
+   operadores del shell: el operador «tubería» es él mismo una tubería y rompía la tabla.
 
-**Lo que sigue** (el orden lo decide tu tabla de valor, no el del temario): los dos siguientes son
-**II.4** (sistemas operativos) e **I.8** (acceso electrónico, ENS, ENI y NTI). Sus **índices ya están
-escritos y ensayados** sin gastar un céntimo, así que lo que viene es redactarlos: primero II.4 y
-después I.8, cada uno con su previsión enseñada antes de pagar y su informe con los dos denominadores.
+**Lo que sigue** (el orden lo decide tu tabla de valor, no el del temario): el siguiente es **I.8**
+(acceso electrónico, ENS, ENI y NTI), cuyo **índice ya está escrito y ensayado** sin gastar un
+céntimo (18 apartados, 426 de 442 grupos situados por el enunciado). Después, por esa misma tabla,
+I.7, IV.5, III.4…
 
 **Decide tú:** nada nuevo. Lo que ya esperaba tu decisión sigue esperándola (las dos bandejas del
 motor, el listón de párrafos repetidos del §5.9 del estado y el criterio sobre las claves de I.6,
-I.4 y ahora IV.2).
+I.4, IV.2 y II.4).
 
 ## 11 oct 2026 — ya puedes ver lo que marcas en los apuntes (y una cosa que tienes que hacer tú)
 

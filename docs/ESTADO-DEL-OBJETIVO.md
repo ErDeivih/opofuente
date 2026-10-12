@@ -51,8 +51,9 @@ tokens que devolvió cada llamada; el coste es la estimación con la tabla de pr
 | 11-oct | — | f16: la bandeja de avisos del alumno y «No son preguntas» (bloque C) | 0 | 0 | 0 | 0,0000 $ |
 | **Acumulado medido de f16** | | | **0** | **0** | **0** | **0,0000 $** |
 | 12-oct | IV.2 | la redacción completa del tema (paso B a bucle de huecos) | 182 | 1.829.341 | 806.759 | 0,7585 $ |
-| 12-oct | IV.2 | `--esquema`, `--prever`, `--medir`, `--limpiar-forma` y `--publicar` (solo lectura y limpieza) | 0 | 0 | 0 | 0,0000 $ |
-| **Acumulado medido de f17 (en curso)** | | | **182** | **1.829.341** | **806.759** | **0,7585 $** |
+| 12-oct | II.4 | la redacción completa del tema (paso B a bucle de huecos) | 166 | 1.567.294 | 777.151 | 0,7014 $ |
+| 12-oct | IV.2 + II.4 | `--esquema`, `--prever`, `--medir`, `--limpiar-forma` y `--publicar` (solo lectura y limpieza) | 0 | 0 | 0 | 0,0000 $ |
+| **Acumulado medido de f17 (en curso)** | | | **348** | **3.396.635** | **1.583.910** | **1,4599 $** |
 
 *(f13 no llama al modelo a propósito: es el bloque de interfaz y de la ruta de escritura de los
 avisos. f14 tampoco: es interfaz y consultas de lectura sobre la base; lo único que se ejecuta son las
@@ -92,7 +93,8 @@ guardado y `--prever` dice lo que costaría una corrida **antes** de pagarla.
 | **I.2** | **publicado** (versión archivada, con la marca «Versión generada · en revisión») | 1.233 → 696 redactados | 16 | **669/703 = 95,2 % PASA** | 669/835 = 80,1 % | 19 | 6 | **PASA las cinco** (24.061 palabras de 49.320; repetidos 2,9 %) |
 | **I.4** | **borrador con su motivo** | 1.056 → 721 redactados | 15 | **497/559 = 88,9 % NO PASA** | 497/579 = 85,8 % | 31 | 3 | **PASA las cinco** (27.787 palabras de 42.240; repetidos 4,2 %) |
 | **IV.2** | **publicado** (versión archivada, con la marca «Versión generada · en revisión») | 1.543 → 1.126 redactados | 16 | **757/758 = 99,9 % PASA** | 757/797 = 95,0 % | 1 | 0 | **PASA las cinco** (32.567 palabras de 61.720; repetidos **0,2 %**) |
-| resto (27) | sin empezar | | | | | | | |
+| **II.4** | **publicado** (versión archivada, con la marca «Versión generada · en revisión») | 1.046 → 848 redactados | 17 | **443/462 = 95,9 % PASA** | 443/568 = 78,0 % | 11 | 0 | **PASA las cinco, tras la limpieza** (26.367 palabras de 41.840; repetidos 0,3 %) |
+| resto (26) | sin empezar | | | | | | | |
 
 *(Cifras de **esta** tanda, medidas con `apuntes --medir` sobre la base real —no heredadas de la
 corrida que las escribió—. Las tres filas son del 10-oct: IV.7 es la única que no se ha tocado. La
@@ -193,6 +195,8 @@ y 1 `pregunta_ambigua`).
 | 8. **(f12) Los trozos de una materia se escriben en orden y el segundo sabe lo que ya está puesto** | Una materia que no cabe en una llamada se partía, y cada trozo escribía **su propio índice**: I.1 acabó con «2. Composición de las Cámaras» y «3. Estatuto de los parlamentarios» dos veces | El segundo trozo recibe los encabezados del primero y no los repite; las materias distintas siguen escribiéndose a la vez | `test_los_trozos_de_una_materia_se_escriben_en_orden_y_sin_repetir_encabezados` |
 | 9. **(f12) La comprobación recibe la unión de los apartados de la pregunta, y lo que quepa de su epígrafe** | Recibía el **epígrafe entero**: el de I.1 son nueve apartados de 150 hechos (≈300.000 caracteres) y no cabe en la ventana del modelo —el tema no se podía comprobar— | La unión de sus apartados (§2.1.1) más el resto de sus epígrafes mientras quepa en 60.000 caracteres. El corte es determinista y la huella se calcula con la misma función | `test_la_comprobacion_recibe_la_union_de_sus_apartados_y_lo_que_quepa_del_epigrafe`, `test_el_texto_de_la_comprobacion_se_corta_por_presupuesto` |
 | 10. **(f12) Una columna de tabla sin titular se nombra** | La tabla de comparación se escribe con la primera celda de la cabecera vacía y así no se lee: I.1 tenía **cuatro** así | `nombrar_columnas_sin_titulo` le pone nombre a esa columna (y solo a esa). Los datos no se tocan | `test_una_columna_de_tabla_sin_titulo_se_nombra_y_deja_de_estar_rota` |
+| 11. **(f17) Una tubería dentro de un `código` en una celda de tabla se escapa, y el medidor no parte por una tubería escapada** | La tabla de los operadores del shell de II.4 tiene una fila cuyo contenido **es** la tubería (`` \| ``): sin escapar, la fila se parte en tres celdas donde la cabecera tiene dos y la tabla deja de leerse. Y el arreglo no bastaba solo: `_celdas` volvía a partir por la tubería escapada, así que la reparación no se notaba | `escapar_tuberias_en_celdas` (al guardar un apartado y en `--limpiar-forma`) escapa la tubería que está entre acentos graves de una fila de tabla, y `_celdas` cuenta `\|` como contenido. Son las dos mitades de la misma cosa: lo que se mide y lo que se arregla hablan del mismo texto | `test_una_tuberia_escapada_cuenta_como_una_celda_y_no_como_un_separador` y `test_la_tuberia_que_va_dentro_de_un_codigo_de_una_celda_se_escapa_y_la_tabla_se_arregla` (**2 failed** con el código de antes; registro en `F:\temp-opofuente\f17-scratch\rojo-tuberia.txt`) |
+| 12. **(f17) El título de un apartado se vuelve a poner desde su índice** | La puerta de forma **sí** medía las cabeceras compartidas («las tres primeras palabras del título») y la limpieza **no** podía arreglarlas: II.4 acabó con cuatro apartados titulados «Unix y Linux: …» y ponerles el título de su catálogo obligaba a **volver a pagar** la corrida (50–117 llamadas, 0,34–0,80 $ según `--prever`) | `--limpiar-forma` recalcula el plan del tema (con `indice_de` y `plan_de`, los mismos que usa la corrida) y pone a cada apartado el título que dice **su índice**. Es una reparación, no una invención: no hay título nuevo, hay el del catálogo. Tocó 13 apartados de II.4 y la forma pasó de NO PASA a PASA | `test_el_titulo_de_un_apartado_se_vuelve_a_poner_desde_su_indice` (con el código de antes no existía `titulos_que_cambian`: error de colección; registro en `F:\temp-opofuente\f17-scratch\rojo-titulo.txt`) |
 
 Medido en IV.7: **24 notas de distractor retiradas**, **22 confusiones** en su bloque, **4 familias**,
 **0 puertos repetidos** y **0 notas sin sentido**. El apartado de UDP pasó de 16 hechos —con la
@@ -604,6 +608,43 @@ repetidos (417 de 1.543 se agruparon), sale más barato que uno normativo denso.
 **Y una comprobación que hizo el propio camino**: el informe de la corrida y `--medir` dan **la misma
 cifra** (757/758 y 757/797), contada dos veces por caminos distintos —una al terminar la corrida y
 otra leyendo lo guardado—. Las cifras de este documento son las de `--medir`.
+
+### II.4 (577 preguntas, 501 grupos), escrito y publicado el 12-oct
+
+Es el **quinto por valor** (566 preguntas con clave). Su índice se escribió **y se ensayó en esta
+tanda** (`domain/catalogo_ii_4.py`, 17 apartados, 481 de sus 501 grupos situados por el enunciado),
+que es el orden que manda el bloque: el árbol se decide antes de pagar.
+
+| Qué se midió | Valor |
+|---|---|
+| Cobertura (clave utilizable) | **443/462 = 95,9 % PASA** (umbral 90 %) |
+| Cobertura (todas las que tienen clave) | 443/568 = 78,0 % |
+| Hechos | 1.046 antes de deduplicar → **848** redactados (195 repetidos agrupados) |
+| Apartados | **17** · ninguno pasó del tope de 150 hechos, así que **no hubo que partir ninguno** |
+| Forma | **PASA tras la limpieza** · 26.367 palabras de 41.840 · repetidos 0,3 % |
+| Índice | PASA · 17 apartados · 848 hechos · **2 grupos y 3 hechos sin materia** (a la bandeja) |
+| Bandeja del propietario | **82 incidencias**: 71 `norma_cambiada`, 11 `clave_sospechosa` |
+| Llamadas y coste | **166 llamadas · 0,7014 $** · 50 minutos |
+
+| | `--prever` dijo | La corrida hizo |
+|---|---|---|
+| Llamadas | 92 como mínimo y 158 como máximo | **166** (0 fallidas) |
+| Coste | 0,63 $ como mínimo y 1,07 $ como máximo | **0,7014 $** |
+
+La cota de llamadas se quedó corta por 8 y el coste cayó por el medio del rango: el bucle de huecos
+(71 claves que contradicen la norma y 11 en conflicto) no se puede prever, y el precio por llamada sí
+depende del tema. El tope (1,07 × 4/3 = **1,43 $**, con 5.000 s de tiempo) **no se activó**.
+
+**Y lo que hace distinta esta corrida: acabó con la forma en NO PASA y no se volvió a pagar.**
+`--limpiar-forma` (0 $) arregló las dos cosas que la puerta encontró —una tabla cuya fila tenía una
+celda de más y cuatro apartados con la misma cabecera— y hizo falta **extender dos reparaciones**
+(§3, arreglos 11 y 12, cada uno con su prueba que falla antes). Sin ellas, poner los títulos al día
+habría costado entre 0,34 $ y 0,80 $ según `--prever`: es la primera vez en el bloque que un rojo de
+forma se cierra **sin volver a llamar al modelo**.
+
+**Y la cifra que este tema comparte con IV.2**: «sin contestar por los apuntes: **0**». De los 501
+grupos, 419 quedaron cubiertos con letra y cita (403 a la primera, 16 tras añadir) y los 82 que
+quedan «a revisión» lo están porque **su clave** no se puede usar, no porque falte el texto.
 
 ## 5. Lo que queda abierto
 
