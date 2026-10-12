@@ -1585,6 +1585,56 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/notes-incidents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Las incidencias del motor, para la bandeja del propietario
+         * @description Las incidencias, de la más nueva a la más vieja.
+         *
+         *     `pending` cuenta las que están **sin despachar** (`open`) sin mirar el filtro: es el número que
+         *     el propietario necesita ver aunque esté mirando las de una sola categoría. `totals_by_category`
+         *     cuenta las cuatro categorías **en la base entera**, con un `GROUP BY`: es la cifra de cada
+         *     clase,
+         *     medida y no heredada. El `total`, en cambio, es el del filtro.
+         */
+        get: operations["list_notes_incidents_api_v1_notes_incidents_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/notes-incidents/{incident_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Despacha una incidencia: en curso, resuelta o descartada, con la nota de lo decidido
+         * @description Cambia el estado de una incidencia y, si se escribe, deja la nota de lo que se ha decidido.
+         *
+         *     No hay ruta para borrar una incidencia: lo que señaló el motor no se tira, se despacha. Una
+         *     incidencia que no existe es un 404 con su identificador, y una nota de más de una línea se
+         *     recorta antes de guardarse.
+         */
+        patch: operations["update_notes_incident_api_v1_notes_incidents__incident_id__patch"];
+        trace?: never;
+    };
     "/api/v1/notes-reports": {
         parameters: {
             query?: never;
@@ -5824,6 +5874,160 @@ export interface components {
          *     cuando no viene, la que hubiera se queda.
          */
         NoteReportUpdateSchema: {
+            /** Actor */
+            actor?: string | null;
+            /** Note */
+            note?: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "open" | "in_progress" | "reviewed" | "dismissed";
+        };
+        /**
+         * NotesIncidentListSchema
+         * @description Las incidencias de una página, con **las cuatro cifras** de la bandeja.
+         *
+         *     Los recuentos van aparte de la lista aunque se puedan contar de ella, y son de la **bandeja
+         *     entera**, no del filtro: `total` es lo que devuelve el filtro (contado en la base), y
+         *     `totals_by_category` las cuatro categorías con su número real. Es lo que permite que la pantalla
+         *     diga «291 de norma cambiada» sin leerse las 453, y sin heredar la cifra de ningún documento.
+         *
+         *     Los cuatro estados salen siempre, con cero incluido: un botón de filtro que desaparece cuando su
+         *     número es cero obliga a la pantalla a inventarse la ausencia.
+         */
+        NotesIncidentListSchema: {
+            /**
+             * Dismissed
+             * @description Incidencias descartadas: el motor se equivocaba.
+             */
+            dismissed: number;
+            /**
+             * In Progress
+             * @description Incidencias que el propietario tiene en la mano.
+             */
+            in_progress: number;
+            /** Incidents */
+            incidents: components["schemas"]["NotesIncidentSchema"][];
+            /**
+             * Pending
+             * @description Incidencias en `open`, con independencia del filtro.
+             */
+            pending: number;
+            /**
+             * Reviewed
+             * @description Incidencias ya resueltas.
+             */
+            reviewed: number;
+            /**
+             * Total
+             * @description Incidencias que devuelve el filtro, contadas en la base.
+             */
+            total: number;
+            /** Totals By Category */
+            totals_by_category?: {
+                [key: string]: number;
+            };
+        };
+        /**
+         * NotesIncidentSchema
+         * @description Una incidencia del motor, con lo que hace falta para juzgarla y para ir a mirarla.
+         *
+         *     Cuatro bloques, y cada uno existe por algo:
+         *
+         *     1. **qué es**: la categoría, el motivo y el texto del dominio que explica por qué el motor la
+         *        señaló (`category_help`), más el detalle que escribió la corrida (`detail`) y la frase
+         *        verificada (`phrase`) cuando la hay;
+         *     2. **dónde**: el tema, el apartado del que habla (`anchor` y `section_title`) y —lo que permite
+         *        juzgarla sin abrir nada— el enunciado de la pregunta (`stem`). `section_title` es nulo cuando
+         *        la pregunta **no se pudo situar en ninguna materia**: eso no es un dato que falte, es el
+         *        hallazgo, y la pantalla lo dice en vez de mandar a un ancla que no está;
+         *     3. **de dónde sale la clave**: el conjunto del que es la pregunta (`set_title`) y el material
+         *     con
+         *        su versión y su estado (`source_*`). Cuando la categoría es «norma cambiada», la
+         *        contradicción
+         *        tiene dos mitades y esta es la segunda;
+         *     4. **cómo acabó**: el estado, la nota de lo que se hizo y cuándo se cerró.
+         */
+        NotesIncidentSchema: {
+            /** Anchor */
+            anchor: string;
+            /** Attempts */
+            attempts: number;
+            /**
+             * Category
+             * @enum {string}
+             */
+            category: "hueco_sin_material" | "clave_sospechosa" | "pregunta_ambigua" | "norma_cambiada";
+            /** Category Help */
+            category_help: string;
+            /**
+             * Coverage
+             * @enum {string}
+             */
+            coverage: "doubtful" | "conflict";
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Detail */
+            detail: string;
+            /** Id */
+            id: string;
+            /** Phrase */
+            phrase?: string | null;
+            /** Question Version Id */
+            question_version_id: string;
+            /**
+             * Reason
+             * @enum {string}
+             */
+            reason: "sin_frase_en_los_apuntes" | "letra_no_coincide" | "clave_contradice_la_norma" | "clave_sin_definir" | "sin_materia_en_el_indice";
+            /** Resolution Note */
+            resolution_note?: string | null;
+            /** Reviewed At */
+            reviewed_at?: string | null;
+            /** Section Title */
+            section_title?: string | null;
+            /** Set Title */
+            set_title: string;
+            /** Source Document Id */
+            source_document_id?: string | null;
+            /** Source Document Title */
+            source_document_title?: string | null;
+            /** Source Document Type */
+            source_document_type?: string | null;
+            /** Source Version Label */
+            source_version_label?: string | null;
+            /** Source Version Status */
+            source_version_status?: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "open" | "in_progress" | "reviewed" | "dismissed";
+            /** Stem */
+            stem: string;
+            /** Topic Code */
+            topic_code: string;
+            /** Topic Title */
+            topic_title: string;
+        };
+        /**
+         * NotesIncidentUpdateSchema
+         * @description Lo único que se puede cambiar de una incidencia: en qué punto está y qué se ha hecho.
+         *
+         *     No hay ruta para editarla ni para borrarla. La incidencia la escribió una comprobación y lo que
+         *     la resuelve es otra cosa: añadir material, revisar una clave, reescribir una pregunta o
+         *     comprobar la norma. Lo que el propietario decide aquí es **qué ha hecho con ella**, y eso se
+         *     escribe.
+         *
+         *     `note` es potestativa, como en el aviso del alumno: hay incidencias que se cierran sin nada que
+         *     escribir. Cuando viene, es **una línea** y sustituye a la que hubiera; cuando no viene, la que
+         *     hubiera se queda.
+         */
+        NotesIncidentUpdateSchema: {
             /** Actor */
             actor?: string | null;
             /** Note */
@@ -13870,6 +14074,129 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MappingSchema"][];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    list_notes_incidents_api_v1_notes_incidents_get: {
+        parameters: {
+            query?: {
+                /** @description Filtra por categoría; sin ella salen todas. */
+                category?: ("hueco_sin_material" | "clave_sospechosa" | "pregunta_ambigua" | "norma_cambiada") | null;
+                /** @description Filtra por estado; sin él salen todas. */
+                status?: ("open" | "in_progress" | "reviewed" | "dismissed") | null;
+                /** @description Código legible del tema, como `I.2`, para ver solo las de un tema. */
+                topic?: string | null;
+                /** @description Busca en el enunciado de la pregunta, el motivo, la frase y el apartado. */
+                q?: string | null;
+                /** @description Cuántas incidencias se devuelven como mucho. */
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotesIncidentListSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    update_notes_incident_api_v1_notes_incidents__incident_id__patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-OpoFuente-Actor"?: string | null;
+            };
+            path: {
+                /** @description Identificador de la incidencia, tal como lo devuelve la bandeja. */
+                incident_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotesIncidentUpdateSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotesIncidentSchema"];
+                };
+            };
+            /** @description Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
                 };
             };
             /** @description El recurso no existe. */
