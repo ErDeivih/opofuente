@@ -1205,6 +1205,11 @@ devuelve `in_review` por pregunta `[true, true, true, false]` — **tres de cuat
 
 #### Lo que queda **escrito y NO ejecutado** en las capturas
 
+> **Actualización (13-oct-2026, F22):** ya **no** queda pendiente. La aserción se ejecutó en la
+> corrida de capturas de F22 (54/54, con `test-en-curso` y `resultado` a los dos anchos entre ellas)
+> y **pasó**: la marca «clave en revisión» está demostrada en un navegador de verdad. El texto de
+> abajo se conserva tal como se escribió, porque cuenta por qué estaba pendiente y cómo se cierra.
+
 La herramienta lleva ahora una aserción por captura del alumno, para que la evidencia no dependa de
 que alguien mire el PNG:
 
@@ -1701,6 +1706,13 @@ existen para que no vuelva.
 vista previa —`The directory "dist" does not exist. Did you build your project?`— porque en un árbol
 nuevo no hay `dist` y la herramienta sirve el paquete construido. Se construyó (`npm run build:web`,
 1,33 s) y la segunda corrida pasó entera.
+
+**Y una cosa que estaba escrita sin ejecutar y ya se ha ejecutado** (§F19.9): la aserción de las
+capturas de la marca «clave en revisión» —`await expect(page.getByText(MARCA_EN_REVISION).first())
+.toBeVisible()` en `test-en-curso` y en `resultado`, a los dos anchos— **pasó** en esta corrida. Las
+cuatro capturas que la llevan están entre las 54 que pasan, así que la marca queda demostrada en un
+navegador de verdad a 1280 y a 390 px, y no solo por la prueba de componente. La marca no se ha
+tocado: el servidor sigue mandando `in_review` y el texto lo sigue poniendo la interfaz.
 
 **Un hallazgo que no es de este bloque y se deja dicho**: en el informe de capturas, **`/admin/ui` a
 390 px mide 393** (3 px de desborde en la galería de componentes del panel). No es de F22: el PNG de
