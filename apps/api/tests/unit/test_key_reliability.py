@@ -210,7 +210,7 @@ def test_la_prueba_del_desplazamiento_encuentra_la_clave_corrida() -> None:
     """
     anclas = [(posicion, "a") for posicion in range(1, 21)]
     # La clave de la posición `p` es la de la pregunta `p - 1`: está corrida una posición.
-    claves = {posicion: "a" for posicion in range(0, 20)}
+    claves = dict.fromkeys(range(0, 20), "a")
 
     lecturas = probar_desplazamientos(
         anclas,

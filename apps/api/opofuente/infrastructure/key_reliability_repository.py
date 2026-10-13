@@ -100,6 +100,15 @@ class SqlAlchemyKeyReliabilityRepository:
         opciones giradas— de los conjuntos `dudosa` o `no_fiable`. Es la comprobación barata del §1:
         si alguna alternativa baja del 10 %, la clave no está mal —está corrida— y volver a
         extraerla del material la arregla.
+
+        **De dónde sale la clave que se mueve.** De la plantilla **activa** del conjunto, y si no
+        tiene ninguna, de la versión con **más entradas** (y a igualdad, la más nueva). No es un
+        detalle: cinco de los diez conjuntos en cuarentena (`baquedano`, `TEST VARIOS`, `Test por
+        temas`, `Supuestos Practicos Bloque IV` y `drive-download…`) **no tienen plantilla activa**
+        —tienen entre 2 y 53 versiones en borrador—, y sin esta segunda vía la prueba se quedaba sin
+        secuencia de claves que mover y decía «no es un desplazamiento» **sin haberlo probado**. El
+        motor de apuntes sí las leyó: sus anclas existen precisamente porque una clave en borrador
+        también vale para comprobar.
         """
         with self._session_factory() as session:
             anclas = session.execute(
@@ -117,6 +126,9 @@ class SqlAlchemyKeyReliabilityRepository:
             claves = session.execute(
                 select(
                     AnswerKeyVersionRecord.question_set_id,
+                    AnswerKeyVersionRecord.id,
+                    AnswerKeyVersionRecord.status,
+                    AnswerKeyVersionRecord.version_no,
                     QuestionVersionRecord.position,
                     AnswerKeyEntryRecord.correct_option_keys_json,
                 )
@@ -128,11 +140,27 @@ class SqlAlchemyKeyReliabilityRepository:
                     QuestionVersionRecord,
                     QuestionVersionRecord.id == AnswerKeyEntryRecord.question_version_id,
                 )
-                .where(AnswerKeyVersionRecord.status == "active")
             ).all()
 
+        # La plantilla que se usa por conjunto: la activa si la hay; si no, la de más entradas.
+        entradas: dict[str, dict[str, int]] = {}
+        activas: dict[str, str] = {}
+        for set_id, clave_id, estado, _version, _posicion, _crudo in claves:
+            cuenta = entradas.setdefault(str(set_id), {})
+            cuenta[str(clave_id)] = cuenta.get(str(clave_id), 0) + 1
+            if str(estado) == "active":
+                activas[str(set_id)] = str(clave_id)
+        elegida: dict[str, str] = {}
+        for set_id, cuenta in entradas.items():
+            if set_id in activas:
+                elegida[set_id] = activas[set_id]
+                continue
+            elegida[set_id] = max(cuenta.items(), key=lambda par: (par[1], par[0]))[0]
+
         letras_por_conjunto: dict[str, dict[int, str]] = {}
-        for set_id, posicion, crudo in claves:
+        for set_id, clave_id, _estado, _version, posicion, crudo in claves:
+            if str(clave_id) != elegida.get(str(set_id)):
+                continue
             propias = letras_de_clave(crudo)
             if propias:
                 letras_por_conjunto.setdefault(str(set_id), {})[int(posicion)] = propias[0]

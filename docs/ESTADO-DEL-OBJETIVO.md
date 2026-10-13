@@ -876,3 +876,24 @@ Puerta de claves sobre la copia: **144 conjuntos medibles** (128 `fiable`, 6 `du
 Anclas de conjuntos que **no** son `fiable`, por tema: **I.6 107** · **I.4 95** · **I.8 187**. Los `no_fiable` que toca cada uno: I.6 → baquedano 11, TEST VARIOS 11, Test por temas 5, Test Aragón 2015 4, TAI_ejer_1_A 2, drive-download 1; I.4 → baquedano 11, TAI_ejer_1_A 1, drive-download 1; I.8 → baquedano 28, Test Aragón 6, TEST VARIOS 6, drive-download 4, TAI_ejer_1_A 3, C_ejer_1_libre_DZA 2. El resto son `dudosa`, que entran con la marca.
 
 **Precisión de método**: el código agrupa por **`set_id`**, no por título. Cuatro títulos de exámenes del INAP 2025 están repetidos en **dos conjuntos distintos** cada uno («TAI ingreso libre 2025 · modelo A» y sus tres hermanos), así que agrupar por título da 140 grupos donde hay 144 conjuntos: por título se pueden juntar dos claves distintas.
+
+### 8. El desplazamiento, probado **entero**, y el hallazgo de los dudosos
+
+La primera versión de la prueba usaba solo la plantilla **activa**, y **cinco de los diez conjuntos en cuarentena no tienen ninguna**: tienen entre 2 y 53 versiones en borrador (`baquedano`, `TEST VARIOS`, `Test por temas`, `Supuestos Practicos Bloque IV`, `drive-download…`). La prueba se quedaba sin secuencia de claves que mover y decía «no es un desplazamiento» **sin haberlo probado**. Ya está arreglado en el código: si no hay activa se usa la versión con **más entradas** (y a igualdad, la más nueva), que es la que el motor de apuntes pudo leer —sus anclas existen precisamente porque una clave en borrador también vale para comprobar—.
+
+**Los 10 `no_fiable`, con la prueba entera: ninguno baja del 10 %.** (Las mejores alternativas van del 44 % al 93 %.) Conclusión firme: esas claves no están corridas, están mal en muchos sitios.
+
+**Pero en los `dudosa` aparece una causa exacta**, y son conjuntos cuyas preguntas **sí entran** en los tests:
+
+| conjunto | veredicto | hoy | mejor alternativa | lectura |
+|---|---|---|---|---|
+| 2022_diccionario-concepto-terminos-AE | `dudosa` | 6/21 = 28,6 % | **opciones −1: 21/21 = 100,0 %** | explicado |
+| 01.- eAdministracion | `dudosa` | 4/19 = 21,1 % | **opciones −1: 19/19 = 100,0 %** | explicado |
+| 2025_Diccionario_conceptos_AE_11_ed | `dudosa` | 3/15 = 20,0 % | **opciones −1: 15/15 = 100,0 %** | explicado |
+| Material adicional | `dudosa` | 3/15 = 20,0 % | opciones −1: 14/15 = 93,3 % | mismo patrón |
+| Doc adicional | `dudosa` | 9/60 = 15,0 % | opciones −1: 55/60 = 91,7 % | mismo patrón |
+| Doc Adicional | `dudosa` | 7/28 = 25,0 % | opciones −1: 26/28 = 92,9 % | mismo patrón |
+
+Un 21/21 y un 19/19 bajo una permutación **fija** no es azar: la clave guardada y los apuntes coinciden **si a cada letra de la clave se le resta una posición** (`a→d`, `b→a`, `c→b`, `d→c`). Es exactamente **«una opción de menos»**, lo que el §1 manda probar antes de dar una clave por mala, y son conjuntos que hoy entran en los tests con la marca.
+
+**No se ha reescrito ninguna clave, y se dice por qué**: el §1 pide reextraerla **del original** con el extractor de marcas, y ese extractor no está en el repositorio (fue un script suelto de una sesión anterior). Lo que hay es la **medida**, no el original: se sabe que la relación entre las dos series es una rotación de una posición, pero **no de qué lado está el error** —si la clave se importó con las opciones al revés o si el modelo contestó con el mapa invertido—. Cambiar el dato por una hipótesis, con ~110 entradas repartidas en cinco conjuntos, no se hace sin el original. Tampoco se suben a `no_fiable`: el documento fija el umbral en el 30 % y estos están entre el 15 % y el 28,6 %; subirlos sería decidir contra el documento. **Quedan como incidencia para el propietario, con la causa exacta y la medida al 100 %**, que es la primera vez que hay un arreglo barato y verificable para un conjunto que entra en los tests.
