@@ -968,7 +968,19 @@ intentos y sus causas— en **`F:\temp-opofuente\gates-f20-pregunta.txt`**: form
 estricto, eslint, tipos, **792** unitarias de backend, **684** de integración, **29** de contrato,
 **357** de componentes en 39 ficheros, contrato OpenAPI y tipos sincronizados, los dos build, la
 migración desde base vacía con su verificación por `sqlite3`, la siembra idempotente, los fixtures
-frente a las fuentes y las **74** extremo a extremo. Lo corrido durante la tanda, sobre este árbol:
+frente a las fuentes y las **74** extremo a extremo.
+
+**Y se han vuelto a pasar enteras con `main` dentro** —el §1 de las claves ya fusionado en la rama—,
+que es lo que hace que la fusión no pueda romper `main`: **las 18, a la primera, en 45:36**, con el
+registro en **`F:\temp-opofuente\gates-f20-fusion.txt`** y **827** unitarias, **696** de integración,
+**29** de contrato, **359** de componentes en 40 ficheros y **74** extremo a extremo. Los dos bloques
+tocamos seis ficheros a la vez y los seis están resueltos: el **contrato** (`openapi.json` y
+`openapi.d.ts`) se **regenera** con los dos pasos de la puerta 10 —comprobado que la suma no pierde
+nada: 0 rutas y 0 esquemas de `main` que falten, 0 míos que falten, **164 rutas y 277 esquemas**—, el
+**cuadro de decisiones** es una adición y se **suma** (verificado que no se pierde ni se cambia una
+línea de nadie), y las **capturas** (`screens.spec.ts`) y los **dos documentos** entran cada uno con
+lo suyo (el bloque de la marca «clave en revisión» del §1 y el de la ficha, separados, sin nombres
+repetidos). Lo corrido durante la tanda, sobre este árbol:
 
 - **backend**: la suite **entera** (unitaria, integración, contrato y migraciones) —**1505 en verde**,
   cero rojas— y las nuevas de esta tanda, 44: **24 unitarias** del dominio (las dos reglas con sus
