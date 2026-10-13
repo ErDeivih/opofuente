@@ -9,7 +9,7 @@
  * prueba del orden numérico sirva de algo.
  */
 
-import type { StudentOverview, StudentSyllabus, StudentTopic } from '../../src/api/studentStudy';
+import type { StudentOverview, StudentSyllabus, StudentTestPlan, StudentTopic } from '../../src/api/studentStudy';
 import type {
   StudentMistakes,
   StudentMockExamPlan,
@@ -219,6 +219,28 @@ export const notesFixture: StudentNotes = {
 
 /** Los mismos apuntes, ya publicados: es lo que lleva la marca «Versión generada · en revisión». */
 export const notesPublishedFixture: StudentNotes = { ...notesFixture, state: 'published' };
+
+/** El plan de un test (F22): los tamaños que ofrece la aplicación y lo que dura el reloj de cada uno. */
+export const testPlanFixture: StudentTestPlan = {
+  counts: [
+    { questions: 10, minutes: 20 },
+    { questions: 20, minutes: 40 },
+    { questions: 25, minutes: 50 },
+    { questions: 50, minutes: 100 },
+    { questions: 100, minutes: 200 },
+  ],
+  timed_note:
+    'El reloj de un test lo pone la aplicación —dos minutos por pregunta, redondeado a cinco—. El ' +
+    'tiempo de un examen lo fija la convocatoria, y es el que lleva un test cuando no se le pone ' +
+    'el reloj del test.',
+  convocation_minutes: 120,
+};
+
+/** El mismo plan sin el tiempo del ejercicio en la convocatoria: `null` no es «sin tiempo». */
+export const testPlanSinTiempoFixture: StudentTestPlan = {
+  ...testPlanFixture,
+  convocation_minutes: null,
+};
 
 /* ------------------------------------------------------------------ F14: el cierre del ciclo */
 

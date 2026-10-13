@@ -1037,12 +1037,17 @@ porque la ficha lee tablas que ya existían y lo que escribe son filas nuevas de
    **Temario** y **Tema con apuntes** —con el **sistema de diseño aplicado** (§3.7: tokens en un
    fichero único y las dos fuentes autoalojadas) y el aviso «Esto está mal» guardando de verdad por su
    ruta auditada—, y desde f14 **Resultado, Simulacros, Exámenes oficiales, Fallos y Progreso** (§4c).
-   Faltan la pantalla de **Tests** (elegir temas, cuántas preguntas y cómo se corrigen: pasos 3 y 4 del
-   §3) y, dentro del tema, las pestañas «Preguntas» y «Mi progreso» —hoy son enlaces a su dirección—,
-   el buscador dentro del tema y la marca de leído del índice. La **bandeja del propietario** para los
-   avisos del alumno ya tiene **ruta y pantalla** desde f16 (`/admin/avisos`, §4e): se ven, se
-   despachan y se auditan. Lo que sigue sin pantalla es la **bandeja del motor** (`notes_incidents`,
-   las 333 incidencias), que no tiene ni ruta.
+   **Desde F22 está la pantalla de Tests** (§F22): la que deja elegir temas, cuántas preguntas, cuáles,
+   cómo se corrigen y si lleva reloj, con los tres enlaces que ya le apuntaban funcionando de verdad.
+   Con eso, las **siete entradas del menú** del alumno tienen pantalla. Lo que sigue faltando, medido
+   en el código y **listado en §F22.4**: el enlace «Ver en apuntes» desde el test en curso, «Repetir
+   solo las falladas» en el resultado (hoy repite el test entero), las pestañas «Preguntas» y «Mi
+   progreso» **dentro** del tema (hoy son enlaces fuera), el buscador dentro del tema, la marca de
+   leído del índice y el modo repaso de los apuntes. La **bandeja del propietario** para los avisos
+   del alumno ya tiene **ruta y pantalla** desde f16 (`/admin/avisos`, §4e): se ven, se despachan y se
+   auditan. La **revisión de apuntes en el panel** (§4.3 del objetivo: leer un borrador y aprobarlo)
+   sigue **sin pantalla propia**; la **bandeja del motor** ya tiene ruta, pantalla y contador desde
+   f18.
 7. **Los exámenes del INAP**: la pantalla existe y lee de la API, y hoy sale **vacía** porque no hay
    ninguno importado (D10). Lo que falta es la importación, no la pantalla: cuando los 32 PDF de
    `F:\OpoFuente\fuentes\inap-tai\` entren con su manifiesto, saldrán en la lista con su fecha, su
@@ -1584,3 +1589,145 @@ que quedan:
 **Lo que queda a medias, dicho**: **I.7** (borrador por cobertura, con su corrida cortada por el tope
 de tiempo y su bandeja vacía porque es el final del bucle de huecos quien la escribe). Terminarlo
 cuesta, medido y sin pagarlo, **38–94 llamadas · 0,26–0,64 $**.
+
+---
+
+## F22 · La pantalla de Tests: la zona del alumno se cierra (13-oct-2026)
+
+**Rama `f22-zona-alumno`** (árbol `F:\temp-opofuente\opofuente-alumno2`, desde `main = 570e40d`). Sin
+fusionar. **Coste de API: 0 $** — es interfaz y una lectura; no se ha llamado a ningún modelo.
+
+### 1. Qué se ha construido: la pantalla que el alumno usaba con el enlace roto
+
+`/tests` estaba en la pantalla de «esta sección todavía no está» (`ComingSoonPage`) y **tres enlaces
+vivos le apuntaban ya**: `/tests?count=20` desde Inicio («Test rápido de 20»), `/tests?tema=X` desde el
+botón «Test» del Temario y `/tests?tema=X` desde la pestaña «Preguntas» del tema. El motor estaba
+hecho y probado desde f11 (`POST /student/tests`); lo que faltaba era la pantalla que traduce un
+formulario a esa petición.
+
+Lo que se ve y lo que se puede hacer:
+
+| Qué | Cómo funciona |
+|---|---|
+| **De qué temas** | El árbol del programa, bloque a bloque, con una casilla por tema. Cada tema dice **cuántas preguntas tiene disponibles** y **qué se ha contestado ya** en él («12 contestadas · 75 % de acierto», o «Sin contestar todavía»). Un tema **sin preguntas sale desactivado** y lo dice, en vez de ofrecer una casilla que no puede cumplir. La casilla del bloque marca y desmarca sus temas (con estado intermedio real, `indeterminate`) |
+| **Cuántas preguntas** | Los cinco tamaños que sirve el servidor con lo que durarían: 10 · 20 · 25 · 50 · 100 |
+| **Qué preguntas** | Todas · las que no he visto · las que he fallado · las que marqué dudosas (los cuatro filtros del contrato: `all`/`unseen`/`failed`/`flagged`) |
+| **Cómo se corrigen** | Al responder · al terminar (`immediate`/`at_end`) |
+| **El tiempo** | Un interruptor para poner el reloj del test, con **los minutos que le pondría el servidor**; apagado, dice el tiempo que lleva el test de todas formas (el del examen, 120 minutos en TAI) |
+| **Antes de empezar** | Un resumen con lo que se va a montar: «Test de 20 preguntas de 2 temas», y si hay menos preguntas que las pedidas lo dice **antes** de pulsar («solo hay 12 disponibles, así que tendrá 12») |
+| **La dirección** | `?tema=X` (repetible) llega con ese tema marcado y `?count=N` con ese tamaño elegido, que es lo que hacen los tres enlaces que ya existían |
+
+### 2. Dónde vive, y qué no se ha tocado
+
+| Qué | Dónde |
+|---|---|
+| La pantalla | `apps/web/src/pages/student/TestsPage.tsx`; ruta `/tests` en `app/routes.tsx` |
+| Los estilos | `global.css`, con los tokens de siempre (ni un `#` fuera de `tokens.css`) |
+| El plan del formulario | `GET /student/tests/plan` → `StudentTestPlanView` · `StudentTestPlanSchema` · `student_test_plan` |
+| La petición del test | El **mismo** `POST /student/tests` de f11, sin tocar |
+
+**No se ha tocado** el motor (`StudyService.compose`, `_minutos_de_test`), ni la hoja de respuestas, ni
+la marca «clave en revisión» (`in_review` sigue llegando del servidor y el texto lo pone la interfaz,
+como estaba), ni la bandeja del motor, ni la ficha de pregunta, ni los temas de apuntes, ni
+`origin_scope`, ni el INAP. **No hay migración**: solo se añade una lectura.
+
+### 3. Las pruebas, con sus rojos previos
+
+| Prueba | Antes | Después |
+|---|---|---|
+| `apps/api/tests/integration/test_student_api.py::test_el_plan_del_test_dice_los_tamanos_y_los_minutos_que_luego_se_aplican` | **404** en `/api/v1/student/tests/plan` (`assert 404 == 200`) | pasa: los cinco tamaños, los minutos que anuncia el plan **iguales** a los que recibe cada sesión montada con reloj, y sin reloj el tiempo del perfil (120) |
+| `apps/web/tests/unit/studentTestsConfig.test.tsx` (11 pruebas) | `Failed to resolve import "../../src/pages/student/TestsPage" … Does the file exist?` | 11/11 |
+| `shell.test.tsx` (la prueba de la sección pendiente) | exigía el aviso «Llega en la siguiente fase» en `/tests` | exige que **no** esté y que el título sea el de la pantalla (ver la decisión del 13-oct) |
+
+**Dos trampas medidas al escribir las pruebas**, y las dos están ahora en una aserción:
+
+1. **sin reloj del test la sesión no se queda sin tiempo**: hereda el de la parte del perfil con la que
+   se corrige ese material (**120 minutos** en TAI, porque el tiempo vive en el ejercicio único y la
+   parte lo hereda por `parent_code`). La pantalla lo enseña en vez de decir «sin tiempo», y la prueba
+   de integración lo comprueba montando el test sin reloj;
+2. `timed=True` con un tamaño pequeño **sí** manda sobre el perfil (20 minutos para 10 preguntas), así
+   que el interruptor cambia algo de verdad; es la `max()` de `compose` y se prueba con los cinco
+   tamaños.
+
+### 4. Lo que queda de la zona del alumno, contado en el código
+
+**Lo que ya está** (medido sobre el árbol, no heredado de la lista):
+
+| Qué | Cifra |
+|---|---|
+| Entradas del menú del alumno con pantalla | **7 de 7** (Inicio, Temario, Tests, Simulacros, Exámenes, Fallos, Progreso) |
+| Direcciones del alumno | **10**: las 7 del menú más `/temario/:codigo`, `/test/:id` y `/resultado/:id` |
+| Ficheros de pantalla del alumno | **9** (`apps/web/src/pages/student/*.tsx`) |
+| Rutas de la capa del alumno | **18** (`apps/api/opofuente/api/routes/student.py`) |
+| Pruebas de componente del alumno | **10 ficheros · 179 `expect`** (uno de ellos, el de F22, con 11 pruebas) |
+| Pruebas de integración del alumno | **3 ficheros · 260 `assert`** |
+
+**Lo que falta del §3 del objetivo, punto por punto y con su cifra** (nada de esto se ha tocado):
+
+| Paso del §3 | Estado medido | Lo que falta |
+|---|---|---|
+| 1 · `compose` + `POST /student/tests`, `/mock-exams`, `GET /official-exams` | **hecho** (f11/f14), y F22 le añade la lectura del plan | nada |
+| 2 · Test en curso con hoja de respuestas | **hecho**: teclado `A`–`D`/`1`–`4`, `M`, `←`/`→` e `Intro` (líneas 102–121 del `StudentTestRunner`), corrección al momento o al final, hoja en móvil | **«Ver en apuntes» al párrafo exacto: 0 apariciones** en la zona del alumno (el enlace no existe; la hoja de respuestas se corrige pero no lleva al texto) |
+| 3 · Resultado | **hecho**: nota por parte, tiempo, desglose por tema, pregunta a pregunta (incluida la que la plantilla no corrige) | **«Repetir solo las falladas»: no está.** El botón que hay repite el test entero (`filter: 'all'` y el mismo número de preguntas, `ResultPage.tsx:44-51`); el filtro `failed` **ya existe en el motor**, así que es una salida de pantalla, no motor |
+| 4 · Inicio, Temario, Tema con pestañas | **hecho** en lo esencial (índice con números romanos y barras, tres columnas de lectura) | de las **3 pestañas** del tema, «Apuntes» es la pantalla y las otras **2 apuntan fuera**: «Preguntas» → `/tests?tema=X` (desde F22 lleva a un test de ese tema, **no** a la lista de sus preguntas) y «Mi progreso» → `/progreso` (el general, no el del tema) |
+| 5 · Lectura de apuntes (Stitch) | **hecho**: índice navegable, serif a 68 caracteres, tablas con cabecera, nota al margen por apartado («N preguntas de este tema se contestan en este apartado») y «Esto está mal» por apartado, guardando por su ruta | **buscador dentro del tema: 0**; **marca de leído: 0**; **modo repaso: 0** (no hay vista de tablas sueltas, ni «Datos que caen», ni «Confusiones que caen», ni resumen); **«Practicar este apartado»: 0** |
+| 6 · Simulacros, Exámenes oficiales, Fallos y Progreso | **hecho** (f14) | nada (los exámenes salen vacíos porque **no hay ninguno importado**: es D10, datos) |
+| 7 · Fuentes autoalojadas y tokens | **hecho** (f13/f14) | nada |
+
+**Y lo que queda del panel** (§4 del objetivo), que no es de este bloque: la **revisión de apuntes**
+(leer un borrador y aprobarlo) sigue sin pantalla propia —es lo que el encargo dejaba «si sobra
+tiempo», y **no ha sobrado**: se ha cerrado primero el punto 1 y se ha probado—; la **ficha de
+pregunta** llegó en f20 y el **temario** del panel sigue pendiente.
+
+### 5. Las capturas (`npm run screens`): 54, las cuatro nuevas a 1280 y 390
+
+`npm run screens`, **54 capturas en 2,0 min**, **54 pasan**, **0 errores de consola** y **0
+violaciones de axe** en las 54. Las cuatro de la pantalla nueva:
+
+| fichero | ruta retratada | ancho medido | carga | axe | palabras prohibidas |
+|---|---|---|---|---|---|
+| `tests-escritorio.png` | `/tests` (con datos sembrados) | **1280 × 5838** | 726 ms | 0 | 0 |
+| `tests-movil.png` | `/tests` | **390 × 9300** | 718 ms | 0 | 0 |
+| `tests-elegido-escritorio.png` | `/tests?tema=IV.1&count=20` | **1280 × 5838** | 713 ms | 0 | 0 |
+| `tests-elegido-movil.png` | `/tests?tema=IV.1&count=20` | **390 × 9300** | 715 ms | 0 | 0 |
+
+Los anchos están medidos sobre el PNG (cabecera IHDR), no deducidos: **los cuatro miden exactamente
+1280 y 390 px**. Y las dos capturas de la dirección **afirman sobre la pantalla cargada** que la
+casilla de `IV.1` y el tamaño de 20 llegan marcados, para que la evidencia no dependa de mirar el
+PNG: un enlace que lleva a una pantalla que ignora lo que pides es el fallo que estas dos pruebas
+existen para que no vuelva.
+
+**Un intento fallido, con su causa**: la primera corrida de `npm run screens` murió al arrancar la
+vista previa —`The directory "dist" does not exist. Did you build your project?`— porque en un árbol
+nuevo no hay `dist` y la herramienta sirve el paquete construido. Se construyó (`npm run build:web`,
+1,33 s) y la segunda corrida pasó entera.
+
+**Un hallazgo que no es de este bloque y se deja dicho**: en el informe de capturas, **`/admin/ui` a
+390 px mide 393** (3 px de desborde en la galería de componentes del panel). No es de F22: el PNG de
+la corrida de F19 (13-oct, anterior a este árbol) mide **los mismos 393**, y el de F0 medía 390. La
+puerta de responsividad del E2E **no cubre** esa pantalla (recorre las del alumno y `/admin/importar`),
+así que el desborde lleva dos tandas sin que ninguna puerta lo mire; queda anotado para el panel.
+
+### 6. Las puertas: **18/18** en 41:56 minutos
+
+Ejecutadas con `scripts\gates.ps1` sobre este árbol, con el registro en
+**`F:\temp-opofuente\gates-f22-alumno.txt`** (lanzado con `Start-Process -RedirectStandardOutput`,
+nunca con `>`). Las 18 en verde: formato, ruff, mypy, eslint, typecheck, **1.553 pruebas de backend**
+(unitarias + integración + contrato), **370 de componentes**, contrato OpenAPI y tipos sincronizados,
+los dos builds, la migración desde base vacía con su verificación por `sqlite3`, la siembra idempotente,
+las fixtures de perfil y la **E2E entera** —que ahora recorre `/tests` también a 390 px—.
+
+**Y los intentos, con su causa**, que es lo que hace falta para que la próxima sesión no repita el
+fallo:
+
+| intento | hasta dónde llegó | causa | qué se hizo |
+|---|---|---|---|
+| **1** | puerta **2** (ruff check) | `E501 Line too long (101 > 100)` en `test_student_api.py:638`: un comentario mío de tres líneas. Yo había pasado `ruff check apps/api/opofuente` (que estaba limpio) y **no** `ruff check .` sobre el repositorio entero, que es lo que hace la puerta | se reescribió el comentario y se comprobó con `ruff check .` **y** `ruff format --check .` antes de relanzar. Registro: `F:\temp-opofuente\gates-f22-alumno-intento1-fallo-ruff.txt` |
+| **2** | **18/18** | — | — |
+
+**Los rojos previos de las pruebas, guardados tal cual** (no transcritos a mano):
+`F:\temp-opofuente\f22-scratch\rojo-plan-del-test.txt` (el `404` de la ruta que aún no existía) y
+`F:\temp-opofuente\f22-scratch\rojo-pantalla-tests-err.txt` (`Failed to resolve import
+"../../src/pages/student/TestsPage" … Does the file exist?`).
+
+
