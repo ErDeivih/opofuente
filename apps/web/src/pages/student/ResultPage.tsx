@@ -241,6 +241,13 @@ function PreguntaCorregida({ pregunta }: { pregunta: StudentResultQuestion }) {
           {pregunta.is_reserve ? 'Reserva · ' : ''}
           {pregunta.position}
         </span>
+        {pregunta.key_in_review ? (
+          // En el resultado importa más que en el test: si la clave no es de fiar, un fallo puede ser
+          // de la clave y no del alumno (§1), y eso hay que poder verlo justo al mirar qué se falló.
+          <span className="marca-clave-en-revision" title="clave en revisión">
+            clave en revisión
+          </span>
+        ) : null}
         {pregunta.topics.map((tema) => (
           <Link
             className="resultado__etiqueta-tema"

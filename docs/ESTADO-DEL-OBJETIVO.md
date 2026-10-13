@@ -857,7 +857,7 @@ Se han leído las dos plantillas oficiales (`TAI-2024-libre-plantilla-definitiva
 
 - **Claves derivadas (4b)**: no ejecutadas. Ver la decisión del 13-oct en `DECISIONES-TOMADAS-EN-EL-OBJETIVO.md`.
 - **Bandeja del propietario para los conjuntos en cuarentena**: hoy los conflictos de letra ya llegan a `notes_incidents` (`clave_sospechosa`), pero un conjunto en cuarentena **no crea una incidencia por conjunto**. Es la pieza que le dice «estos 10 conjuntos, con estas cifras, y estas son tus preguntas» en una fila, y no está.
-- **Marca en la pantalla del alumno**: el campo y su texto viajan en la API; el distintivo visual en la web (y sus capturas) no se ha tocado.
+- **Marca en la pantalla del alumno**: **hecha** —el distintivo se pinta en el test en curso (`StudentTestRunner`) y en el resultado (`ResultPage`), con su estilo (`.marca-clave-en-revision`, en el color de aviso del vocabulario `dudosa`) y su prueba de componente, que se demuestra en rojo apagando la marca—. Lo que **no** se ha hecho es volver a tomar las **capturas** de la zona del alumno (`npm run screens`), que van a mano y no son puerta.
 
 ### 7. §3 · Cobertura de I.6, I.4 e I.8 con la cuarentena puesta y sin ella
 
