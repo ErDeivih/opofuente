@@ -48,6 +48,16 @@ necesita tu criterio está marcado como **«Decide tú»**.
    enunciado («2011 Universidad…»), que hay que limpiar. Las dos cosas son escribir una **versión
    nueva** de la pregunta, y eso va con la pantalla de la ficha de pregunta (§5.4 del documento), no
    con esta tanda.
+   *Las seis categorías, con lo que hay dentro de cada una*: **pregunta mal importada 29** (18 sin
+   opciones suficientes —las que han salido de los tests—, 8 con una opción fundida, 2 con una cortada
+   y 1 con dos repetidas); **clave no fiable 158**, todas de conjuntos con la clave en cuarentena (10
+   de los 60 conjuntos que se pueden juzgar pasan del 30 % de discrepancias); **clave sospechosa 200**
+   (85 con la frase de los apuntes que lo demuestra y 115 sin ella, y esas lo dicen en pantalla);
+   **norma cambiada 0**; **hueco sin material 34**; **pregunta ambigua 9**.
+   Y una cosa que conviene que sepas porque afecta a lo que ya estudias: **de los grupos que se van
+   con las 18 preguntas, ninguno estaba cubierto por los apuntes**, así que la cobertura de I.6, I.4 e
+   I.8 **no empeora**; I.6 pierde 5 grupos del denominador (le favorece uno o dos puntos) y los tres
+   siguen como estaban.
 6. **Todo esto se ha probado sobre una copia** de tu base (`F:\temp-opofuente\f18-datos`), nunca sobre
    la tuya: **tu base está en la revisión `0034`** y no se ha tocado. Para que estos cambios lleguen a
    tus datos hay que aplicar la migración `0035` (`scripts\migrate.ps1`) y ejecutar el comando de la

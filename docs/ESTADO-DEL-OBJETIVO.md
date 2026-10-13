@@ -735,6 +735,45 @@ Se escribieron **303 reclasificaciones** y **23 salidas** (326 cambios, cada uno
 tocan: el §2 dice que eso se limpia, y limpiar un enunciado es escribir una versión nueva de la
 pregunta (va con la ficha de pregunta, §5.4).
 
+**Los numeradores y denominadores de cada caja**, que es lo que hace falta para leer las cifras:
+
+| Caja | Cuántas | De dónde salen y qué se hizo |
+|---|---|---|
+| `pregunta_mal_importada` | **29** | 18 por `menos_de_tres_opciones` (esas 18 son las que han salido del temario), 8 por una opción fundida, 2 por una opción cortada y 1 por dos opciones repetidas. Las **11** reparables se quedan en la bandeja con su regla escrita |
+| `clave_no_fiable` | **158** | todas de conjuntos con la clave en cuarentena: **10 de los 60** conjuntos con 15 o más comprobaciones pasan del 30 % (otros 6 quedan `dudosa` entre el 15 % y el 30 %, y 44 son fiables; 84 conjuntos tienen menos de 15 y no se juzgan) |
+| `clave_sospechosa` | **200** | **85** con la frase de los apuntes que lo demuestra y **115** sin ella (el motor solo la guardaba para los conflictos de letra; esas filas lo dicen en pantalla) |
+| `norma_cambiada` | **0** | ninguna: la cita de la norma vigente con su versión o fecha no está en los datos, y sin ella la categoría no se puede afirmar |
+| `hueco_sin_material` | **34** | de las 40: 4 se fueron a `pregunta_mal_importada` y 2 eran falsos positivos |
+| `pregunta_ambigua` | **9** | de las 12: 3 eran falsos positivos y ninguna otra regla las toca |
+| **fuera de la bandeja** | **23** | falsos positivos: la letra de los apuntes **está** en la clave (18 venían de `norma_cambiada`, 3 de `pregunta_ambigua` y 2 de `hueco_sin_material`) |
+| **fuera del temario** | **787** | las marcas de `enunciado_roto` de «No son preguntas»: las 769 de antes más las **18** de esta tanda |
+
+### Qué cambia esto en el veredicto de un tema (§3), medido
+
+**La reclasificación de categorías no cambia ninguna cobertura.** El denominador que decide es «clave
+utilizable», y sale de los **hechos dudosos** del paso B
+(`topic_notes_service.py:361-365` construye `dudosos_de_la_clave` con `hecho.doubtful`, y las cuatro
+llamadas que lo usan —líneas 379, 395, 883 y 943— pasan `clave_utilizable=grupo.signature not in
+dudosos_de_la_clave`), **no** de `notes_incidents`. Lo que sí lo toca son las **18 preguntas que han
+salido del temario**: una pregunta fuera de temario no entra en la comprobación de los apuntes. Medido
+grupo a grupo en la copia:
+
+| Tema | Grupos que se van enteros | De esos, en el denominador | Cubiertos (numerador) | Grupos que se quedan con otras preguntas |
+|---|---|---|---|---|
+| **I.6** | 5 | **5** | 0 | 4 |
+| **IV.7** | 1 | **1** | 0 | 0 |
+| **I.2** | 1 | **1** | 0 | 1 |
+| **IV.2** | 1 | **1** | 0 | 0 |
+| **I.4** | 0 | 0 | 0 | 3 |
+| **II.4** | 0 | 0 | 0 | 2 |
+
+Es decir: **de las tres que el §3 manda volver a medir, I.6 pierde 5 grupos del denominador, I.4
+ninguno e I.8 ninguno**; y **ninguno de los que se van estaba cubierto**, así que el numerador no
+baja. El efecto es de uno o dos puntos **a favor** en I.6 (que está en borrador por el 72,5 % y sigue
+por debajo del 90 %) y **no cambia ningún veredicto**. La vuelta a medir de I.6, I.4 e I.8 que pide el
+§3 sigue siendo del §1 (la cuarentena sí saca preguntas del denominador) y este dato es el trozo que
+aporta esta tanda.
+
 ### El defecto del motor que explicaba las etiquetas, con su evidencia
 
 La categoría `norma_cambiada` **nunca** describió una norma cambiada. El motor la pone cuando
@@ -771,13 +810,20 @@ tamaño).
 ### Las puertas y las pruebas locales
 
 **Las 18 puertas no se han corrido en esta tanda**, y se dice por qué: el §2 del documento de ajustes
-prohíbe lanzar la batería mientras el **§1** (claves fiables y cuarentena `key_reliability`) está en
-marcha en otro bloque, porque las dos no pueden usar a la vez el puerto 8765 ni el directorio de datos
-de las pruebas. Lo que sí se ha corrido, sobre este árbol y sin puerto:
+manda que **primero** corra el bloque del **§1** (claves fiables y cuarentena `key_reliability`), y las
+dos baterías no pueden usar a la vez el puerto 8765 ni el directorio de datos de las pruebas. El
+registro de esta tanda, cuando se lance, va a **`F:\temp-opofuente\gates-f18-panel-incidencias.txt`**,
+con **todos los intentos y sus causas** contados. Lo que sí se ha corrido, sobre este árbol y sin
+puerto:
 
-- **backend**: 18 unitarias nuevas (dominio de la reclasificación) + 6 de migración + 7 de la
-  reclasificación + 10 de la ruta de la bandeja = **41 en verde**, más la suite entera de unitarias e
-  integración (el recuento va en el aviso de la tanda);
+- **backend**: la suite **entera** de unitarias e integración corrió sobre este árbol —**1430 en
+  verde**— y dejó **dos rojas, las dos de esta tanda y las dos arregladas**: la mía de la bandeja
+  esperaba **cuatro** cifras por categoría (ahora son seis, las dos nuevas salen con cero) y la de la
+  cadena de migraciones daba por cabeza la `0034` (ahora es la `0035`). Las dos se han vuelto a pasar
+  en verde en su fichero (**18 pruebas**). No se ha lanzado una segunda corrida completa para no
+  competir por la máquina con la batería del §1, que es la que está en marcha. Las nuevas, en verde:
+  18 unitarias del dominio de la reclasificación, 6 de la migración `0035`, 7 del comando y 10 de la
+  ruta y el despacho de la bandeja;
 - **frontend**: **344** pruebas de componentes en verde (38 ficheros), con las 9 nuevas de la bandeja
   y las 32 de la ficha de pregunta (2 nuevas del enlace `?pregunta=`);
 - **extremo a extremo**: las **3** de `incidencias.spec.ts` en verde (el ciclo con datos reales

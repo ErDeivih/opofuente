@@ -341,10 +341,10 @@ def test_se_puede_ir_al_apartado_y_a_la_pregunta_sin_buscarlos(
     assert ambigua["question_version_id"]
 
 
-def test_las_cuatro_cifras_por_categoria_se_cuentan_en_la_base_y_no_en_la_pagina(
+def test_las_cifras_por_categoria_se_cuentan_en_la_base_y_no_en_la_pagina(
     bandeja: tuple[TestClient, Settings, dict[str, Any]],
 ) -> None:
-    """Con una página de una fila, las cuatro cifras siguen siendo las de la bandeja."""
+    """Con una página de una fila, las cifras siguen siendo las de la bandeja entera."""
     client, _settings_sin_version, _tema = bandeja
 
     cuerpo = client.get("/api/v1/notes-incidents", params={"limit": 1}).json()
@@ -356,6 +356,10 @@ def test_las_cuatro_cifras_por_categoria_se_cuentan_en_la_base_y_no_en_la_pagina
         "clave_sospechosa": 1,
         "pregunta_ambigua": 1,
         "norma_cambiada": 1,
+        # Las dos que asigna la reclasificación salen **con cero**: un botón de filtro que
+        # desapareciera cuando su número es cero obligaría a la pantalla a inventarse la ausencia.
+        "pregunta_mal_importada": 0,
+        "clave_no_fiable": 0,
     }
     assert cuerpo["pending"] == 4
     assert cuerpo["in_progress"] == 0
