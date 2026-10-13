@@ -1820,6 +1820,120 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/question-files/{question_version_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * La ficha de una pregunta: su clave, de dónde sale, los apuntes y qué se puede hacer
+         * @description Todo lo que hace falta para decidir una clave, en una sola lectura.
+         *
+         *         Es la pantalla que faltaba detrás de dos enlaces que ya existían: el de la bandeja del motor
+         *         y
+         *     el
+         *         del banco. Sin ella, «clave sospechosa» era un enlace a una dirección sin ficha donde
+         *     arreglarla.
+         */
+        get: operations["get_question_file_api_v1_question_files__question_version_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/question-files/{question_version_id}/answer-key": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Marca la respuesta correcta, por la ruta auditada (la anterior queda en el historial)
+         * @description Cambia la respuesta correcta escribiendo una **plantilla nueva** del conjunto.
+         *
+         *         Lo que garantiza y se puede comprobar después:
+         *
+         *         - la plantilla que mandaba pasa a `superseded` y la nueva la apunta con `supersedes_id`:
+         *         **no se
+         *           pisa** nada, y el historial de la ficha enseña las dos con la letra que cada una daba a
+         *           esta
+         *           pregunta;
+         *         - el estado se conserva: una plantilla activa se sustituye por otra activa (si no, marcar la
+         *           correcta no cambiaría la corrección y la pantalla mentiría) y una en borrador por otra en
+         *           borrador;
+         *         - **una clave oficial no se toca**: si el conjunto es un examen oficial —o su plantilla
+         *         viene de
+         *     un
+         *           documento, que es el otro camino a «oficial»— la respuesta es un **409 con el motivo** y
+         *           no se
+         *           escribe nada. Los conjuntos protegidos viajan en la ficha, con su nombre, para que no haya
+         *           que
+         *           adivinar cuál estorba;
+         *         - una letra que la pregunta no tiene es un **422** con el campo, antes de tocar la base;
+         *         - el antes, el después y el actor van en el mismo evento de auditoría y en la misma
+         *         transacción
+         *     que
+         *           la plantilla.
+         */
+        post: operations["mark_correct_option_api_v1_question_files__question_version_id__answer_key_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/question-files/{question_version_id}/repairs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Repara lo que una regla mecánica pueda reparar, escribiendo una versión nueva
+         * @description Escribe la versión nueva de la pregunta con lo que una regla mecánica puede arreglar.
+         *
+         *         Solo hay dos reglas y las dos salen del §2 de los ajustes: quitar del enunciado la
+         *         referencia
+         *     del
+         *         examen que quedó pegada al final y partir una opción que se tragó a la siguiente. Lo que no
+         *         se
+         *         pueda reparar con una regla **no se toca**: la ficha dice por qué y esta ruta lo repite con
+         *         un
+         *     409,
+         *         en vez de escribir una versión con texto inventado.
+         *
+         *         Y al reparar, el **sitio** de la pregunta viaja con ella: sus temas, sus anclas de apuntes y
+         *         su
+         *         marca de fuera de temario se mudan a la versión nueva. Sin eso, limpiar un enunciado sacaría
+         *         la
+         *         pregunta del temario y de la cobertura de los apuntes en silencio, que es un cambio mucho
+         *         mayor
+         *     que
+         *         el que se ha pedido.
+         *
+         *         Las incidencias de la pregunta se despachan como **resueltas** por la ruta auditada de la
+         *     bandeja,
+         *         con la nota de lo hecho: una bandeja que siguiera enseñando una pregunta ya reparada
+         *         mentiría.
+         */
+        post: operations["repair_question_api_v1_question_files__question_version_id__repairs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/question-sets": {
         parameters: {
             query?: never;
@@ -5690,6 +5804,42 @@ export interface components {
             /** Subject Type */
             subject_type: string;
         };
+        /**
+         * MarkCorrectOptionSchema
+         * @description Marca la respuesta correcta de esta pregunta.
+         *
+         *     `correct_option_keys` es **obligatorio y sin valor por defecto**: cambiar lo que se da por bueno
+         *     es un acto deliberado, y admitir el cuerpo vacío dejaría la puerta abierta a una llamada que no
+         *     dice qué quiere.
+         */
+        MarkCorrectOptionSchema: {
+            /** Actor */
+            actor?: string | null;
+            /** Correct Option Keys */
+            correct_option_keys: ("a" | "b" | "c" | "d" | "e" | "f" | "g" | "h")[];
+            /** Note */
+            note?: string | null;
+        };
+        /**
+         * MarkCorrectResultSchema
+         * @description Lo que devuelve marcar la correcta: la ficha al día y las dos plantillas.
+         *
+         *     `superseded_key_version_id` viaja porque el hecho que hay que poder comprobar es que la anterior
+         *     **no se ha pisado**: queda `superseded` y se puede leer.
+         */
+        MarkCorrectResultSchema: {
+            /** Actor */
+            actor: string;
+            /** Correct Option Keys */
+            correct_option_keys: string[];
+            file: components["schemas"]["QuestionFileSchema"];
+            /** Key Version Id */
+            key_version_id: string;
+            /** Previous Option Keys */
+            previous_option_keys: string[];
+            /** Superseded Key Version Id */
+            superseded_key_version_id: string | null;
+        };
         /** MarkKeySupersedesRequestSchema */
         MarkKeySupersedesRequestSchema: {
             /** Superseded Id */
@@ -6549,6 +6699,289 @@ export interface components {
             /** Stem */
             stem?: string | null;
         };
+        /** QuestionFileExclusionSchema */
+        QuestionFileExclusionSchema: {
+            /** Actor */
+            actor: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Note */
+            note: string | null;
+            /**
+             * Reason
+             * @enum {string}
+             */
+            reason: "otra_administracion" | "enunciado_roto";
+        };
+        /** QuestionFileIncidentSchema */
+        QuestionFileIncidentSchema: {
+            /**
+             * Category
+             * @enum {string}
+             */
+            category: "hueco_sin_material" | "clave_sospechosa" | "pregunta_ambigua" | "norma_cambiada" | "pregunta_mal_importada" | "clave_no_fiable";
+            /**
+             * Coverage
+             * @enum {string}
+             */
+            coverage: "doubtful" | "conflict";
+            /** Detail */
+            detail: string;
+            /** Id */
+            id: string;
+            /** Phrase */
+            phrase: string | null;
+            /** Reason */
+            reason: string;
+            /** Resolution Note */
+            resolution_note: string | null;
+            /** Reviewed At */
+            reviewed_at: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "open" | "in_progress" | "reviewed" | "dismissed";
+            /** Topic Code */
+            topic_code: string;
+            /** Topic Title */
+            topic_title: string;
+        };
+        /**
+         * QuestionFileKeySchema
+         * @description La respuesta correcta que manda hoy y **de dónde sale**.
+         */
+        QuestionFileKeySchema: {
+            /** Answer Key Version Id */
+            answer_key_version_id: string;
+            /** Approved At */
+            approved_at: string | null;
+            /** Correct Option Keys */
+            correct_option_keys: string[];
+            /** Notes */
+            notes: string | null;
+            /**
+             * Outcome
+             * @enum {string}
+             */
+            outcome: "keyed" | "annulled" | "unanswered" | "conflicting";
+            /** Published At */
+            published_at: string | null;
+            /** Source Document Id */
+            source_document_id: string | null;
+            /** Source Document Title */
+            source_document_title: string | null;
+            /** Source Document Type */
+            source_document_type: string | null;
+            /** Source Version Label */
+            source_version_label: string | null;
+            /** Source Version Status */
+            source_version_status: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "draft" | "active" | "superseded" | "rejected";
+            /** Version No */
+            version_no: number;
+        };
+        /** QuestionFileKeyVersionSchema */
+        QuestionFileKeyVersionSchema: {
+            /** Approved At */
+            approved_at: string | null;
+            /** Correct Option Keys */
+            correct_option_keys: string[];
+            /** Created At */
+            created_at: string | null;
+            /** Id */
+            id: string;
+            /** Source Document Title */
+            source_document_title: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "draft" | "active" | "superseded" | "rejected";
+            /** Version No */
+            version_no: number;
+        };
+        /**
+         * QuestionFileNotesSchema
+         * @description Lo que contestan los apuntes, con el apartado y la frase verificada.
+         */
+        QuestionFileNotesSchema: {
+            /** Anchor */
+            anchor: string;
+            /** Answer Letter */
+            answer_letter: string | null;
+            /** Checked At */
+            checked_at: string | null;
+            /** Coincides */
+            coincides: boolean;
+            /** Expected Letters */
+            expected_letters: string[];
+            /**
+             * Key Status
+             * @enum {string}
+             */
+            key_status: "active" | "draft" | "ninguna";
+            /** Phrase */
+            phrase: string | null;
+            /** Result */
+            result: ("covered" | "gap" | "doubtful" | "conflict") | null;
+            /** Section Title */
+            section_title: string | null;
+            /** Topic Code */
+            topic_code: string;
+            /** Topic Title */
+            topic_title: string;
+        };
+        /** QuestionFileOptionSchema */
+        QuestionFileOptionSchema: {
+            /** Label */
+            label: string | null;
+            /** Position */
+            position: number;
+            /** Stable Key */
+            stable_key: string;
+            /** Text */
+            text: string;
+        };
+        /** QuestionFileProtectedSetSchema */
+        QuestionFileProtectedSetSchema: {
+            /** Id */
+            id: string;
+            /** Reason */
+            reason: string;
+            /** Set Type */
+            set_type: string;
+            /** Source Document Title */
+            source_document_title: string | null;
+            /** Title */
+            title: string;
+        };
+        /** QuestionFileProtectionSchema */
+        QuestionFileProtectionSchema: {
+            /** Protected */
+            protected: boolean;
+            /** Reason */
+            reason: string | null;
+            /** Sets */
+            sets: components["schemas"]["QuestionFileProtectedSetSchema"][];
+        };
+        /** QuestionFileRepairSchema */
+        QuestionFileRepairSchema: {
+            /** Detalle */
+            detalle: string;
+            /** Opciones */
+            opciones: string[] | null;
+            /** Por Que No */
+            por_que_no: string | null;
+            /** Reglas */
+            reglas: string[];
+            /** Stem */
+            stem: string | null;
+            /** Titulos */
+            titulos: string[];
+        };
+        /**
+         * QuestionFileSchema
+         * @description La ficha entera de una pregunta.
+         */
+        QuestionFileSchema: {
+            /** Created At */
+            created_at: string | null;
+            exclusion: components["schemas"]["QuestionFileExclusionSchema"] | null;
+            /** Incidents */
+            incidents: components["schemas"]["QuestionFileIncidentSchema"][];
+            /** Is Reserve */
+            is_reserve: boolean;
+            key: components["schemas"]["QuestionFileKeySchema"] | null;
+            /** Key Reliability */
+            key_reliability: ("fiable" | "dudosa" | "no_fiable") | null;
+            /** Keys */
+            keys: components["schemas"]["QuestionFileKeyVersionSchema"][];
+            /** Note */
+            note: string | null;
+            /** Notes */
+            notes: components["schemas"]["QuestionFileNotesSchema"][];
+            /** Options */
+            options: components["schemas"]["QuestionFileOptionSchema"][];
+            /**
+             * Origin Type
+             * @enum {string}
+             */
+            origin_type: "official" | "private" | "generated";
+            /** Position */
+            position: number;
+            protection: components["schemas"]["QuestionFileProtectionSchema"];
+            /** Question Set Id */
+            question_set_id: string;
+            /**
+             * Question Type
+             * @enum {string}
+             */
+            question_type: "single_choice" | "multi_mark_error" | "true_false" | "free_text_reference";
+            /** Question Version Id */
+            question_version_id: string;
+            /** Reliability Source */
+            reliability_source: string;
+            repair: components["schemas"]["QuestionFileRepairSchema"];
+            /** Reserve Order */
+            reserve_order: number | null;
+            /**
+             * Set Distribution
+             * @enum {string}
+             */
+            set_distribution: "personal" | "public";
+            /** Set Title */
+            set_title: string;
+            /**
+             * Set Type
+             * @enum {string}
+             */
+            set_type: "official_exam" | "private_bank" | "practice" | "generated_batch";
+            /** Stable Key */
+            stable_key: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "incomplete" | "complete" | "verified" | "conflicting" | "annulled" | "superseded";
+            /** Stem */
+            stem: string;
+            /** Superseded By */
+            superseded_by: string | null;
+            /** Version No */
+            version_no: number;
+            /** Versions */
+            versions: components["schemas"]["QuestionFileVersionSchema"][];
+        };
+        /** QuestionFileVersionSchema */
+        QuestionFileVersionSchema: {
+            /** Correct Option Keys */
+            correct_option_keys: string[];
+            /** Created At */
+            created_at: string | null;
+            /** Id */
+            id: string;
+            /** Note */
+            note: string | null;
+            /** Option Count */
+            option_count: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "incomplete" | "complete" | "verified" | "conflicting" | "annulled" | "superseded";
+            /** Stem */
+            stem: string;
+            /** Version No */
+            version_no: number;
+        };
         /**
          * QuestionImportReportSchema
          * @description Lo que ha pasado al importar: ni una fila se pierde, ni un conflicto se esconde.
@@ -7067,6 +7500,43 @@ export interface components {
             detail: string;
             /** Row Number */
             row_number: number;
+        };
+        /**
+         * RepairQuestionSchema
+         * @description Repara lo que una regla mecánica pueda reparar de esta pregunta.
+         *
+         *     No se manda texto: lo que se escribe lo decide una regla del dominio sobre el enunciado y las
+         *     opciones que ya hay. `reglas` solo puede **restringir** lo que el dominio ofrece.
+         */
+        RepairQuestionSchema: {
+            /** Actor */
+            actor?: string | null;
+            /** Note */
+            note: string;
+            /** Reglas */
+            reglas?: string[] | null;
+        };
+        /** RepairResultSchema */
+        RepairResultSchema: {
+            /** Actor */
+            actor: string;
+            /** Dispatched Incidents */
+            dispatched_incidents: number;
+            file: components["schemas"]["QuestionFileSchema"];
+            /** Key Version Id */
+            key_version_id: string | null;
+            /** Moved Anchors */
+            moved_anchors: number;
+            /** Moved Exclusion */
+            moved_exclusion: boolean;
+            /** Moved Topics */
+            moved_topics: number;
+            /** New Question Version Id */
+            new_question_version_id: string;
+            /** Reglas */
+            reglas: string[];
+            /** Superseded Question Version Id */
+            superseded_question_version_id: string;
         };
         /**
          * RepresentationSchema
@@ -14638,6 +15108,204 @@ export interface operations {
             };
             /** @description El recurso no existe. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    get_question_file_api_v1_question_files__question_version_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Identificador de la versión de la pregunta, el que usa la bandeja del motor. */
+                question_version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuestionFileSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    mark_correct_option_api_v1_question_files__question_version_id__answer_key_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-OpoFuente-Actor"?: string | null;
+            };
+            path: {
+                /** @description Identificador de la versión de la pregunta. */
+                question_version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MarkCorrectOptionSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MarkCorrectResultSchema"];
+                };
+            };
+            /** @description Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description El cambio no encaja con lo que hay (`classification_conflict`), y se dice por qué. Por ejemplo, asignar una pregunta a un nodo del programa que no es un tema. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    repair_question_api_v1_question_files__question_version_id__repairs_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-OpoFuente-Actor"?: string | null;
+            };
+            path: {
+                /** @description Identificador de la versión de la pregunta. */
+                question_version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RepairQuestionSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RepairResultSchema"];
+                };
+            };
+            /** @description Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description El cambio no encaja con lo que hay (`classification_conflict`), y se dice por qué. Por ejemplo, asignar una pregunta a un nodo del programa que no es un tema. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

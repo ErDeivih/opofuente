@@ -10,6 +10,7 @@ import { NotFoundPage } from '../pages/NotFoundPage';
 import { NoSonPreguntasPage } from '../pages/NoSonPreguntasPage';
 import { NoteReportsPage } from '../pages/NoteReportsPage';
 import { ProgramPage } from '../pages/ProgramPage';
+import { QuestionFilePage } from '../pages/QuestionFilePage';
 import { QuestionsPage } from '../pages/QuestionsPage';
 import { ReviewPage } from '../pages/ReviewPage';
 import { SearchPage } from '../pages/SearchPage';
@@ -74,18 +75,25 @@ function OldAddress({ to }: { to: string }) {
 }
 
 /**
- * Las preguntas del banco, con la puerta que la decisión del propietario ya tenía escrita.
+ * Las preguntas del banco, con las dos cosas que cuelgan de esa dirección.
  *
- * `docs/DECISIONES-Y-SIGUIENTE-TANDA-2026-10.md` §2 manda la cola de temas a
- * `/admin/preguntas?revisar_tema=1`, y esa dirección tiene que llevar a la cola: la pantalla del
- * banco sigue siendo `/admin/preguntas` a secas, y con la consulta se va a Clasificación, que es
- * donde se revisa. Se conserva la dirección documentada en lugar de dejar que dé una pantalla que
- * no es.
+ * 1. `?revisar_tema=1` lleva a la cola de clasificación, como manda
+ *    `docs/DECISIONES-Y-SIGUIENTE-TANDA-2026-10.md` §2;
+ * 2. `?pregunta=<id>` abre la **ficha** de esa pregunta (F20): es la dirección que la bandeja del
+ *    motor y el banco ya usaban para «abrir la pregunta», y hasta ahora caía en la tabla del banco,
+ *    que la enseña pero no tiene dónde arreglarla. La ficha es otra pantalla porque contesta otra
+ *    pregunta: de dónde sale la respuesta correcta, qué dicen los apuntes, qué ha señalado el motor y
+ *    qué se puede hacer con ella.
+ *
+ * Sin consulta, la pantalla sigue siendo el banco de preguntas de siempre.
  */
 function QuestionsRoute() {
   const [params] = useSearchParams();
   if (params.get('revisar_tema') === '1') {
     return <Navigate to="/admin/clasificacion" replace />;
+  }
+  if (params.get('pregunta') !== null) {
+    return <QuestionFilePage />;
   }
   return <QuestionsPage />;
 }

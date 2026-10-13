@@ -852,6 +852,158 @@ tocan `infrastructure/db_models.py` (clases distintas) y **los dos añaden una m
 `down_revision = 0034`**: quien fusione segundo tiene que reencadenar la suya. La mía
 (`0035_incidencias_despachables`) está sin fusionar en `f18-panel-incidencias`.
 
+## 4h. El bloque C sigue: la ficha de pregunta (f20)
+
+El §4.2 de los ajustes pide «el sitio donde el propietario arregla las claves dudosas» y dice que hoy
+no existe. Existe desde esta tanda: **`/admin/preguntas?pregunta=<id>`** —la dirección que la bandeja
+del motor y el banco ya usaban para «abrir la pregunta»— ya no cae en la tabla del banco, cae en la
+**ficha**, y la ficha no es un visor: es donde se cambia una respuesta correcta y donde se ve qué se
+está estudiando y con qué garantía.
+
+### Lo que se ha construido
+
+1. **La ficha** (`QuestionFilePage` + `QuestionFile`), con seis bloques y **dos historiales**:
+   la pregunta con sus opciones y **cuál está marcada hoy**; de dónde sale esa respuesta (la lista de
+   respuestas del banco, su estado, **el material del que salió con el estado de *su* versión** y el
+   veredicto de fiabilidad del banco); qué dicen los apuntes, con la letra, la **frase** que lo
+   demuestra y el enlace al apartado exacto; las incidencias del motor con su categoría; si está fuera
+   del temario y por qué; y qué se puede hacer. Debajo, el historial de la pregunta y el de la lista de
+   respuestas, **con la letra que cada uno daba a esta pregunta**: es lo que hace que «no se pisa la
+   anterior» sea un hecho y no una promesa.
+2. **Marcar la respuesta correcta por ruta auditada** (`POST /question-files/{id}/answer-key`), sin SQL
+   suelto: se escribe una **lista de respuestas nueva** con el **mismo estado** que la que manda, la
+   anterior pasa a `superseded` y **se conserva**, y en la **misma transacción** queda el evento
+   `question.answer_key_marked` con el **antes y el después** y el actor.
+3. **Nunca sobre una clave oficial.** El dominio (`protege_cambiar_la_clave`) protege por dos caminos
+   y la pantalla lo dice con su motivo y con **la lista de bancos protegidos**: los dos exámenes de la
+   Guardia Civil 2026 (modelos A y B, `official_exam`) y los cuatro exámenes del INAP —TAI ingreso
+   libre 2025 A/B y TAI promoción interna 2025 A/B—, cada uno con la plantilla de la que salió. Son
+   **10 conjuntos**, y los dos caminos dan exactamente esos diez.
+4. **Reparar lo reparable** (`POST /question-files/{id}/repairs` y el comando
+   `python -m opofuente.tools.reparar_preguntas`): una **vista nueva** de la pregunta, la anterior
+   sustituida y con su motivo, **el sitio viaja con ella** (temas, anclas y fuera-de-temario se mueven,
+   no se copian) y la respuesta correcta la sigue **sin cambiarle ninguna letra**. Y las incidencias de
+   esa pregunta se despachan por **la ruta auditada de la bandeja**, no por SQL.
+5. **Las reglas, en el dominio y con guardas** (`domain/question_file.py`): quitar la referencia del
+   examen pegada al final del enunciado (todas las que haya, con el guardián de que la cola no lleve
+   una pregunta, no pase de 120 caracteres y quede un enunciado que cierre) y partir una opción que se
+   tragó a la siguiente (solo si hay dos trozos y el primero no lleva un `?`).
+
+### Las cifras, contadas en la base (copia `F:\temp-opofuente\f20-datos`)
+
+| | antes | después |
+| --- | --- | --- |
+| enunciados con la referencia pegada (de 17.424 vigentes) | 130 | **14** |
+| … de esos, limpiables por la regla | 116 | **0** |
+| … de los **21** que además tenían incidencia (el bloque del panel) | 20 limpiables | **20 limpiadas, 1 se queda** |
+| de las **11** «reparables» de la bandeja, reparables por una regla | 1 | **1 reparada (el JCL), 0 quedan** |
+| incidencias de la bandeja en `open` | 430 | **410** (20 despachadas con su nota) |
+| preguntas con más de una vista | 0 | **116** (y 116 `superseded`) |
+| temas y anclas sobre preguntas vigentes | 19.819 y 6.311 | **19.819 y 6.311** |
+
+Los dos «21» y «11» del encargo, uno a uno: **de los 21 enunciados con la referencia pegada se
+limpian 20**; el que se queda es un párrafo del BOE de **7.916 caracteres** que no es una referencia
+sino el texto entero de la pregunta, y el guardián lo rechaza. **De las 11 mal importadas que una
+regla marcaba como reparables se repara 1** —la del JCL, que además llevaba las dos reglas: la
+referencia pegada *y* una opción que se había tragado a la siguiente, `JOB 0` + `d) CALL` → `JOB` y
+`CALL`—. Las otras diez **no se tocan y se dice por qué**, con el motivo agrupado:
+
+- **5** son referencias legítimas a otra opción («… conforme a lo indicado en la opción c)»): la
+  pregunta está bien escrita y lo que falla es la regla mecánica, no el texto;
+- **2** son una opción que es el principio de otra y así estaban escritas: se arreglan marcando la
+  respuesta correcta, no el texto;
+- **1** son dos opciones que solo se diferencian en las mayúsculas (`LC_COLLATE`) **y esa diferencia
+  es justo lo que se pregunta**;
+- **1** es una opción que se llevó el resto del documento dentro: hay que volver a extraerla del
+  original, no partirla a ciegas;
+- **1** es un resto al que le falta el principio o el final, y ninguna regla puede adivinar lo que se
+  perdió.
+
+Y **las 18 preguntas sin opciones** que el bloque del panel ya había sacado del temario
+(`enunciado_roto`) siguen donde estaban: eso no es una reparación de texto, es volver al original.
+
+### Por qué las reparaciones no se hacen «todas de golpe»
+
+Se reparan **116 de 130**, no las 130, y las 14 que quedan están miradas una a una: son «Microsoft Word
+2013 estándar», «el Plan España Digital 2025», «el BOE del 14 de julio»… **no son referencias de
+examen**, son el contenido de la pregunta. Y de las 130, **109 no tenían ninguna incidencia**: el
+comando limpia 96 de ellas —13 no se pueden, por lo mismo— porque el encargo lo pide, pero ninguna se
+había señalado nunca.
+
+### La prueba que falla antes
+
+Once pruebas se han puesto **rojas apagando su pieza**, una a una y volviéndolas a poner:
+
+| pieza apagada | pruebas que se ponen rojas |
+| --- | --- |
+| `partir_opcion_fundida` (devuelve `None`) | **3** unitarias del dominio, con el caso real del JCL |
+| la guarda de la clave oficial (`protege_cambiar_la_clave`) | **2** de integración: el rechazo del examen oficial y el de la lista que viene de un documento |
+| dejar la lista anterior en el historial (se borra en vez de sustituirla) | **1**: la plantilla nueva con la anterior conservada |
+| que el sitio viaje (`_carry_place`) | **2**: la vista nueva se lleva el tema y la clave sigue a la pregunta |
+| el historial de la pregunta (se recorta a una vista) | **2**: el historial y la reparación |
+| la dirección `?pregunta=` → la ficha (vuelve a la tabla del banco) | **1** de componentes, que monta el árbol de direcciones entero |
+
+Las dos últimas filas se hicieron **sobre el árbol ya escrito** (con el fichero de dominio y el de
+infraestructura copiados y restaurados byte a byte: los dos hashes coinciden). Y el **e2e** que prueba
+la dirección tenía su rojo antes de escribir nada: en `main`, ese enlace abría la **tabla del banco**
+—la prueba de f18 esperaba «Pregunta 1» y ahora espera «Ficha de la pregunta»—; el cambio de esa
+expectativa es el que dice que la dirección cambió de destino.
+
+### Las capturas
+
+`artifacts/screens/admin-preguntas-ficha-{escritorio,movil}.png`, con **0 violaciones de axe** y **0
+errores de consola** en las dos, **1280 px** y **390 px exactos** de ancho y sin scroll horizontal.
+Salen de la **copia** (`F:\temp-opofuente\f20-datos`), nunca de la base del propietario, y con una
+pregunta **real y de verdad del caso de uso**: una de un banco en cuarentena (`clave_no_fiable`),
+elegida por la API de la bandeja, **vigente** (no una vista ya sustituida) y con el veredicto de
+fiabilidad del §1 a la vista. Del detector de palabras prohibidas sale **una**: **«Celador»**, y no la
+pone esta pantalla —viene del **selector de oposición** del marco del panel, el mismo hallazgo que en
+f16 y f18—. Las imágenes **no se han mirado a ojo** (el modelo de esta sesión no lee imágenes); lo que
+se declara de ellas es lo que el guion mide.
+
+### Las puertas y las pruebas locales
+
+**Las 18 puertas pasan a la primera**, en **39:41 minutos**, con el registro completo —todos los
+intentos y sus causas— en **`F:\temp-opofuente\gates-f20-pregunta.txt`**: formato, lint, mypy
+estricto, eslint, tipos, **792** unitarias de backend, **684** de integración, **29** de contrato,
+**357** de componentes en 39 ficheros, contrato OpenAPI y tipos sincronizados, los dos build, la
+migración desde base vacía con su verificación por `sqlite3`, la siembra idempotente, los fixtures
+frente a las fuentes y las **74** extremo a extremo. Lo corrido durante la tanda, sobre este árbol:
+
+- **backend**: la suite **entera** (unitaria, integración, contrato y migraciones) —**1505 en verde**,
+  cero rojas— y las nuevas de esta tanda, 44: **24 unitarias** del dominio (las dos reglas con sus
+  guardas, el motivo de no reparar y la protección de la clave oficial) y **20 de integración** de la
+  ficha, el marcado y la reparación, incluidos los dos rechazos de la clave oficial y la comprobación
+  de que la anterior **se conserva**;
+- **frontend**: **357** pruebas de componentes en verde (39 ficheros), **13** de ellas nuevas de la
+  ficha (la pantalla, la procedencia, los apuntes, la incidencia, el marcado con su antes, el rechazo
+  del banco oficial, la reparación con su motivo obligatorio, la que no se puede reparar, los dos
+  historiales y la dirección);
+- **extremo a extremo**: **74** en verde (la suite entera), **4** nuevas de la ficha: el ciclo completo
+  —abrir desde el enlace de la bandeja, ver de dónde sale la respuesta, marcarla con su evento de
+  auditoría, reparar la referencia pegada y comprobar en la base que la lista anterior se conserva—,
+  el rechazo del examen oficial con **la lista de respuestas intacta**, y las dos de accesibilidad y
+  responsividad. **Una trampa que costó una corrida**: esta prueba creaba sus preguntas **catalogadas
+  en un tema** y eso le cambiaba la muestra al **diagnóstico** de otra prueba (`study.spec.ts`, de 6 a
+  8 preguntas) —se midió: la prueba del diagnóstico pasa sola y falla después de la mía—; se arregló
+  **no catalogando** las preguntas de esta prueba, porque el sitio que viaja se prueba en la de
+  integración y en la corrida sobre la copia. Y **la del banco** (`incidencias.spec.ts`, de f18) se ha
+  actualizado: su enlace ya no lleva a la tabla sino a la ficha;
+- **capturas**: las **50** del guion en verde, con las dos nuevas de la ficha.
+
+### La copia, y la colisión de revisiones que hay que decir
+
+La copia de trabajo se hizo **de la base real** (nunca al revés) y allí se corrieron las reparaciones y
+las medidas. **La base real ya está en `0036_claves_no_fiables`** —el §1 aplicó su migración—, y este
+árbol conoce hasta **`0035_incidencias_despachables`**, así que la copia se marca en `0035` cambiando
+**solo su fila de `alembic_version`**: el esquema de la copia es el de la base real (un superconjunto
+del de 0035) y por eso la ficha **lee `question_sets.key_reliability` de verdad** —221 conjuntos
+`fiable`, 6 `dudosa` y 10 `no_fiable`— en lugar de decir que la columna no existe. Es la única fila que
+se ha tocado a mano, está dicha aquí y no afecta a ninguna migración: **esta tanda no añade ninguna**,
+porque la ficha lee tablas que ya existían y lo que escribe son filas nuevas de
+`answer_versions`/`question_versions` y sus eventos. Colisión con el §2 de los apuntes: ninguna; con el
+§1, la de arriba (su revisión `0036`).
+
 ## 5. Lo que queda abierto
 
 1. **El acumulado de gasto anterior a f10 no existe** y ya no se puede medir. Desde aquí se anota una

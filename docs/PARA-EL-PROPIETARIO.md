@@ -3,6 +3,64 @@
 Lo que conviene que sepas y **no** hace falta que contestes para que el trabajo siga. Lo que sí
 necesita tu criterio está marcado como **«Decide tú»**.
 
+## 13 oct 2026 — Ya hay dónde arreglar una respuesta correcta (y 116 preguntas mal importadas, reparadas)
+
+**Lo que cambia para ti:**
+
+1. **La ficha de la pregunta existe.** Es la pantalla donde se arregla una respuesta correcta, y hasta
+   hoy no había ninguna: el banco te dejaba *ver* una pregunta, no *arreglarla*. Se llega desde
+   **«Incidencias»** (el botón «Ver la pregunta en el banco») y desde el banco de preguntas, y la
+   dirección es `/admin/preguntas?pregunta=<id>`. Enseña seis cosas y **dos historiales**:
+
+   - el enunciado y las opciones, con **cuál está marcada hoy** como correcta;
+   - **de dónde sale esa respuesta**: la lista de respuestas del banco, si está en uso o sin aprobar,
+     **el documento del que se importó** y en qué estado está esa versión del documento, y **con qué
+     garantía se estudia ese banco** (fiable / en duda / no fiable, tal como lo dejó el bloque de las
+     claves: se lee, no se recalcula);
+   - **qué dicen los apuntes**, con la letra que contestan, la frase que lo demuestra y el enlace al
+     apartado exacto;
+   - **lo que el motor ha señalado** de esa pregunta, con su categoría;
+   - si está **fuera del temario** y por qué;
+   - y **qué se puede hacer**: marcar la respuesta correcta o reparar el texto.
+2. **Marcar la respuesta correcta no pisa la anterior.** Se guarda una lista nueva y la de antes queda
+   como sustituida, legible en el historial con la letra que daba. Cada cambio deja su **evento de
+   auditoría** con lo que había y lo que hay, en la misma operación: no hay forma de cambiar una
+   respuesta sin que quede escrito quién y cuándo.
+3. **Sobre un examen oficial no se puede, y la pantalla lo dice.** Son **10 bancos**: los dos exámenes
+   de la **Guardia Civil 2026** (modelos A y B) y los cuatro del **INAP** —TAI ingreso libre 2025 A y
+   B, y TAI promoción interna 2025 A y B—, cada uno con la plantilla de la que salió. Ahí no hay botón
+   de marcar: hay el motivo y la lista. En un banco protegido solo se puede limpiar el enunciado si se
+   demuestra que las letras no cambian.
+4. **Se han reparado 116 preguntas mal importadas, una a una y reversibles.** Lo que se arregla es
+   texto que la extracción pegó mal: la **referencia del examen** que quedaba enganchada al final del
+   enunciado (`… ¿Qué es LDAPS? 2013 Cuerpo de Gestión de Sistemas de la AGE - Gr.B`) y una **opción
+   que se había tragado a la siguiente** (la del JCL: `JOB 0d) CALL` → `JOB` y `CALL`). Cada arreglo es
+   una **vista nueva** de la pregunta; la de antes se conserva sustituida y con su motivo, así que
+   cualquier arreglo se puede leer y deshacer. Y **la pregunta no se mueve de sitio**: sus temas y sus
+   enlaces a los apuntes viajan con ella (203 temas y 47 enlaces movidos), de modo que el veredicto de
+   un tema no cambia por haberle limpiado una coma al enunciado.
+5. **Lo que no se puede reparar con una regla se queda donde está, y se dice por qué.** De las **11**
+   preguntas que el sistema marcaba como reparables, **se ha reparado 1**. Las otras diez no se tocan
+   porque **no están mal**: cinco son referencias legítimas a otra opción («… conforme a lo indicado en
+   la opción c)»), dos son una opción que es el principio de otra y así estaban escritas, una son dos
+   opciones que solo se diferencian en mayúsculas **y esa diferencia es justo lo que se pregunta**, una
+   se llevó el resto del documento dentro (hay que volver al original) y una es un resto al que le
+   falta texto. Y de los **21** enunciados con la referencia pegada, se han limpiado **20**: el que
+   queda es un párrafo del BOE de 7.916 caracteres, que no es una referencia sino la pregunta entera.
+   **Las 18 preguntas sin opciones siguen fuera del temario**, como estaban: eso no se arregla
+   escribiendo, hay que volver al original.
+6. **20 incidencias de tu bandeja se han cerrado solas** al reparar sus preguntas, con una nota que
+   dice qué se hizo. Tu bandeja pasa de **430 pendientes a 410**.
+
+**Decide tú (cuando quieras, no bloquea nada):**
+
+- Las **diez reparables que no se tocan** están en la bandeja con su motivo, y **cinco de ellas no son
+  un problema de importación**, son referencias a otra opción: si quieres, se puede afinar la regla
+  para que deje de señalarlas. Mientras tanto, mirarlas es trabajo perdido.
+- Dos de ellas (una de «Supuestos Prácticos» con un `ls -la` y otra sobre el artículo 148 de la
+  Constitución) **no son un problema de texto sino de respuesta correcta**: lo que hay que hacer es
+  abrir su ficha y marcar la buena.
+
 ## 13 oct 2026 — La bandeja del motor ya tiene pantalla, y sus 453 incidencias estaban mal etiquetadas
 
 **Lo que cambia para ti:**
