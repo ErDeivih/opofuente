@@ -2119,7 +2119,7 @@ class NotesIncidentRecord(Base):
     __table_args__ = (
         CheckConstraint(
             "category IN ('hueco_sin_material', 'clave_sospechosa', 'pregunta_ambigua', "
-            "'norma_cambiada')",
+            "'norma_cambiada', 'pregunta_mal_importada', 'clave_no_fiable')",
             name="ck_notes_incident_category",
         ),
         CheckConstraint("coverage IN ('doubtful', 'conflict')", name="ck_notes_incident_coverage"),

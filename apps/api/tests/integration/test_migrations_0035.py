@@ -178,6 +178,43 @@ def test_lo_que_ya_estaba_entra_como_pendiente_al_subir(tmp_path: Path) -> None:
     ) == [("open", None, None)], "las filas de antes entran pendientes, que es lo que eran"
 
 
+def test_las_seis_categorias_entran_y_las_de_la_reclasificacion_vuelven_al_bajar(
+    tmp_path: Path,
+) -> None:
+    """El §2 del documento de ajustes añade dos categorías que asigna la reclasificación, no el
+    motor.
+
+    Se comprueba que **entran** —o la reclasificación no podría escribir su resultado— y que la
+    vuelta atrás las devuelve a una de las cuatro que había: bajar de revisión no puede dejar filas
+    en un valor que el `CHECK` viejo no admite.
+    """
+    settings = _settings(tmp_path)
+    run_migrations(settings, revision="head")
+
+    for categoria in ("pregunta_mal_importada", "clave_no_fiable", "norma_cambiada"):
+        _insertar(
+            settings,
+            identificador=f"incidencia-{categoria}",
+            pregunta=f"pregunta-{categoria}",
+            categoria=categoria,
+        )
+
+    assert _filas(settings, "SELECT category FROM notes_incidents ORDER BY category", {}) == [
+        ("clave_no_fiable",),
+        ("norma_cambiada",),
+        ("pregunta_mal_importada",),
+    ]
+
+    _insertar_malo(settings, identificador="incidencia-inventada", categoria="clave_rara")
+
+    command.downgrade(alembic_config(settings), DESDE)
+    assert _filas(settings, "SELECT category FROM notes_incidents ORDER BY category", {}) == [
+        ("clave_sospechosa",),
+        ("hueco_sin_material",),
+        ("norma_cambiada",),
+    ], "lo que estaba en una categoría nueva vuelve a la de la que salió"
+
+
 def test_el_estado_entra_y_los_que_nadie_sabe_despachar_no(tmp_path: Path) -> None:
     settings = _settings(tmp_path)
     run_migrations(settings, revision="head")

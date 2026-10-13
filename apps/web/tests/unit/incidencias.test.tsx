@@ -28,20 +28,26 @@ import { renderWithProviders, stubApi } from './testUtils';
 const TEMA = 'I.2';
 
 /**
- * Las cuatro cifras reales de la bandeja, con **una sola** incidencia en la página: es lo que prueba
- * que los números salen de la base y no de las filas que se están mirando.
+ * Las seis cifras **reclasificadas** del §2 del documento de ajustes, con **una sola** incidencia en
+ * la página: es lo que prueba que los números salen de la base y no de las filas que se están
+ * mirando. Son las de la copia de la base real después de la reclasificación (13-oct-2026): 430 en
+ * la bandeja de las 453, y `norma_cambiada` a cero porque esa categoría exige la cita de la norma
+ * vigente con su versión o fecha, y sin esa evidencia una clave que contradice los apuntes es una
+ * clave sospechosa.
  */
 const BANDEJA: IncidentPage = {
-  pending: 453,
+  pending: 430,
   in_progress: 0,
   reviewed: 0,
   dismissed: 0,
-  total: 453,
+  total: 430,
   totals_by_category: {
-    hueco_sin_material: 40,
-    clave_sospechosa: 110,
-    norma_cambiada: 291,
-    pregunta_ambigua: 12,
+    pregunta_mal_importada: 29,
+    clave_no_fiable: 158,
+    clave_sospechosa: 200,
+    norma_cambiada: 0,
+    hueco_sin_material: 34,
+    pregunta_ambigua: 9,
   },
   incidents: [
     {
@@ -183,19 +189,40 @@ describe('la bandeja del motor', () => {
     expect(within(fila).getByRole('link', { name: /ver la pregunta en el banco/i })).toBeInTheDocument();
   });
 
-  it('las cuatro cifras por categoría son las de la base, no las de la página', async () => {
+  it('las cifras por categoría son las de la base, no las de la página', async () => {
     montar();
 
     await filas();
 
     const categorias = screen.getByRole('group', { name: /filtrar por categoría/i });
-    expect(within(categorias).getByRole('button', { name: /todas\s*453/i })).toBeInTheDocument();
-    expect(within(categorias).getByRole('button', { name: /norma cambiada\s*291/i })).toBeInTheDocument();
-    expect(within(categorias).getByRole('button', { name: /clave sospechosa\s*110/i })).toBeInTheDocument();
-    expect(within(categorias).getByRole('button', { name: /hueco sin material\s*40/i })).toBeInTheDocument();
-    expect(within(categorias).getByRole('button', { name: /pregunta ambigua\s*12/i })).toBeInTheDocument();
-    // La lista trae una y el total dice 453: el número no se cuenta de las filas.
-    expect(screen.getByText(/· 453 con estos filtros/i)).toBeInTheDocument();
+    expect(within(categorias).getByRole('button', { name: /todas\s*430/i })).toBeInTheDocument();
+    // Las seis, en el orden de comprobación del §2, y con la cifra medida en la base.
+    expect(
+      within(categorias).getByRole('button', { name: /pregunta mal importada\s*29/i }),
+    ).toBeInTheDocument();
+    expect(within(categorias).getByRole('button', { name: /clave no fiable\s*158/i })).toBeInTheDocument();
+    expect(within(categorias).getByRole('button', { name: /clave sospechosa\s*200/i })).toBeInTheDocument();
+    expect(within(categorias).getByRole('button', { name: /norma cambiada\s*0/i })).toBeInTheDocument();
+    expect(within(categorias).getByRole('button', { name: /hueco sin material\s*34/i })).toBeInTheDocument();
+    expect(within(categorias).getByRole('button', { name: /pregunta ambigua\s*9/i })).toBeInTheDocument();
+    // Un cero se enseña: un botón que desaparece obliga a la pantalla a inventarse la ausencia.
+    expect(within(categorias).getByRole('button', { name: /norma cambiada\s*0/i })).toBeEnabled();
+    // La lista trae una y el total dice 430: el número no se cuenta de las filas.
+    expect(screen.getByText(/· 430 con estos filtros/i)).toBeInTheDocument();
+  });
+
+  it('dice cuándo una clave sospechosa no trae la frase que la demuestra', async () => {
+    montar('', '/admin/incidencias', {
+      ...BANDEJA,
+      incidents: [{ ...BANDEJA.incidents[0]!, phrase: null }],
+    });
+
+    const fila = (await filas())[0]!;
+
+    // Sin la cita verificada la sospecha es más débil, y cambia lo que hay que hacer: abrir la
+    // pregunta en lugar de leer la frase.
+    expect(within(fila).getByText(/sin la frase que lo demuestra/i)).toBeInTheDocument();
+    expect(within(fila).queryByText(/la competencia la ejerce el Ministerio/i)).toBeNull();
   });
 
   it('despacha una incidencia con su estado y su nota por la ruta auditada', async () => {
@@ -250,7 +277,7 @@ describe('la bandeja del motor', () => {
       'patrimonio',
     );
     expect(
-      screen.getByRole('button', { name: /norma cambiada\s*291/i, pressed: true }),
+      screen.getByRole('button', { name: /norma cambiada\s*0/i, pressed: true }),
     ).toBeInTheDocument();
   });
 

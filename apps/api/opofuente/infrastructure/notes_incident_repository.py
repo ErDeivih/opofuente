@@ -22,18 +22,24 @@ Tres cosas y las tres con una regla detrás:
 from __future__ import annotations
 
 import json
+from collections.abc import Sequence
+from dataclasses import dataclass
 from datetime import datetime
 from uuid import uuid4
 
-from sqlalchemy import Select, func, or_, select
+from sqlalchemy import Select, func, inspect, or_, select, text
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.sql.elements import ColumnElement
 
 from opofuente.domain.notes_incidents import (
+    MINIMO_COMPROBADO,
+    UMBRAL_NO_FIABLE,
     IncidentCoverage,
     IncidentFilter,
     IncidentStatus,
     NotesIncident,
+    Reclasificacion,
+    fiabilidad_por_discrepancia,
     normalise_note,
     reviewed_at_for,
 )
@@ -45,6 +51,8 @@ from opofuente.infrastructure.db_models import (
     DocumentVersionRecord,
     LogicalDocumentRecord,
     NotesIncidentRecord,
+    OptionVersionRecord,
+    QuestionNoteAnchorRecord,
     QuestionSetRecord,
     QuestionVersionRecord,
     TopicNoteSectionRecord,
@@ -53,8 +61,66 @@ from opofuente.infrastructure.db_models import (
 #: La acción del evento de despacho, con el mismo vocabulario `objeto.verbo` que el resto.
 ACCION_DESPACHO = "notes.incident_updated"
 
+#: La acción del evento de la reclasificación del §2: la incidencia cambia de categoría.
+ACCION_RECLASIFICACION = "notes.incident_reclassified"
+
+#: Y la de la incidencia que **sale** de la bandeja porque no era una incidencia (falso positivo).
+ACCION_RETIRADA = "notes.incident_dropped"
+
 #: El objeto de la auditoría es **la incidencia**, no el tema: el despacho es de la incidencia.
 OBJETO_INCIDENCIA = "note_incident"
+
+
+@dataclass(frozen=True, slots=True)
+class ReclassificationSummary:
+    """Lo que hizo una pasada de reclasificación: cuántas cambiaron, cuántas salieron y el total."""
+
+    actualizadas: int
+    retiradas: int
+    total: int
+
+
+@dataclass(frozen=True, slots=True)
+class IncidentEvidence:
+    """Todo lo que hace falta para decidir la categoría de una incidencia, en una sola lectura.
+
+    `letra`, `esperadas`, `resultado` y `frase_del_ancla` salen de la **comprobación** del motor
+    (`question_note_anchors`), que es donde está lo que los apuntes contestaron de verdad: la
+    incidencia guarda el desenlace que el motor contó, pero la comprobación de hoy es la que dice si
+    la letra de los apuntes está en la clave (el falso positivo) y cuál es la frase que lo
+    demuestra.
+    """
+
+    incident_id: str
+    categoria: CategoriaIncidencia
+    motivo: Motivo
+    detalle: str
+    phrase: str | None
+    question_version_id: str
+    question_set_id: str
+    question_type: str
+    stem: str
+    opciones: tuple[str, ...]
+    letra: str | None
+    esperadas: tuple[str, ...]
+    resultado: str | None
+    frase_del_ancla: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class KeyReliability:
+    """La fiabilidad de las claves por conjunto, y **de dónde** ha salido.
+
+    `fuente` viaja con el mapa a propósito: hay dos caminos posibles —la columna `question_sets.
+    key_reliability` que añade el §1, o la regla del §1 calculada aquí como respaldo— y el informe
+    del
+    comando tiene que poder decir cuál se usó. Dos verdades calladas sobre lo mismo es lo que este
+    campo evita.
+    """
+
+    por_conjunto: dict[str, str]
+    fuente: str
+
 
 #: Las siete piezas de una fila de la bandeja, en el orden en que las devuelve `_consulta`.
 #:
@@ -250,6 +316,213 @@ class SqlAlchemyNotesIncidentRepository:
             session.commit()
         return self.get(incident_id)
 
+    # ------------------------------------------------------------------ la reclasificación (§2)
+
+    def reclassification_evidence(self) -> tuple[IncidentEvidence, ...]:
+        """Lo que hace falta para reclasificar: la incidencia, su pregunta, sus opciones y su
+        comprobación.
+
+        Se lee **todo de una vez** y no pregunta a pregunta porque la reclasificación es una pasada
+        sobre la bandeja entera: 453 consultas para leer 453 filas es la forma de tardar un minuto
+        en
+        lo que se hace en un segundo, y de paso el resultado es una foto coherente —las cuatro
+        lecturas son de la misma transacción— en lugar de una mezcla de instantes distintos.
+        """
+        with self._session_factory() as session:
+            incidencias = session.execute(
+                select(NotesIncidentRecord, QuestionVersionRecord, QuestionSetRecord)
+                .join(
+                    QuestionVersionRecord,
+                    QuestionVersionRecord.id == NotesIncidentRecord.question_version_id,
+                )
+                .join(
+                    QuestionSetRecord, QuestionSetRecord.id == QuestionVersionRecord.question_set_id
+                )
+                .order_by(NotesIncidentRecord.id)
+            ).all()
+            opciones: dict[str, list[str]] = {}
+            for pregunta_id, texto in session.execute(
+                select(OptionVersionRecord.question_version_id, OptionVersionRecord.text).order_by(
+                    OptionVersionRecord.position
+                )
+            ).all():
+                opciones.setdefault(str(pregunta_id), []).append(str(texto))
+            anclas: dict[tuple[str, str], QuestionNoteAnchorRecord] = {}
+            for fila_ancla in session.execute(select(QuestionNoteAnchorRecord)).scalars():
+                anclas[
+                    (
+                        str(fila_ancla.question_version_id),
+                        str(fila_ancla.curriculum_node_id),
+                    )
+                ] = fila_ancla
+
+        evidencias: list[IncidentEvidence] = []
+        for incidencia, pregunta, conjunto in incidencias:
+            comprobacion = anclas.get(
+                (str(incidencia.question_version_id), str(incidencia.curriculum_node_id))
+            )
+            evidencias.append(
+                IncidentEvidence(
+                    incident_id=str(incidencia.id),
+                    categoria=CategoriaIncidencia(str(incidencia.category)),
+                    motivo=Motivo(str(incidencia.reason)),
+                    detalle=str(incidencia.detail),
+                    phrase=None if incidencia.phrase is None else str(incidencia.phrase),
+                    question_version_id=str(incidencia.question_version_id),
+                    question_set_id=str(conjunto.id),
+                    question_type=str(pregunta.question_type),
+                    stem=str(pregunta.stem),
+                    opciones=tuple(opciones.get(str(pregunta.id), ())),
+                    letra=(
+                        None
+                        if comprobacion is None or comprobacion.answer_letter is None
+                        else str(comprobacion.answer_letter)
+                    ),
+                    esperadas=(
+                        () if comprobacion is None else _letras(comprobacion.expected_letters)
+                    ),
+                    resultado=None if comprobacion is None else str(comprobacion.result),
+                    frase_del_ancla=(
+                        None
+                        if comprobacion is None or comprobacion.quoted_sentence is None
+                        else str(comprobacion.quoted_sentence)
+                    ),
+                )
+            )
+        return tuple(evidencias)
+
+    def key_reliability(self) -> KeyReliability:
+        """La fiabilidad de la clave de cada conjunto, con la columna del §1 si ya existe.
+
+        Si la columna `question_sets.key_reliability` está, **manda ella**: es la que el §1 mantiene
+        como puerta de datos permanente y la que el alumno acabará viendo. Si no está —este bloque
+        llega antes—, se calcula aquí la regla del §1 (mínimo 15 comprobaciones, más del 30 % de
+        discrepancias) para poder medir y publicar la reclasificación, y `fuente` lo dice.
+
+        La columna se lee por su **nombre** (`SELECT id, key_reliability …`) y no por el modelo: no
+        es
+        de esta tanda y no está en `db_models.py`, así que traerla al modelo sería adelantar el
+        trabajo del §1 y crear un choque de ficheros entre los dos bloques. Lo que sí se comprueba
+        —con `inspect`— es que la columna existe antes de leerla.
+        """
+        with self._session_factory() as session:
+            columnas = {
+                str(columna["name"])
+                for columna in inspect(session.get_bind()).get_columns("question_sets")
+            }
+            if "key_reliability" in columnas:
+                mapa = {
+                    str(set_id): str(estado)
+                    for set_id, estado in session.execute(
+                        text("SELECT id, key_reliability FROM question_sets")
+                    ).all()
+                    if estado is not None
+                }
+                return KeyReliability(
+                    por_conjunto=mapa, fuente="la columna question_sets.key_reliability (§1)"
+                )
+        return KeyReliability(
+            por_conjunto=self._discrepancia_por_conjunto(),
+            fuente=(
+                "calculada con la regla del §1 (mínimo "
+                f"{MINIMO_COMPROBADO} comprobaciones, más del {UMBRAL_NO_FIABLE:.0%}) porque la "
+                "columna key_reliability todavía no existe"
+            ),
+        )
+
+    def _discrepancia_por_conjunto(self) -> dict[str, str]:
+        """La regla del §1 medible hoy: por conjunto, cuántas letras de los apuntes contradicen la
+        clave sobre las que se pudieron comprobar."""
+        with self._session_factory() as session:
+            conjunto_de = {
+                str(pregunta_id): str(set_id)
+                for pregunta_id, set_id in session.execute(
+                    select(QuestionVersionRecord.id, QuestionVersionRecord.question_set_id)
+                ).all()
+            }
+            cuenta: dict[str, list[int]] = {}
+            for pregunta_id, letra, esperadas in session.execute(
+                select(
+                    QuestionNoteAnchorRecord.question_version_id,
+                    QuestionNoteAnchorRecord.answer_letter,
+                    QuestionNoteAnchorRecord.expected_letters,
+                ).where(QuestionNoteAnchorRecord.answer_letter.is_not(None))
+            ).all():
+                set_id = conjunto_de.get(str(pregunta_id))
+                if set_id is None or not _letras(esperadas):
+                    continue
+                par = cuenta.setdefault(set_id, [0, 0])
+                par[1] += 1
+                if str(letra).strip().lower() not in _letras(esperadas):
+                    par[0] += 1
+        fiabilidad: dict[str, str] = {}
+        for set_id, (mal, comprobadas) in cuenta.items():
+            estado = fiabilidad_por_discrepancia(mal, comprobadas)
+            if estado is not None:
+                fiabilidad[set_id] = estado
+        return fiabilidad
+
+    def reclassify(
+        self, cambios: Sequence[Reclasificacion], *, actor: str, now: datetime
+    ) -> ReclassificationSummary:
+        """Reescribe la categoría de una tanda y saca de la bandeja las que no lo son.
+
+        Es la escritura del §2 del documento de ajustes, y va por aquí —y no por un `UPDATE` suelto—
+        por las mismas razones que el despacho: cada cambio deja su **evento de auditoría** con lo
+        que había y lo que queda, y los cambios de una tanda entran en **una sola transacción**, así
+        que una ejecución interrumpida no deja media bandeja reclasificada.
+
+        Lo que **no** hace: tocar el estado (`status`). Una incidencia reclasificada es el mismo
+        hallazgo con la etiqueta que le tocaba, y si alguien ya la había puesto en curso o la había
+        despachado, eso es su decisión y no la de este comando. El motor hace lo mismo cuando vuelve
+        a
+        comprobar un tema.
+        """
+        actualizadas = 0
+        retiradas = 0
+        with self._session_factory() as session:
+            for cambio in cambios:
+                fila = session.get(NotesIncidentRecord, cambio.incident_id)
+                if fila is None:
+                    continue
+                antes = {
+                    "incident_id": cambio.incident_id,
+                    "category": str(fila.category),
+                }
+                if cambio.categoria is None:
+                    session.delete(fila)
+                    retiradas += 1
+                    despues = {"incident_id": cambio.incident_id, "category": None}
+                    accion = ACCION_RETIRADA
+                else:
+                    fila.category = cambio.categoria.value
+                    fila.detail = cambio.detalle
+                    if cambio.phrase is not None:
+                        fila.phrase = cambio.phrase
+                    actualizadas += 1
+                    despues = {
+                        "incident_id": cambio.incident_id,
+                        "category": cambio.categoria.value,
+                    }
+                    accion = ACCION_RECLASIFICACION
+                session.add(
+                    AuditEventRecord(
+                        id=str(uuid4()),
+                        actor=actor,
+                        action=accion,
+                        object_type=OBJETO_INCIDENCIA,
+                        object_id=cambio.incident_id,
+                        before_json=json.dumps(antes, ensure_ascii=False, sort_keys=True),
+                        after_json=json.dumps(despues, ensure_ascii=False, sort_keys=True),
+                        correlation_id=None,
+                        created_at=now,
+                    )
+                )
+            session.commit()
+        return ReclassificationSummary(
+            actualizadas=actualizadas, retiradas=retiradas, total=len(cambios)
+        )
+
 
 def _consulta() -> Select[_Fila]:
     """La incidencia con su tema, su apartado, su pregunta y el material del que salió.
@@ -296,6 +569,22 @@ def _consulta() -> Select[_Fila]:
             LogicalDocumentRecord.id == DocumentVersionRecord.logical_document_id,
         )
     )
+
+
+def _letras(texto: str | None) -> tuple[str, ...]:
+    """Las letras esperadas de una comprobación, que viajan como JSON en una columna de texto.
+
+    La columna la escribe el motor como `["a"]`; se defiende de un texto suelto —una fila vieja o de
+    una migración a medias— porque una excepción aquí tumbaría la reclasificación entera por una
+    fila.
+    """
+    if texto is None:
+        return ()
+    try:
+        cargado = json.loads(texto)
+    except json.JSONDecodeError:
+        return tuple(parte.strip() for parte in texto.split(",") if parte.strip())
+    return tuple(str(cual).strip() for cual in cargado if str(cual).strip())
 
 
 def _busqueda(texto: str) -> ColumnElement[bool]:
@@ -360,6 +649,11 @@ def _incidencia(
 
 __all__ = [
     "ACCION_DESPACHO",
+    "ACCION_RECLASIFICACION",
+    "ACCION_RETIRADA",
     "OBJETO_INCIDENCIA",
+    "IncidentEvidence",
+    "KeyReliability",
+    "ReclassificationSummary",
     "SqlAlchemyNotesIncidentRepository",
 ]

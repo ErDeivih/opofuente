@@ -32,30 +32,36 @@ export type IncidentReason = NotesIncident['reason'];
 export const INCIDENTS_LIMIT = 200;
 
 /**
- * La categoría en palabras, en el orden en que se trabaja.
+ * La categoría en palabras, en el orden del §2 del documento de ajustes.
  *
- * El orden no es alfabético: primero lo que hay que **escribir** en los apuntes, luego lo que hay que
- * **mirar** en una respuesta correcta, después la norma y por último la pregunta que no se pudo
- * situar. Es el orden del vocabulario del §2.1.4 del objetivo.
+ * El orden **es el de comprobación**, y por eso no es el alfabético ni el de tamaño: primero lo que
+ * está roto por su forma —una pregunta mal importada no se juzga por su clave—, después lo que no se
+ * puede juzgar porque su clave está en cuarentena, y solo entonces lo que hay que mirar en la clave,
+ * en los apuntes o en la norma. Es el orden en el que hay que trabajar la bandeja.
  *
- * Estos cuatro nombres **son los de la categoría del dominio**, tal como el objetivo los fija
- * (`hueco_sin_material`, `clave_sospechosa`, `pregunta_ambigua`, `norma_cambiada`). Por eso la
- * pantalla los pinta dentro de un contenedor `data-contenido`, igual que f16 hizo con los títulos del
- * programa oficial: son el **nombre de lo que el motor registró**, no una frase nuestra. Las frases
- * de la interfaz —las de esta pantalla y las de sus botones— no usan el vocabulario de dentro.
+ * Estos seis nombres **son los de la categoría del dominio**, tal como el §2 los fija
+ * (`pregunta_mal_importada`, `clave_no_fiable`, `clave_sospechosa`, `norma_cambiada`,
+ * `hueco_sin_material`, `pregunta_ambigua`). Por eso la pantalla los pinta dentro de un contenedor
+ * `data-contenido`, igual que f16 hizo con los títulos del programa oficial: son el **nombre de lo
+ * que el motor registró**, no una frase nuestra. Las frases de la interfaz —las de esta pantalla y
+ * las de sus botones— no usan el vocabulario de dentro.
  */
 export const INCIDENT_CATEGORY_LABELS: Record<IncidentCategory, string> = {
-  hueco_sin_material: 'Hueco sin material',
+  pregunta_mal_importada: 'Pregunta mal importada',
+  clave_no_fiable: 'Clave no fiable',
   clave_sospechosa: 'Clave sospechosa',
   norma_cambiada: 'Norma cambiada',
+  hueco_sin_material: 'Hueco sin material',
   pregunta_ambigua: 'Pregunta ambigua',
 };
 
-/** Las cuatro categorías, en el orden en que se enseñan los filtros y las cifras. */
+/** Las seis categorías, en el orden de comprobación del §2: es el orden de los filtros. */
 export const INCIDENT_CATEGORIES: readonly IncidentCategory[] = [
-  'hueco_sin_material',
+  'pregunta_mal_importada',
+  'clave_no_fiable',
   'clave_sospechosa',
   'norma_cambiada',
+  'hueco_sin_material',
   'pregunta_ambigua',
 ];
 

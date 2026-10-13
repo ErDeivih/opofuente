@@ -2993,6 +2993,15 @@ kbd {
   margin: var(--s2) 0 0;
 }
 
+/* Una clave sospechosa sin la cita que la demuestra: es la marca de que hay que abrir la pregunta,
+   así que se ve —en el tono de la duda, que es el que esta aplicación reserva para lo que no está
+   resuelto— sin gritar. */
+.incidencias__sin-frase {
+  margin: var(--s2) 0 0;
+  color: var(--dudosa);
+  overflow-wrap: anywhere;
+}
+
 /* Lo que anotó la corrida: está, pero no compite con lo que hay que leer para decidir. */
 .incidencias__detalle {
   margin-top: var(--s3);

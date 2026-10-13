@@ -110,6 +110,20 @@ export function IncidentRow({ incidencia, busy, onDispatch }: IncidentRowProps) 
         </blockquote>
       )}
 
+      {/*
+        Una clave sospechosa **sin** la frase que la demuestra es una sospecha más débil: el motor
+        vio que la letra de los apuntes no está en la clave, pero no pudo verificar la cita que lo
+        sostiene. Se dice, porque cambia lo que hay que hacer: abrir la pregunta en lugar de leer la
+        frase.
+      */}
+      {incidencia.category === 'clave_sospechosa' &&
+        (incidencia.phrase === null || incidencia.phrase === undefined) && (
+          <p className="incidencias__sin-frase">
+            Sin la frase que lo demuestra: no se pudo verificar una cita de los apuntes para esta
+            contradicción, así que hay que abrir la pregunta.
+          </p>
+        )}
+
       <p className="avisos__apartado">
         {apartadoHref === null ? (
           <span className="avisos__apartado-perdido">

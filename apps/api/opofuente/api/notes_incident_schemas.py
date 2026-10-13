@@ -25,7 +25,12 @@ from opofuente.domain.notes_reports import MAX_REASON_CHARS
 
 #: La categoría con la que una incidencia entra en la bandeja: quién tiene que arreglarla.
 IncidentCategoryName = Literal[
-    "hueco_sin_material", "clave_sospechosa", "pregunta_ambigua", "norma_cambiada"
+    "hueco_sin_material",
+    "clave_sospechosa",
+    "pregunta_ambigua",
+    "norma_cambiada",
+    "pregunta_mal_importada",
+    "clave_no_fiable",
 ]
 
 #: Qué pasó exactamente. Es el vocabulario de `domain.topic_notes.Motivo`.

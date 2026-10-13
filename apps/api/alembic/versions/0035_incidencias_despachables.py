@@ -50,6 +50,16 @@ depends_on = None
 #: El vocabulario del estado: el mismo de la bandeja del alumno, que es el que ya existe.
 _ESTADOS = "status IN ('open', 'in_progress', 'reviewed', 'dismissed')"
 
+#: Las categorías que la bandeja admite. Son **seis** y no cuatro desde el §2 del documento de
+#: ajustes: la tabla nació con las cuatro del motor y la reclasificación asigna dos más
+#: (`pregunta_mal_importada` y `clave_no_fiable`), que el motor no sabe poner porque no son defectos
+#: de la clave sino de la pregunta o de su conjunto. El `CHECK` tiene que admitirlas o la
+#: reclasificación no podría escribir su resultado.
+_CATEGORIAS = (
+    "category IN ('hueco_sin_material', 'clave_sospechosa', 'pregunta_ambigua', "
+    "'norma_cambiada', 'pregunta_mal_importada', 'clave_no_fiable')"
+)
+
 #: La nota: nula o con algo dentro. En blanco no: una nota que no dice nada es peor que no tenerla.
 _NOTA = "resolution_note IS NULL OR length(trim(resolution_note)) > 0"
 
@@ -70,6 +80,11 @@ def upgrade() -> None:
         batch.add_column(sa.Column("reviewed_at", sa.DateTime(timezone=True), nullable=True))
         batch.create_check_constraint("ck_notes_incident_status", _ESTADOS)
         batch.create_check_constraint("ck_notes_incident_note", _NOTA)
+        # Ensanchar el vocabulario de la categoría recrea la tabla igual que el estado: las cuatro
+        # de
+        # `0031` siguen ahí y entran las dos que asigna la reclasificación.
+        batch.drop_constraint("ck_notes_incident_category", type_="check")
+        batch.create_check_constraint("ck_notes_incident_category", _CATEGORIAS)
     # El índice del filtro de la bandeja: «las pendientes de esta categoría» es la consulta que la
     # pantalla hace cada vez que se enciende.
     op.create_index("ix_notes_incidents_status_category", "notes_incidents", ["status", "category"])
@@ -77,9 +92,27 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     op.drop_index("ix_notes_incidents_status_category", table_name="notes_incidents")
+    # Lo que esté en una categoría que el vocabulario viejo no admite vuelve a la categoría de la
+    # que
+    # salió: una pregunta mal importada es trabajo de los apuntes y una clave no fiable es una clave
+    # que hay que revisar. Sin esto, la recreación de la tabla fallaría a mitad.
+    op.execute(
+        "UPDATE notes_incidents SET category = 'hueco_sin_material' "
+        "WHERE category = 'pregunta_mal_importada'"
+    )
+    op.execute(
+        "UPDATE notes_incidents SET category = 'clave_sospechosa' "
+        "WHERE category = 'clave_no_fiable'"
+    )
     with op.batch_alter_table("notes_incidents") as batch:
         batch.drop_constraint("ck_notes_incident_note", type_="check")
         batch.drop_constraint("ck_notes_incident_status", type_="check")
+        batch.drop_constraint("ck_notes_incident_category", type_="check")
+        batch.create_check_constraint(
+            "ck_notes_incident_category",
+            "category IN ('hueco_sin_material', 'clave_sospechosa', 'pregunta_ambigua', "
+            "'norma_cambiada')",
+        )
         batch.drop_column("reviewed_at")
         batch.drop_column("resolution_note")
         batch.drop_column("status")

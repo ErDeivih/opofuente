@@ -5958,7 +5958,7 @@ export interface components {
              * Category
              * @enum {string}
              */
-            category: "hueco_sin_material" | "clave_sospechosa" | "pregunta_ambigua" | "norma_cambiada";
+            category: "hueco_sin_material" | "clave_sospechosa" | "pregunta_ambigua" | "norma_cambiada" | "pregunta_mal_importada" | "clave_no_fiable";
             /** Category Help */
             category_help: string;
             /**
@@ -14109,7 +14109,7 @@ export interface operations {
         parameters: {
             query?: {
                 /** @description Filtra por categoría; sin ella salen todas. */
-                category?: ("hueco_sin_material" | "clave_sospechosa" | "pregunta_ambigua" | "norma_cambiada") | null;
+                category?: ("hueco_sin_material" | "clave_sospechosa" | "pregunta_ambigua" | "norma_cambiada" | "pregunta_mal_importada" | "clave_no_fiable") | null;
                 /** @description Filtra por estado; sin él salen todas. */
                 status?: ("open" | "in_progress" | "reviewed" | "dismissed") | null;
                 /** @description Código legible del tema, como `I.2`, para ver solo las de un tema. */
