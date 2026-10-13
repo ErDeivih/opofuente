@@ -1067,3 +1067,214 @@ conjuntos que no son fiables dicen lo mismo: no es un desplazamiento**.
 **Conclusión, la de siempre y ahora con la prueba entera: las claves no están corridas, están mal en
 muchos sitios**, y el paso siguiente es la clave derivada del §1. No hay ninguna excepción que
 aplicar ni ninguna lista que mantener.
+
+## F21 · La tanda de contenido por valor: cuatro índices y la base que había que migrar (13-oct-2026)
+
+**Rama `f21-temas-valor`** (worktree `F:\temp-opofuente\opofuente-contenido`, desde `main = d67e799`).
+Es la primera tanda que aplica el **ritmo nuevo del §4** de `AJUSTES-AL-OBJETIVO-CLAVES-Y-RITMO-2026-10.md`:
+contenido **directo sobre la base real**, sin rama de contenido y **sin batería de 18 puertas**, decidido
+por las puertas de datos del tema.
+
+### 1. La base real no estaba migrada: la cuarentena estaba en el código, no en los datos
+
+`main = d67e799` ya trae el motor de F19, pero la base real estaba en **`0034_avisos_en_curso_y_nota`**:
+la columna `question_sets.key_reliability` **no existía** y cualquier lectura fallaba con
+`no such column: question_sets.key_reliability` — `--listar`, `--esquema`, `--prever` y la corrida.
+Es decir: la cuarentena que el encargo da por puesta **no estaba aplicada a los datos**.
+
+| Qué | Cómo |
+|---|---|
+| Migración | `alembic upgrade head` → `0035_incidencias_despachables` + `0036_claves_no_fiables` (aditivas: cuatro columnas con `server_default`, tres `CHECK` y un índice; la vuelta atrás de la `0036` está probada por F19) |
+| Copia de seguridad | `20261013-113403-e4c97c.zip` (revisión **0034**, verificada hoy) — es la vuelta atrás real |
+| Veredictos | Poblados por la **vía auditada** (`measures()` + `apply()`, actor `f19:puerta-de-claves`): **144 conjuntos medibles**, **16 cambios de veredicto**, cada uno con su evento de auditoría → **10 `no_fiable` · 6 `dudosa` · 221 `fiable`** |
+| Coste | **0 $** (la puerta de claves no llama al modelo) |
+
+Las cifras coinciden **exactamente** con las que F19 midió sobre una copia (§7 de F19): mismos 16
+cambios, mismos 10 conjuntos en cuarentena. La decisión está en `DECISIONES-TOMADAS-EN-EL-OBJETIVO.md`.
+
+### 2. «Dos temas a la vez» no es posible, y el límite no es la API
+
+El §4 pide lanzar dos temas a la vez si la API lo aguanta y medir el 429. **Medido**: el motor tiene
+una marca **única** en `app_metadata` — `CLAVE_APUNTES = "apuntes_en_curso"`, en
+`infrastructure/run_lock.py`— y **sin el tema en la clave**, así que la segunda corrida (del mismo tema
+o de otro) se niega con `ClassificationAlreadyRunningError` y sale con código 1 **antes de llamar al
+modelo**. No hay 429: la API no se llega a tocar. La sonda de latencia confirma que la API está sana
+(**6,2 s y 6,6 s** por petición pequeña).
+
+El candado es **deliberado** y está documentado en su propio módulo: el 10-oct-2026 dos corridas de
+`apuntes` a la vez sobre I.6 obligaron a matar la segunda. Abrirlo **por tema**
+(`clave=f"{CLAVE_APUNTES}:{tema}"`) es un cambio de **motor** —con su prueba que falla antes y sus
+18/18— y no cambia lo que se puede entregar en esta tanda: queda **propuesto**, no hecho.
+
+### 3. La tabla de valor, vuelta a medir con la cuarentena puesta
+
+La tabla del §4d se midió el 11-oct, **antes** de la cuarentena. Vuelta a medir hoy (`valor_por_tema.py`
+sobre la base real, con `question_groups` filtrando ya los conjuntos `no_fiable`): los números bajan
+en los temas que tienen conjuntos en cuarentena y **suben los que quedan por hacer**. Los diez primeros
+por **clave utilizable**:
+
+| # | Tema | Grupos | Preguntas | Con clave | **Clave utilizable** | Hechos | Estado |
+|---|---|---|---|---|---|---|---|
+| 1 | I.1 | 1.998 | 2.023 | 2.016 | **1.985** | 3.511 | publicado |
+| 2 | IV.2 | 751 | 767 | 757 | **739** | 1.543 | publicado |
+| 3 | I.2 | 613 | 692 | 682 | **656** | 1.233 | publicado |
+| 4 | I.4 | 537 | 589 | 564 | **549** | 1.056 | borrador (88,9 %) |
+| 5 | **I.7** | 364 | 564 | 528 | **528** | 0 | **esta tanda** |
+| 6 | I.8 | 413 | 557 | 517 | **491** | 815 | borrador (82,0 %) |
+| 7 | II.4 | 446 | 481 | 471 | **435** | 1.046 | publicado |
+| 8 | IV.7 | 442 | 472 | 459 | **433** | 958 | publicado |
+| 9 | III.4 | 405 | 416 | 415 | **415** | 0 | **NO se escribe (ver §5)** |
+| 10 | IV.5 | 387 | 402 | 395 | **395** | 0 | **esta tanda** |
+
+*(La columna «clave utilizable» sale de la base con la cuarentena puesta. En los temas ya escritos se ve
+su efecto: I.1 2.035 → 1.985, IV.7 511 → 433, I.6 283 → 239.)*
+
+### 4. Los cuatro índices, escritos y ensayados **antes** de pagar (0 $)
+
+El bloque manda que el árbol se decida antes de facturar: `--esquema` y el ensayo de reparto (los dos
+de solo lectura) deciden si el catálogo sirve antes de que se llame a nadie.
+
+| tema | apartados | grupos situados por el enunciado | revisión del índice | previsión (`--prever`) | tope |
+|---|---|---|---|---|---|
+| **I.7** | 19 (por las normas del tema) | **339/364 = 93,1 %** | PASA | 72–125 llamadas · 0,49–0,85 $ | 1,13 $ |
+| **IV.5** | 16 (por asunto) | **381/387 = 98,4 %** | PASA | 75–130 llamadas · 0,51–0,88 $ | 1,17 $ |
+| **I.5** | 14 (por sus cinco normas) | **300/340 = 88,2 %** | PASA | 61–105 llamadas · 0,41–0,71 $ | 0,95 $ |
+| **III.9** | 13 (por asunto) | **312/346 = 90,2 %** | PASA | 63–108 llamadas · 0,43–0,73 $ | 0,97 $ |
+
+Los grupos que ningún catálogo sitúa **no** se esconden en un cajón: van a la bandeja del propietario
+con su motivo, que es lo que el índice manda. En I.7 están clasificados **uno a uno** y el informe lo
+dice: ~14 grupos son de **otro tema** (cartografía del IGN, ciberseguridad/NIS, TLS, HDB, EBEP,
+Haciendas Locales, Ley 39/2015) y el resto son **fragmentos de norma sin sujeto** («…tendrá como mínimo
+las siguientes funciones» = funciones del delegado de protección de datos), que el reparto sitúa **por
+el texto de sus hechos** —el camino que el motor tiene para eso desde I.1—.
+
+### 5. III.4 **no** se escribe, con la cifra delante
+
+Antes de gastar medio día en su catálogo se midió su banco (`pertenencia_utf8.py`, una sonda de
+pertenencia por palabras sobre los enunciados): de **405 grupos**, solo **237 (58,5 %)** hablan de
+diseño y programación orientada a objetos, patrones o UML —su materia—; **85 (21,0 %)** son de
+**fundamentos de programación** (el resultado de `5<<2`, bucles, tipos primitivos de Java, compiladores,
+tipado, paradigmas) y **71 (17,5 %)** no reconocen ninguna de las dos listas y, leídos, también son de
+esa otra materia. La cobertura no podría pasar del ~60 %: escribirlo sería dejarlo en **borrador
+seguro** o **lavar** preguntas mal clasificadas dentro de apartados que no existen. Es un problema de
+**clasificación** —de la bandeja del motor, no de los apuntes— y queda dicho con su número.
+
+### 6. Una trampa del montaje, dicha
+
+El montaje de la tanda manda copiar `data\sources\*` desde `opofuente-arreglos`. Esa copia deja el
+árbol **inconsistente con su propio `fixtures/profiles/manifest.json`**: las dos fuentes volátiles
+(`gc-pagina-oficial-html`, `gc-nota-legal-html`) están descargadas de nuevo en `-arreglos` y su
+manifiesto es otro. Efecto medido: `tests/unit/test_profile_fixtures.py` pasa en `opofuente-main` y
+**falla** en el árbol nuevo. No se toca el manifiesto —es de otro bloque— ni se relaja la prueba: se
+copian las fuentes **de `opofuente-main`**, que son las que cuadran con el manifiesto de esta rama.
+Con eso, **803 pruebas unitarias en verde** y `ruff` limpio en `opofuente/domain`.
+
+### 7. I.7, redactado el 13-oct: **borrador, con dos motivos medidos**
+
+| Qué | Valor |
+|---|---|
+| Cobertura (**clave utilizable**) | **291/498 = 58,4 % NO PASA** (umbral 90 %) |
+| Cobertura (todas las que tienen clave) | 291/531 = 54,8 % |
+| Hechos | 738 guardados → **610 en el plan** (128 repetidos agrupados) |
+| Apartados | **19** · ninguno pasó del tope de 150 hechos |
+| Forma | **PASA** · 25.768 palabras de 29.520 (87,3 %) · repetidos 1,6 % · `--limpiar-forma` tocó 15 apartados |
+| Índice | PASA · **3 grupos y 6 hechos sin materia** (van a la bandeja) |
+| Anclas | 564 · **303 cubiertas · 196 huecos · 59 dudosas · 6 en conflicto** |
+| Llamadas y coste | **144 llamadas (0 fallidas) · 1,1903 $** · 90 minutos, **parada por su tope de tiempo** |
+| Previsión | 72–125 llamadas · 0,49–0,85 $ → **el máximo se cruzó** |
+
+**Los dos motivos del borrador:**
+
+1. **la cobertura es el 58,4 %** de las 498 preguntas con clave utilizable. **No se toca el listón**;
+2. **la corrida no terminó**: el tope de tiempo (5400 s) la paró con **257 de los 364 grupos**
+   comprobados y el **bucle de huecos apenas arrancado** (3 grupos cubiertos «tras añadir»). El 58,4 %
+   es un **suelo**, no el techo. Terminarlo cuesta, medido y sin pagarlo, **38–94 llamadas ·
+   0,26–0,64 $**; no se ha hecho porque los tres temas siguientes tienen índice ya ensayado y mejor
+   encaje de banco, y no se vuelve a pagar por lo escrito.
+
+**El tope de dinero se cruzó en 0,06 $ (5,3 %)** y se dice: la cota de llamadas se quedó corta por 19
+(144 frente a 125) y el bucle de huecos es el que las añadió. El precio por llamada salió a
+**0,00826 $** —el tercero de los normativos densos de la serie, tras I.4 (0,00865 $) e I.8
+(0,00853 $)—, así que la regla del tope («la cota de arriba más un tercio») volvió a quedarse corta con
+un tema de este tipo: **con I.4 e I.8 son ya tres de tres**, y la cota de arriba de `--prever` no
+alcanza cuando el banco es normativo y denso.
+
+**Y queda a medias, dicho**: la bandeja del propietario de I.7 está **vacía** porque las incidencias las
+escribe el final del bucle de huecos, que es lo que el tope cortó. Los 196 huecos y los 59 dudosos
+están en las anclas con su motivo, pero **no se ven en la bandeja** hasta que se retome la corrida.
+
+**La puerta de datos del §1, al cerrar**: **65 conjuntos medibles** (eran 60), **10 en cuarentena · 7
+dudosos · 85 sin poder medir**, con **3 cambios de veredicto** auditados —Material Adicional y
+Normativa pasan a `dudosa`, Doc adicional vuelve a `fiable`—. Es la puerta entrando sola al cruzar el
+umbral, que es lo que el §1 pide de ella.
+
+### 8. IV.5, redactado y **publicado** el 13-oct: el mejor encaje de la tanda
+
+| Qué | Valor |
+|---|---|
+| Cobertura (**clave utilizable**) | **364/374 = 97,3 % PASA** (umbral 90 %) |
+| Cobertura (todas las que tienen clave) | 364/392 = 92,9 % |
+| Hechos | 740 guardados → **633 en el plan** (107 repetidos agrupados) |
+| Apartados | **16** · ninguno pasó del tope de 150 hechos |
+| Forma | **PASA** · 19.627 palabras de 29.600 · repetidos 0,3 % |
+| Índice | PASA · **0 grupos y 0 hechos sin materia** |
+| Bandeja del propietario | **26 incidencias**: 16 `norma_cambiada`, 6 `clave_sospechosa`, 4 `hueco_sin_material` |
+| Llamadas y coste | **125 llamadas (0 fallidas) · 0,5452 $** · 42 minutos, **sin tope activado** |
+| Previsión | 75–130 llamadas · 0,51–**0,88 $** → la corrida entró **por debajo del mínimo** |
+
+Es el tema **técnico** de la tanda y se comporta como tal: **0,00436 $ por llamada**, la mitad que un
+normativo denso. Y es la corrida **más limpia de la serie**: terminó sola (387 de 387 comprobaciones,
+sin corte de tiempo), el índice no dejó **ni un grupo sin materia** y la forma pasó sin reparaciones
+que la rompieran.
+
+**La puerta de datos del §1 volvió a entrar sola**: **71 conjuntos medibles** (eran 65), **11 en
+cuarentena**, y un conjunto nuevo —`PreparaTAI AGE-2026…`, con 5/15 = 33,3 %— pasó a `no_fiable` en
+cuanto las anclas de IV.5 le dieron las comprobaciones que le faltaban. Sus preguntas salieron del
+denominador (402 → 399).
+
+### 9. I.5, redactado y **publicado** el 13-oct: pasa por el margen más estrecho de la tanda
+
+| Qué | Valor |
+|---|---|
+| Cobertura (**clave utilizable**) | **344/376 = 91,5 % PASA** (umbral 90 %) |
+| Cobertura (todas las que tienen clave) | 344/389 = 88,4 % |
+| Hechos | 622 guardados → **436 en el plan** (181 repetidos agrupados) |
+| Apartados | **14** · ninguno pasó del tope de 150 hechos |
+| Forma | **PASA** · 18.235 palabras de 24.880 · repetidos 2,3 % · `--limpiar-forma` tocó 13 apartados |
+| Índice | PASA · 2 grupos y 2 hechos sin materia |
+| Bandeja del propietario | **38 incidencias**: 11 `clave_sospechosa`, 11 `norma_cambiada`, 9 `hueco_sin_material`, 7 `pregunta_ambigua` |
+| Llamadas y coste | **115 llamadas (0 fallidas) · 0,8966 $** · 67 minutos, **sin tope activado** |
+| Previsión | 61–105 llamadas · 0,41–0,71 $ → la corrida **cruzó el máximo** (115 llamadas, +26 % en coste) |
+
+**Pasa por el margen más estrecho de la serie** (1,5 puntos sobre el listón), y el margen lo da el
+**bucle de huecos**: 24 grupos se cubrieron «tras añadir» —el segundo mejor de la tanda tras los 20 de
+IV.2—; sin ellos, el tema se quedaría en el **85,1 %**. Es un tema **normativo** de cinco leyes: 115
+llamadas a 0,0078 $, con hechos largos y poco repetidos (181 de 610 agrupados, frente a 107 de 740 en
+el técnico IV.5).
+
+**La puerta de datos del §1** cerró en **81 conjuntos medibles · 11 en cuarentena · 8 dudosos**, y el
+denominador de la cobertura pasó de 377 a **376** preguntas: otro conjunto cruzó su umbral al recibir
+las anclas nuevas y sus preguntas salieron del cómputo **solas**.
+
+### 10. III.9, redactado y **publicado** el 13-oct: el bucle de huecos que más ha recuperado
+
+| Qué | Valor |
+|---|---|
+| Cobertura (**clave utilizable**) | **324/337 = 96,1 % PASA** (umbral 90 %) |
+| Cobertura (todas las que tienen clave) | 324/369 = 87,8 % |
+| Hechos | 686 guardados → **511 en el plan** (175 repetidos agrupados) |
+| Apartados | **13** · ninguno pasó del tope de 150 hechos |
+| Forma | **PASA** · 16.960 palabras de 27.440 · repetidos 0,4 % · `--limpiar-forma` tocó 13 apartados |
+| Índice | PASA · 7 grupos y 15 hechos sin materia |
+| Bandeja del propietario | **44 incidencias**: 31 `norma_cambiada`, 8 `pregunta_ambigua`, 5 `clave_sospechosa` |
+| Llamadas y coste | **111 llamadas (0 fallidas) · 0,4961 $** · 29 minutos, **sin tope activado** |
+| Previsión | 63–108 llamadas · 0,43–**0,73 $** → la corrida entró por el medio del rango |
+
+Es el tema **técnico** de la tanda que mejor aprovecha el bucle de huecos: **26 grupos** se cubrieron
+«tras añadir» —el mejor de la serie, por delante de los 24 de I.5 y los 20 de IV.2—, y cierra con
+**«sin contestar por los apuntes: 0»**. Y es el segundo más barato: 111 llamadas a **0,00447 $**, con
+175 de 686 hechos agrupados por la deduplicación.
+
+**La puerta de datos del §1** cerró en **85 conjuntos medibles · 12 en cuarentena · 8 dudosos**: otro
+conjunto entró **solo** al recibir las anclas del tema, y el denominador de la cobertura pasó de 341 a
+**337** preguntas.
