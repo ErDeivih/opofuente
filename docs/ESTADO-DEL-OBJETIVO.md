@@ -1002,7 +1002,36 @@ Se han leído las dos plantillas oficiales (`TAI-2024-libre-plantilla-definitiva
 
 - **Claves derivadas (4b)**: no ejecutadas. Ver la decisión del 13-oct en `DECISIONES-TOMADAS-EN-EL-OBJETIVO.md`.
 - **Bandeja del propietario para los conjuntos en cuarentena**: hoy los conflictos de letra ya llegan a `notes_incidents` (`clave_sospechosa`), pero un conjunto en cuarentena **no crea una incidencia por conjunto**. Es la pieza que le dice «estos 10 conjuntos, con estas cifras, y estas son tus preguntas» en una fila, y no está.
-- **Marca en la pantalla del alumno**: **hecha** —el distintivo se pinta en el test en curso (`StudentTestRunner`) y en el resultado (`ResultPage`), con su estilo (`.marca-clave-en-revision`, en el color de aviso del vocabulario `dudosa`) y su prueba de componente, que se demuestra en rojo apagando la marca—. Lo que **no** se ha hecho es volver a tomar las **capturas** de la zona del alumno (`npm run screens`), que van a mano y no son puerta.
+- **Marca en la pantalla del alumno**: **hecha y retratada** —el distintivo se pinta en el test en curso (`StudentTestRunner`) y en el resultado (`ResultPage`), con su estilo (`.marca-clave-en-revision`, que reutiliza el patrón `.marca` de la casa y su par de colores ya verificado), su prueba de componente que se demuestra en rojo apagando la marca, y sus **capturas**—.
+
+### 9. Las capturas de la marca (escritorio y móvil, 0 axe)
+
+`npm run screens`, 48 capturas en 2,0 min, **0 violaciones de axe** («Ninguna: axe no encuentra
+violaciones A/AA en ninguna pantalla»), 0 errores de consola y 0 palabras prohibidas. Las cuatro que
+enseñan la marca:
+
+| fichero | ruta retratada | ancho | carga | axe |
+|---|---|---|---|---|
+| `test-en-curso-escritorio.png` | `/test/0bee477c…` | 1280×800 | 665 ms | 0 |
+| `test-en-curso-movil.png` | `/test/e4021b8c…` | 390×844 | 664 ms | 0 |
+| `resultado-escritorio.png` | `/resultado/fa8462e9…` | 1280×800 | 707 ms | 0 |
+| `resultado-movil.png` | `/resultado/fa8462e9…` | 390×844 | 700 ms | 0 |
+
+**Cómo se consigue que la marca salga en el retrato**, que es lo que tiene truco: la marca solo se
+pinta si el conjunto es `dudosa`, y la suite de capturas monta su propio conjunto (tres preguntas,
+sin apuntes), así que la puerta de datos **no puede medirlo** —no llega a las 15 comprobadas— y el
+veredicto se queda en `fiable`. La herramienta de capturas escribe entonces el veredicto directamente
+en **su** base (`.e2e-data`, que se borra en cada corrida) con `node:sqlite`, que viene con Node 24:
+sin dependencias nuevas y sin procesos de más. Va en la herramienta y no en la puerta a propósito:
+esto retrata, no juzga.
+
+**La cadena de evidencia, comprobada en la base de la suite**: los conjuntos de la captura quedan
+`dudosa` (2 de 3), sus 3 y 4 preguntas son las de las sesiones retratadas
+(`0bee477c…` y `e4021b8c…` en curso, `fa8462e9…` terminada), y de ahí sale el `in_review = true` que
+la interfaz convierte en el rótulo. Las dos capturas del alumno **fallan** si la marca no está en
+pantalla (`await expect(page.getByText('clave en revisión')).toBeVisible()`), para que la evidencia no
+dependa de que alguien mire el PNG.
+
 
 ### 7. §3 · Cobertura de I.6, I.4 e I.8 con la cuarentena puesta y sin ella
 
