@@ -694,6 +694,22 @@ devolvió **11.617 tokens de salida por llamada** (la media de la tabla es ~8.00
 costó **0,00853 $**. Es el segundo tema normativo y denso de la serie —tras I.4, con 0,00865 $— y se
 comporta exactamente como la regla supone.
 
+**Puertas: 18/18**, ejecutadas en **38:45 minutos** sobre este árbol (750 pruebas unitarias de
+backend, 641 de integración, 29 de contrato, 333 de componentes —37 ficheros—, **67** de extremo a
+extremo de Playwright y las 18 puertas del `gates.ps1`). El registro está en
+`F:\temp-opofuente\gates-f17-apuntes.txt`. **La primera pasada no falló ninguna puerta**, así que no
+hubo que arreglar nada para que pasaran: los dos arreglos de motor de esta tanda (§3, 11 y 12) se
+hicieron **durante** el trabajo de los temas, con su prueba que falla antes, y llegaron a las puertas
+ya en verde. Es la segunda tanda seguida sin un solo intento fallido de puerta (f15 también fue 18/18
+a la primera).
+
+**Capturas**: **no se han hecho**, y se dice por qué. Lo que cambia esta tanda en la lectura del
+alumno son **datos** (los apuntes de IV.2 y de II.4, y el borrador de I.8), no código de lectura:
+ninguna pantalla de la zona del alumno ni del panel se ha tocado, y la puerta 18 (E2E de Playwright)
+recorre esa misma ruta con el texto real de un tema. Lo que **sí** cambió de código es `notes_quality`
+y el comando `apuntes`, que no los lee ninguna pantalla; su efecto se ve en la forma de los apuntes
+(§4f) y en las tablas escapadas.
+
 ## 4g. El bloque C sigue: la bandeja del motor y la reclasificación de las incidencias (f18)
 
 Esta tanda cierra la **otra mitad** del §4.1 del objetivo —la bandeja del **motor**— y obedece además
