@@ -110,6 +110,18 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     parser.add_argument(
         "--aplicar", action="store_true", help="escribe de verdad (sin esto, solo dice qué haría)"
     )
+    parser.add_argument(
+        "--incluir-archivados",
+        action="store_true",
+        help=(
+            "mira también los conjuntos archivados. La protección de una clave oficial **no** "
+            "depende de que el conjunto salga en la lista de vivos: una archivada que sea un "
+            "examen oficial tiene que llevar su procedencia igual"
+        ),
+    )
+    parser.add_argument(
+        "--lote", type=int, default=1000, help="cuántos conjuntos se leen de una vez"
+    )
     return parser.parse_args(list(argv))
 
 
@@ -135,7 +147,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 session_factory, RepresentationStore(settings.data_paths)
             ),
         )
-        paginas = servicio.sets(limit=1000)
+        paginas = servicio.sets(include_archived=args.incluir_archivados, limit=args.lote)
         resumen: dict[str, int] = {}
         cambios = 0
         for vista in paginas.sets:
@@ -146,7 +158,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             cambios += 1
             print(
                 f"  {vista.origin_scope:18s} → {ambito:18s} [{vista.set_type:14s}] "
-                f"{str(vista.title)[:70]}"
+                f"[{vista.status!s:8s}] {str(vista.title)[:70]}"
             )
             print(f"      {motivo}")
             if args.aplicar:
