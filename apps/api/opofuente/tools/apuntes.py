@@ -598,21 +598,41 @@ def _desplazamientos(fiabilidad: SqlAlchemyKeyReliabilityRepository) -> tuple[st
     """La prueba del desplazamiento de los conjuntos que no son fiables (paso barato del §1).
 
     Si la clave de un conjunto está **corrida** —una pregunta o una opción de más o de menos—,
-    volver a extraerla del material la arregla y el conjunto vuelve a los tests. Si ninguna
-    alternativa baja del 10 %, la clave no está corrida: está mal en muchos sitios, y eso es otra
-    cosa (clave derivada). No llama a nadie y no cuesta dinero: por eso se prueba antes de gastar.
+    volver a extraerla del material la arregla y el conjunto vuelve a los tests. Se imprime
+    **aciertos sobre total** con la etiqueta delante, porque la cifra al revés (discrepantes sobre
+    total) se lee como si fuera lo contrario: un «21/21 = 100 %» de discrepantes es **cero**
+    aciertos, no todos. Y se compara con el azar: con cuatro opciones, una rotación sin relación
+    acierta el 25 %.
+
+    No llama a nadie y no cuesta dinero: por eso se prueba antes de gastar en claves derivadas.
     """
-    lineas = ["prueba del desplazamiento (la clave, corrida, en vez de equivocada):"]
+    lineas = [
+        "prueba del desplazamiento (¿la clave está corrida o está mal?); aciertos sobre total:"
+    ]
     for medida, lecturas in fiabilidad.shifts():
         lineas.append(f"  · {medida.set_title} ({medida.veredicto.value})")
         for lectura in lecturas:
-            marca = "  <<< BAJA DEL 10 %" if lectura.explica_la_discrepancia else ""
+            aciertos = lectura.comprobadas - lectura.discrepantes
+            proporcion = aciertos / lectura.comprobadas if lectura.comprobadas else 0.0
+            marca = "  <<< EXPLICA (>= 90 %)" if lectura.explica_la_discrepancia else ""
             lineas.append(
-                f"      {lectura.descripcion}: {lectura.discrepantes}/{lectura.comprobadas} = "
-                f"{100 * lectura.discrepancia:.1f} %{marca}"
+                f"      aciertos {aciertos:>4}/{lectura.comprobadas:<4} = "
+                f"{100 * proporcion:>5.1f} %  {lectura.descripcion}{marca}"
             )
         if not any(lectura.explica_la_discrepancia for lectura in lecturas):
-            lineas.append("      no es un desplazamiento: su clave está mal en muchos sitios")
+            if len(lecturas) > 1:
+                lineas.append(
+                    "      no es un desplazamiento: ninguna alternativa baja del 10 % de "
+                    "discrepancia (el azar es el 25 % de aciertos)"
+                )
+            else:
+                # Una sola lectura significa que el dominio **no comparó**: su línea base no cuadra
+                # con las anclas del conjunto (dos preguntas con la misma posición, por ejemplo).
+                # Decir «no es un desplazamiento» aquí sería afirmar lo que no se ha probado.
+                lineas.append(
+                    "      NO SE HA PODIDO PROBAR: la línea base de la prueba no cuadra con las "
+                    "anclas del conjunto (¿dos preguntas con la misma posición?)"
+                )
     return tuple(lineas)
 
 

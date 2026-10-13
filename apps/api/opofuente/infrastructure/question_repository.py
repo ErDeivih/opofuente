@@ -47,7 +47,6 @@ from opofuente.application.question_models import (
     TopicProposalView,
 )
 from opofuente.domain.errors import InvariantViolationError
-from opofuente.domain.key_reliability import KeyReliability
 from opofuente.domain.questions import (
     AnswerKeyEntry,
     AnswerKeyVersion,
@@ -1434,14 +1433,6 @@ class SqlAlchemyQuestionRepository:
                 for pregunta_id, veredicto in filas:
                     salida[str(pregunta_id)] = str(veredicto)
         return salida
-
-    def unreliable_question_ids(self, question_ids: Sequence[str]) -> frozenset[str]:
-        """Las que son de un conjunto en cuarentena (`no_fiable`)."""
-        return frozenset(
-            pregunta_id
-            for pregunta_id, veredicto in self.key_reliability_by_question(question_ids).items()
-            if veredicto == KeyReliability.NO_FIABLE.value
-        )
 
     def clear_exclusion(
         self, question_version_id: str, *, now: datetime, actor: str = "local"

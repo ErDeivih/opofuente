@@ -28,13 +28,12 @@ from opofuente.domain.key_reliability import (
     Desplazamiento,
     KeyReliability,
     MedidaDeConjunto,
+    discrepante,
     letras_de_clave,
     medir_conjuntos,
     probar_desplazamientos,
 )
 from opofuente.infrastructure.db_models import (
-    AnswerKeyEntryRecord,
-    AnswerKeyVersionRecord,
     AuditEventRecord,
     QuestionNoteAnchorRecord,
     QuestionSetRecord,
@@ -98,17 +97,19 @@ class SqlAlchemyKeyReliabilityRepository:
 
         Devuelve la medida de hoy y las alternativas —la clave una o dos preguntas más allá, y las
         opciones giradas— de los conjuntos `dudosa` o `no_fiable`. Es la comprobación barata del §1:
-        si alguna alternativa baja del 10 %, la clave no está mal —está corrida— y volver a
+        si alguna alternativa **baja del 10 %**, la clave no está mal —está corrida— y volver a
         extraerla del material la arregla.
 
-        **De dónde sale la clave que se mueve.** De la plantilla **activa** del conjunto, y si no
-        tiene ninguna, de la versión con **más entradas** (y a igualdad, la más nueva). No es un
-        detalle: cinco de los diez conjuntos en cuarentena (`baquedano`, `TEST VARIOS`, `Test por
-        temas`, `Supuestos Practicos Bloque IV` y `drive-download…`) **no tienen plantilla activa**
-        —tienen entre 2 y 53 versiones en borrador—, y sin esta segunda vía la prueba se quedaba sin
-        secuencia de claves que mover y decía «no es un desplazamiento» **sin haberlo probado**. El
-        motor de apuntes sí las leyó: sus anclas existen precisamente porque una clave en borrador
-        también vale para comprobar.
+        **De dónde sale la clave que se mueve: del propio ancla.** `expected_letters` es la letra
+        que el motor de apuntes leyó al comprobar esa pregunta, y es el dato con el que se midió la
+        discrepancia. Así la fila «hoy» y las alternativas son **la misma línea base** y la tabla se
+        puede comparar consigo misma.
+
+        Antes se movía la plantilla **de hoy** por posición mientras «hoy» salía de las anclas, y
+        esa mezcla hizo que la tabla se pudiera leer **al revés**: una alternativa con 21
+        discrepantes de 21 se leyó como «21 aciertos de 21» y se tomó por un hallazgo. Con una sola
+        línea base eso no pasa —el dominio comprueba que cuadra y, si no cuadra, **no compara**—, y
+        la salida del comando imprime aciertos sobre total con la etiqueta delante.
         """
         with self._session_factory() as session:
             anclas = session.execute(
@@ -123,47 +124,6 @@ class SqlAlchemyKeyReliabilityRepository:
                     QuestionVersionRecord.id == QuestionNoteAnchorRecord.question_version_id,
                 )
             ).all()
-            claves = session.execute(
-                select(
-                    AnswerKeyVersionRecord.question_set_id,
-                    AnswerKeyVersionRecord.id,
-                    AnswerKeyVersionRecord.status,
-                    AnswerKeyVersionRecord.version_no,
-                    QuestionVersionRecord.position,
-                    AnswerKeyEntryRecord.correct_option_keys_json,
-                )
-                .join(
-                    AnswerKeyEntryRecord,
-                    AnswerKeyEntryRecord.answer_key_version_id == AnswerKeyVersionRecord.id,
-                )
-                .join(
-                    QuestionVersionRecord,
-                    QuestionVersionRecord.id == AnswerKeyEntryRecord.question_version_id,
-                )
-            ).all()
-
-        # La plantilla que se usa por conjunto: la activa si la hay; si no, la de más entradas.
-        entradas: dict[str, dict[str, int]] = {}
-        activas: dict[str, str] = {}
-        for set_id, clave_id, estado, _version, _posicion, _crudo in claves:
-            cuenta = entradas.setdefault(str(set_id), {})
-            cuenta[str(clave_id)] = cuenta.get(str(clave_id), 0) + 1
-            if str(estado) == "active":
-                activas[str(set_id)] = str(clave_id)
-        elegida: dict[str, str] = {}
-        for set_id, cuenta in entradas.items():
-            if set_id in activas:
-                elegida[set_id] = activas[set_id]
-                continue
-            elegida[set_id] = max(cuenta.items(), key=lambda par: (par[1], par[0]))[0]
-
-        letras_por_conjunto: dict[str, dict[int, str]] = {}
-        for set_id, clave_id, _estado, _version, posicion, crudo in claves:
-            if str(clave_id) != elegida.get(str(set_id)):
-                continue
-            propias = letras_de_clave(crudo)
-            if propias:
-                letras_por_conjunto.setdefault(str(set_id), {})[int(posicion)] = propias[0]
 
         por_conjunto: dict[str, dict[str, tuple[int, AnclaMedible]]] = {}
         for set_id, posicion, pregunta_id, letra, esperadas in anclas:
@@ -183,14 +143,46 @@ class SqlAlchemyKeyReliabilityRepository:
             suyas = por_conjunto.get(medida.set_id, {})
             if not suyas or medida.veredicto is KeyReliability.FIABLE:
                 continue
-            pares = [(posicion, ancla.answer_letter or "") for posicion, ancla in suyas.values()]
+            # Una **posición** puede tener más de una pregunta (la posición no es única por
+            # conjunto), y entonces «la clave de la posición de al lado» no está definida: esas
+            # posiciones no se mueven. Se dejan fuera también de la línea base, para que la fila
+            # «hoy» y las alternativas sean el mismo conjunto de preguntas y la tabla se pueda
+            # comparar consigo misma. Se dice cuántas quedan fuera en la propia línea base.
+            por_posicion: dict[int, list[tuple[str, str]]] = {}
+            for posicion, ancla in suyas.values():
+                propias = letras_de_clave(ancla.expected_letters)
+                if not propias:
+                    continue
+                por_posicion.setdefault(posicion, []).append(
+                    (ancla.answer_letter or "", propias[0])
+                )
+            pares: list[tuple[int, str]] = []
+            letra_por_posicion: dict[int, str] = {}
+            for posicion, candidatas in por_posicion.items():
+                if len(candidatas) != 1:
+                    continue
+                letra, clave = candidatas[0]
+                pares.append((posicion, letra))
+                letra_por_posicion[posicion] = clave
+            if not pares:
+                continue
+            discrepantes = sum(
+                1
+                for posicion, letra in pares
+                if discrepante(letra, (letra_por_posicion[posicion],))
+            )
             salida.append(
                 (
                     medida,
                     probar_desplazamientos(
                         pares,
-                        letras_por_conjunto.get(medida.set_id, {}),
-                        actual=medida,
+                        letra_por_posicion,
+                        actual=MedidaDeConjunto(
+                            set_id=medida.set_id,
+                            set_title=medida.set_title,
+                            comprobadas=len(pares),
+                            discrepantes=discrepantes,
+                        ),
                     ),
                 )
             )

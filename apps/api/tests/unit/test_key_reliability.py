@@ -205,12 +205,16 @@ def test_la_prueba_del_desplazamiento_encuentra_la_clave_corrida() -> None:
     """Si la clave está una pregunta más allá, la prueba lo dice y baja del 10 %.
 
     Es el paso barato del §1: antes de dar por mala una clave, se comprueba si la extracción se fue
-    una pregunta. Aquí las 20 preguntas de los apuntes dicen «a» y la clave guardada dice «a» en la
-    posición de al lado: movida una, coincide todo.
+    una pregunta. Aquí los apuntes alternan «a» y «b» y la clave guardada tiene **las dos letras
+    cambiadas de sitio**: en su posición no cuadra ninguna (20 discrepantes de 20) y movida una
+    pregunta cuadran todas.
+
+    La línea base se comprueba sola: «hoy» tiene que dar exactamente lo que dice ctual, o el
+    dominio no compara nada —que es lo que evita leer la tabla al revés—.
     """
-    anclas = [(posicion, "a") for posicion in range(1, 21)]
-    # La clave de la posición `p` es la de la pregunta `p - 1`: está corrida una posición.
-    claves = dict.fromkeys(range(0, 20), "a")
+    anclas = [(posicion, "a" if posicion % 2 else "b") for posicion in range(1, 21)]
+    # La clave de cada posición es la letra de la posición de al lado: está corrida una pregunta.
+    claves = {posicion: ("b" if posicion % 2 else "a") for posicion in range(1, 21)}
 
     lecturas = probar_desplazamientos(
         anclas,
@@ -219,22 +223,28 @@ def test_la_prueba_del_desplazamiento_encuentra_la_clave_corrida() -> None:
     )
 
     por_descripcion = {lectura.descripcion: lectura for lectura in lecturas}
-    assert por_descripcion["lectura de hoy"].discrepancia == 1.0
-    assert por_descripcion["la clave, -1 pregunta(s)"].discrepancia == 0.0
-    assert por_descripcion["la clave, -1 pregunta(s)"].explica_la_discrepancia
-    assert not por_descripcion["lectura de hoy"].explica_la_discrepancia
+    hoy = por_descripcion["lectura de hoy (la clave en su sitio)"]
+    assert hoy.discrepancia == 1.0
+    assert not hoy.explica_la_discrepancia, "la lectura de hoy no se explica a sí misma"
+    corrida = por_descripcion["la clave, -1 pregunta(s)"]
+    assert corrida.discrepantes == 0, "movida una pregunta, cuadran todas"
+    assert corrida.explica_la_discrepancia
 
 
 def test_la_prueba_del_desplazamiento_no_inventa_una_explicacion() -> None:
     """Cuando la clave no está corrida, ninguna alternativa baja del 10 % y se dice.
 
-    Es el caso de los nueve conjuntos de «respuestas marcadas» de la base real: probadas las cuatro
-    preguntas vecinas y los tres giros de opciones, la mejor sigue por encima del 10 %, así que la
-    clave no está corrida.
+    Es el caso de los diez conjuntos en cuarentena de la base real: probadas las cuatro preguntas
+    vecinas y los tres giros de opciones, la mejor sigue por encima del 10 % de discrepancia —y las
+    rotaciones se quedan en el nivel del azar, el 25 % de aciertos—, así que la clave no está
+    corrida: está mal en muchos sitios.
     """
-    anclas = [(posicion, "a") for posicion in range(1, 21)]
-    # Una clave que no tiene nada que ver: la mitad «c», la mitad «d», y sin relación con la vecina.
-    claves = {posicion: ("c" if posicion % 2 else "d") for posicion in range(1, 21)}
+    # Dos series que **no** son la misma girada ni corrida: los apuntes ciclan a/b/c/d y la clave
+    # cicla c/a/d/b, que no es ninguna rotación de la primera ni cuadra con la vecina. Con una clave
+    # constante la prueba **sí** encontraría la rotación (y haría bien: una clave «c» para apuntes
+    # «a» es una opción de más), así que el caso tiene que ser irregular para ser un caso de verdad.
+    anclas = [(posicion, "abcd"[(posicion - 1) % 4]) for posicion in range(1, 21)]
+    claves = {posicion: "cadb"[(posicion - 1) % 4] for posicion in range(1, 21)}
 
     lecturas = probar_desplazamientos(
         anclas,
@@ -244,3 +254,25 @@ def test_la_prueba_del_desplazamiento_no_inventa_una_explicacion() -> None:
 
     assert len(lecturas) == 8, "la de hoy, cuatro preguntas vecinas y tres giros de opciones"
     assert not any(lectura.explica_la_discrepancia for lectura in lecturas)
+
+
+def test_la_prueba_no_compara_si_su_linea_base_no_cuadra() -> None:
+    """Con dos orígenes distintos no se compara nada: es lo que permite leer la tabla al revés.
+
+    Es el error que se cometió de verdad: la fila «hoy» salía de las anclas y las alternativas de la
+    plantilla de hoy, y así una alternativa con 21 discrepantes de 21 se pudo leer como «21 aciertos
+    de 21». Con la comprobación, el dominio devuelve **una sola** lectura y dice por qué.
+    """
+    anclas = [(posicion, "a") for posicion in range(1, 21)]
+    claves = dict.fromkeys(range(1, 21), "a")
+
+    lecturas = probar_desplazamientos(
+        anclas,
+        claves,
+        # ctual dice 20 discrepancias, pero con estas secuencias no hay ninguna: no cuadra.
+        actual=MedidaDeConjunto("s", "Banco", comprobadas=20, discrepantes=20),
+    )
+
+    assert len(lecturas) == 1
+    assert "sin cuadrar" in lecturas[0].descripcion
+    assert not lecturas[0].explica_la_discrepancia

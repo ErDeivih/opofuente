@@ -383,6 +383,15 @@ atrás están escritas en `docs/DECISIONES-TOMADAS-EN-EL-OBJETIVO.md`.
 **Y una cosa que conviene que sepas: la cuarentena no sube las cifras de los apuntes, las limpia.** Al quitar de la medida las preguntas de esos 10 conjuntos, I.6 baja del 72,5 % al 71,1 % (salen 19 preguntas del denominador y 17 de ellas estaban cubiertas), y I.4 e I.8 se quedan igual (88,9 % y 82,0 %). Ninguno llega al 90 % con el que se publica. Es lo esperable: el número deja de estar sostenido por claves que no son de fiar.
 
 
-**Y una buena noticia de las claves: en cinco conjuntos «dudosos» ya sé exactamente qué pasa, y tiene arreglo barato.** En tres de ellos la cuenta es perfecta: si a cada letra de la clave se le resta una posición (la «a» pasa a «d», la «b» a «a», la «c» a «b» y la «d» a «c»), **coinciden las 21 de 21, las 19 de 19 y las 15 de 15**. Eso no es casualidad: es que la clave y los apuntes están desplazados **una opción**, que es justo lo que el encargo mandaba probar antes de dar una clave por mala. Los tres son `2022_diccionario-concepto-terminos-AE`, `01.- eAdministracion` y `2025_Diccionario_conceptos_AE_11_ed`, y sus preguntas **están entrando en tus tests** (con el aviso «clave en revisión»). Otros dos (`Material adicional` y `Doc adicional`) muestran el mismo patrón al 93 % y al 92 %.
 
-**No te he tocado esas claves, y quiero que sepas por qué**: lo que tengo es la medida, no el material original —el programa que extrajo esas claves no está en el repositorio, lo hizo una sesión anterior a mano—. Sé que las dos series están desplazadas una opción, pero **no sé de qué lado está el error**: puede que la clave se importara con las opciones al revés, o que el modelo que escribió los apuntes contestara con el mapa invertido. Cambiar una clave por una sospecha, aunque sea muy buena, es cambiar tu dato. **Lo que sí te digo es dónde mirar**: esos cinco conjuntos, y con la ficha de pregunta («marcar la correcta») se arreglan en un rato.
+
+**Y una corrección que te debo, porque la publiqué antes de comprobarla.** Durante un rato te dije
+que en cinco conjuntos «dudosos» la clave estaba **corrida una opción** y que eso tenía arreglo
+barato. **Era falso y ya está corregido**: leí mal mi propia tabla —una fila que decía «21 de 21»
+era *21 fallos de 21*, no 21 aciertos—. Lo he vuelto a medir con la definición buena y con la
+prueba completa, conjunto a conjunto: **en ninguno de los 16 se explica la discrepancia por un
+desplazamiento**; ninguna alternativa sube del 50 %, y el azar con cuatro opciones es el 25 %. La
+conclusión no cambia: **esas claves no están corridas, están mal en muchos sitios**, y arreglarlas
+pide el paso de la clave revisada automáticamente, no una resta de letras. También he arreglado la
+herramienta para que no se pueda volver a leer al revés: ahora dice «aciertos sobre total» y no
+compara nada si su línea base no cuadra.

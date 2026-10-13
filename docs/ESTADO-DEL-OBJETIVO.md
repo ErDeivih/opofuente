@@ -877,23 +877,48 @@ Anclas de conjuntos que **no** son `fiable`, por tema: **I.6 107** · **I.4 95**
 
 **Precisión de método**: el código agrupa por **`set_id`**, no por título. Cuatro títulos de exámenes del INAP 2025 están repetidos en **dos conjuntos distintos** cada uno («TAI ingreso libre 2025 · modelo A» y sus tres hermanos), así que agrupar por título da 140 grupos donde hay 144 conjuntos: por título se pueden juntar dos claves distintas.
 
-### 8. El desplazamiento, probado **entero**, y el hallazgo de los dudosos
+### 8. El desplazamiento, probado **entero** — y una lectura al revés que se corrige
 
-La primera versión de la prueba usaba solo la plantilla **activa**, y **cinco de los diez conjuntos en cuarentena no tienen ninguna**: tienen entre 2 y 53 versiones en borrador (`baquedano`, `TEST VARIOS`, `Test por temas`, `Supuestos Practicos Bloque IV`, `drive-download…`). La prueba se quedaba sin secuencia de claves que mover y decía «no es un desplazamiento» **sin haberlo probado**. Ya está arreglado en el código: si no hay activa se usa la versión con **más entradas** (y a igualdad, la más nueva), que es la que el motor de apuntes pudo leer —sus anclas existen precisamente porque una clave en borrador también vale para comprobar—.
+**Lo que pasó, porque queda escrito.** La primera salida de esta prueba imprimía
+`discrepantes/comprobadas`, y se leyó «las opciones, 3 puesto(s): **21/21 = 100,0 %**» como «21
+aciertos de 21». Quiere decir **21 discrepantes de 21: cero aciertos**. Se sacó de ahí un «hallazgo»
+—claves corridas una opción en cinco conjuntos `dudosa`— que **era falso**, y llegó a proponerse
+como decisión. El error tenía además una causa de fondo: la fila «hoy» salía de la discrepancia de
+las anclas y las alternativas de la **plantilla de hoy** por posición, y esas dos cosas no son la
+misma línea base; una tabla con dos orígenes se puede leer al revés sin que nada avise.
 
-**Los 10 `no_fiable`, con la prueba entera: ninguno baja del 10 %.** (Las mejores alternativas van del 44 % al 93 %.) Conclusión firme: esas claves no están corridas, están mal en muchos sitios.
+**Lo que se ha corregido en el código, no solo en el texto:**
 
-**Pero en los `dudosa` aparece una causa exacta**, y son conjuntos cuyas preguntas **sí entran** en los tests:
+1. `probar_desplazamientos` toma la clave **del propio ancla** (`expected_letters`), que es el dato
+   con el que se midió la discrepancia: la fila «hoy» y las alternativas son la misma línea base.
+2. El dominio **comprueba que la línea base cuadra**; si no cuadra, devuelve una sola lectura y dice
+   que no compara, en lugar de enseñar una comparación que no es de lo mismo.
+3. La fila de **hoy no puede explicarse a sí misma** (`es_alternativa`): si hoy ya coincidiera no
+   habría discrepancia que explicar.
+4. La salida del comando imprime **aciertos sobre total** con la etiqueta delante, compara con el
+   azar (25 %, cuatro opciones) y solo marca «EXPLICA» por encima del 90 %.
+5. Las posiciones con más de una pregunta no se mueven (no está definida «la clave de al lado»), y
+   se dejan fuera **también de la línea base**, para que «hoy» y las alternativas sean el mismo
+   conjunto de preguntas.
 
-| conjunto | veredicto | hoy | mejor alternativa | lectura |
-|---|---|---|---|---|
-| 2022_diccionario-concepto-terminos-AE | `dudosa` | 6/21 = 28,6 % | **opciones −1: 21/21 = 100,0 %** | explicado |
-| 01.- eAdministracion | `dudosa` | 4/19 = 21,1 % | **opciones −1: 19/19 = 100,0 %** | explicado |
-| 2025_Diccionario_conceptos_AE_11_ed | `dudosa` | 3/15 = 20,0 % | **opciones −1: 15/15 = 100,0 %** | explicado |
-| Material adicional | `dudosa` | 3/15 = 20,0 % | opciones −1: 14/15 = 93,3 % | mismo patrón |
-| Doc adicional | `dudosa` | 9/60 = 15,0 % | opciones −1: 55/60 = 91,7 % | mismo patrón |
-| Doc Adicional | `dudosa` | 7/28 = 25,0 % | opciones −1: 26/28 = 92,9 % | mismo patrón |
+**La medida buena, con las dos secuencias del mismo acto de comprobación** (registro completo en
+`F:\temp-opofuente\f19-scratch\desplazamiento.txt`):
 
-Un 21/21 y un 19/19 bajo una permutación **fija** no es azar: la clave guardada y los apuntes coinciden **si a cada letra de la clave se le resta una posición** (`a→d`, `b→a`, `c→b`, `d→c`). Es exactamente **«una opción de menos»**, lo que el §1 manda probar antes de dar una clave por mala, y son conjuntos que hoy entran en los tests con la marca.
+| conjunto | hoy (aciertos) | mejor alternativa | ¿explica? |
+|---|---|---|---|
+| 2022_diccionario-concepto-terminos-AE | 15/21 = 71,4 % | clave −1: 9/20 = 45,0 % | **no** |
+| 01.- eAdministracion | 15/19 = 78,9 % | clave −1: 10/19 = 52,6 % | **no** |
+| 2025_Diccionario_conceptos_AE_11_ed | 12/15 = 80,0 % | clave −1: 8/15 = 53,3 % | **no** |
+| Material adicional | 6/15 = 40,0 % | clave −1: 5/14 = 35,7 % | **no** |
+| Doc Adicional | 16/28 = 57,1 % | clave −1: 11/27 = 40,7 % | **no** |
+| Doc adicional | 24/25 = 96,0 % | clave −2 / +2: 43,8 % | **no** |
 
-**No se ha reescrito ninguna clave, y se dice por qué**: el §1 pide reextraerla **del original** con el extractor de marcas, y ese extractor no está en el repositorio (fue un script suelto de una sesión anterior). Lo que hay es la **medida**, no el original: se sabe que la relación entre las dos series es una rotación de una posición, pero **no de qué lado está el error** —si la clave se importó con las opciones al revés o si el modelo contestó con el mapa invertido—. Cambiar el dato por una hipótesis, con ~110 entradas repartidas en cinco conjuntos, no se hace sin el original. Tampoco se suben a `no_fiable`: el documento fija el umbral en el 30 % y estos están entre el 15 % y el 28,6 %; subirlos sería decidir contra el documento. **Quedan como incidencia para el propietario, con la causa exacta y la medida al 100 %**, que es la primera vez que hay un arreglo barato y verificable para un conjunto que entra en los tests.
+Y en los diez `no_fiable` lo mismo (baquedano, TEST VARIOS, Test por temas, Test Aragón 2015,
+1600-Preguntas, TEST B1, Supuestos Practicos, drive-download, C_ejer_1_libre_DZA y
+TAI_ejer_1_A): **la lectura de hoy es la mejor o está al lado, y ninguna alternativa pasa del
+50 %**. Las rotaciones se quedan en el **nivel del azar**. Con la prueba ya completa, **los 16
+conjuntos que no son fiables dicen lo mismo: no es un desplazamiento**.
+
+**Conclusión, la de siempre y ahora con la prueba entera: las claves no están corridas, están mal en
+muchos sitios**, y el paso siguiente es la clave derivada del §1. No hay ninguna excepción que
+aplicar ni ninguna lista que mantener.

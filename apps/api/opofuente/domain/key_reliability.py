@@ -263,19 +263,53 @@ def probar_desplazamientos(
       más o de menos).
 
     `anclas` son pares `(posición de la pregunta, letra que dan los apuntes)` y
-    `claves_por_posicion` la clave **activa** del conjunto por posición. Devuelve la lectura de hoy
-    y cada alternativa, en orden, con `explica_la_discrepancia` diciendo si alguna baja del 10 %.
+    `claves_por_posicion` la clave **de cada posición**, en la misma línea base que la lectura de
+    hoy: la letra que el motor de apuntes leyó al comprobar esa pregunta, que es lo que `actual`
+    mide. Mezclar dos líneas base —la del ancla para «hoy» y la de la plantilla de hoy para las
+    alternativas— hace que la tabla no se pueda comparar consigo misma, y una tabla así se puede
+    leer al revés sin que nada avise. `actual` se usa solo para **comprobar** que la línea base
+    cuadra: si no cuadra, se devuelve la lectura de hoy sola y se dice, en vez de enseñar una
+    comparación que no es de lo mismo.
 
-    Medido en la base real: **ninguno de los nueve conjuntos de «respuestas marcadas» baja del
-    10 %** con esto, así que sus claves no están corridas —están mal en muchos sitios— y el paso
-    siguiente es la clave derivada. El del INAP sí baja, y ahí la explicación es otra: su numeración
-    no cuadra (le faltan dos preguntas oficiales), y eso lo dice su plantilla publicada.
+    Medido en la base real, con la línea base cuadrada: **ningún conjunto de los que no son fiables
+    baja del 10 %**, y las rotaciones de opciones se quedan en el **nivel del azar** (el 25 % de
+    cuatro opciones). Sus claves no están corridas: están mal en muchos sitios, y el paso siguiente
+    es la clave derivada.
+
+    `Desplazamiento.discrepantes` es el **numerador de lo que no cuadra**, así que cuanto más bajo
+    mejor, y `explica_la_discrepancia` es lo que hay que mirar para decidir: dice si la alternativa
+    baja del 10 %. La fila de hoy no puede explicarse a sí misma: se excluye a propósito.
     """
+    hoy_comparables = 0
+    hoy_iguales = 0
+    for posicion, letra in anclas:
+        letra_de_la_clave = claves_por_posicion.get(posicion)
+        if not letra_de_la_clave:
+            continue
+        hoy_comparables += 1
+        if normalizar_letra(letra) == normalizar_letra(letra_de_la_clave):
+            hoy_iguales += 1
+    if (hoy_comparables, hoy_comparables - hoy_iguales) != (
+        actual.comprobadas,
+        actual.discrepantes,
+    ):
+        # La línea base no es la misma que la de `actual`: no se compara nada, porque una tabla con
+        # dos orígenes distintos es la que se puede leer al revés.
+        return (
+            Desplazamiento(
+                descripcion="lectura de hoy (línea base sin cuadrar: no se prueban alternativas)",
+                comprobadas=actual.comprobadas,
+                discrepantes=actual.discrepantes,
+                es_alternativa=False,
+            ),
+        )
+
     lecturas = [
         Desplazamiento(
-            descripcion="lectura de hoy",
+            descripcion="lectura de hoy (la clave en su sitio)",
             comprobadas=actual.comprobadas,
             discrepantes=actual.discrepantes,
+            es_alternativa=False,
         )
     ]
     for salto in (-2, -1, 1, 2):
@@ -332,11 +366,17 @@ class Desplazamiento:
     `salto_de_preguntas` mueve la clave una o dos posiciones; `giro_de_opciones` rota el alfabeto
     (una opcion de mas o de menos). Si alguno de los dos baja la discrepancia por debajo del 10 %,
     la clave no esta mal: esta desplazada, y volver a extraerla del original la arregla.
+
+    `es_alternativa` distingue la fila de **hoy** de las que se prueban. No es un adorno: la lectura
+    de hoy **no puede explicarse a si misma** —si hoy ya coincidiera, no habria discrepancia que
+    explicar—, y sin esta bandera la fila de hoy de un conjunto con pocas anclas movibles se marcaba
+    como «lo explica», que es una contradiccion en la propia tabla.
     """
 
     descripcion: str
     comprobadas: int
     discrepantes: int
+    es_alternativa: bool = True
 
     @property
     def discrepancia(self) -> float:
@@ -344,8 +384,12 @@ class Desplazamiento:
 
     @property
     def explica_la_discrepancia(self) -> bool:
-        """¿Baja del 10 %? Es el criterio del documento, si hay muestra bastante."""
-        return self.comprobadas >= MINIMO_COMPROBADAS and self.discrepancia < 0.10
+        """¿Es una alternativa que baja del 10 %, con muestra bastante? La fila de hoy no."""
+        return (
+            self.es_alternativa
+            and self.comprobadas >= MINIMO_COMPROBADAS
+            and self.discrepancia < 0.10
+        )
 
 
 __all__ = [
