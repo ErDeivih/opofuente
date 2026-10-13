@@ -532,3 +532,18 @@ saber que en un tema normativo hay que contar con el doble de precio por llamada
   antes de la corrida (el ensayo de reparto, que es gratis y va antes de pagar).
 - **I.7 es el único tema que pide una segunda corrida** (0,26–0,64 $) para rellenar sus huecos y
   llenar su bandeja.
+
+### Al cerrar la tanda: **cinco temas publicados y uno en borrador**, por 3,48 $
+
+| tema | previsión | coste real | cobertura | veredicto |
+|---|---|---|---|---|
+| IV.5 · Seguridad de los sistemas de información | 0,51–0,88 $ | 0,5452 $ | 97,3 % | publicado |
+| III.9 · Repositorios, metodologías, pruebas y control de versiones | 0,43–0,73 $ | 0,4961 $ | 96,1 % | publicado |
+| I.5 · Igualdad, violencia de género, LGTBI, discapacidad y dependencia | 0,41–0,71 $ | 0,8966 $ | 91,5 % | publicado |
+| IV.6 · Comunicaciones, medios de transmisión y redes | 0,42–0,73 $ | 0,3916 $ | 97,0 % | publicado |
+| III.1 · Modelado de datos, modelo relacional y normalización | 0,33–0,57 $ | 0,3524 $ | **98,6 %** | publicado |
+| I.7 · Protección de datos personales y derechos digitales | 0,49–0,85 $ | 1,1903 $ | 58,4 % | borrador |
+
+Van a la zona del alumno con la marca «Versión generada · en revisión», como los anteriores. Si algo
+está mal, lo que más ayuda es **«Esto está mal»** desde el propio párrafo: queda anclado al apartado y
+me llega con el texto delante.

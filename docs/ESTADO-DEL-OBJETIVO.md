@@ -1304,3 +1304,55 @@ mismo ensayo (0 $): organismos bajó de 38 a 10 grupos y el WiFi subió de 45 a 
 a la corrida porque el ensayo se hace antes de pagar, que es la regla de la tanda.
 
 **La puerta de datos del §1** cerró en **87 conjuntos medibles · 12 en cuarentena · 9 dudosos**.
+
+### 12. III.1, redactado y **publicado** el 13-oct: la mejor cobertura de la serie
+
+| Qué | Valor |
+|---|---|
+| Cobertura (**clave utilizable**) | **281/285 = 98,6 % PASA** (umbral 90 %) |
+| Cobertura (todas las que tienen clave) | 281/298 = 94,3 % |
+| Hechos | 607 guardados → **412 en el plan** (195 repetidos agrupados) |
+| Apartados | **8** · ninguno pasó del tope de 150 hechos |
+| Forma | **PASA** · 13.151 palabras de 24.280 · repetidos 1,1 % · `--limpiar-forma` tocó 7 apartados |
+| Índice | PASA · **0 grupos y 0 hechos sin materia** |
+| Bandeja del propietario | **17 incidencias**: 13 `norma_cambiada`, 4 `clave_sospechosa` |
+| Llamadas y coste | **78 llamadas (0 fallidas) · 0,3524 $** · 29 minutos, **sin tope activado** |
+| Previsión | 49–84 llamadas · 0,33–**0,57 $** → dentro del rango, por la parte baja |
+
+**Es la mejor cobertura de la serie** (98,6 %) y **el tema más barato por corrida** (0,3524 $): un tema
+de conceptos con vocabulario muy repetido —la deduplicación agrupa **195 de 607 hechos**, casi un
+tercio— que cierra con **«sin contestar por los apuntes: 0»** y **ni un grupo sin materia**.
+
+**La puerta de datos del §1** cerró en **90 conjuntos medibles · 12 en cuarentena · 8 dudosos**.
+
+### 13. El balance de la tanda (f21), con las cifras medidas
+
+| tema | previsión (llamadas · $) | real (llamadas · $) | cobertura (clave utilizable) | veredicto |
+|---|---|---|---|---|
+| **I.7** | 72–125 · 0,49–0,85 | 144 · **1,1903** | 291/498 = **58,4 %** | **borrador** |
+| **IV.5** | 75–130 · 0,51–0,88 | 125 · **0,5452** | 364/374 = **97,3 %** | **publicado** |
+| **I.5** | 61–105 · 0,41–0,71 | 115 · **0,8966** | 344/376 = **91,5 %** | **publicado** |
+| **III.9** | 63–108 · 0,43–0,73 | 111 · **0,4961** | 324/337 = **96,1 %** | **publicado** |
+| **IV.6** | 62–108 · 0,42–0,73 | 105 · **0,3916** | 288/297 = **97,0 %** | **publicado** |
+| **III.1** | 49–84 · 0,33–0,57 | 78 · **0,3524** | 281/285 = **98,6 %** | **publicado** |
+| | | **3,1282 $** (los cinco primeros) + 0,3524 $ | | **5 publicados · 1 borrador** |
+
+**Cinco temas publicados y uno en borrador, por 3,4806 $.** La forma pasó en los seis sin volver a
+llamar al modelo (`--limpiar-forma` reparó 15, 15, 13, 13, 15 y 7 apartados, 0 $). La puerta de claves
+del §1 se recalculó al cerrar cada tema y fue subiendo sola: **65 → 71 → 81 → 85 → 87 → 90 conjuntos
+medibles**, con **10 → 11 → 11 → 12 → 12 → 12 en cuarentena**, cada cambio con su evento de auditoría.
+
+**Lo que la tanda deja medido sobre el precio de un tema**, que es lo que hace falta para planear los
+que quedan:
+
+- un tema **técnico** sale a **0,0037–0,0045 $ por llamada** (IV.6 0,00373, III.1 0,00452, III.9
+  0,00447, IV.5 0,00436);
+- un tema **normativo denso** sale a **0,0078–0,0083 $** (I.7 0,00826, I.5 0,0078), alrededor del
+  **doble**;
+- y la **cota de arriba de `--prever` se quedó corta en los tres normativos densos** de la serie (I.4,
+  I.8 y I.7). La regla del tope («la cota de arriba más un tercio») es la que impidió que I.7 se fuera
+  más allá, pero conviene contar con el doble de precio por llamada cuando el tema es normativo.
+
+**Lo que queda a medias, dicho**: **I.7** (borrador por cobertura, con su corrida cortada por el tope
+de tiempo y su bandeja vacía porque es el final del bucle de huecos quien la escribe). Terminarlo
+cuesta, medido y sin pagarlo, **38–94 llamadas · 0,26–0,64 $**.
