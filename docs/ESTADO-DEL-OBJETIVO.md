@@ -1899,4 +1899,56 @@ fallo:
 `F:\temp-opofuente\f22-scratch\rojo-pantalla-tests-err.txt` (`Failed to resolve import
 "../../src/pages/student/TestsPage" … Does the file exist?`).
 
+### 7. La fusión con `main` (`02cfdb3`): los tres documentos se suman, el código no se toca
+
+El bloque de contenido (`F21b`) entró en `main` antes, y los dos habíamos añadido al final de los
+mismos tres documentos. **Commit de la fusión: `cfd3756`** (padres `bbb73c0` y `02cfdb3`).
+
+**Cómo se resolvió, y por qué así:**
+
+- los choques eran **solo texto en los tres documentos** (`DECISIONES`, `ESTADO` y
+  `PARA-EL-PROPIETARIO`); en los dos primeros el conflicto era literalmente «los dos añadimos al
+  final». `PARA-EL-PROPIETARIO` lo auto-fusionó git;
+- la resolución es el **merge automático de git** (`git merge-file --diff3`, el mismo motor que usa
+  `git merge`), con el bloque en conflicto **concatenado**: primero la parte de `main` (F21b y sus 5
+  decisiones) y después la mía (la sección F22 y sus 10 decisiones), en orden cronológico. Todo lo
+  que **no** estaba en conflicto queda exactamente como git lo fusionó: no se toca ni una línea;
+- **no se elige: se suma**, y está comprobado **por conteo**, no a ojo. La lista de líneas con
+  contenido del fichero resuelto es **idéntica, en el mismo orden**, a la del merge automático con
+  los dos bloques concatenados (DECISIONES 156 líneas con contenido, ESTADO 1.564, PARA 572). Y las
+  secciones están enteras: **61 filas** de decisión = 44 de antes + **7 de `main`** (F21b) + **10
+  mías** (F22); en el estado, la sección **F21b** de `main` con **157 líneas** y la **F22** con **147**.
+
+**Ese conteo cazó una pérdida real**: en un primer intento de resolución a mano se me quedó fuera un
+separador `---` de la junta, y por eso la resolución se rehízo desde `git merge-file`. Y una segunda
+trampa del mismo intento, dicha para la próxima sesión: **`Set-Content -Encoding UTF8` de PowerShell
+5.1 escribe BOM y CRLF**; los documentos del repositorio van en UTF-8 **sin BOM** y con LF, y así se
+escribieron (desde Python).
+
+**El código no se toca en esa fusión**, comprobado fichero a fichero:
+
+- los cuatro ficheros de código que trae `main` (`catalogo_iii_5.py`, `catalogo_iii_7.py`,
+  `catalogo_iv_8.py` y `topic_index.py`) quedan **idénticos** a la versión de `main`;
+- mis **16** ficheros de código, pruebas y contratos quedan **idénticos** a `0853626`: la fusión no
+  les ha hecho nada;
+- y el choque que se temía **no existe**: `main` **no tocó nada de `apps/web`** (ni `screens.spec.ts`
+  ni `routes.tsx`). El bloque de contenido trajo tres catálogos, su registro, tres informes y sus
+  documentos.
+
+**Puertas de la fusión: 18/18 en 51:32 minutos**, registro en
+**`F:\temp-opofuente\gates-f22-fusion.txt`** (827 unitarias + 697 integración + 29 contrato,
+370 componentes y E2E 74/74). **Dos intentos, con su causa:**
+
+| intento | hasta dónde llegó | causa | qué se hizo |
+|---|---|---|---|
+| **1** | puerta **7** (integración): 696 pasan y **1 error** | `sqlite3.OperationalError: database or disk is full` al montar `test_question_topics_bulk_api.py`. **No era del código**: F: se quedó sin espacio porque **otro bloque (`opofuente-inap`) estaba importando los 32 exámenes del INAP** contra la base real (2,6 GB, en F:) *a la vez*. Registro: `gates-f22-fusion-intento1-fallo-disco.txt` | se liberaron **749 MB** de temporales propios (`.pytest-tmp`, `.gates-data`, `test-results`), se comprobó que F: volvía a 6,3 GB libres y se relanzó entera |
+| **2** | **18/18** | — | — |
+
+Lo que ese fallo enseña, y conviene no volver a aprender: **el disco es un recurso compartido entre
+bloques**, como el puerto 8765. La batería escribe una base por prueba en `.pytest-tmp` (dentro del
+árbol, por el `--basetemp` de `pyproject.toml`) y necesita varios GB libres en F: durante 40 minutos;
+si otro bloque escribe en F: a la vez, la puerta 7 puede caer por `database or disk is full` **sin
+que el código tenga nada que ver**. Lo que lo distingue: el mensaje de SQLite y el proceso del otro
+bloque.
+
 
