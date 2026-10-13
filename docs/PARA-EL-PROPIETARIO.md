@@ -605,3 +605,42 @@ saber que en un tema normativo hay que contar con el doble de precio por llamada
 Van a la zona del alumno con la marca «Versión generada · en revisión», como los anteriores. Si algo
 está mal, lo que más ayuda es **«Esto está mal»** desde el propio párrafo: queda anclado al apartado y
 me llega con el texto delante.
+
+### La tanda siguiente (13-oct, por la tarde): dos temas técnicos más y una decisión sobre I.7
+
+Se han escrito y **publicado** dos temas más, elegidos **midiendo su banco antes de pagar** (el ensayo
+del reparto es gratis):
+
+| tema | previsión | coste real | cobertura | veredicto |
+|---|---|---|---|---|
+| III.5 · Jakarta EE y .NET: arquitectura, persistencia, seguridad e interfaces | 0,33–0,58 $ | **0,3078 $** | **99,2 %** | publicado |
+| III.7 · Aplicaciones web, HTML/XML, navegadores y lenguajes de script | 0,32–0,55 $ | **0,3990 $** | **93,6 %** | publicado |
+| IV.8 · Internet: arquitectura, servicios, HTTP y SSL/TLS | 0,28–0,48 $ | **0,1885 $** | **99,1 %** | publicado |
+
+Los tres son **técnicos**, y eso se nota en la factura: **0,0030–0,0039 $ por llamada**, la mitad que
+un tema normativo denso (0,0078–0,0083 $), y **0,30 $ de media por tema**. Aun así, III.7 avisó de lo
+que cuesta su banco: de sus 248 grupos, casi una quinta parte son preguntas de **otros temas** (MySQL,
+cortafuegos, firma electrónica, archivística), y ésas no se responden desde III.7 —van a tu bandeja con
+su motivo—. Con el primer índice, su techo se quedaba en el 89 %: **el ensayo previo evitó pagar un
+borrador seguro**.
+
+**Y uno de los tres se quedó sin publicar al terminar la corrida por una tontería que se arregló sin
+pagar**: la tabla de puertos de servicios de Internet no salía partida por familias. La causa era que
+el catálogo no decía «aquí vive la tabla de puertos»; se añadió esa marca y la limpieza (0 $) la partió
+y la dejó bien. Lo cuento porque es la tercera vez que **una reparación de forma gratis evita repetir
+una corrida**.
+
+**I.7 (protección de datos) se queda en borrador y no se ha reanudado, con la cifra delante**: cubre
+el **58,4 %** y para el 90 % le faltan **157 preguntas** de las que quedan fuera. Reanudarlo cuesta
+0,26–0,64 $, pero **no lo arregla**: no queda ni un grupo sin comprobar, así que la cobertura solo
+puede subir rellenando huecos, y lo que le falta es **material** (196 preguntas sin respuesta en los
+apuntes). Va después de los técnicos.
+
+**Lo que sí se ha hecho por I.7, y era lo que pedía el encargo**: su **bandeja estaba vacía** —las
+incidencias las escribe el final del bucle que el corte de tiempo no alcanzó— y ahora tiene **42
+filas** (23 claves que contradicen el material, 11 huecos sin material, 4 claves sospechosas y 4
+preguntas ambiguas). Se han escrito **sin llamar al modelo** (0 $) desde las comprobaciones que ya
+estaban guardadas: un hueco que no se ve es un hueco que no existe.
+
+**El acumulado del objetivo va por ≈ 15,35 $ de 40 $**, muy por debajo del aviso de los 20 $. A este
+precio (0,19–0,40 $ un tema técnico) quedan temas de sobra dentro del presupuesto.
