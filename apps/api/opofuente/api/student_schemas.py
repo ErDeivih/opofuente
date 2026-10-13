@@ -215,6 +215,13 @@ class StudentQuestionSchema(BaseModel):
     chosen: list[str] = Field(default_factory=list)
     confidence: StudentConfidenceName | None = None
     correction: StudentCorrectionSchema | None = None
+    #: La clave de esta pregunta está en revisión (§1): el conjunto discrepa de los apuntes entre el
+    #: 15 % y el 30 %. Entra en el test, pero el alumno lo ve antes de fiarse de la corrección.
+    key_in_review: bool = Field(
+        default=False,
+        description="La clave de esta pregunta está en revisión: su conjunto discrepa de los "
+        "apuntes entre el 15 % y el 30 % de las preguntas medidas.",
+    )
 
 
 class StudentSheetRowSchema(BaseModel):
@@ -239,6 +246,11 @@ class StudentRunSchema(BaseModel):
     position: int | None = Field(default=None, ge=1)
     question: StudentQuestionSchema | None = None
     sheet: list[StudentSheetRowSchema]
+    keys_in_review: int = Field(
+        default=0,
+        ge=0,
+        description="Cuántas preguntas del test llevan la marca «clave en revisión».",
+    )
 
 
 class StudentPartScoreSchema(BaseModel):
@@ -403,6 +415,13 @@ class StudentResultQuestionSchema(BaseModel):
     outcome: StudentResultOutcomeName
     elapsed_ms: int | None = Field(default=None, ge=0)
     topics: list[StudentTopicRefSchema] = Field(default_factory=list)
+    #: La clave de esta pregunta está en revisión (§1). En el resultado importa más que en el test:
+    #: un fallo puede ser de la clave y no del alumno.
+    key_in_review: bool = Field(
+        default=False,
+        description="La clave de esta pregunta está en revisión: un fallo puede ser de la clave y "
+        "no del alumno.",
+    )
 
 
 class StudentResultTopicSchema(BaseModel):

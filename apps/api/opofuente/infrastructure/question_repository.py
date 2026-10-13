@@ -47,6 +47,7 @@ from opofuente.application.question_models import (
     TopicProposalView,
 )
 from opofuente.domain.errors import InvariantViolationError
+from opofuente.domain.key_reliability import KeyReliability
 from opofuente.domain.questions import (
     AnswerKeyEntry,
     AnswerKeyVersion,
@@ -163,6 +164,11 @@ def _exclusion_view(
 #: nueva puede componerse con ella (DEBT-025). Solo queda fuera `superseded`: una pregunta
 #: `annulled` sigue siendo parte del examen, y quien dice que está anulada es su clave.
 _NO_SUSTITUIDAS: ColumnElement[bool] = QuestionVersionRecord.status != "superseded"
+
+#: Cuántos identificadores caben en un `IN (...)`. SQLite admite muchos más, pero una consulta con
+#: mil parámetros se compila despacio: una sesión de examen tiene 85 preguntas y una comprobación de
+#: una sesión entera cabe de sobra en una tanda.
+_TANDA_DE_CONSULTA = 500
 
 
 def _nuevo_stable_key(numero: int | None, identidad: str, usadas: set[str]) -> str:
@@ -1401,6 +1407,42 @@ class SqlAlchemyQuestionRepository:
             ).scalars()
             return frozenset(str(fila) for fila in filas)
 
+    def key_reliability_by_question(self, question_ids: Sequence[str]) -> dict[str, str]:
+        """El veredicto de la clave del conjunto de cada pregunta. Una consulta, no una por
+        pregunta.
+
+        Lo necesitan las **dos** cosas que dependen del veredicto y no pasan por la composición: la
+        marca «clave en revisión» que se le enseña al alumno pregunta a pregunta, y la comprobación
+        de que una sesión no lleva preguntas de un conjunto en cuarentena. Se pide por identificador
+        y en una sola consulta porque una sesión tiene hasta 85 preguntas.
+        """
+        if not question_ids:
+            return {}
+        salida: dict[str, str] = {}
+        with self._session_factory() as session:
+            identificadores = list(question_ids)
+            for inicio in range(0, len(identificadores), _TANDA_DE_CONSULTA):
+                tanda = identificadores[inicio : inicio + _TANDA_DE_CONSULTA]
+                filas = session.execute(
+                    select(QuestionVersionRecord.id, QuestionSetRecord.key_reliability)
+                    .join(
+                        QuestionSetRecord,
+                        QuestionSetRecord.id == QuestionVersionRecord.question_set_id,
+                    )
+                    .where(QuestionVersionRecord.id.in_(tanda))
+                ).all()
+                for pregunta_id, veredicto in filas:
+                    salida[str(pregunta_id)] = str(veredicto)
+        return salida
+
+    def unreliable_question_ids(self, question_ids: Sequence[str]) -> frozenset[str]:
+        """Las que son de un conjunto en cuarentena (`no_fiable`)."""
+        return frozenset(
+            pregunta_id
+            for pregunta_id, veredicto in self.key_reliability_by_question(question_ids).items()
+            if veredicto == KeyReliability.NO_FIABLE.value
+        )
+
     def clear_exclusion(
         self, question_version_id: str, *, now: datetime, actor: str = "local"
     ) -> bool:
@@ -2628,6 +2670,9 @@ class SqlAlchemyQuestionRepository:
             key_count=len(claves),
             active_key_id=activa,
             distribution=str(fila.distribution),
+            key_reliability=str(fila.key_reliability),
+            key_checked_count=int(fila.key_checked_count),
+            key_discrepant_count=int(fila.key_discrepant_count),
         )
 
     def _question_view(

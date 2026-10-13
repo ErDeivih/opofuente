@@ -504,6 +504,7 @@ class StudyService:
         sin_clave = 0
         sin_respuesta = 0
         no_practicables = 0
+        en_cuarentena = 0
         for question_id in candidatas:
             pregunta = self._questions.get_question(question_id)
             if pregunta is None or pregunta.question_type not in _SUPPORTED_QUESTION_TYPES:
@@ -517,6 +518,12 @@ class StudyService:
             if conjunto is None or conjunto.active_key_id is None:
                 # Sin plantilla activa no hay con qué corregir: se queda fuera y se cuenta.
                 sin_clave += 1
+                continue
+            if conjunto.key_is_unreliable:
+                # Cuarentena de clave (§1): la práctica por tema es uno de los sitios donde se
+                # eligen preguntas, así que se salta aquí también. No es «no se puede corregir»
+                # —la clave existe—: es que la clave no es de fiar.
+                en_cuarentena += 1
                 continue
             clave = self._clave_activa(pregunta.question_set_id)
             claves[pregunta.question_set_id] = clave.id
@@ -556,9 +563,9 @@ class StudyService:
         if not congeladas:
             motivo = (
                 f"{sin_clave} sin plantilla activa, {sin_respuesta} que la plantilla activa no "
-                f"responde y {no_practicables} que no se practican solas "
-                "(reservas o tipo no soportado)"
-                if sin_clave or sin_respuesta or no_practicables
+                f"responde, {en_cuarentena} con la clave en cuarentena y {no_practicables} que "
+                "no se practican solas (reservas o tipo no soportado)"
+                if sin_clave or sin_respuesta or no_practicables or en_cuarentena
                 else "ninguna con plantilla activa"
             )
             raise UnsupportedError(
@@ -576,6 +583,7 @@ class StudyService:
                 sin_clave=sin_clave,
                 sin_respuesta=sin_respuesta,
                 no_practicables=no_practicables,
+                en_cuarentena=en_cuarentena,
             ),
             context_label=self._etiqueta_del_tema(request.curriculum_node_id),
         )
@@ -783,6 +791,13 @@ class StudyService:
                 conjunto = self._questions.get_set(pregunta.question_set_id)
                 if conjunto is None or conjunto.active_key_id is None:
                     continue
+                if conjunto.key_is_unreliable:
+                    # Cuarentena de clave (§1): la pregunta **no entra** en la parte. No se dice
+                    # aquí porque el contrato de la composición ya enseña `available`, que es el
+                    # número de preguntas que de verdad se pueden poner; lo que sí se hace es no
+                    # contarla como disponible, que es lo que haría creer al alumno que tiene 80
+                    # preguntas cuando solo puede contestar 60.
+                    continue
                 if spec.public_only and conjunto.distribution != "public":
                     continue
                 if pregunta.id in self._excluidas(pregunta.question_set_id):
@@ -824,6 +839,16 @@ class StudyService:
             # reproducible para volver a montar la misma sesión, no un secreto.
             random.Random(spec.seed).shuffle(candidatas)  # noqa: S311
         return tuple(candidatas), disponibles
+
+    def key_reliability_of(self, question_ids: Sequence[str]) -> dict[str, str]:
+        """El veredicto de la clave del conjunto de cada pregunta (`fiable` · `dudosa` · `no`).
+
+        Lo necesita la zona del alumno para **marcar** las preguntas de un conjunto dudoso con
+        «clave en revisión» (§1). Vive aquí, y no en un servicio nuevo, porque el motor que elige
+        las preguntas es el que sabe de qué conjunto salió cada una, y tener dos ideas de eso es
+        como se acaba enseñando una marca que no corresponde.
+        """
+        return self._questions.key_reliability_by_question(question_ids)
 
     def _preguntas_del_nodo(self, node_id: str) -> tuple[str, ...]:
         """Las preguntas de un nodo **y de sus descendientes**.
@@ -1045,13 +1070,23 @@ class StudyService:
 
     @staticmethod
     def _nota_del_tema(
-        *, total: int, sin_clave: int, no_practicables: int, sin_respuesta: int = 0
+        *,
+        total: int,
+        sin_clave: int,
+        no_practicables: int,
+        sin_respuesta: int = 0,
+        en_cuarentena: int = 0,
     ) -> str:
         """Lo que una práctica por tema deja fuera, dicho: si no, el número no cuadraría."""
         nota = (
             f"Práctica de un tema: {total} pregunta(s) catalogadas en él, sin parte declarada y "
             "corregidas en directo (la parte la fija la convocatoria para un examen)."
         )
+        if en_cuarentena:
+            nota += (
+                f" {en_cuarentena} se quedaron fuera con la clave en cuarentena (su conjunto "
+                "discrepa de los apuntes en más del 30 % de las preguntas medidas)."
+            )
         if sin_clave:
             nota += f" {sin_clave} se quedaron fuera por no tener plantilla activa."
         if sin_respuesta:
@@ -1094,7 +1129,15 @@ class StudyService:
         etiquetas: list[str] = []
         conjuntos: set[str] = set()
         limite_tiempo: int | None = None
+        en_cuarentena = 0
         for posicion, vencida in enumerate(vencidas, start=1):
+            conjunto_vencido = self._questions.get_set(vencida.question_set_id)
+            if conjunto_vencido is not None and conjunto_vencido.key_is_unreliable:
+                # Cuarentena de clave (§1): el repaso es el tercero de los sitios donde se eligen
+                # preguntas. Volver a preguntar lo que se falló **con una clave que no es de fiar**
+                # es la peor forma de este defecto: se falló por la clave, no por no saberlo.
+                en_cuarentena += 1
+                continue
             if vencida.part_code is None:
                 raise UnsupportedError(
                     f"el repaso de «{vencida.stable_key}» no sabe a qué parte del examen "
@@ -1138,6 +1181,15 @@ class StudyService:
                     else max(limite_tiempo, parte.time_minutes)
                 )
 
+        if not congeladas:
+            # Todo lo vencido estaba en cuarentena: una sesión de repaso vacía no es un repaso, y
+            # decir «no hay nada vencido» sería mentira (había, y no se puede preguntar).
+            raise UnsupportedError(
+                f"lo que te toca repasar ({en_cuarentena} pregunta(s)) es de conjuntos con la "
+                "clave en cuarentena: no se te puede preguntar por una clave de la que no nos "
+                "fiamos. Se arreglará la clave y volverán"
+            )
+
         configuracion = SessionConfiguration(
             mode=request.mode,
             # El repaso corrije al momento: §5 dice que no se enseña la respuesta **antes** del
@@ -1147,6 +1199,12 @@ class StudyService:
             time_limit_minutes=limite_tiempo,
             shuffle=request.shuffle,
             context_label="Repaso de tus fallos",
+            note=(
+                None
+                if not en_cuarentena
+                else f"{en_cuarentena} pregunta(s) de tu cola de repaso se han dejado fuera: su "
+                "conjunto tiene la clave en cuarentena"
+            ),
         )
         return self._study.create_session(
             opposition_id=request.opposition_id,
@@ -1209,7 +1267,11 @@ class StudyService:
         ahora = self._clock.now()
         intentos_previos = self._study.attempt_counts(request.opposition_id)
         conjuntos = self._questions.list_sets(opposition_id=request.opposition_id, limit=200).sets
-        con_clave = [conjunto for conjunto in conjuntos if conjunto.active_key_id is not None]
+        con_clave = [
+            conjunto
+            for conjunto in conjuntos
+            if conjunto.active_key_id is not None and not conjunto.key_is_unreliable
+        ]
         if not con_clave:
             raise UnsupportedError(
                 "ningún conjunto de esta oposición tiene plantilla activa: sin clave no se puede "
@@ -2034,6 +2096,18 @@ class StudyService:
         conjunto = self._questions.get_set(fuente.question_set_id)
         if conjunto is None:
             raise NotFoundError("conjunto de preguntas", fuente.question_set_id)
+        if conjunto.key_is_unreliable:
+            # La clave de este conjunto discrepa de los apuntes en más del 30 % de sus preguntas
+            # medidas: el alumno aprendería respuestas equivocadas. `_preguntas` es el embudo de
+            # práctica por conjuntos, examen oficial y simulacro, así que se corta aquí y se dice
+            # por qué, con los dos números delante, en lugar de montar una sesión con material en
+            # cuarentena.
+            raise UnsupportedError(
+                f"la clave de «{conjunto.title}» está en cuarentena "
+                f"({conjunto.key_discrepant_count} de {conjunto.key_checked_count} preguntas "
+                "medidas no coinciden con sus apuntes): sus preguntas no entran en tests, "
+                "simulacros ni repasos hasta que se arregle la clave"
+            )
         todas = self._questions.all_questions(fuente.question_set_id)
         validas = [
             pregunta for pregunta in todas if pregunta.question_type in _SUPPORTED_QUESTION_TYPES

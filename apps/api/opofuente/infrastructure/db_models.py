@@ -1024,6 +1024,19 @@ class QuestionSetRecord(Base):
         CheckConstraint(
             "distribution IN ('personal', 'public')", name="ck_question_set_distribution"
         ),
+        CheckConstraint(
+            "key_reliability IN ('fiable', 'dudosa', 'no_fiable')",
+            name="ck_question_set_key_reliability",
+        ),
+        CheckConstraint(
+            "key_checked_count >= 0 AND key_discrepant_count >= 0",
+            name="ck_question_set_key_counts",
+        ),
+        CheckConstraint(
+            "key_discrepant_count <= key_checked_count",
+            name="ck_question_set_key_discrepant",
+        ),
+        Index("ix_question_sets_key_reliability", "key_reliability"),
     )
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
@@ -1048,6 +1061,23 @@ class QuestionSetRecord(Base):
     distribution: Mapped[str] = mapped_column(
         String(16), nullable=False, server_default=text("'personal'"), default="personal"
     )
+    #: Si la clave de este conjunto se puede fiar (`0036`, §1 del objetivo). Es del
+    #: **conjunto** y no de la pregunta porque la clave se extrajo del material de un conjunto
+    #: entero: si la extracción salió desplazada, salió desplazada para todas sus preguntas.
+    #: `fiable` por defecto: un conjunto que nadie ha medido no es un conjunto en cuarentena.
+    key_reliability: Mapped[str] = mapped_column(
+        String(16), nullable=False, server_default=text("'fiable'"), default="fiable"
+    )
+    #: Preguntas con letra y clave que se compararon al medir, y cuántas de ellas no coincidían. Los
+    #: dos números se guardan con el veredicto para que la cifra se pueda auditar sin volver a
+    #: medirla.
+    key_checked_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default=text("0"), default=0
+    )
+    key_discrepant_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default=text("0"), default=0
+    )
+    key_measured_at: Mapped[datetime | None] = mapped_column(DateTime(), nullable=True)
     created_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
 

@@ -12,6 +12,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import date, datetime
 
+from opofuente.domain.key_reliability import KeyReliability
 from opofuente.domain.questions import ParseIssue, QuestionDuplicateGroup
 from opofuente.domain.topic_classification import OutOfSyllabus
 
@@ -99,10 +100,28 @@ class QuestionSetView:
     active_key_id: str | None = None
     #: `personal` (material del propietario) o `public` (publicable). Por defecto, `personal`.
     distribution: str = "personal"
+    #: Si la clave de este conjunto se puede fiar (`fiable` · `dudosa` · `no_fiable`, §1 del
+    #: objetivo). Viaja en la vista porque **quien elige preguntas lo necesita**: el motor de
+    #: tests, el simulacro, el repaso y la cobertura lo consultan en cada composición, y sin él
+    #: tendrían que pedirlo aparte (o, peor, no pedirlo).
+    key_reliability: str = "fiable"
+    #: Los dos números de la medida, para poder enseñar por qué el conjunto está como está.
+    key_checked_count: int = 0
+    key_discrepant_count: int = 0
 
     @property
     def is_official(self) -> bool:
         return self.set_type == "official_exam"
+
+    @property
+    def key_is_unreliable(self) -> bool:
+        """¿Sus preguntas quedan fuera de tests, simulacros y repasos?"""
+        return self.key_reliability == KeyReliability.NO_FIABLE.value
+
+    @property
+    def key_is_in_review(self) -> bool:
+        """¿Hay que enseñar «clave en revisión» cuando el alumno responda una de sus preguntas?"""
+        return self.key_reliability == KeyReliability.DUDOSA.value
 
 
 @dataclass(frozen=True, slots=True)
