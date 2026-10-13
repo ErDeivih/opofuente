@@ -1335,9 +1335,9 @@ tercio— que cierra con **«sin contestar por los apuntes: 0»** y **ni un grup
 | **III.9** | 63–108 · 0,43–0,73 | 111 · **0,4961** | 324/337 = **96,1 %** | **publicado** |
 | **IV.6** | 62–108 · 0,42–0,73 | 105 · **0,3916** | 288/297 = **97,0 %** | **publicado** |
 | **III.1** | 49–84 · 0,33–0,57 | 78 · **0,3524** | 281/285 = **98,6 %** | **publicado** |
-| | | **3,1282 $** (los cinco primeros) + 0,3524 $ | | **5 publicados · 1 borrador** |
+| | | **3,8722 $** (los seis temas) | | **5 publicados · 1 borrador** |
 
-**Cinco temas publicados y uno en borrador, por 3,4806 $.** La forma pasó en los seis sin volver a
+**Cinco temas publicados y uno en borrador, por 3,8722 $.** El acumulado del objetivo queda en **≈ 14,45 $ de 40**. La forma pasó en los seis sin volver a
 llamar al modelo (`--limpiar-forma` reparó 15, 15, 13, 13, 15 y 7 apartados, 0 $). La puerta de claves
 del §1 se recalculó al cerrar cada tema y fue subiendo sola: **65 → 71 → 81 → 85 → 87 → 90 conjuntos
 medibles**, con **10 → 11 → 11 → 12 → 12 → 12 en cuarentena**, cada cambio con su evento de auditoría.

@@ -533,7 +533,7 @@ saber que en un tema normativo hay que contar con el doble de precio por llamada
 - **I.7 es el único tema que pide una segunda corrida** (0,26–0,64 $) para rellenar sus huecos y
   llenar su bandeja.
 
-### Al cerrar la tanda: **cinco temas publicados y uno en borrador**, por 3,48 $
+### Al cerrar la tanda: **cinco temas publicados y uno en borrador**, por 3,87 $
 
 | tema | previsión | coste real | cobertura | veredicto |
 |---|---|---|---|---|
