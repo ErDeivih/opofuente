@@ -88,6 +88,12 @@ export const ADMIN_NAV_ITEMS: readonly NavItem[] = [
     summary: 'Lo que el alumno marca como error en los apuntes, con su apartado, para despacharlo.',
   },
   {
+    path: '/admin/incidencias',
+    label: 'Incidencias',
+    summary:
+      'Lo que el sistema no ha podido resolver solo: respuestas correctas que no cuadran, huecos, normas cambiadas.',
+  },
+  {
     path: '/admin/no-son-preguntas',
     label: 'No son preguntas',
     summary: 'Los enunciados que no se pueden contestar y las preguntas de otras administraciones.',

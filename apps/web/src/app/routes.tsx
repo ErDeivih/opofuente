@@ -4,6 +4,7 @@ import { AdminUiPage } from '../pages/AdminUiPage';
 import { ChangesPage } from '../pages/ChangesPage';
 import { ComingSoonPage } from '../pages/ComingSoonPage';
 import { ErrorsPage } from '../pages/ErrorsPage';
+import { IncidentsPage } from '../pages/IncidentsPage';
 import { LibraryPage } from '../pages/LibraryPage';
 import { NotFoundPage } from '../pages/NotFoundPage';
 import { NoSonPreguntasPage } from '../pages/NoSonPreguntasPage';
@@ -161,6 +162,10 @@ export function AppRoutes() {
             dejó fuera de los tests (D6). Se separan a propósito: una se **despacha**, la otra se
             **mira**, y mezclarlas invitaría a tocar desde ahí lo que solo se consulta. */}
         <Route path="avisos" element={<NoteReportsPage />} />
+        {/* La bandeja del **motor** (F18): la otra mitad del §4.1 del objetivo. Va al lado de la del
+            alumno porque son las dos bandejas del panel y se leen juntas, pero son dos pantallas
+            distintas: una es lo que avisa quien estudia y la otra lo que no pudo cerrar el sistema. */}
+        <Route path="incidencias" element={<IncidentsPage />} />
         <Route path="no-son-preguntas" element={<NoSonPreguntasPage />} />
         <Route path="cambios" element={<ChangesPage />} />
         <Route path="errores" element={<ErrorsPage />} />

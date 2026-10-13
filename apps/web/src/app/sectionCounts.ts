@@ -1,6 +1,7 @@
 import {
   useConflictingQuestions,
   useNoteReportCounters,
+  useNotesIncidentCounters,
   useOppositions,
   usePendingActions,
   useReviewQueue,
@@ -37,6 +38,7 @@ export function useSectionCounts(): SectionCounts {
   const repaso = useReviewQueue(active?.id ?? null);
   const conflictos = useConflictingQuestions();
   const avisosApendientes = useNoteReportCounters();
+  const incidenciasApendientes = useNotesIncidentCounters();
 
   const contadores: Record<string, SectionCount> = {};
 
@@ -72,6 +74,18 @@ export function useSectionCounts(): SectionCounts {
     contadores['/admin/avisos'] = {
       count: avisosAlumno,
       label: `${avisosAlumno} avisos de los apuntes sin mirar`,
+    };
+  }
+
+  // Las incidencias del motor (F18): lo que la comprobación de los apuntes no pudo cerrar sola. Solo
+  // las `open`: una incidencia «en curso» ya está en la mano de alguien y no espera una decisión.
+  // Sale de la **misma** consulta que alimenta la bandeja, así que el número del menú y el de la
+  // pantalla no pueden decir cosas distintas.
+  const incidencias = incidenciasApendientes.data?.pending ?? 0;
+  if (incidencias > 0) {
+    contadores['/admin/incidencias'] = {
+      count: incidencias,
+      label: `${incidencias} incidencias del motor sin decidir`,
     };
   }
 

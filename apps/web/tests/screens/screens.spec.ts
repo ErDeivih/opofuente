@@ -66,6 +66,10 @@ const RUTAS: readonly { ruta: string; nombre: string }[] = [
      temario que ya estén en los datos —con los del propietario, los 769 enunciados rotos— y se
      retrata tal cual. La bandeja de avisos va aparte, más abajo: necesita que haya un aviso dentro. */
   { ruta: '/admin/no-son-preguntas', nombre: 'no-son-preguntas' },
+  /* La bandeja del **motor** (F18): las incidencias que deja la comprobación de los apuntes. Con los
+     datos del propietario son 453 —291 de norma cambiada, 110 de clave sospechosa, 40 huecos y 12
+     ambiguas—, y se retrata tal cual: **nada de filas inventadas**. */
+  { ruta: '/admin/incidencias', nombre: 'admin-incidencias' },
 ];
 
 const ANCHOS: readonly { ancho: number; alto: number; etiqueta: string }[] = [
