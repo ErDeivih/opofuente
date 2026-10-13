@@ -1002,7 +1002,8 @@ Se han leído las dos plantillas oficiales (`TAI-2024-libre-plantilla-definitiva
 
 - **Claves derivadas (4b)**: no ejecutadas. Ver la decisión del 13-oct en `DECISIONES-TOMADAS-EN-EL-OBJETIVO.md`.
 - **Bandeja del propietario para los conjuntos en cuarentena**: hoy los conflictos de letra ya llegan a `notes_incidents` (`clave_sospechosa`), pero un conjunto en cuarentena **no crea una incidencia por conjunto**. Es la pieza que le dice «estos 10 conjuntos, con estas cifras, y estas son tus preguntas» en una fila, y no está.
-- **Marca en la pantalla del alumno**: **hecha y retratada** —el distintivo se pinta en el test en curso (`StudentTestRunner`) y en el resultado (`ResultPage`), con su estilo (`.marca-clave-en-revision`, que reutiliza el patrón `.marca` de la casa y su par de colores ya verificado), su prueba de componente que se demuestra en rojo apagando la marca, y sus **capturas**—.
+- **Marca en la pantalla del alumno**: **hecha y retratada** —el distintivo se pinta en el test en curso (`StudentTestRunner`) y en el resultado (`ResultPage`), con su estilo (`.marca-clave-en-revision`, que reutiliza el patrón `.marca` de la casa y su par de colores ya verificado), su prueba de componente que se demuestra en rojo apagando la marca, y sus **capturas**—. Lo único que queda **escrito y no ejecutado** es la aserción de las capturas (ver §9): necesita los puertos 8765 y 4173 libres, y el 8765 lo tiene otro bloque.
+- **Aserción de las capturas del alumno**: escrita en `apps/web/tests/screens/screens.spec.ts` y **sin ejecutar** —las capturas que hay son de la corrida anterior—. Relanzar con `cd apps\web; npm run screens` cuando el puerto 8765 esté libre. Detalle y qué se comprueba, en §9.
 
 ### 9. Las capturas de la marca (escritorio y móvil, 0 axe)
 
@@ -1028,9 +1029,43 @@ esto retrata, no juzga.
 **La cadena de evidencia, comprobada en la base de la suite**: los conjuntos de la captura quedan
 `dudosa` (2 de 3), sus 3 y 4 preguntas son las de las sesiones retratadas
 (`0bee477c…` y `e4021b8c…` en curso, `fa8462e9…` terminada), y de ahí sale el `in_review = true` que
-la interfaz convierte en el rótulo. Las dos capturas del alumno **fallan** si la marca no está en
-pantalla (`await expect(page.getByText('clave en revisión')).toBeVisible()`), para que la evidencia no
-dependa de que alguien mire el PNG.
+la interfaz convierte en el rótulo. Comprobado **por la API**, levantada aparte en un puerto libre
+(8799, sin tocar el 8765 de otro bloque) sobre esa misma base: el test en curso devuelve
+`question.in_review = true` y `questions_in_review = 3`; la pantalla de resultado, que lee otra ruta,
+devuelve `in_review` por pregunta `[true, true, true, false]` — **tres de cuatro**—.
+
+#### Lo que queda **escrito y NO ejecutado** en las capturas
+
+La herramienta lleva ahora una aserción por captura del alumno, para que la evidencia no dependa de
+que alguien mire el PNG:
+
+```ts
+// apps/web/tests/screens/screens.spec.ts, en las capturas «test-en-curso» y «resultado»
+await expect(page.getByText(MARCA_EN_REVISION).first()).toBeVisible();
+```
+
+**Está escrita y no se ha ejecutado**, y se dice aquí para que no parezca verde:
+
+- **Qué hace**: si el rótulo «clave en revisión» no está en pantalla, esas dos capturas **fallan** en
+  vez de guardar un PNG que no enseña lo que tiene que enseñar.
+- **Por qué no se ha ejecutado**: las capturas que hay son de la corrida **anterior** a la aserción.
+  Para ejecutarla hay que volver a lanzar la suite de capturas, y eso necesita los puertos **8765**
+  (API) y **4173** (vista previa) libres; el 8765 lo tiene tomado el bloque de `opofuente-preguntas`
+  desde las 15:36 y **no se le toca el servidor a otro bloque**.
+- **Cómo se relanza** (desde `apps/web`, con esos dos puertos libres):
+
+  ```powershell
+  cd apps\web
+  npm run screens
+  ```
+
+  Y se comprueba en `artifacts/screens/report.md`: las filas `test-en-curso` y `resultado` de los dos
+  anchos tienen que salir con **0 violaciones de axe**, y las 48 capturas tienen que pasar.
+- **Mientras no se ejecute**, lo que sostiene que la marca está dentro es lo de arriba: la base de la
+  suite (`dudosa`), la API (`in_review = true`, `[true, true, true, false]`) y la prueba de componente
+  que demuestra el pintado. Las tres cosas son evidencia; **la aserción es la que cierra el círculo, y
+  está pendiente**.
+
 
 
 ### 7. §3 · Cobertura de I.6, I.4 e I.8 con la cuarentena puesta y sin ella
