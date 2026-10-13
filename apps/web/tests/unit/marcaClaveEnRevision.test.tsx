@@ -50,12 +50,12 @@ function carrera(keyInReview: boolean) {
       chosen: [],
       confidence: null,
       correction: null,
-      key_in_review: keyInReview,
+      in_review: keyInReview,
     },
     sheet: [
       { position: 1, answered: false, chosen: [], confidence: null, outcome: null, correct: [] },
     ],
-    keys_in_review: keyInReview ? 1 : 0,
+    questions_in_review: keyInReview ? 1 : 0,
   };
 }
 

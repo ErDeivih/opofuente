@@ -994,7 +994,7 @@ Se han leído las dos plantillas oficiales (`TAI-2024-libre-plantilla-definitiva
 - `alembic/versions/0036_claves_no_fiables.py` — `key_reliability` (`fiable` · `dudosa` · `no_fiable`), `key_checked_count`, `key_discrepant_count`, `key_measured_at`, con sus `CHECK` e índice. **Vuelta atrás probada** (quita las cuatro columnas y deja el esquema como estaba; volver a subir las devuelve).
 - `infrastructure/key_reliability_repository.py` — mide, guarda y **audita** cada cambio de veredicto; `set_verdict` para devolver un conjunto a `fiable` por la vía auditada; idempotente.
 - **Cuarentena en los sitios reales**: `_preguntas` (práctica por conjunto y examen oficial: se niega con los dos números), `compose` (test de varios temas y simulacro), `_create_topic_session`, `_create_review_session` (repaso), `_create_diagnostic_session` y `question_groups` (denominador de la cobertura).
-- **Marca «clave en revisión»** para las dudosas: `StudentQuestionView.key_in_review`, `StudentRunView.keys_in_review` y `StudentResultQuestionView.key_in_review`, en la API y en el contrato.
+- **Marca «clave en revisión»** para las dudosas: `StudentQuestionView.in_review`, `StudentRunView.questions_in_review` y `StudentResultQuestionView.in_review`, en la API y en el contrato.
 - **Puerta de datos permanente** al cerrar cada tema (`_puerta_de_claves` en `tools/apuntes.py`, en la corrida y en `--publicar`; `--medir` la enseña sin aplicar): recalcula la discrepancia por conjunto y el que cruce el 30 % **entra en cuarentena solo**.
 - La discrepancia **se puede volver a medir en cualquier momento sin gastar**: `medir_conjuntos` es puro y la puerta es una consulta.
 

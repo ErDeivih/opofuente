@@ -8260,14 +8260,14 @@ export interface components {
             /** Confidence */
             confidence?: ("low" | "medium" | "high") | null;
             correction?: components["schemas"]["StudentCorrectionSchema"] | null;
-            /** Is Reserve */
-            is_reserve: boolean;
             /**
-             * Key In Review
+             * In Review
              * @description La clave de esta pregunta está en revisión: su conjunto discrepa de los apuntes entre el 15 % y el 30 % de las preguntas medidas.
              * @default false
              */
-            key_in_review: boolean;
+            in_review: boolean;
+            /** Is Reserve */
+            is_reserve: boolean;
             /** Options */
             options: components["schemas"]["StudentOptionSchema"][];
             /** Position */
@@ -8325,14 +8325,14 @@ export interface components {
             correct?: string[];
             /** Elapsed Ms */
             elapsed_ms?: number | null;
-            /** Is Reserve */
-            is_reserve: boolean;
             /**
-             * Key In Review
+             * In Review
              * @description La clave de esta pregunta está en revisión: un fallo puede ser de la clave y no del alumno.
              * @default false
              */
-            key_in_review: boolean;
+            in_review: boolean;
+            /** Is Reserve */
+            is_reserve: boolean;
             /** Options */
             options: components["schemas"]["StudentOptionSchema"][];
             /**
@@ -8394,17 +8394,17 @@ export interface components {
             answered: number;
             /** Finished */
             finished: boolean;
-            /**
-             * Keys In Review
-             * @description Cuántas preguntas del test llevan la marca «clave en revisión».
-             * @default 0
-             */
-            keys_in_review: number;
             /** Pending */
             pending: number;
             /** Position */
             position?: number | null;
             question?: components["schemas"]["StudentQuestionSchema"] | null;
+            /**
+             * Questions In Review
+             * @description Cuántas preguntas del test llevan la marca «clave en revisión».
+             * @default 0
+             */
+            questions_in_review: number;
             session: components["schemas"]["StudentSessionSchema"];
             /** Sheet */
             sheet: components["schemas"]["StudentSheetRowSchema"][];

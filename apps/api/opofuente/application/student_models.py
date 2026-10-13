@@ -257,7 +257,7 @@ class StudentQuestionView:
     #: entre el 15 % y el 30 %, así que entra en el test pero el alumno lo ve. El texto de la
     #: marca vive en `domain.key_reliability.MARCA_EN_REVISION` y no se repite aquí: dos
     #: literales distintos acabarían diciendo cosas distintas en la pantalla y en el contrato.
-    key_in_review: bool = False
+    in_review: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -286,7 +286,7 @@ class StudentRunView:
     sheet: tuple[StudentSheetRowView, ...] = ()
     #: Cuántas preguntas del test llevan la marca «clave en revisión». El test entero lo puede decir
     #: de un vistazo sin que el alumno tenga que ir pregunta a pregunta.
-    keys_in_review: int = 0
+    questions_in_review: int = 0
 
 
 @dataclass(frozen=True, slots=True)
@@ -420,7 +420,7 @@ class StudentResultQuestionView:
     #: La clave de esta pregunta está **en revisión** (§1). En el resultado importa más que en
     #: el test: si la clave no es de fiar, un fallo puede ser de la clave y no del alumno, y eso
     #: hay que poder verlo justo cuando se mira qué se ha fallado.
-    key_in_review: bool = False
+    in_review: bool = False
 
 
 @dataclass(frozen=True, slots=True)

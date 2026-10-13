@@ -1257,7 +1257,7 @@ class StudentService:
             outcome=StudentService._outcome(correccion.outcome if correccion else None),
             elapsed_ms=entrada.elapsed_ms,
             topics=temas.get(entrada.question_version_id, ()),
-            key_in_review=entrada.question_version_id in en_revision,
+            in_review=entrada.question_version_id in en_revision,
         )
 
     @staticmethod
@@ -1411,7 +1411,7 @@ class StudentService:
                 else StudentService._pregunta(vista.current, en_revision)
             ),
             sheet=tuple(StudentService._fila(pregunta) for pregunta in vista.questions),
-            keys_in_review=sum(
+            questions_in_review=sum(
                 1 for pregunta in vista.questions if pregunta.question_version_id in en_revision
             ),
         )
@@ -1448,7 +1448,7 @@ class StudentService:
             answered=pregunta.answered,
             chosen_option_keys=tuple(pregunta.chosen_option_keys),
             confidence=None if pregunta.confidence is None else pregunta.confidence.value,
-            key_in_review=pregunta.question_version_id in en_revision,
+            in_review=pregunta.question_version_id in en_revision,
             correction=(
                 None
                 if pregunta.correction is None

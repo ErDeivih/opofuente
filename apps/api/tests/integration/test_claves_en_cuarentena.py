@@ -399,8 +399,8 @@ def test_una_clave_dudosa_entra_en_el_test_con_la_marca_a_la_vista(
     assert arrancado.status_code == 200, arrancado.text
     cuerpo = arrancado.json()
     assert cuerpo["total"] == 3, "el dudoso entra en el test"
-    assert cuerpo["keys_in_review"] == 3, "y las tres van marcadas"
-    assert cuerpo["question"]["key_in_review"] is True
+    assert cuerpo["questions_in_review"] == 3, "y las tres van marcadas"
+    assert cuerpo["question"]["in_review"] is True
     assert rutas
 
 

@@ -230,7 +230,7 @@ export function StudentTestRunner() {
               <p className="test-pregunta__numero">
                 {pregunta.is_reserve ? 'Reserva · ' : ''}
                 {pregunta.position}
-                {pregunta.key_in_review ? (
+                {pregunta.in_review ? (
                   // La clave de esta pregunta está en revisión (§1): el conjunto discrepa de los
                   // apuntes entre el 15 % y el 30 %. Entra en el test, pero el alumno lo ve **antes**
                   // de fiarse de la corrección. El texto es el mismo que devuelve la API.

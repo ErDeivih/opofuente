@@ -298,7 +298,7 @@ export const sessionResultFixture: StudentSessionResult = {
     {
       position: 1,
       is_reserve: false,
-      key_in_review: false,
+      in_review: false,
       part_code: 'primera_parte',
       part_name: 'Primera parte: cuestionario de conocimientos',
       stem: '¿Cuántas capas tiene el modelo OSI?',
@@ -315,7 +315,7 @@ export const sessionResultFixture: StudentSessionResult = {
     {
       position: 2,
       is_reserve: false,
-      key_in_review: false,
+      in_review: false,
       part_code: 'primera_parte',
       part_name: 'Primera parte: cuestionario de conocimientos',
       stem: 'El puerto 443 corresponde a HTTPS.',
@@ -332,7 +332,7 @@ export const sessionResultFixture: StudentSessionResult = {
     {
       position: 3,
       is_reserve: false,
-      key_in_review: false,
+      in_review: false,
       part_code: 'primera_parte',
       part_name: 'Primera parte: cuestionario de conocimientos',
       stem: 'El puerto 22 se usa para SSH.',
@@ -352,7 +352,7 @@ export const sessionResultFixture: StudentSessionResult = {
     {
       position: 4,
       is_reserve: true,
-      key_in_review: false,
+      in_review: false,
       part_code: 'primera_parte',
       part_name: 'Primera parte: cuestionario de conocimientos',
       stem: 'Una pregunta que la plantilla anuló.',
