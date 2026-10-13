@@ -644,3 +644,50 @@ estaban guardadas: un hueco que no se ve es un hueco que no existe.
 
 **El acumulado del objetivo va por ≈ 15,35 $ de 40 $**, muy por debajo del aviso de los 20 $. A este
 precio (0,19–0,40 $ un tema técnico) quedan temas de sobra dentro del presupuesto.
+
+## 13 oct 2026 — Dos temas más publicados (administración de sistemas y seguridad en redes)
+
+Se han escrito y **publicado** los dos que quedaban por valor que no tenían índice. Van con la marca
+«Versión generada · en revisión», como los anteriores:
+
+| tema | previsión | coste real | cobertura | veredicto |
+|---|---|---|---|---|
+| IV.1 · Administración del sistema operativo y software de base | 0,30–0,52 $ | **0,3281 $** | **98,2 %** | publicado |
+| IV.9 · Seguridad en redes, perímetro, acceso remoto, VPN y puesto | 0,27–0,46 $ | **0,3204 $** | **91,1 %** | publicado |
+
+**Lo que cambia para ti:**
+
+1. **IV.1 (administración del sistema)** sale muy bien: cubre el **98,2 %** de las preguntas y su
+   temario es el del día a día del administrador —usuarios y permisos, procesos y servicios, discos y
+   sistemas de ficheros, paquetes y versiones de Debian y macOS, PowerShell y `cmd`, y el
+   mantenimiento y la reparación—. Su bandeja te deja **8 incidencias** (4 claves que contradicen el
+   material, 3 en las que los apuntes dicen otra letra y 1 hueco).
+
+2. **IV.9 (seguridad en redes) publica al filo, y lo sabíamos antes de pagar**: cubre el **91,1 %**
+   cuando el listón es el 90 %. La razón está medida y no es del índice: de los 22 grupos de preguntas
+   que ningún apartado puede situar, **20 tienen clave** y son de **otros temas** (el PoE y las VLAN,
+   que son de IV.10; el RAID y el TIA-942, de IV.2 y IV.5; la gestión de incidencias, de IV.5; el
+   `RFC 2142` y Exchange, de IV.3). Se escribió con esa cifra delante: su techo era el 91,2 %.
+   **Y su bandeja es la más llena de todas: 34 incidencias** (15 preguntas sin clave con la que
+   comprobarse, 11 claves que contradicen el material, 4 claves sospechosas y 4 huecos). Ahí tienes
+   trabajo real de revisión: son las preguntas que el banco trae mal o sin respuesta.
+
+3. **Dos preguntas se quedaron sin cubrir porque el modelo no contestó** por ellas (un fallo de la
+   llamada, no del material): no llevan incidencia porque no hay nada que revisar, pero quedan
+   dichas en el informe del tema.
+
+4. **Una cosa que se aprendió arreglando, y que conviene que sepas**: la corrida de IV.9 dejó el tema
+   sin publicar porque el redactor escribió **dos tablas de puertos** en dos apartados distintos, y un
+   tema **no puede tener dos**: cada una lleva sus encabezados («Servicios de red», «Confusiones que
+   caen») y la comprobación de encabezados repetidos los cuenta dos veces. Se arregló **sin pagar
+   nada**: las cuatro filas que faltaban (Telnet 23, TFTP 69, RDP 3389 y VNC 5900) se movieron a la
+   tabla del cortafuegos **tal como estaban escritas** —no se inventó ninguna— y el bloque duplicado
+   se quitó. Es la cuarta vez que una reparación gratis evita repetir una corrida.
+
+**El acumulado del objetivo va por ≈ 16,00 $ de 40 $**, todavía por debajo del aviso de los 20 $.
+Quedan **15 de los 33 temas publicados** y cuatro borradores (I.4, I.6, I.7 e I.8) que no se reanudan
+porque lo que les falta es material y criterio sobre las claves, no otra corrida.
+
+**Lo que más ayuda ahora mismo**, si tienes un rato: las bandejas de **IV.9** (34 filas) e **IV.1**
+(8) en el panel de incidencias, y el botón **«Esto está mal»** desde el propio párrafo de los apuntes
+cuando algo no cuadre: queda anclado al apartado y llega con el texto delante.
