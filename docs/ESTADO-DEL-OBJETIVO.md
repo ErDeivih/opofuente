@@ -1754,6 +1754,150 @@ que quedan:
 
 ---
 
+## F21c · La tanda de contenido cierra los dos que faltaban por valor: IV.1 y IV.9 (13-oct-2026)
+
+**Rama `f21-temas-valor`** (worktree `F:\\temp-opofuente\\opofuente-contenido`), con **`main = 02cfdb3`
+dentro** al empezar (la rama ya estaba en ese commit: `git merge main` respondió «Already up to date»).
+**Y `main` avanzó a mitad de la tanda**: F22 (`a256321`, la pantalla de Tests) entró en `main` mientras
+se corrían los temas, así que **al cerrar se fusionó `main` en esta rama** (un solo choque, en los tres
+documentos, resuelto **sumando los dos bloques**; el código de F22 entra sin tocar). Es la
+tercera tanda con el **ritmo del §4** de `AJUSTES-AL-OBJETIVO-CLAVES-Y-RITMO-2026-10.md`: contenido
+**directo sobre la base real**, sin rama de contenido y **sin batería de 18 puertas**. La copia
+verificada del día (`20261013-113403-e4c97c.zip`, revisión `0034`) y las migraciones `0035`/`0036` ya
+estaban hechas por f21 y **no se han vuelto a tocar**.
+
+### 1. La tabla de valor, vuelta a medir hoy, y el orden que sale de ella
+
+Los números del encargo son los del principio de f21b; medidos hoy con la cuarentena puesta (la
+puerta del §1 metió dos conjuntos más al cerrar IV.8) son más bajos:
+
+| Tema | Del encargo | **Medido hoy** | Grupos | Preguntas |
+|---|---|---|---|---|
+| **IV.1** | 230 | **228** | 229 | 230 |
+| **IV.9** | 235 | **227** | 222 | 241 |
+
+**El orden se invierte respecto al encargo** (que decía «IV.9 (232) y IV.1 (228)»): medidos hoy, IV.1
+va primero por **una pregunta**. La diferencia es ruido, pero la regla del encargo es que **manda la
+medición del día**, así que se corrió IV.1 y después IV.9, y queda escrito.
+
+### 2. Los dos índices, escritos y ensayados **antes** de pagar (0 $)
+
+| tema | apartados | grupos situados por el enunciado | techo medido | revisión del índice |
+|---|---|---|---|---|
+| **IV.1** | 9 (por asunto, en sus 2 epígrafes) | **223/229 = 97,4 %** | **218/224 = 97,3 %** | PASA |
+| **IV.9** | 8 (por asunto, en sus 5 epígrafes) | **200/222 = 90,1 %** | **207/227 = 91,2 %** | PASA |
+
+Los grupos que ningún índice sitúa **no** se lavan: van a la bandeja del propietario con su motivo.
+En IV.1 son **6** (Kubernetes, la caché L1, la desnormalización, *mashup* y el ERS del ciclo de vida);
+en IV.9 son **22**, y **20 de ellos tienen clave utilizable**, que es lo que pone su techo.
+
+**La sonda de pertenencia por palabras volvió a dar un susto que no era**: en IV.1 decía que el
+**32,8 %** de sus grupos no hablaban de su materia y, leídos, eran las versiones con nombre de Debian
+y macOS, `ext2/3/4`, APT, Ansible, los directorios del sistema y los tipos de mantenimiento —todo de
+IV.1—. Es la segunda vez seguida que orienta mal (en IV.8 pasó lo mismo): **la sonda orienta, el
+ensayo decide**.
+
+### 3. IV.1, redactado y **publicado** el 13-oct
+
+| Qué | Valor |
+|---|---|
+| Cobertura (**clave utilizable**) | **220/224 = 98,2 % PASA** (umbral 90 %) |
+| Cobertura (todas las que tienen clave) | 220/228 = 96,5 % |
+| Hechos | **431 guardados** (432 nuevos, 10 con la clave señalada) → 331 en el plan |
+| Apartados | **9** · ninguno pasó del tope de 150 hechos |
+| Forma | **PASA** · 10.153 palabras de 17.240 (58,9 %) · repetidos 0,6 % · `--limpiar-forma` alineó 8 títulos |
+| Índice | PASA · **0 grupos y 0 hechos sin materia** al cerrar |
+| Bandeja del propietario | **8 incidencias**: 4 `norma_cambiada`, 3 `clave_sospechosa`, 1 `hueco_sin_material` |
+| Llamadas y coste | **79 llamadas (0 fallidas) · 0,3281 $** · 33 minutos, **sin tope activado** |
+| Previsión | 44–76 llamadas · 0,30–**0,52 $** → 3 llamadas por encima del máximo y el coste dentro del rango |
+
+**Tema técnico, precio de técnico**: 79 llamadas a **0,00415 $**, con el **79,7 % de la entrada en
+caché**. La cota de coste de `--prever` volvió a ser un **techo** (0,0068 $/llamada es la media con
+los normativos dentro) y se quedó 0,19 $ por encima de lo que costó de verdad.
+
+### 4. IV.9, redactado y **publicado** el 13-oct: el margen más estrecho de la serie
+
+| Qué | Valor |
+|---|---|
+| Cobertura (**clave utilizable**) | **205/225 = 91,1 % PASA** (umbral 90 %) |
+| Cobertura (todas las que tienen clave) | 205/238 = 86,1 % |
+| Hechos | **461 guardados** → 374 en el plan (87 repetidos agrupados) |
+| Apartados | **8** · ninguno pasó del tope de 150 hechos |
+| Forma | **PASA tras arreglo de 0 $** · 13.383 palabras de 18.440 (72,6 %) · repetidos 0,5 % |
+| Índice | PASA · 12 grupos y 22 hechos sin materia (se fueron con sus grupos) |
+| Bandeja del propietario | **34 incidencias** (la más llena de la serie): 15 `pregunta_ambigua`, 11 `norma_cambiada`, 4 `clave_sospechosa`, 4 `hueco_sin_material` |
+| Llamadas y coste | **73 llamadas (0 fallidas) · 0,3204 $** · 25 minutos, **sin tope activado** |
+| Previsión | 40–68 llamadas · 0,27–**0,46 $** → 5 llamadas por encima del máximo y el coste dentro del rango |
+
+**Publica por 1,1 puntos**, y eso se sabía antes de pagar: el techo medido era **91,2 %** porque
+**20 de los 22 grupos que ningún índice sitúa tienen clave utilizable** y son de otros temas (PoE,
+VLAN, IPv6 y control de acceso al medio de IV.10; RAID 6 y TIA-942 de IV.2 y IV.5; el ENS y la
+gestión de incidencias de I.8 y IV.5; `heartbleed` de IV.5; `RFC 2142` y Exchange de IV.3). El
+margen lo puso **el banco**, no el índice.
+
+**Y dos preguntas quedan sin cubrir y sin incidencia** (`a3491e88`, `f8b2dfbd`): **el modelo no
+contestó** por ellas. Es un fallo de la llamada, no del material, y se dice en su informe.
+
+### 5. La lección de esta tanda: **un tema no puede tener dos tablas de puertos**
+
+La corrida de IV.9 **no archivó la versión**: dejó la forma en NO PASA por dos motivos, los dos de la
+tabla de puertos (dos notas que solo decían lo que un puerto **no** es, y la tabla del acceso remoto
+sin partir por familias). Se marcó también ese apartado y se volvió a pasar `--limpiar-puertos`
+(0 $)… y apareció el defecto de verdad: cada tabla recibe los encabezados «Servicios de red»,
+«Escritorio remoto y otros» y «Confusiones que caen», y la puerta de **encabezados repetidos** —que
+mira el tema entero— los cuenta **dos veces**. No hay orden de limpiezas que lo tape.
+
+**Lo que se hizo, midiendo antes de tocar nada y a 0 $**: **consolidar las dos tablas en una**. Las
+cuatro filas que no estaban en la del cortafuegos (23 Telnet, 69 TFTP, 3389 RDP y 5900 RFB/VNC) se
+movieron allí **literalmente** —su mismo servicio, su misma nota, sin inventar ninguna fila—, el
+bloque duplicado se quitó del acceso remoto y la marca `tabla_unica` volvió a estar **solo** en el
+apartado del cortafuegos. Después, `--publicar` (0 $). **Es la cuarta vez en la serie que una
+reparación de 0 $ evita volver a pagar una corrida**, y la primera que **mueve** contenido de un
+apartado a otro.
+
+### 6. El balance de la tanda (f21c), con las cifras medidas
+
+| tema | previsión (llamadas · $) | real (llamadas · $) | cobertura (clave utilizable) | veredicto |
+|---|---|---|---|---|
+| **IV.1** | 44–76 · 0,30–0,52 | 79 · **0,3281** | 220/224 = **98,2 %** | **publicado** |
+| **IV.9** | 40–68 · 0,27–0,46 | 73 · **0,3204** | 205/225 = **91,1 %** | **publicado** |
+| | | **0,6485 $** (los dos temas) | | **2 publicados · 0 borradores** |
+
+**Dos temas publicados por 0,6485 $**, con **0,32 $ de media** por tema. El acumulado del objetivo
+queda en **≈ 16,00 $ de 40** (≈ 15,35 $ al cerrar f21b). La forma pasó en los dos: IV.1 con
+`--limpiar-forma` (8 títulos, 0 $) y IV.9 con la consolidación de sus dos tablas de puertos (0 $).
+La puerta de claves del §1 se recalculó al cerrar cada tema: **99 → 103 → 105 conjuntos medibles**,
+con **14 en cuarentena** y **9 dudosos** en los dos cierres, y **ningún conjunto cambió de veredicto**.
+
+**Lo que la tanda deja medido sobre el precio de un tema**:
+
+- un tema **técnico** sale a **0,0030–0,0045 $ por llamada** (IV.1 0,00415, IV.9 0,00439) y la corrida
+  entera a **0,19–0,40 $**: son ya **seis técnicos seguidos** dentro de la banda;
+- para un técnico la **cota de coste de `--prever` es un techo**, no un suelo: se quedó por encima en
+  los dos temas de esta tanda (0,52 $ frente a 0,3281 $, y 0,46 $ frente a 0,3204 $);
+- la cota de **llamadas** se quedó corta en **5 de las 6 corridas** de f21 y f21b, siempre por el
+  **bucle de huecos**: es la partida que no se puede acotar de antemano;
+- y el **techo medido antes de pagar** (`sin_materia_con_clave.py`) es la cifra que decide si el tema
+  merece la pena: IV.8 91,8 % → publicó 99,1 %; IV.1 97,3 % → publicó 98,2 %; **IV.9 91,2 % → publicó
+  91,1 %**, al filo.
+
+### 7. Lo que queda fuera, con el porqué
+
+- **I.7** (58,4 %), **I.4** (88,9 %), **I.8** (82,0 %) e **I.6** (72,5 %): los cuatro borradores
+  **siguen sin reanudar**, con su cifra escrita y por el mismo motivo medido —su hueco es de
+  **material** y de criterio sobre las claves, no de una corrida más—;
+- **III.4 (409)** sigue **sin escribir**: su banco es de otra materia en un 40 %, ya medido;
+- los **12 grupos de IV.9** y los **6 de IV.1** que ningún índice sitúa: están en la bandeja del
+  propietario con su motivo, y en IV.9 son los que ponen el techo en el 91,2 %;
+- las **2 preguntas de IV.9** por las que el modelo no contestó: sin cubrir y sin incidencia.
+
+**Con IV.1 e IV.9 quedan publicados 15 de los 33 temas** (medido en la base: 15 temas con versión
+archivada **y** apartados escritos; hay una instantánea de II.1 del 6-oct que es del **dossier** del
+tema, sin apartados, y no cuenta como tema escrito). Están escritos 19: los 15 publicados más los
+cuatro borradores. Los que faltan por escribir son los que la tabla pone por debajo de 227 claves
+utilizables (II.1 216, III.3 201, II.3 189, I.3 182, IV.10 180, II.2 173, III.8 169, II.5 155…) más
+los cuatro borradores y III.4.
+
 ## F22 · La pantalla de Tests: la zona del alumno se cierra (13-oct-2026)
 
 **Rama `f22-zona-alumno`** (árbol `F:\temp-opofuente\opofuente-alumno2`, desde `main = 570e40d`). Sin

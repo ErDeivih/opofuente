@@ -63,6 +63,28 @@ ventana de quince minutos puede parecer congelado **sin estarlo**; el contador *
 pilla. Y `.out.txt` a 0 B durante toda la corrida **no es señal**. Lo que decide es **el contador por
 tema**, no el global ni el fichero.
 
+### Cierre de la noche del 13-oct · el estado y un aviso de disco
+
+- **15 de 33 temas publicados** y 4 en borrador con motivo medido. Lo de la tarde: **ocho temas publicados
+  por 3,58 $** (media 0,45 $), coberturas del 91 % al 99 %, **sin una sola batería de 18 puertas**. La
+  previsión se queda **corta en los normativos densos** (cuestan el doble por llamada) y **larga en los
+  técnicos** (es un techo). Cuatro veces una reparación de **0 $** evitó repetir una corrida.
+- **La cuarentena entró sola** cuatro veces más al cerrar cada tema: **105 conjuntos medibles y 14 en
+  cuarentena** (eran 10 al empezar la tarde). **La bandeja del propietario: 603 incidencias.**
+- **Zona del alumno cerrada**: la **pantalla de Tests** ya existe (18/18) y los tres enlaces que le
+  apuntaban (`?count=20`, `?tema=X`) funcionan. Queda sin hacer, medido y escrito: «Ver en apuntes» desde
+  el test, «Repetir solo las falladas» (el filtro `failed` ya está en el motor), 2 de las 3 pestañas del
+  tema y el buscador/marca de leído/modo repaso dentro del tema. **La revisión de apuntes en el panel
+  sigue pendiente.**
+- **INAP**: **18 exámenes importados**, 4 ya estaban (sin duplicar) y **6 fuera con motivo** —entre ellos
+  los tres de 2018, que **son escaneos sin capa de texto y necesitan OCR**—. `origin_scope` en los datos.
+- **AVISO DE DISCO**: `F:` llegó a **0 GB libres** al verificar una copia (la extracción necesita 2,7 GB
+  más). Se liberaron 6,3 GB borrando los restos de esa extracción y la copia del 10-oct. **`F:` tiene
+  ~6 GB y la base pesa 2,72 GB**: hay margen para trabajar, **no para otra copia del árbol entero**
+  (pesa 4,08 GB, porque incluye fuentes y PDF; la base sola es 2,72 GB). **Antes de la copia final hay
+  que hacer sitio o copiar solo la base.**
+- **Sin fusionar todavía**: el bloque del INAP (`f23-inap`), que espera su turno de puertas.
+
 ---
 
 # Estado de la sesión, para retomar sin preguntar (12-oct-2026)
