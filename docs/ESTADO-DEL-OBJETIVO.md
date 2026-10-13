@@ -1278,3 +1278,29 @@ Es el tema **técnico** de la tanda que mejor aprovecha el bucle de huecos: **26
 **La puerta de datos del §1** cerró en **85 conjuntos medibles · 12 en cuarentena · 8 dudosos**: otro
 conjunto entró **solo** al recibir las anclas del tema, y el denominador de la cobertura pasó de 341 a
 **337** preguntas.
+
+### 11. IV.6, redactado y **publicado** el 13-oct: la corrida más barata de la serie
+
+| Qué | Valor |
+|---|---|
+| Cobertura (**clave utilizable**) | **288/297 = 97,0 % PASA** (umbral 90 %) |
+| Cobertura (todas las que tienen clave) | 288/311 = 92,6 % |
+| Hechos | 626 guardados → **488 en el plan** (138 repetidos agrupados) |
+| Apartados | **16** · ninguno pasó del tope de 150 hechos |
+| Forma | **PASA** · 15.339 palabras de 25.040 · **repetidos 0,0 %** · `--limpiar-forma` tocó 15 apartados |
+| Índice | PASA · 4 grupos y 5 hechos sin materia |
+| Bandeja del propietario | **25 incidencias**: 14 `norma_cambiada`, 5 `pregunta_ambigua`, 4 `clave_sospechosa`, 2 `hueco_sin_material` |
+| Llamadas y coste | **105 llamadas (0 fallidas) · 0,3916 $** · 28 minutos, **sin tope activado** |
+| Previsión | 62–108 llamadas · 0,42–**0,73 $** → la corrida salió **por debajo del mínimo** |
+
+**Es la corrida más barata de la serie**: 105 llamadas a **0,00373 $**, con el 55 % de la entrada en
+caché (353.664 de 642.841 tokens) y 4.685 tokens de salida por llamada. **Es también la primera con
+párrafos repetidos al 0,0 %** y la que cierra con menos preguntas «sin contestar por los apuntes»
+(2 de 321).
+
+**Y el ensayo evitó un reparto mal hecho**: `802 ?11` estaba como patrón del apartado de organismos y
+**38 de los 310 grupos** acabaron ahí por citar la norma al principio del enunciado. Corregido en el
+mismo ensayo (0 $): organismos bajó de 38 a 10 grupos y el WiFi subió de 45 a 72. El defecto no llegó
+a la corrida porque el ensayo se hace antes de pagar, que es la regla de la tanda.
+
+**La puerta de datos del §1** cerró en **87 conjuntos medibles · 12 en cuarentena · 9 dudosos**.

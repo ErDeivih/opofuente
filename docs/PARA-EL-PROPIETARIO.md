@@ -472,3 +472,63 @@ conclusión no cambia: **esas claves no están corridas, están mal en muchos si
 pide el paso de la clave revisada automáticamente, no una resta de letras. También he arreglado la
 herramienta para que no se pueda volver a leer al revés: ahora dice «aciertos sobre total» y no
 compara nada si su línea base no cuadra.
+
+---
+
+## 13-oct-2026 · La cuarentena de claves ya está aplicada a **tus datos** (y cuatro temas nuevos de apuntes)
+
+**Esto te toca lo que estudias, así que va lo primero.** La cuarentena de claves que se anunció el
+13-oct estaba **en el programa, no en tu base**: la base estaba en la revisión anterior y le faltaba la
+columna del veredicto. Ya está aplicada, y con ella **la medida hecha sobre tus datos**:
+
+- **10 conjuntos con la clave en cuarentena** (1.117 preguntas): sus preguntas **no entran** en tests,
+  simulacros, repasos, práctica por tema ni diagnóstico, y **no cuentan** en la cobertura de los apuntes.
+  Son los que ya se dijeron: C_ejer_1_libre_DZA_2026, Test por temas, TEST VARIOS, Test Aragón 2015,
+  1600-Preguntas-Constitución, TEST B1, baquedano, Supuestos Prácticos Bloque IV, TAI_ejer_1_A (INAP
+  2024) y el simulacro de drive-download.
+- **6 conjuntos marcados «dudosa»** (984 preguntas): entran, con la marca **«clave en revisión»** visible
+  al corregir.
+- **16 cambios de veredicto**, cada uno con su registro de auditoría.
+- Y la puerta se **recalcula sola al cerrar cada tema**: al escribir los apuntes de estos cuatro temas,
+  **dos conjuntos más** (`PreparaTAI AGE-2026` y otro) cruzaron su umbral y entraron en cuarentena sin
+  que nadie se acordara de mirarlo. Es lo que el ajuste pedía.
+
+### Los apuntes: cuatro temas nuevos, tres publicados y uno en borrador
+
+Por la tabla de valor (cuántas preguntas tienen clave **utilizable**), y con el índice de cada tema
+escrito y **ensayado antes de pagar** (0 $):
+
+| tema | previsión | coste real | cobertura (clave utilizable) | veredicto |
+|---|---|---|---|---|
+| **IV.5** · Seguridad de los sistemas de información | 0,51–0,88 $ | **0,5452 $** | **97,3 %** | **publicado** |
+| **III.9** · Repositorios, metodologías, pruebas y control de versiones | 0,43–0,73 $ | **0,4961 $** | **96,1 %** | **publicado** |
+| **I.5** · Igualdad, violencia de género, LGTBI, discapacidad y dependencia | 0,41–0,71 $ | **0,8966 $** | **91,5 %** | **publicado** |
+| **IV.6** · Comunicaciones, medios de transmisión y redes | 0,42–0,73 $ | **0,3916 $** | **97,0 %** | **publicado** |
+| **I.7** · Protección de datos personales y derechos digitales | 0,49–0,85 $ | **1,1903 $** | 58,4 % | **borrador** |
+
+**I.7 se queda en borrador con dos motivos escritos**: su corrida **se paró por su tope de tiempo**
+(compuso 257 de 364 grupos) y el bucle que rellena los huecos apenas arrancó. Los apuntes están
+escritos y guardados (19 apartados, 25.768 palabras) y **volver a lanzarlo cuesta 0,26–0,64 $**, sin
+pagar otra vez por lo hecho. **Dos cosas que conviene que sepas de I.7**: su bandeja de incidencias
+está **vacía** (las escribe el final del bucle que el tope cortó) y su tope de dinero se cruzó en
+0,06 $.
+
+### Una cifra que te sirve para lo que queda: el precio de un tema
+
+Medido en esta tanda: **0,0037–0,0045 $ por llamada en un tema técnico** y **0,0078–0,0083 $ en uno
+normativo y denso** (casi el doble). Y la cota de arriba de la previsión **se ha quedado corta en los
+tres temas normativos densos** (I.4, I.8 y ahora I.7). La regla del tope («la cota de arriba más un
+tercio») **sigue siendo la correcta** —es la que impidió que I.7 se fuera de las manos— pero conviene
+saber que en un tema normativo hay que contar con el doble de precio por llamada que en uno técnico.
+
+### Lo que sigue, y lo que necesitaría
+
+- **III.4 (Diseño y programación orientada a objetos)** **no se escribe**, y está medido: de sus 405
+  grupos, solo el **58,5 %** son de su materia; el resto son **fundamentos de programación** (bucles,
+  operadores a nivel de bits, tipos primitivos de Java), que son de III.2. Su cobertura no podría pasar
+  del 60 %: **es un problema de clasificación de preguntas, no de apuntes**, y adivinar dónde va cada
+  una es trabajo de la bandeja, no de los apuntes.
+- **Los siguientes por valor** son III.1, III.7, III.5, IV.9 y IV.8, y todos necesitan su catálogo
+  antes de la corrida (el ensayo de reparto, que es gratis y va antes de pagar).
+- **I.7 es el único tema que pide una segunda corrida** (0,26–0,64 $) para rellenar sus huecos y
+  llenar su bandeja.
