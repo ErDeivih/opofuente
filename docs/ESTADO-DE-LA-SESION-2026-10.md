@@ -38,6 +38,31 @@ claves fiables, incidencias bien clasificadas y **el ritmo**: el contenido de ap
    conjunto** en la bandeja del propietario; la pantalla de **Tests**; `origin_scope` + INAP; D4; D11; y una
    **copia verificada final**.
 
+### Cierre de la tarde del 13-oct · el ritmo nuevo, medido
+
+**Nueve temas publicados** y **cuatro en borrador con su motivo medido**. Lo de esta tarde, sin una sola
+batería de 18 puertas (el §4 tenía razón: generar apuntes **no cambia el programa**):
+
+| tema | cobertura (clave utilizable) | coste | previsión |
+|---|---|---|---|
+| **IV.5** | 367/377 = **97,3 %** | **0,5452 $** | 0,51–0,88 $ |
+| **I.5** | 344/377 = **91,2 %** | **0,8966 $** | 0,41–0,71 $ (se cruzó) |
+| **III.9** | 328/341 = **96,2 %** | **0,4961 $** | 0,43–0,73 $ |
+| **IV.6** | 288/297 = **97,0 %** | **0,3916 $** | — |
+
+**Cuatro temas publicados por 2,33 $** (media ≈0,58 $/tema). **I.7 quedó en borrador** con dos motivos:
+cobertura 291/498 = **58,4 %** y **la corrida la cortó su tope de tiempo** — su coste, 1,1903 $, **cruzó la
+previsión** (0,49–0,85 $) porque el tema tiene **133 preguntas sin clave clara**: los temas con claves
+dudosas cuestan más y publican menos, y eso ya se ve **antes** de pagar. **Es reanudable sin volver a
+pagar** lo escrito. **Frontera de tema publicada**: IV.6 a las 20:02; el siguiente (**III.1**) lanzado a las
+20:01. Gasto acumulado **≈14,1 $ de 40**.
+
+**Aprendido midiendo (tercera vez el mismo patrón)**: en la segunda mitad de una corrida **el contador
+global de anclas se mueve a saltos** (las comprobaciones se escriben por lotes de 10), así que en una
+ventana de quince minutos puede parecer congelado **sin estarlo**; el contador **del nodo del tema** sí lo
+pilla. Y `.out.txt` a 0 B durante toda la corrida **no es señal**. Lo que decide es **el contador por
+tema**, no el global ni el fichero.
+
 ---
 
 # Estado de la sesión, para retomar sin preguntar (12-oct-2026)
