@@ -2005,3 +2005,38 @@ escrito con su cifra.
 3. **Las capturas de la pantalla de Exámenes y la batería de 18 puertas**: pendientes del turno.
 4. La `held_at` de los 13 exámenes queda nula: ni el cuestionario ni la plantilla declaran la fecha,
    y no se inventa.
+
+### 7. Añadidos tras la revisión del agente padre (13-oct-2026, noche)
+
+**Las 32 descargas son 16 cuestionarios y sus 16 plantillas.** El manifiesto `inap-tai` trae las dos
+cosas por examen, y por eso cada examen se puede importar **con su clave**: sin la plantilla no se
+importa la clave, y sin clave el examen no se puede corregir.
+
+**a) La procedencia llega también a los conjuntos archivados (53 cambios, no 49).** El primer relleno
+leía la lista de conjuntos **vivos**, así que los cuatro archivados de 2025 (`b9798368`, `200c1c04`,
+`ee30a6d1`, `4b87ff6b`) se quedaban en `desconocida`. Era un agujero **de la regla, no de los datos**:
+los cuatro **son** exámenes oficiales del INAP. `marcar_procedencia.py` gana `--incluir-archivados` y
+quedan en `age` (**4 cambios más**). La protección de una clave oficial no depende de que un conjunto
+salga en la lista de vivos.
+
+**b) Los modelos A y B no comparten clave: son dos plantillas distintas sobre el mismo cuestionario.**
+Medido entrada a entrada, en el orden del documento, sobre las dos claves **activas**:
+
+| pareja | entradas | iguales | distintas |
+|---|---|---|---|
+| TAI libre 2025, A contra B | 135 y 135 | 47 | **88** |
+| TAI promoción interna 2025, A contra B | 85 y 85 | 40 | **45** |
+
+(Ejemplos del de libre: posición 3 → A «c», B «a»; posición 4 → A «a», B «c»; posición 5 → A «d», B
+«b».) El cuestionario es el mismo —medido por firma: 131 de 135 en el de libre y **85 de 85** en el de
+promoción interna— y lo que cambia es la plantilla, que es como el INAP cruza las respuestas entre
+modelos. **Ninguno de los dos sobra**: los dos nombres parecidos son los dos modelos publicados.
+
+**c) La plantilla recortada, con nombre y apellidos.** Los dos exámenes que se ven y no se pueden
+hacer son **«TAI ingreso libre 2022 · ejercicio único»** y **«TAI ingreso libre 2025 ·
+extraordinario»**: la versión de su plantilla que **ya estaba en la biblioteca desde el 29-sep** tiene
+la evidencia recortada (1.198 de 1.276 caracteres citables), y el enlace que verifica la plantilla
+contra la clave confirma 60 de 135 y **se niega**. El sistema lo detectó solo; no se ha tapado ni se
+ha activado una clave a medias. La reparación —volver a extraer el texto de esas versiones con el
+código de hoy— **no tiene ruta todavía**, y alcanza a **3.474 de 5.162** versiones cortas de la
+biblioteca (**1,71 M** de caracteres que no se pueden citar).

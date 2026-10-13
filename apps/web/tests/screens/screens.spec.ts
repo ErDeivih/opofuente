@@ -322,6 +322,17 @@ async function montarExamenOficial(): Promise<string> {
     }),
   );
 
+  await leer<unknown>(
+    await fetch(`${API}/api/v1/question-sets/${conjunto.id}`, {
+      method: 'PATCH',
+      headers: cabeceras,
+      // La visibilidad va aparte de la creación, como en la aplicación: un conjunto nace `personal` y
+      // se hace `public` a propósito. Sin esto el examen no sale en la lista del alumno, que es justo
+      // la pantalla que se retrata.
+      body: JSON.stringify({ distribution: 'public' }),
+    }),
+  );
+
   const claves = await leer<{ id: string }[]>(
     await fetch(`${API}/api/v1/question-sets/${conjunto.id}/answer-keys`),
   );
