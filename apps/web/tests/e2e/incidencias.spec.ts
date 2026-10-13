@@ -294,10 +294,13 @@ test('E2E-F18 una incidencia del motor se ve, lleva a lo que la provoca y se des
       `/admin/preguntas?pregunta=${pregunta}`,
     );
 
-    // Y el enlace a la pregunta **abre su ficha**, que es para lo que está.
+    // Y el enlace a la pregunta **abre su ficha**, que es para lo que está: desde F20 esa dirección
+    // (`/admin/preguntas?pregunta=…`) es la ficha donde se arregla la respuesta correcta, no la tabla
+    // del banco.
     await fila.getByRole('link', { name: /Ver la pregunta en el banco/ }).click();
     await expect(page).toHaveURL(new RegExp(`/admin/preguntas\\?pregunta=${pregunta}$`));
-    await expect(page.getByRole('heading', { name: 'Pregunta 1' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Ficha de la pregunta' })).toBeVisible();
+    await expect(page.getByText(ENUNCIADO)).toBeVisible();
 
     // --- 2. Se despacha, con la nota de lo que se ha decidido ------------------------------------
     await page.goto('/admin/incidencias');

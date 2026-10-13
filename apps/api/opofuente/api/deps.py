@@ -26,6 +26,7 @@ from opofuente.application.library_service import LibraryService
 from opofuente.application.notes_incident_service import NotesIncidentsService
 from opofuente.application.notes_report_service import NotesReportsService
 from opofuente.application.profiles_service import ProfilesService
+from opofuente.application.question_file_service import QuestionFileService
 from opofuente.application.question_service import QuestionService
 from opofuente.application.readiness_service import ReadinessService
 from opofuente.application.review_service import ReviewService
@@ -89,6 +90,12 @@ def get_artifact_store(request: Request) -> ArtifactStore:
 
 def get_question_service(request: Request) -> QuestionService:
     service: QuestionService = request.app.state.question_service
+    return service
+
+
+def get_question_file_service(request: Request) -> QuestionFileService:
+    """La ficha de pregunta: donde el propietario arregla una clave dudosa (F20, bloque C)."""
+    service: QuestionFileService = request.app.state.question_file_service
     return service
 
 
@@ -176,6 +183,7 @@ ClassificationServiceDep = Annotated[ClassificationService, Depends(get_classifi
 LibraryServiceDep = Annotated[LibraryService, Depends(get_library_service)]
 ArtifactStoreDep = Annotated[ArtifactStore, Depends(get_artifact_store)]
 QuestionServiceDep = Annotated[QuestionService, Depends(get_question_service)]
+QuestionFileServiceDep = Annotated[QuestionFileService, Depends(get_question_file_service)]
 AutoStudyServiceDep = Annotated[AutoStudyService, Depends(get_auto_study_service)]
 StudyServiceDep = Annotated[StudyService, Depends(get_study_service)]
 SearchServiceDep = Annotated[SearchService, Depends(get_search_service)]

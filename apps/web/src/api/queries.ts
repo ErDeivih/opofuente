@@ -123,6 +123,13 @@ import {
   type NavigateRequest,
 } from './study';
 import {
+  fetchQuestionFile,
+  markCorrectOption,
+  repairQuestion,
+  type MarkCorrectResult,
+  type RepairResult,
+} from './questionFile';
+import {
   activateAnswerKey,
   correctQuestion,
   createQuestionSet,
@@ -229,6 +236,9 @@ export const queryKeys = {
   setQuestions: (setId: string, filtros: string) =>
     ['questions', 'set', setId, 'list', filtros] as const,
   question: (questionId: string) => ['questions', 'question', questionId] as const,
+  /* F20: la ficha de la pregunta. Cuelga de la pregunta porque es la misma cosa vista entera: la
+     respuesta correcta, de dónde sale, los apuntes y las incidencias. */
+  questionFile: (questionId: string) => ['questions', 'question', questionId, 'file'] as const,
   questionEvidence: (questionId: string) =>
     ['questions', 'question', questionId, 'evidence'] as const,
   /* S12.7: la explicación de la pregunta entera y la de cada opción. */
@@ -940,6 +950,78 @@ export function useQuestion(questionId: string | null) {
     queryKey: queryKeys.question(questionId ?? 'ninguna'),
     queryFn: () => fetchQuestion(questionId as string),
     enabled: questionId !== null,
+  });
+}
+
+/**
+ * La ficha de una pregunta (F20): la respuesta correcta, de dónde sale, los apuntes y qué se puede
+ * hacer con ella.
+ *
+ * Es una lectura propia y no un trozo de `useQuestion` a propósito: la ficha cruza seis tablas más
+ * —la plantilla del banco, el material del que salió, las comprobaciones de los apuntes, las
+ * incidencias y las dos marcas de fuera de temario— y meterla en la consulta del banco haría que la
+ * tabla de 50 preguntas pagara por lo que solo se mira de una en una.
+ */
+export function useQuestionFile(questionId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.questionFile(questionId ?? 'ninguna'),
+    queryFn: () => fetchQuestionFile(questionId as string),
+    enabled: questionId !== null,
+  });
+}
+
+/**
+ * Marca la respuesta correcta (F20). Al terminar, todo lo del banco se recarga.
+ *
+ * Se invalida `['questions']` entero y no solo la ficha: cambiar la respuesta correcta escribe una
+ * plantilla nueva del banco, así que también cambian el historial de la ficha, el listado de
+ * plantillas y lo que se ve en el banco. Dejar la mitad sin recargar enseñaría dos verdades.
+ */
+export function useMarkCorrectOption() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: {
+      questionId: string;
+      correctOptionKeys: string[];
+      note?: string | null;
+      actor?: string | null;
+    }) =>
+      markCorrectOption(input.questionId, {
+        correctOptionKeys: input.correctOptionKeys,
+        note: input.note ?? null,
+        actor: input.actor ?? undefined,
+      }),
+    onSuccess: (resultado: MarkCorrectResult) => {
+      queryClient.setQueryData(queryKeys.questionFile(resultado.file.question_version_id), resultado.file);
+      invalidateQuestions(queryClient);
+    },
+  });
+}
+
+/** Repara lo que una regla mecánica pueda reparar (F20), escribiendo una versión nueva. */
+export function useRepairQuestion() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: {
+      questionId: string;
+      note: string;
+      reglas?: string[] | null;
+      actor?: string | null;
+    }) =>
+      repairQuestion(input.questionId, {
+        note: input.note,
+        reglas: input.reglas ?? null,
+        actor: input.actor ?? undefined,
+      }),
+    onSuccess: (resultado: RepairResult) => {
+      // La versión nueva pasa a ser la que se mira: dejarla en la vieja enseñaría la que acaba de
+      // quedar sustituida, y el botón de reparar volvería a ofrecerse sobre ella.
+      queryClient.setQueryData(
+        queryKeys.questionFile(resultado.new_question_version_id),
+        resultado.file,
+      );
+      invalidateQuestions(queryClient);
+    },
   });
 }
 

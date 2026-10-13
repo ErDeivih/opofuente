@@ -44,6 +44,7 @@ from opofuente.application.library_service import LibraryService
 from opofuente.application.notes_incident_service import NotesIncidentsService
 from opofuente.application.notes_report_service import NotesReportsService
 from opofuente.application.profiles_service import ProfilesService
+from opofuente.application.question_file_service import QuestionFileService
 from opofuente.application.question_service import QuestionService
 from opofuente.application.readiness_service import ReadinessService
 from opofuente.application.review_service import ReviewService
@@ -83,6 +84,7 @@ from opofuente.infrastructure.observability import setup_logging
 from opofuente.infrastructure.ocr import tesseract_from_settings
 from opofuente.infrastructure.probes import DatabaseProbe, DataDirectoryProbe
 from opofuente.infrastructure.profile_repository import SqlAlchemyProfileRepository
+from opofuente.infrastructure.question_file_repository import SqlAlchemyQuestionFileRepository
 from opofuente.infrastructure.question_repository import SqlAlchemyQuestionRepository
 from opofuente.infrastructure.readiness_repository import SqlAlchemyReadinessRepository
 from opofuente.infrastructure.representation_store import RepresentationStore
@@ -252,6 +254,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         # Importar preguntas **desde un documento** necesita leer sus secciones y fragmentos: la
         # cita de una pregunta sale de ahí (DEBT-010).
         documents=SqlAlchemyDocumentRepository(session_factory, representations),
+    )
+    # F20: la ficha de pregunta. Reutiliza el servicio del banco para leer la pregunta y sus
+    # plantillas, y añade lo que solo la ficha necesita (de dónde salió la clave, qué contestaron
+    # los apuntes, las incidencias y el veredicto de fiabilidad del §1) y las dos escrituras
+    # auditadas: marcar la correcta y reparar con una regla.
+    question_file_service = QuestionFileService(
+        questions=question_service,
+        files=SqlAlchemyQuestionFileRepository(session_factory),
+        clock=clock,
     )
     search_service = SearchService(
         search=SqlAlchemySearchRepository(session_factory),
@@ -435,6 +446,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.library_service = library_service
     app.state.artifact_store = artifact_store
     app.state.question_service = question_service
+    app.state.question_file_service = question_file_service
     app.state.auto_study_service = auto_study_service
     app.state.study_service = study_service
     app.state.student_service = student_service

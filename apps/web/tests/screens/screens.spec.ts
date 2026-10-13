@@ -212,6 +212,93 @@ for (const { ancho, alto, etiqueta } of ANCHOS) {
 }
 
 /**
+ * La ficha de pregunta (F20), con una pregunta **de verdad** y del caso de uso: una de un banco con la
+ * respuesta correcta en duda.
+ *
+ * La pregunta se elige por la **bandeja del motor**, que es de donde se llega a la ficha de verdad: se
+ * piden las incidencias de los bancos en cuarentena (`clave_no_fiable`), se lee su ficha por la API y
+ * se retrata la primera que **manda hoy** (no una vista ya sustituida) y cuyo banco trae el veredicto
+ * de fiabilidad del §1. Así la captura enseña el caso entero: la letra, de dónde sale, el veredicto del
+ * banco y lo que dicen los apuntes en contra.
+ *
+ * Si los datos no traen ninguna —la base de la suite nace vacía— se cae a la primera pregunta del
+ * banco, y lo que salga se ve en la captura: **nada de filas inventadas**.
+ *
+ * Se retrata a los dos anchos porque es una pantalla larga —enunciado, opciones, procedencia, apuntes,
+ * incidencias, los dos botones y dos tablas— y el móvil es donde se desborda.
+ */
+for (const { ancho, alto, etiqueta } of ANCHOS) {
+  test(`ficha-de-pregunta a ${ancho} px`, async ({ page }) => {
+    const pregunta = await preguntaEnCuarentena();
+    await retratar(
+      page,
+      `/admin/preguntas?pregunta=${pregunta}`,
+      '/admin/preguntas-ficha',
+      ancho,
+      alto,
+      etiqueta,
+    );
+  });
+}
+
+/** La ficha de una pregunta, por la API: se usa para elegir la que se retrata. */
+async function fichaDe(pregunta: string): Promise<{
+  superseded_by: string | null;
+  key_reliability: string | null;
+} | null> {
+  const respuesta = await fetch(`${API}/api/v1/question-files/${pregunta}`);
+  if (!respuesta.ok) {
+    return null;
+  }
+  return (await respuesta.json()) as { superseded_by: string | null; key_reliability: string | null };
+}
+
+/**
+ * La primera pregunta **vigente** de un banco en cuarentena, o la primera del banco.
+ *
+ * Se piden veinte candidatas y no una: después de una corrida de reparaciones, parte de la bandeja
+ * apunta a vistas ya sustituidas, y retratar una de esas enseñaría el aviso de «esta vista está
+ * sustituida» en lugar de la ficha del caso de uso.
+ */
+async function preguntaEnCuarentena(): Promise<string> {
+  const incidencias = await fetch(
+    `${API}/api/v1/notes-incidents?category=clave_no_fiable&limit=20`,
+  );
+  if (incidencias.ok) {
+    const cuerpo = (await incidencias.json()) as {
+      incidents?: { question_version_id: string }[];
+    };
+    const candidatas = (cuerpo.incidents ?? []).map(
+      (incidencia) => incidencia.question_version_id,
+    );
+    let primeraVigente: string | undefined;
+    for (const candidata of candidatas) {
+      const ficha = await fichaDe(candidata);
+      if (ficha?.superseded_by !== null && ficha !== null) {
+        continue;
+      }
+      primeraVigente ??= candidata;
+      if (ficha?.key_reliability === 'no_fiable' || ficha?.key_reliability === 'dudosa') {
+        return candidata;
+      }
+    }
+    if (primeraVigente !== undefined) {
+      return primeraVigente;
+    }
+  }
+  const preguntas = await fetch(`${API}/api/v1/questions?limit=1`);
+  if (!preguntas.ok) {
+    throw new Error('no se pudo leer ninguna pregunta del banco para la captura de la ficha');
+  }
+  const listado = (await preguntas.json()) as { questions: { id: string }[] };
+  const primera = listado.questions[0]?.id;
+  if (primera === undefined) {
+    throw new Error('el banco no tiene ninguna pregunta: no hay ficha que retratar');
+  }
+  return primera;
+}
+
+/**
  * La bandeja de avisos del alumno, con un aviso dentro (F16).
  *
  * Se siembra por la ruta del alumno —la misma que usa el botón «Esto está mal»— sobre los apuntes

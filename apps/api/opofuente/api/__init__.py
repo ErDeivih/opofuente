@@ -19,6 +19,7 @@ from opofuente.api.routes import (
     notes_incidents,
     notes_reports,
     profiles,
+    question_file,
     questions,
     readiness,
     reviews,
@@ -58,5 +59,9 @@ api_router.include_router(notes_reports.router)
 # va
 # al final por el mismo motivo que la del alumno.
 api_router.include_router(notes_incidents.router)
+# La ficha de pregunta (F20) cuelga de `/question-files`, un prefijo que no comparte con nadie: va
+# al final por el mismo motivo que las dos bandejas. Es la pantalla que faltaba detrás de los
+# enlaces que la bandeja del motor y el banco ya usaban (`/admin/preguntas?pregunta=<id>`).
+api_router.include_router(question_file.router)
 
 __all__ = ["api_router"]
