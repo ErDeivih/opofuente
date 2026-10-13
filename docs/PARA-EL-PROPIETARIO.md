@@ -3,6 +3,83 @@
 Lo que conviene que sepas y **no** hace falta que contestes para que el trabajo siga. Lo que sí
 necesita tu criterio está marcado como **«Decide tú»**.
 
+## 13 oct 2026 — La bandeja del motor ya tiene pantalla, y sus 453 incidencias estaban mal etiquetadas
+
+**Lo que cambia para ti:**
+
+1. **Por fin hay dónde mirar las incidencias del motor.** Están en el panel, en **«Incidencias»**
+   (`/admin/incidencias`), al lado de «Avisos». No es una lista de errores de nadie: es **lo que el
+   sistema no ha podido resolver solo** al comprobar un tema contra las preguntas de su banco. Cada
+   una lleva su categoría, el motivo concreto, la **pregunta que la provoca**, la frase de los apuntes
+   que la demuestra cuando existe, y tres enlaces: al **apartado exacto de los apuntes**, a la
+   **pregunta en el banco** y al **material del que salió la clave**. Y se puede **decidir** qué se
+   hace con ella dejándolo escrito (pendiente / en curso / resuelta / descartada + una nota), con cada
+   cambio auditado. El contador de pendientes sale en el menú, como el de los avisos del alumno.
+2. **Las 453 estaban mal clasificadas y se han vuelto a clasificar.** De las **291** que decían
+   «norma cambiada», **23 no eran ni incidencias** (la letra de los apuntes está en la clave: no hay
+   nada que decidir) y **146** eran de conjuntos con la clave en cuarentena. El motor ponía esa
+   etiqueta a toda pregunta con un dato dudoso **antes** de mirar la clave; el porqué está escrito con
+   su línea de código en el estado del objetivo. **No se ha tocado el motor**: se ha corregido por
+   encima, y las cifras nuevas son éstas, contadas en la base:
+
+   | Categoría | Antes | Ahora |
+   |---|---|---|
+   | Pregunta mal importada (opciones fundidas, cortadas o de menos) | — | **29** |
+   | Clave no fiable (conjunto en cuarentena, §1) | — | **158** |
+   | Clave sospechosa (contradice los apuntes) | 110 | **200** |
+   | Norma cambiada | 291 | **0** |
+   | Hueco sin material | 40 | **34** |
+   | Pregunta ambigua | 12 | **9** |
+   | *(fuera: no eran incidencias)* | — | **23** |
+   | **En la bandeja** | **453** | **430** |
+
+3. **«Norma cambiada» se queda a cero, y es a propósito.** Esa categoría solo vale si hay **cita de la
+   norma vigente con su versión o fecha**, y esa cita no está en los datos: la escribe una pasada del
+   modelo que esta tanda no ha ejecutado (no se le ha dado presupuesto). Sin ella, una clave que
+   contradice los apuntes se llama «clave sospechosa», que es lo que sí se puede afirmar. Cuando esa
+   pasada exista, las que tengan la cita subirán solas.
+4. **18 preguntas han salido de los tests** (de 769 a 787 marcas de «enunciado roto»): son las que **no
+   se pueden contestar** porque les faltan opciones (fragmentos de leyes partidos, «...» como opción,
+   dos opciones fundidas en una). Es lo que manda el §2 del documento de ajustes: lo que no se puede
+   reparar con una regla no entra en tests, simulacros ni repasos. **Se pueden recuperar**: asignarles
+   un tema levanta la marca.
+5. **Y quedan dos cosas por hacer con las preguntas rotas, dichas para que no se pierdan**: **9** se
+   pueden reparar partiendo la opción fundida y **21** llevan la referencia del examen pegada al
+   enunciado («2011 Universidad…»), que hay que limpiar. Las dos cosas son escribir una **versión
+   nueva** de la pregunta, y eso va con la pantalla de la ficha de pregunta (§5.4 del documento), no
+   con esta tanda.
+   *Las seis categorías, con lo que hay dentro de cada una*: **pregunta mal importada 29** (18 sin
+   opciones suficientes —las que han salido de los tests—, 8 con una opción fundida, 2 con una cortada
+   y 1 con dos repetidas); **clave no fiable 158**, todas de conjuntos con la clave en cuarentena (10
+   de los 60 conjuntos que se pueden juzgar pasan del 30 % de discrepancias); **clave sospechosa 200**
+   (85 con la frase de los apuntes que lo demuestra y 115 sin ella, y esas lo dicen en pantalla);
+   **norma cambiada 0**; **hueco sin material 34**; **pregunta ambigua 9**.
+   Y una cosa que conviene que sepas porque afecta a lo que ya estudias: **de los grupos que se van
+   con las 18 preguntas, ninguno estaba cubierto por los apuntes**, así que la cobertura de I.6, I.4 e
+   I.8 **no empeora**; I.6 pierde 5 grupos del denominador (le favorece uno o dos puntos) y los tres
+   siguen como estaban.
+6. **Todo esto se ha probado sobre una copia** de tu base (`F:\temp-opofuente\f18-datos`), nunca sobre
+   la tuya: **tu base está en la revisión `0034`** y no se ha tocado. Para que estos cambios lleguen a
+   tus datos hay que aplicar la migración `0035` (`scripts\migrate.ps1`) y ejecutar el comando de la
+   reclasificación —primero en ensayo, que no escribe nada, y luego con `--aplicar`, que hace **copia
+   verificada** antes de tocar la bandeja—: `uv run python -m opofuente.tools.reclasificar_incidencias`
+   y `… --aplicar --excluir-no-reparables`.
+7. **Las 18 puertas no se han corrido todavía**, y no por descuido: el §1 del documento de ajustes
+   (las claves fiables y su cuarentena) está en marcha en otro bloque y las dos baterías no pueden usar
+   a la vez el mismo puerto ni el mismo directorio de pruebas. Lo que sí está en verde son las pruebas
+   locales: 41 de backend nuevas, las 344 de componentes y las 3 de extremo a extremo de esta pantalla.
+8. **Una cosa que no he podido hacer y lo digo**: **no he mirado las capturas con mis ojos** (el modelo
+   de esta sesión no lee imágenes). Lo que declaro de ellas es lo que el guion mide: 1280 y **390 px
+   exactos**, **0 violaciones de accesibilidad**, **0 errores de consola**. Las tienes en
+   `artifacts/screens/admin-incidencias-categoria-hueco_sin_material-{escritorio,movil}.png`.
+
+**Decide tú** (nada urgente, nada bloquea):
+
+- **Si las 21 con la referencia pegada** se limpian solas (quitando el texto del examen) o prefieres
+  revisarlas una a una. Por ahora no se toca ninguna.
+- **Si las 9 reparables** se parten automáticamente o las miras tú. Su caso está guardado con la regla
+  que lo detectó.
+
 ## 12 oct 2026 — IV.2 y II.4 ya se leen, y hay dos temas nuevos que contestan de cada cinco preguntas
 
 **Lo que cambia para ti:**

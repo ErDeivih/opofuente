@@ -207,12 +207,26 @@ class CategoriaIncidencia(StrEnum):
     primero se le escribe más material, al segundo se le revisa la clave, al tercero hay que
     reescribir la pregunta y al cuarto hay que comprobar qué dice hoy la norma. Una incidencia sin
     categoría no se puede despachar, y por eso «conflictos de letra sin categorizar» es una puerta.
+
+    Desde el §2 de `AJUSTES-AL-OBJETIVO-CLAVES-Y-RITMO-2026-10.md` son **seis**, porque se midió que
+    el motor ponía mal la etiqueta de dos clases enteras de lo que dejaba en la bandeja:
+
+    - `pregunta_mal_importada`: la pregunta está rota por su **forma** —le faltan opciones, dos
+      quedaron fundidas, una es el principio de otra— y eso no se arregla mirando la clave;
+    - `clave_no_fiable`: la pregunta es de un conjunto con la clave en cuarentena (§1), y mientras
+    lo
+      esté lo que diga de los apuntes no es una incidencia de los apuntes.
+
+    Las dos las asigna **la reclasificación** (`domain/notes_incidents.py`), no el motor: el motor
+    sigue poniendo las cuatro de siempre.
     """
 
     HUECO_SIN_MATERIAL = "hueco_sin_material"
     CLAVE_SOSPECHOSA = "clave_sospechosa"
     PREGUNTA_AMBIGUA = "pregunta_ambigua"
     NORMA_CAMBIADA = "norma_cambiada"
+    PREGUNTA_MAL_IMPORTADA = "pregunta_mal_importada"
+    CLAVE_NO_FIABLE = "clave_no_fiable"
 
 
 #: Qué categoría le toca a cada motivo. El motivo dice **qué pasó**; la categoría, **quién lo
@@ -278,6 +292,16 @@ TEXTO_DE_CATEGORIA: dict[CategoriaIncidencia, str] = {
     CategoriaIncidencia.PREGUNTA_AMBIGUA: (
         "la pregunta no tiene clave con la que comprobarla: no se puede decidir si los apuntes la "
         "contestan"
+    ),
+    CategoriaIncidencia.PREGUNTA_MAL_IMPORTADA: (
+        "la pregunta está rota por su forma —le faltan opciones, dos quedaron fundidas o una es el "
+        "principio de otra—: antes de mirar la clave hay que arreglar la pregunta, y lo que no se "
+        "pueda reparar con una regla no entra en los tests"
+    ),
+    CategoriaIncidencia.CLAVE_NO_FIABLE: (
+        "la clave de esta pregunta es de un conjunto en cuarentena (más del 30 % de sus claves "
+        "contradicen los apuntes): no se usa para corregir ni cuenta para la cobertura hasta que "
+        "se arregle, así que lo que diga de los apuntes no es una incidencia de los apuntes"
     ),
 }
 

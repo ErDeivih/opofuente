@@ -41,6 +41,7 @@ from opofuente.application.ingestion_service import IngestionService
 from opofuente.application.intake_service import IntakeService
 from opofuente.application.job_service import JobService
 from opofuente.application.library_service import LibraryService
+from opofuente.application.notes_incident_service import NotesIncidentsService
 from opofuente.application.notes_report_service import NotesReportsService
 from opofuente.application.profiles_service import ProfilesService
 from opofuente.application.question_service import QuestionService
@@ -74,6 +75,9 @@ from opofuente.infrastructure.housekeeping_repository import SqlAlchemyHousekeep
 from opofuente.infrastructure.ingestion_repository import SqlAlchemyIngestionRepository
 from opofuente.infrastructure.job_repository import SqlAlchemyJobRepository
 from opofuente.infrastructure.migrations import database_revision, run_migrations, script_head
+from opofuente.infrastructure.notes_incident_repository import (
+    SqlAlchemyNotesIncidentRepository,
+)
 from opofuente.infrastructure.notes_report_repository import SqlAlchemyNotesReportRepository
 from opofuente.infrastructure.observability import setup_logging
 from opofuente.infrastructure.ocr import tesseract_from_settings
@@ -288,6 +292,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     # despacha desde esa bandeja, con su evento y su nota (bloque C).
     notes_reports_repository = SqlAlchemyNotesReportRepository(session_factory)
     notes_reports_service = NotesReportsService(notes_reports_repository, clock=clock)
+    # F18: la bandeja del motor. Escribe en `notes_incidents` el propio motor de apuntes (no se
+    # toca)
+    # y la lee y la despacha el propietario desde el panel, con su estado, su nota y su evento
+    # (bloque C, §4.1 del objetivo).
+    notes_incidents_repository = SqlAlchemyNotesIncidentRepository(session_factory)
+    notes_incidents_service = NotesIncidentsService(notes_incidents_repository, clock=clock)
     export_service = ExportService(
         questions=SqlAlchemyQuestionRepository(session_factory),
         documents=SqlAlchemyDocumentRepository(session_factory, representations),
@@ -438,6 +448,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.readiness_service = readiness_service
     app.state.dossier_service = dossier_service
     app.state.notes_reports_service = notes_reports_service
+    app.state.notes_incidents_service = notes_incidents_service
 
     # El orden importa: el último añadido es el más externo, así que el identificador de
     # correlación envuelve también los rechazos por Origin.

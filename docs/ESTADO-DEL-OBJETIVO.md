@@ -710,6 +710,148 @@ recorre esa misma ruta con el texto real de un tema. Lo que **sí** cambió de c
 y el comando `apuntes`, que no los lee ninguna pantalla; su efecto se ve en la forma de los apuntes
 (§4f) y en las tablas escapadas.
 
+## 4g. El bloque C sigue: la bandeja del motor y la reclasificación de las incidencias (f18)
+
+Esta tanda cierra la **otra mitad** del §4.1 del objetivo —la bandeja del **motor**— y obedece además
+al **§2** de `AJUSTES-AL-OBJETIVO-CLAVES-Y-RITMO-2026-10.md`, que manda en lo que diga el goal.
+**No ha gastado API**: es interfaz, una migración, reglas mecánicas y consultas.
+
+### Lo que se ha construido
+
+| Qué | Dónde | Cómo se comprueba |
+|---|---|---|
+| **La incidencia se puede despachar** (lo que faltaba: el motor la escribía y **no tenía ningún estado**) | `PATCH /notes-incidents/{id}` con `{status, note}` y el actor en el cuerpo o en `X-OpoFuente-Actor` | `test_el_propietario_despacha_la_incidencia_con_su_nota_y_su_evento`: estado, nota y **evento de auditoría** (`notes.incident_updated`, objeto `note_incident`) en la misma escritura, y la auditoría **sin** el texto de la nota |
+| **Los estados que faltaban**: los cuatro que la aplicación ya usa para despachar una bandeja, más la nota y la fecha de revisión | Migración **`0035_incidencias_despachables`** (`status`, `resolution_note`, `reviewed_at`, sus dos `CHECK` y el índice `status·category`), `domain/notes_incidents.py`, `db_models.py` | `test_migrations_0035.py` (6): los cuatro estados entran y uno inventado no, la nota en blanco no entra, las restricciones e índices de `0031` sobreviven a la recreación de la tabla, y la vuelta atrás se lleva las tres columnas y devuelve las categorías nuevas a las de antes |
+| **Las seis categorías del §2**, con su orden de comprobación | `CategoriaIncidencia` (dominio), `domain/notes_incidents.py` (`categoria_reclasificada`) y el `CHECK` de `0035` | `test_notes_incidents_domain.py` (18): el orden (forma → cuarentena → clave → norma → apuntes), las cuatro reglas mecánicas, el falso positivo y la guarda del truncado |
+| **La reclasificación de las 453**, por un comando y por rutas auditadas | `python -m opofuente.tools.reclasificar_incidencias` (ensayo por defecto; `--aplicar` hace **copia verificada** antes) | `test_reclasificar_incidencias.py` (7): el falso positivo sale de la bandeja, `norma_cambiada` queda a cero, lo irreparable sale del temario con `enunciado_roto`, todo deja su evento y **la segunda pasada escribe cero cambios** |
+| **La pantalla de la bandeja**: categoría, motivo, el porqué del dominio, la pregunta que la provoca, la frase verificada, el apartado, el material y los cuatro botones con su nota | `apps/web/src/pages/IncidentsPage.tsx` (`/admin/incidencias`), `features/incidencias/IncidentRow.tsx`, el contador en el menú (`app/sectionCounts.ts`) | `incidencias.test.tsx` (9) y `tests/e2e/incidencias.spec.ts` (3) |
+| **El enlace a lo que la provoca**, sin buscarlo a mano | Al **apartado de los apuntes** por su ancla (`/temario/<tema>#apartado-<ancla>`), a la **pregunta** en el banco (`/admin/preguntas?pregunta=<id>`, que es nuevo) y al **material** del que salió la clave (`/admin/biblioteca?documento=<id>`) | La prueba de extremo a extremo pulsa el enlace a la pregunta y comprueba que **abre su ficha**; el enlace al apartado se comprueba por su `href` y el caso sin apartado dice que no se pudo situar |
+| **Las cifras por categoría, contadas en la base** | `totals_by_category` con un `GROUP BY` que **no mira el filtro**, y las cuatro de estado | La prueba de la pantalla enseña **una** fila y comprueba que los botones siguen diciendo 29/158/200/0/34/9 con «Todas 430» |
+
+### Las cifras nuevas, contadas en la base
+
+Medidas en la copia de la base real (`F:\temp-opofuente\f18-datos`, migrada a `0035`) **después** de
+pasar el comando con `--aplicar --excluir-no-reparables`:
+
+| Categoría | Antes | **Después** |
+|---|---|---|
+| `pregunta_mal_importada` | — | **29** |
+| `clave_no_fiable` | — | **158** |
+| `clave_sospechosa` | 110 | **200** |
+| `norma_cambiada` | 291 | **0** |
+| `hueco_sin_material` | 40 | **34** |
+| `pregunta_ambigua` | 12 | **9** |
+| *(fuera: no era una incidencia)* | — | **23** |
+| **Total en la bandeja** | **453** | **430** |
+
+Se escribieron **303 reclasificaciones** y **23 salidas** (326 cambios, cada uno con su evento), y
+**18 preguntas** salieron del temario con `enunciado_roto` (de 769 a 787). Por regla mecánica:
+`menos_de_tres_opciones` 18, `opcion_con_patron_de_otra` 9, `opcion_truncada` 2,
+`opciones_duplicadas` 1. Las **21** que llevan la referencia del examen pegada al enunciado **no** se
+tocan: el §2 dice que eso se limpia, y limpiar un enunciado es escribir una versión nueva de la
+pregunta (va con la ficha de pregunta, §5.4).
+
+**Los numeradores y denominadores de cada caja**, que es lo que hace falta para leer las cifras:
+
+| Caja | Cuántas | De dónde salen y qué se hizo |
+|---|---|---|
+| `pregunta_mal_importada` | **29** | 18 por `menos_de_tres_opciones` (esas 18 son las que han salido del temario), 8 por una opción fundida, 2 por una opción cortada y 1 por dos opciones repetidas. Las **11** reparables se quedan en la bandeja con su regla escrita |
+| `clave_no_fiable` | **158** | todas de conjuntos con la clave en cuarentena: **10 de los 60** conjuntos con 15 o más comprobaciones pasan del 30 % (otros 6 quedan `dudosa` entre el 15 % y el 30 %, y 44 son fiables; 84 conjuntos tienen menos de 15 y no se juzgan) |
+| `clave_sospechosa` | **200** | **85** con la frase de los apuntes que lo demuestra y **115** sin ella (el motor solo la guardaba para los conflictos de letra; esas filas lo dicen en pantalla) |
+| `norma_cambiada` | **0** | ninguna: la cita de la norma vigente con su versión o fecha no está en los datos, y sin ella la categoría no se puede afirmar |
+| `hueco_sin_material` | **34** | de las 40: 4 se fueron a `pregunta_mal_importada` y 2 eran falsos positivos |
+| `pregunta_ambigua` | **9** | de las 12: 3 eran falsos positivos y ninguna otra regla las toca |
+| **fuera de la bandeja** | **23** | falsos positivos: la letra de los apuntes **está** en la clave (18 venían de `norma_cambiada`, 3 de `pregunta_ambigua` y 2 de `hueco_sin_material`) |
+| **fuera del temario** | **787** | las marcas de `enunciado_roto` de «No son preguntas»: las 769 de antes más las **18** de esta tanda |
+
+### Qué cambia esto en el veredicto de un tema (§3), medido
+
+**La reclasificación de categorías no cambia ninguna cobertura.** El denominador que decide es «clave
+utilizable», y sale de los **hechos dudosos** del paso B
+(`topic_notes_service.py:361-365` construye `dudosos_de_la_clave` con `hecho.doubtful`, y las cuatro
+llamadas que lo usan —líneas 379, 395, 883 y 943— pasan `clave_utilizable=grupo.signature not in
+dudosos_de_la_clave`), **no** de `notes_incidents`. Lo que sí lo toca son las **18 preguntas que han
+salido del temario**: una pregunta fuera de temario no entra en la comprobación de los apuntes. Medido
+grupo a grupo en la copia:
+
+| Tema | Grupos que se van enteros | De esos, en el denominador | Cubiertos (numerador) | Grupos que se quedan con otras preguntas |
+|---|---|---|---|---|
+| **I.6** | 5 | **5** | 0 | 4 |
+| **IV.7** | 1 | **1** | 0 | 0 |
+| **I.2** | 1 | **1** | 0 | 1 |
+| **IV.2** | 1 | **1** | 0 | 0 |
+| **I.4** | 0 | 0 | 0 | 3 |
+| **II.4** | 0 | 0 | 0 | 2 |
+
+Es decir: **de las tres que el §3 manda volver a medir, I.6 pierde 5 grupos del denominador, I.4
+ninguno e I.8 ninguno**; y **ninguno de los que se van estaba cubierto**, así que el numerador no
+baja. El efecto es de uno o dos puntos **a favor** en I.6 (que está en borrador por el 72,5 % y sigue
+por debajo del 90 %) y **no cambia ningún veredicto**. La vuelta a medir de I.6, I.4 e I.8 que pide el
+§3 sigue siendo del §1 (la cuarentena sí saca preguntas del denominador) y este dato es el trozo que
+aporta esta tanda.
+
+### El defecto del motor que explicaba las etiquetas, con su evidencia
+
+La categoría `norma_cambiada` **nunca** describió una norma cambiada. El motor la pone cuando
+`clave_dudosa=True`, es decir cuando **alguno de los hechos de la pregunta es dudoso**, y lo hace
+**antes** de mirar la letra: `application/topic_notes_service.py:1019` pasa
+`clave_dudosa=any(hecho.doubtful …)` y `domain/topic_notes.py:814` devuelve `DUDOSA` +
+`CLAVE_CONTRADICE_LA_NORMA` sin comparar letras. De ahí los falsos positivos: 23 incidencias cuya letra
+de los apuntes **está** en la clave. **No se ha tocado el motor** (esta tanda lo tiene prohibido): la
+reclasificación lo corrige por encima, la categoría pasa a significar lo que dice el §2 y el defecto
+queda aquí escrito con su línea de código.
+
+### La prueba que falla antes
+
+Con el código de `main` (`db422ba`) y **solo los ficheros de prueba nuevos**: el dominio no existe
+(`ModuleNotFoundError: opofuente.domain.notes_incidents`), la migración no tiene columnas
+(`no such column: status`), la ruta de la bandeja es un **404** y la pantalla no está
+(`Failed to resolve import … IncidentsPage`), con el menú del panel esperando **14** entradas donde
+ahora hay **15**. El registro está en `F:\temp-opofuente\f18-scratch\rojo-antes.txt`.
+
+### Las capturas
+
+`artifacts/screens/admin-incidencias-categoria-hueco_sin_material-{escritorio,movil}.png`, con **0
+violaciones de axe** y **0 errores de consola** en las dos, **1280 px** y **390 px exactos** de ancho.
+Salen de la **copia** (`F:\temp-opofuente\f18-datos`), nunca de la base del propietario, y **con las
+incidencias reales ya reclasificadas**: el filtro es `?categoria=hueco_sin_material` (34 incidencias
+reales) porque sin filtro el PNG mide **262.914 px de alto** —medido— y no hay visor que lo abra; las
+**seis cifras** se ven igual en los botones, porque se cuentan en la base y no miran el filtro (§4 de
+las decisiones del 13-oct). Del detector de palabras prohibidas, con los datos reales, sale **una**:
+**«Celador»**, y no la pone esta pantalla —viene del **selector de oposición** del marco del panel, el
+mismo hallazgo que en f16—. El **Y no se han podido mirar a ojo**: el modelo de esta sesión no lee
+imágenes; lo que se declara de ellas es lo que el guion mide (ancho exacto, violaciones, errores y
+tamaño).
+
+### Las puertas y las pruebas locales
+
+**Las 18 puertas no se han corrido en esta tanda**, y se dice por qué: el §2 del documento de ajustes
+manda que **primero** corra el bloque del **§1** (claves fiables y cuarentena `key_reliability`), y las
+dos baterías no pueden usar a la vez el puerto 8765 ni el directorio de datos de las pruebas. El
+registro de esta tanda, cuando se lance, va a **`F:\temp-opofuente\gates-f18-panel-incidencias.txt`**,
+con **todos los intentos y sus causas** contados. Lo que sí se ha corrido, sobre este árbol y sin
+puerto:
+
+- **backend**: la suite **entera** de unitarias e integración corrió sobre este árbol —**1430 en
+  verde**— y dejó **dos rojas, las dos de esta tanda y las dos arregladas**: la mía de la bandeja
+  esperaba **cuatro** cifras por categoría (ahora son seis, las dos nuevas salen con cero) y la de la
+  cadena de migraciones daba por cabeza la `0034` (ahora es la `0035`). Las dos se han vuelto a pasar
+  en verde en su fichero (**18 pruebas**). No se ha lanzado una segunda corrida completa para no
+  competir por la máquina con la batería del §1, que es la que está en marcha. Las nuevas, en verde:
+  18 unitarias del dominio de la reclasificación, 6 de la migración `0035`, 7 del comando y 10 de la
+  ruta y el despacho de la bandeja;
+- **frontend**: **344** pruebas de componentes en verde (38 ficheros), con las 9 nuevas de la bandeja
+  y las 32 de la ficha de pregunta (2 nuevas del enlace `?pregunta=`);
+- **extremo a extremo**: las **3** de `incidencias.spec.ts` en verde (el ciclo con datos reales
+  montados en la base de la suite, y las dos de responsividad y accesibilidad a 1280 y 390).
+
+**Colisión de ficheros que hay que decir**: el §1 va a añadir la columna `key_reliability` a
+`question_sets` (migración propia) y este bloque **lee** esa columna por su nombre si existe
+(`notes_incident_repository.key_reliability`), así que no la escribe ni la modela. Los dos bloques
+tocan `infrastructure/db_models.py` (clases distintas) y **los dos añaden una migración con
+`down_revision = 0034`**: quien fusione segundo tiene que reencadenar la suya. La mía
+(`0035_incidencias_despachables`) está sin fusionar en `f18-panel-incidencias`.
+
 ## 5. Lo que queda abierto
 
 1. **El acumulado de gasto anterior a f10 no existe** y ya no se puede medir. Desde aquí se anota una
@@ -745,9 +887,12 @@ y el comando `apuntes`, que no los lee ninguna pantalla; su efecto se ve en la f
    ya está probada con un examen de verdad montado por la API (§4c)
 8. Los **25 temas restantes** y el bloque D (datos: copias, epígrafes, INAP) siguen sin empezar, con
    D5 (copias verificadas) como primer paso del §6 del objetivo. El **bloque C ha empezado** en f16 con
-   sus dos primeras pantallas (la bandeja de avisos del alumno y «No son preguntas», §4e); le faltan
-   la **bandeja única con las incidencias del motor**, la **ficha de pregunta**, los **apuntes** y el
-   **temario** del §4 del objetivo. En f15 se les ha puesto
+   sus dos primeras pantallas (la bandeja de avisos del alumno y «No son preguntas», §4e) y **f18 le
+   añade la bandeja del motor** —con su ruta, su pantalla, su contador en el menú y la reclasificación
+   de las 453 incidencias (§4g)—; le faltan la **ficha de pregunta**, los **apuntes** y el **temario**
+   del §4 del objetivo, que es donde se limpiarán los enunciados con la referencia del examen pegada y
+   se repararán las preguntas mal importadas que sí se pueden reparar (dos opciones fundidas, una
+   cortada, una repetida). En f15 se les ha puesto
    **orden de valor** a los temas: la tabla de preguntas con clave utilizable de cada tema es la que
    decide qué se escribe primero, y está abajo. **IV.2 (el 3.º) e II.4 (el 5.º) quedaron escritos y
    publicados en f17**; **I.8 (el 6.º) quedó en borrador** con sus dos motivos y **es reanudable**:

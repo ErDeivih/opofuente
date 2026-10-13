@@ -35,6 +35,11 @@ ESCALONES: tuple[tuple[str, str, tuple[str, ...]], ...] = (
         # desaparece al bajar, por eso su escalón va vacío. Que las columnas se van de verdad lo
         # comprueba `test_migrations_0036.py`, que es donde se mide la forma de la tabla.
         "0036_claves_no_fiables",
+        "0035_incidencias_despachables",
+        (),
+    ),
+    (
+        "0035_incidencias_despachables",
         "0034_avisos_en_curso_y_nota",
         (),
     ),

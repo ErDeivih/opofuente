@@ -2135,22 +2135,39 @@ class NotesIncidentRecord(Base):
     Una fila por pregunta y tema (`uq_notes_incident_question_node`): volver a comprobar el tema
     actualiza la incidencia en vez de añadir otra copia, que es lo que hace que la bandeja se pueda
     vaciar de verdad.
+
+    `status` es lo que la convierte en una bandeja que **se despacha** (migración `0035`): el motor
+    deja la incidencia `open` y el propietario la pone «en curso» mientras la mira y la cierra con
+    `reviewed` (ha hecho lo que su categoría pide) o con `dismissed` (ha decidido que el motor se
+    equivoca, que también pasa). `resolution_note` es lo que escribe de lo que ha hecho —una línea,
+    opcional— y `reviewed_at` solo tiene fecha mientras esté cerrada. Ninguna de las tres la toca el
+    motor: su `save_incidents` actualiza la categoría, el motivo y la frase, y **no** pisa la
+    decisión de nadie.
     """
 
     __tablename__ = "notes_incidents"
     __table_args__ = (
         CheckConstraint(
             "category IN ('hueco_sin_material', 'clave_sospechosa', 'pregunta_ambigua', "
-            "'norma_cambiada')",
+            "'norma_cambiada', 'pregunta_mal_importada', 'clave_no_fiable')",
             name="ck_notes_incident_category",
         ),
         CheckConstraint("coverage IN ('doubtful', 'conflict')", name="ck_notes_incident_coverage"),
         CheckConstraint("length(trim(detail)) > 0", name="ck_notes_incident_detail"),
         CheckConstraint("attempts >= 1", name="ck_notes_incident_attempts"),
+        CheckConstraint(
+            "status IN ('open', 'in_progress', 'reviewed', 'dismissed')",
+            name="ck_notes_incident_status",
+        ),
+        CheckConstraint(
+            "resolution_note IS NULL OR length(trim(resolution_note)) > 0",
+            name="ck_notes_incident_note",
+        ),
         UniqueConstraint(
             "question_version_id", "curriculum_node_id", name="uq_notes_incident_question_node"
         ),
         Index("ix_notes_incidents_node_category", "curriculum_node_id", "category"),
+        Index("ix_notes_incidents_status_category", "status", "category"),
     )
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
@@ -2172,6 +2189,14 @@ class NotesIncidentRecord(Base):
         Integer, nullable=False, server_default=text("1"), default=1
     )
     created_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
+    #: Desde la migración `0035`: en qué punto está la incidencia para el propietario.
+    status: Mapped[str] = mapped_column(
+        String(16), nullable=False, server_default=text("'open'"), default="open"
+    )
+    #: Lo que escribió de lo que ha hecho, en una línea. Nula mientras no haya escrito nada.
+    resolution_note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    #: Cuándo la cerró. Nula mientras esté abierta o en curso: lo decide el dominio, no la pantalla.
+    reviewed_at: Mapped[datetime | None] = mapped_column(UtcDateTime(), nullable=True)
 
 
 class NotesReportRecord(Base):

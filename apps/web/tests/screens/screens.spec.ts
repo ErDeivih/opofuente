@@ -66,6 +66,17 @@ const RUTAS: readonly { ruta: string; nombre: string }[] = [
      temario que ya estén en los datos —con los del propietario, los 769 enunciados rotos— y se
      retrata tal cual. La bandeja de avisos va aparte, más abajo: necesita que haya un aviso dentro. */
   { ruta: '/admin/no-son-preguntas', nombre: 'no-son-preguntas' },
+  /* La bandeja del **motor** (F18): las incidencias que deja la comprobación de los apuntes. Con los
+     datos del propietario son 453 —291 de norma cambiada, 110 de clave sospechosa, 40 huecos y 12
+     ambiguas—, y se retrata tal cual: **nada de filas inventadas**.
+     Va **con el filtro de una categoría** puesta, y se dice por qué: sin filtro la pantalla enseña
+     200 filas y el PNG sale de **262.914 px de alto** (medido el 13-oct-2026 en la copia de la base
+     real), que no hay visor que abra. Con `hueco_sin_material` —40 incidencias reales, la primera
+     categoría del orden de trabajo— se ve la fila entera con sus enlaces y sus botones, y **las
+     cuatro cifras siguen ahí**, porque los contadores de los botones se cuentan en la base y no miran
+     el filtro: «Todas 453 · Hueco sin material 40 · Clave sospechosa 110 · Norma cambiada 291 ·
+     Pregunta ambigua 12». */
+  { ruta: '/admin/incidencias?categoria=hueco_sin_material', nombre: 'admin-incidencias' },
 ];
 
 const ANCHOS: readonly { ancho: number; alto: number; etiqueta: string }[] = [

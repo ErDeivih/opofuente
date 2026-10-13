@@ -16,6 +16,7 @@ from opofuente.api.routes import (
     housekeeping,
     ingestion,
     library,
+    notes_incidents,
     notes_reports,
     profiles,
     questions,
@@ -53,5 +54,9 @@ api_router.include_router(student.router)
 # La bandeja de avisos del alumno (F13) es del propietario y cuelga de `/notes-reports`, un prefijo
 # que no comparte con nadie: va al final, con las demás rutas que no pueden quedar tapadas.
 api_router.include_router(notes_reports.router)
+# La bandeja del motor (F18) cuelga de `/notes-incidents`, otro prefijo que no comparte con nadie:
+# va
+# al final por el mismo motivo que la del alumno.
+api_router.include_router(notes_incidents.router)
 
 __all__ = ["api_router"]

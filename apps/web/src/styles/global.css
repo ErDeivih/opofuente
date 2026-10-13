@@ -2939,3 +2939,102 @@ kbd {
   font-size: var(--t-sm);
   overflow-wrap: anywhere;
 }
+
+/*
+ * La bandeja del **motor** (F18): la tercera pantalla de esta familia.
+ *
+ * Comparte con la del alumno la forma de la lista (`.avisos*`: la línea de 1px entre filas, la cita
+ * con la raya del margen, los botones de despacho) porque es el mismo trabajo: leer un texto largo y
+ * decidir. Lo que añade son los tres bloques que solo tiene una incidencia —de qué categoría es, qué
+ * pregunta la provoca y de dónde sale la clave—, y ahí lo único que hace falta es separarlos con
+ * espacio y con la etiqueta en pequeño, sin cajas de color: el color sigue reservado a los estados,
+ * que además llevan su palabra al lado.
+ */
+
+.incidencias__titulo-filtro {
+  margin: var(--s4) 0 var(--s2);
+  color: var(--tinta-suave);
+  font-size: var(--t-sm);
+  font-weight: 600;
+  text-transform: none;
+}
+
+/* La categoría, que es lo primero que hay que saber: quién tiene que arreglarlo. */
+.incidencias__categoria {
+  margin: var(--s3) 0 0;
+  overflow-wrap: anywhere;
+}
+
+.incidencias__etiqueta {
+  display: inline-block;
+  padding: 0 var(--s2);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio-etiqueta);
+  background: var(--hoja);
+  font-size: var(--t-sm);
+  font-weight: 600;
+}
+
+/* El porqué, en las palabras del dominio: es el texto que dice qué se está pidiendo. */
+.incidencias__porque {
+  margin: var(--s2) 0 0;
+  max-width: var(--medida-texto);
+  overflow-wrap: anywhere;
+}
+
+.incidencias__provoca {
+  margin-top: var(--s3);
+  padding-left: var(--s3);
+  border-left: 2px solid var(--linea);
+}
+
+.incidencias__provoca .hint {
+  margin: 0;
+}
+
+/* El enunciado, en la fuente de las preguntas: es el texto que hay que leer para juzgar la clave. */
+.incidencias__enunciado {
+  margin: var(--s1) 0 0;
+  font-family: var(--fuente-codigo);
+  font-size: var(--t-sm);
+  overflow-wrap: anywhere;
+}
+
+.incidencias__origen-pregunta {
+  margin: var(--s1) 0 0;
+}
+
+.incidencias__origen-material {
+  margin: var(--s2) 0 0;
+}
+
+/* Una clave sospechosa sin la cita que la demuestra: es la marca de que hay que abrir la pregunta,
+   así que se ve —en el tono de la duda, que es el que esta aplicación reserva para lo que no está
+   resuelto— sin gritar. */
+.incidencias__sin-frase {
+  margin: var(--s2) 0 0;
+  color: var(--dudosa);
+  overflow-wrap: anywhere;
+}
+
+/* Lo que anotó la corrida: está, pero no compite con lo que hay que leer para decidir. */
+.incidencias__detalle {
+  margin-top: var(--s3);
+}
+
+.incidencias__detalle summary {
+  min-height: var(--objetivo-tactil);
+  display: inline-flex;
+  align-items: center;
+  color: var(--azul);
+  cursor: pointer;
+}
+
+.incidencias__detalle p {
+  margin: var(--s2) 0 0;
+  max-width: var(--medida-texto);
+  color: var(--tinta-suave);
+  font-size: var(--t-sm);
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}

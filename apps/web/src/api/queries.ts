@@ -63,6 +63,12 @@ import {
   type SubjectType,
 } from './library';
 import {
+  fetchNotesIncidents,
+  updateNotesIncident,
+  type IncidentCategory,
+  type IncidentStatus,
+} from './notesIncidents';
+import {
   fetchNoteReports,
   updateNoteReport,
   type NoteReportStatus,
@@ -276,6 +282,10 @@ export const queryKeys = {
      propia entrada: cambiar de estado o de tema no puede enseñar lo que ya estaba cacheado. */
   noteReports: (status: string, topic: string, q: string) =>
     ['note-reports', status, topic, q] as const,
+  /* F18: la bandeja del motor, hermana de la anterior. La raíz es propia (`note-incidents`) porque
+     son dos bandejas distintas con dos tablas distintas: invalidar una no puede recargar la otra. */
+  noteIncidents: (category: string, status: string, topic: string, q: string) =>
+    ['note-incidents', category, status, topic, q] as const,
 };
 
 export function useReadiness() {
@@ -1798,3 +1808,60 @@ export function useUpdateNoteReport() {
 
 /** Reexporta el tipo del estado para que las pantallas no importen del contrato a mano. */
 export type { NoteReportStatus, NoteReportUpdate };
+
+/**
+ * La bandeja del motor (F18): las incidencias que deja la comprobación de los apuntes.
+ *
+ * Cada combinación de filtros es su propia entrada de la caché: cambiar de categoría, de estado o de
+ * tema no puede enseñar lo que ya estaba cacheado para otra combinación. Y el contador de pendientes
+ * se lee de **esta misma consulta** —el `pending` de la respuesta cuenta los `open` sin mirar el
+ * filtro y `totals_by_category` cuenta las categorías en la base—, así que el número del menú y las
+ * cifras de los botones no pueden decir cosas distintas de las de la lista.
+ */
+export function useNotesIncidents(
+  category: IncidentCategory | null = null,
+  status: IncidentStatus | null = null,
+  topic: string | null = null,
+  q = '',
+) {
+  return useQuery({
+    queryKey: queryKeys.noteIncidents(category ?? '', status ?? '', topic ?? '', q),
+    queryFn: () => fetchNotesIncidents({ category, status, topic, q }),
+  });
+}
+
+/**
+ * Cuántas incidencias esperan al propietario, para el contador del menú.
+ *
+ * Pide **una** fila (`limit: 1`): los recuentos viajan en la misma respuesta que la lista, así que el
+ * contador no necesita traerse las 453. Y por eso mismo despachar una incidencia invalida las dos.
+ */
+export function useNotesIncidentCounters() {
+  return useQuery({
+    queryKey: ['note-incidents', 'contadores'] as const,
+    queryFn: () => fetchNotesIncidents({ limit: 1 }),
+    staleTime: 30_000,
+  });
+}
+
+/**
+ * Despacha una incidencia y recarga la bandeja entera.
+ *
+ * Se invalida la raíz `note-incidents` completa y no la entrada que se está mirando: el estado cambia
+ * los cuatro contadores de estado, puede sacar la incidencia del filtro activo y deja de contar en
+ * `pending`, así que dejar cacheadas las otras combinaciones enseñaría incidencias que ya no están
+ * donde se dice.
+ */
+export function useUpdateNotesIncident() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { id: string; status: IncidentStatus; note?: string | null }) =>
+      updateNotesIncident(input.id, { status: input.status, note: input.note ?? null }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['note-incidents'] });
+    },
+  });
+}
+
+/** Reexporta el vocabulario de la incidencia para que las pantallas no importen del contrato. */
+export type { IncidentCategory, IncidentStatus };

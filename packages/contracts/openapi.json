@@ -6990,6 +6990,321 @@
         "title": "NoteReportUpdateSchema",
         "type": "object"
       },
+      "NotesIncidentListSchema": {
+        "description": "Las incidencias de una página, con **las cuatro cifras** de la bandeja.\n\nLos recuentos van aparte de la lista aunque se puedan contar de ella, y son de la **bandeja\nentera**, no del filtro: `total` es lo que devuelve el filtro (contado en la base), y\n`totals_by_category` las cuatro categorías con su número real. Es lo que permite que la pantalla\ndiga «291 de norma cambiada» sin leerse las 453, y sin heredar la cifra de ningún documento.\n\nLos cuatro estados salen siempre, con cero incluido: un botón de filtro que desaparece cuando su\nnúmero es cero obliga a la pantalla a inventarse la ausencia.",
+        "properties": {
+          "dismissed": {
+            "description": "Incidencias descartadas: el motor se equivocaba.",
+            "minimum": 0.0,
+            "title": "Dismissed",
+            "type": "integer"
+          },
+          "in_progress": {
+            "description": "Incidencias que el propietario tiene en la mano.",
+            "minimum": 0.0,
+            "title": "In Progress",
+            "type": "integer"
+          },
+          "incidents": {
+            "items": {
+              "$ref": "#/components/schemas/NotesIncidentSchema"
+            },
+            "title": "Incidents",
+            "type": "array"
+          },
+          "pending": {
+            "description": "Incidencias en `open`, con independencia del filtro.",
+            "minimum": 0.0,
+            "title": "Pending",
+            "type": "integer"
+          },
+          "reviewed": {
+            "description": "Incidencias ya resueltas.",
+            "minimum": 0.0,
+            "title": "Reviewed",
+            "type": "integer"
+          },
+          "total": {
+            "description": "Incidencias que devuelve el filtro, contadas en la base.",
+            "minimum": 0.0,
+            "title": "Total",
+            "type": "integer"
+          },
+          "totals_by_category": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Totals By Category",
+            "type": "object"
+          }
+        },
+        "required": [
+          "pending",
+          "in_progress",
+          "reviewed",
+          "dismissed",
+          "total",
+          "incidents"
+        ],
+        "title": "NotesIncidentListSchema",
+        "type": "object"
+      },
+      "NotesIncidentSchema": {
+        "description": "Una incidencia del motor, con lo que hace falta para juzgarla y para ir a mirarla.\n\nCuatro bloques, y cada uno existe por algo:\n\n1. **qué es**: la categoría, el motivo y el texto del dominio que explica por qué el motor la\n   señaló (`category_help`), más el detalle que escribió la corrida (`detail`) y la frase\n   verificada (`phrase`) cuando la hay;\n2. **dónde**: el tema, el apartado del que habla (`anchor` y `section_title`) y —lo que permite\n   juzgarla sin abrir nada— el enunciado de la pregunta (`stem`). `section_title` es nulo cuando\n   la pregunta **no se pudo situar en ninguna materia**: eso no es un dato que falte, es el\n   hallazgo, y la pantalla lo dice en vez de mandar a un ancla que no está;\n3. **de dónde sale la clave**: el conjunto del que es la pregunta (`set_title`) y el material\ncon\n   su versión y su estado (`source_*`). Cuando la categoría es «norma cambiada», la\n   contradicción\n   tiene dos mitades y esta es la segunda;\n4. **cómo acabó**: el estado, la nota de lo que se hizo y cuándo se cerró.",
+        "properties": {
+          "anchor": {
+            "title": "Anchor",
+            "type": "string"
+          },
+          "attempts": {
+            "title": "Attempts",
+            "type": "integer"
+          },
+          "category": {
+            "enum": [
+              "hueco_sin_material",
+              "clave_sospechosa",
+              "pregunta_ambigua",
+              "norma_cambiada",
+              "pregunta_mal_importada",
+              "clave_no_fiable"
+            ],
+            "title": "Category",
+            "type": "string"
+          },
+          "category_help": {
+            "title": "Category Help",
+            "type": "string"
+          },
+          "coverage": {
+            "enum": [
+              "doubtful",
+              "conflict"
+            ],
+            "title": "Coverage",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "phrase": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phrase"
+          },
+          "question_version_id": {
+            "title": "Question Version Id",
+            "type": "string"
+          },
+          "reason": {
+            "enum": [
+              "sin_frase_en_los_apuntes",
+              "letra_no_coincide",
+              "clave_contradice_la_norma",
+              "clave_sin_definir",
+              "sin_materia_en_el_indice"
+            ],
+            "title": "Reason",
+            "type": "string"
+          },
+          "resolution_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolution Note"
+          },
+          "reviewed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewed At"
+          },
+          "section_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Section Title"
+          },
+          "set_title": {
+            "title": "Set Title",
+            "type": "string"
+          },
+          "source_document_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Document Id"
+          },
+          "source_document_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Document Title"
+          },
+          "source_document_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Document Type"
+          },
+          "source_version_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Version Label"
+          },
+          "source_version_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Version Status"
+          },
+          "status": {
+            "enum": [
+              "open",
+              "in_progress",
+              "reviewed",
+              "dismissed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "stem": {
+            "title": "Stem",
+            "type": "string"
+          },
+          "topic_code": {
+            "title": "Topic Code",
+            "type": "string"
+          },
+          "topic_title": {
+            "title": "Topic Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "topic_code",
+          "topic_title",
+          "category",
+          "category_help",
+          "reason",
+          "coverage",
+          "detail",
+          "attempts",
+          "anchor",
+          "question_version_id",
+          "stem",
+          "set_title",
+          "status",
+          "created_at"
+        ],
+        "title": "NotesIncidentSchema",
+        "type": "object"
+      },
+      "NotesIncidentUpdateSchema": {
+        "additionalProperties": false,
+        "description": "Lo único que se puede cambiar de una incidencia: en qué punto está y qué se ha hecho.\n\nNo hay ruta para editarla ni para borrarla. La incidencia la escribió una comprobación y lo que\nla resuelve es otra cosa: añadir material, revisar una clave, reescribir una pregunta o\ncomprobar la norma. Lo que el propietario decide aquí es **qué ha hecho con ella**, y eso se\nescribe.\n\n`note` es potestativa, como en el aviso del alumno: hay incidencias que se cierran sin nada que\nescribir. Cuando viene, es **una línea** y sustituye a la que hubiera; cuando no viene, la que\nhubiera se queda.",
+        "properties": {
+          "actor": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "status": {
+            "enum": [
+              "open",
+              "in_progress",
+              "reviewed",
+              "dismissed"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "NotesIncidentUpdateSchema",
+        "type": "object"
+      },
       "OcrSettingsSchema": {
         "properties": {
           "tesseract_available": {
@@ -21069,6 +21384,262 @@
         "summary": "Mapeos de programa de un sujeto",
         "tags": [
           "clasificación"
+        ]
+      }
+    },
+    "/api/v1/notes-incidents": {
+      "get": {
+        "description": "Las incidencias, de la más nueva a la más vieja.\n\n`pending` cuenta las que están **sin despachar** (`open`) sin mirar el filtro: es el número que\nel propietario necesita ver aunque esté mirando las de una sola categoría. `totals_by_category`\ncuenta las cuatro categorías **en la base entera**, con un `GROUP BY`: es la cifra de cada\nclase,\nmedida y no heredada. El `total`, en cambio, es el del filtro.",
+        "operationId": "list_notes_incidents_api_v1_notes_incidents_get",
+        "parameters": [
+          {
+            "description": "Filtra por categoría; sin ella salen todas.",
+            "in": "query",
+            "name": "category",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "hueco_sin_material",
+                    "clave_sospechosa",
+                    "pregunta_ambigua",
+                    "norma_cambiada",
+                    "pregunta_mal_importada",
+                    "clave_no_fiable"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filtra por categoría; sin ella salen todas.",
+              "title": "Category"
+            }
+          },
+          {
+            "description": "Filtra por estado; sin él salen todas.",
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "open",
+                    "in_progress",
+                    "reviewed",
+                    "dismissed"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filtra por estado; sin él salen todas.",
+              "title": "Status"
+            }
+          },
+          {
+            "description": "Código legible del tema, como `I.2`, para ver solo las de un tema.",
+            "in": "query",
+            "name": "topic",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Código legible del tema, como `I.2`, para ver solo las de un tema.",
+              "title": "Topic"
+            }
+          },
+          {
+            "description": "Busca en el enunciado de la pregunta, el motivo, la frase y el apartado.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Busca en el enunciado de la pregunta, el motivo, la frase y el apartado.",
+              "title": "Q"
+            }
+          },
+          {
+            "description": "Cuántas incidencias se devuelven como mucho.",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 200,
+              "description": "Cuántas incidencias se devuelven como mucho.",
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotesIncidentListSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Las incidencias del motor, para la bandeja del propietario",
+        "tags": [
+          "panel"
+        ]
+      }
+    },
+    "/api/v1/notes-incidents/{incident_id}": {
+      "patch": {
+        "description": "Cambia el estado de una incidencia y, si se escribe, deja la nota de lo que se ha decidido.\n\nNo hay ruta para borrar una incidencia: lo que señaló el motor no se tira, se despacha. Una\nincidencia que no existe es un 404 con su identificador, y una nota de más de una línea se\nrecorta antes de guardarse.",
+        "operationId": "update_notes_incident_api_v1_notes_incidents__incident_id__patch",
+        "parameters": [
+          {
+            "description": "Identificador de la incidencia, tal como lo devuelve la bandeja.",
+            "in": "path",
+            "name": "incident_id",
+            "required": true,
+            "schema": {
+              "description": "Identificador de la incidencia, tal como lo devuelve la bandeja.",
+              "title": "Incident Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-OpoFuente-Actor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Opofuente-Actor"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotesIncidentUpdateSchema"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotesIncidentSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Despacha una incidencia: en curso, resuelta o descartada, con la nota de lo decidido",
+        "tags": [
+          "panel"
         ]
       }
     },

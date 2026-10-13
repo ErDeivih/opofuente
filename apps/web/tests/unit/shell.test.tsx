@@ -108,6 +108,8 @@ describe('los dos mapas de navegación', () => {
       // Las dos entradas que estrena el bloque C (F16): lo que avisa el alumno —que se despacha— y lo
       // que el motor dejó fuera de los tests —que solo se mira—.
       'Avisos',
+      // Y la bandeja del **motor** (F18): la otra mitad del §4.1, que hasta ahora no tenía ni ruta.
+      'Incidencias',
       'No son preguntas',
       'Cambios',
       'Errores',
