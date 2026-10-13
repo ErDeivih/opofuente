@@ -186,6 +186,21 @@ export interface StudentMistakes {
   topics: StudentMistakeTopic[];
 }
 
+/** Un tamaño de test ofrecido, con lo que duraría con el reloj del test puesto. */
+export interface StudentTestCount {
+  questions: number;
+  minutes: number;
+}
+
+/** Lo que la pantalla de Tests puede ofrecer antes de montar nada (F22). */
+export interface StudentTestPlan {
+  counts: StudentTestCount[];
+  /** La regla del reloj, escrita una vez por el servidor: la pantalla la pinta tal cual. */
+  timed_note: string;
+  /** El tiempo que lleva el test **sin** el reloj del test. `null`: la convocatoria no lo publica. */
+  convocation_minutes: number | null;
+}
+
 /** Inicio: el test a medias, los fallos vencidos, el progreso por bloque y lo último hecho. */
 export function getStudentOverview(): Promise<StudentOverview> {
   return apiFetch<StudentOverview>('/api/v1/student/overview');
@@ -223,6 +238,17 @@ export function getStudentOfficialExams(): Promise<StudentOfficialExams> {
 /** Las preguntas que fallaste la última vez, con su tema, su fecha y cuántas veces. */
 export function getStudentMistakes(): Promise<StudentMistakes> {
   return apiFetch<StudentMistakes>('/api/v1/student/mistakes');
+}
+
+/**
+ * El plan de un test: qué tamaños se ofrecen y cuánto dura cada uno con el reloj puesto (F22).
+ *
+ * Se lee antes de montar nada y **no se recalcula en la pantalla**: la regla del reloj es del
+ * servidor, y es el mismo que después se lo pone a la sesión. `convocation_minutes` es el tiempo que
+ * lleva un test cuando **no** se le pone el reloj del test: no es cero, es el de la convocatoria.
+ */
+export function getStudentTestPlan(): Promise<StudentTestPlan> {
+  return apiFetch<StudentTestPlan>('/api/v1/student/tests/plan');
 }
 
 /** Un tema por su código: título, epígrafes, recuentos y progreso. */

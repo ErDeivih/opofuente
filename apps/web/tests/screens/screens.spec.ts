@@ -351,6 +351,36 @@ function zonaSembrada(): Promise<{ sesion: string }> {
   return sembrado;
 }
 
+/**
+ * La pantalla de Tests (F22), que es la que faltaba de la zona del alumno.
+ *
+ * Se retrata **con datos**: el temario de la suite nace sin preguntas, y una captura de esta pantalla
+ * con todo desactivado no enseña lo que hace. Se reutiliza la siembra de las capturas del cierre —dos
+ * temas con dos preguntas cada uno— y se retratan las dos caras del caso de uso:
+ *
+ * 1. **el formulario tal como se abre** desde el menú, con lo que hay para preguntar y lo que ya se ha
+ *    contestado en cada tema;
+ * 2. **el formulario con lo que trae la dirección**, que es la mitad del asunto: el enlace del Temario
+ *    (`?tema=IV.1`) y el atajo de Inicio (`?count=20`) tienen que llegar con la elección hecha. La
+ *    aserción lo comprueba sobre la pantalla cargada, para que la evidencia no dependa de mirar el
+ *    PNG: una casilla marcada en la captura de al lado no dice nada por sí sola.
+ */
+for (const { ancho, alto, etiqueta } of ANCHOS) {
+  test(`tests a ${ancho} px`, async ({ page }) => {
+    await zonaSembrada();
+    await retratar(page, '/tests', '/tests', ancho, alto, etiqueta);
+  });
+}
+
+for (const { ancho, alto, etiqueta } of ANCHOS) {
+  test(`tests con un tema elegido a ${ancho} px`, async ({ page }) => {
+    await zonaSembrada();
+    await retratar(page, '/tests?tema=IV.1&count=20', '/tests-elegido', ancho, alto, etiqueta);
+    await expect(page.getByRole('checkbox', { name: /^IV\.1\b/ })).toBeChecked();
+    await expect(page.getByRole('radio', { name: /20 preguntas/ })).toBeChecked();
+  });
+}
+
 /** Un test de cuatro preguntas en dos temas, contestado y terminado: devuelve su identificador. */
 async function sembrarUnTestTerminado(): Promise<{ sesion: string }> {
   const cabeceras = { 'Content-Type': 'application/json', Origin: ORIGEN };

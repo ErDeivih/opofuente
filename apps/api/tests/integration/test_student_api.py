@@ -441,6 +441,7 @@ def _respuestas_de_alumno(zona: ZonaAlumno) -> dict[str, Any]:
         "topics/IV.1/notes": "/api/v1/student/topics/IV.1/notes",
         "topics/IV.10/notes": "/api/v1/student/topics/IV.10/notes",
         "progress": "/api/v1/student/progress",
+        "tests/plan": "/api/v1/student/tests/plan",
         "mock-exams/plan": "/api/v1/student/mock-exams",
         "official-exams": "/api/v1/student/official-exams",
         "mistakes": "/api/v1/student/mistakes",
@@ -593,6 +594,61 @@ def test_nada_de_la_oposicion_ajena_aparece_en_la_zona_del_alumno(zona: ZonaAlum
     # Y la oposición que sí se sirve es la configurada, no «la activa» por casualidad.
     for nombre in ("overview", "syllabus", "progress"):
         assert respuestas[nombre]["opposition"]["code"] == OPOSICION_ALUMNO
+
+
+# ---------------------------------------------------------------- 3b. el plan del test (F22)
+
+
+def test_el_plan_del_test_dice_los_tamanos_y_los_minutos_que_luego_se_aplican(
+    zona: ZonaAlumno,
+) -> None:
+    """El plan del test (F22) y lo que de verdad pasa al montarlo: la misma cifra.
+
+    Lo que esta prueba defiende es que la pantalla **no calcule** el reloj: los minutos del plan
+    tienen que ser los que la sesión recibe de verdad. Se comprueba montando el test con reloj para
+    cada tamaño ofrecido y comparando `time_limit_minutes` con los minutos que anunciaba el plan. Si
+    alguien moviera la regla del reloj en el motor y el plan siguiera sirviendo la cifra vieja, esto
+    falla —que es justo lo que tiene que pasar cuando las dos cifras se separan—.
+    """
+    plan = zona.client.get("/api/v1/student/tests/plan")
+    assert plan.status_code == 200, plan.text
+    cuerpo = plan.json()
+
+    tamanos = [cuenta["questions"] for cuenta in cuerpo["counts"]]
+    assert tamanos == [10, 20, 25, 50, 100]
+    assert all(cuenta["minutes"] > 0 for cuenta in cuerpo["counts"])
+    # Los minutos no son «dos por pregunta» a secas: la regla redondea a cinco. Con el 25, que es el
+    # único de la lista que no es múltiplo de cinco, se ve que el plan sirve el número redondeado.
+    minutos = {cuenta["questions"]: cuenta["minutes"] for cuenta in cuerpo["counts"]}
+    assert minutos[25] == 50
+    assert cuerpo["timed_note"], "la nota del reloj tiene que decir de dónde sale el tiempo"
+
+    for tamano in tamanos:
+        creada = zona.client.post(
+            "/api/v1/student/tests",
+            json={"nodes": ["IV.1"], "count": tamano, "timed": True},
+            headers=ALLOWED_ORIGIN,
+        )
+        assert creada.status_code == 201, creada.text
+        assert creada.json()["time_limit_minutes"] == minutos[tamano], (
+            f"el plan anunciaba {minutos[tamano]} minutos para {tamano} preguntas y la sesión "
+            f"recibió {creada.json()['time_limit_minutes']}"
+        )
+
+    # Y sin el reloj del test, la sesión **no** se queda sin tiempo: hereda el de la parte del
+    # perfil con la que se corrige ese material, que es justo lo que el plan anuncia. Medido aquí
+    # porque es una cifra que sorprende: un test de diez preguntas sin reloj sigue llevando 120
+    # minutos.
+    sin_reloj = zona.client.post(
+        "/api/v1/student/tests",
+        json={"nodes": ["IV.1"], "count": 10, "timed": False},
+        headers=ALLOWED_ORIGIN,
+    )
+    assert sin_reloj.status_code == 201, sin_reloj.text
+    assert cuerpo["convocation_minutes"] is not None, (
+        "el perfil sembrado publica el tiempo del ejercicio: si no, esta mitad no probaría nada"
+    )
+    assert sin_reloj.json()["time_limit_minutes"] == cuerpo["convocation_minutes"]
 
 
 def test_la_oposicion_configurada_manda_sobre_lo_que_hay(seeded_settings: Settings) -> None:

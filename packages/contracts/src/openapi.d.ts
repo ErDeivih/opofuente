@@ -3071,6 +3071,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/student/tests/plan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Qué se puede elegir antes de montar un test: los tamaños y lo que dura su reloj
+         * @description El formulario del test, con lo que solo sabe el servidor (F22).
+         *
+         *     La pantalla de Tests **decide poco**: los tamaños que se ofrecen y los minutos que les pondría
+         *     el reloj salen de aquí, y salen del mismo sitio del que sale el reloj de la sesión de verdad.
+         *     Una pantalla que calculara los minutos por su cuenta enseñaría una cifra que podría no ser la
+         *     que se aplica al empezar.
+         */
+        get: operations["student_test_plan_api_v1_student_tests_plan_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/student/topics/{codigo}": {
         parameters: {
             query?: never;
@@ -8992,6 +9017,34 @@ export interface components {
             /** Blocks */
             blocks: components["schemas"]["StudentBlockProgressSchema"][];
             opposition: components["schemas"]["StudentOppositionSchema"];
+        };
+        /**
+         * StudentTestCountSchema
+         * @description Un tamaño de test ofrecido, con lo que duraría con el reloj puesto.
+         */
+        StudentTestCountSchema: {
+            /** Minutes */
+            minutes: number;
+            /** Questions */
+            questions: number;
+        };
+        /**
+         * StudentTestPlanSchema
+         * @description Lo que la pantalla de Tests puede ofrecer antes de montar un test (F22).
+         *
+         *     Ni un tamaño ni un minuto se calculan en la pantalla: los sirve el servidor, que es el mismo que
+         *     después pone el reloj. `timed_note` es la frase que acompaña al interruptor del reloj, y también
+         *     viene de aquí por la misma razón que la nota del simulacro: la regla se escribe una vez.
+         *     `convocation_minutes` es el tiempo del test cuando **no** se le pone el reloj del test; `null`
+         *     significa que la convocatoria no lo publica, no que no haya ninguno.
+         */
+        StudentTestPlanSchema: {
+            /** Convocation Minutes */
+            convocation_minutes?: number | null;
+            /** Counts */
+            counts: components["schemas"]["StudentTestCountSchema"][];
+            /** Timed Note */
+            timed_note: string;
         };
         /**
          * StudentTestRequestSchema
@@ -18562,6 +18615,53 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StudentSessionSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    student_test_plan_api_v1_student_tests_plan_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentTestPlanSchema"];
                 };
             };
             /** @description El recurso no existe. */

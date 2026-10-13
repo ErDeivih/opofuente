@@ -61,6 +61,8 @@ from opofuente.application.student_models import (
     StudentSessionResultView,
     StudentSessionView,
     StudentSheetRowView,
+    StudentTestCountView,
+    StudentTestPlanView,
     StudentTestRequest,
     StudentTopicProgressView,
     StudentTopicRefView,
@@ -141,6 +143,19 @@ SIMULACRO_CORTO_MINUTOS = 48
 
 #: Los bloques de los que se puede elegir el supuesto práctico (el perfil de TAI publica dos).
 BLOQUES_DEL_SUPUESTO: frozenset[str] = frozenset({"III", "IV"})
+
+#: Los tamaños de test que ofrece la pantalla de Tests (F22). Son de la **aplicación** —la
+#: convocatoria no publica tamaños de test— y el 20 está porque es el del atajo «Test rápido de 20»
+#: de Inicio, que ya existía y apunta a esta pantalla.
+TAMANOS_DE_TEST: tuple[int, ...] = (10, 20, 25, 50, 100)
+
+#: La nota que acompaña al reloj de un test. Va con el plan y no en la pantalla para que la regla
+#: del reloj se lea de un solo sitio: el mismo del que salen los minutos.
+NOTA_DEL_RELOJ = (
+    "El reloj de un test lo pone la aplicación —dos minutos por pregunta, redondeado a cinco—. El "
+    "tiempo de un examen lo fija la convocatoria, y es el que lleva un test cuando no se le pone "
+    "el reloj del test."
+)
 
 #: El nombre que se le da a cada modo. Es lo que el alumno lee en su historial; el del conjunto de
 #: origen no se usa nunca.
@@ -599,6 +614,44 @@ class StudentService:
         return None
 
     # ------------------------------------------------------------------ montar y correr un test
+
+    def test_plan(self) -> StudentTestPlanView:
+        """Qué puede elegir el alumno antes de montar un test, con lo que dura cada tamaño (F22).
+
+        Lo que se sirve es lo que la pantalla necesita para no inventarse nada: los tamaños que
+        ofrece la aplicación, los minutos que le pondría el reloj a cada uno y el tiempo que lleva
+        el test **sin** reloj —el de la parte del perfil con la que se corrige este material—.
+
+        Los minutos del reloj salen de `_minutos_de_test`, la **misma** regla con la que
+        `create_test` pone el reloj de la sesión; y el tiempo sin reloj sale de la convocatoria, que
+        es de donde lo toma la composición cuando no se le pide otro. Se enseña porque es una cifra
+        que sorprende: medido en la base, un test de diez preguntas sin reloj no se queda sin
+        tiempo, se queda con los 120 minutos del ejercicio.
+        """
+        oposicion = self._opposition()
+        convocatoria = self._convocatoria(oposicion)
+        parte_del_test = self._parte_de_test(oposicion)
+        parte = (
+            None
+            if parte_del_test is None
+            else StudentService._parte_del_perfil(convocatoria, parte_del_test)
+        )
+        return StudentTestPlanView(
+            counts=tuple(
+                StudentTestCountView(
+                    questions=tamano,
+                    minutes=StudentService._minutos_de_test(tamano),
+                )
+                for tamano in TAMANOS_DE_TEST
+            ),
+            timed_note=NOTA_DEL_RELOJ,
+            # El tiempo de la parte, con la regla del motor: si la parte no lo declara, lo declara
+            # el grupo que la contiene (en TAI, los 120 minutos están en el ejercicio único). Se usa
+            # el mismo ayudante que el plan del simulacro, que ya está atado a la sesión por prueba.
+            convocation_minutes=(
+                None if parte is None else StudentService._tiempo_de_parte(convocatoria, parte)
+            ),
+        )
 
     def create_test(self, request: StudentTestRequest) -> StudentSessionView:
         """Monta un test de los temas elegidos, por la composición declarada de `StudyService`.
