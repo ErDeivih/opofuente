@@ -3,6 +3,43 @@
 Lo que conviene que sepas y **no** hace falta que contestes para que el trabajo siga. Lo que sí
 necesita tu criterio está marcado como **«Decide tú»**.
 
+## 13 oct 2026 — Ya puedes hacerte un test a tu medida (la zona del alumno queda cerrada)
+
+**Lo que cambia para ti:** la pantalla **Tests** ya existe. Era la última del menú del alumno que
+faltaba, y hasta hoy los tres enlaces que la llamaban —el «Test rápido de 20» de Inicio y el botón
+«Test» del Temario y de cada tema— llevaban a una pantalla que decía que todavía no estaba.
+
+Ahora, al entrar en **Tests**, eliges:
+
+1. **de qué temas** (el programa entero, con una casilla por tema; cada tema te dice cuántas preguntas
+   tiene y qué has contestado ya en él; los temas con los que todavía no hay preguntas salen apagados y
+   lo dicen);
+2. **cuántas preguntas** (10, 20, 25, 50 o 100);
+3. **cuáles** (todas, las que no has visto, las que has fallado o las que marcaste dudosas);
+4. **cómo se corrigen** (al responder o al terminar);
+5. **si lleva reloj** (y cuánto duraría).
+
+Y si entras desde un enlace que ya traía algo elegido (`?tema=IV.1` desde el Temario, `?count=20` desde
+Inicio), la pantalla **llega con eso marcado**: el enlace no se pierde por el camino.
+
+**Un dato que conviene que sepas, porque sorprende:** si **no** le pones el reloj del test, el test
+**no** se queda sin tiempo — hereda el tiempo del examen, **120 minutos**. La pantalla lo dice con esas
+palabras en vez de callárselo.
+
+**Lo que la zona del alumno todavía no tiene** (medido en el programa, no de memoria): el enlace «Ver
+en apuntes» desde una pregunta del test; «Repetir solo las falladas» en el resultado (el botón que hay
+repite el test entero); el buscador dentro de un tema, la marca de lo leído y un modo repaso de los
+apuntes; y las pestañas «Preguntas» y «Mi progreso» **dentro** del tema (hoy llevan fuera: a un test de
+ese tema y al progreso general). Nada de eso está roto: son huecos que quedan por cerrar.
+
+**Lo que sigue esperando al panel** y que no ha entrado en esta tanda: la pantalla para **leer y
+aprobar los apuntes en borrador** desde el panel (era lo que el encargo dejaba «si sobra tiempo», y no
+ha sobrado: primero se cerró la pantalla de Tests y se probó). Los borradores, mientras tanto, se
+siguen leyendo en la zona del alumno con su marca «Versión generada · en revisión».
+
+**No tienes que decidir nada de esto.** Si algo no cuadra, lo que más ayuda es «Esto está mal» desde el
+párrafo, como siempre.
+
 ## 13 oct 2026 — Ya hay dónde arreglar una respuesta correcta (y 116 preguntas mal importadas, reparadas)
 
 **Lo que cambia para ti:**

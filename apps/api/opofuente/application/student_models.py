@@ -167,6 +167,39 @@ class StudentTestRequest:
 
 
 @dataclass(frozen=True, slots=True)
+class StudentTestCountView:
+    """Un tamaño de test ofrecido en la pantalla, con lo que dura si se le pone reloj.
+
+    `minutes` sale de la **misma** regla con la que el servidor pone el reloj al montar la sesión
+    (`StudentService._minutos_de_test`). La pantalla no la recalcula: si lo hiciera, habría dos
+    verdades sobre cuánto dura un test, y la que se enseña antes de empezar podría dejar de ser la
+    que se aplica después.
+    """
+
+    questions: int
+    minutes: int
+
+
+@dataclass(frozen=True, slots=True)
+class StudentTestPlanView:
+    """Lo que la pantalla de Tests puede ofrecer **antes** de montar nada (F22).
+
+    Los tamaños y la nota del reloj son de la **aplicación**, no de la convocatoria —como los 40
+    minutos de la variante corta del simulacro—, y por eso los sirve el servidor: son números que
+    la interfaz enseña y que tienen que salir del mismo sitio del que sale el reloj de verdad.
+
+    `convocation_minutes` es el tiempo que **sí** lleva un test cuando no se le pone el reloj del
+    test: el de la parte del perfil con la que se corrige ese material. Es `None` si la convocatoria
+    no lo publica, y la pantalla lo dice en lugar de suponer que no hay ninguno: medido en la base,
+    un test sin reloj hereda los 120 minutos del ejercicio, no cero.
+    """
+
+    counts: tuple[StudentTestCountView, ...]
+    timed_note: str
+    convocation_minutes: int | None = None
+
+
+@dataclass(frozen=True, slots=True)
 class StudentMockExamRequest:
     """Lo que pide el alumno cuando monta un simulacro: variante y bloque del supuesto.
 

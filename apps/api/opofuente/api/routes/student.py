@@ -62,6 +62,8 @@ from opofuente.api.student_schemas import (
     StudentSessionSchema,
     StudentSheetRowSchema,
     StudentSyllabusSchema,
+    StudentTestCountSchema,
+    StudentTestPlanSchema,
     StudentTestRequestSchema,
     StudentTopicProgressSchema,
     StudentTopicRefSchema,
@@ -94,6 +96,7 @@ from opofuente.application.student_models import (
     StudentScoreView,
     StudentSessionResultView,
     StudentSessionView,
+    StudentTestPlanView,
     StudentTestRequest,
     StudentTopicProgressView,
     StudentTopicRefView,
@@ -347,6 +350,17 @@ def _mock_plan(view: StudentMockExamPlanView) -> StudentMockExamPlanSchema:
         full=_mock_variant(view.full),
         short=_mock_variant(view.short),
         case_blocks=[_mock_case_block(bloque) for bloque in view.case_blocks],
+    )
+
+
+def _test_plan(view: StudentTestPlanView) -> StudentTestPlanSchema:
+    return StudentTestPlanSchema(
+        counts=[
+            StudentTestCountSchema(questions=cuenta.questions, minutes=cuenta.minutes)
+            for cuenta in view.counts
+        ],
+        timed_note=view.timed_note,
+        convocation_minutes=view.convocation_minutes,
     )
 
 
@@ -609,6 +623,23 @@ def student_mistakes(service: StudentServiceDep) -> StudentMistakesSchema:
 
 
 # --- el test: montarlo, correrlo y cerrarlo ------------------------------------------------------
+
+
+@router.get(
+    "/tests/plan",
+    response_model=StudentTestPlanSchema,
+    responses=RESOURCE_ERRORS,
+    summary="Qué se puede elegir antes de montar un test: los tamaños y lo que dura su reloj",
+)
+def student_test_plan(service: StudentServiceDep) -> StudentTestPlanSchema:
+    """El formulario del test, con lo que solo sabe el servidor (F22).
+
+    La pantalla de Tests **decide poco**: los tamaños que se ofrecen y los minutos que les pondría
+    el reloj salen de aquí, y salen del mismo sitio del que sale el reloj de la sesión de verdad.
+    Una pantalla que calculara los minutos por su cuenta enseñaría una cifra que podría no ser la
+    que se aplica al empezar.
+    """
+    return _test_plan(service.test_plan())
 
 
 @router.post(

@@ -14882,6 +14882,61 @@
         "title": "StudentSyllabusSchema",
         "type": "object"
       },
+      "StudentTestCountSchema": {
+        "description": "Un tamaño de test ofrecido, con lo que duraría con el reloj puesto.",
+        "properties": {
+          "minutes": {
+            "minimum": 1.0,
+            "title": "Minutes",
+            "type": "integer"
+          },
+          "questions": {
+            "minimum": 1.0,
+            "title": "Questions",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "questions",
+          "minutes"
+        ],
+        "title": "StudentTestCountSchema",
+        "type": "object"
+      },
+      "StudentTestPlanSchema": {
+        "description": "Lo que la pantalla de Tests puede ofrecer antes de montar un test (F22).\n\nNi un tamaño ni un minuto se calculan en la pantalla: los sirve el servidor, que es el mismo que\ndespués pone el reloj. `timed_note` es la frase que acompaña al interruptor del reloj, y también\nviene de aquí por la misma razón que la nota del simulacro: la regla se escribe una vez.\n`convocation_minutes` es el tiempo del test cuando **no** se le pone el reloj del test; `null`\nsignifica que la convocatoria no lo publica, no que no haya ninguno.",
+        "properties": {
+          "convocation_minutes": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Convocation Minutes"
+          },
+          "counts": {
+            "items": {
+              "$ref": "#/components/schemas/StudentTestCountSchema"
+            },
+            "title": "Counts",
+            "type": "array"
+          },
+          "timed_note": {
+            "title": "Timed Note",
+            "type": "string"
+          }
+        },
+        "required": [
+          "counts",
+          "timed_note"
+        ],
+        "title": "StudentTestPlanSchema",
+        "type": "object"
+      },
       "StudentTestRequestSchema": {
         "description": "Lo que manda la pantalla para montar un test: sus temas, cuántas y con qué filtro.",
         "properties": {
@@ -28128,6 +28183,58 @@
           }
         },
         "summary": "Monta un test de varios temas (los que elija el alumno)",
+        "tags": [
+          "alumno"
+        ]
+      }
+    },
+    "/api/v1/student/tests/plan": {
+      "get": {
+        "description": "El formulario del test, con lo que solo sabe el servidor (F22).\n\nLa pantalla de Tests **decide poco**: los tamaños que se ofrecen y los minutos que les pondría\nel reloj salen de aquí, y salen del mismo sitio del que sale el reloj de la sesión de verdad.\nUna pantalla que calculara los minutos por su cuenta enseñaría una cifra que podría no ser la\nque se aplica al empezar.",
+        "operationId": "student_test_plan_api_v1_student_tests_plan_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudentTestPlanSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Qué se puede elegir antes de montar un test: los tamaños y lo que dura su reloj",
         "tags": [
           "alumno"
         ]

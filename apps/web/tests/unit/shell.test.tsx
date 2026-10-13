@@ -178,16 +178,17 @@ describe('el marco del alumno', () => {
     expect(administrar).toHaveAttribute('href', '/admin');
   });
 
-  it('una sección que todavía no está lo dice con su frase, sin jerga de construcción', () => {
-    // La única que queda sin pantalla es Tests: Simulacros, Exámenes, Fallos y Progreso la tienen
-    // desde F14, y cada una enseña lo suyo en lugar de una frase.
+  it('la zona del alumno ya no tiene ninguna sección pendiente: Tests lleva a su pantalla', () => {
+    // F22 cerró la última que faltaba (Tests). Antes, esta dirección pintaba la pantalla de «todavía
+    // no está»; ahora tiene que pintar el formulario de verdad. Se comprueba en las dos direcciones:
+    // que el aviso de sección pendiente **no** sale, y que lo que sale es la pantalla con su título.
+    // Sin datos de la API, la pantalla dice que no pudo preparar el test —eso también es una pantalla,
+    // y distinta de una promesa—, así que aquí se mira lo que el marco tiene que garantizar.
+    stubApi({});
     renderWithProviders(<AppRoutes />, { route: '/tests' });
 
     expect(screen.getByRole('heading', { level: 1, name: 'Tests' })).toBeInTheDocument();
-    expect(
-      screen.getByText(/Tú eliges los temas.*Llega en la siguiente fase\./),
-    ).toBeInTheDocument();
-    expect(screen.queryByText(/slice/)).toBeNull();
+    expect(screen.queryByText(/Llega en la siguiente fase/)).toBeNull();
   });
 
   it('el enlace de salto al contenido existe y apunta al main', () => {

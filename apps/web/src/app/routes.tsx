@@ -2,7 +2,6 @@ import { Navigate, Outlet, Route, Routes, useLocation, useSearchParams } from 'r
 
 import { AdminUiPage } from '../pages/AdminUiPage';
 import { ChangesPage } from '../pages/ChangesPage';
-import { ComingSoonPage } from '../pages/ComingSoonPage';
 import { ErrorsPage } from '../pages/ErrorsPage';
 import { IncidentsPage } from '../pages/IncidentsPage';
 import { LibraryPage } from '../pages/LibraryPage';
@@ -23,13 +22,14 @@ import { OfficialExamsPage } from '../pages/student/OfficialExamsPage';
 import { ProgressPage } from '../pages/student/ProgressPage';
 import { ResultPage } from '../pages/student/ResultPage';
 import { SyllabusPage } from '../pages/student/SyllabusPage';
+import { TestsPage } from '../pages/student/TestsPage';
 import { TopicNotesPage } from '../pages/student/TopicNotesPage';
 import { TopicReviewPage } from '../pages/TopicReviewPage';
 import { TrayPage } from '../pages/TrayPage';
 import { StudentTestRunner } from '../features/study/StudentTestRunner';
 import { AdminShell } from './AdminShell';
 import { AppShell } from './AppShell';
-import { ROUTE_REDIRECTS, STUDENT_NAV_ITEMS } from './navigation';
+import { ROUTE_REDIRECTS } from './navigation';
 import { useApartadoDeLaDireccion } from './apartadoDeLaDireccion';
 
 /**
@@ -98,23 +98,15 @@ function QuestionsRoute() {
   return <QuestionsPage />;
 }
 
-/**
- * La única sección del alumno que todavía no tiene pantalla: **Tests**.
+/*
+ * Las secciones del alumno **ya no tienen ninguna pendiente**.
  *
- * Simulacros, Exámenes, Fallos y Progreso ya la tienen desde F14, y cada una dice lo suyo; lo que
- * queda —elegir temas, cuántas preguntas y cómo se corrigen— llegará con su bloque, y hasta entonces
- * esa entrada dice qué hará en lugar de quedarse en blanco. La lista sale del mapa de navegación para
- * que no haya dos listas de «lo que falta» que puedan divergir.
+ * F22 cerró la última —Tests, la que deja elegir temas, cuántas preguntas y cómo se corrigen—, y con
+ * ella desaparece el recurso de «esta sección todavía no está»: las siete entradas del menú llevan a
+ * una pantalla que hace lo suyo, así que no queda ninguna lista de «lo que falta» que pueda divergir
+ * del menú. Si algún día se añade una sección sin pantalla, se declara aquí y se pinta con el recurso
+ * de siempre.
  */
-const SECCIONES_PENDIENTES = STUDENT_NAV_ITEMS.filter(
-  (item) =>
-    item.path !== '/' &&
-    item.path !== '/temario' &&
-    item.path !== '/simulacros' &&
-    item.path !== '/examenes' &&
-    item.path !== '/fallos' &&
-    item.path !== '/progreso',
-);
 
 export function AppRoutes() {
   return (
@@ -143,17 +135,11 @@ export function AppRoutes() {
           —es la dirección del propio test— y todo lo demás por su nombre.
         */}
         <Route path="/resultado/:id" element={<ResultPage />} />
+        <Route path="/tests" element={<TestsPage />} />
         <Route path="/simulacros" element={<MockExamPage />} />
         <Route path="/examenes" element={<OfficialExamsPage />} />
         <Route path="/fallos" element={<MistakesPage />} />
         <Route path="/progreso" element={<ProgressPage />} />
-        {SECCIONES_PENDIENTES.map((item) => (
-          <Route
-            key={item.path}
-            path={item.path}
-            element={<ComingSoonPage title={item.label} summary={item.summary} />}
-          />
-        ))}
         <Route path="*" element={<NotFoundPage />} />
       </Route>
 

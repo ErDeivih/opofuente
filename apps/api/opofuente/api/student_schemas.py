@@ -302,6 +302,28 @@ class StudentMockExamRequestSchema(BaseModel):
     case_block: StudentCaseBlockName = "III"
 
 
+class StudentTestCountSchema(BaseModel):
+    """Un tamaño de test ofrecido, con lo que duraría con el reloj puesto."""
+
+    questions: int = Field(ge=1)
+    minutes: int = Field(ge=1)
+
+
+class StudentTestPlanSchema(BaseModel):
+    """Lo que la pantalla de Tests puede ofrecer antes de montar un test (F22).
+
+    Ni un tamaño ni un minuto se calculan en la pantalla: los sirve el servidor, que es el mismo que
+    después pone el reloj. `timed_note` es la frase que acompaña al interruptor del reloj, y también
+    viene de aquí por la misma razón que la nota del simulacro: la regla se escribe una vez.
+    `convocation_minutes` es el tiempo del test cuando **no** se le pone el reloj del test; `null`
+    significa que la convocatoria no lo publica, no que no haya ninguno.
+    """
+
+    counts: list[StudentTestCountSchema]
+    timed_note: str
+    convocation_minutes: int | None = Field(default=None, ge=1)
+
+
 class StudentAnswerRequestSchema(BaseModel):
     """La respuesta a una pregunta, **por su fila en la hoja de respuestas**."""
 

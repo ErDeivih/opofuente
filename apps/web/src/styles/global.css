@@ -2518,6 +2518,113 @@ kbd {
   font-weight: 700;
 }
 
+/* --- La pantalla de Tests: elegir y empezar (F22) ---------------------------------------- */
+
+/* El árbol de temas. Cada bloque es una caja con su número romano, y cada tema una fila con su
+   casilla. En móvil la casilla va delante y el texto ocupa lo que quede: con `minmax(0, 1fr)` y
+   `overflow-wrap` un título largo se parte en vez de sacar la página de 390 px. */
+.elegir-temas {
+  list-style: none;
+  margin: 0 0 var(--s3);
+  padding: 0;
+  display: grid;
+  gap: var(--s3);
+}
+
+.elegir-temas__bloque {
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  background: var(--hoja);
+  padding: var(--s3) var(--s4);
+}
+
+.elegir-temas__cabecera {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s3);
+  margin-bottom: var(--s2);
+}
+
+.elegir-temas__romano {
+  margin: 0;
+  font-weight: 700;
+  color: var(--azul);
+  font-variant-numeric: tabular-nums;
+}
+
+.elegir-temas__titulo-bloque {
+  margin: 0;
+  font-size: var(--t-sm);
+  color: var(--tinta-suave);
+  overflow-wrap: anywhere;
+}
+
+.elegir-temas__marcar-todo {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  padding-bottom: var(--s2);
+  border-bottom: 1px solid var(--linea);
+  color: var(--tinta-suave);
+  font-size: var(--t-sm);
+}
+
+.elegir-temas__lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.elegir-temas__fila {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: var(--s3);
+  padding: var(--s3) 0;
+  border-top: 1px solid var(--linea-suave);
+}
+
+.elegir-temas__fila:first-child {
+  border-top: none;
+}
+
+.elegir-temas__texto {
+  display: grid;
+  gap: var(--s1);
+  min-width: 0;
+  cursor: pointer;
+}
+
+.elegir-temas__titulo {
+  overflow-wrap: anywhere;
+}
+
+.elegir-temas__codigo {
+  font-weight: 700;
+  color: var(--azul);
+  font-variant-numeric: tabular-nums;
+}
+
+.elegir-temas__datos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2) var(--s3);
+  color: var(--tinta-suave);
+  font-size: var(--t-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+/* El resumen de lo que se va a montar: se lee justo antes de pulsar, y dice lo que hay de verdad
+   (si no hay tantas preguntas como se piden, se dice aquí y no al ver el test corto). */
+.resumen-test {
+  margin: 0 0 var(--s3);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  background: var(--hoja);
+  padding: var(--s3) var(--s4);
+  max-width: var(--medida-texto);
+}
+
 /* --- El simulacro: qué va a caer --------------------------------------------------------- */
 
 .opciones {
