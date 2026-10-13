@@ -14176,6 +14176,12 @@
               }
             ]
           },
+          "in_review": {
+            "default": false,
+            "description": "La clave de esta pregunta está en revisión: su conjunto discrepa de los apuntes entre el 15 % y el 30 % de las preguntas medidas.",
+            "title": "In Review",
+            "type": "boolean"
+          },
           "is_reserve": {
             "title": "Is Reserve",
             "type": "boolean"
@@ -14298,6 +14304,12 @@
               }
             ],
             "title": "Elapsed Ms"
+          },
+          "in_review": {
+            "default": false,
+            "description": "La clave de esta pregunta está en revisión: un fallo puede ser de la clave y no del alumno.",
+            "title": "In Review",
+            "type": "boolean"
           },
           "is_reserve": {
             "title": "Is Reserve",
@@ -14504,6 +14516,13 @@
                 "type": "null"
               }
             ]
+          },
+          "questions_in_review": {
+            "default": 0,
+            "description": "Cuántas preguntas del test llevan la marca «clave en revisión».",
+            "minimum": 0.0,
+            "title": "Questions In Review",
+            "type": "integer"
           },
           "session": {
             "$ref": "#/components/schemas/StudentSessionSchema"

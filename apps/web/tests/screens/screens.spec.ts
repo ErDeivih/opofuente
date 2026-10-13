@@ -36,6 +36,44 @@ const API = process.env.OPOFUENTE_API_URL ?? 'http://127.0.0.1:8765';
 /** El origen con el que se firman las escrituras, como en el navegador. */
 const ORIGEN = 'http://127.0.0.1:4173';
 
+/**
+ * El texto que ve el alumno cuando la clave de esa pregunta está en revisión (§1 del objetivo).
+ *
+ * La API manda un booleano (`in_review`); el rótulo lo pone la interfaz. Estas capturas existen para
+ * enseñarlo, así que se comprueba que está: un PNG que hay que mirar a ojo no es evidencia.
+ */
+const MARCA_EN_REVISION = 'clave en revisión';
+
+/** El directorio de datos de la suite, el mismo que le pasa `playwright.config.ts` a la API. */
+const DATOS_DE_LA_SUITE =
+  process.env.OPOFUENTE_E2E_DATA_DIR ?? path.resolve(process.cwd(), '..', '..', '.e2e-data');
+
+/**
+ * Deja el conjunto recién montado como **dudoso**, que es lo que hace visible la marca «clave en
+ * revisión» (§1 del objetivo).
+ *
+ * La fiabilidad de una clave la decide la **puerta de datos**, midiendo el conjunto contra los
+ * apuntes del tema; aquí no hay apuntes ni quince preguntas comprobadas, así que la puerta no puede
+ * medirlo y el conjunto se quedaría `fiable`. La captura necesita justo lo contrario —**enseñar** la
+ * marca—, así que se escribe el veredicto directamente en la base **de la suite** (`.e2e-data`, que
+ * es suya y se borra en cada corrida) con el valor que la puerta habría puesto tras medir una
+ * discrepancia de entre el 15 % y el 30 %.
+ *
+ * Se hace con `node:sqlite`, que viene con Node, para no añadir dependencias ni procesos. Y se hace
+ * aquí y no en la puerta a propósito: esto es una **herramienta de capturas**, no el juez.
+ */
+async function marcarElConjuntoComoDudoso(setId: string): Promise<void> {
+  const { DatabaseSync } = await import('node:sqlite');
+  const base = new DatabaseSync(path.join(DATOS_DE_LA_SUITE, 'opofuente.sqlite3'));
+  try {
+    base
+      .prepare('UPDATE question_sets SET key_reliability = ? WHERE id = ?')
+      .run('dudosa', setId);
+  } finally {
+    base.close();
+  }
+}
+
 // El informe se escribe **después** de la última captura de este proceso. Si una captura se pasa de
 // tiempo, Playwright reinicia el proceso y este `afterAll` vuelve a correr: cada fila ya está en
 // disco, así que el informe sale completo igualmente.
@@ -166,6 +204,10 @@ for (const { ancho, alto, etiqueta } of ANCHOS) {
   test(`test-en-curso a ${ancho} px`, async ({ page }) => {
     const sesion = await montarTestDeAlumno();
     await retratar(page, `/test/${sesion}`, '/test-en-curso', ancho, alto, etiqueta);
+    // La marca «clave en revisión» es lo que esta captura tiene que enseñar: si no está, la captura
+    // no sirve de nada. Se comprueba aquí, sobre la pantalla ya cargada, para que la evidencia no
+    // dependa de que alguien mire el PNG.
+    await expect(page.getByText(MARCA_EN_REVISION).first()).toBeVisible();
   });
 }
 
@@ -295,6 +337,9 @@ for (const { ancho, alto, etiqueta } of ANCHOS) {
   test(`resultado a ${ancho} px`, async ({ page }) => {
     const { sesion } = await zonaSembrada();
     await retratar(page, `/resultado/${sesion}`, '/resultado', ancho, alto, etiqueta);
+    // En el resultado la marca importa más que en el test: un fallo puede ser de la clave y no del
+    // alumno. Si no sale en la captura, la captura no enseña lo que tiene que enseñar.
+    await expect(page.getByText(MARCA_EN_REVISION).first()).toBeVisible();
   });
 }
 
@@ -403,6 +448,9 @@ async function sembrarUnTestTerminado(): Promise<{ sesion: string }> {
       );
     }
   }
+
+  // La clave de este conjunto también queda en revisión: el resultado tiene que enseñar la marca.
+  await marcarElConjuntoComoDudoso(conjunto.id);
 
   const sesion = await leer<{ id: string }>(
     await fetch(`${API}/api/v1/student/tests`, {
@@ -533,6 +581,10 @@ async function montarTestDeAlumno(): Promise<string> {  const cabeceras = { 'Con
       }),
     );
   }
+
+  // La clave del conjunto que se acaba de montar queda **en revisión**, que es lo que hay que ver en
+  // la captura: la marca sale en el test en curso y en el resultado.
+  await marcarElConjuntoComoDudoso(conjunto.id);
 
   const sesion = await leer<{ id: string }>(
     await fetch(`${API}/api/v1/student/tests`, {

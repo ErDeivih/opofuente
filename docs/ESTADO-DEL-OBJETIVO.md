@@ -1074,3 +1074,212 @@ porque la ficha lee tablas que ya existían y lo que escribe son filas nuevas de
    reales**: son regiones que se desplazan y no se pueden recorrer con el teclado. No son de f16 —las
    dos pantallas de la bandeja salen a **0**, con datos reales— y se arreglan con el mismo remedio que se aplicó a las
    tablas de los apuntes (`tabindex` y nombre), pero tocan el panel: quedan anotadas para él.
+
+
+---
+
+## F19 · Las claves que no son fiables (§1 del objetivo) — 13-oct-2026
+
+**Rama `f19-claves-fiables`** (worktree `F:\temp-opofuente\opofuente-claves`, desde `db422ba`), migración **`0036_claves_no_fiables`**. Sin fusionar.
+
+### 1. La copia verificada (Paso 0)
+
+`F:\OpoFuente\datos\backups\20261013-113403-e4c97c.zip` · **799.306.361 bytes** · SHA-256 del ZIP `9434fa9b858c04514648f6cb2ec0c966dec4db94dca2f5461a561f89433be49c`. Método del proyecto: instantánea con la API de respaldo de SQLite → ZIP con `force_zip64` y manifiesto → `verify_archive` → extracción a temporal en C: y `PRAGMA integrity_check`. Comprobado: 2/2 entradas con CRC correcto, 0 problemas en la verificación, SHA-256 de la base extraída **idéntico** al de la instantánea (`b9a68c2e…0a6f465`), `integrity_check` = ok, `quick_check` = ok, `foreign_key_check` = 0 filas, cabecera SQLite 660.686 páginas × 4096 = 2.706.169.856 bytes exactos, revisión `0034_avisos_en_curso_y_nota`. 332 s. **No se ha borrado ninguna copia** (quedan 3).
+
+### 2. La discrepancia, medida otra vez (no heredada)
+
+Universo: `question_note_anchors` ⋈ `question_versions` ⋈ `question_sets`, **una pregunta cuenta una vez**, conjunto de origen = `question_versions.question_set_id` → `question_sets.title` (0 títulos vacíos, 0 preguntas sin conjunto). Medible = ancla con letra de los apuntes y con clave no vacía. Discrepante = la letra de los apuntes no está entre las de la clave.
+
+**6.311 anclas · 5.929 con letra y clave · 5.925 preguntas distintas · 528/5.925 = 8,91 % global.**
+
+| conjunto | comprobadas | discrepantes | % | veredicto |
+|---|---|---|---|---|
+| TAI · C_ejer_1_libre_DZA_2026 (marcadas) | 18 | 16 | 88,89 | `no_fiable` |
+| TAI · Test por temas (marcadas) | 32 | 26 | 81,25 | `no_fiable` |
+| TAI · TEST VARIOS (marcadas) | 64 | 49 | 76,56 | `no_fiable` |
+| TAI · Test Aragón 2015 (marcadas) | 31 | 23 | 74,19 | `no_fiable` |
+| TAI · 1600-Preguntas-Constitución-Española (marcadas) | 71 | 51 | 71,83 | `no_fiable` |
+| TAI · TEST B1 (marcadas) | 71 | 51 | 71,83 | `no_fiable` |
+| TAI · baquedano (marcadas) | 105 | 70 | 66,67 | `no_fiable` |
+| TAI · Supuestos Practicos Bloque IV (marcadas) | 22 | 8 | 36,36 | `no_fiable` |
+| TAI · «…drive-download…SIMULACROS y» (respuesta en el material) | 15 | 5 | 33,33 | `no_fiable` |
+| TAI · TAI_ejer_1_A_libre_AGE_2024 (clave publicada) | 15 | 5 | 33,33 | `no_fiable` |
+| TAI · 2022_diccionario-concepto-terminos-AE (marcadas) | 21 | 6 | 28,57 | `dudosa` |
+| TAI · Doc Adicional (marcadas) | 28 | 7 | 25,00 | `dudosa` |
+| TAI · 01.- eAdministracion (marcadas) | 19 | 4 | 21,05 | `dudosa` |
+| TAI · 2025_Diccionario_conceptos_AE_11_ed (marcadas) | 15 | 3 | 20,00 | `dudosa` |
+| TAI · Material adicional (marcadas) | 15 | 3 | 20,00 | `dudosa` |
+| TAI · Doc adicional (marcadas) | 60 | 9 | 15,00 | `dudosa` |
+
+Y **80 conjuntos quedan por debajo del mínimo de 15 comprobadas** (364 preguntas): no se cuarentenan porque no se pueden medir. Los otros 44 medibles son `fiable` (el peor, 14,29 %).
+
+**Preguntas afectadas: `no_fiable` 10 conjuntos = 1.117 preguntas** (380 con clave activa, 461 anclas) **fuera de tests, simulacros, repasos, práctica por tema y diagnóstico, y fuera del denominador de cobertura**; **`dudosa` 6 conjuntos = 984 preguntas** (332 anclas), que entran con la marca **«clave en revisión»**.
+
+### 3. Los tres arreglos que se intentaron
+
+| conjunto | discrepancia | preguntas ±1/±2 | opciones giradas | conclusión |
+|---|---|---|---|---|
+| C_ejer_1_libre_DZA_2026 | 88,9 % | 87,5 % | 44,4 % (peor) | no es desplazamiento |
+| Test por temas | 81,2 % | 84,4 % | 80,0 % | no es desplazamiento |
+| TEST VARIOS | 76,6 % | 75,0 % | 73,4 % | no es desplazamiento |
+| Test Aragón 2015 | 74,2 % | 67,7 % | 74,2 % | no es desplazamiento |
+| TEST B1 / 1600-Preguntas | 71,8 % | 68,6 % | 74,6 % | no es desplazamiento |
+| baquedano | 66,7 % | 66,7 % | 68,6 % | no es desplazamiento |
+| Supuestos Practicos Bloque IV | 36,4 % | 35,0 % | 36,4 % | no es desplazamiento |
+| «…SIMULACROS y» | 33,3 % | 33,3 % | 33,3 % | no es desplazamiento |
+| TAI_ejer_1_A_libre_AGE_2024 | 33,3 % | 86,7 % con +1 **solo sobre 15 anclas** | 93,3 % con +1 | **es el caso del INAP: se explica por la numeración, no por la clave** |
+
+Ningún conjunto baja del 10 % con un desplazamiento de preguntas ni con una rotación de opciones, salvo el del INAP —donde el conjunto tiene 15 anclas y la comparación por contenido (abajo) demuestra que la clave **sí** es la oficial—. **El apartado 4a no explica ninguno de los nueve conjuntos de «respuestas marcadas»: no era un desplazamiento.**
+
+### 4. INAP 2024 modelo A — dictamen
+
+Se han leído las dos plantillas oficiales (`TAI-2024-libre-plantilla-definitiva-unico-{A,B}.pdf`) y el cuestionario A, y se han comparado con la clave guardada **por contenido** (alineando por enunciado, no por número):
+
+- **Es el modelo A, no el B**: la clave guardada coincide con la plantilla oficial **A en 66/73 = 90,4 %** y con la **B en 35,2 %**; el orden de las preguntas también es el de A (el de B solo casa en 17/76).
+- **La numeración NO cuadra**: faltan **2 preguntas oficiales** en el conjunto (la 57 y la 76), así que desde la posición 57 la numeración va una por detrás de la oficial y desde la 75, dos; y el conjunto tiene **0 reservas** cuando la plantilla publica 5 para la primera parte.
+- Aun corrigiendo el desplazamiento, **7 preguntas siguen discrepando** con la plantilla oficial (posiciones 1, 2, 4, 6, 7, 8 y 9) y **3 que la plantilla declara ANULADA (22, 51, 70) llevan clave «a»** en el conjunto.
+- **Dictamen**: es clave **oficial** y no se toca. Y como la numeración no cuadra, no es «todo cuadra y aun así discrepa»: son **incidencias para el propietario** (faltan 2 preguntas, no hay reservas, 7 claves no son las de la plantilla), con estas cifras.
+
+### 5. Lo que se ha construido (con prueba que falla antes de cada regla)
+
+- `domain/key_reliability.py` — el veredicto, las dos fronteras, la medida por conjunto y la prueba del desplazamiento. Puro, sin base de datos.
+- `alembic/versions/0036_claves_no_fiables.py` — `key_reliability` (`fiable` · `dudosa` · `no_fiable`), `key_checked_count`, `key_discrepant_count`, `key_measured_at`, con sus `CHECK` e índice. **Vuelta atrás probada** (quita las cuatro columnas y deja el esquema como estaba; volver a subir las devuelve).
+- `infrastructure/key_reliability_repository.py` — mide, guarda y **audita** cada cambio de veredicto; `set_verdict` para devolver un conjunto a `fiable` por la vía auditada; idempotente.
+- **Cuarentena en los sitios reales**: `_preguntas` (práctica por conjunto y examen oficial: se niega con los dos números), `compose` (test de varios temas y simulacro), `_create_topic_session`, `_create_review_session` (repaso), `_create_diagnostic_session` y `question_groups` (denominador de la cobertura).
+- **Marca «clave en revisión»** para las dudosas: `StudentQuestionView.in_review`, `StudentRunView.questions_in_review` y `StudentResultQuestionView.in_review`, en la API y en el contrato.
+- **Puerta de datos permanente** al cerrar cada tema (`_puerta_de_claves` en `tools/apuntes.py`, en la corrida y en `--publicar`; `--medir` la enseña sin aplicar): recalcula la discrepancia por conjunto y el que cruce el 30 % **entra en cuarentena solo**.
+- La discrepancia **se puede volver a medir en cualquier momento sin gastar**: `medir_conjuntos` es puro y la puerta es una consulta.
+
+### 6. Lo que queda fuera, y por qué
+
+- **Claves derivadas (4b)**: no ejecutadas. Ver la decisión del 13-oct en `DECISIONES-TOMADAS-EN-EL-OBJETIVO.md`.
+- **Bandeja del propietario para los conjuntos en cuarentena**: hoy los conflictos de letra ya llegan a `notes_incidents` (`clave_sospechosa`), pero un conjunto en cuarentena **no crea una incidencia por conjunto**. Es la pieza que le dice «estos 10 conjuntos, con estas cifras, y estas son tus preguntas» en una fila, y no está.
+- **Marca en la pantalla del alumno**: **hecha y retratada** —el distintivo se pinta en el test en curso (`StudentTestRunner`) y en el resultado (`ResultPage`), con su estilo (`.marca-clave-en-revision`, que reutiliza el patrón `.marca` de la casa y su par de colores ya verificado), su prueba de componente que se demuestra en rojo apagando la marca, y sus **capturas**—. Lo único que queda **escrito y no ejecutado** es la aserción de las capturas (ver §9): necesita los puertos 8765 y 4173 libres, y el 8765 lo tiene otro bloque.
+- **Aserción de las capturas del alumno**: escrita en `apps/web/tests/screens/screens.spec.ts` y **sin ejecutar** —las capturas que hay son de la corrida anterior—. Relanzar con `cd apps\web; npm run screens` cuando el puerto 8765 esté libre. Detalle y qué se comprueba, en §9.
+
+### 9. Las capturas de la marca (escritorio y móvil, 0 axe)
+
+`npm run screens`, 48 capturas en 2,0 min, **0 violaciones de axe** («Ninguna: axe no encuentra
+violaciones A/AA en ninguna pantalla»), 0 errores de consola y 0 palabras prohibidas. Las cuatro que
+enseñan la marca:
+
+| fichero | ruta retratada | ancho | carga | axe |
+|---|---|---|---|---|
+| `test-en-curso-escritorio.png` | `/test/0bee477c…` | 1280×800 | 665 ms | 0 |
+| `test-en-curso-movil.png` | `/test/e4021b8c…` | 390×844 | 664 ms | 0 |
+| `resultado-escritorio.png` | `/resultado/fa8462e9…` | 1280×800 | 707 ms | 0 |
+| `resultado-movil.png` | `/resultado/fa8462e9…` | 390×844 | 700 ms | 0 |
+
+**Cómo se consigue que la marca salga en el retrato**, que es lo que tiene truco: la marca solo se
+pinta si el conjunto es `dudosa`, y la suite de capturas monta su propio conjunto (tres preguntas,
+sin apuntes), así que la puerta de datos **no puede medirlo** —no llega a las 15 comprobadas— y el
+veredicto se queda en `fiable`. La herramienta de capturas escribe entonces el veredicto directamente
+en **su** base (`.e2e-data`, que se borra en cada corrida) con `node:sqlite`, que viene con Node 24:
+sin dependencias nuevas y sin procesos de más. Va en la herramienta y no en la puerta a propósito:
+esto retrata, no juzga.
+
+**La cadena de evidencia, comprobada en la base de la suite**: los conjuntos de la captura quedan
+`dudosa` (2 de 3), sus 3 y 4 preguntas son las de las sesiones retratadas
+(`0bee477c…` y `e4021b8c…` en curso, `fa8462e9…` terminada), y de ahí sale el `in_review = true` que
+la interfaz convierte en el rótulo. Comprobado **por la API**, levantada aparte en un puerto libre
+(8799, sin tocar el 8765 de otro bloque) sobre esa misma base: el test en curso devuelve
+`question.in_review = true` y `questions_in_review = 3`; la pantalla de resultado, que lee otra ruta,
+devuelve `in_review` por pregunta `[true, true, true, false]` — **tres de cuatro**—.
+
+#### Lo que queda **escrito y NO ejecutado** en las capturas
+
+La herramienta lleva ahora una aserción por captura del alumno, para que la evidencia no dependa de
+que alguien mire el PNG:
+
+```ts
+// apps/web/tests/screens/screens.spec.ts, en las capturas «test-en-curso» y «resultado»
+await expect(page.getByText(MARCA_EN_REVISION).first()).toBeVisible();
+```
+
+**Está escrita y no se ha ejecutado**, y se dice aquí para que no parezca verde:
+
+- **Qué hace**: si el rótulo «clave en revisión» no está en pantalla, esas dos capturas **fallan** en
+  vez de guardar un PNG que no enseña lo que tiene que enseñar.
+- **Por qué no se ha ejecutado**: las capturas que hay son de la corrida **anterior** a la aserción.
+  Para ejecutarla hay que volver a lanzar la suite de capturas, y eso necesita los puertos **8765**
+  (API) y **4173** (vista previa) libres; el 8765 lo tiene tomado el bloque de `opofuente-preguntas`
+  desde las 15:36 y **no se le toca el servidor a otro bloque**.
+- **Cómo se relanza** (desde `apps/web`, con esos dos puertos libres):
+
+  ```powershell
+  cd apps\web
+  npm run screens
+  ```
+
+  Y se comprueba en `artifacts/screens/report.md`: las filas `test-en-curso` y `resultado` de los dos
+  anchos tienen que salir con **0 violaciones de axe**, y las 48 capturas tienen que pasar.
+- **Mientras no se ejecute**, lo que sostiene que la marca está dentro es lo de arriba: la base de la
+  suite (`dudosa`), la API (`in_review = true`, `[true, true, true, false]`) y la prueba de componente
+  que demuestra el pintado. Las tres cosas son evidencia; **la aserción es la que cierra el círculo, y
+  está pendiente**.
+
+
+
+### 7. §3 · Cobertura de I.6, I.4 e I.8 con la cuarentena puesta y sin ella
+
+**Método**: copia de la base real con la API de respaldo de SQLite (nunca la real) en `C:\…\Temp\f19-datos`, migrada a la cabeza —aplica la `0036`— y `TopicNotesService.medir`, que sale de lo guardado y **no llama al modelo**. Coste **0 $**.
+
+| tema | antes | después | denominador | cubiertas | veredicto |
+|---|---|---|---|---|---|
+| **I.6** | 187/258 = **72,5 %** | 170/239 = **71,1 %** | 258 → 239 (−19) | 187 → 170 (−17) | NO PASA |
+| **I.4** | 497/559 = **88,9 %** | 490/551 = **88,9 %** | 559 → 551 (−8) | 497 → 490 (−7) | NO PASA |
+| **I.8** | 423/516 = **82,0 %** | 405/494 = **82,0 %** | 516 → 494 (−22) | 423 → 405 (−18) | NO PASA |
+
+**Ninguno cruza el 90 %.** La cuarentena **baja I.6** (72,5 → 71,1) y deja I.4 e I.8 igual, y el motivo está medido: de las preguntas que salen del denominador la mayoría **estaban cubiertas** (17 de 19 en I.6, 7 de 8 en I.4, 18 de 22 en I.8), así que quitar numerador y denominador a la vez mueve la razón hacia abajo cuando esas preguntas estaban por encima de la media del tema. La cuarentena **no regala cobertura: la limpia**, y el número deja de estar sostenido por claves que no son de fiar.
+
+Puerta de claves sobre la copia: **144 conjuntos medibles** (128 `fiable`, 6 `dudosa`, 10 `no_fiable`) y **16 cambios de veredicto**, cada uno con su evento de auditoría. Anclas: 6.311 · **461 en cuarentena** · **332 dudosas**.
+
+Anclas de conjuntos que **no** son `fiable`, por tema: **I.6 107** · **I.4 95** · **I.8 187**. Los `no_fiable` que toca cada uno: I.6 → baquedano 11, TEST VARIOS 11, Test por temas 5, Test Aragón 2015 4, TAI_ejer_1_A 2, drive-download 1; I.4 → baquedano 11, TAI_ejer_1_A 1, drive-download 1; I.8 → baquedano 28, Test Aragón 6, TEST VARIOS 6, drive-download 4, TAI_ejer_1_A 3, C_ejer_1_libre_DZA 2. El resto son `dudosa`, que entran con la marca.
+
+**Precisión de método**: el código agrupa por **`set_id`**, no por título. Cuatro títulos de exámenes del INAP 2025 están repetidos en **dos conjuntos distintos** cada uno («TAI ingreso libre 2025 · modelo A» y sus tres hermanos), así que agrupar por título da 140 grupos donde hay 144 conjuntos: por título se pueden juntar dos claves distintas.
+
+### 8. El desplazamiento, probado **entero** — y una lectura al revés que se corrige
+
+**Lo que pasó, porque queda escrito.** La primera salida de esta prueba imprimía
+`discrepantes/comprobadas`, y se leyó «las opciones, 3 puesto(s): **21/21 = 100,0 %**» como «21
+aciertos de 21». Quiere decir **21 discrepantes de 21: cero aciertos**. Se sacó de ahí un «hallazgo»
+—claves corridas una opción en cinco conjuntos `dudosa`— que **era falso**, y llegó a proponerse
+como decisión. El error tenía además una causa de fondo: la fila «hoy» salía de la discrepancia de
+las anclas y las alternativas de la **plantilla de hoy** por posición, y esas dos cosas no son la
+misma línea base; una tabla con dos orígenes se puede leer al revés sin que nada avise.
+
+**Lo que se ha corregido en el código, no solo en el texto:**
+
+1. `probar_desplazamientos` toma la clave **del propio ancla** (`expected_letters`), que es el dato
+   con el que se midió la discrepancia: la fila «hoy» y las alternativas son la misma línea base.
+2. El dominio **comprueba que la línea base cuadra**; si no cuadra, devuelve una sola lectura y dice
+   que no compara, en lugar de enseñar una comparación que no es de lo mismo.
+3. La fila de **hoy no puede explicarse a sí misma** (`es_alternativa`): si hoy ya coincidiera no
+   habría discrepancia que explicar.
+4. La salida del comando imprime **aciertos sobre total** con la etiqueta delante, compara con el
+   azar (25 %, cuatro opciones) y solo marca «EXPLICA» por encima del 90 %.
+5. Las posiciones con más de una pregunta no se mueven (no está definida «la clave de al lado»), y
+   se dejan fuera **también de la línea base**, para que «hoy» y las alternativas sean el mismo
+   conjunto de preguntas.
+
+**La medida buena, con las dos secuencias del mismo acto de comprobación** (registro completo en
+`F:\temp-opofuente\f19-scratch\desplazamiento.txt`):
+
+| conjunto | hoy (aciertos) | mejor alternativa | ¿explica? |
+|---|---|---|---|
+| 2022_diccionario-concepto-terminos-AE | 15/21 = 71,4 % | clave −1: 9/20 = 45,0 % | **no** |
+| 01.- eAdministracion | 15/19 = 78,9 % | clave −1: 10/19 = 52,6 % | **no** |
+| 2025_Diccionario_conceptos_AE_11_ed | 12/15 = 80,0 % | clave −1: 8/15 = 53,3 % | **no** |
+| Material adicional | 6/15 = 40,0 % | clave −1: 5/14 = 35,7 % | **no** |
+| Doc Adicional | 16/28 = 57,1 % | clave −1: 11/27 = 40,7 % | **no** |
+| Doc adicional | 24/25 = 96,0 % | clave −2 / +2: 43,8 % | **no** |
+
+Y en los diez `no_fiable` lo mismo (baquedano, TEST VARIOS, Test por temas, Test Aragón 2015,
+1600-Preguntas, TEST B1, Supuestos Practicos, drive-download, C_ejer_1_libre_DZA y
+TAI_ejer_1_A): **la lectura de hoy es la mejor o está al lado, y ninguna alternativa pasa del
+50 %**. Las rotaciones se quedan en el **nivel del azar**. Con la prueba ya completa, **los 16
+conjuntos que no son fiables dicen lo mismo: no es un desplazamiento**.
+
+**Conclusión, la de siempre y ahora con la prueba entera: las claves no están corridas, están mal en
+muchos sitios**, y el paso siguiente es la clave derivada del §1. No hay ninguna excepción que
+aplicar ni ninguna lista que mantener.

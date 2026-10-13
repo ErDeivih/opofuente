@@ -27,6 +27,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.orm import Session, sessionmaker
 
 from opofuente.application.topic_notes_models import NotesNode
+from opofuente.domain.key_reliability import KeyReliability
 from opofuente.domain.rag import normalise
 from opofuente.domain.topic_notes import (
     HECHOS_NUEVOS,
@@ -55,6 +56,7 @@ from opofuente.infrastructure.db_models import (
     NotesIncidentRecord,
     OptionVersionRecord,
     QuestionNoteAnchorRecord,
+    QuestionSetRecord,
     QuestionVersionRecord,
     TopicFactRecord,
     TopicNoteSectionRecord,
@@ -169,12 +171,21 @@ class SqlAlchemyTopicNotesRepository:
             identificadores = sorted(estado_por_pregunta)
             leidas = self._leer_preguntas(session, identificadores)
             claves = self._claves(session, identificadores)
+            en_cuarentena = self._conjuntos_en_cuarentena(session)
         completo: list[QuestionForNotes] = []
         for pregunta_id in identificadores:
             leida = leidas.get(pregunta_id)
             if leida is None:
                 continue
             conjunto, enunciado, opciones = leida
+            if conjunto in en_cuarentena:
+                # Cuarentena de clave (§1): las preguntas de un conjunto cuya clave discrepa de los
+                # apuntes en más del 30 % **no cuentan en el denominador de la cobertura**. Si
+                # contaran, la puerta del 90 % estaría midiendo al tema contra una clave que se sabe
+                # mala: el tema bajaría por un fallo del banco y el propietario reescribiría apuntes
+                # que estaban bien. Tampoco generan hechos ni anclas: la cita que se guardara
+                # apuntaría a una respuesta equivocada.
+                continue
             letras, estado_clave = claves.get(pregunta_id, ((), KeyStatus.NINGUNA))
             completo.append(
                 QuestionForNotes(
@@ -189,6 +200,21 @@ class SqlAlchemyTopicNotesRepository:
                 )
             )
         return agrupar(completo)
+
+    @staticmethod
+    def _conjuntos_en_cuarentena(session: Session) -> frozenset[str]:
+        """Los conjuntos con la clave en cuarentena (`no_fiable`), en una sola consulta.
+
+        Se leen todos y no solo los del tema a proposito: la consulta es una y la lista es de
+        decenas, mientras que acotarla por tema obligaria a otra consulta por cada llamada —y
+        `question_groups` se llama en cada paso de cada tema.
+        """
+        filas = session.execute(
+            select(QuestionSetRecord.id).where(
+                QuestionSetRecord.key_reliability == KeyReliability.NO_FIABLE.value
+            )
+        ).scalars()
+        return frozenset(str(fila) for fila in filas)
 
     @staticmethod
     def _leer_preguntas(

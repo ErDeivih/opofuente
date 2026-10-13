@@ -484,3 +484,49 @@ atrás están escritas en `docs/DECISIONES-TOMADAS-EN-EL-OBJETIVO.md`.
 - **Tu bandeja** ya tiene lo que no se pudo resolver solo: 55 incidencias en IV.7 y 81 en I.6, cada una
   con su categoría (clave sospechosa, norma cambiada, hueco sin material, pregunta ambigua), su motivo
   y, cuando la hay, **la frase de los apuntes que lo demuestra**.
+
+
+---
+
+## Las claves que no son de fiar (13-oct-2026) — lo que se ha hecho y lo que te toca a ti
+
+**El problema, medido.** De los conjuntos con los que ya estudias, **10 tienen la clave mal** y no es opinión: se ha comparado, pregunta a pregunta y **una vez por pregunta**, la letra que dan tus apuntes con la letra de la clave. En un conjunto de 18 preguntas, 16 no cuadran: eso no es que los apuntes se equivoquen, es que la clave salió mal del material.
+
+| conjunto | no cuadran | de | % |
+|---|---|---|---|
+| C_ejer_1_libre_DZA_2026 | 16 | 18 | 89 % |
+| Test por temas | 26 | 32 | 81 % |
+| TEST VARIOS | 49 | 64 | 77 % |
+| Test Aragón 2015 | 23 | 31 | 74 % |
+| 1600-Preguntas-Constitución-Española | 51 | 71 | 72 % |
+| TEST B1 | 51 | 71 | 72 % |
+| baquedano | 70 | 105 | 67 % |
+| Supuestos Practicos Bloque IV | 8 | 22 | 36 % |
+| «…drive-download…SIMULACROS y» | 5 | 15 | 33 % |
+| TAI_ejer_1_A_libre_AGE_2024 (clave publicada) | 5 | 15 | 33 % |
+
+**Qué se ha hecho con ellos.** Estos 10 conjuntos (**1.117 preguntas**, 380 con clave activa) **ya no entran en tus tests, simulacros ni repasos**, y tampoco cuentan para medir la cobertura de los apuntes. No se ha borrado nada: las preguntas siguen en la base y volverán en cuanto su clave esté arreglada. Otros 6 conjuntos (**984 preguntas**) están entre el 15 % y el 30 %: **entran, con la marca «clave en revisión»**.
+
+**Lo que probé para arreglarlas sin gastar: no era un desplazamiento.** Lo primero que se comprueba es si la clave está corrida una pregunta o una opción (eso sería barato de arreglar). Se probó con las nueve tandas grandes: **ninguna baja del 10 %** moviéndola una o dos preguntas ni girando las opciones. Así que la clave no está corrida: está mal en muchos sitios, y arreglarla de verdad necesita el paso siguiente.
+
+**El INAP 2024 modelo A: tu clave es la oficial, y el problema es la numeración.** Comparé tu plantilla con las dos oficiales del INAP. **Es la del modelo A** (coincide con ella en el 90 % de las preguntas y con la del B solo en el 35 %) y **no la he tocado**, como manda la regla. Pero **faltan 2 preguntas** de las 80 (la 57 y la 76) y **no están las 5 de reserva**: eso hace que las posiciones desde la 57 vayan una por detrás de las del examen. Con eso corregido, **7 claves no son las de la plantilla oficial** y **3 preguntas que el INAP anuló (22, 51, 70) llevan respuesta en tu copia**. Son incidencias tuyas: dime si quieres que las repase contigo.
+
+**Lo que te toca a ti.** Los 10 conjuntos necesitan que mires su clave: son las preguntas que hoy están fuera de tus tests. Y sigue en pie lo que pediste: **una clave oficial no se cambia nunca sola**.
+
+**Lo que todavía no está.** El «clave revisada automáticamente» que pediste (la letra de los apuntes **y** el modelo **sin los apuntes** de acuerdo → se guarda como revisada, no como oficial) **no se ha ejecutado**: son 1.117 preguntas con gasto de modelo y una marca nueva en la pantalla del alumno, y hacerlo a medias habría dejado claves a medio revisar. Queda como el siguiente bloque, con su previsión de gasto delante. El aviso «clave en revisión» ya se ve en la pantalla: sale junto al número de la pregunta mientras haces el test y también en la lista de resultados, para que sepas que esa respuesta no está confirmada. **Y tienes las cuatro fotos para verlo sin levantarte**: `artifacts/screens/test-en-curso-escritorio.png`, `test-en-curso-movil.png`, `resultado-escritorio.png` y `resultado-movil.png`, en escritorio y a 390 px, sin una sola violación de accesibilidad.
+
+**Y una cosa que conviene que sepas: la cuarentena no sube las cifras de los apuntes, las limpia.** Al quitar de la medida las preguntas de esos 10 conjuntos, I.6 baja del 72,5 % al 71,1 % (salen 19 preguntas del denominador y 17 de ellas estaban cubiertas), y I.4 e I.8 se quedan igual (88,9 % y 82,0 %). Ninguno llega al 90 % con el que se publica. Es lo esperable: el número deja de estar sostenido por claves que no son de fiar.
+
+
+
+
+**Y una corrección que te debo, porque la publiqué antes de comprobarla.** Durante un rato te dije
+que en cinco conjuntos «dudosos» la clave estaba **corrida una opción** y que eso tenía arreglo
+barato. **Era falso y ya está corregido**: leí mal mi propia tabla —una fila que decía «21 de 21»
+era *21 fallos de 21*, no 21 aciertos—. Lo he vuelto a medir con la definición buena y con la
+prueba completa, conjunto a conjunto: **en ninguno de los 16 se explica la discrepancia por un
+desplazamiento**; ninguna alternativa sube del 50 %, y el azar con cuatro opciones es el 25 %. La
+conclusión no cambia: **esas claves no están corridas, están mal en muchos sitios**, y arreglarlas
+pide el paso de la clave revisada automáticamente, no una resta de letras. También he arreglado la
+herramienta para que no se pueda volver a leer al revés: ahora dice «aciertos sobre total» y no
+compara nada si su línea base no cuadra.

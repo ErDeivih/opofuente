@@ -84,6 +84,7 @@ from opofuente.application.study_service import (
 )
 from opofuente.config import Settings
 from opofuente.domain.errors import NotFoundError, UnsupportedError
+from opofuente.domain.key_reliability import KeyReliability
 from opofuente.domain.notes_reports import normalise_reason
 from opofuente.domain.profiles import ExamPart, NodeType
 from opofuente.domain.study import (
@@ -744,7 +745,7 @@ class StudentService:
         """El test en curso: la sesión, la pregunta que toca y la hoja de respuestas entera."""
         sesion = self._sesion_del_alumno(session_id)
         vista = self._study.runner_view(session_id)
-        return StudentService._run(vista, sesion)
+        return StudentService._run(vista, sesion, self._en_revision(vista))
 
     def start(self, session_id: str) -> StudentRunView:
         """Arranca el test (arrancar uno que ya corre no cambia nada) y devuelve su estado."""
@@ -826,8 +827,20 @@ class StudentService:
         partes = {
             parte.code: parte.name for parte in self._convocatoria(oposicion).parts if parte.name
         }
+        en_revision = self._study.key_reliability_of(
+            [entrada.question_version_id for entrada in revision.entries]
+        )
         preguntas = tuple(
-            StudentService._pregunta_corregida(entrada, partes, temas)
+            StudentService._pregunta_corregida(
+                entrada,
+                partes,
+                temas,
+                frozenset(
+                    pregunta_id
+                    for pregunta_id, veredicto in en_revision.items()
+                    if veredicto == KeyReliability.DUDOSA.value
+                ),
+            )
             for entrada in revision.entries
         )
         return StudentSessionResultView(
@@ -1223,6 +1236,7 @@ class StudentService:
         entrada: SessionQuestionView,
         partes: Mapping[str, str],
         temas: Mapping[str, tuple[StudentTopicRefView, ...]],
+        en_revision: frozenset[str] = frozenset(),
     ) -> StudentResultQuestionView:
         """Una pregunta de la revisión, con su corrección y sin nada que no se pueda enseñar."""
         correccion = entrada.correction
@@ -1243,6 +1257,7 @@ class StudentService:
             outcome=StudentService._outcome(correccion.outcome if correccion else None),
             elapsed_ms=entrada.elapsed_ms,
             topics=temas.get(entrada.question_version_id, ()),
+            in_review=entrada.question_version_id in en_revision,
         )
 
     @staticmethod
@@ -1377,7 +1392,11 @@ class StudentService:
         )
 
     @staticmethod
-    def _run(vista: RunnerView, sesion: StudentSessionView) -> StudentRunView:
+    def _run(
+        vista: RunnerView,
+        sesion: StudentSessionView,
+        en_revision: frozenset[str] = frozenset(),
+    ) -> StudentRunView:
         """El estado del test en curso, con la hoja de respuestas entera."""
         return StudentRunView(
             session=sesion,
@@ -1386,12 +1405,37 @@ class StudentService:
             pending=vista.pending,
             finished=vista.finished,
             position=None if vista.current is None else vista.current.position,
-            question=None if vista.current is None else StudentService._pregunta(vista.current),
+            question=(
+                None
+                if vista.current is None
+                else StudentService._pregunta(vista.current, en_revision)
+            ),
             sheet=tuple(StudentService._fila(pregunta) for pregunta in vista.questions),
+            questions_in_review=sum(
+                1 for pregunta in vista.questions if pregunta.question_version_id in en_revision
+            ),
+        )
+
+    def _en_revision(self, vista: RunnerView) -> frozenset[str]:
+        """Las preguntas de esta sesión cuya clave está en revisión (`dudosa`, §1).
+
+        Se pide **una vez por vista** y no una vez por pregunta: una sesión de simulacro tiene 85
+        preguntas y preguntar el veredicto de cada una por separado serían 85 consultas para pintar
+        una marca.
+        """
+        fiabilidad = self._study.key_reliability_of(
+            [pregunta.question_version_id for pregunta in vista.questions]
+        )
+        return frozenset(
+            pregunta_id
+            for pregunta_id, veredicto in fiabilidad.items()
+            if veredicto == KeyReliability.DUDOSA.value
         )
 
     @staticmethod
-    def _pregunta(pregunta: SessionQuestionView) -> StudentQuestionView:
+    def _pregunta(
+        pregunta: SessionQuestionView, en_revision: frozenset[str] = frozenset()
+    ) -> StudentQuestionView:
         return StudentQuestionView(
             position=pregunta.position,
             is_reserve=pregunta.is_reserve,
@@ -1404,6 +1448,7 @@ class StudentService:
             answered=pregunta.answered,
             chosen_option_keys=tuple(pregunta.chosen_option_keys),
             confidence=None if pregunta.confidence is None else pregunta.confidence.value,
+            in_review=pregunta.question_version_id in en_revision,
             correction=(
                 None
                 if pregunta.correction is None

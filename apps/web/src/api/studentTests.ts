@@ -69,6 +69,9 @@ export interface StudentQuestion {
   chosen: string[];
   confidence: StudentConfidence | null;
   correction: StudentCorrection | null;
+  /** La clave de esta pregunta está en revisión (§1): su conjunto discrepa de los apuntes entre el
+   * 15 % y el 30 %. Entra en el test, pero el alumno lo ve antes de fiarse de la corrección. */
+  in_review: boolean;
 }
 
 export interface StudentSheetRow {
@@ -86,6 +89,7 @@ export interface StudentRun {
   answered: number;
   pending: number;
   finished: boolean;
+  questions_in_review: number;
   position: number | null;
   question: StudentQuestion | null;
   sheet: StudentSheetRow[];
@@ -131,6 +135,9 @@ export interface StudentResultQuestion {
   outcome: StudentResultOutcome;
   elapsed_ms: number | null;
   topics: StudentTopicRef[];
+  /** La clave de esta pregunta está en revisión (§1). En el resultado importa más que en el test:
+   * un fallo puede ser de la clave y no del alumno. */
+  in_review: boolean;
 }
 
 /** Cómo fue el test en un tema: es el desglose que dice qué hay que repasar. */

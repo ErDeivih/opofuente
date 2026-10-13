@@ -43,6 +43,7 @@ from opofuente.application.topic_notes_models import TopicNotesReport
 from opofuente.application.topic_notes_service import TopicNotesService
 from opofuente.config import Settings, get_settings
 from opofuente.domain.errors import OpoFuenteError
+from opofuente.domain.key_reliability import ACTOR, KeyReliability
 from opofuente.domain.notes_quality import (
     escapar_tuberias_en_celdas,
     limpiar_andamios,
@@ -65,6 +66,9 @@ from opofuente.domain.topic_index import (
 from opofuente.infrastructure.clock import SystemClock
 from opofuente.infrastructure.db import build_engine, build_session_factory
 from opofuente.infrastructure.dossier_repository import SqlAlchemyDossierRepository
+from opofuente.infrastructure.key_reliability_repository import (
+    SqlAlchemyKeyReliabilityRepository,
+)
 from opofuente.infrastructure.run_lock import CLAVE_APUNTES, ClassificationRunLock
 from opofuente.infrastructure.topic_notes_client import (
     BASE_URL_POR_DEFECTO,
@@ -159,6 +163,15 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
             "conservan, cuáles se vuelven a redactar (y cuántas llamadas son) y cuáles se tiran. Es"
             ""
             "lo que evita pagar dos veces por lo mismo sin enterarse"
+        ),
+    )
+    parser.add_argument(
+        "--desplazamiento",
+        action="store_true",
+        help=(
+            "prueba si la clave de los conjuntos que no son fiables está **corrida** (una pregunta "
+            "o una opción de más o de menos) en vez de equivocada. No llama a nadie: es el paso "
+            "barato del §1 antes de gastar en claves derivadas"
         ),
     )
     parser.add_argument(
@@ -297,6 +310,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     try:
         session_factory = build_session_factory(engine)
         notas = SqlAlchemyTopicNotesRepository(session_factory)
+        fiabilidad = SqlAlchemyKeyReliabilityRepository(session_factory)
         dossier_service = DossierService(
             repository=SqlAlchemyDossierRepository(session_factory),
             clock=SystemClock(),
@@ -343,6 +357,10 @@ def main(argv: Sequence[str] | None = None) -> int:
                 )
                 print("\n".join(informe.lines()))
                 print()
+                # `--publicar` también cierra el tema —mide lo guardado y archiva la versión—, así
+                # que también pasa la puerta de datos del §1.
+                print("\n".join(_puerta_de_claves(fiabilidad, ejecutar=True)))
+                print()
             return 0
         if args.medir:
             # La medida del tema guardado: tampoco llama a nadie ni necesita clave. Una cifra que va
@@ -356,6 +374,14 @@ def main(argv: Sequence[str] | None = None) -> int:
             for tema in temas:
                 print("\n".join(servicio.medir(tema).lines()))
                 print()
+                # Medir no cambia los datos del propietario: la puerta se **enseña** pero no se
+                # aplica. Aplicarla es cosa de la corrida y de `--publicar`.
+                print("\n".join(_puerta_de_claves(fiabilidad, ejecutar=False)))
+                print()
+            return 0
+        if args.desplazamiento:
+            # La prueba barata del §1: ¿la clave está corrida o está mal? No llama a nadie.
+            print("\n".join(_desplazamientos(fiabilidad)))
             return 0
         if args.esquema:
             # El esquema antes de redactar: tampoco llama a nadie ni necesita clave.
@@ -447,6 +473,13 @@ def main(argv: Sequence[str] | None = None) -> int:
                 if not pasa_cobertura:
                     sin_cobertura.append(informe.topic_code)
                 print("\n".join(informe.lines()))
+                print()
+                # La puerta de datos del §1, **al terminar cada tema**: el paso E acaba de
+                # escribir anclas, y una ancla nueva puede cruzar el 30 % de su conjunto. Aquí
+                # se recalcula la discrepancia por conjunto de origen y el que la cruce **entra
+                # en cuarentena solo**, sin que nadie tenga que acordarse de mirarlo.
+                puerta = _puerta_de_claves(fiabilidad, ejecutar=not args.dry_run)
+                print("\n".join(puerta))
                 print()
                 total += informe.estimated_cost_usd
         if len(temas) > 1:
@@ -558,6 +591,87 @@ def _limpiar_andamios(notas: SqlAlchemyTopicNotesRepository, code: str) -> tuple
         tocados += 1
         lineas.append(f"    {apartado.key}: {len(marcas)} marca(s) quitada(s)")
     lineas.append(f"    {total} marca(s) en {tocados} apartado(s)")
+    return tuple(lineas)
+
+
+def _desplazamientos(fiabilidad: SqlAlchemyKeyReliabilityRepository) -> tuple[str, ...]:
+    """La prueba del desplazamiento de los conjuntos que no son fiables (paso barato del §1).
+
+    Si la clave de un conjunto está **corrida** —una pregunta o una opción de más o de menos—,
+    volver a extraerla del material la arregla y el conjunto vuelve a los tests. Se imprime
+    **aciertos sobre total** con la etiqueta delante, porque la cifra al revés (discrepantes sobre
+    total) se lee como si fuera lo contrario: un «21/21 = 100 %» de discrepantes es **cero**
+    aciertos, no todos. Y se compara con el azar: con cuatro opciones, una rotación sin relación
+    acierta el 25 %.
+
+    No llama a nadie y no cuesta dinero: por eso se prueba antes de gastar en claves derivadas.
+    """
+    lineas = [
+        "prueba del desplazamiento (¿la clave está corrida o está mal?); aciertos sobre total:"
+    ]
+    for medida, lecturas in fiabilidad.shifts():
+        lineas.append(f"  · {medida.set_title} ({medida.veredicto.value})")
+        for lectura in lecturas:
+            aciertos = lectura.comprobadas - lectura.discrepantes
+            proporcion = aciertos / lectura.comprobadas if lectura.comprobadas else 0.0
+            marca = "  <<< EXPLICA (>= 90 %)" if lectura.explica_la_discrepancia else ""
+            lineas.append(
+                f"      aciertos {aciertos:>4}/{lectura.comprobadas:<4} = "
+                f"{100 * proporcion:>5.1f} %  {lectura.descripcion}{marca}"
+            )
+        if not any(lectura.explica_la_discrepancia for lectura in lecturas):
+            if len(lecturas) > 1:
+                lineas.append(
+                    "      no es un desplazamiento: ninguna alternativa baja del 10 % de "
+                    "discrepancia (el azar es el 25 % de aciertos)"
+                )
+            else:
+                # Una sola lectura significa que el dominio **no comparó**: su línea base no cuadra
+                # con las anclas del conjunto (dos preguntas con la misma posición, por ejemplo).
+                # Decir «no es un desplazamiento» aquí sería afirmar lo que no se ha probado.
+                lineas.append(
+                    "      NO SE HA PODIDO PROBAR: la línea base de la prueba no cuadra con las "
+                    "anclas del conjunto (¿dos preguntas con la misma posición?)"
+                )
+    return tuple(lineas)
+
+
+def _puerta_de_claves(
+    fiabilidad: SqlAlchemyKeyReliabilityRepository, *, ejecutar: bool
+) -> tuple[str, ...]:
+    """La **puerta de datos** del §1: recalcula la discrepancia por conjunto y pone la cuarentena.
+
+    Se llama al terminar cada tema, que es cuando el paso E acaba de escribir anclas nuevas: una
+        ancla nueva puede cambiar la discrepancia de su conjunto, y un conjunto que cruce el 30 %
+      **entra
+    en cuarentena solo**, sin que nadie se acuerde de mirarlo. Antes de esta puerta, la cuarentena
+    era una medida que había que volver a hacer a mano.
+
+    Es la mitad barata del problema: mide y decide, no llama a nadie y no cuesta dinero. `ejecutar`
+    es `False` en las pasadas que solo miran (`--medir`, `--prever`): medir no puede cambiar los
+    datos del propietario sin que lo haya pedido.
+    """
+    medidas = fiabilidad.measures()
+    cambiados = fiabilidad.apply(medidas, now=SystemClock().now(), actor=ACTOR) if ejecutar else ()
+    medidos = [medida for medida in medidas if medida.medible]
+    en_cuarentena = [medida for medida in medidos if medida.veredicto is KeyReliability.NO_FIABLE]
+    dudosos = [medida for medida in medidos if medida.veredicto is KeyReliability.DUDOSA]
+    lineas = [
+        f"    puerta de claves: {len(medidos)} conjunto(s) medibles · "
+        f"{len(en_cuarentena)} en cuarentena · {len(dudosos)} dudoso(s) · "
+        f"{len(medidas) - len(medidos)} sin poder medir"
+    ]
+    for medida in en_cuarentena:
+        lineas.append(f"      · no_fiable: {medida.linea()}")
+    for medida in dudosos:
+        lineas.append(f"      · dudosa: {medida.linea()}")
+    if cambiados:
+        lineas.append(
+            "      · han cambiado de veredicto: "
+            + ", ".join(f"{medida.set_title} → {medida.veredicto.value}" for medida in cambiados)
+        )
+    elif ejecutar:
+        lineas.append("      · ningún conjunto ha cambiado de veredicto")
     return tuple(lineas)
 
 

@@ -1793,6 +1793,18 @@ kbd {
   background: var(--dudosa-suave);
 }
 
+/* La marca «clave en revisión» (§1): el conjunto de esta pregunta discrepa de los apuntes entre el
+   15 % y el 30 %, así que entra en el test pero con la clave sin confirmar. Usa el mismo par de
+   colores que `.marca--borrador` —que ya está en la suite verde y pasa axe con 4,506:1— y no el
+   color de fallo: la pregunta no está mal, su clave está sin confirmar. */
+.marca-clave-en-revision {
+  border-color: var(--dudosa);
+  color: var(--dudosa);
+  background: var(--dudosa-suave);
+  font-weight: 700;
+  margin-left: var(--s2);
+}
+
 .marca--vacia {
   border-style: dashed;
 }
