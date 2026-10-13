@@ -1,3 +1,45 @@
+# Estado de la sesión, para retomar sin preguntar (13-oct-2026)
+
+## 13-oct · lo que ha cambiado hoy (leer esto primero)
+
+**Autoridad nueva: `docs/AJUSTES-AL-OBJETIVO-CLAVES-Y-RITMO-2026-10.md`** (manda sobre el goal si choca):
+claves fiables, incidencias bien clasificadas y **el ritmo**: el contenido de apuntes **no** lleva batería de
+18 puertas, se decide con las **puertas de datos** del tema.
+
+`main` = **`d67e799`** · gasto **≈10,58 $ de 40** (aviso de los 10 $ cruzado) · base real en **`0036`**.
+
+1. **Claves (f19, en `main`)**: discrepancia apuntes↔clave por conjunto, medida: **528/5.925 = 8,91 %**.
+   **10 conjuntos `no_fiable`** (>30 %) · **6 `dudosa`** (15–30 %) · 16 veredictos cambiados con auditoría.
+   **1.117 preguntas fuera de tests, simulacros, repasos y del denominador de cobertura**; 984 dudosas
+   entran con la marca. Migración `0036` (`key_reliability`) + **puerta permanente** al cerrar cada tema.
+   La marca **«clave en revisión» ya se ve** en el test en curso y en los resultados (el campo del alumno es
+   **`in_review`**, no `key_in_review`: el vocabulario interno no sale del servidor). **Claves arregladas:
+   cero** — el desplazamiento no las explica (probado entero) y las derivadas no se han empezado. El INAP
+   2024 A **es el modelo A** y su **numeración no cuadra** (faltan 2 preguntas oficiales, 0 reservas, 7
+   posiciones discrepan y **3 anuladas llevan clave**): incidencias del propietario; la oficial **no se toca**.
+2. **Incidencias (f18, en `main`)**: pantalla **`/admin/incidencias`** con contador, tres enlaces y cuatro
+   estados con nota auditada (migración `0035`). Las 453 reclasificadas: `pregunta_mal_importada` 29 ·
+   `clave_no_fiable` 158 · `clave_sospechosa` 200 · **`norma_cambiada` 0** · `hueco_sin_material` 34 ·
+   `pregunta_ambigua` 9 → **430 en la bandeja**, 23 falsos positivos fuera y **18 irreparables al temario
+   fuera**.
+3. **§3 re-medido**: I.6 **71,1 %** · I.4 **88,9 %** · I.8 **82,0 %** — **ninguno cruza el 90 %**, y la
+   cuarentena **no regala cobertura: la limpia** (la mayoría de las que salen estaban cubiertas).
+4. **La base real estaba en `0034`**: la cuarentena estaba **en el código, no en los datos**. Aplicadas
+   `0035` y `0036` y poblados los veredictos por la vía auditada (actor `f19:puerta-de-claves`).
+   **Lección: una puerta que solo existe en el código no protege los datos.**
+5. **«Dos temas a la vez» NO se puede**: el motor tiene **una marca única de corrida sin el tema dentro**
+   (`run_lock.py`): la segunda corrida se niega **antes de llamar al modelo**. Abrirlo por tema es un cambio
+   de motor, propuesto y no hecho. **Un tema a la vez.**
+6. **En vuelo**: **f20** (ficha de pregunta con «marcar la correcta», árbol `opofuente-preguntas`) y **f21**
+   (contenido: I.7 corriendo; índices ensayados de **IV.5 98,4 %**, **III.9 90,2 %**, **I.5 88,2 %**; **III.4
+   no se escribe**: solo 237/405 grupos (58,5 %) son de su materia — es un problema de clasificación).
+7. **Pendiente con nombre**: la aserción de las capturas del alumno (**escrita y NO ejecutada**: el puerto
+   8765 lo tenía el bloque de la ficha); las **claves derivadas** (corrida + marca nuevas); **la fila por
+   conjunto** en la bandeja del propietario; la pantalla de **Tests**; `origin_scope` + INAP; D4; D11; y una
+   **copia verificada final**.
+
+---
+
 # Estado de la sesión, para retomar sin preguntar (12-oct-2026)
 
 Escrito por DeepSeek al **parar el bucle a petición del propietario**. Aquí está lo que hay, lo que está a
