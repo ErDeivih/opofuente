@@ -1690,6 +1690,10 @@ from opofuente.domain.catalogo_ii_4 import MATERIAS as MATERIAS_II4  # noqa: E40
 from opofuente.domain.catalogo_ii_4 import ORDEN as ORDEN_II4  # noqa: E402
 from opofuente.domain.catalogo_iii_1 import MATERIAS as MATERIAS_III1  # noqa: E402
 from opofuente.domain.catalogo_iii_1 import ORDEN as ORDEN_III1  # noqa: E402
+from opofuente.domain.catalogo_iii_5 import MATERIAS as MATERIAS_III5  # noqa: E402
+from opofuente.domain.catalogo_iii_5 import ORDEN as ORDEN_III5  # noqa: E402
+from opofuente.domain.catalogo_iii_7 import MATERIAS as MATERIAS_III7  # noqa: E402
+from opofuente.domain.catalogo_iii_7 import ORDEN as ORDEN_III7  # noqa: E402
 from opofuente.domain.catalogo_iii_9 import MATERIAS as MATERIAS_III9  # noqa: E402
 from opofuente.domain.catalogo_iii_9 import ORDEN as ORDEN_III9  # noqa: E402
 from opofuente.domain.catalogo_iv_2 import MATERIAS as MATERIAS_IV2  # noqa: E402
@@ -1698,6 +1702,8 @@ from opofuente.domain.catalogo_iv_5 import MATERIAS as MATERIAS_IV5  # noqa: E40
 from opofuente.domain.catalogo_iv_5 import ORDEN as ORDEN_IV5  # noqa: E402
 from opofuente.domain.catalogo_iv_6 import MATERIAS as MATERIAS_IV6  # noqa: E402
 from opofuente.domain.catalogo_iv_6 import ORDEN as ORDEN_IV6  # noqa: E402
+from opofuente.domain.catalogo_iv_8 import MATERIAS as MATERIAS_IV8  # noqa: E402
+from opofuente.domain.catalogo_iv_8 import ORDEN as ORDEN_IV8  # noqa: E402
 
 _CATALOGOS: dict[str, tuple[Materia, ...]] = {
     "IV.7": _en_orden_de_estudio(_MATERIAS_IV7, _ORDEN_IV7),
@@ -1708,12 +1714,15 @@ _CATALOGOS: dict[str, tuple[Materia, ...]] = {
     "I.1": _en_orden_de_estudio(MATERIAS_I1, ORDEN_I1),
     "III.9": _en_orden_de_estudio(MATERIAS_III9, ORDEN_III9),
     "III.1": _en_orden_de_estudio(MATERIAS_III1, ORDEN_III1),
+    "III.5": _en_orden_de_estudio(MATERIAS_III5, ORDEN_III5),
+    "III.7": _en_orden_de_estudio(MATERIAS_III7, ORDEN_III7),
     "I.2": _en_orden_de_estudio(MATERIAS_I2, ORDEN_I2),
     "I.4": _en_orden_de_estudio(MATERIAS_I4, ORDEN_I4),
     "I.5": _en_orden_de_estudio(MATERIAS_I5, ORDEN_I5),
     "I.8": _en_orden_de_estudio(MATERIAS_I8, ORDEN_I8),
     "IV.5": _en_orden_de_estudio(MATERIAS_IV5, ORDEN_IV5),
     "IV.6": _en_orden_de_estudio(MATERIAS_IV6, ORDEN_IV6),
+    "IV.8": _en_orden_de_estudio(MATERIAS_IV8, ORDEN_IV8),
 }
 
 

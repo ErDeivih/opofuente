@@ -1,11 +1,11 @@
 # Estado del objetivo largo (TAI: los 33 temas y la app de estudio)
 
 **Autoridad:** `docs/GOAL-DEEPSEEK-TRABAJO-LARGO-2026-10.md` · **Presupuesto de API:** 40 $ · **Se
-avisa cada 10 $** · Última actualización: **12 oct 2026 (tanda f17: vuelve el bloque A —los
-apuntes— por la tabla de valor, con el tope medido. **IV.2 e II.4 quedan escritos y publicados**
-(99,9 % y 95,9 % sobre clave utilizable) e **I.8 en borrador con dos motivos**; los índices de los
-tres se escriben y se ensayan antes de gastar un céntimo, y dos arreglos de forma ahorran una corrida
-entera. **Aviso de los 10 $ cruzado**: acumulado ≈10,58 $ de 40)**.
+avisa cada 10 $** · Última actualización: **13 oct 2026 (tanda f21b: el contenido sigue por la tabla
+de valor y por el encaje medido del banco. **III.5 (99,2 %), III.7 (93,6 %) e IV.8 (99,1 %) quedan
+escritos y publicados** por 0,8953 $; **I.7 se queda en borrador con la decisión escrita** y su
+bandeja —que estaba vacía— rellenada con 42 incidencias sin gastar un céntimo. Acumulado ≈ 15,35 $ de
+40)**.
 
 > **De las fechas:** la tanda anterior se etiquetó «11 oct» en este fichero, pero **su reloj, sus
 > ficheros y sus marcas de base son del 10 de octubre** (la corrida de I.6 acabó a las 18:09 del
@@ -1594,6 +1594,163 @@ que quedan:
 **Lo que queda a medias, dicho**: **I.7** (borrador por cobertura, con su corrida cortada por el tope
 de tiempo y su bandeja vacía porque es el final del bucle de huecos quien la escribe). Terminarlo
 cuesta, medido y sin pagarlo, **38–94 llamadas · 0,26–0,64 $**.
+
+---
+
+## F21b · La tanda de contenido sigue: los técnicos por valor y la decisión escrita sobre I.7 (13-oct-2026)
+
+**Rama `f21-temas-valor`** (worktree `F:\\temp-opofuente\\opofuente-contenido`), con **`main = 570e40d`
+dentro** (la rama iba por detrás y se puso al día antes de empezar: `5e7ce6f..570e40d`, avance rápido,
+sin choques). Es la segunda tanda con el **ritmo del §4** de `AJUSTES-AL-OBJETIVO-CLAVES-Y-RITMO-2026-10.md`:
+contenido **directo sobre la base real**, sin rama de contenido y sin batería de 18 puertas. La copia
+verificada del día (`20261013-113403-e4c97c.zip`, revisión `0034`) y las migraciones `0035`/`0036` ya
+estaban hechas por f21 y no se han vuelto a tocar.
+
+### 1. La tabla de valor, vuelta a medir con la cuarentena puesta
+
+Los números del encargo son los del **principio** de f21; medidos hoy sobre la base real son algo más
+bajos, porque la puerta de claves del §1 fue poniendo conjuntos en cuarentena durante aquella tanda
+(**10 → 12**) y sus preguntas salen del denominador:
+
+| Tema | Del encargo | **Medido hoy** | Grupos | Preguntas |
+|---|---|---|---|---|
+| III.7 | 271 | **268** | 248 | 280 |
+| III.5 | 268 | **264** | 258 | 265 |
+| IV.9 | 235 | **232** | 227 | 246 |
+| IV.8 | 232 | **232** | 225 | 233 |
+| IV.1 | 230 | **228** | 229 | 230 |
+
+La diferencia no cambia el orden y queda dicha: una cifra que va a un documento se mide, no se hereda.
+
+### 2. III.5, redactado y **publicado** el 13-oct: el tema más barato de la serie
+
+| Qué | Valor |
+|---|---|
+| Cobertura (**clave utilizable**) | **253/255 = 99,2 % PASA** (umbral 90 %) |
+| Cobertura (todas las que tienen clave) | 253/265 = 95,5 % |
+| Hechos | 528 guardados (532 nuevos) → **437 en el plan** (91 repetidos agrupados) |
+| Apartados | **10** · ninguno pasó del tope de 150 hechos |
+| Forma | **PASA** · 12.253 palabras de 21.120 · repetidos **0,0 %** · `--limpiar-forma` tocó 9 apartados |
+| Índice | PASA · **1 grupo y 3 hechos sin materia** (una pregunta; cuatro grupos de C++ son de III.2 y van a la bandeja) |
+| Bandeja del propietario | **12 incidencias**: 10 `norma_cambiada`, 1 `clave_sospechosa`, 1 `pregunta_ambigua` |
+| Llamadas y coste | **80 llamadas (0 fallidas) · 0,3078 $** · 17 minutos, **sin tope activado** |
+| Previsión | 49–85 llamadas · 0,33–**0,58 $** → las llamadas dentro del rango y el coste **por debajo del mínimo** |
+
+**Es el tema más barato de la serie** (0,00385 $ por llamada, precio de tema **técnico**) y el de mejor
+cobertura (99,2 %). Y deja medida una cosa que hacía falta para planear: en un tema técnico la cota de
+coste de `--prever` es un **techo**, no un suelo —usa 0,0068 $ por llamada, la media con los normativos
+dentro, y un técnico cuesta la mitad—. Es exactamente la cara opuesta de I.4, I.8 e I.7.
+
+### 3. III.7, redactado y **publicado** el 13-oct: el banco más heterogéneo, y el ensayo que lo salvó
+
+| Qué | Valor |
+|---|---|
+| Cobertura (**clave utilizable**) | **218/233 = 93,6 % PASA** (umbral 90 %) |
+| Cobertura (todas las que tienen clave) | 218/261 = 83,5 % |
+| Hechos | 528 guardados (536 nuevos) → **455 en el plan** (73 repetidos agrupados) |
+| Apartados | **11** · ninguno pasó del tope de 150 hechos |
+| Forma | **PASA** · 14.726 palabras de 21.120 · repetidos 0,9 % · `--limpiar-forma` tocó 10 apartados |
+| Índice | PASA · **1 grupo y 3 hechos sin materia** |
+| Bandeja del propietario | **41 incidencias**: 26 `norma_cambiada`, 6 `clave_sospechosa`, 6 `hueco_sin_material`, 3 `pregunta_ambigua` |
+| Llamadas y coste | **103 llamadas (0 fallidas) · 0,3990 $** · 24 minutos, **sin tope activado** |
+| Previsión | 47–**81** llamadas · 0,32–0,55 $ → **22 llamadas más** que la cota de arriba, y el coste dentro del rango |
+
+Su banco es el que más preguntas de otros temas trae (MySQL y modelo relacional, `iptables`, firma
+electrónica y FNMT, archivística, textos legales, ofimática). Con el primer catálogo el **techo medido**
+era el **89,2 %** —un borrador seguro— y **el ensayo evitó pagarlo**: la pregunta de OWASP sobre la
+prevención del XSS es un grupo de **8 preguntas** y es contenido del **desarrollo web**, así que entró
+en el apartado de desarrollo web en servidor y el techo subió a **92,2 %**. Lo que sigue fuera son
+preguntas de otros temas y no se lava: va a la bandeja con su motivo.
+
+**Y las dos cifras del mismo tema se dicen**: la corrida cerró en **220/240 = 91,7 %** y, una vez
+pasada la puerta de claves (que puso dos conjuntos más en cuarentena), el mismo tema mide
+**218/233 = 93,6 %**. Sus preguntas salieron del denominador solas.
+
+### 4. I.7: la decisión escrita, con la cifra delante
+
+**I.7 se queda en borrador y no se reanuda en esta tanda.** Medido hoy, sin pagar nada:
+
+| Qué | Cifra |
+|---|---|
+| Cobertura hoy | **291/498 = 58,4 %** sobre clave utilizable · 291/531 = 54,8 % sobre todas |
+| Lo que costaría reanudarlo | **38–94 llamadas · 0,26–0,64 $** (`--prever` sobre lo guardado) |
+| Lo que falta para el 90 % | **157 preguntas** de las 207 que quedan fuera |
+| Grupos con clave utilizable **sin comprobar** | **0** (341 de 341 tienen su comprobación guardada) |
+| Lo que recupera el bucle de huecos | **un añadido por apartado** (19 como máximo); en esta serie ha recuperado **8, 12, 20, 24 y 26 grupos** |
+| Su bandeja, antes / después | **0 → 42 incidencias** (23 `norma_cambiada`, 11 `hueco_sin_material`, 4 `clave_sospechosa`, 4 `pregunta_ambigua`) |
+
+Dos razones, y las dos medidas: **no queda nada sin comprobar**, así que la cobertura solo puede subir
+por el bucle de huecos, y **no le faltan comprobaciones: le falta material** —sus 196 huecos dicen que
+los apuntes no contestan al 40 % de un banco normativo denso, y su precio por llamada es el **doble**
+que el de los técnicos que sí publican—. Por eso van primero los técnicos; I.7 se retoma **con su
+cifra** cuando se acaben.
+
+**Y su bandeja ya no está vacía**: se rellenó por el **mismo camino auditado de la corrida**
+(`_paso_huecos`, con un modelo de nulo que no añade nada, `f21b-scratch/rellenar_bandeja_utf8.py`), sin
+llamar a nadie y **sin inventar una sola incidencia**: las 42 filas salen de las comprobaciones que ya
+estaban en la base. Es lo que la regla 3 del encargo pide: un hueco que no se ve es un hueco que no
+existe.
+
+### 5. IV.8, redactado y **publicado** el 13-oct: el tema más barato del objetivo
+
+| Qué | Valor |
+|---|---|
+| Cobertura (**clave utilizable**) | **221/223 = 99,1 % PASA** (umbral 90 %) |
+| Cobertura (todas las que tienen clave) | 221/231 = 95,7 % |
+| Hechos | 426 guardados (430 nuevos) → **344 en el plan** (82 repetidos agrupados) |
+| Apartados | **9** · uno partido por el tope de 150 hechos |
+| Forma | **PASA** · 9.541 palabras de 17.040 · repetidos **0,0 %** · `--limpiar-forma` tocó 8 apartados |
+| Índice | PASA · **0 grupos y 0 hechos sin materia** |
+| Bandeja del propietario | **10 incidencias**: 8 `norma_cambiada`, 2 `clave_sospechosa` |
+| Llamadas y coste | **63 llamadas (0 fallidas) · 0,1885 $** · 15 minutos, **sin tope activado** |
+| Previsión | 41–70 llamadas · 0,28–**0,48 $** → llamadas dentro del rango y coste **por debajo del mínimo** |
+
+**Es el tema más barato del objetivo**: 63 llamadas a **0,00299 $** cada una, por debajo del 0,00373 $
+de IV.6. Y deja una lección de forma que costó 0 $: la corrida cerró con la **forma en NO PASA** porque
+la limpieza de la tabla de puertos solo se aplica si el **catálogo marca esa materia como
+`tabla_unica`**, y no la marcaba. Bastó añadir la marca (**un atributo del catálogo, sin tocar el
+motor**) y pasar **`--limpiar-puertos`** (0 $) para partir la tabla por familias y dejar la forma en
+PASA; después, `--publicar` (0 $). Es la tercera vez en la serie que una reparación de 0 $ evita volver
+a pagar una corrida.
+
+### 6. El balance de la tanda (f21b), con las cifras medidas
+
+| tema | previsión (llamadas · $) | real (llamadas · $) | cobertura (clave utilizable) | veredicto |
+|---|---|---|---|---|
+| **III.5** | 49–85 · 0,33–0,58 | 80 · **0,3078** | 253/255 = **99,2 %** | **publicado** |
+| **III.7** | 47–81 · 0,32–0,55 | 103 · **0,3990** | 218/233 = **93,6 %** | **publicado** |
+| **IV.8** | 41–70 · 0,28–0,48 | 63 · **0,1885** | 221/223 = **99,1 %** | **publicado** |
+| | | **0,8953 $** (los tres temas) | | **3 publicados · 0 borradores** |
+
+**Tres temas publicados por 0,8953 $**, con **0,30 $ de media** por tema. El acumulado del objetivo
+queda en **≈ 15,35 $ de 40** (≈ 14,45 $ al cerrar f21). La forma pasó en los tres sin volver a llamar
+al modelo (`--limpiar-forma` reparó 9, 10 y 8 apartados y `--limpiar-puertos` 1 tabla, todo 0 $). La
+puerta de claves del §1 se recalculó al cerrar cada tema y siguió subiendo sola: **90 → 93 → 97 → 99
+conjuntos medibles**, con **12 → 12 → 14 → 14 en cuarentena**, cada cambio con su evento de auditoría
+(cuatro cambios de veredicto al cerrar III.7, ninguno al cerrar III.5 ni IV.8).
+
+**Lo que la tanda deja medido sobre el precio de un tema**, que es lo que hace falta para planear los
+que quedan:
+
+- un tema **técnico** sale a **0,0030–0,0039 $ por llamada** (IV.8 0,00299, III.5 0,00385, III.7
+  0,00387), y la corrida entera a **0,19–0,40 $**;
+- para un tema técnico la **cota de coste de `--prever` es un techo**, no un suelo: usa 0,0068 $ por
+  llamada (la media con los normativos dentro) y un técnico cuesta la mitad. Es exactamente lo
+  contrario de lo que pasa con I.4, I.8 e I.7;
+- la cota de **llamadas** de `--prever` se quedó corta en las tres corridas de la serie f21 (la de
+  III.7 por 22), así que el **bucle de huecos** sigue siendo la partida que no se puede acotar de
+  antemano.
+
+**Lo que queda fuera, con el porqué:**
+
+- **I.7** (58,4 %, borrador): decidido y escrito con su cifra, y con su bandeja rellenada;
+- **I.4 (88,9 %), I.8 (82,0 %) e I.6 (72,5 % / techo 84,1 %)**, los tres borradores anteriores, siguen
+  **sin reanudar**: son normativos densos y su hueco es de **criterio sobre las claves** y de material,
+  no de una corrida más;
+- **IV.9 (232) y IV.1 (228)**, los dos siguientes por valor, **no se han empezado**: no tienen catálogo
+  y escribir uno es el trabajo de la próxima tanda (el ensayo es lo primero, como en estos tres);
+- **III.4 (412)** sigue **sin escribir** por el motivo ya medido (su banco es de otra materia en un
+  40 %).
 
 ---
 
