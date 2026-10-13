@@ -1967,11 +1967,14 @@ export interface paths {
         options?: never;
         head?: never;
         /**
-         * Cambia quién puede ver un conjunto (personal o public)
-         * @description `personal` es material del propietario; `public`, publicable.
+         * Cambia quién puede ver un conjunto (personal o public) y de dónde sale
+         * @description `personal` es material del propietario; `public`, publicable. `origin_scope`, de dónde sale.
          *
          *     Un conjunto **nace** `personal` y solo se hace `public` a propósito, uno a uno: el material que
-         *     el propietario ha reunido no se hace visible por descuido. El actor viaja a la auditoría.
+         *     el propietario ha reunido no se hace visible por descuido. La procedencia se declara por el
+         *     mismo camino y por la misma razón: marcar un conjunto como de otra administración lo deja fuera
+         *     de los simulacros, y eso es una decisión que tiene que quedar auditada. El actor viaja a la
+         *     auditoría. Los dos campos son opcionales, pero al menos uno tiene que venir.
          */
         patch: operations["update_question_set_api_v1_question_sets__set_id__patch"];
         trace?: never;
@@ -4353,6 +4356,12 @@ export interface components {
             /** Opposition Id */
             opposition_id: string;
             /**
+             * Origin Scope
+             * @default desconocida
+             * @enum {string}
+             */
+            origin_scope: "age" | "otra_administracion" | "desconocida";
+            /**
              * Set Type
              * @enum {string}
              */
@@ -6413,16 +6422,19 @@ export interface components {
          * PatchQuestionSetSchema
          * @description Lo que se puede cambiar de un conjunto sin tocar su contenido.
          *
-         *     Hoy, la **visibilidad**: un conjunto nace `personal` y se hace `public` a propósito, uno a uno.
-         *     Nada más se cambia por aquí — el título y el tipo son la identidad del conjunto, y reescribirlos
-         *     rompería la trazabilidad de las preguntas que cuelgan de él.
+         *     La **visibilidad** (un conjunto nace `personal` y se hace `public` a propósito, uno a uno) y la
+         *     **procedencia** (`origin_scope`, que es lo que deja el material de otra administración fuera de
+         *     un simulacro). Nada más se cambia por aquí — el título y el tipo son la identidad del conjunto,
+         *     y reescribirlos rompería la trazabilidad de las preguntas que cuelgan de él.
+         *
+         *     Los dos campos son opcionales pero **al menos uno** tiene que venir: un `PATCH` que no cambia
+         *     nada es un error de quien llama, no una operación correcta.
          */
         PatchQuestionSetSchema: {
-            /**
-             * Distribution
-             * @enum {string}
-             */
-            distribution: "personal" | "public";
+            /** Distribution */
+            distribution?: ("personal" | "public") | null;
+            /** Origin Scope */
+            origin_scope?: ("age" | "otra_administracion" | "desconocida") | null;
         };
         /**
          * PendingActionSchema
@@ -7202,6 +7214,12 @@ export interface components {
             model_code?: string | null;
             /** Opposition Id */
             opposition_id: string;
+            /**
+             * Origin Scope
+             * @default desconocida
+             * @enum {string}
+             */
+            origin_scope: "age" | "otra_administracion" | "desconocida";
             /**
              * Question Count
              * @default 0
@@ -8640,6 +8658,12 @@ export interface components {
         StudentOfficialExamSchema: {
             /** Held At */
             held_at?: string | null;
+            /**
+             * Origin Scope
+             * @default desconocida
+             * @enum {string}
+             */
+            origin_scope: "age" | "otra_administracion" | "desconocida";
             /** Position */
             position: number;
             /** Questions */

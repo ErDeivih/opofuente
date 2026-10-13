@@ -1003,6 +1003,7 @@ class StudentService:
                     held_at=fila.held_at,
                     questions=fila.questions,
                     ready=fila.ready,
+                    origin_scope=fila.origin_scope,
                 )
                 for posicion, fila in enumerate(self._examenes_oficiales(), start=1)
             )

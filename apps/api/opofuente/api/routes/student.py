@@ -371,6 +371,7 @@ def _official_exam(view: StudentOfficialExamView) -> StudentOfficialExamSchema:
         held_at=view.held_at,
         questions=view.questions,
         ready=view.ready,
+        origin_scope=view.origin_scope,  # type: ignore[arg-type]
     )
 
 

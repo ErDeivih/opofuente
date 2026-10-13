@@ -289,6 +289,11 @@ export function QuestionsPage() {
                     // programa, así que una columna `topic` no tendría contra qué resolverse (y la
                     // muestra por temas del diagnóstico se quedaría sin temas).
                     convocation_version_id: activa.active_convocation?.id ?? null,
+                    // La procedencia se declara **a propósito** y aquí no se adivina: un conjunto
+                    // creado a mano nace `desconocida` («no se afirma lo que no se sabe»), que es el
+                    // valor que no excluye de nada, y se cambia después por su ruta auditada cuando
+                    // el material dice de dónde sale.
+                    origin_scope: 'desconocida',
                   },
                   {
                     onSuccess: (creado) => {

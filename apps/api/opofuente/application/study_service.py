@@ -800,6 +800,13 @@ class StudyService:
                     continue
                 if spec.public_only and conjunto.distribution != "public":
                     continue
+                if spec.exam_like and conjunto.is_other_administration:
+                    # Material de otra administración (`origin_scope`, D10): su normativa y su
+                    # organización no caen en el examen de TAI, así que no entran en una composición
+                    # que se parece al examen real. En un test por tema y en los apuntes **sí
+                    # cuentan**: son material para estudiar, y por eso el filtro vive aquí (el
+                    # embudo de examen y simulacro) y no en el recuento de preguntas.
+                    continue
                 if pregunta.id in self._excluidas(pregunta.question_set_id):
                     continue
                 clave = self._clave_activa(pregunta.question_set_id)

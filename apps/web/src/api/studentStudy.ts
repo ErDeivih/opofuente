@@ -157,6 +157,8 @@ export interface StudentOfficialExam {
   held_at: string | null;
   questions: number;
   ready: boolean;
+  /** De dónde sale el examen (D10): `age`, `otra_administracion` o `desconocida`. */
+  origin_scope: 'age' | 'otra_administracion' | 'desconocida';
 }
 
 export interface StudentOfficialExams {

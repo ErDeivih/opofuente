@@ -59,6 +59,7 @@ from opofuente.domain.questions import (
     AnswerKeyEntry,
     KeyOutcome,
     Origin,
+    OriginScope,
     ParsedKeyLine,
     ParsedOption,
     ParsedQuestion,
@@ -175,12 +176,19 @@ class QuestionService:
         model_code: str | None = None,
         held_at: date | None = None,
         source_document_version_id: str | None = None,
+        origin_scope: str = OriginScope.DESCONOCIDA.value,
         actor: str = "local",
     ) -> QuestionSetView:
         try:
             tipo = SetType(set_type)
         except ValueError as error:
             raise InvariantViolationError(f"«{set_type}» no es un tipo de conjunto") from error
+        try:
+            ambito = OriginScope(origin_scope)
+        except ValueError as error:
+            raise InvariantViolationError(
+                f"«{origin_scope}» no es un ámbito de procedencia de conjunto"
+            ) from error
         return self._questions.create_set(
             title=title,
             opposition_id=opposition_id,
@@ -190,6 +198,7 @@ class QuestionService:
             model_code=model_code,
             held_at=held_at,
             source_document_version_id=source_document_version_id,
+            origin_scope=ambito.value,
             actor=actor,
         )
 
@@ -248,6 +257,29 @@ class QuestionService:
             logger.info(
                 "questions.set_distribution_changed",
                 extra={"event": "set_distribution_changed", "path": set_id},
+            )
+        return cambiado
+
+    def set_origin_scope(self, set_id: str, origin_scope: str, *, actor: str = "local") -> bool:
+        """Cambia de qué administración sale el material de un conjunto. `False` si no existe.
+
+        La procedencia decide **qué entra en un simulacro**: `otra_administracion` se queda fuera
+        (`CompositionSpec.exam_like`). Por eso el cambio se audita igual que la visibilidad: no es
+        un detalle de presentación, es una decisión sobre qué mide el examen simulado.
+        """
+        try:
+            elegido = OriginScope(origin_scope)
+        except ValueError as error:
+            raise InvariantViolationError(
+                f"«{origin_scope}» no es un ámbito de procedencia de conjunto"
+            ) from error
+        cambiado = self._questions.set_origin_scope(
+            set_id, elegido.value, now=self._clock.now(), actor=actor
+        )
+        if cambiado:
+            logger.info(
+                "questions.set_origin_scope_changed",
+                extra={"event": "set_origin_scope_changed", "path": set_id},
             )
         return cambiado
 

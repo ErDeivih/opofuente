@@ -493,6 +493,7 @@ export const officialExamsFixture: StudentOfficialExams = {
       held_at: '2025-11-22',
       questions: 85,
       ready: true,
+      origin_scope: 'age',
     },
     {
       position: 2,
@@ -500,6 +501,7 @@ export const officialExamsFixture: StudentOfficialExams = {
       held_at: '2024-10-06',
       questions: 85,
       ready: false,
+      origin_scope: 'otra_administracion',
     },
   ],
 };

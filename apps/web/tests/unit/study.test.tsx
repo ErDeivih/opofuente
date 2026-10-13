@@ -181,6 +181,7 @@ const CONJUNTO: QuestionSet = {
   active_key_id: 'key-1',
   is_official: false,
   distribution: 'personal',
+  origin_scope: 'desconocida',
 };
 
 const CONVOCATORIA: ConvocationDetail = {

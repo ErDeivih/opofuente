@@ -90,6 +90,9 @@ class OfficialExamRow:
     `ready` es si se puede **hacer** hoy: tener preguntas y una plantilla activa. Un examen a medio
     importar se enseña igual —existe— pero dice que todavía no se puede correr, en vez de ofrecer un
     botón que responde con un error.
+
+    `origin_scope` es **de dónde sale** (D10): el alumno tiene que saber qué está practicando, y un
+    examen de otra administración no es el examen que se va a encontrar.
     """
 
     question_set_id: str
@@ -97,6 +100,7 @@ class OfficialExamRow:
     held_at: date | None
     questions: int
     ready: bool
+    origin_scope: str = "desconocida"
 
 
 def _solo_publicos[Fila: tuple[Any, ...]](
@@ -597,6 +601,7 @@ class SqlAlchemyStudentRepository:
                 QuestionSetRecord.held_at,
                 preguntas,
                 plantillas,
+                QuestionSetRecord.origin_scope,
             )
             .where(
                 QuestionSetRecord.opposition_id == opposition_id,
@@ -621,6 +626,7 @@ class SqlAlchemyStudentRepository:
                 held_at=fila[2],
                 questions=int(fila[3]),
                 ready=int(fila[4]) > 0 and int(fila[3]) > 0,
+                origin_scope=str(fila[5]),
             )
             for fila in filas
         )

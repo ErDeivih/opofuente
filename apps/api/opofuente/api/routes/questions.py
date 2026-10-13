@@ -136,6 +136,7 @@ def _set(view: QuestionSetView) -> QuestionSetSchema:
         active_key_id=view.active_key_id,
         is_official=view.is_official,
         distribution=view.distribution,  # type: ignore[arg-type]
+        origin_scope=view.origin_scope,  # type: ignore[arg-type]
     )
 
 
@@ -483,6 +484,7 @@ def create_question_set(
             model_code=request.model_code,
             held_at=request.held_at,
             source_document_version_id=request.source_document_version_id,
+            origin_scope=request.origin_scope,
         )
     )
 
@@ -504,7 +506,7 @@ def get_question_set(set_id: str, service: QuestionServiceDep) -> QuestionSetSch
     "/question-sets/{set_id}",
     response_model=QuestionSetSchema,
     responses=WRITE_ERRORS,
-    summary="Cambia quién puede ver un conjunto (personal o public)",
+    summary="Cambia quién puede ver un conjunto (personal o public) y de dónde sale",
 )
 def update_question_set(
     set_id: str,
@@ -512,13 +514,22 @@ def update_question_set(
     service: QuestionServiceDep,
     actor_header: Annotated[str | None, Header(alias=TOPIC_ACTOR_HEADER)] = None,
 ) -> QuestionSetSchema:
-    """`personal` es material del propietario; `public`, publicable.
+    """`personal` es material del propietario; `public`, publicable. `origin_scope`, de dónde sale.
 
     Un conjunto **nace** `personal` y solo se hace `public` a propósito, uno a uno: el material que
-    el propietario ha reunido no se hace visible por descuido. El actor viaja a la auditoría.
+    el propietario ha reunido no se hace visible por descuido. La procedencia se declara por el
+    mismo camino y por la misma razón: marcar un conjunto como de otra administración lo deja fuera
+    de los simulacros, y eso es una decisión que tiene que quedar auditada. El actor viaja a la
+    auditoría. Los dos campos son opcionales, pero al menos uno tiene que venir.
     """
     actor = _topic_actor(declared=None, header=actor_header)
-    if not service.set_distribution(set_id, request.distribution, actor=actor):
+    if request.distribution is not None and not service.set_distribution(
+        set_id, request.distribution, actor=actor
+    ):
+        raise NotFoundError("conjunto de preguntas", set_id)
+    if request.origin_scope is not None and not service.set_origin_scope(
+        set_id, request.origin_scope, actor=actor
+    ):
         raise NotFoundError("conjunto de preguntas", set_id)
     vista = service.set_detail(set_id)
     if vista is None:  # pragma: no cover - se acaba de cambiar y leer

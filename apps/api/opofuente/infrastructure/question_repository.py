@@ -52,6 +52,7 @@ from opofuente.domain.questions import (
     AnswerKeyVersion,
     KeyOutcome,
     Origin,
+    OriginScope,
     ParsedQuestion,
     QuestionSet,
     SetDistribution,
@@ -169,6 +170,10 @@ _NO_SUSTITUIDAS: ColumnElement[bool] = QuestionVersionRecord.status != "supersed
 #: una sesión entera cabe de sobra en una tanda.
 _TANDA_DE_CONSULTA = 500
 
+#: Los tres ámbitos de procedencia (`0037`, D10). El vocabulario vive en el dominio
+#: (`OriginScope`) y aquí se materializa una vez para no recorrer el enumerado en cada cambio.
+_ORIGENES = frozenset(valor.value for valor in OriginScope)
+
 
 def _nuevo_stable_key(numero: int | None, identidad: str, usadas: set[str]) -> str:
     """Clave estable de una pregunta: su número si consta, o su huella. Nunca se repite.
@@ -208,11 +213,16 @@ class SqlAlchemyQuestionRepository:
         model_code: str | None = None,
         held_at: date | None = None,
         source_document_version_id: str | None = None,
+        origin_scope: str = OriginScope.DESCONOCIDA.value,
         actor: str = "local",
     ) -> QuestionSetView:
         """Crea un conjunto. El título vacío no entra: un conjunto sin nombre no se puede elegir."""
         if not title.strip():
             raise InvariantViolationError("Un conjunto de preguntas necesita título")
+        if origin_scope not in _ORIGENES:
+            raise InvariantViolationError(
+                f"«{origin_scope}» no es un ámbito de procedencia de conjunto"
+            )
         with self._session_factory() as session:
             if session.get(OppositionRecord, opposition_id) is None:
                 raise InvariantViolationError(f"la oposición «{opposition_id}» no existe")
@@ -226,6 +236,7 @@ class SqlAlchemyQuestionRepository:
                 held_at=held_at,
                 source_document_version_id=source_document_version_id,
                 status="draft",
+                origin_scope=origin_scope,
                 created_at=now,
                 updated_at=now,
             )
@@ -237,7 +248,12 @@ class SqlAlchemyQuestionRepository:
                 object_type="question_set",
                 object_id=fila.id,
                 before={},
-                after={"title": fila.title, "set_type": set_type, "model_code": fila.model_code},
+                after={
+                    "title": fila.title,
+                    "set_type": set_type,
+                    "model_code": fila.model_code,
+                    "origin_scope": fila.origin_scope,
+                },
                 now=now,
             )
             session.commit()
@@ -313,6 +329,41 @@ class SqlAlchemyQuestionRepository:
                 object_id=set_id,
                 before={"distribution": anterior},
                 after={"distribution": distribution},
+                now=now,
+            )
+            session.commit()
+            return True
+
+    def set_origin_scope(
+        self, set_id: str, origin_scope: str, *, now: datetime, actor: str = "local"
+    ) -> bool:
+        """Cambia de qué administración sale el material de un conjunto. `False` si no existe.
+
+        Es un cambio deliberado y se **audita** por la misma razón que `distribution`: marcar un
+        conjunto como `otra_administracion` lo deja fuera de los simulacros, y eso es una decisión
+        sobre qué mide el examen simulado; tiene que quedar escrito quién la tomó y cuándo.
+        """
+        if origin_scope not in _ORIGENES:
+            raise InvariantViolationError(
+                f"«{origin_scope}» no es un ámbito de procedencia de conjunto"
+            )
+        with self._session_factory() as session:
+            fila = session.get(QuestionSetRecord, set_id)
+            if fila is None:
+                return False
+            anterior = str(fila.origin_scope)
+            if anterior == origin_scope:
+                return True
+            fila.origin_scope = origin_scope
+            fila.updated_at = now
+            self._audit(
+                session,
+                actor=actor,
+                action="question_set.origin_scope_changed",
+                object_type="question_set",
+                object_id=set_id,
+                before={"origin_scope": anterior},
+                after={"origin_scope": origin_scope},
                 now=now,
             )
             session.commit()
@@ -2661,6 +2712,7 @@ class SqlAlchemyQuestionRepository:
             key_count=len(claves),
             active_key_id=activa,
             distribution=str(fila.distribution),
+            origin_scope=str(fila.origin_scope),
             key_reliability=str(fila.key_reliability),
             key_checked_count=int(fila.key_checked_count),
             key_discrepant_count=int(fila.key_discrepant_count),

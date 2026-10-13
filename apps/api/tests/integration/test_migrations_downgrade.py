@@ -31,6 +31,15 @@ from opofuente.infrastructure.migrations import alembic_config, run_migrations, 
 #: desaparecer al hacerlo. El orden es el de la cadena, de la más nueva a la más antigua.
 ESCALONES: tuple[tuple[str, str, tuple[str, ...]], ...] = (
     (
+        # `0037` añade una columna a `question_sets` con su `CHECK` y su índice, y su vuelta atrás
+        # los quita: ninguna tabla desaparece al bajar, por eso su escalón va vacío. Que la columna
+        # se va de verdad (con su `CHECK` y su índice) lo comprueba `test_migrations_0037.py`, donde
+        # se mide la forma de la tabla.
+        "0037_origin_scope",
+        "0036_claves_no_fiables",
+        (),
+    ),
+    (
         # `0036` solo añade columnas a `question_sets` y su vuelta atrás las quita: ninguna tabla
         # desaparece al bajar, por eso su escalón va vacío. Que las columnas se van de verdad lo
         # comprueba `test_migrations_0036.py`, que es donde se mide la forma de la tabla.
