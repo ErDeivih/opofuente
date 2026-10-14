@@ -150,7 +150,7 @@ _TOPOLOGIAS = (
     r"topologia(s)?|topologia en bus|anillo|estrella|malla",
     r"punto a punto|equipos? terminal de datos|\bdte\b|un solo sentido",
     r"scatternet|piconet|bluetooth",
-    r"inalambric|wifi|wi ?-? ?fi|802\.11|5 ?ghz|banda de los 5",
+    r"inalambric|wifi|wi ?-? ?fi|802 ?\.? ?11|5 ?ghz|banda de los 5",
     r"red de area local inalambrica|\bwlan\b",
 )
 

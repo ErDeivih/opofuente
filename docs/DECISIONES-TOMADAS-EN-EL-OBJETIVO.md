@@ -278,6 +278,17 @@ correr, **ningún patrón propio puede contener `/`, `\\` ni un punto que no sea
 regular**; los ficheros y los ficheros de configuración se piden **con el espacio del separador**. Es
 una línea de ensayo a 0 $ que puede evitar una corrida entera —o un borrador— por un patrón muerto.
 
+**Y se auditó el proyecto entero, porque un patrón muerto escrito una vez se copia**: con
+`patrones_muertos.py` (0 $) se miraron **los 28 catálogos**. Encontró **siete patrones muertos en siete
+temas**, de los que **dos eran de esta tanda** (II.5 `ado\.net` y IV.4 `802\.11`) y **cinco de temas ya
+publicados** (II.4 `\be/s\b` y `services\.msc`, III.3 `ansi/?iso sql`, III.7 `console\.log` y IV.5
+`ens/stic`). **Se arreglaron los siete**, con el modismo que tolera las dos formas —`ens ?/? ?stic`,
+`802 ?\.? ?11`— y **la auditoría vuelve a pasar con cero**. Se dice porque **se tocaron catálogos de
+temas que no eran de esta tanda**: no cambia **nada** de lo publicado —lo publicado vive en la base, no
+en el catálogo— y solo evita el daño si esos temas se vuelven a correr algún día, que es exactamente
+cuando el patrón muerto se cobraría el grupo. El detector tuvo además **un falso positivo** (`listener(\.|\s)?ora`, donde el `?` cierra el grupo y el punto ya es opcional) que se afinó para no volver a
+marcarlo.
+
 ### F25f · IV.4 se publica, con su decisión de apartado dicha (14-oct-2026)
 
 | Fecha | Decisión | Por qué | Cómo deshacerla |
