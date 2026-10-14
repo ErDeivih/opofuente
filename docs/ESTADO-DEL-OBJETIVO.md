@@ -2656,3 +2656,58 @@ tema** (lo dijo la tanda de I.3), que **la cobertura cuenta dos veces una pregun
 sitúa** (lo encontró el panel) y que **`repartir_hechos` es la causa de lo primero**. Cuando toque, será
 un bloque de motor con su prueba que falla antes y **con el caso del CPD como prueba de regresión**. No
 se toca ahora: el encargo es escribir temas y un cambio de motor arrastra las 18 puertas.
+
+### 12. IV.4, redactado y **publicado** el 14-oct, y el hallazgo que vale para todos los catálogos
+
+| Qué | Valor |
+|---|---|
+| Cobertura (**clave utilizable**) | **141/145 = 97,2 % PASA** |
+| Cobertura (todas las claves) | 141/151 = 93,4 % |
+| Techo medido antes de pagar | 143/147 = **97,3 %** |
+| Hechos | **308 guardados** → **261 en el plan** (47 agrupados) · 17 con la clave señalada |
+| Apartados | **15** |
+| Forma | **PASA** · 8.879 palabras de 12.320 · repetidos **0,0 %** |
+| Índice | PASA · 4 grupos y 9 hechos sin materia, los cuatro de otro tema y con su motivo |
+| Bandeja del propietario | **10**: 6 `norma_cambiada`, 4 `pregunta_ambigua` |
+| Llamadas y coste | **70 (0 fallidas) · 0,1522 $** |
+| Previsión | 38–68 llamadas · 0,26–0,46 $ → **70 llamadas (por encima del máximo) y coste por debajo del mínimo** |
+
+**El hallazgo del día, que no es de este tema sino de todos los catálogos: el normalizador convierte la
+barra en espacio, como ya hacía con el guion, el punto y la coma, así que un patrón escrito
+`/etc/passwd` no puede casar nunca** —el texto que ve el motor es « etc passwd »—. Los patrones de
+ficheros hay que escribirlos **con el espacio del separador**: `etc ?passwd`, `etc ?shadow`,
+`etc ?gshadow`, `login ?defs`. **Es un patrón muerto que no da ningún error**: el catálogo carga, el
+índice dice PASA y el grupo se cae a la bandeja sin que nadie se entere.
+
+**Y el ensayo previo se volvió a pagar solo**: el primer ensayo dejó **22 grupos sin materia y el techo
+en 85,7 %** —por debajo del listón, o sea borrador seguro—; con los arreglos (el de la barra y tres
+patrones demasiado literales, como «estadísticas y conexiones» donde el enunciado dice «conexiones y
+estadísticas») el techo subió a **97,3 %**: **dieciséis puntos de cobertura por no haber pagado la
+corrida antes de ensayar.**
+
+**Una decisión de apartado, dicha**: las preguntas de **usuarios conectados, sesión remota, procesos en
+un equipo remoto y fecha del último reinicio** son administración del sistema y no de la red, así que
+tienen **apartado propio** en vez de forzarlas dentro de «la red en Linux» o «la red en Windows». Y lo
+que es de otro tema va a la bandeja, comprobado **sin ancla**: el ataque de denegación distribuida
+(IV.9), las funciones de la capa de transporte (IV.7), SAN y NAS (IV.2) y la Ley 7/1985 (derecho
+administrativo).
+
+**Con IV.4 quedan publicados 25 de los 33 temas.**
+
+### 13. La tanda f25, en una tabla
+
+| Tema | Techo (0 $) | **Cobertura publicada** | Todas las claves | Forma | Llamadas · coste | Previsión |
+|---|---|---|---|---|---|---|
+| **II.2** | 98,3 % | **163/165 = 98,8 %** | 94,8 % | PASA 0,0 % | 40 · **0,0772 $** | 0,30–0,54 $ |
+| **III.8** | 97,6 % | **152/155 = 98,1 %** | 91,0 % | PASA 0,0 % | 57 · **0,2090 $** | 0,22–0,39 $ |
+| **II.5** | 95,5 % | **150/154 = 97,4 %** | 94,3 % | PASA 0,0 % | 51 · **0,1663 $** | 0,22–0,39 $ |
+| **IV.4** | 97,3 % | **141/145 = 97,2 %** | 93,4 % | PASA 0,0 % | 70 · **0,1522 $** | 0,26–0,46 $ |
+
+**Los cuatro publicados**, los cuatro con las dos puertas en PASA y **0,0 % de párrafos repetidos**.
+**Coste medido de la tanda: 0,6047 $** (más **≈0,10–0,15 $ estimados** de la corrida de II.2 que murió
+con el turno). **Cuatro de cuatro corridas salieron por debajo del mínimo previsto en dinero**, y en
+IV.4 la cota de **llamadas** se superó (70 frente a 68): **la de dinero es un techo, la de llamadas no.**
+
+**Quedan publicados 25 de los 33.** Están escritos 28: los 25 publicados más los tres borradores
+(I.8, I.6 e I.7). Los que faltan por escribir son **III.6 y IV.3 (145), III.2 (140) e I.9 (133)**, más
+**III.4**, que sigue fuera con su medición.

@@ -250,4 +250,40 @@ El motor tiene una red de seguridad —**`repartir_hechos`**: un hecho que no re
 
 **No se toca el motor ahora**: el encargo es escribir temas, y un cambio de motor arrastra las 18 puertas. Queda escrito con su medición para que el bloque se haga cuando toque y **con el caso del CPD como prueba de regresión**.
 
+### F25e · **El patrón que no puede casar y no avisa**: la barra es un espacio (14-oct-2026)
+
+**Un patrón con `/` es un patrón muerto, y no da ningún error.**
+
+El texto que ve el motor está **normalizado**: minúsculas, sin acentos y con la puntuación convertida en
+**espacio** —el guion, la barra, el punto y la coma—. Así que un patrón escrito `/etc/passwd` **no puede
+casar nunca**, porque el texto normalizado dice « etc passwd ». **Y no falla nada**: el catálogo carga,
+`--esquema` dice PASA y el grupo se cae a la bandeja del propietario sin que nadie se entere.
+
+| Escribí | ¿Casa? | Hay que escribir |
+|---|---|---|
+| `/etc/passwd` | ✗ **nunca** | `etc ?passwd` |
+| `/etc/shadow` | ✗ **nunca** | `etc ?shadow` |
+| `/etc/gshadow` | ✗ **nunca** | `etc ?gshadow` |
+| `login\.defs` | ✗ **nunca** (el punto también es espacio) | `login ?defs` |
+
+**Se descubrió en IV.4, y costó dieciséis puntos de cobertura antes de arreglarlo**: el primer ensayo
+dejó **22 grupos sin materia y el techo en 85,7 %** —por debajo del listón, o sea borrador seguro—;
+con el arreglo de la barra y el de tres patrones demasiado literales (el enunciado dice «estadísticas y
+conexiones» donde el patrón decía «conexiones y estadísticas», y «propiedad de **una** organización»
+donde decía «propiedad de **la** organización»), el techo subió a **97,3 %** y el tema publicó al
+**97,2 %**.
+
+**La regla que queda, y vale para todos los catálogos**: *el separador nunca llega al patrón*. Antes de
+correr, **ningún patrón propio puede contener `/`, `\\` ni un punto que no sea de una expresión
+regular**; los ficheros y los ficheros de configuración se piden **con el espacio del separador**. Es
+una línea de ensayo a 0 $ que puede evitar una corrida entera —o un borrador— por un patrón muerto.
+
+### F25f · IV.4 se publica, con su decisión de apartado dicha (14-oct-2026)
+
+| Fecha | Decisión | Por qué | Cómo deshacerla |
+|---|---|---|---|
+| **14-oct-2026** | **IV.4 se publica**: **141/145 = 97,2 %** de cobertura por clave utilizable, forma PASA (0,0 % de repetidos) e índice PASA con 4 grupos y 9 hechos sin materia | Techo medido 97,3 % → cobertura real **97,2 %**. Coste: **70 llamadas · 0,1522 $**. **Es la primera vez en la serie que la cota de llamadas de `--prever` se queda corta por arriba** (70 frente a 68) **y la cuarta seguida que el coste sale por debajo del mínimo** (0,1522 $ frente a 0,26 $): la cota de dinero es un techo, la de llamadas no | Retirar la versión desde el panel |
+| **14-oct-2026** | Las preguntas de **usuarios conectados, sesión en una máquina remota, procesos en un equipo remoto y fecha del último reinicio** tienen **apartado propio** («Los comandos de administración del sistema») | Son **administración del sistema, no de la red**: no caben en «la red en Linux» ni en «la red en Windows», y forzarlas dentro de uno de los dos sería lavarlas. Mismo criterio que el apartado de orientación a objetos en II.5 y que el cortafuegos en este tema | Repartirlas por los apartados de red (quedarían en un apartado que no habla de ellas) |
+| **14-oct-2026** | Lo que es de otro tema va a la bandeja, **comprobado sin ancla** con `donde_cayeron.py` (0 $) | El motor tiene la red de `repartir_hechos` (F25b) y la única defensa es mirarlo. En IV.4 los **4 grupos** que el índice no sitúa —el ataque de denegación distribuida (IV.9), las funciones de la capa de transporte (IV.7), SAN y NAS (IV.2) y la Ley 7/1985 (derecho administrativo)— aparecen **«(sin ancla)»**: no se sentaron en ningún apartado | No comprobarlo y suponer que el índice bastó (es lo que pasó en I.3) |
+
 
