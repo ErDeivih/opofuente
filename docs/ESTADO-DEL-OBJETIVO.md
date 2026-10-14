@@ -2198,8 +2198,7 @@ escrito con su cifra.
 2. **Dos exámenes sin clave activa** (2022 libre y 2025 extraordinario): la evidencia recortada de su
    plantilla en la biblioteca. La salida es volver a extraer la evidencia de esas versiones con el
    código de hoy, y **no hay ruta para hacerlo** (es trabajo pendiente, no un rodeo).
-3. **Las capturas de la pantalla de Exámenes y la batería de 18 puertas**: pendientes del turno.
-4. La `held_at` de los 13 exámenes queda nula: ni el cuestionario ni la plantilla declaran la fecha,
+3. La `held_at` de los 13 exámenes queda nula: ni el cuestionario ni la plantilla declaran la fecha,
    y no se inventa.
 
 ### 7. Añadidos tras la revisión del agente padre (13-oct-2026, noche)
@@ -2236,3 +2235,40 @@ contra la clave confirma 60 de 135 y **se niega**. El sistema lo detectó solo; 
 ha activado una clave a medias. La reparación —volver a extraer el texto de esas versiones con el
 código de hoy— **no tiene ruta todavía**, y alcanza a **3.474 de 5.162** versiones cortas de la
 biblioteca (**1,71 M** de caracteres que no se pueden citar).
+
+### 8. Las capturas, y la batería con sus intentos y sus causas
+
+**Las capturas de la pantalla de Exámenes, con un examen oficial de verdad.** El guion de capturas
+(`apps/web/tests/screens/screens.spec.ts`) monta un examen oficial **por las rutas de la API** —tipo
+`official_exam`, procedencia `age`, sus 135 preguntas con la numeración oficial por secciones
+(80 + 5 + 20 + 5 + 20 + 5), su visibilidad a `public` y su clave activada— y retrata `/examenes` a los
+dos anchos. Y **afirma** lo que la captura tiene que enseñar, para que la evidencia no sea un PNG que
+hay que mirar a ojo:
+
+| comprobación | resultado |
+|---|---|
+| la procedencia se lee en pantalla («Administración General del Estado») | sí |
+| el número de preguntas del examen se lee («135 preguntas») | sí |
+| violaciones de accesibilidad (axe, `wcag2a/2aa/21a/21aa/22aa`) | **0** |
+| errores de consola | 0 |
+| tamaño de la captura de escritorio | `artifacts/screens/examenes-oficiales-escritorio.png` · **1280×800** |
+| tamaño de la captura de móvil | `artifacts/screens/examenes-oficiales-movil.png` · **390×847** |
+
+El `expect(violaciones).toEqual([])` es una exigencia **nueva** del guion: hasta ahora el informe
+apuntaba las violaciones pero no bloqueaba. Se añade para esta captura, que es la que se ha pedido con
+«0 axe», y sin cambiar el comportamiento de las demás (el guion de capturas **no** entra en las
+puertas: `npm run e2e` mira solo `tests/e2e`).
+
+**La batería de 18 puertas, con sus tres intentos y la causa de cada uno.**
+
+| intento | commit | hasta dónde llegó | causa | qué se hizo |
+|---|---|---|---|---|
+| **1** | `70b89c4` | **puerta 7** (integración) | dos pruebas cayeron **bajo la carga de mis propios comandos en paralelo** (`npm ci`, `typecheck`, `lint`, el script de procedencia y la API en el 8799): `test_changes.py::test_confirmar_un_cambio_actualiza_la_revision_...` (`assert 0 >= 1` al buscar «veinte» tras confirmar un cambio) y un **error de teardown** en `test_classification.py::test_el_mismo_texto_pegado_dos_veces...` (`InvariantViolationError: el trabajo pertenece a otro worker`). **No son de mi cambio**: el mismo par pasa aislado (2/2) y juntos (23/23) en cuanto la máquina está quieta, y en la corrida completa anterior a la batería ya habían pasado | se guardó el registro (`gates-f23-inap-intento1-fallo-puerta7.txt`), se aislaron las dos pruebas para demostrar que pasan, se paró mi API y **se repitió la batería con la máquina quieta** |
+| **2** | `e93dbd5` | **18/18** | — | registro: `gates-f23-inap-intento2-18de18-en-e93dbd5.txt` (integración **705 pasan**, contrato **29**, componentes **370**, E2E **74**) |
+| **3** | `8c8cdf0` (el de la fusión) | **18/18** | — | la fusión trae código de `main`, así que el árbol que midió el intento 2 **no era** el que se fusiona: se repitió entera en vez de dar por bueno un registro de otro árbol. Registro: `gates-f23-inap-intento3-18de18-en-8c8cdf0.txt` (unitarias **836**, integración **705**, contrato **29**, componentes **370**, E2E **74**) |
+
+Los tres registros están en `F:\temp-opofuente\`, sin transcribir: son la salida literal de la batería.
+**El cambio de estos párrafos es posterior a la tercera batería y solo toca `docs/*.md`**, que ninguna
+de las 18 puertas lee (ruff, mypy y las suites miran `apps/`; el paso 17 mira los fixtures de perfil y
+los `docs/apuntes/` de las fuentes, no estos tres documentos).
+
