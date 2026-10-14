@@ -728,3 +728,89 @@ porque lo que les falta es material y criterio sobre las claves, no otra corrida
 **Lo que más ayuda ahora mismo**, si tienes un rato: las bandejas de **IV.9** (34 filas) e **IV.1**
 (8) en el panel de incidencias, y el botón **«Esto está mal»** desde el propio párrafo de los apuntes
 cuando algo no cuadre: queda anclado al apartado y llega con el texto delante.
+
+---
+
+## Qué ha cambiado para ti en esta tanda (F23 · los exámenes del INAP)
+
+**Ya puedes hacer exámenes oficiales del INAP en la pantalla de Exámenes, con la clave que publicó la
+Administración.** Son **11 exámenes** listos (de 13 que aparecen), con su número de preguntas y su
+procedencia a la vista. **Coste de API: 0 $** (esto es conversión de PDF y datos, no ha llamado a
+ningún modelo).
+
+### Los 16 cuestionarios del INAP que descargaste: qué ha pasado con cada uno
+
+| Examen | Qué ha pasado | Preguntas |
+|---|---|---|
+| **2019** libre y promoción interna | **Importados y listos** | 135 y 85 |
+| **2022** promoción interna | **Importado y listo** | 85 |
+| **2024** libre A y B, promoción interna A y B | **Importados y listos** (los cuatro) | 135 y 85 |
+| **2025** libre A y B, promoción interna A y B | **Ya estaban** de la tanda anterior y **no se han duplicado**: comprobé que sus claves coinciden con las plantillas oficiales, **135 de 135 y 85 de 85** | 135 y 85 |
+| **2025 extraordinario** | **Importado**; su examen se ve, pero todavía no se puede hacer (ver abajo) | 135 |
+| **2022 libre** | **Importado**; su examen se ve, pero todavía no se puede hacer (ver abajo) | 135 |
+| **2018** libre 1.º, libre 2.º y promoción interna | **Fuera**: los tres son **escaneos** (fotos de papel) y hay que pasarles OCR antes. Tu equipo no tiene el OCR instalado, así que no los he transcrito a mano: transcribir 30 páginas «a ojo» no es importar, es inventar | — |
+
+**Los dos que se ven y no se pueden hacer** (2022 libre y 2025 extraordinario) tienen un motivo
+concreto y **lo ha detectado el propio sistema**, no lo he tapado yo: la plantilla de esos dos
+exámenes **ya estaba en tu biblioteca desde el 29 de septiembre**, guardada antes de que se arreglara
+un fallo de extracción de texto que **recortaba** lo que se podía citar (de 1.276 caracteres se
+guardaban 1.198). Sin las últimas líneas de la plantilla, la comprobación que enlaza la plantilla con
+la clave **confirma 60 de las 135 respuestas y se niega**, que es lo correcto: antes que activar una
+clave que no puede demostrar, se para y lo dice. La pantalla te lo dice con su aviso («Todavía no se
+puede hacer: faltan sus respuestas»).
+
+**Y ahí hay algo que te interesa más allá de estos dos exámenes**: he medido cuántas versiones de tu
+biblioteca tienen ese texto recortado y son **3.474 de 5.162** (1,71 millones de caracteres que no se
+pueden citar). El arreglo del código ya está hecho desde octubre, pero **los datos viejos no se han
+vuelto a extraer**, y no hay todavía una herramienta que lo haga. Es trabajo pendiente y está apuntado.
+
+### De dónde sale cada pregunta, ahora escrito en los datos
+
+Cada conjunto de la aplicación dice de dónde sale, con tres valores posibles:
+
+- **Administración General del Estado** (los exámenes del INAP y los de la Guardia Civil),
+- **Otra administración** (ayuntamientos, comunidades, universidades),
+- **Desconocida** (cuando no se puede afirmar; **es el valor de partida y no quita nada de ningún
+  sitio**).
+
+**Para qué sirve, en la práctica, una sola cosa**: en un **simulacro** o en un **examen**, las
+preguntas de otra administración **no entran**, porque el simulacro tiene que parecerse al examen que
+te vas a encontrar. En un **test por tema** y en los **apuntes sí cuentan**, porque ahí el material es
+para estudiar. Y en la pantalla de Exámenes lo ves escrito en cada fila, para que sepas qué estás
+practicando.
+
+De tus 242 conjuntos: **30 son de la AGE**, **28 de otra administración** y **184 quedan como
+«desconocida»** (tu material propio, del que el título no dice la administración). Los 30 y los 28 los
+he clasificado **por el título**, con la regla escrita y **49 cambios registrados en la auditoría**;
+los 184 se quedan como estaban porque decir «AGE» de un banco que no lo declara sería afirmar lo que
+no se sabe.
+
+### La clave oficial, intacta, y tú no la puedes romper por accidente
+
+- La clave se ha copiado **literalmente de la plantilla oficial**, sin interpretar nada. Donde la
+  plantilla dice «ANULADA», queda anulada; donde reinicia la numeración en cada supuesto, se respeta.
+- **La guarda protege los exámenes importados**: si intentas cambiar la respuesta correcta de una
+  pregunta de un examen oficial desde su ficha, la aplicación **lo rechaza** (y no escribe nada). Hay
+  una prueba nueva que lo comprueba con un examen montado igual que los tuyos.
+- Y no he relajado la comprobación que impide activar la clave de un examen oficial sin su plantilla
+  enlazada: es justo lo que demuestra que la clave que se aplica es la del documento oficial.
+
+### El examen de 2024 que estaba mal numerado
+
+El **TAI libre 2024 modelo A** que ya tenías en el banco privado (78 preguntas, 7 posiciones
+desplazadas, marcado como no fiable) **sigue ahí y no lo he tocado**, porque está en cuarentena y de
+ahí no se toca nada. Lo que he hecho es importar el **examen oficial de verdad**, con la numeración
+oficial (80 + 5 de la primera parte y 20 + 5 de cada supuesto), 15 reservas, y su clave activa
+enlazada a la plantilla oficial. **Una sola verdad practicable**: para practicar 2024 A se usa el
+examen oficial nuevo. Las copias viejas del banco privado no entran en tests ni simulacros (una está
+en cuarentena), así que no se cruzan.
+
+### Lo que queda pendiente de esta tanda
+
+1. Las **capturas** de la pantalla de Exámenes con un examen oficial (escritorio y móvil) y el
+   resultado de las **18 puertas**: van en el informe del bloque.
+2. **«Volver a extraer» el texto de las versiones viejas de la biblioteca** (los 1,71 M de caracteres
+   recortados). Con eso, los dos exámenes que hoy no se pueden hacer quedarían listos sin tocar
+   ninguna clave.
+3. **Los tres exámenes de 2018**: necesitan el OCR instalado en tu equipo (`tesseract` con el idioma
+   español). Cuando esté, se importan con el mismo comando.

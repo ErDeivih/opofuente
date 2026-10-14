@@ -1009,6 +1009,10 @@ class QuestionSetRecord(Base):
     por defecto para no cambiar la visibilidad de lo que ya existe) o `public` (publicable, como los
     exámenes oficiales que publica la administración). Es del conjunto y no de la pregunta: un
     cuestionario oficial se publica entero.
+
+    `origin_scope` dice **de qué administración sale** (`0037`): `age` (Administración General del
+    Estado), `otra_administracion` (lo que queda fuera de un simulacro) o `desconocida` (el valor
+    por defecto: material cuya procedencia no se puede afirmar). También es del conjunto.
     """
 
     __tablename__ = "question_sets"
@@ -1025,6 +1029,10 @@ class QuestionSetRecord(Base):
             "distribution IN ('personal', 'public')", name="ck_question_set_distribution"
         ),
         CheckConstraint(
+            "origin_scope IN ('age', 'otra_administracion', 'desconocida')",
+            name="ck_question_set_origin_scope",
+        ),
+        CheckConstraint(
             "key_reliability IN ('fiable', 'dudosa', 'no_fiable')",
             name="ck_question_set_key_reliability",
         ),
@@ -1037,6 +1045,7 @@ class QuestionSetRecord(Base):
             name="ck_question_set_key_discrepant",
         ),
         Index("ix_question_sets_key_reliability", "key_reliability"),
+        Index("ix_question_sets_origin_scope", "origin_scope"),
     )
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
@@ -1060,6 +1069,13 @@ class QuestionSetRecord(Base):
     )
     distribution: Mapped[str] = mapped_column(
         String(16), nullable=False, server_default=text("'personal'"), default="personal"
+    )
+    #: De qué administración sale el material (`0037`, D10). Es del **conjunto** como
+    #: `distribution`: un cuestionario oficial se publica entero y su procedencia es la del
+    #: documento. `desconocida` por defecto y no `age`: decir «es de la AGE» de un material que
+    #: nadie ha comprobado sería afirmar lo que no se sabe, y ese valor sí excluye de un simulacro.
+    origin_scope: Mapped[str] = mapped_column(
+        String(24), nullable=False, server_default=text("'desconocida'"), default="desconocida"
     )
     #: Si la clave de este conjunto se puede fiar (`0036`, §1 del objetivo). Es del
     #: **conjunto** y no de la pregunta porque la clave se extrajo del material de un conjunto

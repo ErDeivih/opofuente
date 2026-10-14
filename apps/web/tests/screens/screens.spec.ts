@@ -135,7 +135,7 @@ async function retratar(
   ancho: number,
   alto: number,
   etiqueta: string,
-): Promise<void> {
+): Promise<string[]> {
   const errores: string[] = [];
   page.on('console', (mensaje) => {
     if (mensaje.type() === 'error') {
@@ -183,6 +183,9 @@ async function retratar(
     prohibidas: revisarPantalla(interfaz, todo),
     fichero: nombreFichero,
   });
+  // Se devuelven las violaciones para que la captura que exige **cero** pueda exigirlo de verdad:
+  // el informe las apunta siempre, pero quien pide un cero lo comprueba aquí, no mirando el PNG.
+  return analisis.violations.map((violacion) => violacion.id);
 }
 
 for (const { ruta, nombre } of RUTAS) {
@@ -191,6 +194,40 @@ for (const { ruta, nombre } of RUTAS) {
       await retratar(page, ruta, ruta, ancho, alto, etiqueta);
     });
   }
+}
+
+/**
+ * La pantalla de **Exámenes** con un examen oficial de verdad (D10), a los dos anchos.
+ *
+ * La captura genérica de `/examenes` sale con la base de la suite, que nace sin exámenes oficiales:
+ * no enseña ni la procedencia ni el número de preguntas, que es justo lo que hay que ver. Esta monta
+ * un examen oficial **por las rutas de la API** —conjunto `official_exam`, procedencia `age`, sus
+ * preguntas, su plantilla enlazada a una versión de documento y la clave activada— y luego comprueba
+ * dos cosas sobre la pantalla ya cargada, para que la evidencia no dependa de mirar el PNG:
+ *
+ * 1. que la **procedencia** se lee («Administración General del Estado») y con su número de preguntas;
+ * 2. que no hay **ninguna** violación de accesibilidad.
+ *
+ * La plantilla se enlaza con `node:sqlite` sobre la base **de la suite** (`.e2e-data`, que es suya y se
+ * borra en cada corrida) porque activar la clave de un examen oficial exige la plantilla enlazada a un
+ * documento y no hay ninguna ruta que invente un material sin pasar por la extracción entera: es el
+ * mismo atajo, y por el mismo motivo, que usa la prueba de la ficha de pregunta.
+ */
+for (const { ancho, alto, etiqueta } of ANCHOS) {
+  test(`examenes-oficiales a ${ancho} px`, async ({ page }) => {
+    await montarExamenOficial();
+    const violaciones = await retratar(
+      page,
+      '/examenes',
+      '/examenes-oficiales',
+      ancho,
+      alto,
+      etiqueta,
+    );
+    await expect(page.getByText('Administración General del Estado').first()).toBeVisible();
+    await expect(page.getByText('135 preguntas').first()).toBeVisible();
+    expect(violaciones, `axe en la pantalla de exámenes: ${violaciones.join(', ')}`).toEqual([]);
+  });
 }
 
 /**
@@ -212,9 +249,161 @@ for (const { ancho, alto, etiqueta } of ANCHOS) {
 }
 
 /**
+ * Monta un **examen oficial** con datos de verdad, para que la captura de `/examenes` enseñe lo que
+ * tiene que enseñar: la procedencia y el número de preguntas.
+ *
+ * Todo va por las rutas de la API (conjunto `official_exam` con `origin_scope: 'age'`, sus 135
+ * preguntas con sus reservas, su clave, la activación) menos el enlace de la plantilla, que se escribe
+ * con `node:sqlite` sobre `.e2e-data` por el mismo motivo que en la prueba de la ficha: activar la
+ * clave de un examen oficial exige la plantilla enlazada a una versión de documento, y no hay ninguna
+ * ruta que invente un material sin pasar por la extracción entera.
+ */
+async function montarExamenOficial(): Promise<string> {
+  const cabeceras = { 'Content-Type': 'application/json', Origin: ORIGEN };
+  const leer = async <T>(respuesta: Response): Promise<T> => {
+    if (!respuesta.ok) {
+      throw new Error(`la API respondió ${respuesta.status} al montar el examen oficial`);
+    }
+    return (await respuesta.json()) as T;
+  };
+
+  const oposiciones = await leer<
+    { id: string; active: boolean; active_convocation: { id: string } | null }[]
+  >(await fetch(`${API}/api/v1/oppositions`));
+  const activa = oposiciones.find((oposicion) => oposicion.active);
+  if (activa?.active_convocation == null) {
+    throw new Error('no hay oposición activa con convocatoria: no se puede montar el examen');
+  }
+
+  const conjunto = await leer<{ id: string; title: string }>(
+    await fetch(`${API}/api/v1/question-sets`, {
+      method: 'POST',
+      headers: cabeceras,
+      body: JSON.stringify({
+        title: `TAI ingreso libre 2025 · modelo A (examen oficial INAP) · capturas`,
+        opposition_id: activa.id,
+        set_type: 'official_exam',
+        origin_scope: 'age',
+        convocation_version_id: activa.active_convocation.id,
+      }),
+    }),
+  );
+
+  // 135 preguntas con la numeración oficial por secciones (80 + 5 + 20 + 5 + 20 + 5), reiniciando en
+  // cada una y con las reservas marcadas: la pantalla enseña el número de preguntas de verdad, y la
+  // numeración que se retrata es la del examen, no una inventada.
+  const SECCIONES: readonly { preguntas: number; reservas: boolean }[] = [
+    { preguntas: 80, reservas: false },
+    { preguntas: 5, reservas: true },
+    { preguntas: 20, reservas: false },
+    { preguntas: 5, reservas: true },
+    { preguntas: 20, reservas: false },
+    { preguntas: 5, reservas: true },
+  ];
+  const lineas: string[] = [];
+  let total = 0;
+  for (const seccion of SECCIONES) {
+    for (let numero = 1; numero <= seccion.preguntas; numero += 1) {
+      total += 1;
+      const marca = seccion.reservas ? '[R] ' : '';
+      lineas.push(`${numero}. ${marca}El supuesto practico ${total} se resuelve en diez dias:`);
+      for (const letra of ['a', 'b', 'c', 'd']) {
+        lineas.push(`${letra}) Opcion ${letra.toUpperCase()} del supuesto ${total}`);
+      }
+      lineas.push('Respuesta correcta: a');
+      lineas.push('');
+    }
+  }
+  await leer<unknown>(
+    await fetch(`${API}/api/v1/question-sets/${conjunto.id}/parse`, {
+      method: 'POST',
+      headers: cabeceras,
+      body: JSON.stringify({ kind: 'questions', text: lineas.join('\n') }),
+    }),
+  );
+
+  await leer<unknown>(
+    await fetch(`${API}/api/v1/question-sets/${conjunto.id}`, {
+      method: 'PATCH',
+      headers: cabeceras,
+      // La visibilidad va aparte de la creación, como en la aplicación: un conjunto nace `personal` y
+      // se hace `public` a propósito. Sin esto el examen no sale en la lista del alumno, que es justo
+      // la pantalla que se retrata.
+      body: JSON.stringify({ distribution: 'public' }),
+    }),
+  );
+
+  const claves = await leer<{ id: string }[]>(
+    await fetch(`${API}/api/v1/question-sets/${conjunto.id}/answer-keys`),
+  );
+  const clave = claves[0];
+  if (clave === undefined) {
+    throw new Error('el examen no trae plantilla: sin ella no se puede activar');
+  }
+
+  // La plantilla en la biblioteca: artefacto, documento y versión, y la clave apuntando a ella. Es
+  // preparación de la captura sobre la base **de la suite**, no un camino que exista en producción.
+  const { DatabaseSync } = await import('node:sqlite');
+  const base = new DatabaseSync(path.join(DATOS_DE_LA_SUITE, 'opofuente.sqlite3'));
+  try {
+    const sufijo = String(Date.now());
+    const artefacto = `art-captura-${sufijo}`;
+    const documento = `doc-captura-${sufijo}`;
+    const version = `ver-captura-${sufijo}`;
+    base
+      .prepare(
+        'INSERT INTO source_artifacts (id, sha256, size_bytes, media_type, storage_key, ' +
+          'first_seen_at) VALUES (?, ?, 100, ?, ?, ?)',
+      )
+      .run(artefacto, sufijo.padEnd(64, '0').slice(0, 64), 'text/plain', 'k', new Date().toISOString());
+    base
+      .prepare(
+        'INSERT INTO logical_documents (id, canonical_title, document_type, authority_tier, ' +
+          'owner_scope, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      )
+      .run(
+        documento,
+        'Plantilla de respuestas del examen de las capturas',
+        'answer_key',
+        'A',
+        'public',
+        new Date().toISOString(),
+        new Date().toISOString(),
+      );
+    base
+      .prepare(
+        'INSERT INTO document_versions (id, logical_document_id, artifact_id, version_label, ' +
+          'status, approved_at, approved_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      )
+      .run(
+        version,
+        documento,
+        artefacto,
+        'definitiva',
+        'accepted',
+        new Date().toISOString(),
+        'local',
+        new Date().toISOString(),
+      );
+    base
+      .prepare('UPDATE answer_key_versions SET source_document_version_id = ? WHERE id = ?')
+      .run(version, clave.id);
+  } finally {
+    base.close();
+  }
+
+  await leer<unknown>(
+    await fetch(`${API}/api/v1/question-sets/${conjunto.id}/answer-keys/${clave.id}/activate`, {
+      method: 'POST',
+      headers: cabeceras,
+    }),
+  );
+  return conjunto.id;
+}
+
+/**
  * La ficha de pregunta (F20), con una pregunta **de verdad** y del caso de uso: una de un banco con la
  * respuesta correcta en duda.
- *
  * La pregunta se elige por la **bandeja del motor**, que es de donde se llega a la ficha de verdad: se
  * piden las incidencias de los bancos en cuarentena (`clave_no_fiable`), se lee su ficha por la API y
  * se retrata la primera que **manda hoy** (no una vista ya sustituida) y cuyo banco trae el veredicto

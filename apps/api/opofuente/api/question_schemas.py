@@ -13,7 +13,12 @@ from __future__ import annotations
 from datetime import date, datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+#: De qué administración sale el material de un conjunto (D10, `0037`). El vocabulario vive en el
+#: dominio (`OriginScope`) y aquí se declara una vez para el contrato: `age` (Administración General
+#: del Estado), `otra_administracion` (queda fuera de un simulacro) y `desconocida` (por defecto).
+OriginScopeName = Literal["age", "otra_administracion", "desconocida"]
 
 
 class QuestionSetSchema(BaseModel):
@@ -36,6 +41,9 @@ class QuestionSetSchema(BaseModel):
     #: `personal` (material del propietario) o `public` (publicable). Nunca nulo: el conjunto
     #: siempre dice quién puede verlo, y por defecto lo dice «solo su dueño».
     distribution: Literal["personal", "public"] = "personal"
+    #: De qué administración sale el material (D10). Nunca nulo: un conjunto sin procedencia
+    #: declarada dice `desconocida`, que es la respuesta honesta y la que no excluye de nada.
+    origin_scope: OriginScopeName = "desconocida"
 
 
 class QuestionSetPageSchema(BaseModel):
@@ -55,19 +63,35 @@ class CreateQuestionSetSchema(BaseModel):
     model_code: str | None = Field(default=None, max_length=8)
     held_at: date | None = None
     source_document_version_id: str | None = None
+    #: La procedencia se declara al crear el conjunto cuando se sabe —el importador del INAP sabe
+    #: que sus exámenes son de la AGE—. Si no se dice, `desconocida`.
+    origin_scope: OriginScopeName = "desconocida"
 
 
 class PatchQuestionSetSchema(BaseModel):
     """Lo que se puede cambiar de un conjunto sin tocar su contenido.
 
-    Hoy, la **visibilidad**: un conjunto nace `personal` y se hace `public` a propósito, uno a uno.
-    Nada más se cambia por aquí — el título y el tipo son la identidad del conjunto, y reescribirlos
-    rompería la trazabilidad de las preguntas que cuelgan de él.
+    La **visibilidad** (un conjunto nace `personal` y se hace `public` a propósito, uno a uno) y la
+    **procedencia** (`origin_scope`, que es lo que deja el material de otra administración fuera de
+    un simulacro). Nada más se cambia por aquí — el título y el tipo son la identidad del conjunto,
+    y reescribirlos rompería la trazabilidad de las preguntas que cuelgan de él.
+
+    Los dos campos son opcionales pero **al menos uno** tiene que venir: un `PATCH` que no cambia
+    nada es un error de quien llama, no una operación correcta.
     """
 
     model_config = ConfigDict(extra="forbid")
 
-    distribution: Literal["personal", "public"]
+    distribution: Literal["personal", "public"] | None = None
+    origin_scope: OriginScopeName | None = None
+
+    @model_validator(mode="after")
+    def _algo_que_cambiar(self) -> PatchQuestionSetSchema:
+        if self.distribution is None and self.origin_scope is None:
+            raise ValueError(
+                "el cambio no dice nada: `distribution` u `origin_scope`, uno al menos"
+            )
+        return self
 
 
 class OptionSchema(BaseModel):

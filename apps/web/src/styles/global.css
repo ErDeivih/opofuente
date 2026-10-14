@@ -2716,7 +2716,7 @@ kbd {
 
 .examenes__fila {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
   align-items: center;
   gap: var(--s3);
   border-top: 1px solid var(--linea-suave);
@@ -2726,6 +2726,14 @@ kbd {
 .examenes__titulo {
   min-width: 0;
   font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+/* De dónde sale el examen (`origin_scope`, D10). Es una etiqueta, no un número: no lleva cifras
+   tabulares y sí el color de la casa para lo secundario, igual que `.examenes__datos`. */
+.examenes__procedencia {
+  color: var(--tinta-suave);
+  font-size: var(--t-sm);
   overflow-wrap: anywhere;
 }
 

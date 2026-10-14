@@ -13,7 +13,7 @@ from dataclasses import dataclass, field
 from datetime import date, datetime
 
 from opofuente.domain.key_reliability import KeyReliability
-from opofuente.domain.questions import ParseIssue, QuestionDuplicateGroup
+from opofuente.domain.questions import OriginScope, ParseIssue, QuestionDuplicateGroup
 from opofuente.domain.topic_classification import OutOfSyllabus
 
 
@@ -100,6 +100,10 @@ class QuestionSetView:
     active_key_id: str | None = None
     #: `personal` (material del propietario) o `public` (publicable). Por defecto, `personal`.
     distribution: str = "personal"
+    #: De qué administración sale el material (`0037`, D10): `age` · `otra_administracion` ·
+    #: `desconocida`. Viaja en la vista porque **quien compone lo necesita**: el motor de tests deja
+    #: fuera `otra_administracion` en un simulacro, y sin este campo tendría que pedirlo aparte.
+    origin_scope: str = "desconocida"
     #: Si la clave de este conjunto se puede fiar (`fiable` · `dudosa` · `no_fiable`, §1 del
     #: objetivo). Viaja en la vista porque **quien elige preguntas lo necesita**: el motor de
     #: tests, el simulacro, el repaso y la cobertura lo consultan en cada composición, y sin él
@@ -122,6 +126,11 @@ class QuestionSetView:
     def key_is_in_review(self) -> bool:
         """¿Hay que enseñar «clave en revisión» cuando el alumno responda una de sus preguntas?"""
         return self.key_reliability == KeyReliability.DUDOSA.value
+
+    @property
+    def is_other_administration(self) -> bool:
+        """¿Es material de otra administración? Entonces no entra en un simulacro (`exam_like`)."""
+        return self.origin_scope == OriginScope.OTRA_ADMINISTRACION.value
 
 
 @dataclass(frozen=True, slots=True)

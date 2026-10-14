@@ -39,6 +39,7 @@ const CONJUNTO: QuestionSet = {
   active_key_id: null,
   is_official: true,
   distribution: 'personal',
+  origin_scope: 'desconocida',
 };
 
 const PREGUNTA: Question = {

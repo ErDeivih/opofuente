@@ -14,6 +14,11 @@ Dos cosas que sí viajan y son deliberadas:
 - **el identificador de la sesión**, que es lo que la pantalla necesita para pedir el siguiente
   test. Es lo único que se parece a un identificador interno, y no se puede evitar: es la dirección
   del propio test. Lo que no viaja es de dónde salieron sus preguntas.
+- **la procedencia de un examen oficial** (`origin_scope`, D10), y esto es una excepción deliberada
+  a la regla de arriba: en la **lista de exámenes** el alumno tiene que saber **qué está
+  practicando** —un examen del INAP no es un examen de otra administración—, así que el vocabulario
+  cerrado viaja. No viaja el identificador del conjunto (`question_set_id`): la lista sigue
+  direccionando cada examen por su sitio, como una fila de la hoja de respuestas.
 """
 
 from __future__ import annotations
@@ -23,6 +28,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
 
+from opofuente.api.question_schemas import OriginScopeName
 from opofuente.api.study_schemas import SessionModeName, SessionStatusName
 from opofuente.domain.notes_reports import MAX_REASON_CHARS, normalise_reason
 
@@ -533,6 +539,9 @@ class StudentOfficialExamSchema(BaseModel):
     held_at: date | None = None
     questions: int = Field(ge=0)
     ready: bool
+    #: De dónde sale el examen (D10): `age`, `otra_administracion` o `desconocida`. La pantalla lo
+    #: enseña para que el alumno sepa **qué está practicando**.
+    origin_scope: OriginScopeName = "desconocida"
 
 
 class StudentOfficialExamsSchema(BaseModel):

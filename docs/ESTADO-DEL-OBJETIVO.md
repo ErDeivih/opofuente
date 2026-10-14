@@ -2095,4 +2095,144 @@ si otro bloque escribe en F: a la vez, la puerta 7 puede caer por `database or d
 que el código tenga nada que ver**. Lo que lo distingue: el mensaje de SQLite y el proceso del otro
 bloque.
 
+## F23 · Los exámenes del INAP y de dónde sale cada conjunto (13-oct-2026)
 
+**Rama `f23-inap`** (worktree `F:\temp-opofuente\opofuente-inap`, desde `main = a256321`). Sin fusionar.
+**Coste de API: 0 $** — no se ha llamado a ningún modelo: es conversión de PDF, datos y una pantalla.
+
+### 1. `origin_scope`: qué es y cómo queda en los datos
+
+El objetivo (`DECISIONES-Y-SIGUIENTE-TANDA §1`, `GOAL D10`) lo define como **la procedencia del
+conjunto** con tres valores, y su única consecuencia es **qué entra en un simulacro**:
+
+| valor | qué significa | qué hace |
+|---|---|---|
+| `age` | Administración General del Estado (INAP, Guardia Civil) | entra en todo |
+| `otra_administracion` | otra administración (ayuntamientos, comunidades, universidades) | **fuera** de un simulacro y de un examen (`exam_like`); cuenta en tests por tema y en los apuntes |
+| `desconocida` | material cuya administración de origen no se puede afirmar | entra en todo (el valor por defecto, y el que **no excluye de nada**) |
+
+Lo que se ha construido:
+
+| qué | dónde |
+|---|---|
+| La columna, su `CHECK` de tres valores y su índice | migración `0037_origin_scope` (`apps/api/alembic/versions/0037_origin_scope.py`) |
+| El vocabulario, con su porqué | `domain/questions.py` → `OriginScope` |
+| Declararla al crear y cambiarla después, **auditado** | `CreateQuestionSetSchema.origin_scope` y `PatchQuestionSetSchema.origin_scope`; `QuestionService.set_origin_scope` → `question_set.origin_scope_changed` |
+| La consecuencia: el simulacro deja fuera `otra_administracion` | `study_service._candidatas` con `CompositionSpec.exam_like` |
+| Que el alumno sepa qué practica | `origin_scope` en la lista de exámenes (contrato del alumno, vista, esquema y `OfficialExamsPage`) |
+| El relleno hacia atrás de los 237 conjuntos que ya estaban | `tools/marcar_procedencia.py` (regla por título, con su motivo, **49** cambios auditados) |
+
+**En los datos, medido:** 242 conjuntos no archivados → **30 `age`** (15 exámenes oficiales + 15
+bancos privados que son exámenes de la AGE: los tres «examen completo, con su plantilla» y los doce
+`TAI_ejer_*_AGE_*`), **28 `otra_administracion`** (12 de administración local, 11 de comunidades o
+parlamentos, 5 de universidades) y **184 `desconocida`**.
+
+### 2. Los 16 exámenes del INAP: qué ha entrado y qué no
+
+El manifiesto tiene **16 cuestionarios**, cada uno con su plantilla. El comando
+`tools/importar_inap.py` convierte el PDF (numeración oficial, reservas marcadas, cabeceras fuera),
+comprueba que la plantilla **encaja en el orden del documento** y escribe por los métodos del
+servicio. La segunda mitad (`tools/inap_biblioteca.py`) sube la plantilla a la biblioteca por las
+rutas de la API, la promociona a documento `answer_key`, la acepta y la **enlaza** a la clave —que es
+lo que la deja **activa** y el examen practicable.
+
+| # | examen | qué ha pasado | preguntas |
+|---|---|---|---|
+| 1-3 | **2018** libre 1.º, libre 2.º y PI | **FUERA**: los tres cuestionarios son escaneos **sin capa de texto** (0 caracteres en 10 páginas) y el OCR no está operativo (sin `tesseract.exe`; solo hay `tessdata`) | — |
+| 4-13 | **2019, 2022, 2024, 2025 extraordinario** (libre y PI, modelos A y B) | **IMPORTADOS** (9 conjuntos, 9 claves): 135 preguntas (120 + 15 reservas) los de libre y 85 (74 + 11) los de PI, con la numeración oficial por secciones (80/5/20/5/20/5 y 50/5/12/3/12/3) | 135 / 85 |
+| 14-17 | **2025** libre A y B, PI A y B | **YA ESTABAN y no se han duplicado**: se ha verificado que sus claves coinciden con las plantillas oficiales **135/135** y **85/85** alineando en el orden del documento | 135 / 85 |
+
+**El resultado en la zona del alumno** (`GET /student/official-exams`): **13 exámenes oficiales**,
+**11 practicables** (clave activa), todos con su procedencia (`age`) y su número de preguntas.
+
+**Los dos que no se pueden hacer todavía, con el motivo medido** (2022 libre y 2025 extraordinario):
+la clave se queda en **borrador** porque su plantilla **ya estaba en la biblioteca desde el 29-sep**
+con la evidencia **recortada** —1.198 de 1.276 caracteres citables— por el fallo de extracción que se
+corrigió en octubre (`MAX_EVIDENCE_CHARS`, `domain/evidence.py`). Sin las últimas líneas, el enlace
+—que compara la plantilla con la clave pregunta a pregunta— confirma **60 de 135** y **se niega**, en
+vez de activar una clave que no puede demostrar. **El choque lo ha detectado el sistema, no se ha
+tapado.** Medido sobre la biblioteca entera: **3.474 de 5.162** versiones cortas tienen la evidencia
+recortada (**1,71 M** de caracteres que no se pueden citar).
+
+### 3. El TAI 2024 modelo A, que ya estaba en el banco con la numeración desplazada
+
+| copia | qué es | qué se ha hecho |
+|---|---|---|
+| `ddc98b71…` «TAI_ejer_1_A_libre_AGE_2024 (preguntas con clave publicada)» | **banco privado**, 78 preguntas, posiciones 1..78 sin reservas, clave con 78 entradas, **`no_fiable`** desde F19 | **no se toca** (la cuarentena no se toca). Cubre el **58 %** del documento oficial |
+| `3516c265…` «TAI ingreso libre 2024 (examen completo, con su plantilla)» | banco privado, 135 preguntas con 15 reservas, `fiable` | **no se toca**: cubre el **99 %** del documento oficial de 2024 A (y el 98 % del B) |
+| **el nuevo** «TAI ingreso libre 2024 · modelo A (examen oficial INAP)» | **examen oficial** con la numeración oficial (80+5 / 20+5 / 20+5), `origin_scope = age`, `public`, clave **activa** enlazada a la plantilla | es la **verdad practicable** |
+
+**Una sola verdad, dicha**: para practicar el examen de 2024 A se usa el conjunto oficial nuevo (el
+único que aparece en la pantalla de exámenes y el único cuya clave está activa y enlazada a la
+plantilla oficial). Las dos copias del banco privado se quedan como estaban —una de ellas en
+cuarentena, así que sus preguntas no entran en tests, simulacros ni repasos— y su solapamiento queda
+escrito con su cifra.
+
+### 4. La clave oficial, intacta y protegida
+
+- **La clave se copia tal cual**: el comando manda el texto de la plantilla oficial
+  (`texto_de_plantilla`, sin tocar una letra: `ANULADA`, `MODIFICADA` y la numeración reiniciada se
+  quedan como están) y el importador la aplica **en orden**. No hay ninguna interpretación.
+- **La guarda ya existía y cubre lo importado**: `protege_cambiar_la_clave` protege por el **tipo**
+  del conjunto (`official_exam`) o por tener la plantilla enlazada a un documento, y los exámenes
+  importados son las dos cosas. La prueba nueva lo comprueba con un examen montado como lo deja el
+  importador: `protected_sets` lo incluye con su motivo y `POST
+  /question-files/{id}/answer-key` responde **409 sin escribir nada** (la clave sigue siendo `a`).
+- **Y la invariante no se ha relajado**: activar la clave de un examen oficial exige la plantilla
+  enlazada (`can_activate`). En vez de saltársela, la plantilla entra en la biblioteca **por el
+  pipeline de la API** (subida → extracción del worker → promoción a `answer_key` → aceptación) y el
+  enlace **verifica las 135 respuestas** antes de activar. Ese es el dato firme del §1: no una lista
+  de nombres, sino un documento enlazado y comprobado.
+
+### 5. Las pruebas, con sus rojos previos
+
+| prueba | qué defiende |
+|---|---|
+| `apps/api/tests/unit/test_inap.py` (9) | la conversión: numeración oficial, reservas marcadas con `(R)`, opciones partidas que se juntan, cabeceras que no ensucian la última opción, una línea que empieza por número y **no** es la pregunta (se declara), un PDF sin capa de texto que se rechaza, la plantilla tal cual, y —la que cierra el círculo— que el texto convertido lo lee el **parser de verdad** del proyecto sin una sola incidencia. Uno de los casos mide el PDF real de 2024 A (80/5/20/5/20/5, 120 ordinarias, 15 reservas, cero líneas descartadas) |
+| `apps/api/tests/integration/test_origin_scope.py` (4) | la procedencia declarada, cambiada y **auditada** con su antes y su después; el vocabulario cerrado y el `PATCH` vacío rechazados **sin escribir**; `exam_like` que deja fuera las 6 preguntas de otra administración y trae las 6 de la AGE (y que el test por tema sí las trae); y el examen oficial importado **protegido**, con la ficha devolviendo 409 |
+| `apps/api/tests/integration/test_migrations_0037.py` (4) | la columna con sus tres valores, el valor por defecto `desconocida` sobre lo que ya estaba, los `CHECK` anteriores que sobreviven a la recreación de la tabla, y la vuelta atrás que se lleva columna, `CHECK` e índice y se puede volver a subir |
+
+### 6. Lo que queda fuera, y por qué
+
+1. **Los tres exámenes de 2018**: sin capa de texto y sin OCR instalado. No se transcriben a mano.
+2. **Dos exámenes sin clave activa** (2022 libre y 2025 extraordinario): la evidencia recortada de su
+   plantilla en la biblioteca. La salida es volver a extraer la evidencia de esas versiones con el
+   código de hoy, y **no hay ruta para hacerlo** (es trabajo pendiente, no un rodeo).
+3. **Las capturas de la pantalla de Exámenes y la batería de 18 puertas**: pendientes del turno.
+4. La `held_at` de los 13 exámenes queda nula: ni el cuestionario ni la plantilla declaran la fecha,
+   y no se inventa.
+
+### 7. Añadidos tras la revisión del agente padre (13-oct-2026, noche)
+
+**Las 32 descargas son 16 cuestionarios y sus 16 plantillas.** El manifiesto `inap-tai` trae las dos
+cosas por examen, y por eso cada examen se puede importar **con su clave**: sin la plantilla no se
+importa la clave, y sin clave el examen no se puede corregir.
+
+**a) La procedencia llega también a los conjuntos archivados (53 cambios, no 49).** El primer relleno
+leía la lista de conjuntos **vivos**, así que los cuatro archivados de 2025 (`b9798368`, `200c1c04`,
+`ee30a6d1`, `4b87ff6b`) se quedaban en `desconocida`. Era un agujero **de la regla, no de los datos**:
+los cuatro **son** exámenes oficiales del INAP. `marcar_procedencia.py` gana `--incluir-archivados` y
+quedan en `age` (**4 cambios más**). La protección de una clave oficial no depende de que un conjunto
+salga en la lista de vivos.
+
+**b) Los modelos A y B no comparten clave: son dos plantillas distintas sobre el mismo cuestionario.**
+Medido entrada a entrada, en el orden del documento, sobre las dos claves **activas**:
+
+| pareja | entradas | iguales | distintas |
+|---|---|---|---|
+| TAI libre 2025, A contra B | 135 y 135 | 47 | **88** |
+| TAI promoción interna 2025, A contra B | 85 y 85 | 40 | **45** |
+
+(Ejemplos del de libre: posición 3 → A «c», B «a»; posición 4 → A «a», B «c»; posición 5 → A «d», B
+«b».) El cuestionario es el mismo —medido por firma: 131 de 135 en el de libre y **85 de 85** en el de
+promoción interna— y lo que cambia es la plantilla, que es como el INAP cruza las respuestas entre
+modelos. **Ninguno de los dos sobra**: los dos nombres parecidos son los dos modelos publicados.
+
+**c) La plantilla recortada, con nombre y apellidos.** Los dos exámenes que se ven y no se pueden
+hacer son **«TAI ingreso libre 2022 · ejercicio único»** y **«TAI ingreso libre 2025 ·
+extraordinario»**: la versión de su plantilla que **ya estaba en la biblioteca desde el 29-sep** tiene
+la evidencia recortada (1.198 de 1.276 caracteres citables), y el enlace que verifica la plantilla
+contra la clave confirma 60 de 135 y **se niega**. El sistema lo detectó solo; no se ha tapado ni se
+ha activado una clave a medias. La reparación —volver a extraer el texto de esas versiones con el
+código de hoy— **no tiene ruta todavía**, y alcanza a **3.474 de 5.162** versiones cortas de la
+biblioteca (**1,71 M** de caracteres que no se pueden citar).

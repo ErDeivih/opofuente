@@ -2557,6 +2557,16 @@
             "title": "Opposition Id",
             "type": "string"
           },
+          "origin_scope": {
+            "default": "desconocida",
+            "enum": [
+              "age",
+              "otra_administracion",
+              "desconocida"
+            ],
+            "title": "Origin Scope",
+            "type": "string"
+          },
           "set_type": {
             "enum": [
               "official_exam",
@@ -8022,20 +8032,40 @@
       },
       "PatchQuestionSetSchema": {
         "additionalProperties": false,
-        "description": "Lo que se puede cambiar de un conjunto sin tocar su contenido.\n\nHoy, la **visibilidad**: un conjunto nace `personal` y se hace `public` a propósito, uno a uno.\nNada más se cambia por aquí — el título y el tipo son la identidad del conjunto, y reescribirlos\nrompería la trazabilidad de las preguntas que cuelgan de él.",
+        "description": "Lo que se puede cambiar de un conjunto sin tocar su contenido.\n\nLa **visibilidad** (un conjunto nace `personal` y se hace `public` a propósito, uno a uno) y la\n**procedencia** (`origin_scope`, que es lo que deja el material de otra administración fuera de\nun simulacro). Nada más se cambia por aquí — el título y el tipo son la identidad del conjunto,\ny reescribirlos rompería la trazabilidad de las preguntas que cuelgan de él.\n\nLos dos campos son opcionales pero **al menos uno** tiene que venir: un `PATCH` que no cambia\nnada es un error de quien llama, no una operación correcta.",
         "properties": {
           "distribution": {
-            "enum": [
-              "personal",
-              "public"
+            "anyOf": [
+              {
+                "enum": [
+                  "personal",
+                  "public"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
             ],
-            "title": "Distribution",
-            "type": "string"
+            "title": "Distribution"
+          },
+          "origin_scope": {
+            "anyOf": [
+              {
+                "enum": [
+                  "age",
+                  "otra_administracion",
+                  "desconocida"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Origin Scope"
           }
         },
-        "required": [
-          "distribution"
-        ],
         "title": "PatchQuestionSetSchema",
         "type": "object"
       },
@@ -10266,6 +10296,16 @@
           },
           "opposition_id": {
             "title": "Opposition Id",
+            "type": "string"
+          },
+          "origin_scope": {
+            "default": "desconocida",
+            "enum": [
+              "age",
+              "otra_administracion",
+              "desconocida"
+            ],
+            "title": "Origin Scope",
             "type": "string"
           },
           "question_count": {
@@ -13856,6 +13896,16 @@
               }
             ],
             "title": "Held At"
+          },
+          "origin_scope": {
+            "default": "desconocida",
+            "enum": [
+              "age",
+              "otra_administracion",
+              "desconocida"
+            ],
+            "title": "Origin Scope",
+            "type": "string"
           },
           "position": {
             "minimum": 1.0,
@@ -24091,7 +24141,7 @@
         ]
       },
       "patch": {
-        "description": "`personal` es material del propietario; `public`, publicable.\n\nUn conjunto **nace** `personal` y solo se hace `public` a propósito, uno a uno: el material que\nel propietario ha reunido no se hace visible por descuido. El actor viaja a la auditoría.",
+        "description": "`personal` es material del propietario; `public`, publicable. `origin_scope`, de dónde sale.\n\nUn conjunto **nace** `personal` y solo se hace `public` a propósito, uno a uno: el material que\nel propietario ha reunido no se hace visible por descuido. La procedencia se declara por el\nmismo camino y por la misma razón: marcar un conjunto como de otra administración lo deja fuera\nde los simulacros, y eso es una decisión que tiene que quedar auditada. El actor viaja a la\nauditoría. Los dos campos son opcionales, pero al menos uno tiene que venir.",
         "operationId": "update_question_set_api_v1_question_sets__set_id__patch",
         "parameters": [
           {
@@ -24182,7 +24232,7 @@
             "description": "Error interno inesperado (RFC 9457)."
           }
         },
-        "summary": "Cambia quién puede ver un conjunto (personal o public)",
+        "summary": "Cambia quién puede ver un conjunto (personal o public) y de dónde sale",
         "tags": [
           "preguntas"
         ]

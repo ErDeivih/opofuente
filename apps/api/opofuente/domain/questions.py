@@ -52,6 +52,29 @@ class SetDistribution(StrEnum):
     PUBLIC = "public"
 
 
+class OriginScope(StrEnum):
+    """De qué administración sale el material del conjunto (D10, `0037`).
+
+    Es del **conjunto** y no de la pregunta, por la misma razón que `distribution`: un cuestionario
+    oficial se publica entero y su procedencia es la del documento del que salió.
+
+    Tres valores, y cada uno dice una cosa distinta:
+
+    - `age` — de la **Administración General del Estado** (los exámenes del INAP y de la Guardia
+      Civil): es el material que se parece al examen que se está preparando;
+    - `otra_administracion` — de otra administración: normativa y organización que **no caen** en el
+      examen de TAI, así que quedan fuera de un simulacro (`exam_like`) pero cuentan en un test por
+      tema y en los apuntes;
+    - `desconocida` — el valor por defecto: material del propietario cuya administración de origen
+      **no se puede afirmar**. No excluye de nada, que es lo conservador: preferir `age` por defecto
+      diría algo que nadie ha comprobado.
+    """
+
+    AGE = "age"
+    OTRA_ADMINISTRACION = "otra_administracion"
+    DESCONOCIDA = "desconocida"
+
+
 class QuestionType(StrEnum):
     SINGLE_CHOICE = "single_choice"
     MULTI_MARK_ERROR = "multi_mark_error"
@@ -1367,6 +1390,7 @@ __all__ = [
     "KeyStatus",
     "OptionVersion",
     "Origin",
+    "OriginScope",
     "ParseIssue",
     "ParsedKeyLine",
     "ParsedOption",

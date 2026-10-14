@@ -587,6 +587,9 @@ class StudentOfficialExamView:
     held_at: date | None
     questions: int
     ready: bool
+    #: De dónde sale el examen (D10): `age`, `otra_administracion` o `desconocida`. Va en la vista
+    #: porque **la pantalla lo tiene que decir**: el alumno tiene que saber qué está practicando.
+    origin_scope: str = "desconocida"
 
 
 @dataclass(frozen=True, slots=True)

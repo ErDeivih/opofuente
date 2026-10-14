@@ -9,11 +9,11 @@ import { describeError } from '../../features/system/labels';
 import { diaLegible } from '../../lib/fechas';
 
 /**
- * Los exámenes oficiales importados (F14, paso 6 del §3 del objetivo).
+ * Los exámenes oficiales importados (F14, paso 6 del §3 del objetivo; D10 para el INAP).
  *
- * Hoy esta pantalla está **vacía**, y eso es lo que hay que contar bien: los exámenes del INAP se
- * descargan y se importan en su propio bloque, así que todavía no hay ninguno. Las tres cosas que
- * esta pantalla **no** hace, y por las que está escrita así:
+ * La lista sale de la base y no de una lista escrita aquí: los exámenes del INAP se importan con su
+ * cuestionario y su plantilla oficial (bloque D10), y lo que se ve es **lo que hay importado**. Las
+ * tres cosas que esta pantalla **no** hace, y por las que está escrita así:
  *
  * 1. **no rellena la lista con lo que se le parezca.** No enseña bancos de práctica ni tests ya
  *    hechos con el nombre de «examen oficial»: una lista vacía con su explicación es más útil que una
@@ -23,8 +23,9 @@ import { diaLegible } from '../../lib/fechas';
  * 3. **no ofrece un examen que no se puede corregir**: el que está a medio importar (sin plantilla
  *    activa) sale, pero con su motivo en vez de un botón que fallaría.
  *
- * Y el examen se pide **por su sitio en la lista**, no por un identificador: la zona del alumno sigue
- * sin enseñar de dónde salen las preguntas de un test.
+ * Y enseña **de dónde sale cada uno** (`origin_scope`, D10) y **cuántas preguntas tiene**, que es lo
+ * que el alumno necesita para saber qué está practicando. El examen se pide **por su sitio en la
+ * lista**, no por un identificador: del conjunto no viaja el identificador, solo su procedencia.
  */
 export function OfficialExamsPage() {
   const navegar = useNavigate();
@@ -104,6 +105,7 @@ export function OfficialExamsPage() {
                 <span className="examenes__titulo" data-contenido>
                   {examen.title}
                 </span>
+                <span className="examenes__procedencia">{procedenciaDe(examen)}</span>
                 <span className="examenes__datos">{datosDe(examen)}</span>
                 {examen.ready ? (
                   <button
@@ -136,6 +138,25 @@ export function OfficialExamsPage() {
 function datosDe(examen: StudentOfficialExam): string {
   const fecha = examen.held_at === null ? 'Sin fecha publicada' : diaLegible(examen.held_at);
   return `${fecha} · ${String(examen.questions)} preguntas`;
+}
+
+/**
+ * De dónde sale el examen (`origin_scope`, D10), en las palabras del alumno.
+ *
+ * Tres valores y los tres se dicen: `age` es la Administración General del Estado —el INAP y la
+ * Guardia Civil, que es el examen que se está preparando—, `otra_administracion` es material de otra
+ * administración y `desconocida` es lo que no se puede afirmar. Un vocabulario se cierra en la base
+ * (`CHECK`) y se traduce aquí una sola vez: escribir «AGE» a pelo en la pantalla dejaría dos verdades
+ * sobre el mismo dato.
+ */
+function procedenciaDe(examen: StudentOfficialExam): string {
+  if (examen.origin_scope === 'age') {
+    return 'Administración General del Estado';
+  }
+  if (examen.origin_scope === 'otra_administracion') {
+    return 'Otra administración';
+  }
+  return 'Procedencia sin declarar';
 }
 
 /** Por qué un examen no se puede hacer todavía, con el motivo que le corresponde. */
