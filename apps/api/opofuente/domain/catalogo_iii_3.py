@@ -186,7 +186,8 @@ _TIPOS_Y_SINTAXIS = (
 
 #: El estándar, su historia y sus versiones.
 _EL_ESTANDAR = (
-    r"ansi sql|ansi/?iso sql|\biso ?9075\b|sql ?92|sql ?99|sql ?3\b|sql ?: ?1999|sql ?2016",
+    r"ansi sql|ansi ?/? ?iso ?sql|ansi iso sql|\biso ?9075\b",
+    r"sql ?92|sql ?99|sql ?3\b|sql ?: ?1999|sql ?2016",
     r"estandar (ansi|iso) sql|estandar sql",
     r"que significa sql|que version de sql|ano fue desarrollado|que organizacion escogio",
     r"parte del (lenguaje )?sql|pertenece al (lenguaje )?sql",

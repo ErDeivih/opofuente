@@ -209,7 +209,7 @@ MATERIAS: tuple[Materia, ...] = (
             "algoritmos de planificación del disco (FCFS, SSTF, SCAN, C-SCAN y LOOK)."
         ),
         patrones=(
-            r"entrada(s)?.{0,3}salida|entrada salida|\be/s\b",
+            r"entrada(s)?.{0,3}salida|entrada salida|\be ?/? ?s\b",
             r"interrupcion(es)?|\birq\b",
             r"acceso directo a memoria|\bdma\b",
             r"\bdriver(s)?\b|controlador(es)? de dispositivo|manejador(es)? de dispositivo",
@@ -365,7 +365,7 @@ MATERIAS: tuple[Materia, ...] = (
             r"arquitectura de windows|subsistema(s)? de (entorno|windows)|"
             r"biblioteca(s)? de enlace dinamico|\bdll\b",
             r"servicio(s)? de windows|consola de servicios|administrador de servicios|"
-            r"services\.msc",
+            r"services ?\.? ?msc",
             r"almacen de datos de arranque|\bbcd\b|bootmgr|gestor de arranque de windows|"
             r"\bwinload\b|\bntldr\b",
             r"administrador de tareas|\btaskmgr\b",

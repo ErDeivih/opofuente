@@ -225,6 +225,78 @@ propietario debería saber además va a `PARA-EL-PROPIETARIO.md`.
 | **14-oct-2026** | **Se comprueba, grupo por grupo, que el defecto de I.3 no se ha repetido** en II.2, III.8 ni II.5 | El motor tiene una red de seguridad —un hecho que no reconoce ninguna materia va **al apartado de la pregunta de la que salió** (`repartir_hechos`)— y **ésa es exactamente la puerta por la que el material ajeno se sienta dentro de un tema**, que es el defecto declarado en I.3. Con `donde_cayeron.py` (0 $) se ha mirado cada grupo ajeno y **los seis aparecen «(sin ancla)»**: la NTI de Digitalización (I.8.4), el Portal de la Transparencia (I.4), la Ley 11/2007 (I.8.1), el hipervisor (IV.2), Docker (IV.1), SCRUM, Spring Boot (III.5) y C# (III.2) **se quedaron en la bandeja con su motivo**. No se supone: se comprueba, que es lo que faltaba en I.3 | No comprobarlo y dar por hecho que el índice bastó (fue lo que pasó en I.3, y de ahí las dos cifras del §5 de F24) |
 | **14-oct-2026** | **La cota de dinero de `--prever` se toma como techo, y con el catálogo ensayado se queda holgada**; la de llamadas, como suelo en su extremo superior | **Tres de tres** corridas de f25 salieron por debajo del mínimo previsto: II.2 0,0772 $ de 0,30 · III.8 0,2090 $ de 0,22 · II.5 0,1663 $ de 0,22. En llamadas, III.8 se quedó al tope (57 de 58). Es lo mismo que ya se midió en f24 y lo que confirma que **el ensayo previo del catálogo (0 $) es lo que hace que la previsión sobre** | Decidir con la cota de arriba como si fuera un suelo y llevar el tope de dinero pegado al mínimo previsto |
 
+### F25b · **La causa raíz del material ajeno**: la red de seguridad de `repartir_hechos` (14-oct-2026)
+
+**Esto no es una anécdota de I.3: es la causa, y tiene dos caras.**
+
+El motor tiene una red de seguridad —**`repartir_hechos`**: un hecho que no reconoce ninguna materia va **al apartado de la pregunta de la que salió**—. Esa red **existe para no perder hechos** y hace bien su trabajo: sin ella, un hecho que el índice no sabe situar se quedaría fuera del tema. **Pero es exactamente la puerta por la que el material de otro tema se sienta dentro de un apartado que no le corresponde**, porque el hecho no se sitúa por su contenido, sino por **de dónde vino la pregunta**.
+
+| | |
+|---|---|
+| **Qué pasó en I.3** | El apartado `i-3-1-otros` se quedó con material del **estándar ANSI/TIA-942 del CPD**, que es de **IV.5.7**: **1 de 15 apartados**, 2 de 300 hechos, 730 de ~45.000 caracteres y 5 de 181 preguntas. La causa es ésta: el grupo no trae epígrafe, el índice no lo sitúa, y el hecho acabó **en el apartado de la pregunta de la que salió** |
+| **Qué se hizo entonces** | **No se borró**, y sigue declarado con sus dos cifras (la publicada y la honesta, 163/181 = 90,1 %). La razón está en el §5 de F24: la puerta de cobertura **cuenta comprobaciones guardadas, no el texto**, así que borrarlo dejaría el 92,8 % publicado mientras el alumno ya no lee esas frases |
+| **Cuál es hoy la única defensa** | **Mirarlo a mano**: `donde_cayeron.py` (0 $, en `F:\temp-opofuente\f25-scratch\`) busca por texto los grupos que el ensayo dejaba fuera y dice **en qué apartado acabaron**. El 14-oct se pasó sobre II.2, III.8 y II.5 y **los seis grupos ajenos aparecen «(sin ancla)»**: no se sentaron en ningún apartado y se quedaron en la bandeja del propietario. **Está comprobado, no supuesto** |
+| **Por qué importa como regla** | Convierte «ojo con los patrones genéricos» en algo **comprobable**: no basta con que el ensayo diga cuántos grupos quedan fuera; hay que mirar **dónde acaban**, porque el motor tiene una red que los puede sentar dentro |
+
+### F25c · **Pendiente, y no se hace ahora**: un bloque de motor para el agujero que estos tres hallazgos comparten (14-oct-2026)
+
+**Los tres son el mismo agujero: nadie comprueba que el sitio donde acaba un hecho o una comprobación sea suyo.** Se apuntan juntos para que, cuando toque, sea **un solo bloque de motor con su prueba que falla antes**, y con estas mediciones delante:
+
+| # | El hallazgo | De dónde sale | Qué le falta al motor |
+|---|---|---|---|
+| 1 | **No hay ninguna puerta que mire si el apartado al que se ancla una respuesta es del tema** | La tanda de I.3 | La puerta de cobertura dice **cuántas** respuestas están contestadas, **no por quién**. Es la comprobación que habría cazado el material del CPD sin mirarlo a mano |
+| 2 | **La cobertura cuenta dos veces una pregunta que el índice no sitúa** | Lo encontró **el panel** | Una pregunta sin materia puede contarse en el cómputo dos veces, con lo que la cobertura publicada sube sin que el tema haya mejorado |
+| 3 | **`repartir_hechos` sienta el hecho en el apartado de la pregunta de la que salió** | Esta medición (F25b) | Es **la causa de 1**: la red evita perder hechos, pero no comprueba que el destino sea del tema. Hoy la única defensa es `donde_cayeron.py`, a mano |
+
+**No se toca el motor ahora**: el encargo es escribir temas, y un cambio de motor arrastra las 18 puertas. Queda escrito con su medición para que el bloque se haga cuando toque y **con el caso del CPD como prueba de regresión**.
+
+### F25e · **El patrón que no puede casar y no avisa**: la barra es un espacio (14-oct-2026)
+
+**Un patrón con `/` es un patrón muerto, y no da ningún error.**
+
+El texto que ve el motor está **normalizado**: minúsculas, sin acentos y con la puntuación convertida en
+**espacio** —el guion, la barra, el punto y la coma—. Así que un patrón escrito `/etc/passwd` **no puede
+casar nunca**, porque el texto normalizado dice « etc passwd ». **Y no falla nada**: el catálogo carga,
+`--esquema` dice PASA y el grupo se cae a la bandeja del propietario sin que nadie se entere.
+
+| Escribí | ¿Casa? | Hay que escribir |
+|---|---|---|
+| `/etc/passwd` | ✗ **nunca** | `etc ?passwd` |
+| `/etc/shadow` | ✗ **nunca** | `etc ?shadow` |
+| `/etc/gshadow` | ✗ **nunca** | `etc ?gshadow` |
+| `login\.defs` | ✗ **nunca** (el punto también es espacio) | `login ?defs` |
+
+**Se descubrió en IV.4, y costó dieciséis puntos de cobertura antes de arreglarlo**: el primer ensayo
+dejó **22 grupos sin materia y el techo en 85,7 %** —por debajo del listón, o sea borrador seguro—;
+con el arreglo de la barra y el de tres patrones demasiado literales (el enunciado dice «estadísticas y
+conexiones» donde el patrón decía «conexiones y estadísticas», y «propiedad de **una** organización»
+donde decía «propiedad de **la** organización»), el techo subió a **97,3 %** y el tema publicó al
+**97,2 %**.
+
+**La regla que queda, y vale para todos los catálogos**: *el separador nunca llega al patrón*. Antes de
+correr, **ningún patrón propio puede contener `/`, `\\` ni un punto que no sea de una expresión
+regular**; los ficheros y los ficheros de configuración se piden **con el espacio del separador**. Es
+una línea de ensayo a 0 $ que puede evitar una corrida entera —o un borrador— por un patrón muerto.
+
+**Y se auditó el proyecto entero, porque un patrón muerto escrito una vez se copia**: con
+`patrones_muertos.py` (0 $) se miraron **los 28 catálogos**. Encontró **siete patrones muertos en siete
+temas**, de los que **dos eran de esta tanda** (II.5 `ado\.net` y IV.4 `802\.11`) y **cinco de temas ya
+publicados** (II.4 `\be/s\b` y `services\.msc`, III.3 `ansi/?iso sql`, III.7 `console\.log` y IV.5
+`ens/stic`). **Se arreglaron los siete**, con el modismo que tolera las dos formas —`ens ?/? ?stic`,
+`802 ?\.? ?11`— y **la auditoría vuelve a pasar con cero**. Se dice porque **se tocaron catálogos de
+temas que no eran de esta tanda**: no cambia **nada** de lo publicado —lo publicado vive en la base, no
+en el catálogo— y solo evita el daño si esos temas se vuelven a correr algún día, que es exactamente
+cuando el patrón muerto se cobraría el grupo. El detector tuvo además **un falso positivo** (`listener(\.|\s)?ora`, donde el `?` cierra el grupo y el punto ya es opcional) que se afinó para no volver a
+marcarlo.
+
+### F25f · IV.4 se publica, con su decisión de apartado dicha (14-oct-2026)
+
+| Fecha | Decisión | Por qué | Cómo deshacerla |
+|---|---|---|---|
+| **14-oct-2026** | **IV.4 se publica**: **141/145 = 97,2 %** de cobertura por clave utilizable, forma PASA (0,0 % de repetidos) e índice PASA con 4 grupos y 9 hechos sin materia | Techo medido 97,3 % → cobertura real **97,2 %**. Coste: **70 llamadas · 0,1522 $**. **Es la primera vez en la serie que la cota de llamadas de `--prever` se queda corta por arriba** (70 frente a 68) **y la cuarta seguida que el coste sale por debajo del mínimo** (0,1522 $ frente a 0,26 $): la cota de dinero es un techo, la de llamadas no | Retirar la versión desde el panel |
+| **14-oct-2026** | Las preguntas de **usuarios conectados, sesión en una máquina remota, procesos en un equipo remoto y fecha del último reinicio** tienen **apartado propio** («Los comandos de administración del sistema») | Son **administración del sistema, no de la red**: no caben en «la red en Linux» ni en «la red en Windows», y forzarlas dentro de uno de los dos sería lavarlas. Mismo criterio que el apartado de orientación a objetos en II.5 y que el cortafuegos en este tema | Repartirlas por los apartados de red (quedarían en un apartado que no habla de ellas) |
+| **14-oct-2026** | Lo que es de otro tema va a la bandeja, **comprobado sin ancla** con `donde_cayeron.py` (0 $) | El motor tiene la red de `repartir_hechos` (F25b) y la única defensa es mirarlo. En IV.4 los **4 grupos** que el índice no sitúa —el ataque de denegación distribuida (IV.9), las funciones de la capa de transporte (IV.7), SAN y NAS (IV.2) y la Ley 7/1985 (derecho administrativo)— aparecen **«(sin ancla)»**: no se sentaron en ningún apartado | No comprobarlo y suponer que el índice bastó (es lo que pasó en I.3) |
+
 
 | **14-oct-2026** | **El motivo de un borrador se lee de lo que el motor ya dejó guardado**, con el mismo camino que `apuntes --medir` (`TopicNotesService.medir`), y **no se recalcula a mano ni se hereda de un documento** | Es lo que pedía el encargo («no los recalcules: léelos de donde ya estén»). Medir así **no llama al modelo y no cuesta nada** (verificado: el servicio va acompañado de un motor que se niega a usarse, `MedidaSinModelo`), y garantiza que la cifra del panel sea **la misma** que la del comando: dos formas de medir la cobertura acabarían dando dos números del mismo tema. Medido con la base real el 14-oct: I.4 489/542 = 90,2 %, I.6 164/230 = 71,3 %, I.7 289/493 = 58,6 %, I.8 394/477 = 82,6 % | Quitar la llamada a `medir` del servicio de la revisión y devolver el motivo vacío; el panel seguiría enseñando el estado y las decisiones |
 | **14-oct-2026** | La tabla mide **solo los temas que esperan una decisión** (los borradores); de los publicados enseña su estado y sus cifras de hoy, y **su ficha los mide al abrirla** | Medir los 19 temas con apuntes cuesta **31,8 s** medidos, y 15 de ellos ya pasaron las puertas: medirlos sería la mitad de la página para repetir lo que ya dice su estado. Solo en los borradores la cobertura decide algo, y son cuatro: la tabla tarda **7,6 s** (tres vueltas medidas) | Medir todos los temas en la tabla: una línea (`_medir_los_borradores` sin el filtro `not fila.published`) y la página pasa de 7,6 s a 31,8 s |
@@ -243,7 +315,7 @@ propietario debería saber además va a `PARA-EL-PROPIETARIO.md`.
 
 ### La medición del doble conteo de la cobertura (14-oct-2026)
 
-La pidió el agente padre al cerrar F24, para que quien lo arregle sepa **el tamaño del agujero**.
+La pidió el agente padre al cerrar **F24-panel**, para que quien lo arregle sepa **el tamaño del agujero**.
 Medido con el código del motor **tal cual** (`_recontar_cobertura` + `_grupos_sin_materia` +
 `_comprobables`), tema a tema y sin llamar a ningún modelo, sobre la copia de la base real (guion
 `medir_doble_conteo.py`; salida en `doble-conteo.txt` y su resumen en `doble-conteo-resumen.txt`):
