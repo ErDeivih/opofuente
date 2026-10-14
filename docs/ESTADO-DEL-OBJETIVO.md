@@ -2465,3 +2465,103 @@ termina; un tema con hueco de material se queda en borrador con su cifra.
 los tres borradores (I.7, I.8 e I.6). Los que faltan por escribir son los que la tabla pone por debajo
 de 180 claves utilizables —**II.2 (173), III.8 (169), II.5 (155)** y los siguientes— más los tres
 borradores y III.4.
+
+## F25 · La tanda de contenido sigue por los de menos valor, y una corrida que se murió con el turno (14-oct-2026)
+
+**Rama `f21-temas-valor`**, base real **`0037_origin_scope`**, copia verificada del día
+(`20261014-101138-3c75b9.zip`). Mismo ritmo del §4: contenido directo sobre la base real, sin rama de
+contenido y sin batería de 18 puertas.
+
+### 1. I.4 se cierra a coste 0 $, y pasa por 0,2 puntos
+
+Detalle completo en el §7 de F24 y en `docs/apuntes/INFORME-I.4.md`. En una línea: **489/542 = 90,2 %**
+de cobertura por clave utilizable y forma PASA, con `--publicar` (0 llamadas, 0,0000 $). **Publica
+porque cumple la regla tal como está escrita, el margen va dicho y es reversible.** Con esto quedan
+**21 de 33**.
+
+### 2. La tabla de valor, vuelta a medir hoy, y el orden de lo que queda
+
+Medida hoy (la cuarentena ya va por **17** conjuntos, así que los números siguen bajando):
+
+| Tema | Claves utilizables |
+|---|---|
+| **II.2** | **172** |
+| **III.8** | **167** |
+| **II.5** | **155** |
+| IV.4 | 150 |
+| III.6 · IV.3 | 145 |
+| III.2 | 140 |
+| I.9 | 133 |
+
+**III.4 (407)** sigue **fuera** con su medición: su banco es de otra materia en un 40 %.
+
+### 3. Los tres catálogos, escritos y ensayados antes de pagar (0 $)
+
+| Tema | Apartados | Índice | **Techo medido** | Previsión | Estado |
+|---|---|---|---|---|---|
+| **II.2** | **17** | PASA | **169/172 = 98,3 %** | 44–79 llam. · 0,30–0,54 $ | **publicado** |
+| **III.8** | **10** | PASA | **163/167 = 97,6 %** | 33–58 llam. · 0,22–0,39 $ | catálogo listo |
+| **II.5** | **11** | PASA | **148/155 = 95,5 %** | 33–58 llam. · 0,22–0,39 $ | catálogo listo |
+
+**Las dos lecciones de f24, aplicadas desde el principio y comprobadas con una cuenta antes de
+correr**: los títulos de los tres catálogos **no comparten las tres primeras palabras entre tres
+apartados** (lo que dejó II.3 sin publicar) y **ningún patrón propio es una palabra genérica**
+(«velocidad», «estándar», «acceso», «datos», «base» salen en casi todos los enunciados de estos
+bancos). Lo que es de otro tema va a la bandeja con su motivo: en II.2 la **NTI de Digitalización**
+(I.8.4); en III.8 el **Portal de la Transparencia** (I.4) y los once principios de la **Ley 11/2007**
+(I.8.1); en II.5 el **hipervisor** (IV.2), **SCRUM**, **Docker**, **Spring Boot** y **C#**.
+
+### 4. II.2, redactado y **publicado** el 14-oct
+
+| Qué | Valor |
+|---|---|
+| Cobertura (**clave utilizable**) | **163/165 = 98,8 % PASA** — **la mejor de toda la serie** |
+| Cobertura (todas las claves) | 163/172 = 94,8 % |
+| Hechos | **325 guardados** → **268 en el plan** (57 agrupados) |
+| Apartados | **17** · ninguno pasó el tope de 150 hechos |
+| Forma | **PASA** · 8.045 palabras de 13.000 · repetidos **0,0 %** |
+| Índice | PASA · **0 grupos y 0 hechos sin materia** |
+| Bandeja del propietario | **9**: 7 `norma_cambiada`, 2 `clave_sospechosa` |
+| Llamadas y coste | **40 (0 fallidas) · 0,0772 $** · 12 minutos, sin tope activado |
+| Previsión | 44–79 llamadas · 0,30–**0,54 $** → coste muy por debajo del mínimo |
+| Precio por llamada | **0,00193 $**, el más bajo del proyecto (comprobar es diez veces más barato que redactar) |
+
+### 5. Una corrida murió con el turno del agente, y se dice con su cifra
+
+**El lanzamiento de II.2 (13:01) se hizo como trabajo de fondo de la sesión, y los trabajos de fondo
+no sobreviven al final del turno.** Al morir el padre murió el hijo:
+
+| Qué | Cifra |
+|---|---|
+| Lo que dejó escrito | **325 hechos, los 17 apartados y 53 de 175 comprobaciones** (nada perdido) |
+| Su coste | **no medido**: `corrida-II.2-1.out.txt` quedó a **0 bytes** (el volcado murió con el proceso) |
+| Estimación de su coste | **≈0,10–0,15 $** (9 llamadas de hechos + 17 de redacción + ~6 de comprobación) |
+| El candado | quedó **echado**; hubo que soltarlo por el camino que documenta el motor |
+| La reanudación | 13:40, con `-u` y **fichero de salida nuevo**: **175/175 comprobadas por 0,0772 $** |
+
+**`python -u` no salva la salida en ese caso**: lo que la redirige es el proceso padre y su búfer muere
+con él. **Lo que sí sobrevive es lo escrito en la base**, así que reanudar es barato.
+
+**Y una sospecha que la medición desmintió**: durante esa hora, el `python` que consumía CPU **no era
+esta corrida**, sino el `pytest` de integración de **otro árbol** (`opofuente-apuntes`), que arrancó a
+las 14:41:14 por casualidad. La reanudación comprobó **10 grupos por minuto** (53 → 175 en doce
+minutos): la lentitud aparente no era de la API, era que la corrida ya estaba muerta.
+
+**La regla que esto fija para las próximas tandas**: **lanzar y esperar dentro del turno** (que es lo
+que se hizo en f24, y por eso allí no pasó), o aceptar que habrá que reanudar —lo que cuesta 40
+llamadas y 0,0772 $ para 122 grupos, que es de lo más barato que se puede pagar—.
+
+### 6. Lo que queda fuera, con el porqué
+
+- **I.8 (81,2 %), I.6 (71,4 %) e I.7 (57,1 %)**: los tres borradores siguen **con su cifra** y con la
+  causa medida —**0 grupos sin comprobar** en los tres, así que su hueco es **material** y ninguna
+  corrida lo mueve—;
+- **III.4**: sigue **sin escribir**; su banco es de otra materia en un 40 %, ya medido;
+- los grupos que ningún índice sitúa (3 en II.2, 8 en II.1, 5 en III.3, 10 en II.3, 19 en I.3, 5 en
+  IV.10): en la bandeja del propietario con su motivo;
+- **la pregunta del CPD en I.3**: contada como cubierta y declarada en el §5 de F24, con las dos
+  cifras.
+
+**Con I.4 y II.2 quedan publicados 22 de los 33 temas.** Están escritos 25: los 22 publicados más los
+tres borradores. Los que faltan por escribir son **III.8 (167), II.5 (155), IV.4 (150), III.6 y IV.3
+(145), III.2 (140) e I.9 (133)**.
