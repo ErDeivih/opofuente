@@ -50,7 +50,14 @@ const BASE = path.join(DATOS, 'opofuente.sqlite3');
 
 /** El tema de la prueba y su apartado: es texto de prueba, no del propietario. */
 const TEMA = 'IV.1';
-const APARTADO = 'powershell-y-cmdlet';
+/**
+ * La clave del apartado **tiene que ser una materia del catálogo de IV.1**, y no un nombre inventado:
+ * `administracion-de-windows` es la materia a la que el índice de IV.1 manda la pregunta de esta
+ * prueba (`powershell|cmdlet|…`). Importa desde F27: la cobertura cuenta la comprobación de una
+ * pregunta **solo si su ancla es un apartado suyo**, y el apartado suyo lo dice el índice. Con una
+ * clave que no es materia del tema, la comprobación sembrada no ancla nada y el tema mide 0 de 1.
+ */
+const APARTADO = 'administracion-de-windows';
 const EPIGRAFE = 'IV.1.1';
 const TITULO_APARTADO = 'PowerShell y los cmdlet';
 const CUERPO =

@@ -965,11 +965,18 @@ medir con la puerta buena, **dos temas publicados dejan de llegar al 90 %**:
 | **I.4** (función pública) | 489/542 = **90,2 %** | **483/540 = 89,4 %** | **6 preguntas**: el **kernel de Android** (que es de IV.1) y la **Ética Pública**, que el índice no sitúa y se comprobaba contra el primer apartado de su epígrafe |
 
 **No he tocado ni una línea de esos dos temas.** Siguen publicados y se leen igual: lo que ha cambiado es
-la cifra, que ahora dice lo que de verdad contestan sus apuntes. **La decisión es tuya** y tienes tres
-caminos, ninguno urgente:
+la cifra, que ahora dice lo que de verdad contestan sus apuntes. **Y la decisión está tomada, con estas
+palabras**:
 
-1. **dejarlos como están** — se leen bien y el alumno no nota nada; la cifra queda dicha aquí y en el
-   panel;
+> «Dos temas que ya tenías publicados miden ahora por debajo del listón; los dejo disponibles con su cifra
+> a la vista para que lo decidas tú.»
+
+Es decir: **se quedan publicados** porque **lo que ha cambiado es la medición, no el material** —lo que
+tú lees está igual de bien que ayer— y retirar dos temas que puedes estudiar sería peor que decirte la
+cifra. Los verás con su número medido en la pantalla de **revisión de apuntes**, y desde ahí los puedes
+retirar con un clic cuando quieras. Los tres caminos siguen abiertos, ninguno urgente:
+
+1. **dejarlos como están** (es lo que se ha decidido por ahora) — se leen bien y el alumno no nota nada;
 2. **retirarlos** desde el panel (vuelven a borrador, sin perder nada del texto) hasta que se limpien; o
 3. **volver a correrlos** cuando toque: una corrida con el reparto nuevo deja fuera el material ajeno y
    los apartados que pierden hechos se rehacen — eso **sí cuesta dinero** (≈0,4–1,5 $ por tema) y lo

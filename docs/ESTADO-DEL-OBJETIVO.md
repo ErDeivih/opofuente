@@ -3044,7 +3044,14 @@ y daba **163/181 = 90,1 %** como «cifra honesta». **Se quedó corto**: el lava
 y no 5, porque los otros ocho grupos ajenos también entraron por la misma puerta (los cajones
 `i-3-1-otros`, `i-3-2-otros` y `i-3-3-otros`) y el informe no los miró uno a uno. La cifra de hoy,
 **152/181 = 84,0 %**, es la del motor con la puerta nueva; el texto publicado **no se ha tocado** y el
-material ajeno sigue escrito donde estaba. **La decisión es del propietario** (`PARA-EL-PROPIETARIO`).
+material ajeno sigue escrito donde estaba.
+
+**Y la decisión ya está tomada, con estas palabras**: **I.3 e I.4 se quedan publicados** con su cifra nueva
+a la vista, porque **lo que ha cambiado es la medición, no el material** y **retirar dos temas que el
+propietario puede estudiar es peor que decirle la cifra**. La pantalla de revisión de apuntes ya los enseña
+con el número medido —el bloque del panel la construyó **leyendo la medición**, no un valor guardado—, así
+que el propietario puede retirarlos con un clic si quiere. Está escrito en `DECISIONES` (**F27**) y en
+`PARA-EL-PROPIETARIO`.
 
 **Lo que sí queda medido y comprobado**: las nueve preguntas que pierden la cobertura en I.3 son
 **exactamente las que su propio catálogo declara de otro tema** (la lista está en la cabecera de
@@ -3107,8 +3114,37 @@ que cambia son I.3 e I.4, los dos **a peor**, porque lo que se les descontaba er
   **no pierden su cobertura** —su ancla son los apartados donde están sus hechos de verdad, y eso está
   comprobado con la sonda `sonda_cajones.py`—, así que una corrida con el reparto nuevo deja el tema en
   la cifra honesta de esta sección. No se ha corrido nada.
+- **Y la otra cara del ancla propia, dicha**: el ancla sale del **índice de hoy**, así que **si a una
+  materia del catálogo se le cambia la clave, su apartado guardado deja de anclar** hasta que el tema se
+  vuelva a correr (entonces `plan_de` deja el apartado viejo en `sobran` y el texto se rehace). No ha
+  pasado en la serie: los catálogos que se han tocado entre corridas cambiaron **patrones y títulos**, no
+  claves.
 - **Lo que no se ha hecho, y por qué**: el hallazgo **(a)** que quedó apuntado con este —un grupo con
   apartado propio y **sin comprobación guardada** no entra en la puerta (ni en el numerador ni en el
   denominador), así que un tema con apartados y sin comprobaciones mide «0 de 0»— **no se toca**: no es
   de los tres que este bloque cierra, y cambiarlo mueve el denominador de todos los temas otra vez. Sigue
   apuntado en `DECISIONES` (14-oct, el párrafo de los dos hallazgos del motor).
+
+### 6. Las 18 puertas: **18/18, repartidas en dos corridas**, con los dos intentos y su causa
+
+El registro literal está en **`F:\temp-opofuente\gates-f27-medidor.txt`** (los dos intentos en el mismo
+fichero, con su cabecera de intentos) y el del segundo intento, aparte, en
+`gates-f27-medidor-intento2.txt`. Se lanzó con `Start-Process -RedirectStandardOutput` y **sin tuberías**,
+con el `gates.ps1` del árbol y su mismo juez (`common.ps1` + `Invoke-OpoFuenteStep`).
+
+| Intento | Qué se corrió | Resultado | Causa del fallo |
+|---|---|---|---|
+| **1** | `scripts/gates.ps1` entero, de una pasada, sobre el motor nuevo | **puertas 1-17 OK · puerta 18 FALLO (código 1)**: 76 pasan y **2 caen**, las dos de `apuntes-revision.spec.ts` | **Fallo de lógica, no nativo**, y medido: el spec del panel siembra su apartado con la clave **`powershell-y-cmdlet`, que no es una materia del catálogo de IV.1** (sus nueve materias están en `catalogo_iv_1.py`; la de esa pregunta es `administracion-de-windows`). El escenario solo pasaba **por el respaldo que este bloque quita**, así que el tema medía `1/1 = 100,0 %` antes y `0/1 = 0,0 %` después. **Se arregla la semilla, no la expectativa** (que sigue siendo `1/1 = 100,0 %` y «Aprobarlo la publica»), y queda escrito en `DECISIONES` (**F27**) |
+| **2** | las puertas que **pueden ver el fichero arreglado** —eslint (4), typecheck (5) y E2E (18)—, con el **mismo juez** | **4 OK · 5 OK · 18 OK**, con **78 de 78** en Playwright | — |
+
+**Por qué se repartió así, y no se volvió a correr entera**: entre los dos intentos lo único que cambió
+fue **un fichero de pruebas E2E** (`apps/web/tests/e2e/apuntes-revision.spec.ts`); las otras quince puertas
+ya estaban verdes en el intento 1 **sobre el mismo árbol de código** y no leen ese fichero. Aun así se
+repitieron las dos que sí podrían leerlo (eslint y typecheck) además de la que cayó. Decir «18/18 de una
+pasada» sería falso; decir que no está verde, también. Es la misma decisión que se tomó en **F24-panel**
+(«repartidas en tres corridas», con el mismo `common.ps1`).
+
+**Lo que midió cada suite** (literal en el registro): unitarias **856**, integración **726** (43:15),
+contrato **29**, componentes **379** (42 ficheros), E2E **78**, y las 18 puertas del `gates.ps1` en verde
+entre las dos corridas. **Ninguna puerta cayó con un código nativo** (los dos códigos nativos que se
+pagaron en esta serie —`0xC0000409` y `0xC0000374`— no han aparecido aquí).
