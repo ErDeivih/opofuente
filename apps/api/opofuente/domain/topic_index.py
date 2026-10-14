@@ -1690,10 +1690,14 @@ from opofuente.domain.catalogo_i_8 import MATERIAS as MATERIAS_I8  # noqa: E402
 from opofuente.domain.catalogo_i_8 import ORDEN as ORDEN_I8  # noqa: E402
 from opofuente.domain.catalogo_ii_1 import MATERIAS as MATERIAS_II1  # noqa: E402
 from opofuente.domain.catalogo_ii_1 import ORDEN as ORDEN_II1  # noqa: E402
+from opofuente.domain.catalogo_ii_2 import MATERIAS as MATERIAS_II2  # noqa: E402
+from opofuente.domain.catalogo_ii_2 import ORDEN as ORDEN_II2  # noqa: E402
 from opofuente.domain.catalogo_ii_3 import MATERIAS as MATERIAS_II3  # noqa: E402
 from opofuente.domain.catalogo_ii_3 import ORDEN as ORDEN_II3  # noqa: E402
 from opofuente.domain.catalogo_ii_4 import MATERIAS as MATERIAS_II4  # noqa: E402
 from opofuente.domain.catalogo_ii_4 import ORDEN as ORDEN_II4  # noqa: E402
+from opofuente.domain.catalogo_ii_5 import MATERIAS as MATERIAS_II5  # noqa: E402
+from opofuente.domain.catalogo_ii_5 import ORDEN as ORDEN_II5  # noqa: E402
 from opofuente.domain.catalogo_iii_1 import MATERIAS as MATERIAS_III1  # noqa: E402
 from opofuente.domain.catalogo_iii_1 import ORDEN as ORDEN_III1  # noqa: E402
 from opofuente.domain.catalogo_iii_3 import MATERIAS as MATERIAS_III3  # noqa: E402
@@ -1702,6 +1706,8 @@ from opofuente.domain.catalogo_iii_5 import MATERIAS as MATERIAS_III5  # noqa: E
 from opofuente.domain.catalogo_iii_5 import ORDEN as ORDEN_III5  # noqa: E402
 from opofuente.domain.catalogo_iii_7 import MATERIAS as MATERIAS_III7  # noqa: E402
 from opofuente.domain.catalogo_iii_7 import ORDEN as ORDEN_III7  # noqa: E402
+from opofuente.domain.catalogo_iii_8 import MATERIAS as MATERIAS_III8  # noqa: E402
+from opofuente.domain.catalogo_iii_8 import ORDEN as ORDEN_III8  # noqa: E402
 from opofuente.domain.catalogo_iii_9 import MATERIAS as MATERIAS_III9  # noqa: E402
 from opofuente.domain.catalogo_iii_9 import ORDEN as ORDEN_III9  # noqa: E402
 from opofuente.domain.catalogo_iv_1 import MATERIAS as MATERIAS_IV1  # noqa: E402
@@ -1744,6 +1750,9 @@ _CATALOGOS: dict[str, tuple[Materia, ...]] = {
     "II.3": _en_orden_de_estudio(MATERIAS_II3, ORDEN_II3),
     "III.3": _en_orden_de_estudio(MATERIAS_III3, ORDEN_III3),
     "IV.10": _en_orden_de_estudio(MATERIAS_IV10, ORDEN_IV10),
+    "II.2": _en_orden_de_estudio(MATERIAS_II2, ORDEN_II2),
+    "II.5": _en_orden_de_estudio(MATERIAS_II5, ORDEN_II5),
+    "III.8": _en_orden_de_estudio(MATERIAS_III8, ORDEN_III8),
 }
 
 
