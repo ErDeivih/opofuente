@@ -463,7 +463,7 @@ MATERIAS: tuple[Materia, ...] = (
         title="Los comandos de administración del sistema: sesiones y procesos",
         resumen=(
             "Las órdenes del día a día del administrador: quién está conectado y con qué procesos, "
-            "cómo se abre una sesión en una máquina remota, cómo se termina un proceso que corre",
+            "cómo se abre una sesión en una máquina remota, cómo se termina un proceso que corre"
             " en otro equipo y cómo se averigua la fecha y la hora del último reinicio."
         ),
         patrones=_ADMIN_SISTEMA,
