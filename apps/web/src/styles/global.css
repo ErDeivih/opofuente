@@ -3150,3 +3150,112 @@ kbd {
   white-space: pre-line;
   overflow-wrap: anywhere;
 }
+
+/* --- La revisión de los apuntes (F24, §4.3 del objetivo) ------------------------------- */
+
+/* La tabla de los temas: cada tema es una ficha con sus cifras, su motivo y su decisión. Se parece a
+   la bandeja del motor a propósito —se leen juntas y se recorren igual— y por eso reutiliza sus
+   tonos: la duda para el borrador y la marca neutra para lo publicado. */
+.apuntes-revision {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.apuntes-revision__fila {
+  padding: var(--s4) 0;
+  border-top: 1px solid var(--linea-suave);
+}
+
+.apuntes-revision__fila:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+.apuntes-revision__cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2) var(--s4);
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.apuntes-revision__titulo {
+  margin: 0;
+  font-size: var(--t-cuerpo);
+  overflow-wrap: anywhere;
+}
+
+.apuntes-revision__codigo {
+  font-variant-numeric: tabular-nums;
+  color: var(--tinta-suave);
+}
+
+.apuntes-revision__estado {
+  margin: 0;
+}
+
+/* Las cifras del tema, en una rejilla que cabe en el móvil: dos columnas de datos con su rótulo, sin
+   tablas que se desplacen. */
+.apuntes-revision__cifras {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: var(--s2) var(--s4);
+  margin: var(--s3) 0 0;
+}
+
+.apuntes-revision__cifras dt {
+  color: var(--tinta-suave);
+  font-size: var(--t-sm);
+}
+
+.apuntes-revision__cifras dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+/* El motivo: una línea por razón, con la cifra delante y en negrita. Es lo que el propietario lee
+   para entender por qué un tema no está publicado sin abrir un informe. */
+.apuntes-revision__motivos {
+  margin: var(--s3) 0 0;
+  padding-left: var(--s5);
+  max-width: var(--medida-texto);
+}
+
+.apuntes-revision__motivos li {
+  margin-bottom: var(--s1);
+  overflow-wrap: anywhere;
+}
+
+.apuntes-revision__figura {
+  font-variant-numeric: tabular-nums;
+}
+
+.apuntes-revision__decision {
+  margin: var(--s3) 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2) var(--s3);
+  align-items: baseline;
+}
+
+.apuntes-revision__enlace {
+  min-height: var(--objetivo-tactil);
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Lo que ha pasado al decidir: se queda a la vista hasta que se cierra, porque dice si el tema ha
+   quedado publicado o qué puerta lo frena. */
+.apuntes-revision__resultado {
+  margin-top: var(--s4);
+  padding: var(--s3) var(--s4);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  background: var(--color-superficie);
+}
+
+.apuntes-revision__resultado p {
+  margin: 0 0 var(--s3);
+}
+

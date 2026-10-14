@@ -2265,3 +2265,50 @@ class NotesReportRecord(Base):
     reviewed_at: Mapped[datetime | None] = mapped_column(UtcDateTime(), nullable=True)
     #: Qué se ha hecho con el aviso, en una línea, escrito por el propietario al despacharlo.
     resolution_note: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+
+class TopicNotesReviewRecord(Base):
+    """La decisión del propietario sobre los apuntes de un tema (F24, §4.3 del objetivo).
+
+    La pieza que faltaba para que la revisión de apuntes **se pueda hacer desde el panel**: hasta la
+    migración `0038` un tema en borrador no se distinguía de un tema que nadie había mirado, porque
+    el estado se deducía del par (¿hay apartados escritos?, ¿hay versión archivada?) y no había
+    ninguna fila donde quedara escrita la decisión.
+
+    Una fila por tema (`uq_topic_notes_review_node`): la segunda revisión **actualiza** la primera,
+    y con ella viaja siempre el mismo evento de auditoría con su antes y su después. Las cifras del
+    motivo **no** se copian aquí: se leen de donde ya están —las comprobaciones del motor, la
+    bandeja de incidencias y el texto—, porque una copia dentro de la fila acabaría diciendo algo
+    distinto de lo que dice el tema.
+
+    `rejected` exige nota (`ck_topic_notes_review_note`): un rechazo sin motivo deja el borrador
+    donde estaba y sin saber por qué. Aprobar **no** publica por sí solo: publicar es archivar la
+    versión, y eso sigue pasando por las dos puertas del §2.3.
+    """
+
+    __tablename__ = "topic_notes_reviews"
+    __table_args__ = (
+        CheckConstraint(
+            "decision IN ('approved', 'rejected')", name="ck_topic_notes_review_decision"
+        ),
+        CheckConstraint(
+            "decision <> 'rejected' OR (note IS NOT NULL AND length(trim(note)) > 0)",
+            name="ck_topic_notes_review_note",
+        ),
+        UniqueConstraint("curriculum_node_id", name="uq_topic_notes_review_node"),
+        Index("ix_topic_notes_reviews_decision", "decision"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    curriculum_node_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("curriculum_nodes.id", ondelete="CASCADE"), nullable=False
+    )
+    decision: Mapped[str] = mapped_column(String(16), nullable=False)
+    #: La nota de lo decidido, en una línea. Opcional al aprobar y **obligatoria** al rechazar.
+    note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    #: Quién lo revisó. Hoy la persona local; está puesto para que la decisión no sea anónima el día
+    #: que haya cuentas.
+    actor: Mapped[str] = mapped_column(String(120), nullable=False)
+    reviewed_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)

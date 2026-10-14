@@ -21,6 +21,7 @@ from opofuente.domain.errors import (
     ClassificationConflictError,
     InvalidAnswerError,
     InvalidBatchStateError,
+    InvalidReviewError,
     InvalidSourceError,
     InvalidStateError,
     MappingMismatchError,
@@ -190,6 +191,17 @@ def register_exception_handlers(app: FastAPI) -> None:
                 code="unsupported",
             )
         if isinstance(exc, InvalidAnswerError):
+            return problem_response(
+                status_code=422,
+                detail=str(exc),
+                instance=request.url.path,
+                code=exc.code,
+                field_errors=[FieldError(field=exc.field, message=exc.reason)],
+            )
+        if isinstance(exc, InvalidReviewError):
+            # Rechazar los apuntes de un tema sin motivo, o decidir sobre un tema sin texto: es la
+            # misma familia que una respuesta inválida —entrada que no vale, con su campo— y se
+            # contesta igual, con `field_errors`, para que la pantalla sepa qué señalar.
             return problem_response(
                 status_code=422,
                 detail=str(exc),

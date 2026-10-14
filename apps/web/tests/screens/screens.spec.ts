@@ -197,6 +197,49 @@ for (const { ruta, nombre } of RUTAS) {
 }
 
 /**
+ * La revisión de los apuntes (F24, §4.3 del objetivo) con los datos que haya, a los dos anchos.
+ *
+ * Es la captura que pide el entregable: **un tema publicado y un borrador con su motivo**. Se retrata
+ * contra la copia de la base real (`F:\temp-opofuente\f24-datos`, pasada como
+ * `OPOFUENTE_E2E_DATA_DIR`), y por eso la tabla sale con quince temas publicados y **los cuatro
+ * borradores** (I.4, I.6, I.7 e I.8) con su cifra, y la ficha con **I.7**: un borrador de verdad, con
+ * su motivo y sus diecinueve apartados. Con la base vacía de la suite las dos pantallas salen igual
+ * —la tabla, con los temas sin apuntes— y la captura lo dice; no se inventa ninguna fila.
+ *
+ * Y no se limita a retratar: **comprueba** lo que el entregable exige de las capturas, para que la
+ * evidencia no dependa de mirar el PNG.
+ *
+ * 1. **cero violaciones** de accesibilidad en las dos pantallas;
+ * 2. **390 px exactos** de ancho de ventana en la captura de móvil (una captura de página completa más
+ *    ancha que el viewport sería un desplazamiento horizontal);
+ * 3. y que la tabla **enseña temas** (o lo dice): la captura no puede salir en blanco sin que se sepa.
+ */
+for (const { ancho, alto, etiqueta } of ANCHOS) {
+  test(`la revisión de apuntes a ${ancho} px`, async ({ page }) => {
+    const tabla = await retratar(page, '/admin/apuntes', '/admin/apuntes', ancho, alto, etiqueta);
+    await expect(page.getByRole('heading', { level: 1, name: 'Apuntes' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Temas con apuntes/ })).toBeVisible();
+
+    const ficha = await retratar(
+      page,
+      '/admin/apuntes/I.7',
+      '/admin/apuntes/I.7',
+      ancho,
+      alto,
+      etiqueta,
+    );
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+
+    expect(tabla, `axe en la tabla de apuntes: ${tabla.join(', ')}`).toEqual([]);
+    expect(ficha, `axe en la ficha del borrador: ${ficha.join(', ')}`).toEqual([]);
+    if (ancho === 390) {
+      const medido = await page.evaluate(() => window.innerWidth);
+      expect(medido, 'el ancho de la captura de móvil').toBe(390);
+    }
+  });
+}
+
+/**
  * La pantalla de **Exámenes** con un examen oficial de verdad (D10), a los dos anchos.
  *
  * La captura genérica de `/examenes` sale con la base de la suite, que nace sin exámenes oficiales:
