@@ -2639,7 +2639,18 @@ más los tres borradores (I.8, I.6 e I.7). Los que faltan por escribir son **IV.
 ## F24 · La revisión de los apuntes en el panel (14-oct-2026)
 
 **Rama `f24-revision-apuntes`** (worktree `F:\temp-opofuente\opofuente-apuntes`, desde
-`main = 511a8a9`). Sin fusionar: la fusión es del agente padre.
+`main = 511a8a9`, con `main = a2a6511` ya **fusionado en la rama**). La fusión a `main` la hace el
+agente padre.
+
+**La fusión con `main`, medida** (commit `5636a3b`, con sus dos padres: `cc87dfe` y `a2a6511`): los dos
+documentos que chocaron se resolvieron **sumando**, y no a ojo —**cero** marcadores de conflicto; las
+**302** líneas que `main` añadió al ESTADO y las **183** mías están todas en el resultado (y **40** y
+**44** en el del propietario); los encabezados de sección del ESTADO pasan de **20** (main) a **21** y
+las entradas del propietario de **17** a **18**; y la tabla de decisiones cuadra por la identidad
+**173 = 159 (main) + 146 (mías) − 132 (base)**. Después de fusionar, y ya con el código de las tres
+tandas de contenido dentro: `ruff format --check` (509 ficheros), `ruff check`, `mypy` (235 ficheros),
+`eslint`, `tsc` y el contrato sincronizado, con **912 pruebas de backend** y **379 de componentes** en
+verde.
 **Coste de API: 0 $** — no se ha llamado a ningún modelo. La cifra de un borrador se **lee** de las
 comprobaciones que el motor ya dejó guardadas, con el mismo camino que `apuntes --medir`
 (`TopicNotesService.medir`), así que el panel y el comando no pueden dar dos números del mismo tema.
