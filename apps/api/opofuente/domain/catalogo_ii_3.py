@@ -274,7 +274,7 @@ MATERIAS: tuple[Materia, ...] = (
     Materia(
         key="los-algoritmos-de-ordenacion",
         epigraph_code="II.3.3",
-        title="Los algoritmos de ordenación",
+        title="Ordenación de datos: la burbuja, la selección, el pivote y los demás",
         resumen=(
             "Poner en orden: la burbuja o intercambio directo, la selección directa, la inserción "
             "binaria, el método del pivote, la mezcla directa, los montículos y los algoritmos "
@@ -288,7 +288,7 @@ MATERIAS: tuple[Materia, ...] = (
     Materia(
         key="los-algoritmos-de-busqueda",
         epigraph_code="II.3.3",
-        title="Los algoritmos de búsqueda",
+        title="Búsqueda de un dato: binaria, secuencial y por función aritmética",
         resumen=(
             "Encontrar un dato: la búsqueda binaria y el número de comparaciones que necesita, la "
             "búsqueda que se vale de una función aritmética para calcular la posición, la búsqueda "
@@ -302,7 +302,7 @@ MATERIAS: tuple[Materia, ...] = (
     Materia(
         key="los-algoritmos-de-grafos-y-de-optimizacion",
         epigraph_code="II.3.3",
-        title="Los algoritmos de grafos y de optimización",
+        title="Grafos y optimización: Dijkstra, Prim, Kruskal, Bellman-Ford y A*",
         resumen=(
             "Recorrer una red de nodos buscando lo mejor: Dijkstra, Prim, Kruskal, Bellman-Ford, "
             "Floyd-Warshall y A*, el árbol recubridor mínimo de un grafo conexo y ponderado, el "

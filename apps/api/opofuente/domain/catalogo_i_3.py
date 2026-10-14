@@ -372,33 +372,30 @@ MATERIAS: tuple[Materia, ...] = (
     Materia(
         key="i-3-1-otros",
         epigraph_code="I.3.1",
-        title="Otras cuestiones sobre la composición, el nombramiento y el cese",
+        title="Cuestiones sueltas de la composición, el nombramiento y el cese",
         resumen=(
             "Las preguntas del epígrafe cuyo enunciado no dice de qué parte del Gobierno habla "
-            "(«señale la afirmación verdadera», «indique cuál es correcta»): se estudian junto a "
-            "la"
-            "composición, el nombramiento y el cese, que es el epígrafe del que salen."
+            "(«señale la afirmación verdadera», «indique cuál es correcta»): se estudian junto a"
+            " la composición, el nombramiento y el cese, que es el epígrafe del que salen."
         ),
     ),
     Materia(
         key="i-3-2-otros",
         epigraph_code="I.3.2",
-        title="Otras cuestiones sobre las funciones del Gobierno",
+        title="Preguntas sueltas sobre las funciones del Gobierno",
         resumen=(
-            "Las preguntas del epígrafe cuyo enunciado no nombra la materia: se estudian junto a "
-            "las"
-            "funciones del Gobierno, que es el epígrafe del que salen."
+            "Las preguntas del epígrafe cuyo enunciado no nombra la materia: se estudian junto a"
+            " las funciones del Gobierno, que es el epígrafe del que salen."
         ),
     ),
     Materia(
         key="i-3-3-otros",
         epigraph_code="I.3.3",
-        title="Otras cuestiones sobre las relaciones entre el Gobierno y las Cortes",
+        title="Sin materia propia en las relaciones entre el Gobierno y las Cortes",
         resumen=(
-            "Las preguntas del epígrafe cuyo enunciado no nombra la institución: se estudian junto "
-            "a"
-            "las relaciones entre el Gobierno y las Cortes Generales, que es el epígrafe del que "
-            "salen."
+            "Las preguntas del epígrafe cuyo enunciado no nombra la institución: se estudian junto"
+            " a las relaciones entre el Gobierno y las Cortes Generales, que es el epígrafe del "
+            "que salen."
         ),
     ),
 )
