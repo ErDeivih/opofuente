@@ -219,6 +219,23 @@ for (const { ancho, alto, etiqueta } of ANCHOS) {
     const tabla = await retratar(page, '/admin/apuntes', '/admin/apuntes', ancho, alto, etiqueta);
     await expect(page.getByRole('heading', { level: 1, name: 'Apuntes' })).toBeVisible();
     await expect(page.getByRole('heading', { name: /Temas con apuntes/ })).toBeVisible();
+    // Con los datos del propietario la tabla trae las dos cosas que pide el entregable: **temas
+    // publicados** y **borradores**, y el borrador con su motivo. Se comprueba aquí (y no solo
+    // mirando el PNG) para que la captura diga lo que tiene que decir; con la base vacía de la suite
+    // las dos marcas no están y esta prueba se salta esas dos comprobaciones, no las finge.
+    const publicados = page.getByText('Publicado', { exact: true });
+    if ((await publicados.count()) > 0) {
+      await expect(publicados.first()).toBeVisible();
+      // El motivo **del borrador** (no el del primer tema de la tabla, que puede estar publicado y no
+      // llevar cifra de cobertura): su primera razón es la del listón, con su porcentaje.
+      const filaBorrador = page
+        .getByRole('listitem')
+        .filter({ hasText: 'En borrador' })
+        .first();
+      await expect(filaBorrador).toContainText('En borrador');
+      await expect(filaBorrador.locator('.apuntes-revision__motivos')).toContainText(/%/);
+      await expect(filaBorrador.locator('.apuntes-revision__cifras')).toBeVisible();
+    }
 
     const ficha = await retratar(
       page,
@@ -228,7 +245,15 @@ for (const { ancho, alto, etiqueta } of ANCHOS) {
       alto,
       etiqueta,
     );
-    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: /I\.7/ })).toBeVisible();
+    // La ficha del borrador: su motivo («Por qué está así») y su texto, apartado a apartado.
+    await expect(page.getByRole('heading', { name: 'Por qué está así' })).toBeVisible();
+    const motivos = page.locator('.apuntes-revision__motivos');
+    await expect(motivos).toContainText(/%/);
+    if ((await page.locator('.apartado__cuerpo').count()) > 0) {
+      await expect(page.locator('.apartado__cuerpo').first()).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Los peores primero' })).toBeVisible();
+    }
 
     expect(tabla, `axe en la tabla de apuntes: ${tabla.join(', ')}`).toEqual([]);
     expect(ficha, `axe en la ficha del borrador: ${ficha.join(', ')}`).toEqual([]);

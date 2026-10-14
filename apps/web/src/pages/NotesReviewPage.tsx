@@ -174,7 +174,7 @@ function Fila({ tema }: { tema: NotesReviewTopic }) {
         </div>
         {coberturaTodas !== null && (
           <div>
-            <dt>Sobre todas las claves</dt>
+            <dt>Sobre todas las preguntas</dt>
             <dd>{coberturaTodas}</dd>
           </div>
         )}

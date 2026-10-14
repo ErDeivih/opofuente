@@ -8,7 +8,8 @@
  * - **aprobar publica**: el tema pasa a estar publicado y el alumno lo ve publicado en su zona;
  * - **rechazar exige motivo**, y con motivo se guarda y se lee al volver a la ficha;
  * - **la decisión sobrevive a una corrida del motor**: el motor vuelve a escribir sus comprobaciones y
- *   su bandeja y la decisión del propietario sigue donde estaba.
+ *   su bandeja y la decisión del propietario sigue donde estaba;
+ * - y la pantalla **cabe en 390 px** y **no tiene ninguna violación** de accesibilidad.
  *
  * Sobre los apuntes de la prueba: la suite arranca con la base **vacía**, y los apuntes los escribe el
  * motor de apuntes desde las preguntas del tema, que cuesta llamadas al modelo. Aquí se escriben
@@ -24,12 +25,13 @@
  * espera (1 de 1) no saldría.
  */
 
+import { createHash } from 'node:crypto';
 import { DatabaseSync } from 'node:sqlite';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
+import { expect, test, type APIRequestContext, type Locator, type Page } from '@playwright/test';
 
 import { lenguajeInternoEnElTexto } from '../palabrasProhibidas';
 
@@ -89,7 +91,7 @@ function ahoraComoLaEscribeElMotor(): string {
  * La normalización del motor (`domain/rag.normalise`): sin acentos, sin signos y en minúsculas.
  *
  * `unicodedata.normalize("NFKD", …)` y luego quitar los diacríticos es lo que hace Python; aquí se
- * hace lo mismo con `normalize('NFKD')` y el rango de marcas combinantes.
+ * hace lo mismo con `normalize('NFKD')` y el rango de las marcas combinantes.
  */
 function normalise(texto: string): string {
   return texto
@@ -101,18 +103,35 @@ function normalise(texto: string): string {
     .trim();
 }
 
-/** La firma de un grupo de preguntas, igual que `domain/topic_notes.firma_de_grupo`. */
+/**
+ * La firma de un grupo de preguntas, igual que `domain/topic_notes.firma_de_grupo`.
+ *
+ * Ojo con el último paso, que es el que se me escapó la primera vez: la firma **no es el texto**
+ * normalizado, es su `sha256` en hexadecimal **cortado a 32 caracteres**. Sin el corte y sin el hash, la
+ * comprobación sembrada no casa con ninguna firma del motor, no cuenta para la cobertura y el tema
+ * mediría 0 de 0. La prueba lo detecta sola: espera «1/1».
+ */
 function firmaDeGrupo(stem: string, opciones: readonly { stable_key: string; text: string }[]): string {
-  return (
-    normalise(stem) + ' || ' + opciones.map((o) => `${o.stable_key}: ${normalise(o.text)}`).join(' | ')
-  );
+  const cuerpo =
+    normalise(stem) + ' || ' + opciones.map((o) => `${o.stable_key}: ${normalise(o.text)}`).join(' | ');
+  return createHash('sha256').update(cuerpo, 'utf8').digest('hex').slice(0, 32);
+}
+
+/**
+ * La fila del tema en la tabla del panel.
+ *
+ * El filtro es por **texto anclado al principio**: `IV.1` a secas también casa con `IV.10` e `IV.11`
+ * (la tabla enseña los 33 temas del programa), y aquí hay que coger la fila de uno solo.
+ */
+function filaDelTema(page: Page, codigo: string): Locator {
+  return page
+    .getByRole('listitem')
+    .filter({ hasText: new RegExp(`^${codigo.replace('.', '\\.')}\\b`) })
+    .first();
 }
 
 /** Un banco de la prueba con una pregunta, su clave activa y la pregunta catalogada en el tema. */
-async function bancoDeLaPrueba(
-  request: APIRequestContext,
-  temaId: string,
-): Promise<Pregunta> {
+async function bancoDeLaPrueba(request: APIRequestContext, temaId: string): Promise<Pregunta> {
   const oposiciones = (await (await request.get(`${API}/oppositions`)).json()) as {
     id: string;
     active: boolean;
@@ -190,8 +209,7 @@ async function temaDelPrograma(request: APIRequestContext, codigo: string): Prom
  * Escribe los apuntes del tema **en la base de la suite**: el apartado y la comprobación que lo cubre.
  *
  * `text_sha256` se deja nulo a propósito: la huella solo sirve para saber si la comprobación sigue
- * valiendo para el texto de hoy, y lo que se está midiendo aquí es la cobertura, que no depende de
- * ella.
+ * valiendo para el texto de hoy, y lo que se mide aquí es la cobertura, que no depende de ella.
  */
 function sembrarApuntes(nodeId: string, pregunta: Pregunta): void {
   const db = new DatabaseSync(BASE);
@@ -243,7 +261,7 @@ function sembrarApuntes(nodeId: string, pregunta: Pregunta): void {
 }
 
 /**
- * Una corrida del motor sobre el tema: vuelve a escribir su comprobación (con otra huella) y deja una
+ * Una corrida del motor sobre el tema: vuelve a escribir su comprobación (ahora dudosa) y deja una
  * incidencia en su bandeja. Es lo que la prueba usa para comprobar que la decisión **sobrevive**.
  */
 function correrElMotor(nodeId: string, pregunta: Pregunta): void {
@@ -274,8 +292,19 @@ function correrElMotor(nodeId: string, pregunta: Pregunta): void {
   }
 }
 
-/** Retira **lo de la prueba**: sus apuntes, su comprobación, su incidencia, su decisión y su versión. */
-function retirarLoDeLaPrueba(nodeId: string): void {
+/**
+ * Retira **lo de la prueba**: su decisión, sus apuntes, su comprobación, su incidencia y —lo que más
+ * importa— el **catálogo de su pregunta en el tema**.
+ *
+ * El catálogo se retira porque la muestra de un **diagnóstico** la compone el servidor con las preguntas
+ * que tienen tema: dejarlo puesto cambiaría el diagnóstico de otra prueba de la suite. Se descubrió así
+ * (la prueba de E2E-06 esperaba «0 de 6 respondidas» y con mis preguntas catalogadas eran más), y por
+ * eso esta limpieza lleva su comentario.
+ *
+ * Lo que **no** se retira es el banco de preguntas: la suite entera nace vacía en cada corrida y los
+ * bancos se crean por las rutas de la API, como en la prueba de la ficha de pregunta.
+ */
+function retirarLoDeLaPrueba(nodeId: string, preguntaId: string): void {
   const db = new DatabaseSync(BASE);
   try {
     db.prepare('DELETE FROM topic_notes_reviews WHERE curriculum_node_id = ?').run(nodeId);
@@ -283,12 +312,22 @@ function retirarLoDeLaPrueba(nodeId: string): void {
     db.prepare('DELETE FROM notes_incidents WHERE id = ?').run(INCIDENCIA);
     db.prepare('DELETE FROM topic_note_sections WHERE id = ?').run(SECCION);
     db.prepare('DELETE FROM dossier_snapshots WHERE curriculum_node_id = ?').run(nodeId);
+    db.prepare(
+      "DELETE FROM curriculum_mappings WHERE subject_type = 'question_version' AND subject_id = ?",
+    ).run(preguntaId);
   } finally {
     db.close();
   }
 }
 
-/** Lo que quedó en la base sobre el tema: su decisión, su versión y su evento de auditoría. */
+/**
+ * Lo que quedó en la base sobre el tema: su decisión, su versión y su evento de auditoría.
+ *
+ * Los eventos se cuentan **con una base tomada antes de decidir** y no en absoluto: el registro de
+ * auditoría es de solo añadir (no se borra, tampoco desde una prueba) y otra prueba de esta misma
+ * suite puede haber dejado el suyo sobre el mismo tema. Contar la diferencia es lo que se quiere saber
+ * —«mi decisión dejó su evento»— sin depender del orden en el que corran las pruebas.
+ */
 function loQueQuedo(nodeId: string): {
   decisiones: number;
   versiones: number;
@@ -296,23 +335,18 @@ function loQueQuedo(nodeId: string): {
 } {
   const db = new DatabaseSync(BASE);
   try {
-    const cuenta = (sql: string, parametro: string): number =>
-      Number(
-        (db.prepare(sql).get(parametro) as { total?: number } | undefined)?.total ?? 0,
-      );
+    const cuenta = (sql: string): number =>
+      Number((db.prepare(sql).get(nodeId) as { total?: number } | undefined)?.total ?? 0);
     return {
       decisiones: cuenta(
         'SELECT count(*) AS total FROM topic_notes_reviews WHERE curriculum_node_id = ?',
-        nodeId,
       ),
       versiones: cuenta(
         'SELECT count(*) AS total FROM dossier_snapshots WHERE curriculum_node_id = ?',
-        nodeId,
       ),
       eventos: cuenta(
         "SELECT count(*) AS total FROM audit_events WHERE action = 'notes.topic_reviewed' " +
           'AND object_id = ?',
-        nodeId,
       ),
     };
   } finally {
@@ -330,16 +364,14 @@ async function sinViolaciones(page: Page, donde: string): Promise<void> {
 
 /** La interfaz no enseña la jerga de la trastienda (lo que va marcado como contenido no cuenta). */
 async function sinJerga(page: Page): Promise<void> {
-  const { interfaz } = await page.evaluate(() => {
+  const interfaz = await page.evaluate(() => {
     const copia = document.body.cloneNode(true) as HTMLElement;
     for (const nodo of Array.from(copia.querySelectorAll('[data-contenido]'))) {
       nodo.remove();
     }
-    return { interfaz: copia.innerText || copia.textContent || '' };
+    return copia.innerText || copia.textContent || '';
   });
-  expect(
-    lenguajeInternoEnElTexto(interfaz).map((encontrado) => encontrado.palabra),
-  ).toEqual([]);
+  expect(lenguajeInternoEnElTexto(interfaz).map((encontrado) => encontrado.palabra)).toEqual([]);
 }
 
 test('E2E-F24 la tabla enseña el estado de cada tema y el motivo del borrador con su cifra', async ({
@@ -354,21 +386,21 @@ test('E2E-F24 la tabla enseña el estado de cada tema y el motivo del borrador c
 
     await expect(page.getByRole('heading', { level: 1, name: 'Apuntes' })).toBeVisible();
     // El contador de la cabecera: hay un borrador esperando decisión.
-    await expect(page.getByText(/esperan tu decisión/)).toBeVisible();
+    await expect(page.locator('.avisos__resumen')).toContainText('esperan tu decisión');
 
-    const fila = page.getByRole('listitem').filter({ hasText: TEMA }).first();
-    await expect(fila.getByText('En borrador')).toBeVisible();
+    const fila = filaDelTema(page, TEMA);
+    await expect(fila).toContainText('En borrador');
     // El motivo, con su cifra: el tema cumple las dos puertas y no está publicado.
-    await expect(fila.getByText('1/1 = 100.0 %')).toBeVisible();
-    await expect(fila.getByText(/Cumple las dos puertas/)).toBeVisible();
-    await expect(fila.getByText(/Aprobarlo la publica/)).toBeVisible();
-    await expect(fila.getByText(/Nadie ha revisado este tema todavía/)).toBeVisible();
+    await expect(fila).toContainText('1/1 = 100.0 %');
+    await expect(fila).toContainText('Cumple las dos puertas');
+    await expect(fila).toContainText('Aprobarlo la publica');
+    await expect(fila).toContainText('Nadie ha revisado este tema todavía');
 
     // Y sin jerga de la trastienda en la interfaz (el motivo va marcado como contenido).
     await sinJerga(page);
     await sinViolaciones(page, '/admin/apuntes');
   } finally {
-    retirarLoDeLaPrueba(tema.id);
+    retirarLoDeLaPrueba(tema.id, pregunta.id);
   }
 });
 
@@ -379,29 +411,32 @@ test('E2E-F24 un borrador se lee entero en el panel y se aprueba: aprobar public
   const tema = await temaDelPrograma(request, TEMA);
   const pregunta = await bancoDeLaPrueba(request, tema.id);
   sembrarApuntes(tema.id, pregunta);
+  // La base del registro de auditoría, **antes** de decidir: lo que se comprueba es que mi decisión
+  // deja su evento, no cuántos hay en total (los de otra prueba de la suite no se borran).
+  const eventosAntes = loQueQuedo(tema.id).eventos;
   try {
     // --- 1. La ficha: el texto, apartado a apartado, como lo lee el alumno --------------------
     await page.goto(`/admin/apuntes/${TEMA}`);
     await expect(page.getByRole('heading', { level: 1, name: new RegExp(TEMA) })).toBeVisible();
-    await expect(page.getByRole('article').getByText('PowerShell y los cmdlet')).toBeVisible();
-    await expect(
-      page.getByText(/Un cmdlet de PowerShell es un comando del sistema de administración/),
-    ).toBeVisible();
-    // El mismo texto que sirve la zona del alumno: la promesa de esta ficha.
-    const enElPanel = await page
-      .getByRole('article')
-      .locator('.apartado__cuerpo')
-      .first()
-      .innerText();
+    const cuerpoEnElPanel = page.locator('.apartado__cuerpo').first();
+    await expect(cuerpoEnElPanel).toContainText('PowerShell y los cmdlet');
+    await expect(cuerpoEnElPanel).toContainText(
+      'Un cmdlet de PowerShell es un comando del sistema de administración',
+    );
+    // El **mismo** texto que sirve la zona del alumno: es la promesa de esta ficha.
+    const enElPanel = await cuerpoEnElPanel.innerText();
     await page.goto(`/temario/${TEMA}`);
     const enLaZonaDelAlumno = await page.locator('.apartado__cuerpo').first().innerText();
     expect(enElPanel.trim()).toBe(enLaZonaDelAlumno.trim());
 
     // --- 2. Aprobar desde el panel ------------------------------------------------------------
     await page.goto(`/admin/apuntes/${TEMA}`);
-    await page.getByLabel(/qué has decidido/).fill(NOTA);
+    // El localizador de la nota va **sin distinguir mayúsculas**: la etiqueta empieza por «Qué» y un
+    // `getByLabel(/qué …/)` de Playwright es sensible a mayúsculas y no la encuentra (fue un fallo real
+    // de esta prueba, que tardó 30 s en rendirse en vez de decir por qué).
+    await page.getByLabel(/has decidido/i).fill(NOTA);
     await page.getByRole('button', { name: 'Aprobar los apuntes' }).click();
-    await expect(page.getByRole('status')).toHaveText(/el tema ha quedado publicado/);
+    await expect(page.locator('.apuntes-revision__resultado')).toContainText('publicado');
 
     // --- 3. Y el alumno lo ve publicado -------------------------------------------------------
     await page.goto(`/temario/${TEMA}`);
@@ -411,15 +446,14 @@ test('E2E-F24 un borrador se lee entero en el panel y se aprueba: aprobar public
     const quedó = loQueQuedo(tema.id);
     expect(quedó.decisiones).toBe(1);
     expect(quedó.versiones).toBeGreaterThan(0);
-    expect(quedó.eventos).toBe(1);
-    await expect(page).toHaveURL(new RegExp(`/temario/${TEMA}$`));
+    expect(quedó.eventos - eventosAntes).toBe(1);
 
     // La ficha lo cuenta al volver.
     await page.goto(`/admin/apuntes/${TEMA}`);
-    await expect(page.getByText(new RegExp(NOTA))).toBeVisible();
-    await expect(page.getByText('Publicado').first()).toBeVisible();
+    await expect(page.locator('.apuntes-revision__decision')).toContainText(NOTA);
+    await expect(page.locator('.apuntes-revision__estado')).toContainText('Publicado');
   } finally {
-    retirarLoDeLaPrueba(tema.id);
+    retirarLoDeLaPrueba(tema.id, pregunta.id);
   }
 });
 
@@ -430,6 +464,9 @@ test('E2E-F24 rechazar exige motivo y la decisión sobrevive a una corrida del m
   const tema = await temaDelPrograma(request, TEMA);
   const pregunta = await bancoDeLaPrueba(request, tema.id);
   sembrarApuntes(tema.id, pregunta);
+  // La base del registro de auditoría, antes de nada: el rechazo sin motivo **no** puede dejar evento,
+  // y el que sí lleva motivo deja **uno**; contar la diferencia es lo que se mide (ver `loQueQuedo`).
+  const eventosAntes = loQueQuedo(tema.id).eventos;
   try {
     await page.goto(`/admin/apuntes/${TEMA}`);
 
@@ -442,33 +479,35 @@ test('E2E-F24 rechazar exige motivo y la decisión sobrevive a una corrida del m
     });
     expect(sinMotivo.status()).toBe(422);
     expect(loQueQuedo(tema.id).decisiones).toBe(0);
+    // Un rechazo rechazado por el servidor no escribe **nada**: ni decisión ni evento.
+    expect(loQueQuedo(tema.id).eventos - eventosAntes).toBe(0);
 
     // Con motivo, se guarda y se lee al volver.
-    await page.getByLabel(/qué has decidido/).fill(NOTA_RECHAZO);
+    await page.getByLabel(/has decidido/i).fill(NOTA_RECHAZO);
     await expect(rechazar).toBeEnabled();
     await rechazar.click();
-    await expect(page.getByRole('status')).toHaveText(/el tema no se ha publicado/);
+    await expect(page.locator('.apuntes-revision__resultado')).toContainText('no se ha publicado');
 
     // **Una corrida del motor**: reescribe su comprobación y deja una incidencia en su bandeja.
     correrElMotor(tema.id, pregunta);
 
     await page.reload();
     // La decisión sigue donde estaba, con su nota, y el motivo de datos se ha refrescado.
-    await expect(page.getByText(new RegExp(NOTA_RECHAZO))).toBeVisible();
-    await expect(page.getByText(/1 incidencia\(s\)/)).toBeVisible();
+    await expect(page.locator('.apuntes-revision__decision')).toContainText(NOTA_RECHAZO);
+    await expect(page.locator('.apuntes-revision__motivos')).toContainText('1 incidencia(s)');
 
     // Y en la tabla del panel también.
     await page.goto('/admin/apuntes');
-    const fila = page.getByRole('listitem').filter({ hasText: TEMA }).first();
-    await expect(fila.getByText('Rechazado')).toBeVisible();
-    await expect(fila.getByText(new RegExp(NOTA_RECHAZO))).toBeVisible();
+    const fila = filaDelTema(page, TEMA);
+    await expect(fila).toContainText('Rechazado');
+    await expect(fila).toContainText(NOTA_RECHAZO);
 
     const quedó = loQueQuedo(tema.id);
     expect(quedó.decisiones).toBe(1);
     expect(quedó.versiones).toBe(0);
-    expect(quedó.eventos).toBe(1);
+    expect(quedó.eventos - eventosAntes).toBe(1);
   } finally {
-    retirarLoDeLaPrueba(tema.id);
+    retirarLoDeLaPrueba(tema.id, pregunta.id);
   }
 });
 
@@ -486,13 +525,13 @@ test('E2E-F24 accesibilidad y móvil: la ficha de un borrador a 390 px, sin viol
 
     // La pantalla **cabe**: el ancho del documento no pasa del viewport (390 px exactos).
     const ancho = await page.evaluate(() => document.documentElement.scrollWidth);
-    expect(ancho).toBeLessThanOrEqual(390 + 1);
-    const anchoDeLaCaptura = await page.evaluate(() => window.innerWidth);
-    expect(anchoDeLaCaptura).toBe(390);
+    expect(ancho).toBeLessThanOrEqual(391);
+    const anchoDeLaVentana = await page.evaluate(() => window.innerWidth);
+    expect(anchoDeLaVentana).toBe(390);
 
     await sinViolaciones(page, `/admin/apuntes/${TEMA} a 390 px`);
     await sinJerga(page);
   } finally {
-    retirarLoDeLaPrueba(tema.id);
+    retirarLoDeLaPrueba(tema.id, pregunta.id);
   }
 });

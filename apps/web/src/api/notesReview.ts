@@ -42,8 +42,8 @@ export const NOTES_STATE_LABELS: Record<NotesStateName, string> = {
 };
 
 export const NOTES_STATE_HELP: Record<NotesStateName, string> = {
-  published: 'Su versión se archivó al pasar las dos puertas.',
-  draft: 'Tiene texto escrito y su versión no está archivada: se lee, pero no está publicado.',
+  published: 'Ya pasó las dos puertas y su texto quedó archivado.',
+  draft: 'Tiene apartados escritos y su texto no está archivado: se lee, pero no está publicado.',
   none: 'Todavía no hay apartados escritos de este tema.',
 };
 

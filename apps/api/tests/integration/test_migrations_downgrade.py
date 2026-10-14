@@ -31,6 +31,13 @@ from opofuente.infrastructure.migrations import alembic_config, run_migrations, 
 #: desaparecer al hacerlo. El orden es el de la cadena, de la más nueva a la más antigua.
 ESCALONES: tuple[tuple[str, str, tuple[str, ...]], ...] = (
     (
+        # `0038` crea la tabla de la revisión de los apuntes del propietario (F24) y su vuelta atrás
+        # se la lleva: al bajar de este escalón la tabla **desaparece**, y es lo que se mide aquí.
+        "0038_revision_de_apuntes",
+        "0037_origin_scope",
+        ("topic_notes_reviews",),
+    ),
+    (
         # `0037` añade una columna a `question_sets` con su `CHECK` y su índice, y su vuelta atrás
         # los quita: ninguna tabla desaparece al bajar, por eso su escalón va vacío. Que la columna
         # se va de verdad (con su `CHECK` y su índice) lo comprueba `test_migrations_0037.py`, donde

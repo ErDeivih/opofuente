@@ -328,9 +328,12 @@ function Apartado({ apartado }: { apartado: NotesReviewSection }) {
         <span className="apartado__numero">{apartado.position}.</span>{' '}
         <span data-contenido>{apartado.title}</span>
       </h3>
-      <div className="apartado__cuerpo">
+      <div className="apartado__cuerpo" data-contenido>
         {/* El mismo lector que la pantalla del alumno: la promesa de esta ficha es que aquí se lee
-            como se leerá allí, y con un segundo lector eso dejaría de ser verdad. */}
+            como se leerá allí, y con un segundo lector eso dejaría de ser verdad. Y va marcado como
+            **contenido**, igual que allí: es el texto del tema, no una frase de la interfaz, y el
+            detector de jerga no tiene nada que buscar dentro (una «versión» de un programa en un
+            apartado de informática es material, no cocina interna). */}
         <NotesBody markdown={apartado.body_markdown} />
       </div>
       <div className="apartado__lateral">
