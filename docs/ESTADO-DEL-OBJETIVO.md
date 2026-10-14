@@ -2967,3 +2967,148 @@ informe marca en las pantallas del panel **ya salía el 6-oct-2026** en el infor
 `opofuente-main` (en las dos filas de cada pantalla del panel): viene del **selector de oposición** de la
 cáscara, que lista las tres oposiciones de la base real, no de la pantalla de apuntes —los dos payloads
 de la revisión no contienen esa palabra, comprobado.
+
+## F27 · El motor comprueba que el sitio donde acaba un hecho o una comprobación sea suyo (14-oct-2026)
+
+**Rama `f27-medidor-anclas`** (worktree `F:\temp-opofuente\opofuente-medidor`), base **`main = 4290817`**.
+Cierra **F25c** y **F25b**: los tres hallazgos eran el mismo agujero y se arreglan en **un solo bloque de
+motor**, con el caso del CPD de I.3 como prueba de regresión. Las decisiones están en `DECISIONES`
+(**F27**). Las 18 puertas y su registro, al final de esta sección.
+
+### 1. Los tres arreglos, con su prueba que falla antes
+
+| # | Arreglo | Qué hacía antes | Qué hace ahora | Prueba (en rojo con el motor de antes) |
+|---|---|---|---|---|
+| **1** | **`repartir_hechos` no sienta un hecho que no nombra ninguna materia del tema** (`F25b`) | Un hecho que no reconocía ninguna materia se caía al apartado de la **pregunta de la que salía** «para no perderlo»: es la puerta por la que el material de otro tema se sentó dentro de un tema | El hecho va a `sin_materia` con su texto (**no se pierde**), se cuenta (`hechos_de_su_pregunta`) y su pregunta va a la bandeja con su motivo, que ahora **lleva el texto de los hechos sin apartado**. El **cajón** de un epígrafe deja de votar y de recibir hechos: no reconoce nada, recoge | `test_un_hecho_sin_materia_no_se_sienta_en_el_apartado_de_su_pregunta` (**rojo**: `assert False` en «no se sienta en ningún apartado»), `test_un_hecho_sin_materia_no_se_sienta_en_el_cajon_de_su_epigrafe` (**rojo**: `AttributeError`, el método no existía) |
+| **1-bis** | **El caso del CPD de I.3, como regresión** | El grupo del estándar **ANSI/TIA-942-B** no trae epígrafe y ningún patrón de I.3 lo sitúa, pero sus dos hechos llevaban el epígrafe **I.3.1 que les puso el modelo**, y su voto al cajón `i-3-1-otros` sentó al grupo y contó sus **5 respuestas como cubiertas** (medido en `F25b`: 1 apartado de 15, 2 hechos de 300, 730 caracteres y 5 preguntas de 181) | El grupo no cabe en ninguna materia del tema (va a la bandeja con su motivo) y sus hechos no se sientan en ningún apartado | `test_el_material_del_cpd_de_i_3_no_se_sienta_en_ningun_apartado_y_va_a_la_bandeja` (**rojo**: `assert [] == ['3bf0acd5…']`, el grupo **sí** estaba situado) |
+| **2** | **La puerta que falta: cobertura por apartado propio** (lo dejó medido el bloque de I.3) | La puerta decía **cuántas** respuestas estaban contestadas y no **por quién**: una pregunta sin apartado propio se comprobaba contra el **primer apartado de su epígrafe** (el respaldo `por_defecto`) y esa comprobación contaba como cobertura | El ancla es `IndiceDelTema.apartados_propios_de`: los apartados de sus hechos y, si no tiene ninguno, el de la materia en la que el índice la sitúa. Un ancla en un apartado ajeno **no cuenta como cobertura** | `test_una_comprobacion_anclada_en_un_apartado_ajeno_no_cuenta_como_cobertura` (**rojo**: `preguntas_cubiertas_con_clave == 3`, contaba la pregunta sin apartado como cubierta) |
+| **3** | **El doble conteo, una sola vez** (lo encontró el panel) | La misma pregunta entraba **dos** veces: como hueco (`grupos_sin_materia`) y con su comprobación guardada | Cada pregunta se cuenta **una sola vez**, y ese «una vez» es **no cubierta** (su comprobación está anclada a un apartado que no es el suyo). Los **dos** recuentos —el de la corrida y el del comando— se unifican en `_contar_cobertura` | `test_una_pregunta_que_el_indice_no_situa_cuenta_una_sola_vez` (**rojo**: `assert 4 == 3`, tres preguntas contadas como cuatro) |
+
+**El rojo, tal cual salió** (5 fallos, con el motor de `HEAD` y solo las pruebas nuevas puestas):
+`F:\temp-opofuente\f27-scratch\rojo-antes.txt` (10,19 s). **Después, verde**: 75 pruebas de las dos
+suites tocadas (41 unitarias de `test_topic_index.py` y 34 de integración de `test_topic_notes.py`).
+
+### 2. Antes y después, tema a tema, medido sobre la base real
+
+Medido con el mismo camino que `apuntes --medir` (`servicio.medir`), **sin llamar a ningún modelo** y
+**sin escribir una fila**: `F:\temp-opofuente\f27-scratch\medir_cobertura.py`. Las dos salidas están
+guardadas (`cobertura-antes.txt` y `cobertura-despues.txt`). «Antes» es el motor de `4290817`; «después»
+las tres reglas nuevas. Los 25 publicados y los tres borradores (I.4, que estaba en borrador cuando se
+escribieron estas notas, **se publicó el 14-oct** y va con los publicados):
+
+| tema | antes | después | diferencia | veredicto | estado |
+|---|---|---|---|---|---|
+| I.1 | 1958/1985 = 98,6 % | 1958/1985 = **98,6 %** | 0,0 | PASA | publicado |
+| I.2 | 628/656 = 95,7 % | 626/656 = **95,4 %** | −0,3 | PASA | publicado |
+| **I.3** | 168/181 = 92,8 % | 152/181 = **84,0 %** | **−8,8** | **NO PASA** | **publicado** |
+| **I.4** | 489/542 = 90,2 % | 483/540 = **89,4 %** | **−0,8** | **NO PASA** | **publicado** |
+| I.5 | 339/371 = 91,4 % | 335/367 = **91,3 %** | −0,1 | PASA | publicado |
+| I.6 | 164/230 = 71,3 % | 164/230 = **71,3 %** | 0,0 | NO PASA | borrador |
+| I.7 | 287/491 = 58,5 % | 287/488 = **58,8 %** | +0,3 | NO PASA | borrador |
+| I.8 | 389/472 = 82,4 % | 389/469 = **82,9 %** | +0,5 | NO PASA | borrador |
+| II.1 | 200/203 = 98,5 % | 200/203 = **98,5 %** | 0,0 | PASA | publicado |
+| II.2 | 162/164 = 98,8 % | 162/164 = **98,8 %** | 0,0 | PASA | publicado |
+| II.3 | 179/188 = 95,2 % | 173/182 = **95,1 %** | −0,1 | PASA | publicado |
+| II.4 | 419/431 = 97,2 % | 419/431 = **97,2 %** | 0,0 | PASA | publicado |
+| II.5 | 150/154 = 97,4 % | 146/150 = **97,3 %** | −0,1 | PASA | publicado |
+| III.1 | 278/281 = 98,9 % | 278/281 = **98,9 %** | 0,0 | PASA | publicado |
+| III.3 | 190/204 = 93,1 % | 177/191 = **92,7 %** | −0,4 | PASA | publicado |
+| III.5 | 251/253 = 99,2 % | 250/252 = **99,2 %** | 0,0 | PASA | publicado |
+| III.7 | 213/226 = 94,2 % | 212/225 = **94,2 %** | 0,0 | PASA | publicado |
+| III.8 | 152/155 = 98,1 % | 152/155 = **98,1 %** | 0,0 | PASA | publicado |
+| III.9 | 322/335 = 96,1 % | 314/327 = **96,0 %** | −0,1 | PASA | publicado |
+| IV.1 | 218/222 = 98,2 % | 218/222 = **98,2 %** | 0,0 | PASA | publicado |
+| IV.10 | 171/175 = 97,7 % | 170/174 = **97,7 %** | 0,0 | PASA | publicado |
+| IV.2 | 736/736 = 100,0 % | 736/736 = **100,0 %** | 0,0 | PASA | publicado |
+| IV.4 | 140/144 = 97,2 % | 136/140 = **97,1 %** | −0,1 | PASA | publicado |
+| IV.5 | 361/371 = 97,3 % | 361/371 = **97,3 %** | 0,0 | PASA | publicado |
+| IV.6 | 282/290 = 97,2 % | 279/287 = **97,2 %** | 0,0 | PASA | publicado |
+| IV.7 | 417/426 = 97,9 % | 417/426 = **97,9 %** | 0,0 | PASA | publicado |
+| IV.8 | 220/221 = 99,5 % | 220/221 = **99,5 %** | 0,0 | PASA | publicado |
+| IV.9 | 204/221 = 92,3 % | 195/212 = **92,0 %** | −0,3 | PASA | publicado |
+
+**En total se caen 78 preguntas cubiertas** de las **9.687** que contaba el motor de antes (el **0,8 %**):
+son respuestas que se apuntaban a un tema con una comprobación anclada en un apartado que **no era el
+suyo**, o con un hecho sentado en el apartado de su pregunta. **Ningún veredicto pasa de NO PASA a PASA
+por este arreglo** —no era su trabajo—, y **dos publicados sí cambian de veredicto**:
+
+### 3. Los dos temas publicados que dejan de llegar al 90 %, con nombre y con cifra
+
+| tema | publicado con | mide hoy con la puerta nueva | qué se le ha descontado |
+|---|---|---|---|
+| **I.3** | 168/181 = **92,8 %** | **152/181 = 84,0 %** | **16 preguntas**: las 5 del estándar **ANSI/TIA-942-B** del CPD (de IV.5.7) y las 11 de otros **ocho grupos ajenos** que estaban sentados en sus cajones: el **CSV** del RFC 4180 (de II.3), el **TREBEP** y los **funcionarios interinos** (de I.4), las **infracciones leves**, el **ANSI SQL**, **Jakarta EE** (de III.5) y **Docker** (de IV.3) |
+| **I.4** | 489/542 = **90,2 %** | **483/540 = 89,4 %** | **6 preguntas**: el **kernel de Android** (de IV.1) y la **Ética Pública** —que el índice no sitúa y se comprobaba contra el primer apartado de su epígrafe—, más el hueco duplicado de las tres que quedan |
+
+**Y una corrección a un informe anterior, dicha**: el §7 del `INFORME-I.3.md` descontaba **solo el CPD**
+y daba **163/181 = 90,1 %** como «cifra honesta». **Se quedó corto**: el lavado de I.3 son **16** preguntas
+y no 5, porque los otros ocho grupos ajenos también entraron por la misma puerta (los cajones
+`i-3-1-otros`, `i-3-2-otros` y `i-3-3-otros`) y el informe no los miró uno a uno. La cifra de hoy,
+**152/181 = 84,0 %**, es la del motor con la puerta nueva; el texto publicado **no se ha tocado** y el
+material ajeno sigue escrito donde estaba. **La decisión es del propietario** (`PARA-EL-PROPIETARIO`).
+
+**Lo que sí queda medido y comprobado**: las nueve preguntas que pierden la cobertura en I.3 son
+**exactamente las que su propio catálogo declara de otro tema** (la lista está en la cabecera de
+`catalogo_i_3.py`), y ninguna de ellas es una pregunta de I.3 mal medida. La sonda que lo dice, grupo a
+grupo y con la materia que **nombra** cada hecho, es `F:\temp-opofuente\f27-scratch\sonda_perdidas.py`
+(salida en `perdidas-I.3.txt`).
+
+### 4. El doble conteo, medido por separado
+
+Con el motor de antes y la misma base (`medir_doble_conteo_aislado.py`, salida `doble-conteo-aislado.txt`):
+**16 de los 28 temas con apuntes** tenían preguntas contadas dos veces —**91 preguntas**—, y la cifra
+cambiaba entre **+0,3 y +8,1 puntos**. La medición que había documentada (10 de 19 temas, 41 preguntas,
++0,3 a +4,2) era de una base con 19 temas; la base ha crecido.
+
+| tema | grupos contados dos veces | preguntas (utilizables) | cifra de antes | contando una vez | cuánto cambiaba |
+|---|---|---|---|---|---|
+| I.2 | 1 | 2 | 626/656 = 95,7 % | 626/654 | +0,3 |
+| I.3 | 10 | 16 | 152/181 = 84,0 % | 152/165 | +8,1 |
+| I.4 | 3 | 7 | 483/540 = 89,4 % | 483/533 | +1,2 |
+| I.5 | 2 | 4 | 335/367 = 91,4 % | 335/363 | +1,0 |
+| I.7 | 3 | 3 | 287/488 = 58,8 % | 287/485 | +0,4 |
+| I.8 | 4 | 3 | 389/469 = 82,9 % | 389/466 | +0,5 |
+| II.3 | 3 | 6 | 173/182 = 95,1 % | 173/176 | +3,2 |
+| II.5 | 4 | 4 | 146/150 = 97,3 % | 146/146 | +2,7 |
+| III.3 | 5 | 13 | 177/191 = 92,7 % | 177/178 | +6,8 |
+| III.5 | 1 | 1 | 250/252 = 99,2 % | 250/251 | +0,4 |
+| III.7 | 1 | 1 | 212/225 = 94,2 % | 212/224 | +0,4 |
+| III.9 | 7 | 8 | 314/327 = 96,0 % | 314/319 | +2,4 |
+| IV.10 | 1 | 1 | 170/174 = 97,7 % | 170/173 | +0,6 |
+| IV.4 | 4 | 4 | 136/140 = 97,1 % | 136/136 | +2,9 |
+| IV.6 | 4 | 3 | 279/287 = 97,2 % | 279/284 | +1,0 |
+| IV.9 | 11 | 9 | 195/212 = 92,0 % | 195/203 | +4,1 |
+
+*(La columna «cifra de antes» de esta tabla es la que mide el motor **nuevo** con el resto de reglas
+puestas —por eso I.3 dice 84,0 % y no 92,8 %—, y la de «contando una vez» es la aritmética de la opción
+que conservaba el resultado guardado. Con la puerta nueva esa opción **no se sostiene**: sería contar
+como cubierta una respuesta por un apartado ajeno, que es justo lo que el hallazgo 2 prohíbe. Por eso la
+cifra final de un tema con doble conteo **no sube** «lo que subía» en esta tabla.)*
+
+**Dicho en una línea**: el doble conteo **nunca dejaba pasar un tema malo** (la pregunta entraba una vez
+como hueco y otra con su resultado, así que el cociente salía por debajo del verdadero), y ahora la
+cuenta está donde tiene que estar. El arreglo que sí cambia veredictos es el de las anclas, y los dos
+que cambia son I.3 e I.4, los dos **a peor**, porque lo que se les descontaba era lavado.
+
+### 5. Lo que queda fuera, y las consecuencias dichas
+
+- **No se ha escrito ni una fila en la base del propietario.** Toda la medición es de solo lectura
+  (`servicio.medir` sobre `F:\OpoFuente\datos`, con el modelo sustituido por uno que se niega a
+  usarse). Coste de API de este bloque: **0 $**.
+- **El texto publicado no se reescribe**, ni el de I.3 ni el de I.4 ni el de ningún otro: el material
+  ajeno que tenían sentado sigue escrito donde estaba. Lo que cambia es que **ya no cuenta**, y la
+  decisión de qué hacer con él es del propietario.
+- **Los informes por tema no se han tocado** (`docs/apuntes/INFORME-*.md`): el encargo de este bloque
+  solo permite escribir en los tres documentos de seguimiento. La corrección de la cifra de I.3 está,
+  por tanto, **en esta sección y en `PARA-EL-PROPIETARIO`**, no en su informe.
+- **La próxima corrida de I.2, I.3 o I.4 costará más de lo normal y es una decisión del propietario**:
+  son los tres temas con cajones de epígrafe, y con la regla nueva sus cajones se quedan **sin hechos**.
+  La regla que ya existía (`_apartados_que_pierden_hechos`) rehace el texto de los apartados que pierden
+  hechos, y el cajón que se queda sin hechos **sale del plan**. Las preguntas que vivían en el cajón
+  **no pierden su cobertura** —su ancla son los apartados donde están sus hechos de verdad, y eso está
+  comprobado con la sonda `sonda_cajones.py`—, así que una corrida con el reparto nuevo deja el tema en
+  la cifra honesta de esta sección. No se ha corrido nada.
+- **Lo que no se ha hecho, y por qué**: el hallazgo **(a)** que quedó apuntado con este —un grupo con
+  apartado propio y **sin comprobación guardada** no entra en la puerta (ni en el numerador ni en el
+  denominador), así que un tema con apartados y sin comprobaciones mide «0 de 0»— **no se toca**: no es
+  de los tres que este bloque cierra, y cambiarlo mueve el denominador de todos los temas otra vez. Sigue
+  apuntado en `DECISIONES` (14-oct, el párrafo de los dos hallazgos del motor).

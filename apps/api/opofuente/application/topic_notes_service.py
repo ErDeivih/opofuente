@@ -34,7 +34,7 @@ from __future__ import annotations
 import logging
 import re
 import time
-from collections.abc import Callable, Collection, Iterable, Sequence
+from collections.abc import Callable, Collection, Iterable, Mapping, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 from datetime import datetime
@@ -353,51 +353,12 @@ class TopicNotesService:
         cobertura de la que el tema tenía de verdad (I.1: el informe dijo 1.947 de 1.995 y el tema
         quedó en 1.965 de 1.995, un 98,5 %). Una cifra que va a un documento se mide, no se hereda —
         ni siquiera de la propia corrida.
+
+        El recuento en sí vive en `_contar_cobertura`, que es el **único** sitio donde se cuenta: la
+        corrida y el comando tienen que dar la misma cifra, y con dos bucles separados dejaban de
+        darla en cuanto una regla cambiaba en uno solo.
         """
-        informe.coverage = CoverageReport()
-        informe.coverage.groups = len(self._comprobables(nodo, grupos, secciones))
-        informe.coverage.preguntas = informe.questions
-        hechos_por_firma = _hechos_por_firma(hechos)
-        dudosos_de_la_clave = {
-            firma
-            for firma, suyos in hechos_por_firma.items()
-            if any(hecho.doubtful for hecho in suyos)
-        }
-        por_firma = {
-            resultado.group_signature: resultado
-            for resultado in self._repository.checks(nodo.node_id)
-        }
-        # Las que el índice no puede situar cuentan como no cubiertas, igual que en la corrida: si
-        # aquí no se contaran, la medida del comando sería mejor que la del informe.
-        for grupo in _grupos_sin_materia(indice):
-            informe.coverage.add(
-                Coverage.HUECO,
-                None,
-                attempts=1,
-                clave_activa=grupo.key_status.clara,
-                preguntas=len(grupo.questions),
-                clave_utilizable=grupo.signature not in dudosos_de_la_clave,
-                tiene_clave=grupo.key_status is not KeyStatus.NINGUNA,
-            )
-        vigentes = 0
-        for grupo, apartados in self._comprobables(nodo, grupos, secciones):
-            resultado = por_firma.get(grupo.signature)
-            if resultado is None:
-                continue
-            if resultado.text_sha256 == _huella_de(secciones, apartados):
-                vigentes += 1
-            informe.coverage.add(
-                resultado.coverage,
-                resultado.note,
-                attempts=resultado.attempts,
-                clave_activa=resultado.key_status.clara,
-                preguntas=len(grupo.questions),
-                clave_utilizable=grupo.signature not in dudosos_de_la_clave,
-                tiene_clave=resultado.key_status is not KeyStatus.NINGUNA,
-            )
-            if grupo.signature in dudosos_de_la_clave:
-                informe.coverage.incidencias_clave_marcada += 1
-        informe.coverage.comprobaciones_vigentes = vigentes
+        self._contar_cobertura(nodo, grupos, informe, hechos, secciones, indice)
         # Y la bandeja del propietario, contada **desde la base**: es lo que él va a ver, y lo que
         # el
         # informe enseña tiene que ser eso, no lo que la corrida creía haber escrito.
@@ -407,25 +368,155 @@ class TopicNotesService:
                 informe.coverage.por_categoria.get(incidencia.category, 0) + 1
             )
 
+    def _contar_cobertura(
+        self,
+        nodo: NotesNode,
+        grupos: Sequence[QuestionGroup],
+        informe: TopicNotesReport,
+        hechos: Sequence[Hecho],
+        secciones: Sequence[NoteSection],
+        indice: IndiceDelTema | None,
+    ) -> None:
+        """La puerta de cobertura, contada **una vez por pregunta** y **solo con anclas propias**.
+
+        Tres reglas, y las tres son el mismo agujero visto desde tres sitios (F25c: «nadie comprueba
+        que el sitio donde acaba un hecho o una comprobación sea suyo»):
+
+        1. **una vez por pregunta.** Antes la misma pregunta entraba dos veces —una como hueco, por
+           estar en `grupos_sin_materia`, y otra con su comprobación guardada, anclada por el
+           respaldo al primer apartado de su epígrafe—, así que el cociente salía por debajo del
+           verdadero y podía **bloquear un tema que merecía pasar**. Era el caso de **16 de los 28
+           temas con apuntes** cuando se arregló (91 preguntas, entre +0,3 y +8,1 puntos; la primera
+           medición, con 19 temas, dio 10 temas y 41 preguntas). Aquí cada grupo se mira **una sola
+           vez**;
+        2. **con anclas propias.** La comprobación de una pregunta cuenta si su ancla es un apartado
+           **suyo** (`IndiceDelTema.apartados_propios_de`): los de sus hechos y, si no tiene ninguno
+           colocado, el de la materia en la que el índice la sitúa. Una comprobación anclada en un
+           apartado ajeno **no cuenta como cobertura de este tema**: es la puerta que faltaba desde
+           I.3, donde las cinco respuestas del estándar del CPD se contaban con una comprobación
+           anclada en un apartado que no era el suyo (`i-3-1-otros`);
+        3. **lo que no tiene apartado propio cuenta como no cubierto**, y no se cae del denominador:
+           si se cayera, la puerta se mediría sobre un conjunto del que se han ido justo las que
+           peor están.
+
+        Lo que **no** cambia, porque es un hallazgo ya medido y no es de este encargo: un grupo con
+        apartado propio y **sin comprobación guardada** no entra en la puerta (ni en el numerador ni
+        en el denominador).
+        """
+        informe.coverage = CoverageReport()
+        informe.coverage.preguntas = informe.questions
+        anclas = self._anclas_propias(nodo, grupos, secciones, indice)
+        con_texto = {
+            firma: apartados
+            for firma, apartados in anclas.items()
+            if any(apartado.body_markdown.strip() for apartado in apartados)
+        }
+        informe.coverage.groups = len(con_texto)
+        hechos_por_firma = _hechos_por_firma(hechos)
+        dudosos_de_la_clave = {
+            firma
+            for firma, suyos in hechos_por_firma.items()
+            if any(hecho.doubtful for hecho in suyos)
+        }
+        sin_materia = {grupo.signature for grupo in _grupos_sin_materia(indice)}
+        por_firma = {
+            resultado.group_signature: resultado
+            for resultado in self._repository.checks(nodo.node_id)
+        }
+        vigentes = 0
+        for grupo in grupos:
+            firma = grupo.signature
+            apartados = con_texto.get(firma, ())
+            resultado = por_firma.get(firma)
+            if apartados and resultado is not None:
+                if resultado.text_sha256 == _huella_de(secciones, apartados):
+                    vigentes += 1
+                informe.coverage.add(
+                    resultado.coverage,
+                    resultado.note,
+                    attempts=resultado.attempts,
+                    clave_activa=resultado.key_status.clara,
+                    preguntas=len(grupo.questions),
+                    clave_utilizable=firma not in dudosos_de_la_clave,
+                    tiene_clave=resultado.key_status is not KeyStatus.NINGUNA,
+                )
+                if firma in dudosos_de_la_clave:
+                    informe.coverage.incidencias_clave_marcada += 1
+                continue
+            if apartados:
+                # Tiene apartado propio y no hay comprobación guardada: no entra en la puerta.
+                continue
+            if resultado is None and firma not in sin_materia:
+                # Su apartado propio está vacío y nunca se comprobó: no hay nada que contar.
+                continue
+            # Sin apartado propio: no está cubierta, se cuenta **una sola vez** y con su resultado
+            # guardado a la vista no cuenta como cobertura.
+            informe.coverage.add(
+                Coverage.HUECO,
+                None,
+                attempts=1,
+                clave_activa=grupo.key_status.clara,
+                preguntas=len(grupo.questions),
+                clave_utilizable=firma not in dudosos_de_la_clave,
+                tiene_clave=grupo.key_status is not KeyStatus.NINGUNA,
+            )
+        informe.coverage.comprobaciones_vigentes = vigentes
+
+    def _anclas_propias(
+        self,
+        nodo: NotesNode,
+        grupos: Sequence[QuestionGroup],
+        secciones: Sequence[NoteSection],
+        indice: IndiceDelTema | None,
+    ) -> dict[str, tuple[NoteSection, ...]]:
+        """Los apartados **suyos** de cada pregunta, en orden de lectura.
+
+        Con catálogo manda **el índice** (`apartados_propios_de`), no la clave guardada en cada
+        hecho: el reparto de hoy es el que dice dónde va cada hecho, y así la medida del comando y
+        la de una corrida dicen lo mismo aunque la base se escribiera con el reparto de antes.
+
+        Sin catálogo (temas con el esquema por epígrafes) se mantiene la lectura de siempre: los
+        apartados donde cayeron sus hechos y, si no cayó ninguno, el primero de su epígrafe.
+        """
+        por_clave = {apartado.key: apartado for apartado in secciones}
+        if indice is None:
+            hechos_por_firma = _hechos_por_firma(self._repository.facts(nodo.node_id))
+            epigrafe_por_defecto = nodo.epigraphs[0][0] if nodo.epigraphs else ""
+            return {
+                grupo.signature: _apartados_de(
+                    grupo, secciones, por_clave, hechos_por_firma, epigrafe_por_defecto
+                )
+                for grupo in grupos
+            }
+        por_materia = _secciones_por_materia(secciones)
+        return {
+            grupo.signature: tuple(
+                apartado
+                for materia in indice.apartados_propios_de(grupo.signature)
+                for apartado in por_materia.get(materia, ())
+            )
+            for grupo in grupos
+        }
+
     def _comprobables(
         self,
         nodo: NotesNode,
         grupos: Sequence[QuestionGroup],
         secciones: Sequence[NoteSection],
+        indice: IndiceDelTema | None = None,
     ) -> list[tuple[QuestionGroup, tuple[NoteSection, ...]]]:
-        """Los grupos que se pueden comprobar: los que tienen algún apartado con texto.
+        """Los grupos que se pueden comprobar: los que tienen algún apartado **suyo** con texto.
 
         Es la misma lista que arma `_paso_comprobacion`, y tiene que serlo: si aquí se contaran
-        otras preguntas, la medida del comando y la del informe de una corrida no cuadrarían.
+        otras preguntas, la medida del comando y la del informe de una corrida no cuadrarían. Y
+        «suyo» es lo que cambia: antes bastaba con que `_apartados_de` encontrara un apartado —y lo
+        encontraba siempre, porque sin hechos caía al primero de su epígrafe—, así que se comprobaba
+        una pregunta contra el texto de un apartado que no era el suyo.
         """
-        por_clave = {apartado.key: apartado for apartado in secciones}
-        hechos_por_firma = _hechos_por_firma(self._repository.facts(nodo.node_id))
-        epigrafe_por_defecto = nodo.epigraphs[0][0] if nodo.epigraphs else ""
+        anclas = self._anclas_propias(nodo, grupos, secciones, indice)
         comprobables: list[tuple[QuestionGroup, tuple[NoteSection, ...]]] = []
         for grupo in grupos:
-            apartados = _apartados_de(
-                grupo, secciones, por_clave, hechos_por_firma, epigrafe_por_defecto
-            )
+            apartados = anclas.get(grupo.signature, ())
             if not apartados or not any(a.body_markdown.strip() for a in apartados):
                 continue
             comprobables.append((grupo, apartados))
@@ -860,30 +951,22 @@ class TopicNotesService:
         if dry_run:
             return
         secciones = list(self._repository.sections(nodo.node_id))
-        hechos_por_firma = _hechos_por_firma(self._repository.facts(nodo.node_id))
-        comprobables = self._comprobables(nodo, grupos, secciones)
+        hechos = self._repository.facts(nodo.node_id)
+        hechos_por_firma = _hechos_por_firma(hechos)
+        comprobables = self._comprobables(nodo, grupos, secciones, indice)
         informe.coverage.groups = len(comprobables)
-        # Las preguntas que el índice **no puede situar** no tienen apartado, así que no son
+        # Las preguntas que el índice **no puede situar** no tienen apartado propio, así que no son
         # «comprobables», y sin contarlas la puerta de cobertura se mediría sobre un conjunto del
         # que se han caído justo las que peor están. Se cuentan como no cubiertas —tienen clave
         # utilizable y los apuntes no las contestan porque no hay dónde—; su incidencia va a la
-        # bandeja en `_paso_huecos`.
+        # bandeja en `_paso_huecos`. El recuento lo hace `_contar_cobertura`, que es el único sitio
+        # donde se cuenta: aquí solo se dice cuántas son.
+        informe.sin_materia = sum(len(grupo.questions) for grupo in _grupos_sin_materia(indice))
         dudosos_de_la_clave = {
             firma
             for firma, suyos in hechos_por_firma.items()
             if any(hecho.doubtful for hecho in suyos)
         }
-        for grupo in _grupos_sin_materia(indice):
-            informe.coverage.add(
-                Coverage.HUECO,
-                None,
-                attempts=1,
-                clave_activa=grupo.key_status.clara,
-                preguntas=len(grupo.questions),
-                clave_utilizable=grupo.signature not in dudosos_de_la_clave,
-                tiene_clave=grupo.key_status is not KeyStatus.NINGUNA,
-            )
-            informe.sin_materia += len(grupo.questions)
 
         previos = {
             resultado.group_signature: resultado
@@ -930,25 +1013,12 @@ class TopicNotesService:
             resultado = finales.get(grupo.signature)
             if resultado is None:
                 continue
-            informe.coverage.add(
-                resultado.coverage,
-                resultado.note,
-                attempts=resultado.attempts,
-                clave_activa=resultado.key_status.clara,
-                # La puerta se cuenta **pregunta a pregunta**: una pregunta repetida en dos bancos
-                # cuenta dos veces, y el §2.3 habla de preguntas.
-                preguntas=len(grupo.questions),
-                # Y el denominador que decide excluye las claves que el paso B marcó: una respuesta
-                # que contradice la norma no es una respuesta con la que se pueda acertar.
-                clave_utilizable=grupo.signature not in dudosos_de_la_clave,
-                # Las que no tienen ninguna clave no entran en la puerta (no hay letra con la que
-                # acertar): se cuentan aparte, y el informe dice cuántas son.
-                tiene_clave=resultado.key_status is not KeyStatus.NINGUNA,
-            )
             if grupo.signature in dudosos_de_la_clave:
                 # El paso B señaló la clave: la pregunta se revisa aunque los apuntes la contesten.
                 informe.coverage.incidencias_clave_marcada += 1
         informe.coverage.preguntas = informe.questions
+        # La puerta, contada en el sitio único: una vez por pregunta y solo con anclas propias.
+        self._contar_cobertura(nodo, grupos, informe, hechos, secciones, indice)
         informe.sections = self._informe_apartados(secciones, {})
 
     def _comprobar(
@@ -1210,7 +1280,12 @@ class TopicNotesService:
         )
         # Y lo que el índice no puede situar, con su motivo propio: no es un hueco de los apuntes
         # (no hay apartado donde escribirlo) ni una clave sospechosa.
-        incidencias = (*incidencias, *_incidencias_sin_materia(_grupos_sin_materia(indice)))
+        incidencias = (
+            *incidencias,
+            *_incidencias_sin_materia(
+                _grupos_sin_materia(indice), _hechos_sin_materia_por_grupo(indice)
+            ),
+        )
         informe.coverage.incidencias = len(incidencias)
         for incidencia in incidencias:
             informe.coverage.por_categoria[incidencia.category] = (
@@ -1375,13 +1450,55 @@ def _materia_de(clave: str) -> str:
     return re.sub(r"-\d+$", "", clave)
 
 
+def _secciones_por_materia(
+    secciones: Sequence[NoteSection],
+) -> dict[str, tuple[NoteSection, ...]]:
+    """Los apartados guardados de cada materia, con sus trozos y en orden de lectura.
+
+    Una materia que no cabe en una llamada se parte en trozos numerados (`udp-1`, `udp-2`): el
+    índice la nombra por su clave (`udp`) y en la base hay dos apartados. Sin esta traducción, la
+    pregunta de una materia partida se quedaría sin apartado propio —y contaría como no cubierta—
+    por un detalle de cómo se guarda el texto, no por dónde está su material.
+
+    Cada apartado se indexa por su clave **y** por la de su materia, y las dos hacen falta: hay
+    claves de materia que **acaban en cifras** (`ley-59-2003`), así que quitarle a la clave de un
+    apartado el sufijo de trozo no siempre devuelve la clave de su materia. Así la pregunta
+    encuentra su apartado tanto si la materia va entera como si va partida.
+    """
+    por_materia: dict[str, list[NoteSection]] = {}
+    for apartado in secciones:
+        por_materia.setdefault(apartado.key, []).append(apartado)
+        por_materia.setdefault(_materia_de(apartado.key), []).append(apartado)
+    return {
+        materia: tuple(sorted(suyos, key=lambda apartado: apartado.position))
+        for materia, suyos in por_materia.items()
+    }
+
+
 def _grupos_sin_materia(indice: IndiceDelTema | None) -> tuple[QuestionGroup, ...]:
     """Las preguntas que el índice **no puede situar**: ni por su enunciado ni por sus hechos."""
     return () if indice is None else indice.grupos_sin_materia
 
 
+def _hechos_sin_materia_por_grupo(
+    indice: IndiceDelTema | None,
+) -> dict[str, tuple[Hecho, ...]]:
+    """Los hechos que **no se han sentado** en ningún apartado, por la pregunta de la que salen.
+
+    Es la mitad del arreglo de `repartir_hechos` que el propietario tiene que poder ver: el hecho
+    no se sienta en un apartado ajeno, pero **tampoco se pierde**, y su sitio es la bandeja con el
+    mismo motivo que su pregunta. Un hecho puede salir de varias preguntas y se enseña en todas.
+    """
+    por_firma: dict[str, list[Hecho]] = {}
+    for hecho in () if indice is None else indice.sin_materia:
+        for firma in hecho.source_groups:
+            por_firma.setdefault(firma, []).append(hecho)
+    return {firma: tuple(suyos) for firma, suyos in por_firma.items()}
+
+
 def _incidencias_sin_materia(
     grupos: Sequence[QuestionGroup],
+    hechos_por_grupo: Mapping[str, tuple[Hecho, ...]] | None = None,
 ) -> tuple[IncidenciaDeApuntes, ...]:
     """Las incidencias de las preguntas que no caben en ninguna materia del tema.
 
@@ -1389,7 +1506,12 @@ def _incidencias_sin_materia(
     (es su clave natural) y una pregunta repetida en dos bancos tiene que poder despacharse dos
     veces. El detalle lleva el enunciado y el motivo, que es lo que él necesita para decidir: sin
     apartado no hay frase de los apuntes que enseñar, y sin frase no se puede inventar una.
+
+    Y lleva sus **hechos sin apartado**: son los que la red de seguridad sentaba dentro del tema
+    antes de este arreglo, y el propietario tiene que verlos con su texto para decidir si la
+    pregunta está mal clasificada o si falta un apartado en el tema.
     """
+    sin_apartado = hechos_por_grupo or {}
     return tuple(
         IncidenciaDeApuntes(
             question_version_id=pregunta.question_version_id,
@@ -1401,6 +1523,10 @@ def _incidencias_sin_materia(
                 f"pregunta: {grupo.representative.stem.strip()[:300]}\n"
                 f"clave: {', '.join(grupo.correct_keys) or 'sin clave'} "
                 f"({grupo.key_status.value})"
+                + "".join(
+                    f"\nhecho sin apartado: {hecho.text.strip()[:300]}"
+                    for hecho in sin_apartado.get(grupo.signature, ())
+                )
             ),
         )
         for grupo in grupos

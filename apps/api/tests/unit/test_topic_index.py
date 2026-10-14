@@ -90,7 +90,7 @@ def _hecho(
     )
 
 
-def _grupo(identificador: str, enunciado: str, *, epigrafe: str = "IV.7.2") -> QuestionGroup:
+def _grupo(identificador: str, enunciado: str, *, epigrafe: str | None = "IV.7.2") -> QuestionGroup:
     return agrupar(
         [
             QuestionForNotes(
@@ -882,3 +882,126 @@ def test_el_indice_no_repite_la_cabecera_de_sus_apartados() -> None:
         ]
     )
     assert CABECERAS_REPETIDAS not in {hallazgo.codigo for hallazgo in revision.hallazgos}
+
+
+# --- el sitio donde acaba un hecho tiene que ser suyo (F25b y F25c) -------------------------------
+
+#: Los tres epígrafes oficiales de I.3, tal como los declara su convocatoria.
+EPIGRAFES_I_3 = (
+    ("I.3.1", "El Gobierno: composición, nombramiento y cese."),
+    ("I.3.2", "Las funciones del Gobierno."),
+    ("I.3.3", "Relaciones entre el Gobierno y las Cortes Generales."),
+)
+
+
+def test_un_hecho_sin_materia_no_se_sienta_en_el_apartado_de_su_pregunta() -> None:
+    """La red de seguridad de `repartir_hechos` deja de sentar hechos en apartados ajenos.
+
+    Un hecho que **no nombra ninguna materia** del tema se caía al apartado de la pregunta de la que
+    salía «para no perderlo». Eso sitúa el hecho por **de dónde vino la pregunta**, no por lo que el
+    hecho dice, y es la puerta por la que el material de otro tema se sentó dentro de un tema. Hoy
+    no se sienta en ninguno: va a `sin_materia` (no se pierde), se cuenta y su pregunta va a la
+    bandeja.
+    """
+    grupo = _grupo("q1", "¿Qué protocolo resuelve los nombres de dominio?")
+    ajeno = _hecho(
+        "El acoplamiento de control se da cuando los parámetros que se pasan son de control.",
+        grupos=(grupo.signature,),
+    )
+
+    reparto, sin_materia, de_su_pregunta = repartir_hechos(
+        [ajeno], _materias(), materia_por_grupo={grupo.signature: "dns"}
+    )
+
+    assert all(not suyos for suyos in reparto.values()), (
+        "no se sienta en ningún apartado, ni siquiera en el de su pregunta"
+    )
+    assert [hecho.text for hecho in sin_materia] == [ajeno.text]
+    assert [hecho.text for hecho in de_su_pregunta] == [ajeno.text], (
+        "y se cuenta: es la medida del arreglo"
+    )
+
+
+def test_el_material_del_cpd_de_i_3_no_se_sienta_en_ningun_apartado_y_va_a_la_bandeja() -> None:
+    """El caso medido del CPD en I.3, como prueba de regresión de este arreglo.
+
+    El grupo del estándar **ANSI/TIA-942-B** de la zona de un CPD no trae epígrafe y ningún patrón
+    de I.3 lo sitúa; sus dos hechos llevan el epígrafe I.3.1 que les puso el modelo, y por eso el
+    cajón `i-3-1-otros` —que recoge todo lo de su epígrafe— los recogía, y con esas anclas el grupo
+    quedaba sentado ahí con sus **5 respuestas contadas como cubiertas**. Medido entonces (`F25b`):
+    1 apartado de 15, 2 hechos de 300, 730 caracteres y 5 preguntas de 181.
+
+    Hoy ni el cajón reconoce nada ni hay red que los recoja: el grupo no cabe en ninguna materia del
+    tema (va a la bandeja con su motivo) y sus hechos no se sientan en ningún apartado.
+    """
+    grupo = _grupo(
+        "cpd",
+        "Según el estándar ANSI/TIA 942-B, la zona de un Centro de Procesamiento de Datos donde se "
+        "ubican elementos finales, como un servidor o un mainframe, se denomina:",
+        epigrafe=None,
+    )
+    hechos = [
+        _hecho(
+            "Según el estándar ANSI/TIA-942, la zona del Centro de Procesamiento de Datos donde se "
+            "ubican los elementos finales, como servidores o mainframes, se denomina MDA.",
+            epigrafe="I.3.1",
+            grupos=(grupo.signature,),
+        ),
+        _hecho(
+            "En el mismo estándar, el MDA (Main Distribution Area) alberga la distribución "
+            "principal (router, backbone de red, conmutador principal).",
+            epigrafe="I.3.1",
+            grupos=(grupo.signature,),
+        ),
+    ]
+
+    indice = indice_de(
+        topic_code="I.3",
+        topic_title="El Gobierno",
+        epigraphs=EPIGRAFES_I_3,
+        hechos=hechos,
+        grupos=[grupo],
+    )
+
+    assert [suyo.signature for suyo in indice.grupos_sin_materia] == [grupo.signature], (
+        "el grupo no cabe en ninguna materia y va a la bandeja del propietario con su motivo"
+    )
+    assert indice.hechos == 0, "y sus hechos no sostienen ningún apartado del tema"
+    assert [hecho.text for hecho in indice.sin_materia] == [hecho.text for hecho in hechos]
+    assert indice.apartados_de(grupo.signature) == ()
+    assert indice.apartados_propios_de(grupo.signature) == (), (
+        "no tiene apartado propio: ninguno de los del tema es el suyo"
+    )
+
+
+def test_un_hecho_sin_materia_no_se_sienta_en_el_cajon_de_su_epigrafe() -> None:
+    """El cajón de un epígrafe **no reconoce** nada: recoge, y aquí no recoge hechos.
+
+    El cajón existe para las preguntas con epígrafe oficial y sin sujeto —su sitio es el de las
+    otras cuestiones de ese epígrafe—, pero un hecho no se sitúa por el epígrafe que le puso el
+    modelo: si no nombra nada, el cajón tampoco es suyo. Es lo que sentó el material del CPD en I.3.
+    """
+    grupo = _grupo("q1", "Señale la afirmación verdadera", epigrafe="I.3.1")
+    hecho = _hecho(
+        "El MDA alberga la distribución principal del centro de procesamiento de datos.",
+        epigrafe="I.3.1",
+        grupos=(grupo.signature,),
+    )
+
+    indice = indice_de(
+        topic_code="I.3",
+        topic_title="El Gobierno",
+        epigraphs=EPIGRAFES_I_3,
+        hechos=[hecho],
+        grupos=[grupo],
+    )
+
+    assert indice.materia_de_grupo(grupo.signature) == "i-3-1-otros", (
+        "la pregunta sí es de ese epígrafe: su apartado es el de sus otras cuestiones"
+    )
+    assert all(
+        hecho.text not in [suyo.text for suyo in apartado.hechos] for apartado in indice.reparto
+    ), "el hecho no se sienta en el cajón por el epígrafe que le puso el modelo"
+    assert indice.apartados_propios_de(grupo.signature) == ("i-3-1-otros",), (
+        "y el apartado propio de la pregunta es el de su materia, no el primero del epígrafe"
+    )

@@ -927,3 +927,64 @@ la abres, y ahí verás también sus apartados.
    guardado y a la vista de quien siga con ellos.
 3. Si algún tema te parece mal publicado, dímelo: hoy la tabla no mide los publicados, así que habría
    que abrir su ficha (una a una) para ver su cobertura de hoy.
+
+## 14-oct-2026 · El motor ya comprueba que el sitio donde acaba un hecho o una respuesta sea suyo (y dos temas publicados bajan del listón al medirlos bien)
+
+Este bloque no ha escrito apuntes ni los ha tocado: ha arreglado **cómo se mide**. Tres cosas que
+estaban mal y que eran la misma: **nadie comprobaba que el apartado donde acaba un hecho —o donde se
+apoya una respuesta— fuera suyo**. Lo cuento con las cifras porque una de ellas te afecta.
+
+### 1. Una respuesta contaba como buena aunque se apoyara en un apartado que no era el suyo
+
+La cobertura decía **cuántas** respuestas estaban contestadas, y no **por quién**. Si una pregunta no
+tenía apartado propio, el motor la comprobaba contra el **primer apartado de su epígrafe** —que puede no
+tener nada que ver— y, si ahí aparecía la frase, la contaba como cubierta. Eso ya no pasa: una respuesta
+solo cuenta si su apartado es suyo.
+
+### 2. Un hecho que no dice de qué habla se sentaba en el apartado de su pregunta
+
+Es lo que metió el estándar del **CPD** (que es de IV.5.7) dentro de **I.3**. Ahora un hecho que no
+nombra ninguna materia del tema **no se sienta en ningún apartado**: se queda en la bandeja con su
+motivo y su texto, y su pregunta se te enseña para que decidas. **No se pierde nada**: se ve.
+
+### 3. La misma pregunta se contaba dos veces (y eso solo podía perjudicarte)
+
+Una pregunta que el índice no sabe situar entraba dos veces en la cuenta: como hueco y además con su
+comprobación. El cociente salía **por debajo** del verdadero, así que **nunca dejaba pasar un tema malo:
+podía bloquear uno bueno**. Medido: **16 de los 28 temas** tenían preguntas contadas dos veces (**91
+preguntas**), entre +0,3 y +8,1 puntos de diferencia. Hoy cada pregunta cuenta **una sola vez**.
+
+### Lo que esto cambia en tus temas, con nombre y con cifra
+
+**El listón del 90 % no se ha tocado** y no se ha cambiado la forma de medir para que nada pase. Al
+medir con la puerta buena, **dos temas publicados dejan de llegar al 90 %**:
+
+| tema | publicado con | mide hoy | qué se le ha descontado |
+|---|---|---|---|
+| **I.3** (el Gobierno) | 168/181 = **92,8 %** | **152/181 = 84,0 %** | **16 preguntas** que no son de I.3: las 5 del estándar del **CPD** (de IV.5.7) y las 11 de otros ocho grupos ajenos —el **CSV** del RFC 4180, el **TREBEP**, los **funcionarios interinos**, las **infracciones leves**, el **ANSI SQL**, **Jakarta EE** y **Docker**— que estaban sentados en sus cajones |
+| **I.4** (función pública) | 489/542 = **90,2 %** | **483/540 = 89,4 %** | **6 preguntas**: el **kernel de Android** (que es de IV.1) y la **Ética Pública**, que el índice no sitúa y se comprobaba contra el primer apartado de su epígrafe |
+
+**No he tocado ni una línea de esos dos temas.** Siguen publicados y se leen igual: lo que ha cambiado es
+la cifra, que ahora dice lo que de verdad contestan sus apuntes. **La decisión es tuya** y tienes tres
+caminos, ninguno urgente:
+
+1. **dejarlos como están** — se leen bien y el alumno no nota nada; la cifra queda dicha aquí y en el
+   panel;
+2. **retirarlos** desde el panel (vuelven a borrador, sin perder nada del texto) hasta que se limpien; o
+3. **volver a correrlos** cuando toque: una corrida con el reparto nuevo deja fuera el material ajeno y
+   los apartados que pierden hechos se rehacen — eso **sí cuesta dinero** (≈0,4–1,5 $ por tema) y lo
+   decides tú.
+
+### Y una corrección que te debo
+
+El informe de I.3 decía que, descontando el material del CPD, su cifra honesta era **163/181 = 90,1 %**
+—o sea, que pasaba—. **Se quedó corto**: no miró los otros ocho grupos ajenos, que entraron por la misma
+puerta. La cifra buena es **152/181 = 84,0 %**. Lo digo porque el informe te dio una cifra que ya no
+sostengo.
+
+### Lo que no cambia
+
+- **Tus datos no se han tocado**: todo esto es lectura (`--medir`) sobre tu base, sin escribir una fila y
+  sin llamar a ningún modelo. Coste: **0 $**.
+- **El listón sigue en el 90 %** y aprobar un tema del 82 % **no** lo publica.
+- **La zona del alumno no cambia**: lee lo mismo.

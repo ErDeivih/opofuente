@@ -160,6 +160,11 @@ class RepartoMateria:
         """Las firmas de las preguntas que anclan los hechos de este apartado."""
         return frozenset(firma for hecho in self.hechos for firma in hecho.source_groups)
 
+    @property
+    def firmas_de_sus_grupos(self) -> frozenset[str]:
+        """Las firmas de las preguntas que el índice sitúa **en este apartado**."""
+        return frozenset(grupo.signature for grupo in self.grupos)
+
     def lineas(self) -> tuple[str, ...]:
         """El apartado del índice: una línea con su cuenta y otra con lo que entra."""
         marcas = " · una sola tabla en todo el tema" if self.materia.tabla_unica else ""
@@ -254,10 +259,11 @@ class IndiceDelTema:
     grupos_sin_materia: tuple[QuestionGroup, ...] = field(default=())
     #: Hechos que había en el tema antes de agrupar los repetidos.
     hechos_originales: int = 0
-    #: Hechos que no reconocían ninguna materia y se han colocado en el apartado de la pregunta de
-    #: la que salen, para no perderlos. Se cuentan y se dicen: son los que el vocabulario del
-    #: catálogo no reconoce, y el sitio donde se estudian es el de su pregunta.
-    hechos_por_su_pregunta: int = 0
+    #: Hechos que **no nombran ninguna materia** del tema y cuya pregunta sí tiene apartado propio:
+    #: son exactamente los que la red de seguridad sentaba en el apartado de su pregunta, y hoy
+    #: van a la bandeja del propietario con el motivo de su pregunta. Se cuentan porque son la
+    #: medida del arreglo y tienen que poder revisarse. **No se sientan en ningún apartado.**
+    hechos_de_su_pregunta: int = 0
     #: Grupos cuyo **enunciado** no reconocía ninguna materia y se han colocado por el texto de sus
     #: hechos (la materia que reconocen más de sus hechos). Es lo que resuelve las preguntas cortas
     #: («Una de las siguientes afirmaciones es falsa»), que no dicen de qué hablan pero cuyos hechos
@@ -293,10 +299,11 @@ class IndiceDelTema:
             f"({len(self.fusionados)} repetido(s) agrupado(s)) · {self.preguntas} "
             f"pregunta(s) en {self.grupos} grupo(s) · {len(self.epigraphs)} epígrafe(s) oficiales",
         ]
-        if self.hechos_por_su_pregunta:
+        if self.hechos_de_su_pregunta:
             lineas.append(
-                f"    {self.hechos_por_su_pregunta} hecho(s) no reconocen ninguna materia por sus "
-                "palabras y van al apartado de la pregunta de la que salen (no se pierden)"
+                f"    {self.hechos_de_su_pregunta} hecho(s) no nombran ninguna materia del tema y "
+                "su pregunta sí tiene apartado propio: la red de seguridad los sentaba ahí y hoy "
+                "van a la bandeja con el motivo de su pregunta (no se pierden)"
             )
         if self.grupos_por_sus_hechos:
             lineas.append(
@@ -366,6 +373,36 @@ class IndiceDelTema:
         return tuple(
             apartado.materia.key for apartado in self.reparto if firma in apartado.firmas_de_grupo
         )
+
+    def materia_de_grupo(self, firma: str) -> str | None:
+        """La materia en la que el índice sitúa una pregunta, si la sitúa en alguna.
+
+        Es `None` cuando la pregunta no cabe en ninguna materia del tema (`grupos_sin_materia`): no
+        tiene apartado propio, y ninguno de los apartados del tema es el suyo.
+        """
+        for apartado in self.reparto:
+            if firma in apartado.firmas_de_sus_grupos:
+                return apartado.materia.key
+        return None
+
+    def apartados_propios_de(self, firma: str) -> tuple[str, ...]:
+        """Los apartados que son **suyos**: los de sus hechos y, si no tiene ninguno colocado, el de
+        la materia en la que el índice la sitúa.
+
+        Existe porque la puerta de cobertura decía **cuántas** respuestas estaban contestadas y no
+        **por quién**: un ancla en un apartado que no es el de la pregunta contaba como cobertura
+        del tema. Aquí está la lista de las que sí lo son; lo que no aparezca en ella es un apartado
+        ajeno, y una comprobación anclada ahí **no cuenta como cobertura** de este tema.
+
+        La segunda mitad importa: una pregunta con epígrafe oficial y sin hechos que nombren nada
+        —«Señale la afirmación verdadera»— se sitúa por su propio epígrafe, y su apartado es el
+        suyo. Antes se anclaba al **primer** apartado de su epígrafe, que puede no serlo.
+        """
+        propios = self.apartados_de(firma)
+        if propios:
+            return propios
+        materia = self.materia_de_grupo(firma)
+        return () if materia is None else (materia,)
 
 
 # --- la deduplicación -------------------------------------------------------------------------
@@ -589,6 +626,26 @@ def materia_de(
     return next((materia for materia in suyas if materia.es_cajon), None)
 
 
+def materia_nombrada_de(
+    texto: str, epigraph_code: str | None, materias: Sequence[Materia]
+) -> Materia | None:
+    """La materia que el texto **nombra**, o `None` si no nombra ninguna.
+
+    Es `materia_de` con una diferencia que decide todo el reparto: **el cajón no cuenta**. Un cajón
+    no tiene patrones —no reconoce nada—, así que «cae en el cajón» quiere decir, literalmente, que
+    el texto no ha nombrado ninguna materia. Decir que ahí ha reconocido algo es lo que sentaba
+    material de otro tema dentro de un apartado: el estándar ANSI/TIA-942 del CPD de I.3 acabó en el
+    cajón `i-3-1-otros` porque el modelo le puso el epígrafe I.3.1 a sus hechos y el cajón recoge
+    todo lo de su epígrafe.
+
+    El cajón sigue existiendo para las **preguntas** —una pregunta con epígrafe oficial y sin sujeto
+    es de ese epígrafe, y su apartado es el de sus otras cuestiones—, pero para un **hecho** manda
+    lo que el hecho dice: si no nombra nada, no es de ninguna materia del tema.
+    """
+    encontrada = materia_de(texto, epigraph_code, materias)
+    return None if encontrada is not None and encontrada.es_cajon else encontrada
+
+
 def _texto_de_grupo(grupo: QuestionGroup) -> str:
     """De un grupo de preguntas se clasifica el **enunciado**: las opciones traen los distractores
     (NTP, DNS, 137) y clasificar por ellos mandaría la pregunta a la materia del distractor."""
@@ -609,15 +666,22 @@ def repartir_hechos(
     con el reparto anterior —que iba por la pregunta de la que sale—, que metía en el apartado de
     UDP la cabecera de IPv6, la fragmentación, 127.0.0.1, ARP del router e ICMP frente a SMTP.
 
-    El texto decide siempre que reconozca una materia. Solo cuando no reconoce **ninguna** se cae a
-    la pregunta de la que sale, y solo para no perder el hecho: un hecho de una pregunta del tema es
-    del tema aunque sus palabras no casen con el vocabulario del catálogo, y su sitio es donde se
-    estudia esa pregunta. Esos se cuentan (`hechos_por_su_pregunta`) y se dicen.
+    **Un hecho que no nombra ninguna materia del tema no se sienta en ningún apartado.** La red de
+    seguridad que había —caerlo al apartado de la pregunta de la que sale, para no perderlo— es
+    exactamente la puerta por la que el material ajeno se sentó dentro de un tema: sitúa el hecho
+    por **de dónde vino la pregunta**, no por lo que el hecho dice, y no hay forma de que eso sea
+    suyo. El hecho **no se pierde**: va a `sin_materia` con su texto, se cuenta, se enseña en el
+    índice y su pregunta va a la bandeja del propietario con su motivo
+    (`SIN_MATERIA_EN_EL_INDICE`). Lo que no hace es sostener un apartado del que no es ni anclar
+    respuestas que no contesta.
 
-    Un hecho cuyas preguntas van a materias distintas no se mueve a un cajón: va a la materia que
-    reconocen sus palabras y, si no reconoce ninguna, a la primera de sus preguntas en el orden del
-    catálogo (determinista, no «la que salga»). El ancla pregunta→apuntes admite varios apartados,
-    así que repartir los hechos de una pregunta entre dos apartados no deja a nadie sin anclaje.
+    Un hecho sin materia de su pregunta se cuenta aparte (`hechos_de_su_pregunta`) porque es la
+    medida del arreglo: son los que la red sentaba dentro del tema y hoy van a la bandeja.
+
+    Un hecho cuyas preguntas van a materias distintas va a la materia que **nombra**; sus preguntas
+    siguen ancladas donde sus otros hechos las pongan, y el ancla pregunta→apuntes admite varios
+    apartados, así que repartir los hechos de una pregunta entre dos apartados no deja a nadie sin
+    anclaje.
 
     Y un hecho cuyas preguntas **no son de este tema** (`grupos_sin_materia`) se va con ellas: si la
     pregunta está mal clasificada y va a la cola, su hecho no puede quedarse aquí a sostener un
@@ -626,27 +690,21 @@ def repartir_hechos(
     por_clave: dict[str, list[Hecho]] = {materia.key: [] for materia in materias}
     por_grupo = materia_por_grupo or {}
     ajenas = set(grupos_sin_materia)
-    # El orden del catálogo, para desempatar de forma determinista cuando un hecho no reconoce nada.
-    orden = {materia.key: posicion for posicion, materia in enumerate(materias)}
     sin_materia: list[Hecho] = []
     por_su_pregunta: list[Hecho] = []
     for hecho in hechos:
         if hecho.source_groups and all(firma in ajenas for firma in hecho.source_groups):
             sin_materia.append(hecho)
             continue
-        propia = materia_de(hecho.text, hecho.epigraph_code, materias)
+        propia = materia_nombrada_de(hecho.text, hecho.epigraph_code, materias)
         if propia is not None:
             por_clave[propia.key].append(hecho)
             continue
-        destinos = sorted(
-            {por_grupo[firma] for firma in hecho.source_groups if firma in por_grupo},
-            key=lambda clave: orden.get(clave, len(orden)),
-        )
-        if destinos:
-            por_clave[destinos[0]].append(hecho)
-            por_su_pregunta.append(hecho)
-            continue
+        # No nombra ninguna materia: no se sienta. Se cuenta aparte si su pregunta sí tiene
+        # apartado propio, que es el caso que la red de seguridad recogía.
         sin_materia.append(hecho)
+        if any(firma in por_grupo for firma in hecho.source_groups):
+            por_su_pregunta.append(hecho)
     return por_clave, sin_materia, por_su_pregunta
 
 
@@ -670,10 +728,16 @@ def _materia_por_sus_hechos(hechos: Sequence[Hecho], materias: Sequence[Materia]
     enunciado ni los hechos dicen de qué va, no es que el índice esté mal, es que la pregunta
     necesita
     que alguien la mire—.
+
+    **El cajón no vota.** Un hecho que «cae en el cajón» no ha nombrado nada, así que no puede
+    decidir la materia de su pregunta: si votara, una pregunta sin sujeto se situaría por el
+    epígrafe que el modelo le puso a sus hechos, y por ahí se sentó dentro del tema el material del
+    CPD de I.3 (sus dos hechos, con el epígrafe I.3.1 puesto por el modelo, votaron al cajón
+    `i-3-1-otros`).
     """
     votos: dict[str, int] = {}
     for hecho in hechos:
-        hallada = materia_de(hecho.text, hecho.epigraph_code, materias)
+        hallada = materia_nombrada_de(hecho.text, hecho.epigraph_code, materias)
         if hallada is not None:
             votos[hallada.key] = votos.get(hallada.key, 0) + 1
     if not votos:
@@ -813,7 +877,7 @@ def indice_de(
         ),
         grupos_sin_materia=tuple(grupos_sin_materia),
         hechos_originales=len(hechos),
-        hechos_por_su_pregunta=len(por_su_pregunta),
+        hechos_de_su_pregunta=len(por_su_pregunta),
         grupos_por_sus_hechos=por_sus_hechos,
     )
 
@@ -1791,6 +1855,7 @@ __all__ = [
     "grupos_equivalentes",
     "indice_de",
     "materia_de",
+    "materia_nombrada_de",
     "plan_de",
     "repartir_grupos",
     "repartir_hechos",
