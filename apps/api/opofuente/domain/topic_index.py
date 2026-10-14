@@ -1696,6 +1696,8 @@ from opofuente.domain.catalogo_iii_7 import MATERIAS as MATERIAS_III7  # noqa: E
 from opofuente.domain.catalogo_iii_7 import ORDEN as ORDEN_III7  # noqa: E402
 from opofuente.domain.catalogo_iii_9 import MATERIAS as MATERIAS_III9  # noqa: E402
 from opofuente.domain.catalogo_iii_9 import ORDEN as ORDEN_III9  # noqa: E402
+from opofuente.domain.catalogo_iv_1 import MATERIAS as MATERIAS_IV1  # noqa: E402
+from opofuente.domain.catalogo_iv_1 import ORDEN as ORDEN_IV1  # noqa: E402
 from opofuente.domain.catalogo_iv_2 import MATERIAS as MATERIAS_IV2  # noqa: E402
 from opofuente.domain.catalogo_iv_2 import ORDEN as ORDEN_IV2  # noqa: E402
 from opofuente.domain.catalogo_iv_5 import MATERIAS as MATERIAS_IV5  # noqa: E402
@@ -1704,9 +1706,12 @@ from opofuente.domain.catalogo_iv_6 import MATERIAS as MATERIAS_IV6  # noqa: E40
 from opofuente.domain.catalogo_iv_6 import ORDEN as ORDEN_IV6  # noqa: E402
 from opofuente.domain.catalogo_iv_8 import MATERIAS as MATERIAS_IV8  # noqa: E402
 from opofuente.domain.catalogo_iv_8 import ORDEN as ORDEN_IV8  # noqa: E402
+from opofuente.domain.catalogo_iv_9 import MATERIAS as MATERIAS_IV9  # noqa: E402
+from opofuente.domain.catalogo_iv_9 import ORDEN as ORDEN_IV9  # noqa: E402
 
 _CATALOGOS: dict[str, tuple[Materia, ...]] = {
     "IV.7": _en_orden_de_estudio(_MATERIAS_IV7, _ORDEN_IV7),
+    "IV.1": _en_orden_de_estudio(MATERIAS_IV1, ORDEN_IV1),
     "IV.2": _en_orden_de_estudio(MATERIAS_IV2, ORDEN_IV2),
     "II.4": _en_orden_de_estudio(MATERIAS_II4, ORDEN_II4),
     "I.6": _en_orden_de_estudio(MATERIAS_I6, ORDEN_I6),
@@ -1723,6 +1728,7 @@ _CATALOGOS: dict[str, tuple[Materia, ...]] = {
     "IV.5": _en_orden_de_estudio(MATERIAS_IV5, ORDEN_IV5),
     "IV.6": _en_orden_de_estudio(MATERIAS_IV6, ORDEN_IV6),
     "IV.8": _en_orden_de_estudio(MATERIAS_IV8, ORDEN_IV8),
+    "IV.9": _en_orden_de_estudio(MATERIAS_IV9, ORDEN_IV9),
 }
 
 
