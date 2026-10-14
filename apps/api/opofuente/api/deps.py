@@ -23,7 +23,11 @@ from opofuente.application.ingestion_service import IngestionService
 from opofuente.application.intake_service import IntakeService
 from opofuente.application.job_service import JobService
 from opofuente.application.library_service import LibraryService
+from opofuente.application.notes_incident_service import NotesIncidentsService
+from opofuente.application.notes_report_service import NotesReportsService
+from opofuente.application.notes_review_service import NotesReviewService
 from opofuente.application.profiles_service import ProfilesService
+from opofuente.application.question_file_service import QuestionFileService
 from opofuente.application.question_service import QuestionService
 from opofuente.application.readiness_service import ReadinessService
 from opofuente.application.review_service import ReviewService
@@ -90,6 +94,12 @@ def get_question_service(request: Request) -> QuestionService:
     return service
 
 
+def get_question_file_service(request: Request) -> QuestionFileService:
+    """La ficha de pregunta: donde el propietario arregla una clave dudosa (F20, bloque C)."""
+    service: QuestionFileService = request.app.state.question_file_service
+    return service
+
+
 def get_auto_study_service(request: Request) -> AutoStudyService:
     service: AutoStudyService = request.app.state.auto_study_service
     return service
@@ -150,6 +160,24 @@ def get_student_service(request: Request) -> StudentService:
     return service
 
 
+def get_notes_reports_service(request: Request) -> NotesReportsService:
+    """La bandeja de avisos del alumno, que es del propietario: la lee el panel."""
+    service: NotesReportsService = request.app.state.notes_reports_service
+    return service
+
+
+def get_notes_incidents_service(request: Request) -> NotesIncidentsService:
+    """La bandeja del motor: lo que la comprobación de los apuntes dejó sin resolver."""
+    service: NotesIncidentsService = request.app.state.notes_incidents_service
+    return service
+
+
+def get_notes_review_service(request: Request) -> NotesReviewService:
+    """La revisión de los apuntes: los temas, su motivo medido y la decisión del propietario."""
+    service: NotesReviewService = request.app.state.notes_review_service
+    return service
+
+
 #: Dependencias anotadas (estilo moderno de FastAPI: sin llamadas en valores por defecto).
 AppSettingsDep = Annotated[Settings, Depends(get_app_settings)]
 SystemServiceDep = Annotated[SystemService, Depends(get_system_service)]
@@ -162,6 +190,7 @@ ClassificationServiceDep = Annotated[ClassificationService, Depends(get_classifi
 LibraryServiceDep = Annotated[LibraryService, Depends(get_library_service)]
 ArtifactStoreDep = Annotated[ArtifactStore, Depends(get_artifact_store)]
 QuestionServiceDep = Annotated[QuestionService, Depends(get_question_service)]
+QuestionFileServiceDep = Annotated[QuestionFileService, Depends(get_question_file_service)]
 AutoStudyServiceDep = Annotated[AutoStudyService, Depends(get_auto_study_service)]
 StudyServiceDep = Annotated[StudyService, Depends(get_study_service)]
 SearchServiceDep = Annotated[SearchService, Depends(get_search_service)]
@@ -174,3 +203,6 @@ HousekeepingServiceDep = Annotated[HousekeepingService, Depends(get_housekeeping
 DiagnosticServiceDep = Annotated[DiagnosticService, Depends(get_diagnostic_service)]
 ReadinessServiceDep = Annotated[ReadinessService, Depends(get_readiness_service)]
 StudentServiceDep = Annotated[StudentService, Depends(get_student_service)]
+NotesReportsServiceDep = Annotated[NotesReportsService, Depends(get_notes_reports_service)]
+NotesIncidentsServiceDep = Annotated[NotesIncidentsService, Depends(get_notes_incidents_service)]
+NotesReviewServiceDep = Annotated[NotesReviewService, Depends(get_notes_review_service)]

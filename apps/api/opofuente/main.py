@@ -41,7 +41,11 @@ from opofuente.application.ingestion_service import IngestionService
 from opofuente.application.intake_service import IntakeService
 from opofuente.application.job_service import JobService
 from opofuente.application.library_service import LibraryService
+from opofuente.application.notes_incident_service import NotesIncidentsService
+from opofuente.application.notes_report_service import NotesReportsService
+from opofuente.application.notes_review_service import MedidaSinModelo, NotesReviewService
 from opofuente.application.profiles_service import ProfilesService
+from opofuente.application.question_file_service import QuestionFileService
 from opofuente.application.question_service import QuestionService
 from opofuente.application.readiness_service import ReadinessService
 from opofuente.application.review_service import ReviewService
@@ -49,6 +53,7 @@ from opofuente.application.search_service import SearchService
 from opofuente.application.student_service import StudentService
 from opofuente.application.study_service import StudyService
 from opofuente.application.system_service import SystemService
+from opofuente.application.topic_notes_service import TopicNotesService
 from opofuente.config import Settings, get_settings
 from opofuente.domain.jobs import JobType
 from opofuente.infrastructure.artifact_store import ArtifactStore
@@ -73,10 +78,16 @@ from opofuente.infrastructure.housekeeping_repository import SqlAlchemyHousekeep
 from opofuente.infrastructure.ingestion_repository import SqlAlchemyIngestionRepository
 from opofuente.infrastructure.job_repository import SqlAlchemyJobRepository
 from opofuente.infrastructure.migrations import database_revision, run_migrations, script_head
+from opofuente.infrastructure.notes_incident_repository import (
+    SqlAlchemyNotesIncidentRepository,
+)
+from opofuente.infrastructure.notes_report_repository import SqlAlchemyNotesReportRepository
+from opofuente.infrastructure.notes_review_repository import SqlAlchemyNotesReviewRepository
 from opofuente.infrastructure.observability import setup_logging
 from opofuente.infrastructure.ocr import tesseract_from_settings
 from opofuente.infrastructure.probes import DatabaseProbe, DataDirectoryProbe
 from opofuente.infrastructure.profile_repository import SqlAlchemyProfileRepository
+from opofuente.infrastructure.question_file_repository import SqlAlchemyQuestionFileRepository
 from opofuente.infrastructure.question_repository import SqlAlchemyQuestionRepository
 from opofuente.infrastructure.readiness_repository import SqlAlchemyReadinessRepository
 from opofuente.infrastructure.representation_store import RepresentationStore
@@ -247,6 +258,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         # cita de una pregunta sale de ahí (DEBT-010).
         documents=SqlAlchemyDocumentRepository(session_factory, representations),
     )
+    # F20: la ficha de pregunta. Reutiliza el servicio del banco para leer la pregunta y sus
+    # plantillas, y añade lo que solo la ficha necesita (de dónde salió la clave, qué contestaron
+    # los apuntes, las incidencias y el veredicto de fiabilidad del §1) y las dos escrituras
+    # auditadas: marcar la correcta y reparar con una regla.
+    question_file_service = QuestionFileService(
+        questions=question_service,
+        files=SqlAlchemyQuestionFileRepository(session_factory),
+        clock=clock,
+    )
     search_service = SearchService(
         search=SqlAlchemySearchRepository(session_factory),
         clock=clock,
@@ -272,11 +292,43 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     # S13: el dossier del tema. Se calcula desde el corpus cada vez que se pide y se archiva cuando
     # alguien lo pide: la verdad está en las fuentes, no en una copia. Los apuntes redactados (pasos
-    # B-E) se leen de su tabla y viajan dentro del mismo documento, así que se versionan con él.
+    # B-E) se leen de su tabla y viajan dentro del mismo documento, así que se versionan con él. El
+    # repositorio de apuntes se comparte con la zona del alumno (F13), que lee los mismos apartados
+    # para la pantalla de lectura: dos instancias serían dos formas de leer lo mismo.
+    notes_repository = SqlAlchemyTopicNotesRepository(session_factory)
     dossier_service = DossierService(
         repository=SqlAlchemyDossierRepository(session_factory),
         clock=clock,
-        notes=SqlAlchemyTopicNotesRepository(session_factory),
+        notes=notes_repository,
+    )
+    # F13: los avisos del alumno sobre los apuntes. Se escriben desde su zona, auditados, y los lee
+    # la bandeja del propietario (decisión D2 del objetivo). Desde F16 el propietario también los
+    # despacha desde esa bandeja, con su evento y su nota (bloque C).
+    notes_reports_repository = SqlAlchemyNotesReportRepository(session_factory)
+    notes_reports_service = NotesReportsService(notes_reports_repository, clock=clock)
+    # F18: la bandeja del motor. Escribe en `notes_incidents` el propio motor de apuntes (no se
+    # toca)
+    # y la lee y la despacha el propietario desde el panel, con su estado, su nota y su evento
+    # (bloque C, §4.1 del objetivo).
+    notes_incidents_repository = SqlAlchemyNotesIncidentRepository(session_factory)
+    notes_incidents_service = NotesIncidentsService(notes_incidents_repository, clock=clock)
+    # F24: la revisión de los apuntes (§4.3 del objetivo). El propietario ve los temas con su motivo
+    # medido, lee un borrador dentro del panel y lo aprueba o lo rechaza. El servicio de apuntes
+    # entra **solo para medir** (lee lo guardado y no llama a nadie: le acompaña un motor que se
+    # niega a usarse) y publicar sigue siendo `DossierService.archive`, el camino de siempre.
+    notes_review_repository = SqlAlchemyNotesReviewRepository(session_factory)
+    notes_review_service = NotesReviewService(
+        profiles=SqlAlchemyProfileRepository(session_factory),
+        reviews=notes_review_repository,
+        notes=notes_repository,
+        topic_notes=TopicNotesService(
+            repository=notes_repository,
+            dossier=SqlAlchemyDossierRepository(session_factory),
+            model=MedidaSinModelo(),
+            workers=1,
+        ),
+        dossier=dossier_service,
+        clock=clock,
     )
     export_service = ExportService(
         questions=SqlAlchemyQuestionRepository(session_factory),
@@ -294,14 +346,17 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         review=review_service,
     )
     # F2: la zona del alumno. Reutiliza el servicio de estudio para leer las sesiones (que ya
-    # filtra por dueño) y añade lo suyo: el progreso por bloque y por tema, el temario y los
-    # fallos vencidos. El filtro de oposición sale de la configuración, no de la petición.
+    # filtra por dueño) y añade lo suyo: el progreso por bloque y por tema, el temario, los fallos
+    # vencidos y —desde F13— los apuntes del tema y el aviso «esto está mal». El filtro de oposición
+    # sale de la configuración, no de la petición.
     student_service = StudentService(
         settings=resolved,
         profiles=SqlAlchemyProfileRepository(session_factory),
         student=SqlAlchemyStudentRepository(session_factory),
         study=study_service,
         clock=clock,
+        notes=notes_repository,
+        reports=notes_reports_repository,
     )
     # S12: copia, verificación y restauración. La migración y la comprobación van como funciones: al
     # restaurar hay que migrar la base recién colocada y comprobar que quedó sana.
@@ -412,6 +467,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.library_service = library_service
     app.state.artifact_store = artifact_store
     app.state.question_service = question_service
+    app.state.question_file_service = question_file_service
     app.state.auto_study_service = auto_study_service
     app.state.study_service = study_service
     app.state.student_service = student_service
@@ -424,6 +480,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.diagnostic_service = diagnostic_service
     app.state.readiness_service = readiness_service
     app.state.dossier_service = dossier_service
+    app.state.notes_reports_service = notes_reports_service
+    app.state.notes_incidents_service = notes_incidents_service
+    app.state.notes_review_service = notes_review_service
 
     # El orden importa: el último añadido es el más externo, así que el identificador de
     # correlación envuelve también los rechazos por Origin.

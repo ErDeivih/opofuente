@@ -17,14 +17,20 @@ declarada o con un formato que este slice no corrige (S08) no entra en una sesi�
 from __future__ import annotations
 
 import json
+import random
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, replace
 from datetime import datetime, timedelta
 from fractions import Fraction
+from typing import Literal
 
 from opofuente.application.ports import Clock
-from opofuente.application.question_models import AnswerKeyView, KeyEntryView, QuestionView
-from opofuente.application.read_models import ConvocationDetail, OppositionDetail
+from opofuente.application.question_models import (
+    AnswerKeyView,
+    KeyEntryView,
+    QuestionView,
+)
+from opofuente.application.read_models import ConvocationDetail, NodeView, OppositionDetail
 from opofuente.application.review_service import ReviewService
 from opofuente.application.study_models import (
     AnswerOutcomeView,
@@ -62,6 +68,7 @@ from opofuente.domain.errors import (
 from opofuente.domain.profiles import ExamPart
 from opofuente.domain.questions import KeyOutcome
 from opofuente.domain.study import (
+    OWNER_ID_LOCAL,
     SUPPORTED_MODES,
     AttemptOutcome,
     Confidence,
@@ -85,6 +92,7 @@ from opofuente.domain.study import (
     exact_fraction,
     grade_attempt,
 )
+from opofuente.domain.topic_notes import firma_de_grupo
 from opofuente.infrastructure.profile_repository import SqlAlchemyProfileRepository
 from opofuente.infrastructure.question_repository import SqlAlchemyQuestionRepository
 from opofuente.infrastructure.study_repository import SqlAlchemyStudyRepository
@@ -166,6 +174,132 @@ class _PartContext:
     reserve_items: int | None
     time_minutes: int | None
     format: str | None
+
+
+#: Los filtros con los que se eligen las preguntas de una composición. `all` no filtra; los otros
+#: tres miran lo que ya hizo quien estudia, que es lo que hace que «un test de lo que fallé» sea un
+#: test de lo que falló y no de lo que le apetezca al orden del banco.
+CompositionFilter = Literal["all", "unseen", "failed", "flagged"]
+
+
+@dataclass(frozen=True, slots=True)
+class PartSpec:
+    """Una parte de una composición: de qué nodos del programa y cuántas preguntas.
+
+    `node_ids` son nodos del temario: un tema trae sus preguntas y un bloque trae las de sus temas
+    (se recorre su subárbol). `alternative_group` marca las partes **excluyentes entre sí** —el
+    supuesto práctico de III o el de IV—: de un grupo se compone una, nunca las dos, y si llegan las
+    dos se compone la primera y se dice.
+
+    `weights` es el reparto por nodo (`{node_id: peso}`). Sin él el reparto es **proporcional a lo
+    que hay** en cada nodo, que es lo que hace que un bloque con más preguntas pese más en el
+    simulacro sin que nadie escriba una tabla a mano.
+    """
+
+    code: str
+    node_ids: tuple[str, ...]
+    count: int
+    reserve: int = 0
+    alternative_group: str | None = None
+    weights: Mapping[str, float] | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class CompositionSpec:
+    """Cómo se monta una sesión, **declarado**: es la única forma de componer.
+
+    De aquí salen todos los casos —el test de varios temas, el simulacro con su supuesto, el examen
+    de un solo conjunto—, y por eso hay un solo sitio donde se decide qué clave se congela, cómo se
+    numeran las reservas y con qué penalización se corrige. Un segundo camino de composición sería
+    una segunda verdad sobre cómo se corrige una sesión.
+    """
+
+    parts: tuple[PartSpec, ...]
+    mode: SessionMode = SessionMode.PRACTICE
+    filter: CompositionFilter = "all"
+    owner_id: str = OWNER_ID_LOCAL
+    #: Se guarda con la sesión: la misma semilla elige las mismas preguntas, y una sesión que se
+    #: quiere reproducir (una incidencia, una revisión) se puede volver a montar igual.
+    seed: int | None = None
+    #: Un simulacro o un examen: se parece al examen real, así que deja fuera las preguntas que no
+    #: son de este temario (normativa y organización de otra administración).
+    exam_like: bool = False
+    #: En modo público solo entran preguntas de conjuntos publicables: enseñar la nota de un banco
+    #: privado sería enseñar, en cifras, lo que pasa dentro de él.
+    public_only: bool = False
+    feedback: Feedback | None = None
+    shuffle: bool = False
+    #: El límite de tiempo, cuando la composición **no** es el perfil exacto del examen: una
+    #: variante corta del simulacro tiene su propio tiempo y se dice. Si es `None`, manda el de la
+    #: convocatoria (en TAI, los 120 minutos del ejercicio único).
+    time_limit_minutes: int | None = None
+    label: str | None = None
+    note: str | None = None
+    #: De dónde salió el supuesto práctico cuando no había preguntas de supuesto de verdad: se
+    #: compone del bloque elegido y la sesión lo declara (`"bloque"`). No se inventa que es un
+    #: supuesto si no lo es.
+    practical_case_origin: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class PartComposition:
+    """Qué pidió una parte y qué se pudo montar: es lo que la respuesta dice cuando
+    falta material."""
+
+    code: str
+    requested: int
+    selected: int
+    available: int
+    reserves_requested: int = 0
+    reserves_selected: int = 0
+
+
+@dataclass(frozen=True, slots=True)
+class CompositionResult:
+    """La sesión montada y, por parte, lo que se pidió frente a lo que había."""
+
+    session: SessionView
+    parts: tuple[PartComposition, ...]
+
+    @property
+    def short(self) -> tuple[PartComposition, ...]:
+        """Las partes a las que les faltó material: la respuesta lo dice, no falla por ello."""
+        return tuple(parte for parte in self.parts if parte.selected < parte.requested)
+
+
+@dataclass(frozen=True, slots=True)
+class RunnerView:
+    """La sesión como la lee la pantalla que la corre: la pregunta que toca y todas las demás.
+
+    `current` es la primera sin responder (o `None` si ya están todas) y `questions` es la sesión
+    entera, que es lo que necesita la hoja de respuestas para pintar sus filas.
+    """
+
+    session: SessionView
+    current: SessionQuestionView | None
+    questions: tuple[SessionQuestionView, ...]
+    answered: int
+    total: int
+    pending: int
+    finished: bool
+
+
+@dataclass(frozen=True, slots=True)
+class _Candidata:
+    """Una pregunta que puede entrar en una composición, con lo que hace falta para congelarla.
+
+    `signature` es la firma de «la misma pregunta» (enunciado y opciones normalizados) que usa el
+    motor de apuntes: dos bancos pueden traer la misma pregunta y en una sesión no puede caer dos
+    veces. `node_id` es el nodo del programa por el que entró: una pregunta catalogada en dos temas
+    cuenta en el **primero** que la pidió, para que el reparto no la sume dos veces.
+    """
+
+    question: QuestionView
+    key_id: str
+    entry: KeyEntryView
+    signature: str
+    node_id: str
+    reserve_order: int | None = None
 
 
 class StudyService:
@@ -370,6 +504,7 @@ class StudyService:
         sin_clave = 0
         sin_respuesta = 0
         no_practicables = 0
+        en_cuarentena = 0
         for question_id in candidatas:
             pregunta = self._questions.get_question(question_id)
             if pregunta is None or pregunta.question_type not in _SUPPORTED_QUESTION_TYPES:
@@ -383,6 +518,12 @@ class StudyService:
             if conjunto is None or conjunto.active_key_id is None:
                 # Sin plantilla activa no hay con qué corregir: se queda fuera y se cuenta.
                 sin_clave += 1
+                continue
+            if conjunto.key_is_unreliable:
+                # Cuarentena de clave (§1): la práctica por tema es uno de los sitios donde se
+                # eligen preguntas, así que se salta aquí también. No es «no se puede corregir»
+                # —la clave existe—: es que la clave no es de fiar.
+                en_cuarentena += 1
                 continue
             clave = self._clave_activa(pregunta.question_set_id)
             claves[pregunta.question_set_id] = clave.id
@@ -422,9 +563,9 @@ class StudyService:
         if not congeladas:
             motivo = (
                 f"{sin_clave} sin plantilla activa, {sin_respuesta} que la plantilla activa no "
-                f"responde y {no_practicables} que no se practican solas "
-                "(reservas o tipo no soportado)"
-                if sin_clave or sin_respuesta or no_practicables
+                f"responde, {en_cuarentena} con la clave en cuarentena y {no_practicables} que "
+                "no se practican solas (reservas o tipo no soportado)"
+                if sin_clave or sin_respuesta or no_practicables or en_cuarentena
                 else "ninguna con plantilla activa"
             )
             raise UnsupportedError(
@@ -442,6 +583,7 @@ class StudyService:
                 sin_clave=sin_clave,
                 sin_respuesta=sin_respuesta,
                 no_practicables=no_practicables,
+                en_cuarentena=en_cuarentena,
             ),
             context_label=self._etiqueta_del_tema(request.curriculum_node_id),
         )
@@ -456,6 +598,450 @@ class StudyService:
             time_limit_minutes=None,
             key_label=" · ".join(etiquetas),
         )
+
+    # ------------------------------------------------------------------ componer (una sola forma)
+    #
+    # Todo lo que monta una sesión con preguntas elegidas pasa por `compose`: el test de varios
+    # temas, el simulacro con su supuesto y el examen de un conjunto. Los caminos que ya existían
+    # (por conjunto y por tema) siguen donde estaban porque tienen reglas propias —el examen toma la
+    # parte entera de su conjunto, la práctica por tema la pone la catalogación—, pero **no** hay un
+    # tercer sitio donde se congele una clave: `compose` usa `_clave_activa` y `FrozenQuestion`, los
+    # mismos que ellos.
+
+    def compose(self, spec: CompositionSpec, *, opposition_id: str) -> CompositionResult:
+        """Monta una sesión a partir de una composición declarada (`CompositionSpec`).
+
+        La oposición viaja aparte de la composición a propósito: **de qué** es una sesión (sus
+        temas,
+        sus partes, sus filtros) y **dónde** se estudia (la oposición, con su convocatoria y su
+        forma de corregir) son dos cosas distintas, y mezclarlas en el mismo saco haría que una
+        composición no se pudiera reutilizar.
+
+        Nunca falla por falta de material: monta la sesión con lo que haya y **dice** lo que pidió y
+        lo que había por parte (`CompositionResult.parts`). Un test de 50 con 30 preguntas
+        disponibles es un test de 30 que lo dice, no un error que deja al alumno sin estudiar.
+        """
+        if not spec.parts:
+            raise UnsupportedError("una composición sin partes no monta ninguna sesión")
+        oposicion = self._profiles.get_opposition(opposition_id)
+        if oposicion is None:
+            raise NotFoundError("oposición", opposition_id)
+        convocatoria = self._convocatoria_de(oposicion.opposition.convocation_id)
+
+        vistas = self._estado_de_quien_estudia(spec, opposition_id)
+        contexto: dict[str, _PartContext] = {}
+        congeladas: list[FrozenQuestion] = []
+        claves: set[str] = set()
+        conjuntos: set[str] = set()
+        etiquetas: list[str] = []
+        partes: list[PartComposition] = []
+        grupos_vistos: dict[str, PartSpec] = {}
+        limite_tiempo: int | None = spec.time_limit_minutes
+        firmas: set[str] = set()
+
+        for parte in spec.parts:
+            if parte.alternative_group is not None:
+                if parte.alternative_group in grupos_vistos:
+                    # Dos partes excluyentes a la vez (el supuesto de III **y** el de IV) no se
+                    # montan: se compone la primera y se dice, en vez de duplicar el supuesto.
+                    continue
+                grupos_vistos[parte.alternative_group] = parte
+            if parte.code in contexto:
+                raise UnsupportedError(
+                    f"la composición repite la parte «{parte.code}»: dos partes con el mismo "
+                    "no se pueden corregir por separado"
+                )
+            if parte.code in {candidata.code for candidata in convocatoria.parts}:
+                contexto_parte = self._parte(convocatoria, parte.code)
+                contexto[contexto_parte.code] = contexto_parte
+                if spec.time_limit_minutes is None and contexto_parte.time_minutes is not None:
+                    limite_tiempo = (
+                        contexto_parte.time_minutes
+                        if limite_tiempo is None
+                        else max(limite_tiempo, contexto_parte.time_minutes)
+                    )
+            # Una parte de la composición que **no** es una parte de la convocatoria (un test de
+            # temas, por ejemplo) se congela **sin parte declarada**: no tiene regla publicada, y
+            # aplicarle la de una parte que no es la suya sería corregir con un dato inventado. Se
+            # corrige en directo, igual que una práctica por tema.
+            codigo_congelado = (
+                parte.code
+                if parte.code in {candidata.code for candidata in convocatoria.parts}
+                else None
+            )
+
+            candidatas, disponibles = self._candidatas(parte, spec, vistas)
+            elegidas = self._repartir(parte, candidatas, firmas)
+            reservas = self._reservas(parte, candidatas, firmas, elegidas)
+            for candidata in (*elegidas, *reservas):
+                firmas.add(candidata.signature)
+                claves.add(candidata.key_id)
+                conjuntos.add(candidata.question.question_set_id)
+                congeladas.append(
+                    FrozenQuestion(
+                        question_version_id=candidata.question.id,
+                        stable_key=candidata.question.stable_key,
+                        position=candidata.question.position,
+                        part_code=codigo_congelado,
+                        is_reserve=candidata.reserve_order is not None,
+                        reserve_order=candidata.reserve_order,
+                        key_outcome=candidata.entry.outcome,
+                        correct_option_keys=candidata.entry.correct_option_keys,
+                    )
+                )
+            partes.append(
+                PartComposition(
+                    code=parte.code,
+                    requested=parte.count,
+                    selected=len(elegidas),
+                    available=disponibles,
+                    reserves_requested=parte.reserve,
+                    reserves_selected=len(reservas),
+                )
+            )
+
+        if not congeladas:
+            raise UnsupportedError(
+                "no hay ninguna pregunta que se pueda poner: de los temas elegidos, ninguna tiene "
+                "plantilla activa con su respuesta (y las que no la tienen no se pueden corregir)"
+            )
+
+        etiquetas = self._etiquetas_de_conjuntos(conjuntos)
+
+        # Un examen y un simulacro corrigen al terminar: enseñar la corrección mientras se contesta
+        # filtraría la solución, y `SessionConfiguration` lo exige también desde el dominio.
+        modo_examen = spec.mode in (SessionMode.OFFICIAL_EXAM, SessionMode.MOCK_EXAM)
+        feedback = Feedback.AT_END if modo_examen else (spec.feedback or Feedback.IMMEDIATE)
+        configuracion = SessionConfiguration(
+            mode=spec.mode,
+            feedback=feedback,
+            sources=(),
+            time_limit_minutes=limite_tiempo,
+            shuffle=spec.shuffle,
+            note=spec.note,
+            context_label=spec.label,
+            practical_case_origin=spec.practical_case_origin,
+        )
+        plan = assign_positions(congeladas, shuffle=spec.shuffle)
+        sesion = self._study.create_session(
+            opposition_id=opposition_id,
+            configuration=configuracion,
+            questions=plan,
+            now=self._clock.now(),
+            convocation_version_id=convocatoria.summary.id,
+            question_set_id=next(iter(conjuntos)) if len(conjuntos) == 1 else None,
+            answer_key_version_id=next(iter(claves)) if len(claves) == 1 else None,
+            time_limit_minutes=limite_tiempo,
+            key_label=" · ".join(etiquetas),
+        )
+        return CompositionResult(session=sesion, parts=tuple(partes))
+
+    def _convocatoria_de(self, identificador: str | None) -> ConvocationDetail:
+        """La convocatoria de la oposición, o el motivo por el que no se puede componer."""
+        if identificador is None:
+            raise UnsupportedError(
+                "la oposición no tiene convocatoria: sin ella no se sabe cómo se corrige el examen"
+            )
+        convocatoria = self._profiles.get_convocation(identificador)
+        if convocatoria is None:
+            raise NotFoundError("convocatoria", identificador)
+        return convocatoria
+
+    def _estado_de_quien_estudia(
+        self, spec: CompositionSpec, opposition_id: str
+    ) -> Mapping[str, tuple[str | None, str | None]]:
+        """Lo que ya hizo quien estudia, por pregunta: solo si la composición lo va a mirar.
+
+        `all` no filtra, y entonces no se consulta nada: pedir el historial entero para no usarlo
+        sería trabajo de la base a cambio de nada.
+        """
+        if spec.filter == "all":
+            return {}
+        return self._study.owner_last_state(opposition_id, spec.owner_id)
+
+    def _candidatas(
+        self,
+        parte: PartSpec,
+        spec: CompositionSpec,
+        vistas: Mapping[str, tuple[str | None, str | None]],
+    ) -> tuple[tuple[_Candidata, ...], int]:
+        """Las preguntas que pueden entrar en una parte, en orden estable, y cuántas hay.
+
+        Las reglas son las del contrato de la composición, y ninguna se improvisa aquí:
+
+        - solo preguntas con **clave activa que diga su respuesta**: sin ella responder no cuenta;
+        - **nunca dos de la misma pregunta**: dos bancos pueden traer el mismo enunciado, y
+          repetirlo
+          en un test de 25 sería medir dos veces lo mismo (se agrupa con la firma del motor de
+          apuntes, que es la misma definición de «la misma pregunta» que usa el resto del sistema);
+        - fuera las marcadas **fuera de temario** y los **enunciados rotos**: no son preguntas;
+        - en modo público, solo conjuntos publicables;
+        - y el filtro de lo ya hecho (`unseen`, `failed`, `flagged`) cuando se pide.
+        """
+        candidatas: list[_Candidata] = []
+        vistas_del_tema: set[str] = set()
+        for node_id in parte.node_ids:
+            for pregunta_id in self._preguntas_del_nodo(node_id):
+                if pregunta_id in vistas_del_tema:
+                    continue
+                vistas_del_tema.add(pregunta_id)
+                pregunta = self._questions.get_question(pregunta_id)
+                if pregunta is None or pregunta.question_type not in _SUPPORTED_QUESTION_TYPES:
+                    continue
+                conjunto = self._questions.get_set(pregunta.question_set_id)
+                if conjunto is None or conjunto.active_key_id is None:
+                    continue
+                if conjunto.key_is_unreliable:
+                    # Cuarentena de clave (§1): la pregunta **no entra** en la parte. No se dice
+                    # aquí porque el contrato de la composición ya enseña `available`, que es el
+                    # número de preguntas que de verdad se pueden poner; lo que sí se hace es no
+                    # contarla como disponible, que es lo que haría creer al alumno que tiene 80
+                    # preguntas cuando solo puede contestar 60.
+                    continue
+                if spec.public_only and conjunto.distribution != "public":
+                    continue
+                if spec.exam_like and conjunto.is_other_administration:
+                    # Material de otra administración (`origin_scope`, D10): su normativa y su
+                    # organización no caen en el examen de TAI, así que no entran en una composición
+                    # que se parece al examen real. En un test por tema y en los apuntes **sí
+                    # cuentan**: son material para estudiar, y por eso el filtro vive aquí (el
+                    # embudo de examen y simulacro) y no en el recuento de preguntas.
+                    continue
+                if pregunta.id in self._excluidas(pregunta.question_set_id):
+                    continue
+                clave = self._clave_activa(pregunta.question_set_id)
+                entrada = next(
+                    (
+                        candidata
+                        for candidata in clave.entries
+                        if candidata.question_version_id == pregunta.id
+                    ),
+                    None,
+                )
+                if entrada is None or entrada.outcome != KeyOutcome.KEYED.value:
+                    continue
+                if not self._pasa_el_filtro(spec.filter, pregunta.id, vistas):
+                    continue
+                candidatas.append(
+                    _Candidata(
+                        question=pregunta,
+                        key_id=clave.id,
+                        entry=entrada,
+                        signature=firma_de_grupo(
+                            pregunta.stem,
+                            tuple((opcion.stable_key, opcion.text) for opcion in pregunta.options),
+                        ),
+                        # El nodo por el que entró: como `vistas_del_tema` ya la ha marcado, es el
+                        # **primero** de los nodos pedidos que la contiene.
+                        node_id=node_id,
+                    )
+                )
+        # Lo disponible para la parte son sus preguntas **ordinarias**: las reservas del banco no
+        # cuentan para el tamaño del cuestionario, entran solo a sustituir a una anulada.
+        disponibles = sum(1 for candidata in candidatas if not candidata.question.is_reserve)
+        if spec.seed is not None:
+            # La semilla baraja **una vez**, aquí: lo que se elige después ya es determinista, así
+            # que la misma semilla monta la misma sesión y sin semilla el orden es el del programa.
+            # `random` a propósito y no un generador criptográfico: esto es una semilla
+            # reproducible para volver a montar la misma sesión, no un secreto.
+            random.Random(spec.seed).shuffle(candidatas)  # noqa: S311
+        return tuple(candidatas), disponibles
+
+    def key_reliability_of(self, question_ids: Sequence[str]) -> dict[str, str]:
+        """El veredicto de la clave del conjunto de cada pregunta (`fiable` · `dudosa` · `no`).
+
+        Lo necesita la zona del alumno para **marcar** las preguntas de un conjunto dudoso con
+        «clave en revisión» (§1). Vive aquí, y no en un servicio nuevo, porque el motor que elige
+        las preguntas es el que sabe de qué conjunto salió cada una, y tener dos ideas de eso es
+        como se acaba enseñando una marca que no corresponde.
+        """
+        return self._questions.key_reliability_by_question(question_ids)
+
+    def _preguntas_del_nodo(self, node_id: str) -> tuple[str, ...]:
+        """Las preguntas de un nodo **y de sus descendientes**.
+
+        Un tema trae las suyas; un bloque trae las de sus temas, que es lo que hace que «un test de
+        todo el bloque IV» sea de todo el bloque y no de un bloque que no tiene preguntas propias.
+        """
+        nodo = self._profiles.get_node(node_id)
+        if nodo is None:
+            raise NotFoundError("nodo del programa", node_id)
+        ids: list[str] = list(self._questions.question_ids_of_node(node_id))
+        for hijo in self._descendientes(nodo.node):
+            ids.extend(self._questions.question_ids_of_node(hijo))
+        ordenadas: dict[str, None] = {}
+        for identificador in ids:
+            ordenadas.setdefault(identificador, None)
+        return tuple(ordenadas)
+
+    @staticmethod
+    def _descendientes(nodo: NodeView) -> tuple[str, ...]:
+        """Los identificadores de todo el subárbol de un nodo, en orden de lectura."""
+        ids: list[str] = []
+        for hijo in nodo.children:
+            ids.append(hijo.id)
+            ids.extend(StudyService._descendientes(hijo))
+        return tuple(ids)
+
+    def _excluidas(self, set_id: str) -> frozenset[str]:
+        """Las preguntas del conjunto que no son preguntas: fuera de temario o enunciado roto."""
+        return self._questions.excluded_question_ids(set_id)
+
+    @staticmethod
+    def _pasa_el_filtro(
+        filtro: CompositionFilter,
+        pregunta_id: str,
+        vistas: Mapping[str, tuple[str | None, str | None]],
+    ) -> bool:
+        """¿Entra esta pregunta con el filtro pedido?
+
+        `unseen` deja fuera lo ya intentado; `failed`, lo que no se falló la última vez; `flagged`,
+        lo que no se marcó con poca confianza. Se mira el **último** intento: una pregunta fallada y
+        después acertada no es una pregunta fallada.
+        """
+        if filtro == "all":
+            return True
+        ultimo = vistas.get(pregunta_id)
+        if filtro == "unseen":
+            return ultimo is None
+        if ultimo is None:
+            return False
+        desenlace, confianza = ultimo
+        if filtro == "failed":
+            return desenlace == AttemptOutcome.WRONG.value
+        return confianza == Confidence.LOW.value
+
+    def _repartir(
+        self, parte: PartSpec, candidatas: Sequence[_Candidata], firmas: set[str]
+    ) -> tuple[_Candidata, ...]:
+        """Elige las `count` preguntas ordinarias, repartidas por nodo y sin repetir ninguna.
+
+        El reparto por nodo es proporcional a lo que hay (o a los pesos declarados), y lo que un
+        nodo
+        no puede dar pasa a los demás: es lo que evita que un tema con tres preguntas deje el test a
+        medias teniendo el temario cientos.
+        """
+        if parte.count <= 0:
+            return ()
+        # Las reservas del banco no son preguntas ordinarias: entran por `_reservas`, a sustituir a
+        # una anulada. Si se colaran aquí, una reserva ocuparía el sitio de una ordinaria y el
+        # cuestionario tendría una pregunta menos de las que cuenta la parte.
+        ordinarias = [candidata for candidata in candidatas if not candidata.question.is_reserve]
+        por_nodo = self._por_nodo(parte, ordinarias)
+        cupos = self._cupos(parte, por_nodo)
+        elegidas: list[_Candidata] = []
+        sobrantes: list[_Candidata] = []
+        vistos: set[str] = set(firmas)
+        for node_id in parte.node_ids:
+            suyas = por_nodo.get(node_id, [])
+            cupo = cupos.get(node_id, 0)
+            tomadas = 0
+            for candidata in suyas:
+                if tomadas >= cupo:
+                    sobrantes.append(candidata)
+                    continue
+                if candidata.signature in vistos:
+                    continue
+                vistos.add(candidata.signature)
+                elegidas.append(candidata)
+                tomadas += 1
+        # Lo que no se pudo llenar con los cupos se completa con el resto, en el orden del programa.
+        for candidata in sobrantes:
+            if len(elegidas) >= parte.count:
+                break
+            if candidata.signature in vistos:
+                continue
+            vistos.add(candidata.signature)
+            elegidas.append(candidata)
+        return tuple(elegidas[: parte.count])
+
+    @staticmethod
+    def _por_nodo(parte: PartSpec, candidatas: Sequence[_Candidata]) -> dict[str, list[_Candidata]]:
+        """Las candidatas agrupadas por el **primer** nodo de la parte al que pertenecen.
+
+        Una pregunta puede estar catalogada en dos temas; para el reparto cuenta una vez, y en el
+        primero de la lista, que es el orden en el que se pidieron: contarla en los dos haría que el
+        total no cuadrara con lo que se selecciona. El nodo lo puso `_candidatas` al recogerla, así
+        que aquí solo se agrupa.
+        """
+        por_nodo: dict[str, list[_Candidata]] = {node_id: [] for node_id in parte.node_ids}
+        for candidata in candidatas:
+            por_nodo.setdefault(candidata.node_id, []).append(candidata)
+        return por_nodo
+
+    @staticmethod
+    def _cupos(parte: PartSpec, por_nodo: Mapping[str, Sequence[_Candidata]]) -> dict[str, int]:
+        """Cuántas preguntas le tocan a cada nodo, proporcional a lo que hay o a sus pesos."""
+        if parte.weights:
+            pesos = {node_id: float(parte.weights.get(node_id, 0.0)) for node_id in parte.node_ids}
+        else:
+            pesos = {node_id: float(len(por_nodo.get(node_id, ()))) for node_id in parte.node_ids}
+        total = sum(pesos.values())
+        if total <= 0:
+            return dict.fromkeys(parte.node_ids, 0)
+        cupos = {node_id: int(parte.count * peso / total) for node_id, peso in pesos.items()}
+        # Lo que el redondeo deja fuera se reparte entre los nodos que sí tienen preguntas, en el
+        # orden en que se pidieron: así el total de cupos es el pedido y no uno menos por redondear.
+        restante = parte.count - sum(cupos.values())
+        ordenados = sorted(
+            parte.node_ids,
+            key=lambda node_id: (-(parte.count * pesos[node_id] / total - cupos[node_id]), node_id),
+        )
+        for node_id in ordenados:
+            if restante <= 0:
+                break
+            if len(por_nodo.get(node_id, ())) > cupos[node_id]:
+                cupos[node_id] += 1
+                restante -= 1
+        return cupos
+
+    def _reservas(
+        self,
+        parte: PartSpec,
+        candidatas: Sequence[_Candidata],
+        firmas: set[str],
+        elegidas: Sequence[_Candidata],
+    ) -> tuple[_Candidata, ...]:
+        """Las reservas de la parte: las que el banco marca como reserva, en su orden.
+
+        La convocatoria las valora **por su orden** en el caso de que se anule una
+        ordinaria, así que
+        se numeran al congelarlas. Si el banco tiene menos de las que pide la parte, entran las que
+        haya y la composición lo dice: no se inventan reservas de preguntas que no lo son.
+        """
+        if parte.reserve <= 0:
+            return ()
+        usadas = {candidata.question.id for candidata in elegidas}
+        reservas = [
+            candidata
+            for candidata in candidatas
+            if candidata.question.is_reserve
+            and candidata.question.id not in usadas
+            and candidata.signature not in firmas
+        ]
+        reservas.sort(
+            key=lambda candidata: (
+                candidata.question.reserve_order
+                if candidata.question.reserve_order is not None
+                else 10**6,
+                candidata.question.position,
+            )
+        )
+        return tuple(
+            replace(candidata, reserve_order=indice)
+            for indice, candidata in enumerate(reservas[: parte.reserve], start=1)
+        )
+
+    def _etiquetas_de_conjuntos(self, conjuntos: set[str]) -> list[str]:
+        """De qué conjuntos salió la composición, para la etiqueta de la clave que se congeló."""
+        etiquetas: list[str] = []
+        for set_id in sorted(conjuntos):
+            conjunto = self._questions.get_set(set_id)
+            if conjunto is None or conjunto.active_key_id is None:
+                continue
+            clave = self._clave_activa(set_id)
+            etiquetas.append(f"{conjunto.title}: plantilla v{clave.version_no}")
+        return etiquetas
 
     def _etiqueta_de_fuentes(self, fuentes: Sequence[SourceInput]) -> str | None:
         """De qué es una sesión montada sobre conjuntos: sus títulos, que es lo que se lee.
@@ -491,13 +1077,23 @@ class StudyService:
 
     @staticmethod
     def _nota_del_tema(
-        *, total: int, sin_clave: int, no_practicables: int, sin_respuesta: int = 0
+        *,
+        total: int,
+        sin_clave: int,
+        no_practicables: int,
+        sin_respuesta: int = 0,
+        en_cuarentena: int = 0,
     ) -> str:
         """Lo que una práctica por tema deja fuera, dicho: si no, el número no cuadraría."""
         nota = (
             f"Práctica de un tema: {total} pregunta(s) catalogadas en él, sin parte declarada y "
             "corregidas en directo (la parte la fija la convocatoria para un examen)."
         )
+        if en_cuarentena:
+            nota += (
+                f" {en_cuarentena} se quedaron fuera con la clave en cuarentena (su conjunto "
+                "discrepa de los apuntes en más del 30 % de las preguntas medidas)."
+            )
         if sin_clave:
             nota += f" {sin_clave} se quedaron fuera por no tener plantilla activa."
         if sin_respuesta:
@@ -540,7 +1136,15 @@ class StudyService:
         etiquetas: list[str] = []
         conjuntos: set[str] = set()
         limite_tiempo: int | None = None
+        en_cuarentena = 0
         for posicion, vencida in enumerate(vencidas, start=1):
+            conjunto_vencido = self._questions.get_set(vencida.question_set_id)
+            if conjunto_vencido is not None and conjunto_vencido.key_is_unreliable:
+                # Cuarentena de clave (§1): el repaso es el tercero de los sitios donde se eligen
+                # preguntas. Volver a preguntar lo que se falló **con una clave que no es de fiar**
+                # es la peor forma de este defecto: se falló por la clave, no por no saberlo.
+                en_cuarentena += 1
+                continue
             if vencida.part_code is None:
                 raise UnsupportedError(
                     f"el repaso de «{vencida.stable_key}» no sabe a qué parte del examen "
@@ -584,6 +1188,15 @@ class StudyService:
                     else max(limite_tiempo, parte.time_minutes)
                 )
 
+        if not congeladas:
+            # Todo lo vencido estaba en cuarentena: una sesión de repaso vacía no es un repaso, y
+            # decir «no hay nada vencido» sería mentira (había, y no se puede preguntar).
+            raise UnsupportedError(
+                f"lo que te toca repasar ({en_cuarentena} pregunta(s)) es de conjuntos con la "
+                "clave en cuarentena: no se te puede preguntar por una clave de la que no nos "
+                "fiamos. Se arreglará la clave y volverán"
+            )
+
         configuracion = SessionConfiguration(
             mode=request.mode,
             # El repaso corrije al momento: §5 dice que no se enseña la respuesta **antes** del
@@ -593,6 +1206,12 @@ class StudyService:
             time_limit_minutes=limite_tiempo,
             shuffle=request.shuffle,
             context_label="Repaso de tus fallos",
+            note=(
+                None
+                if not en_cuarentena
+                else f"{en_cuarentena} pregunta(s) de tu cola de repaso se han dejado fuera: su "
+                "conjunto tiene la clave en cuarentena"
+            ),
         )
         return self._study.create_session(
             opposition_id=request.opposition_id,
@@ -655,7 +1274,11 @@ class StudyService:
         ahora = self._clock.now()
         intentos_previos = self._study.attempt_counts(request.opposition_id)
         conjuntos = self._questions.list_sets(opposition_id=request.opposition_id, limit=200).sets
-        con_clave = [conjunto for conjunto in conjuntos if conjunto.active_key_id is not None]
+        con_clave = [
+            conjunto
+            for conjunto in conjuntos
+            if conjunto.active_key_id is not None and not conjunto.key_is_unreliable
+        ]
         if not con_clave:
             raise UnsupportedError(
                 "ningún conjunto de esta oposición tiene plantilla activa: sin clave no se puede "
@@ -915,6 +1538,28 @@ class StudyService:
         return CurrentQuestionView(
             session=session,
             question=pendiente,
+            answered=sum(1 for vista in vistas if vista.answered),
+            total=len(vistas),
+            pending=sum(1 for vista in vistas if not vista.answered),
+            finished=session.status is SessionStatus.FINISHED,
+        )
+
+    def runner_view(self, session_id: str) -> RunnerView:
+        """La sesión entera como la necesita la pantalla del test en curso, **sin evidencia**.
+
+        Es la lectura de `current_question` más lo que la hoja de respuestas necesita de todas las
+        preguntas (posición, si se contestó, qué se marcó y, cuando se puede enseñar, su
+        corrección). No hay una segunda corrección: sale de `_componer`, que es la que ya existe,
+        con la evidencia apagada.
+        """
+        session = self._session_or_404(session_id)
+        preguntas = self._study.session_questions(session_id)
+        intentos = self._indice_intentos(session_id)
+        vistas = self._componer(session, preguntas, intentos, with_evidence=False)
+        return RunnerView(
+            session=session,
+            current=next((vista for vista in vistas if not vista.answered), None),
+            questions=vistas,
             answered=sum(1 for vista in vistas if vista.answered),
             total=len(vistas),
             pending=sum(1 for vista in vistas if not vista.answered),
@@ -1458,6 +2103,18 @@ class StudyService:
         conjunto = self._questions.get_set(fuente.question_set_id)
         if conjunto is None:
             raise NotFoundError("conjunto de preguntas", fuente.question_set_id)
+        if conjunto.key_is_unreliable:
+            # La clave de este conjunto discrepa de los apuntes en más del 30 % de sus preguntas
+            # medidas: el alumno aprendería respuestas equivocadas. `_preguntas` es el embudo de
+            # práctica por conjuntos, examen oficial y simulacro, así que se corta aquí y se dice
+            # por qué, con los dos números delante, en lugar de montar una sesión con material en
+            # cuarentena.
+            raise UnsupportedError(
+                f"la clave de «{conjunto.title}» está en cuarentena "
+                f"({conjunto.key_discrepant_count} de {conjunto.key_checked_count} preguntas "
+                "medidas no coinciden con sus apuntes): sus preguntas no entran en tests, "
+                "simulacros ni repasos hasta que se arregle la clave"
+            )
         todas = self._questions.all_questions(fuente.question_set_id)
         validas = [
             pregunta for pregunta in todas if pregunta.question_type in _SUPPORTED_QUESTION_TYPES
@@ -1592,8 +2249,15 @@ class StudyService:
         session: SessionView,
         preguntas: Sequence[SessionQuestionView],
         intentos: Mapping[str, AttemptView],
+        *,
+        with_evidence: bool = True,
     ) -> tuple[SessionQuestionView, ...]:
-        """Junta composición, intentos y correcciones: es lo que se enseña de una sesión."""
+        """Junta composición, intentos y correcciones: es lo que se enseña de una sesión.
+
+        `with_evidence=False` deja fuera la evidencia documental: la zona del alumno no la tiene y
+        pedirla sería trabajo de la base para tirarlo después (y una fuga que no debe existir ni en
+        el camino). El panel sí la pide, porque el propietario revisa contra el material.
+        """
         vistas: list[SessionQuestionView] = []
         for pregunta in preguntas:
             intento = intentos.get(pregunta.question_version_id)
@@ -1615,7 +2279,7 @@ class StudyService:
                     elapsed_ms=intento.elapsed_ms if intento is not None else None,
                     confidence=intento.confidence if intento is not None else None,
                     correction=(
-                        self._correccion(session, pregunta, intento)
+                        self._correccion(session, pregunta, intento, with_evidence=with_evidence)
                         if intento is not None
                         else None
                     ),
@@ -1630,6 +2294,8 @@ class StudyService:
         session: SessionView,
         pregunta: SessionQuestionView,
         intento: AttemptView,
+        *,
+        with_evidence: bool = True,
     ) -> CorrectionView | None:
         """La corrección, **si se puede enseñar**: única puerta por la que sale la solución."""
         if not can_show_correction(self._state(session), question_answered=True):
@@ -1641,7 +2307,11 @@ class StudyService:
             score=ScoreView(calificado.score),
             reason=calificado.reason,
             explanation=None,
-            evidence=self._questions.question_evidence(pregunta.question_version_id),
+            evidence=(
+                self._questions.question_evidence(pregunta.question_version_id)
+                if with_evidence
+                else ()
+            ),
         )
 
     def _calcular(
@@ -1759,6 +2429,19 @@ class StudyService:
                         "declara superada."
                     ),
                 )
+            elif (
+                regla.kind is ScoringKind.DIRECT
+                and regla.ordinary_items is not None
+                and regla.score_max is not None
+                and presentadas >= regla.ordinary_items
+            ):
+                # El cuestionario **completo** de una parte que publica su banda (TAI: 80 preguntas
+                # y 50 de máximo): la puntuación directa se puede escalar a esa banda, y esa es la
+                # «nota estimada» por parte del simulacro. La penalización es la publicada, así que
+                # no hace falta inventar el número de alternativas (`options_per_question` sigue
+                # nulo en el perfil). Con la parte **incompleta** —una práctica de 20 de 80— no se
+                # escala: se muestra la directa, porque escalar una muestra sería inventar una nota.
+                regla = replace(regla, kind=ScoringKind.ESTIMATED)
             reglas[codigo] = regla
         return reglas
 

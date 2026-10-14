@@ -11,7 +11,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from opofuente.domain.notes_quality import RevisionApuntes
+from opofuente.domain.topic_index import RevisionIndice
 from opofuente.domain.topic_notes import (
+    COBERTURA_MINIMA,
+    CategoriaIncidencia,
     Coverage,
     Motivo,
     TokenLedger,
@@ -20,9 +24,20 @@ from opofuente.domain.topic_notes import (
 #: Nombres legibles de los motivos, para el informe. El código se guarda; la frase se imprime.
 MOTIVO_TEXTO: dict[Motivo, str] = {
     Motivo.SIN_FRASE_EN_LOS_APUNTES: "no hay ninguna frase en los apuntes que la justifique",
-    Motivo.LETRA_NO_COINCIDE: "la frase está, pero la clave dice otra opción",
+    Motivo.LETRA_NO_COINCIDE: "en conflicto: la frase está, pero la clave dice otra opción",
     Motivo.CLAVE_CONTRADICE_LA_NORMA: "la clave contradice la norma o el material",
     Motivo.CLAVE_SIN_DEFINIR: "la pregunta no tiene clave con la que comprobarla",
+    Motivo.SIN_MATERIA_EN_EL_INDICE: (
+        "la pregunta no cabe en ninguna materia del índice: no hay apartado donde contestarla"
+    ),
+}
+
+#: Y los de las categorías de la bandeja del propietario (§2.1.4).
+CATEGORIA_TEXTO: dict[CategoriaIncidencia, str] = {
+    CategoriaIncidencia.HUECO_SIN_MATERIAL: "huecos sin material (los apuntes no tienen el dato)",
+    CategoriaIncidencia.CLAVE_SOSPECHOSA: "claves sospechosas (los apuntes dicen otra letra)",
+    CategoriaIncidencia.PREGUNTA_AMBIGUA: "preguntas ambiguas (sin clave con la que comprobar)",
+    CategoriaIncidencia.NORMA_CAMBIADA: "norma cambiada (la clave contradice la norma)",
 }
 
 
@@ -56,7 +71,13 @@ class SectionReport:
 
 @dataclass(slots=True)
 class CoverageReport:
-    """El recuento de la comprobación, con los dos motivos de duda separados."""
+    """El recuento de la comprobación, con los dos motivos de duda separados.
+
+    `conflicts` va aparte de `covered` y de las dudas a propósito: es la cuenta que destapó la
+    revisión del propietario (96 preguntas de los tres pilotos que se contaban como cubiertas
+    diciendo otra letra que su clave). Una pregunta en conflicto **no** está cubierta y va a la cola
+    de revisión, con la clave delante.
+    """
 
     groups: int = 0
     covered: int = 0
@@ -64,6 +85,9 @@ class CoverageReport:
     covered_tras_anadido: int = 0
     covered_con_clave_activa: int = 0
     covered_sin_clave: int = 0
+    conflicts: int = 0
+    conflicts_con_clave_activa: int = 0
+    conflicts_con_clave_borrador: int = 0
     huecos_apuntes: int = 0
     huecos_clave: int = 0
     dudosas_apuntes: int = 0
@@ -72,15 +96,85 @@ class CoverageReport:
     #: la
     #: norma o al material. Son incidencias de la pregunta, no de los apuntes.
     incidencias_clave_marcada: int = 0
+    #: Lo que queda en la bandeja del propietario tras el bucle de huecos (§2.1.4), por categoría.
+    incidencias: int = 0
+    por_categoria: dict[CategoriaIncidencia, int] = field(default_factory=dict)
+    #: Huecos de material a los que se les ha dado la tercera vuelta de añadido.
+    huecos_rellenados: int = 0
     por_motivo: dict[Motivo, int] = field(default_factory=dict)
+    #: La puerta de cobertura, contada **pregunta a pregunta** y con los dos denominadores (§2.3):
+    #: `preguntas_con_clave` (activa o en borrador) y `preguntas_con_clave_utilizable` (las mismas
+    #: sin las que el motor ha marcado como contrarias a la norma). El que decide es el segundo.
+    preguntas: int = 0
+    preguntas_con_clave: int = 0
+    preguntas_cubiertas_con_clave: int = 0
+    preguntas_con_clave_utilizable: int = 0
+    preguntas_cubiertas_con_clave_utilizable: int = 0
+
+    #: Cuántas de las comprobaciones guardadas siguen valiendo para el texto de hoy (su huella es
+    #: la del apartado que se comprobó). Solo lo rellena `medir`: una corrida vuelve a comprobar las
+    #: que no valen, así que al terminar no queda ninguna caduca.
+    comprobaciones_vigentes: int = 0
+
+    @property
+    def cobertura_con_clave(self) -> float:
+        """Cubiertas sobre **todas** las que tienen clave (activa o en borrador)."""
+        if not self.preguntas_con_clave:
+            return 0.0
+        return self.preguntas_cubiertas_con_clave / self.preguntas_con_clave
+
+    @property
+    def cobertura_con_clave_utilizable(self) -> float:
+        """Cubiertas sobre las que tienen clave utilizable. **Es el número de la puerta.**"""
+        if not self.preguntas_con_clave_utilizable:
+            return 0.0
+        return self.preguntas_cubiertas_con_clave_utilizable / self.preguntas_con_clave_utilizable
+
+    @property
+    def pasa_cobertura(self) -> bool:
+        """¿Llega al umbral del §2.3? Se mide siempre; decide el denominador utilizable."""
+        return self.cobertura_con_clave_utilizable >= COBERTURA_MINIMA
 
     @property
     def finales(self) -> int:
-        return self.covered + self.dudosas_apuntes + self.dudosas_clave
+        return self.covered + self.dudosas_apuntes + self.dudosas_clave + self.conflicts
+
+    @property
+    def en_revision(self) -> int:
+        """Las que el propietario tiene que mirar: dudas por los apuntes, dudas por la clave y
+        conflictos de letra."""
+        return self.dudosas_apuntes + self.dudosas_clave + self.conflicts
 
     def add(
-        self, coverage: Coverage, note: Motivo | None, *, attempts: int, clave_activa: bool
+        self,
+        coverage: Coverage,
+        note: Motivo | None,
+        *,
+        attempts: int,
+        clave_activa: bool,
+        preguntas: int = 1,
+        clave_utilizable: bool = True,
+        tiene_clave: bool = True,
     ) -> None:
+        """Suma un grupo de preguntas al recuento.
+
+        `preguntas` es cuántas preguntas trae el grupo: los recuentos de «grupo» son los que se leen
+        en el informe, pero la **puerta de cobertura se cuenta pregunta a pregunta** (una pregunta
+        repetida en dos bancos cuenta dos veces, y la puerta del §2.3 habla de preguntas).
+
+        `tiene_clave` es falso cuando la pregunta no tiene ninguna clave: la puerta no la cuenta
+        (no hay letra con la que acertar). `clave_utilizable` es falso cuando el paso B marcó la
+        clave como contraria a la norma: esas preguntas cuentan en (a) y **no** en el denominador
+        que decide, porque no tienen una respuesta con la que se pueda acertar.
+        """
+        if tiene_clave:
+            self.preguntas_con_clave += preguntas
+            if coverage is Coverage.CUBIERTA:
+                self.preguntas_cubiertas_con_clave += preguntas
+            if clave_utilizable:
+                self.preguntas_con_clave_utilizable += preguntas
+                if coverage is Coverage.CUBIERTA:
+                    self.preguntas_cubiertas_con_clave_utilizable += preguntas
         if coverage is Coverage.CUBIERTA:
             self.covered += 1
             if attempts > 1:
@@ -92,7 +186,15 @@ class CoverageReport:
             else:
                 self.covered_sin_clave += 1
         elif coverage is Coverage.HUECO:
-            return
+            pass
+        elif coverage is Coverage.CONFLICTO:
+            self.conflicts += 1
+            if clave_activa:
+                self.conflicts_con_clave_activa += 1
+            else:
+                self.conflicts_con_clave_borrador += 1
+            if note is not None:
+                self.por_motivo[note] = self.por_motivo.get(note, 0) + 1
         else:
             if note is not None:
                 self.por_motivo[note] = self.por_motivo.get(note, 0) + 1
@@ -117,10 +219,22 @@ class TopicNotesReport:
     hechos_dudosos: int = 0
     sections: tuple[SectionReport, ...] = ()
     coverage: CoverageReport = field(default_factory=CoverageReport)
+    revision: RevisionApuntes | None = None
     ledger: TokenLedger = field(default_factory=TokenLedger)
     failed_batches: int = 0
+    #: Lo que se ha hecho con la tabla de puertos: notas de distractor retiradas y pares que se
+    #: confunden de verdad recogidos aparte (§2.1.2). Se cuenta porque el arreglo tiene que poder
+    #: revisarse.
+    notas_de_puertos_retiradas: int = 0
+    confusiones_de_puertos: int = 0
     dry_run: bool = False
     version_created: bool | None = None
+    #: Si la versión que había se ha retirado por no pasar la puerta: el tema vuelve a borrador.
+    version_retired: bool | None = None
+    #: La revisión del índice del tema (§2.2.3), que se mide **antes** de redactar con él.
+    indice: RevisionIndice | None = None
+    #: Preguntas que el índice no puede situar y que van a la bandeja del propietario con su motivo.
+    sin_materia: int = 0
     notes: str = ""
 
     @property
@@ -153,19 +267,58 @@ class TopicNotesReport:
         lineas.append(
             f"    comprobadas {cobertura.finales} de {cobertura.groups} · cubiertas "
             f"{cobertura.covered} ({cobertura.covered_primera_vuelta} a la primera, "
-            f"{cobertura.covered_tras_anadido} tras añadir) · sin contestar por los apuntes "
-            f"{cobertura.dudosas_apuntes} · incidencias de clave {cobertura.dudosas_clave} "
-            f"(+{cobertura.incidencias_clave_marcada} con la clave señalada)"
+            f"{cobertura.covered_tras_anadido} tras añadir) · en conflicto con la clave "
+            f"{cobertura.conflicts} ({cobertura.conflicts_con_clave_activa} con clave activa) · "
+            f"sin contestar por los apuntes {cobertura.dudosas_apuntes} · incidencias de clave "
+            f"{cobertura.dudosas_clave} (+{cobertura.incidencias_clave_marcada} con la clave "
+            "señalada)"
         )
         if cobertura.groups:
             porcentaje = 100.0 * cobertura.covered / cobertura.groups
             lineas.append(
-                f"    cobertura {porcentaje:.1f} % · con clave activa "
+                f"    cobertura {porcentaje:.1f} % de los grupos · con clave activa "
                 f"{cobertura.covered_con_clave_activa} · "
-                f"sin clave clara {cobertura.covered_sin_clave}"
+                f"sin clave clara {cobertura.covered_sin_clave} · a revisión "
+                f"{cobertura.en_revision}"
             )
+        # La puerta del §2.3, con **los dos denominadores escritos** y siempre —también cuando el
+        # tema se queda en borrador—: el número que decide es el de la clave utilizable, porque una
+        # pregunta cuya respuesta marcada contradice la norma no tiene respuesta con la que acertar.
+        if cobertura.preguntas_con_clave:
+            lineas.append(
+                f"    puerta de cobertura {'PASA' if cobertura.pasa_cobertura else 'NO PASA'} "
+                f"(umbral {100 * COBERTURA_MINIMA:.0f} %): "
+                f"{cobertura.preguntas_cubiertas_con_clave_utilizable}/"
+                f"{cobertura.preguntas_con_clave_utilizable} = "
+                f"{100 * cobertura.cobertura_con_clave_utilizable:.1f} % sobre las que tienen "
+                "clave "
+                f"utilizable · {cobertura.preguntas_cubiertas_con_clave}/"
+                f"{cobertura.preguntas_con_clave} = {100 * cobertura.cobertura_con_clave:.1f} % "
+                "sobre todas las que tienen clave (activa o en borrador)"
+            )
+        if self.indice is not None:
+            lineas.extend(self.indice.lines())
+        if self.revision is not None:
+            lineas.extend(self.revision.lines())
         for motivo, cuantos in sorted(cobertura.por_motivo.items(), key=lambda fila: -fila[1]):
             lineas.append(f"      {cuantos:>5} · {MOTIVO_TEXTO.get(motivo, motivo.value)}")
+        if self.notas_de_puertos_retiradas or self.confusiones_de_puertos:
+            lineas.append(
+                f"    tabla de puertos: {self.notas_de_puertos_retiradas} nota(s) de distractor "
+                f"retirada(s) · {self.confusiones_de_puertos} confusión(es) que caen en su bloque"
+            )
+        if self.coverage.huecos_rellenados:
+            lineas.append(
+                f"    bucle de huecos: {self.coverage.huecos_rellenados} apartado(s) con "
+                "una vuelta más de añadido"
+            )
+        for categoria, cuantas in sorted(
+            self.coverage.por_categoria.items(), key=lambda fila: -fila[1]
+        ):
+            lineas.append(
+                f"      {cuantas:>5} · bandeja del propietario: "
+                f"{CATEGORIA_TEXTO.get(categoria, categoria.value)}"
+            )
         if self.hechos_sin_integrar:
             lineas.append(
                 f"    hechos que no se encontraron en el texto: {self.hechos_sin_integrar}"
@@ -192,6 +345,10 @@ class TopicNotesReport:
                 "    versión del tema: "
                 + ("guardada (nueva)" if self.version_created else "ya estaba guardada")
             )
+        if self.version_retired:
+            lineas.append(
+                "    versión del tema: RETIRADA (el tema no pasa la puerta y queda en borrador)"
+            )
         lineas.extend(f"    {linea}" for linea in self.ledger.lines())
         if self.notes:
             lineas.append(f"    {self.notes}")
@@ -199,6 +356,7 @@ class TopicNotesReport:
 
 
 __all__ = [
+    "CATEGORIA_TEXTO",
     "MOTIVO_TEXTO",
     "CoverageReport",
     "NotesNode",

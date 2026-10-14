@@ -355,6 +355,49 @@ class SqlAlchemyStudyRepository:
             ).scalars()
             return frozenset(str(fila) for fila in filas)
 
+    def owner_last_state(
+        self, opposition_id: str, owner_id: str
+    ) -> Mapping[str, tuple[str | None, str | None]]:
+        """Por pregunta, el desenlace y la confianza del **último** intento de esa persona.
+
+        Es lo que necesitan los filtros de una composición: «no vistas» (no está), «falladas» (su
+        último intento salió mal) y «dudosas» (la marcó con poca confianza). Con un recuento en vez
+        del último intento, una pregunta fallada y después acertada seguiría contando como
+        fallada, y
+        «repasar lo que fallé» traería justo lo que ya se sabe.
+        """
+        with self._session_factory() as session:
+            filas = session.execute(
+                select(
+                    SessionQuestionRecord.question_version_id,
+                    AttemptRecord.id,
+                    AttemptRecord.answered_at,
+                    AttemptRecord.confidence,
+                )
+                .join(AttemptRecord, AttemptRecord.session_question_id == SessionQuestionRecord.id)
+                .join(StudySessionRecord, StudySessionRecord.id == SessionQuestionRecord.session_id)
+                .where(
+                    StudySessionRecord.opposition_id == opposition_id,
+                    StudySessionRecord.owner_id == owner_id,
+                )
+            ).all()
+            evaluaciones = self._latest_evaluations(session, [str(fila[1]) for fila in filas])
+        ultimos: dict[str, tuple[datetime, str | None, str | None]] = {}
+        for pregunta, intento, respondida, confianza in filas:
+            anterior = ultimos.get(str(pregunta))
+            if anterior is not None and anterior[0] >= respondida:
+                continue
+            evaluacion = evaluaciones.get(str(intento))
+            ultimos[str(pregunta)] = (
+                respondida,
+                None if evaluacion is None else str(evaluacion.outcome),
+                None if confianza is None else str(confianza),
+            )
+        return {
+            pregunta: (desenlace, confianza)
+            for pregunta, (_respondida, desenlace, confianza) in ultimos.items()
+        }
+
     def attempt_counts(self, opposition_id: str) -> Mapping[str, int]:
         """Cuántas veces se ha intentado cada pregunta de la oposición (DEBT-012).
 
@@ -939,6 +982,9 @@ class SqlAlchemyStudyRepository:
             # De qué es la sesión, en palabras: es lo que hace que la lista diga «TAI libre 2025 ·
             # modelo A» en vez de cinco filas iguales.
             "context_label": configuration.context_label,
+            # De dónde salió el supuesto práctico cuando no era material de supuesto: se congela con
+            # la sesión porque es parte de lo que la composición quiso decir de sí misma.
+            "practical_case_origin": configuration.practical_case_origin,
             "sources": [
                 {
                     "question_set_id": fuente.question_set_id,
@@ -983,6 +1029,11 @@ class SqlAlchemyStudyRepository:
             note=(str(datos["note"]) if datos.get("note") is not None else None),
             context_label=(
                 str(datos["context_label"]) if datos.get("context_label") is not None else None
+            ),
+            practical_case_origin=(
+                str(datos["practical_case_origin"])
+                if datos.get("practical_case_origin") is not None
+                else None
             ),
         )
 

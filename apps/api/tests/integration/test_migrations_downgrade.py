@@ -31,6 +31,60 @@ from opofuente.infrastructure.migrations import alembic_config, run_migrations, 
 #: desaparecer al hacerlo. El orden es el de la cadena, de la más nueva a la más antigua.
 ESCALONES: tuple[tuple[str, str, tuple[str, ...]], ...] = (
     (
+        # `0038` crea la tabla de la revisión de los apuntes del propietario (F24) y su vuelta atrás
+        # se la lleva: al bajar de este escalón la tabla **desaparece**, y es lo que se mide aquí.
+        "0038_revision_de_apuntes",
+        "0037_origin_scope",
+        ("topic_notes_reviews",),
+    ),
+    (
+        # `0037` añade una columna a `question_sets` con su `CHECK` y su índice, y su vuelta atrás
+        # los quita: ninguna tabla desaparece al bajar, por eso su escalón va vacío. Que la columna
+        # se va de verdad (con su `CHECK` y su índice) lo comprueba `test_migrations_0037.py`, donde
+        # se mide la forma de la tabla.
+        "0037_origin_scope",
+        "0036_claves_no_fiables",
+        (),
+    ),
+    (
+        # `0036` solo añade columnas a `question_sets` y su vuelta atrás las quita: ninguna tabla
+        # desaparece al bajar, por eso su escalón va vacío. Que las columnas se van de verdad lo
+        # comprueba `test_migrations_0036.py`, que es donde se mide la forma de la tabla.
+        "0036_claves_no_fiables",
+        "0035_incidencias_despachables",
+        (),
+    ),
+    (
+        "0035_incidencias_despachables",
+        "0034_avisos_en_curso_y_nota",
+        (),
+    ),
+    (
+        "0034_avisos_en_curso_y_nota",
+        "0033_avisos_del_alumno",
+        (),
+    ),
+    (
+        "0033_avisos_del_alumno",
+        "0032_huella_del_texto_comprobado",
+        ("notes_reports",),
+    ),
+    (
+        "0032_huella_del_texto_comprobado",
+        "0031_incidencias_apuntes",
+        (),
+    ),
+    (
+        "0031_incidencias_apuntes",
+        "0030_ancla_en_conflicto",
+        ("notes_incidents",),
+    ),
+    (
+        "0030_ancla_en_conflicto",
+        "0029_apuntes_por_preguntas",
+        (),
+    ),
+    (
         "0029_apuntes_por_preguntas",
         "0028_fuera_de_temario",
         ("topic_facts", "topic_note_sections", "question_note_anchors"),

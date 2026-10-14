@@ -98,6 +98,19 @@ class DossierService:
             return None
         return self._repository.snapshots(node_id)
 
+    def retire(self, node_id: str, *, reason: str) -> bool:
+        """Retira la última versión guardada del tema, con su motivo y auditado.
+
+        Es lo contrario de `archive`, y existe por una razón concreta: mientras la puerta de
+        cobertura no estaba cableada, un tema que no la pasaba podía quedarse con su versión
+        archivada. Un tema que no pasa **no puede quedar publicado**, así que la versión se retira.
+
+        Lo que se va es la **lectura** del tema, no su contenido: los apartados, los hechos, las
+        comprobaciones y la bandeja siguen donde estaban, y volver a ejecutar el comando cuando el
+        tema pase la archiva otra vez. Devuelve si había algo que retirar.
+        """
+        return self._repository.retire_snapshot(node_id, reason=reason, now=self._clock.now())
+
     def version(self, node_id: str, version_id: str) -> TopicDossier | None:
         """Una versión guardada, leída tal como se leyó. `None` si no es de ese tema."""
         guardado = self._repository.snapshot(node_id, version_id)

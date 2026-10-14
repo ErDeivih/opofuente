@@ -23,14 +23,12 @@ sabidas,
    hay,
    es lo que hay. Lo que no se puede comprobar no se da por cubierto.
 
-Vocabulario del resultado, y es el del informe: **cubierta** (la frase está y la letra coincide con
-la
-clave, cuando la clave es clara), **hueco** (no está: se añade lo que falta y se vuelve a comprobar)
-y
-**dudosa** (la clave contradice el material, la clave no está clara, o tras dos vueltas la frase
-sigue
-sin aparecer). El paso E del plan llama «incidencia» al estado final que aquí se guarda como
-`dudosa`.
+Vocabulario del resultado, y es el del informe: **cubierta** (la frase está y la letra coincide
+con la clave; sin ninguna clave, basta la frase), **hueco** (no está: se añade lo que falta y se
+vuelve a comprobar), **conflicto** (la frase está y la letra **no** coincide con la clave, activa o
+en borrador: o la clave está mal o los apuntes, y eso se revisa, no se da por bueno) y **dudosa**
+(la clave contradice el material, la clave no está clara, o tras dos vueltas la frase sigue sin
+aparecer). El paso E del plan llama «incidencia» al estado final que aquí se guarda como `dudosa`.
 """
 
 from __future__ import annotations
@@ -44,6 +42,7 @@ from datetime import datetime
 from enum import StrEnum
 from typing import Any, Protocol
 
+from opofuente.domain.puertos import familias_para_el_prompt
 from opofuente.domain.rag import STOPWORDS, normalise
 from opofuente.domain.topic_classification import (
     PRECIO_ENTRADA_USD_POR_MILLON,
@@ -51,8 +50,14 @@ from opofuente.domain.topic_classification import (
 )
 
 #: Versión de las plantillas de instrucciones. Va con cada apartado guardado: un texto escrito con
-#: otras instrucciones no es comparable con el que salga de estas.
-VERSION_PLANTILLA = "apuntes-1"
+#: otras instrucciones no es comparable con el que salga de estas. Sube cuando cambie lo que se le
+#: pide al redactor: la v2 añade el **tope de extensión** del apartado.
+VERSION_PLANTILLA = "apuntes-2"
+
+#: Tope de extensión de un apartado: palabras por **hecho distinto**. Es la puerta de densidad del
+#: §2.3, y vive aquí —y no solo en la revisión de forma— porque el redactor tiene que saberlo
+#: **antes** de escribir: `notes_quality` la importa de aquí y el encargo la dice en palabras.
+MAX_PALABRAS_POR_HECHO = 40
 
 #: Preguntas por llamada al pedir hechos (el paso B del plan mide ≈20).
 LOTE_HECHOS = 20
@@ -81,8 +86,18 @@ MAX_MATERIAL_CARACTERES = 24_000
 #: y, al final, el propietario.
 MINIMO_TERMINOS_INTEGRADOS = 0.6
 
-#: Vueltas de comprobación. La primera es la comprobación entera; la segunda, solo los huecos.
+#: Vueltas de comprobación. La primera es la comprobación entera; la segunda, solo los huecos; y la
+#: tercera —`VUELTAS_CON_HUECOS`— el **bucle de huecos** del §2.1.4, que se hace una sola vez sobre
+#: lo que quedó sin frase en los apuntes. Más vueltas sobre el mismo hueco no lo rellenan: lo tapan.
 VUELTAS_MAXIMAS = 2
+VUELTAS_CON_HUECOS = 3
+
+#: Cobertura mínima para publicar un tema: preguntas cubiertas sobre las que tienen **clave
+#: utilizable**. Es la puerta del §2.3, y el denominador importa tanto como el umbral: una pregunta
+#: cuya respuesta marcada contradice la norma no tiene una respuesta con la que se pueda acertar,
+#: así que contarla en contra de los apuntes sería culpar al texto de un fallo del banco. El número
+#: se mide y se enseña **siempre**, también cuando el tema queda en borrador.
+COBERTURA_MINIMA = 0.90
 
 #: Lo que se marca en un apartado escrito sin material de apoyo. Es lo que el propietario busca al
 #: revisar, y el redactor escribe la misma marca dentro del párrafo.
@@ -90,6 +105,10 @@ SIN_MATERIAL = "sin material de apoyo"
 
 #: Lo que se marca en un apartado al que le han llegado hechos nuevos después de escribirlo.
 HECHOS_NUEVOS = "hechos nuevos sin integrar"
+
+#: Mínimo de palabras de un añadido. Un añadido de cero palabras no rellena nada, y el bucle de
+#: huecos existe para rellenar: por debajo de esto no se baja, aunque el apartado esté en su tope.
+MINIMO_PALABRAS_ANADIDO = 60
 
 
 class FactKind(StrEnum):
@@ -99,13 +118,33 @@ class FactKind(StrEnum):
     TECNICO = "tecnico"
 
 
+class NotesState(StrEnum):
+    """Qué se puede decir de los apuntes de un tema **en la zona del alumno**.
+
+    Son tres estados y no dos porque «no tiene apuntes» y «los tiene sin publicar» se leen distinto:
+    al primero no se puede entrar a leer, y el segundo se lee igual que el publicado pero **diciendo
+    que es un borrador** (el tema no pasó las dos puertas del §2.3 y su versión no se archivó).
+
+    Lo decide el par (¿hay apartados escritos?, ¿hay versión archivada?):
+
+    - sin apartados: `NONE`, y la pantalla dice que todavía no hay apuntes de ese tema;
+    - con apartados y sin versión: `DRAFT`;
+    - con apartados y con versión: `PUBLISHED`.
+    """
+
+    NONE = "none"
+    DRAFT = "draft"
+    PUBLISHED = "published"
+
+
 class KeyStatus(StrEnum):
     """Qué se puede decir de la respuesta correcta de una pregunta.
 
     Es la diferencia que decide si la letra del modelo se puede usar como criterio: con una clave
-    **activa** sí (es la que corrige los tests); con una **en borrador** solo se anota, porque hay
-    conjuntos cuya plantilla está desalineada y una clave mala convertiría un acierto en un hueco;
-    **sin ninguna** entrada no hay letra contra la que comparar.
+    **activa** sí (es la que corrige los tests); con una **en borrador** también se compara —una
+    letra distinta de la clave es un conflicto, no una cobertura—, pero se anota su estado, porque
+    hay conjuntos cuya plantilla está desalineada y el conflicto puede ser de la clave; **sin
+    ninguna** entrada no hay letra contra la que comparar y manda la frase.
     """
 
     ACTIVE = "active"
@@ -118,11 +157,19 @@ class KeyStatus(StrEnum):
 
 
 class Coverage(StrEnum):
-    """El resultado final de una pregunta frente a los apuntes. Es lo que cuenta el informe."""
+    """El resultado final de una pregunta frente a los apuntes. Es lo que cuenta el informe.
+
+    `conflict` es el que faltaba y el que destapó la revisión del propietario: **una letra distinta
+    de la clave no es una pregunta cubierta**. Los apuntes contestan «b» y la plantilla dice «a»; o
+    la clave está mal o los apuntes, y ninguna de las dos cosas se arregla dando la pregunta por
+    buena. Con clave **activa** el resultado ya terminaba en duda; con clave **en borrador** entraba
+    como cubierta, y eran 96 preguntas de los tres pilotos contadas de más.
+    """
 
     CUBIERTA = "covered"
     HUECO = "gap"
     DUDOSA = "doubtful"
+    CONFLICTO = "conflict"
 
 
 class Motivo(StrEnum):
@@ -130,17 +177,163 @@ class Motivo(StrEnum):
 
     Los dos primeros motivos son de los **apuntes** (hay que añadir o reescribir); los dos últimos,
     de la **clave** (la pregunta se revisa en el panel, no se arregla escribiendo más).
+
+    `SIN_MATERIA_EN_EL_INDICE` es el quinto y no es ninguno de los dos: la pregunta no se puede
+    situar en ninguna materia del tema ni por su enunciado ni por el texto de sus hechos, así que no
+    hay apartado en el que escribirla. Antes esto **paraba la corrida** diciendo que era una
+    pregunta
+    mal clasificada; ahora va a la bandeja del propietario con su motivo, que es lo que se pidió: lo
+    que no se puede situar se le enseña a él, no se esconde en un cajón de «otros» ni bloquea el
+    tema
+    entero por diez preguntas.
     """
 
     SIN_FRASE_EN_LOS_APUNTES = "sin_frase_en_los_apuntes"
     LETRA_NO_COINCIDE = "letra_no_coincide"
     CLAVE_CONTRADICE_LA_NORMA = "clave_contradice_la_norma"
     CLAVE_SIN_DEFINIR = "clave_sin_definir"
+    SIN_MATERIA_EN_EL_INDICE = "sin_materia_en_el_indice"
 
     @property
     def es_de_los_apuntes(self) -> bool:
         """¿El motivo se arregla escribiendo mejor los apuntes?"""
         return self in (Motivo.SIN_FRASE_EN_LOS_APUNTES, Motivo.LETRA_NO_COINCIDE)
+
+
+class CategoriaIncidencia(StrEnum):
+    """La categoría con la que una pregunta que no queda cubierta va a la bandeja del propietario.
+
+    Es el vocabulario del §2.1.4 del objetivo, y son cuatro porque son cuatro trabajos distintos: al
+    primero se le escribe más material, al segundo se le revisa la clave, al tercero hay que
+    reescribir la pregunta y al cuarto hay que comprobar qué dice hoy la norma. Una incidencia sin
+    categoría no se puede despachar, y por eso «conflictos de letra sin categorizar» es una puerta.
+
+    Desde el §2 de `AJUSTES-AL-OBJETIVO-CLAVES-Y-RITMO-2026-10.md` son **seis**, porque se midió que
+    el motor ponía mal la etiqueta de dos clases enteras de lo que dejaba en la bandeja:
+
+    - `pregunta_mal_importada`: la pregunta está rota por su **forma** —le faltan opciones, dos
+      quedaron fundidas, una es el principio de otra— y eso no se arregla mirando la clave;
+    - `clave_no_fiable`: la pregunta es de un conjunto con la clave en cuarentena (§1), y mientras
+    lo
+      esté lo que diga de los apuntes no es una incidencia de los apuntes.
+
+    Las dos las asigna **la reclasificación** (`domain/notes_incidents.py`), no el motor: el motor
+    sigue poniendo las cuatro de siempre.
+    """
+
+    HUECO_SIN_MATERIAL = "hueco_sin_material"
+    CLAVE_SOSPECHOSA = "clave_sospechosa"
+    PREGUNTA_AMBIGUA = "pregunta_ambigua"
+    NORMA_CAMBIADA = "norma_cambiada"
+    PREGUNTA_MAL_IMPORTADA = "pregunta_mal_importada"
+    CLAVE_NO_FIABLE = "clave_no_fiable"
+
+
+#: Qué categoría le toca a cada motivo. El motivo dice **qué pasó**; la categoría, **quién lo
+#: arregla**. Un hueco es trabajo de los apuntes; una letra que no coincide, de la clave; una clave
+#: que contradice la norma, de la norma; y una pregunta sin clave no se puede juzgar.
+CATEGORIA_POR_MOTIVO: dict[Motivo, CategoriaIncidencia] = {
+    Motivo.SIN_FRASE_EN_LOS_APUNTES: CategoriaIncidencia.HUECO_SIN_MATERIAL,
+    Motivo.LETRA_NO_COINCIDE: CategoriaIncidencia.CLAVE_SOSPECHOSA,
+    Motivo.CLAVE_CONTRADICE_LA_NORMA: CategoriaIncidencia.NORMA_CAMBIADA,
+    Motivo.CLAVE_SIN_DEFINIR: CategoriaIncidencia.PREGUNTA_AMBIGUA,
+    # Una pregunta que no se puede situar en el índice se arregla reescribiéndola o asignándola a
+    # mano: es trabajo del propietario sobre la pregunta, no sobre los apuntes.
+    Motivo.SIN_MATERIA_EN_EL_INDICE: CategoriaIncidencia.PREGUNTA_AMBIGUA,
+}
+
+
+@dataclass(frozen=True, slots=True)
+class IncidenciaDeApuntes:
+    """Una pregunta que los apuntes no cubren, con su categoría, su motivo y la frase que lo prueba.
+
+    `frase` es la cita **verificada** de los apuntes cuando la hay (el conflicto de letra la
+    tiene: es la frase que sostiene otra opción que la clave). Sin ella, la incidencia sigue siendo
+    válida: hay huecos que no tienen frase porque el dato no está escrito.
+    """
+
+    question_version_id: str
+    group_signature: str
+    category: CategoriaIncidencia
+    reason: Motivo
+    detail: str
+    section_key: str = ""
+    anchor: str = ""
+    phrase: str | None = None
+
+
+def categoria_de(coverage: Coverage, motivo: Motivo | None) -> CategoriaIncidencia | None:
+    """La categoría de una pregunta que no quedó cubierta, o `None` si sí lo quedó."""
+    if coverage is Coverage.CUBIERTA or coverage is Coverage.HUECO:
+        return None
+    if motivo is None:
+        return CategoriaIncidencia.PREGUNTA_AMBIGUA
+    return CATEGORIA_POR_MOTIVO.get(motivo, CategoriaIncidencia.PREGUNTA_AMBIGUA)
+
+
+#: Qué se le dice al propietario de cada categoría: es lo que va a leer en la bandeja.
+TEXTO_DE_CATEGORIA: dict[CategoriaIncidencia, str] = {
+    CategoriaIncidencia.HUECO_SIN_MATERIAL: (
+        "los apuntes no contienen el dato ni se ha podido rellenar en las tres vueltas: falta "
+        "material de estudio para esta pregunta"
+    ),
+    CategoriaIncidencia.CLAVE_SOSPECHOSA: (
+        "los apuntes sí contestan la pregunta, y con otra letra que su clave: hay que mirar "
+        "cuál de las dos está mal"
+    ),
+    CategoriaIncidencia.PREGUNTA_AMBIGUA: (
+        "la pregunta no tiene clave con la que comprobarla: no se puede decidir si los apuntes la "
+        "contestan"
+    ),
+    CategoriaIncidencia.NORMA_CAMBIADA: (
+        "la clave contradice la norma o el material de estudio: hay que comprobar qué dice hoy la "
+        "norma"
+    ),
+    CategoriaIncidencia.PREGUNTA_AMBIGUA: (
+        "la pregunta no tiene clave con la que comprobarla: no se puede decidir si los apuntes la "
+        "contestan"
+    ),
+    CategoriaIncidencia.PREGUNTA_MAL_IMPORTADA: (
+        "la pregunta está rota por su forma —le faltan opciones, dos quedaron fundidas o una es el "
+        "principio de otra—: antes de mirar la clave hay que arreglar la pregunta, y lo que no se "
+        "pueda reparar con una regla no entra en los tests"
+    ),
+    CategoriaIncidencia.CLAVE_NO_FIABLE: (
+        "la clave de esta pregunta es de un conjunto en cuarentena (más del 30 % de sus claves "
+        "contradicen los apuntes): no se usa para corregir ni cuenta para la cobertura hasta que "
+        "se arregle, así que lo que diga de los apuntes no es una incidencia de los apuntes"
+    ),
+}
+
+#: Lo que se le dice al propietario cuando la pregunta no cabe en **ninguna** materia del tema: ni
+#: su enunciado ni sus hechos dicen de qué habla. No es un hueco de los apuntes —no hay apartado
+#: donde escribirla— ni una clave sospechosa: es una pregunta que necesita que él decida dónde va.
+TEXTO_SIN_MATERIA = (
+    "la pregunta no se puede situar en ninguna materia del tema ni por su enunciado ni por el "
+    "texto de sus hechos: no hay apartado de apuntes donde contestarla, así que hay que "
+    "reescribirla o asignarle un tema a mano (no se ha metido en ningún cajón de «otros»)"
+)
+
+
+def detalle_de_incidencia(resultado: NotesCheck, grupo: QuestionGroup | None) -> str:
+    """La frase que el propietario lee en la bandeja: qué pasa, con qué pregunta y con qué prueba.
+
+    No es un volcado: es la pregunta, la letra que dieron los apuntes frente a la clave, y la frase
+    verificada cuando la hay. Con eso se puede decidir sin abrir la base.
+    """
+    categoria = categoria_de(resultado.coverage, resultado.note)
+    partes = [TEXTO_DE_CATEGORIA.get(categoria, "sin categoría") if categoria else "sin categoría"]
+    if grupo is not None:
+        partes.append(f"pregunta: {grupo.representative.stem.strip()[:300]}")
+        esperadas = ", ".join(grupo.correct_keys) or "sin clave"
+        partes.append(
+            f"clave: {esperadas} ({grupo.key_status.value}) · los apuntes dicen: "
+            f"{resultado.letter or 'no contestan'}"
+        )
+    if resultado.quote:
+        partes.append(f"frase de los apuntes: «{resultado.quote[:400]}»")
+    partes.append(f"vueltas: {resultado.attempts}")
+    return "\n".join(partes)
 
 
 # --- las preguntas y sus grupos -------------------------------------------------------------------
@@ -321,6 +514,12 @@ class NoteSection:
 
     `key` y `anchor` son lo mismo a propósito: el anclaje es la clave del subapartado, así que se
     puede enlazar una pregunta a un párrafo sin resolver nada por el camino.
+
+    `encabezados_ya_usados` son los títulos que ya están puestos **en los otros trozos de su misma
+    materia**: una materia que no cabe en una llamada se parte, y sin esto cada trozo escribe su
+    propio índice y los dos escriben el mismo (le pasó a I.1: «2. Composición de las Cámaras» en los
+    dos trozos de las Cortes Generales). Va en el apartado y no en la firma del motor, para no
+    cambiar el puerto por un dato del reparto.
     """
 
     key: str
@@ -332,6 +531,7 @@ class NoteSection:
     body_markdown: str = ""
     needs_review_reason: str | None = None
     section_id: str = ""
+    encabezados_ya_usados: tuple[str, ...] = ()
 
 
 def slug(codigo: str) -> str:
@@ -581,6 +781,17 @@ def verificar_cita(cita: str | None, apuntes: str) -> bool:
     return limpia in normalise(_sin_marcas(apuntes))
 
 
+def huella_de_texto(texto: str) -> str:
+    """La huella del texto que se comprobó: es la clave de la caché del paso E.
+
+    Una comprobación guardada **solo** vale para el texto contra el que se verificó. Comparar la
+    huella es lo que impide reutilizar la cita de un apartado que después se ha reescrito: sin esto,
+    la bandeja del propietario enseñaba frases que ya no están en los apuntes (le pasó a I.6, cuyo
+    texto se rehizo después de comprobarlo).
+    """
+    return hashlib.sha256(texto.encode("utf-8")).hexdigest()
+
+
 def evaluar(
     *,
     grupo: QuestionGroup,
@@ -594,13 +805,24 @@ def evaluar(
 
     El orden importa:
 
-    1. **sin respuesta del modelo** o sin frase que aparezca en el texto → hueco;
-    2. si la clave está marcada como contradictoria por el paso B, la letra **no** decide: la clave
-       que se sabe mala no puede convertir un acierto en un fallo. Queda cubierta si la frase está,
-       y
-       el motivo viaja con ella (es una incidencia de la pregunta, no de los apuntes);
-    3. con **clave activa**, la letra tiene que coincidir además de estar la frase;
-    4. con clave **en borrador o sin definir**, manda la frase: la letra se guarda, pero no decide.
+    1. si el paso B marcó la clave como contraria a la norma, la letra **no** decide nunca: la clave
+       que se sabe mala no puede convertir un acierto en un fallo, y la pregunta queda como
+       incidencia de la pregunta (con la frase o sin ella);
+    2. **sin frase** que aparezca en el texto → hueco (y, agotadas las vueltas, duda con su motivo):
+       lo que no se puede citar no se da por cubierto;
+    3. con la frase verificada y **clave** (activa o en borrador), la letra tiene que coincidir: si
+       no coincide —o si el modelo no dijo ninguna— el resultado es **conflicto**, no cobertura;
+    4. con la frase verificada y **sin ninguna clave** no hay letra contra la que comparar, así que
+       manda la frase.
+
+    La regla 3 es la que cambió. Antes, una clave en borrador daba por cubierta cualquier pregunta
+    con la frase, aunque el modelo hubiera contestado otra letra: 96 preguntas de los tres pilotos
+    contaban como cubiertas diciendo lo contrario que su plantilla, y una letra distinta de la clave
+    es justo lo que hay que mirar (o la clave está mal, o los apuntes), no lo que se da por bueno.
+
+    A la primera vuelta un desacuerdo de letra se queda en **hueco** —el añadido puede ser lo que
+    falta para que la respuesta correcta se vea—; agotadas las vueltas es un **conflicto**, porque
+    escribir más no arregla una clave que dice otra cosa.
 
     Al agotar las vueltas, un hueco se convierte en **dudosa**: el plan llama incidencia a lo que
     sigue fallando tras dos vueltas, y distinguirlo de «cubierta» es lo que evita dar por bueno un
@@ -613,26 +835,6 @@ def evaluar(
     correctas = grupo.correct_keys
     letra_ok = bool(correctas) and letra is not None and letra.strip().lower() in correctas
 
-    if frase_ok and (clave_dudosa or not clave.clara):
-        if clave_dudosa:
-            return _resultado(
-                grupo,
-                section,
-                Coverage.DUDOSA,
-                Motivo.CLAVE_CONTRADICE_LA_NORMA,
-                cita,
-                letra,
-                correctas,
-                clave,
-                attempts,
-            )
-        return _resultado(
-            grupo, section, Coverage.CUBIERTA, None, cita, letra, correctas, clave, attempts
-        )
-    if frase_ok and letra_ok:
-        return _resultado(
-            grupo, section, Coverage.CUBIERTA, None, cita, letra, correctas, clave, attempts
-        )
     if clave_dudosa:
         return _resultado(
             grupo,
@@ -645,21 +847,36 @@ def evaluar(
             clave,
             attempts,
         )
+    if frase_ok:
+        if not correctas or letra_ok:
+            return _resultado(
+                grupo, section, Coverage.CUBIERTA, None, cita, letra, correctas, clave, attempts
+            )
+        if attempts < VUELTAS_MAXIMAS:
+            return _resultado(
+                grupo, section, Coverage.HUECO, None, cita, letra, correctas, clave, attempts
+            )
+        return _resultado(
+            grupo,
+            section,
+            Coverage.CONFLICTO,
+            Motivo.LETRA_NO_COINCIDE,
+            cita,
+            letra,
+            correctas,
+            clave,
+            attempts,
+        )
     if attempts < VUELTAS_MAXIMAS:
         return _resultado(
             grupo, section, Coverage.HUECO, None, cita, letra, correctas, clave, attempts
         )
-    if not clave.clara:
-        motivo = Motivo.CLAVE_SIN_DEFINIR if not correctas else Motivo.SIN_FRASE_EN_LOS_APUNTES
-        return _resultado(
-            grupo, section, Coverage.DUDOSA, motivo, cita, letra, correctas, clave, attempts
-        )
-    if frase_ok and not letra_ok:
+    if not correctas:
         return _resultado(
             grupo,
             section,
             Coverage.DUDOSA,
-            Motivo.LETRA_NO_COINCIDE,
+            Motivo.CLAVE_SIN_DEFINIR,
             cita,
             letra,
             correctas,
@@ -695,6 +912,9 @@ class NotesCheck:
     expected: tuple[str, ...]
     key_status: KeyStatus
     attempts: int
+    #: Huella del texto contra el que se verificó `quote`. Es lo que decide si esta comprobación se
+    #: puede reutilizar en la corrida siguiente: solo si el texto es el mismo.
+    text_sha256: str | None = None
 
 
 def _resultado(
@@ -708,6 +928,14 @@ def _resultado(
     key_status: KeyStatus,
     attempts: int,
 ) -> NotesCheck:
+    """El resultado de una pregunta, con la cita **solo** cuando está verificada.
+
+    La cita se guarda cuando la pregunta está cubierta (es el enlace al párrafo que la contesta) y
+    cuando está en **conflicto**: ahí la frase es la prueba que el propietario necesita para decidir
+    si el que está mal es la clave o los apuntes (§2.1.4, «con la frase que lo demuestra»). Lo
+    que no
+    se guarda nunca es una cita sin verificar: el modelo la copia a veces de memoria.
+    """
     return NotesCheck(
         question_version_id=grupo.representative.question_version_id,
         group_signature=grupo.signature,
@@ -715,7 +943,7 @@ def _resultado(
         anchor=section.anchor,
         coverage=coverage,
         note=note,
-        quote=quote if coverage is Coverage.CUBIERTA else None,
+        quote=quote if coverage in (Coverage.CUBIERTA, Coverage.CONFLICTO) else None,
         letter=letter,
         expected=expected,
         key_status=key_status,
@@ -779,8 +1007,9 @@ class SectionNotes:
 
     `question_ids` son las preguntas que este apartado **cubre** (frase verificada y letra de
     acuerdo
-    con la clave cuando la clave es clara). Es el rastro que pide el propietario: qué preguntas
-    sostiene cada apartado, sin tener que volver a comprobarlas.
+    con la clave cuando la clave existe). Es el rastro que pide el propietario: qué preguntas
+    sostiene cada apartado, sin tener que volver a comprobarlas. `conflict_question_ids` es aparte a
+    propósito: una pregunta en conflicto no está cubierta y se revisa.
     """
 
     key: str
@@ -793,9 +1022,11 @@ class SectionNotes:
     covered: int = 0
     gaps: int = 0
     doubtful: int = 0
+    conflicts: int = 0
     question_ids: tuple[str, ...] = ()
     gap_question_ids: tuple[str, ...] = ()
     doubtful_question_ids: tuple[str, ...] = ()
+    conflict_question_ids: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -814,7 +1045,8 @@ class TopicNotes:
     @property
     def questions_total(self) -> int:
         return sum(
-            apartado.covered + apartado.gaps + apartado.doubtful for apartado in self.sections
+            apartado.covered + apartado.gaps + apartado.doubtful + apartado.conflicts
+            for apartado in self.sections
         )
 
     @property
@@ -828,6 +1060,11 @@ class TopicNotes:
     @property
     def doubtful(self) -> int:
         return sum(apartado.doubtful for apartado in self.sections)
+
+    @property
+    def conflicts(self) -> int:
+        """Preguntas que los apuntes contestan con otra letra que su clave: van a revisión."""
+        return sum(apartado.conflicts for apartado in self.sections)
 
 
 def notes_signature(notes: TopicNotes | None) -> dict[str, Any]:
@@ -850,6 +1087,7 @@ def notes_signature(notes: TopicNotes | None) -> dict[str, Any]:
                     "covered": sorted(apartado.question_ids),
                     "gaps": sorted(apartado.gap_question_ids),
                     "doubtful": sorted(apartado.doubtful_question_ids),
+                    "conflict": sorted(apartado.conflict_question_ids),
                 }
                 for apartado in notes.sections
             ],
@@ -870,6 +1108,7 @@ def notes_document(notes: TopicNotes | None) -> dict[str, Any] | None:
         "covered": notes.covered,
         "gaps": notes.gaps,
         "doubtful": notes.doubtful,
+        "conflicts": notes.conflicts,
         "sections": [
             {
                 "key": apartado.key,
@@ -882,9 +1121,11 @@ def notes_document(notes: TopicNotes | None) -> dict[str, Any] | None:
                 "covered": apartado.covered,
                 "gaps": apartado.gaps,
                 "doubtful": apartado.doubtful,
+                "conflicts": apartado.conflicts,
                 "question_ids": list(apartado.question_ids),
                 "gap_question_ids": list(apartado.gap_question_ids),
                 "doubtful_question_ids": list(apartado.doubtful_question_ids),
+                "conflict_question_ids": list(apartado.conflict_question_ids),
             }
             for apartado in notes.sections
         ],
@@ -916,9 +1157,11 @@ def notes_from_document(datos: Mapping[str, Any] | None) -> TopicNotes | None:
                 covered=_entero(apartado.get("covered")),
                 gaps=_entero(apartado.get("gaps")),
                 doubtful=_entero(apartado.get("doubtful")),
+                conflicts=_entero(apartado.get("conflicts")),
                 question_ids=_textos(apartado.get("question_ids")),
                 gap_question_ids=_textos(apartado.get("gap_question_ids")),
                 doubtful_question_ids=_textos(apartado.get("doubtful_question_ids")),
+                conflict_question_ids=_textos(apartado.get("conflict_question_ids")),
             )
             for apartado in _diccionarios(datos.get("sections"))
         ),
@@ -1081,9 +1324,19 @@ def build_user_prompt_hechos(grupos: Sequence[QuestionGroup]) -> str:
     return "Escribe los hechos de estas preguntas:\n\n" + "\n\n".join(bloques)
 
 
-def build_user_prompt_redactar(section: NoteSection, material: Sequence[MaterialPassage]) -> str:
+def build_user_prompt_redactar(
+    section: NoteSection,
+    material: Sequence[MaterialPassage],
+    *,
+    es_tabla_de_puertos: bool = False,
+) -> str:
     """El encargo de un apartado: el título, los hechos obligatorios y el material que los
-    sostiene."""
+    sostiene.
+
+    Si el apartado es la tabla de puertos, se le añaden las instrucciones de sus **familias** y la
+    regla de la columna de notas: es un apartado con una forma propia y decirlo aquí (y no en las
+    instrucciones generales) es lo que hace que el resto de apartados no cargue con esas reglas.
+    """
     hechos = "\n".join(
         f"{numero}. [{hecho.kind.value}] {hecho.text}"
         for numero, hecho in enumerate(section.facts, start=1)
@@ -1096,13 +1349,30 @@ def build_user_prompt_redactar(section: NoteSection, material: Sequence[Material
         )
     else:
         cuerpo_material = "(no hay material del tema que trate estos hechos)"
+    propio = f"\n\n{familias_para_el_prompt()}" if es_tabla_de_puertos else ""
+    # Los encabezados que ya están puestos en los otros trozos de esta misma materia: partir una
+    # materia en dos llamadas (no cabe en una) hace que cada trozo escriba su propio índice, y sin
+    # esto los dos escriben el mismo. La puerta de encabezados repetidos lo dice con razón.
+    ya_puestos = ""
+    if section.encabezados_ya_usados:
+        lista = "\n".join(f"- {titulo}" for titulo in section.encabezados_ya_usados)
+        ya_puestos = (
+            f"\n\nENCABEZADOS QUE YA ESTÁN PUESTOS EN LOS OTROS TROZOS DE ESTA MATERIA (no los "
+            f"repitas: este apartado es la continuación de esa misma materia):\n{lista}"
+        )
+    # El tope de extensión, dicho en el encargo y no solo comprobado después: un apartado se mide en
+    # `40 x hechos distintos` (la puerta de densidad del §2.3) y el redactor tiene que saberlo antes
+    # de escribir, no descubrirlo en el informe. I.6 salió con 82 palabras por hecho y no pasó.
+    tope = MAX_PALABRAS_POR_HECHO * max(len(section.facts), 1)
     return (
         f"Apartado: {section.title}\n"
         f"Epígrafe oficial: {section.epigraph_code}\n\n"
         f"HECHOS OBLIGATORIOS ({len(section.facts)}):\n{hechos}\n\n"
         f"MATERIAL DEL OPOSITOR (citas de su biblioteca; úsalo como apoyo, no lo copies entero):\n"
-        f"{cuerpo_material}\n\n"
-        "Escribe el apartado."
+        f"{cuerpo_material}{propio}{ya_puestos}\n\n"
+        f"Escribe el apartado. No pases de unas {tope} palabras en total (son "
+        f"{MAX_PALABRAS_POR_HECHO} por cada uno de los {len(section.facts)} hechos): lo que no sea "
+        "explicar un hecho, no va."
     )
 
 
@@ -1132,6 +1402,13 @@ def build_user_prompt_anadir(
 
     Los hechos van **obligatorios**: son los del paso B para esas mismas preguntas, así que el
     añadido no se apoya en lo que el modelo recuerde, sino en lo que ya se escribió y se comprueba.
+
+    Y el añadido lleva **su tope**: lo que le queda al apartado para llegar a `40 x hechos` (§2.3),
+    nunca menos de `MINIMO_PALABRAS_ANADIDO` (un párrafo tiene que poder decir algo). Sin esto, el
+    añadido escribía sin límite y el tema acababa por encima del tope de extensión justo por
+    rellenar sus huecos: I.6 quedó en 18.795 palabras de 13.840 después de cuatro añadidos, con el
+    texto ya bien. El tope se saca del apartado (sus hechos y lo que ya tiene escrito) y no de un
+    parámetro, para que valga en los dos sitios donde se escribe un añadido.
     """
     ya = section.body_markdown.strip()
     if len(ya) > maximo_caracteres:
@@ -1146,13 +1423,27 @@ def build_user_prompt_anadir(
         "\n".join(f"{numero}. {hecho.text}" for numero, hecho in enumerate(hechos, start=1))
         or "(no hay hechos nuevos: escribe a partir de la norma, sin inventar)"
     )
+    tope = tope_del_anadido(section)
     return (
         f"Apartado: {section.title}\n\n"
         f"LO QUE YA DICEN LOS APUNTES (final del apartado):\n{ya or '(vacío)'}\n\n"
         f"HECHOS QUE FALTAN (obligatorios, intégralos en el añadido):\n{obligatorios}\n\n"
         "PREGUNTAS QUE LOS APUNTES NO CONTESTAN:\n" + "\n\n".join(bloques) + "\n\nEscribe lo que "
-        "falta, sin repetir lo que ya está."
+        f"falta, sin repetir lo que ya está. **Como mucho {tope} palabras**: es lo que le queda al "
+        "apartado para no pasar de 40 por cada hecho suyo. Si no cabe todo, di primero lo que "
+        "contesta a las preguntas de arriba."
     )
+
+
+def tope_del_anadido(section: NoteSection) -> int:
+    """Cuántas palabras le quedan al apartado antes de pasarse de `40 x hechos` (§2.3).
+
+    Nunca menos de `MINIMO_PALABRAS_ANADIDO`: un añadido de cero palabras no rellena nada, y el
+    objetivo del bucle de huecos es justo lo contrario. El hueco que quede por encima de eso se
+    declara (va a la bandeja del propietario con su categoría), no se tapa escribiendo de más.
+    """
+    tope = MAX_PALABRAS_POR_HECHO * max(len(section.facts), 1)
+    return max(MINIMO_PALABRAS_ANADIDO, tope - len(section.body_markdown.split()))
 
 
 def serializar_hechos(hechos: Sequence[Hecho]) -> str:
@@ -1182,6 +1473,7 @@ __all__ = [
     "LOTE_HECHOS",
     "MAX_HECHOS_POR_APARTADO",
     "MINIMO_CITA",
+    "MINIMO_PALABRAS_ANADIDO",
     "SIN_MATERIAL",
     "VERSION_PLANTILLA",
     "VUELTAS_MAXIMAS",
@@ -1224,5 +1516,6 @@ __all__ = [
     "serializar_hechos",
     "slug",
     "terminos_significativos",
+    "tope_del_anadido",
     "verificar_cita",
 ]

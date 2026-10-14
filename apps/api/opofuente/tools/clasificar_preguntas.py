@@ -41,6 +41,7 @@ from opofuente.infrastructure.document_repository import SqlAlchemyDocumentRepos
 from opofuente.infrastructure.profile_repository import SqlAlchemyProfileRepository
 from opofuente.infrastructure.question_repository import SqlAlchemyQuestionRepository
 from opofuente.infrastructure.representation_store import RepresentationStore
+from opofuente.infrastructure.run_lock import ClassificationRunLock, current_run
 from opofuente.infrastructure.topic_classification_client import (
     BASE_URL_POR_DEFECTO,
     MODELO_POR_DEFECTO,
@@ -157,6 +158,16 @@ def main(argv: Sequence[str] | None = None) -> int:
             # Sin clave y sin modelo: ver lo que hay no cuesta nada y es lo primero que se mira.
             oposicion_id = _opposition_id(profiles, code)
             print(_banks_to_show(classification.banks(oposicion_id, limit=args.bancos)))
+            # Si hay una corrida en curso se dice aquí: es la respuesta a «¿por qué no arranca?»
+            # antes de intentarlo siquiera.
+            en_curso = current_run(session_factory)
+            if en_curso is not None:
+                print(
+                    f"\nAVISO: hay una clasificación en curso desde "
+                    f"{en_curso.get('iniciada', en_curso.get('marca', '?'))} "
+                    f"(oposición «{en_curso.get('oposicion', 'desconocida')}»). Otra corrida se "
+                    "negará a arrancar hasta que termine."
+                )
             return 0
 
         api_key = os.environ.get(VARIABLE_DE_LA_CLAVE, "")
@@ -178,6 +189,9 @@ def main(argv: Sequence[str] | None = None) -> int:
                 base_url=args.base_url,
                 timeout_seconds=args.tiempo,
             ),
+            # La marca de corrida: dos clasificaciones a la vez sobre la misma base se pisan y
+            # dejan preguntas con dos temas propuestos. La segunda se niega y lo dice.
+            lock=ClassificationRunLock(session_factory, opposition_code=code),
             batch_size=args.lote,
         )
         if args.dry_run:

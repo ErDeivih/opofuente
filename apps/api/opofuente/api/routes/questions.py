@@ -27,6 +27,7 @@ from opofuente.api.question_schemas import (
     BulkTopicAssignmentResultSchema,
     BulkTopicAssignmentSchema,
     BulkTopicAssignmentsSchema,
+    ConflictingTopicSchema,
     CorrectionOutcomeSchema,
     CreateQuestionSetSchema,
     CsvMappingSchema,
@@ -45,6 +46,7 @@ from opofuente.api.question_schemas import (
     ParseQuestionSetSchema,
     PatchQuestionSchema,
     PatchQuestionSetSchema,
+    ProgrammeNodeRefSchema,
     QuestionEvidenceSchema,
     QuestionExclusionPageSchema,
     QuestionExclusionSchema,
@@ -54,6 +56,11 @@ from opofuente.api.question_schemas import (
     QuestionSetPageSchema,
     QuestionSetSchema,
     QuestionTopicAssignmentSchema,
+    QuestionTopicConflictPageSchema,
+    QuestionTopicConflictSchema,
+    QuestionTopicProposalPageSchema,
+    QuestionTopicProposalSchema,
+    QuestionTopicProposalsSchema,
     QuestionTopicSchema,
     RejectedRowSchema,
     SetExplanationRequestSchema,
@@ -64,6 +71,7 @@ from opofuente.application.question_models import (
     ExplanationView,
     IssueReportView,
     OptionView,
+    ProgrammeNodeRef,
     QuestionEvidenceView,
     QuestionExclusionOutcome,
     QuestionExclusionView,
@@ -71,12 +79,15 @@ from opofuente.application.question_models import (
     QuestionPage,
     QuestionSetPage,
     QuestionSetView,
+    QuestionTopicConflictView,
+    QuestionTopicProposalsView,
     QuestionTopicView,
     QuestionView,
     TopicAssignment,
     TopicAssignmentBatch,
     TopicAssignmentRequest,
     TopicAssignmentRow,
+    TopicProposalView,
 )
 from opofuente.domain.errors import ClassificationConflictError, NotFoundError
 from opofuente.domain.questions import Origin, QuestionDuplicateGroup
@@ -125,6 +136,7 @@ def _set(view: QuestionSetView) -> QuestionSetSchema:
         active_key_id=view.active_key_id,
         is_official=view.is_official,
         distribution=view.distribution,  # type: ignore[arg-type]
+        origin_scope=view.origin_scope,  # type: ignore[arg-type]
     )
 
 
@@ -306,11 +318,13 @@ def _topic_assignment(asignacion: TopicAssignment) -> QuestionTopicAssignmentSch
     return QuestionTopicAssignmentSchema(
         **_topic(asignacion.topic.view).model_dump(),
         created=asignacion.topic.created,
+        promoted=asignacion.topic.promoted,
         epigraph=(
             None
             if asignacion.epigraph is None
             else _assignment(asignacion.epigraph.view, created=asignacion.epigraph.created)
         ),
+        retired=asignacion.retired,
     )
 
 
@@ -321,6 +335,7 @@ def _exclusion(vista: QuestionExclusionView) -> QuestionExclusionSchema:
         actor=vista.actor,
         note=vista.note,
         created_at=vista.created_at,
+        stem=vista.stem,
     )
 
 
@@ -329,7 +344,13 @@ def _exclusion_outcome(marca: QuestionExclusionOutcome) -> QuestionExclusionSche
 
 
 def _bulk_request(peticion: BulkTopicAssignmentSchema) -> TopicAssignmentRequest:
-    """La fila del contrato traducida a lo que entiende el servicio. El servicio decide el resto."""
+    """La fila del contrato traducida a lo que entiende el servicio. El servicio decide el resto.
+
+    `status` nulo es «no toques lo que ya haya» y `promote` solo se enciende cuando la fila **dice**
+    qué tiene que quedar: es la diferencia entre una clasificación por lotes que se reintenta (no
+    cambia nada de lo que ya está) y el propietario confirmando en la pantalla de revisión (la
+    propuesta pasa a decisión, con su evento).
+    """
     return TopicAssignmentRequest(
         question_version_id=peticion.question_version_id,
         curriculum_node_id=peticion.curriculum_node_id,
@@ -339,6 +360,9 @@ def _bulk_request(peticion: BulkTopicAssignmentSchema) -> TopicAssignmentRequest
         ),
         confidence=peticion.confidence,
         reason=peticion.reason,
+        status=peticion.status or "accepted",
+        promote=peticion.status is not None,
+        retire_others=peticion.retire_others,
     )
 
 
@@ -357,9 +381,62 @@ def _bulk_report(lote: TopicAssignmentBatch) -> BulkTopicAssignmentReportSchema:
         results=[_bulk_row(fila) for fila in lote.rows],
         created=lote.created,
         existing=lote.existing,
+        promoted=lote.promoted,
         excluded=lote.excluded,
         already_excluded=lote.already_excluded,
         errors=lote.errors,
+    )
+
+
+def _node_ref(nodo: ProgrammeNodeRef) -> ProgrammeNodeRefSchema:
+    return ProgrammeNodeRefSchema(
+        node_id=nodo.node_id,
+        official_code=nodo.official_code,
+        path=nodo.path,
+        title=nodo.title,
+    )
+
+
+def _proposal(propuesta: TopicProposalView) -> QuestionTopicProposalSchema:
+    return QuestionTopicProposalSchema(
+        mapping_id=propuesta.mapping_id,
+        topic=_node_ref(propuesta.topic),
+        epigraphs=[_node_ref(epigrafe) for epigrafe in propuesta.epigraphs],
+        confidence=propuesta.confidence,
+        reason=propuesta.reason,
+        created_at=propuesta.created_at,
+    )
+
+
+def _proposal_card(tarjeta: QuestionTopicProposalsView) -> QuestionTopicProposalsSchema:
+    return QuestionTopicProposalsSchema(
+        question_version_id=tarjeta.question_version_id,
+        question_set_id=tarjeta.question_set_id,
+        set_title=tarjeta.set_title,
+        stem=tarjeta.stem,
+        options=[_option(opcion) for opcion in tarjeta.options],
+        accepted=None if tarjeta.accepted is None else _node_ref(tarjeta.accepted),
+        proposals=[_proposal(propuesta) for propuesta in tarjeta.proposals],
+    )
+
+
+def _conflict(conflicto: QuestionTopicConflictView) -> QuestionTopicConflictSchema:
+    return QuestionTopicConflictSchema(
+        question_version_id=conflicto.question_version_id,
+        question_set_id=conflicto.question_set_id,
+        set_title=conflicto.set_title,
+        stem=conflicto.stem,
+        options=[_option(opcion) for opcion in conflicto.options],
+        topics=[
+            ConflictingTopicSchema(
+                mapping_id=tema.mapping_id,
+                topic=_node_ref(tema.topic),
+                confidence=tema.confidence,
+                actor=tema.actor,
+                created_at=tema.created_at,
+            )
+            for tema in conflicto.topics
+        ],
     )
 
 
@@ -407,6 +484,7 @@ def create_question_set(
             model_code=request.model_code,
             held_at=request.held_at,
             source_document_version_id=request.source_document_version_id,
+            origin_scope=request.origin_scope,
         )
     )
 
@@ -428,7 +506,7 @@ def get_question_set(set_id: str, service: QuestionServiceDep) -> QuestionSetSch
     "/question-sets/{set_id}",
     response_model=QuestionSetSchema,
     responses=WRITE_ERRORS,
-    summary="Cambia quién puede ver un conjunto (personal o public)",
+    summary="Cambia quién puede ver un conjunto (personal o public) y de dónde sale",
 )
 def update_question_set(
     set_id: str,
@@ -436,13 +514,22 @@ def update_question_set(
     service: QuestionServiceDep,
     actor_header: Annotated[str | None, Header(alias=TOPIC_ACTOR_HEADER)] = None,
 ) -> QuestionSetSchema:
-    """`personal` es material del propietario; `public`, publicable.
+    """`personal` es material del propietario; `public`, publicable. `origin_scope`, de dónde sale.
 
     Un conjunto **nace** `personal` y solo se hace `public` a propósito, uno a uno: el material que
-    el propietario ha reunido no se hace visible por descuido. El actor viaja a la auditoría.
+    el propietario ha reunido no se hace visible por descuido. La procedencia se declara por el
+    mismo camino y por la misma razón: marcar un conjunto como de otra administración lo deja fuera
+    de los simulacros, y eso es una decisión que tiene que quedar auditada. El actor viaja a la
+    auditoría. Los dos campos son opcionales, pero al menos uno tiene que venir.
     """
     actor = _topic_actor(declared=None, header=actor_header)
-    if not service.set_distribution(set_id, request.distribution, actor=actor):
+    if request.distribution is not None and not service.set_distribution(
+        set_id, request.distribution, actor=actor
+    ):
+        raise NotFoundError("conjunto de preguntas", set_id)
+    if request.origin_scope is not None and not service.set_origin_scope(
+        set_id, request.origin_scope, actor=actor
+    ):
         raise NotFoundError("conjunto de preguntas", set_id)
     vista = service.set_detail(set_id)
     if vista is None:  # pragma: no cover - se acaba de cambiar y leer
@@ -825,6 +912,10 @@ def assign_question_topics_bulk(
 def list_question_exclusions(
     service: QuestionServiceDep,
     reason: Annotated[str | None, Query()] = None,
+    q: Annotated[
+        str | None,
+        Query(max_length=200, description="Busca en el enunciado de la pregunta excluida."),
+    ] = None,
     limit: Annotated[int, Query(ge=1, le=200)] = DEFAULT_LIMIT,
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> QuestionExclusionPageSchema:
@@ -835,10 +926,82 @@ def list_question_exclusions(
     pregunta a propósito: una marca no es un tema, y meterla en el mismo sitio invitaría a leerla
     como si lo fuera. La revisión de una marca se hace asignando un tema (que la levanta) o
     dejándola.
+
+    `q` filtra por el enunciado: la sección «No son preguntas» del panel (F16, decisión D6) enseña
+    los enunciados rotos, y con 769 en la base hay que poder buscar el que se tiene en la cabeza.
     """
-    marcas, total = service.exclusions(reason=reason, limit=limit, offset=offset)
+    marcas, total = service.exclusions(reason=reason, q=q, limit=limit, offset=offset)
     return QuestionExclusionPageSchema(
         exclusions=[_exclusion(marca) for marca in marcas],
+        total=total,
+        limit=limit,
+        offset=offset,
+        totals_by_reason=service.exclusions_by_reason(),
+    )
+
+
+@router.get(
+    "/question-topic-proposals",
+    response_model=QuestionTopicProposalPageSchema,
+    responses=RESOURCE_ERRORS,
+    summary="Las propuestas de tema sin confirmar, con la pregunta (la cola de revisión del panel)",
+)
+def list_question_topic_proposals(
+    service: QuestionServiceDep,
+    limit: Annotated[int, Query(ge=1, le=200)] = DEFAULT_LIMIT,
+    offset: Annotated[int, Query(ge=0)] = 0,
+) -> QuestionTopicProposalPageSchema:
+    """Lo que el clasificador propuso con dudas (`provisional`) y nadie ha decidido todavía.
+
+    Es la lectura de la cola que despacha el propietario con el teclado, y por eso trae la pregunta
+    **entera** —enunciado y opciones— junto al tema y los epígrafes propuestos, la confianza y el
+    motivo del modelo: sin el texto delante, una propuesta no se puede juzgar, y sin la confianza no
+    se sabe cuánto dudó quien la hizo.
+
+    Va como recurso propio y no dentro de `GET /questions/{id}/topics` porque una propuesta no es
+    «los temas de una pregunta»: es **una cola**, se pagina como tal, y su total lo cuenta el
+    servidor. Van de la más dudosa a la menos, y el motivo sale de la auditoría, que es donde vive.
+
+    Se despacha con `POST /questions/topics/bulk`: una fila por propuesta con su `status`
+    (`accepted`) la confirma, otra con otro tema la corrige, y `exclusion_reason` la deja fuera de
+    temario. No hay una ruta de escritura propia para esto a propósito: la propuesta se decide por
+    el mismo camino auditado por el que se asignan los temas.
+    """
+    propuestas, total = service.topic_proposals(limit=limit, offset=offset)
+    return QuestionTopicProposalPageSchema(
+        questions=[_proposal_card(tarjeta) for tarjeta in propuestas],
+        total=total,
+        limit=limit,
+        offset=offset,
+    )
+
+
+@router.get(
+    "/question-topic-conflicts",
+    response_model=QuestionTopicConflictPageSchema,
+    responses=RESOURCE_ERRORS,
+    summary="Las preguntas que cuentan en dos temas aceptados, con quién decidió cada uno",
+)
+def list_question_topic_conflicts(
+    service: QuestionServiceDep,
+    limit: Annotated[int, Query(ge=1, le=200)] = DEFAULT_LIMIT,
+    offset: Annotated[int, Query(ge=0)] = 0,
+) -> QuestionTopicConflictPageSchema:
+    """Las preguntas que cuentan en **dos o más temas decididos** a la vez.
+
+    No es una curiosidad: una pregunta en dos temas suma en los dos en todos los recuentos del
+    alumno y en la cobertura, así que mientras exista, esas cifras mienten. Vienen de antes de esta
+    tanda —la catalogación heredada del documento, las migraciones— y de dos corridas del
+    clasificador que se pisaron; por eso cada tema viaja con **quién lo decidió**, que es lo que
+    permite juzgar cuál se queda.
+
+    Se resuelve con la misma ruta por lotes que la cola: una fila con el tema elegido, `status`
+    `accepted` y `retire_others` deja la pregunta con ese tema y retira los demás. La aplicación no
+    elige: si nadie decide, no se toca nada.
+    """
+    conflictos, total = service.topic_conflicts(limit=limit, offset=offset)
+    return QuestionTopicConflictPageSchema(
+        questions=[_conflict(conflicto) for conflicto in conflictos],
         total=total,
         limit=limit,
         offset=offset,

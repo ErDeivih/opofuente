@@ -54,9 +54,17 @@ class DossierNoteSectionSchema(BaseModel):
     covered: int = Field(ge=0)
     gaps: int = Field(ge=0)
     doubtful: int = Field(ge=0)
+    conflicts: int = Field(
+        ge=0,
+        description=(
+            "Preguntas que este apartado contesta con una letra distinta de su clave: van a "
+            "revisión, no cuentan como cubiertas."
+        ),
+    )
     question_ids: list[str]
     gap_question_ids: list[str]
     doubtful_question_ids: list[str]
+    conflict_question_ids: list[str]
 
 
 class DossierNotesSchema(BaseModel):
@@ -76,6 +84,13 @@ class DossierNotesSchema(BaseModel):
     covered: int = Field(ge=0)
     gaps: int = Field(ge=0)
     doubtful: int = Field(ge=0)
+    conflicts: int = Field(
+        ge=0,
+        description=(
+            "Preguntas cuya letra según los apuntes no coincide con la clave. No son cobertura: "
+            "son la cola de revisión de la comprobación (paso E)."
+        ),
+    )
     sections: list[DossierNoteSectionSchema]
 
     @model_validator(mode="after")
@@ -85,8 +100,11 @@ class DossierNotesSchema(BaseModel):
             raise ValueError("sections_total no cuadra con los apartados servidos")
         if self.covered != sum(apartado.covered for apartado in self.sections):
             raise ValueError("covered no cuadra con los apartados servidos")
+        if self.conflicts != sum(apartado.conflicts for apartado in self.sections):
+            raise ValueError("conflicts no cuadra con los apartados servidos")
         if self.questions_total != sum(
-            apartado.covered + apartado.gaps + apartado.doubtful for apartado in self.sections
+            apartado.covered + apartado.gaps + apartado.doubtful + apartado.conflicts
+            for apartado in self.sections
         ):
             raise ValueError("questions_total no cuadra con las preguntas comprobadas")
         return self

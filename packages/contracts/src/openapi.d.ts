@@ -1585,6 +1585,196 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/notes-incidents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Las incidencias del motor, para la bandeja del propietario
+         * @description Las incidencias, de la más nueva a la más vieja.
+         *
+         *     `pending` cuenta las que están **sin despachar** (`open`) sin mirar el filtro: es el número que
+         *     el propietario necesita ver aunque esté mirando las de una sola categoría. `totals_by_category`
+         *     cuenta las cuatro categorías **en la base entera**, con un `GROUP BY`: es la cifra de cada
+         *     clase,
+         *     medida y no heredada. El `total`, en cambio, es el del filtro.
+         */
+        get: operations["list_notes_incidents_api_v1_notes_incidents_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/notes-incidents/{incident_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Despacha una incidencia: en curso, resuelta o descartada, con la nota de lo decidido
+         * @description Cambia el estado de una incidencia y, si se escribe, deja la nota de lo que se ha decidido.
+         *
+         *     No hay ruta para borrar una incidencia: lo que señaló el motor no se tira, se despacha. Una
+         *     incidencia que no existe es un 404 con su identificador, y una nota de más de una línea se
+         *     recorta antes de guardarse.
+         */
+        patch: operations["update_notes_incident_api_v1_notes_incidents__incident_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/notes-reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Los avisos del alumno sobre los apuntes, para la bandeja del propietario
+         * @description Los avisos, del más nuevo al más viejo.
+         *
+         *     `pending` cuenta los que están **sin despachar** (`open`) sin mirar el filtro: es el número que
+         *     el propietario necesita ver aunque esté mirando los de un solo tema. Los otros tres recuentos y
+         *     el `total` del filtro salen de la base, no de la página que se devuelve.
+         */
+        get: operations["list_note_reports_api_v1_notes_reports_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/notes-reports/{report_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Despacha un aviso: en curso, resuelto o descartado, con la nota de lo que se ha hecho
+         * @description Cambia el estado de un aviso y, si se escribe, deja la nota de lo que se ha hecho.
+         *
+         *     No hay ruta para borrar un aviso: lo que el alumno marcó como mal no se tira, se despacha. Un
+         *     aviso que no existe es un 404 con su identificador, y una nota de más de una línea se recorta
+         *     antes de guardarse.
+         */
+        patch: operations["update_note_report_api_v1_notes_reports__report_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/notes-review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Los temas con su estado, sus puertas y el motivo de los que están en borrador
+         * @description La tabla del panel: los temas del programa activo, en orden, con su motivo medido.
+         *
+         *     Mide **solo** los temas que esperan una decisión (los borradores): los publicados ya pasaron las
+         *     puertas y medirlos costaría la mitad de la página para repetir su estado. La medida sale de las
+         *     comprobaciones guardadas —el mismo camino que `apuntes --medir`— y no llama a ningún modelo.
+         */
+        get: operations["list_notes_review_api_v1_notes_review_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/notes-review/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Cuántos borradores esperan una decisión (el número del menú, sin medir nada)
+         * @description Los contadores del menú. No mide la cobertura de nada: se pide en todas las pantallas.
+         */
+        get: operations["notes_review_summary_api_v1_notes_review_summary_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/notes-review/{codigo}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * La ficha de un tema: sus apartados, tal como se leerán en la zona del alumno
+         * @description Un tema, apartado a apartado, con su texto, su forma y lo que se ha comprobado en cada uno.
+         *
+         *     Un tema sin apuntes escritos sale con su estado (`none`) y sin apartados: no es un error que un
+         *     tema no tenga texto, y devolver un 404 obligaría a la pantalla a distinguir «no existe» de «no
+         *     está escrito», que es justo lo que el estado contesta.
+         */
+        get: operations["notes_review_file_api_v1_notes_review__codigo__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/notes-review/{codigo}/decision": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Aprueba o rechaza los apuntes de un tema, con su nota y su evento de auditoría
+         * @description Aprueba (y publica, si las puertas pasan) o rechaza el texto de un tema.
+         *
+         *     Aprobar **no salta el listón**: si la cobertura del §2.3 no llega, el tema queda aprobado y sin
+         *     publicar, y `blocked_by` dice qué puerta lo frena con su cifra en el motivo. Rechazar exige
+         *     motivo, y una nota de más de una línea se recorta a una.
+         */
+        post: operations["decide_notes_review_api_v1_notes_review__codigo__decision_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/oppositions": {
         parameters: {
             query?: never;
@@ -1709,10 +1899,127 @@ export interface paths {
          *     pregunta a propósito: una marca no es un tema, y meterla en el mismo sitio invitaría a leerla
          *     como si lo fuera. La revisión de una marca se hace asignando un tema (que la levanta) o
          *     dejándola.
+         *
+         *     `q` filtra por el enunciado: la sección «No son preguntas» del panel (F16, decisión D6) enseña
+         *     los enunciados rotos, y con 769 en la base hay que poder buscar el que se tiene en la cabeza.
          */
         get: operations["list_question_exclusions_api_v1_question_exclusions_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/question-files/{question_version_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * La ficha de una pregunta: su clave, de dónde sale, los apuntes y qué se puede hacer
+         * @description Todo lo que hace falta para decidir una clave, en una sola lectura.
+         *
+         *         Es la pantalla que faltaba detrás de dos enlaces que ya existían: el de la bandeja del motor
+         *         y
+         *     el
+         *         del banco. Sin ella, «clave sospechosa» era un enlace a una dirección sin ficha donde
+         *     arreglarla.
+         */
+        get: operations["get_question_file_api_v1_question_files__question_version_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/question-files/{question_version_id}/answer-key": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Marca la respuesta correcta, por la ruta auditada (la anterior queda en el historial)
+         * @description Cambia la respuesta correcta escribiendo una **plantilla nueva** del conjunto.
+         *
+         *         Lo que garantiza y se puede comprobar después:
+         *
+         *         - la plantilla que mandaba pasa a `superseded` y la nueva la apunta con `supersedes_id`:
+         *         **no se
+         *           pisa** nada, y el historial de la ficha enseña las dos con la letra que cada una daba a
+         *           esta
+         *           pregunta;
+         *         - el estado se conserva: una plantilla activa se sustituye por otra activa (si no, marcar la
+         *           correcta no cambiaría la corrección y la pantalla mentiría) y una en borrador por otra en
+         *           borrador;
+         *         - **una clave oficial no se toca**: si el conjunto es un examen oficial —o su plantilla
+         *         viene de
+         *     un
+         *           documento, que es el otro camino a «oficial»— la respuesta es un **409 con el motivo** y
+         *           no se
+         *           escribe nada. Los conjuntos protegidos viajan en la ficha, con su nombre, para que no haya
+         *           que
+         *           adivinar cuál estorba;
+         *         - una letra que la pregunta no tiene es un **422** con el campo, antes de tocar la base;
+         *         - el antes, el después y el actor van en el mismo evento de auditoría y en la misma
+         *         transacción
+         *     que
+         *           la plantilla.
+         */
+        post: operations["mark_correct_option_api_v1_question_files__question_version_id__answer_key_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/question-files/{question_version_id}/repairs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Repara lo que una regla mecánica pueda reparar, escribiendo una versión nueva
+         * @description Escribe la versión nueva de la pregunta con lo que una regla mecánica puede arreglar.
+         *
+         *         Solo hay dos reglas y las dos salen del §2 de los ajustes: quitar del enunciado la
+         *         referencia
+         *     del
+         *         examen que quedó pegada al final y partir una opción que se tragó a la siguiente. Lo que no
+         *         se
+         *         pueda reparar con una regla **no se toca**: la ficha dice por qué y esta ruta lo repite con
+         *         un
+         *     409,
+         *         en vez de escribir una versión con texto inventado.
+         *
+         *         Y al reparar, el **sitio** de la pregunta viaja con ella: sus temas, sus anclas de apuntes y
+         *         su
+         *         marca de fuera de temario se mudan a la versión nueva. Sin eso, limpiar un enunciado sacaría
+         *         la
+         *         pregunta del temario y de la cobertura de los apuntes en silencio, que es un cambio mucho
+         *         mayor
+         *     que
+         *         el que se ha pedido.
+         *
+         *         Las incidencias de la pregunta se despachan como **resueltas** por la ruta auditada de la
+         *     bandeja,
+         *         con la nota de lo hecho: una bandeja que siguiera enseñando una pregunta ya reparada
+         *         mentiría.
+         */
+        post: operations["repair_question_api_v1_question_files__question_version_id__repairs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1752,11 +2059,14 @@ export interface paths {
         options?: never;
         head?: never;
         /**
-         * Cambia quién puede ver un conjunto (personal o public)
-         * @description `personal` es material del propietario; `public`, publicable.
+         * Cambia quién puede ver un conjunto (personal o public) y de dónde sale
+         * @description `personal` es material del propietario; `public`, publicable. `origin_scope`, de dónde sale.
          *
          *     Un conjunto **nace** `personal` y solo se hace `public` a propósito, uno a uno: el material que
-         *     el propietario ha reunido no se hace visible por descuido. El actor viaja a la auditoría.
+         *     el propietario ha reunido no se hace visible por descuido. La procedencia se declara por el
+         *     mismo camino y por la misma razón: marcar un conjunto como de otra administración lo deja fuera
+         *     de los simulacros, y eso es una decisión que tiene que quedar auditada. El actor viaja a la
+         *     auditoría. Los dos campos son opcionales, pero al menos uno tiene que venir.
          */
         patch: operations["update_question_set_api_v1_question_sets__set_id__patch"];
         trace?: never;
@@ -1937,6 +2247,70 @@ export interface paths {
          *     comprobar.
          */
         post: operations["recalculate_set_api_v1_question_sets__set_id__recalculate_sessions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/question-topic-conflicts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Las preguntas que cuentan en dos temas aceptados, con quién decidió cada uno
+         * @description Las preguntas que cuentan en **dos o más temas decididos** a la vez.
+         *
+         *     No es una curiosidad: una pregunta en dos temas suma en los dos en todos los recuentos del
+         *     alumno y en la cobertura, así que mientras exista, esas cifras mienten. Vienen de antes de esta
+         *     tanda —la catalogación heredada del documento, las migraciones— y de dos corridas del
+         *     clasificador que se pisaron; por eso cada tema viaja con **quién lo decidió**, que es lo que
+         *     permite juzgar cuál se queda.
+         *
+         *     Se resuelve con la misma ruta por lotes que la cola: una fila con el tema elegido, `status`
+         *     `accepted` y `retire_others` deja la pregunta con ese tema y retira los demás. La aplicación no
+         *     elige: si nadie decide, no se toca nada.
+         */
+        get: operations["list_question_topic_conflicts_api_v1_question_topic_conflicts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/question-topic-proposals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Las propuestas de tema sin confirmar, con la pregunta (la cola de revisión del panel)
+         * @description Lo que el clasificador propuso con dudas (`provisional`) y nadie ha decidido todavía.
+         *
+         *     Es la lectura de la cola que despacha el propietario con el teclado, y por eso trae la pregunta
+         *     **entera** —enunciado y opciones— junto al tema y los epígrafes propuestos, la confianza y el
+         *     motivo del modelo: sin el texto delante, una propuesta no se puede juzgar, y sin la confianza no
+         *     se sabe cuánto dudó quien la hizo.
+         *
+         *     Va como recurso propio y no dentro de `GET /questions/{id}/topics` porque una propuesta no es
+         *     «los temas de una pregunta»: es **una cola**, se pagina como tal, y su total lo cuenta el
+         *     servidor. Van de la más dudosa a la menos, y el motivo sale de la auditoría, que es donde vive.
+         *
+         *     Se despacha con `POST /questions/topics/bulk`: una fila por propuesta con su `status`
+         *     (`accepted`) la confirma, otra con otro tema la corrige, y `exclusion_reason` la deja fuera de
+         *     temario. No hay una ruta de escritura propia para esto a propósito: la propuesta se decide por
+         *     el mismo camino auditado por el que se asignan los temas.
+         */
+        get: operations["list_question_topic_proposals_api_v1_question_topic_proposals_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2499,6 +2873,111 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/student/mistakes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Las preguntas que fallaste la última vez, con su tema, su fecha y cuántas veces
+         * @description Los fallos, y de aquí sale un test.
+         *
+         *     Cada fila dice **de qué tema** era la pregunta —el dato que convierte la lista en algo que se
+         *     puede usar— y el reparto por tema es lo que permite pedir un test solo con los fallos de un
+         *     tema. Ese test lo compone el motor con el filtro de falladas, sobre los intentos de verdad: esta
+         *     lista es para mirar, no la fuente de la composición.
+         */
+        get: operations["student_mistakes_api_v1_student_mistakes_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/student/mock-exams": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * El simulacro antes de montarlo: sus variantes, sus partes y el bloque del supuesto
+         * @description Qué va a caer en el simulacro, leído del perfil del examen.
+         *
+         *     Es la ruta que hace que se pueda elegir **sabiendo qué se elige**: cuántas preguntas tiene cada
+         *     parte, cuántas de reserva, cuánto dura, con qué se corrige (la penalización publicada) y qué
+         *     temas entran en cada uno de los dos bloques del supuesto. Nada de esto se escribe a mano en la
+         *     pantalla: sale de la convocatoria, y lo que la convocatoria no publica viaja como `null`.
+         */
+        get: operations["student_mock_exam_plan_api_v1_student_mock_exams_get"];
+        put?: never;
+        /**
+         * Monta el simulacro con el perfil del examen y el bloque elegido para el supuesto
+         * @description El simulacro del perfil: 80 + 5 y el supuesto de 20 + 5 del bloque III o del IV.
+         *
+         *     Los dos supuestos son excluyentes y se monta el elegido. Si sus preguntas salen de los temas del
+         *     bloque, la sesión lo dice (`practical_case_origin`).
+         */
+        post: operations["student_create_mock_exam_api_v1_student_mock_exams_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/student/official-exams": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Los exámenes oficiales importados (hoy, ninguno: la lista vacía se dice)
+         * @description Los exámenes oficiales que hay importados de esta oposición.
+         *
+         *     Una lista vacía es un **estado**, no un error: quiere decir que todavía no se ha importado
+         *     ninguno, y la pantalla lo dice con esas palabras en vez de quedarse en blanco o de enseñar otra
+         *     cosa con el nombre de «examen oficial».
+         */
+        get: operations["student_official_exams_api_v1_student_official_exams_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/student/official-exams/{posicion}/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Monta el examen oficial que ocupa esa posición de la lista
+         * @description El examen se pide por su **sitio en la lista**, no por un identificador.
+         *
+         *     Es la misma regla que la hoja de respuestas: lo que el alumno tiene delante es la fila, y por
+         *     eso
+         *     la fila es la dirección. Así la zona del alumno sigue sin enseñar de dónde salen las preguntas.
+         */
+        post: operations["student_create_official_exam_api_v1_student_official_exams__posicion__sessions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/student/overview": {
         parameters: {
             query?: never;
@@ -2540,6 +3019,106 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/student/sessions/{sesion}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** El test en curso: la pregunta que toca y la hoja de respuestas entera */
+        get: operations["student_session_api_v1_student_sessions__sesion__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/student/sessions/{sesion}/answers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Contesta la pregunta de una fila de la hoja y devuelve el test como queda
+         * @description La respuesta se pide por la **fila** de la hoja de respuestas, no por un identificador.
+         *
+         *     Es lo que el alumno tiene delante, y así la capa no tiene que enseñar ningún identificador de
+         *     pregunta. La corrección solo vuelve cuando el modo la permite (`can_show_correction`).
+         */
+        post: operations["student_answer_api_v1_student_sessions__sesion__answers_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/student/sessions/{sesion}/finish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Termina el test y devuelve el resultado con la nota de cada parte */
+        post: operations["student_finish_api_v1_student_sessions__sesion__finish_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/student/sessions/{sesion}/result": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * El resultado de un test terminado: la nota por parte, el tiempo y pregunta a pregunta
+         * @description El resultado entero de un test terminado, con lo que hace falta para repasar.
+         *
+         *     Cada pregunta con tus opciones, lo que marcaste, cuál era la correcta y **de qué tema era**, más
+         *     el desglose por tema. Es la pantalla que contesta a «qué he fallado y por dónde lo repaso», que
+         *     es
+         *     para lo que sirve un resultado; de un test sin terminar, el motor dice que no hay resultado y la
+         *     respuesta lo repite en lugar de enseñar medio resultado.
+         */
+        get: operations["student_session_result_api_v1_student_sessions__sesion__result_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/student/sessions/{sesion}/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Arranca el test (arrancar uno que ya corre no cambia nada) */
+        post: operations["student_start_api_v1_student_sessions__sesion__start_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/student/syllabus": {
         parameters: {
             query?: never;
@@ -2564,6 +3143,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/student/tests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Monta un test de varios temas (los que elija el alumno)
+         * @description Un test de los temas elegidos, por la composición declarada del servicio de estudio.
+         *
+         *     Si en esos temas no hay tantas preguntas como se piden, la sesión se monta con las que haya: un
+         *     test de 50 con 30 disponibles es un test de 30, no un error que deja al alumno sin estudiar.
+         */
+        post: operations["student_create_test_api_v1_student_tests_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/student/tests/plan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Qué se puede elegir antes de montar un test: los tamaños y lo que dura su reloj
+         * @description El formulario del test, con lo que solo sabe el servidor (F22).
+         *
+         *     La pantalla de Tests **decide poco**: los tamaños que se ofrecen y los minutos que les pondría
+         *     el reloj salen de aquí, y salen del mismo sitio del que sale el reloj de la sesión de verdad.
+         *     Una pantalla que calculara los minutos por su cuenta enseñaría una cifra que podría no ser la
+         *     que se aplica al empezar.
+         */
+        get: operations["student_test_plan_api_v1_student_tests_plan_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/student/topics/{codigo}": {
         parameters: {
             query?: never;
@@ -2578,6 +3205,55 @@ export interface paths {
         get: operations["student_topic_api_v1_student_topics__codigo__get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/student/topics/{codigo}/notes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Los apuntes de un tema: su texto en orden de lectura y si están en borrador
+         * @description Los apuntes del tema, tal como se leen.
+         *
+         *     Un tema **en borrador se sirve igual** que uno publicado: el estado viaja con el texto
+         *     (`draft`) y la pantalla lo dice. No se esconden apuntes por no haber pasado una puerta —para eso
+         *     está la marca— y un tema sin apuntes devuelve su estado y una lista vacía, no un 404: el tema
+         *     existe y lo que falta es el texto.
+         */
+        get: operations["student_topic_notes_api_v1_student_topics__codigo__notes_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/student/topics/{codigo}/reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Avisa de que un apartado de los apuntes está mal («esto está mal»)
+         * @description Guarda el aviso del alumno sobre un apartado de los apuntes (decisión D2).
+         *
+         *     No es un registro de pantalla: entra en `notes_reports` y **en la auditoría**, en la misma
+         *     transacción, y es lo que el propietario verá en su bandeja. El motivo es obligatorio y de una
+         *     línea; el apartado se identifica por su clave y el anclaje lo pone el servidor.
+         */
+        post: operations["student_report_notes_api_v1_student_topics__codigo__reports_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3295,6 +3971,11 @@ export interface components {
              * @default 0
              */
             existing: number;
+            /**
+             * Promoted
+             * @default 0
+             */
+            promoted: number;
             /** Results */
             results: components["schemas"]["BulkTopicAssignmentResultSchema"][];
         };
@@ -3303,9 +3984,14 @@ export interface components {
          * @description Qué ha pasado con **una** fila del lote.
          *
          *     `outcome` es el vocabulario que hace utilizable el reintento: `created` (esta llamada lo creó),
-         *     `existing` (ya estaba), `excluded` (marcada fuera de temario ahora), `already_excluded` (ya lo
-         *     estaba) y `error` (la fila no se pudo aplicar, con el motivo en `detail`). Una fila mala **no**
-         *     tumba el lote: se dice cuál y por qué.
+         *     `existing` (ya estaba tal cual), `promoted` (ya estaba como **propuesta** y esta llamada la ha
+         *     confirmado), `excluded` (marcada fuera de temario ahora), `already_excluded` (ya lo estaba) y
+         *     `error` (la fila no se pudo aplicar, con el motivo en `detail`). Una fila mala **no** tumba el
+         *     lote: se dice cuál y por qué.
+         *
+         *     `promoted` y `created` son distintos a propósito: la cola de revisión se despacha confirmando
+         *     propuestas, y un informe que contara las confirmaciones como «ya estaban» dejaría al propietario
+         *     sin saber si su decisión se aplicó.
          */
         BulkTopicAssignmentResultSchema: {
             assignment?: components["schemas"]["QuestionTopicAssignmentSchema"] | null;
@@ -3316,7 +4002,7 @@ export interface components {
              * Outcome
              * @enum {string}
              */
-            outcome: "created" | "existing" | "excluded" | "already_excluded" | "error";
+            outcome: "created" | "existing" | "promoted" | "excluded" | "already_excluded" | "error";
             /** Question Version Id */
             question_version_id: string;
         };
@@ -3326,6 +4012,13 @@ export interface components {
          *
          *     Las dos formas son excluyentes y se comprueba: una fila que dijera las dos cosas dejaría la
          *     pregunta clasificada y sin clasificar a la vez, y una que no dijera ninguna no pide nada.
+         *
+         *     `status` es opcional **a propósito**, y su ausencia significa algo: una fila sin `status` no
+         *     toca lo que ya existe (crear si falta, y nada más), que es lo que necesita una clasificación por
+         *     lotes que se reintenta. Una fila **con** `status` dice qué tiene que quedar: si la pregunta ya
+         *     tenía una propuesta (`provisional`) a ese tema, se confirma —o se vuelve a proponer— y eso queda
+         *     auditado. Es lo que hace el propietario al despachar la cola desde la pantalla de revisión, y
+         *     por eso la confirmación viaja en el lote: no una petición por pregunta.
          */
         BulkTopicAssignmentSchema: {
             /**
@@ -3343,6 +4036,13 @@ export interface components {
             question_version_id: string;
             /** Reason */
             reason?: string | null;
+            /**
+             * Retire Others
+             * @default false
+             */
+            retire_others: boolean;
+            /** Status */
+            status?: ("provisional" | "accepted") | null;
         };
         /**
          * BulkTopicAssignmentsSchema
@@ -3560,6 +4260,25 @@ export interface components {
             /** Resolved Count */
             resolved_count: number;
         };
+        /**
+         * ConflictingTopicSchema
+         * @description Un tema ya decidido de una pregunta que tiene más de uno, con quién lo decidió.
+         *
+         *     `actor` viaja porque cambia cómo se mira: uno heredado de una migración (`local`) y uno
+         *     propuesto por el modelo (`llm:…`) no se juzgan igual. Nulo es «no consta en la auditoría», que
+         *     también hay que poder decir en lugar de inventarse un autor.
+         */
+        ConflictingTopicSchema: {
+            /** Actor */
+            actor?: string | null;
+            /** Confidence */
+            confidence: number;
+            /** Created At */
+            created_at?: string | null;
+            /** Mapping Id */
+            mapping_id: string;
+            topic: components["schemas"]["ProgrammeNodeRefSchema"];
+        };
         /** ConvocationDetailSchema */
         ConvocationDetailSchema: {
             /** Code */
@@ -3728,6 +4447,12 @@ export interface components {
             model_code?: string | null;
             /** Opposition Id */
             opposition_id: string;
+            /**
+             * Origin Scope
+             * @default desconocida
+             * @enum {string}
+             */
+            origin_scope: "age" | "otra_administracion" | "desconocida";
             /**
              * Set Type
              * @enum {string}
@@ -4175,6 +4900,13 @@ export interface components {
             anchor: string;
             /** Body Markdown */
             body_markdown: string;
+            /** Conflict Question Ids */
+            conflict_question_ids: string[];
+            /**
+             * Conflicts
+             * @description Preguntas que este apartado contesta con una letra distinta de su clave: van a revisión, no cuentan como cubiertas.
+             */
+            conflicts: number;
             /** Covered */
             covered: number;
             /** Doubtful */
@@ -4208,6 +4940,11 @@ export interface components {
          *     leyó.
          */
         DossierNotesSchema: {
+            /**
+             * Conflicts
+             * @description Preguntas cuya letra según los apuntes no coincide con la clave. No son cobertura: son la cola de revisión de la comprobación (paso E).
+             */
+            conflicts: number;
             /** Covered */
             covered: number;
             /** Doubtful */
@@ -5193,6 +5930,42 @@ export interface components {
             /** Subject Type */
             subject_type: string;
         };
+        /**
+         * MarkCorrectOptionSchema
+         * @description Marca la respuesta correcta de esta pregunta.
+         *
+         *     `correct_option_keys` es **obligatorio y sin valor por defecto**: cambiar lo que se da por bueno
+         *     es un acto deliberado, y admitir el cuerpo vacío dejaría la puerta abierta a una llamada que no
+         *     dice qué quiere.
+         */
+        MarkCorrectOptionSchema: {
+            /** Actor */
+            actor?: string | null;
+            /** Correct Option Keys */
+            correct_option_keys: ("a" | "b" | "c" | "d" | "e" | "f" | "g" | "h")[];
+            /** Note */
+            note?: string | null;
+        };
+        /**
+         * MarkCorrectResultSchema
+         * @description Lo que devuelve marcar la correcta: la ficha al día y las dos plantillas.
+         *
+         *     `superseded_key_version_id` viaja porque el hecho que hay que poder comprobar es que la anterior
+         *     **no se ha pisado**: queda `superseded` y se puede leer.
+         */
+        MarkCorrectResultSchema: {
+            /** Actor */
+            actor: string;
+            /** Correct Option Keys */
+            correct_option_keys: string[];
+            file: components["schemas"]["QuestionFileSchema"];
+            /** Key Version Id */
+            key_version_id: string;
+            /** Previous Option Keys */
+            previous_option_keys: string[];
+            /** Superseded Key Version Id */
+            superseded_key_version_id: string | null;
+        };
         /** MarkKeySupersedesRequestSchema */
         MarkKeySupersedesRequestSchema: {
             /** Superseded Id */
@@ -5290,6 +6063,573 @@ export interface components {
          * @enum {string}
          */
         NodeType: "block" | "topic" | "epigraph";
+        /**
+         * NoteReportListSchema
+         * @description Los avisos, cuántos siguen sin despachar y cuántos hay en cada estado.
+         *
+         *     Los recuentos van aparte de la lista aunque se puedan contar de ella: la lista viene filtrada y
+         *     limitada (por estado, por tema y por búsqueda), y los números que el propietario necesita ver
+         *     son los de la bandeja entera, no los de la página que está mirando. `pending` es solo `open`:
+         *     un aviso «en curso» ya no espera a nadie, y por eso no cuenta ahí.
+         */
+        NoteReportListSchema: {
+            /**
+             * Dismissed
+             * @description Avisos descartados: no eran un error.
+             */
+            dismissed: number;
+            /**
+             * In Progress
+             * @description Avisos que el propietario tiene en la mano.
+             */
+            in_progress: number;
+            /**
+             * Pending
+             * @description Avisos en estado `open`, con independencia del filtro.
+             */
+            pending: number;
+            /** Reports */
+            reports: components["schemas"]["NoteReportSchema"][];
+            /**
+             * Reviewed
+             * @description Avisos resueltos.
+             */
+            reviewed: number;
+            /**
+             * Total
+             * @description Avisos que devuelve el filtro, contados en la base.
+             */
+            total: number;
+        };
+        /**
+         * NoteReportSchema
+         * @description Un aviso del alumno: qué apartado, qué dice, cuándo llegó y cómo acabó.
+         *
+         *     `section_title` es `None` cuando el apartado ya no existe —los apuntes se reescriben—: el aviso
+         *     se sigue enseñando, y ese hueco es justo lo que hay que mirar. `resolution_note` es lo que el
+         *     propietario escribió de lo que hizo, y `reviewed_at` cuándo lo cerró (vuelve a estar vacío si lo
+         *     reabre).
+         */
+        NoteReportSchema: {
+            /** Anchor */
+            anchor: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Id */
+            id: string;
+            /** Reason */
+            reason: string;
+            /** Resolution Note */
+            resolution_note?: string | null;
+            /** Reviewed At */
+            reviewed_at?: string | null;
+            /** Section Key */
+            section_key: string;
+            /** Section Title */
+            section_title?: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "open" | "in_progress" | "reviewed" | "dismissed";
+            /** Topic Code */
+            topic_code: string;
+            /** Topic Title */
+            topic_title: string;
+        };
+        /**
+         * NoteReportUpdateSchema
+         * @description Lo único que se puede cambiar de un aviso: en qué punto está y qué se ha hecho.
+         *
+         *     `note` es potestativa a propósito. El motivo del alumno es obligatorio porque un aviso sin él no
+         *     se puede arreglar; la nota del propietario no, porque hay avisos que se cierran sin nada que
+         *     escribir. Cuando viene, es **una línea** (el servidor la recorta) y sustituye a la que hubiera;
+         *     cuando no viene, la que hubiera se queda.
+         */
+        NoteReportUpdateSchema: {
+            /** Actor */
+            actor?: string | null;
+            /** Note */
+            note?: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "open" | "in_progress" | "reviewed" | "dismissed";
+        };
+        /**
+         * NotesIncidentListSchema
+         * @description Las incidencias de una página, con **las cuatro cifras** de la bandeja.
+         *
+         *     Los recuentos van aparte de la lista aunque se puedan contar de ella, y son de la **bandeja
+         *     entera**, no del filtro: `total` es lo que devuelve el filtro (contado en la base), y
+         *     `totals_by_category` las cuatro categorías con su número real. Es lo que permite que la pantalla
+         *     diga «291 de norma cambiada» sin leerse las 453, y sin heredar la cifra de ningún documento.
+         *
+         *     Los cuatro estados salen siempre, con cero incluido: un botón de filtro que desaparece cuando su
+         *     número es cero obliga a la pantalla a inventarse la ausencia.
+         */
+        NotesIncidentListSchema: {
+            /**
+             * Dismissed
+             * @description Incidencias descartadas: el motor se equivocaba.
+             */
+            dismissed: number;
+            /**
+             * In Progress
+             * @description Incidencias que el propietario tiene en la mano.
+             */
+            in_progress: number;
+            /** Incidents */
+            incidents: components["schemas"]["NotesIncidentSchema"][];
+            /**
+             * Pending
+             * @description Incidencias en `open`, con independencia del filtro.
+             */
+            pending: number;
+            /**
+             * Reviewed
+             * @description Incidencias ya resueltas.
+             */
+            reviewed: number;
+            /**
+             * Total
+             * @description Incidencias que devuelve el filtro, contadas en la base.
+             */
+            total: number;
+            /** Totals By Category */
+            totals_by_category?: {
+                [key: string]: number;
+            };
+        };
+        /**
+         * NotesIncidentSchema
+         * @description Una incidencia del motor, con lo que hace falta para juzgarla y para ir a mirarla.
+         *
+         *     Cuatro bloques, y cada uno existe por algo:
+         *
+         *     1. **qué es**: la categoría, el motivo y el texto del dominio que explica por qué el motor la
+         *        señaló (`category_help`), más el detalle que escribió la corrida (`detail`) y la frase
+         *        verificada (`phrase`) cuando la hay;
+         *     2. **dónde**: el tema, el apartado del que habla (`anchor` y `section_title`) y —lo que permite
+         *        juzgarla sin abrir nada— el enunciado de la pregunta (`stem`). `section_title` es nulo cuando
+         *        la pregunta **no se pudo situar en ninguna materia**: eso no es un dato que falte, es el
+         *        hallazgo, y la pantalla lo dice en vez de mandar a un ancla que no está;
+         *     3. **de dónde sale la clave**: el conjunto del que es la pregunta (`set_title`) y el material
+         *     con
+         *        su versión y su estado (`source_*`). Cuando la categoría es «norma cambiada», la
+         *        contradicción
+         *        tiene dos mitades y esta es la segunda;
+         *     4. **cómo acabó**: el estado, la nota de lo que se hizo y cuándo se cerró.
+         */
+        NotesIncidentSchema: {
+            /** Anchor */
+            anchor: string;
+            /** Attempts */
+            attempts: number;
+            /**
+             * Category
+             * @enum {string}
+             */
+            category: "hueco_sin_material" | "clave_sospechosa" | "pregunta_ambigua" | "norma_cambiada" | "pregunta_mal_importada" | "clave_no_fiable";
+            /** Category Help */
+            category_help: string;
+            /**
+             * Coverage
+             * @enum {string}
+             */
+            coverage: "doubtful" | "conflict";
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Detail */
+            detail: string;
+            /** Id */
+            id: string;
+            /** Phrase */
+            phrase?: string | null;
+            /** Question Version Id */
+            question_version_id: string;
+            /**
+             * Reason
+             * @enum {string}
+             */
+            reason: "sin_frase_en_los_apuntes" | "letra_no_coincide" | "clave_contradice_la_norma" | "clave_sin_definir" | "sin_materia_en_el_indice";
+            /** Resolution Note */
+            resolution_note?: string | null;
+            /** Reviewed At */
+            reviewed_at?: string | null;
+            /** Section Title */
+            section_title?: string | null;
+            /** Set Title */
+            set_title: string;
+            /** Source Document Id */
+            source_document_id?: string | null;
+            /** Source Document Title */
+            source_document_title?: string | null;
+            /** Source Document Type */
+            source_document_type?: string | null;
+            /** Source Version Label */
+            source_version_label?: string | null;
+            /** Source Version Status */
+            source_version_status?: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "open" | "in_progress" | "reviewed" | "dismissed";
+            /** Stem */
+            stem: string;
+            /** Topic Code */
+            topic_code: string;
+            /** Topic Title */
+            topic_title: string;
+        };
+        /**
+         * NotesIncidentUpdateSchema
+         * @description Lo único que se puede cambiar de una incidencia: en qué punto está y qué se ha hecho.
+         *
+         *     No hay ruta para editarla ni para borrarla. La incidencia la escribió una comprobación y lo que
+         *     la resuelve es otra cosa: añadir material, revisar una clave, reescribir una pregunta o
+         *     comprobar la norma. Lo que el propietario decide aquí es **qué ha hecho con ella**, y eso se
+         *     escribe.
+         *
+         *     `note` es potestativa, como en el aviso del alumno: hay incidencias que se cierran sin nada que
+         *     escribir. Cuando viene, es **una línea** y sustituye a la que hubiera; cuando no viene, la que
+         *     hubiera se queda.
+         */
+        NotesIncidentUpdateSchema: {
+            /** Actor */
+            actor?: string | null;
+            /** Note */
+            note?: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "open" | "in_progress" | "reviewed" | "dismissed";
+        };
+        /**
+         * NotesReviewChecksSchema
+         * @description Las comprobaciones guardadas del tema, contadas en la base.
+         *
+         *     No son la puerta de cobertura —esa tiene otro denominador— y por eso van con su propio nombre:
+         *     «de las preguntas que el motor ha comprobado, cuántas quedaron cubiertas, sin frase, dudosas o
+         *     en conflicto con su respuesta correcta».
+         */
+        NotesReviewChecksSchema: {
+            /** Conflicts */
+            conflicts: number;
+            /** Covered */
+            covered: number;
+            /** Doubtful */
+            doubtful: number;
+            /** Gaps */
+            gaps: number;
+            /** Total */
+            total: number;
+        };
+        /**
+         * NotesReviewCountersSchema
+         * @description Los números de la cabecera: cuántos temas hay de cada clase y cuántos esperan decisión.
+         */
+        NotesReviewCountersSchema: {
+            /**
+             * Approved
+             * @description Con una decisión de aprobación escrita por el propietario.
+             */
+            approved: number;
+            /**
+             * Draft
+             * @description Con apuntes escritos y **sin** versión archivada.
+             */
+            draft: number;
+            /**
+             * Pending Decision
+             * @description Borradores sin aprobar: es lo que espera al propietario.
+             */
+            pending_decision: number;
+            /**
+             * Published
+             * @description Con versión archivada: se leen como publicados.
+             */
+            published: number;
+            /**
+             * Rejected
+             * @description Rechazados: esperan a que el texto se arregle.
+             */
+            rejected: number;
+            /**
+             * Topics Total
+             * @description Temas del programa activo.
+             */
+            topics_total: number;
+            /**
+             * With Notes
+             * @description Temas con apuntes escritos.
+             */
+            with_notes: number;
+            /**
+             * Without Notes
+             * @description Temas que todavía no tienen apuntes escritos.
+             */
+            without_notes: number;
+        };
+        /**
+         * NotesReviewDecisionRequestSchema
+         * @description Aprobar o rechazar los apuntes de un tema, con la nota de lo decidido.
+         *
+         *     La nota es **opcional al aprobar** y **obligatoria al rechazar**: un rechazo sin motivo deja el
+         *     borrador donde estaba y encima sin saber por qué. Lo comprueba el esquema (para contestar un 422
+         *     con su campo) y lo vuelve a comprobar el dominio (para cualquier camino que no pase por aquí).
+         *
+         *     `validate_default` no es decorativo: sin él, un cuerpo que **no trae** `note` no pasa por el
+         *     validador del campo —pydantic no valida los campos que no vienen— y el rechazo sin motivo se
+         *     colaba hasta la última línea, donde solo quedaba un 500. Con él, el validador corre también
+         *     cuando la nota no viene, y el 422 señala `note`, que es el campo que hay que rellenar.
+         */
+        NotesReviewDecisionRequestSchema: {
+            /**
+             * Actor
+             * @description Quién decide. Si no viene, la cabecera `X-OpoFuente-Actor`; si no, `local`.
+             */
+            actor?: string | null;
+            /**
+             * Decision
+             * @enum {string}
+             */
+            decision: "approved" | "rejected";
+            /** Note */
+            note?: string | null;
+        };
+        /**
+         * NotesReviewDecisionResultSchema
+         * @description Lo que ha pasado al decidir: la decisión y **si eso ha publicado** el tema.
+         *
+         *     `published` no es «aprobado»: aprobar un tema que no pasa las puertas lo deja aprobado y sin
+         *     publicar, y `blocked_by` dice cuál de las dos lo frena. El listón no se toca.
+         */
+        NotesReviewDecisionResultSchema: {
+            /**
+             * Blocked By
+             * @description Qué puerta impide publicar, cuando el tema está aprobado y no sale.
+             */
+            blocked_by?: ("cobertura" | "forma") | null;
+            /** Published */
+            published: boolean;
+            topic: components["schemas"]["NotesReviewTopicSchema"];
+            /**
+             * Version Created
+             * @description Si la aprobación ha archivado una versión nueva. `false` si la que había ya era la misma lectura; `null` si no se ha intentado archivar.
+             */
+            version_created?: boolean | null;
+        };
+        /**
+         * NotesReviewDecisionSchema
+         * @description Lo que el propietario decidió sobre un tema, con su nota, su fecha y quién lo firmó.
+         */
+        NotesReviewDecisionSchema: {
+            /** Actor */
+            actor: string;
+            /**
+             * Decision
+             * @enum {string}
+             */
+            decision: "approved" | "rejected";
+            /** Note */
+            note?: string | null;
+            /**
+             * Reviewed At
+             * Format: date-time
+             */
+            reviewed_at: string;
+        };
+        /**
+         * NotesReviewFileSchema
+         * @description La ficha de un tema: su fila de la tabla y sus apartados en orden de lectura.
+         */
+        NotesReviewFileSchema: {
+            /**
+             * Sections
+             * @description Los apartados, en orden de lectura. Vacío si el tema no tiene texto escrito.
+             */
+            sections: components["schemas"]["NotesReviewSectionSchema"][];
+            topic: components["schemas"]["NotesReviewTopicSchema"];
+        };
+        /**
+         * NotesReviewListSchema
+         * @description La tabla entera, con los contadores de la cabecera.
+         */
+        NotesReviewListSchema: {
+            counters: components["schemas"]["NotesReviewCountersSchema"];
+            /**
+             * Topics
+             * @description Los temas del programa activo, en orden del temario. Siempre la lista entera.
+             */
+            topics: components["schemas"]["NotesReviewTopicSchema"][];
+        };
+        /**
+         * NotesReviewReasonSchema
+         * @description Por qué un tema está como está, en una frase con su cifra.
+         *
+         *     `code` es el vocabulario del dominio (para filtrar o probar) y `text` lo que se lee. El orden de
+         *     la lista **es** el orden de lectura: la primera razón es el titular.
+         */
+        NotesReviewReasonSchema: {
+            /**
+             * Code
+             * @description El código del motivo, del vocabulario del dominio.
+             */
+            code: string;
+            /**
+             * Figure
+             * @description La cifra sola, para pintarla aparte del texto.
+             */
+            figure?: string | null;
+            /**
+             * Text
+             * @description La frase, ya compuesta con su cifra.
+             */
+            text: string;
+        };
+        /**
+         * NotesReviewSectionSchema
+         * @description Un apartado de los apuntes, tal como se lee, con lo que se ha comprobado en él.
+         */
+        NotesReviewSectionSchema: {
+            /** Anchor */
+            anchor: string;
+            /** Body Markdown */
+            body_markdown: string;
+            /** Conflicts */
+            conflicts: number;
+            /** Covered */
+            covered: number;
+            /** Doubtful */
+            doubtful: number;
+            /** Epigraph Code */
+            epigraph_code: string;
+            /** Facts Total */
+            facts_total: number;
+            /** Gaps */
+            gaps: number;
+            /** Key */
+            key: string;
+            /** Needs Review Reason */
+            needs_review_reason?: string | null;
+            /**
+             * Position
+             * @description El número con el que se lee, en orden de lectura.
+             */
+            position: number;
+            /** Title */
+            title: string;
+            /** Words */
+            words: number;
+            /**
+             * Worst
+             * @description Cuánto queda sin resolver en este apartado (conflictos + dudosas + sin frase): es lo que ordena «los peores primero».
+             */
+            worst: number;
+        };
+        /**
+         * NotesReviewTopicSchema
+         * @description Una fila de la tabla: el tema, su estado, sus cifras, su motivo y su decisión.
+         */
+        NotesReviewTopicSchema: {
+            /** Block Code */
+            block_code: string;
+            /** Block Title */
+            block_title: string;
+            checks: components["schemas"]["NotesReviewChecksSchema"];
+            /**
+             * Code
+             * @description Código legible del tema, como `IV.7`.
+             */
+            code: string;
+            /**
+             * Coverage
+             * @description `(cubiertas, con clave utilizable)`: el par que decide la puerta del §2.3.
+             */
+            coverage?: [
+                number,
+                number
+            ] | null;
+            /**
+             * Coverage All Keys
+             * @description `(cubiertas, con clave)` sobre **todas** las que tienen clave. Se enseña.
+             */
+            coverage_all_keys?: [
+                number,
+                number
+            ] | null;
+            /**
+             * Coverage Threshold
+             * @description El listón del §2.3, que no se toca.
+             * @default 0.9
+             */
+            coverage_threshold: number;
+            /**
+             * Facts
+             * @description Hechos guardados del tema (paso B).
+             */
+            facts: number;
+            /**
+             * Incidents By Category
+             * @description Esas incidencias, por categoría. Vacío cuando no hay ninguna.
+             */
+            incidents_by_category: {
+                [key: string]: number;
+            };
+            /**
+             * Incidents Open
+             * @description Incidencias del motor sin despachar de este tema.
+             */
+            incidents_open: number;
+            /**
+             * Measured
+             * @description Si esta lectura ha medido la cobertura del tema (sin modelo y sin coste).
+             */
+            measured: boolean;
+            /**
+             * Reasons
+             * @description Por qué el tema está como está, con sus cifras. Vacío en los temas publicados que la tabla no mide (ya pasaron las puertas): su ficha sí los mide.
+             */
+            reasons: components["schemas"]["NotesReviewReasonSchema"][];
+            review?: components["schemas"]["NotesReviewDecisionSchema"] | null;
+            /**
+             * Sections Written
+             * @description Apartados con texto.
+             */
+            sections_written: number;
+            /**
+             * State
+             * @description `published`, `draft` o `none`.
+             * @enum {string}
+             */
+            state: "published" | "draft" | "none";
+            /** Title */
+            title: string;
+            version?: components["schemas"]["NotesReviewVersionSchema"] | null;
+        };
+        /**
+         * NotesReviewVersionSchema
+         * @description La versión archivada de un tema: lo que lo hace «publicado».
+         */
+        NotesReviewVersionSchema: {
+            /**
+             * Built At
+             * Format: date-time
+             */
+            built_at: string;
+            /** Id */
+            id: string;
+        };
         /** OcrSettingsSchema */
         OcrSettingsSchema: {
             /** Tesseract Available */
@@ -5412,7 +6752,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "direct" | "scaled" | "pass_fail";
+            kind: "direct" | "scaled" | "estimated" | "pass_fail";
             /** Official Available */
             official_available: boolean;
             /** Ordinary Items */
@@ -5490,16 +6830,19 @@ export interface components {
          * PatchQuestionSetSchema
          * @description Lo que se puede cambiar de un conjunto sin tocar su contenido.
          *
-         *     Hoy, la **visibilidad**: un conjunto nace `personal` y se hace `public` a propósito, uno a uno.
-         *     Nada más se cambia por aquí — el título y el tipo son la identidad del conjunto, y reescribirlos
-         *     rompería la trazabilidad de las preguntas que cuelgan de él.
+         *     La **visibilidad** (un conjunto nace `personal` y se hace `public` a propósito, uno a uno) y la
+         *     **procedencia** (`origin_scope`, que es lo que deja el material de otra administración fuera de
+         *     un simulacro). Nada más se cambia por aquí — el título y el tipo son la identidad del conjunto,
+         *     y reescribirlos rompería la trazabilidad de las preguntas que cuelgan de él.
+         *
+         *     Los dos campos son opcionales pero **al menos uno** tiene que venir: un `PATCH` que no cambia
+         *     nada es un error de quien llama, no una operación correcta.
          */
         PatchQuestionSetSchema: {
-            /**
-             * Distribution
-             * @enum {string}
-             */
-            distribution: "personal" | "public";
+            /** Distribution */
+            distribution?: ("personal" | "public") | null;
+            /** Origin Scope */
+            origin_scope?: ("age" | "otra_administracion" | "desconocida") | null;
         };
         /**
          * PendingActionSchema
@@ -5553,6 +6896,23 @@ export interface components {
              * @default about:blank
              */
             type: string;
+        };
+        /**
+         * ProgrammeNodeRefSchema
+         * @description Un nodo del programa dentro de una propuesta: sus dos códigos y su título.
+         *
+         *     `official_code` es el número que publica la convocatoria («1») y `path` la posición legible del
+         *     árbol («I.1»), que es la que el propietario reconoce en la pantalla.
+         */
+        ProgrammeNodeRefSchema: {
+            /** Node Id */
+            node_id: string;
+            /** Official Code */
+            official_code: string;
+            /** Path */
+            path: string;
+            /** Title */
+            title: string;
         };
         /**
          * PromoteRequestSchema
@@ -5740,6 +7100,10 @@ export interface components {
         /**
          * QuestionExclusionPageSchema
          * @description La cola de fuera de temario: las marcas de una página y cuántas hay en total.
+         *
+         *     `totals_by_reason` cuenta **cada** motivo en la base, sin mirar el filtro de la petición: es lo
+         *     que permite que la sección «No son preguntas» del panel (F16, decisión D6) diga cuántos
+         *     enunciados rotos hay sin leerlos para contarlos. Un motivo sin ninguna marca no aparece.
          */
         QuestionExclusionPageSchema: {
             /** Exclusions */
@@ -5750,12 +7114,18 @@ export interface components {
             offset: number;
             /** Total */
             total: number;
+            /** Totals By Reason */
+            totals_by_reason?: {
+                [key: string]: number;
+            };
         };
         /**
          * QuestionExclusionSchema
          * @description Una pregunta declarada fuera del temario, con su motivo.
          *
          *     No lleva código de tema ni nodo: **no es un mapeo**, y por eso no se puede confundir con uno.
+         *     Sí lleva el enunciado, que es lo que permite juzgar si la marca estaba bien puesta; al escribir
+         *     la marca va nulo, porque ahí no hay nada que revisar.
          */
         QuestionExclusionSchema: {
             /** Actor */
@@ -5771,6 +7141,291 @@ export interface components {
              * @enum {string}
              */
             reason: "otra_administracion" | "enunciado_roto";
+            /** Stem */
+            stem?: string | null;
+        };
+        /** QuestionFileExclusionSchema */
+        QuestionFileExclusionSchema: {
+            /** Actor */
+            actor: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Note */
+            note: string | null;
+            /**
+             * Reason
+             * @enum {string}
+             */
+            reason: "otra_administracion" | "enunciado_roto";
+        };
+        /** QuestionFileIncidentSchema */
+        QuestionFileIncidentSchema: {
+            /**
+             * Category
+             * @enum {string}
+             */
+            category: "hueco_sin_material" | "clave_sospechosa" | "pregunta_ambigua" | "norma_cambiada" | "pregunta_mal_importada" | "clave_no_fiable";
+            /**
+             * Coverage
+             * @enum {string}
+             */
+            coverage: "doubtful" | "conflict";
+            /** Detail */
+            detail: string;
+            /** Id */
+            id: string;
+            /** Phrase */
+            phrase: string | null;
+            /** Reason */
+            reason: string;
+            /** Resolution Note */
+            resolution_note: string | null;
+            /** Reviewed At */
+            reviewed_at: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "open" | "in_progress" | "reviewed" | "dismissed";
+            /** Topic Code */
+            topic_code: string;
+            /** Topic Title */
+            topic_title: string;
+        };
+        /**
+         * QuestionFileKeySchema
+         * @description La respuesta correcta que manda hoy y **de dónde sale**.
+         */
+        QuestionFileKeySchema: {
+            /** Answer Key Version Id */
+            answer_key_version_id: string;
+            /** Approved At */
+            approved_at: string | null;
+            /** Correct Option Keys */
+            correct_option_keys: string[];
+            /** Notes */
+            notes: string | null;
+            /**
+             * Outcome
+             * @enum {string}
+             */
+            outcome: "keyed" | "annulled" | "unanswered" | "conflicting";
+            /** Published At */
+            published_at: string | null;
+            /** Source Document Id */
+            source_document_id: string | null;
+            /** Source Document Title */
+            source_document_title: string | null;
+            /** Source Document Type */
+            source_document_type: string | null;
+            /** Source Version Label */
+            source_version_label: string | null;
+            /** Source Version Status */
+            source_version_status: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "draft" | "active" | "superseded" | "rejected";
+            /** Version No */
+            version_no: number;
+        };
+        /** QuestionFileKeyVersionSchema */
+        QuestionFileKeyVersionSchema: {
+            /** Approved At */
+            approved_at: string | null;
+            /** Correct Option Keys */
+            correct_option_keys: string[];
+            /** Created At */
+            created_at: string | null;
+            /** Id */
+            id: string;
+            /** Source Document Title */
+            source_document_title: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "draft" | "active" | "superseded" | "rejected";
+            /** Version No */
+            version_no: number;
+        };
+        /**
+         * QuestionFileNotesSchema
+         * @description Lo que contestan los apuntes, con el apartado y la frase verificada.
+         */
+        QuestionFileNotesSchema: {
+            /** Anchor */
+            anchor: string;
+            /** Answer Letter */
+            answer_letter: string | null;
+            /** Checked At */
+            checked_at: string | null;
+            /** Coincides */
+            coincides: boolean;
+            /** Expected Letters */
+            expected_letters: string[];
+            /**
+             * Key Status
+             * @enum {string}
+             */
+            key_status: "active" | "draft" | "ninguna";
+            /** Phrase */
+            phrase: string | null;
+            /** Result */
+            result: ("covered" | "gap" | "doubtful" | "conflict") | null;
+            /** Section Title */
+            section_title: string | null;
+            /** Topic Code */
+            topic_code: string;
+            /** Topic Title */
+            topic_title: string;
+        };
+        /** QuestionFileOptionSchema */
+        QuestionFileOptionSchema: {
+            /** Label */
+            label: string | null;
+            /** Position */
+            position: number;
+            /** Stable Key */
+            stable_key: string;
+            /** Text */
+            text: string;
+        };
+        /** QuestionFileProtectedSetSchema */
+        QuestionFileProtectedSetSchema: {
+            /** Id */
+            id: string;
+            /** Reason */
+            reason: string;
+            /** Set Type */
+            set_type: string;
+            /** Source Document Title */
+            source_document_title: string | null;
+            /** Title */
+            title: string;
+        };
+        /** QuestionFileProtectionSchema */
+        QuestionFileProtectionSchema: {
+            /** Protected */
+            protected: boolean;
+            /** Reason */
+            reason: string | null;
+            /** Sets */
+            sets: components["schemas"]["QuestionFileProtectedSetSchema"][];
+        };
+        /** QuestionFileRepairSchema */
+        QuestionFileRepairSchema: {
+            /** Detalle */
+            detalle: string;
+            /** Opciones */
+            opciones: string[] | null;
+            /** Por Que No */
+            por_que_no: string | null;
+            /** Reglas */
+            reglas: string[];
+            /** Stem */
+            stem: string | null;
+            /** Titulos */
+            titulos: string[];
+        };
+        /**
+         * QuestionFileSchema
+         * @description La ficha entera de una pregunta.
+         */
+        QuestionFileSchema: {
+            /** Created At */
+            created_at: string | null;
+            exclusion: components["schemas"]["QuestionFileExclusionSchema"] | null;
+            /** Incidents */
+            incidents: components["schemas"]["QuestionFileIncidentSchema"][];
+            /** Is Reserve */
+            is_reserve: boolean;
+            key: components["schemas"]["QuestionFileKeySchema"] | null;
+            /** Key Reliability */
+            key_reliability: ("fiable" | "dudosa" | "no_fiable") | null;
+            /** Keys */
+            keys: components["schemas"]["QuestionFileKeyVersionSchema"][];
+            /** Note */
+            note: string | null;
+            /** Notes */
+            notes: components["schemas"]["QuestionFileNotesSchema"][];
+            /** Options */
+            options: components["schemas"]["QuestionFileOptionSchema"][];
+            /**
+             * Origin Type
+             * @enum {string}
+             */
+            origin_type: "official" | "private" | "generated";
+            /** Position */
+            position: number;
+            protection: components["schemas"]["QuestionFileProtectionSchema"];
+            /** Question Set Id */
+            question_set_id: string;
+            /**
+             * Question Type
+             * @enum {string}
+             */
+            question_type: "single_choice" | "multi_mark_error" | "true_false" | "free_text_reference";
+            /** Question Version Id */
+            question_version_id: string;
+            /** Reliability Source */
+            reliability_source: string;
+            repair: components["schemas"]["QuestionFileRepairSchema"];
+            /** Reserve Order */
+            reserve_order: number | null;
+            /**
+             * Set Distribution
+             * @enum {string}
+             */
+            set_distribution: "personal" | "public";
+            /** Set Title */
+            set_title: string;
+            /**
+             * Set Type
+             * @enum {string}
+             */
+            set_type: "official_exam" | "private_bank" | "practice" | "generated_batch";
+            /** Stable Key */
+            stable_key: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "incomplete" | "complete" | "verified" | "conflicting" | "annulled" | "superseded";
+            /** Stem */
+            stem: string;
+            /** Superseded By */
+            superseded_by: string | null;
+            /** Version No */
+            version_no: number;
+            /** Versions */
+            versions: components["schemas"]["QuestionFileVersionSchema"][];
+        };
+        /** QuestionFileVersionSchema */
+        QuestionFileVersionSchema: {
+            /** Correct Option Keys */
+            correct_option_keys: string[];
+            /** Created At */
+            created_at: string | null;
+            /** Id */
+            id: string;
+            /** Note */
+            note: string | null;
+            /** Option Count */
+            option_count: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "incomplete" | "complete" | "verified" | "conflicting" | "annulled" | "superseded";
+            /** Stem */
+            stem: string;
+            /** Version No */
+            version_no: number;
         };
         /**
          * QuestionImportReportSchema
@@ -5968,6 +7623,12 @@ export interface components {
             /** Opposition Id */
             opposition_id: string;
             /**
+             * Origin Scope
+             * @default desconocida
+             * @enum {string}
+             */
+            origin_scope: "age" | "otra_administracion" | "desconocida";
+            /**
              * Question Count
              * @default 0
              */
@@ -5999,8 +7660,16 @@ export interface components {
          *     `created` es lo que hace utilizable una ruta idempotente: reintentar la clasificación de un lote
          *     entero no puede confundir «lo asigné yo ahora» con «ya estaba asignado».
          *
+         *     `promoted` es la tercera cosa que puede pasar, y la que necesita la cola de revisión: el mapeo
+         *     ya estaba, pero como **propuesta**, y esta llamada la ha confirmado. No es «creado» —la fila
+         *     existía— ni «ya estaba» —algo se ha escrito y queda auditado—.
+         *
          *     `epigraph` viaja cuando se pidió asignar también un epígrafe: se asigna con su tema, y decir
          *     solo el tema escondería la mitad de lo que se ha escrito.
+         *
+         *     `retired` son las propuestas **de esa pregunta** que se han retirado en la misma operación: una
+         *     pregunta no puede quedarse con dos temas propuestos cuando uno se acepta, y quien decide tiene
+         *     que ver que las demás ya no están.
          */
         QuestionTopicAssignmentSchema: {
             /**
@@ -6019,8 +7688,18 @@ export interface components {
             mapping_id: string;
             /** Official Code */
             official_code: string;
+            /**
+             * Promoted
+             * @default false
+             */
+            promoted: boolean;
             /** Question Version Id */
             question_version_id: string;
+            /**
+             * Retired
+             * @default 0
+             */
+            retired: number;
             /**
              * Status
              * @enum {string}
@@ -6028,6 +7707,100 @@ export interface components {
             status: "provisional" | "accepted" | "rejected";
             /** Title */
             title: string;
+        };
+        /**
+         * QuestionTopicConflictPageSchema
+         * @description Las preguntas en dos temas de una página, y cuántas hay en total.
+         */
+        QuestionTopicConflictPageSchema: {
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+            /** Questions */
+            questions: components["schemas"]["QuestionTopicConflictSchema"][];
+            /** Total */
+            total: number;
+        };
+        /**
+         * QuestionTopicConflictSchema
+         * @description Una pregunta que cuenta en **dos temas aceptados** a la vez, con los dos delante.
+         *
+         *     Es la otra cara de la cola: allí se revisa lo que nadie ha decidido y aquí lo que quedó decidido
+         *     dos veces. Una pregunta en dos temas cuenta en los dos agregados, así que hay que poder dejarla
+         *     con uno —eligiendo cuál— sin que la aplicación decida por su cuenta.
+         */
+        QuestionTopicConflictSchema: {
+            /** Options */
+            options: components["schemas"]["OptionSchema"][];
+            /** Question Set Id */
+            question_set_id: string;
+            /** Question Version Id */
+            question_version_id: string;
+            /** Set Title */
+            set_title: string;
+            /** Stem */
+            stem: string;
+            /** Topics */
+            topics: components["schemas"]["ConflictingTopicSchema"][];
+        };
+        /**
+         * QuestionTopicProposalPageSchema
+         * @description La cola de propuestas, contada en **preguntas** (tarjetas): las de una página y el total.
+         */
+        QuestionTopicProposalPageSchema: {
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+            /** Questions */
+            questions: components["schemas"]["QuestionTopicProposalsSchema"][];
+            /** Total */
+            total: number;
+        };
+        /**
+         * QuestionTopicProposalSchema
+         * @description Un tema candidato para una pregunta, sin confirmar, con sus epígrafes propuestos.
+         *
+         *     No lleva la pregunta dentro: la pregunta es la tarjeta (`QuestionTopicProposalsSchema`) y esto
+         *     es una de las respuestas que la máquina le dio.
+         */
+        QuestionTopicProposalSchema: {
+            /** Confidence */
+            confidence: number;
+            /** Created At */
+            created_at?: string | null;
+            /** Epigraphs */
+            epigraphs: components["schemas"]["ProgrammeNodeRefSchema"][];
+            /** Mapping Id */
+            mapping_id: string;
+            /** Reason */
+            reason?: string | null;
+            topic: components["schemas"]["ProgrammeNodeRefSchema"];
+        };
+        /**
+         * QuestionTopicProposalsSchema
+         * @description Una pregunta de la cola con **todas** sus propuestas juntas: una tarjeta, no una por mapeo.
+         *
+         *     Es la unidad con la que se despacha: el propietario decide sobre la pregunta —«esta pregunta es
+         *     del tema X»—, así que el mismo enunciado no puede salir dos veces. `accepted` va aparte de
+         *     `proposals`: si la pregunta ya tiene tema decidido, ese manda y lo que queda son propuestas que
+         *     se retiran.
+         */
+        QuestionTopicProposalsSchema: {
+            accepted?: components["schemas"]["ProgrammeNodeRefSchema"] | null;
+            /** Options */
+            options: components["schemas"]["OptionSchema"][];
+            /** Proposals */
+            proposals: components["schemas"]["QuestionTopicProposalSchema"][];
+            /** Question Set Id */
+            question_set_id: string;
+            /** Question Version Id */
+            question_version_id: string;
+            /** Set Title */
+            set_title: string;
+            /** Stem */
+            stem: string;
         };
         /**
          * QuestionTopicSchema
@@ -6178,6 +7951,43 @@ export interface components {
             detail: string;
             /** Row Number */
             row_number: number;
+        };
+        /**
+         * RepairQuestionSchema
+         * @description Repara lo que una regla mecánica pueda reparar de esta pregunta.
+         *
+         *     No se manda texto: lo que se escribe lo decide una regla del dominio sobre el enunciado y las
+         *     opciones que ya hay. `reglas` solo puede **restringir** lo que el dominio ofrece.
+         */
+        RepairQuestionSchema: {
+            /** Actor */
+            actor?: string | null;
+            /** Note */
+            note: string;
+            /** Reglas */
+            reglas?: string[] | null;
+        };
+        /** RepairResultSchema */
+        RepairResultSchema: {
+            /** Actor */
+            actor: string;
+            /** Dispatched Incidents */
+            dispatched_incidents: number;
+            file: components["schemas"]["QuestionFileSchema"];
+            /** Key Version Id */
+            key_version_id: string | null;
+            /** Moved Anchors */
+            moved_anchors: number;
+            /** Moved Exclusion */
+            moved_exclusion: boolean;
+            /** Moved Topics */
+            moved_topics: number;
+            /** New Question Version Id */
+            new_question_version_id: string;
+            /** Reglas */
+            reglas: string[];
+            /** Superseded Question Version Id */
+            superseded_question_version_id: string;
         };
         /**
          * RepresentationSchema
@@ -6992,6 +8802,23 @@ export interface components {
             days: number;
         };
         /**
+         * StudentAnswerRequestSchema
+         * @description La respuesta a una pregunta, **por su fila en la hoja de respuestas**.
+         */
+        StudentAnswerRequestSchema: {
+            /** Chosen */
+            chosen?: string[];
+            /** Confidence */
+            confidence?: ("low" | "medium" | "high") | null;
+            /**
+             * Elapsed Ms
+             * @default 0
+             */
+            elapsed_ms: number;
+            /** Position */
+            position: number;
+        };
+        /**
          * StudentBlockProgressSchema
          * @description Un bloque del programa con sus temas y el agregado del bloque.
          */
@@ -7019,6 +8846,24 @@ export interface components {
             topics: components["schemas"]["StudentTopicProgressSchema"][];
         };
         /**
+         * StudentCorrectionSchema
+         * @description La corrección de una pregunta respondida, cuando se puede enseñar.
+         */
+        StudentCorrectionSchema: {
+            /**
+             * Correct
+             * @description Letras de la plantilla.
+             */
+            correct?: string[];
+            /**
+             * Outcome
+             * @enum {string}
+             */
+            outcome: "correct" | "wrong" | "blank";
+            /** Reason */
+            reason?: string | null;
+        };
+        /**
          * StudentEpigraphSchema
          * @description Un epígrafe del tema: solo su código y su título.
          */
@@ -7029,6 +8874,222 @@ export interface components {
             title: string;
         };
         /**
+         * StudentMistakeSchema
+         * @description Una pregunta fallada: qué decía, de qué era, cuándo y cuántas veces.
+         */
+        StudentMistakeSchema: {
+            /** Due */
+            due: boolean;
+            /**
+             * Last Failed At
+             * Format: date-time
+             */
+            last_failed_at: string;
+            /** Stem */
+            stem: string;
+            /** Times Failed */
+            times_failed: number;
+            /** Topics */
+            topics?: components["schemas"]["StudentTopicRefSchema"][];
+        };
+        /**
+         * StudentMistakeTopicSchema
+         * @description Los fallos de un tema: es con lo que se pide un test solo de esos fallos.
+         */
+        StudentMistakeTopicSchema: {
+            /** Code */
+            code: string;
+            /** Due */
+            due: number;
+            /** Failed */
+            failed: number;
+            /** Title */
+            title: string;
+        };
+        /**
+         * StudentMistakesSchema
+         * @description Los fallos: los totales, los que se enseñan y su reparto por tema.
+         */
+        StudentMistakesSchema: {
+            /** Due Total */
+            due_total: number;
+            /** Questions */
+            questions: components["schemas"]["StudentMistakeSchema"][];
+            /** Topics */
+            topics: components["schemas"]["StudentMistakeTopicSchema"][];
+            /** Total */
+            total: number;
+        };
+        /**
+         * StudentMockCaseBlockSchema
+         * @description Un bloque del que se puede elegir el supuesto (III o IV).
+         */
+        StudentMockCaseBlockSchema: {
+            /** Code */
+            code: string;
+            /** Title */
+            title: string;
+            /** Topics */
+            topics: components["schemas"]["StudentMockCaseTopicSchema"][];
+        };
+        /**
+         * StudentMockCaseTopicSchema
+         * @description Un tema del bloque del supuesto, con sus preguntas disponibles hoy.
+         */
+        StudentMockCaseTopicSchema: {
+            /** Available Questions */
+            available_questions: number;
+            /** Code */
+            code: string;
+            /** Title */
+            title: string;
+        };
+        /**
+         * StudentMockExamPartSchema
+         * @description Una parte del simulacro, con lo que publica el perfil del examen y nada más.
+         */
+        StudentMockExamPartSchema: {
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+            /** Ordinary Items */
+            ordinary_items?: number | null;
+            /** Pass Score */
+            pass_score?: number | null;
+            /** Penalty */
+            penalty?: string | null;
+            /** Reserve Items */
+            reserve_items?: number | null;
+            /** Score Max */
+            score_max?: number | null;
+            /** Time Minutes */
+            time_minutes?: number | null;
+        };
+        /**
+         * StudentMockExamPlanSchema
+         * @description El simulacro antes de montarlo: las dos variantes y los bloques del supuesto.
+         */
+        StudentMockExamPlanSchema: {
+            /** Case Blocks */
+            case_blocks: components["schemas"]["StudentMockCaseBlockSchema"][];
+            full: components["schemas"]["StudentMockExamVariantSchema"];
+            opposition: components["schemas"]["StudentOppositionSchema"];
+            short: components["schemas"]["StudentMockExamVariantSchema"];
+        };
+        /**
+         * StudentMockExamRequestSchema
+         * @description Lo que manda la pantalla para montar un simulacro: variante y bloque del supuesto.
+         */
+        StudentMockExamRequestSchema: {
+            /**
+             * Case Block
+             * @default III
+             * @enum {string}
+             */
+            case_block: "III" | "IV";
+            /**
+             * Variant
+             * @default full
+             * @enum {string}
+             */
+            variant: "full" | "short";
+        };
+        /**
+         * StudentMockExamVariantSchema
+         * @description Una variante del simulacro: qué cae, cuánto dura y qué es lo que **no** es.
+         */
+        StudentMockExamVariantSchema: {
+            /** Note */
+            note?: string | null;
+            /** Parts */
+            parts: components["schemas"]["StudentMockExamPartSchema"][];
+            /** Time Limit Minutes */
+            time_limit_minutes?: number | null;
+            /** Title */
+            title: string;
+            /**
+             * Variant
+             * @enum {string}
+             */
+            variant: "full" | "short";
+        };
+        /**
+         * StudentNoteSectionSchema
+         * @description Un apartado de los apuntes, con su sitio en el índice y su dirección en la página.
+         *
+         *     `anchor` es lo que convierte el índice en navegable: el enlace del índice lleva al párrafo y el
+         *     aviso del alumno apunta a él. `questions_covered` es el dato que acompaña al párrafo («N
+         *     preguntas de este tema se contestan aquí»), y es un recuento real de las comprobaciones del
+         *     tema, no una afirmación sobre exámenes.
+         */
+        StudentNoteSectionSchema: {
+            /** Anchor */
+            anchor: string;
+            /** Body Markdown */
+            body_markdown: string;
+            /** Epigraph Code */
+            epigraph_code: string;
+            /** Key */
+            key: string;
+            /** Number */
+            number: number;
+            /** Questions Covered */
+            questions_covered: number;
+            /** Title */
+            title: string;
+        };
+        /**
+         * StudentNotesSchema
+         * @description Los apuntes de un tema: cómo están y sus apartados en orden de lectura.
+         *
+         *     Un tema en `draft` se sirve **igual** que uno en `published`: la marca distingue uno de otro y
+         *     el alumno puede leer los dos. Un tema en `none` no trae apartados, y eso no es un error.
+         */
+        StudentNotesSchema: {
+            /** Code */
+            code: string;
+            /** Generated At */
+            generated_at?: string | null;
+            /** Sections */
+            sections: components["schemas"]["StudentNoteSectionSchema"][];
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "published" | "draft" | "none";
+        };
+        /**
+         * StudentOfficialExamSchema
+         * @description Un examen oficial, por su sitio en la lista: título, fecha, tamaño y si se puede hacer.
+         */
+        StudentOfficialExamSchema: {
+            /** Held At */
+            held_at?: string | null;
+            /**
+             * Origin Scope
+             * @default desconocida
+             * @enum {string}
+             */
+            origin_scope: "age" | "otra_administracion" | "desconocida";
+            /** Position */
+            position: number;
+            /** Questions */
+            questions: number;
+            /** Ready */
+            ready: boolean;
+            /** Title */
+            title: string;
+        };
+        /**
+         * StudentOfficialExamsSchema
+         * @description Los exámenes oficiales importados. Una lista vacía es un estado, no un error.
+         */
+        StudentOfficialExamsSchema: {
+            /** Exams */
+            exams: components["schemas"]["StudentOfficialExamSchema"][];
+        };
+        /**
          * StudentOppositionSchema
          * @description La oposición que sirve la zona del alumno.
          */
@@ -7037,6 +9098,16 @@ export interface components {
             code: string;
             /** Name */
             name: string;
+        };
+        /**
+         * StudentOptionSchema
+         * @description Una opción: su letra (`a`) y su texto.
+         */
+        StudentOptionSchema: {
+            /** Key */
+            key: string;
+            /** Text */
+            text: string;
         };
         /**
          * StudentOverviewSchema
@@ -7053,8 +9124,45 @@ export interface components {
             recent_tests: components["schemas"]["StudentSessionSchema"][];
         };
         /**
+         * StudentPartScoreSchema
+         * @description La nota de una parte, con la forma con la que se calculó.
+         *
+         *     `kind` dice cómo se corrigió (`estimated` cuando la puntuación es la directa escalada a la banda
+         *     de la parte) y `verdict_note` lo explica en palabras: una estimación no es la calificación
+         *     oficial, y `passed` se queda en `None` para no declarar un aprobado que nadie ha calculado.
+         */
+        StudentPartScoreSchema: {
+            /** Blank */
+            blank: number;
+            /** Correct */
+            correct: number;
+            /** Kind */
+            kind: string;
+            /** Part Code */
+            part_code?: string | null;
+            /** Part Name */
+            part_name?: string | null;
+            /** Pass Score */
+            pass_score?: number | null;
+            /** Passed */
+            passed?: boolean | null;
+            /** Score */
+            score: string;
+            /** Score Decimal */
+            score_decimal: string;
+            /** Score Max */
+            score_max?: number | null;
+            /** Verdict Note */
+            verdict_note?: string | null;
+            /** Wrong */
+            wrong: number;
+        };
+        /**
          * StudentProgressSchema
          * @description El progreso: acierto por bloque y por tema, los cinco más flojos e historial.
+         *
+         *     `tests_finished` es el número de tests **terminados** de esta persona, no los que caben en el
+         *     historial: la cifra se lee al lado de una lista de veinte y tiene que ser la de verdad.
          */
         StudentProgressSchema: {
             /** Blocks */
@@ -7062,8 +9170,173 @@ export interface components {
             /** History */
             history: components["schemas"]["StudentSessionSchema"][];
             opposition: components["schemas"]["StudentOppositionSchema"];
+            /** Tests Finished */
+            tests_finished: number;
             /** Weakest Topics */
             weakest_topics: components["schemas"]["StudentTopicProgressSchema"][];
+        };
+        /**
+         * StudentQuestionSchema
+         * @description La pregunta que se está contestando, por su posición en la hoja.
+         */
+        StudentQuestionSchema: {
+            /** Answered */
+            answered: boolean;
+            /** Chosen */
+            chosen?: string[];
+            /** Confidence */
+            confidence?: ("low" | "medium" | "high") | null;
+            correction?: components["schemas"]["StudentCorrectionSchema"] | null;
+            /**
+             * In Review
+             * @description La clave de esta pregunta está en revisión: su conjunto discrepa de los apuntes entre el 15 % y el 30 % de las preguntas medidas.
+             * @default false
+             */
+            in_review: boolean;
+            /** Is Reserve */
+            is_reserve: boolean;
+            /** Options */
+            options: components["schemas"]["StudentOptionSchema"][];
+            /** Position */
+            position: number;
+            /** Question Type */
+            question_type: string;
+            /** Stem */
+            stem: string;
+        };
+        /**
+         * StudentReportRequestSchema
+         * @description Lo que manda la pantalla cuando el alumno marca «esto está mal» en un apartado.
+         *
+         *     El motivo es **una línea** y es obligatorio: se recorta, no puede quedar vacío y tiene su tope
+         *     (`MAX_REASON_CHARS`). El apartado se manda por su clave, no por su anclaje: el anclaje lo pone
+         *     el servidor a partir del apartado que existe hoy.
+         */
+        StudentReportRequestSchema: {
+            /** Reason */
+            reason: string;
+            /** Section Key */
+            section_key: string;
+        };
+        /**
+         * StudentReportSchema
+         * @description El aviso ya guardado: dónde, qué se escribió y cuándo.
+         */
+        StudentReportSchema: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Reason
+             * @description El motivo, en una línea (máximo 300 caracteres).
+             */
+            reason: string;
+            /** Section Key */
+            section_key: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "open" | "reviewed" | "dismissed";
+        };
+        /**
+         * StudentResultQuestionSchema
+         * @description Una pregunta corregida: sus opciones, lo que se marcó, la correcta y de qué era.
+         */
+        StudentResultQuestionSchema: {
+            /** Chosen */
+            chosen?: string[];
+            /** Correct */
+            correct?: string[];
+            /** Elapsed Ms */
+            elapsed_ms?: number | null;
+            /**
+             * In Review
+             * @description La clave de esta pregunta está en revisión: un fallo puede ser de la clave y no del alumno.
+             * @default false
+             */
+            in_review: boolean;
+            /** Is Reserve */
+            is_reserve: boolean;
+            /** Options */
+            options: components["schemas"]["StudentOptionSchema"][];
+            /**
+             * Outcome
+             * @enum {string}
+             */
+            outcome: "correct" | "wrong" | "blank" | "void";
+            /** Part Code */
+            part_code?: string | null;
+            /** Part Name */
+            part_name?: string | null;
+            /** Position */
+            position: number;
+            /** Stem */
+            stem: string;
+            /** Topics */
+            topics?: components["schemas"]["StudentTopicRefSchema"][];
+        };
+        /**
+         * StudentResultSchema
+         * @description El resultado de un test: la sesión terminada, la nota por parte y el total.
+         */
+        StudentResultSchema: {
+            /** Official Available */
+            official_available: boolean;
+            /** Official Note */
+            official_note?: string | null;
+            /** Parts */
+            parts: components["schemas"]["StudentPartScoreSchema"][];
+            session: components["schemas"]["StudentSessionSchema"];
+            total: components["schemas"]["StudentPartScoreSchema"];
+        };
+        /**
+         * StudentResultTopicSchema
+         * @description Cómo fue el test en un tema: aciertos, fallos, blancos y el porcentaje que sale de ellos.
+         */
+        StudentResultTopicSchema: {
+            /** Accuracy */
+            accuracy?: number | null;
+            /** Blank */
+            blank: number;
+            /** Code */
+            code: string;
+            /** Correct */
+            correct: number;
+            /** Graded */
+            graded: number;
+            /** Title */
+            title: string;
+            /** Wrong */
+            wrong: number;
+        };
+        /**
+         * StudentRunSchema
+         * @description El test en curso: la sesión, la pregunta que toca y la hoja de respuestas entera.
+         */
+        StudentRunSchema: {
+            /** Answered */
+            answered: number;
+            /** Finished */
+            finished: boolean;
+            /** Pending */
+            pending: number;
+            /** Position */
+            position?: number | null;
+            question?: components["schemas"]["StudentQuestionSchema"] | null;
+            /**
+             * Questions In Review
+             * @description Cuántas preguntas del test llevan la marca «clave en revisión».
+             * @default 0
+             */
+            questions_in_review: number;
+            session: components["schemas"]["StudentSessionSchema"];
+            /** Sheet */
+            sheet: components["schemas"]["StudentSheetRowSchema"][];
+            /** Total */
+            total: number;
         };
         /**
          * StudentScoreSchema
@@ -7090,6 +9363,26 @@ export interface components {
             wrong: number;
         };
         /**
+         * StudentSessionResultSchema
+         * @description El resultado de un test terminado, con el tiempo empleado y las preguntas una a una.
+         */
+        StudentSessionResultSchema: {
+            /** Duration Seconds */
+            duration_seconds?: number | null;
+            /** Official Available */
+            official_available: boolean;
+            /** Official Note */
+            official_note?: string | null;
+            /** Parts */
+            parts: components["schemas"]["StudentPartScoreSchema"][];
+            /** Questions */
+            questions: components["schemas"]["StudentResultQuestionSchema"][];
+            session: components["schemas"]["StudentSessionSchema"];
+            /** Topics */
+            topics: components["schemas"]["StudentResultTopicSchema"][];
+            total: components["schemas"]["StudentPartScoreSchema"];
+        };
+        /**
          * StudentSessionSchema
          * @description Un test del alumno: lo que se pinta en «Continuar», en el historial y al terminar.
          *
@@ -7113,6 +9406,8 @@ export interface components {
              * @enum {string}
              */
             mode: "practice" | "error_review" | "official_exam" | "mock_exam" | "diagnostic";
+            /** Practical Case Origin */
+            practical_case_origin?: string | null;
             result?: components["schemas"]["StudentScoreSchema"] | null;
             /** Started At */
             started_at?: string | null;
@@ -7129,6 +9424,24 @@ export interface components {
             total_questions: number;
         };
         /**
+         * StudentSheetRowSchema
+         * @description Una fila de la hoja de respuestas: qué se marcó en esa posición y cómo quedó.
+         */
+        StudentSheetRowSchema: {
+            /** Answered */
+            answered: boolean;
+            /** Chosen */
+            chosen?: string[];
+            /** Confidence */
+            confidence?: ("low" | "medium" | "high") | null;
+            /** Correct */
+            correct?: string[];
+            /** Outcome */
+            outcome?: ("correct" | "wrong" | "blank") | null;
+            /** Position */
+            position: number;
+        };
+        /**
          * StudentSyllabusSchema
          * @description El temario: bloques y temas **en orden numérico** (IV.1 antes de IV.10).
          */
@@ -7138,11 +9451,70 @@ export interface components {
             opposition: components["schemas"]["StudentOppositionSchema"];
         };
         /**
+         * StudentTestCountSchema
+         * @description Un tamaño de test ofrecido, con lo que duraría con el reloj puesto.
+         */
+        StudentTestCountSchema: {
+            /** Minutes */
+            minutes: number;
+            /** Questions */
+            questions: number;
+        };
+        /**
+         * StudentTestPlanSchema
+         * @description Lo que la pantalla de Tests puede ofrecer antes de montar un test (F22).
+         *
+         *     Ni un tamaño ni un minuto se calculan en la pantalla: los sirve el servidor, que es el mismo que
+         *     después pone el reloj. `timed_note` es la frase que acompaña al interruptor del reloj, y también
+         *     viene de aquí por la misma razón que la nota del simulacro: la regla se escribe una vez.
+         *     `convocation_minutes` es el tiempo del test cuando **no** se le pone el reloj del test; `null`
+         *     significa que la convocatoria no lo publica, no que no haya ninguno.
+         */
+        StudentTestPlanSchema: {
+            /** Convocation Minutes */
+            convocation_minutes?: number | null;
+            /** Counts */
+            counts: components["schemas"]["StudentTestCountSchema"][];
+            /** Timed Note */
+            timed_note: string;
+        };
+        /**
+         * StudentTestRequestSchema
+         * @description Lo que manda la pantalla para montar un test: sus temas, cuántas y con qué filtro.
+         */
+        StudentTestRequestSchema: {
+            /** Count */
+            count: number;
+            /**
+             * Feedback
+             * @default immediate
+             * @enum {string}
+             */
+            feedback: "immediate" | "at_end";
+            /**
+             * Filter
+             * @default all
+             * @enum {string}
+             */
+            filter: "all" | "unseen" | "failed" | "flagged";
+            /**
+             * Nodes
+             * @description Códigos de tema, como `IV.10`.
+             */
+            nodes: string[];
+            /**
+             * Timed
+             * @default false
+             */
+            timed: boolean;
+        };
+        /**
          * StudentTopicProgressSchema
          * @description Un tema con lo que tiene y lo que se ha hecho en él.
          *
          *     `accuracy` es `None` cuando no hay nada corregido todavía: un tema sin tocar no está
-         *     suspendido.
+         *     suspendido. `notes_state` es lo que permite pintar en el temario si sus apuntes están
+         *     publicados, en borrador o sin escribir.
          */
         StudentTopicProgressSchema: {
             /** Accuracy */
@@ -7160,8 +9532,24 @@ export interface components {
              * @default 0
              */
             due_reviews: number;
+            /**
+             * Notes State
+             * @default none
+             * @enum {string}
+             */
+            notes_state: "published" | "draft" | "none";
             /** Number */
             number?: number | null;
+            /** Title */
+            title: string;
+        };
+        /**
+         * StudentTopicRefSchema
+         * @description Un tema por su código legible: la respuesta a «¿de qué era esto?».
+         */
+        StudentTopicRefSchema: {
+            /** Code */
+            code: string;
             /** Title */
             title: string;
         };
@@ -12690,6 +15078,459 @@ export interface operations {
             };
         };
     };
+    list_notes_incidents_api_v1_notes_incidents_get: {
+        parameters: {
+            query?: {
+                /** @description Filtra por categoría; sin ella salen todas. */
+                category?: ("hueco_sin_material" | "clave_sospechosa" | "pregunta_ambigua" | "norma_cambiada" | "pregunta_mal_importada" | "clave_no_fiable") | null;
+                /** @description Filtra por estado; sin él salen todas. */
+                status?: ("open" | "in_progress" | "reviewed" | "dismissed") | null;
+                /** @description Código legible del tema, como `I.2`, para ver solo las de un tema. */
+                topic?: string | null;
+                /** @description Busca en el enunciado de la pregunta, el motivo, la frase y el apartado. */
+                q?: string | null;
+                /** @description Cuántas incidencias se devuelven como mucho. */
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotesIncidentListSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    update_notes_incident_api_v1_notes_incidents__incident_id__patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-OpoFuente-Actor"?: string | null;
+            };
+            path: {
+                /** @description Identificador de la incidencia, tal como lo devuelve la bandeja. */
+                incident_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotesIncidentUpdateSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotesIncidentSchema"];
+                };
+            };
+            /** @description Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    list_note_reports_api_v1_notes_reports_get: {
+        parameters: {
+            query?: {
+                /** @description Filtra por estado; sin él salen todos. */
+                status?: ("open" | "in_progress" | "reviewed" | "dismissed") | null;
+                /** @description Código legible del tema, como `IV.7`, para ver solo los de un tema. */
+                topic?: string | null;
+                /** @description Busca en el motivo del alumno y en el título del apartado. */
+                q?: string | null;
+                /** @description Cuántos avisos se devuelven como mucho. */
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteReportListSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    update_note_report_api_v1_notes_reports__report_id__patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-OpoFuente-Actor"?: string | null;
+            };
+            path: {
+                /** @description Identificador del aviso, tal como lo devuelve la bandeja. */
+                report_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NoteReportUpdateSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteReportSchema"];
+                };
+            };
+            /** @description Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    list_notes_review_api_v1_notes_review_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotesReviewListSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    notes_review_summary_api_v1_notes_review_summary_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotesReviewCountersSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    notes_review_file_api_v1_notes_review__codigo__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Código legible del tema, como `I.4` (también se acepta `I-4`). */
+                codigo: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotesReviewFileSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    decide_notes_review_api_v1_notes_review__codigo__decision_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-OpoFuente-Actor"?: string | null;
+            };
+            path: {
+                /** @description Código legible del tema, como `I.4`. */
+                codigo: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotesReviewDecisionRequestSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotesReviewDecisionResultSchema"];
+                };
+            };
+            /** @description Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
     list_oppositions_api_v1_oppositions_get: {
         parameters: {
             query?: never;
@@ -12957,6 +15798,8 @@ export interface operations {
         parameters: {
             query?: {
                 reason?: string | null;
+                /** @description Busca en el enunciado de la pregunta excluida. */
+                q?: string | null;
                 limit?: number;
                 offset?: number;
             };
@@ -12977,6 +15820,204 @@ export interface operations {
             };
             /** @description El recurso no existe. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    get_question_file_api_v1_question_files__question_version_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Identificador de la versión de la pregunta, el que usa la bandeja del motor. */
+                question_version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuestionFileSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    mark_correct_option_api_v1_question_files__question_version_id__answer_key_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-OpoFuente-Actor"?: string | null;
+            };
+            path: {
+                /** @description Identificador de la versión de la pregunta. */
+                question_version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MarkCorrectOptionSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MarkCorrectResultSchema"];
+                };
+            };
+            /** @description Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description El cambio no encaja con lo que hay (`classification_conflict`), y se dice por qué. Por ejemplo, asignar una pregunta a un nodo del programa que no es un tema. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    repair_question_api_v1_question_files__question_version_id__repairs_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-OpoFuente-Actor"?: string | null;
+            };
+            path: {
+                /** @description Identificador de la versión de la pregunta. */
+                question_version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RepairQuestionSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RepairResultSchema"];
+                };
+            };
+            /** @description Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description El cambio no encaja con lo que hay (`classification_conflict`), y se dice por qué. Por ejemplo, asignar una pregunta a un nodo del programa que no es un tema. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -13710,6 +16751,106 @@ export interface operations {
                 };
                 content: {
                     "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    list_question_topic_conflicts_api_v1_question_topic_conflicts_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuestionTopicConflictPageSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    list_question_topic_proposals_api_v1_question_topic_proposals_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuestionTopicProposalPageSchema"];
                 };
             };
             /** @description El recurso no existe. */
@@ -15462,6 +18603,248 @@ export interface operations {
             };
         };
     };
+    student_mistakes_api_v1_student_mistakes_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentMistakesSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    student_mock_exam_plan_api_v1_student_mock_exams_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentMockExamPlanSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    student_create_mock_exam_api_v1_student_mock_exams_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StudentMockExamRequestSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentSessionSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    student_official_exams_api_v1_student_official_exams_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentOfficialExamsSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    student_create_official_exam_api_v1_student_official_exams__posicion__sessions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Su sitio en la lista de exámenes oficiales (el primero, el segundo). */
+                posicion: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentSessionSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
     student_overview_api_v1_student_overview_get: {
         parameters: {
             query?: never;
@@ -15556,6 +18939,256 @@ export interface operations {
             };
         };
     };
+    student_session_api_v1_student_sessions__sesion__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Identificador de la sesión, el que devolvió al montarla. */
+                sesion: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentRunSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    student_answer_api_v1_student_sessions__sesion__answers_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sesion: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StudentAnswerRequestSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentRunSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    student_finish_api_v1_student_sessions__sesion__finish_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sesion: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentResultSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    student_session_result_api_v1_student_sessions__sesion__result_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sesion: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentSessionResultSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    student_start_api_v1_student_sessions__sesion__start_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sesion: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentRunSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
     student_syllabus_api_v1_student_syllabus_get: {
         parameters: {
             query?: never;
@@ -15572,6 +19205,104 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StudentSyllabusSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    student_create_test_api_v1_student_tests_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StudentTestRequestSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentSessionSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    student_test_plan_api_v1_student_tests_plan_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentTestPlanSchema"];
                 };
             };
             /** @description El recurso no existe. */
@@ -15622,6 +19353,119 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StudentTopicSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    student_topic_notes_api_v1_student_topics__codigo__notes_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Código legible del tema, como `IV.10` (también se acepta `IV-10`). */
+                codigo: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentNotesSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    student_report_notes_api_v1_student_topics__codigo__reports_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Código legible del tema, como `IV.10`. */
+                codigo: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StudentReportRequestSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentReportSchema"];
+                };
+            };
+            /** @description Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
                 };
             };
             /** @description El recurso no existe. */

@@ -11,6 +11,8 @@ from __future__ import annotations
 from opofuente.domain.dossier import PassageFacts
 from opofuente.domain.topic_notes import (
     MAX_HECHOS_POR_APARTADO,
+    MAX_PALABRAS_POR_HECHO,
+    MINIMO_PALABRAS_ANADIDO,
     Coverage,
     FactKind,
     Hecho,
@@ -21,6 +23,7 @@ from opofuente.domain.topic_notes import (
     QuestionGroup,
     QuoteCheck,
     agrupar,
+    build_user_prompt_anadir,
     esquema,
     evaluar,
     firma_de_grupo,
@@ -30,6 +33,7 @@ from opofuente.domain.topic_notes import (
     notes_from_document,
     notes_signature,
     seleccionar_material,
+    tope_del_anadido,
     verificar_cita,
 )
 from opofuente.domain.topic_notes import (
@@ -218,7 +222,7 @@ def test_con_clave_activa_hacen_falta_la_frase_y_la_letra() -> None:
         section=seccion,
         attempts=2,
     )
-    assert repetida.coverage is Coverage.DUDOSA
+    assert repetida.coverage is Coverage.CONFLICTO, "con clave activa, la letra decide"
     assert repetida.note is Motivo.LETRA_NO_COINCIDE
 
 
@@ -247,14 +251,73 @@ def test_sin_frase_es_hueco_a_la_primera_y_duda_a_la_segunda() -> None:
     assert segunda.note is Motivo.SIN_FRASE_EN_LOS_APUNTES
 
 
-def test_sin_clave_clara_manda_la_frase_y_la_letra_no_decide() -> None:
-    """Una clave en borrador puede estar desalineada: convertiría un acierto en un hueco."""
-    apuntes = "El derecho de petición se reconoce en el artículo 29 de la Constitución."
-    grupo = _grupo(_pregunta("q1", letras=("a",), estado=KeyStatus.DRAFT))
+def test_con_clave_en_borrador_la_frase_cubre_solo_si_la_letra_coincide() -> None:
+    """La revisión del propietario cambió este criterio, y eran 96 preguntas de los tres pilotos.
 
+    Antes, con clave en borrador mandaba la frase y la letra del modelo no decidía: una pregunta que
+    los apuntes contestaban «b» con la plantilla diciendo «a» contaba como cubierta. Una letra
+    distinta de la clave no es una cobertura: es un conflicto (o la clave está mal, o los apuntes) y
+    va a la cola de revisión. La frase verificada sigue siendo obligatoria.
+    """
+    apuntes = "El derecho de petición se reconoce en el artículo 29 de la Constitución."
+    frase = "se reconoce en el artículo 29 de la Constitución"
+
+    coincide = evaluar(
+        grupo=_grupo(_pregunta("q1", letras=("a",), estado=KeyStatus.DRAFT)),
+        check=QuoteCheck("f", "a", frase),
+        apuntes=apuntes,
+        section=_seccion(),
+        attempts=1,
+    )
+    assert coincide.coverage is Coverage.CUBIERTA
+
+    primera = evaluar(
+        grupo=_grupo(_pregunta("q2", letras=("a",), estado=KeyStatus.DRAFT)),
+        check=QuoteCheck("f", "b", frase),
+        apuntes=apuntes,
+        section=_seccion(),
+        attempts=1,
+    )
+    assert primera.coverage is Coverage.HUECO, "a la primera se le da la vuelta del añadido"
+
+    final = evaluar(
+        grupo=_grupo(_pregunta("q3", letras=("a",), estado=KeyStatus.DRAFT)),
+        check=QuoteCheck("f", "b", frase),
+        apuntes=apuntes,
+        section=_seccion(),
+        attempts=2,
+    )
+    assert final.coverage is Coverage.CONFLICTO
+    assert final.note is Motivo.LETRA_NO_COINCIDE
+    # La frase **sí** se guarda en un conflicto, y con el mismo texto que se verificó: es la prueba
+    # que el propietario necesita para decidir si el que está mal es la clave o los apuntes
+    # (§2.1.4, «con la frase que lo demuestra»). Lo que sigue sin guardarse nunca es una cita sin
+    # verificar.
+    assert final.quote == frase
+
+
+def test_con_la_frase_y_sin_letra_del_modelo_es_un_conflicto_con_clave() -> None:
+    """No decir la letra no puede contar como decir la buena: con clave, la letra tiene que valer.
+
+    Es el otro lado de la regla nueva: sin letra no se puede afirmar que coincida.
+    """
+    apuntes = "El derecho de petición se reconoce en el artículo 29 de la Constitución."
     resultado = evaluar(
-        grupo=grupo,
-        check=QuoteCheck("f", "b", "se reconoce en el artículo 29 de la Constitución"),
+        grupo=_grupo(_pregunta("q1", letras=("a",), estado=KeyStatus.DRAFT)),
+        check=QuoteCheck("f", None, "se reconoce en el artículo 29 de la Constitución"),
+        apuntes=apuntes,
+        section=_seccion(),
+        attempts=2,
+    )
+    assert resultado.coverage is Coverage.CONFLICTO
+    assert resultado.note is Motivo.LETRA_NO_COINCIDE
+
+
+def test_sin_ninguna_clave_manda_la_frase_porque_no_hay_letra_que_comparar() -> None:
+    apuntes = "El derecho de petición se reconoce en el artículo 29 de la Constitución."
+    resultado = evaluar(
+        grupo=_grupo(_pregunta("q1", letras=(), estado=KeyStatus.NINGUNA)),
+        check=QuoteCheck("f", None, "se reconoce en el artículo 29 de la Constitución"),
         apuntes=apuntes,
         section=_seccion(),
         attempts=1,
@@ -354,6 +417,31 @@ def test_un_hecho_que_no_aparece_en_el_texto_se_detecta() -> None:
         "El derecho de petición se reconoce en el artículo 29 de la Constitución Española.",
     )
     assert len(faltan) == 1
+
+
+# --- el tope de un añadido ------------------------------------------------------------------------
+
+
+def test_el_anadido_lleva_su_tope_de_palabras_en_el_encargo() -> None:
+    """El añadido no puede escribir sin límite: el apartado entero tiene que caber en `40 x hechos`.
+
+    Es el otro lado del bucle de huecos. I.6 rellenó sus huecos y quedó en **18.795 palabras de
+    13.840**: el texto ya estaba bien y no se podía dar por bueno. El tope sale del apartado (sus
+    hechos y lo que ya tiene escrito), así que vale en los dos sitios donde se escribe un añadido.
+    """
+    hechos = tuple(_hecho(f"hecho {numero}") for numero in range(10))
+    seccion = _seccion(hechos, body=" ".join(["palabra"] * 100))
+
+    assert tope_del_anadido(seccion) == MAX_PALABRAS_POR_HECHO * 10 - 100
+    encargo = build_user_prompt_anadir(
+        seccion, [_grupo(_pregunta("q1", enunciado="¿En qué año se aprobó la Constitución?"))]
+    )
+    assert f"Como mucho {MAX_PALABRAS_POR_HECHO * 10 - 100} palabras" in encargo
+
+    # Con el apartado ya pasado de su tope no se baja de un párrafo: un añadido de cero palabras no
+    # rellena nada, y el hueco que no quepa se declara en vez de taparse escribiendo de más.
+    lleno = _seccion(hechos, body=" ".join(["palabra"] * 500))
+    assert tope_del_anadido(lleno) == MINIMO_PALABRAS_ANADIDO
 
 
 # --- la forma canónica de los apuntes -------------------------------------------------------------

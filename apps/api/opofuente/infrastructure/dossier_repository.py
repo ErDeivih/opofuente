@@ -18,6 +18,7 @@ entera
 
 from __future__ import annotations
 
+import json
 from collections.abc import Sequence
 from dataclasses import replace
 from datetime import datetime
@@ -353,6 +354,49 @@ class SqlAlchemyDossierRepository:
                 {"node_id": node_id},
             ).first()
         return None if fila is None else str(fila[0])
+
+    def retire_snapshot(self, node_id: str, *, reason: str, now: datetime) -> bool:
+        """Retira la última versión del tema y lo deja auditado. Devuelve si había algo que retirar.
+
+        Se va la **lectura** del tema (el dossier guardado), no su contenido: los apartados, los
+        hechos, las comprobaciones y la bandeja siguen en sus tablas, y volver a archivar cuando el
+        tema pase la puerta lo devuelve. El evento dice quién y por qué, que es lo que permite
+        entender por qué un tema que estaba publicado ha vuelto a borrador.
+        """
+        with self._session_factory() as session:
+            fila = session.execute(
+                text(
+                    "SELECT id FROM dossier_snapshots WHERE curriculum_node_id = :node_id "
+                    "ORDER BY built_at DESC, created_at DESC, id DESC LIMIT 1"
+                ),
+                {"node_id": node_id},
+            ).first()
+            if fila is None:
+                return False
+            version_id = str(fila[0])
+            session.execute(
+                text("DELETE FROM dossier_snapshots WHERE id = :id"), {"id": version_id}
+            )
+            session.execute(
+                text(
+                    "INSERT INTO audit_events (id, actor, action, object_type, object_id, "
+                    "before_json, after_json, correlation_id, created_at) "
+                    "VALUES (:id, :actor, :action, :object_type, :object_id, :before, :after, "
+                    "NULL, :now)"
+                ),
+                {
+                    "id": str(uuid4()),
+                    "actor": "f10:puerta-de-cobertura",
+                    "action": "dossier.snapshot_retired",
+                    "object_type": "topic",
+                    "object_id": node_id,
+                    "before": json.dumps({"version_id": version_id}),
+                    "after": json.dumps({"reason": reason}),
+                    "now": now,
+                },
+            )
+            session.commit()
+        return True
 
     def snapshot(self, node_id: str, version_id: str) -> tuple[str, datetime, str] | None:
         """`(payload, built_at, content_hash)` de una versión, si es de ese tema."""

@@ -77,6 +77,7 @@ from opofuente.domain.topic_notes import (
     ComprobacionBatch,
     Hecho,
     HechosBatch,
+    IncidenciaDeApuntes,
     MaterialPassage,
     NotesCheck,
     NoteSection,
@@ -518,6 +519,14 @@ class DossierRepository(Protocol):
         """Las versiones guardadas, de la más nueva a la más antigua, sin su contenido."""
         ...
 
+    def retire_snapshot(self, node_id: str, *, reason: str, now: datetime) -> bool:
+        """Retira la última versión del tema y lo deja auditado.
+
+        Es lo contrario de `save_snapshot`, y existe porque un tema que no pasa la puerta de
+        cobertura **no puede quedar publicado**: se va la lectura guardada, no el contenido.
+        """
+        ...
+
 
 @runtime_checkable
 class VectorSearch(Protocol):
@@ -698,6 +707,38 @@ class TopicNotesRepository(TopicNotesReader, Protocol):
         resultado."""
         ...
 
+    def save_incidents(
+        self, node_id: str, incidents: Sequence[IncidenciaDeApuntes], *, now: datetime
+    ) -> int:
+        """Deja en la bandeja del propietario las preguntas que los apuntes no cubren (§2.1.4).
+
+        Una fila por pregunta y tema: lo que ya está cubierto sale de la bandeja, y volver a
+        comprobar el tema actualiza la incidencia en vez de añadir otra copia.
+        """
+        ...
+
+    def incidents(self, node_id: str) -> tuple[IncidenciaDeApuntes, ...]:
+        """La bandeja del tema: las incidencias con su categoría, para el panel."""
+        ...
+
+    def forget_facts(
+        self,
+        node_id: str,
+        fact_ids: Sequence[str],
+        *,
+        actor: str,
+        reason: str,
+        now: datetime,
+    ) -> int:
+        """Tira unos hechos del tema y lo deja auditado. Devuelve cuántos ha tirado.
+
+        Es para lo que se va del tema: los hechos de una pregunta **mal clasificada**, que se lleva
+        la cola de clasificación. Dejarlos aquí sería sostener un apartado del que ya no son, y el
+        propietario lo pidió así: «sus datos se van con ellas». Se borran uno a uno (no por lote a
+        ciegas) y queda el evento con quién lo hizo y por qué.
+        """
+        ...
+
 
 #: El actor con el que se firma lo que escribe la máquina en los apuntes.
 ACTOR_APUNTES = "llm:deepseek-flash"
@@ -742,8 +783,14 @@ class NotesModel(Protocol):
         topic_code: str,
         topic_title: str,
         material: Sequence[MaterialPassage],
+        es_tabla_de_puertos: bool = False,
     ) -> RedaccionBatch:
-        """El texto de un apartado, con todos sus hechos dentro."""
+        """El texto de un apartado, con todos sus hechos dentro.
+
+        `es_tabla_de_puertos` añade a las instrucciones la organización por familias y la regla de
+        las notas (que explican el puerto, no lo que no es). Es un dato del apartado, no del tema, y
+        el motor no tiene por qué saber de qué catálogo sale.
+        """
         ...
 
     def comprobar(self, grupos: Sequence[QuestionGroup], *, apuntes: str) -> ComprobacionBatch:

@@ -414,8 +414,8 @@ def test_una_carrera_con_el_worker_no_convierte_la_asignacion_en_un_500(
                 pregunta["id"], node_id=tema["id"], now=datetime.now(UTC), actor="auto"
             )
             assert asignado is not None
-            vista, creado = asignado
-            assert creado is True, "el otro escritor crea el mapeo: si no, no hay carrera"
+            vista, desenlace = asignado
+            assert desenlace == "created", "el otro escritor crea el mapeo: si no, no hay carrera"
             ganador["mapping_id"] = vista.mapping_id
 
         monkeypatch.setattr(

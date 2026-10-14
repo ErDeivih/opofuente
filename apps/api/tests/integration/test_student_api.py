@@ -21,12 +21,16 @@ from __future__ import annotations
 import json
 from collections.abc import Iterator
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
 
 from opofuente.config import Settings
+from opofuente.domain.topic_notes import Coverage, KeyStatus, NotesCheck, NoteSection
+from opofuente.infrastructure.db import build_engine, build_session_factory
+from opofuente.infrastructure.topic_notes_repository import SqlAlchemyTopicNotesRepository
 from opofuente.main import create_app
 
 ALLOWED_ORIGIN = {"Origin": "http://127.0.0.1:5173"}
@@ -227,6 +231,62 @@ def _asignar(client: TestClient, pregunta_id: str, node_id: str) -> None:
     assert respuesta.status_code in (200, 201), respuesta.text
 
 
+def _escribir_apuntes(settings: Settings, node_id: str, pregunta_id: str) -> None:
+    """Escribe un apartado de apuntes con una pregunta anclada, por la ruta de verdad.
+
+    La prueba de contrato de esta fase recorre **todas** las respuestas de `/student/*` buscando lo
+    que no puede salir. Los apuntes del tema (F13) son la respuesta más larga de la zona del alumno,
+    así que tienen que estar ahí con texto de verdad: comprobar que un texto vacío no lleva una ruta
+    no demuestra nada.
+    """
+    ahora = datetime.now(UTC)
+    engine = build_engine(settings.data_paths.database)
+    try:
+        notas = SqlAlchemyTopicNotesRepository(build_session_factory(engine))
+        (apartado,) = notas.save_sections(
+            node_id,
+            [
+                NoteSection(
+                    key="udp",
+                    epigraph_code="IV.1.1",
+                    title="UDP: datagramas sin conexión",
+                    anchor="udp",
+                    position=1,
+                )
+            ],
+            now=ahora,
+        )
+        notas.save_section_body(
+            apartado,
+            title=None,
+            body="El datagrama UDP no tiene conexión ni acuse de recibo.",
+            needs_review_reason=None,
+            model="modelo-de-la-prueba",
+            now=ahora,
+        )
+        notas.save_checks(
+            node_id,
+            [
+                NotesCheck(
+                    question_version_id=pregunta_id,
+                    group_signature="firma-de-la-prueba",
+                    section_key=apartado.key,
+                    anchor=apartado.anchor,
+                    coverage=Coverage.CUBIERTA,
+                    note=None,
+                    quote="El datagrama UDP no tiene conexión ni acuse de recibo",
+                    letter="a",
+                    expected=("a",),
+                    key_status=KeyStatus.ACTIVE,
+                    attempts=1,
+                )
+            ],
+            now=ahora,
+        )
+    finally:
+        engine.dispose()
+
+
 def _responder(client: TestClient, session_id: str, veces: int) -> None:
     """Responde `veces` preguntas de la sesión, una detrás de otra, para que haya progreso real."""
     for _ in range(veces):
@@ -299,6 +359,14 @@ def zona(seeded_settings: Settings) -> Iterator[ZonaAlumno]:
         preguntas_propias = _preguntas(client, set_propio)
         for indice, path in enumerate(TEMAS_CON_PREGUNTAS):
             _asignar(client, str(preguntas_propias[indice]["id"]), str(temas_alumno[path]["id"]))
+        # Y apuntes escritos en IV.1, con una pregunta anclada: la pantalla de lectura existe (F13)
+        # y su respuesta es la más larga de la zona del alumno, así que entra en la prueba de
+        # contrato.
+        _escribir_apuntes(
+            seeded_settings,
+            str(temas_alumno["IV.1"]["id"]),
+            str(preguntas_propias[0]["id"]),
+        )
         preguntas_ajenas = _preguntas(client, set_ajeno)
         path_ajeno = next(iter(temas_ajenos))
         _asignar(client, str(preguntas_ajenas[0]["id"]), str(temas_ajenos[path_ajeno]["id"]))
@@ -360,7 +428,9 @@ def _respuestas_de_alumno(zona: ZonaAlumno) -> dict[str, Any]:
     """**Cada** respuesta de `/student/*` con datos sembrados, incluida una de error.
 
     El 404 entra a propósito: un mensaje de error también es una respuesta, y es donde más fácil se
-    cuela un identificador interno al decir qué no se ha encontrado.
+    cuela un identificador interno al decir qué no se ha encontrado. Y el test en curso entra
+    entero —montarlo, arrancarlo, contestarlo y cerrarlo— porque es la pantalla que más datos
+    enseña: si algo se colara, se colaría aquí.
     """
     rutas = {
         "overview": "/api/v1/student/overview",
@@ -368,14 +438,86 @@ def _respuestas_de_alumno(zona: ZonaAlumno) -> dict[str, Any]:
         "topics/IV.1": "/api/v1/student/topics/IV.1",
         "topics/IV-10": "/api/v1/student/topics/IV-10",
         "topics/I.1": "/api/v1/student/topics/I.1",
+        "topics/IV.1/notes": "/api/v1/student/topics/IV.1/notes",
+        "topics/IV.10/notes": "/api/v1/student/topics/IV.10/notes",
         "progress": "/api/v1/student/progress",
+        "tests/plan": "/api/v1/student/tests/plan",
+        "mock-exams/plan": "/api/v1/student/mock-exams",
+        "official-exams": "/api/v1/student/official-exams",
+        "mistakes": "/api/v1/student/mistakes",
         "topics/inexistente": "/api/v1/student/topics/XX.99",
+        "topics/inexistente/notes": "/api/v1/student/topics/XX.99/notes",
     }
     respuestas: dict[str, Any] = {}
     for nombre, ruta in rutas.items():
         respuesta = zona.client.get(ruta)
         assert respuesta.status_code in (200, 404), f"{ruta}: {respuesta.status_code}"
         respuestas[nombre] = respuesta.json()
+
+    # El aviso «esto está mal» (F13) también es una respuesta de esta capa: su cuerpo no puede
+    # llevar nada de la trastienda, y el rechazo (un apartado que no existe) entra como el 404.
+    aviso = zona.client.post(
+        "/api/v1/student/topics/IV.1/reports",
+        json={"section_key": "udp", "reason": "La cabecera de UDP no es de 12 bytes."},
+        headers=ALLOWED_ORIGIN,
+    )
+    assert aviso.status_code == 201, aviso.text
+    respuestas["topics/IV.1/reports"] = aviso.json()
+    respuestas["topics/IV.1/reports/sin-apartado"] = zona.client.post(
+        "/api/v1/student/topics/IV.1/reports",
+        json={"section_key": "no-existe", "reason": "Esto está mal."},
+        headers=ALLOWED_ORIGIN,
+    ).json()
+
+    creado = zona.client.post(
+        "/api/v1/student/tests",
+        json={"nodes": ["IV.1"], "count": 2, "filter": "all", "feedback": "immediate"},
+        headers=ALLOWED_ORIGIN,
+    )
+    assert creado.status_code == 201, creado.text
+    respuestas["tests"] = creado.json()
+    sesion = str(creado.json()["id"])
+
+    arrancado = zona.client.post(f"/api/v1/student/sessions/{sesion}/start", headers=ALLOWED_ORIGIN)
+    assert arrancado.status_code == 200, arrancado.text
+    respuestas["sessions/start"] = arrancado.json()
+
+    en_curso = zona.client.get(f"/api/v1/student/sessions/{sesion}")
+    assert en_curso.status_code == 200, en_curso.text
+    respuestas["sessions/en-curso"] = en_curso.json()
+    assert respuestas["sessions/en-curso"]["question"] is not None, "hay una pregunta que contestar"
+    primera = respuestas["sessions/en-curso"]["question"]["options"][0]["key"]
+
+    contestado = zona.client.post(
+        f"/api/v1/student/sessions/{sesion}/answers",
+        json={"position": 1, "chosen": [primera], "elapsed_ms": 1200},
+        headers=ALLOWED_ORIGIN,
+    )
+    assert contestado.status_code == 200, contestado.text
+    respuestas["sessions/answers"] = contestado.json()
+
+    cerrado = zona.client.post(f"/api/v1/student/sessions/{sesion}/finish", headers=ALLOWED_ORIGIN)
+    assert cerrado.status_code == 200, cerrado.text
+    respuestas["sessions/finish"] = cerrado.json()
+
+    # El resultado del test terminado (F14) es la respuesta más larga de esta capa: cada pregunta
+    # con sus opciones, lo que se marcó, la correcta y su tema. Si algo se colara, se colaría aquí.
+    resultado = zona.client.get(f"/api/v1/student/sessions/{sesion}/result")
+    assert resultado.status_code == 200, resultado.text
+    respuestas["sessions/result"] = resultado.json()
+    assert respuestas["sessions/result"]["questions"], "el resultado tiene preguntas que enseñar"
+
+    simulacro = zona.client.post(
+        "/api/v1/student/mock-exams",
+        json={"variant": "short", "case_block": "III"},
+        headers=ALLOWED_ORIGIN,
+    )
+    assert simulacro.status_code == 201, simulacro.text
+    respuestas["mock-exams"] = simulacro.json()
+
+    respuestas["sessions/inexistente"] = zona.client.get(
+        "/api/v1/student/sessions/00000000-0000-0000-0000-000000000000"
+    ).json()
     return respuestas
 
 
@@ -452,6 +594,61 @@ def test_nada_de_la_oposicion_ajena_aparece_en_la_zona_del_alumno(zona: ZonaAlum
     # Y la oposición que sí se sirve es la configurada, no «la activa» por casualidad.
     for nombre in ("overview", "syllabus", "progress"):
         assert respuestas[nombre]["opposition"]["code"] == OPOSICION_ALUMNO
+
+
+# ---------------------------------------------------------------- 3b. el plan del test (F22)
+
+
+def test_el_plan_del_test_dice_los_tamanos_y_los_minutos_que_luego_se_aplican(
+    zona: ZonaAlumno,
+) -> None:
+    """El plan del test (F22) y lo que de verdad pasa al montarlo: la misma cifra.
+
+    Lo que esta prueba defiende es que la pantalla **no calcule** el reloj: los minutos del plan
+    tienen que ser los que la sesión recibe de verdad. Se comprueba montando el test con reloj para
+    cada tamaño ofrecido y comparando `time_limit_minutes` con los minutos que anunciaba el plan. Si
+    alguien moviera la regla del reloj en el motor y el plan siguiera sirviendo la cifra vieja, esto
+    falla —que es justo lo que tiene que pasar cuando las dos cifras se separan—.
+    """
+    plan = zona.client.get("/api/v1/student/tests/plan")
+    assert plan.status_code == 200, plan.text
+    cuerpo = plan.json()
+
+    tamanos = [cuenta["questions"] for cuenta in cuerpo["counts"]]
+    assert tamanos == [10, 20, 25, 50, 100]
+    assert all(cuenta["minutes"] > 0 for cuenta in cuerpo["counts"])
+    # Los minutos no son «dos por pregunta» a secas: la regla redondea a cinco. Con el 25, que es el
+    # único de la lista que no es múltiplo de cinco, se ve que el plan sirve el número redondeado.
+    minutos = {cuenta["questions"]: cuenta["minutes"] for cuenta in cuerpo["counts"]}
+    assert minutos[25] == 50
+    assert cuerpo["timed_note"], "la nota del reloj tiene que decir de dónde sale el tiempo"
+
+    for tamano in tamanos:
+        creada = zona.client.post(
+            "/api/v1/student/tests",
+            json={"nodes": ["IV.1"], "count": tamano, "timed": True},
+            headers=ALLOWED_ORIGIN,
+        )
+        assert creada.status_code == 201, creada.text
+        assert creada.json()["time_limit_minutes"] == minutos[tamano], (
+            f"el plan anunciaba {minutos[tamano]} minutos para {tamano} preguntas y la sesión "
+            f"recibió {creada.json()['time_limit_minutes']}"
+        )
+
+    # Y sin el reloj del test, la sesión **no** se queda sin tiempo: hereda el de la parte del
+    # perfil con la que se corrige ese material, que es justo lo que el plan anuncia. Medido aquí
+    # porque es una cifra que sorprende: un test de diez preguntas sin reloj sigue llevando 120
+    # minutos.
+    sin_reloj = zona.client.post(
+        "/api/v1/student/tests",
+        json={"nodes": ["IV.1"], "count": 10, "timed": False},
+        headers=ALLOWED_ORIGIN,
+    )
+    assert sin_reloj.status_code == 201, sin_reloj.text
+    assert cuerpo["convocation_minutes"] is not None, (
+        "el perfil sembrado publica el tiempo del ejercicio: si no, esta mitad no probaría nada"
+    )
+    assert sin_reloj.json()["time_limit_minutes"] == cuerpo["convocation_minutes"]
 
 
 def test_la_oposicion_configurada_manda_sobre_lo_que_hay(seeded_settings: Settings) -> None:

@@ -93,10 +93,20 @@ class ScoringKind(StrEnum):
     calificación a unos baremos que fija la Comisión; Guardia Civil publica la fórmula completa
     `Px = (Y/T)·(A - E/(N-1))`; y sus pruebas de ortografía y gramática se evalúan como apto o no
     apto por número de errores. Las tres formas se corrigen aquí tal como están publicadas.
+
+    `estimated` es la cuarta, y existe porque TAI publica la penalización y la banda de la parte
+    **pero no** cuántas alternativas tiene cada pregunta: el anexo V no lo dice y no se puede
+    inventar, así que la fórmula de Guardia Civil (`E/(N-1)`) no se puede aplicar. Lo que sí se
+    puede —y es lo que pidió el propietario— es **escalar** la puntuación directa a la banda de la
+    parte: `(Y/T)·(A - E·p)`. Con 50 aciertos y 15 fallos sobre 80 preguntas de la primera parte de
+    TAI da `50 · 45/80 = 28,125`, exacto. Es una **estimación**: la calificación oficial
+    0-50 sale
+    de los baremos de la Comisión y sigue declarada como no disponible.
     """
 
     DIRECT = "direct"
     SCALED = "scaled"
+    ESTIMATED = "estimated"
     #: La parte se evalúa como apto o no apto por número de errores. El valor del vocabulario es el
     #: que se guarda y se sirve; no hay ninguna credencial aquí (`S105` lo lee por el nombre).
     PASS_FAIL = "pass_fail"  # noqa: S105
@@ -104,7 +114,7 @@ class ScoringKind(StrEnum):
     @property
     def numeric(self) -> bool:
         """¿Da esta forma de corregir una puntuación numérica que se suma al total?"""
-        return self in (ScoringKind.DIRECT, ScoringKind.SCALED)
+        return self in (ScoringKind.DIRECT, ScoringKind.SCALED, ScoringKind.ESTIMATED)
 
 
 class AttemptOutcome(StrEnum):
@@ -241,6 +251,10 @@ class SessionConfiguration:
     #: de la clave (que llega a listar 21 plantillas), así que cinco sesiones de examen oficial se
     #: veían como cinco filas idénticas (5 de octubre de 2026).
     context_label: str | None = None
+    #: De dónde salieron las preguntas del supuesto práctico cuando no había supuesto de verdad: se
+    #: compone del bloque elegido y se dice (`"bloque"`), en lugar de llamar «supuesto práctico» a
+    #: veinte preguntas de tema. Es `None` cuando el supuesto es material de supuesto.
+    practical_case_origin: str | None = None
 
     def __post_init__(self) -> None:
         if self.mode in (SessionMode.OFFICIAL_EXAM, SessionMode.MOCK_EXAM) and (
@@ -612,6 +626,17 @@ class PartRule:
                     f"la parte «{self.code}» necesita el número de alternativas por pregunta: sin "
                     "él no se puede descontar `E/(N-1)`"
                 )
+        if self.kind is ScoringKind.ESTIMATED and (
+            self.score_max is None or not self.ordinary_items
+        ):
+            # La estimación **no** pide `options_per_question`: precisamente existe porque la
+            # convocatoria no lo publica. Restar `E/(N-1)` con un número inventado sería corregir
+            # con un dato que nadie ha publicado.
+            raise InvariantViolationError(
+                f"la parte «{self.code}» se puntúa con la estimación y necesita su puntuación "
+                "máxima y su número de preguntas (la banda a la que se escala la "
+                "puntuación directa)"
+            )
         if self.kind is ScoringKind.PASS_FAIL and self.fail_if_errors_gte is None:
             raise InvariantViolationError(
                 f"la parte «{self.code}» se evalúa como apto o no apto y necesita su número de "
@@ -629,6 +654,8 @@ def score_part(rule: PartRule, *, correct: int, wrong: int) -> Fraction:
 
     - `direct`: `A - E·p`, con la penalización exacta de la parte;
     - `scaled`: `(Y/T)·(A - E/(N-1))`, la fórmula oficial de Guardia Civil;
+    - `estimated`: `(Y/T)·(A - E·p)`, la puntuación directa escalada a la banda de la parte con la
+      penalización publicada (TAI, cuyo anexo V no publica las alternativas por pregunta);
     - `pass_fail`: cero, porque una parte que se evalúa como apto o no apto no da puntos (y quien
       decide si se supera es `passed_part`).
     """
@@ -637,9 +664,16 @@ def score_part(rule: PartRule, *, correct: int, wrong: int) -> Fraction:
     if rule.kind is ScoringKind.DIRECT:
         return exact_score(correct, wrong, rule.penalty)
 
-    # `scaled`: `PartRule` ya ha comprobado que están Y, T y N.
     assert rule.score_max is not None  # noqa: S101 - lo garantiza PartRule.__post_init__
     assert rule.ordinary_items  # noqa: S101
+    if rule.kind is ScoringKind.ESTIMATED:
+        # La directa (con la penalización **publicada**), escalada a la banda de la parte. El caso
+        # del propietario: 50 aciertos y 15 fallos en la primera parte de TAI (80 preguntas, 50 de
+        # máximo, un tercio por error) → `50 · (50 - 15/3)/80 = 225/8 = 28,125`.
+        bruto = exact_score(correct, wrong, rule.penalty)
+        return Fraction(str(rule.score_max)) * bruto / Fraction(rule.ordinary_items)
+
+    # `scaled`: `PartRule` ya ha comprobado que están Y, T y N.
     assert rule.options_per_question is not None  # noqa: S101
     bruto = Fraction(correct) - Fraction(wrong, rule.options_per_question - 1)
     return Fraction(str(rule.score_max)) * bruto / Fraction(rule.ordinary_items)
@@ -672,6 +706,12 @@ def verdict_for(rule: PartRule, score: Fraction, *, wrong: int) -> PartVerdict:
                 f"{wrong} respuestas erróneas frente al límite de {rule.fail_if_errors_gte}"
             ),
         )
+    if rule.kind is ScoringKind.ESTIMATED:
+        # La estimación **sí** está en la banda publicada de la parte, así que se puede decir si
+        # llega al mínimo; lo que no se puede es declarar superada la prueba: la calificación
+        # oficial sale de los baremos de la Comisión, y comparar una estimación con el umbral
+        # oficial y llamarlo «aprobado» sería inventar un aprobado.
+        return PartVerdict(passed=None, reason=estimated_verdict_note(rule, score))
     if rule.pass_score is None:
         return PartVerdict(
             passed=None,
@@ -696,6 +736,40 @@ def verdict_for(rule: PartRule, score: Fraction, *, wrong: int) -> PartVerdict:
             "baremos de la convocatoria: no se aplica a la puntuación directa"
         ),
     )
+
+
+#: Lo que se dice de una parte puntuada con la **estimación**. Es la frase que impide que la cifra
+#: se lea como una calificación: el número es real y está calculado, lo que no está es la tabla
+#: oficial con la que la Comisión convierte la puntuación directa en su 0-50.
+ESTIMATED_SCORE_NOTE = (
+    "Es una **estimación**: la puntuación directa (aciertos menos errores por su penalización) "
+    "escalada a la banda que publica la convocatoria para esta parte. La calificación oficial 0-50 "
+    "resulta de los baremos que fija la Comisión de Selección, y esa tabla no está importada: esto "
+    "no es la calificación oficial."
+)
+
+
+def estimated_verdict_note(rule: PartRule, score: Fraction) -> str:
+    """El aviso de una parte estimada, con si su estimación llega al mínimo publicado.
+
+    Se dice lo que se puede afirmar —la estimación y el mínimo, los dos en la misma banda— y **no**
+    se declara superada la prueba: eso lo diría la calificación oficial, que no se puede calcular.
+    """
+    maximo = (
+        "?" if rule.score_max is None else decimal_text(Fraction(str(rule.score_max)), decimales=2)
+    )
+    cabecera = (
+        f"La estimación de «{rule.name or rule.code}» es {decimal_text(score)} sobre {maximo}"
+    )
+    if rule.pass_score is None:
+        return f"{cabecera}. {ESTIMATED_SCORE_NOTE}"
+    minimo = decimal_text(Fraction(str(rule.pass_score)), decimales=2)
+    alcanza = (
+        "llega al mínimo publicado"
+        if score >= Fraction(str(rule.pass_score))
+        else "no llega al mínimo publicado"
+    )
+    return f"{cabecera} y {alcanza} ({minimo}), pero {ESTIMATED_SCORE_NOTE}"
 
 
 def aggregate(
@@ -775,6 +849,16 @@ def aggregate(
     numericas = tuple(parte for parte in detalle if parte.kind.numeric)
     penalizaciones = {parte.penalty for parte in numericas}
     penalizacion = penalizaciones.pop() if len(penalizaciones) == 1 else None
+    # La forma del total es la de sus partes numéricas: la suma de estimaciones es una estimación, y
+    # decir que es una puntuación directa cuando ninguna de sus partes lo es confundiría las dos
+    # cosas justo donde se leen juntas.
+    formas = {parte.kind for parte in numericas}
+    if formas == {ScoringKind.ESTIMATED}:
+        forma_total = ScoringKind.ESTIMATED
+    elif numericas:
+        forma_total = ScoringKind.DIRECT
+    else:
+        forma_total = ScoringKind.PASS_FAIL
 
     total = PartScore(
         part_code=None,
@@ -784,7 +868,7 @@ def aggregate(
         score_max=None,
         pass_score=None,
         penalty=penalizacion,
-        kind=ScoringKind.DIRECT if numericas else ScoringKind.PASS_FAIL,
+        kind=forma_total,
         correct=sum(parte.correct for parte in detalle),
         wrong=sum(parte.wrong for parte in detalle),
         blank=sum(parte.blank for parte in detalle),

@@ -194,7 +194,10 @@ class PartScoreSchema(BaseModel):
     score_max: float | None = None
     pass_score: float | None = None
     penalty: ScoreSchema | None = None
-    kind: Literal["direct", "scaled", "pass_fail"]
+    #: Cómo se corrigió la parte: `direct` (aciertos menos errores por su penalización), `scaled`
+    #: (la fórmula publicada de Guardia Civil), `estimated` (la directa escalada a la banda de la
+    #: parte, que es una estimación y no la calificación oficial) o `pass_fail` (apto o no apto).
+    kind: Literal["direct", "scaled", "estimated", "pass_fail"]
     correct: int
     wrong: int
     blank: int

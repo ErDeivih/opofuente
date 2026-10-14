@@ -91,6 +91,22 @@ Lo de confianza alta entra (`accepted`), lo dudoso queda como propuesta provisio
 revisión (`GET /api/v1/question-exclusions` lista lo que se declaró fuera de temario) y lo que no es
 materia del programa se marca fuera de temario, que lo deja fuera de simulacros y exámenes oficiales.
 
+### La cola de revisión de la clasificación (F5)
+
+En el panel, **Clasificación** (`/admin/clasificacion`, y también la dirección documentada
+`/admin/preguntas?revisar_tema=1`) despacha con el teclado las propuestas que dejó el clasificador:
+una tarjeta por pregunta, con el enunciado, sus opciones, el tema y el epígrafe propuestos, la
+confianza y el motivo del modelo. `A` acepta, `C` cambia de tema o epígrafe, `F`/`X` marcan fuera de
+temario, `S` salta, `R` retira lo que sobra y `G` guarda **en una sola llamada** todo lo decidido
+(`POST /api/v1/questions/topics/bulk`). Aceptar un tema **retira** las demás propuestas de esa
+pregunta: una pregunta no puede acabar con dos temas.
+
+El clasificador toma una **marca de corrida** en `app_metadata` (`clasificacion_en_curso`) antes de
+empezar y la suelta al terminar, pase lo que pase: dos corridas a la vez sobre la misma base calculan
+sus pendientes antes de que la otra escriba y acaban proponiendo dos temas a la misma pregunta (pasó
+el 8 de octubre de 2026). La segunda se niega y dice desde cuándo corre la primera; si el proceso
+murió de golpe, la marca se puede retirar a mano o se da por muerta a las 12 h.
+
 Las puertas 17 y 18 necesitan las fuentes oficiales ya descargadas (`fetch-sources.ps1`) y el
 navegador de Playwright (`npx playwright install chromium`).
 

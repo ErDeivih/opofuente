@@ -913,6 +913,7 @@ export const dossierNotesFixture: Dossier = {
     covered: 2,
     gaps: 0,
     doubtful: 1,
+    conflicts: 0,
     sections: [
       {
         key: 'i-1-1',
@@ -928,9 +929,11 @@ export const dossierNotesFixture: Dossier = {
         covered: 2,
         gaps: 0,
         doubtful: 0,
+        conflicts: 0,
         question_ids: ['q-1', 'q-2'],
         gap_question_ids: [],
         doubtful_question_ids: [],
+        conflict_question_ids: [],
       },
       {
         key: 'i-1-4',
@@ -943,9 +946,11 @@ export const dossierNotesFixture: Dossier = {
         covered: 0,
         gaps: 0,
         doubtful: 1,
+        conflicts: 0,
         question_ids: [],
         gap_question_ids: [],
         doubtful_question_ids: ['q-3'],
+        conflict_question_ids: [],
       },
     ],
   },

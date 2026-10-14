@@ -67,6 +67,22 @@ class InvalidAnswerError(OpoFuenteError):
         self.code = code
 
 
+class InvalidReviewError(OpoFuenteError):
+    """La revisión de un tema no se puede guardar así. La API lo traduce a 422 `invalid_review`.
+
+    Dos casos, y los dos son culpa de la entrada, no del programa: **rechazar un tema sin motivo**
+    —un rechazo sin motivo deja el borrador donde estaba y encima sin saber por qué— y aprobar o
+    rechazar un tema que **todavía no tiene apuntes escritos**. La nota viaja en `field_errors` para
+    que la pantalla pueda señalar el campo, igual que cualquier otra entrada inválida.
+    """
+
+    def __init__(self, reason: str, *, field: str = "note") -> None:
+        super().__init__(reason)
+        self.reason = reason
+        self.field = field
+        self.code = "invalid_review"
+
+
 class UnsupportedError(OpoFuenteError):
     """Se ha pedido algo que esta aplicación todavía no hace. La API lo traduce a 409.
 
@@ -140,6 +156,34 @@ class ExternalServiceError(OpoFuenteError):
     API porque no hay ninguna ruta que llame a un modelo: quien lo usa es un comando de la línea de
     órdenes, y lo que tiene que hacer es decirlo y parar, no inventar una clasificación.
     """
+
+
+class ClassificationAlreadyRunningError(OpoFuenteError):
+    """Ya hay una corrida larga escribiendo en esta base (F5).
+
+    Existe por un fallo real, no por prudencia: el 8 de octubre de 2026 dos corridas del
+    clasificador escribieron a la vez sobre los datos del propietario y dejaron **cuatro preguntas
+    con dos temas propuestos** y dos propuestas huérfanas, porque cada una calculó su lista de
+    pendientes antes de que la otra escribiera. Un instrumento que escribe en los datos de alguien
+    no puede permitir que dos procesos se pisen: la segunda corrida se niega y dice desde cuándo
+    corre la primera.
+
+    `que` es el nombre de la corrida («clasificación», «apuntes»): la mecánica es la misma y el
+    mensaje tiene que decir cuál de las dos está en marcha, no siempre la clasificación.
+
+    No es un error de la API: no hay ninguna ruta que clasifique. Lo lee quien lanza el comando.
+    """
+
+    def __init__(
+        self, *, started_at: str, opposition_code: str, hint: str, que: str = "clasificación"
+    ) -> None:
+        super().__init__(
+            f"ya hay una {que} en curso desde {started_at} "
+            f"(oposición «{opposition_code}»): dos corridas a la vez sobre la misma base escriben "
+            f"propuestas duplicadas. {hint}"
+        )
+        self.started_at = started_at
+        self.opposition_code = opposition_code
 
 
 class UnsafeContentError(OpoFuenteError):

@@ -13,7 +13,12 @@ from __future__ import annotations
 from datetime import date, datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+#: De qué administración sale el material de un conjunto (D10, `0037`). El vocabulario vive en el
+#: dominio (`OriginScope`) y aquí se declara una vez para el contrato: `age` (Administración General
+#: del Estado), `otra_administracion` (queda fuera de un simulacro) y `desconocida` (por defecto).
+OriginScopeName = Literal["age", "otra_administracion", "desconocida"]
 
 
 class QuestionSetSchema(BaseModel):
@@ -36,6 +41,9 @@ class QuestionSetSchema(BaseModel):
     #: `personal` (material del propietario) o `public` (publicable). Nunca nulo: el conjunto
     #: siempre dice quién puede verlo, y por defecto lo dice «solo su dueño».
     distribution: Literal["personal", "public"] = "personal"
+    #: De qué administración sale el material (D10). Nunca nulo: un conjunto sin procedencia
+    #: declarada dice `desconocida`, que es la respuesta honesta y la que no excluye de nada.
+    origin_scope: OriginScopeName = "desconocida"
 
 
 class QuestionSetPageSchema(BaseModel):
@@ -55,19 +63,35 @@ class CreateQuestionSetSchema(BaseModel):
     model_code: str | None = Field(default=None, max_length=8)
     held_at: date | None = None
     source_document_version_id: str | None = None
+    #: La procedencia se declara al crear el conjunto cuando se sabe —el importador del INAP sabe
+    #: que sus exámenes son de la AGE—. Si no se dice, `desconocida`.
+    origin_scope: OriginScopeName = "desconocida"
 
 
 class PatchQuestionSetSchema(BaseModel):
     """Lo que se puede cambiar de un conjunto sin tocar su contenido.
 
-    Hoy, la **visibilidad**: un conjunto nace `personal` y se hace `public` a propósito, uno a uno.
-    Nada más se cambia por aquí — el título y el tipo son la identidad del conjunto, y reescribirlos
-    rompería la trazabilidad de las preguntas que cuelgan de él.
+    La **visibilidad** (un conjunto nace `personal` y se hace `public` a propósito, uno a uno) y la
+    **procedencia** (`origin_scope`, que es lo que deja el material de otra administración fuera de
+    un simulacro). Nada más se cambia por aquí — el título y el tipo son la identidad del conjunto,
+    y reescribirlos rompería la trazabilidad de las preguntas que cuelgan de él.
+
+    Los dos campos son opcionales pero **al menos uno** tiene que venir: un `PATCH` que no cambia
+    nada es un error de quien llama, no una operación correcta.
     """
 
     model_config = ConfigDict(extra="forbid")
 
-    distribution: Literal["personal", "public"]
+    distribution: Literal["personal", "public"] | None = None
+    origin_scope: OriginScopeName | None = None
+
+    @model_validator(mode="after")
+    def _algo_que_cambiar(self) -> PatchQuestionSetSchema:
+        if self.distribution is None and self.origin_scope is None:
+            raise ValueError(
+                "el cambio no dice nada: `distribution` u `origin_scope`, uno al menos"
+            )
+        return self
 
 
 class OptionSchema(BaseModel):
@@ -358,12 +382,22 @@ class QuestionTopicAssignmentSchema(QuestionTopicSchema):
     `created` es lo que hace utilizable una ruta idempotente: reintentar la clasificación de un lote
     entero no puede confundir «lo asigné yo ahora» con «ya estaba asignado».
 
+    `promoted` es la tercera cosa que puede pasar, y la que necesita la cola de revisión: el mapeo
+    ya estaba, pero como **propuesta**, y esta llamada la ha confirmado. No es «creado» —la fila
+    existía— ni «ya estaba» —algo se ha escrito y queda auditado—.
+
     `epigraph` viaja cuando se pidió asignar también un epígrafe: se asigna con su tema, y decir
     solo el tema escondería la mitad de lo que se ha escrito.
+
+    `retired` son las propuestas **de esa pregunta** que se han retirado en la misma operación: una
+    pregunta no puede quedarse con dos temas propuestos cuando uno se acepta, y quien decide tiene
+    que ver que las demás ya no están.
     """
 
     created: bool
+    promoted: bool = False
     epigraph: QuestionTopicAssignmentSchema | None = None
+    retired: int = 0
 
 
 class AssignTopicRequestSchema(BaseModel):
@@ -393,6 +427,8 @@ class QuestionExclusionSchema(BaseModel):
     """Una pregunta declarada fuera del temario, con su motivo.
 
     No lleva código de tema ni nodo: **no es un mapeo**, y por eso no se puede confundir con uno.
+    Sí lleva el enunciado, que es lo que permite juzgar si la marca estaba bien puesta; al escribir
+    la marca va nulo, porque ahí no hay nada que revisar.
     """
 
     question_version_id: str
@@ -400,12 +436,115 @@ class QuestionExclusionSchema(BaseModel):
     actor: str
     note: str | None = None
     created_at: datetime | None = None
+    stem: str | None = None
 
 
 class QuestionExclusionPageSchema(BaseModel):
-    """La cola de fuera de temario: las marcas de una página y cuántas hay en total."""
+    """La cola de fuera de temario: las marcas de una página y cuántas hay en total.
+
+    `totals_by_reason` cuenta **cada** motivo en la base, sin mirar el filtro de la petición: es lo
+    que permite que la sección «No son preguntas» del panel (F16, decisión D6) diga cuántos
+    enunciados rotos hay sin leerlos para contarlos. Un motivo sin ninguna marca no aparece.
+    """
 
     exclusions: list[QuestionExclusionSchema]
+    total: int
+    limit: int
+    offset: int
+    totals_by_reason: dict[str, int] = Field(default_factory=dict)
+
+
+class ProgrammeNodeRefSchema(BaseModel):
+    """Un nodo del programa dentro de una propuesta: sus dos códigos y su título.
+
+    `official_code` es el número que publica la convocatoria («1») y `path` la posición legible del
+    árbol («I.1»), que es la que el propietario reconoce en la pantalla.
+    """
+
+    node_id: str
+    official_code: str
+    path: str
+    title: str
+
+
+class QuestionTopicProposalSchema(BaseModel):
+    """Un tema candidato para una pregunta, sin confirmar, con sus epígrafes propuestos.
+
+    No lleva la pregunta dentro: la pregunta es la tarjeta (`QuestionTopicProposalsSchema`) y esto
+    es una de las respuestas que la máquina le dio.
+    """
+
+    mapping_id: str
+    topic: ProgrammeNodeRefSchema
+    #: Puede haber más de uno: el mismo tema puede traer varios epígrafes propuestos.
+    epigraphs: list[ProgrammeNodeRefSchema]
+    confidence: float
+    reason: str | None = None
+    created_at: datetime | None = None
+
+
+class QuestionTopicProposalsSchema(BaseModel):
+    """Una pregunta de la cola con **todas** sus propuestas juntas: una tarjeta, no una por mapeo.
+
+    Es la unidad con la que se despacha: el propietario decide sobre la pregunta —«esta pregunta es
+    del tema X»—, así que el mismo enunciado no puede salir dos veces. `accepted` va aparte de
+    `proposals`: si la pregunta ya tiene tema decidido, ese manda y lo que queda son propuestas que
+    se retiran.
+    """
+
+    question_version_id: str
+    question_set_id: str
+    set_title: str
+    stem: str
+    options: list[OptionSchema]
+    accepted: ProgrammeNodeRefSchema | None = None
+    proposals: list[QuestionTopicProposalSchema]
+
+
+class QuestionTopicProposalPageSchema(BaseModel):
+    """La cola de propuestas, contada en **preguntas** (tarjetas): las de una página y el total."""
+
+    questions: list[QuestionTopicProposalsSchema]
+    total: int
+    limit: int
+    offset: int
+
+
+class ConflictingTopicSchema(BaseModel):
+    """Un tema ya decidido de una pregunta que tiene más de uno, con quién lo decidió.
+
+    `actor` viaja porque cambia cómo se mira: uno heredado de una migración (`local`) y uno
+    propuesto por el modelo (`llm:…`) no se juzgan igual. Nulo es «no consta en la auditoría», que
+    también hay que poder decir en lugar de inventarse un autor.
+    """
+
+    mapping_id: str
+    topic: ProgrammeNodeRefSchema
+    confidence: float
+    actor: str | None = None
+    created_at: datetime | None = None
+
+
+class QuestionTopicConflictSchema(BaseModel):
+    """Una pregunta que cuenta en **dos temas aceptados** a la vez, con los dos delante.
+
+    Es la otra cara de la cola: allí se revisa lo que nadie ha decidido y aquí lo que quedó decidido
+    dos veces. Una pregunta en dos temas cuenta en los dos agregados, así que hay que poder dejarla
+    con uno —eligiendo cuál— sin que la aplicación decida por su cuenta.
+    """
+
+    question_version_id: str
+    question_set_id: str
+    set_title: str
+    stem: str
+    options: list[OptionSchema]
+    topics: list[ConflictingTopicSchema]
+
+
+class QuestionTopicConflictPageSchema(BaseModel):
+    """Las preguntas en dos temas de una página, y cuántas hay en total."""
+
+    questions: list[QuestionTopicConflictSchema]
     total: int
     limit: int
     offset: int
@@ -416,6 +555,13 @@ class BulkTopicAssignmentSchema(BaseModel):
 
     Las dos formas son excluyentes y se comprueba: una fila que dijera las dos cosas dejaría la
     pregunta clasificada y sin clasificar a la vez, y una que no dijera ninguna no pide nada.
+
+    `status` es opcional **a propósito**, y su ausencia significa algo: una fila sin `status` no
+    toca lo que ya existe (crear si falta, y nada más), que es lo que necesita una clasificación por
+    lotes que se reintenta. Una fila **con** `status` dice qué tiene que quedar: si la pregunta ya
+    tenía una propuesta (`provisional`) a ese tema, se confirma —o se vuelve a proponer— y eso queda
+    auditado. Es lo que hace el propietario al despachar la cola desde la pantalla de revisión, y
+    por eso la confirmación viaja en el lote: no una petición por pregunta.
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -426,6 +572,14 @@ class BulkTopicAssignmentSchema(BaseModel):
     exclusion_reason: ExclusionReasonName | None = None
     confidence: float = Field(default=1.0, ge=0.0, le=1.0)
     reason: str | None = Field(default=None, max_length=500)
+    #: `provisional` guarda una propuesta (la cola), `accepted` la decide. Nulo: no cambia nada
+    #: de lo que ya haya; solo escribe si el mapeo no existía.
+    status: Literal["provisional", "accepted"] | None = None
+    #: Al decidir una fila, retirar las demás propuestas de esa pregunta. Es lo que impide que una
+    #: pregunta con dos propuestas —de dos corridas que se pisaron— acabe con dos temas aceptados.
+    #: Lo pide la pantalla de revisión; el clasificador no, y no le hace falta: solo escribe
+    #: preguntas que no tienen ninguna propuesta.
+    retire_others: bool = False
 
 
 class BulkTopicAssignmentsSchema(BaseModel):
@@ -445,13 +599,18 @@ class BulkTopicAssignmentResultSchema(BaseModel):
     """Qué ha pasado con **una** fila del lote.
 
     `outcome` es el vocabulario que hace utilizable el reintento: `created` (esta llamada lo creó),
-    `existing` (ya estaba), `excluded` (marcada fuera de temario ahora), `already_excluded` (ya lo
-    estaba) y `error` (la fila no se pudo aplicar, con el motivo en `detail`). Una fila mala **no**
-    tumba el lote: se dice cuál y por qué.
+    `existing` (ya estaba tal cual), `promoted` (ya estaba como **propuesta** y esta llamada la ha
+    confirmado), `excluded` (marcada fuera de temario ahora), `already_excluded` (ya lo estaba) y
+    `error` (la fila no se pudo aplicar, con el motivo en `detail`). Una fila mala **no** tumba el
+    lote: se dice cuál y por qué.
+
+    `promoted` y `created` son distintos a propósito: la cola de revisión se despacha confirmando
+    propuestas, y un informe que contara las confirmaciones como «ya estaban» dejaría al propietario
+    sin saber si su decisión se aplicó.
     """
 
     question_version_id: str
-    outcome: Literal["created", "existing", "excluded", "already_excluded", "error"]
+    outcome: Literal["created", "existing", "promoted", "excluded", "already_excluded", "error"]
     assignment: QuestionTopicAssignmentSchema | None = None
     exclusion: QuestionExclusionSchema | None = None
     detail: str | None = None
@@ -463,6 +622,7 @@ class BulkTopicAssignmentReportSchema(BaseModel):
     results: list[BulkTopicAssignmentResultSchema]
     created: int = 0
     existing: int = 0
+    promoted: int = 0
     excluded: int = 0
     already_excluded: int = 0
     errors: int = 0

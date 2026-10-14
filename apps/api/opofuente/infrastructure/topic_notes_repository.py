@@ -27,13 +27,16 @@ from sqlalchemy import delete, select
 from sqlalchemy.orm import Session, sessionmaker
 
 from opofuente.application.topic_notes_models import NotesNode
+from opofuente.domain.key_reliability import KeyReliability
 from opofuente.domain.rag import normalise
 from opofuente.domain.topic_notes import (
     HECHOS_NUEVOS,
     VERSION_PLANTILLA,
+    CategoriaIncidencia,
     Coverage,
     FactKind,
     Hecho,
+    IncidenciaDeApuntes,
     KeyStatus,
     Motivo,
     NotesCheck,
@@ -47,10 +50,13 @@ from opofuente.domain.topic_notes import (
 from opofuente.infrastructure.db_models import (
     AnswerKeyEntryRecord,
     AnswerKeyVersionRecord,
+    AuditEventRecord,
     CurriculumMappingRecord,
     CurriculumNodeRecord,
+    NotesIncidentRecord,
     OptionVersionRecord,
     QuestionNoteAnchorRecord,
+    QuestionSetRecord,
     QuestionVersionRecord,
     TopicFactRecord,
     TopicNoteSectionRecord,
@@ -165,12 +171,21 @@ class SqlAlchemyTopicNotesRepository:
             identificadores = sorted(estado_por_pregunta)
             leidas = self._leer_preguntas(session, identificadores)
             claves = self._claves(session, identificadores)
+            en_cuarentena = self._conjuntos_en_cuarentena(session)
         completo: list[QuestionForNotes] = []
         for pregunta_id in identificadores:
             leida = leidas.get(pregunta_id)
             if leida is None:
                 continue
             conjunto, enunciado, opciones = leida
+            if conjunto in en_cuarentena:
+                # Cuarentena de clave (§1): las preguntas de un conjunto cuya clave discrepa de los
+                # apuntes en más del 30 % **no cuentan en el denominador de la cobertura**. Si
+                # contaran, la puerta del 90 % estaría midiendo al tema contra una clave que se sabe
+                # mala: el tema bajaría por un fallo del banco y el propietario reescribiría apuntes
+                # que estaban bien. Tampoco generan hechos ni anclas: la cita que se guardara
+                # apuntaría a una respuesta equivocada.
+                continue
             letras, estado_clave = claves.get(pregunta_id, ((), KeyStatus.NINGUNA))
             completo.append(
                 QuestionForNotes(
@@ -185,6 +200,21 @@ class SqlAlchemyTopicNotesRepository:
                 )
             )
         return agrupar(completo)
+
+    @staticmethod
+    def _conjuntos_en_cuarentena(session: Session) -> frozenset[str]:
+        """Los conjuntos con la clave en cuarentena (`no_fiable`), en una sola consulta.
+
+        Se leen todos y no solo los del tema a proposito: la consulta es una y la lista es de
+        decenas, mientras que acotarla por tema obligaria a otra consulta por cada llamada —y
+        `question_groups` se llama en cada paso de cada tema.
+        """
+        filas = session.execute(
+            select(QuestionSetRecord.id).where(
+                QuestionSetRecord.key_reliability == KeyReliability.NO_FIABLE.value
+            )
+        ).scalars()
+        return frozenset(str(fila) for fila in filas)
 
     @staticmethod
     def _leer_preguntas(
@@ -561,9 +591,92 @@ class SqlAlchemyTopicNotesRepository:
                 fila.result = resultado.coverage.value
                 fila.note = None if resultado.note is None else resultado.note.value
                 fila.attempts = resultado.attempts
+                # La huella del texto contra el que se verificó esta cita: es lo que permite saber,
+                # en la corrida siguiente, si la comprobación sigue valiendo o el apartado se ha
+                # reescrito y hay que volver a comprobarlo.
+                fila.text_sha256 = resultado.text_sha256
                 fila.checked_at = now
             session.commit()
         return len(results)
+
+    # ------------------------------------------------------------------ la bandeja del propietario
+
+    def save_incidents(
+        self, node_id: str, incidents: Sequence[IncidenciaDeApuntes], *, now: datetime
+    ) -> int:
+        """Guarda en la bandeja las preguntas que los apuntes no cubren, con su categoría.
+
+        Una fila por pregunta y tema: volver a comprobar el tema **actualiza** la incidencia (puede
+        cambiar de categoría o dejar de estar) y la retira si esa pregunta ya está cubierta. Sin
+        eso, la bandeja crecería con cada corrida y dejaría de ser una bandeja.
+
+        Devuelve cuántas quedan dentro después de la escritura.
+        """
+        with self._session_factory() as session:
+            existentes: dict[str, NotesIncidentRecord] = {}
+            for existente in session.execute(
+                select(NotesIncidentRecord).where(NotesIncidentRecord.curriculum_node_id == node_id)
+            ).scalars():
+                existentes[str(existente.question_version_id)] = existente
+            vistas: set[str] = set()
+            for incidencia in incidents:
+                vistas.add(incidencia.question_version_id)
+                fila = existentes.get(incidencia.question_version_id)
+                if fila is None:
+                    fila = NotesIncidentRecord(
+                        id=str(uuid4()),
+                        question_version_id=incidencia.question_version_id,
+                        curriculum_node_id=node_id,
+                        group_signature=incidencia.group_signature,
+                        category=incidencia.category.value,
+                        coverage=Coverage.DUDOSA.value,
+                        reason=incidencia.reason.value,
+                        created_at=now,
+                    )
+                    session.add(fila)
+                    existentes[incidencia.question_version_id] = fila
+                fila.group_signature = incidencia.group_signature
+                fila.category = incidencia.category.value
+                # El desenlace que la bandeja enseña: un conflicto de letra es un conflicto, no una
+                # duda. Se deduce del motivo, que es lo único que distingue los dos casos.
+                fila.coverage = (
+                    Coverage.CONFLICTO.value
+                    if incidencia.reason is Motivo.LETRA_NO_COINCIDE
+                    else Coverage.DUDOSA.value
+                )
+                fila.reason = incidencia.reason.value
+                fila.section_key = incidencia.section_key or None
+                fila.anchor = incidencia.anchor or None
+                fila.phrase = incidencia.phrase
+                fila.detail = incidencia.detail
+            # Lo que ya no está en la lista se ha resuelto: sale de la bandeja.
+            for question_id, fila in existentes.items():
+                if question_id not in vistas:
+                    session.delete(fila)
+            session.commit()
+        return len(vistas)
+
+    def incidents(self, node_id: str) -> tuple[IncidenciaDeApuntes, ...]:
+        """La bandeja del tema: lo que espera el criterio del propietario, por categoría."""
+        with self._session_factory() as session:
+            filas = session.execute(
+                select(NotesIncidentRecord)
+                .where(NotesIncidentRecord.curriculum_node_id == node_id)
+                .order_by(NotesIncidentRecord.category, NotesIncidentRecord.created_at)
+            ).scalars()
+            return tuple(
+                IncidenciaDeApuntes(
+                    question_version_id=str(fila.question_version_id),
+                    group_signature=str(fila.group_signature),
+                    category=CategoriaIncidencia(str(fila.category)),
+                    reason=Motivo(str(fila.reason)),
+                    detail=str(fila.detail),
+                    section_key="" if fila.section_key is None else str(fila.section_key),
+                    anchor="" if fila.anchor is None else str(fila.anchor),
+                    phrase=fila.phrase,
+                )
+                for fila in filas
+            )
 
     # ------------------------------------------------------------------ lo que se publica
 
@@ -606,9 +719,11 @@ class SqlAlchemyTopicNotesRepository:
                 covered=_cuenta(suyos, Coverage.CUBIERTA),
                 gaps=_cuenta(suyos, Coverage.HUECO),
                 doubtful=_cuenta(suyos, Coverage.DUDOSA),
+                conflicts=_cuenta(suyos, Coverage.CONFLICTO),
                 question_ids=_preguntas(suyos, Coverage.CUBIERTA),
                 gap_question_ids=_preguntas(suyos, Coverage.HUECO),
                 doubtful_question_ids=_preguntas(suyos, Coverage.DUDOSA),
+                conflict_question_ids=_preguntas(suyos, Coverage.CONFLICTO),
             )
             for apartado in secciones
             for suyos in (por_ancla.get(apartado.anchor, []),)
@@ -669,6 +784,64 @@ class SqlAlchemyTopicNotesRepository:
                 delete(TopicFactRecord).where(TopicFactRecord.curriculum_node_id == node_id)
             )
             session.commit()
+
+    def forget_facts(
+        self,
+        node_id: str,
+        fact_ids: Sequence[str],
+        *,
+        actor: str,
+        reason: str,
+        now: datetime,
+    ) -> int:
+        """Tira los hechos indicados del tema y escribe un evento de auditoría por cada uno.
+
+        Un hecho cuyo tema ya no es el suyo no se queda: sostendría un apartado del que no es y
+        volvería a escribirse. Se borra por identificador (nunca por consulta a ciegas) y el evento
+        dice **cuál**, **quién** y **por qué**, con el texto delante: la auditoría de una pérdida de
+        trabajo tiene que poder leerse sin la base.
+        """
+        if not fact_ids:
+            return 0
+        borrados = 0
+        with self._session_factory() as session:
+            for tanda in _tandas(list(fact_ids)):
+                filas = (
+                    session.execute(
+                        select(TopicFactRecord).where(
+                            TopicFactRecord.curriculum_node_id == node_id,
+                            TopicFactRecord.id.in_(tanda),
+                        )
+                    )
+                    .scalars()
+                    .all()
+                )
+                for fila in filas:
+                    session.add(
+                        AuditEventRecord(
+                            id=str(uuid4()),
+                            actor=actor,
+                            action="topic_fact.forgotten",
+                            object_type="topic_fact",
+                            object_id=str(fila.id),
+                            before_json=json.dumps(
+                                {
+                                    "curriculum_node_id": str(fila.curriculum_node_id),
+                                    "text": str(fila.text),
+                                    "epigraph_code": str(fila.epigraph_code),
+                                    "source_group_ids": json.loads(str(fila.source_group_ids)),
+                                },
+                                ensure_ascii=False,
+                            ),
+                            after_json=json.dumps({"reason": reason}, ensure_ascii=False),
+                            correlation_id=None,
+                            created_at=now,
+                        )
+                    )
+                    session.delete(fila)
+                    borrados += 1
+            session.commit()
+        return borrados
 
 
 def huella_de_hecho(texto: str) -> str:
@@ -749,6 +922,7 @@ def _check(fila: QuestionNoteAnchorRecord) -> NotesCheck:
         expected=_letras(fila.expected_letters),
         key_status=KeyStatus(str(fila.key_status)),
         attempts=int(fila.attempts),
+        text_sha256=fila.text_sha256,
     )
 
 

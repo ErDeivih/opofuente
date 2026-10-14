@@ -1,4 +1,12 @@
-import { useConflictingQuestions, useOppositions, usePendingActions, useReviewQueue } from '../api/queries';
+import {
+  useConflictingQuestions,
+  useNoteReportCounters,
+  useNotesIncidentCounters,
+  useNotesReviewCounters,
+  useOppositions,
+  usePendingActions,
+  useReviewQueue,
+} from '../api/queries';
 
 /**
  * Los contadores del menú de administración (07_UI-UX §2, movidos a `/admin` en F1).
@@ -30,6 +38,9 @@ export function useSectionCounts(): SectionCounts {
   const pendientes = usePendingActions();
   const repaso = useReviewQueue(active?.id ?? null);
   const conflictos = useConflictingQuestions();
+  const avisosApendientes = useNoteReportCounters();
+  const incidenciasApendientes = useNotesIncidentCounters();
+  const apuntesApendientes = useNotesReviewCounters();
 
   const contadores: Record<string, SectionCount> = {};
 
@@ -56,6 +67,40 @@ export function useSectionCounts(): SectionCounts {
   const cambios = pendientes.data?.actions.find((accion) => accion.key === 'cambios')?.count ?? 0;
   if (cambios > 0) {
     contadores['/admin/cambios'] = { count: cambios, label: `${cambios} cambios sin confirmar` };
+  }
+
+  // Los avisos del alumno (F16): lo que ha marcado como error en los apuntes y nadie ha mirado. Solo
+  // los `open`: un aviso «en curso» ya está en la mano de alguien y no espera una decisión.
+  const avisosAlumno = avisosApendientes.data?.pending ?? 0;
+  if (avisosAlumno > 0) {
+    contadores['/admin/avisos'] = {
+      count: avisosAlumno,
+      label: `${avisosAlumno} avisos de los apuntes sin mirar`,
+    };
+  }
+
+  // Las incidencias del motor (F18): lo que la comprobación de los apuntes no pudo cerrar sola. Solo
+  // las `open`: una incidencia «en curso» ya está en la mano de alguien y no espera una decisión.
+  // Sale de la **misma** consulta que alimenta la bandeja, así que el número del menú y el de la
+  // pantalla no pueden decir cosas distintas.
+  const incidencias = incidenciasApendientes.data?.pending ?? 0;
+  if (incidencias > 0) {
+    contadores['/admin/incidencias'] = {
+      count: incidencias,
+      label: `${incidencias} incidencias del motor sin decidir`,
+    };
+  }
+
+  // La revisión de apuntes (F24): los borradores que esperan una decisión del propietario. Sale de
+  // una ruta **barata** propia (`/notes-review/summary`), no de la tabla de la pantalla: esa mide los
+  // borradores —de medio segundo a tres por tema— y el contador se pide en todas las pantallas del
+  // panel. Un tema publicado no cuenta: ya pasó las puertas y no espera a nadie.
+  const apuntes = apuntesApendientes.data?.pending_decision ?? 0;
+  if (apuntes > 0) {
+    contadores['/admin/apuntes'] = {
+      count: apuntes,
+      label: `${apuntes} tema(s) con apuntes esperando tu decisión`,
+    };
   }
 
   return contadores;

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 
 import { isApiError } from '../api/client';
 import type { CsvMapping, ImportKind, IssueKind, QuestionImportReport } from '../api/questions';
@@ -62,9 +63,14 @@ function plural(cantidad: number, singular: string, plurales: string): string {
  *    pueden descargar para arreglarlas, en lugar de desaparecer en silencio.
  */
 export function QuestionsPage() {
+  const [params] = useSearchParams();
   const [tab, setTab] = useState<TabId>('preguntas');
   const [setIdElegido, setSetIdElegido] = useState<string | null>(null);
-  const [questionId, setQuestionId] = useState<string | null>(null);
+  // La pregunta que se está mirando puede venir **de la dirección** (`?pregunta=…`): la bandeja de
+  // incidencias del motor enlaza así la clave que sospecha, sin obligar a buscarla en 17.000. El
+  // estado manda después —elegir otra en la tabla la cambia—, y por eso la dirección es solo el
+  // punto de partida y no se reescribe al navegar por el banco.
+  const [questionId, setQuestionId] = useState<string | null>(params.get('pregunta'));
   const [filters, setFilters] = useState({
     status: '',
     originType: '',
@@ -82,14 +88,16 @@ export function QuestionsPage() {
   const oppositions = useOppositions();
   const activa = oppositions.data?.find((oposicion) => oposicion.active) ?? null;
   const conjuntos = useQuestionSets(activa?.id ?? null);
-  // El conjunto abierto se **deriva**: el elegido y, mientras nadie elija, el primero que haya. Sin
-  // efecto que sincronice estado con la carga: obligar a un clic extra cuando hay un solo banco no
-  // aporta nada.
-  const setId = setIdElegido ?? conjuntos.data?.sets[0]?.id ?? null;
+  const detalle = useQuestion(questionId);
+  // El conjunto abierto se **deriva**: el elegido, el de la pregunta que se está mirando —cuando se
+  // llega por su identificador todavía no se ha elegido ninguno, y su conjunto lo dice la propia
+  // pregunta— y, mientras nadie elija, el primero que haya. Sin efecto que sincronice estado con la
+  // carga: obligar a un clic extra cuando hay un solo banco no aporta nada.
+  const setId =
+    setIdElegido ?? detalle.data?.question_set_id ?? conjuntos.data?.sets[0]?.id ?? null;
   const conjunto = conjuntos.data?.sets.find((candidato) => candidato.id === setId) ?? null;
 
   const preguntas = useSetQuestions(setId, filters);
-  const detalle = useQuestion(questionId);
   const evidencia = useQuestionEvidence(questionId);
   // S12.7: la explicación de la pregunta entera y la de cada opción, con su escritura.
   const explicaciones = useQuestionExplanations(questionId);
@@ -281,6 +289,11 @@ export function QuestionsPage() {
                     // programa, así que una columna `topic` no tendría contra qué resolverse (y la
                     // muestra por temas del diagnóstico se quedaría sin temas).
                     convocation_version_id: activa.active_convocation?.id ?? null,
+                    // La procedencia se declara **a propósito** y aquí no se adivina: un conjunto
+                    // creado a mano nace `desconocida` («no se afirma lo que no se sabe»), que es el
+                    // valor que no excluye de nada, y se cambia después por su ruta auditada cuando
+                    // el material dice de dónde sale.
+                    origin_scope: 'desconocida',
                   },
                   {
                     onSuccess: (creado) => {

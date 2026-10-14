@@ -46,19 +46,16 @@ function stubPanel(extra: Record<string, StubbedRoute> = {}) {
   });
 }
 
-/** Lo que lee Inicio: los tests, lo que fallaste y tu progreso. */
+/** Lo que lee Inicio desde F13: el resumen del alumno (sin tests, sin fallos y sin progreso). */
 function stubInicio(extra: Record<string, StubbedRoute> = {}) {
   return stubPanel({
-    '/api/v1/study-sessions': {
-      body: { sessions: [], total: 0, limit: 50, offset: 0 },
-    },
-    '/api/v1/reviews/mastery': {
+    '/api/v1/student/overview': {
       body: {
-        opposition_id: 'opp-tai',
-        nodes_total: 33,
-        nodes_with_estimate: 0,
-        nodes: [],
-        note: 'Sin intentos no hay nada que estimar.',
+        opposition: { code: 'tai-age', name: 'Cuerpo de Técnicos Auxiliares de Informática' },
+        in_progress: null,
+        due_reviews: 0,
+        blocks: [],
+        recent_tests: [],
       },
     },
     ...extra,
@@ -107,6 +104,16 @@ describe('los dos mapas de navegación', () => {
       'Importaciones',
       'Biblioteca',
       'Revisión',
+      'Clasificación',
+      // Las dos entradas que estrena el bloque C (F16): lo que avisa el alumno —que se despacha— y lo
+      // que el motor dejó fuera de los tests —que solo se mira—.
+      'Avisos',
+      // Y la bandeja del **motor** (F18): la otra mitad del §4.1, que hasta ahora no tenía ni ruta.
+      'Incidencias',
+      // La revisión de los apuntes (F24, §4.3): leer un borrador dentro del panel, con su motivo
+      // medido, y aprobarlo o rechazarlo.
+      'Apuntes',
+      'No son preguntas',
       'Cambios',
       'Errores',
       'Preguntas',
@@ -133,6 +140,7 @@ describe('los dos mapas de navegación', () => {
       '/bandeja -> /admin/importar',
       '/biblioteca -> /admin/biblioteca',
       '/revision -> /admin/revision',
+      '/clasificacion -> /admin/clasificacion',
       '/cambios -> /admin/cambios',
       '/errores -> /admin/errores',
       '/preguntas -> /admin/preguntas',
@@ -173,14 +181,17 @@ describe('el marco del alumno', () => {
     expect(administrar).toHaveAttribute('href', '/admin');
   });
 
-  it('una sección que todavía no está lo dice con su frase, sin jerga de construcción', () => {
-    renderWithProviders(<AppRoutes />, { route: '/simulacros' });
+  it('la zona del alumno ya no tiene ninguna sección pendiente: Tests lleva a su pantalla', () => {
+    // F22 cerró la última que faltaba (Tests). Antes, esta dirección pintaba la pantalla de «todavía
+    // no está»; ahora tiene que pintar el formulario de verdad. Se comprueba en las dos direcciones:
+    // que el aviso de sección pendiente **no** sale, y que lo que sale es la pantalla con su título.
+    // Sin datos de la API, la pantalla dice que no pudo preparar el test —eso también es una pantalla,
+    // y distinta de una promesa—, así que aquí se mira lo que el marco tiene que garantizar.
+    stubApi({});
+    renderWithProviders(<AppRoutes />, { route: '/tests' });
 
-    expect(screen.getByRole('heading', { level: 1, name: 'Simulacros' })).toBeInTheDocument();
-    expect(
-      screen.getByText(/Un examen completo como el del día.*Llega en la siguiente fase\./),
-    ).toBeInTheDocument();
-    expect(screen.queryByText(/slice/)).toBeNull();
+    expect(screen.getByRole('heading', { level: 1, name: 'Tests' })).toBeInTheDocument();
+    expect(screen.queryByText(/Llega en la siguiente fase/)).toBeNull();
   });
 
   it('el enlace de salto al contenido existe y apunta al main', () => {

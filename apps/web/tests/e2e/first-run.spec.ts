@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
 import {
   ADMIN_NAV_ITEMS,
@@ -26,28 +26,28 @@ const VIEWPORTS = [
   { name: 'móvil 390x844', width: 390, height: 844 },
 ];
 
-/** La pantalla de cada sección del panel: su título de nivel 1. */
-const PANTALLAS_DEL_PANEL: readonly { readonly path: string; readonly h1: string }[] = [
-  { path: '/admin/importar', h1: 'Bandeja' },
-  { path: '/admin/biblioteca', h1: 'Biblioteca' },
-  { path: '/admin/revision', h1: 'Revisión' },
-  { path: '/admin/cambios', h1: 'Cambios' },
-  { path: '/admin/errores', h1: 'Errores' },
-  { path: '/admin/preguntas', h1: 'Preguntas' },
-  { path: '/admin/programa', h1: 'Programa' },
-  { path: '/admin/estudiar', h1: 'Estudiar' },
-  { path: '/admin/buscar', h1: 'Buscar y preguntar' },
-  { path: '/admin/ajustes', h1: 'Ajustes' },
-  { path: '/admin/ui', h1: 'Componentes' },
-];
-
-/** El título de la pantalla de esa dirección. Falla si el menú trae una sección sin pantalla. */
-function tituloDe(path: string): string {
-  const pantalla = PANTALLAS_DEL_PANEL.find((candidata) => candidata.path === path);
-  if (pantalla === undefined) {
-    throw new Error(`la sección ${path} no tiene pantalla declarada en esta prueba`);
-  }
-  return pantalla.h1;
+/**
+ * Comprueba que la dirección enseña una pantalla **de verdad**: un título de nivel 1 propio y ni la
+ * de «no encontrada» ni la de «todavía no está construida».
+ *
+ * No hay una lista escrita a mano de qué título tiene cada sección, y es a propósito: la lista se
+ * quedaría vieja en cuanto alguien añadiera una entrada al menú, y esta prueba existe justo para
+ * que eso no pase. La fuente de verdad es `navigation.ts` (las direcciones) y `routes.tsx` (qué se
+ * pinta en cada una): una entrada del menú sin ruta cae en la pantalla de «no encontrada» dentro del
+ * panel, y aquí se ve.
+ */
+async function expectPantallaDeVerdad(page: Page, path: string): Promise<string> {
+  const titulo = page.getByRole('heading', { level: 1 });
+  await expect(titulo, `${path} debería tener su título`).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Página no encontrada' }),
+    `${path} no tiene pantalla propia`,
+  ).toHaveCount(0);
+  await expect(
+    page.getByText('Esta sección todavía no está construida'),
+    `${path} no está construida`,
+  ).toHaveCount(0);
+  return (await titulo.textContent()) ?? '';
 }
 
 test('E2E-00 primera ejecución: la zona del alumno arranca y dice qué toca', async ({ page }) => {
@@ -114,25 +114,26 @@ test('E2E-00 el panel: aviso de que no hay contraseña, menú propio y cada secc
   // las de siempre: lo que cambia en F1 es dónde viven, no lo que hacen. Se pulsa por la **dirección**
   // del enlace, no por su nombre: el nombre accesible lleva el contador («Errores: 4 repasos
   // vencidos») y buscar por texto encontraría también el enlace de Importaciones.
+  //
+  // El título no se compara con una lista escrita aquí: se exige que la sección **tenga** su pantalla
+  // (un título propio, y ni «no encontrada» ni «sin construir»). Así, añadir una entrada al menú sin
+  // su ruta sigue fallando, que es lo que esta prueba defiende.
+  const titulos = new Map<string, string>();
   for (const item of ADMIN_NAV_ITEMS) {
     await nav.locator(`a[href="${item.path}"]`).click();
     await expect(page).toHaveURL(new RegExp(`${item.path.replace('/', '\\/')}$`));
-    await expect(page.getByRole('heading', { level: 1, name: tituloDe(item.path) })).toBeVisible();
     await expect(page.getByText('Modo administración · sin contraseña: solo en este ordenador')).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Página no encontrada' })).toHaveCount(0);
-    await expect(page.getByText('Esta sección todavía no está construida')).toHaveCount(0);
+    titulos.set(item.path, await expectPantallaDeVerdad(page, item.path));
   }
+  // Dos secciones distintas no pueden ser la misma pantalla: sería una entrada del menú de más.
+  expect(new Set(titulos.values()).size).toBe(ADMIN_NAV_ITEMS.length);
 });
 
 test('E2E-00 ninguna dirección antigua da 404: cada una acaba en su pantalla nueva', async ({ page }) => {
   for (const { from, to } of ROUTE_REDIRECTS) {
     await page.goto(from);
     await expect(page, `${from} debería acabar en ${to}`).toHaveURL(new RegExp(`${to.replace('/', '\\/')}$`));
-    await expect(
-      page.getByRole('heading', { level: 1, name: tituloDe(to) }),
-      `${from} debería enseñar «${tituloDe(to)}»`,
-    ).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Página no encontrada' })).toHaveCount(0);
+    await expectPantallaDeVerdad(page, from);
   }
 
   // Y la consulta no se pierde por el camino: hay enlaces con estado dentro (`?documento=`, `?q=`).
@@ -175,13 +176,26 @@ test('E2E-00 la zona del alumno no enseña la cocina en ninguna de sus pantallas
 for (const viewport of VIEWPORTS) {
   test(`E2E-00 responsive sin scroll horizontal (${viewport.name})`, async ({ page }) => {
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
-    await page.goto('/');
-    await expect(page.getByRole('heading', { level: 1, name: 'Inicio' })).toBeVisible();
 
-    const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
-    expect(scrollWidth, `scroll horizontal en ${viewport.name}`).toBeLessThanOrEqual(
-      viewport.width + 1,
-    );
+    // Las pantallas del alumno que ya están construidas. La de los apuntes de un tema necesita que el
+    // tema tenga texto —y la suite arranca con los datos vacíos—, así que aquí se comprueban Inicio y
+    // el temario: el desborde que se cuela por un título largo o una tabla ancha se ve igual. Desde
+    // F14 entran las cuatro pantallas que cierran el ciclo de estudio, que es donde hay filas con
+    // código, título, cifras y acción: a 390 px es justo lo que se sale si no se apila. Desde F22
+    // entra Tests, que es el árbol de temas y los cuatro grupos de opciones.
+    for (const ruta of ['/', '/temario', '/tests', '/simulacros', '/examenes', '/fallos', '/progreso']) {
+      await page.goto(ruta);
+      await expect(
+        page.getByRole('heading', { level: 1 }),
+        `${ruta} debería tener su título`,
+      ).toBeVisible();
+
+      const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
+      expect(
+        scrollWidth,
+        `scroll horizontal en ${ruta} (${viewport.name})`,
+      ).toBeLessThanOrEqual(viewport.width + 1);
+    }
   });
 }
 

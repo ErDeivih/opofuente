@@ -65,6 +65,25 @@ import {
   type SubjectType,
 } from './library';
 import {
+  fetchNotesIncidents,
+  updateNotesIncident,
+  type IncidentCategory,
+  type IncidentStatus,
+} from './notesIncidents';
+import {
+  fetchNoteReports,
+  updateNoteReport,
+  type NoteReportStatus,
+  type NoteReportUpdate,
+} from './notesReports';
+import {
+  decideNotesReview,
+  fetchNotesReview,
+  fetchNotesReviewFile,
+  fetchNotesReviewSummary,
+  type ReviewDecisionName,
+} from './notesReview';
+import {
   activateConvocation,
   activateOpposition,
   fetchConvocation,
@@ -113,6 +132,13 @@ import {
   type NavigateRequest,
 } from './study';
 import {
+  fetchQuestionFile,
+  markCorrectOption,
+  repairQuestion,
+  type MarkCorrectResult,
+  type RepairResult,
+} from './questionFile';
+import {
   activateAnswerKey,
   correctQuestion,
   createQuestionSet,
@@ -140,6 +166,17 @@ import {
 } from './questions';
 import { fetchCapabilities, fetchReadiness, fetchSettings } from './system';
 import { fetchPendingActions, fetchStudyReadiness } from './readiness';
+import {
+  applyTopicDecisions,
+  CONFLICTS_LIMIT,
+  EXCLUSIONS_LIMIT,
+  fetchExclusions,
+  fetchTopicConflicts,
+  fetchTopicProposals,
+  PROPOSALS_LIMIT,
+  type ExclusionReason,
+  type TopicAssignmentRow,
+} from './topicReview';
 import {
   createBackup,
   executeRestore,
@@ -208,6 +245,9 @@ export const queryKeys = {
   setQuestions: (setId: string, filtros: string) =>
     ['questions', 'set', setId, 'list', filtros] as const,
   question: (questionId: string) => ['questions', 'question', questionId] as const,
+  /* F20: la ficha de la pregunta. Cuelga de la pregunta porque es la misma cosa vista entera: la
+     respuesta correcta, de dónde sale, los apuntes y las incidencias. */
+  questionFile: (questionId: string) => ['questions', 'question', questionId, 'file'] as const,
   questionEvidence: (questionId: string) =>
     ['questions', 'question', questionId, 'evidence'] as const,
   /* S12.7: la explicación de la pregunta entera y la de cada opción. */
@@ -248,6 +288,29 @@ export const queryKeys = {
   housekeeping: () => ['maintenance', 'housekeeping'] as const,
   indexHealth: () => ['maintenance', 'index'] as const,
   diagnostic: () => ['maintenance', 'diagnostic'] as const,
+  /* F5: la cola de revisión de la clasificación. La cola y las exclusiones cuelgan de la misma
+     raíz porque decidir una propuesta cambia las dos: aceptar un tema levanta la marca de fuera de
+     temario, y marcar fuera de temario retira las propuestas de esa pregunta. */
+  topicProposals: (offset = 0) => ['topic-review', 'proposals', offset] as const,
+  questionExclusions: (offset = 0, q = '') =>
+    ['topic-review', 'exclusions', offset, q] as const,
+  /* Las preguntas que cuentan en dos temas cuelgan de la misma raíz: resolver una con un tema
+     retira los demás mapeos y deja de estar en las dos listas a la vez. */
+  topicConflicts: (offset = 0) => ['topic-review', 'conflicts', offset] as const,
+  /* F16: la bandeja de avisos del alumno, que es del propietario. Cada combinación de filtros es su
+     propia entrada: cambiar de estado o de tema no puede enseñar lo que ya estaba cacheado. */
+  noteReports: (status: string, topic: string, q: string) =>
+    ['note-reports', status, topic, q] as const,
+  /* F18: la bandeja del motor, hermana de la anterior. La raíz es propia (`note-incidents`) porque
+     son dos bandejas distintas con dos tablas distintas: invalidar una no puede recargar la otra. */
+  noteIncidents: (category: string, status: string, topic: string, q: string) =>
+    ['note-incidents', category, status, topic, q] as const,
+  /* F24: la revisión de los apuntes en el panel. **Raíz propia** (`notes-review`): decidir un tema
+     cambia su fila, su ficha, el contador del menú y —cuando la aprobación publica— lo que lee el
+     alumno. La ficha cuelga de la misma raíz para que una decisión no deje la tabla y la ficha
+     diciendo cosas distintas. */
+  notesReview: ['notes-review'] as const,
+  notesReviewFile: (code: string) => ['notes-review', 'ficha', code] as const,
 };
 
 export function useReadiness() {
@@ -971,6 +1034,78 @@ export function useQuestion(questionId: string | null) {
   });
 }
 
+/**
+ * La ficha de una pregunta (F20): la respuesta correcta, de dónde sale, los apuntes y qué se puede
+ * hacer con ella.
+ *
+ * Es una lectura propia y no un trozo de `useQuestion` a propósito: la ficha cruza seis tablas más
+ * —la plantilla del banco, el material del que salió, las comprobaciones de los apuntes, las
+ * incidencias y las dos marcas de fuera de temario— y meterla en la consulta del banco haría que la
+ * tabla de 50 preguntas pagara por lo que solo se mira de una en una.
+ */
+export function useQuestionFile(questionId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.questionFile(questionId ?? 'ninguna'),
+    queryFn: () => fetchQuestionFile(questionId as string),
+    enabled: questionId !== null,
+  });
+}
+
+/**
+ * Marca la respuesta correcta (F20). Al terminar, todo lo del banco se recarga.
+ *
+ * Se invalida `['questions']` entero y no solo la ficha: cambiar la respuesta correcta escribe una
+ * plantilla nueva del banco, así que también cambian el historial de la ficha, el listado de
+ * plantillas y lo que se ve en el banco. Dejar la mitad sin recargar enseñaría dos verdades.
+ */
+export function useMarkCorrectOption() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: {
+      questionId: string;
+      correctOptionKeys: string[];
+      note?: string | null;
+      actor?: string | null;
+    }) =>
+      markCorrectOption(input.questionId, {
+        correctOptionKeys: input.correctOptionKeys,
+        note: input.note ?? null,
+        actor: input.actor ?? undefined,
+      }),
+    onSuccess: (resultado: MarkCorrectResult) => {
+      queryClient.setQueryData(queryKeys.questionFile(resultado.file.question_version_id), resultado.file);
+      invalidateQuestions(queryClient);
+    },
+  });
+}
+
+/** Repara lo que una regla mecánica pueda reparar (F20), escribiendo una versión nueva. */
+export function useRepairQuestion() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: {
+      questionId: string;
+      note: string;
+      reglas?: string[] | null;
+      actor?: string | null;
+    }) =>
+      repairQuestion(input.questionId, {
+        note: input.note,
+        reglas: input.reglas ?? null,
+        actor: input.actor ?? undefined,
+      }),
+    onSuccess: (resultado: RepairResult) => {
+      // La versión nueva pasa a ser la que se mira: dejarla en la vieja enseñaría la que acaba de
+      // quedar sustituida, y el botón de reparar volvería a ofrecerse sobre ella.
+      queryClient.setQueryData(
+        queryKeys.questionFile(resultado.new_question_version_id),
+        resultado.file,
+      );
+      invalidateQuestions(queryClient);
+    },
+  });
+}
+
 /** Evidencia que sostiene la pregunta. Vacío es una respuesta, no un error. */
 export function useQuestionEvidence(questionId: string | null) {
   return useQuery({
@@ -1628,6 +1763,81 @@ export function usePurge() {
   });
 }
 
+/* ------------------------------------------- F5: la cola de revisión de la clasificación */
+
+/**
+ * La cola de propuestas de tema sin confirmar, paginada por **pregunta** (una tarjeta por pregunta).
+ *
+ * Sin `staleTime`: la cola es el trabajo del propietario y se despacha de un tirón; una lectura
+ * cacheada le enseñaría propuestas que acaba de decidir.
+ */
+export function useTopicProposals(offset = 0) {
+  return useQuery({
+    queryKey: queryKeys.topicProposals(offset),
+    queryFn: () => fetchTopicProposals(offset, PROPOSALS_LIMIT),
+  });
+}
+
+/** Las preguntas declaradas fuera de temario, con su motivo: la otra mitad de la pantalla. */
+export function useQuestionExclusions(offset = 0) {
+  return useQuery({
+    queryKey: queryKeys.questionExclusions(offset),
+    queryFn: () => fetchExclusions({ offset, limit: EXCLUSIONS_LIMIT }),
+  });
+}
+
+/**
+ * Los enunciados que no son preguntas, con su motivo y buscables (F16, decisión D6).
+ *
+ * Es la sección «No son preguntas» del panel: lo que el motor dejó fuera de los tests —enunciados
+ * rotos y preguntas de otra administración—, que **se queda en la base** y el propietario tiene que
+ * poder mirar. No hay ninguna mutación colgando de aquí: esta pantalla no borra ni edita nada.
+ */
+export function useExcludedQuestions(
+  reason: ExclusionReason | null,
+  q = '',
+  offset = 0,
+) {
+  return useQuery({
+    queryKey: queryKeys.questionExclusions(offset, `${reason ?? ''}:${q}`),
+    queryFn: () => fetchExclusions({ offset, limit: EXCLUSIONS_LIMIT, reason, q }),
+  });
+}
+
+/**
+ * Las preguntas que cuentan en dos temas aceptados a la vez.
+ *
+ * Es lo que quedó decidido dos veces antes de esta tanda. La lista se lee; resolverla es una decisión
+ * del propietario, y por eso no hay nada que la toque sola.
+ */
+export function useTopicConflicts(offset = 0) {
+  return useQuery({
+    queryKey: queryKeys.topicConflicts(offset),
+    queryFn: () => fetchTopicConflicts(offset, CONFLICTS_LIMIT),
+  });
+}
+
+/**
+ * Aplica un lote de decisiones y recarga la cola entera.
+ *
+ * Decidir cambia **las dos** listas: una propuesta aceptada sale de la cola, y una pregunta marcada
+ * fuera de temario entra en las exclusiones (y al revés, asignar un tema levanta la marca). Por eso
+ * se invalida la raíz `topic-review` completa y no una de las dos.
+ */
+export function useApplyTopicDecisions() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (rows: TopicAssignmentRow[]) => applyTopicDecisions(rows),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['topic-review'] });
+      // Y lo que el alumno puede practicar cambia con ello: la cobertura por temas la sirve el
+      // mismo mapeo, así que dejarla cacheada enseñaría el banco de antes de decidir.
+      void queryClient.invalidateQueries({ queryKey: ['profiles'] });
+      void queryClient.invalidateQueries({ queryKey: ['questions'] });
+    },
+  });
+}
+
 export function useReindex() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -1702,5 +1912,183 @@ export function useConflictingQuestions() {
     queryKey: queryKeys.conflictingQuestions,
     queryFn: fetchConflictingQuestions,
     staleTime: 30_000,
+  });
+}
+
+/**
+ * Los avisos del alumno sobre los apuntes: la bandeja del propietario (F13 y F16).
+ *
+ * Sin `staleTime`: es el trabajo del propietario y acaba de despachar lo que tiene delante, así que
+ * una lectura cacheada le devolvería el estado anterior a su propia decisión.
+ *
+ * El contador de pendientes se lee de **esta misma consulta** —el `pending` de la respuesta cuenta
+ * los `open` sin mirar el filtro—, así que el número del menú y el de la pantalla no pueden decir
+ * cosas distintas.
+ */
+export function useNoteReports(
+  status: NoteReportStatus | null = null,
+  topic: string | null = null,
+  q = '',
+) {
+  return useQuery({
+    queryKey: queryKeys.noteReports(status ?? '', topic ?? '', q),
+    queryFn: () => fetchNoteReports({ status, topic, q }),
+  });
+}
+
+/**
+ * Cuántos avisos esperan al propietario, para el contador del menú.
+ *
+ * Pide **una** fila (`limit: 1`): los recuentos viajan en la misma respuesta que la lista, así que
+ * el contador no necesita traerse los avisos. Es la misma consulta que alimenta la bandeja —y por
+ * eso el número del menú y el de la pantalla no pueden decir cosas distintas—, y por eso mismo
+ * `despachar un aviso` invalida las dos.
+ */
+export function useNoteReportCounters() {
+  return useQuery({
+    queryKey: ['note-reports', 'contadores'] as const,
+    queryFn: () => fetchNoteReports({ limit: 1 }),
+    staleTime: 30_000,
+  });
+}
+
+/**
+ * Despacha un aviso y recarga la bandeja entera.
+ *
+ * Se invalida la raíz `note-reports` completa y no la entrada que se está mirando: el estado del
+ * aviso cambia los cuatro contadores y puede sacarlo del filtro activo, así que dejar cacheadas las
+ * otras combinaciones enseñaría avisos que ya no están donde se dice.
+ */
+export function useUpdateNoteReport() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { id: string; status: NoteReportStatus; note?: string | null }) =>
+      updateNoteReport(input.id, { status: input.status, note: input.note ?? null }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['note-reports'] });
+    },
+  });
+}
+
+/** Reexporta el tipo del estado para que las pantallas no importen del contrato a mano. */
+export type { NoteReportStatus, NoteReportUpdate };
+
+/**
+ * La bandeja del motor (F18): las incidencias que deja la comprobación de los apuntes.
+ *
+ * Cada combinación de filtros es su propia entrada de la caché: cambiar de categoría, de estado o de
+ * tema no puede enseñar lo que ya estaba cacheado para otra combinación. Y el contador de pendientes
+ * se lee de **esta misma consulta** —el `pending` de la respuesta cuenta los `open` sin mirar el
+ * filtro y `totals_by_category` cuenta las categorías en la base—, así que el número del menú y las
+ * cifras de los botones no pueden decir cosas distintas de las de la lista.
+ */
+export function useNotesIncidents(
+  category: IncidentCategory | null = null,
+  status: IncidentStatus | null = null,
+  topic: string | null = null,
+  q = '',
+) {
+  return useQuery({
+    queryKey: queryKeys.noteIncidents(category ?? '', status ?? '', topic ?? '', q),
+    queryFn: () => fetchNotesIncidents({ category, status, topic, q }),
+  });
+}
+
+/**
+ * Cuántas incidencias esperan al propietario, para el contador del menú.
+ *
+ * Pide **una** fila (`limit: 1`): los recuentos viajan en la misma respuesta que la lista, así que el
+ * contador no necesita traerse las 453. Y por eso mismo despachar una incidencia invalida las dos.
+ */
+export function useNotesIncidentCounters() {
+  return useQuery({
+    queryKey: ['note-incidents', 'contadores'] as const,
+    queryFn: () => fetchNotesIncidents({ limit: 1 }),
+    staleTime: 30_000,
+  });
+}
+
+/**
+ * Despacha una incidencia y recarga la bandeja entera.
+ *
+ * Se invalida la raíz `note-incidents` completa y no la entrada que se está mirando: el estado cambia
+ * los cuatro contadores de estado, puede sacar la incidencia del filtro activo y deja de contar en
+ * `pending`, así que dejar cacheadas las otras combinaciones enseñaría incidencias que ya no están
+ * donde se dice.
+ */
+export function useUpdateNotesIncident() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { id: string; status: IncidentStatus; note?: string | null }) =>
+      updateNotesIncident(input.id, { status: input.status, note: input.note ?? null }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['note-incidents'] });
+    },
+  });
+}
+
+/** Reexporta el vocabulario de la incidencia para que las pantallas no importen del contrato. */
+export type { IncidentCategory, IncidentStatus };
+
+/**
+ * La tabla de la revisión de apuntes (F24): los temas con su estado y el motivo de los borradores.
+ *
+ * Sin `refetchInterval` a propósito: medir los borradores cuesta entre medio segundo y tres por tema
+ * (lee las comprobaciones guardadas y no llama a ningún modelo), así que la consulta se refresca al
+ * decidir o al entrar, no cada quince segundos. Una decisión la invalida —`['notes-review']`— porque
+ * cambia el estado del tema, su motivo y el contador del menú.
+ */
+export function useNotesReview() {
+  return useQuery({
+    queryKey: queryKeys.notesReview,
+    queryFn: fetchNotesReview,
+    staleTime: 30_000,
+  });
+}
+
+/**
+ * Cuántos borradores esperan una decisión, para el contador del menú.
+ *
+ * Es una ruta propia y **barata** a propósito: el contador se pide en todas las pantallas del panel y
+ * no puede costar lo que cuesta medir cuatro temas. Lo que cuenta es el estado y la decisión, y eso
+ * se lee de la base sin medir nada.
+ */
+export function useNotesReviewCounters() {
+  return useQuery({
+    queryKey: ['notes-review', 'contadores'] as const,
+    queryFn: fetchNotesReviewSummary,
+    staleTime: 30_000,
+  });
+}
+
+/** La ficha de un tema: sus apartados, tal como se leerán en la zona del alumno. */
+export function useNotesReviewFile(code: string | null) {
+  return useQuery({
+    queryKey: queryKeys.notesReviewFile(code ?? 'ninguno'),
+    queryFn: () => fetchNotesReviewFile(code ?? ''),
+    enabled: code !== null && code !== '',
+  });
+}
+
+/**
+ * Aprueba o rechaza los apuntes de un tema, y recarga lo que cambia con esa decisión.
+ *
+ * Se invalida la raíz `notes-review` entera —la tabla, la ficha y el contador— y **también** lo que
+ * lee el alumno: aprobar un tema que pasa las puertas archiva su versión, así que el temario, el tema
+ * y la portada del alumno dejan de decir «borrador». Sin esa segunda invalidación la pantalla del
+ * propietario diría «publicado» y la del alumno seguiría diciendo «borrador» hasta recargar.
+ */
+export function useDecideNotesReview(code: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { decision: ReviewDecisionName; note?: string | null }) =>
+      decideNotesReview(code, input),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['notes-review'] });
+      void queryClient.invalidateQueries({ queryKey: ['student-notes'] });
+      void queryClient.invalidateQueries({ queryKey: ['student-topic'] });
+      void queryClient.invalidateQueries({ queryKey: ['student-syllabus'] });
+      void queryClient.invalidateQueries({ queryKey: ['student-overview'] });
+    },
   });
 }

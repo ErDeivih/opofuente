@@ -20,6 +20,12 @@ export interface FilaDeCaptura {
   violaciones: string[];
   prohibidas: Encontrado[];
   alto?: number;
+  /**
+   * El nombre del PNG, sin extensión. Se guarda **calculado** y no se deduce de la ruta al escribir
+   * el informe: una ruta con identificador dentro (`/test/<uuid>`) daría un fichero distinto en cada
+   * corrida y el enlace del informe apuntaría a un PNG que no existe.
+   */
+  fichero?: string;
 }
 
 const SALIDA = path.resolve(process.cwd(), '..', '..', 'artifacts', 'screens');
@@ -83,7 +89,8 @@ export function escribirInforme(): void {
 
   lineas.push('', '## PNG', '');
   for (const fila of filas) {
-    lineas.push(`- [${fila.ruta} · ${fila.ancho}](${nombreDeFichero(fila.ruta, fila.ancho)}.png)`);
+    const fichero = fila.fichero ?? nombreDeFichero(fila.ruta, fila.ancho);
+    lineas.push(`- [${fila.ruta} · ${fila.ancho}](${fichero}.png)`);
   }
 
   // Los errores de consola, con su texto: una pantalla que carga con un error en la consola está
@@ -94,6 +101,21 @@ export function escribirInforme(): void {
     lineas.push(`### ${fila.ruta} · ${fila.ancho}`, '');
     for (const error of fila.errores) {
       lineas.push(`- ${error.slice(0, 300)}`);
+    }
+    lineas.push('');
+  }
+
+  // Y las violaciones de accesibilidad **por su nombre**: «1 violación» no se puede arreglar; el
+  // identificador de la regla sí dice qué está mal.
+  const conViolaciones = filas.filter((fila) => fila.violaciones.length > 0);
+  lineas.push('', `## Violaciones de accesibilidad (${conViolaciones.length} capturas)`, '');
+  if (conViolaciones.length === 0) {
+    lineas.push('Ninguna: axe no encuentra violaciones A/AA en ninguna pantalla.');
+  }
+  for (const fila of conViolaciones) {
+    lineas.push(`### ${fila.ruta} · ${fila.ancho}`, '');
+    for (const violacion of fila.violaciones) {
+      lineas.push(`- ${violacion}`);
     }
     lineas.push('');
   }

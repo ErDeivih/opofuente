@@ -111,6 +111,9 @@ export function notesSummary(notes: DossierNotes): string {
     `${String(notes.sections_total)} ${notes.sections_total === 1 ? 'apartado' : 'apartados'}`,
     `${String(notes.covered)} de ${String(notes.questions_total)} preguntas cubiertas`,
   ];
+  if (notes.conflicts > 0) {
+    partes.push(`${String(notes.conflicts)} en conflicto con la clave`);
+  }
   if (notes.doubtful > 0) {
     partes.push(`${String(notes.doubtful)} para revisar`);
   }

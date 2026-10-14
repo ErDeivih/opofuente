@@ -45,6 +45,31 @@ describe('apuntes redactados del tema (pasos B-E)', () => {
     // La marca de revisión no se enseña cruda dentro del párrafo: se cuenta aparte.
     expect(screen.queryByText(/<!--/)).not.toBeInTheDocument();
   });
+
+  it('las preguntas en conflicto con su clave no se cuentan como cubiertas', () => {
+    // Una letra distinta de la clave es lo que el propietario encontró en 96 preguntas de los
+    // pilotos: se enseña como conflicto, aparte de las cubiertas y de las dudosas.
+    const notes = dossierNotesFixture.notes!;
+    const conConflicto = {
+      ...notes,
+      questions_total: 4,
+      conflicts: 1,
+      sections: notes.sections.map((apartado, indice) =>
+        indice === 0
+          ? { ...apartado, conflicts: 1, conflict_question_ids: ['q-4'] }
+          : apartado,
+      ),
+    };
+    renderWithProviders(<TopicNotes notes={conConflicto} />);
+
+    expect(screen.getByText(/1 en conflicto con la clave/)).toBeInTheDocument();
+    expect(screen.getByText('conflicto')).toBeInTheDocument();
+    expect(
+      screen.getByText(/pregunta la contestan los apuntes con una letra distinta de su clave/),
+    ).toBeInTheDocument();
+    // El apartado del conflicto cuenta esa pregunta entre las que no quedan cubiertas.
+    expect(screen.getAllByText(/1 sin cubrir/).length).toBeGreaterThan(0);
+  });
 });
 
 describe('lector mínimo de markdown de los apuntes', () => {

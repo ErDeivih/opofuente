@@ -1009,6 +1009,10 @@ class QuestionSetRecord(Base):
     por defecto para no cambiar la visibilidad de lo que ya existe) o `public` (publicable, como los
     exámenes oficiales que publica la administración). Es del conjunto y no de la pregunta: un
     cuestionario oficial se publica entero.
+
+    `origin_scope` dice **de qué administración sale** (`0037`): `age` (Administración General del
+    Estado), `otra_administracion` (lo que queda fuera de un simulacro) o `desconocida` (el valor
+    por defecto: material cuya procedencia no se puede afirmar). También es del conjunto.
     """
 
     __tablename__ = "question_sets"
@@ -1024,6 +1028,24 @@ class QuestionSetRecord(Base):
         CheckConstraint(
             "distribution IN ('personal', 'public')", name="ck_question_set_distribution"
         ),
+        CheckConstraint(
+            "origin_scope IN ('age', 'otra_administracion', 'desconocida')",
+            name="ck_question_set_origin_scope",
+        ),
+        CheckConstraint(
+            "key_reliability IN ('fiable', 'dudosa', 'no_fiable')",
+            name="ck_question_set_key_reliability",
+        ),
+        CheckConstraint(
+            "key_checked_count >= 0 AND key_discrepant_count >= 0",
+            name="ck_question_set_key_counts",
+        ),
+        CheckConstraint(
+            "key_discrepant_count <= key_checked_count",
+            name="ck_question_set_key_discrepant",
+        ),
+        Index("ix_question_sets_key_reliability", "key_reliability"),
+        Index("ix_question_sets_origin_scope", "origin_scope"),
     )
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
@@ -1048,6 +1070,30 @@ class QuestionSetRecord(Base):
     distribution: Mapped[str] = mapped_column(
         String(16), nullable=False, server_default=text("'personal'"), default="personal"
     )
+    #: De qué administración sale el material (`0037`, D10). Es del **conjunto** como
+    #: `distribution`: un cuestionario oficial se publica entero y su procedencia es la del
+    #: documento. `desconocida` por defecto y no `age`: decir «es de la AGE» de un material que
+    #: nadie ha comprobado sería afirmar lo que no se sabe, y ese valor sí excluye de un simulacro.
+    origin_scope: Mapped[str] = mapped_column(
+        String(24), nullable=False, server_default=text("'desconocida'"), default="desconocida"
+    )
+    #: Si la clave de este conjunto se puede fiar (`0036`, §1 del objetivo). Es del
+    #: **conjunto** y no de la pregunta porque la clave se extrajo del material de un conjunto
+    #: entero: si la extracción salió desplazada, salió desplazada para todas sus preguntas.
+    #: `fiable` por defecto: un conjunto que nadie ha medido no es un conjunto en cuarentena.
+    key_reliability: Mapped[str] = mapped_column(
+        String(16), nullable=False, server_default=text("'fiable'"), default="fiable"
+    )
+    #: Preguntas con letra y clave que se compararon al medir, y cuántas de ellas no coincidían. Los
+    #: dos números se guardan con el veredicto para que la cifra se pueda auditar sin volver a
+    #: medirla.
+    key_checked_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default=text("0"), default=0
+    )
+    key_discrepant_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default=text("0"), default=0
+    )
+    key_measured_at: Mapped[datetime | None] = mapped_column(DateTime(), nullable=True)
     created_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
 
@@ -2041,6 +2087,12 @@ class QuestionNoteAnchorRecord(Base):
     Una fila por pregunta y tema. `quoted_sentence` es la frase que se verificó **contra el texto**
     de
     los apuntes: es lo que permite abrir el párrafo exacto desde la pregunta.
+
+    `text_sha256` es la huella de **ese** texto. Sin ella, volver a ejecutar el tema reutilizaba la
+    comprobación aunque el apartado se hubiera reescrito, y la cita guardada dejaba de estar en los
+    apuntes: la bandeja del propietario enseñaba frases que ya no existen en el texto. Con la
+    huella,
+    una comprobación se reutiliza solo si el texto que el modelo leyó es el de hoy.
     """
 
     __tablename__ = "question_note_anchors"
@@ -2048,7 +2100,9 @@ class QuestionNoteAnchorRecord(Base):
         CheckConstraint(
             "key_status IN ('active', 'draft', 'ninguna')", name="ck_anchor_key_status"
         ),
-        CheckConstraint("result IN ('covered', 'gap', 'doubtful')", name="ck_anchor_result"),
+        CheckConstraint(
+            "result IN ('covered', 'gap', 'doubtful', 'conflict')", name="ck_anchor_result"
+        ),
         CheckConstraint("attempts >= 1", name="ck_anchor_attempts"),
         UniqueConstraint(
             "question_version_id", "curriculum_node_id", name="uq_anchor_question_node"
@@ -2080,4 +2134,181 @@ class QuestionNoteAnchorRecord(Base):
     attempts: Mapped[int] = mapped_column(
         Integer, nullable=False, server_default=text("1"), default=1
     )
+    #: La huella del texto contra el que se verificó la cita. Nula en las filas escritas antes de
+    #: que existiera: esas se vuelven a comprobar, que es lo correcto con una comprobación de la que
+    #: no se sabe a qué texto corresponde.
+    text_sha256: Mapped[str | None] = mapped_column(String(64), nullable=True)
     checked_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
+
+
+class NotesIncidentRecord(Base):
+    """Una pregunta que los apuntes no cubren, en la bandeja del propietario (§2.1.4).
+
+    La bandeja es lo que queda **después** de intentar rellenar el hueco: las dudosas y los
+    conflictos de letra, cada uno con su categoría (a quién le toca arreglarlo), su motivo y la
+    frase verificada que lo prueba cuando la hay.
+
+    Una fila por pregunta y tema (`uq_notes_incident_question_node`): volver a comprobar el tema
+    actualiza la incidencia en vez de añadir otra copia, que es lo que hace que la bandeja se pueda
+    vaciar de verdad.
+
+    `status` es lo que la convierte en una bandeja que **se despacha** (migración `0035`): el motor
+    deja la incidencia `open` y el propietario la pone «en curso» mientras la mira y la cierra con
+    `reviewed` (ha hecho lo que su categoría pide) o con `dismissed` (ha decidido que el motor se
+    equivoca, que también pasa). `resolution_note` es lo que escribe de lo que ha hecho —una línea,
+    opcional— y `reviewed_at` solo tiene fecha mientras esté cerrada. Ninguna de las tres la toca el
+    motor: su `save_incidents` actualiza la categoría, el motivo y la frase, y **no** pisa la
+    decisión de nadie.
+    """
+
+    __tablename__ = "notes_incidents"
+    __table_args__ = (
+        CheckConstraint(
+            "category IN ('hueco_sin_material', 'clave_sospechosa', 'pregunta_ambigua', "
+            "'norma_cambiada', 'pregunta_mal_importada', 'clave_no_fiable')",
+            name="ck_notes_incident_category",
+        ),
+        CheckConstraint("coverage IN ('doubtful', 'conflict')", name="ck_notes_incident_coverage"),
+        CheckConstraint("length(trim(detail)) > 0", name="ck_notes_incident_detail"),
+        CheckConstraint("attempts >= 1", name="ck_notes_incident_attempts"),
+        CheckConstraint(
+            "status IN ('open', 'in_progress', 'reviewed', 'dismissed')",
+            name="ck_notes_incident_status",
+        ),
+        CheckConstraint(
+            "resolution_note IS NULL OR length(trim(resolution_note)) > 0",
+            name="ck_notes_incident_note",
+        ),
+        UniqueConstraint(
+            "question_version_id", "curriculum_node_id", name="uq_notes_incident_question_node"
+        ),
+        Index("ix_notes_incidents_node_category", "curriculum_node_id", "category"),
+        Index("ix_notes_incidents_status_category", "status", "category"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    curriculum_node_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("curriculum_nodes.id", ondelete="CASCADE"), nullable=False
+    )
+    question_version_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("question_versions.id", ondelete="CASCADE"), nullable=False
+    )
+    group_signature: Mapped[str] = mapped_column(String(64), nullable=False)
+    category: Mapped[str] = mapped_column(String(24), nullable=False)
+    coverage: Mapped[str] = mapped_column(String(16), nullable=False)
+    reason: Mapped[str] = mapped_column(String(48), nullable=False)
+    section_key: Mapped[str | None] = mapped_column(Text, nullable=True)
+    anchor: Mapped[str | None] = mapped_column(Text, nullable=True)
+    phrase: Mapped[str | None] = mapped_column(Text, nullable=True)
+    detail: Mapped[str] = mapped_column(Text, nullable=False)
+    attempts: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default=text("1"), default=1
+    )
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
+    #: Desde la migración `0035`: en qué punto está la incidencia para el propietario.
+    status: Mapped[str] = mapped_column(
+        String(16), nullable=False, server_default=text("'open'"), default="open"
+    )
+    #: Lo que escribió de lo que ha hecho, en una línea. Nula mientras no haya escrito nada.
+    resolution_note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    #: Cuándo la cerró. Nula mientras esté abierta o en curso: lo decide el dominio, no la pantalla.
+    reviewed_at: Mapped[datetime | None] = mapped_column(UtcDateTime(), nullable=True)
+
+
+class NotesReportRecord(Base):
+    """Un aviso del alumno sobre un apartado de los apuntes («esto está mal», decisión D2).
+
+    No es una comprobación del motor —eso es `notes_incidents`—: es una persona leyendo que dice
+    «aquí hay un error» y escribe el motivo en una línea. Por eso no tiene categoría ni frase
+    verificada: tiene el texto de quien lo reporta, la dirección del párrafo (`section_key` y
+    `anchor`) y el estado con el que el propietario lo despachará.
+
+    `status` cambia cuando el propietario lo despacha desde el panel: `in_progress` mientras lo
+    tiene en la mano, `reviewed` cuando lo ha arreglado y `dismissed` cuando decide que no era un
+    error (migración `0034`). Hasta entonces el aviso está `open`. `resolution_note` es lo que el
+    propietario escribe de lo que ha hecho: opcional, en una línea, y nula mientras no haya escrito
+    nada. No hay índice único: dos avisos sobre el mismo apartado son dos avisos, y borrarlos porque
+    se parecen sería perder lo que dijo el segundo.
+    """
+
+    __tablename__ = "notes_reports"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('open', 'in_progress', 'reviewed', 'dismissed')",
+            name="ck_note_report_status",
+        ),
+        CheckConstraint(
+            "resolution_note IS NULL OR length(trim(resolution_note)) > 0",
+            name="ck_note_report_note",
+        ),
+        CheckConstraint("length(trim(reason)) > 0", name="ck_note_report_reason"),
+        CheckConstraint("length(trim(section_key)) > 0", name="ck_note_report_section"),
+        CheckConstraint("length(trim(anchor)) > 0", name="ck_note_report_anchor"),
+        Index("ix_notes_reports_status_created", "status", "created_at"),
+        Index("ix_notes_reports_node_status", "curriculum_node_id", "status"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    curriculum_node_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("curriculum_nodes.id", ondelete="CASCADE"), nullable=False
+    )
+    #: Quién estudia y lo reporta. Hoy es `local`; está puesto para que el aviso no sea anónimo el
+    #: día que haya cuentas, y para poder filtrar por persona sin migrar la tabla.
+    owner_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    section_key: Mapped[str] = mapped_column(Text, nullable=False)
+    anchor: Mapped[str] = mapped_column(Text, nullable=False)
+    reason: Mapped[str] = mapped_column(Text, nullable=False)
+    status: Mapped[str] = mapped_column(
+        String(16), nullable=False, server_default=text("'open'"), default="open"
+    )
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
+    reviewed_at: Mapped[datetime | None] = mapped_column(UtcDateTime(), nullable=True)
+    #: Qué se ha hecho con el aviso, en una línea, escrito por el propietario al despacharlo.
+    resolution_note: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+
+class TopicNotesReviewRecord(Base):
+    """La decisión del propietario sobre los apuntes de un tema (F24, §4.3 del objetivo).
+
+    La pieza que faltaba para que la revisión de apuntes **se pueda hacer desde el panel**: hasta la
+    migración `0038` un tema en borrador no se distinguía de un tema que nadie había mirado, porque
+    el estado se deducía del par (¿hay apartados escritos?, ¿hay versión archivada?) y no había
+    ninguna fila donde quedara escrita la decisión.
+
+    Una fila por tema (`uq_topic_notes_review_node`): la segunda revisión **actualiza** la primera,
+    y con ella viaja siempre el mismo evento de auditoría con su antes y su después. Las cifras del
+    motivo **no** se copian aquí: se leen de donde ya están —las comprobaciones del motor, la
+    bandeja de incidencias y el texto—, porque una copia dentro de la fila acabaría diciendo algo
+    distinto de lo que dice el tema.
+
+    `rejected` exige nota (`ck_topic_notes_review_note`): un rechazo sin motivo deja el borrador
+    donde estaba y sin saber por qué. Aprobar **no** publica por sí solo: publicar es archivar la
+    versión, y eso sigue pasando por las dos puertas del §2.3.
+    """
+
+    __tablename__ = "topic_notes_reviews"
+    __table_args__ = (
+        CheckConstraint(
+            "decision IN ('approved', 'rejected')", name="ck_topic_notes_review_decision"
+        ),
+        CheckConstraint(
+            "decision <> 'rejected' OR (note IS NOT NULL AND length(trim(note)) > 0)",
+            name="ck_topic_notes_review_note",
+        ),
+        UniqueConstraint("curriculum_node_id", name="uq_topic_notes_review_node"),
+        Index("ix_topic_notes_reviews_decision", "decision"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    curriculum_node_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("curriculum_nodes.id", ondelete="CASCADE"), nullable=False
+    )
+    decision: Mapped[str] = mapped_column(String(16), nullable=False)
+    #: La nota de lo decidido, en una línea. Opcional al aprobar y **obligatoria** al rechazar.
+    note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    #: Quién lo revisó. Hoy la persona local; está puesto para que la decisión no sea anónima el día
+    #: que haya cuentas.
+    actor: Mapped[str] = mapped_column(String(120), nullable=False)
+    reviewed_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)

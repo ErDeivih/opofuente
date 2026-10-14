@@ -28,18 +28,23 @@ from sqlalchemy.sql.elements import ColumnElement
 
 from opofuente.application.question_models import (
     AnswerKeyView,
+    ConflictingTopicView,
     ExplanationView,
     IssueReportView,
     KeyEntryView,
     OptionView,
+    ProgrammeNodeRef,
     QuestionEvidenceView,
     QuestionExclusionView,
     QuestionPage,
     QuestionSetPage,
     QuestionSetView,
+    QuestionTopicConflictView,
+    QuestionTopicProposalsView,
     QuestionTopicView,
     QuestionView,
     SaveQuestionsOutcome,
+    TopicProposalView,
 )
 from opofuente.domain.errors import InvariantViolationError
 from opofuente.domain.questions import (
@@ -47,6 +52,7 @@ from opofuente.domain.questions import (
     AnswerKeyVersion,
     KeyOutcome,
     Origin,
+    OriginScope,
     ParsedQuestion,
     QuestionSet,
     SetDistribution,
@@ -100,7 +106,45 @@ def _reason(reason: str | None) -> dict[str, object]:
     return {"reason": limpio} if limpio else {}
 
 
-def _exclusion_view(fila: QuestionCurriculumExclusionRecord) -> QuestionExclusionView:
+def _node_ref(nodo: CurriculumNodeRecord) -> ProgrammeNodeRef:
+    """Un nodo del programa como referencia para una propuesta: su identificador, sus dos códigos y
+    su título, que es lo que se enseña y lo que se manda de vuelta al escribir."""
+    return ProgrammeNodeRef(
+        node_id=str(nodo.id),
+        official_code=str(nodo.official_code),
+        path=str(nodo.path),
+        title=str(nodo.title),
+    )
+
+
+def _orphan_proposal(
+    mapeo: CurriculumMappingRecord,
+    epigrafe: CurriculumNodeRecord,
+    parents: Mapping[str, CurriculumNodeRecord],
+    reasons: Mapping[str, str],
+) -> TopicProposalView | None:
+    """Un epígrafe propuesto cuyo tema nadie propuso (ni está aceptado), como candidato de su tema.
+
+    Sin esto, la propuesta existiría, mantendría la pregunta en la cola y no habría forma de
+    decidirla: la tarjeta saldría vacía. `None` si el padre no está en el programa, que sería un
+    árbol roto y no algo que se pueda proponer.
+    """
+    padre = None if epigrafe.parent_id is None else parents.get(str(epigrafe.parent_id))
+    if padre is None:
+        return None
+    return TopicProposalView(
+        mapping_id=str(mapeo.id),
+        topic=_node_ref(padre),
+        epigraphs=(_node_ref(epigrafe),),
+        confidence=float(mapeo.confidence),
+        reason=reasons.get(str(mapeo.id)),
+        created_at=mapeo.created_at,
+    )
+
+
+def _exclusion_view(
+    fila: QuestionCurriculumExclusionRecord, stem: str | None = None
+) -> QuestionExclusionView:
     """Una marca de fuera de temario leída como vista: la pregunta, el motivo y quién lo decidió."""
     return QuestionExclusionView(
         question_version_id=str(fila.question_version_id),
@@ -108,6 +152,7 @@ def _exclusion_view(fila: QuestionCurriculumExclusionRecord) -> QuestionExclusio
         actor=str(fila.actor),
         note=fila.note,
         created_at=fila.created_at,
+        stem=stem,
     )
 
 
@@ -119,6 +164,15 @@ def _exclusion_view(fila: QuestionCurriculumExclusionRecord) -> QuestionExclusio
 #: nueva puede componerse con ella (DEBT-025). Solo queda fuera `superseded`: una pregunta
 #: `annulled` sigue siendo parte del examen, y quien dice que está anulada es su clave.
 _NO_SUSTITUIDAS: ColumnElement[bool] = QuestionVersionRecord.status != "superseded"
+
+#: Cuántos identificadores caben en un `IN (...)`. SQLite admite muchos más, pero una consulta con
+#: mil parámetros se compila despacio: una sesión de examen tiene 85 preguntas y una comprobación de
+#: una sesión entera cabe de sobra en una tanda.
+_TANDA_DE_CONSULTA = 500
+
+#: Los tres ámbitos de procedencia (`0037`, D10). El vocabulario vive en el dominio
+#: (`OriginScope`) y aquí se materializa una vez para no recorrer el enumerado en cada cambio.
+_ORIGENES = frozenset(valor.value for valor in OriginScope)
 
 
 def _nuevo_stable_key(numero: int | None, identidad: str, usadas: set[str]) -> str:
@@ -159,11 +213,16 @@ class SqlAlchemyQuestionRepository:
         model_code: str | None = None,
         held_at: date | None = None,
         source_document_version_id: str | None = None,
+        origin_scope: str = OriginScope.DESCONOCIDA.value,
         actor: str = "local",
     ) -> QuestionSetView:
         """Crea un conjunto. El título vacío no entra: un conjunto sin nombre no se puede elegir."""
         if not title.strip():
             raise InvariantViolationError("Un conjunto de preguntas necesita título")
+        if origin_scope not in _ORIGENES:
+            raise InvariantViolationError(
+                f"«{origin_scope}» no es un ámbito de procedencia de conjunto"
+            )
         with self._session_factory() as session:
             if session.get(OppositionRecord, opposition_id) is None:
                 raise InvariantViolationError(f"la oposición «{opposition_id}» no existe")
@@ -177,6 +236,7 @@ class SqlAlchemyQuestionRepository:
                 held_at=held_at,
                 source_document_version_id=source_document_version_id,
                 status="draft",
+                origin_scope=origin_scope,
                 created_at=now,
                 updated_at=now,
             )
@@ -188,7 +248,12 @@ class SqlAlchemyQuestionRepository:
                 object_type="question_set",
                 object_id=fila.id,
                 before={},
-                after={"title": fila.title, "set_type": set_type, "model_code": fila.model_code},
+                after={
+                    "title": fila.title,
+                    "set_type": set_type,
+                    "model_code": fila.model_code,
+                    "origin_scope": fila.origin_scope,
+                },
                 now=now,
             )
             session.commit()
@@ -264,6 +329,41 @@ class SqlAlchemyQuestionRepository:
                 object_id=set_id,
                 before={"distribution": anterior},
                 after={"distribution": distribution},
+                now=now,
+            )
+            session.commit()
+            return True
+
+    def set_origin_scope(
+        self, set_id: str, origin_scope: str, *, now: datetime, actor: str = "local"
+    ) -> bool:
+        """Cambia de qué administración sale el material de un conjunto. `False` si no existe.
+
+        Es un cambio deliberado y se **audita** por la misma razón que `distribution`: marcar un
+        conjunto como `otra_administracion` lo deja fuera de los simulacros, y eso es una decisión
+        sobre qué mide el examen simulado; tiene que quedar escrito quién la tomó y cuándo.
+        """
+        if origin_scope not in _ORIGENES:
+            raise InvariantViolationError(
+                f"«{origin_scope}» no es un ámbito de procedencia de conjunto"
+            )
+        with self._session_factory() as session:
+            fila = session.get(QuestionSetRecord, set_id)
+            if fila is None:
+                return False
+            anterior = str(fila.origin_scope)
+            if anterior == origin_scope:
+                return True
+            fila.origin_scope = origin_scope
+            fila.updated_at = now
+            self._audit(
+                session,
+                actor=actor,
+                action="question_set.origin_scope_changed",
+                object_type="question_set",
+                object_id=set_id,
+                before={"origin_scope": anterior},
+                after={"origin_scope": origin_scope},
                 now=now,
             )
             session.commit()
@@ -1024,13 +1124,26 @@ class SqlAlchemyQuestionRepository:
         coverage_type: str = "partial",
         status: str = "accepted",
         reason: str | None = None,
-    ) -> tuple[QuestionTopicView, bool] | None:
-        """Asigna una pregunta a un nodo y devuelve `(tema, creado)`. `None` si algo no existe.
+        promote: bool = False,
+    ) -> tuple[QuestionTopicView, str] | None:
+        """Asigna una pregunta a un nodo y devuelve `(tema, qué ha pasado)`. `None` si algo no
+        existe.
 
-        Idempotente por `(nodo, pregunta)`: si el mapeo ya estaba se devuelve con `creado=False` y
-        **no** se escribe un segundo evento de auditoría. Dos eventos idénticos no son dos hechos, y
-        la clasificación de 7.677 preguntas se reintenta: ensuciar el registro con la misma línea
-        repetida lo haría ilegible justo donde hay que leer qué pasó.
+        El segundo valor es del vocabulario del lote: `created` (esta llamada lo escribió),
+        `existing` (ya estaba tal cual) o `promoted` (ya estaba **como propuesta** y esta llamada la
+        ha confirmado). Tres estados y no dos porque la cola de revisión vive justo en el tercero:
+        «ya estaba» y «lo he confirmado» no pueden contarse igual.
+
+        Idempotente por `(nodo, pregunta)`: si el mapeo ya estaba con el mismo estado se devuelve
+        con `existing` y **no** se escribe un segundo evento de auditoría. Dos eventos idénticos no
+        son dos hechos, y la clasificación de 7.677 preguntas se reintenta: ensuciar el registro con
+        la misma línea repetida lo haría ilegible justo donde hay que leer qué pasó.
+
+        `promote` es lo que convierte una **propuesta** (`provisional`) en la decisión que dice
+        `status`, con su evento. Va apagado por defecto y a propósito: la catalogación automática
+        (S12.6) y el clasificador escriben con `status="accepted"`, y ninguno de los dos puede
+        confirmar por su cuenta una propuesta que el propietario no ha mirado —el segundo, además,
+        solo coge preguntas sin ningún mapeo, así que nunca se topa con una.
 
         La idempotencia vale también **contra otro escritor**: el worker cataloga al aceptar una
         versión (S12.6) y una pasada de clasificación de miles de preguntas puede coincidir con él.
@@ -1064,7 +1177,21 @@ class SqlAlchemyQuestionRepository:
                 )
             ).scalar_one_or_none()
             if existente is not None:
-                return _topic_view(existente, nodo), False
+                if not promote or str(existente.status) == status:
+                    return _topic_view(existente, nodo), "existing"
+                return (
+                    self._promote_mapping(
+                        session,
+                        existente,
+                        nodo,
+                        status=status,
+                        confidence=confidence,
+                        reason=reason,
+                        actor=actor,
+                        now=now,
+                    ),
+                    "promoted",
+                )
             mapeo = CurriculumMappingRecord(
                 id=_new_id(),
                 curriculum_node_id=node_id,
@@ -1118,8 +1245,52 @@ class SqlAlchemyQuestionRepository:
                 nodo = session.get(CurriculumNodeRecord, node_id)
                 if repetido is None or nodo is None:
                     raise
-                return _topic_view(repetido, nodo), False
-            return vista, True
+                return _topic_view(repetido, nodo), "existing"
+            return vista, "created"
+
+    def _promote_mapping(
+        self,
+        session: Session,
+        mapeo: CurriculumMappingRecord,
+        nodo: CurriculumNodeRecord,
+        *,
+        status: str,
+        confidence: float,
+        reason: str | None,
+        actor: str,
+        now: datetime,
+    ) -> QuestionTopicView:
+        """Confirma (o vuelve a proponer) un mapeo que ya estaba, y lo deja auditado.
+
+        El `before` lleva el estado y la confianza de antes porque es lo que hace falta para
+        entender la decisión al leer el registro: sin él, un evento de confirmación no dice de
+        dónde venía. La fecha de aprobación se escribe al confirmar y se retira al volver a
+        proponer, por la misma razón que en el alta: una propuesta con fecha de aprobación sería
+        una aprobación que no ha ocurrido.
+        """
+        antes = {"status": str(mapeo.status), "confidence": float(mapeo.confidence)}
+        mapeo.status = status
+        mapeo.confidence = confidence
+        mapeo.approved_at = now if status == "accepted" else None
+        vista = _topic_view(mapeo, nodo)
+        self._audit(
+            session,
+            actor=actor,
+            action="question.mapped",
+            object_type="curriculum_mapping",
+            object_id=str(mapeo.id),
+            before=antes,
+            after={
+                "node_id": str(mapeo.curriculum_node_id),
+                "question_version_id": str(mapeo.subject_id),
+                "status": status,
+                "confidence": confidence,
+                **_reason(reason),
+            },
+            now=now,
+        )
+        session.commit()
+        return vista
 
     def unmap_question_from_node(
         self,
@@ -1286,6 +1457,34 @@ class SqlAlchemyQuestionRepository:
             ).scalars()
             return frozenset(str(fila) for fila in filas)
 
+    def key_reliability_by_question(self, question_ids: Sequence[str]) -> dict[str, str]:
+        """El veredicto de la clave del conjunto de cada pregunta. Una consulta, no una por
+        pregunta.
+
+        Lo necesitan las **dos** cosas que dependen del veredicto y no pasan por la composición: la
+        marca «clave en revisión» que se le enseña al alumno pregunta a pregunta, y la comprobación
+        de que una sesión no lleva preguntas de un conjunto en cuarentena. Se pide por identificador
+        y en una sola consulta porque una sesión tiene hasta 85 preguntas.
+        """
+        if not question_ids:
+            return {}
+        salida: dict[str, str] = {}
+        with self._session_factory() as session:
+            identificadores = list(question_ids)
+            for inicio in range(0, len(identificadores), _TANDA_DE_CONSULTA):
+                tanda = identificadores[inicio : inicio + _TANDA_DE_CONSULTA]
+                filas = session.execute(
+                    select(QuestionVersionRecord.id, QuestionSetRecord.key_reliability)
+                    .join(
+                        QuestionSetRecord,
+                        QuestionSetRecord.id == QuestionVersionRecord.question_set_id,
+                    )
+                    .where(QuestionVersionRecord.id.in_(tanda))
+                ).all()
+                for pregunta_id, veredicto in filas:
+                    salida[str(pregunta_id)] = str(veredicto)
+        return salida
+
     def clear_exclusion(
         self, question_version_id: str, *, now: datetime, actor: str = "local"
     ) -> bool:
@@ -1319,6 +1518,7 @@ class SqlAlchemyQuestionRepository:
         self,
         *,
         reason: str | None = None,
+        q: str | None = None,
         limit: int = 50,
         offset: int = 0,
     ) -> tuple[tuple[QuestionExclusionView, ...], int]:
@@ -1326,27 +1526,524 @@ class SqlAlchemyQuestionRepository:
 
         El total viaja aparte porque la pantalla de revisión lo necesita para decir cuántas quedan:
         contar en Python lo que se ha traído con un tope daría un número que miente.
+
+        Y el **enunciado** viaja con cada marca: sin él, lo único que se puede enseñar de una
+        pregunta excluida es un identificador, y un identificador no se puede juzgar. Es la misma
+        razón por la que la cola de propuestas trae la pregunta entera.
+
+        `q` busca en el enunciado (F16, la sección «No son preguntas»): con 769 enunciados rotos en
+        la base, recorrerlos a ojo no es una forma de encontrar el que se busca. `LIKE` sin
+        `lower()` a propósito: SQLite ya compara sin distinguir mayúsculas en ASCII, y envolver la
+        columna en una función impediría cualquier uso de índice. Lo que no iguala son los
+        acentos, y eso lo dice la pantalla.
         """
         filtro = [] if reason is None else [QuestionCurriculumExclusionRecord.reason == reason]
+        if q is not None:
+            filtro.append(QuestionVersionRecord.stem.like(f"%{q.strip()}%"))
         with self._session_factory() as session:
             total = session.execute(
-                select(func.count()).select_from(QuestionCurriculumExclusionRecord).where(*filtro)
+                select(func.count())
+                .select_from(QuestionCurriculumExclusionRecord)
+                .join(
+                    QuestionVersionRecord,
+                    QuestionVersionRecord.id
+                    == QuestionCurriculumExclusionRecord.question_version_id,
+                )
+                .where(*filtro)
             ).scalar_one()
-            filas = (
-                session.execute(
-                    select(QuestionCurriculumExclusionRecord)
-                    .where(*filtro)
-                    .order_by(
-                        QuestionCurriculumExclusionRecord.created_at.desc(),
-                        QuestionCurriculumExclusionRecord.question_version_id,
+            filas = session.execute(
+                select(QuestionCurriculumExclusionRecord, QuestionVersionRecord.stem)
+                .join(
+                    QuestionVersionRecord,
+                    QuestionVersionRecord.id
+                    == QuestionCurriculumExclusionRecord.question_version_id,
+                )
+                .where(*filtro)
+                .order_by(
+                    QuestionCurriculumExclusionRecord.created_at.desc(),
+                    QuestionCurriculumExclusionRecord.question_version_id,
+                )
+                .limit(limit)
+                .offset(offset)
+            ).all()
+        return tuple(_exclusion_view(fila, stem) for fila, stem in filas), int(total)
+
+    def count_exclusions_by_reason(self) -> dict[str, int]:
+        """Cuántas preguntas hay fuera de temario **por cada motivo**, sin traerse las filas.
+
+        Es lo que permite que la sección «No son preguntas» diga cuántos enunciados rotos hay —la
+        cifra que va al informe del propietario— sin leer 769 filas para contarlas. Los motivos que
+        no tengan ninguna marca no salen: el vocabulario cerrado lo conoce quien pinta la pantalla.
+        """
+        with self._session_factory() as session:
+            filas = session.execute(
+                select(QuestionCurriculumExclusionRecord.reason, func.count()).group_by(
+                    QuestionCurriculumExclusionRecord.reason
+                )
+            ).all()
+        return {str(motivo): int(total) for motivo, total in filas}
+
+    def list_topic_proposals(
+        self, *, limit: int, offset: int
+    ) -> tuple[tuple[QuestionTopicProposalsView, ...], int]:
+        """La cola de revisión: **una tarjeta por pregunta**, con todas sus propuestas dentro.
+
+        Es lo que despacha el propietario, y se lee entera de una vez en lugar de pregunta a
+        pregunta: una tarjeta sin su enunciado no se puede juzgar, y pedir la pregunta después sería
+        una petición por propuesta —justo lo que la pantalla existe para no hacer.
+
+        Cinco decisiones que se ven en el SQL:
+
+        1. **La unidad es la pregunta**, no el mapeo. Una pregunta con dos propuestas distintas
+           —pasó en la corrida real, por dos procesos que se pisaron— sale **una sola vez**, con los
+           dos candidatos juntos: si saliera dos veces, aceptar una dejaría la otra puesta y la
+           misma pregunta volvería a la cola.
+        2. **De lo más dudoso a lo menos**: el propietario empieza por donde el modelo dudó más, y
+           el identificador de la pregunta desempata para que dos páginas no se pisen. El `total`
+           cuenta tarjetas, que es lo que le queda por despachar.
+        3. **Lo ya aceptado viaja aparte de lo propuesto.** Si la pregunta tiene un tema decidido,
+           ese manda y lo que sobra son propuestas que se retiran; mezclarlos en una lista no
+           dejaría distinguir «lo que la máquina propone» de «lo que ya está decidido».
+        4. **El motivo sale de la auditoría**, que es donde vive: el mapeo guarda confianza y
+           estado, no la frase con la que el modelo se explicó. Se lee el último `question.mapped`
+           de cada mapeo, que es el que vale si la propuesta se reescribió.
+        5. **Un epígrafe propuesto sin tema propuesto se enseña igual.** Si el epígrafe cuelga de un
+           tema que nadie propuso (ni está aceptado), se presenta como candidato de su tema: dejarlo
+           fuera mantendría la pregunta en la cola sin nada que decidir, que es la peor forma de
+           atascarla.
+        """
+        con_propuesta = (
+            select(CurriculumMappingRecord.subject_id)
+            .where(
+                CurriculumMappingRecord.subject_type == "question_version",
+                CurriculumMappingRecord.status == "provisional",
+            )
+            .group_by(CurriculumMappingRecord.subject_id)
+        )
+        with self._session_factory() as session:
+            total = session.execute(
+                select(func.count()).select_from(con_propuesta.subquery())
+            ).scalar_one()
+            identificadores = [
+                str(fila)
+                for fila in session.execute(
+                    con_propuesta.order_by(
+                        func.min(CurriculumMappingRecord.confidence),
+                        CurriculumMappingRecord.subject_id,
                     )
                     .limit(limit)
                     .offset(offset)
+                ).scalars()
+            ]
+            if not identificadores:
+                return (), int(total)
+
+            filas = session.execute(
+                select(CurriculumMappingRecord, CurriculumNodeRecord)
+                .join(
+                    CurriculumNodeRecord,
+                    CurriculumNodeRecord.id == CurriculumMappingRecord.curriculum_node_id,
+                )
+                .where(
+                    CurriculumMappingRecord.subject_type == "question_version",
+                    CurriculumMappingRecord.subject_id.in_(identificadores),
+                )
+                .order_by(*curriculum_order(CurriculumNodeRecord.path))
+            ).all()
+            preguntas = {
+                fila.id: fila
+                for fila in session.execute(
+                    select(QuestionVersionRecord).where(
+                        QuestionVersionRecord.id.in_(identificadores)
+                    )
                 )
                 .scalars()
                 .all()
+            }
+            conjuntos = {
+                fila.id: str(fila.title)
+                for fila in session.execute(
+                    select(QuestionSetRecord).where(
+                        QuestionSetRecord.id.in_(
+                            {str(pregunta.question_set_id) for pregunta in preguntas.values()}
+                        )
+                    )
+                )
+                .scalars()
+                .all()
+            }
+            opciones = self._options_by_question(session, identificadores)
+            padres = {
+                str(fila.id): fila
+                for fila in session.execute(
+                    select(CurriculumNodeRecord).where(
+                        CurriculumNodeRecord.id.in_(
+                            {
+                                str(nodo.parent_id)
+                                for _, nodo in filas
+                                if str(nodo.node_type) == "epigraph" and nodo.parent_id is not None
+                            }
+                        )
+                    )
+                )
+                .scalars()
+                .all()
+            }
+            motivos = self._mapping_reasons(
+                session,
+                [str(mapeo.id) for mapeo, _ in filas if str(mapeo.status) == "provisional"],
             )
-        return tuple(_exclusion_view(fila) for fila in filas), int(total)
+
+        return (
+            tuple(
+                self._proposal_card(
+                    identificador,
+                    filas=[
+                        (mapeo, nodo)
+                        for mapeo, nodo in filas
+                        if str(mapeo.subject_id) == identificador
+                    ],
+                    pregunta=preguntas.get(identificador),
+                    set_title=conjuntos.get(
+                        ""
+                        if preguntas.get(identificador) is None
+                        else str(preguntas[identificador].question_set_id),
+                        "",
+                    ),
+                    options=opciones.get(identificador, ()),
+                    parents=padres,
+                    reasons=motivos,
+                )
+                for identificador in identificadores
+            ),
+            int(total),
+        )
+
+    @staticmethod
+    def _proposal_card(
+        question_version_id: str,
+        *,
+        filas: Sequence[tuple[CurriculumMappingRecord, CurriculumNodeRecord]],
+        pregunta: QuestionVersionRecord | None,
+        set_title: str,
+        options: Sequence[OptionVersionRecord],
+        parents: Mapping[str, CurriculumNodeRecord],
+        reasons: Mapping[str, str],
+    ) -> QuestionTopicProposalsView:
+        """Arma la tarjeta de una pregunta: lo aceptado, los candidatos y sus epígrafes.
+
+        Se separa de la consulta porque aquí está la decisión de qué es un candidato: un mapeo
+        `provisional` de tema, o un epígrafe `provisional` cuyo tema no se propuso (ni está
+        aceptado). Todo lo demás de la pregunta —lo aceptado, lo rechazado— no es una propuesta.
+        """
+        aceptados = [
+            nodo
+            for mapeo, nodo in filas
+            if str(mapeo.status) == "accepted" and str(nodo.node_type) == "topic"
+        ]
+        candidatos = {
+            str(nodo.id): (mapeo, nodo)
+            for mapeo, nodo in filas
+            if str(mapeo.status) == "provisional" and str(nodo.node_type) == "topic"
+        }
+        epigrafes: dict[str, list[CurriculumNodeRecord]] = {}
+        huerfanos: list[tuple[CurriculumMappingRecord, CurriculumNodeRecord]] = []
+        for mapeo, nodo in filas:
+            if str(mapeo.status) != "provisional" or str(nodo.node_type) != "epigraph":
+                continue
+            padre = None if nodo.parent_id is None else str(nodo.parent_id)
+            if padre is not None and padre in candidatos:
+                epigrafes.setdefault(padre, []).append(nodo)
+            elif padre is None or all(str(aceptado.id) != padre for aceptado in aceptados):
+                huerfanos.append((mapeo, nodo))
+
+        propuestas = [
+            TopicProposalView(
+                mapping_id=str(mapeo.id),
+                topic=_node_ref(nodo),
+                epigraphs=tuple(_node_ref(hijo) for hijo in epigrafes.get(clave, ())),
+                confidence=float(mapeo.confidence),
+                reason=reasons.get(str(mapeo.id)),
+                created_at=mapeo.created_at,
+            )
+            for clave, (mapeo, nodo) in candidatos.items()
+        ]
+        propuestas.extend(
+            propuesta
+            for propuesta in (
+                _orphan_proposal(mapeo, nodo, parents, reasons) for mapeo, nodo in huerfanos
+            )
+            if propuesta is not None
+        )
+        propuestas.sort(key=lambda propuesta: (propuesta.confidence, propuesta.mapping_id))
+        return QuestionTopicProposalsView(
+            question_version_id=question_version_id,
+            question_set_id="" if pregunta is None else str(pregunta.question_set_id),
+            set_title=set_title,
+            stem="" if pregunta is None else str(pregunta.stem),
+            options=tuple(
+                OptionView(
+                    id=opcion.id,
+                    stable_key=str(opcion.stable_key),
+                    text=str(opcion.text),
+                    position=int(opcion.position),
+                    label=opcion.label,
+                )
+                for opcion in options
+            ),
+            accepted=None if not aceptados else _node_ref(aceptados[0]),
+            proposals=tuple(propuestas),
+        )
+
+    @staticmethod
+    def _mapping_reasons(session: Session, mapping_ids: Sequence[str]) -> dict[str, str]:
+        """El motivo de cada mapeo, leído de su último evento `question.mapped`.
+
+        La auditoría es la que lo guarda (el mapeo no tiene columna de motivo), y se toma el evento
+        más nuevo porque es el que describe el estado que se está leyendo.
+        """
+        if not mapping_ids:
+            return {}
+        filas = session.execute(
+            select(AuditEventRecord.object_id, AuditEventRecord.after_json)
+            .where(
+                AuditEventRecord.object_id.in_(list(mapping_ids)),
+                AuditEventRecord.action == "question.mapped",
+            )
+            .order_by(AuditEventRecord.created_at)
+        ).all()
+        motivos: dict[str, str] = {}
+        for object_id, despues in filas:
+            try:
+                datos = json.loads(despues or "{}")
+            except ValueError:  # pragma: no cover - la auditoría la escribe esta aplicación
+                continue
+            motivo = datos.get("reason")
+            if isinstance(motivo, str) and motivo.strip():
+                motivos[str(object_id)] = motivo
+        return motivos
+
+    @staticmethod
+    def _mapping_actors(session: Session, mapping_ids: Sequence[str]) -> dict[str, str]:
+        """Quién escribió cada mapeo, leído de su último evento `question.mapped`.
+
+        La auditoría es la que lo guarda, y se toma el evento más nuevo porque es el que describe el
+        estado que se está leyendo. Un mapeo sin evento no aparece en el diccionario: no se inventa
+        un actor para lo que no consta, que es justo lo que hay que poder ver en la lista.
+        """
+        if not mapping_ids:
+            return {}
+        filas = session.execute(
+            select(AuditEventRecord.object_id, AuditEventRecord.actor)
+            .where(
+                AuditEventRecord.object_id.in_(list(mapping_ids)),
+                AuditEventRecord.action == "question.mapped",
+            )
+            .order_by(AuditEventRecord.created_at)
+        ).all()
+        actores: dict[str, str] = {}
+        for object_id, actor in filas:
+            limpio = str(actor).strip()
+            if limpio:
+                actores[str(object_id)] = limpio
+        return actores
+
+    def reject_other_mappings(
+        self,
+        question_version_id: str,
+        *,
+        keep_node_ids: frozenset[str],
+        now: datetime,
+        actor: str = "local",
+        reason: str | None = None,
+    ) -> int:
+        """Deja la pregunta con **un solo tema**: retira los demás mapeos de tema y epígrafe.
+
+        Retirar es marcar `rejected`, **no** borrar el mapeo, y esa es la decisión importante: una
+        pregunta ya decidida que se quedara sin ningún mapeo volvería a entrar en la siguiente
+        pasada del clasificador y la cola se llenaría de lo mismo que el propietario ya despachó.
+        Con la marca puesta, la propuesta sigue ahí —se puede leer qué se propuso y quién lo
+        retiró— y el clasificador no la vuelve a coger.
+
+        Qué se queda, exactamente:
+
+        - los nodos de `keep_node_ids` (el tema elegido y lo que se acabe de escribir);
+        - los **epígrafes cuyo tema es el elegido**: un epígrafe no sustituye a su tema, así que
+          retirarlo al retirar «el otro tema» sería tirar la clasificación fina que sí vale;
+        - y **nada de lo que no sea tema o epígrafe**: un mapeo a un bloque es la catalogación que
+          el documento traía (S12.6) y no es un tema, así que no entra en esta limpieza.
+
+        No se toca la fecha de aprobación (un mapeo retirado no está aprobado) ni la confianza: lo
+        que cambia es el estado, y el `before` lo dice en la auditoría.
+        """
+        with self._session_factory() as session:
+            filas = session.execute(
+                select(CurriculumMappingRecord, CurriculumNodeRecord)
+                .join(
+                    CurriculumNodeRecord,
+                    CurriculumNodeRecord.id == CurriculumMappingRecord.curriculum_node_id,
+                )
+                .where(
+                    CurriculumMappingRecord.subject_type == "question_version",
+                    CurriculumMappingRecord.subject_id == question_version_id,
+                    CurriculumNodeRecord.node_type.in_(("topic", "epigraph")),
+                )
+            ).all()
+            sobran = [
+                mapeo
+                for mapeo, nodo in filas
+                if str(nodo.id) not in keep_node_ids
+                and (
+                    str(nodo.node_type) == "topic"
+                    or nodo.parent_id is None
+                    or str(nodo.parent_id) not in keep_node_ids
+                )
+            ]
+            for mapeo in sobran:
+                antes = {"status": str(mapeo.status), "confidence": float(mapeo.confidence)}
+                mapeo.status = "rejected"
+                self._audit(
+                    session,
+                    actor=actor,
+                    action="question.proposal_retired",
+                    object_type="curriculum_mapping",
+                    object_id=str(mapeo.id),
+                    before=antes,
+                    after={
+                        "node_id": str(mapeo.curriculum_node_id),
+                        "question_version_id": question_version_id,
+                        "status": "rejected",
+                        **_reason(reason),
+                    },
+                    now=now,
+                )
+            if sobran:
+                session.commit()
+            return len(sobran)
+
+    def list_topic_conflicts(
+        self, *, limit: int, offset: int
+    ) -> tuple[tuple[QuestionTopicConflictView, ...], int]:
+        """Las preguntas que cuentan en **dos o más temas aceptados**, con quién decidió cada uno.
+
+        Es la lectura de lo que quedó torcido antes de esta tanda: la catalogación heredada del
+        documento, las migraciones y las dos corridas del clasificador que se pisaron. Una pregunta
+        en dos temas cuenta en los dos en todos los agregados, así que esto no es una curiosidad: es
+        un recuento que miente hasta que alguien lo arregla —y lo arregla el propietario, eligiendo
+        cuál se queda; la aplicación no lo decide por su cuenta.
+        """
+        con_conflicto = (
+            select(CurriculumMappingRecord.subject_id)
+            .join(
+                CurriculumNodeRecord,
+                CurriculumNodeRecord.id == CurriculumMappingRecord.curriculum_node_id,
+            )
+            .where(
+                CurriculumMappingRecord.subject_type == "question_version",
+                CurriculumMappingRecord.status == "accepted",
+                CurriculumNodeRecord.node_type == "topic",
+            )
+            .group_by(CurriculumMappingRecord.subject_id)
+            .having(func.count() > 1)
+        )
+        with self._session_factory() as session:
+            total = session.execute(
+                select(func.count()).select_from(con_conflicto.subquery())
+            ).scalar_one()
+            identificadores = [
+                str(fila)
+                for fila in session.execute(
+                    con_conflicto.order_by(CurriculumMappingRecord.subject_id)
+                    .limit(limit)
+                    .offset(offset)
+                ).scalars()
+            ]
+            if not identificadores:
+                return (), int(total)
+
+            filas = session.execute(
+                select(CurriculumMappingRecord, CurriculumNodeRecord)
+                .join(
+                    CurriculumNodeRecord,
+                    CurriculumNodeRecord.id == CurriculumMappingRecord.curriculum_node_id,
+                )
+                .where(
+                    CurriculumMappingRecord.subject_type == "question_version",
+                    CurriculumMappingRecord.status == "accepted",
+                    CurriculumNodeRecord.node_type == "topic",
+                    CurriculumMappingRecord.subject_id.in_(identificadores),
+                )
+                .order_by(*curriculum_order(CurriculumNodeRecord.path))
+            ).all()
+            preguntas = {
+                fila.id: fila
+                for fila in session.execute(
+                    select(QuestionVersionRecord).where(
+                        QuestionVersionRecord.id.in_(identificadores)
+                    )
+                )
+                .scalars()
+                .all()
+            }
+            conjuntos = {
+                fila.id: str(fila.title)
+                for fila in session.execute(
+                    select(QuestionSetRecord).where(
+                        QuestionSetRecord.id.in_(
+                            {str(pregunta.question_set_id) for pregunta in preguntas.values()}
+                        )
+                    )
+                )
+                .scalars()
+                .all()
+            }
+            opciones = self._options_by_question(session, identificadores)
+            actores = self._mapping_actors(session, [str(mapeo.id) for mapeo, _ in filas])
+
+        return (
+            tuple(
+                QuestionTopicConflictView(
+                    question_version_id=identificador,
+                    question_set_id=(
+                        ""
+                        if identificador not in preguntas
+                        else str(preguntas[identificador].question_set_id)
+                    ),
+                    set_title=conjuntos.get(
+                        ""
+                        if identificador not in preguntas
+                        else str(preguntas[identificador].question_set_id),
+                        "",
+                    ),
+                    stem=""
+                    if identificador not in preguntas
+                    else str(preguntas[identificador].stem),
+                    options=tuple(
+                        OptionView(
+                            id=opcion.id,
+                            stable_key=str(opcion.stable_key),
+                            text=str(opcion.text),
+                            position=int(opcion.position),
+                            label=opcion.label,
+                        )
+                        for opcion in opciones.get(identificador, ())
+                    ),
+                    topics=tuple(
+                        ConflictingTopicView(
+                            mapping_id=str(mapeo.id),
+                            topic=_node_ref(nodo),
+                            confidence=float(mapeo.confidence),
+                            actor=actores.get(str(mapeo.id)),
+                            created_at=mapeo.created_at,
+                        )
+                        for mapeo, nodo in filas
+                        if str(mapeo.subject_id) == identificador
+                    ),
+                )
+                for identificador in identificadores
+            ),
+            int(total),
+        )
 
     def entry_map(self, set_id: str) -> dict[str, AnswerKeyEntry]:
         """Desenlaces conocidos de cada pregunta, de **todas** las plantillas del conjunto.
@@ -2015,6 +2712,10 @@ class SqlAlchemyQuestionRepository:
             key_count=len(claves),
             active_key_id=activa,
             distribution=str(fila.distribution),
+            origin_scope=str(fila.origin_scope),
+            key_reliability=str(fila.key_reliability),
+            key_checked_count=int(fila.key_checked_count),
+            key_discrepant_count=int(fila.key_discrepant_count),
         )
 
     def _question_view(

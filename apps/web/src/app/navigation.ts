@@ -77,6 +77,34 @@ export const ADMIN_NAV_ITEMS: readonly NavItem[] = [
     summary: 'Propuestas de clasificación esperando una decisión.',
   },
   {
+    path: '/admin/clasificacion',
+    label: 'Clasificación',
+    summary:
+      'Las preguntas dudosas del clasificador: dales tema o márcalas fuera, con el teclado.',
+  },
+  {
+    path: '/admin/avisos',
+    label: 'Avisos',
+    summary: 'Lo que el alumno marca como error en los apuntes, con su apartado, para despacharlo.',
+  },
+  {
+    path: '/admin/incidencias',
+    label: 'Incidencias',
+    summary:
+      'Lo que el sistema no ha podido resolver solo: respuestas correctas que no cuadran, huecos, normas cambiadas.',
+  },
+  {
+    path: '/admin/apuntes',
+    label: 'Apuntes',
+    summary:
+      'Los temas con lo que ha medido el motor: leer un borrador con su motivo y aprobarlo o rechazarlo.',
+  },
+  {
+    path: '/admin/no-son-preguntas',
+    label: 'No son preguntas',
+    summary: 'Los enunciados que no se pueden contestar y las preguntas de otras administraciones.',
+  },
+  {
     path: '/admin/cambios',
     label: 'Cambios',
     summary: 'Versiones sustituidas y derivados que necesitan revisión.',
@@ -129,6 +157,7 @@ export const ROUTE_REDIRECTS: readonly { readonly from: string; readonly to: str
   { from: '/bandeja', to: '/admin/importar' },
   { from: '/biblioteca', to: '/admin/biblioteca' },
   { from: '/revision', to: '/admin/revision' },
+  { from: '/clasificacion', to: '/admin/clasificacion' },
   { from: '/cambios', to: '/admin/cambios' },
   { from: '/errores', to: '/admin/errores' },
   { from: '/preguntas', to: '/admin/preguntas' },

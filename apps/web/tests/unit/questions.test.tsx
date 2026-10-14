@@ -39,6 +39,7 @@ const CONJUNTO: QuestionSet = {
   active_key_id: null,
   is_official: true,
   distribution: 'personal',
+  origin_scope: 'desconocida',
 };
 
 const PREGUNTA: Question = {
@@ -183,12 +184,12 @@ function stubQuestions(overrides: Record<string, StubbedRoute> = {}) {
   });
 }
 
-function renderPreguntas() {
+function renderPreguntas(ruta = '/preguntas') {
   return renderWithProviders(
     <AppShell>
       <QuestionsPage />
     </AppShell>,
-    { route: '/preguntas' },
+    { route: ruta },
   );
 }
 
@@ -415,6 +416,30 @@ describe('preguntas: la ficha', () => {
     ).toBeGreaterThan(1);
     expect(screen.getByText('1978')).toBeInTheDocument();
     expect(screen.getByText('correcta')).toBeInTheDocument();
+  });
+
+  it('abre la pregunta que dice la dirección, sin buscarla en el banco (F18)', async () => {
+    stubQuestions();
+    // La bandeja de incidencias del motor enlaza así la clave que sospecha: por el identificador de
+    // la pregunta, que es lo único que la incidencia conoce de ella.
+    renderPreguntas('/preguntas?pregunta=q-2');
+
+    expect(await screen.findByRole('heading', { name: 'Pregunta 2' })).toBeInTheDocument();
+    // El enunciado sale dos veces: en la fila del banco y en la ficha que se ha abierto sola.
+    expect(
+      (await screen.findAllByText('El plazo de alegaciones es de diez dias habiles.')).length,
+    ).toBeGreaterThan(1);
+    // Y el conjunto se deriva de la propia pregunta: llega por su identificador, sin haber elegido
+    // ninguno, y la pantalla no se queda en «elige un conjunto».
+    expect(screen.queryByText(/Elige o crea un conjunto/i)).toBeNull();
+  });
+
+  it('sin identificador en la dirección no abre ninguna pregunta', async () => {
+    stubQuestions();
+    renderPreguntas();
+
+    await screen.findByRole('button', { name: 'Abrir la pregunta 1' });
+    expect(screen.queryByRole('heading', { name: /^Pregunta / })).toBeNull();
   });
 
   it('dice que no hay documento de origen en lugar de inventar una cita', async () => {

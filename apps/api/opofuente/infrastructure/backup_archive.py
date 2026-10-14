@@ -142,7 +142,11 @@ def write_archive(
             tamano = 0
             if origen_bd.is_file():
                 with (
-                    archivo.open(DATABASE_ENTRY, "w") as destino,
+                    # `force_zip64`: la base del propietario pasa de los 4 GB que caben en una
+                    # entrada ZIP normal y `ZipFile.open` sin esto revienta **al cerrar** la
+                    # entrada, después de haber copiado la base entera (`File size too large, try
+                    # using force_zip64`). El formato ZIP64 existe justo para esto.
+                    archivo.open(DATABASE_ENTRY, "w", force_zip64=True) as destino,
                     origen_bd.open("rb") as fuente,
                 ):
                     while True:
@@ -159,7 +163,12 @@ def write_archive(
         for indice, (relativa, ruta) in enumerate(ficheros, start=1):
             digest = hashlib.sha256()
             tamano = 0
-            with archivo.open(relativa, "w") as destino, ruta.open("rb") as fuente:
+            with (
+                # Lo mismo para un fichero de material grande (una base de datos adjunta, un ZIP):
+                # el tope es de 2 GiB por entrada y se comprueba al cerrarla.
+                archivo.open(relativa, "w", force_zip64=True) as destino,
+                ruta.open("rb") as fuente,
+            ):
                 while True:
                     bloque = fuente.read(CHUNK_BYTES)
                     if not bloque:
