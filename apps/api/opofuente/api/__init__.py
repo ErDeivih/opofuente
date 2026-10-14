@@ -18,6 +18,7 @@ from opofuente.api.routes import (
     library,
     notes_incidents,
     notes_reports,
+    notes_review,
     profiles,
     question_file,
     questions,
@@ -63,5 +64,10 @@ api_router.include_router(notes_incidents.router)
 # al final por el mismo motivo que las dos bandejas. Es la pantalla que faltaba detrás de los
 # enlaces que la bandeja del motor y el banco ya usaban (`/admin/preguntas?pregunta=<id>`).
 api_router.include_router(question_file.router)
+# La revisión de los apuntes (F24, §4.3 del objetivo) cuelga de `/notes-review`, un prefijo que no
+# comparte con nadie. Va al final como las tres anteriores, y **después** de la bandeja del motor a
+# propósito: `/notes-review/summary` se declara antes que `/notes-review/{codigo}` dentro de su
+# propio router (ADR-018: la ruta literal gana a la que lleva parámetro).
+api_router.include_router(notes_review.router)
 
 __all__ = ["api_router"]

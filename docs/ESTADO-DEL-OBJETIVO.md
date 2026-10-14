@@ -2711,3 +2711,259 @@ IV.4 la cota de **llamadas** se superó (70 frente a 68): **la de dinero es un t
 **Quedan publicados 25 de los 33.** Están escritos 28: los 25 publicados más los tres borradores
 (I.8, I.6 e I.7). Los que faltan por escribir son **III.6 y IV.3 (145), III.2 (140) e I.9 (133)**, más
 **III.4**, que sigue fuera con su medición.
+
+## F24-panel · La revisión de los apuntes en el panel (14-oct-2026)
+
+> **Las puertas, en una línea, para que no haya que reconstruirlo dentro de un mes**: las **18 en verde,
+> repartidas en tres corridas** (la 1-8 en el intento 10, la 9-12 en el 11 y la 13-18 en el 13), con
+> **dos percances de entorno** —una prueba de componentes que falla por carga y pasa sola, y dos caídas
+> con un código nativo de Windows (`0xC0000409`) que a mano salen en 0— y **un fallo real mío por el
+> camino**, que encontró la puerta 7 (la cadena de migraciones hacia atrás no tenía mi escalón). El
+> detalle, en el §7; cada intento con su mensaje literal, en
+> `F:\temp-opofuente\gates-f24-apuntes.txt`.
+>
+> Esta sección se llama **`F24-panel`** y no `F24` porque el bloque de contenido usó ese número a la vez
+> para su propia sección (`F24`, `F24b`, `F24c`, `F25`, `F25b`, `F25c`, `F25e` están tomados). Así ninguna
+> cita futura puede apuntar a la sección equivocada.
+
+**Rama `f24-revision-apuntes`** (worktree `F:\temp-opofuente\opofuente-apuntes`, desde
+`main = 511a8a9`, con `main` ya **fusionado en la rama** hasta `7cf1544`). La fusión a `main` la hace el
+agente padre.
+
+**La fusión con `main`, medida** (commits `5636a3b` con `a2a6511` y el que trae `7cf1544`): los documentos
+que chocaron se resolvieron **sumando**, y no a ojo —**cero** marcadores de conflicto y **unión exacta**:
+`líneas(fusión) == líneas(main) ∪ líneas(mías)` en los tres—. En la última, `main` añadía **59** líneas
+(la sección de IV.4) y las mías eran **193**; los encabezados del ESTADO pasan de **20** (main) a **21**,
+las entradas del propietario de **17** a **18**, y la tabla de decisiones cuadra por
+**176 = 162 (main) + 173 (mías) − 159 (en las dos)**. Después de fusionar, y ya con el código de las tres
+tandas de contenido dentro: `ruff format --check` (509 ficheros), `ruff check`, `mypy` (235 ficheros),
+`eslint`, `tsc` y el contrato sincronizado, con **912 pruebas de backend** y **379 de componentes** en
+verde.
+**Coste de API: 0 $** — no se ha llamado a ningún modelo. La cifra de un borrador se **lee** de las
+comprobaciones que el motor ya dejó guardadas, con el mismo camino que `apuntes --medir`
+(`TopicNotesService.medir`), así que el panel y el comando no pueden dar dos números del mismo tema.
+
+### 1. Qué se ha construido, y dónde
+
+| qué | dónde |
+|---|---|
+| La decisión, en su tabla, con el rechazo **obligado a llevar motivo** (`CHECK`) | migración `0038_revision_de_apuntes` (`apps/api/alembic/versions/0038_revision_de_apuntes.py`) |
+| El vocabulario del motivo: `ReviewDecision`, `MotivoDelBorrador` (12 códigos), `Razon` con su cifra, `CifrasDelTema`, `razones_del_tema` | `domain/notes_review.py` |
+| Leer las comprobaciones guardadas del tema y la decisión escrita | `infrastructure/notes_review_repository.py` |
+| Medir los borradores, componer la ficha y decidir | `application/notes_review_service.py` |
+| Tres rutas y una cuarta barata para el contador del menú | `api/routes/notes_review.py` (`GET /notes-review`, `GET /notes-review/summary` **antes** de la de parámetro —ADR-018—, `GET /notes-review/{codigo}`, `POST /notes-review/{codigo}/decision`) |
+| El rechazo sin motivo, como error de campo | `domain/errors.py` → `InvalidReviewError`; `api/errors.py` lo sirve 422 con `field_errors` |
+| La decisión, en la misma transacción y auditada | `notes.topic_reviewed` con `before_json`/`after_json` (y sin copiar la nota al evento) |
+| La tabla del panel: estado, cifras, motivo con su cifra y decisión | `apps/web/src/pages/NotesReviewPage.tsx` (`/admin/apuntes`) |
+| La ficha: motivo, los apartados **como los lee el alumno**, «los peores primero» y la decisión | `apps/web/src/pages/NotesReviewTopicPage.tsx` (`/admin/apuntes/:codigo`) |
+| La entrada del menú y su contador | `app/navigation.ts`; `app/sectionCounts.ts` con `GET /notes-review/summary` |
+| El lector del texto | `features/student/NotesBody` — **el mismo** componente que la zona del alumno |
+
+**Publicar es archivar por el camino de siempre** (`DossierService.archive`): la aprobación no escribe
+una versión a mano, y por eso lo que ve el alumno cambia igual que si se hubiera publicado desde el
+comando.
+
+### 2. Cómo está cada borrador, medido hoy, y qué enseña el panel
+
+Medido el 14-oct-2026 sobre la copia de la base real (`f24-datos`, `integrity_check: ok`), con los 33
+temas del TAI: **15 publicados**, **4 en borrador** (I.4, I.6, I.7 e I.8), **19 con apuntes** y 14 sin
+apuntes escritos. (La copia es una **fotografía** de esa mañana: la base del propietario siguió
+creciendo mientras se trabajaba en esta tanda —a las 13:00 tenía 340 apartados y 10.904 comprobaciones
+frente a los 274 y 9.923 de la copia—, así que estas cifras son las de la copia con la que se midió y se
+retrató, no las de su base de ahora mismo.) Lo que la pantalla dice de cada borrador, con la misma frase
+y la misma cifra que devuelve la API:
+
+| tema | cobertura (puerta) | qué le pasa (titular del motivo) | apartados · hechos | sin frase | en revisión o contra el material | incidencias |
+|---|---|---|---|---|---|---|
+| **I.4** | 489 de 542 = **90,2 %** | **Cumple las dos puertas** y no está publicado: nadie archivó su versión. **Aprobarlo lo publica** | 15 · 1.056 | 3 | 30 + 16 | 55 |
+| **I.6** | 164 de 230 = **71,3 %** | Le faltan **43** preguntas cubiertas | 13 · 346 | 20 | 19 + 13 | 63 |
+| **I.7** | 289 de 493 = **58,6 %** | Le faltan **155** preguntas cubiertas | 19 · 738 | 11 | 4 + 24 | 42 |
+| **I.8** | 394 de 477 = **82,6 %** | Le faltan **36** preguntas cubiertas | 18 · 815 | 9 | 7 + 24 | 0 |
+
+(«Sin frase» son las preguntas que los apuntes no contestan; «en revisión o contra el material» son las
+que tienen la respuesta correcta marcada —`dudosas_clave`— o en conflicto con lo que dicen los apuntes
+—`conflictos`—. Las cifras son las del **titular medido** el 14-oct-2026 con el código del motor tal
+cual; la de «todas las claves» —sin excluir las dudosas— va en la ficha: I.4 87,9 %, I.6 68,3 %,
+I.7 54,9 % e I.8 78,5 %.) Los cuatro tienen la **forma** en verde: lo que los frena es la cobertura, no
+el texto.
+
+Un tema **publicado** no se mide en la tabla: enseña su estado y sus cifras, y dice «sin medir en esta
+tabla» en vez de un cero que mentiría; su ficha sí lo mide al abrirla (y ahí se ve su cobertura de hoy).
+
+### 3. Qué puertas mira, y qué pasa al decidir
+
+| decisión | qué escribe | qué pasa después |
+|---|---|---|
+| **Aprobar** | su fila en `topic_notes_reviews`, su evento y —si las dos puertas del §2.3 pasan— la versión archivada | el tema queda **publicado** y el alumno lo lee como publicado; si no pasan, queda **aprobado y sin publicar** y la respuesta dice **qué puerta** lo frena (`blocked_by`: `cobertura` o `forma`) |
+| **Rechazar** | su fila (con la nota, obligatoria) y su evento | el motivo queda guardado y el tema sigue en borrador |
+
+El listón **no se toca**: aprobar un tema del 82 % no lo publica, y la pantalla lo dice con la cifra
+delante. La aprobación **no** cambia ninguna clave, ni la cuarentena, ni `key_reliability`, ni la marca
+`in_review` del alumno: lo único que mueve es qué versión está archivada.
+
+**La decisión sobrevive a una corrida del motor**, y está probado por partida doble: en integración (se
+reescriben `question_note_anchors` y `notes_incidents` con el repositorio de verdad y la decisión sigue
+donde estaba) y en extremo a extremo (una corrida escrita con `node:sqlite` sobre la base de la suite,
+y al recargar el panel sigue el «Rechazado» con su nota, con el motivo de datos ya refrescado).
+
+### 4. Coste y tiempos medidos (14-oct-2026, base real)
+
+| qué | cuánto |
+|---|---|
+| `GET /notes-review` en frío | ~15 s |
+| `GET /notes-review` con la caché de SQLite caliente | **7,0 a 8,1 s** (tres vueltas) para los 4 borradores |
+| `GET /notes-review/{codigo}` (ficha de un tema) | 1,2 s |
+| Medir los **19** temas con apuntes (lo que **no** hace la tabla) | **31,8 s** |
+| `GET /notes-review/summary` (el contador del menú) | una lectura, sin medir nada |
+| Medir los 4 borradores **con cuatro hilos** | 7,6 a 8,1 s — **no mejora** el serie (7,0 a 7,8 s): `medir` no suelta el GIL. Descartado |
+
+### 5. Las pruebas, con sus rojos previos
+
+| prueba | qué defiende |
+|---|---|
+| `apps/api/tests/unit/test_notes_review_domain.py` (**17**) | los 12 motivos y su orden (el titular primero, y `sin_decision` solo cuando no está publicado); las cifras con su cifra y **sin** cifra cuando el tema no se mide; el rechazo sin motivo que **no** valida; el «le faltan» con aritmética entera (el 90 % de 542 son 488, no 487,8); y el tema sin preguntas comprobables, que lo dice en vez de enseñar un «0 de 0» |
+| `apps/api/tests/integration/test_notes_review_api.py` (**14**) | la tabla con el estado y el motivo medido; el contador del menú que cuadra (`published + draft == with_notes`); la ficha con sus apartados, su texto y su forma; aprobar un tema que **no** llega y verlo sin publicar con la puerta que lo frena; aprobar el que llega y verlo **publicado** (con su versión archivada y su evento); rechazar sin motivo (422 con `body.note`) y con motivo (guardado, auditado y leído); y la corrida del motor que **no toca** la decisión |
+| `apps/api/tests/integration/test_migrations_0038.py` (**4**) | la tabla, el `CHECK` de dos decisiones, el rechazo sin motivo que la base **no** admite, y una decisión por tema, con su vuelta atrás y su vuelta a subir |
+| `apps/api/tests/integration/test_migrations_downgrade.py` (actualizada) | la cadena de migraciones hacia atrás **incluye ya el escalón de `0038`**: al bajar de él, `topic_notes_reviews` desaparece. No es un adorno: sin ese escalón la prueba falla (decía «se esperaba estar en 0037» y la cabeza es `0038`), y con él se ejecuta de verdad el `downgrade` de la migración nueva |
+| `apps/web/tests/unit/apuntesRevision.test.tsx` (**9**) | la tabla con el estado y el motivo **con su cifra** (y el publicado que dice que no se ha medido); el enlace a la ficha; el contador; los temas sin apuntes aparte; la ficha que lee el apartado con su tabla y sus cifras; «los peores primero» que reordena **sin cambiar el número de lectura**; aprobar por la ruta auditada con su cuerpo exacto; y rechazar, que sin motivo **no se puede enviar** |
+| `apps/web/tests/e2e/apuntes-revision.spec.ts` (**4**) | lo mismo, en el navegador y con datos: la tabla con el motivo y su cifra; la ficha que enseña **el mismo texto** que la zona del alumno (comparado carácter a carácter); aprobar → publicado (y el alumno lo ve publicado); rechazar sin motivo → **422**, con motivo → guardado, y **la corrida del motor** después; y accesibilidad y móvil (**0 violaciones de axe** y **390 px exactos**) |
+
+**Los rojos previos** (guardados en `F:\temp-opofuente\f24b-panel-scratch\rojo-antes.txt` y
+`rojo-antes-front.txt`): en un árbol del commit base (`511a8a9`, sin mi código y **solo** con los
+ficheros de prueba nuevos) las tres pruebas de backend **no se pueden ni recoger**
+(`ImportError: cannot import name 'InvalidReviewError'`, `ModuleNotFoundError: No module named
+'opofuente.infrastructure.notes_review_repository'`) y, corriendo sola la de la migración —que sí se
+recoge—, **fallan las cuatro** con `sqlite3.OperationalError: no such table: topic_notes_reviews`; la
+de componente cae al resolver el import (`Failed to resolve import
+"../../src/pages/NotesReviewPage"`). El árbol de prueba se retiró después (`git worktree remove`).
+
+### 6. Lo que queda fuera, y por qué
+
+1. **El editor de apartados y «Regenerar este apartado»** (§4.3 del objetivo). Regenerar cuesta una
+   corrida del modelo y pertenece a la tanda de contenido, que decide con las puertas de datos del
+   tema; y un editor de texto para 33 temas es otra pantalla, no esta. Lo que **sí** está es lo que
+   evita releer sesenta páginas: el orden «los peores primero» y las cifras de cada apartado.
+2. **«Marcar revisado» por apartado**: se decidió por tema. El motor **sí** reescribe
+   `needs_review_reason` de un apartado, y una marca de revisión al lado de eso se leería como
+   contradictoria; y la decisión que publica o deja en borrador es sobre el tema.
+3. **Los dos hallazgos del motor, medidos y no tocados** (esta tanda tiene prohibido cambiar el motor):
+   **(a)** un grupo **sin** comprobación guardada no cuenta en la puerta —ni arriba ni abajo—, así que
+   un tema con apartados y sin comprobaciones mide «0 de 0» y no pasa; **(b)** una pregunta que el
+   índice no sabe situar se cuenta **dos veces** —como `sin_materia_en_el_indice` y además como su
+   comprobación—, y el denominador sube con la misma pregunta que ya contaba en los dos lados (se
+   descubrió al escribir la prueba: una sola pregunta daba «1 de 2»).
+4. **El segundo motivo de I.8** («la corrida se paró al agotar su tope de tiempo») **no está en la
+   base**: se dijo en su día en un informe, y el panel solo enseña motivos de datos con su cifra. No se
+   inventa ni se copia de un documento.
+5. **La tabla no mide los temas publicados** (sí su ficha): medirlos costaría 31,8 s para repetir lo
+   que ya dice su estado.
+
+### 7. Las 18 puertas
+
+Corridas el 14-oct-2026 sobre el árbol `f24-revision-apuntes` con `scripts/gates.ps1` (y, para los
+dos tramos finales, con su mismo `common.ps1` y su `Invoke-OpoFuenteStep`, porque volver a correr la
+puerta 7 cuesta 42 minutos y ya estaba verde en esa corrida).
+
+**Resultado: las 18 en verde, repartidas en tres corridas** (la 1-8 en el intento 10, la 9-12 en el
+11 y la 13-18 en el 13), con dos percances de entorno y un fallo real mío por el camino —todo ello
+contado más abajo—. No es un «18/18 de una sola pasada» y no se va a decir que lo sea.
+
+| puerta | qué comprueba | resultado |
+|---|---|---|
+| **1. ruff format --check** | El formato de Python (E501 a 100 caracteres) | OK (intento 10) |
+| **2. ruff check** | El lint de Python | OK (intento 10) |
+| **3. mypy (estricto)** | Los tipos en estricto, 227 ficheros | OK (intento 10) |
+| **4. eslint** | El lint del front | OK (intento 10) |
+| **5. typecheck TypeScript** | Los tipos del front | OK (intento 10) |
+| **6. pruebas unitarias backend** | Las unitarias de Python (**853** pruebas) | OK (intento 10) |
+| **7. pruebas de integración backend** | Integración, con base y migraciones de verdad (42 minutos) | OK (intento 10) |
+| **8. pruebas de contrato** | El contrato OpenAPI | OK (intento 10) |
+| **9. pruebas de componentes (Vitest)** | Los componentes del front (**379** pruebas) | OK (intento 11) |
+| **10. contrato OpenAPI y tipos sincronizados** | `openapi.json` y los tipos derivados al día | OK (intento 11) |
+| **11. build backend** | El paquete de Python | OK (intento 11) |
+| **12. build frontend** | El paquete del front | OK (intento 11) |
+| **13. migración desde base vacía** | La cadena entera sobre un directorio nuevo (revisión `0038`) | OK (intento 13) |
+| **14. esquema migrado verificado con sqlite3** | La revisión y los metadatos, leídos sin la aplicación | OK (intento 13) |
+| **15. siembra de perfiles desde base vacía** | Los perfiles oficiales, desde cero | OK (intento 13) |
+| **16. siembra idempotente (segunda ejecución sin cambios)** | Volver a sembrar no cambia nada | OK (intento 13) |
+| **17. fixtures de perfil sincronizados con las fuentes oficiales** | Los fixtures frente a las fuentes | OK (intento 13) |
+| **18. E2E (Playwright)** | La suite entera en el navegador (**78** pruebas, mis 4 incluidas) | OK (intento 13) |
+
+Las cifras de las pruebas de esa corrida:
+
+- unitarias de backend: **853 pruebas**;
+- integración: **853 pruebas (y 2 fallos en el primer intento, arreglados)**;
+- componentes: **379 pruebas**;
+- extremo a extremo: **41 pruebas, 42**.
+
+**Las 18 están en verde, y hay que decirlo como es: repartidas en tres corridas.** La 1 a la 8 en el
+intento 10, la 9 a la 12 en el intento 11 y la 13 a la 18 en el intento 13. No es un 18/18 de una
+sola pasada, y el registro lo cuenta con sus causas:
+
+1. **Un fallo de verdad, mío, que encontró la puerta 7**: la lista escrita a mano de la cadena de
+   migraciones hacia atrás (`test_migrations_downgrade.py`) empezaba en `0037` y al subir la cabeza a
+   mi `0038` fallaba. Arreglado **añadiendo mi escalón** (y con él se ejecuta de verdad el `downgrade`
+   de la migración nueva). No se tocó ninguna comprobación para que callara.
+2. **Dos percances de entorno**, los dos medidos:
+   - la puerta **9 cayó con 1 de 379 pruebas**: `questions.test.tsx`, un fichero que **pasa solo**
+     (32 de 32 en 20,3 s frente a 65 s con la máquina cargada; el entorno `jsdom` se creó 42 veces en
+     esa corrida). Es carga, no lógica;
+   - y la puerta **13 cayó dos veces con un código NATIVO de Windows: `-1073740022` = `0xC0000409`**
+     (fallo rápido del proceso, sin una línea de la migración en el registro). Repetida a mano —
+     incluso con la misma redirección de salida que usa el lanzador— la misma migración desde base
+     vacía termina en **0** y deja la revisión `0038_revision_de_apuntes`; en el intento 13 pasa sola.
+3. **La E2E falló una vez por una prueba mía mal contada** (los eventos de auditoría del tema en
+   absoluto en vez de la diferencia: el registro es de solo añadir), y quedó arreglada antes de la
+   corrida final: **78 de 78** en la puerta 18.
+
+#### Los dos códigos nativos del mismo día: la máquina, no el código
+
+El mismo 14-oct-2026, con dos árboles distintos y en dos bloques distintos, murieron dos procesos con
+códigos nativos de memoria: el de esta tanda con **`0xC0000409`** (fallo rápido del proceso) en la
+migración desde base vacía, y el del bloque de **contenido** con **`0xC0000374` (corrupción de
+montón)** al morir su corrida. Dos árboles, dos códigos distintos, el mismo día: **no es el código de
+ninguno de los dos, es la máquina con presión de memoria** (los dos bloques corriendo máquinas de
+estados y suites enteras a la vez). Queda escrito para el que venga: **si una puerta vuelve a caer con
+un código nativo, lo primero que se mira es la memoria y los procesos, no el `diff`**.
+
+#### Una decisión para la próxima vez
+
+**Reintentar una puerta que cae con un código nativo, una vez y contada, es legítimo.** No es
+«reintentar hasta que salga verde»: es distinguir un fallo **del proceso** (memoria, un fichero a
+medias, un antivirus) de un fallo **del código**, que se arregla y no se reintenta. Un reintento de
+una prueba que falla por lógica **no se hace nunca**, y aquí no se ha hecho: la puerta 7 se arregló
+(era un fallo real), la 9 se midió (pasa sola) y la 13 se reintentó **dos veces** porque su código de
+salida era nativo y su comando, a mano, salía en 0.
+
+### 8. Las capturas
+
+Las cuatro capturas están en `artifacts/screens/` (ignorado por git, como en las tandas anteriores) y se
+hicieron **contra una copia de la base real** (`F:\temp-opofuente\f24-datos`, `integrity_check: ok`),
+nunca contra la del propietario:
+
+| captura | fichero | carga | axe | consola |
+|---|---|---|---|---|
+| La tabla de los 33 temas, escritorio | `artifacts/screens/admin-apuntes-escritorio.png` | 10.756 ms | **0** | 0 |
+| La tabla, móvil (390 px exactos) | `artifacts/screens/admin-apuntes-movil.png` | 10.187 ms | **0** | 0 |
+| La ficha del borrador **I.7**, escritorio | `artifacts/screens/admin-apuntes-I-7-escritorio.png` | 3.700 ms | **0** | 0 |
+| La ficha de I.7, móvil | `artifacts/screens/admin-apuntes-I-7-movil.png` | 3.386 ms | **0** | 0 |
+
+La prueba de capturas **no se limita a retratar**: comprueba que en la tabla se ven las dos cosas que
+pide el entregable —un tema **publicado** y un **borrador con su motivo y su cifra**—, que la ficha
+enseña el motivo y el texto apartado a apartado, que no hay **ninguna violación de axe** y que el ancho
+de la captura de móvil es **390 px exactos**. Los cuatro PNG salen con la misma aplicación y los mismos
+dos anchos que el resto de la suite.
+
+#### Los 6 fallos de capturas del informe son preexistentes (demostrado)
+
+El informe de esa corrida apuntó 6 capturas en rojo, **ninguna mía**. Para no quedarse en «no la he
+tocado», se corrieron esas 6 en un árbol con **`main` limpio** (`511a8a9`) y una copia aparte de la base
+real (`f24-datos-main`, revisión `0037`): allí **fallan 5 igual** —`revision` a 1280 px, `test-en-curso`
+y `resultado` a los dos anchos— y la sexta, `revision` a 390 px, es **de borde** (la captura tarda ~102 s
+y el límite son 120 s; repetida dos veces a solas en mi árbol, **pasa las dos**). La causa de
+`test-en-curso` y `resultado` está medida: en las dos copias hay **0 conjuntos con
+`key_reliability = 'in_review'`**, que es la marca que esa captura espera ver. Y el «Celador» que el
+informe marca en las pantallas del panel **ya salía el 6-oct-2026** en el informe de F0 de
+`opofuente-main` (en las dos filas de cada pantalla del panel): viene del **selector de oposición** de la
+cáscara, que lista las tres oposiciones de la base real, no de la pantalla de apuntes —los dos payloads
+de la revisión no contienen esa palabra, comprobado.

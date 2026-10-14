@@ -1683,6 +1683,98 @@ export interface paths {
         patch: operations["update_note_report_api_v1_notes_reports__report_id__patch"];
         trace?: never;
     };
+    "/api/v1/notes-review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Los temas con su estado, sus puertas y el motivo de los que están en borrador
+         * @description La tabla del panel: los temas del programa activo, en orden, con su motivo medido.
+         *
+         *     Mide **solo** los temas que esperan una decisión (los borradores): los publicados ya pasaron las
+         *     puertas y medirlos costaría la mitad de la página para repetir su estado. La medida sale de las
+         *     comprobaciones guardadas —el mismo camino que `apuntes --medir`— y no llama a ningún modelo.
+         */
+        get: operations["list_notes_review_api_v1_notes_review_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/notes-review/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Cuántos borradores esperan una decisión (el número del menú, sin medir nada)
+         * @description Los contadores del menú. No mide la cobertura de nada: se pide en todas las pantallas.
+         */
+        get: operations["notes_review_summary_api_v1_notes_review_summary_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/notes-review/{codigo}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * La ficha de un tema: sus apartados, tal como se leerán en la zona del alumno
+         * @description Un tema, apartado a apartado, con su texto, su forma y lo que se ha comprobado en cada uno.
+         *
+         *     Un tema sin apuntes escritos sale con su estado (`none`) y sin apartados: no es un error que un
+         *     tema no tenga texto, y devolver un 404 obligaría a la pantalla a distinguir «no existe» de «no
+         *     está escrito», que es justo lo que el estado contesta.
+         */
+        get: operations["notes_review_file_api_v1_notes_review__codigo__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/notes-review/{codigo}/decision": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Aprueba o rechaza los apuntes de un tema, con su nota y su evento de auditoría
+         * @description Aprueba (y publica, si las puertas pasan) o rechaza el texto de un tema.
+         *
+         *     Aprobar **no salta el listón**: si la cobertura del §2.3 no llega, el tema queda aprobado y sin
+         *     publicar, y `blocked_by` dice qué puerta lo frena con su cifra en el motivo. Rechazar exige
+         *     motivo, y una nota de más de una línea se recorta a una.
+         */
+        post: operations["decide_notes_review_api_v1_notes_review__codigo__decision_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/oppositions": {
         parameters: {
             query?: never;
@@ -6221,6 +6313,322 @@ export interface components {
              * @enum {string}
              */
             status: "open" | "in_progress" | "reviewed" | "dismissed";
+        };
+        /**
+         * NotesReviewChecksSchema
+         * @description Las comprobaciones guardadas del tema, contadas en la base.
+         *
+         *     No son la puerta de cobertura —esa tiene otro denominador— y por eso van con su propio nombre:
+         *     «de las preguntas que el motor ha comprobado, cuántas quedaron cubiertas, sin frase, dudosas o
+         *     en conflicto con su respuesta correcta».
+         */
+        NotesReviewChecksSchema: {
+            /** Conflicts */
+            conflicts: number;
+            /** Covered */
+            covered: number;
+            /** Doubtful */
+            doubtful: number;
+            /** Gaps */
+            gaps: number;
+            /** Total */
+            total: number;
+        };
+        /**
+         * NotesReviewCountersSchema
+         * @description Los números de la cabecera: cuántos temas hay de cada clase y cuántos esperan decisión.
+         */
+        NotesReviewCountersSchema: {
+            /**
+             * Approved
+             * @description Con una decisión de aprobación escrita por el propietario.
+             */
+            approved: number;
+            /**
+             * Draft
+             * @description Con apuntes escritos y **sin** versión archivada.
+             */
+            draft: number;
+            /**
+             * Pending Decision
+             * @description Borradores sin aprobar: es lo que espera al propietario.
+             */
+            pending_decision: number;
+            /**
+             * Published
+             * @description Con versión archivada: se leen como publicados.
+             */
+            published: number;
+            /**
+             * Rejected
+             * @description Rechazados: esperan a que el texto se arregle.
+             */
+            rejected: number;
+            /**
+             * Topics Total
+             * @description Temas del programa activo.
+             */
+            topics_total: number;
+            /**
+             * With Notes
+             * @description Temas con apuntes escritos.
+             */
+            with_notes: number;
+            /**
+             * Without Notes
+             * @description Temas que todavía no tienen apuntes escritos.
+             */
+            without_notes: number;
+        };
+        /**
+         * NotesReviewDecisionRequestSchema
+         * @description Aprobar o rechazar los apuntes de un tema, con la nota de lo decidido.
+         *
+         *     La nota es **opcional al aprobar** y **obligatoria al rechazar**: un rechazo sin motivo deja el
+         *     borrador donde estaba y encima sin saber por qué. Lo comprueba el esquema (para contestar un 422
+         *     con su campo) y lo vuelve a comprobar el dominio (para cualquier camino que no pase por aquí).
+         *
+         *     `validate_default` no es decorativo: sin él, un cuerpo que **no trae** `note` no pasa por el
+         *     validador del campo —pydantic no valida los campos que no vienen— y el rechazo sin motivo se
+         *     colaba hasta la última línea, donde solo quedaba un 500. Con él, el validador corre también
+         *     cuando la nota no viene, y el 422 señala `note`, que es el campo que hay que rellenar.
+         */
+        NotesReviewDecisionRequestSchema: {
+            /**
+             * Actor
+             * @description Quién decide. Si no viene, la cabecera `X-OpoFuente-Actor`; si no, `local`.
+             */
+            actor?: string | null;
+            /**
+             * Decision
+             * @enum {string}
+             */
+            decision: "approved" | "rejected";
+            /** Note */
+            note?: string | null;
+        };
+        /**
+         * NotesReviewDecisionResultSchema
+         * @description Lo que ha pasado al decidir: la decisión y **si eso ha publicado** el tema.
+         *
+         *     `published` no es «aprobado»: aprobar un tema que no pasa las puertas lo deja aprobado y sin
+         *     publicar, y `blocked_by` dice cuál de las dos lo frena. El listón no se toca.
+         */
+        NotesReviewDecisionResultSchema: {
+            /**
+             * Blocked By
+             * @description Qué puerta impide publicar, cuando el tema está aprobado y no sale.
+             */
+            blocked_by?: ("cobertura" | "forma") | null;
+            /** Published */
+            published: boolean;
+            topic: components["schemas"]["NotesReviewTopicSchema"];
+            /**
+             * Version Created
+             * @description Si la aprobación ha archivado una versión nueva. `false` si la que había ya era la misma lectura; `null` si no se ha intentado archivar.
+             */
+            version_created?: boolean | null;
+        };
+        /**
+         * NotesReviewDecisionSchema
+         * @description Lo que el propietario decidió sobre un tema, con su nota, su fecha y quién lo firmó.
+         */
+        NotesReviewDecisionSchema: {
+            /** Actor */
+            actor: string;
+            /**
+             * Decision
+             * @enum {string}
+             */
+            decision: "approved" | "rejected";
+            /** Note */
+            note?: string | null;
+            /**
+             * Reviewed At
+             * Format: date-time
+             */
+            reviewed_at: string;
+        };
+        /**
+         * NotesReviewFileSchema
+         * @description La ficha de un tema: su fila de la tabla y sus apartados en orden de lectura.
+         */
+        NotesReviewFileSchema: {
+            /**
+             * Sections
+             * @description Los apartados, en orden de lectura. Vacío si el tema no tiene texto escrito.
+             */
+            sections: components["schemas"]["NotesReviewSectionSchema"][];
+            topic: components["schemas"]["NotesReviewTopicSchema"];
+        };
+        /**
+         * NotesReviewListSchema
+         * @description La tabla entera, con los contadores de la cabecera.
+         */
+        NotesReviewListSchema: {
+            counters: components["schemas"]["NotesReviewCountersSchema"];
+            /**
+             * Topics
+             * @description Los temas del programa activo, en orden del temario. Siempre la lista entera.
+             */
+            topics: components["schemas"]["NotesReviewTopicSchema"][];
+        };
+        /**
+         * NotesReviewReasonSchema
+         * @description Por qué un tema está como está, en una frase con su cifra.
+         *
+         *     `code` es el vocabulario del dominio (para filtrar o probar) y `text` lo que se lee. El orden de
+         *     la lista **es** el orden de lectura: la primera razón es el titular.
+         */
+        NotesReviewReasonSchema: {
+            /**
+             * Code
+             * @description El código del motivo, del vocabulario del dominio.
+             */
+            code: string;
+            /**
+             * Figure
+             * @description La cifra sola, para pintarla aparte del texto.
+             */
+            figure?: string | null;
+            /**
+             * Text
+             * @description La frase, ya compuesta con su cifra.
+             */
+            text: string;
+        };
+        /**
+         * NotesReviewSectionSchema
+         * @description Un apartado de los apuntes, tal como se lee, con lo que se ha comprobado en él.
+         */
+        NotesReviewSectionSchema: {
+            /** Anchor */
+            anchor: string;
+            /** Body Markdown */
+            body_markdown: string;
+            /** Conflicts */
+            conflicts: number;
+            /** Covered */
+            covered: number;
+            /** Doubtful */
+            doubtful: number;
+            /** Epigraph Code */
+            epigraph_code: string;
+            /** Facts Total */
+            facts_total: number;
+            /** Gaps */
+            gaps: number;
+            /** Key */
+            key: string;
+            /** Needs Review Reason */
+            needs_review_reason?: string | null;
+            /**
+             * Position
+             * @description El número con el que se lee, en orden de lectura.
+             */
+            position: number;
+            /** Title */
+            title: string;
+            /** Words */
+            words: number;
+            /**
+             * Worst
+             * @description Cuánto queda sin resolver en este apartado (conflictos + dudosas + sin frase): es lo que ordena «los peores primero».
+             */
+            worst: number;
+        };
+        /**
+         * NotesReviewTopicSchema
+         * @description Una fila de la tabla: el tema, su estado, sus cifras, su motivo y su decisión.
+         */
+        NotesReviewTopicSchema: {
+            /** Block Code */
+            block_code: string;
+            /** Block Title */
+            block_title: string;
+            checks: components["schemas"]["NotesReviewChecksSchema"];
+            /**
+             * Code
+             * @description Código legible del tema, como `IV.7`.
+             */
+            code: string;
+            /**
+             * Coverage
+             * @description `(cubiertas, con clave utilizable)`: el par que decide la puerta del §2.3.
+             */
+            coverage?: [
+                number,
+                number
+            ] | null;
+            /**
+             * Coverage All Keys
+             * @description `(cubiertas, con clave)` sobre **todas** las que tienen clave. Se enseña.
+             */
+            coverage_all_keys?: [
+                number,
+                number
+            ] | null;
+            /**
+             * Coverage Threshold
+             * @description El listón del §2.3, que no se toca.
+             * @default 0.9
+             */
+            coverage_threshold: number;
+            /**
+             * Facts
+             * @description Hechos guardados del tema (paso B).
+             */
+            facts: number;
+            /**
+             * Incidents By Category
+             * @description Esas incidencias, por categoría. Vacío cuando no hay ninguna.
+             */
+            incidents_by_category: {
+                [key: string]: number;
+            };
+            /**
+             * Incidents Open
+             * @description Incidencias del motor sin despachar de este tema.
+             */
+            incidents_open: number;
+            /**
+             * Measured
+             * @description Si esta lectura ha medido la cobertura del tema (sin modelo y sin coste).
+             */
+            measured: boolean;
+            /**
+             * Reasons
+             * @description Por qué el tema está como está, con sus cifras. Vacío en los temas publicados que la tabla no mide (ya pasaron las puertas): su ficha sí los mide.
+             */
+            reasons: components["schemas"]["NotesReviewReasonSchema"][];
+            review?: components["schemas"]["NotesReviewDecisionSchema"] | null;
+            /**
+             * Sections Written
+             * @description Apartados con texto.
+             */
+            sections_written: number;
+            /**
+             * State
+             * @description `published`, `draft` o `none`.
+             * @enum {string}
+             */
+            state: "published" | "draft" | "none";
+            /** Title */
+            title: string;
+            version?: components["schemas"]["NotesReviewVersionSchema"] | null;
+        };
+        /**
+         * NotesReviewVersionSchema
+         * @description La versión archivada de un tema: lo que lo hace «publicado».
+         */
+        NotesReviewVersionSchema: {
+            /**
+             * Built At
+             * Format: date-time
+             */
+            built_at: string;
+            /** Id */
+            id: string;
         };
         /** OcrSettingsSchema */
         OcrSettingsSchema: {
@@ -14874,6 +15282,215 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["NoteReportSchema"];
+                };
+            };
+            /** @description Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    list_notes_review_api_v1_notes_review_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotesReviewListSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    notes_review_summary_api_v1_notes_review_summary_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotesReviewCountersSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    notes_review_file_api_v1_notes_review__codigo__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Código legible del tema, como `I.4` (también se acepta `I-4`). */
+                codigo: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotesReviewFileSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    decide_notes_review_api_v1_notes_review__codigo__decision_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-OpoFuente-Actor"?: string | null;
+            };
+            path: {
+                /** @description Código legible del tema, como `I.4`. */
+                codigo: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotesReviewDecisionRequestSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotesReviewDecisionResultSchema"];
                 };
             };
             /** @description Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura. */

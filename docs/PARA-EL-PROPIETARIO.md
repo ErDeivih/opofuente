@@ -869,3 +869,61 @@ Hice **copia verificada nueva** al empezar (revisión `0037`, comprobada entera:
 recuentos y bytes) porque la más reciente era de **antes** de la migración del INAP. **No he borrado
 ninguna de las anteriores**: la política dice conservar dos y el motivo era el disco, y hoy sobran
 **78,9 GB** en `F:`. Tienes **tres copias verificadas**; si prefieres volver a dos, dime cuál se va.
+
+## 14-oct-2026 · Ya puedes revisar los apuntes desde el panel: ver por qué un tema no está publicado, leerlo y decidir
+
+Hasta hoy, saber por qué I.6, I.7 o I.8 seguían en borrador obligaba a mirar un informe. Ya no: hay
+una pantalla nueva en el menú del panel.
+
+### Qué puedes hacer ahora
+
+**Menú → Apuntes** (nueva entrada, con un contador que te dice cuántos temas esperan tu decisión).
+
+1. **La tabla de los 33 temas** con su estado —Publicado, En borrador, Sin apuntes—, sus cifras y, en
+   los cuatro borradores, **el motivo con su número**. No hay que abrir nada para saber qué pasa.
+2. **Pinchas un tema y lo lees entero**, apartado a apartado, **igual que lo lee el alumno** (mismo
+   texto, mismas tablas, mismos títulos) y con las cifras de cada apartado: cuántos hechos tiene,
+   cuántas preguntas se contestan en él y cuántas quedan sin resolver.
+3. **Un botón «Los peores primero»** ordena los apartados por lo que queda sin resolver, para no
+   releerte sesenta páginas cuando solo quieres ver lo que está peor.
+4. **Al final, tu decisión**, con una nota tuya:
+   - **Aprobar los apuntes**: publica el tema **si cumple las dos puertas** del §2.3 (el 90 % y la
+     forma del texto). Si no las cumple, el tema queda aprobado y sin publicar, y la pantalla te dice
+     **qué puerta** lo ha frenado.
+   - **Rechazar con este motivo**: la nota es **obligatoria**. Sin ella el botón no se puede pulsar (y
+     el servidor tampoco lo admite), para que dentro de un mes se sepa por qué.
+
+Cada decisión queda **auditada** —quién, cuándo, y qué había antes y después— y **no se pierde** aunque
+el motor vuelva a comprobar el tema: está probado que una corrida nueva no borra tu decisión.
+
+### Cómo están tus cuatro borradores (medido hoy, 14-oct-2026)
+
+| tema | cobertura | qué le pasa |
+|---|---|---|
+| **I.4** | 489 de 542 = **90,2 %** | **Cumple las dos puertas**: no está publicado porque nadie archivó su versión. **Aprobarlo lo publica** |
+| **I.6** | 164 de 230 = **71,3 %** | Le faltan **43** preguntas por contestar en los apuntes |
+| **I.7** | 289 de 493 = **58,6 %** | Le faltan **155** |
+| **I.8** | 394 de 477 = **82,6 %** | Le faltan **36** |
+
+Los quince temas publicados no se miden en la tabla (ya pasaron las puertas); su ficha sí los mide si
+la abres, y ahí verás también sus apartados.
+
+### Tres cosas que no cambian (a propósito)
+
+1. **El listón del 90 % no se ha tocado.** Aprobar un tema del 82 % **no** lo publica: te dirá que la
+   cobertura no llega. Lo contrario sería colar por la puerta de atrás justo lo que la puerta impide.
+2. **La zona del alumno no se ha tocado**: sigue leyendo lo mismo y con la misma marca. Lo único que
+   cambia es que, cuando apruebas un tema que cumple las puertas, deja de estar en borrador.
+3. **Esto no llama a ningún modelo y no cuesta dinero**: la cifra se lee de las comprobaciones que el
+   motor ya dejó guardadas.
+
+### Lo que te toca a ti
+
+1. Abrir **Apuntes** y decidir sobre los cuatro. **I.4 se publica con un clic** (si el texto te
+   convence, claro: la cifra dice que contesta al 90,2 % de lo que se puede corregir, no que esté bien
+   escrito).
+2. Para I.6, I.7 e I.8 hay que **escribir más apuntes o reasignar preguntas**: eso es la tanda de
+   contenido, no esta pantalla. Lo que sí puedes hacer ya es **rechazarlos con tu motivo**, que queda
+   guardado y a la vista de quien siga con ellos.
+3. Si algún tema te parece mal publicado, dímelo: hoy la tabla no mide los publicados, así que habría
+   que abrir su ficha (una a una) para ver su cobertura de hoy.

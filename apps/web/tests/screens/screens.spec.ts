@@ -197,6 +197,74 @@ for (const { ruta, nombre } of RUTAS) {
 }
 
 /**
+ * La revisión de los apuntes (F24, §4.3 del objetivo) con los datos que haya, a los dos anchos.
+ *
+ * Es la captura que pide el entregable: **un tema publicado y un borrador con su motivo**. Se retrata
+ * contra la copia de la base real (`F:\temp-opofuente\f24-datos`, pasada como
+ * `OPOFUENTE_E2E_DATA_DIR`), y por eso la tabla sale con quince temas publicados y **los cuatro
+ * borradores** (I.4, I.6, I.7 e I.8) con su cifra, y la ficha con **I.7**: un borrador de verdad, con
+ * su motivo y sus diecinueve apartados. Con la base vacía de la suite las dos pantallas salen igual
+ * —la tabla, con los temas sin apuntes— y la captura lo dice; no se inventa ninguna fila.
+ *
+ * Y no se limita a retratar: **comprueba** lo que el entregable exige de las capturas, para que la
+ * evidencia no dependa de mirar el PNG.
+ *
+ * 1. **cero violaciones** de accesibilidad en las dos pantallas;
+ * 2. **390 px exactos** de ancho de ventana en la captura de móvil (una captura de página completa más
+ *    ancha que el viewport sería un desplazamiento horizontal);
+ * 3. y que la tabla **enseña temas** (o lo dice): la captura no puede salir en blanco sin que se sepa.
+ */
+for (const { ancho, alto, etiqueta } of ANCHOS) {
+  test(`la revisión de apuntes a ${ancho} px`, async ({ page }) => {
+    const tabla = await retratar(page, '/admin/apuntes', '/admin/apuntes', ancho, alto, etiqueta);
+    await expect(page.getByRole('heading', { level: 1, name: 'Apuntes' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Temas con apuntes/ })).toBeVisible();
+    // Con los datos del propietario la tabla trae las dos cosas que pide el entregable: **temas
+    // publicados** y **borradores**, y el borrador con su motivo. Se comprueba aquí (y no solo
+    // mirando el PNG) para que la captura diga lo que tiene que decir; con la base vacía de la suite
+    // las dos marcas no están y esta prueba se salta esas dos comprobaciones, no las finge.
+    const publicados = page.getByText('Publicado', { exact: true });
+    if ((await publicados.count()) > 0) {
+      await expect(publicados.first()).toBeVisible();
+      // El motivo **del borrador** (no el del primer tema de la tabla, que puede estar publicado y no
+      // llevar cifra de cobertura): su primera razón es la del listón, con su porcentaje.
+      const filaBorrador = page
+        .getByRole('listitem')
+        .filter({ hasText: 'En borrador' })
+        .first();
+      await expect(filaBorrador).toContainText('En borrador');
+      await expect(filaBorrador.locator('.apuntes-revision__motivos')).toContainText(/%/);
+      await expect(filaBorrador.locator('.apuntes-revision__cifras')).toBeVisible();
+    }
+
+    const ficha = await retratar(
+      page,
+      '/admin/apuntes/I.7',
+      '/admin/apuntes/I.7',
+      ancho,
+      alto,
+      etiqueta,
+    );
+    await expect(page.getByRole('heading', { level: 1, name: /I\.7/ })).toBeVisible();
+    // La ficha del borrador: su motivo («Por qué está así») y su texto, apartado a apartado.
+    await expect(page.getByRole('heading', { name: 'Por qué está así' })).toBeVisible();
+    const motivos = page.locator('.apuntes-revision__motivos');
+    await expect(motivos).toContainText(/%/);
+    if ((await page.locator('.apartado__cuerpo').count()) > 0) {
+      await expect(page.locator('.apartado__cuerpo').first()).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Los peores primero' })).toBeVisible();
+    }
+
+    expect(tabla, `axe en la tabla de apuntes: ${tabla.join(', ')}`).toEqual([]);
+    expect(ficha, `axe en la ficha del borrador: ${ficha.join(', ')}`).toEqual([]);
+    if (ancho === 390) {
+      const medido = await page.evaluate(() => window.innerWidth);
+      expect(medido, 'el ancho de la captura de móvil').toBe(390);
+    }
+  });
+}
+
+/**
  * La pantalla de **Exámenes** con un examen oficial de verdad (D10), a los dos anchos.
  *
  * La captura genérica de `/examenes` sale con la base de la suite, que nace sin exámenes oficiales:

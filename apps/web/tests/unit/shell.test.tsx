@@ -110,6 +110,9 @@ describe('los dos mapas de navegación', () => {
       'Avisos',
       // Y la bandeja del **motor** (F18): la otra mitad del §4.1, que hasta ahora no tenía ni ruta.
       'Incidencias',
+      // La revisión de los apuntes (F24, §4.3): leer un borrador dentro del panel, con su motivo
+      // medido, y aprobarlo o rechazarlo.
+      'Apuntes',
       'No son preguntas',
       'Cambios',
       'Errores',

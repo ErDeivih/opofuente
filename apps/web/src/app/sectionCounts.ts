@@ -2,6 +2,7 @@ import {
   useConflictingQuestions,
   useNoteReportCounters,
   useNotesIncidentCounters,
+  useNotesReviewCounters,
   useOppositions,
   usePendingActions,
   useReviewQueue,
@@ -39,6 +40,7 @@ export function useSectionCounts(): SectionCounts {
   const conflictos = useConflictingQuestions();
   const avisosApendientes = useNoteReportCounters();
   const incidenciasApendientes = useNotesIncidentCounters();
+  const apuntesApendientes = useNotesReviewCounters();
 
   const contadores: Record<string, SectionCount> = {};
 
@@ -86,6 +88,18 @@ export function useSectionCounts(): SectionCounts {
     contadores['/admin/incidencias'] = {
       count: incidencias,
       label: `${incidencias} incidencias del motor sin decidir`,
+    };
+  }
+
+  // La revisión de apuntes (F24): los borradores que esperan una decisión del propietario. Sale de
+  // una ruta **barata** propia (`/notes-review/summary`), no de la tabla de la pantalla: esa mide los
+  // borradores —de medio segundo a tres por tema— y el contador se pide en todas las pantallas del
+  // panel. Un tema publicado no cuenta: ya pasó las puertas y no espera a nadie.
+  const apuntes = apuntesApendientes.data?.pending_decision ?? 0;
+  if (apuntes > 0) {
+    contadores['/admin/apuntes'] = {
+      count: apuntes,
+      label: `${apuntes} tema(s) con apuntes esperando tu decisión`,
     };
   }
 
