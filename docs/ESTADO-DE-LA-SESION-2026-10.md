@@ -85,6 +85,40 @@ tema**, no el global ni el fichero.
   que hacer sitio o copiar solo la base.**
 - **Sin fusionar todavía**: el bloque del INAP (`f23-inap`), que espera su turno de puertas.
 
+### 14-oct · el día que se cerraron cuatro de los cinco puntos del objetivo
+
+`main` = **`5c5f9fb`** · gasto **≈17,3 $ de 40** · base real en **`0037_origin_scope`** · **`F:` con 63–79 GB libres**
+(se movieron 41,6 GB a `E:\OpoFuente-archivo` con enlaces; ver `LEEME.md` en `F:\OpoFuente`).
+
+1. **Claves (1)**: cuarentena con **puerta permanente** que recalcula al cerrar cada tema; **17 conjuntos
+   en cuarentena** y 116 medibles (empezó en 10 y 60). La marca «clave en revisión» visible en el alumno.
+2. **Incidencias (2)**: reclasificadas y con pantalla; **la bandeja del propietario va por 603**.
+3. **Zona del alumno y panel (4)**: **pantalla de Tests** (los tres enlaces vivos ya funcionan) y
+   **ficha de pregunta con «marcar la correcta»** con la guarda de las claves oficiales por **tipo de
+   conjunto** (no por lista de nombres). La **revisión de apuntes en el panel** estaba en su batería.
+4. **INAP (5)**: **9 importados + 4 ya existían (sin duplicar) + 3 fuera por ser escaneos sin texto**;
+   `origin_scope` en los datos (30 `age`, 28 `otra_administracion`, 184 `desconocida`, 53 eventos);
+   **11 practicables**; el 2024 A con numeración oficial y la copia mala intacta y marcada.
+5. **Temas (3)**: **21 de 33 publicados**. Los cuatro borradores, con la causa medida (**0 grupos sin
+   comprobar** en I.6/I.7/I.8 ⇒ lo que falta es **material**, no una corrida). **I.4 se publicó al 90,2 %
+   por 0 $** porque el denominador se movió solo (pasa por 0,2 puntos, y está escrito).
+
+**Coste real medido**: **≈0,20 $ por tema publicado** en las dos últimas tandas (III.3 0,24 $;
+IV.10 0,24 $; II.3 0,08 $; I.3 0,37 $; IV.5 0,55 $). El contenido **no lleva batería de puertas**, y esa
+fue la decisión que cambió el ritmo: 21 temas por menos de 5 $.
+
+**Trampas nuevas de este día, todas medidas** (van a `DECISIONES`):
+`STATUS_HEAP_CORRUPTION` (`0xC0000374`) mata un proceso **y deja echado el candado** `apuntes_en_curso`
+(los siguientes se niegan **antes de llamar al modelo**: 0 $); **el techo medido por el enunciado es un
+suelo** (I.5 87→91,5 %, I.3 85,7→92,8 %); **los títulos del catálogo pasan por la puerta de encabezados
+repetidos**; **los patrones genéricos son la puerta de entrada del material ajeno**; **una migración nueva
+rompe listas escritas a mano de otras pruebas** (la cadena de bajadas); **la cobertura cuenta dos veces**
+una pregunta que el índice no sitúa (defecto abierto, con su medición); y **una prueba que cuenta eventos
+en absoluto mide de más porque el mundo no se reinicia entre pruebas** (la auditoría es de solo añadir:
+se mide la **diferencia**). Y de instrumentos: el `.out.txt` del motor **siempre a cero**, los contadores
+globales **a saltos**, y **un registro que apunta a otro fichero** —cuando el contador no se mueve,
+comprobar el contador—.
+
 ---
 
 # Estado de la sesión, para retomar sin preguntar (12-oct-2026)
