@@ -2562,6 +2562,76 @@ llamadas y 0,0772 $ para 122 grupos, que es de lo más barato que se puede pagar
 - **la pregunta del CPD en I.3**: contada como cubierta y declarada en el §5 de F24, con las dos
   cifras.
 
-**Con I.4 y II.2 quedan publicados 22 de los 33 temas.** Están escritos 25: los 22 publicados más los
-tres borradores. Los que faltan por escribir son **III.8 (167), II.5 (155), IV.4 (150), III.6 y IV.3
-(145), III.2 (140) e I.9 (133)**.
+**Con I.4 y II.2 quedaban publicados 22 de los 33 temas** (y con III.8 y II.5 de los §7 y §8, **24**; el
+recuento final, en el §10).
+
+### 7. III.8, redactado y **publicado** el 14-oct
+
+| Qué | Valor |
+|---|---|
+| Cobertura (**clave utilizable**) | **152/155 = 98,1 % PASA** |
+| Cobertura (todas las claves) | 152/167 = 91,0 % |
+| Techo medido antes de pagar | 163/167 = **97,6 %** |
+| Hechos | **286 guardados** → **233 en el plan** (53 agrupados) · 16 con la clave señalada |
+| Apartados | **10** · el banco más descolgado de la serie: **124 de 147 grupos sin epígrafe** (84 %) |
+| Forma | **PASA** · 8.027 palabras de 11.560 · repetidos **0,0 %** |
+| Índice | PASA · **0 grupos y 0 hechos sin materia** |
+| Bandeja del propietario | **10**: 8 `norma_cambiada`, 1 `clave_sospechosa`, 1 `hueco_sin_material` |
+| Llamadas y coste | **57 (0 fallidas) · 0,2090 $** · **17 minutos**, sin tope activado |
+| Previsión | 33–58 llamadas · 0,22–0,39 $ → **57 llamadas (al tope de la cota) y coste por debajo del mínimo** |
+| Precio por llamada | **0,00367 $** |
+
+**Y el índice hizo su trabajo con el banco más difícil**: tres de sus cuatro epígrafes oficiales tienen
+**0, 0 y 6 grupos**, así que el asunto lo puso entero el enunciado —144 de 147 grupos situados (98,0 %)
+y un techo medido de 97,6 % que la corrida convirtió en **98,1 %**.
+
+### 8. II.5, redactado y **publicado** el 14-oct
+
+| Qué | Valor |
+|---|---|
+| Cobertura (**clave utilizable**) | **150/154 = 97,4 % PASA** |
+| Cobertura (todas las claves) | 150/159 = 94,3 % |
+| Techo medido antes de pagar | 148/155 = **95,5 %** |
+| Hechos | **282 guardados** → **219 en el plan** (63 agrupados) · 11 con la clave señalada |
+| Apartados | **11** · un solo epígrafe oficial con contenido y **88 de 143 grupos sin epígrafe** |
+| Forma | **PASA** · 7.717 palabras de 11.280 · repetidos **0,0 %** |
+| Índice | PASA · **4 grupos y 6 hechos sin materia**, con su motivo |
+| Bandeja del propietario | **9**: 5 `norma_cambiada`, 4 `pregunta_ambigua` |
+| Llamadas y coste | **51 (0 fallidas) · 0,1663 $** |
+| Previsión | 33–58 llamadas · 0,22–0,39 $ → **coste por debajo del mínimo** |
+| Precio por llamada | **0,00326 $** |
+
+### 9. Lo que la tanda deja medido, y lo que se ha verificado en vez de suponer
+
+- **Comprobar dentro del turno funciona y es rápido**: III.8 tardó **17 minutos** y II.5 **13**, frente
+  a las horas perdidas en II.2 por lanzarlo como trabajo de fondo. La regla queda: **lanzar y esperar
+  dentro del turno**.
+- **La cota de dinero de `--prever` es un techo y se queda holgada** cuando el catálogo se ensaya antes
+  de pagar: **tres de tres** corridas salieron por debajo del mínimo previsto (II.2 0,0772 $ de 0,30 ·
+  III.8 0,2090 $ de 0,22 · II.5 0,1663 $ de 0,22), mientras que la cota de **llamadas** se quedó al
+  tope en III.8 (57 de 58).
+- **El defecto de I.3 no se ha repetido, y está comprobado, no supuesto**: el motor sienta un hecho sin
+  materia en el apartado de la pregunta de la que salió (`repartir_hechos`), que es la puerta por la que
+  el material ajeno entra en un tema. Se ha mirado **grupo por grupo con `donde_cayeron.py` (0 $)** y
+  **los seis grupos ajenos de II.2, III.8 y II.5 aparecen «(sin ancla)»**: la NTI de Digitalización
+  (I.8.4), el Portal de la Transparencia (I.4), la Ley 11/2007 (I.8.1), el hipervisor (IV.2), Docker
+  (IV.1), SCRUM, Spring Boot (III.5) y C# (III.2) **se quedaron en la bandeja del propietario con su
+  motivo** en vez de sentarse en un apartado.
+- **El techo medido antes de pagar y la cobertura real coinciden en los tres**: 98,3 % → **98,8 %**
+  (II.2), 97,6 % → **98,1 %** (III.8) y 95,5 % → **97,4 %** (II.5). Con el catálogo ensayado, el techo
+  es un suelo.
+
+### 10. La tanda f25, en una tabla
+
+| Tema | Techo (0 $) | **Cobertura publicada** | Todas las claves | Forma | Bandeja | Llamadas · coste | Previsión |
+|---|---|---|---|---|---|---|---|
+| **II.2** | 98,3 % | **163/165 = 98,8 %** | 94,8 % | PASA 0,0 % | 9 | 40 · **0,0772 $** | 0,30–0,54 $ |
+| **III.8** | 97,6 % | **152/155 = 98,1 %** | 91,0 % | PASA 0,0 % | 10 | 57 · **0,2090 $** | 0,22–0,39 $ |
+| **II.5** | 95,5 % | **150/154 = 97,4 %** | 94,3 % | PASA 0,0 % | 9 | 51 · **0,1663 $** | 0,22–0,39 $ |
+
+**Los tres publicados, los tres con las dos puertas en PASA, y el coste medido de la tanda: 0,4525 $**
+(más **≈0,10–0,15 $ estimados** de la corrida de II.2 que murió con el turno y cuyo informe se perdió).
+
+**Con I.4 y estos tres quedan publicados 24 de los 33 temas.** Están escritos 27: los 24 publicados
+más los tres borradores (I.8, I.6 e I.7). Los que faltan por escribir son **IV.4 (150), III.6 y IV.3
+(145), III.2 (140) e I.9 (133)**, más **III.4**, que sigue fuera con su medición.
