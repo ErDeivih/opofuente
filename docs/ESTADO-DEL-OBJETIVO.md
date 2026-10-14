@@ -2272,3 +2272,148 @@ Los tres registros están en `F:\temp-opofuente\`, sin transcribir: son la salid
 de las 18 puertas lee (ruff, mypy y las suites miran `apps/`; el paso 17 mira los fixtures de perfil y
 los `docs/apuntes/` de las fuentes, no estos tres documentos).
 
+## F24 · La tanda de contenido cierra los cinco que quedaban por valor (14-oct-2026)
+
+**Rama `f21-temas-valor`** (worktree `F:\temp-opofuente\opofuente-contenido`), puesta al día **antes de
+empezar**: `git merge main` respondió **«Fast-forward»** desde `09a38cc` hasta **`511a8a9`** (el bloque
+del INAP y el de la zona del alumno entran sin tocar nada). Base real en **`0037_origin_scope`**. Es la
+cuarta tanda con el **ritmo del §4** de `AJUSTES-AL-OBJETIVO-CLAVES-Y-RITMO-2026-10.md`: contenido
+**directo sobre la base real**, sin rama de contenido y **sin batería de 18 puertas**.
+
+**Copia verificada al empezar la tanda**, que es nueva porque la anterior era de la revisión `0036`:
+`20261014-101138-3c75b9.zip` (805.529.470 B, revisión `0037_origin_scope`), verificada de verdad
+(`verify_archive` sin problemas, CRC de las 2 entradas correcto, `PRAGMA integrity_check` = ok,
+`quick_check` = ok, `foreign_key_check` = 0 filas, y los bytes extraídos coinciden con la instantánea:
+sha256 `f3fa671d…`, 665.588 páginas × 4096 = el tamaño exacto).
+
+### 1. La tabla de valor, vuelta a medir hoy, y los cinco catálogos
+
+Medida hoy con la cuarentena puesta, coincide con la del encargo y **manda esa medición**:
+
+| Tema | Del encargo | **Medido hoy** | Grupos | Preguntas | Apartados del catálogo | Techo medido (0 $) |
+|---|---|---|---|---|---|---|
+| **II.1** | 216 | **216** | 214 | 223 | 14 | **96,3 %** |
+| **III.3** | 201 | **201** | 181 | 201 | 14 | **93,5 %** |
+| **II.3** | 189 | **189** | 171 | 191 | 11 | **91,5 %** |
+| **I.3** | 182 | **182** | 168 | 183 | 15 | **85,7 %** |
+| **IV.10** | 180 | **180** | 185 | 185 | 12 | **97,2 %** |
+
+**Ninguno tenía catálogo**, así que escribirlo y ensayarlo fue lo primero (0 $) en los cinco, y los
+cinco `--esquema` **PASAN**. El techo medido es la cifra que decide y **es un suelo, no un techo**: I.3
+prometía 85,7 % y publicó **92,8 %**.
+
+### 2. Los cinco temas, redactados y **publicados** el 14-oct
+
+| Qué | **II.1** | **III.3** | **II.3** | **I.3** | **IV.10** |
+|---|---|---|---|---|---|
+| Cobertura (clave utilizable) | **201/204 = 98,5 %** | **191/208 = 91,8 %** | **181/190 = 95,3 %** | **168/181 = 92,8 %** | **171/175 = 97,7 %** |
+| Cobertura (todas las claves) | 201/214 = 93,9 % | 191/213 = 89,7 % | 181/194 = 93,3 % | 168/182 = 92,3 % | 171/181 = 94,5 % |
+| Forma | PASA · 1,1 % rep. | PASA · 0,7 % | **PASA tras arreglo de 0 $** · 0,0 % | PASA · 1,7 % | PASA · 0,0 % |
+| Índice | PASA · 0 y 1 sin materia | PASA · 5 y 11 | PASA · 3 y 7 | PASA · **0 y 0** | PASA · 1 y 1 |
+| Hechos | 447 → 365 en el plan | 382 → 322 | 343 → 267 | 300 → 193 | 386 → 314 |
+| Bandeja | **13** | 20 | 13 | 11 | 10 |
+| Llamadas · coste | 26 · **0,0577 $** (cierre) | 83 · **0,2432 $** | 36 · **0,0835 $** (2.º intento) | 83 · **0,3733 $** | 71 · **0,2440 $** |
+| Precio por llamada | — | **0,00293 $** | **0,00232 $** | 0,00450 $ | 0,00344 $ |
+| Minutos | 14,3 + 13 | 13,8 | 12,6 + 7,5 | 29,8 | 18 |
+| Veredicto | **publicado** | **publicado** | **publicado** | **publicado** | **publicado** |
+
+### 3. El balance de la tanda (f24), con las cifras medidas
+
+| tema | previsión (llamadas · $) | real | cobertura (clave utilizable) | veredicto |
+|---|---|---|---|---|
+| **II.1** | 46–81 · 0,31–0,55 | 26 medidas + la primera (no medida) · **0,0577 $ medidos** | 201/204 = **98,5 %** | **publicado** |
+| **III.3** | 42–74 · 0,29–0,50 | 83 · **0,2432 $** | 191/208 = **91,8 %** | **publicado** |
+| **II.3** | 37–65 · 0,25–0,44 | 36 en el 2.º intento · **0,0835 $ medidos** | 181/190 = **95,3 %** | **publicado** |
+| **I.3** | 39–69 · 0,27–0,47 | 83 · **0,3733 $** | 168/181 = **92,8 %** | **publicado** |
+| **IV.10** | 40–70 · 0,27–0,48 | 71 · **0,2440 $** | 171/175 = **97,7 %** | **publicado** |
+| | | **1,0017 $ medidos** (≈1,30–1,46 $ con lo estimado) | | **5 publicados · 0 borradores** |
+
+**Cinco temas publicados y ninguno en borrador.** El acumulado del objetivo queda en **≈ 17,3 $ de
+40** (≈ 16,00 $ al cerrar f21c). La forma pasó en los cinco y **no costó ninguna llamada**:
+`--limpiar-forma` alineó tres títulos en II.3, una tabla se reparó insertando la línea de separación
+que le faltaba, y `--publicar` cerró los cinco (0 $). La puerta de claves del §1 se recalculó al cerrar
+cada tema: **108 → 110 → 112 → 113 → 116 conjuntos medibles**, con **15 → 16 → 16 → 16 → 17 en
+cuarentena**, cada cambio con su evento de auditoría.
+
+**Lo que la tanda deja medido sobre el precio de un tema**:
+
+- un tema **técnico** sale a **0,0023–0,0045 $ por llamada** y la corrida entera a **0,08–0,24 $**:
+  III.3 (**0,00293 $**) y II.3 (**0,00232 $**) son los dos temas más baratos del proyecto;
+- **«normativo» no quiere decir «caro»**: I.3 salió a **0,00450 $** por llamada, la banda de los
+  técnicos, no la de los normativos densos (I.4, I.5, I.7: 0,0078–0,0083 $). El precio lo fija el
+  banco, no la etiqueta. La regla de **duplicar la cota** en los normativos se aplicó al decidir el
+  tope de I.3 (0,94 $) y resultó **conservadora**: la corrida costó 0,3733 $;
+- la cota de **llamadas** de `--prever` se quedó corta en cuatro de las cinco corridas (por 1, 9, 14 y
+  el bucle de huecos), pero **en IV.10 solo por una**: es la primera vez en la serie que el bucle de
+  huecos no desborda la previsión;
+- la cota de **coste** volvió a ser un **techo** en todos los técnicos (III.3 0,50 → 0,2432; IV.10 0,48
+  → 0,2440; II.3 0,44 → 0,0835 medidos).
+
+**Lo que la tanda deja medido sobre el método**:
+
+- **un techo medido por el enunciado no es un techo**: I.3 prometía 85,7 % (por debajo del listón) y
+  publicó 92,8 %. Lo que lo sube es el camino del motor que sitúa un grupo por **los hechos de sus
+  preguntas**, y en I.3 además los **cajones de epígrafe**;
+- **ese mismo camino es el que deja entrar material de otro tema**: es el defecto de I.3 del §5, y hoy
+  **no hay ninguna puerta que mire si el apartado al que se ancla una respuesta es del tema**;
+- **los títulos del catálogo pasan por la puerta de encabezados repetidos**: tres apartados que
+  compartan las tres primeras palabras del título dejan el tema sin publicar. Se mira **antes de
+  correr**, que es gratis;
+- **los patrones genéricos son la puerta de entrada del material ajeno**: `ansi`/`iso`/`estándar` en
+  III.3 y `formato`/`fichero` en II.3. El ensayo los caza a 0 $.
+
+### 4. Dos corridas cuyo informe se perdió, dicho con su causa y su cifra
+
+**II.1 murió a lo bruto** con `STATUS_HEAP_CORRUPTION` (`exit=-1073740022`, `0xC0000374`) **después**
+de archivar la versión: los hechos, los apartados y 207 de 214 comprobaciones quedaron escritos, pero
+**el informe —llamadas y coste— se perdió con el búfer**, así que su coste va **estimado (0,20–0,36 $)**
+y no medido. Un proceso muerto deja echado el candado `apuntes_en_curso`, y los cuatro temas
+siguientes se negaron **antes de llamar a nadie** (coste 0 $) hasta que se soltó por el camino que el
+propio motor documenta. **No fueron dos corridas a la vez**: la serie era en serie. Arreglos aplicados:
+`python -u` y reintento tras soltar el candado.
+
+**Y un defecto del lanzador, con su coste**: el reintento estaba puesto para **cualquier** código
+distinto de cero, y un **código 3** no es un fallo sino «no pasa la puerta de forma». A **II.3** le
+costó una segunda corrida de **0,0835 $** que no arreglaba nada (lo que hacía falta era una reparación
+de **0 $**), y el guion escribía los dos intentos en el **mismo fichero**, así que el coste del primero
+(≈0,10 $) se perdió. **≈0,12 $ de más por dos defectos del guion, no del motor.**
+
+**II.1 se completó** con una segunda corrida (0,0577 $, 26 llamadas, sin rehacer ni un hecho ni un
+apartado): subió de 96,6 % a **98,5 %**, comprobó 213 de 213 y dejó las incidencias escritas. Y su
+bandeja, que la corrida muerta dejó **vacía**, se rellenó a **0 $** por el mismo camino auditado de la
+corrida (`_paso_huecos` con un modelo nulo que no añade nada): **0 → 10**.
+
+### 5. El defecto de I.3, con su tamaño, y la puerta que falta
+
+**Uno de los 15 apartados de I.3 (`i-3-1-otros`) no es material del tema**: contiene el estándar
+**ANSI/TIA-942-B** del CPD (MDA, HDA, EDA), que es de **IV.5.7**. Medido: **1 apartado de 15**, **2
+hechos de 300** (0,7 %), **730 caracteres** de ~45.000 (1,6 %) y **5 preguntas de 181**. El grupo no
+trae epígrafe y ningún patrón lo sitúa —así que el índice lo deja fuera—, pero el motor tiene un camino
+para no perder un hecho que no reconoce ninguna materia: **caerlo a la materia de la pregunta de la que
+sale**; con esas anclas, el grupo acabó en el cajón y sus respuestas se contaron como cubiertas.
+
+**No se ha borrado a propósito**: la puerta de cobertura **cuenta comprobaciones guardadas, no el
+texto**, así que quitar los hechos y vaciar el apartado dejaría la cifra publicada en 92,8 % mientras
+el alumno ya no lee esas frases. La cifra honesta, descontando el lavado, es **163/181 = 90,1 %**, que
+también pasa el listón; en el informe van **las dos**.
+
+**Y queda dicho como hueco del método**: hoy **no hay ninguna puerta que mire si el apartado al que se
+ancla una respuesta es del tema**. La de cobertura dice cuántas respuestas están contestadas, no por
+quién. Es la comprobación que falta si «no se lava» tiene que ser una medida y no un propósito.
+
+### 6. Lo que queda fuera, con el porqué
+
+- **I.7 (58,4 %), I.4 (88,9 %), I.8 (82,0 %) e I.6 (72,5 %)**: los cuatro borradores **siguen sin
+  reanudar**, con su cifra escrita y por el motivo ya medido —su hueco es de **material** y de criterio
+  sobre las claves, no de una corrida más—;
+- **III.4** sigue **sin escribir**: su banco es de otra materia en un 40 %, ya medido;
+- **los 8 grupos de II.1, 5 de III.3, 10 de II.3, 19 de I.3 y 5 de IV.10** que ningún índice sitúa:
+  están en la bandeja del propietario con su motivo, y son los que ponen el techo de cada tema;
+- **la pregunta del CPD en I.3**: contada como cubierta y declarada en el §5, con las dos cifras;
+- **las 2 preguntas de IV.10 y las 2 de IV.9** por las que el modelo no contestó: sin cubrir y sin
+  incidencia, porque el fallo es de la llamada y no del material.
+
+**Con estos cinco quedan publicados 20 de los 33 temas.** Están escritos 24: los 20 publicados más los
+cuatro borradores (I.7, I.4, I.8 e I.6). Los que faltan por escribir son los que la tabla pone por
+debajo de 180 claves utilizables —**II.2 (173), III.8 (169), II.5 (155)** y los siguientes— más los
+cuatro borradores y III.4.

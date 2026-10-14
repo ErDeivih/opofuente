@@ -814,3 +814,58 @@ en cuarentena), así que no se cruzan.
    ninguna clave.
 3. **Los tres exámenes de 2018**: necesitan el OCR instalado en tu equipo (`tesseract` con el idioma
    español). Cuando esté, se importan con el mismo comando.
+
+## Tanda del 14-oct-2026 (F24): cinco temas más, y una cosa que quiero que sepas
+
+### Lo que ya puedes leer
+
+**Cinco temas nuevos publicados**, con sus apuntes en la zona del alumno y la marca «Versión generada ·
+en revisión». Con estos son **20 de los 33**:
+
+| Tema | Materia | Cobertura (clave utilizable) |
+|---|---|---|
+| **II.1** | Informática básica, representación de la información, arquitectura y componentes internos | **98,5 %** |
+| **III.3** | Lenguajes de interrogación, ANSI SQL, procedimientos y disparadores | **91,8 %** |
+| **II.3** | Tipos abstractos, organizaciones de ficheros, algoritmos y formatos | **95,3 %** |
+| **I.3** | El Gobierno: composición, funciones y relaciones con las Cortes | **92,8 %** |
+| **IV.10** | Redes locales, tipología, transmisión, acceso y dispositivos | **97,7 %** |
+
+Coste medido de la tanda: **1,0017 $**. El acumulado del objetivo va por **≈17,3 $ de 40**.
+
+### Una cosa que tienes que saber, y por la que te la cuento antes que nada
+
+**En el tema I.3 hay un apartado que no es de ese tema.** Se titula «Áreas de distribución del CPD
+según ANSI/TIA-942» y habla del **MDA, el HDA y el EDA**, que son cosas de un Centro de Procesamiento
+de Datos: eso pertenece a **IV.5.7**, no a «El Gobierno».
+
+- Es **1 apartado de 15**, **2 hechos de 300** y **730 caracteres** de unos 45.000 (el **1,6 %** del
+  tema). Son **5 preguntas** de las 181 que cubre el tema.
+- **Lo he dejado escrito a propósito, en vez de borrarlo**, y quiero que sepas por qué: la puerta que
+  mide la cobertura **cuenta comprobaciones guardadas, no el texto**. Si quitara esos hechos y vaciara
+  el apartado, el número que ves seguiría diciendo 92,8 % mientras tú ya no leerías esas frases: un
+  dato que no corresponde con lo que hay. La cifra **honesta**, descontando ese apartado, es **90,1 %**,
+  que también pasa el listón; en el informe van las dos, dichas.
+- **Lo que falta para que no vuelva a pasar** es una comprobación que hoy no existe: que mire si el
+  apartado al que se ancla una respuesta **es del tema**. La de cobertura dice cuántas respuestas están
+  contestadas, no por quién. Queda anotado como lo que es, un hueco del método.
+
+Si prefieres que ese apartado desaparezca de la vista, se puede vaciar en un minuto (0 $), pero
+entonces el 92,8 % deja de ser cierto: dímelo y lo hago con la cifra corregida en el panel.
+
+### Dos corridas cuyo coste no se pudo medir (y por qué)
+
+**II.1** se murió a lo bruto a los 14 minutos (un fallo de memoria de Windows, no del motor): el
+trabajo quedó escrito y el tema se publicó, pero **el informe con las llamadas y el coste se perdió**.
+Su coste va **estimado en 0,20–0,36 $**, no medido, y lo digo así en su informe. Se completó después
+por **0,0577 $** y subió de 96,6 % a 98,5 %.
+
+**En II.3**, un defecto de mi guion de lanzamiento (reintentaba cuando no debía y escribía los dos
+intentos en el mismo fichero) hizo **una corrida de más de 0,0835 $** y perdió el coste de la primera
+(≈0,10 $): **≈0,12 $ de más**, dicho con su cifra.
+
+### Copias de seguridad
+
+Hice **copia verificada nueva** al empezar (revisión `0037`, comprobada entera: integridad, CRC,
+recuentos y bytes) porque la más reciente era de **antes** de la migración del INAP. **No he borrado
+ninguna de las anteriores**: la política dice conservar dos y el motivo era el disco, y hoy sobran
+**78,9 GB** en `F:`. Tienes **tres copias verificadas**; si prefieres volver a dos, dime cuál se va.
