@@ -277,7 +277,7 @@ MATERIAS: tuple[Materia, ...] = (
             r"asynchronous javascript|\bjson\b|\bmean\b|node ?js|\bv8\b|nashorn",
             r"lenguaje de (script|programacion) (del|en el) (lado )?(cliente|navegador)|"
             r"script en el cliente|scripts? en el navegador",
-            r"console\.log|===|setinterval|fetch\(|\bdocument\)|"
+            r"console ?\.? ?log|===|setinterval|fetch\(|\bdocument\)|"
             r"objeto usado para recibir informacion",
             r"framework de pruebas para javascript|sentencia condicional en javascript",
         ),

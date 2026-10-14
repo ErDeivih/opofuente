@@ -215,7 +215,7 @@ MATERIAS: tuple[Materia, ...] = (
             r"conformidad (con el ens|del ens)|declaracion de conformidad|"
             r"informe de estado de seguridad",
             r"medidas? de seguridad (del anexo|del ens)|anexo(s)? (i|ii|iii)? ?del ens",
-            r"auditoria de cumplimiento|conformidad ens|ens/stic",
+            r"auditoria de cumplimiento|conformidad ens|ens ?/? ?stic",
             r"guia(s)? (ccn|stic|de seguridad)|publicaciones del ccn",
             r"ambito de aplicacion del ens|entidades del ambito",
         ),

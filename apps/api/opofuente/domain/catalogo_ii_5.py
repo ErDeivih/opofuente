@@ -149,7 +149,7 @@ _GESTORES = (
 
 #: El acceso a los datos y los ORM.
 _ACCESO_A_DATOS = (
-    r"\bodbc\b|\bjdbc\b|\boledb\b|ado\.net",
+    r"\bodbc\b|\bjdbc\b|\boledb\b|ado ?\.? ?net",
     r"sistema(s)? de acceso a (bases? de )?datos|protocolos? de acceso a datos",
     r"herramienta.*(de|para el) acceso a sus bases|desarrollada por oracle para el acceso",
     r"jpa|java persistence|\bjakarta\b|persistence api",
