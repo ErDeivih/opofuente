@@ -225,4 +225,29 @@ propietario debería saber además va a `PARA-EL-PROPIETARIO.md`.
 | **14-oct-2026** | **Se comprueba, grupo por grupo, que el defecto de I.3 no se ha repetido** en II.2, III.8 ni II.5 | El motor tiene una red de seguridad —un hecho que no reconoce ninguna materia va **al apartado de la pregunta de la que salió** (`repartir_hechos`)— y **ésa es exactamente la puerta por la que el material ajeno se sienta dentro de un tema**, que es el defecto declarado en I.3. Con `donde_cayeron.py` (0 $) se ha mirado cada grupo ajeno y **los seis aparecen «(sin ancla)»**: la NTI de Digitalización (I.8.4), el Portal de la Transparencia (I.4), la Ley 11/2007 (I.8.1), el hipervisor (IV.2), Docker (IV.1), SCRUM, Spring Boot (III.5) y C# (III.2) **se quedaron en la bandeja con su motivo**. No se supone: se comprueba, que es lo que faltaba en I.3 | No comprobarlo y dar por hecho que el índice bastó (fue lo que pasó en I.3, y de ahí las dos cifras del §5 de F24) |
 | **14-oct-2026** | **La cota de dinero de `--prever` se toma como techo, y con el catálogo ensayado se queda holgada**; la de llamadas, como suelo en su extremo superior | **Tres de tres** corridas de f25 salieron por debajo del mínimo previsto: II.2 0,0772 $ de 0,30 · III.8 0,2090 $ de 0,22 · II.5 0,1663 $ de 0,22. En llamadas, III.8 se quedó al tope (57 de 58). Es lo mismo que ya se midió en f24 y lo que confirma que **el ensayo previo del catálogo (0 $) es lo que hace que la previsión sobre** | Decidir con la cota de arriba como si fuera un suelo y llevar el tope de dinero pegado al mínimo previsto |
 
+### F25b · **La causa raíz del material ajeno**: la red de seguridad de `repartir_hechos` (14-oct-2026)
+
+**Esto no es una anécdota de I.3: es la causa, y tiene dos caras.**
+
+El motor tiene una red de seguridad —**`repartir_hechos`**: un hecho que no reconoce ninguna materia va **al apartado de la pregunta de la que salió**—. Esa red **existe para no perder hechos** y hace bien su trabajo: sin ella, un hecho que el índice no sabe situar se quedaría fuera del tema. **Pero es exactamente la puerta por la que el material de otro tema se sienta dentro de un apartado que no le corresponde**, porque el hecho no se sitúa por su contenido, sino por **de dónde vino la pregunta**.
+
+| | |
+|---|---|
+| **Qué pasó en I.3** | El apartado `i-3-1-otros` se quedó con material del **estándar ANSI/TIA-942 del CPD**, que es de **IV.5.7**: **1 de 15 apartados**, 2 de 300 hechos, 730 de ~45.000 caracteres y 5 de 181 preguntas. La causa es ésta: el grupo no trae epígrafe, el índice no lo sitúa, y el hecho acabó **en el apartado de la pregunta de la que salió** |
+| **Qué se hizo entonces** | **No se borró**, y sigue declarado con sus dos cifras (la publicada y la honesta, 163/181 = 90,1 %). La razón está en el §5 de F24: la puerta de cobertura **cuenta comprobaciones guardadas, no el texto**, así que borrarlo dejaría el 92,8 % publicado mientras el alumno ya no lee esas frases |
+| **Cuál es hoy la única defensa** | **Mirarlo a mano**: `donde_cayeron.py` (0 $, en `F:\temp-opofuente\f25-scratch\`) busca por texto los grupos que el ensayo dejaba fuera y dice **en qué apartado acabaron**. El 14-oct se pasó sobre II.2, III.8 y II.5 y **los seis grupos ajenos aparecen «(sin ancla)»**: no se sentaron en ningún apartado y se quedaron en la bandeja del propietario. **Está comprobado, no supuesto** |
+| **Por qué importa como regla** | Convierte «ojo con los patrones genéricos» en algo **comprobable**: no basta con que el ensayo diga cuántos grupos quedan fuera; hay que mirar **dónde acaban**, porque el motor tiene una red que los puede sentar dentro |
+
+### F25c · **Pendiente, y no se hace ahora**: un bloque de motor para el agujero que estos tres hallazgos comparten (14-oct-2026)
+
+**Los tres son el mismo agujero: nadie comprueba que el sitio donde acaba un hecho o una comprobación sea suyo.** Se apuntan juntos para que, cuando toque, sea **un solo bloque de motor con su prueba que falla antes**, y con estas mediciones delante:
+
+| # | El hallazgo | De dónde sale | Qué le falta al motor |
+|---|---|---|---|
+| 1 | **No hay ninguna puerta que mire si el apartado al que se ancla una respuesta es del tema** | La tanda de I.3 | La puerta de cobertura dice **cuántas** respuestas están contestadas, **no por quién**. Es la comprobación que habría cazado el material del CPD sin mirarlo a mano |
+| 2 | **La cobertura cuenta dos veces una pregunta que el índice no sitúa** | Lo encontró **el panel** | Una pregunta sin materia puede contarse en el cómputo dos veces, con lo que la cobertura publicada sube sin que el tema haya mejorado |
+| 3 | **`repartir_hechos` sienta el hecho en el apartado de la pregunta de la que salió** | Esta medición (F25b) | Es **la causa de 1**: la red evita perder hechos, pero no comprueba que el destino sea del tema. Hoy la única defensa es `donde_cayeron.py`, a mano |
+
+**No se toca el motor ahora**: el encargo es escribir temas, y un cambio de motor arrastra las 18 puertas. Queda escrito con su medición para que el bloque se haga cuando toque y **con el caso del CPD como prueba de regresión**.
+
 

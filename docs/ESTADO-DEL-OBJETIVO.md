@@ -2635,3 +2635,24 @@ y un techo medido de 97,6 % que la corrida convirtió en **98,1 %**.
 **Con I.4 y estos tres quedan publicados 24 de los 33 temas.** Están escritos 27: los 24 publicados
 más los tres borradores (I.8, I.6 e I.7). Los que faltan por escribir son **IV.4 (150), III.6 y IV.3
 (145), III.2 (140) e I.9 (133)**, más **III.4**, que sigue fuera con su medición.
+
+### 11. La causa raíz del material ajeno, y el bloque de motor que queda pendiente
+
+**La puerta por la que entró el material del CPD en I.3 tiene nombre**: `repartir_hechos`, la red de
+seguridad del motor por la que **un hecho que no reconoce ninguna materia va al apartado de la pregunta
+de la que salió**. Esa red **existe para no perder hechos** —y hace bien su trabajo— pero **no comprueba
+que el destino sea del tema**: sitúa el hecho por **de dónde vino la pregunta**, no por lo que dice. Es
+una causa raíz, no una anécdota, y sus dos caras están escritas en `DECISIONES` (**F25b**) con el caso
+del CPD medido: 1 de 15 apartados, 2 de 300 hechos, 730 caracteres y 5 de 181 preguntas.
+
+**Hoy la única defensa es mirarlo a mano**, y por eso `donde_cayeron.py` (0 $) forma parte del método:
+el ensayo dice **cuántos** grupos quedan fuera del índice, pero no **dónde acaban**. Se pasó sobre II.2,
+III.8 y II.5 y los seis grupos ajenos salieron **«(sin ancla)»**.
+
+**Y queda pendiente, apuntado y no hecho** (**F25c** en `DECISIONES`): **un solo bloque de motor para un
+solo agujero** —nadie comprueba que el sitio donde acaba un hecho o una comprobación sea suyo—, que
+junta tres hallazgos: que **no hay puerta que mire si el apartado al que se ancla una respuesta es del
+tema** (lo dijo la tanda de I.3), que **la cobertura cuenta dos veces una pregunta que el índice no
+sitúa** (lo encontró el panel) y que **`repartir_hechos` es la causa de lo primero**. Cuando toque, será
+un bloque de motor con su prueba que falla antes y **con el caso del CPD como prueba de regresión**. No
+se toca ahora: el encargo es escribir temas y un cambio de motor arrastra las 18 puertas.
