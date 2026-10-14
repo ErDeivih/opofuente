@@ -2403,9 +2403,10 @@ quién. Es la comprobación que falta si «no se lava» tiene que ser una medida
 
 ### 6. Lo que queda fuera, con el porqué
 
-- **I.7 (58,4 %), I.4 (88,9 %), I.8 (82,0 %) e I.6 (72,5 %)**: los cuatro borradores **siguen sin
-  reanudar**, con su cifra escrita y por el motivo ya medido —su hueco es de **material** y de criterio
-  sobre las claves, no de una corrida más—;
+- **I.7 (57,1 %), I.8 (81,2 %) e I.6 (71,4 %)**: los tres borradores que quedan, con su cifra escrita y
+  por el motivo **ahora medido por causa** (§7): **0 grupos sin comprobar** en los tres, así que todo
+  lo que les falta está comprobado y sin cubrir —eso es **material**— y ninguna corrida mueve su cifra
+  ni un punto;
 - **III.4** sigue **sin escribir**: su banco es de otra materia en un 40 %, ya medido;
 - **los 8 grupos de II.1, 5 de III.3, 10 de II.3, 19 de I.3 y 5 de IV.10** que ningún índice sitúa:
   están en la bandeja del propietario con su motivo, y son los que ponen el techo de cada tema;
@@ -2413,7 +2414,54 @@ quién. Es la comprobación que falta si «no se lava» tiene que ser una medida
 - **las 2 preguntas de IV.10 y las 2 de IV.9** por las que el modelo no contestó: sin cubrir y sin
   incidencia, porque el fallo es de la llamada y no del material.
 
-**Con estos cinco quedan publicados 20 de los 33 temas.** Están escritos 24: los 20 publicados más los
-cuatro borradores (I.7, I.4, I.8 e I.6). Los que faltan por escribir son los que la tabla pone por
-debajo de 180 claves utilizables —**II.2 (173), III.8 (169), II.5 (155)** y los siguientes— más los
-cuatro borradores y III.4.
+**Con estos cinco quedan publicados 20 de los 33 temas**, y con el cierre de I.4 del §7, **21**.
+
+### 7. I.4 se cierra el 14-oct a coste 0 $: publicado, y pasa por **0,2 puntos**
+
+**I.4 estaba escrito desde el 11-oct y quedó en borrador cuando medía 497/559 = 88,9 %.** No se ha
+escrito ni una línea nueva: lo que ha cambiado es **el denominador**, que se mueve solo con la
+cuarentena de claves del §1 (al cerrar f21 había **10** conjuntos en cuarentena; hoy hay **17**, y sus
+preguntas salen del cómputo). La puerta, medida hoy sobre lo guardado:
+
+| Puerta | Umbral | 11-oct | **14-oct** | Veredicto |
+|---|---|---|---|---|
+| Preguntas cubiertas (clave utilizable) | ≥ 90 % | 497/559 = 88,9 % | **489/542 = 90,2 %** | **PASA** |
+| Preguntas cubiertas (todas las claves) | — | 497/579 = 85,8 % | 489/555 = 88,1 % | — |
+| Párrafos casi repetidos | ≤ 5 % (el código) | 4,2 % | 4,2 % | PASA |
+| Extensión | ≤ 40 palabras × hecho | 27.787 de 42.240 | 27.787 de 42.240 | PASA |
+
+`--publicar --tema I.4` mide las dos puertas **sobre lo ya guardado** y archiva la versión si pasan:
+**0 llamadas · 0,0000 $**. **Es la sexta vez en la serie que una reparación de 0 $ evita volver a
+pagar una corrida, y la primera en que la reparación es simplemente volver a medir.**
+
+**Se publica, y el margen va dicho: pasa al 90,2 %, margen de 0,2 puntos.** Tres razones: cumple la
+regla del objetivo **tal como está escrita** (y aplicarle otra a este tema sería cambiarla a mitad de
+camino, después de veinte temas); **publicar no es aprobar para siempre** —sale con la marca «Versión
+generada · en revisión» y desde el panel se retira, así que es reversible—; y el margen queda escrito
+para que, si algún día vuelve a caer (una comprobación que entre en duda, o un conjunto que **salga**
+de la cuarentena y devuelva sus preguntas al cómputo), nadie piense que se coló.
+
+### 8. La medición por causa, que zanja la duda de los borradores
+
+`margen_por_causa.py` (0 $, en `F:\temp-opofuente\f24-scratch\`) separa las dos causas por las que una
+pregunta puede no estar cubierta: **sin comprobar** (lo arregla una corrida) y **comprobada y no
+cubierta** (eso es **material**, y no lo arregla ninguna corrida más). `margen_de_cierre.py` solo no
+las separaba, y es justo lo que decide entre cerrar un tema y dejarlo en borrador.
+
+| tema | hoy (clave utilizable) | **sin comprobar** | **comprobada y NO cubierta = MATERIAL** | ¿cruza el 90 % con una corrida? |
+|---|---|---|---|---|
+| **I.4** | 505/561 = 90,0 % (la puerta mide 489/542 = 90,2 %) | **0** | 56 | **CRUZA — ya está por encima** |
+| **I.8** | 410/505 = 81,2 % | **0** | **95** | **no** |
+| **I.6** | 177/248 = 71,4 % | **0** | **71** | no |
+| **I.7** | 300/525 = 57,1 % | **0** | **225** | no |
+
+**Los tres borradores lo están porque les falta material, no porque su corrida se cortara**: **0 grupos
+sin comprobar** en los tres. Eso zanja la duda que se arrastraba desde el §3 del encargo.
+**El contraste que lo demuestra, medido**: en **II.1** los 7 grupos sin comprobar **sí** tenían clave
+utilizable, y completarlos subió el tema de **96,6 % a 98,5 %** por **0,0577 $**. Un tema cortado se
+termina; un tema con hueco de material se queda en borrador con su cifra.
+
+**Con el cierre de I.4 quedan publicados 21 de los 33 temas.** Están escritos 24: los 21 publicados más
+los tres borradores (I.7, I.8 e I.6). Los que faltan por escribir son los que la tabla pone por debajo
+de 180 claves utilizables —**II.2 (173), III.8 (169), II.5 (155)** y los siguientes— más los tres
+borradores y III.4.
