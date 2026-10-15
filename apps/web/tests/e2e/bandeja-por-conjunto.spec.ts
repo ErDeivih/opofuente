@@ -373,8 +373,7 @@ test('E2E-F31 la bandeja se agrupa por conjunto y una acción en bloque la despa
       seccionOficial.getByRole('button', { name: /Aceptar todas las derivadas/i }),
     ).toHaveCount(0);
 
-    // --- 2. El conjunto no oficial es **una** fila, y despliega ----------------------------------
-    const lista = page.getByRole('list', { name: 'Avisos agrupados por banco' });
+    // --- 2. El banco no oficial es **una** fila, y despliega -------------------------------------
     const filaPrivada = page.locator(`li[data-conjunto="${conjuntos.privado}"]`);
     await expect(filaPrivada).toBeVisible();
     await expect(filaPrivada).toContainText('2 claves sospechosas');
@@ -386,14 +385,24 @@ test('E2E-F31 la bandeja se agrupa por conjunto y una acción en bloque la despa
     // --- 3. La acción en bloque, y su evento -----------------------------------------------------
     await filaPrivada.getByRole('button', { name: /Dejar fuera del estudio/i }).click();
     await expect(filaPrivada).toHaveCount(0, { timeout: 15_000 });
-    // Y el conjunto oficial **sigue ahí**: la acción era de un conjunto, no de la bandeja.
+    // Y el examen oficial **sigue ahí**: la acción era de un banco, no de la bandeja.
     await expect(page.locator(`li[data-conjunto="${conjuntos.oficial}"]`)).toHaveCount(1);
 
     const despachos = eventos('notes.incident_bulk_dispatched');
     expect(despachos).toHaveLength(2);
     expect(despachos.every((evento) => evento.actor === 'local')).toBe(true);
     expect(despachos.every((evento) => evento.despues?.includes('dejar_fuera'))).toBe(true);
-    await expect(lista).toBeVisible();
+
+    // Lo que queda donde estaba el banco es el **estado vacío**, no una lista vacía: la lista solo
+    // existe cuando tiene filas, así que exigir aquí que «la lista siga visible» era exigir dos cosas
+    // incompatibles —que la fila desaparezca y que la lista que la contenía siga ahí—. La pantalla
+    // tiene razón: despachado el único banco no oficial, lo correcto es «Ningún banco esperando».
+    await expect(page.getByText('Ningún banco esperando')).toBeVisible();
+    // Y lo oficial, que no se ha tocado, sigue en pie con su propia lista.
+    await expect(page.getByRole('region', { name: 'Exámenes oficiales' })).toBeVisible();
+    await expect(
+      page.getByRole('list', { name: 'Avisos de exámenes oficiales' }),
+    ).toBeVisible();
 
     // --- 4. Idempotencia: volver a pedirlo no duplica --------------------------------------------
     const antes = eventos('notes.incident_bulk_dispatched').length;

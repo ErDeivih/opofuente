@@ -61,3 +61,8 @@ Heap.*.heapsnapshot
 
 # Capturas de pantalla del guion de F0 (se generan, no se guardan).
 artifacts/screens/
+
+# Capturas de la puerta 18 de la bandeja por banco (F31): **se reescriben en cada corrida**, así que
+# rastrearlas deja el árbol sucio cada vez que alguien mide. Un artefacto que cambia en cada pasada no
+# es fuente; se generan donde toca —`artifacts/capturas-f31/`— y no viven en el control de versiones.
+artifacts/capturas-f31/
