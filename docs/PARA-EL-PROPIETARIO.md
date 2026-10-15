@@ -1056,3 +1056,11 @@ Lo que hay que saber, sin jerga:
 8. **Ojo con las cifras y con el orden**: mientras yo trabajaba, el bloque de contenido cerró el tema
    I.4 y su puerta de claves **sacó 6 conjuntos de la cuarentena** (de 21 a 15). Mis números son los
    del final, medidos después de su corrida, no los del principio.
+
+9. **Una clave derivada se sostiene en su cita, y con la cita se va.** Si un tema se vuelve a
+   escribir, sus apartados se rehacen y la frase que sostenía una letra puede desaparecer: esa
+   pregunta vuelve a quedarse fuera hasta que se derive otra vez. Ha pasado ya: la corrida dejó
+   **59** preguntas dentro a las 13:12 y a las 14:25 el bloque de contenido rehízo apartados de
+   baquedano, con lo que **6 de esas 59** (todas de baquedano) se han quedado sin su cita y han
+   vuelto a la cuarentena. **Quedan 53.** Volver a derivarlas cuesta céntimos (≈0,0006 $ por
+   pregunta): lo suyo es correr `--derivar` al cerrar cada tema, y eso lo decides tú.

@@ -3484,3 +3484,15 @@ dos colgando de `0038` habría dos cabezas y `alembic upgrade head` no sabría p
 - **La previsión de salida estaba mal** (§4) y el cliente del modelo **no lleva `max_tokens`**: el
   modelo devuelve ~1.020 tokens de salida por pregunta cuando solo se lee una letra. Recortarlo sería
   un cambio en un camino compartido con los apuntes y no se ha hecho aquí.
+- **Una clave derivada se va con su ancla, y eso se ha visto en vivo.** La fila guarda el **ancla**
+  que la sostiene (la cita verificada) y su clave foránea es `ON DELETE CASCADE`: si el tema se vuelve
+  a correr y el apartado se rehace, el ancla desaparece y **la clave derivada se va con ella** —que es
+  lo correcto: una letra sin la cita que la sostiene no es una clave derivada—. Medido: la corrida
+  escribió **59** claves a las 13:12 (local); a las 14:25 el bloque de contenido corrió **I.8**, se
+  rehicieron apartados de baquedano y **6 de sus 23 claves** se fueron con sus anclas (medido a las
+  16:00: **53 claves**, y las 6 preguntas se han quedado **sin ninguna ancla**). No es un fallo: es el
+  precio de que la clave dependa de su evidencia. **La consecuencia práctica hay que decirla**: un
+  tema que se reescriba puede devolver a la cuarentena preguntas que ya habían vuelto, y la forma de
+  que no pase es **volver a correr `--derivar` al cerrar cada tema** (cuesta ~0,0006 $ por pregunta y
+  salta las ya derivadas: con los 1.283 candidatos de hoy, ≈0,8 $). Queda como recomendación, no como
+  puerta automática: hacerlo puerta es una decisión del propietario.
