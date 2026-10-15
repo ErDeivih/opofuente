@@ -35,6 +35,9 @@ const TEMA = 'IV.1';
 const ANCLA = 'modelo-tcp-ip';
 const TITULO_APARTADO = 'El modelo TCP/IP y sus cuatro capas';
 const ENUNCIADO = 'El modelo TCP/IP tiene cuatro capas.';
+//: La segunda pregunta del banco, distinta de la primera: las dos incidencias de la prueba tienen
+//: que caer en **preguntas distintas** o la clave única las colapsa en una sola fila.
+const SEGUNDO_ENUNCIADO = 'El modelo OSI tiene siete capas.';
 const DETALLE = 'la clave contradice los apuntes: los apuntes dicen que el puerto es 636';
 const FRASE = 'el puerto de LDAPS es el 636';
 
@@ -137,32 +140,40 @@ function marcarOficial(setId: string): void {
 function retirarLoDeLaPrueba(setIds: readonly string[]): void {
   const db = new DatabaseSync(BASE);
   try {
-    const huecos = setIds.map(() => '?').join(', ');
-    const preguntas = db
-      .prepare(`SELECT id FROM question_versions WHERE question_set_id IN (${huecos})`)
-      .all(...setIds) as { id: string }[];
-    const ids = preguntas.map((fila) => fila.id);
+    // Sin conjuntos no hay nada que borrar de ellos: y una sentencia `IN ()` no es SQL válido, así
+    // que este camino —el de una siembra que se cae antes de crear el primero— se sale por aquí en
+    // vez de reventar dentro del `finally`, que es donde más duele.
+    if (setIds.length > 0) {
+      const huecos = setIds.map(() => '?').join(', ');
+      const preguntas = db
+        .prepare(`SELECT id FROM question_versions WHERE question_set_id IN (${huecos})`)
+        .all(...setIds) as { id: string }[];
+      const ids = preguntas.map((fila) => fila.id);
 
-    if (ids.length > 0) {
-      const marcaPreguntas = ids.map(() => '?').join(', ');
-      db.prepare(
-        `DELETE FROM curriculum_mappings WHERE subject_type = 'question_version' ` +
-          `AND subject_id IN (${marcaPreguntas})`,
-      ).run(...ids);
-      db.prepare(`DELETE FROM notes_incidents WHERE question_version_id IN (${marcaPreguntas})`).run(
-        ...ids,
+      if (ids.length > 0) {
+        const marcaPreguntas = ids.map(() => '?').join(', ');
+        db.prepare(
+          `DELETE FROM curriculum_mappings WHERE subject_type = 'question_version' ` +
+            `AND subject_id IN (${marcaPreguntas})`,
+        ).run(...ids);
+        db.prepare(
+          `DELETE FROM notes_incidents WHERE question_version_id IN (${marcaPreguntas})`,
+        ).run(...ids);
+        db.prepare(
+          `DELETE FROM answer_key_entries WHERE question_version_id IN (${marcaPreguntas})`,
+        ).run(...ids);
+        db.prepare(`DELETE FROM option_versions WHERE question_version_id IN (${marcaPreguntas})`).run(
+          ...ids,
+        );
+        db.prepare(`DELETE FROM question_versions WHERE id IN (${marcaPreguntas})`).run(...ids);
+      }
+
+      db.prepare(`DELETE FROM answer_key_versions WHERE question_set_id IN (${huecos})`).run(
+        ...setIds,
       );
-      db.prepare(`DELETE FROM answer_key_entries WHERE question_version_id IN (${marcaPreguntas})`).run(
-        ...ids,
-      );
-      db.prepare(`DELETE FROM option_versions WHERE question_version_id IN (${marcaPreguntas})`).run(
-        ...ids,
-      );
-      db.prepare(`DELETE FROM question_versions WHERE id IN (${marcaPreguntas})`).run(...ids);
+      db.prepare(`DELETE FROM question_sets WHERE id IN (${huecos})`).run(...setIds);
     }
 
-    db.prepare(`DELETE FROM answer_key_versions WHERE question_set_id IN (${huecos})`).run(...setIds);
-    db.prepare(`DELETE FROM question_sets WHERE id IN (${huecos})`).run(...setIds);
     db.prepare('DELETE FROM topic_note_sections WHERE id = ?').run('apartado-de-la-bandeja-f31');
   } finally {
     db.close();
@@ -209,7 +220,7 @@ async function nodoDelTema(request: APIRequestContext): Promise<NodoPrograma> {
   return tema;
 }
 
-/** Un banco con dos preguntas catalogadas. Devuelve su identificador y sus preguntas. */
+/** Un banco con **dos** preguntas catalogadas. Devuelve su identificador y sus preguntas. */
 async function sembrarBanco(
   request: APIRequestContext,
   tema: NodoPrograma,
@@ -233,11 +244,26 @@ async function sembrarBanco(
     })
   ).json()) as { id: string };
 
+  // **Dos** preguntas y no una: la prueba necesita dos incidencias en la misma fila, y la clave
+  // única de `notes_incidents` es `(question_version_id, curriculum_node_id)`, así que dos
+  // incidencias sobre la misma pregunta se quedan en una y la fila dice «1 clave sospechosa» donde
+  // la prueba esperaba dos. El comentario de esta función decía «dos preguntas» desde el principio;
+  // ahora las hace.
   await request.post(`${API}/question-sets/${conjunto.id}/parse`, {
     headers: { Origin: ORIGEN, 'Content-Type': 'application/json' },
     data: {
       kind: 'questions',
-      text: [`1. ${ENUNCIADO}`, 'a) Verdadero', 'b) Falso', 'Respuesta correcta: a', ''].join('\n'),
+      text: [
+        `1. ${ENUNCIADO}`,
+        'a) Verdadero',
+        'b) Falso',
+        'Respuesta correcta: a',
+        `2. ${SEGUNDO_ENUNCIADO}`,
+        'a) Verdadero',
+        'b) Falso',
+        'Respuesta correcta: a',
+        '',
+      ].join('\n'),
     },
   });
   const claves = (await (
@@ -259,8 +285,10 @@ async function sembrarBanco(
     });
     identificadores.push(pregunta.id);
   }
-  if (identificadores.length === 0) {
-    throw new Error('el banco de la prueba no trae ninguna pregunta');
+  if (identificadores.length < 2) {
+    throw new Error(
+      `el banco de la prueba tiene que traer dos preguntas y trae ${String(identificadores.length)}`,
+    );
   }
   return { setId: conjunto.id, preguntas: identificadores };
 }
@@ -270,21 +298,31 @@ async function sembrarBanco(
  *
  * Deja **dos** conjuntos a propósito: es lo que permite comprobar de una vez que lo oficial va en su
  * sección sin botones y que lo demás se decide en bloque.
+ *
+ * `registrados` se rellena **según se crea cada conjunto**, no al final: si la siembra se cae a
+ * mitad —lo hizo, con `TypeError: Provided value cannot be bound to SQLite parameter 3`—, el que ya
+ * estaba creado tiene que poder retirarse igual. Una prueba que ensucia cuando falla es peor que una
+ * que falla: sus restos aparecieron tres ficheros más abajo, en `incidencias.spec.ts` y en el
+ * diagnóstico de `study.spec.ts`.
  */
 async function prepararLaBandeja(
   request: APIRequestContext,
+  registrados: string[],
 ): Promise<{ privado: string; oficial: string; total: number }> {
   const tema = await nodoDelTema(request);
   const privado = await sembrarBanco(request, tema, `Banco de la bandeja f31 ${String(Date.now())}`);
+  registrados.push(privado.setId);
   const oficial = await sembrarBanco(
     request,
     tema,
     `Examen oficial de la bandeja f31 ${String(Date.now())}`,
   );
+  registrados.push(oficial.setId);
 
   sembrarApartado(tema.id);
-  // Dos incidencias del banco privado y una del examen oficial: lo justo para que las dos secciones
-  // existan y para que la acción en bloque cierre **un** conjunto y no el otro.
+  // Dos incidencias del banco privado —en **dos preguntas distintas**— y una del examen oficial: lo
+  // justo para que las dos secciones existan y para que la acción en bloque cierre **un** conjunto y
+  // no el otro.
   sembrarIncidencias(tema.id, [
     privado.preguntas[0]!,
     privado.preguntas[1]!,
@@ -313,9 +351,13 @@ test('E2E-F31 la bandeja se agrupa por conjunto y una acción en bloque la despa
   request,
 }) => {
   const errores = vigilarConsola(page);
-  const conjuntos = await prepararLaBandeja(request);
+  // Los conjuntos que la siembra vaya creando, para poder retirarlos **aunque la siembra se caiga**:
+  // el `try` envuelve también la preparación. Antes no lo hacía, la siembra murió a mitad y sus dos
+  // bancos se quedaron en `.e2e-data` contaminando `incidencias.spec.ts` y `study.spec.ts`.
+  const creados: string[] = [];
 
   try {
+    const conjuntos = await prepararLaBandeja(request, creados);
     await page.goto('/admin/incidencias');
     await expect(
       page.getByRole('heading', { level: 2, name: 'Avisos agrupados por banco' }),
@@ -366,7 +408,7 @@ test('E2E-F31 la bandeja se agrupa por conjunto y una acción en bloque la despa
     expect(errores, `errores de consola: ${errores.join(' | ')}`).toEqual([]);
     expect(conjuntos.total).toBe(3);
   } finally {
-    retirarLoDeLaPrueba([conjuntos.privado, conjuntos.oficial]);
+    retirarLoDeLaPrueba(creados);
   }
 });
 
@@ -386,9 +428,10 @@ for (const viewport of [
     request,
   }) => {
     const errores = vigilarConsola(page);
-    const conjuntos = await prepararLaBandeja(request);
+    const creados: string[] = [];
 
     try {
+      const conjuntos = await prepararLaBandeja(request, creados);
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
       await page.goto('/admin/incidencias');
       await expect(
@@ -433,7 +476,7 @@ for (const viewport of [
 
       expect(errores, `errores de consola: ${errores.join(' | ')}`).toEqual([]);
     } finally {
-      retirarLoDeLaPrueba([conjuntos.privado, conjuntos.oficial]);
+      retirarLoDeLaPrueba(creados);
     }
   });
 }
