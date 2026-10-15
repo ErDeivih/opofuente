@@ -615,3 +615,59 @@ un método auditado, `topic_facts.reassign_epigraph`, con actor `f10:epigrafes`.
 **Así que D4 no tiene nada que arreglar y el método no se crea**, porque **no se crea una ruta para
 arreglar lo que no está roto**. El «30» era de hace semanas y la cifra medida es la que manda. **Es una
 respuesta, no un pendiente.**
+
+### F28k · **I.8 reanudado: sube a 87,3 % y se queda en borrador con su cifra** · y una incoherencia del motor (15-oct-2026)
+
+**El §5.3 del orden nuevo pedía reanudar los tres borradores «desde lo guardado con el medidor nuevo».
+El medidor nuevo cambia el diagnóstico de dos de ellos**, y eso corrige lo que se había dicho antes con
+el viejo:
+
+| Tema | Medidor **viejo** | Medidor **nuevo** | Comprobadas | Sin comprobar |
+|---|---|---|---|---|
+| **I.8** | 81,2 % | **404/490 = 82,4 %** | 357 de 405 | **48 grupos** |
+| **I.7** | 57,1 % | **291/495 = 58,8 %** | 257 de 361 | **104 grupos** |
+| **I.6** | 71,4 % | **171/240 = 71,2 %** | **168 de 168** | 0 — el hueco es **material** |
+
+**La conclusión anterior —«los tres son material, ninguna corrida los mueve»— valía para el medidor
+viejo y no vale para el nuevo**: I.8 e I.7 **sí tenían comprobaciones pendientes** y se pueden terminar.
+**I.6 no se corre**: está entero y su hueco es material, así que se queda en borrador con su cifra.
+
+**I.8, reanudado** (405 de 405 grupos comprobados):
+
+| Qué | Valor |
+|---|---|
+| Cobertura antes | 404/490 = **82,4 %** |
+| **Cobertura después** | **426/488 = 87,3 %** sobre clave utilizable · 426/516 = 82,6 % sobre todas |
+| Veredicto | **NO PASA** el 90 % — **se queda en borrador con su cifra** |
+| Forma | **NO PASA**, y se arregló lo que se pudo a 0 $ (ver abajo) |
+| Índice | PASA · 18 apartados · 603 hechos · 4 grupos y 33 hechos sin materia |
+| Bandeja | **75**: 23 `norma_cambiada`, 19 `huecos sin material`, 18 `clave_sospechosa`, 15 `pregunta_ambigua` |
+| Llamadas · coste | **139 (0 fallidas) · 0,8031 $** (previsión 0,36–0,76 $) |
+
+**Subió 4,9 puntos y no le llegó**: de 87,3 % a 90 % faltan **13 preguntas cubiertas**. **No se fuerza**:
+se queda **en borrador con su cifra**, como manda el §5.
+
+### F28l · **Una incoherencia del motor que I.8 destapó**: la marca que la puerta castiga y el limpiador no ve
+
+`--limpiar-forma` arregló los **2 encabezados repetidos** de I.8 (12 apartados tocados, 0 $) pero dejó
+**una tabla sin cabecera utilizable**: en `nti-datos-y-comunicaciones`, «fila con 3 celdas y una cabecera
+de 2 columnas». Mirando la tabla, **el «tercer elemento» es un comentario del propio motor**:
+`<!-- revisar: sin material de apoyo -->`, pegado al final de la fila.
+
+**Las dos caras**:
+
+- la comprobación **3** de la puerta de forma (tablas sin cabecera) **cuenta el comentario como una
+  celda más**, así que la fila tiene una columna que nadie ha titulado y **el apartado falla**;
+- la comprobación **2** llama **andamios** a esas marcas y existe `--limpiar-andamios` para quitarlas,
+  pero **sobre I.8 dijo «0 marcas»: no reconoce esta forma**.
+
+**O sea: el motor escribe la marca, la puerta la castiga y el limpiador no la ve.** Medido en toda la
+base: **1.758 marcas `<!-- … -->` en 317 apartados de 29 temas**, y **solo 16 están dentro de una fila de
+tabla** (13 en I.1, 1 en I.7, 1 en III.1, 1 en II.3 y 1 en I.8). De esos cinco temas, **cuatro pasan la
+forma hoy** (I.1, I.7, III.1 y II.3) y **solo I.8 falla** por la suya.
+
+**El arreglo es de motor, no de datos**, y por eso **no se toca la base**: si el motor sigue escribiendo
+la marca dentro de la fila, repararla a mano en cinco temas **la volvería a romper la próxima corrida**.
+Las dos salidas posibles, para el bloque que lo coja: **que la puerta ignore un comentario HTML al contar
+las celdas**, o **que `--limpiar-andamios` reconozca esta forma y la saque de la tabla**. Con el caso de
+I.8 como prueba (una tabla de 2 columnas con la marca al final de una fila).
