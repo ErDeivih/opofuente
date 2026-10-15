@@ -31,6 +31,22 @@ from opofuente.infrastructure.migrations import alembic_config, run_migrations, 
 #: desaparecer al hacerlo. El orden es el de la cadena, de la más nueva a la más antigua.
 ESCALONES: tuple[tuple[str, str, tuple[str, ...]], ...] = (
     (
+        # `0039` crea las seis tablas de la plataforma desplegable (S28: cuentas, sesiones,
+        # recuperación, freno de intentos, consentimiento y contadores) y su vuelta atrás se las
+        # lleva: al bajar de este escalón **desaparecen las seis**, y es lo que se mide aquí. Que su
+        # forma sea la declarada lo comprueba `test_migrations_0039.py`.
+        "0039_cuentas_y_consentimiento",
+        "0038_revision_de_apuntes",
+        (
+            "accounts",
+            "account_sessions",
+            "password_resets",
+            "login_throttles",
+            "consent_records",
+            "analytics_events",
+        ),
+    ),
+    (
         # `0038` crea la tabla de la revisión de los apuntes del propietario (F24) y su vuelta atrás
         # se la lleva: al bajar de este escalón la tabla **desaparece**, y es lo que se mide aquí.
         "0038_revision_de_apuntes",
