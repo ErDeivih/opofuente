@@ -373,6 +373,248 @@ prueba que falla antes y las 18 puertas.
 | **14-oct-2026** | **No se escribe ni una fila en la base del propietario**: toda la medición es de solo lectura (`servicio.medir` sobre `F:\OpoFuente\datos`, con el modelo sustituido por uno que se niega a usarse) | Es un bloque de motor y de medida: lo que cambia es qué cuenta la puerta, no lo que hay escrito. Los apartados que pierden hechos se rehacen **la próxima vez que se corra el tema** (la regla que ya existía), y eso cuesta dinero: lo decide quien corra, no este bloque | Correr los temas afectados (I.2, I.3 e I.4 tienen cajones) reescribe sus apartados y vuelve a comprobar con el reparto nuevo |
 | **14-oct-2026** | **La caída de la puerta 18 se arregla en la semilla de la prueba, no en la expectativa.** El spec del panel de apuntes (`apuntes-revision.spec.ts`) sembraba su apartado con la clave `powershell-y-cmdlet`, que **no es una materia del catálogo de IV.1**; se cambia a la clave real, `administracion-de-windows`, que es donde el índice de IV.1 manda esa pregunta (`powershell\|cmdlet\|…`). La expectativa (`1/1 = 100.0 %`, «Aprobarlo la publica») **no se toca** | El escenario solo pasaba **por el respaldo que este bloque quita**: la comprobación se anclaba al «primer apartado del epígrafe» y daba igual que la clave del apartado existiera o no. Con la puerta nueva, una clave que no es materia del tema **no ancla nada** —y es lo correcto: en la base real la clave de un apartado la pone `plan_de` desde el catálogo, así que el escenario era irreal—. Se corrige la semilla (que es lo que estaba mal), no la cifra que se espera | Volver la clave vieja (la prueba vuelve a medir 0 de 1 y a caer) |
 | **14-oct-2026** | **Consecuencia dicha del arranque: si a una materia del catálogo se le cambia la clave, el apartado guardado deja de anclar** hasta que el tema se vuelva a correr | El ancla sale del **índice de hoy**, no de la clave guardada: es lo que hace que un ancla ajena no cuente, y tiene esta otra cara. Pasó ya en esta serie que un catálogo se toca entre corridas (títulos de II.3, patrones muertos de siete temas): ninguno cambió una **clave**, y por eso no ha hecho daño todavía. La reparación es la que ya existe: al volver a correr, `plan_de` deja el apartado viejo en `sobran` y el texto se rehace | Volver a leer `section_key` en el ancla (vuelve el lavado que este bloque quita) |
+| **15-oct-2026** | **D11: la entrega antigua `s14-promover-sin-guardar` pasa las 18 puertas y entra.** Medida sobre **`4f7a1f0`** (= `main@4290817` + `s14`): **18/18**, **una sola pasada**, **54:01 minutos**, **0 códigos nativos y por tanto 0 reintentos** | Es literalmente lo que manda el goal: «pásala por las puertas **una vez**; si da 18/18, fusiónala; si no, anótala en `DEBT.md`». Dio 18/18, así que se fusiona y no se toca. No se relajó ninguna configuración de las puertas para que pasaran: el entregable entra tal cual, con su `eslint-disable` motivado y su enlace a la dirección antigua `/biblioteca` (que redirige), porque reescribirlo sería cambiar lo medido | `git revert -m 1 c6f9184` y borrar la rama |
+| **15-oct-2026** | **La fusión con `main` se resuelve SUMANDO, y se verifica contando**: la comprobación es `Counter(merge) == Counter(main) + Counter(s14) − Counter(base)` **fichero a fichero**, además de ficheros, líneas y líneas de contenido | No es ceremonia: `main` también había tocado `apps/web/src/api/queries.ts` y git auto-fusionó esa parte. Contar es lo que separa «no parece que se perdiera nada» de «no se perdió nada»: **843 ficheros, 0 discrepancias**; **0 marcadores** de conflicto; **234 filas de decisión** y **18 entradas del propietario** antes y después, con los dos documentos **byte-idénticos** | — |
+| **15-oct-2026** | **Se dice contra qué `main` se midió, y esa cifra NO se hereda al commit que entró.** La batería corrió sobre `main@4290817`; cuando terminó —54 minutos después— `main` ya llevaba el trabajo del bloque de apuntes (`195cbb8`, 918 líneas en `topic_notes_service.py`, `topic_index.py`, sus dos pruebas y 9 líneas de `apuntes-revision.spec.ts`). Lo que entró es **`c6f9184` = `195cbb8` + `s14`** | Las dos afirmaciones son verdad y hay que poder distinguirlas: **la entrega `s14` está medida** (sus 9 ficheros son byte-idénticos en los dos árboles, comprobado con `git hash-object`) y **la composición `195cbb8 + s14` no la midió esta batería**, la midió el bloque de apuntes en su rama. Escribir «18/18» a secas sobre `c6f9184` sería heredar una cifra, que es lo que el §1.4 prohíbe. Se deja escrito y se ofrece la re-medición | Volver a correr las 18 sobre `c6f9184` (una pasada, ~54 min con la máquina cargada) y entonces sí anotar la cifra a nombre de ese commit |
+| **15-oct-2026** | **Las puertas se corren con Windows PowerShell 5.1**, no con `pwsh` | `pwsh` **no está instalado en esta máquina** (no hay ningún `pwsh.exe` en disco) y `dev.ps1` ya lo dejó escrito («aquí no lo está»): el intérprete de la casa en este equipo es 5.1. Su `Test-OpoFuenteExitCodeDetection` comprobó, **antes de la primera puerta**, que este intérprete ve los códigos de salida (código 3 visto), que es el fallo que el 1-oct hizo imprimir «OK» a comandos que fallaban | Instalar PowerShell 7 y volver a correr |
+| **15-oct-2026** | **No se toca ni un fichero sin rastrear de otro agente.** La fusión falló primero con `Merge with strategy ort failed` sin listar conflicto: la causa era que **cinco ficheros del entregable existían sin rastrear en `main`** (copias byte-idénticas), y git se niega a pisarlos | El encargo lo dice y es correcto: esos 45 ficheros sin rastrear no son míos. Se registraron los cinco (commit `1aa0f87`) **sin cambiar un byte** y la fusión entró limpia. Yo no toqué el árbol `opofuente-main` | Deshacer `1aa0f87` (los cinco vuelven a estar sin rastrear) |
+
+### F28a · **La reextracción de las plantillas recortadas necesita una ruta nueva** (15-oct-2026)
+
+**Lo primero del orden nuevo (`SIGUIENTE-TANDA-CIERRE-DEL-OBJETIVO-2026-10.md` §3, `OBJETIVO-VIVO` A3): devolver
+los dos exámenes oficiales reextrayendo la evidencia recortada de la biblioteca.** Se ha mirado si eso se puede
+hacer por una ruta auditada, y **la respuesta es que no: hace falta construirla**. Se dice con lo medido, y no
+se fuerza ni se hace con SQL.
+
+**La ruta no existe**, comprobado sobre el código:
+
+| Qué se buscó | Qué hay |
+|---|---|
+| Un comando que vuelva a trocear la evidencia | **Ninguno**: las trece herramientas de `tools/` reparan preguntas, incidencias, procedencia o clasificación, no evidencia |
+| Quién trocea la evidencia | `evidence_cuts` (`domain/evidence.py`), usada **solo** por `document_repository._evidence`, a la que se llega por **`promote_artifact`**, o sea **en la ingesta** |
+| Un método para redibujar la estructura de una versión ya guardada | **No lo hay**: la API pública del repositorio de documentos es `promote_artifact`, `accept_version`, `withdraw_version`, `reinstate_version`, `list_*`, `get_*`, `version_detail`, `version_text`, `version_artifact`, `document_diff` y las colecciones |
+| El almacén de donde saldría el texto | **Está**: `extracted` tiene **11.778 ficheros (0,63 GB)** y **las 2.031 versiones afectadas conservan su representación de origen** |
+
+**Y el alcance, vuelto a medir hoy** (la cifra del 13-oct —3.474 versiones y 1,71 M de caracteres— **no coincide
+con la de hoy y manda la de hoy**, con la definición dicha):
+
+| Qué | Cifra de hoy |
+|---|---|
+| Secciones con evidencia en la biblioteca | **700.759** |
+| De ellas, troceadas en varias evidencias (lo que hace el código nuevo) | **0** — **toda la biblioteca se construyó con el código viejo** |
+| Secciones **recortadas** (su evidencia llega al tope del fallo, 1.198–1.200, y la sección es más larga) | **40.396** |
+| Versiones de documento afectadas | **2.031** |
+| Caracteres que no se pueden citar | **64.723.281** (64,7 M) |
+
+**La definición, para que la cifra sea comprobable**: la cobertura de una sección es
+`max(char_end) − min(char_start)` sobre **todas** sus evidencias; está recortada cuando esa cobertura llega al
+tope **y** la sección es más larga. Una sección partida en tres trozos que la cubren entera **no** está
+recortada. La primera medida que hice comparaba la evidencia **más larga** con la sección y marcaba como
+recortada cualquier sección bien troceada; se corrigió, y por eso la cifra de arriba es la buena.
+
+**Los dos exámenes del goal, medidos**: de los **19 conjuntos oficiales**, **doce no tienen ni una comprobación
+de clave** —entre ellos **TAI ingreso libre 2022** y **TAI ingreso libre 2025 extraordinario**, que son los dos
+que el goal nombra—; los de 2025 modelo A y B y promoción interna 2025 tienen 43, 47, 26 y 29 comprobadas y
+**cero discrepantes**.
+
+**Qué haría falta, para quien lo coja** (es **motor**, no contenido, y por tanto lleva sus 18 puertas y su
+prueba que falla antes): un método en el repositorio de documentos —del estilo `rederive_evidence(version_id)`—
+que, **para una versión ya guardada**, vuelva a leer su representación, vuelva a trocear con `evidence_cuts` las
+secciones recortadas, **sustituya** sus evidencias y **vuelva a enlazar** `question_evidence`, con su evento de
+auditoría. El patrón de la casa ya existe: `tools/reparar_preguntas.py` hace exactamente eso —ensaño por defecto,
+`--aplicar`, copia verificada antes, idempotente— para otro objeto.
+
+**No se ha tocado nada**: ni la base, ni el motor, ni la biblioteca. Queda escrito con su alcance y su causa para
+que el bloque que lo coja no tenga que volver a medirlo.
+
+## F28b · I.3 e I.4 con el medidor nuevo: **ninguno de los dos pasa**, y la cifra vieja queda corregida (15-oct-2026)
+
+El §5.1 del orden nuevo pedía **volver a correr I.3 e I.4 con el medidor nuevo** y el arreglo de
+`repartir_hechos`, «solo los grupos afectados; es barato», y quitarles la marca de «por debajo del
+listón» **si pasaban del 90 %**. Se han corrido los dos. **Ninguno pasa, y el medidor nuevo corrige a
+la baja las dos cifras que estaban escritas.** Las dos corridas se hicieron con `--sin-version` para no
+tocar la versión archivada de ningún tema.
+
+| Tema | Lo que decía el medidor viejo | **Lo que dice el nuevo** | Corrida de hoy | Veredicto |
+|---|---|---|---|---|
+| **I.3** | 168/181 = **92,8 %** (publicado) | **152/181 = 84,0 %** | 68 llamadas · **0,2273 $** | **NO PASA** — sigue publicado con su cifra |
+| **I.4** | 489/542 = **90,2 %** (publicado, «margen de 0,2 puntos») | **491/551 = 89,1 %** | 137 llamadas · **0,8335 $** | **NO PASA** — sigue publicado con su cifra |
+
+**Las dos se quedan como están y con su cifra a la vista**, que es lo que manda el §4 del orden nuevo:
+«ningún tema publicado se retira automáticamente; si alguno baja del 90 %, se queda con su cifra».
+**Comprobado que no se retiró ninguna**: I.3 tiene su versión archivada y I.4 la suya, y el total sigue
+en **25 publicados**.
+
+**Y hay un detalle que hay que decir porque si no parece un error**: la corrida de I.4 **terminó
+diciendo 487/540 = 90,2 %** —pasaba— y `--publicar`, **dos minutos después, midió 491/551 = 89,1 %**.
+No es una contradicción del motor: **el denominador se movió solo** entre las dos medidas (las
+preguntas con clave utilizable pasaron de 540 a 551), porque **la base la están tocando otros bloques**
+y la puerta de claves se recalcula en cada medida. La cifra que vale es **la de la última medida**, y
+por eso I.4 se queda en 89,1 % y **no** se le quita la marca. Anotado para que nadie lo lea como un
+fallo de la corrida.
+
+**Lo que esto deja claro, y es lo importante**: el medidor nuevo **no sube temas, los mide de verdad**.
+Las dos cifras viejas —92,8 % y 90,2 %— se midieron cuando la cobertura contaba de más (una sección
+cubierta valía por todo su texto y un hecho sin materia se sentaba en el apartado de su pregunta). Con
+la cuenta buena, **I.3 está en 84,0 % e I.4 en 89,1 %**: los dos siguen visibles para el alumno, con su
+cifra, y **no se fuerza ninguno** para llegar al listón.
+
+**Coste de las dos corridas: 1,0608 $**, dentro de lo previsto (0,13–0,32 $ para I.3 y 0,44–0,90 $ para
+I.4). Es el precio de que las dos cifras que hay en los documentos sean las de verdad.
+
+### F28d · **La reclasificación de III.4 a III.2, hecha por la ruta auditada** (15-oct-2026)
+
+El §5.2 del orden nuevo: el banco de III.4 tiene preguntas de otra materia, se reclasifican **a su tema
+por la ruta auditada** —las dudosas, a la cola— y **después** se escribe III.4 con lo que quede.
+
+**Copia verificada antes** (`20261015-131613-e55348.zip`, revisión **`0039_claves_derivadas`**,
+2.746.548.224 B, `verify_archive` sin problemas, CRC de las 2 entradas correcto, `extracted_equals_snapshot`,
+`integrity_check` ok, `quick_check` ok y `foreign_key_check` 0 filas). **Y se hizo con la base sin nadie
+escribiendo**: cero candados de corrida y última escritura 31 minutos antes.
+
+**La ruta es la que ya existe y pasó sus puertas**: `QuestionService.assign_topic` —la misma que usan la
+clasificación por lotes y la ficha de pregunta del panel—, con actor **`f28:reclasificacion-iii4`**, su
+motivo y su evento de auditoría. **Ni un `UPDATE` suelto.** El guion es de `f25-scratch`
+(`reclasificar_iii4_a_iii2.py`), **ensayo por defecto y `--aplicar` para escribir**, y **no añade ningún
+fichero a `apps/`**: es una migración de datos de una vez, no una capacidad nueva del producto.
+
+**La frontera entre los dos temas**, por regla escrita y discutible (`frontera_iii4_iii2.py`): es de
+**III.2** lo que habla de lenguajes y su clasificación, tipado, operadores, estructuras de control,
+recursividad, funciones y parámetros, vectores y registros; es de **III.4** lo de clase, objeto,
+herencia, polimorfismo, sobrecarga, encapsulación, cohesión y acoplamiento, los lenguajes **en cuanto a
+su orientación a objetos**, los patrones y UML; **si salen los dos, manda lo específico** (la sobrecarga
+**de operadores** es de III.4; el resultado de `5<<2` es de III.2); y **lo que no cae claramente en
+ninguno va a la cola**.
+
+| | Preguntas | Qué se hizo |
+|---|---|---|
+| Se quedan en **III.4** | **275** | nada |
+| Se van a **III.2** como decisión (`accepted`) | **92** | asignadas con su motivo |
+| A **III.2** como propuesta (`provisional`, **la cola**) | **67** | propuestas, no decididas |
+| **Total movido** | **159** | con `retire_others`, que retira el mapeo viejo en la misma operación |
+
+**El «40 %» del documento era una estimación y la cifra medida manda**: lo que no es claramente de III.4
+es el **36,6 %** (92 + 67). Las 67 dudosas van a la cola en vez de repartirlas a ojo: **no se inventa una
+frontera para llegar antes.**
+
+**Idempotencia probada, no supuesta** (era una de las tres condiciones): se aplicó **dos veces**. La
+segunda pasada encontró **0 que mover**, escribió **0 asignaciones** y no añadió ni un mapeo.
+
+**Y el antes/después de III.2, medido sobre la copia y sobre la base viva**, que es lo que pedía la
+tercera condición — **su banco y su valor cambian, y se sabe cuánto**:
+
+| Tema | Antes (copia verificada) | **Después (base viva)** | Cambio |
+|---|---|---|---|
+| **III.2** | 142 grupos · 147 preguntas · **142/147 con clave utilizable** | **294 grupos · 299 preguntas · 294/299** | **+152 grupos y +152 preguntas** |
+| **III.4** | 400 grupos · 413 preguntas · 400/413 | **248 grupos · 261 preguntas · 248/261** | **−152 grupos y −152 preguntas** |
+
+**De 159 asignaciones movidas salen 152 grupos**: los 7 que faltan son preguntas cuyo contenido ya estaba
+en el destino (el motor agrupa por firma, y dos enunciados iguales son un solo trabajo).
+
+**Lo que esto deja dicho para cuando le toque a III.2**: **su banco se ha doblado** (142 → 294 grupos) y
+**su valor también**, así que la fila de la tabla de valor que lo pone en 140 claves utilizables **ya no
+vale** y hay que volver a medirla antes de decidir cuándo se escribe. Las **67 propuestas de la cola**
+esperan la decisión del propietario y **no cuentan** en el diagnóstico mientras estén así.
+
+### F28g · **III.4, escrito después de arreglar su banco, y publicado al 98,8 %** (15-oct-2026)
+
+| Qué | Valor |
+|---|---|
+| Cobertura (**clave utilizable**) | **244/247 = 98,8 % PASA** · última medida **243/246 = 98,8 %** |
+| Cobertura (todas las claves) | 244/260 = 93,8 % · última 243/257 = 94,6 % |
+| Techo medido antes de pagar | 254/260 = **97,7 %** |
+| Hechos · apartados | **530 guardados** → 363 en el plan · **15** |
+| Forma · índice | **PASA** 0,0 % repetidos · PASA con 2 grupos y 30 hechos sin materia |
+| Bandeja | **16**: 13 `norma_cambiada`, 2 `pregunta_ambigua`, 1 `clave_sospechosa` |
+| Llamadas · coste | **83 (0 fallidas) · 0,2437 $** (previsión 0,36–0,63 $) |
+
+**Y se dan las dos medidas, que es la regla de hoy**: la de la corrida (**244/247**) y **la última**
+(**243/246**), dos minutos después y sobre la misma base. El denominador se mueve solo mientras otros
+bloques escriben; **vale la última** y las dos coinciden en el 98,8 %.
+
+**Dos arreglos de 0 $ que valieron diez puntos de techo**, y los dos son lecciones de forma:
+
+1. **Faltaba un apartado entero**: el epígrafe oficial **III.4.3 es «Ventajas e inconvenientes»** y el
+   catálogo no lo cubría, así que las preguntas de «¿cuál **NO** es una ventaja de la POO?» no tenían
+   dónde caer. **Fallo de lectura del enunciado, no de los patrones.**
+2. **Un patrón que no casaba por la forma de la palabra**: los enunciados dicen «orientad**a** a
+   objetos» y el patrón buscaba «orientaci**ón** a objetos». **Es el mismo error de forma que la barra
+   de `/etc/passwd` y el punto de `802.11`: tres veces el mismo, y las tres cazadas a 0 $.**
+
+### F28h · **Una alerta que hay que decir: I.4 aparece sin versión archivada** (15-oct-2026)
+
+**El hecho, medido**: `I.4` tiene **14 apartados escritos y 0 versiones archivadas**, así que **no está
+visible como publicado**. `I.3` sí conserva la suya, y `III.4` acaba de archivarla.
+
+**Lo que sí se puede afirmar, porque está comparado**:
+
+- **La copia verificada de las 13:16 ya tenía a I.4 con cero versiones.** Se comparó **tema por tema**
+  la copia con la base viva y **el único cambio es III.4** (0 → 1 versión, 0 → 15 apartados): **ningún
+  otro tema ha perdido nada** en ese tramo.
+- **No he ejecutado ningún comando que borre versiones**: lo mío sobre I.4 fue una corrida con
+  `--sin-version` (que por definición no toca la versión archivada) y un `--publicar` que **midió NO
+  PASA**. El `--publicar` dice en su ayuda que si la puerta no pasa «la retira con su motivo», así que
+  **es el candidato más probable**, pero **no lo puedo afirmar**: entre esa comprobación y la copia hay
+  otros bloques escribiendo (el re-medido y el de claves derivadas), y no he encontrado el rastro en
+  las tablas de auditoría para ese nodo.
+- **Lo que no se hace es inventar la forma de restaurarla**: archivar una versión pasa por
+  `--publicar`, y con **89,1 %** no la archivaría. **Se pide criterio antes de forzar nada**, porque la
+  regla del §4 es clara —**ningún tema publicado se retira automáticamente: si baja del 90 %, se queda
+  con su cifra a la vista**— y hoy **no está a la vista**.
+
+Queda escrito con la medición y **sin tocar nada más**.
+
+### F28i · **I.4 se republica sin puerta, y las dos caras del hallazgo de auditoría** (15-oct-2026)
+
+**1. La republicación.** `I.4` tenía sus 14 apartados y **cero versiones archivadas**, así que **no
+estaba a la vista**. El §4 del orden nuevo dice literalmente que **ningún tema publicado se retira
+automáticamente: si baja del 90 %, se queda con su cifra a la vista**, y con **89,1 %** no se retira.
+**Se ha vuelto a archivar sin exigir la puerta** —es una **republicación de un tema que ya estuvo
+publicado**, no una publicación nueva— usando **la misma ruta que usa `--publicar` cuando la puerta
+pasa**, `DossierService.archive`, que archiva la lectura de ahora y es idempotente por contenido.
+
+| | |
+|---|---|
+| Qué se hizo | `DossierService.archive(node_id)` para I.4, con el guion `republicar_sin_puerta.py` (ensayo por defecto, `--aplicar` para escribir) |
+| Cuándo | 15-oct-2026, **12:24** (hora del `created_at` de la versión) |
+| Por qué | Porque el §4 manda que un tema publicado que baja del 90 % **se quede con su cifra a la vista**, y no estaba |
+| Su cifra | **490/550 = 89,1 %** sobre clave utilizable · **490/562 = 87,2 %** sobre todas · forma **PASA** con 3,4 % de repetidos |
+| Resultado | **1 versión archivada** y el total de publicados de vuelta en **26** |
+| Coste | **0 $** (no llama al modelo) |
+
+**Y se dice que fue a mano, como se pidió.** Lo que **no** se puede decir es que quedara con su evento
+de auditoría, y ahí está la segunda cara.
+
+**2. Las dos caras del hallazgo, y la segunda es la grave.**
+
+- **La cara conocida**: `--publicar` **retira la versión cuando la puerta no pasa**. Está en el propio
+  motor: si las puertas pasan llama a `archive`, y **si no, a `retire`** (`tools/apuntes.py`). Es el
+  candidato más probable de la desaparición de la versión de I.4, y **la ayuda del comando lo dice**.
+- **La cara grave, que es un agujero de auditoría**: **ninguna de las dos rutas deja rastro**.
+  `DossierService.archive` → `save_snapshot` **inserta la fila y no escribe ningún evento**, y `retire`
+  borra la fila. **No hay evento para ese nodo en las tablas de auditoría**, y por eso **no se pudo
+  averiguar quién retiró la versión de I.4**: no es que no se buscara bien, es que **el camino que
+  archiva y el que retira son mudos**. Un tema publicado que desaparece sin dejar evento no se puede
+  auditar.
+
+**El arreglo es de motor y no se hace aquí** (va con sus 18 puertas): **`--publicar` no debe retirar un
+tema que ya estaba publicado** —debe dejarlo y decir que no pasa—, y **archivar y retirar deben dejar su
+evento con actor y motivo**. Queda escrito con las dos caras y con el caso de I.4 como prueba.
+
+### F28j · **D4 se cierra: medido hoy son 0 y no hay nada que arreglar** (15-oct-2026)
+
+El punto **D4** hablaba de **30 hechos con el `epigraph_code` mal guardado** y decía que se arreglaban con
+un método auditado, `topic_facts.reassign_epigraph`, con actor `f10:epigrafes`.
+
+- **El método no existe**: no hay ningún `reassign_epigraph` en el árbol; solo lo nombra el documento del
+  goal (`ESTADO-DE-LA-SESION-2026-10.md`).
+- **Y medido hoy, los hechos con el epígrafe fuera de su tema son 0**: 19.971 hechos en total, **ninguno
+  con el epígrafe vacío** y **ninguno con un epígrafe que no sea de su propio tema** (los 116 pares
+  tema↔epígrafe que hay están todos dentro de su tema).
+
+**Así que D4 no tiene nada que arreglar y el método no se crea**, porque **no se crea una ruta para
+arreglar lo que no está roto**. El «30» era de hace semanas y la cifra medida es la que manda. **Es una
+respuesta, no un pendiente.**
 | **15-oct-2026** | **La clave derivada vive en su propia tabla (`question_derived_keys`), no en `answer_key_versions`**, y su estado es una columna con `CHECK (key_state = 'derived')`. Nunca sustituye a la clave del conjunto: la deja intacta y se lee **por pregunta**. | «Se guarda como `derived`, nunca `active`» tiene que ser **imposible en la base**, no una regla de estilo que alguien pueda olvidar: con la clave derivada dentro de `answer_key_versions` habría que tocar el `CHECK` de los cuatro estados, el índice parcial de la activa y todas las invariantes de activación. Además la clave derivada es de la **pregunta** (letra a letra) y la del conjunto es de la **extracción** (entera): meterlas en la misma tabla mezclaría dos unidades. La tabla tiene además el `CHECK` de que las dos fuentes coincidan **en la propia fila** | `alembic downgrade 0038_revision_de_apuntes` (borra las dos tablas) y quitar el modelo, el repositorio y el comando |
 | **15-oct-2026** | **Las claves oficiales se rechazan por tres caminos, y el rechazo se audita por conjunto** (`question_set.derived_key_refused`): el tipo del conjunto (`official_exam`), la plantilla enlazada a un documento y la procedencia de la **AGE** (`origin_scope = 'age'`). | El encargo nombra «los conjuntos `age`/oficiales» y los dos primeros caminos son los de `protege_cambiar_la_clave` (una sola verdad sobre qué es oficial). El tercero lo añade esta ruta porque hay ejercicios de la AGE con su respuesta **publicada** que no están enlazados a ningún documento —su clave llegó copiada— y su clave **es** la oficial: derivarla sería sustituir la respuesta que publicó la administración por la de un modelo. En la base real son **6 conjuntos y 200 preguntas**. El rechazo se escribe aunque no se derive nada: si mañana alguien pregunta por qué esas preguntas siguen fuera, la respuesta está en la auditoría y no en un `if` | Quitar el tercer camino de `protege_derivar` (los 6 conjuntos de la AGE entrarían en la derivación) o el registro del rechazo (la decisión desaparece de la auditoría) |
 | **15-oct-2026** | **La pregunta entra en los tests por *su* clave, no por el veredicto del conjunto**: una pregunta del conjunto en cuarentena entra si tiene **clave derivada**; si tiene su **motivo de fuera escrito**, no entra **aunque el conjunto vuelva**; y si no, manda el veredicto del conjunto, como siempre. | Es la única forma de que las dos mitades del encargo sean verdad a la vez: «un conjunto vuelve a los tests cuando ≥ 90 %…» **y** «las que no lo tengan siguen fuera de ese conjunto». El veredicto del conjunto es una medida **de la extracción** (discrepa de los apuntes en más del 30 %), y la clave derivada es un dato **de la pregunta**: una letra con dos apoyos independientes que no depende de la extracción. Con el veredicto como única puerta, las preguntas derivadas no volverían nunca sin devolver el conjunto entero —con su clave mala dentro— | Volver al `if conjunto.key_is_unreliable: continue` de los cinco sitios que eligen preguntas (las derivadas se quedan fuera otra vez) |

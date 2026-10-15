@@ -261,6 +261,46 @@ export function fetchVersionDiff(
 }
 
 /**
+ * Pasa un artefacto ya ingerido de la bandeja a la biblioteca: crea el documento y su versión.
+ *
+ * **Promocionar no es aceptar** (ADR-009). La versión nace en estado **candidata**: existe, se puede
+ * ver y se le pueden colgar derechos, pero **no cuenta para estudiar** hasta que una persona la
+ * acepta. Por eso este paso no lleva confirmación crítica: no decide nada sobre el material, solo lo
+ * trae a la pantalla donde se decide.
+ *
+ * Es idempotente por diseño del servidor: promocionar dos veces el mismo artefacto devuelve la
+ * versión que ya existía (`created_document` y `created_version` en falso) en vez de duplicarla, así
+ * que repetir la operación por haber fallado a medias no ensucia la biblioteca.
+ */
+export function promoteArtifact(input: PromoteArtifactInput): Promise<PromotionOutcome> {
+  return apiFetch<PromotionOutcome>('/api/v1/documents', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      artifact_id: input.artifactId,
+      title: input.title ?? null,
+      document_type: input.documentType ?? 'unknown',
+      authority_tier: input.authorityTier ?? null,
+      rights_code: input.rightsCode ?? null,
+    }),
+  });
+}
+
+/** Un artefacto candidato a entrar en la biblioteca, con lo mínimo para pedirlo. */
+export interface PromoteArtifactInput {
+  /** Identificador del artefacto ingerido (el que dá la representación de su texto). */
+  artifactId: string;
+  /** Título con el que entrará. Sin él, el servidor usa el nombre del fichero del que salió. */
+  title?: string | null;
+  /** Tipo documental del vocabulario del servidor. `unknown` es el valor por defecto del contrato. */
+  documentType?: string;
+  /** Nivel de autoridad (`A1`, `A2`…), si consta. */
+  authorityTier?: string | null;
+  /** Código de derechos, si consta. */
+  rightsCode?: string | null;
+}
+
+/**
  * Acepta una versión: promoción crítica, confirmada por una persona y auditada en el servidor.
  *
  * Si el servidor no la puede aplicar responde 409 con `classification_conflict` y su motivo, y
