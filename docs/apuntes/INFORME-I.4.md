@@ -10,6 +10,15 @@ nueva para subirlo**: lo que ha cambiado es el **denominador**, que se mueve sol
 de claves del §1. **Pasa por 0,2 puntos** y así queda dicho —en este informe y en el estado— para
 que, si algún día vuelve a caer, nadie piense que se coló. El porqué de la decisión, en el §6.
 
+> **Corrección del 15-oct, medida de nuevo con el medidor nuevo**: con la cuenta buena —la cobertura por
+> apartado propio, sin doblar la pregunta que el índice no sitúa y con `repartir_hechos` arreglado— I.4
+> mide **490/550 = 89,1 %** sobre clave utilizable y **490/562 = 87,2 %** sobre todas, con la forma en
+> PASA (3,4 % de repetidos). **El 90,2 % era del medidor viejo, que contaba de más**; el tema **no ha
+> empeorado**. Y el 15-oct **se volvió a archivar a mano y sin exigir la puerta** —**republicación de un
+> tema que ya estuvo publicado**, porque el §4 manda que se quede **con su cifra a la vista**— con la
+> misma ruta que usa `--publicar` cuando la puerta pasa. **Fue a mano, a las 12:24, y por qué**: el
+> detalle completo, en `DECISIONES` (F28b y F28i).
+
 Las cifras de este informe están **medidas** sobre la base real con `apuntes --medir` y
 `apuntes --esquema`, no heredadas de la corrida que las escribió.
 
