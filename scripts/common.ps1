@@ -20,6 +20,76 @@ function Get-OpoFuenteRepoRoot {
     return $script:OpoFuenteRepoRoot
 }
 
+#: Los puertos que usan las puertas con navegador (la API y el servidor de vista previa de la web).
+$script:OpoFuentePuertosDeLasPuertas = @(8765, 4173)
+
+function Test-OpoFuenteEsDescendiente {
+    <#
+    .SYNOPSIS
+        ¿Este proceso cuelga (directa o indirectamente) del proceso que lanzó la batería?
+    .DESCRIPTION
+        Es lo que distingue «nuestro servidor de vista previa» de «el `vite preview` de otro
+        proyecto». Sin esta distinción, la guarda de puertos abortaría corridas legítimas.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][int]$Proceso,
+        [Parameter(Mandatory)][int]$Raiz,
+        [int]$Profundidad = 8
+    )
+
+    $actual = $Proceso
+    for ($paso = 0; $paso -lt $Profundidad; $paso++) {
+        if ($actual -eq $Raiz) { return $true }
+        if ($actual -le 0) { return $false }
+        $padre = Get-CimInstance Win32_Process -Filter "ProcessId = $actual" -ErrorAction SilentlyContinue
+        if ($null -eq $padre) { return $false }
+        $actual = [int]$padre.ParentProcessId
+    }
+    return $false
+}
+
+function Assert-OpoFuentePuertosLibres {
+    <#
+    .SYNOPSIS
+        Comprueba que los puertos de las puertas con navegador no los tiene otro, y si los tiene, para.
+    .DESCRIPTION
+        El 15 de octubre de 2026, otro proyecto abrió su propio `vite preview` en el 4173 **a mitad**
+        de una suite: el servidor de vista previa de esa corrida murió, y **15 pruebas E2E cayeron con
+        `ERR_CONNECTION_REFUSED`**, un rojo que no era del código y que quedó escrito como si lo fuera.
+        Volvió a pasar en el banco de pruebas de al lado.
+
+        Esta guarda mira los puertos **antes y después de cada puerta** y, si uno está ocupado por un
+        proceso que **no cuelga de esta corrida**, para con el **código 4** diciendo el PID y el
+        proceso. No cambia ningún veredicto: solo evita que el rojo de un puerto ajeno se confunda con
+        un fallo propio.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$Etapa,
+        [int]$Raiz = $PID,
+        [int[]]$Puertos = $script:OpoFuentePuertosDeLasPuertas
+    )
+
+    foreach ($puerto in $Puertos) {
+        $escuchas = Get-NetTCPConnection -LocalPort $puerto -State Listen -ErrorAction SilentlyContinue
+        foreach ($escucha in @($escuchas)) {
+            if ($null -eq $escucha) { continue }
+            $dueno = [int]$escucha.OwningProcess
+            if (Test-OpoFuenteEsDescendiente -Proceso $dueno -Raiz $Raiz) { continue }
+            $proceso = Get-Process -Id $dueno -ErrorAction SilentlyContinue
+            $nombre = if ($null -ne $proceso) { $proceso.ProcessName } else { 'desconocido' }
+            $ruta = if ($null -ne $proceso -and $null -ne $proceso.Path) { $proceso.Path } else { 'sin ruta' }
+            Write-Host ''
+            Write-Host "PUERTO $puerto OCUPADO POR UN PROCESO AJENO A ESTA CORRIDA ($Etapa)." -ForegroundColor Red
+            Write-Host "  pid $dueno · $nombre · $ruta" -ForegroundColor Red
+            Write-Host '  Se para con el código 4: lanzar la puerta ahora daría un rojo del puerto y no' -ForegroundColor Red
+            Write-Host '  del código. Cuando quede libre, se relanza con el mismo juez.' -ForegroundColor Red
+            exit 4
+        }
+    }
+}
+
 function Invoke-OpoFuenteStep {
     <#
     .SYNOPSIS
@@ -44,6 +114,9 @@ function Invoke-OpoFuenteStep {
 
     Write-Host ''
     Write-Host "=== $Name ===" -ForegroundColor Cyan
+    # Antes de la puerta: los puertos de las puertas con navegador tienen que estar libres o ser
+    # nuestros. Un `vite preview` ajeno a mitad de una suite produjo 15 rojos falsos el 15-oct-2026.
+    Assert-OpoFuentePuertosLibres -Etapa "antes de '$Name'"
     $global:LASTEXITCODE = 0
     $excepcion = $null
     try {
@@ -53,6 +126,8 @@ function Invoke-OpoFuenteStep {
         $excepcion = $_
     }
     $codigo = $global:LASTEXITCODE
+    # Y después: si algo se quedó escuchando y no es nuestro, la puerta siguiente lo notaría.
+    Assert-OpoFuentePuertosLibres -Etapa "después de '$Name'"
     if ($null -ne $excepcion) {
         Write-Host "Excepción en '$Name': $excepcion" -ForegroundColor Red
         if ($codigo -eq 0) { $codigo = 1 }
