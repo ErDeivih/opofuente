@@ -2312,3 +2312,185 @@ class TopicNotesReviewRecord(Base):
     reviewed_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
     created_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
+
+
+# --------------------------------------------------------------------------- S28: cuentas (§8)
+
+
+class AccountRecord(Base):
+    """Una cuenta: una dirección de correo y el resumen de su contraseña (S28, §8 del objetivo).
+
+    **Lo que no guarda es tan importante como lo que guarda.** No hay ninguna columna para la
+    contraseña en claro, ni para la dirección de red desde la que se entra, ni para el navegador. La
+    contraseña vive como resumen argon2id (`password_hash`) y el algoritmo se declara en
+    `password_algo`, para que el día que se cambie de derivador las contraseñas viejas se puedan
+    seguir comprobando y volver a escribir con el nuevo.
+
+    `email_normalized` es la que decide si dos cuentas son la misma —minúsculas y sin acentos— y es
+    única; `email` conserva lo que se escribió, para poder enseñarlo tal cual en «mi cuenta».
+    """
+
+    __tablename__ = "accounts"
+    __table_args__ = (
+        CheckConstraint("length(trim(email)) > 0", name="ck_account_email"),
+        CheckConstraint("length(trim(email_normalized)) > 0", name="ck_account_email_normalized"),
+        CheckConstraint("length(trim(password_hash)) > 0", name="ck_account_password_hash"),
+        CheckConstraint("password_algo IN ('argon2id')", name="ck_account_password_algo"),
+        UniqueConstraint("email_normalized", name="uq_account_email_normalized"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    #: La dirección tal y como la escribió su dueño, sin espacios alrededor.
+    email: Mapped[str] = mapped_column(Text, nullable=False)
+    #: La dirección en su forma canónica: es la que identifica la cuenta.
+    email_normalized: Mapped[str] = mapped_column(Text, nullable=False)
+    #: El resumen de la contraseña. Nunca sale de esta tabla hacia ninguna respuesta.
+    password_hash: Mapped[str] = mapped_column(Text, nullable=False)
+    password_algo: Mapped[str] = mapped_column(
+        String(16), nullable=False, server_default=text("'argon2id'"), default="argon2id"
+    )
+    #: El `owner_id` con el que se firma su progreso (`acct:<id>`). Se copia aquí y no se deduce en
+    #: cada consulta para que cambiar la forma del dueño sea una migración y no una aritmética
+    #: repartida por el código.
+    owner_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
+    #: Cuándo se cambió la contraseña por última vez. Sirve para poder decir «tu contraseña es de
+    #: hace un año» sin guardar el historial de contraseñas, que es justo lo que no hay que guardar.
+    password_changed_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
+
+
+class AccountSessionRecord(Base):
+    """Una sesión abierta: el **resumen** de su testigo y sus fechas (S28).
+
+    El testigo que viaja al navegador no está aquí: se guarda su SHA-256. Quien lea la base no puede
+    suplantar a nadie con lo que hay dentro. `owner_id` se copia para que el progreso de la sesión y
+    el de la cuenta no puedan discrepar.
+    """
+
+    __tablename__ = "account_sessions"
+    __table_args__ = (
+        UniqueConstraint("token_hash", name="uq_account_session_token"),
+        CheckConstraint("expires_at > created_at", name="ck_account_session_expiry"),
+        Index("ix_account_sessions_account", "account_id", "expires_at"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    account_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("accounts.id", ondelete="CASCADE"), nullable=False
+    )
+    token_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    owner_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
+    last_seen_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
+    #: Cuando se cierra sesión, la fila se marca en vez de borrarse: así un testigo robado que se
+    #: intente usar después de cerrar sesión se distingue de un testigo que nunca existió.
+    revoked_at: Mapped[datetime | None] = mapped_column(UtcDateTime(), nullable=True)
+
+
+class PasswordResetRecord(Base):
+    """Un enlace de recuperación: el resumen de su testigo y cuándo caduca (S28).
+
+    Los enlaces se piden sin decir si la dirección tiene cuenta y se consumen una sola vez
+    (`used_at`). El que no se usa caduca en una hora.
+    """
+
+    __tablename__ = "password_resets"
+    __table_args__ = (
+        UniqueConstraint("token_hash", name="uq_password_reset_token"),
+        CheckConstraint("expires_at > created_at", name="ck_password_reset_expiry"),
+        Index("ix_password_resets_account", "account_id", "expires_at"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    account_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("accounts.id", ondelete="CASCADE"), nullable=False
+    )
+    token_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
+    used_at: Mapped[datetime | None] = mapped_column(UtcDateTime(), nullable=True)
+
+
+class LoginThrottleRecord(Base):
+    """El freno de los intentos fallidos, por cuenta (S28).
+
+    La fila se identifica por el **resumen** de la dirección normalizada, no por la dirección: el
+    freno tiene que poder contar sin construir un registro de quién lo intenta. No guarda qué
+    contraseña se probó, ni desde dónde, ni en qué orden.
+
+    Se borra en cuanto se acierta (`register_success`): quien se equivoca una vez y luego entra bien
+    no arrastra nada. Lo que quede sin resolverse —una cuenta que nadie vuelve a tocar— se limpia
+    con `purge_stale`, que el servicio llama antes de contar un fallo.
+    """
+
+    __tablename__ = "login_throttles"
+    __table_args__ = (
+        CheckConstraint("failures >= 0", name="ck_login_throttle_failures"),
+        CheckConstraint(
+            "locked_until IS NULL OR locked_until > window_started_at",
+            name="ck_login_throttle_lock",
+        ),
+    )
+
+    key_hash: Mapped[str] = mapped_column(String(64), primary_key=True)
+    failures: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default=text("0"), default=0
+    )
+    window_started_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
+    locked_until: Mapped[datetime | None] = mapped_column(UtcDateTime(), nullable=True)
+
+
+class ConsentRecordRecord(Base):
+    """Una decisión sobre las cookies, **sin sujeto** (S28, §9 del objetivo).
+
+    No hay ninguna columna para saber quién la tomó: no hay cuenta, no hay sesión, no hay dirección
+    de red. Es lo que permite poder demostrar que se preguntó y que hubo respuestas sin construir un
+    fichero de quién aceptó qué. La decisión que **sí** hay que recordar por persona vive en su
+    navegador, en una cookie, y no sube aquí.
+    """
+
+    __tablename__ = "consent_records"
+    __table_args__ = (
+        CheckConstraint("policy_version >= 1", name="ck_consent_policy_version"),
+        CheckConstraint("analytics IN (0, 1)", name="ck_consent_analytics"),
+        CheckConstraint("preferences IN (0, 1)", name="ck_consent_preferences"),
+        Index("ix_consent_records_decided", "decided_at"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    decided_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
+    policy_version: Mapped[int] = mapped_column(Integer, nullable=False)
+    analytics: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default=text("0"), default=False
+    )
+    preferences: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default=text("0"), default=False
+    )
+
+
+class AnalyticsEventRecord(Base):
+    """Un contador de uso: día, tipo y etiqueta de una lista cerrada (S28, §10 del objetivo).
+
+    **Este esquema no puede guardar datos personales.** No hay columna para la cuenta, para la
+    sesión, para la dirección de red, para el navegador ni para ningún texto libre: lo único que se
+    escribe son dos columnas con un vocabulario cerrado (`analytics.py`) y el día. Un contador sin
+    sujeto no es un dato personal, y por eso no hay nada que anonimizar.
+    """
+
+    __tablename__ = "analytics_events"
+    __table_args__ = (
+        CheckConstraint("name IN ('page_view', 'action')", name="ck_analytics_name"),
+        CheckConstraint("length(trim(label)) > 0", name="ck_analytics_label"),
+        CheckConstraint("length(occurred_on) = 10", name="ck_analytics_day"),
+        Index("ix_analytics_events_day_label", "occurred_on", "name", "label"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    #: El día, en `AAAA-MM-DD`. Se guarda el día y no la hora a propósito: la hora exacta de una
+    #: visita, repetida, empieza a parecerse a un identificador.
+    occurred_on: Mapped[str] = mapped_column(String(10), nullable=False)
+    name: Mapped[str] = mapped_column(String(16), nullable=False)
+    label: Mapped[str] = mapped_column(String(48), nullable=False)
+    recorded_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)

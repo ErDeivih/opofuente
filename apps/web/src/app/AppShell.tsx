@@ -1,6 +1,9 @@
 import { Link, NavLink } from 'react-router-dom';
 
 import { ApiUnavailableNotice } from '../components/ApiUnavailableNotice';
+import { CookieNotice } from '../features/legal/CookieNotice';
+import { usePageView } from '../lib/analytics';
+import { usePolicy } from './policy';
 import {
   IconExamenes,
   IconFallos,
@@ -38,6 +41,10 @@ export interface AppShellProps {
 export function AppShell({ children }: AppShellProps) {
   const carril = STUDENT_NAV_ITEMS;
   const barra = STUDENT_NAV_ITEMS.filter((item) => ATAJOS_MOVIL.has(item.path));
+  const politica = usePolicy();
+  // La analítica propia (§10): cuenta la pantalla vista. Si está apagada o no hay permiso, el
+  // servidor lo rechaza y aquí no pasa nada.
+  usePageView();
 
   return (
     <div className="marco-alumno">
@@ -89,12 +96,48 @@ export function AppShell({ children }: AppShellProps) {
           {/*
             Una sola puerta al panel, en el pie y discreta: quitarla la escondería, y ponerla dos
             veces (en el carril y aquí) dejaría dos enlaces con el mismo nombre en la página.
+
+            Desde S28 (§8 y §9) el pie lleva además lo que tiene que poder encontrarse **desde
+            cualquier pantalla**: los textos legales y —solo si esta instalación tiene cuentas— el
+            acceso. Con las cuentas apagadas no se enseña el enlace, porque no hay nada al otro lado:
+            es la diferencia entre no ofrecer algo y ofrecer algo que no existe.
           */}
           <footer className="marco-alumno__pie">
-            <Link to="/admin">Administrar</Link>
+            <nav aria-label="Información y cuenta">
+              <ul className="pie__lista">
+                {politica?.legal.enabled && (
+                  <>
+                    <li>
+                      <Link to="/legal/aviso-legal">Aviso legal</Link>
+                    </li>
+                    <li>
+                      <Link to="/legal/privacidad">Privacidad</Link>
+                    </li>
+                    <li>
+                      <Link to="/legal/cookies">Cookies</Link>
+                    </li>
+                  </>
+                )}
+                {politica?.accounts.enabled && (
+                  <>
+                    <li>
+                      <Link to="/acceso">Entrar</Link>
+                    </li>
+                    <li>
+                      <Link to="/cuenta">Mi cuenta</Link>
+                    </li>
+                  </>
+                )}
+                <li>
+                  <Link to="/admin">Administrar</Link>
+                </li>
+              </ul>
+            </nav>
           </footer>
         </div>
       </div>
+
+      <CookieNotice />
 
       <nav className="barra-inferior" aria-label="Secciones principales">
         <ul className="barra-inferior__lista">

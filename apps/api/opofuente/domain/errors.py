@@ -83,6 +83,79 @@ class InvalidReviewError(OpoFuenteError):
         self.code = "invalid_review"
 
 
+class InvalidAccountInputError(OpoFuenteError):
+    """Un dato de la cuenta no vale. La API lo traduce a 422 `invalid_account_input`.
+
+    Casos (S28, §8 del objetivo vivo): un correo que no tiene forma de correo, una contraseña más
+    corta que el mínimo o que es la propia dirección, y un enlace de recuperación caducado o ya
+    usado. Los tres son culpa de la entrada, así que se contestan con `field_errors` —el campo que
+    hay que corregir— y no con un 500.
+    """
+
+    def __init__(self, reason: str, *, field: str, code: str = "invalid_account_input") -> None:
+        super().__init__(reason)
+        self.reason = reason
+        self.field = field
+        self.code = code
+
+
+class TooManyAttemptsError(OpoFuenteError):
+    """Se ha insistido demasiado con la contraseña. La API lo traduce a 429.
+
+    Existe para que una contraseña corriente no se pueda probar a razón de mil por minuto. Viaja con
+    **los segundos que faltan**, porque un «demasiados intentos» sin decir cuándo se puede volver a
+    probar deja a quien se equivocó de verdad sin salida.
+    """
+
+    def __init__(self, *, retry_after_seconds: int) -> None:
+        super().__init__(
+            "demasiados intentos con esa cuenta: espera "
+            f"{retry_after_seconds // 60 + 1} minuto(s) y vuelve a intentarlo"
+        )
+        self.retry_after_seconds = retry_after_seconds
+
+
+class InvalidCredentialsError(OpoFuenteError):
+    """El correo o la contraseña no son los de ninguna cuenta. La API lo traduce a 401.
+
+    **Un solo error para los dos casos, con el mismo texto**, y no es un descuido: «esa dirección no
+    está registrada» es decir quién tiene cuenta aquí, y eso es información sobre alguien que no ha
+    demostrado ser quien dice ser. El freno de intentos cuenta igual los dos casos, así que tampoco
+    por el tiempo se puede distinguir.
+    """
+
+    def __init__(self, reason: str = "el correo o la contraseña no son correctos") -> None:
+        super().__init__(reason)
+
+
+class ConsentRequiredError(OpoFuenteError):
+    """Se ha pedido algo que exige un consentimiento que no se ha dado. La API lo traduce a 403.
+
+    Es un 403 —y no un 404 como la bandera apagada— porque aquí la función **existe** y lo que falta
+    es el permiso de quien navega. Confundir las dos cosas haría que un rechazo de cookies pareciera
+    una aplicación rota.
+    """
+
+
+class LegalDisabledError(OpoFuenteError):
+    """Se ha llamado a una función de los textos legales con su bandera apagada. La API da 404.
+
+    Mismo criterio que las cuentas: con `OPOFUENTE_LEGAL_ENABLED=0` esta aplicación **no sirve**
+    aviso legal, privacidad ni aviso de cookies, y «no lo sirve» se dice con un 404, no con un 403.
+    """
+
+
+class AccountsDisabledError(OpoFuenteError):
+    """Se ha llamado a una función de cuentas con su bandera apagada. La API lo traduce a 404.
+
+    Es un 404 y no un 403 a propósito: con `OPOFUENTE_ACCOUNTS_ENABLED=0` esta aplicación **no
+    tiene** cuentas, no es que se niegue a usarlas. Contestar «prohibido» sugeriría que hay algo
+    detrás que se podría alcanzar de otra forma, y no lo hay: no hay ninguna cuenta creada ni
+    ninguna
+    ruta viva.
+    """
+
+
 class UnsupportedError(OpoFuenteError):
     """Se ha pedido algo que esta aplicación todavía no hace. La API lo traduce a 409.
 

@@ -995,3 +995,80 @@ sostengo.
   sin llamar a ningún modelo. Coste: **0 $**.
 - **El listón sigue en el 90 %** y aprobar un tema del 82 % **no** lo publica.
 - **La zona del alumno no cambia**: lee lo mismo.
+
+---
+
+# F28 · La plataforma desplegable (§8 a §11): lo que tienes que saber
+
+Esto es el bloque de «que otra persona pueda usarlo desde internet». **Nada de esto está encendido**:
+con las cuatro banderas a 0 (como nacen) la aplicación se comporta **exactamente** como hasta hoy para
+quien estudia sin cuenta. Hay una prueba que lo comprueba, y es la primera del bloque.
+
+## 1. Hay datos de tu aplicación en otro disco, y esto es lo que pasa si no está
+
+`datos\tmp` **no es una carpeta: es un enlace a `E:\OpoFuente-archivo\datos-tmp`**, de los 41,6 GB que
+se movieron a `E:` para liberar `F:`. Si `E:` no está conectado, esa carpeta **existe en el nombre y no
+en los hechos**: se puede listar y no se puede escribir, así que lo que fallaba a media operación era
+importar un documento, la instantánea antes de una copia y la restauración —es decir, lo peor: páginas
+que cargan y acciones que no—.
+
+**Desde este bloque**: al arrancar se **escribe un fichero de sonda y se borra** en el temporal. Si no
+se puede, lo dice en el registro con la ruta exacta y **usa un temporal de repuesto** en `F:`, dentro
+del propio árbol de datos (`datos\_tmp`), y sigue funcionando. Si no valiera ninguno de los dos, **la
+aplicación no arranca** con el mensaje que dice qué disco falta y qué hacer, en vez de arrancar a
+medias. Está probado simulando la ausencia.
+
+**Lo que tienes que saber**: si algún día ves `opofuente.tmp_fallback` en el registro, significa que
+`E:` no estaba y que se ha usado `F:`. No se ha perdido nada; es el aviso.
+
+## 2. Qué habría que contratar (y no se ha contratado nada)
+
+| Para qué | Qué habría que contratar | Qué pasa mientras no esté |
+|---|---|---|
+| **Recuperar la contraseña sin que tú estés delante** | Un servicio de correo (por ejemplo un proveedor de envío de correo transaccional) | El enlace de recuperación **se deja en `F:\OpoFuente\datos\recovery\`** (un fichero `.txt` con el enlace) y lo tienes que pasar tú. La pantalla lo dice con esas palabras. El enlace caduca en una hora y se usa una sola vez |
+| **Cobrar** | Una pasarela: **Stripe** (recomendada, ver abajo), o Paddle (revendedor) o Redsys (TPV del banco) | No hay ninguna integrada y **no se puede cobrar nada**. La ruta de pagos contesta qué habría que contratar |
+| **Servir con HTTPS** (dominio propio) | Un dominio y un servidor con certificado | La cookie está sin `Secure` porque la aplicación escucha en `http://127.0.0.1`. El día que se sirva por HTTPS hay que poner `OPOFUENTE_SESSION_COOKIE_SECURE=1` |
+| **Verificar el correo al darse de alta** | El mismo servicio de correo | La cuenta queda lista sin verificar. No se finge que se ha mandado un mensaje |
+
+**La pasarela propuesta es Stripe**, y el porqué está en `docs/decisions/ADR-021-cuentas-y-marco-legal.md`
+y en la propia pantalla: es la que menos cosas hay que contratar antes de cobrar (se abre por internet,
+sin firmar con un banco) y trae en la misma cuenta el cobro, la autenticación reforzada del banco y la
+factura. **Las comisiones no las he podido comprobar**: sus páginas de precios se sirven con JavaScript
+y no devolvieron el texto, así que van marcadas como «sin verificar» y tienes que mirarlas en
+`https://stripe.com/es/pricing` antes de contratar nada. Lo que **sí** te puedo decir con seguridad: no
+hay cuota por tener la cuenta abierta.
+
+## 3. Lo que hay que rellenar antes de publicar esto en internet
+
+Los tres textos legales (aviso legal, privacidad y cookies) llevan **marcas `[PENDIENTE: …]`** donde
+tienen que ir tu **nombre o razón social, tu NIF, tu dirección de contacto y un correo de contacto**.
+No se inventan: aparecen también en la pantalla, arriba, avisando de que faltan. En cuanto los
+rellenes, hay que subir `LEGAL_TEXT_VERSION` (`apps/api/opofuente/domain/legal.py`) para que a quien
+ya hubiera aceptado se le vuelva a preguntar.
+
+## 4. Lo que hay que decidir tú (no lo decide el bloque)
+
+1. **¿Abierta a cualquiera o cerrada?** El bloque trae las cuentas hechas, no la decisión de a quién se
+   las das.
+2. **¿De pago o gratis?** Los huecos de plan están puestos (`Estudiar sin cuenta`, `Cuenta`, `De pago`)
+   **sin precios**: poner un precio es decidirlo, y eso es tuyo.
+3. **¿Dominio y nombre?** Y con ellos, el HTTPS y la cookie `Secure`.
+
+## 5. Cómo se enciende, si algún día quieres probarlo
+
+```
+$env:OPOFUENTE_ACCOUNTS_ENABLED = '1'
+$env:OPOFUENTE_LEGAL_ENABLED    = '1'
+# La analítica y los pagos EXIGEN el marco legal encendido:
+$env:OPOFUENTE_ANALYTICS_ENABLED = '1'
+$env:OPOFUENTE_PAYMENTS_ENABLED  = '1'
+.\scripts\api.ps1
+```
+
+Con las cuentas encendidas, **la administración deja de ser abierta** (pide sesión) y **la zona de
+estudio sigue abierta**: se puede seguir estudiando sin cuenta. La pantalla de «Entrar» aparece en el
+pie, y los textos legales también.
+
+## 6. Lo que cuesta
+
+**0 $.** Este bloque no llama a ningún modelo: lo que ha costado es tiempo y memoria de las puertas.

@@ -8,6 +8,7 @@ from __future__ import annotations
 from fastapi import APIRouter
 
 from opofuente.api.routes import (
+    accounts,
     backups,
     changes,
     classification,
@@ -15,10 +16,12 @@ from opofuente.api.routes import (
     exports,
     housekeeping,
     ingestion,
+    legal,
     library,
     notes_incidents,
     notes_reports,
     notes_review,
+    platform,
     profiles,
     question_file,
     questions,
@@ -69,5 +72,17 @@ api_router.include_router(question_file.router)
 # propósito: `/notes-review/summary` se declara antes que `/notes-review/{codigo}` dentro de su
 # propio router (ADR-018: la ruta literal gana a la que lleva parámetro).
 api_router.include_router(notes_review.router)
+# La plataforma desplegable (§8 a §11 del objetivo vivo): las cuentas, los textos legales, la
+# política de la instalación y el hueco de pagos. Cuelgan de prefijos propios —`/accounts`,
+# `/legal`, `/platform`, `/analytics`, `/payments`— que no comparte nadie, así que van al final como
+# las anteriores. **El orden dentro de `accounts` importa** (ADR-018):
+# `/accounts/password-resets/confirm` y `/accounts/configuration` no encajan con el patrón de
+# ninguna otra, así que no se tapan.
+api_router.include_router(platform.router)
+api_router.include_router(accounts.router)
+# Los textos legales y el consentimiento (§9) cuelgan de `/legal`, otro prefijo propio. Se declaran
+# **después** de la política de la instalación porque `/legal/documents` es literal y no encaja con
+# ninguna ruta con parámetro, y dentro del router la literal va antes que `/legal/documents/{key}`.
+api_router.include_router(legal.router)
 
 __all__ = ["api_router"]

@@ -3148,3 +3148,60 @@ pasada» sería falso; decir que no está verde, también. Es la misma decisión
 contrato **29**, componentes **379** (42 ficheros), E2E **78**, y las 18 puertas del `gates.ps1` en verde
 entre las dos corridas. **Ninguna puerta cayó con un código nativo** (los dos códigos nativos que se
 pagaron en esta serie —`0xC0000409` y `0xC0000374`— no han aparecido aquí).
+
+---
+
+## F28 · La plataforma desplegable (S28, §8 a §11 del objetivo vivo) — 15-oct-2026
+
+**Rama**: `f28-plataforma`, sobre `main = e03b354` (más `a7e7f78`, que trae el objetivo vivo al
+repositorio). Árbol: `F:\temp-opofuente\opofuente-plataforma`.
+
+### Qué se ha construido
+
+| Apartado | Qué hay | Dónde |
+|---|---|---|
+| **§8 · Cuentas y sesiones** | Alta, acceso, recuperación, cierre de sesión, baja, **puerta de rutas** y freno de intentos. Contraseñas con **argon2id**, testigos guardados como resumen, cookie `HttpOnly` + `SameSite=Lax`, **sin revelar si un correo existe** (ni al dar de alta ni al pedir el enlace) y **cada movimiento auditado** | `domain/accounts.py`, `accounts_service.py`, `account_repository.py`, `routes/accounts.py`, `session_gate.py`, migración `0039` |
+| **§9 · Legales y control de datos** | Aviso legal, privacidad y cookies servidos por la API (una sola redacción, la que el programa puede comprobar), **consentimiento real** —antes de aceptar no se pone ninguna cookie no necesaria— y **un inventario de datos que se cruza contra el esquema** en las dos direcciones | `domain/legal.py`, `legal_service.py`, `routes/legal.py`, `lib/consent.ts`, `CookieNotice.tsx`, `LegalPage.tsx` |
+| **§10 · Analítica** | **Montada**, propia y agregada: dos tipos de suceso y un vocabulario cerrado de etiquetas. **Sin cuenta, sin sesión, sin dirección, sin navegador y sin texto libre**; el servidor comprueba el consentimiento en cada petición | `domain/analytics.py`, `analytics_service.py`, `analytics_repository.py`, `routes/platform.py`, `lib/analytics.ts` |
+| **§11 · Pagos** | **Solo el hueco y la bandera apagada**, con la propuesta escrita: Stripe (recomendada), Paddle y Redsys, con qué habría que contratar, qué costaría **sin verificar** y qué datos personales saldrían | `domain/payments.py`, `GET /api/v1/payments/plans` |
+| **Punto 6 · El temporal** | Si `datos\tmp` no admite escritura —es un enlace a `E:`—, **se dice con la ruta exacta** y se usa un temporal de repuesto **en la misma unidad que la base**; si no vale ninguno, **el arranque falla** en lugar de arrancar a medias | `config.resolve_tmp_directory`, `main.py`, `test_temporal_de_datos.py` |
+
+### Las banderas
+
+`OPOFUENTE_ACCOUNTS_ENABLED=0` · `OPOFUENTE_LEGAL_ENABLED=0` (la cuarta, ver `DECISIONES`) ·
+`OPOFUENTE_ANALYTICS_ENABLED=0` · `OPOFUENTE_PAYMENTS_ENABLED=0`. **Con las cuatro a 0 el árbol se
+comporta como `e03b354`** para quien estudia sin cuenta, y hay una prueba que lo comprueba. La
+analítica y los pagos **exigen** el marco legal encendido (encenderlos sueltos falla al arrancar, con
+el motivo escrito).
+
+### Los rojos previos (medidos, no prometidos)
+
+Las tres pruebas de integración del bloque, ejecutadas contra el árbol **sin** el bloque
+(`F:\temp-opofuente\f28-rojo`, detached HEAD en `e03b354`), con el intérprete del árbol de trabajo y
+`PYTHONPATH` apuntando al árbol base:
+
+```
+19 failed, 2 passed, 2 errors in 113.93s
+```
+
+- **19 rojos** en `test_plataforma_cuentas.py`: las rutas nuevas contestan **404** (el alta, el
+  acceso, la recuperación, la puerta de rutas, el freno, la baja, la auditoría…).
+- **2 errores de recolección**: `test_plataforma_legal.py` y `test_temporal_de_datos.py` no se pueden
+  ni importar contra la base (`No module named 'opofuente.domain.legal'`,
+  `cannot import name 'resolve_tmp_directory'`), porque lo que prueban no existe allí.
+- **Y 2 verdes**, que son los dos que **no deben cambiar**: `test_el_alumno_sin_cuenta_sigue_estudiando`
+  (el estudio sin cuenta funciona igual) y `test_el_fichero_del_enlace_no_esta_en_la_respuesta`.
+- Registro literal: `F:\temp-opofuente\f28-rojos-previos.txt`.
+
+### Lo que queda fuera
+
+- **El §12 (acabado de interfaz) no es de este bloque**: el encargo recibido son los puntos 8 a 11.
+- **No hay servicio de correo contratado**: el enlace de recuperación se deja en `datos/recovery/`.
+- **`Secure` de la cookie está apagado** (se sirve por `http://127.0.0.1`).
+- **Los pagos no están integrados** y sus comisiones **no se han podido verificar**.
+- **Los textos legales llevan marcas `[PENDIENTE: …]`** en los datos del titular: no se inventan.
+
+### Gasto
+
+**0 $**: este bloque no llama a ningún modelo. Su coste es de memoria y de tiempo de puertas, no de API.
+

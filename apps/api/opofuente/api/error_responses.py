@@ -74,6 +74,12 @@ BASE_ERRORS: dict[int | str, dict[str, Any]] = {**_INTERNAL}
 #: Errores de una ruta que busca un recurso por identificador.
 RESOURCE_ERRORS: dict[int | str, dict[str, Any]] = {**_INTERNAL, **_NOT_FOUND, **_VALIDATION}
 
+#: Errores de una **lectura con parámetros validados**: la consulta puede venir mal y entonces la
+#: respuesta es un 422 con `field_errors`, pero no hay ningún recurso por identificador y por eso no
+#: se documenta un 404 que no puede ocurrir. Sin declararlo, FastAPI publicaría su
+#: `HTTPValidationError`, que no es el cuerpo que esta aplicación sirve (DEBT-002).
+READ_WITH_QUERY_ERRORS: dict[int | str, dict[str, Any]] = {**_INTERNAL, **_VALIDATION}
+
 #: Errores de una ruta de escritura con identificador: añade el rechazo por Origin.
 WRITE_ERRORS: dict[int | str, dict[str, Any]] = {
     **_INTERNAL,

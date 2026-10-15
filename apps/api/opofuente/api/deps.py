@@ -10,6 +10,8 @@ from typing import Annotated
 
 from fastapi import Depends, Request
 
+from opofuente.application.accounts_service import AccountsService
+from opofuente.application.analytics_service import AnalyticsService
 from opofuente.application.auto_study_service import AutoStudyService
 from opofuente.application.backup_service import BackupService
 from opofuente.application.change_service import ChangeService
@@ -22,6 +24,7 @@ from opofuente.application.housekeeping_service import HousekeepingService
 from opofuente.application.ingestion_service import IngestionService
 from opofuente.application.intake_service import IntakeService
 from opofuente.application.job_service import JobService
+from opofuente.application.legal_service import LegalService
 from opofuente.application.library_service import LibraryService
 from opofuente.application.notes_incident_service import NotesIncidentsService
 from opofuente.application.notes_report_service import NotesReportsService
@@ -178,6 +181,24 @@ def get_notes_review_service(request: Request) -> NotesReviewService:
     return service
 
 
+def get_accounts_service(request: Request) -> AccountsService:
+    """Las cuentas: alta, acceso, recuperación, sesiones y baja (§8 del objetivo vivo)."""
+    service: AccountsService = request.app.state.accounts_service
+    return service
+
+
+def get_legal_service(request: Request) -> LegalService:
+    """Los textos legales, el inventario de datos y el consentimiento (§9)."""
+    service: LegalService = request.app.state.legal_service
+    return service
+
+
+def get_analytics_service(request: Request) -> AnalyticsService:
+    """Los contadores propios, sin identificadores y solo con permiso (§10)."""
+    service: AnalyticsService = request.app.state.analytics_service
+    return service
+
+
 #: Dependencias anotadas (estilo moderno de FastAPI: sin llamadas en valores por defecto).
 AppSettingsDep = Annotated[Settings, Depends(get_app_settings)]
 SystemServiceDep = Annotated[SystemService, Depends(get_system_service)]
@@ -206,3 +227,6 @@ StudentServiceDep = Annotated[StudentService, Depends(get_student_service)]
 NotesReportsServiceDep = Annotated[NotesReportsService, Depends(get_notes_reports_service)]
 NotesIncidentsServiceDep = Annotated[NotesIncidentsService, Depends(get_notes_incidents_service)]
 NotesReviewServiceDep = Annotated[NotesReviewService, Depends(get_notes_review_service)]
+AccountsServiceDep = Annotated[AccountsService, Depends(get_accounts_service)]
+LegalServiceDep = Annotated[LegalService, Depends(get_legal_service)]
+AnalyticsServiceDep = Annotated[AnalyticsService, Depends(get_analytics_service)]
