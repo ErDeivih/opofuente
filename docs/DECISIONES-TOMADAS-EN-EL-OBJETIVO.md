@@ -421,3 +421,38 @@ auditoría. El patrón de la casa ya existe: `tools/reparar_preguntas.py` hace e
 
 **No se ha tocado nada**: ni la base, ni el motor, ni la biblioteca. Queda escrito con su alcance y su causa para
 que el bloque que lo coja no tenga que volver a medirlo.
+
+## F28b · I.3 e I.4 con el medidor nuevo: **ninguno de los dos pasa**, y la cifra vieja queda corregida (15-oct-2026)
+
+El §5.1 del orden nuevo pedía **volver a correr I.3 e I.4 con el medidor nuevo** y el arreglo de
+`repartir_hechos`, «solo los grupos afectados; es barato», y quitarles la marca de «por debajo del
+listón» **si pasaban del 90 %**. Se han corrido los dos. **Ninguno pasa, y el medidor nuevo corrige a
+la baja las dos cifras que estaban escritas.** Las dos corridas se hicieron con `--sin-version` para no
+tocar la versión archivada de ningún tema.
+
+| Tema | Lo que decía el medidor viejo | **Lo que dice el nuevo** | Corrida de hoy | Veredicto |
+|---|---|---|---|---|
+| **I.3** | 168/181 = **92,8 %** (publicado) | **152/181 = 84,0 %** | 68 llamadas · **0,2273 $** | **NO PASA** — sigue publicado con su cifra |
+| **I.4** | 489/542 = **90,2 %** (publicado, «margen de 0,2 puntos») | **491/551 = 89,1 %** | 137 llamadas · **0,8335 $** | **NO PASA** — sigue publicado con su cifra |
+
+**Las dos se quedan como están y con su cifra a la vista**, que es lo que manda el §4 del orden nuevo:
+«ningún tema publicado se retira automáticamente; si alguno baja del 90 %, se queda con su cifra».
+**Comprobado que no se retiró ninguna**: I.3 tiene su versión archivada y I.4 la suya, y el total sigue
+en **25 publicados**.
+
+**Y hay un detalle que hay que decir porque si no parece un error**: la corrida de I.4 **terminó
+diciendo 487/540 = 90,2 %** —pasaba— y `--publicar`, **dos minutos después, midió 491/551 = 89,1 %**.
+No es una contradicción del motor: **el denominador se movió solo** entre las dos medidas (las
+preguntas con clave utilizable pasaron de 540 a 551), porque **la base la están tocando otros bloques**
+y la puerta de claves se recalcula en cada medida. La cifra que vale es **la de la última medida**, y
+por eso I.4 se queda en 89,1 % y **no** se le quita la marca. Anotado para que nadie lo lea como un
+fallo de la corrida.
+
+**Lo que esto deja claro, y es lo importante**: el medidor nuevo **no sube temas, los mide de verdad**.
+Las dos cifras viejas —92,8 % y 90,2 %— se midieron cuando la cobertura contaba de más (una sección
+cubierta valía por todo su texto y un hecho sin materia se sentaba en el apartado de su pregunta). Con
+la cuenta buena, **I.3 está en 84,0 % e I.4 en 89,1 %**: los dos siguen visibles para el alumno, con su
+cifra, y **no se fuerza ninguno** para llegar al listón.
+
+**Coste de las dos corridas: 1,0608 $**, dentro de lo previsto (0,13–0,32 $ para I.3 y 0,44–0,90 $ para
+I.4). Es el precio de que las dos cifras que hay en los documentos sean las de verdad.
