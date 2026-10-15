@@ -378,3 +378,86 @@ prueba que falla antes y las 18 puertas.
 | **15-oct-2026** | **Se dice contra qué `main` se midió, y esa cifra NO se hereda al commit que entró.** La batería corrió sobre `main@4290817`; cuando terminó —54 minutos después— `main` ya llevaba el trabajo del bloque de apuntes (`195cbb8`, 918 líneas en `topic_notes_service.py`, `topic_index.py`, sus dos pruebas y 9 líneas de `apuntes-revision.spec.ts`). Lo que entró es **`c6f9184` = `195cbb8` + `s14`** | Las dos afirmaciones son verdad y hay que poder distinguirlas: **la entrega `s14` está medida** (sus 9 ficheros son byte-idénticos en los dos árboles, comprobado con `git hash-object`) y **la composición `195cbb8 + s14` no la midió esta batería**, la midió el bloque de apuntes en su rama. Escribir «18/18» a secas sobre `c6f9184` sería heredar una cifra, que es lo que el §1.4 prohíbe. Se deja escrito y se ofrece la re-medición | Volver a correr las 18 sobre `c6f9184` (una pasada, ~54 min con la máquina cargada) y entonces sí anotar la cifra a nombre de ese commit |
 | **15-oct-2026** | **Las puertas se corren con Windows PowerShell 5.1**, no con `pwsh` | `pwsh` **no está instalado en esta máquina** (no hay ningún `pwsh.exe` en disco) y `dev.ps1` ya lo dejó escrito («aquí no lo está»): el intérprete de la casa en este equipo es 5.1. Su `Test-OpoFuenteExitCodeDetection` comprobó, **antes de la primera puerta**, que este intérprete ve los códigos de salida (código 3 visto), que es el fallo que el 1-oct hizo imprimir «OK» a comandos que fallaban | Instalar PowerShell 7 y volver a correr |
 | **15-oct-2026** | **No se toca ni un fichero sin rastrear de otro agente.** La fusión falló primero con `Merge with strategy ort failed` sin listar conflicto: la causa era que **cinco ficheros del entregable existían sin rastrear en `main`** (copias byte-idénticas), y git se niega a pisarlos | El encargo lo dice y es correcto: esos 45 ficheros sin rastrear no son míos. Se registraron los cinco (commit `1aa0f87`) **sin cambiar un byte** y la fusión entró limpia. Yo no toqué el árbol `opofuente-main` | Deshacer `1aa0f87` (los cinco vuelven a estar sin rastrear) |
+
+### F28a · **La reextracción de las plantillas recortadas necesita una ruta nueva** (15-oct-2026)
+
+**Lo primero del orden nuevo (`SIGUIENTE-TANDA-CIERRE-DEL-OBJETIVO-2026-10.md` §3, `OBJETIVO-VIVO` A3): devolver
+los dos exámenes oficiales reextrayendo la evidencia recortada de la biblioteca.** Se ha mirado si eso se puede
+hacer por una ruta auditada, y **la respuesta es que no: hace falta construirla**. Se dice con lo medido, y no
+se fuerza ni se hace con SQL.
+
+**La ruta no existe**, comprobado sobre el código:
+
+| Qué se buscó | Qué hay |
+|---|---|
+| Un comando que vuelva a trocear la evidencia | **Ninguno**: las trece herramientas de `tools/` reparan preguntas, incidencias, procedencia o clasificación, no evidencia |
+| Quién trocea la evidencia | `evidence_cuts` (`domain/evidence.py`), usada **solo** por `document_repository._evidence`, a la que se llega por **`promote_artifact`**, o sea **en la ingesta** |
+| Un método para redibujar la estructura de una versión ya guardada | **No lo hay**: la API pública del repositorio de documentos es `promote_artifact`, `accept_version`, `withdraw_version`, `reinstate_version`, `list_*`, `get_*`, `version_detail`, `version_text`, `version_artifact`, `document_diff` y las colecciones |
+| El almacén de donde saldría el texto | **Está**: `extracted` tiene **11.778 ficheros (0,63 GB)** y **las 2.031 versiones afectadas conservan su representación de origen** |
+
+**Y el alcance, vuelto a medir hoy** (la cifra del 13-oct —3.474 versiones y 1,71 M de caracteres— **no coincide
+con la de hoy y manda la de hoy**, con la definición dicha):
+
+| Qué | Cifra de hoy |
+|---|---|
+| Secciones con evidencia en la biblioteca | **700.759** |
+| De ellas, troceadas en varias evidencias (lo que hace el código nuevo) | **0** — **toda la biblioteca se construyó con el código viejo** |
+| Secciones **recortadas** (su evidencia llega al tope del fallo, 1.198–1.200, y la sección es más larga) | **40.396** |
+| Versiones de documento afectadas | **2.031** |
+| Caracteres que no se pueden citar | **64.723.281** (64,7 M) |
+
+**La definición, para que la cifra sea comprobable**: la cobertura de una sección es
+`max(char_end) − min(char_start)` sobre **todas** sus evidencias; está recortada cuando esa cobertura llega al
+tope **y** la sección es más larga. Una sección partida en tres trozos que la cubren entera **no** está
+recortada. La primera medida que hice comparaba la evidencia **más larga** con la sección y marcaba como
+recortada cualquier sección bien troceada; se corrigió, y por eso la cifra de arriba es la buena.
+
+**Los dos exámenes del goal, medidos**: de los **19 conjuntos oficiales**, **doce no tienen ni una comprobación
+de clave** —entre ellos **TAI ingreso libre 2022** y **TAI ingreso libre 2025 extraordinario**, que son los dos
+que el goal nombra—; los de 2025 modelo A y B y promoción interna 2025 tienen 43, 47, 26 y 29 comprobadas y
+**cero discrepantes**.
+
+**Qué haría falta, para quien lo coja** (es **motor**, no contenido, y por tanto lleva sus 18 puertas y su
+prueba que falla antes): un método en el repositorio de documentos —del estilo `rederive_evidence(version_id)`—
+que, **para una versión ya guardada**, vuelva a leer su representación, vuelva a trocear con `evidence_cuts` las
+secciones recortadas, **sustituya** sus evidencias y **vuelva a enlazar** `question_evidence`, con su evento de
+auditoría. El patrón de la casa ya existe: `tools/reparar_preguntas.py` hace exactamente eso —ensaño por defecto,
+`--aplicar`, copia verificada antes, idempotente— para otro objeto.
+
+**No se ha tocado nada**: ni la base, ni el motor, ni la biblioteca. Queda escrito con su alcance y su causa para
+que el bloque que lo coja no tenga que volver a medirlo.
+
+## F28b · I.3 e I.4 con el medidor nuevo: **ninguno de los dos pasa**, y la cifra vieja queda corregida (15-oct-2026)
+
+El §5.1 del orden nuevo pedía **volver a correr I.3 e I.4 con el medidor nuevo** y el arreglo de
+`repartir_hechos`, «solo los grupos afectados; es barato», y quitarles la marca de «por debajo del
+listón» **si pasaban del 90 %**. Se han corrido los dos. **Ninguno pasa, y el medidor nuevo corrige a
+la baja las dos cifras que estaban escritas.** Las dos corridas se hicieron con `--sin-version` para no
+tocar la versión archivada de ningún tema.
+
+| Tema | Lo que decía el medidor viejo | **Lo que dice el nuevo** | Corrida de hoy | Veredicto |
+|---|---|---|---|---|
+| **I.3** | 168/181 = **92,8 %** (publicado) | **152/181 = 84,0 %** | 68 llamadas · **0,2273 $** | **NO PASA** — sigue publicado con su cifra |
+| **I.4** | 489/542 = **90,2 %** (publicado, «margen de 0,2 puntos») | **491/551 = 89,1 %** | 137 llamadas · **0,8335 $** | **NO PASA** — sigue publicado con su cifra |
+
+**Las dos se quedan como están y con su cifra a la vista**, que es lo que manda el §4 del orden nuevo:
+«ningún tema publicado se retira automáticamente; si alguno baja del 90 %, se queda con su cifra».
+**Comprobado que no se retiró ninguna**: I.3 tiene su versión archivada y I.4 la suya, y el total sigue
+en **25 publicados**.
+
+**Y hay un detalle que hay que decir porque si no parece un error**: la corrida de I.4 **terminó
+diciendo 487/540 = 90,2 %** —pasaba— y `--publicar`, **dos minutos después, midió 491/551 = 89,1 %**.
+No es una contradicción del motor: **el denominador se movió solo** entre las dos medidas (las
+preguntas con clave utilizable pasaron de 540 a 551), porque **la base la están tocando otros bloques**
+y la puerta de claves se recalcula en cada medida. La cifra que vale es **la de la última medida**, y
+por eso I.4 se queda en 89,1 % y **no** se le quita la marca. Anotado para que nadie lo lea como un
+fallo de la corrida.
+
+**Lo que esto deja claro, y es lo importante**: el medidor nuevo **no sube temas, los mide de verdad**.
+Las dos cifras viejas —92,8 % y 90,2 %— se midieron cuando la cobertura contaba de más (una sección
+cubierta valía por todo su texto y un hecho sin materia se sentaba en el apartado de su pregunta). Con
+la cuenta buena, **I.3 está en 84,0 % e I.4 en 89,1 %**: los dos siguen visibles para el alumno, con su
+cifra, y **no se fuerza ninguno** para llegar al listón.
+
+**Coste de las dos corridas: 1,0608 $**, dentro de lo previsto (0,13–0,32 $ para I.3 y 0,44–0,90 $ para
+I.4). Es el precio de que las dos cifras que hay en los documentos sean las de verdad.
