@@ -2313,3 +2313,98 @@ class TopicNotesReviewRecord(Base):
     reviewed_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
     created_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
+
+
+class DerivedKeyRecord(Base):
+    """La clave **derivada** de una pregunta (migración `0039`, §1 del encargo).
+
+    Nace de dos fuentes **independientes** que dicen la misma letra: la de los apuntes, con la cita
+    verificada, y la que el modelo contesta a la pregunta **sola** (enunciado y opciones, sin
+    apuntes). La clave extraída del material **no** participa en la decisión, que es lo que hace que
+    la letra derivada se pueda fiar aunque la del conjunto esté mal.
+
+    Es de la **pregunta**, no del conjunto: la clave extraída se estropea para un conjunto entero
+    —por eso el §1 puso la fiabilidad en `question_sets`—, pero lo que se deriva es letra a letra.
+
+    **`key_state` vale `derived` y solo `derived`**, y lo impone un `CHECK`: guardar una clave
+    derivada como `active` es imposible en la base, no una regla de estilo. La clave del conjunto no
+    se toca, no se copia y no se sustituye.
+    """
+
+    __tablename__ = "question_derived_keys"
+    __table_args__ = (
+        CheckConstraint("key_state IN ('derived')", name="ck_derived_key_state"),
+        CheckConstraint(
+            "length(trim(notes_letter)) > 0 AND length(trim(model_letter)) > 0 "
+            "AND lower(trim(notes_letter)) = lower(trim(model_letter))",
+            name="ck_derived_key_fuentes",
+        ),
+        CheckConstraint("correct_option_keys_json <> '[]'", name="ck_derived_key_has_key"),
+        Index("ix_derived_keys_set", "question_set_id"),
+    )
+
+    question_version_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("question_versions.id", ondelete="CASCADE", name="fk_derived_key_question"),
+        primary_key=True,
+    )
+    question_set_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("question_sets.id", ondelete="CASCADE"), nullable=False
+    )
+    correct_option_keys_json: Mapped[str] = mapped_column(Text, nullable=False)
+    key_state: Mapped[str] = mapped_column(
+        String(16), nullable=False, server_default=text("'derived'"), default="derived"
+    )
+    #: La letra que dan los apuntes y la **cita verificada** que la sostiene: la primera fuente.
+    notes_letter: Mapped[str] = mapped_column(String(4), nullable=False)
+    notes_quote: Mapped[str] = mapped_column(Text, nullable=False)
+    notes_anchor_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("question_note_anchors.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    #: Contra qué clave comprobó el motor de apuntes esa letra (`active` · `draft` · `ninguna`). No
+    #: decide la derivación —la letra vale por su cita— pero viaja con la evidencia: de ahí sale
+    #: que la letra corrobore o contradiga la clave del conjunto.
+    notes_key_status: Mapped[str] = mapped_column(String(16), nullable=False)
+    #: La segunda fuente: la letra que contestó el modelo a la pregunta sola, y con qué motor.
+    model_letter: Mapped[str] = mapped_column(String(4), nullable=False)
+    model_name: Mapped[str] = mapped_column(String(64), nullable=False)
+    model_version: Mapped[str] = mapped_column(String(64), nullable=False)
+    prompt_version: Mapped[str] = mapped_column(String(64), nullable=False)
+    actor: Mapped[str] = mapped_column(String(64), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
+
+
+class KeyGapRecord(Base):
+    """Por qué una pregunta de un conjunto en cuarentena **sigue fuera** (migración `0039`).
+
+    Tres motivos y ninguno más (`sin_material` · `sin_cita` · `sin_coincidencia`), que son los del
+    informe del encargo. Es el dato que el §2 necesita para agrupar la bandeja **por conjunto**
+    que hace verdad «las que no tengan clave fiable siguen fuera de ese conjunto»: una pregunta con
+    motivo escrito no vuelve a los tests aunque su conjunto vuelva.
+
+    Se escribe **solo** para preguntas de conjuntos que la corrida ha procesado (los que están en
+    cuarentena), así que ningún conjunto sano cambia de comportamiento por tener esta tabla.
+    """
+
+    __tablename__ = "question_key_gaps"
+    __table_args__ = (
+        CheckConstraint(
+            "reason IN ('sin_material', 'sin_cita', 'sin_coincidencia')",
+            name="ck_key_gap_reason",
+        ),
+        Index("ix_key_gaps_set", "question_set_id"),
+    )
+
+    question_version_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("question_versions.id", ondelete="CASCADE", name="fk_key_gap_question"),
+        primary_key=True,
+    )
+    question_set_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("question_sets.id", ondelete="CASCADE"), nullable=False
+    )
+    reason: Mapped[str] = mapped_column(String(24), nullable=False)
+    actor: Mapped[str] = mapped_column(String(64), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)

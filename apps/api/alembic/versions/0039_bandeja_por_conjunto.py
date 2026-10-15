@@ -1,8 +1,19 @@
 """La bandeja agrupada por conjunto: dos estados que resuelve una regla, no una persona (F31).
 
 Revision ID: 0039_bandeja_por_conjunto
-Revises: 0038_revision_de_apuntes
+Revises: 0039_claves_derivadas
 Create Date: 2026-10-15
+
+**Va detrás de `0039_claves_derivadas`, y ese orden es el correcto aunque las dos se llamen 0039.**
+Las dos ramas nacieron del mismo `main` y las dos colgaron de `0038_revision_de_apuntes`: dos
+migraciones con el mismo padre son **dos cabezas**, y alembic se niega a subir. Al fusionar, la del
+§1 entró primero, y esta **se re-apunta a ella**. El identificador de revisión es la cadena entera
+(`0039_bandeja_por_conjunto` ≠ `0039_claves_derivadas`), así que los dos números conviven; lo que no
+puede convivir es el padre repetido.
+
+Y no es un detalle de fontanería: la bandeja **lee** `question_derived_keys` para proponer en bloque
+lo que el §1 ha derivado, así que esta migración va detrás de la suya por la misma razón por la que
+el aviso va detrás de la comprobación.
 
 La bandeja nació (`0031`) como un resto que la corrida de apuntes contaba al terminar, y `0035` la
 hizo **despachable**: cuatro estados —los mismos que la bandeja del alumno— y la nota de lo que se
@@ -40,7 +51,7 @@ from __future__ import annotations
 from alembic import op
 
 revision = "0039_bandeja_por_conjunto"
-down_revision = "0038_revision_de_apuntes"
+down_revision = "0039_claves_derivadas"
 branch_labels = None
 depends_on = None
 

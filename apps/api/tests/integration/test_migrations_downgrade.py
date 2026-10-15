@@ -31,6 +31,27 @@ from opofuente.infrastructure.migrations import alembic_config, run_migrations, 
 #: desaparecer al hacerlo. El orden es el de la cadena, de la más nueva a la más antigua.
 ESCALONES: tuple[tuple[str, str, tuple[str, ...]], ...] = (
     (
+        # `0039_bandeja_por_conjunto` (F31) solo **ensancha** el `CHECK` del estado de la bandeja
+        # —de cuatro valores a seis— y añade un índice: ninguna tabla desaparece al bajar, por eso
+        # su escalón va vacío. Que los dos estados nuevos se van de verdad, con su `CHECK`, lo
+        # comprueba `test_migrations_0039_bandeja.py`, donde se mide la forma de la tabla.
+        #
+        # Va **detrás** de `0039_claves_derivadas`, y ese es el dato que importa: las dos ramas
+        # colgaban de `0038` y al fusionarlas esta se re-apuntó, porque dos migraciones con el mismo
+        # padre son **dos cabezas** y alembic se niega a subir. El escalón se recorre igual: bajar
+        # de una a la otra, que es lo que esta prueba mide.
+        "0039_bandeja_por_conjunto",
+        "0039_claves_derivadas",
+        (),
+    ),
+    (
+        # `0039` crea las dos tablas de la clave derivada (F29) y su vuelta atrás se las lleva: al
+        # bajar de este escalón desaparecen las dos, que es lo que se mide aquí.
+        "0039_claves_derivadas",
+        "0038_revision_de_apuntes",
+        ("question_derived_keys", "question_key_gaps"),
+    ),
+    (
         # `0038` crea la tabla de la revisión de los apuntes del propietario (F24) y su vuelta atrás
         # se la lleva: al bajar de este escalón la tabla **desaparece**, y es lo que se mide aquí.
         "0038_revision_de_apuntes",

@@ -3258,6 +3258,245 @@ en disco; `dev.ps1` ya lo dice: «aquí no lo está»). Su `Test-OpoFuenteExitCo
   aceptación a una persona y una versión. `s14` mueve el cuello de botella, no lo quita; decidir si se
   acepta en bloque (agrupando por documento) es una decisión de diseño que no toma este bloque.
 
+### 6. La segunda medición, sobre `c6f9184`, y por qué hacía falta
+
+La medición de arriba certificó **`4f7a1f0`**, pero lo que entró en `main` fue **`c6f9184`**, y entre los
+dos `main` había ganado 918 líneas del bloque de apuntes —incluidas **9 líneas de
+`apps/web/tests/e2e/apuntes-revision.spec.ts`**, que es un fichero que **la puerta 18 ejecuta**—. Por eso
+la cifra se volvió a medir **sobre el commit que está en `main`**. Esto es lo que salió.
+
+**El árbol medido es exactamente `c6f9184`**: `HEAD` desacoplado en ese commit, con
+`git status --porcelain` **vacío** antes y después de las dos corridas. `main`, en cambio, se movió **dos
+veces más** mientras se medía (`5a62d0d` → `6b3db4ab` → `cef3308`); eso ya no se pierde, porque **los dos
+registros llevan su procedencia** (ver el punto 4 y **DEBT-030**).
+
+| Tramo | Cuándo | Puertas | Resultado |
+|---|---|---|---|
+| **1** | 12:45:36 → 13:51:11 (65 min) | 1–9 | **1–8 OK** · **9 FALLO (código 1)** · 10–18 no llegaron a correr |
+| *diagnóstico* | 13:52 | — | los **dos ficheros** que cayeron pasan **42/42 en aislamiento**, mismo árbol y mismo juez |
+| **2** | 14:59:24 → 15:06:02 (**06:39**) | 9–18 | **9–18 OK, `exit 0`** · componentes **389/389** · E2E **80/80** |
+
+**Veredicto: `c6f9184` pasa las 18, en dos tramos**, y el único rojo del camino fue un **falso negativo
+por contención**, medido y no supuesto:
+
+- Los dos fallos del tramo 1 son `TestingLibraryElementError: Unable to find role="button"` dentro de dos
+  `waitFor` que esperan un botón que aparece **tras una petición asíncrona** (`promote.test.tsx:150` y
+  `questions.test.tsx:217`): firma de tiempo, no de expectativa.
+- **`questions.test.tsx` no viene de `s14`**: la rama aporta **9 ficheros** (`git diff 4f7a1f0^2
+  4f7a1f0`) y ese no es uno de ellos. Un fallo en un fichero que la rama no toca no puede ser de la rama.
+- Los dos ficheros **pasan 42/42 en aislamiento**, sobre el mismo árbol y con el mismo juez.
+- Y el terreno, con la cifra: en el tramo 1 la puerta 7 tardó **1:00:20** (frente a **45:11** en la primera
+  medición) y Vitest creó jsdom **43 veces con 471 s de tiempo rastreado (53 %)**. Es **DEBT-022**.
+
+**El tramo 2 no repite el tramo 1, y se dice por qué**: el árbol es byte-idéntico (mismo `HEAD`, árbol
+limpio) y las puertas 1–8 ya estaban verdes sobre él, así que solo se re-juzga **lo que quedó sin
+veredicto**. Es el mismo criterio con el que **F24-panel** quedó «18/18 repartidas en tres corridas», con
+el mismo `common.ps1`. Y el tramo 2 se corrió **a propósito con la máquina cargada** (CPU 90–100 %, cuatro
+suites de integración ajenas): que la puerta 9 pase ahí **es un veredicto más fuerte**, no uno más cómodo
+— el riesgo que se corría era un falso **rojo**, que es justo lo que sabemos detectar; un falso verde es
+lo que no estaba en juego y no se ha fabricado.
+
+**Los dos registros, con su procedencia** (lo que **DEBT-030** pedía, y ya está en el acta):
+
+| Fichero | Qué es | Procedencia que lleva dentro |
+|---|---|---|
+| `F:\temp-opofuente\gates-s14.txt` (43.995 B) | tramo 1, salida literal, `exit=1` | `ANTES … main=5a62d0d…` → `DESPUES … main=6b3db4ab…` |
+| `F:\temp-opofuente\gates-s14-tramo2.txt` (38.963 B) | tramo 2, salida literal, `exit=0` | `ANTES … main=cef3308…` → `DESPUES … main=cef3308…` |
+
+*(Sus `.err.txt` van al lado: 30.498 y 15.321 bytes, sin un error real — son los `INFO` de alembic, el
+aviso de tamaño de trozo de Vite y las salidas de `uv build`.)*
+
+**Y el instrumento hizo su trabajo el primer día que se usó**: en el tramo 1, `main` **se movió de verdad
+durante los 65 minutos** (`5a62d0d` → `6b3db4ab`, las 83 líneas de `DECISIONES` del commit `F28b`). Sin
+esa cabecera, hoy habría vuelto a escribirse una cifra contra un commit que no era el medido — que es
+exactamente el agujero que **DEBT-030** describía y que ya está cerrado.
+
+
+## F29 · Devolver al estudio las preguntas en cuarentena: la clave derivada (15-oct-2026)
+
+**Rama `f29-claves-derivadas`** (worktree `F:\temp-opofuente\opofuente-claves2`, desde `main = e03b354`),
+migración **`0039_claves_derivadas`**. Sin fusionar. Cierra el **§1** de
+`SIGUIENTE-TANDA-CIERRE-DEL-OBJETIVO-2026-10.md`, que es el encargo.
+
+**Lo que cambia, en una frase.** Una pregunta de un conjunto en cuarentena vuelve al estudio cuando
+**dos fuentes independientes dicen la misma letra** —los apuntes, con su cita verificada, y el modelo
+preguntado **sin apuntes**— y su clave se guarda como `derived` (**nunca** `active`), con la marca
+«clave revisada automáticamente» en la zona del alumno. Las que no consiguen esa coincidencia siguen
+fuera **con su motivo escrito**.
+
+### 1. La copia verificada (paso 0)
+
+`F:\OpoFuente\datos\backups\20261015-101027-00483c.zip` · **811.170.724 bytes** · SHA-256 del ZIP
+`adc596ef4d916de8841aba97d35792953680b7c599f268a7f8830701a6e9b2bb`. Método del proyecto
+(`BackupService.create` con alcance `database` → ZIP con manifiesto → `verify` → extracción a un
+temporal y `integrity_check`): **verify 2/2 entradas, 0 problemas**, base extraída 2.746.511.360
+bytes, `integrity_check` **ok**, `quick_check` **ok**, `foreign_key_check` **0 filas**, revisión de la
+copia `0037_origin_scope`. No se ha borrado ninguna copia.
+
+### 2. Lo que se ha construido, con su prueba que falla antes
+
+| # | Pieza | Qué hace | Prueba (rojo antes) |
+|---|---|---|---|
+| 1 | `domain/derived_keys.py` | La coincidencia de las dos fuentes, los **tres motivos** de quedarse fuera (en ese orden), la protección de la clave oficial por **tres caminos** y la decisión del 90 %. Puro: se prueba sin base de datos | `tests/unit/test_derived_keys.py` (**20 pruebas**) |
+| 2 | `alembic/versions/0039_claves_derivadas.py` | `question_derived_keys` (una fila por pregunta, con sus dos fuentes y su cita; `CHECK (key_state = 'derived')`) y `question_key_gaps` (por qué sigue fuera). **Vuelta atrás probada** | `tests/integration/test_migrations_0039.py` (**5**) |
+| 3 | `infrastructure/derived_key_repository.py` | La ruta **auditada**: guarda la clave con su evento, los motivos con un evento por conjunto, el rechazo del oficial y la decisión | `tests/integration/test_claves_derivadas.py` (**12**) |
+| 4 | `ports.AnswerKeyModel` + `DeepSeekNotesModel.responder` | La segunda fuente: la pregunta **sola** (enunciado y opciones), `temperature=0`, sin apuntes en el mensaje | lectura pura `read_respuestas_independientes` |
+| 5 | `tools/claves_derivadas.py` | `--listar`, `--prever`, `--derivar` (`--tope-usd`, `--limite`, `--seco`), `--decidir`, `--informe` | — |
+| 6 | `study_service`: `_banco`, `_correccion_de` y los **cinco sitios** que eligen preguntas | La pregunta entra por **su** clave: derivada sí; motivo escrito no (**aunque el conjunto vuelva**); si no, el veredicto del conjunto | `test_la_pregunta_derivada_entra_en_el_test_con_su_letra`, `test_la_pregunta_sin_clave_fiable_sigue_fuera_aunque_el_conjunto_vuelva` |
+| 7 | Zona del alumno: `derived_key` en la API y la marca en el test y en el resultado | El alumno ve **«clave revisada automáticamente»**, distinta de «clave en revisión» (una dice de dónde sale la letra; la otra, que se duda) | `apps/web/tests/unit/marcaClaveDerivada.test.tsx` (2) |
+
+**El rojo, tal cual salió** (`F:\temp-opofuente\f29-scratch\rojo-antes.txt`), revirtiendo **una**
+regla y corriendo **solo** la prueba que la fija:
+
+1. sin mirar la clave derivada en la composición → `UnsupportedError: no hay ninguna pregunta que se
+   pueda poner` (la pregunta vuelve a quedarse fuera, como antes);
+2. guardando la clave derivada como `active` → `sqlite3.IntegrityError: CHECK constraint failed:
+   ck_derived_key_state` (la base la rechaza: «nunca `active`» **no** depende de que alguien se
+   acuerde).
+
+### 3. La copia de la base y la migración
+
+La copia del §1 es de la revisión `0037_origin_scope`. Al empezar la corrida se aplicó la cabeza
+(`0039`) sobre la base real: **sube también la `0038_revision_de_apuntes` de F24**, que ya está en
+`main` y la base real no tenía —sin ella el código de `main` no arranca—. Las dos son aditivas y las
+dos tienen vuelta atrás probada.
+
+### 4. La corrida, con su previsión delante y su tope
+
+`--prever` (0 $, antes de pagar): **10 conjuntos entran, 5 se rechazan por clave oficial** (122
+preguntas de la AGE), **74 preguntas** con letra y cita por preguntar, 8 llamadas,
+**0,0030–0,0033 $**. Tope puesto en **0,50 $ y 200 llamadas**.
+
+Corrida real (`--derivar`):
+
+| | |
+|---|---|
+| llamadas | **13** (0 fallidas) |
+| preguntas preguntadas | **74** |
+| tokens | 16.701 de entrada (1.536 de caché) · **75.510 de salida** |
+| coste medido | **0,0478 $** |
+| coste por pregunta | **0,000646 $** |
+| claves derivadas | **59 (79,7 % de las preguntas preguntadas)** |
+
+**Y una corrección dicha: la previsión se quedó 14,5 veces corta.** Estimaba 12 tokens de salida por
+pregunta (lo que ocupa una letra en JSON) y el modelo devolvió ≈1.020: **la previsión era
+0,0030 $ y costó 0,0478 $**. La constante está corregida con lo medido
+(`TOKENS_DE_SALIDA_POR_PREGUNTA = 1020`) para que la próxima avise de verdad. El tope no se acercó
+ni de lejos y el total es de cinco céntimos, así que la corrida no se paró; con una base 16 veces
+mayor (los 1.283 candidatos posibles de hoy, si todos tuvieran cita) sí habría que decidir si merece
+la pena: costaría ≈0,8 $.
+
+### 5. El antes/después por conjunto, contado en la base y con el motor
+
+«Antes» es **0** por el veredicto `no_fiable` (la cuarentena cortaba el conjunto entero: lo demuestra
+el rojo del §2, no una suposición). «Después» está contado **llamando a `_candidatas`**, que es el
+embudo real de la composición, y sin escribir nada
+(`F:\temp-opofuente\f29-scratch\antes-despues.txt`):
+
+| conjunto | preguntas | devueltas al estudio (test por tema) | derivadas | corroboradas | % con clave fiable | ¿vuelve a tests? |
+|---|---|---|---|---|---|---|
+| TAI · SIMULACROS y TEST | 28 | **9** | 10 | 0 | 35,7 % | no (faltan 16) |
+| TAI · 1600-Preguntas-Constitución | 75 | **3** | 3 | 20 | 30,7 % | no (faltan 45) |
+| TAI · TEST B1 | 75 | **3** | 3 | 20 | 30,7 % | no (faltan 45) |
+| TAI · Supuestos Practicos Bloque IV | 67 | **1** | 1 | 14 | 22,4 % | no (faltan 46) |
+| TAI · Test por temas | 90 | **7** | 8 | 0 | 8,9 % | no (faltan 73) |
+| TAI · Test Aragón 2015 | 102 | **1** | 1 | 8 | 8,8 % | no (faltan 83) |
+| TAI · baquedano | 318 | **19** | 23 | 5 | 8,8 % | no (faltan 259) |
+| TAI · 2019 GSI promoción | 80 | **1** | 1 | 6 | 8,8 % | no (faltan 65) |
+| TAI · TEST VARIOS | 192 | **4** | 9 | 7 | 8,3 % | no (faltan 157) |
+| TAI · C_ejer_1_libre_DZA_2026 | 50 | **0** | 0 | 2 | 4,0 % | no (faltan 43) |
+| **TOTAL** | **1.077** | **48** | **59** | **82** | **13,1 %** | **0 conjuntos** |
+
+**Ningún conjunto alcanza el listón del 90 %** (el mejor mide 35,7 %), así que la decisión de volver
+—tomada y auditada conjunto a conjunto con su cifra— es **que ninguno vuelve entero**. Lo que vuelve
+es cada pregunta con su clave derivada.
+
+**Los dos números de «devueltas» no son el mismo a propósito**: hay **59 claves derivadas** y **48**
+alcanzables por un test por tema; las **11** restantes no están catalogadas en ningún tema (no las
+sitúa el índice), así que vuelven por la **práctica de un conjunto** o el **repaso**, que son los
+otros caminos que eligen preguntas.
+
+### 6. Lo que sigue fuera, y por qué (contado en la base)
+
+De las **1.077** preguntas de los 10 conjuntos procesados: **628 sin material** (los apuntes no las
+contestan), **293 sin cita** (dan una letra pero no la frase que la sostenga) y **15 sin
+coincidencia** (las dos fuentes hablan y no dicen lo mismo: **esas 15 son del propietario**, y son las
+que la bandeja del §2 tiene que enseñar agrupadas por conjunto). Las **82 corroboradas** (los apuntes
+confirman la letra de la plantilla activa) cuentan para el listón pero **no entran hasta que su
+conjunto vuelva**, porque su letra sale de la plantilla que está en cuarentena.
+
+Y **las claves oficiales no se han tocado**: 5 conjuntos de la AGE con su respuesta publicada
+**rechazados** y auditados (`question_set.derived_key_refused`), 122 preguntas.
+
+### 7. Las 18 puertas, y la fusión con `main`
+
+**18/18 en una sola pasada.** El registro literal está en
+`F:\temp-opofuente\gates-f29-claves-derivadas.txt`, lanzado con `Start-Process` y **sin
+tuberías**, con el `gates.ps1` del árbol y su mismo juez. Lo que midió cada suite (literal en el
+registro): unitarias **876**, integración **742** (1:07:39), contrato **29**, componentes **381** (43
+ficheros), E2E **78** (3,9 min), migración desde base vacía, siembra idempotente y fixtures de perfil
+en verde. **Ninguna puerta cayó y no hubo ningún código nativo.** El puerto (8765/4173) estaba libre
+cuando se lanzó la 18, comprobado con `netstat` antes.
+
+**Una prueba se añadió después de que la 7 arrancara** (`test_el_alumno_ve_la_marca_de_la_clave_derivada`,
+la que comprueba `derived_key` por la API del alumno). Se corrió aparte y está verde (**12 pruebas**
+del fichero). Decir que la 7 la midió sería falso; el fichero entero se ha vuelto a correr después.
+
+**La fusión con `main` (`cef3308`, que trae el contenido —III.4 publicado, I.4 republicado, D4—, D11
+y `s14`) se resuelve SUMANDO, y se verifica contando**: los dos únicos conflictos eran
+`DECISIONES-TOMADAS-EN-EL-OBJETIVO.md` y `ESTADO-DEL-OBJETIVO.md` (cada bloque añade lo suyo al
+final). La comprobación es `Counter(fusión) == Counter(main) + Counter(mía) − Counter(base)` línea a
+línea, con `base = e03b354`:
+
+| documento | base | main | mía | fusión | faltan | sobran | marcadores | filas de decisión (base → main → mía → fusión) |
+|---|---|---|---|---|---|---|---|---|
+| `DECISIONES` | 375 | 617 | 383 | **625** | 0 | 0 | **0** | 191 → 201 → 199 → **209** |
+| `ESTADO` | 3.150 | 3.259 | 3.294 | **3.403** | 0 | 0 | **0** | 165 → 165 → 166 → **166** |
+
+Las dos filas cuadran: **209 = 201 + 199 − 191** (mis ocho decisiones entran enteras y ninguna de
+`main` se pierde). Sobre el resultado: **`ruff check .` limpio, `mypy` estricto limpio** (240
+ficheros) y **128 pruebas de integración** de los ficheros que tocan esto y lo que trajo `main`
+(derivadas, cuarentena, apuntes, migraciones, estudio y alumno) **en verde**.
+
+**Aviso de tráfico que queda dicho**: el bloque de la bandeja por conjunto crea
+`0039_bandeja_por_conjunto` colgando de `0038`; como esta rama entra primero con
+`0039_claves_derivadas`, **su `down_revision` tiene que re-apuntar a la mía** (él ya lo sabe). Con las
+dos colgando de `0038` habría dos cabezas y `alembic upgrade head` no sabría por dónde seguir.
+
+**Tres pruebas existentes se tocan, y se dice por qué** (no es relajar el juez):
+
+- `test_migrations_downgrade.py`: la cadena se recorre hacia atrás y **cada migración añade su
+  escalón**; el de `0039` entra con las dos tablas que su vuelta atrás se lleva. Sin él, la prueba
+  afirmaba estar en `0038` cuando la cabeza ya es `0039`.
+- `test_study_session.py` y `test_study_api.py` («sin clave activa no hay sesión»): el camino nuevo
+  permitía montar una sesión de un conjunto **sin plantilla activa y sin ninguna clave derivada**, que
+  no se podría corregir. `_correccion_de` vuelve a negarse con **el mismo** `ClassificationConflictError`
+  que publicaba el contrato; la expectativa **no** se ha tocado.
+
+### 8. Lo que queda fuera de este bloque, y por qué
+
+- **El §2 (la bandeja por conjunto) no se hace aquí**: el encargo pide **dejar el dato y el motivo**, y
+  están (`question_key_gaps`, con su recuento por conjunto y su evento de auditoría).
+- **La interacción con la puerta de datos del §1.4**: si un conjunto llegara al 90 % y volviera a
+  `fiable`, la puerta que se recalcula al cerrar cada tema lo mediría **con las anclas guardadas** —que
+  no cambian con la derivación— y podría devolverlo a cuarentena. Hoy **no le pasa a ninguno** (ninguno
+  llega al 90 %), pero queda dicho.
+- **La previsión de salida estaba mal** (§4) y el cliente del modelo **no lleva `max_tokens`**: el
+  modelo devuelve ~1.020 tokens de salida por pregunta cuando solo se lee una letra. Recortarlo sería
+  un cambio en un camino compartido con los apuntes y no se ha hecho aquí.
+- **Una clave derivada se va con su ancla, y eso se ha visto en vivo.** La fila guarda el **ancla**
+  que la sostiene (la cita verificada) y su clave foránea es `ON DELETE CASCADE`: si el tema se vuelve
+  a correr y el apartado se rehace, el ancla desaparece y **la clave derivada se va con ella** —que es
+  lo correcto: una letra sin la cita que la sostiene no es una clave derivada—. Medido: la corrida
+  escribió **59** claves a las 13:12 (local); a las 14:25 el bloque de contenido corrió **I.8**, se
+  rehicieron apartados de baquedano y **6 de sus 23 claves** se fueron con sus anclas (medido a las
+  16:00: **53 claves**, y las 6 preguntas se han quedado **sin ninguna ancla**). No es un fallo: es el
+  precio de que la clave dependa de su evidencia. **La consecuencia práctica hay que decirla**: un
+  tema que se reescriba puede devolver a la cuarentena preguntas que ya habían vuelto, y la forma de
+  que no pase es **volver a correr `--derivar` al cerrar cada tema** (cuesta ~0,0006 $ por pregunta y
+  salta las ya derivadas: con los 1.283 candidatos de hoy, ≈0,8 $). Queda como recomendación, no como
+  puerta automática: hacerlo puerta es una decisión del propietario.
+
 
 ## F31 · La bandeja del propietario, agrupada por conjunto (15-oct-2026)
 

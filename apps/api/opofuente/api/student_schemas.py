@@ -228,6 +228,15 @@ class StudentQuestionSchema(BaseModel):
         description="La clave de esta pregunta está en revisión: su conjunto discrepa de los "
         "apuntes entre el 15 % y el 30 % de las preguntas medidas.",
     )
+    #: Y la clave de esta pregunta es **derivada** (§1 del encargo F29): los apuntes, con su cita
+    #: verificada, y el modelo preguntado sin apuntes dicen la misma letra. La interfaz la enseña
+    #: como «clave revisada automáticamente», que es distinto de «en revisión».
+    derived_key: bool = Field(
+        default=False,
+        description="La clave de esta pregunta es derivada: los apuntes (con su cita verificada) y "
+        "el modelo preguntado sin apuntes dicen la misma letra. Se enseña como «clave revisada "
+        "automáticamente».",
+    )
 
 
 class StudentSheetRowSchema(BaseModel):
@@ -256,6 +265,12 @@ class StudentRunSchema(BaseModel):
         default=0,
         ge=0,
         description="Cuántas preguntas del test llevan la marca «clave en revisión».",
+    )
+    questions_derived: int = Field(
+        default=0,
+        ge=0,
+        description="Cuántas preguntas del test llevan la marca «clave revisada automáticamente»: "
+        "su clave es derivada y no sale de la plantilla del conjunto.",
     )
 
 
@@ -449,6 +464,12 @@ class StudentResultQuestionSchema(BaseModel):
         default=False,
         description="La clave de esta pregunta está en revisión: un fallo puede ser de la clave y "
         "no del alumno.",
+    )
+    derived_key: bool = Field(
+        default=False,
+        description="La clave de esta pregunta es derivada (los apuntes, con su cita verificada, y "
+        "el modelo sin apuntes dicen la misma letra): se enseña como «clave revisada "
+        "automáticamente».",
     )
 
 

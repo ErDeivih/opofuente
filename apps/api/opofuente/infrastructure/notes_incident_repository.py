@@ -52,6 +52,7 @@ from opofuente.infrastructure.db_models import (
     AnswerKeyVersionRecord,
     AuditEventRecord,
     CurriculumNodeRecord,
+    DerivedKeyRecord,
     DocumentSectionRecord,
     DocumentVersionRecord,
     LogicalDocumentRecord,
@@ -792,39 +793,72 @@ class SqlAlchemyNotesIncidentRepository:
         """Las claves derivadas que esperan aprobación, con sus dos fuentes.
 
         La tabla `question_derived_keys` la escribe la ruta de las claves derivadas (el §1 del
-        encargo), y **puede no estar**: este bloque llega antes que su migración. Cuando no está, no
-        hay propuestas y se dice —que es distinto de decir que no hay ninguna pendiente—, con el
-        mismo patrón que ya usa `key_reliability()` para la columna del §1: se comprueba con
-        `inspect` antes de leer, y no se adelanta el trabajo de otro bloque.
+        encargo) y la crea **su** migración, `0039_claves_derivadas`, que va **delante** de la de
+        esta bandeja: por eso esta migración se re-apuntó a ella al fusionar —dos migraciones
+        colgando del mismo padre son dos cabezas— y por eso aquí no hay guarda que valga. Si no
+        estuviera, el esquema estaría por debajo de su revisión, y eso no es un caso que esta
+        lectura tenga que disimular: lo dice `alembic current`.
 
-        Una propuesta es una fila de esa tabla con `key_state = 'derived'` cuya letra **no está** en
-        la clave que el conjunto tiene hoy: si estuviera, el motor ya la habría dado por buena y
-        habría incidencia que aprobar.
+        Se leen las cuatro columnas que hacen falta y no la fila entera: la forma de esa tabla no es
+        de este bloque, y una consulta que se traiga todo se rompe el día que el §1 le añada una
+        columna.
+
+        Una propuesta es una fila con `key_state = 'derived'` cuya letra **no está** en la clave que
+        el conjunto tiene hoy: si estuviera, el motor ya la habría dado por buena y no habría
+        incidencia que aprobar.
         """
         with self._session_factory() as session:
-            if not inspect(session.get_bind()).has_table("question_derived_keys"):
-                return ()
             filas = session.execute(
-                text(
-                    "SELECT i.id, i.question_version_id, v.question_set_id, "
-                    "       d.correct_option_keys_json, d.notes_letter, d.model_letter, "
-                    "       d.notes_quote, a.expected_letters "
-                    "  FROM notes_incidents i "
-                    "  JOIN question_versions v ON v.id = i.question_version_id "
-                    "  JOIN question_derived_keys d "
-                    "    ON d.question_version_id = i.question_version_id "
-                    "  LEFT JOIN question_note_anchors a "
-                    "    ON a.question_version_id = i.question_version_id "
-                    "   AND a.curriculum_node_id = i.curriculum_node_id "
-                    " WHERE i.status IN ('open', 'in_progress', 'propuesta_lista') "
-                    "   AND i.category IN ('clave_sospechosa', 'clave_no_fiable') "
-                    "   AND d.key_state = 'derived'"
+                select(
+                    NotesIncidentRecord.id,
+                    NotesIncidentRecord.question_version_id,
+                    QuestionVersionRecord.question_set_id,
+                    DerivedKeyRecord.correct_option_keys_json,
+                    DerivedKeyRecord.notes_letter,
+                    DerivedKeyRecord.model_letter,
+                    DerivedKeyRecord.notes_quote,
+                    QuestionNoteAnchorRecord.expected_letters,
                 )
+                .join(
+                    QuestionVersionRecord,
+                    QuestionVersionRecord.id == NotesIncidentRecord.question_version_id,
+                )
+                .join(
+                    DerivedKeyRecord,
+                    DerivedKeyRecord.question_version_id == NotesIncidentRecord.question_version_id,
+                )
+                .outerjoin(
+                    QuestionNoteAnchorRecord,
+                    (
+                        QuestionNoteAnchorRecord.question_version_id
+                        == NotesIncidentRecord.question_version_id
+                    )
+                    & (
+                        QuestionNoteAnchorRecord.curriculum_node_id
+                        == NotesIncidentRecord.curriculum_node_id
+                    ),
+                )
+                .where(
+                    NotesIncidentRecord.status.in_(
+                        [
+                            estado.value
+                            for estado in (*ESTADOS_ESPERANDO, IncidentStatus.PROPUESTA_LISTA)
+                        ]
+                    ),
+                    NotesIncidentRecord.category.in_(
+                        [
+                            CategoriaIncidencia.CLAVE_SOSPECHOSA.value,
+                            CategoriaIncidencia.CLAVE_NO_FIABLE.value,
+                        ]
+                    ),
+                    DerivedKeyRecord.key_state == "derived",
+                )
+                .order_by(NotesIncidentRecord.id)
             ).all()
 
         propuestas: list[IncidentProposal] = []
         for fila in filas:
-            letras = letras_de_clave(None if fila[3] is None else str(fila[3]))
+            letras = letras_de_clave(str(fila[3]))
             if len(letras) != 1:
                 continue
             esperadas = {
@@ -839,8 +873,8 @@ class SqlAlchemyNotesIncidentRepository:
                     question_version_id=str(fila[1]),
                     set_id=str(fila[2]),
                     letters=letras,
-                    notes_letter=normalizar_letra(None if fila[4] is None else str(fila[4])),
-                    model_letter=normalizar_letra(None if fila[5] is None else str(fila[5])),
+                    notes_letter=normalizar_letra(str(fila[4])),
+                    model_letter=normalizar_letra(str(fila[5])),
                     quote=None if fila[6] is None else str(fila[6]),
                 )
             )

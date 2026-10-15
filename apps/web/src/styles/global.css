@@ -1805,6 +1805,20 @@ kbd {
   margin-left: var(--s2);
 }
 
+/* La marca «clave revisada automáticamente» (§1 del encargo F29): la letra de esta pregunta no
+   sale de la plantilla del conjunto (que está en cuarentena o en borrador) sino de dos fuentes
+   independientes que dicen lo mismo —los apuntes con su cita y el modelo sin apuntes—. No es una
+   duda: es una clave reconstruida, así que va en el par de colores de «correcto»
+   (`--acierto` sobre `--acierto-suave`, el mismo par que `.resultado__desenlace--correct`, ya en la
+   suite verde) y no en el par de «en revisión». */
+.marca-clave-derivada {
+  border-color: var(--acierto);
+  color: var(--acierto);
+  background: var(--acierto-suave);
+  font-weight: 700;
+  margin-left: var(--s2);
+}
+
 .marca--vacia {
   border-style: dashed;
 }

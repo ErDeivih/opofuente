@@ -84,11 +84,13 @@ function runFixture(overrides: Partial<StudentRun> = {}): StudentRun {
     pending: 1,
     finished: false,
     questions_in_review: 0,
+    questions_derived: 0,
     position: 3,
     question: {
       position: 3,
       is_reserve: false,
       in_review: false,
+      derived_key: false,
       stem: '¿Cuántas capas tiene el modelo OSI?',
       question_type: 'single_choice',
       options: [
@@ -245,6 +247,7 @@ describe('el test en curso', () => {
         position: 3,
         is_reserve: false,
         in_review: false,
+      derived_key: false,
         stem: '¿Cuántas capas tiene el modelo OSI?',
         question_type: 'single_choice',
         options: [

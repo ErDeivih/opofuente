@@ -11,10 +11,12 @@ Dos cosas del montaje que conviene decir porque no son del propietario:
 - los conjuntos oficiales se marcan con un `UPDATE` sobre la base **de la suite** (`.pytest-tmp`),
   no sobre ninguna real: no hay ruta que cambie el tipo de un conjunto, y el tipo es lo que hace
   que su clave esté protegida;
-- la tabla de claves derivadas la escribe el bloque del §1, que **no está fusionado todavía**. Aquí
-  se crea a mano con las columnas que este bloque lee. Sin ella, la acción de aceptar derivadas no
-  tendría nada que aceptar y la prueba no probaría la escritura de la clave, que es justo lo que hay
-  que demostrar que se rechaza cuando el conjunto es oficial.
+- la clave derivada se siembra a mano en `question_derived_keys` —la tabla que crea la migración
+  `0039_claves_derivadas` del §1, ya fusionada— porque derivarla de verdad cuesta una llamada al
+  modelo, y lo que esta prueba mide es la **aprobación en bloque**, no quién la derivó. La fila se
+  siembra **como la escribe su ruta**: con la cita de los apuntes y con el **ancla verificada**
+  apuntada por su clave foránea, así que antes hay que comprobar las preguntas (`save_checks`), que
+  es como nace un ancla.
 """
 
 from __future__ import annotations
@@ -31,8 +33,11 @@ from sqlalchemy import text
 from opofuente.config import Settings
 from opofuente.domain.topic_notes import (
     CategoriaIncidencia,
+    Coverage,
     IncidenciaDeApuntes,
+    KeyStatus,
     Motivo,
+    NotesCheck,
     NoteSection,
 )
 from opofuente.infrastructure.db import build_engine, build_session_factory
@@ -67,6 +72,12 @@ TEXTO_PREGUNTAS = "\n".join(
 #: Lo que la prueba aprobaría en bloque: la letra que dicen los apuntes con cita y el modelo, y que
 #: **no** es la que el conjunto tiene hoy (que es `a` para todas las preguntas del banco).
 LETRA_DERIVADA = "b"
+
+#: La cita verificada de los apuntes que sostiene esa letra. Es lo que une las dos filas que la
+#: prueba siembra —el ancla de la comprobación y la clave derivada—, y por eso es una constante: si
+#: se escribiera dos veces a mano, un cambio en una dejaría la otra sin enlazar y la prueba
+#: mediría una fila que no existe.
+CITA = "la clave del material está mal: la respuesta correcta es la b"
 
 
 def _settings(settings: Settings) -> Settings:
@@ -161,6 +172,29 @@ def _escribir_bandeja(settings: Settings, node_id: str, preguntas: list[str]) ->
             now=ahora,
         )
         apartado = guardados[0]
+        # Las comprobaciones de los apuntes: son el **ancla** (la frase verificada con la letra que
+        # sostiene) y son la clave foránea que la clave derivada exige. Se comprueban las dos
+        # preguntas con incidencia de clave; la tercera —el hueco— no tiene letra que anclar.
+        notas.save_checks(
+            node_id,
+            [
+                NotesCheck(
+                    question_version_id=pregunta,
+                    group_signature="firma-sospechosa",
+                    section_key=apartado.key,
+                    anchor=apartado.anchor,
+                    coverage=Coverage.CONFLICTO,
+                    note=Motivo.LETRA_NO_COINCIDE,
+                    quote=CITA,
+                    letter=LETRA_DERIVADA,
+                    expected=("a",),
+                    key_status=KeyStatus.ACTIVE,
+                    attempts=1,
+                )
+                for pregunta in preguntas[:2]
+            ],
+            now=ahora,
+        )
         notas.save_incidents(
             node_id,
             [
@@ -200,50 +234,35 @@ def _escribir_bandeja(settings: Settings, node_id: str, preguntas: list[str]) ->
         engine.dispose()
 
 
-def _crear_tabla_de_derivadas(settings: Settings) -> None:
-    """La tabla que escribe el bloque del §1, con las columnas que este bloque lee.
+def _sembrar_derivadas(settings: Settings) -> None:
+    """Escribe la clave derivada **como la escribe su ruta**, con el ancla que la sostiene.
 
-    Se crea a mano porque su migración no está fusionada todavía. Cuando lo esté, esta función sobra
-    y la prueba sigue valiendo: lo que comprueba es la **aprobación en bloque**, no quién creó la
-    tabla.
+    La tabla la crea la migración `0039_claves_derivadas` del §1 (fusionada antes que esta rama),
+    así que aquí no se crea nada: se **escribe** en ella. Y se escribe con sus dos fuentes y su
+    ancla porque la tabla lo exige en la base —`key_state` solo admite `derived`, las dos letras
+    deben coincidir y `notes_anchor_id` es una clave foránea—: si se saltara esas reglas, estaría
+    probando una aprobación que en la base real no podría existir.
     """
     engine = build_engine(settings.data_paths.database)
     try:
         with engine.begin() as conexion:
             conexion.execute(
                 text(
-                    "CREATE TABLE IF NOT EXISTS question_derived_keys ("
-                    " question_version_id VARCHAR(36) PRIMARY KEY,"
-                    " question_set_id VARCHAR(36) NOT NULL,"
-                    " correct_option_keys_json TEXT NOT NULL,"
-                    " key_state VARCHAR(16) NOT NULL,"
-                    " notes_letter VARCHAR(4),"
-                    " notes_quote TEXT,"
-                    " notes_anchor_id VARCHAR(36),"
-                    " notes_key_status VARCHAR(16),"
-                    " model_letter VARCHAR(4),"
-                    " model_name VARCHAR(64),"
-                    " model_version VARCHAR(64),"
-                    " prompt_version VARCHAR(64),"
-                    " actor VARCHAR(64),"
-                    " created_at DATETIME)"
-                )
-            )
-            conexion.execute(
-                text(
-                    "INSERT OR REPLACE INTO question_derived_keys ("
+                    "INSERT INTO question_derived_keys ("
                     " question_version_id, question_set_id, correct_option_keys_json, key_state,"
-                    " notes_letter, notes_quote, notes_key_status, model_letter, actor, created_at)"
-                    " SELECT v.id, v.question_set_id, :letras, 'derived', :letra,"
-                    "        'la clave del material esta mal: es la b', 'draft', :letra,"
-                    "        'f29:claves-derivadas', :ahora"
-                    "   FROM question_versions v"
-                    "   JOIN question_sets s ON s.id = v.question_set_id"
-                    "  WHERE s.title = 'Banco de la bandeja por conjunto'"
+                    " notes_letter, notes_quote, notes_anchor_id, notes_key_status, model_letter,"
+                    " model_name, model_version, prompt_version, actor, created_at)"
+                    " SELECT a.question_version_id, v.question_set_id, :letras, 'derived',"
+                    "        :letra, :cita, a.id, 'active', :letra,"
+                    "        'deepseek', 'v1', 'clave-derivada-1', 'f29:claves-derivadas', :ahora"
+                    "   FROM question_note_anchors a"
+                    "   JOIN question_versions v ON v.id = a.question_version_id"
+                    "  WHERE a.quoted_sentence = :cita"
                 ),
                 {
                     "letras": json.dumps([LETRA_DERIVADA]),
                     "letra": LETRA_DERIVADA,
+                    "cita": CITA,
                     "ahora": datetime.now(UTC).replace(tzinfo=None),
                 },
             )
@@ -448,7 +467,7 @@ def test_aceptar_las_derivadas_escribe_la_clave_y_cierra_la_incidencia(
     lo que tiene propuesta, que es justo la diferencia entre «resuelto» y «propuesto en bloque».
     """
     client, settings, set_id, preguntas = bandeja
-    _crear_tabla_de_derivadas(settings)
+    _sembrar_derivadas(settings)
     assert _clave_de(settings, preguntas[0]) == '["a"]'
 
     bandeja_antes = client.get("/api/v1/notes-incidents/tray").json()
@@ -502,7 +521,7 @@ def test_una_clave_oficial_no_se_toca_y_la_ruta_lo_rechaza_con_su_prueba(
         set_id, preguntas = _banco(client, tema)
         _escribir_bandeja(resuelta, str(tema["id"]), preguntas)
         _es_clave_oficial(resuelta, set_id)
-        _crear_tabla_de_derivadas(resuelta)
+        _sembrar_derivadas(resuelta)
 
         clave_antes = _clave_de(resuelta, preguntas[0])
         incidencias_antes = _incidencias(resuelta)
