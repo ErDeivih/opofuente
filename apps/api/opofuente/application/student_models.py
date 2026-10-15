@@ -291,6 +291,12 @@ class StudentQuestionView:
     #: marca vive en `domain.key_reliability.MARCA_EN_REVISION` y no se repite aquí: dos
     #: literales distintos acabarían diciendo cosas distintas en la pantalla y en el contrato.
     in_review: bool = False
+    #: La clave de **esta** pregunta es **derivada** (§1 del encargo F29): los apuntes, con su cita
+    #: verificada, y el modelo preguntado sin apuntes dicen la misma letra. El alumno la ve con la
+    #: marca `domain.key_reliability.MARCA_DERIVADA` («clave revisada automáticamente»), que es
+    #: distinta de «en revisión» y por eso es otro campo: una avisa de una duda y la otra dice de
+    #: dónde sale la letra.
+    derived_key: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -320,6 +326,10 @@ class StudentRunView:
     #: Cuántas preguntas del test llevan la marca «clave en revisión». El test entero lo puede decir
     #: de un vistazo sin que el alumno tenga que ir pregunta a pregunta.
     questions_in_review: int = 0
+    #: Y cuántas se corrigen con su **clave derivada** y llevan la marca «clave revisada
+    #: automáticamente». Es otra cuenta porque es otra cosa: una dice cuántas están en duda y esta,
+    #: cuántas letras se han reconstruido con dos fuentes independientes.
+    questions_derived: int = 0
 
 
 @dataclass(frozen=True, slots=True)
@@ -454,6 +464,10 @@ class StudentResultQuestionView:
     #: el test: si la clave no es de fiar, un fallo puede ser de la clave y no del alumno, y eso
     #: hay que poder verlo justo cuando se mira qué se ha fallado.
     in_review: bool = False
+    #: Y la clave de esta pregunta es **derivada** (§1 del encargo F29). En el resultado importa
+    #: por lo mismo que la otra: dice de dónde sale la letra con la que se corrigió, y con la marca
+    #: «clave revisada automáticamente» el alumno sabe que la letra no es la de la plantilla.
+    derived_key: bool = False
 
 
 @dataclass(frozen=True, slots=True)

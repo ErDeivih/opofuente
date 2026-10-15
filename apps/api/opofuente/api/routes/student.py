@@ -176,6 +176,7 @@ def _question(view: StudentQuestionView) -> StudentQuestionSchema:
             )
         ),
         in_review=view.in_review,
+        derived_key=view.derived_key,
     )
 
 
@@ -189,6 +190,7 @@ def _run(view: StudentRunView) -> StudentRunSchema:
         position=view.position,
         question=None if view.question is None else _question(view.question),
         questions_in_review=view.questions_in_review,
+        questions_derived=view.questions_derived,
         sheet=[
             StudentSheetRowSchema(
                 position=fila.position,
@@ -278,6 +280,7 @@ def _result_question(view: StudentResultQuestionView) -> StudentResultQuestionSc
         elapsed_ms=view.elapsed_ms,
         topics=[_topic_ref(tema) for tema in view.topics],
         in_review=view.in_review,
+        derived_key=view.derived_key,
     )
 
 
