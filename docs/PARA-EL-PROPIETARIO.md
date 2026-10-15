@@ -3,6 +3,32 @@
 Lo que conviene que sepas y **no** hace falta que contestes para que el trabajo siga. Lo que sí
 necesita tu criterio está marcado como **«Decide tú»**.
 
+## 15 oct 2026 — El material de la Bandeja ya se puede pasar a la Biblioteca
+
+**Lo que cambia para ti:** hasta hoy, para que algo llegara a la **Biblioteca** había que llamar a la
+API a mano. La pantalla de la Bandeja copiaba el material y le sacaba el texto, y la Biblioteca seguía
+**vacía**. Ahora, cuando una importación termina, la Bandeja te enseña el paso que faltaba
+—**«Pasar a la biblioteca»**—: marcas lo que sí es un documento, pulsas, y entra.
+
+**Y entra sin aceptar nada**, que es lo importante: lo que pasa a la Biblioteca son versiones
+**candidatas** —se ven, se citan, se les pueden colgar derechos— pero **no cuentan para estudiar**
+hasta que las aceptas, una a una, en la Biblioteca. La pantalla lo dice con esas palabras.
+
+Tres cosas que conviene que sepas:
+
+- **Vienen marcadas las que tienen texto** (lo que se puede leer y citar); un escaneo no viene marcado,
+  pero lo puedes marcar tú. Y si el lote es **grande** —más de 25 artefactos— **no viene marcado nada**
+  y la pantalla dice por qué: en tu lote de TAI hay **1.191 artefactos y 1.090 con texto**, y un clic
+  habría creado 1.090 versiones que después habría que aceptar una a una.
+- **Repetirlo no duplica**: si pasas dos veces el mismo fichero, la segunda dice «ya estaba».
+- **El cuello de botella se mueve, no desaparece.** Con un lote así, aceptar sigue siendo un clic por
+  versión. **Decide tú** si merece la pena cambiar eso —agrupar el material en documentos de verdad (un
+  temario, unos apuntes) y aceptar decenas en vez de miles—, porque hoy la aplicación no lo hace sola y
+  no es una decisión que deba tomar yo.
+
+*(Este paso venía de una entrega del 29 de septiembre que se quedó sin fusionar. No se ha metido a
+ciegas: se ha pasado por las 18 puertas sobre el código de hoy, en verde.)*
+
 ## 13 oct 2026 — Ya puedes hacerte un test a tu medida (la zona del alumno queda cerrada)
 
 **Lo que cambia para ti:** la pantalla **Tests** ya existe. Era la última del menú del alumno que

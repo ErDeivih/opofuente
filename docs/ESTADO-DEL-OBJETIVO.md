@@ -3148,3 +3148,112 @@ pasada» sería falso; decir que no está verde, también. Es la misma decisión
 contrato **29**, componentes **379** (42 ficheros), E2E **78**, y las 18 puertas del `gates.ps1` en verde
 entre las dos corridas. **Ninguna puerta cayó con un código nativo** (los dos códigos nativos que se
 pagaron en esta serie —`0xC0000409` y `0xC0000374`— no han aparecido aquí).
+
+---
+
+## D11 · La entrega antigua `s14-promover-sin-guardar`, medida y fusionada (15-oct-2026)
+
+El goal (D11) pide **una** cosa con esta rama: pasarla por las puertas **una vez**; si da 18/18,
+fusionarla; si no, anotarla en `DEBT.md` y no volver a ella. **Dio 18/18 y entró.**
+
+La rama es del **29 de septiembre** (`8f3718d`, «S14 sin guardar: promover de la Bandeja a la
+Biblioteca») y se rescató del árbol de trabajo. Aporta **9 ficheros y 1.472 líneas, ninguna borrada**:
+`apps/web/src/api/library.ts` (+40), `apps/web/src/api/queries.ts` (+69),
+`apps/web/src/features/ingestion/PromotePanel.tsx` (+344),
+`apps/web/src/features/ingestion/labels.ts` (+5), `apps/web/src/pages/TrayPage.tsx` (+11),
+`apps/web/tests/e2e/promote.spec.ts` (+169), `apps/web/tests/unit/promote.test.tsx` (+363),
+`docs/slices/S14.md` (+114) y `docs/TRASPASO-DE-MATERIAL-A-CLAUDE.md` (+357). De los nueve, **cinco ya
+existían sin rastrear en `main`** (copias byte-idénticas, comprobadas con `git hash-object`), que es lo
+que hizo fallar la primera fusión: se registraron en `1aa0f87` sin cambiar un byte y la fusión entró.
+
+### 1. Qué se midió, y contra qué `main` (que no es el mismo árbol)
+
+- **Lo que se midió:** `4f7a1f0` = `main@4290817` + `s14` — el merge que el encargo pide **antes** de medir.
+- **Lo que entró en `main`:** `c6f9184` = `main@195cbb8` + `s14`.
+
+Las dos cosas **no son el mismo árbol y se dice con la cifra**: entre `4290817` (14-oct 17:18) y
+`195cbb8` (15-oct 11:28, **diez minutos antes de que arrancara la batería**) `main` ganó el trabajo del
+bloque de apuntes —**918 líneas**: `application/topic_notes_service.py`, `domain/topic_index.py`, sus
+dos pruebas y 9 líneas de `apps/web/tests/e2e/apuntes-revision.spec.ts`—. Así que:
+
+- **la entrega `s14` está medida** (sus 9 ficheros son byte-idénticos en los dos árboles);
+- **la composición `195cbb8 + s14` no la midió esta batería**, la midió el bloque de apuntes en su rama;
+- poner «18/18» a secas sobre `c6f9184` sería **heredar** la cifra, que es lo que prohíbe el §1.4.
+
+Queda ofrecida la re-medición sobre `c6f9184` (una pasada, ~54 min con la máquina cargada) para poder
+anotar la cifra a nombre de ese commit.
+
+### 2. La fusión: limpia, y contada en cuatro niveles
+
+`git merge --no-edit main` desde el árbol `s14` con `main@4290817`: **auto-merge, 0 conflictos, exit 0**,
+`git ls-files -u` **vacío** y ningún fichero tocado a mano. El único fichero con auto-merge real fue
+`apps/web/src/api/queries.ts`, que `main` también había tocado: git **sumó** las dos partes.
+
+La verificación no es «no parece que se perdiera nada». Se extrajeron los cuatro árboles con
+`git archive` y se comprobó, **fichero a fichero**, `Counter(merge) == Counter(main) + Counter(s14) −
+Counter(base)`:
+
+| Qué | main | s14 | base | esperado | medido |
+|---|---|---|---|---|---|
+| ficheros | 836 | 649 | 644 | 841 | **841** |
+| líneas | 323.564 | 241.947 | 240.475 | 325.036 | **325.036** |
+| líneas de contenido | 294.564 | 220.880 | 219.593 | 295.851 | **295.851** |
+| identidad por fichero (843 ficheros × 2 métricas) | | | | 0 | **0 discrepancias** |
+
+Y lo que no se ve en un total: **0 marcadores de conflicto** en los 841 ficheros rastreados, **234 filas
+de decisión** y **18 entradas del propietario** antes y después, con
+`docs/DECISIONES-TOMADAS-EN-EL-OBJETIVO.md` y `docs/PARA-EL-PROPIETARIO.md` **byte-idénticos** (mismo
+SHA-256). Los dos únicos ficheros de `s14` ausentes del merge son `HomePage.tsx` y `home.test.tsx`, que
+**`main` había borrado a propósito**: la identidad cuadra igual (0 + 132 − 132 = 0).
+
+### 3. Las 18 puertas: 18/18, una pasada, sin códigos nativos
+
+Registro: **`F:\temp-opofuente\gates-s14.txt`** (y `gates-s14.err.txt`, 15.321 bytes **sin un solo
+error**: son los `INFO` de alembic, el aviso de tamaño de trozo de Vite y la salida de `uv build`).
+Lanzadas con `Start-Process -RedirectStandardOutput/-RedirectStandardError`, **sin tuberías**, y con
+**Windows PowerShell 5.1** porque `pwsh` **no está instalado en esta máquina** (no hay ningún `pwsh.exe`
+en disco; `dev.ps1` ya lo dice: «aquí no lo está»). Su `Test-OpoFuenteExitCodeDetection` comprobó
+**antes de la primera puerta** que este intérprete ve los códigos de salida.
+
+- **Una sola pasada**, **código de salida 0**, **54:00 minutos** (el reloj de fuera mide 54:01).
+- **Ninguna puerta cayó con código nativo y por tanto ninguna se reintentó.** No hubo ni un rojo: **no
+  hay intentos que contar**.
+- Lo que midió cada suite, **literal del registro**: unitarias backend **853**, integración **724**
+  (**45:11** — es la puerta que se come el tiempo: con la máquina cargada, más del doble de lo normal),
+  contrato **29**, componentes **389** (43 ficheros, 61,39 s) y E2E **80** (3,5 min).
+- **Las dos pruebas del entregable pasan y salen nombradas**: `promote.spec.ts` **2/2** en verde
+  (E2E-20, «se pasa a la biblioteca desde la pantalla, y sin aceptar» y «volver a pasar el mismo
+  material no duplica documentos») y `promote.test.tsx` dentro de los 389 de componentes.
+- **La RAM no tumbó nada**: se midió antes (1,4 GB libres y sin tendencia a subir —37 procesos `node`
+  aparcados—), así que no se esperó, y la batería terminó con 4,27 GB libres.
+
+### 4. Las migraciones: la rama no trae ninguna
+
+`s14` aporta **0 ficheros** en `apps/api/alembic/versions/`, así que no hay nada que reencadenar. El
+árbol fusionado tiene **una sola cabeza**: `alembic heads` → **`0038_revision_de_apuntes (head)`**, y
+`alembic branches` **no imprime nada** (ningún punto de rama), con la cadena lineal
+`0034 → 0035 → 0036 → 0037 → 0038`. La trampa existe y ya está resuelta en `main`:
+`0036_claves_no_fiables` resuelve su revisión previa **al importar** (`0035` si está en el directorio,
+`0034` si no), justo para que dos bloques no dejen dos cabezas al fusionar.
+
+### 5. Lo que queda fuera, con el porqué
+
+- **No se corrieron capturas** (`npm run screens` **no** forma parte de las 18). Esta entrega no
+  construye una pantalla nueva: mete una que ya estaba escrita dentro de una pantalla que ya existía, y
+  lo que la respalda son las pruebas de componentes y el E2E, no una captura.
+- **El entregable entra sin retoques**, y dos cosas suyas se dicen para que no sorprendan: el panel
+  enlaza a **`/biblioteca`**, que es una dirección de antes y **redirige** a `/admin/biblioteca` (las
+  direcciones viejas se conservan a propósito en `ROUTE_REDIRECTS`, para no romper marcadores ni las
+  pruebas que entran por URL), y trae un `eslint-disable-next-line react-hooks/exhaustive-deps` **con su
+  motivo escrito**. La puerta 4 (eslint) pasa con él.
+- **`docs/TRASPASO-DE-MATERIAL-A-CLAUDE.md`** (29-sep, 357 líneas) entra en el árbol y convive con los
+  traspasos de octubre (`PARA-CLAUDE-RESUMEN-DE-LAS-RONDAS…`, `RESUMEN-COMPLETO-DE-LAS-RONDAS…`,
+  `OBJETIVO-VIVO-2026-10.md`). Es el más antiguo de los cuatro; se anota, no se borra.
+- **La entrega no está obsoleta, y esto se comprobó antes de fusionar**: `main` **no tenía** la
+  promoción en la interfaz —no hay ningún fichero `promote*` rastreado y **ningún** `POST
+  /api/v1/documents` desde la web; los únicos POST a `/documents/…` son versiones de un documento que ya
+  existe—. El hueco que `s14` tapa seguía abierto.
+- **La limitación que la propia entrega declara** (y que se deja escrita, no arreglada): con un lote
+  grande, aceptar sigue siendo **un clic por versión** en la Biblioteca, porque ADR-009 reserva la
+  aceptación a una persona y una versión. `s14` mueve el cuello de botella, no lo quita; decidir si se
+  acepta en bloque (agrupando por documento) es una decisión de diseño que no toma este bloque.
