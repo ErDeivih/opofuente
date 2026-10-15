@@ -1,5 +1,11 @@
 # Estado de la sesión, para retomar sin preguntar (13-oct-2026)
 
+> **15-oct: el encargo vigente está en `docs/OBJETIVO-VIVO-2026-10.md`** (se creó porque el encargo de
+> plataforma desplegable **no estaba en ningún documento del repositorio**: un bloque lo buscó y no lo
+> encontró). Ahí están, con su orden de precedencia: el **cierre de estudio** punto por punto, la
+> **plataforma desplegable** (cuentas, legales, analíticas, pagos detrás de bandera, acabado de
+> interfaz), **D5 resuelto con su medición** y las reglas que no se negocian. **Léelo antes que este.**
+
 ## 13-oct · lo que ha cambiado hoy (leer esto primero)
 
 **Autoridad nueva: `docs/AJUSTES-AL-OBJETIVO-CLAVES-Y-RITMO-2026-10.md`** (manda sobre el goal si choca):
