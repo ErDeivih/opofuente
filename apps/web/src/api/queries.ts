@@ -75,6 +75,13 @@ import {
   type NoteReportUpdate,
 } from './notesReports';
 import {
+  decideNotesReview,
+  fetchNotesReview,
+  fetchNotesReviewFile,
+  fetchNotesReviewSummary,
+  type ReviewDecisionName,
+} from './notesReview';
+import {
   activateConvocation,
   activateOpposition,
   fetchConvocation,
@@ -296,6 +303,12 @@ export const queryKeys = {
      son dos bandejas distintas con dos tablas distintas: invalidar una no puede recargar la otra. */
   noteIncidents: (category: string, status: string, topic: string, q: string) =>
     ['note-incidents', category, status, topic, q] as const,
+  /* F24: la revisión de los apuntes en el panel. **Raíz propia** (`notes-review`): decidir un tema
+     cambia su fila, su ficha, el contador del menú y —cuando la aprobación publica— lo que lee el
+     alumno. La ficha cuelga de la misma raíz para que una decisión no deje la tabla y la ficha
+     diciendo cosas distintas. */
+  notesReview: ['notes-review'] as const,
+  notesReviewFile: (code: string) => ['notes-review', 'ficha', code] as const,
 };
 
 export function useReadiness() {
@@ -1947,3 +1960,66 @@ export function useUpdateNotesIncident() {
 
 /** Reexporta el vocabulario de la incidencia para que las pantallas no importen del contrato. */
 export type { IncidentCategory, IncidentStatus };
+
+/**
+ * La tabla de la revisión de apuntes (F24): los temas con su estado y el motivo de los borradores.
+ *
+ * Sin `refetchInterval` a propósito: medir los borradores cuesta entre medio segundo y tres por tema
+ * (lee las comprobaciones guardadas y no llama a ningún modelo), así que la consulta se refresca al
+ * decidir o al entrar, no cada quince segundos. Una decisión la invalida —`['notes-review']`— porque
+ * cambia el estado del tema, su motivo y el contador del menú.
+ */
+export function useNotesReview() {
+  return useQuery({
+    queryKey: queryKeys.notesReview,
+    queryFn: fetchNotesReview,
+    staleTime: 30_000,
+  });
+}
+
+/**
+ * Cuántos borradores esperan una decisión, para el contador del menú.
+ *
+ * Es una ruta propia y **barata** a propósito: el contador se pide en todas las pantallas del panel y
+ * no puede costar lo que cuesta medir cuatro temas. Lo que cuenta es el estado y la decisión, y eso
+ * se lee de la base sin medir nada.
+ */
+export function useNotesReviewCounters() {
+  return useQuery({
+    queryKey: ['notes-review', 'contadores'] as const,
+    queryFn: fetchNotesReviewSummary,
+    staleTime: 30_000,
+  });
+}
+
+/** La ficha de un tema: sus apartados, tal como se leerán en la zona del alumno. */
+export function useNotesReviewFile(code: string | null) {
+  return useQuery({
+    queryKey: queryKeys.notesReviewFile(code ?? 'ninguno'),
+    queryFn: () => fetchNotesReviewFile(code ?? ''),
+    enabled: code !== null && code !== '',
+  });
+}
+
+/**
+ * Aprueba o rechaza los apuntes de un tema, y recarga lo que cambia con esa decisión.
+ *
+ * Se invalida la raíz `notes-review` entera —la tabla, la ficha y el contador— y **también** lo que
+ * lee el alumno: aprobar un tema que pasa las puertas archiva su versión, así que el temario, el tema
+ * y la portada del alumno dejan de decir «borrador». Sin esa segunda invalidación la pantalla del
+ * propietario diría «publicado» y la del alumno seguiría diciendo «borrador» hasta recargar.
+ */
+export function useDecideNotesReview(code: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { decision: ReviewDecisionName; note?: string | null }) =>
+      decideNotesReview(code, input),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['notes-review'] });
+      void queryClient.invalidateQueries({ queryKey: ['student-notes'] });
+      void queryClient.invalidateQueries({ queryKey: ['student-topic'] });
+      void queryClient.invalidateQueries({ queryKey: ['student-syllabus'] });
+      void queryClient.invalidateQueries({ queryKey: ['student-overview'] });
+    },
+  });
+}

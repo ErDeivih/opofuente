@@ -28,6 +28,7 @@ from typing import Any
 import pytest
 from fastapi.testclient import TestClient
 
+from opofuente.application.topic_notes_models import TopicNotesReport
 from opofuente.application.topic_notes_service import TopicNotesService
 from opofuente.config import Settings, get_settings
 from opofuente.domain.errors import (
@@ -43,6 +44,7 @@ from opofuente.domain.rag import normalise
 from opofuente.domain.topic_notes import (
     CategoriaIncidencia,
     ComprobacionBatch,
+    Coverage,
     FactKind,
     Hecho,
     HechosBatch,
@@ -1179,6 +1181,140 @@ def test_una_pregunta_que_no_cabe_en_el_indice_va_a_la_bandeja_y_no_para_la_corr
     assert incidencias[0].category is CategoriaIncidencia.PREGUNTA_AMBIGUA
     assert "afirmaciones es falsa" in incidencias[0].detail
     assert all("otros" not in apartado.key for apartado in repositorio.sections(node_id))
+
+
+class _ModeloQueSientaUnaPreguntaSinMateria(_ModeloFalso):
+    """Hechos que nombran su materia para las preguntas del tema, y un hecho que no nombra nada.
+
+    Es lo que hace falta para reproducir el estado que el motor dejaba tras una corrida real: un
+    tema **con apartados escritos** (así hay texto contra el que comprobar) y una pregunta que el
+    índice **no puede situar**, que se quedaba con una comprobación guardada anclada al primer
+    apartado de su epígrafe —el respaldo de `_apartados_de`— y contaba dos veces: como hueco y como
+    cubierta.
+    """
+
+    def hechos(
+        self,
+        grupos: Sequence[QuestionGroup],
+        *,
+        topic_code: str,
+        topic_title: str,
+        epigraphs: Sequence[tuple[str, str]],
+    ) -> HechosBatch:
+        sin_materia = [
+            grupo for grupo in grupos if "afirmaciones es falsa" in grupo.representative.stem
+        ]
+        con_materia = [grupo for grupo in grupos if grupo not in sin_materia]
+        lote = (
+            super().hechos(
+                con_materia,
+                topic_code=topic_code,
+                topic_title=topic_title,
+                epigraphs=epigraphs,
+            )
+            if con_materia
+            else HechosBatch(hechos=(), input_tokens=0, output_tokens=0)
+        )
+        neutrales = tuple(
+            Hecho(
+                text="El plazo para resolver es de tres meses desde la solicitud.",
+                kind=FactKind.TECNICO,
+                epigraph_code=epigraphs[0][0],
+                source_groups=(grupo.signature,),
+                source_questions=grupo.question_ids,
+            )
+            for grupo in sin_materia
+        )
+        return HechosBatch(
+            hechos=(*lote.hechos, *neutrales),
+            input_tokens=lote.input_tokens,
+            output_tokens=lote.output_tokens,
+        )
+
+
+def _tema_con_una_pregunta_que_no_cabe(
+    client: TestClient,
+) -> tuple[TopicNotesReport, SqlAlchemyTopicNotesRepository, str, str]:
+    """Un tema con dos preguntas situadas y una tercera que no cabe en ninguna materia.
+
+    Devuelve el informe de la corrida, el repositorio, el nodo y la firma del grupo que no cabe. La
+    tercera pregunta **no** es un caso raro: es la forma real de 209 grupos de I.1 y la del grupo
+    del estándar del CPD de I.3, que es el que destapó este agujero.
+    """
+    conjunto = _conjunto(client, titulo="Las dos preguntas del tema")
+    preguntas = _preguntas(client, conjunto["id"], texto=TEXTO)
+    _activar_clave(client, conjunto["id"])
+    for pregunta in preguntas:
+        _asignar_tema(client, pregunta["id"], tema="IV.7", epigrafe="IV.7.1")
+    ajeno = _conjunto(client, titulo="La pregunta que no cabe en ninguna materia")
+    sueltas = _preguntas(client, ajeno["id"], texto=TEXTO_SIN_MATERIA)
+    _activar_clave(client, ajeno["id"])
+    for pregunta in sueltas:
+        _asignar_tema(client, pregunta["id"], tema="IV.7", epigrafe="IV.7.1")
+    fabrica = client.app.state.session_factory
+    repositorio = SqlAlchemyTopicNotesRepository(fabrica)
+    node_id = repositorio.node_id("IV.7")
+    assert node_id is not None
+
+    servicio = _servicio(client, _ModeloQueSientaUnaPreguntaSinMateria())
+    informe = servicio.run("IV.7", now=SystemClock().now())
+    nodo = repositorio.node(node_id)
+    assert nodo is not None
+    _planes, indice = servicio._plan_del_tema(nodo, repositorio.facts(node_id))
+    assert indice is not None
+    assert len(indice.grupos_sin_materia) == 1
+    return informe, repositorio, node_id, indice.grupos_sin_materia[0].signature
+
+
+def test_una_comprobacion_anclada_en_un_apartado_ajeno_no_cuenta_como_cobertura(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """La puerta que faltaba desde I.3: la cobertura dice **cuántas** y también **por quién**.
+
+    Una pregunta que el índice no puede situar no tiene apartado propio, pero se quedaba con una
+    comprobación guardada anclada al **primer apartado de su epígrafe** —el respaldo de
+    `_apartados_de`—, y esa comprobación contaba como cobertura del tema. Es el lavado del CPD en
+    I.3: cinco respuestas contadas con una comprobación anclada en un apartado que no era el suyo.
+
+    Se mide con las tres preguntas del escenario: las dos que sí tienen materia cuentan como
+    cubiertas, y la que no tiene apartado propio **no** suma al numerador.
+    """
+    informe, repositorio, node_id, firma = _tema_con_una_pregunta_que_no_cabe(seeded_client)
+
+    assert informe.coverage.preguntas_con_clave == 3
+    assert informe.coverage.preguntas_cubiertas_con_clave == 2, (
+        "la comprobación de la pregunta sin apartado propio no cuenta como cobertura del tema"
+    )
+    assert informe.coverage.preguntas_con_clave_utilizable == 3
+    assert informe.coverage.preguntas_cubiertas_con_clave_utilizable == 2
+    assert all(resultado.group_signature != firma for resultado in repositorio.checks(node_id)), (
+        "y no se ancla a un apartado del tema: no hay ninguno que sea suyo"
+    )
+
+
+def test_una_pregunta_que_el_indice_no_situa_cuenta_una_sola_vez(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """El doble conteo medido por el panel: la misma pregunta contada dos veces.
+
+    La pregunta que no cabe entraba **dos** veces en el denominador: una como hueco —está en
+    `grupos_sin_materia`— y otra con su comprobación guardada, anclada por el respaldo al primer
+    apartado de su epígrafe. El cociente salía por debajo del verdadero y podía **bloquear un tema
+    que merecía pasar** (medido: 41 preguntas en 10 de los 19 temas con apuntes, entre +0,3 y +4,2
+    puntos; el agujero nunca deja colar uno malo). Hoy cada pregunta cuenta **una sola vez**.
+    """
+    informe, _repositorio, _node_id, firma = _tema_con_una_pregunta_que_no_cabe(seeded_client)
+
+    assert informe.sin_materia == 1, "la pregunta que no cabe sigue contando en contra"
+    assert informe.coverage.preguntas_con_clave == 3, (
+        "tres preguntas con clave, contadas una vez cada una (antes eran cuatro)"
+    )
+    assert informe.coverage.preguntas_con_clave_utilizable == 3
+    assert firma not in {
+        resultado.group_signature
+        for resultado in _repositorio.checks(_node_id)
+        if resultado.coverage is Coverage.CUBIERTA
+    }, "su resultado guardado no puede contarla como cubierta por partida doble"
 
 
 def test_la_comprobacion_recibe_la_union_de_sus_apartados_y_lo_que_quepa_del_epigrafe(

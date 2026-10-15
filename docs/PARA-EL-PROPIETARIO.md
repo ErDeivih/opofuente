@@ -869,3 +869,129 @@ Hice **copia verificada nueva** al empezar (revisión `0037`, comprobada entera:
 recuentos y bytes) porque la más reciente era de **antes** de la migración del INAP. **No he borrado
 ninguna de las anteriores**: la política dice conservar dos y el motivo era el disco, y hoy sobran
 **78,9 GB** en `F:`. Tienes **tres copias verificadas**; si prefieres volver a dos, dime cuál se va.
+
+## 14-oct-2026 · Ya puedes revisar los apuntes desde el panel: ver por qué un tema no está publicado, leerlo y decidir
+
+Hasta hoy, saber por qué I.6, I.7 o I.8 seguían en borrador obligaba a mirar un informe. Ya no: hay
+una pantalla nueva en el menú del panel.
+
+### Qué puedes hacer ahora
+
+**Menú → Apuntes** (nueva entrada, con un contador que te dice cuántos temas esperan tu decisión).
+
+1. **La tabla de los 33 temas** con su estado —Publicado, En borrador, Sin apuntes—, sus cifras y, en
+   los cuatro borradores, **el motivo con su número**. No hay que abrir nada para saber qué pasa.
+2. **Pinchas un tema y lo lees entero**, apartado a apartado, **igual que lo lee el alumno** (mismo
+   texto, mismas tablas, mismos títulos) y con las cifras de cada apartado: cuántos hechos tiene,
+   cuántas preguntas se contestan en él y cuántas quedan sin resolver.
+3. **Un botón «Los peores primero»** ordena los apartados por lo que queda sin resolver, para no
+   releerte sesenta páginas cuando solo quieres ver lo que está peor.
+4. **Al final, tu decisión**, con una nota tuya:
+   - **Aprobar los apuntes**: publica el tema **si cumple las dos puertas** del §2.3 (el 90 % y la
+     forma del texto). Si no las cumple, el tema queda aprobado y sin publicar, y la pantalla te dice
+     **qué puerta** lo ha frenado.
+   - **Rechazar con este motivo**: la nota es **obligatoria**. Sin ella el botón no se puede pulsar (y
+     el servidor tampoco lo admite), para que dentro de un mes se sepa por qué.
+
+Cada decisión queda **auditada** —quién, cuándo, y qué había antes y después— y **no se pierde** aunque
+el motor vuelva a comprobar el tema: está probado que una corrida nueva no borra tu decisión.
+
+### Cómo están tus cuatro borradores (medido hoy, 14-oct-2026)
+
+| tema | cobertura | qué le pasa |
+|---|---|---|
+| **I.4** | 489 de 542 = **90,2 %** | **Cumple las dos puertas**: no está publicado porque nadie archivó su versión. **Aprobarlo lo publica** |
+| **I.6** | 164 de 230 = **71,3 %** | Le faltan **43** preguntas por contestar en los apuntes |
+| **I.7** | 289 de 493 = **58,6 %** | Le faltan **155** |
+| **I.8** | 394 de 477 = **82,6 %** | Le faltan **36** |
+
+Los quince temas publicados no se miden en la tabla (ya pasaron las puertas); su ficha sí los mide si
+la abres, y ahí verás también sus apartados.
+
+### Tres cosas que no cambian (a propósito)
+
+1. **El listón del 90 % no se ha tocado.** Aprobar un tema del 82 % **no** lo publica: te dirá que la
+   cobertura no llega. Lo contrario sería colar por la puerta de atrás justo lo que la puerta impide.
+2. **La zona del alumno no se ha tocado**: sigue leyendo lo mismo y con la misma marca. Lo único que
+   cambia es que, cuando apruebas un tema que cumple las puertas, deja de estar en borrador.
+3. **Esto no llama a ningún modelo y no cuesta dinero**: la cifra se lee de las comprobaciones que el
+   motor ya dejó guardadas.
+
+### Lo que te toca a ti
+
+1. Abrir **Apuntes** y decidir sobre los cuatro. **I.4 se publica con un clic** (si el texto te
+   convence, claro: la cifra dice que contesta al 90,2 % de lo que se puede corregir, no que esté bien
+   escrito).
+2. Para I.6, I.7 e I.8 hay que **escribir más apuntes o reasignar preguntas**: eso es la tanda de
+   contenido, no esta pantalla. Lo que sí puedes hacer ya es **rechazarlos con tu motivo**, que queda
+   guardado y a la vista de quien siga con ellos.
+3. Si algún tema te parece mal publicado, dímelo: hoy la tabla no mide los publicados, así que habría
+   que abrir su ficha (una a una) para ver su cobertura de hoy.
+
+## 14-oct-2026 · El motor ya comprueba que el sitio donde acaba un hecho o una respuesta sea suyo (y dos temas publicados bajan del listón al medirlos bien)
+
+Este bloque no ha escrito apuntes ni los ha tocado: ha arreglado **cómo se mide**. Tres cosas que
+estaban mal y que eran la misma: **nadie comprobaba que el apartado donde acaba un hecho —o donde se
+apoya una respuesta— fuera suyo**. Lo cuento con las cifras porque una de ellas te afecta.
+
+### 1. Una respuesta contaba como buena aunque se apoyara en un apartado que no era el suyo
+
+La cobertura decía **cuántas** respuestas estaban contestadas, y no **por quién**. Si una pregunta no
+tenía apartado propio, el motor la comprobaba contra el **primer apartado de su epígrafe** —que puede no
+tener nada que ver— y, si ahí aparecía la frase, la contaba como cubierta. Eso ya no pasa: una respuesta
+solo cuenta si su apartado es suyo.
+
+### 2. Un hecho que no dice de qué habla se sentaba en el apartado de su pregunta
+
+Es lo que metió el estándar del **CPD** (que es de IV.5.7) dentro de **I.3**. Ahora un hecho que no
+nombra ninguna materia del tema **no se sienta en ningún apartado**: se queda en la bandeja con su
+motivo y su texto, y su pregunta se te enseña para que decidas. **No se pierde nada**: se ve.
+
+### 3. La misma pregunta se contaba dos veces (y eso solo podía perjudicarte)
+
+Una pregunta que el índice no sabe situar entraba dos veces en la cuenta: como hueco y además con su
+comprobación. El cociente salía **por debajo** del verdadero, así que **nunca dejaba pasar un tema malo:
+podía bloquear uno bueno**. Medido: **16 de los 28 temas** tenían preguntas contadas dos veces (**91
+preguntas**), entre +0,3 y +8,1 puntos de diferencia. Hoy cada pregunta cuenta **una sola vez**.
+
+### Lo que esto cambia en tus temas, con nombre y con cifra
+
+**El listón del 90 % no se ha tocado** y no se ha cambiado la forma de medir para que nada pase. Al
+medir con la puerta buena, **dos temas publicados dejan de llegar al 90 %**:
+
+| tema | publicado con | mide hoy | qué se le ha descontado |
+|---|---|---|---|
+| **I.3** (el Gobierno) | 168/181 = **92,8 %** | **152/181 = 84,0 %** | **16 preguntas** que no son de I.3: las 5 del estándar del **CPD** (de IV.5.7) y las 11 de otros ocho grupos ajenos —el **CSV** del RFC 4180, el **TREBEP**, los **funcionarios interinos**, las **infracciones leves**, el **ANSI SQL**, **Jakarta EE** y **Docker**— que estaban sentados en sus cajones |
+| **I.4** (función pública) | 489/542 = **90,2 %** | **483/540 = 89,4 %** | **6 preguntas**: el **kernel de Android** (que es de IV.1) y la **Ética Pública**, que el índice no sitúa y se comprobaba contra el primer apartado de su epígrafe |
+
+**No he tocado ni una línea de esos dos temas.** Siguen publicados y se leen igual: lo que ha cambiado es
+la cifra, que ahora dice lo que de verdad contestan sus apuntes. **Y la decisión está tomada, con estas
+palabras**:
+
+> «Dos temas que ya tenías publicados miden ahora por debajo del listón; los dejo disponibles con su cifra
+> a la vista para que lo decidas tú.»
+
+Es decir: **se quedan publicados** porque **lo que ha cambiado es la medición, no el material** —lo que
+tú lees está igual de bien que ayer— y retirar dos temas que puedes estudiar sería peor que decirte la
+cifra. Los verás con su número medido en la pantalla de **revisión de apuntes**, y desde ahí los puedes
+retirar con un clic cuando quieras. Los tres caminos siguen abiertos, ninguno urgente:
+
+1. **dejarlos como están** (es lo que se ha decidido por ahora) — se leen bien y el alumno no nota nada;
+2. **retirarlos** desde el panel (vuelven a borrador, sin perder nada del texto) hasta que se limpien; o
+3. **volver a correrlos** cuando toque: una corrida con el reparto nuevo deja fuera el material ajeno y
+   los apartados que pierden hechos se rehacen — eso **sí cuesta dinero** (≈0,4–1,5 $ por tema) y lo
+   decides tú.
+
+### Y una corrección que te debo
+
+El informe de I.3 decía que, descontando el material del CPD, su cifra honesta era **163/181 = 90,1 %**
+—o sea, que pasaba—. **Se quedó corto**: no miró los otros ocho grupos ajenos, que entraron por la misma
+puerta. La cifra buena es **152/181 = 84,0 %**. Lo digo porque el informe te dio una cifra que ya no
+sostengo.
+
+### Lo que no cambia
+
+- **Tus datos no se han tocado**: todo esto es lectura (`--medir`) sobre tu base, sin escribir una fila y
+  sin llamar a ningún modelo. Coste: **0 $**.
+- **El listón sigue en el 90 %** y aprobar un tema del 82 % **no** lo publica.
+- **La zona del alumno no cambia**: lee lo mismo.

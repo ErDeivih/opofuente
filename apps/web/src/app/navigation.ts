@@ -94,6 +94,12 @@ export const ADMIN_NAV_ITEMS: readonly NavItem[] = [
       'Lo que el sistema no ha podido resolver solo: respuestas correctas que no cuadran, huecos, normas cambiadas.',
   },
   {
+    path: '/admin/apuntes',
+    label: 'Apuntes',
+    summary:
+      'Los temas con lo que ha medido el motor: leer un borrador con su motivo y aprobarlo o rechazarlo.',
+  },
+  {
     path: '/admin/no-son-preguntas',
     label: 'No son preguntas',
     summary: 'Los enunciados que no se pueden contestar y las preguntas de otras administraciones.',

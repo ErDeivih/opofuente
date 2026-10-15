@@ -67,6 +67,22 @@ class InvalidAnswerError(OpoFuenteError):
         self.code = code
 
 
+class InvalidReviewError(OpoFuenteError):
+    """La revisión de un tema no se puede guardar así. La API lo traduce a 422 `invalid_review`.
+
+    Dos casos, y los dos son culpa de la entrada, no del programa: **rechazar un tema sin motivo**
+    —un rechazo sin motivo deja el borrador donde estaba y encima sin saber por qué— y aprobar o
+    rechazar un tema que **todavía no tiene apuntes escritos**. La nota viaja en `field_errors` para
+    que la pantalla pueda señalar el campo, igual que cualquier otra entrada inválida.
+    """
+
+    def __init__(self, reason: str, *, field: str = "note") -> None:
+        super().__init__(reason)
+        self.reason = reason
+        self.field = field
+        self.code = "invalid_review"
+
+
 class UnsupportedError(OpoFuenteError):
     """Se ha pedido algo que esta aplicación todavía no hace. La API lo traduce a 409.
 

@@ -8,6 +8,8 @@ import { LibraryPage } from '../pages/LibraryPage';
 import { NotFoundPage } from '../pages/NotFoundPage';
 import { NoSonPreguntasPage } from '../pages/NoSonPreguntasPage';
 import { NoteReportsPage } from '../pages/NoteReportsPage';
+import { NotesReviewPage } from '../pages/NotesReviewPage';
+import { NotesReviewTopicPage } from '../pages/NotesReviewTopicPage';
 import { ProgramPage } from '../pages/ProgramPage';
 import { QuestionFilePage } from '../pages/QuestionFilePage';
 import { QuestionsPage } from '../pages/QuestionsPage';
@@ -160,6 +162,12 @@ export function AppRoutes() {
             alumno porque son las dos bandejas del panel y se leen juntas, pero son dos pantallas
             distintas: una es lo que avisa quien estudia y la otra lo que no pudo cerrar el sistema. */}
         <Route path="incidencias" element={<IncidentsPage />} />
+        {/* La revisión de los apuntes (F24, §4.3 del objetivo): la tabla de los temas con su motivo
+            medido y, detrás, la ficha donde se lee un borrador y se aprueba o se rechaza. El código
+            legible (`I.4`) es la dirección de la ficha, como en la zona del alumno: nunca un
+            identificador de nodo. */}
+        <Route path="apuntes" element={<NotesReviewPage />} />
+        <Route path="apuntes/:codigo" element={<NotesReviewTopicPage />} />
         <Route path="no-son-preguntas" element={<NoSonPreguntasPage />} />
         <Route path="cambios" element={<ChangesPage />} />
         <Route path="errores" element={<ErrorsPage />} />

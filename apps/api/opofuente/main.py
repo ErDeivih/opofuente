@@ -43,6 +43,7 @@ from opofuente.application.job_service import JobService
 from opofuente.application.library_service import LibraryService
 from opofuente.application.notes_incident_service import NotesIncidentsService
 from opofuente.application.notes_report_service import NotesReportsService
+from opofuente.application.notes_review_service import MedidaSinModelo, NotesReviewService
 from opofuente.application.profiles_service import ProfilesService
 from opofuente.application.question_file_service import QuestionFileService
 from opofuente.application.question_service import QuestionService
@@ -52,6 +53,7 @@ from opofuente.application.search_service import SearchService
 from opofuente.application.student_service import StudentService
 from opofuente.application.study_service import StudyService
 from opofuente.application.system_service import SystemService
+from opofuente.application.topic_notes_service import TopicNotesService
 from opofuente.config import Settings, get_settings
 from opofuente.domain.jobs import JobType
 from opofuente.infrastructure.artifact_store import ArtifactStore
@@ -80,6 +82,7 @@ from opofuente.infrastructure.notes_incident_repository import (
     SqlAlchemyNotesIncidentRepository,
 )
 from opofuente.infrastructure.notes_report_repository import SqlAlchemyNotesReportRepository
+from opofuente.infrastructure.notes_review_repository import SqlAlchemyNotesReviewRepository
 from opofuente.infrastructure.observability import setup_logging
 from opofuente.infrastructure.ocr import tesseract_from_settings
 from opofuente.infrastructure.probes import DatabaseProbe, DataDirectoryProbe
@@ -309,6 +312,24 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     # (bloque C, §4.1 del objetivo).
     notes_incidents_repository = SqlAlchemyNotesIncidentRepository(session_factory)
     notes_incidents_service = NotesIncidentsService(notes_incidents_repository, clock=clock)
+    # F24: la revisión de los apuntes (§4.3 del objetivo). El propietario ve los temas con su motivo
+    # medido, lee un borrador dentro del panel y lo aprueba o lo rechaza. El servicio de apuntes
+    # entra **solo para medir** (lee lo guardado y no llama a nadie: le acompaña un motor que se
+    # niega a usarse) y publicar sigue siendo `DossierService.archive`, el camino de siempre.
+    notes_review_repository = SqlAlchemyNotesReviewRepository(session_factory)
+    notes_review_service = NotesReviewService(
+        profiles=SqlAlchemyProfileRepository(session_factory),
+        reviews=notes_review_repository,
+        notes=notes_repository,
+        topic_notes=TopicNotesService(
+            repository=notes_repository,
+            dossier=SqlAlchemyDossierRepository(session_factory),
+            model=MedidaSinModelo(),
+            workers=1,
+        ),
+        dossier=dossier_service,
+        clock=clock,
+    )
     export_service = ExportService(
         questions=SqlAlchemyQuestionRepository(session_factory),
         documents=SqlAlchemyDocumentRepository(session_factory, representations),
@@ -461,6 +482,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.dossier_service = dossier_service
     app.state.notes_reports_service = notes_reports_service
     app.state.notes_incidents_service = notes_incidents_service
+    app.state.notes_review_service = notes_review_service
 
     # El orden importa: el último añadido es el más externo, así que el identificador de
     # correlación envuelve también los rechazos por Origin.
