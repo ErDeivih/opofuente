@@ -52,21 +52,23 @@ AHORA = datetime(2026, 10, 13, 9, 30, tzinfo=UTC)
 
 
 def test_el_vocabulario_es_el_de_bandeja_que_la_aplicacion_ya_tenia() -> None:
-    """Los cuatro estados de `notes_reports`, palabra por palabra: la bandeja habla el mismo idioma.
+    """Los cuatro estados de `notes_reports`, palabra por palabra, más los dos de la regla (F31).
 
     Es lo que el §1.2 del objetivo pide («usa los estados que existan»): no se estrena vocabulario,
     se reutiliza el de la otra bandeja del panel, que es el único que la aplicación tiene para decir
     «esto espera, lo tengo en la mano, lo he resuelto, o me parece que el aviso se equivoca».
+
+    **Los dos últimos son de esta bandeja y solo de esta**, y la prueba dice las dos cosas a la vez:
+    hasta `dismissed` el vocabulario es el compartido, y a partir de ahí está lo que solo puede
+    pasar aquí —una regla que resuelve sin el propietario—. La bandeja del alumno no tiene
+    resolución
+    automática y no le hacen falta: meterlos allí sería inventarle un flujo.
     """
-    assert [estado.value for estado in IncidentStatus] == [
-        "open",
-        "in_progress",
-        "reviewed",
-        "dismissed",
-    ]
+    compartidos = ["open", "in_progress", "reviewed", "dismissed"]
+    assert [estado.value for estado in IncidentStatus][: len(compartidos)] == compartidos
     assert [estado.value for estado in IncidentStatus] == [
         estado.value for estado in NoteReportStatus
-    ]
+    ] + ["propuesta_lista", "no_son_preguntas"]
 
 
 def test_solo_caben_las_dos_coberturas_que_la_tabla_admite() -> None:
@@ -80,20 +82,26 @@ def test_solo_caben_las_dos_coberturas_que_la_tabla_admite() -> None:
 def test_los_estados_del_dominio_son_los_del_check_de_la_migracion_y_del_modelo() -> None:
     """La base y el dominio, comparados valor por valor.
 
-    Se leen el texto de la migración `0035` y el del modelo en vez de volver a escribir la lista: si
-    alguien añade un estado a la base y no al dominio (o al revés), esta prueba lo dice, en vez de
-    dejarlo para que lo descubra una escritura rechazada en producción.
+    Se leen el texto de **las migraciones que han ampliado el vocabulario** —`0035`, que lo creó con
+    los cuatro de siempre, y `0039`, que añade los dos de la resolución automática (F31)— y el del
+    modelo, en vez de volver a escribir la lista: si alguien añade un estado a la base y no al
+    dominio (o al revés), esta prueba lo dice, en vez de dejarlo para que lo descubra una escritura
+    rechazada en producción.
     """
     from opofuente.infrastructure import db_models
 
     raiz = Path(db_models.__file__).resolve().parents[2]
-    migracion = (raiz / "alembic" / "versions" / "0035_incidencias_despachables.py").read_text(
-        encoding="utf-8"
+    versiones = raiz / "alembic" / "versions"
+    migraciones = "\n".join(
+        (versiones / nombre).read_text(encoding="utf-8")
+        for nombre in ("0035_incidencias_despachables.py", "0039_bandeja_por_conjunto.py")
     )
     modelo = Path(db_models.__file__).read_text(encoding="utf-8")
 
     for cual in IncidentStatus:
-        assert f"'{cual.value}'" in migracion, f"{cual.value} falta en el CHECK de la migración"
+        assert f"'{cual.value}'" in migraciones, (
+            f"{cual.value} falta en el CHECK de las migraciones"
+        )
         assert f"'{cual.value}'" in modelo, f"{cual.value} falta en el CHECK del modelo"
 
 
@@ -102,7 +110,18 @@ def test_cerrar_una_incidencia_deja_fecha_y_reabrirla_la_borra() -> None:
     assert reviewed_at_for(IncidentStatus.DISMISSED, AHORA) == AHORA
     assert reviewed_at_for(IncidentStatus.IN_PROGRESS, AHORA) is None
     assert reviewed_at_for(IncidentStatus.OPEN, AHORA) is None
-    assert {IncidentStatus.REVIEWED, IncidentStatus.DISMISSED} == CLOSED_STATUSES
+    # `no_son_preguntas` **deja fecha** aunque no la haya cerrado el propietario: la columna dice
+    # cuándo dejó de esperar una incidencia —y esta dejó de esperar cuando la escribió la regla—; el
+    # quién vive en el evento de auditoría.
+    assert reviewed_at_for(IncidentStatus.NO_SON_PREGUNTAS, AHORA) == AHORA
+    # `propuesta_lista` **no**: espera una aprobación, y una incidencia que espera con fecha de
+    # revisión es la traza que miente.
+    assert reviewed_at_for(IncidentStatus.PROPUESTA_LISTA, AHORA) is None
+    assert {
+        IncidentStatus.REVIEWED,
+        IncidentStatus.DISMISSED,
+        IncidentStatus.NO_SON_PREGUNTAS,
+    } == CLOSED_STATUSES
 
 
 def test_una_nota_se_guarda_en_una_linea() -> None:
