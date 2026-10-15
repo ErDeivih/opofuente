@@ -1021,3 +1021,57 @@ sostengo.
   sin llamar a ningún modelo. Coste: **0 $**.
 - **El listón sigue en el 90 %** y aprobar un tema del 82 % **no** lo publica.
 - **La zona del alumno no cambia**: lee lo mismo.
+
+---
+
+## 15-oct-2026 · El medidor contaba «0 de 0» en los temas a medio comprobar, y eso ya no pasa
+
+### Qué pasaba
+
+Cuando un tema tiene apartados escritos pero **no** tiene guardada la comprobación de todas sus
+preguntas, el medidor **no contaba esas preguntas de ninguna manera**: ni como cubiertas ni como
+pendientes. Se caían de la cuenta por los dos lados. El efecto era que la cifra de ese tema se calculaba
+sobre un conjunto pequeño —las pocas que sí estaban comprobadas— y salía **más alta de lo que es**, y en
+el caso extremo (apartados escritos y ninguna comprobación guardada) el tema medía «**0 de 0**»: una
+casilla vacía que no dice ni si está bien ni cuánto le falta.
+
+### Qué se ha cambiado
+
+Esas preguntas ahora cuentan como **pendientes de comprobar**: **no** suman cobertura —sería mentirte— y
+**sí** se quedan dentro del denominador, porque son trabajo que queda por hacer. El informe de cada tema
+lo dice con su número («N grupos pendientes de comprobar»).
+
+### A quién le cambia la cifra (y a quién no)
+
+- **I.8** (en borrador): pasa de **261/320 = 81,6 %** a **261/488 = 53,5 %**. No es que el tema haya
+  empeorado: es que antes se medía sobre 320 preguntas y tiene 488. Le faltan **150 grupos por
+  comprobar** (201 preguntas), y eso es exactamente lo que la cifra vieja escondía.
+- **I.4** (publicado): gana **1 grupo pendiente** que **no** entra en el número que decide, así que su
+  **89,1 % no se mueve**; solo cambia su segunda cifra (87,2 % → 87,0 %).
+- **Los otros 31 temas dan exactamente la misma cifra que ayer**, con decimal incluido.
+- **Ninguno cambia de veredicto y no se retira ninguno.** I.3 (84,0 %) e I.4 (89,1 %) siguen
+  **publicados con su cifra a la vista**, como se decidió: **lo que ha cambiado es la medición, no el
+  material** — lo que tú lees está igual que ayer.
+- **I.9, III.2, III.6 y IV.3** siguen sin línea de puerta, y es correcto: **no tienen ningún apartado
+  escrito**. No es el caso de arriba: en ellos no hay nada que esté a medias.
+
+### Una cosa que te debo decir sobre las cifras
+
+Mientras medía, **tu base estaba cambiando** (otro bloque estaba guardando comprobaciones), y dos
+medidas seguidas del mismo programa daban cifras distintas para el mismo tema: I.8 salió **81,6 %** en
+una y **80,9 %** en la siguiente, con el denominador cambiado solo (de 320 a 367) **sin que nadie
+tocara los apuntes**. Por eso la tabla de este bloque se mide sobre una **copia congelada** de tu base:
+así la comparación de antes y después es de verdad del cambio que he hecho yo y no de lo que estaba
+haciendo otro a la vez.
+
+**Y una buena noticia de ese lío**: con el arreglo, el denominador de un tema **ya no cambia cuando otro
+bloque guarda comprobaciones**. En I.8, entre las dos copias, el denominador se queda **clavado en 488**
+y lo único que sube es lo cubierto (261 → 297), que es lo que tiene que pasar cuando se avanza. La cifra
+de un tema a medio comprobar ya no baila sola.
+
+### Lo que no cambia
+
+- **Tus datos no se han tocado**: todo es lectura, y esta vez ni siquiera sobre tu base viva sino sobre
+  una copia. Coste: **0 $**.
+- **El listón sigue en el 90 %** y **nada se ha publicado ni retirado** en esta tanda.
+- **La zona del alumno no cambia**: lee lo mismo.

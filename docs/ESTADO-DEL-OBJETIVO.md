@@ -3257,3 +3257,194 @@ en disco; `dev.ps1` ya lo dice: «aquí no lo está»). Su `Test-OpoFuenteExitCo
   grande, aceptar sigue siendo **un clic por versión** en la Biblioteca, porque ADR-009 reserva la
   aceptación a una persona y una versión. `s14` mueve el cuello de botella, no lo quita; decidir si se
   acepta en bloque (agrupando por documento) es una decisión de diseño que no toma este bloque.
+
+---
+
+## F32 · El «0 de 0» del medidor: un grupo con apartado propio y sin comprobación guardada pasa a ser trabajo pendiente (15-oct-2026 · §4 de `SIGUIENTE-TANDA-CIERRE-DEL-OBJETIVO-2026-10`)
+
+### 1. El defecto, medido, y por qué movía el denominador de todos los temas
+
+`TopicNotesService._contar_cobertura` recorre los grupos del tema y le da a cada uno un desenlace. Tenía
+cuatro y un `continue` de más:
+
+```python
+if apartados:
+    # Tiene apartado propio y no hay comprobación guardada: no entra en la puerta.
+    continue
+```
+
+Un grupo **con apartado propio escrito y sin comprobación guardada** se caía de la puerta **por los dos
+lados**: no entraba en el numerador (no hay comprobación que lo demuestre) **ni en el denominador** (el
+`continue` lo saltaba entero). Las consecuencias, y las dos se midieron:
+
+1. la cifra de ese tema se calculaba sobre un conjunto **más pequeño** —solo las preguntas que sí tenían
+   comprobación guardada—, así que salía **más alta de lo que es**;
+2. en el caso extremo —apartados escritos y **ninguna** comprobación guardada— el denominador se quedaba
+   **vacío**, la línea de puerta no se imprimía y el tema medía «**0 de 0**»: una casilla vacía que no
+   dice ni si está bien ni cuánto le falta.
+
+El hallazgo se apuntó el 14-oct como «medido y **no** tocado» (`DECISIONES`, el párrafo de los dos
+hallazgos del motor) precisamente porque cambiarlo mueve el denominador de todos los temas. El §4 del
+documento de cierre lo convierte en encargo.
+
+### 2. La regla que entra
+
+Un grupo **con apartado propio y sin comprobación guardada** cuenta como **pendiente de comprobar**:
+**entra en el denominador y no en el numerador**, y se cuenta aparte. Ni suma cobertura (sería mentira:
+no hay nada que la demuestre) ni se cae del denominador (sería peor: esconde trabajo por hacer).
+
+El quinto desenlace **no** se ha metido en el enumerado `Coverage` a propósito: `Coverage` es lo que dice
+una fila guardada en `question_note_anchors`, y esa tabla tiene un `CHECK` de cuatro valores
+(`ck_anchor_result`, `apps/api/opofuente/infrastructure/db_models.py`). Un «pendiente» **no se guarda
+nunca** —lo que hace el medidor al encontrárselo es contarlo—, así que meterlo en el enumerado que se
+persiste sería declarar un valor que no puede existir en la base. Vive en `CoverageReport.add_pendiente`
+y en tres campos nuevos (`pendientes`, `preguntas_pendientes`,
+`preguntas_pendientes_con_clave_utilizable`), y el `elif` de la línea de puerta garantiza que **nunca más
+se imprime un «0 de 0»**: si no hay denominador con clave, se dice por qué.
+
+### 3. La prueba que falla antes
+
+Dos pruebas, y las dos se vieron **en rojo** sobre el árbol sin el arreglo:
+
+- **unitaria** (`apps/api/tests/unit/test_puerta_de_cobertura.py`, 5 pruebas nuevas): el recuento. Sin el
+  arreglo fallan con `AttributeError: 'CoverageReport' object has no attribute 'add_pendiente'`.
+- **de integración** (`apps/api/tests/integration/test_topic_notes.py::test_un_tema_con_apartados_y_sin_comprobaciones_no_mide_cero_de_cero`):
+  el caso real. Corre un tema entero (dos apartados con texto, dos comprobaciones guardadas), borra las
+  comprobaciones —que es el estado que deja una corrida parada por su tope de tiempo entre la redacción
+  y la comprobación— y **mide**. Sin el arreglo, la primera aserción que cae es la que mide el defecto:
+  `assert informe.coverage.preguntas_con_clave_utilizable == 2` → **`assert 0 == 2`**. El orden de las
+  aserciones es a propósito: primero el defecto **medido** (el denominador vacío) y después la cuenta
+  nueva, para que el rojo de antes del arreglo sea el «0 de 0» y no un atributo que aún no existe.
+
+Con el arreglo: **14 pruebas verdes** entre las dos (las 8 de la puerta que ya existían, las 5 nuevas y
+la de integración).
+
+### 4. Cómo se midió, y por qué no sobre la base viva
+
+La base del propietario **se estaba moviendo mientras se medía**: los bloques de plataforma y de claves
+estaban corriendo. Se vio de la forma más incómoda: dos medidas seguidas del **mismo** medidor dieron
+para I.8 `261/320 = 81,6 %` (la primera) y `297/367 = 80,9 %` (la segunda), con el **denominador
+cambiado solo**, de 320 a 367, sin que nadie tocara los apuntes.
+
+Así que la tabla de este bloque sale de una **instantánea consistente** de la base
+(`sqlite3.Connection.backup` sobre `F:\OpoFuente\datos\opofuente.sqlite3`, 2 748 469 248 bytes, 25 s,
+**solo lectura**) y **las dos versiones del medidor se miden sobre la misma instantánea**. Se comprobó
+con una huella del contenido de las siete tablas que deciden la puerta (`question_note_anchors`,
+`answer_key_entries`, `answer_key_versions`, `curriculum_mappings`, `topic_note_sections`, `topic_facts`,
+`question_derived_keys`): **idéntica antes, en medio y después** de las dos medidas
+(`5754bf1b…`). Coste: **0 $** y ni una fila escrita.
+
+### 5. La tabla de los 33, antes y después
+
+«Antes» = `main` en `cef3308` (la definición de hoy). «Ahora» = `f32-medidor`. Las dos columnas que
+deciden son las de **clave utilizable**; las de «todas» se miden y se enseñan pero no deciden. «con
+apartado» son los grupos con apartado propio y texto (los que la puerta puede medir) y «comprobadas» los
+que tienen comprobación guardada.
+
+| Tema | grupos | con apartado | comprobadas | antes (utilizable) | ahora | antes (todas) | ahora | pendientes | veredicto |
+|---|---|---|---|---|---|---|---|---|---|
+| **I.1** | 1998 | 1998 | 1998 | 1958/1985 = 98,6 % | 1958/1985 = 98,6 % | 1958/2016 = 97,1 % | 1958/2016 = 97,1 % | — | PASA |
+| **I.2** | 613 | 612 | 612 | 626/656 = 95,4 % | 626/656 = 95,4 % | 626/682 = 91,8 % | 626/682 = 91,8 % | — | PASA |
+| **I.3** | 168 | 158 | 158 | 152/181 = 84,0 % | 152/181 = 84,0 % | 152/182 = 83,5 % | 152/182 = 83,5 % | — | NO PASA |
+| **I.4** | 536 | 533 | 532 | 490/550 = 89,1 % | 490/550 = 89,1 % **«cambia»** | 490/562 = 87,2 % | 490/563 = 87,0 % | 1 grupo(s) · 1 preg. (0 en la que decide) | NO PASA |
+| **I.5** | 334 | 332 | 332 | 343/375 = 91,5 % | 343/375 = 91,5 % | 343/385 = 89,1 % | 343/385 = 89,1 % | — | PASA |
+| **I.6** | 168 | 168 | 168 | 171/240 = 71,2 % | 171/240 = 71,2 % | 171/249 = 68,7 % | 171/249 = 68,7 % | — | NO PASA |
+| **I.7** | 364 | 361 | 257 | 291/495 = 58,8 % | 291/495 = 58,8 % | 291/528 = 55,1 % | 291/528 = 55,1 % | — | NO PASA |
+| **I.8** | 409 | 405 | 213 | 261/320 = 81,6 % | 261/488 = 53,5 % **«cambia»** | 261/337 = 77,4 % | 261/516 = 50,6 % | 150 grupo(s) · 201 preg. (168 en la que decide) | NO PASA |
+| **I.9** | 131 | 0 | 0 | sin línea | sin línea | sin línea | sin línea | — | sin línea (sin apartados) |
+| **II.1** | 212 | 212 | 211 | 202/205 = 98,5 % | 202/205 = 98,5 % | 202/214 = 94,4 % | 202/214 = 94,4 % | — | PASA |
+| **II.2** | 173 | 173 | 173 | 162/164 = 98,8 % | 162/164 = 98,8 % | 162/170 = 95,3 % | 162/170 = 95,3 % | — | PASA |
+| **II.3** | 170 | 167 | 167 | 174/183 = 95,1 % | 174/183 = 95,1 % | 174/187 = 93,0 % | 174/187 = 93,0 % | — | PASA |
+| **II.4** | 445 | 445 | 445 | 424/436 = 97,2 % | 424/436 = 97,2 % | 424/468 = 90,6 % | 424/468 = 90,6 % | — | PASA |
+| **II.5** | 143 | 139 | 139 | 149/153 = 97,4 % | 149/153 = 97,4 % | 149/158 = 94,3 % | 149/158 = 94,3 % | — | PASA |
+| **III.1** | 273 | 273 | 273 | 281/284 = 98,9 % | 281/284 = 98,9 % | 281/294 = 95,6 % | 281/294 = 95,6 % | — | PASA |
+| **III.2** | 294 | 0 | 0 | sin línea | sin línea | sin línea | sin línea | — | sin línea (sin apartados) |
+| **III.3** | 178 | 173 | 173 | 177/191 = 92,7 % | 177/191 = 92,7 % | 177/197 = 89,8 % | 177/197 = 89,8 % | — | PASA |
+| **III.4** | 246 | 244 | 244 | 243/246 = 98,8 % | 243/246 = 98,8 % | 243/257 = 94,6 % | 243/257 = 94,6 % | — | PASA |
+| **III.5** | 252 | 251 | 251 | 251/253 = 99,2 % | 251/253 = 99,2 % | 251/259 = 96,9 % | 251/259 = 96,9 % | — | PASA |
+| **III.6** | 141 | 0 | 0 | sin línea | sin línea | sin línea | sin línea | — | sin línea (sin apartados) |
+| **III.7** | 230 | 229 | 229 | 216/233 = 92,7 % | 216/233 = 92,7 % | 216/257 = 84,0 % | 216/257 = 84,0 % | — | PASA |
+| **III.8** | 145 | 145 | 145 | 154/157 = 98,1 % | 154/157 = 98,1 % | 154/167 = 92,2 % | 154/167 = 92,2 % | — | PASA |
+| **III.9** | 332 | 325 | 325 | 319/332 = 96,1 % | 319/332 = 96,1 % | 319/354 = 90,1 % | 319/354 = 90,1 % | — | PASA |
+| **IV.1** | 227 | 227 | 227 | 218/222 = 98,2 % | 218/222 = 98,2 % | 218/226 = 96,5 % | 218/226 = 96,5 % | — | PASA |
+| **IV.2** | 747 | 747 | 747 | 738/738 = 100,0 % | 738/738 = 100,0 % | 738/753 = 98,0 % | 738/753 = 98,0 % | — | PASA |
+| **IV.3** | 125 | 0 | 0 | sin línea | sin línea | sin línea | sin línea | — | sin línea (sin apartados) |
+| **IV.4** | 149 | 145 | 145 | 138/142 = 97,2 % | 138/142 = 97,2 % | 138/147 = 93,9 % | 138/147 = 93,9 % | — | PASA |
+| **IV.5** | 381 | 381 | 380 | 367/377 = 97,3 % | 367/377 = 97,3 % | 367/389 = 94,3 % | 367/389 = 94,3 % | — | PASA |
+| **IV.6** | 305 | 301 | 301 | 285/294 = 96,9 % | 285/294 = 96,9 % | 285/308 = 92,5 % | 285/308 = 92,5 % | — | PASA |
+| **IV.7** | 431 | 431 | 431 | 419/428 = 97,9 % | 419/428 = 97,9 % | 419/450 = 93,1 % | 419/450 = 93,1 % | — | PASA |
+| **IV.8** | 220 | 220 | 220 | 221/222 = 99,5 % | 221/222 = 99,5 % | 221/228 = 96,9 % | 221/228 = 96,9 % | — | PASA |
+| **IV.9** | 217 | 206 | 206 | 196/213 = 92,0 % | 196/213 = 92,0 % | 196/223 = 87,9 % | 196/223 = 87,9 % | — | PASA |
+| **IV.10** | 182 | 181 | 181 | 170/174 = 97,7 % | 170/174 = 97,7 % | 170/179 = 95,0 % | 170/179 = 95,0 % | — | PASA |
+
+### 6. Qué cambia de veredicto, y qué no
+
+- **Ningún tema cambia de veredicto.** I.4 e I.8 siguen en **NO PASA**, y los 31 restantes siguen en el
+  veredicto que ya tenían. La puerta no se ha movido: el umbral sigue en el 90 %.
+- **Los cuatro números que el encargo pedía vigilar no se mueven**: III.4 **98,8 %**, II.2 **98,8 %**,
+  III.8 **98,1 %** y II.5 **97,4 %**, idénticos al decimal con las dos definiciones.
+- **Los 26 temas publicados siguen publicados y ninguno se ha retirado.** Medido sobre la misma
+  instantánea: **26 nodos con versión archivada y apuntes** (`dossier_snapshots` con `notes`), 7 sin
+  versión (I.6, I.7, I.8, I.9, III.2, III.6 y IV.3). A **ninguno** de los 26 le cambia el número que
+  decide. Y dos de ellos siguen **por debajo del listón con su cifra a la vista**, como se decidió:
+  **I.3 = 152/181 = 84,0 %** e **I.4 = 490/550 = 89,1 %**. Lo que ha cambiado es **la medición, no el
+  material**.
+- **Y la razón de que no haya nada que decidir con los publicados, medida**: los dos **únicos** temas con
+  grupos pendientes de comprobar son I.8 (en borrador) e I.4; y el grupo pendiente de I.4 es uno cuya
+  clave marcó el paso B como contraria a la norma, así que **no entra en el denominador que decide** (sí
+  en el segundo, que es el que movió 562 → 563). Dicho de otro modo: **ningún tema publicado tiene
+  preguntas pendientes de comprobar dentro del número que decide si pasa**, así que este arreglo no
+  despublica ni baja del listón a ninguno. Si algún día lo tuviera, la regla ya escrita es la del §4: se
+  queda publicado **con su cifra a la vista** y decide el propietario.
+- **Los cuatro temas sin línea de puerta** (I.9, III.2, III.6 y IV.3) **siguen sin ella, y es correcto**:
+  tienen **0 apartados**. La regla del §4 es para grupos **con apartado propio**; un tema sin nada escrito
+  no tiene trabajo pendiente de comprobar, tiene trabajo pendiente de escribir, y su cifra la dice el
+  panel con su motivo («todavía no tiene apuntes»). No es el «0 de 0» del §4 y no se ha tocado.
+
+### 7. La volatilidad del denominador que el encargo pedía juzgar: **mejora**
+
+El encargo pedía decir si el cambio **empeora o mejora** que «las cifras de un tema puedan moverse entre
+dos medidas seguidas porque el denominador cambia solo cuando otro bloque escribe en la base». Se midió
+con **dos instantáneas** separadas en el tiempo y las **dos** versiones del medidor sobre cada una:
+
+| instantánea | medidor viejo (I.8) | medidor nuevo (I.8) |
+|---|---|---|
+| 1 | 261/**320** = 81,6 % | 261/**488** = 53,5 % (150 grupos pendientes) |
+| 2 | 297/**367** = 80,9 % | 297/**488** = 60,9 % (113 grupos pendientes) |
+
+**Mejora, y es el mecanismo lo que cambia**: el denominador del medidor viejo **se movió** (320 → 367)
+porque otro bloque guardó comprobaciones —cada comprobación nueva metía su pregunta en el denominador—,
+y el del nuevo **no se movió** (488 = 488). Con la regla del §4 el denominador lo decide **quién tiene
+apartado propio con texto**, que no cambia cuando alguien guarda una comprobación; lo único que se mueve
+es el numerador, y **hacia arriba** (261 → 297), que es lo que tiene que pasar cuando se hace el trabajo.
+
+**Lo que no arregla, y se dice**: este cambio quita **una** de las causas de movimiento —la que dependía
+de qué comprobaciones había guardadas en el instante de la lectura—, no todas. Una reescritura de los
+apuntes, una reclasificación de preguntas o un tema nuevo corriendo siguen moviendo denominadores, y eso
+es de los bloques que **escriben** en la base, no del medidor. La solución de fondo —medir siempre sobre
+una copia congelada, como se ha hecho aquí para comparar— es una decisión sobre el procedimiento de
+medida, no sobre el medidor, y no es de este encargo.
+
+### 8. Las 18 puertas
+
+<!-- GATES-F32 -->
+
+### 9. Lo que queda fuera, con el porqué
+
+- **No se ha escrito ni una fila en la base del propietario.** Toda la medición es de solo lectura, y esta
+  vez ni siquiera sobre la base viva: sobre una instantánea. Coste de API: **0 $**.
+- **No se ha corrido ningún tema, ni siquiera los afectados.** I.8 tiene 150 grupos pendientes de
+  comprobar y ahora se ve; **comprobarlos cuesta dinero** y lo decide quien corra el tema, no este bloque.
+  Con la regla nueva, correr I.8 (o I.4) **sí vuelve a contar** lo que compruebe: cada grupo que pase de
+  pendiente a comprobado mueve el numerador y no el denominador.
+- **Los informes por tema no se han tocado** (`docs/apuntes/INFORME-*.md`): el encargo de este bloque solo
+  permite escribir en los tres documentos de seguimiento. La corrección de la cifra de I.8 está, por
+  tanto, **en esta sección y en `PARA-EL-PROPIETARIO`**, no en su informe.
+- **El caso «apartado propio vacío y sin comprobación» sigue como estaba**: un grupo cuyo apartado existe
+  en la base pero **sin texto** (`resultado is None and firma not in sin_materia`) se sigue saltando. No
+  es el caso del §4 —la regla habla de un grupo **con apartado**, y un apartado sin texto no es un
+  apartado— y el trabajo que le falta es **redactar**, no comprobar. Queda dicho aquí y no se toca.
+- **La cifra de I.8 se mueve sola mientras otros bloques trabajen**: lo medido en la instantánea 2 es
+  `297/488 = 60,9 %` y en la 1 era `261/488 = 53,5 %`. Las dos son verdad y la diferencia es trabajo
+  hecho. Por eso la tabla del apartado 5 lleva su fecha y su huella y no se presenta como un número
+  eterno.
