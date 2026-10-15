@@ -26,7 +26,14 @@ from collections.abc import Sequence
 from typing import Any
 from urllib.parse import urlsplit
 
+from opofuente.domain.derived_keys import (
+    RespuestaDelModelo,
+    RespuestasBatch,
+    build_system_prompt_responder,
+    build_user_prompt_responder,
+)
 from opofuente.domain.errors import ConfigurationError, ExternalServiceError
+from opofuente.domain.topic_classification import ClassifiableQuestion
 from opofuente.domain.topic_notes import (
     SYSTEM_PROMPT_ANADIR,
     ComprobacionBatch,
@@ -173,6 +180,42 @@ def _letra(valor: object) -> str | None:
     return limpia if len(limpia) == 1 and limpia.isalpha() else None
 
 
+def read_respuestas_independientes(payload: str, *, requested: Sequence[str]) -> RespuestasBatch:
+    """Las respuestas del modelo a la pregunta **sola** (la segunda fuente de la clave derivada).
+
+    Solo se aceptan las letras que son **una letra**: lo que el modelo no conteste, o conteste con
+    algo que no es una letra, entra en `sin_respuesta` y esa pregunta se queda sin derivar. Una
+    respuesta inventada metida en una clave es peor que una pregunta fuera.
+    """
+    sobre = _objeto(payload, "la respuesta del modelo")
+    dentro = _objeto(_contenido(sobre), "el contenido del modelo")
+    elementos = dentro.get("respuestas")
+    if not isinstance(elementos, list):
+        raise ExternalServiceError("el contenido del modelo no trae la lista «respuestas»")
+    pedidas = set(requested)
+    respuestas: list[RespuestaDelModelo] = []
+    contestadas: set[str] = set()
+    for elemento in elementos:
+        if not isinstance(elemento, dict):
+            continue
+        identificador = elemento.get("id")
+        if not isinstance(identificador, str) or identificador not in pedidas:
+            continue
+        letra = _letra(elemento.get("letra"))
+        if letra is None:
+            continue
+        contestadas.add(identificador)
+        respuestas.append(RespuestaDelModelo(question_version_id=identificador, letra=letra))
+    entrada, salida, cache = leer_uso(sobre)
+    return RespuestasBatch(
+        respuestas=tuple(respuestas),
+        input_tokens=entrada,
+        output_tokens=salida,
+        cache_hit_tokens=cache,
+        sin_respuesta=tuple(sorted(pedidas - contestadas)),
+    )
+
+
 def _objeto(payload: str, que: str) -> dict[str, Any]:
     """Un texto que tiene que ser un objeto JSON. Si no lo es, se dice **qué** no lo era."""
     try:
@@ -304,6 +347,22 @@ class DeepSeekNotesModel:
         )
         return read_redaccion(self._post(json.dumps(cuerpo, ensure_ascii=False)))
 
+    def responder(self, preguntas: Sequence[ClassifiableQuestion]) -> RespuestasBatch:
+        """La respuesta **independiente** a un lote de preguntas: la pregunta sola, sin apuntes.
+
+        Es la segunda fuente de la clave derivada (§1 del encargo). `temperature=0` por lo mismo que
+        en los demás pasos: dos pasadas sobre la misma pregunta tienen que decir lo mismo, o la
+        coincidencia con los apuntes dependería del azar.
+        """
+        cuerpo = self._cuerpo(
+            system=build_system_prompt_responder(),
+            user=build_user_prompt_responder(preguntas),
+        )
+        return read_respuestas_independientes(
+            self._post(json.dumps(cuerpo, ensure_ascii=False)),
+            requested=[pregunta.question_version_id for pregunta in preguntas],
+        )
+
     def _cuerpo(self, *, system: str, user: str) -> dict[str, Any]:
         """El sobre de la petición. `temperature=0`: dos pasadas tienen que decir lo mismo."""
         return {
@@ -360,4 +419,5 @@ __all__ = [
     "read_comprobacion",
     "read_hechos",
     "read_redaccion",
+    "read_respuestas_independientes",
 ]

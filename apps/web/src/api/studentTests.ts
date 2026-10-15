@@ -72,6 +72,10 @@ export interface StudentQuestion {
   /** La clave de esta pregunta está en revisión (§1): su conjunto discrepa de los apuntes entre el
    * 15 % y el 30 %. Entra en el test, pero el alumno lo ve antes de fiarse de la corrección. */
   in_review: boolean;
+  /** Y la clave de esta pregunta es derivada (§1 del encargo F29): los apuntes, con su cita
+   * verificada, y el modelo preguntado sin apuntes dicen la misma letra. Se enseña como «clave
+   * revisada automáticamente». */
+  derived_key: boolean;
 }
 
 export interface StudentSheetRow {
@@ -90,6 +94,9 @@ export interface StudentRun {
   pending: number;
   finished: boolean;
   questions_in_review: number;
+  /** Cuántas preguntas del test se corrigen con su clave derivada y llevan la marca «clave revisada
+   * automáticamente» (§1 del encargo F29). */
+  questions_derived: number;
   position: number | null;
   question: StudentQuestion | null;
   sheet: StudentSheetRow[];
@@ -138,6 +145,9 @@ export interface StudentResultQuestion {
   /** La clave de esta pregunta está en revisión (§1). En el resultado importa más que en el test:
    * un fallo puede ser de la clave y no del alumno. */
   in_review: boolean;
+  /** Y la clave de esta pregunta es derivada (§1 del encargo F29). En el resultado dice de dónde
+   * sale la letra con la que se corrigió: no es la plantilla del conjunto. */
+  derived_key: boolean;
 }
 
 /** Cómo fue el test en un tema: es el desglose que dice qué hay que repasar. */

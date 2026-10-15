@@ -31,6 +31,13 @@ from opofuente.infrastructure.migrations import alembic_config, run_migrations, 
 #: desaparecer al hacerlo. El orden es el de la cadena, de la más nueva a la más antigua.
 ESCALONES: tuple[tuple[str, str, tuple[str, ...]], ...] = (
     (
+        # `0039` crea las dos tablas de la clave derivada (F29) y su vuelta atrás se las lleva: al
+        # bajar de este escalón desaparecen las dos, que es lo que se mide aquí.
+        "0039_claves_derivadas",
+        "0038_revision_de_apuntes",
+        ("question_derived_keys", "question_key_gaps"),
+    ),
+    (
         # `0038` crea la tabla de la revisión de los apuntes del propietario (F24) y su vuelta atrás
         # se la lleva: al bajar de este escalón la tabla **desaparece**, y es lo que se mide aquí.
         "0038_revision_de_apuntes",
