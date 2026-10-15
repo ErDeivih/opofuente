@@ -308,7 +308,14 @@ test('E2E-F18 una incidencia del motor se ve, lleva a lo que la provoca y se des
     await otraVez.getByLabel(/Qué has decidido/).fill(NOTA);
     await otraVez.getByRole('button', { name: /^Resuelta:/ }).click();
 
-    await expect(page.getByText(/0 pendientes/)).toBeVisible({ timeout: 15_000 });
+    // La expectativa cambió **a propósito** con F31, y no para que la prueba calle: el resumen de
+    // arriba dejó de contar incidencias sueltas («0 pendientes») y ahora cuenta **lo que de verdad
+    // espera al propietario**, que es la cifra que manda el §2.4 del cierre del objetivo (una fila
+    // por examen, una por incidencia oficial). Al resolver la única incidencia de esta prueba, esa
+    // cifra es cero. El texto viejo ya no existe en la pantalla, así que la espera se actualiza.
+    await expect(page.getByText(/0 avisos que esperan tu criterio/)).toBeVisible({
+      timeout: 15_000,
+    });
     await expect(page.getByRole('listitem').filter({ hasText: /Lo que decidiste:/ })).toContainText(
       NOTA,
     );

@@ -94,18 +94,24 @@ ACCIONES: tuple[TrayAction, ...] = (
 
 #: Qué hace cada acción, dicho para poder decidirla sin abrir nada. Es el texto que lee el
 #: propietario en la pantalla, y se calcula en el servidor para que no haya dos versiones.
+#:
+#: El vocabulario es **el suyo**: «examen» y «respuesta correcta», no «conjunto», «bandeja» ni
+#: «clave». Esas tres son palabras de dentro y la interfaz las tiene vetadas (la puerta 18 las busca
+#: fuera del contenido): decirlas aquí sería colar por el texto del servidor lo que la pantalla no
+#: puede decir.
 TEXTO_DE_ACCION: dict[TrayAction, str] = {
     TrayAction.ACEPTAR_DERIVADAS: (
-        "acepta todas las claves derivadas del conjunto: la letra que coinciden los apuntes y una "
-        "respuesta independiente del modelo pasa a ser la clave, y sus incidencias quedan resueltas"
+        "acepta todas las respuestas derivadas de este examen: la letra que coinciden los apuntes "
+        "y una respuesta independiente del modelo pasa a ser la respuesta correcta, y sus avisos "
+        "quedan resueltos"
     ),
     TrayAction.DEJAR_FUERA: (
-        "deja el conjunto fuera de tests, simulacros y repasos: su clave no se usa para nada hasta "
-        "que se arregle, y sus incidencias quedan resueltas"
+        "deja este examen fuera de tests, simulacros y repasos: su respuesta correcta no se usa "
+        "para nada hasta que se arregle, y sus avisos quedan resueltos"
     ),
     TrayAction.NO_SON_PREGUNTAS: (
-        "el conjunto no son preguntas contestables: sale del temario con su motivo y se queda "
-        "en la base, fuera de tests, simulacros y comprobaciones"
+        "lo que hay en este examen no son preguntas contestables: sale del temario con su motivo y "
+        "se queda en la base, fuera de tests, simulacros y comprobaciones"
     ),
 }
 
@@ -210,11 +216,16 @@ class TraySet:
         return self.total_pendiente if self.es_oficial else 1
 
     def resumen(self) -> str:
-        """«50 claves sospechosas», que es el título de la fila del §2.1 del cierre del objetivo."""
+        """«50 claves sospechosas», que es el título de la fila del §2.1 del cierre del objetivo.
+
+        **Con el número en su forma**: «1 clave sospechosa», no «1 claves sospechosas». Lo compone
+        el servidor y no la pantalla justo por esto: un plural escrito a mano se rompe en cuanto el
+        cuanto el número es uno, y el propietario lo lee en cada fila.
+        """
         if self.total_pendiente == 0:
             return "sin nada pendiente"
         partes = [
-            f"{cuantas} {ETIQUETA_DE_CATEGORIA.get(categoria, categoria)}"
+            f"{cuantas} {_etiqueta(categoria, cuantas)}"
             for categoria, cuantas in sorted(
                 self.pendientes.items(), key=lambda par: (-par[1], par[0])
             )
@@ -223,15 +234,40 @@ class TraySet:
         return " · ".join(partes)
 
 
-#: El nombre de cada categoría en la fila del conjunto. Es el vocabulario del dominio, en plural y
-#: en minúscula, porque lo que sigue a un número es lo que hay dentro.
-ETIQUETA_DE_CATEGORIA: dict[str, str] = {
-    CategoriaIncidencia.HUECO_SIN_MATERIAL.value: "huecos sin material",
-    CategoriaIncidencia.CLAVE_SOSPECHOSA.value: "claves sospechosas",
-    CategoriaIncidencia.PREGUNTA_AMBIGUA.value: "preguntas que no se pueden juzgar",
-    CategoriaIncidencia.NORMA_CAMBIADA.value: "normas que hay que comprobar",
-    CategoriaIncidencia.PREGUNTA_MAL_IMPORTADA.value: "preguntas mal importadas",
-    CategoriaIncidencia.CLAVE_NO_FIABLE.value: "claves no fiables",
+def _etiqueta(categoria: str, cuantas: int) -> str:
+    """El nombre de la categoría, en singular si hay una y en plural si hay más.
+
+    Una categoría que el vocabulario no conozca sale **tal cual** —es lo que ya hacía— y no se
+    inventa un plural: la fila enseña el nombre del dominio antes que una palabra mal formada.
+    """
+    formas = ETIQUETA_DE_CATEGORIA.get(categoria)
+    if formas is None:
+        return categoria
+    singular, plural = formas
+    return singular if cuantas == 1 else plural
+
+
+#: El nombre de cada categoría en la fila del examen, en **sus dos formas** (singular, plural).
+#:
+#: Están las dos escritas y no se deriva una de la otra con una regla: en español el plural no es
+#: añadir una «s» —«norma» → «normas» sí, pero «pregunta que no se puede juzgar» → «preguntas que no
+#: se pueden juzgar»— y una regla a medias escribiría «1 claves» o «2 claves sospechosa».
+ETIQUETA_DE_CATEGORIA: dict[str, tuple[str, str]] = {
+    CategoriaIncidencia.HUECO_SIN_MATERIAL.value: ("hueco sin material", "huecos sin material"),
+    CategoriaIncidencia.CLAVE_SOSPECHOSA.value: ("clave sospechosa", "claves sospechosas"),
+    CategoriaIncidencia.PREGUNTA_AMBIGUA.value: (
+        "pregunta que no se puede juzgar",
+        "preguntas que no se pueden juzgar",
+    ),
+    CategoriaIncidencia.NORMA_CAMBIADA.value: (
+        "norma que hay que comprobar",
+        "normas que hay que comprobar",
+    ),
+    CategoriaIncidencia.PREGUNTA_MAL_IMPORTADA.value: (
+        "pregunta mal importada",
+        "preguntas mal importadas",
+    ),
+    CategoriaIncidencia.CLAVE_NO_FIABLE.value: ("clave no fiable", "claves no fiables"),
 }
 
 

@@ -134,7 +134,7 @@ function urlDe(url: RequestInfo | URL): string {
 
 /** La fila de un conjunto, por su título. */
 async function filaDe(titulo: string): Promise<HTMLElement> {
-  const lista = await screen.findByRole('list', { name: /bandeja agrupada por conjunto/i });
+  const lista = await screen.findByRole('list', { name: /avisos agrupados por examen/i });
   const filas = within(lista).getAllByRole('listitem');
   const fila = filas.find((cual) => within(cual).queryByText(titulo) !== null);
   if (fila === undefined) {
@@ -152,13 +152,13 @@ describe('la bandeja agrupada por conjunto', () => {
     expect(within(fila).getByText(/3 huecos sin material/)).toBeInTheDocument();
     // La cifra que mide si la bandeja sirve: 53 incidencias de un conjunto no oficial son **una**
     // entrada de decisión, y la pantalla la enseña tal como la cuenta el servidor.
-    expect(within(fila).getByText(/1 entrada\(s\) de decisión/)).toBeInTheDocument();
+    expect(within(fila).getByText(/cuenta como una decisión tuya/)).toBeInTheDocument();
     // Las propuestas se cuentan aparte de lo pendiente: significan cosas distintas —una se aprueba
     // en bloque y la otra espera criterio— y la fila las enseña por separado.
     const cifras = within(fila).getByText((_texto, elemento) =>
       Boolean(
         elemento?.classList.contains('conjunto__cifras') &&
-          (elemento.textContent ?? '').includes('12 con clave derivada'),
+          (elemento.textContent ?? '').includes('12 respuestas derivadas'),
       ),
     );
     expect(cifras).toBeInTheDocument();
@@ -176,7 +176,9 @@ describe('la bandeja agrupada por conjunto', () => {
     // Las acciones las dice el servidor: la fila oficial llega con la lista vacía y aquí no se
     // inventa ninguna. Una clave oficial no se toca ni desde un botón.
     expect(within(fila).queryByRole('button', { name: /Aceptar todas las derivadas/i })).toBeNull();
-    expect(within(fila).queryByRole('button', { name: /Dejar el conjunto fuera/i })).toBeNull();
+    expect(
+      within(fila).queryByRole('button', { name: /Dejar fuera del estudio/i }),
+    ).toBeNull();
     expect(
       within(fila).getByRole('button', { name: /Ver lo que tiene dentro/i }),
     ).toBeInTheDocument();
@@ -187,7 +189,9 @@ describe('la bandeja agrupada por conjunto', () => {
     const usuario = userEvent.setup();
 
     const fila = await filaDe('TEST VARIOS');
-    await usuario.click(within(fila).getByRole('button', { name: /Dejar el conjunto fuera/i }));
+    await usuario.click(
+      within(fila).getByRole('button', { name: /Dejar fuera del estudio/i }),
+    );
 
     await waitFor(() => {
       const llamada = fetchMock.mock.calls.find(
@@ -221,7 +225,7 @@ describe('la bandeja agrupada por conjunto', () => {
       expect(llamada).toBeDefined();
     });
 
-    const dentro = await within(fila).findByRole('list', { name: /incidencias de test varios/i });
+    const dentro = await within(fila).findByRole('list', { name: /avisos de test varios/i });
     expect(within(dentro).getByText('El puerto de LDAPS es el 636.')).toBeInTheDocument();
     expect(within(dentro).getByText('Clave sospechosa')).toBeInTheDocument();
   });

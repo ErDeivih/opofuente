@@ -386,7 +386,9 @@ def test_la_bandeja_agrupada_ensena_el_conjunto_como_una_fila(
 
     fila = next(cual for cual in cuerpo["rest"] if cual["set_id"] == set_id)
     assert fila["total_pendiente"] == 3
-    assert fila["resumen"] == "2 claves sospechosas · 1 huecos sin material"
+    # Con el número en su forma: dos en plural y **uno en singular**. «1 huecos sin material» es el
+    # defecto que se vio en la pantalla y que esta línea ata.
+    assert fila["resumen"] == "2 claves sospechosas · 1 hueco sin material"
     assert fila["acciones"] == ["aceptar_derivadas", "dejar_fuera", "no_son_preguntas"]
     assert fila["official"] is False
     # La cifra: tres incidencias en un conjunto no oficial son **una** cosa que atender.

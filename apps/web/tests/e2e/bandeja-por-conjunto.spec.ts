@@ -122,14 +122,47 @@ function marcarOficial(setId: string): void {
   }
 }
 
-/** Retira lo que la prueba ha dejado: sus incidencias y su apartado, y solo eso. */
-function retirarLoDeLaPrueba(cantidad: number): void {
+/**
+ * Retira **todo** lo que la prueba ha dejado: sus avisos, su apartado y los bancos que ha creado.
+ *
+ * Que se lleve los bancos no es celo de limpieza: `workers: 1` corre las specs en orden alfabético,
+ * así que esta va **antes** que `study.spec.ts`, y dos preguntas catalogadas en `IV.1` son un tema
+ * más y dos preguntas más para el diagnóstico de esa prueba. Se comprobó con su volcado: de «6 en 3»
+ * a «8 en 4». Una prueba que deja datos no es una prueba, es una fuga que aparece tres ficheros más
+ * allá.
+ *
+ * Las tablas se borran **de la hoja hacia la raíz** porque el SQLite de `node:sqlite` no trae las
+ * claves foráneas encendidas y ninguna cascada va a hacerlo por nosotros.
+ */
+function retirarLoDeLaPrueba(setIds: readonly string[]): void {
   const db = new DatabaseSync(BASE);
   try {
-    const borrar = db.prepare('DELETE FROM notes_incidents WHERE id = ?');
-    for (let indice = 0; indice < cantidad; indice += 1) {
-      borrar.run(`incidencia-de-la-bandeja-f31-${String(indice)}`);
+    const huecos = setIds.map(() => '?').join(', ');
+    const preguntas = db
+      .prepare(`SELECT id FROM question_versions WHERE question_set_id IN (${huecos})`)
+      .all(...setIds) as { id: string }[];
+    const ids = preguntas.map((fila) => fila.id);
+
+    if (ids.length > 0) {
+      const marcaPreguntas = ids.map(() => '?').join(', ');
+      db.prepare(
+        `DELETE FROM curriculum_mappings WHERE subject_type = 'question_version' ` +
+          `AND subject_id IN (${marcaPreguntas})`,
+      ).run(...ids);
+      db.prepare(`DELETE FROM notes_incidents WHERE question_version_id IN (${marcaPreguntas})`).run(
+        ...ids,
+      );
+      db.prepare(`DELETE FROM answer_key_entries WHERE question_version_id IN (${marcaPreguntas})`).run(
+        ...ids,
+      );
+      db.prepare(`DELETE FROM option_versions WHERE question_version_id IN (${marcaPreguntas})`).run(
+        ...ids,
+      );
+      db.prepare(`DELETE FROM question_versions WHERE id IN (${marcaPreguntas})`).run(...ids);
     }
+
+    db.prepare(`DELETE FROM answer_key_versions WHERE question_set_id IN (${huecos})`).run(...setIds);
+    db.prepare(`DELETE FROM question_sets WHERE id IN (${huecos})`).run(...setIds);
     db.prepare('DELETE FROM topic_note_sections WHERE id = ?').run('apartado-de-la-bandeja-f31');
   } finally {
     db.close();
@@ -254,7 +287,7 @@ async function prepararLaBandeja(
   // existan y para que la acción en bloque cierre **un** conjunto y no el otro.
   sembrarIncidencias(tema.id, [
     privado.preguntas[0]!,
-    privado.preguntas[0]!,
+    privado.preguntas[1]!,
     oficial.preguntas[0]!,
   ]);
   marcarOficial(oficial.setId);
@@ -284,7 +317,9 @@ test('E2E-F31 la bandeja se agrupa por conjunto y una acción en bloque la despa
 
   try {
     await page.goto('/admin/incidencias');
-    await expect(page.getByRole('heading', { level: 2, name: 'La bandeja por conjunto' })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { level: 2, name: 'Avisos agrupados por examen' }),
+    ).toBeVisible();
 
     // --- 1. Lo oficial, aparte y arriba, y sin botones -------------------------------------------
     const seccionOficial = page.getByRole('region', { name: 'Exámenes oficiales' });
@@ -297,17 +332,17 @@ test('E2E-F31 la bandeja se agrupa por conjunto y una acción en bloque la despa
     ).toHaveCount(0);
 
     // --- 2. El conjunto no oficial es **una** fila, y despliega ----------------------------------
-    const lista = page.getByRole('list', { name: 'La bandeja agrupada por conjunto' });
+    const lista = page.getByRole('list', { name: 'Avisos agrupados por examen' });
     const filaPrivada = page.locator(`li[data-conjunto="${conjuntos.privado}"]`);
     await expect(filaPrivada).toBeVisible();
     await expect(filaPrivada).toContainText('2 claves sospechosas');
     await filaPrivada.getByRole('button', { name: /Ver lo que tiene dentro/i }).click();
     await expect(
-      filaPrivada.getByRole('list', { name: /Incidencias de /i }).getByText(FRASE).first(),
+      filaPrivada.getByRole('list', { name: /Avisos de /i }).getByText(FRASE).first(),
     ).toBeVisible();
 
     // --- 3. La acción en bloque, y su evento -----------------------------------------------------
-    await filaPrivada.getByRole('button', { name: /Dejar el conjunto fuera/i }).click();
+    await filaPrivada.getByRole('button', { name: /Dejar fuera del estudio/i }).click();
     await expect(filaPrivada).toHaveCount(0, { timeout: 15_000 });
     // Y el conjunto oficial **sigue ahí**: la acción era de un conjunto, no de la bandeja.
     await expect(page.locator(`li[data-conjunto="${conjuntos.oficial}"]`)).toHaveCount(1);
@@ -331,7 +366,7 @@ test('E2E-F31 la bandeja se agrupa por conjunto y una acción en bloque la despa
     expect(errores, `errores de consola: ${errores.join(' | ')}`).toEqual([]);
     expect(conjuntos.total).toBe(3);
   } finally {
-    retirarLoDeLaPrueba(3);
+    retirarLoDeLaPrueba([conjuntos.privado, conjuntos.oficial]);
   }
 });
 
@@ -357,7 +392,7 @@ for (const viewport of [
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
       await page.goto('/admin/incidencias');
       await expect(
-        page.getByRole('heading', { level: 2, name: 'La bandeja por conjunto' }),
+        page.getByRole('heading', { level: 2, name: 'Avisos agrupados por examen' }),
       ).toBeVisible();
       await expect(page.getByRole('region', { name: 'Exámenes oficiales' })).toBeVisible();
 
@@ -398,7 +433,7 @@ for (const viewport of [
 
       expect(errores, `errores de consola: ${errores.join(' | ')}`).toEqual([]);
     } finally {
-      retirarLoDeLaPrueba(3);
+      retirarLoDeLaPrueba([conjuntos.privado, conjuntos.oficial]);
     }
   });
 }

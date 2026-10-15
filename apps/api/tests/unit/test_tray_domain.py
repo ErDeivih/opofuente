@@ -85,6 +85,37 @@ def test_lo_oficial_cuenta_una_por_incidencia_porque_no_se_decide_en_bloque() ->
     assert oficial.entradas_de_decision == 3
 
 
+def test_el_resumen_pone_el_numero_en_su_forma_y_no_escribe_uno_claves() -> None:
+    """«1 clave sospechosa», no «1 claves sospechosas».
+
+    Es un defecto que se vio **en la pantalla**, no en una idea: la fila que enseñaba un solo aviso
+    decía «1 claves sospechosas». El plural español no es añadir una «s» —«pregunta que no se puede
+    juzgar» → «preguntas que no se pueden juzgar»—, así que las dos formas están escritas y la
+    prueba las ata para las seis categorías. A igualdad de número manda el orden alfabético de la
+    categoría, que es lo que hace que dos corridas seguidas enseñen la misma fila.
+    """
+    assert _conjunto("s1", title="Uno", pendientes={"clave_sospechosa": 1}).resumen() == (
+        "1 clave sospechosa"
+    )
+    assert _conjunto("s2", title="Dos", pendientes={"clave_sospechosa": 2}).resumen() == (
+        "2 claves sospechosas"
+    )
+    assert _conjunto(
+        "s3",
+        title="Mezcla",
+        pendientes={
+            "hueco_sin_material": 1,
+            "clave_no_fiable": 1,
+            "pregunta_ambigua": 1,
+            "pregunta_mal_importada": 1,
+            "norma_cambiada": 1,
+        },
+    ).resumen() == (
+        "1 clave no fiable · 1 hueco sin material · 1 norma que hay que comprobar · "
+        "1 pregunta que no se puede juzgar · 1 pregunta mal importada"
+    )
+
+
 def test_una_plantilla_enlazada_tambien_es_oficial_aunque_el_tipo_diga_banco_privado() -> None:
     """El segundo camino a «oficial»: la plantilla salió de un documento.
 

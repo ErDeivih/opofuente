@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { ReactElement } from 'react';
 
 import type { NotesIncident, TrayAction, TraySet } from '../../api/notesIncidents';
+import { conNumero } from '../../lib/plural';
 import { Button } from '../../ui/Button';
 
 /**
@@ -12,7 +13,7 @@ import { Button } from '../../ui/Button';
  */
 const ETIQUETA_DE_ACCION: Record<TrayAction, string> = {
   aceptar_derivadas: 'Aceptar todas las derivadas',
-  dejar_fuera: 'Dejar el conjunto fuera',
+  dejar_fuera: 'Dejar fuera del estudio',
   no_son_preguntas: 'Marcar como «no son preguntas»',
 };
 
@@ -23,15 +24,15 @@ export interface SetRowProps {
   /** Si hay una escritura en vuelo, los botones se apagan: dos acciones a la vez no tienen sentido. */
   busy: boolean;
   /**
-   * El despliegue de la fila: las incidencias del conjunto, o `null` mientras no se han pedido.
+   * El despliegue de la fila: los avisos del examen, o `null` mientras no se han pedido.
    *
-   * Lo pide la pantalla, que es quien tiene la consulta; la fila solo dice **qué** conjunto hay que
+   * Lo pide la pantalla, que es quien tiene la consulta; la fila solo dice **qué** examen hay que
    * abrir. Así el estado de la carga —que puede tardar, son hasta 70 filas— vive donde se pide.
    */
   detalle: { cargando: boolean; error: boolean; incidencias: NotesIncident[] | null };
   onDesplegar: () => void;
   onBulk: (action: TrayAction) => void;
-  /** Cómo se pinta una incidencia dentro del conjunto: es la misma fila que la de la lista. */
+  /** Cómo se pinta un aviso dentro del examen: es la misma fila que la de la lista. */
   renderIncidencia: (incidencia: NotesIncident) => ReactElement;
 }
 
@@ -90,14 +91,26 @@ export function SetRow({
             {conjunto.resumen}
           </p>
           <p className="conjunto__cifras">
-            <strong>{conjunto.total_pendiente}</strong> esperando criterio
+            {conNumero(
+              conjunto.total_pendiente,
+              'aviso esperando criterio',
+              'avisos esperando criterio',
+            )}
             {conjunto.propuestas > 0 && (
               <>
                 {' · '}
-                <strong>{conjunto.propuestas}</strong> con clave derivada, para aprobar en bloque
+                {conNumero(
+                  conjunto.propuestas,
+                  'respuesta derivada, para aprobar en bloque',
+                  'respuestas derivadas, para aprobar en bloque',
+                )}
               </>
             )}
-            <span className="hint"> · {conjunto.entradas_de_decision} entrada(s) de decisión</span>
+            <span className="hint">
+              {conjunto.entradas_de_decision === 1
+                ? ' · cuenta como una decisión tuya'
+                : ` · cuenta como ${String(conjunto.entradas_de_decision)} decisiones tuyas`}
+            </span>
           </p>
         </div>
 
@@ -114,7 +127,7 @@ export function SetRow({
           aria-label={`Qué hacer con ${conjunto.title}`}
         >
           {acciones.length === 0 ? (
-            <p className="hint">Este conjunto no admite acciones en bloque.</p>
+            <p className="hint">Este examen no admite acciones en bloque.</p>
           ) : (
             acciones.map((accion) => (
               <Button
@@ -150,14 +163,14 @@ export function SetRow({
           {detalle.cargando && <p className="hint">Leyendo lo que hay dentro…</p>}
           {detalle.error && (
             <p className="hint">
-              No se pudieron leer las incidencias de este conjunto. Vuelve a intentarlo.
+              No se pudieron leer los avisos de este examen. Vuelve a intentarlo.
             </p>
           )}
           {detalle.incidencias !== null && detalle.incidencias.length === 0 && (
-            <p className="hint">Este conjunto ya no tiene nada esperando.</p>
+            <p className="hint">Aquí ya no queda nada esperando.</p>
           )}
           {detalle.incidencias !== null && detalle.incidencias.length > 0 && (
-            <ul className="avisos" aria-label={`Incidencias de ${conjunto.title}`}>
+            <ul className="avisos" aria-label={`Avisos de ${conjunto.title}`}>
               {detalle.incidencias.map((incidencia) => renderIncidencia(incidencia))}
             </ul>
           )}

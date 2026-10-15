@@ -32,6 +32,7 @@ import { IncidentRow } from '../features/incidencias/IncidentRow';
 import { SetRow } from '../features/incidencias/SetRow';
 import { groupByBlock, indexProgramme, topicLabel } from '../features/topicReview/programme';
 import { describeError } from '../features/system/labels';
+import { conNumero } from '../lib/plural';
 
 /** Los valores que existen, para no creerse lo que venga escrito en la dirección. */
 function categoriaValida(valor: string | null): IncidentCategory | null {
@@ -218,7 +219,9 @@ export function IncidentsPage() {
           <strong>{bandeja.data?.entradas_de_decision ?? contadores?.pending ?? 0}</strong>{' '}
           {bandeja.data === undefined
             ? 'pendientes'
-            : 'entradas de decisión de verdad, por conjuntos'}
+            : bandeja.data.entradas_de_decision === 1
+              ? 'aviso que espera tu criterio'
+              : 'avisos que esperan tu criterio'}
           {contadores !== null && contadores.pending > 0
             ? ' — el motor las señaló y nadie ha decidido todavía'
             : ' — no espera nada tu criterio'}
@@ -230,9 +233,19 @@ export function IncidentsPage() {
         </p>
         {bandeja.data !== undefined && (
           <p className="hint">
-            {bandeja.data.filas} conjuntos con algo dentro · {bandeja.data.total_pendiente}{' '}
-            incidencias esperando criterio · {bandeja.data.propuestas} ya resueltas por regla,
-            para aprobar en bloque.
+            {conNumero(bandeja.data.filas, 'examen con algo dentro', 'exámenes con algo dentro')} ·{' '}
+            {conNumero(
+              bandeja.data.total_pendiente,
+              'aviso esperando criterio',
+              'avisos esperando criterio',
+            )}{' '}
+            ·{' '}
+            {conNumero(
+              bandeja.data.propuestas,
+              'ya resuelto por regla, para aprobar en bloque',
+              'ya resueltos por regla, para aprobar en bloque',
+            )}
+            .
           </p>
         )}
 
@@ -383,10 +396,10 @@ export function IncidentsPage() {
         </p>
       </section>
 
-      {bandeja.isPending && <LoadingState label="Agrupando la bandeja por conjunto…" />}
+      {bandeja.isPending && <LoadingState label="Agrupando los avisos…" />}
       {bandeja.isError && (
         <ErrorState
-          title="No se pudo agrupar la bandeja por conjunto"
+          title="No se pudieron agrupar los avisos"
           message={describeError(bandeja.error)}
           onRetry={() => {
             void bandeja.refetch();
@@ -413,26 +426,26 @@ export function IncidentsPage() {
                 publicó la administración y <strong>no se cambia jamás</strong>, así que esto no se
                 decide en bloque: cada incidencia la miras tú.
               </p>
-              <ul className="conjuntos" aria-label="Incidencias de exámenes oficiales">
+              <ul className="conjuntos" aria-label="Avisos de exámenes oficiales">
                 {seccion(bandeja.data.official_section ?? [])}
               </ul>
             </section>
           )}
 
           <section className="card" aria-labelledby="bandeja-por-conjunto">
-            <h2 id="bandeja-por-conjunto">La bandeja por conjunto</h2>
+            <h2 id="bandeja-por-conjunto">Avisos agrupados por examen</h2>
             <p className="page__lead">
-              Un conjunto es <strong>una fila</strong>, no cincuenta. Lo que espera dentro se decide de
-              una vez: aceptar las claves derivadas, dejarlo fuera de los tests o marcar que lo que hay
-              ahí no son preguntas. Cada acción deja su evento de auditoría.
+              <strong>Una fila por examen</strong>, no cincuenta avisos. Lo que espera dentro se decide
+              de una vez: aceptar las respuestas derivadas, dejar ese examen fuera del estudio o marcar
+              que lo que hay ahí no son preguntas. Cada decisión queda auditada.
             </p>
             {(bandeja.data.rest ?? []).length === 0 ? (
               <EmptyState
-                title="Ningún conjunto esperando"
-                description="Cuando el motor señale algo que no pueda cerrar solo, su conjunto saldrá aquí con lo que tiene dentro y con lo que se puede hacer de una vez."
+                title="Ningún examen esperando"
+                description="Cuando el motor señale algo que no pueda cerrar solo, su examen saldrá aquí con lo que tiene dentro y con lo que se puede hacer de una vez."
               />
             ) : (
-              <ul className="conjuntos" aria-label="La bandeja agrupada por conjunto">
+              <ul className="conjuntos" aria-label="Avisos agrupados por examen">
                 {seccion(bandeja.data.rest ?? [])}
               </ul>
             )}
@@ -469,7 +482,7 @@ export function IncidentsPage() {
           }
           description={
             contadores !== null && totalCategorias > 0
-              ? 'Hay incidencias en la bandeja, pero no con la categoría, el estado, el tema o la búsqueda que has puesto. Quita algún filtro para verlas.'
+              ? 'Hay incidencias esperando, pero no con la categoría, el estado, el tema o la búsqueda que has puesto. Quita algún filtro para verlas.'
               : 'Aquí aparecerá lo que el motor no pueda cerrar solo al comprobar un tema contra las preguntas de su banco: huecos sin material, respuestas correctas que no cuadran, normas cambiadas y preguntas que no se pueden juzgar.'
           }
         />
