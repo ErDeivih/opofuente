@@ -28,6 +28,9 @@ from opofuente.api.middleware import (
     SecurityHeadersMiddleware,
 )
 from opofuente.api.openapi import apply_problem_media_type
+from opofuente.api.session_gate import SessionGateMiddleware
+from opofuente.application.accounts_service import AccountsService
+from opofuente.application.analytics_service import AnalyticsService
 from opofuente.application.auto_study_service import AutoStudyService
 from opofuente.application.backup_service import BackupService
 from opofuente.application.change_service import ChangeService
@@ -40,6 +43,7 @@ from opofuente.application.housekeeping_service import HousekeepingService
 from opofuente.application.ingestion_service import IngestionService
 from opofuente.application.intake_service import IntakeService
 from opofuente.application.job_service import JobService
+from opofuente.application.legal_service import LegalService
 from opofuente.application.library_service import LibraryService
 from opofuente.application.notes_incident_service import NotesIncidentsService
 from opofuente.application.notes_report_service import NotesReportsService
@@ -54,8 +58,11 @@ from opofuente.application.student_service import StudentService
 from opofuente.application.study_service import StudyService
 from opofuente.application.system_service import SystemService
 from opofuente.application.topic_notes_service import TopicNotesService
-from opofuente.config import Settings, get_settings
+from opofuente.config import Settings, get_settings, resolve_tmp_directory
+from opofuente.domain.errors import ConfigurationError
 from opofuente.domain.jobs import JobType
+from opofuente.infrastructure.account_repository import SqlAlchemyAccountRepository
+from opofuente.infrastructure.analytics_repository import SqlAlchemyAnalyticsRepository
 from opofuente.infrastructure.artifact_store import ArtifactStore
 from opofuente.infrastructure.capabilities import (
     ConfigurationCapabilityProvider,
@@ -88,6 +95,7 @@ from opofuente.infrastructure.notes_report_repository import SqlAlchemyNotesRepo
 from opofuente.infrastructure.notes_review_repository import SqlAlchemyNotesReviewRepository
 from opofuente.infrastructure.observability import setup_logging
 from opofuente.infrastructure.ocr import tesseract_from_settings
+from opofuente.infrastructure.password_hashing import Argon2PasswordHasher
 from opofuente.infrastructure.probes import DatabaseProbe, DataDirectoryProbe
 from opofuente.infrastructure.profile_repository import SqlAlchemyProfileRepository
 from opofuente.infrastructure.question_file_repository import SqlAlchemyQuestionFileRepository
@@ -158,7 +166,13 @@ def _restored_database_health(settings: Settings) -> tuple[bool, str]:
 
 def create_app(settings: Settings | None = None) -> FastAPI:
     resolved = settings or get_settings()
-    paths = resolved.data_paths
+    # # El temporal se resuelve **antes** de construir nada: si `data/tmp` es un enlace a una unidad
+    # que
+    # # no está conectada, todo lo que pasa por ahí —importar un artefacto, la instantánea antes de
+    # una
+    # copia, la restauración— falla a media operación. Ver `config.resolve_tmp_directory`.
+    tmp_decision = resolve_tmp_directory(resolved.data_paths)
+    paths = tmp_decision.paths
     engine = build_engine(paths.database)
     session_factory = build_session_factory(engine)
 
@@ -370,6 +384,36 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         notes=notes_repository,
         reports=notes_reports_repository,
     )
+    # S28 (§8 a §11 del objetivo vivo): la plataforma desplegable. Los tres servicios se construyen
+    # **siempre**, aunque sus banderas nazcan apagadas, porque las tres cosas comparten una misma
+    # propiedad y no se puede depender de cuál está encendida:
+    #
+    # # - con las cuentas apagadas, sus rutas contestan 404 y no escriben ni una fila (hay una
+    # prueba);
+    # - el consentimiento (§9) existe **sin** cuentas: se puede leer la política y decidir sobre las
+    #   cookies en una instalación de un solo usuario;
+    # - la analítica (§10) comprueba en cada petición que está encendida **y** que hay permiso.
+    #
+    # # El derivador de contraseñas no calcula nada al construirse: el resumen de mentira que iguala
+    # los
+    # tiempos de un acceso fallido se calcula la primera vez que hace falta.
+    account_repository = SqlAlchemyAccountRepository(session_factory)
+    accounts_service = AccountsService(
+        store=account_repository,
+        hasher=Argon2PasswordHasher(
+            time_cost=resolved.password_hash_time_cost,
+            memory_cost_kib=resolved.password_hash_memory_cost_kib,
+            parallelism=resolved.password_hash_parallelism,
+        ),
+        clock=clock,
+        settings=resolved,
+    )
+    legal_service = LegalService(store=account_repository, clock=clock, settings=resolved)
+    analytics_service = AnalyticsService(
+        store=SqlAlchemyAnalyticsRepository(session_factory),
+        clock=clock,
+        settings=resolved,
+    )
     # S12: copia, verificación y restauración. La migración y la comprobación van como funciones: al
     # restaurar hay que migrar la base recién colocada y comprobar que quedó sana.
     backup_service = BackupService(
@@ -427,11 +471,33 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         paths.ensure_directories()
         setup_logging(resolved)
+        # Lo primero que se dice al arrancar es dónde ha quedado el temporal y por qué. Si no se
+        # puede escribir en ninguno de los dos, **no se arranca a medias**: se explica la ruta
+        # exacta, el disco que falta y qué hacer, y el proceso muere aquí en lugar de aceptar
+        # peticiones que van a fallar a media operación.
+        if tmp_decision.nothing_writable:
+            logger.error(
+                "opofuente.startup_failed %s. Comprueba que la unidad del temporal está conectada "
+                "(en este equipo `datos\\tmp` apunta a otra unidad) o define el temporal en la "
+                "misma unidad que la base; la aplicación no arranca sin un temporal escribible.",
+                tmp_decision.detail,
+                extra={"event": "startup_failed"},
+            )
+            raise ConfigurationError(f"no hay ningún temporal escribible: {tmp_decision.detail}")
+        if tmp_decision.fallback_used:
+            logger.warning(
+                "opofuente.tmp_fallback %s",
+                tmp_decision.detail,
+                extra={"event": "tmp_fallback"},
+            )
+        else:
+            logger.info("opofuente.tmp_ok %s", tmp_decision.detail, extra={"event": "tmp_ok"})
         logger.info(
-            "opofuente.startup host=%s port=%s log_level=%s",
+            "opofuente.startup host=%s port=%s log_level=%s plataforma=%s",
             resolved.host,
             resolved.port,
             resolved.log_level,
+            "encendida" if resolved.any_platform_feature_enabled else "apagada",
             extra={"event": "startup"},
         )
         worker_task: asyncio.Task[None] | None = None
@@ -483,6 +549,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.auto_study_service = auto_study_service
     app.state.study_service = study_service
     app.state.student_service = student_service
+    app.state.accounts_service = accounts_service
+    app.state.legal_service = legal_service
+    app.state.analytics_service = analytics_service
+    app.state.tmp_decision = tmp_decision
     app.state.search_service = search_service
     app.state.review_service = review_service
     app.state.export_service = export_service
@@ -498,16 +568,30 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     # El orden importa: el último añadido es el más externo, así que el identificador de
     # correlación envuelve también los rechazos por Origin.
+    #
+    # `allow_credentials` sigue a la bandera de las cuentas y no es un detalle: la cookie de sesión
+    # viaja entre la web (otro puerto, mismo sitio) y esta API, y el navegador **descarta** una
+    # # respuesta con credenciales si el servidor no las autoriza. Con las cuentas apagadas se queda
+    # en
+    # `False`, que es como estaba: ninguna petición de hoy cambia de comportamiento.
     app.add_middleware(
         CORSMiddleware,
         allow_origins=list(resolved.cors_origins),
-        allow_credentials=False,
+        allow_credentials=resolved.accounts_enabled,
         allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
         allow_headers=["Content-Type", "Idempotency-Key", "X-Correlation-ID"],
         expose_headers=["X-Correlation-ID"],
     )
     app.add_middleware(SecurityHeadersMiddleware)
     app.add_middleware(OriginCheckMiddleware, allowed_origins=resolved.cors_origins)
+    # La puerta de las sesiones (§8): con las cuentas apagadas no comprueba nada, así que el
+    # comportamiento es el de siempre; encendidas, cierra por defecto todo lo que no sea público, y
+    # deja abierta la zona de estudio.
+    app.add_middleware(
+        SessionGateMiddleware,
+        enabled=lambda: resolved.accounts_enabled,
+        is_live=accounts_service.is_live,
+    )
     app.add_middleware(CorrelationIdMiddleware)
 
     app.include_router(api_router, prefix=API_PREFIX)

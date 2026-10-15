@@ -28,7 +28,17 @@ export interface FilaDeCaptura {
   fichero?: string;
 }
 
-const SALIDA = path.resolve(process.cwd(), '..', '..', 'artifacts', 'screens');
+/**
+ * Dónde van los PNG y el informe.
+ *
+ * Se puede cambiar con `OPOFUENTE_SCREENS_SALIDA` para hacer una captura **aparte** —la de la
+ * plataforma desplegable del §9 se hace con las banderas encendidas y no puede pisar las de la
+ * configuración de siempre—. Tiene que ser **el mismo sitio** para las dos cosas: los PNG y el informe
+ * se enlazan entre sí, y si se separan, el informe apunta a ficheros que no están donde dice.
+ */
+const SALIDA = process.env.OPOFUENTE_SCREENS_SALIDA
+  ? path.resolve(process.env.OPOFUENTE_SCREENS_SALIDA)
+  : path.resolve(process.cwd(), '..', '..', 'artifacts', 'screens');
 const FILAS = path.join(SALIDA, 'filas');
 
 /** Deja la fila de una pantalla en disco, sin fiarse de la memoria del proceso. */

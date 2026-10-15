@@ -65,6 +65,23 @@ export function apiBaseUrl(): string {
 }
 
 /**
+ * Cómo viajan las credenciales en cada petición.
+ *
+ * **Por defecto, como siempre**: `same-origin`, que es lo que hace el navegador cuando no se le dice
+ * nada, así que ninguna petición de hoy cambia de comportamiento. Se enciende a `include` **solo**
+ * cuando la política de la instalación dice que hay cuentas: entonces la cookie de sesión tiene que
+ * viajar entre la web (otro puerto, mismo sitio) y la API, y sin esto el navegador no la mandaría.
+ *
+ * Se cambia con `setApiCredentials` desde el proveedor de la política, que es quien pregunta al
+ * servidor qué configuración hay.
+ */
+let credentialsMode: RequestCredentials = 'same-origin';
+
+export function setApiCredentials(mode: RequestCredentials): void {
+  credentialsMode = mode;
+}
+
+/**
  * Cliente HTTP mínimo. Las páginas no llaman a `fetch` directamente: usan los hooks de
  * `src/api/queries.ts`, que pasan por aquí (02_ARCHITECTURE §4).
  *
@@ -79,6 +96,7 @@ export async function apiFetch<T, TProblem = ProblemDetail>(
   try {
     response = await fetch(`${apiBaseUrl()}${path}`, {
       ...init,
+      credentials: credentialsMode,
       headers: { Accept: 'application/json', ...init?.headers },
     });
   } catch (error) {

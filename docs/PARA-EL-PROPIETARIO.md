@@ -1022,6 +1022,83 @@ sostengo.
 - **El listón sigue en el 90 %** y aprobar un tema del 82 % **no** lo publica.
 - **La zona del alumno no cambia**: lee lo mismo.
 
+---
+
+# F28 · La plataforma desplegable (§8 a §11): lo que tienes que saber
+
+Esto es el bloque de «que otra persona pueda usarlo desde internet». **Nada de esto está encendido**:
+con las cuatro banderas a 0 (como nacen) la aplicación se comporta **exactamente** como hasta hoy para
+quien estudia sin cuenta. Hay una prueba que lo comprueba, y es la primera del bloque.
+
+## 1. Hay datos de tu aplicación en otro disco, y esto es lo que pasa si no está
+
+`datos\tmp` **no es una carpeta: es un enlace a `E:\OpoFuente-archivo\datos-tmp`**, de los 41,6 GB que
+se movieron a `E:` para liberar `F:`. Si `E:` no está conectado, esa carpeta **existe en el nombre y no
+en los hechos**: se puede listar y no se puede escribir, así que lo que fallaba a media operación era
+importar un documento, la instantánea antes de una copia y la restauración —es decir, lo peor: páginas
+que cargan y acciones que no—.
+
+**Desde este bloque**: al arrancar se **escribe un fichero de sonda y se borra** en el temporal. Si no
+se puede, lo dice en el registro con la ruta exacta y **usa un temporal de repuesto** en `F:`, dentro
+del propio árbol de datos (`datos\_tmp`), y sigue funcionando. Si no valiera ninguno de los dos, **la
+aplicación no arranca** con el mensaje que dice qué disco falta y qué hacer, en vez de arrancar a
+medias. Está probado simulando la ausencia.
+
+**Lo que tienes que saber**: si algún día ves `opofuente.tmp_fallback` en el registro, significa que
+`E:` no estaba y que se ha usado `F:`. No se ha perdido nada; es el aviso.
+
+## 2. Qué habría que contratar (y no se ha contratado nada)
+
+| Para qué | Qué habría que contratar | Qué pasa mientras no esté |
+|---|---|---|
+| **Recuperar la contraseña sin que tú estés delante** | Un servicio de correo (por ejemplo un proveedor de envío de correo transaccional) | El enlace de recuperación **se deja en `F:\OpoFuente\datos\recovery\`** (un fichero `.txt` con el enlace) y lo tienes que pasar tú. La pantalla lo dice con esas palabras. El enlace caduca en una hora y se usa una sola vez |
+| **Cobrar** | Una pasarela: **Stripe** (recomendada, ver abajo), o Paddle (revendedor) o Redsys (TPV del banco) | No hay ninguna integrada y **no se puede cobrar nada**. La ruta de pagos contesta qué habría que contratar |
+| **Servir con HTTPS** (dominio propio) | Un dominio y un servidor con certificado | La cookie está sin `Secure` porque la aplicación escucha en `http://127.0.0.1`. El día que se sirva por HTTPS hay que poner `OPOFUENTE_SESSION_COOKIE_SECURE=1` |
+| **Verificar el correo al darse de alta** | El mismo servicio de correo | La cuenta queda lista sin verificar. No se finge que se ha mandado un mensaje |
+
+**La pasarela propuesta es Stripe**, y el porqué está en `docs/decisions/ADR-021-cuentas-y-marco-legal.md`
+y en la propia pantalla: es la que menos cosas hay que contratar antes de cobrar (se abre por internet,
+sin firmar con un banco) y trae en la misma cuenta el cobro, la autenticación reforzada del banco y la
+factura. **Las comisiones no las he podido comprobar**: sus páginas de precios se sirven con JavaScript
+y no devolvieron el texto, así que van marcadas como «sin verificar» y tienes que mirarlas en
+`https://stripe.com/es/pricing` antes de contratar nada. Lo que **sí** te puedo decir con seguridad: no
+hay cuota por tener la cuenta abierta.
+
+## 3. Lo que hay que rellenar antes de publicar esto en internet
+
+Los tres textos legales (aviso legal, privacidad y cookies) llevan **marcas `[PENDIENTE: …]`** donde
+tienen que ir tu **nombre o razón social, tu NIF, tu dirección de contacto y un correo de contacto**.
+No se inventan: aparecen también en la pantalla, arriba, avisando de que faltan. En cuanto los
+rellenes, hay que subir `LEGAL_TEXT_VERSION` (`apps/api/opofuente/domain/legal.py`) para que a quien
+ya hubiera aceptado se le vuelva a preguntar.
+
+## 4. Lo que hay que decidir tú (no lo decide el bloque)
+
+1. **¿Abierta a cualquiera o cerrada?** El bloque trae las cuentas hechas, no la decisión de a quién se
+   las das.
+2. **¿De pago o gratis?** Los huecos de plan están puestos (`Estudiar sin cuenta`, `Cuenta`, `De pago`)
+   **sin precios**: poner un precio es decidirlo, y eso es tuyo.
+3. **¿Dominio y nombre?** Y con ellos, el HTTPS y la cookie `Secure`.
+
+## 5. Cómo se enciende, si algún día quieres probarlo
+
+```
+$env:OPOFUENTE_ACCOUNTS_ENABLED = '1'
+$env:OPOFUENTE_LEGAL_ENABLED    = '1'
+# La analítica y los pagos EXIGEN el marco legal encendido:
+$env:OPOFUENTE_ANALYTICS_ENABLED = '1'
+$env:OPOFUENTE_PAYMENTS_ENABLED  = '1'
+.\scripts\api.ps1
+```
+
+Con las cuentas encendidas, **la administración deja de ser abierta** (pide sesión) y **la zona de
+estudio sigue abierta**: se puede seguir estudiando sin cuenta. La pantalla de «Entrar» aparece en el
+pie, y los textos legales también.
+
+## 6. Lo que cuesta
+
+**0 $.** Este bloque no llama a ningún modelo: lo que ha costado es tiempo y memoria de las puertas.
+
 ## 15-oct-2026 · Las primeras preguntas que vuelven al estudio (F29)
 
 Lo que hay que saber, sin jerga:
@@ -1064,6 +1141,60 @@ Lo que hay que saber, sin jerga:
    baquedano, con lo que **6 de esas 59** (todas de baquedano) se han quedado sin su cita y han
    vuelto a la cuarentena. **Quedan 53.** Volver a derivarlas cuesta céntimos (≈0,0006 $ por
    pregunta): lo suyo es correr `--derivar` al cerrar cada tema, y eso lo decides tú.
+
+---
+
+## 15-oct-2026 · El medidor contaba «0 de 0» en los temas a medio comprobar, y eso ya no pasa
+
+### Qué pasaba
+
+Cuando un tema tiene apartados escritos pero **no** tiene guardada la comprobación de todas sus
+preguntas, el medidor **no contaba esas preguntas de ninguna manera**: ni como cubiertas ni como
+pendientes. Se caían de la cuenta por los dos lados. El efecto era que la cifra de ese tema se calculaba
+sobre un conjunto pequeño —las pocas que sí estaban comprobadas— y salía **más alta de lo que es**, y en
+el caso extremo (apartados escritos y ninguna comprobación guardada) el tema medía «**0 de 0**»: una
+casilla vacía que no dice ni si está bien ni cuánto le falta.
+
+### Qué se ha cambiado
+
+Esas preguntas ahora cuentan como **pendientes de comprobar**: **no** suman cobertura —sería mentirte— y
+**sí** se quedan dentro del denominador, porque son trabajo que queda por hacer. El informe de cada tema
+lo dice con su número («N grupos pendientes de comprobar»).
+
+### A quién le cambia la cifra (y a quién no)
+
+- **I.8** (en borrador): pasa de **261/320 = 81,6 %** a **261/488 = 53,5 %**. No es que el tema haya
+  empeorado: es que antes se medía sobre 320 preguntas y tiene 488. Le faltan **150 grupos por
+  comprobar** (201 preguntas), y eso es exactamente lo que la cifra vieja escondía.
+- **I.4** (publicado): gana **1 grupo pendiente** que **no** entra en el número que decide, así que su
+  **89,1 % no se mueve**; solo cambia su segunda cifra (87,2 % → 87,0 %).
+- **Los otros 31 temas dan exactamente la misma cifra que ayer**, con decimal incluido.
+- **Ninguno cambia de veredicto y no se retira ninguno.** I.3 (84,0 %) e I.4 (89,1 %) siguen
+  **publicados con su cifra a la vista**, como se decidió: **lo que ha cambiado es la medición, no el
+  material** — lo que tú lees está igual que ayer.
+- **I.9, III.2, III.6 y IV.3** siguen sin línea de puerta, y es correcto: **no tienen ningún apartado
+  escrito**. No es el caso de arriba: en ellos no hay nada que esté a medias.
+
+### Una cosa que te debo decir sobre las cifras
+
+Mientras medía, **tu base estaba cambiando** (otro bloque estaba guardando comprobaciones), y dos
+medidas seguidas del mismo programa daban cifras distintas para el mismo tema: I.8 salió **81,6 %** en
+una y **80,9 %** en la siguiente, con el denominador cambiado solo (de 320 a 367) **sin que nadie
+tocara los apuntes**. Por eso la tabla de este bloque se mide sobre una **copia congelada** de tu base:
+así la comparación de antes y después es de verdad del cambio que he hecho yo y no de lo que estaba
+haciendo otro a la vez.
+
+**Y una buena noticia de ese lío**: con el arreglo, el denominador de un tema **ya no cambia cuando otro
+bloque guarda comprobaciones**. En I.8, entre las dos copias, el denominador se queda **clavado en 488**
+y lo único que sube es lo cubierto (261 → 297), que es lo que tiene que pasar cuando se avanza. La cifra
+de un tema a medio comprobar ya no baila sola.
+
+### Lo que no cambia
+
+- **Tus datos no se han tocado**: todo es lectura, y esta vez ni siquiera sobre tu base viva sino sobre
+  una copia. Coste: **0 $**.
+- **El listón sigue en el 90 %** y **nada se ha publicado ni retirado** en esta tanda.
+- **La zona del alumno no cambia**: lee lo mismo.
 
 ## Tu bandeja: de 868 filas a 146 decisiones (15-oct-2026)
 

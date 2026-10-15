@@ -33,14 +33,16 @@ Reglas:
 | [DEBT-019](#debt-019--el-estado-conservado-sin-extractor-no-llega-a-la-pantalla) | S12 | `unsupported_preserved` se guarda y se sirve, pero no hay prueba de interfaz ni de contrato que lo muestre legible | **cerrada** (el estado se enseña con su nombre y su motivo, y hay prueba de la API de punta a punta y prueba de interfaz) |
 | [DEBT-020](#debt-020--la-clave-oficial-de-celador-está-escaneada-y-no-se-puede-importar) | S09+ | La plantilla oficial de respuestas correctas de Celador es un escaneo sin capa de texto: la clave existe y no entra en la aplicación | abierta (OCR hecho; falta el importador revisado o la transcripción) |
 | [DEBT-021](#debt-021--la-puerta-e2e-puede-correr-contra-un-servidor-ajeno) | antes de dar por buena una corrida E2E | La suite E2E reutiliza cualquier servidor que escuche en el 8765: corre contra su base de datos y escribe en ella | abierta |
-| [DEBT-022](#debt-022--la-suite-e2e-no-distingue-la-máquina-está-cargada-de-esto-se-ha-roto) | antes de dar por buena la puerta E2E | La suite tarda 1,8 min en vacío y 11 cargada, y sus esperas fijas pueden caducar sin decir si el problema es el código o el ordenador (los cuatro rojos que primero se le atribuyeron eran del servidor reutilizado, DEBT-021) | abierta |
+| [DEBT-022](#debt-022--la-suite-e2e-no-distingue-la-máquina-está-cargada-de-esto-se-ha-roto) | antes de dar por buena la puerta E2E | La suite tarda 1,8 min en vacío y 11 cargada, y sus esperas fijas pueden caducar sin decir si el problema es el código o el ordenador (los cuatro rojos que primero se le atribuyeron eran del servidor reutilizado, DEBT-021; y el 15-oct-2026 se sumó una tercera forma: **el propio `vite preview` muriéndose a mitad**, `npm error code 4294967295`, que deja 15-18 rojos de `ERR_CONNECTION_REFUSED` en ~250 ms) | abierta |
 | [DEBT-023](#debt-023--una-tarjeta-de-anki-no-puede-ser-una-pregunta-porque-no-hay-dónde-guardar-su-respuesta) | S12.6 | El modelo tiene el tipo `free_text_reference` y no tiene dónde guardar la respuesta de referencia: el reverso de una tarjeta no entra | abierta |
 | [DEBT-024](#debt-024--la-clasificación-se-pide-de-forma-síncrona-y-con-el-corpus-entero-tarda-demasiado) | S12.6 | «Buscar propuestas ahora» clasifica todo el corpus en la misma petición: con material real tarda decenas de segundos y bloquea la pantalla | cerrada |
 | [DEBT-025](#debt-025--corregir-una-pregunta-infla-el-conjunto-y-puede-volver-a-preguntarse-el-texto-viejo) | S12.6 | La versión sustituida de una pregunta corregida cuenta como pregunta: el conjunto se infla, el banco enseña el enunciado viejo y una sesión nueva puede componerse con él | **cerrada** (22 de septiembre de 2026: las consultas del banco dejan fuera `superseded`, y la historia se sigue leyendo pidiéndola) |
 | [DEBT-026](#debt-026--la-suite-e2e-toma-su-directorio-de-datos-del-entorno-y-escribe-donde-le-digan) | S12.6 | Playwright resuelve su directorio de datos con `OPOFUENTE_DATA_DIR`: con esa variable puesta apuntando a una copia del corpus del propietario, correr la suite a mano escribe las pruebas **dentro de su material** | **cerrada** (22 de septiembre de 2026: la suite usa siempre `.e2e-data` y, para apuntarla a otro sitio, una variable propia) |
 | [DEBT-027](#debt-027--07_ui-ux-no-está-aplicada-entera) | S12.6 | La especificación de interfaz pide cosas que no existen: pausar un lote, tabla de revisión virtualizada, columnas de preguntas y próxima revisión en el Programa, lector sincronizado y explicación por opción | **cerrada** (23 de septiembre de 2026: las cinco pasadas, con pausar/cancelar, las columnas del Programa y el banco paginado) |
-| [DEBT-029](#debt-029--el-registro-de-las-puertas-sale-con-los-acentos-doblemente-codificados-en-windows) | antes de dar por buena una corrida de puertas | Los `.ps1` del repositorio están en UTF-8 **sin BOM** y Windows PowerShell 5.1 —el único intérprete de esta máquina— los lee como ANSI: el registro de las puertas sale con los acentos rotos (`código` acaba como `cÃ³digo`), y ese registro es el documento con el que se justifica un «18/18» | abierta (**arreglo probado**: el BOM lo arregla, medido en bytes; falta aplicarlo a `scripts/*.ps1`) |
-| [DEBT-030](#debt-030--el-registro-de-una-batería-no-dice-contra-qué-main-se-midió) | antes de dar por buena una corrida de puertas | Una batería tarda ~54 minutos y `main` puede avanzar mientras corre: la cifra queda sin dueño si nadie anota **qué `main` se midió**. Pasó el 15-oct-2026 con `s14`: se midió `main@4290817` y lo que entró fue `main@195cbb8` + la rama | **cerrada** (15-oct-2026: el registro lleva `commit_medido` y `main` al empezar y al terminar, y **cazó a `main` moviéndose durante el tramo 1**) |
+| [DEBT-029](#debt-029--el-registro-de-las-puertas-sale-con-los-acentos-doblemente-codificados-en-windows) | antes de dar por buena una corrida de puertas | Los `.ps1` del repositorio están en UTF-8 **sin BOM** y Windows PowerShell 5.1 —el único intérprete de esta máquina— los lee como ANSI: el registro de las puertas sale con los acentos rotos (`código` acaba como `cÃ³digo`), y ese registro es el documento con el que se justifica un «18/18» | **cerrada en el instrumento** (15-oct-2026: el lanzador lleva BOM **y** fija la salida a UTF-8 **y** lee `common.ps1` como UTF-8 en memoria sin tocar el árbol; el registro trae `código` con `C3 B3` —6 veces— y `cÃ³digo` **0 veces**. Queda abierta la mitad del repositorio: poner el BOM a `scripts/*.ps1`) |
+| [DEBT-030](#debt-030--el-registro-de-una-batería-no-dice-contra-qué-main-se-midió) | antes de dar por buena una corrida de puertas | Una batería tarda ~54 minutos y `main` puede avanzar mientras corre: la cifra queda sin dueño si nadie anota **qué `main` se midió**. Pasó el 15-oct-2026 con `s14`: se midió `main@4290817` y lo que entró fue `main@195cbb8` + la rama | **cerrada** (15-oct-2026: el registro lleva `commit_medido` y `main` al empezar y al terminar —**cazó a `main` moviéndose durante el tramo 1**—; y el lanzador lleva una **guarda de mutación** que aborta si el árbol se mueve a mitad de corrida, estrenada el 15-oct con el merge que entró en `opofuente-bandeja`) |
+| [DEBT-031](#debt-031--el-detector-de-palabras-prohibidas-policía-el-selector-del-panel) | antes de leer el informe de capturas | El detector marca **«Celador»** en 4 de las 18 capturas del panel: el texto señalado es **el selector de oposición del propio panel**, que tiene que ofrecer las otras oposiciones porque si no el propietario no puede elegir. La regla es de la **zona del alumno** y aquí se aplica a la pantalla equivocada | **decisión tomada, arreglo pendiente** (15-oct-2026: no se quita «Celador» de la lista —eso debilitaría la comprobación donde sí importa—; se excluye el **selector de oposición del panel** por su rol/nombre) |
+| [DEBT-032](#debt-032--la-herramienta-de-capturas-da-por-hecha-una-siembra-que-no-existe) | antes de dar por buenas las capturas | **2 de 58** capturas no se toman: «la revisión de apuntes» a 1280 y 390 falla en `screens.spec.ts:252` esperando un `%` que no llega, porque ese árbol **no tiene apuntes que revisar** y la pantalla dice, correctamente, «Este tema todavía no tiene apuntes escritos: no hay nada que revisar». Faltan dos pantallas del informe y no se nota: el resto pasa | **decisión tomada, arreglo pendiente** (15-oct-2026: lo preferido es **capturar el estado vacío como lo que es** —el propietario va a verlo— en vez de añadir una siembra que finja datos; decide quien escribió la herramienta) |
 
 ---
 
@@ -1290,6 +1292,20 @@ el terreno es el mismo y hoy ha caído la otra punta. Medido:
 producir un rojo indistinguible cuando la máquina va cargada. Hoy, para saberlo, hay que repetir a mano
 los ficheros en aislamiento — que es exactamente lo que un rojo no debería obligar a hacer.
 
+  **Añadido el 15/10/2026 (medición de las tres baterías del cierre): son DOS fallos distintos con el mismo síntoma, y solo uno está cubierto.** Los dos acaban igual —la suite pierde el servidor de vista previa y todo lo que venga detrás cae—, pero **el que se muere es distinto**:
+
+  | | **Cara A: un proceso AJENO ocupa el puerto** | **Cara B: el servidor PROPIO se muere** |
+  |---|---|---|
+  | Qué pasa | otro proyecto levanta su `vite preview` en el 4173 (o su API en el 8765) y el nuestro no puede escuchar | el `vite preview` de la propia corrida **termina de forma anormal** a mitad de la suite |
+  | Cómo se ve | `strictPort` impide arrancar, o el navegador habla con el servidor de otro | `[WebServer] npm error code 4294967295` en el `stderr`, y desde ahí **todos** los `page.goto` dan `ERR_CONNECTION_REFUSED` en ~250 ms cada uno |
+  | Medido el 15-oct | plataforma `b2c76f5`: otro proyecto con su `vite preview` en el 4173, arrancado a las 21:06:17 (`F:\aprendizaje\scrap\plataforma\web\app`) | plataforma `b2c76f5`: **63 verdes y 15 rojos** (los 4 de `topic-review` y los 11 de `tray`); bandeja `0cf4cc1`: **58 verdes y 18 rojos** por esta causa (más 7 reales, que son otra cosa) |
+  | ¿Se cura al reintentar? | sí, cuando el ajeno termina | sí: **plataforma `78/78` en 3,4 min**, y bandeja sin una sola ocurrencia del `4294967295` |
+  | ¿Quién lo caza? | la **guarda de puerto** de `scripts/common.ps1` (bloque de plataforma, 15-oct): mira 8765 y 4173 antes y después de cada puerta y **aborta con código 4** diciendo PID, proceso y ruta; distingue por **propiedad del proceso** subiendo por `ParentProcessId`, así que un escucha **propio** no la dispara | **nadie**: la guarda **no la cubre a propósito**, porque el que se muere es el nuestro y para la guarda es legítimo |
+
+  **La cifra del terreno, para que no se confunda con «carga»: dos de cada cuatro corridas de E2E de esa tarde perdieron su servidor de vista previa a mitad.** No es lentitud ni una espera que caduca: es un proceso que **deja de existir**, y el `stderr` lo firma con su código. Y el aislamiento lo confirma: las mismas pruebas, el mismo árbol y el mismo juez, **sin la muerte, pasan**.
+
+  **Lo que haría falta** —el criterio 1 de esta deuda, aplicado al transporte—: que la suite **detecte que su `vite preview` ya no está** y **falle una vez diciéndolo**, con el código de salida del servidor y su PID, en lugar de producir quince rojos que parecen del código. Hoy, para saber de quién era el rojo, hay que leer a mano el `stderr` del `[WebServer]`.
+
 ---
 
 ## DEBT-023 — Una tarjeta de Anki no puede ser una pregunta porque no hay dónde guardar su respuesta
@@ -1748,6 +1764,36 @@ los registros viejos.
 registro: la línea `OK: 1. ruff format --check (código 0)` tiene que traer `código` **con sus acentos
 correctos** y, en bytes, `C3 B3` en lugar de `C3 83 C2 B3`.
 
+**Medido el 15-oct-2026: el criterio se cumple, y la causa tenía DOS mitades (no una).** El criterio de
+arriba pedía `OK: 1. ruff format --check (código 0)` con los acentos bien. En
+`F:\temp-opofuente\gates-f32-medidor-completa.txt`, contado en bytes:
+
+```
+'código'  (63 C3 B3 64 69 67 6F)         ->  6 ocurrencias
+'cÃ³digo' (63 C3 83 C2 B3 64 69 67 6F)    ->  0 ocurrencias
+```
+
+Y la causa no era solo el BOM del lanzador, que era lo que esta entrada daba por probado. Son **dos**:
+
+1. **el `.ps1` sin BOM** (ya estaba medido aquí), y
+2. **la codificación con la que el intérprete escribe su PROPIA salida** cuando se le redirige el flujo.
+   Con el BOM puesto en el lanzador pero sin tocar esto, la palabra `código` que añade `common.ps1` —que
+   no tiene BOM— sale como **un solo byte `F3`** (el `ó` del codepage ANSI), que no es UTF-8 válido y se
+   lee como `códig<?>`: no es el `cÃ³digo` de antes, pero sigue estando roto. Las dos mitades, medido.
+
+**El arreglo, en el instrumento y sin tocar el árbol medido.** El lanzador hace las tres cosas: (a) su
+propio fichero va **con BOM**; (b) fija `[Console]::OutputEncoding` a **UTF-8** antes de nada, que es la
+mitad que faltaba; y (c) lee `scripts/common.ps1` **como UTF-8 en memoria** en vez de dejar que el
+intérprete lo lea con el codepage ANSI — el texto que ejecuta es el del árbol, **sin modificar el fichero
+del árbol**. Arreglar el instrumento sin tocar lo que se está midiendo es justo lo que hace que el
+registro valga como prueba.
+
+**Lo que sigue abierto, y a propósito.** Poner el BOM a `scripts/*.ps1` del repositorio. **No se hace
+aquí**: los árboles están bajo medición (dos baterías en marcha el 15-oct) y meter un cambio en un árbol
+después de medirlo, o mientras se mide, es exactamente lo que la guarda de mutación de DEBT-030 aborta.
+Va con la fusión, no con la medición. Mientras tanto, **cualquier corrida que use el lanzador de
+`F:\temp-opofuente\puertas-18b.ps1` sale con los acentos correctos**.
+
 **Estado: abierta, con el arreglo probado.** No afecta a ningún veredicto de puerta; afecta a la
 legibilidad y a la cita literal del registro. Lo que falta es **aplicarlo**, no averiguarlo.
 
@@ -1803,3 +1849,66 @@ se acuerde.
 
 **Estado: cerrada** (15/10/2026). No afecta a si una puerta pasa o falla; afecta a **a qué commit
 pertenece la cifra**, y eso ya está en el acta.
+
+### Segunda parte del cierre (15-oct-2026): la procedencia no basta, hace falta la **guarda**
+
+Lo de arriba dice **contra qué** `main` se midió. Ese mismo día se vio que anotar la procedencia **no impide** medir un árbol que se mueve, y que hay **tres** maneras distintas de medir sin querer algo que no es el commit de la cabecera. Las tres ocurrieron el **15-oct-2026**:
+
+| Cuál | Qué se movió | Cómo se descubrió | Qué lo caza |
+|---|---|---|---|
+| **1 · `main` avanzando durante la corrida** (D11, `s14` tramo 1) | `main` pasó de `5a62d0d` a `6b3db4ab` —**83 líneas** del commit `F28b`— **durante los 65 minutos** de la batería | comparando los árboles a mano (`git diff --stat main HEAD`); el registro ya lo decía, con las dos fechas | la línea `ANTES`/`DESPUES` con el `main` de cada momento (**ya está**) |
+| **2 · un `git merge` dentro del árbol medido** (`opofuente-bandeja`, 15-oct **17:29:35**) | a las **17:27:52** el árbol estaba limpio en `6e0beaf`; a las **17:29:35** empezó una fusión en ese worktree (`MERGE_HEAD` vivo, `UU` en los tres documentos) que metió un `0039_claves_derivadas` junto al `0039_bandeja_por_conjunto` del bloque → **dos cabezas de alembic** | la **puerta 6 cayó con código 4 y sin una sola línea de salida**; el `stderr` decía `alembic.util.exc.CommandError: multiple heads (due to branching)`. El rojo era del árbol, no del commit | la **guarda de mutación** (abajo): habría abortado en el segundo en que cambió |
+| **3 · puertas midiendo el `.venv` de otro árbol** | el `.venv` de `main` apunta a `main`; correr una batería en un árbol cuyo `.venv` es de otro hace que las puertas **midan el código del vecino** | leyendo el `_editable_impl_opofuente.pth` de cada árbol **antes** de lanzar | la comprobación del `.pth` en la lista previa (no automática todavía) |
+
+**El mecanismo que cierra esta entrada —y no una recomendación— es la guarda de mutación del lanzador:** antes y **después de cada una** de las 18 puertas se comprueba que el árbol sigue en el mismo `HEAD` y con el mismo `git status --porcelain` (ficheros ya seguidos) que al arrancar. Si algo cambió, **aborta con código 4 y lo dice** —con el `HEAD` de antes y el de ahora y el `status` nuevo— y **no juzga ninguna puerta más**, porque la cifra ya no tendría dueño. Se estrena en la medición de `f32-medidor` del 15-oct-2026 (`F:\temp-opofuente\puertas-18b.ps1`); el caso 2 de la tabla es exactamente lo que caza.
+
+Se comprueban solo los ficheros **ya seguidos** a propósito: así una puerta que deje un artefacto nuevo sin seguir (un informe de Playwright, por ejemplo) no dispara un aborto falso, pero una fusión o una edición concurrente sí, porque tocan ficheros que `git` ya sigue.
+
+**Lo que sigue en pie, y se dice para que nadie se llame a engaño:** la guarda vive en **el lanzador**, no en `scripts/gates.ps1`. Portarla al script de las puertas (las dos comprobaciones alrededor de cada `Invoke-OpoFuenteStep`) es el paso que falta para que no dependa de que quien lanza se acuerde.
+
+**Y la regla de operación que esto obliga**, que nació del caso 2: **un árbol con una batería en marcha queda cerrado a todo el mundo**; si alguien necesita tocarlo, **se para la batería, se toca, se cierra y se relanza**, en ese orden. El 15-oct se le pidió a un bloque que arreglara ese mismo árbol mientras su batería corría, y el resultado fue un rojo falso que parecía del commit.
+
+---
+
+## DEBT-031 — El detector de palabras prohibidas policía el selector del panel
+
+**Origen:** la corrida de capturas del 15-oct-2026 (`npm run screens` sobre el árbol de la bandeja, `fa878c9`). El informe (`artifacts/screens/report.md`) marca **«Celador»** en **4 de las 18 capturas**, y en las cuatro el texto señalado es el mismo: **el selector de oposición del propio panel** —
+
+```
+…istración
+Buscar en el corpus
+Oposición
+Celador/a del Servicio de Salud de Castilla y L…
+```
+
+**Las dos caras, porque mañana alguien verá el aviso y volverá a dudar:**
+
+1. **Puede ser una fuga real**: «Celador» está en `OPOSICIONES_PROHIBIDAS` (`apps/web/tests/palabrasProhibidas.ts`) y esa lista existe porque **el propietario no quiere que su alumno vea que esto también sirve para Celador**. Si el selector estuviera en una pantalla del alumno, sacarlo sería lo correcto.
+2. **Es un falso positivo**: el selector está en la **zona del panel**, que es la vista privada del propietario, y **tiene que ofrecer las otras oposiciones** —si no las ofrece, no puede elegir—. El detector aplica a esa pantalla una regla escrita para la **zona del alumno**.
+
+**Decisión (propietario, 15-oct-2026): es la cara 2, y el arreglo va por donde no debilita nada.**
+
+- **NO se quita «Celador» de la lista**: quitarlo apagaría la comprobación justo donde sí importa —la zona del alumno—, que es el error que esta casa no comete.
+- **Lo que hay que hacer**: que el detector **no mire el selector de oposición del panel**, excluyéndolo **por su rol y su nombre accesible** (no por su texto, que es justo lo que se vigila), y que esa exclusión quede **escrita con sus dos caras** en el propio fichero de la lista.
+
+**Estado: decisión tomada, arreglo pendiente.** No rompe ninguna puerta —la herramienta **informa**, no bloquea— pero ensucia el informe con un aviso que no es una fuga, y un informe que grita en falso deja de leerse.
+
+---
+
+## DEBT-032 — La herramienta de capturas da por hecha una siembra que no existe
+
+**Origen:** la misma corrida. **`2 failed | 56 passed`**: «la revisión de apuntes a 1280 px» y «a 390 px» fallan las dos en `apps/web/tests/screens/screens.spec.ts:252`:
+
+```
+Locator: locator('.apuntes-revision__motivos')
+Expected pattern: /%/
+Received string:  " Este tema todavía no tiene apuntes escritos: no hay nada que revisar."
+```
+
+**Lo que pasa**: la herramienta espera **un tema con apuntes pendientes de revisión y su porcentaje**, y ese árbol **no tiene apuntes escritos**. La pantalla responde **correctamente** con su estado vacío. **No es un fallo de interfaz: es que falta la siembra que la herramienta da por hecha.**
+
+**Y lo que se pierde no es un rojo, son dos capturas**: el informe sale con las otras 18 pantallas y **nadie echa en falta las dos que faltan** salvo quien lea la lista de PNG.
+
+**Decisión (propietario, 15-oct-2026):** entre (a) añadir la siembra que la herramienta asume y (b) **capturar el estado vacío como lo que es**, se prefiere **(b)** — porque **una pantalla vacía también es una pantalla que el propietario va a ver**, y retratarla es más honesto que fabricar datos para que salga «bonita»—. **Decide quien escribió la herramienta**, que es quien conoce su siembra.
+
+**Estado: decisión tomada, arreglo pendiente.** Y deja una lección para la próxima herramienta de capturas: **una captura que no se toma es un dato que falta, y el informe debería decirlo en su tabla en vez de encogerse en silencio.**

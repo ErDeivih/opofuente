@@ -29,6 +29,9 @@ import { TopicNotesPage } from '../pages/student/TopicNotesPage';
 import { TopicReviewPage } from '../pages/TopicReviewPage';
 import { TrayPage } from '../pages/TrayPage';
 import { StudentTestRunner } from '../features/study/StudentTestRunner';
+import { AccountPage, AccessPage, RecoverPage } from '../features/accounts/AccountPages';
+import { RequireSession } from '../features/accounts/RequireSession';
+import { LegalPage } from '../features/legal/LegalPage';
 import { AdminShell } from './AdminShell';
 import { AppShell } from './AppShell';
 import { ROUTE_REDIRECTS } from './navigation';
@@ -142,6 +145,27 @@ export function AppRoutes() {
         <Route path="/examenes" element={<OfficialExamsPage />} />
         <Route path="/fallos" element={<MistakesPage />} />
         <Route path="/progreso" element={<ProgressPage />} />
+        {/*
+          La plataforma desplegable (§8 y §9 del objetivo vivo). Va **dentro** del marco del alumno
+          porque es suyo: la cuenta es de quien estudia y los textos legales se leen desde donde se
+          estudia.
+
+          Ninguna de estas rutas cierra el estudio: `/acceso`, `/recuperar` y `/legal/…` se ven sin
+          sesión, y solo `/cuenta` —que es «lo mío»— pasa por la guarda. Cerrar el temario con una
+          guarda sería romper la regla que manda en todo el bloque: quien estudiaba sin cuenta tiene
+          que seguir estudiando igual.
+        */}
+        <Route path="/acceso" element={<AccessPage />} />
+        <Route path="/recuperar" element={<RecoverPage />} />
+        <Route
+          path="/cuenta"
+          element={
+            <RequireSession>
+              <AccountPage />
+            </RequireSession>
+          }
+        />
+        <Route path="/legal/:documento" element={<LegalPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
 

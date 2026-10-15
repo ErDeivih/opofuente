@@ -10,11 +10,16 @@ texto de un fallo del banco. Por eso se miden los dos números:
 
 Antes de esto la puerta existía en el documento y no en el código, así que un tema con el 85 % podía
 quedar archivado.
+
+Y el **quinto desenlace** está aquí desde el §4 de `SIGUIENTE-TANDA-CIERRE-DEL-OBJETIVO-2026-10`: un
+grupo **con apartado propio y sin comprobación guardada** cuenta como **pendiente de comprobar** —
+entra en el denominador y no en el numerador—, porque antes se caía de la puerta por los dos lados y
+un tema con apartados y sin comprobaciones medía «0 de 0».
 """
 
 from __future__ import annotations
 
-from opofuente.application.topic_notes_models import CoverageReport
+from opofuente.application.topic_notes_models import CoverageReport, TopicNotesReport
 from opofuente.domain.topic_notes import COBERTURA_MINIMA, Coverage, Motivo
 
 
@@ -147,3 +152,91 @@ def test_las_preguntas_sin_clave_no_entran_en_la_puerta() -> None:
     assert informe.preguntas_con_clave_utilizable == 10
     assert informe.covered == 15, "las cinco sin clave sí se cuentan como cubiertas"
     assert informe.pasa_cobertura
+
+
+# --- el quinto desenlace: pendiente de comprobar (§4, el «0 de 0») -------------------------------
+
+
+def _pendientes(*cuantos: int) -> CoverageReport:
+    """Un informe con un grupo pendiente por cada cuántos: la cuenta, sin base de datos.
+
+    Es el recuento que hace `_contar_cobertura` cuando encuentra un grupo **con apartado propio y
+    sin comprobación guardada**: el estado que deja una corrida parada por su tope de tiempo entre
+    la redacción y la comprobación.
+    """
+    informe = CoverageReport()
+    informe.groups = len(cuantos)
+    for preguntas in cuantos:
+        informe.add_pendiente(preguntas=preguntas)
+    return informe
+
+
+def test_un_tema_con_apartados_y_sin_comprobaciones_no_mide_cero_de_cero() -> None:
+    """El «0 de 0» del §4: un grupo pendiente de comprobar **no se cae del denominador**.
+
+    Antes de arreglarlo no había dónde ponerlo: el medidor lo saltaba, el denominador se quedaba en
+    cero y el tema salía con «0 de 0», que no dice ni si está bien ni cuánto le falta. La regla del
+    §4 es que cuenta como **pendiente de comprobar**: no suma cobertura (sería mentira) y sigue
+    dentro del denominador (caerse sería peor: esconde trabajo por hacer).
+    """
+    informe = _pendientes(1, 1)
+
+    assert informe.pendientes == 2, "los dos grupos se cuentan aparte"
+    assert informe.preguntas_pendientes == 2
+    assert informe.preguntas_con_clave_utilizable == 2, "el denominador ya no está vacío"
+    assert informe.preguntas_con_clave == 2
+    assert informe.preguntas_cubiertas_con_clave_utilizable == 0, "no suman cobertura"
+    assert informe.cobertura_con_clave_utilizable == 0.0
+    assert not informe.pasa_cobertura, "0 de 2 no pasa, y se dice con su denominador"
+
+
+def test_un_grupo_pendiente_sin_clave_se_cuenta_aunque_no_entre_en_el_denominador() -> None:
+    """Sin clave no hay letra con la que comprobar; el trabajo pendiente se sigue viendo."""
+    informe = CoverageReport()
+    informe.groups = 1
+    informe.add_pendiente(preguntas=3, tiene_clave=False)
+
+    assert informe.preguntas_con_clave == 0, "sin clave no hay letra contra la que medir"
+    assert informe.preguntas_con_clave_utilizable == 0
+    assert informe.pendientes == 1, "pero el grupo pendiente no desaparece del informe"
+    assert informe.preguntas_pendientes == 3
+
+
+def test_la_clave_marcada_por_el_paso_b_no_cuenta_en_el_denominador_ni_estando_pendiente() -> None:
+    """La regla del paso B vale aquí también: una clave que contradice la norma no mide."""
+    informe = CoverageReport()
+    informe.groups = 1
+    informe.add_pendiente(preguntas=4, clave_utilizable=False)
+
+    assert informe.pendientes == 1
+    assert informe.preguntas_con_clave == 4
+    assert informe.preguntas_pendientes_con_clave_utilizable == 0
+    assert informe.preguntas_con_clave_utilizable == 0
+
+
+def test_el_informe_nombra_los_grupos_pendientes_y_nunca_ensena_un_cero_sin_explicacion() -> None:
+    """La cifra que se lee: «pendientes de comprobar» con su cuenta, no una casilla vacía."""
+    informe = _pendientes(1, 1)
+    tema = TopicNotesReport(topic_code="I.8", topic_title="Un tema a medias", node_id="nodo")
+    tema.coverage = informe
+
+    lineas = "\n".join(tema.lines())
+
+    assert "0/2 = 0.0 %" in lineas, "el denominador está escrito: 0 de 2, no 0 de 0"
+    assert "pendientes de comprobar" in lineas
+    assert "0 de 0" not in lineas
+
+
+def test_sin_ninguna_clave_el_informe_dice_por_que_no_hay_denominador() -> None:
+    """El caso extremo: pendientes y ni una clave. Se dice el motivo en vez de un «0 de 0»."""
+    informe = CoverageReport()
+    informe.groups = 1
+    informe.add_pendiente(preguntas=4, tiene_clave=False)
+    tema = TopicNotesReport(topic_code="III.6", topic_title="Sin clave", node_id="nodo")
+    tema.coverage = informe
+
+    lineas = "\n".join(tema.lines())
+
+    assert "pendientes de comprobar" in lineas
+    assert "no hay denominador" in lineas
+    assert "0 de 0" not in lineas

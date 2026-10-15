@@ -77,6 +77,18 @@ class CoverageReport:
     revisión del propietario (96 preguntas de los tres pilotos que se contaban como cubiertas
     diciendo otra letra que su clave). Una pregunta en conflicto **no** está cubierta y va a la cola
     de revisión, con la clave delante.
+
+    **El quinto desenlace** —y el que faltaba— es `pendientes`: un grupo **con apartado propio y sin
+    comprobación guardada**. No está aquí como un valor de `Coverage` porque no es el resultado de
+    ninguna comprobación: es justo lo que no hay. `Coverage` es lo que dice una fila guardada en
+    `question_note_anchors` (con su `CHECK` de cuatro valores, `ck_anchor_result` de `db_models`), y
+    un «pendiente» no se guarda nunca: lo que hace el medidor al encontrárselo es **contarlo**. Por
+    eso vive en su propio método (`add_pendiente`) y en sus propios campos.
+
+    Lo que decidió el §4 de `SIGUIENTE-TANDA-CIERRE-DEL-OBJETIVO-2026-10`, y es la regla que este
+    recuento implementa: un grupo así es **pendiente de comprobar**, nunca cubierto (no hay nada que
+    lo demuestre) ni ausente (hay apartado escrito para él). Ni suma cobertura ni se cae del
+    denominador, porque caerse sería esconder trabajo por hacer.
     """
 
     groups: int = 0
@@ -110,6 +122,16 @@ class CoverageReport:
     preguntas_cubiertas_con_clave: int = 0
     preguntas_con_clave_utilizable: int = 0
     preguntas_cubiertas_con_clave_utilizable: int = 0
+    #: El quinto desenlace: grupos **con apartado propio y sin comprobación guardada**.
+    #: `pendientes` cuenta grupos (es lo que se lee en la tabla del tema) y `preguntas_pendientes`,
+    #: sus preguntas. Sus preguntas **sí** entran en `preguntas_con_clave` —y en el denominador que
+    #: decide si tienen clave utilizable—, así que un tema con apartados y sin comprobaciones deja
+    #: de medir «0 de 0»: mide 0 de las que le faltan por comprobar, que es la verdad.
+    pendientes: int = 0
+    preguntas_pendientes: int = 0
+    #: Y de esas, cuántas entran en el denominador que decide (las que tienen clave utilizable). Es
+    #: el número que explica el salto del denominador de un tema a medio comprobar.
+    preguntas_pendientes_con_clave_utilizable: int = 0
 
     #: Cuántas de las comprobaciones guardadas siguen valiendo para el texto de hoy (su huella es
     #: la del apartado que se comprobó). Solo lo rellena `medir`: una corrida vuelve a comprobar las
@@ -203,6 +225,42 @@ class CoverageReport:
             else:
                 self.dudosas_clave += 1
 
+    def add_pendiente(
+        self,
+        *,
+        preguntas: int = 1,
+        clave_utilizable: bool = True,
+        tiene_clave: bool = True,
+    ) -> None:
+        """Suma un grupo **pendiente de comprobar**: con apartado propio y sin comprobación.
+
+        Es el quinto desenlace del §4, y las tres reglas se sostienen a la vez:
+
+        1. **no cuenta como cubierta**: no hay ninguna comprobación guardada que lo demuestre, y
+           darlo por cubierto sería mentir con el número que decide si un tema se publica;
+        2. **no desaparece del denominador**: es trabajo que queda por hacer, y dejarle fuera
+           mediría la puerta sobre un conjunto del que se han ido justo las preguntas sin
+           comprobar. Con todos los grupos así, el denominador se quedaba vacío y el tema medía
+           «0 de 0»: un tema con apartados escritos y veinte preguntas pendientes no decía ni lo
+           uno ni lo otro;
+        3. **se cuenta aparte** (`pendientes`), porque no es lo mismo que un hueco: un hueco es
+           «los apuntes no lo contestan» y esto es «todavía no se ha preguntado». Al propietario
+           le cambia el trabajo: al hueco se le escribe, y a esto se le da una corrida de
+           comprobación.
+
+        `tiene_clave` se comporta como en `add`: sin ninguna clave no hay letra contra la que
+        comprobar, así que la pregunta **no** entra en el denominador de la puerta. Sí cuenta como
+        pendiente, que es lo que el informe enseña: sin eso, un tema con apartados y sin claves
+        volvería a medir «0 de 0» y el trabajo pendiente no se vería.
+        """
+        self.pendientes += 1
+        self.preguntas_pendientes += preguntas
+        if tiene_clave:
+            self.preguntas_con_clave += preguntas
+            if clave_utilizable:
+                self.preguntas_con_clave_utilizable += preguntas
+                self.preguntas_pendientes_con_clave_utilizable += preguntas
+
 
 @dataclass(slots=True)
 class TopicNotesReport:
@@ -295,6 +353,22 @@ class TopicNotesReport:
                 f"utilizable · {cobertura.preguntas_cubiertas_con_clave}/"
                 f"{cobertura.preguntas_con_clave} = {100 * cobertura.cobertura_con_clave:.1f} % "
                 "sobre todas las que tienen clave (activa o en borrador)"
+            )
+            if cobertura.pendientes:
+                lineas.append(
+                    f"      de esas, {cobertura.pendientes} grupo(s) están **pendientes de "
+                    f"comprobar** ({cobertura.preguntas_pendientes} pregunta(s); "
+                    f"{cobertura.preguntas_pendientes_con_clave_utilizable} entran en el "
+                    "denominador que decide): tienen apartado propio y no tienen comprobación "
+                    "guardada, así que no suman cobertura y no se caen del denominador"
+                )
+        elif cobertura.pendientes:
+            # Ni un solo grupo con clave: no hay denominador con el que medir. Se dice **por qué**,
+            # que es lo que impide leer un «0 de 0» como «cero preguntas cubiertas».
+            lineas.append(
+                f"    puerta de cobertura NO PASA: ninguna de las preguntas de los "
+                f"{cobertura.pendientes} grupo(s) pendientes de comprobar tiene clave con la que "
+                "medirla, así que no hay denominador. No se da por cubierta ninguna"
             )
         if self.indice is not None:
             lineas.extend(self.indice.lines())

@@ -28,7 +28,9 @@ import { expect, test, type Page } from '@playwright/test';
 import { revisarPantalla } from '../palabrasProhibidas';
 import { escribirInforme, guardarFila, nombreDeFichero } from './informe';
 
-const SALIDA = path.resolve(process.cwd(), '..', '..', 'artifacts', 'screens');
+const SALIDA = process.env.OPOFUENTE_SCREENS_SALIDA
+  ? path.resolve(process.env.OPOFUENTE_SCREENS_SALIDA)
+  : path.resolve(process.cwd(), '..', '..', 'artifacts', 'screens');
 
 /** Dónde escucha la API local en esta herramienta (la misma dirección que usa la web). */
 const API = process.env.OPOFUENTE_API_URL ?? 'http://127.0.0.1:8765';
@@ -160,19 +162,7 @@ async function retratar(
   const analisis = await new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
     .analyze();
-  // Dos textos, porque son dos comprobaciones: el de la **interfaz** (todo menos lo que va dentro
-  // de un contenedor `data-contenido`: enunciados, opciones, apuntes, títulos de tema) y el de
-  // **toda** la pantalla. La jerga solo se busca en el primero; las rutas y los bancos, en los dos.
-  const { interfaz, todo } = await page.evaluate(() => {
-    const copia = document.body.cloneNode(true) as HTMLElement;
-    for (const nodo of Array.from(copia.querySelectorAll('[data-contenido]'))) {
-      nodo.remove();
-    }
-    return {
-      interfaz: copia.innerText || copia.textContent || '',
-      todo: document.body.innerText,
-    };
-  });
+  const { interfaz, todo } = await textosDeLaPantalla(page);
 
   guardarFila({
     ruta,
@@ -186,6 +176,26 @@ async function retratar(
   // Se devuelven las violaciones para que la captura que exige **cero** pueda exigirlo de verdad:
   // el informe las apunta siempre, pero quien pide un cero lo comprueba aquí, no mirando el PNG.
   return analisis.violations.map((violacion) => violacion.id);
+}
+
+/**
+ * Los dos textos de una pantalla, que son dos comprobaciones distintas.
+ *
+ * El de la **interfaz** (todo menos lo que va dentro de un contenedor `data-contenido`: enunciados,
+ * opciones, apuntes, títulos de tema) y el de **toda** la pantalla. La jerga solo se busca en el
+ * primero; las rutas del propietario y los nombres de otras oposiciones, en los dos.
+ */
+async function textosDeLaPantalla(page: Page): Promise<{ interfaz: string; todo: string }> {
+  return page.evaluate(() => {
+    const copia = document.body.cloneNode(true) as HTMLElement;
+    for (const nodo of Array.from(copia.querySelectorAll('[data-contenido]'))) {
+      nodo.remove();
+    }
+    return {
+      interfaz: copia.innerText || copia.textContent || '',
+      todo: document.body.innerText,
+    };
+  });
 }
 
 for (const { ruta, nombre } of RUTAS) {
@@ -949,5 +959,67 @@ async function prepararAvisos(): Promise<void> {
       body: JSON.stringify({ section_key: apartado.key, reason: AVISO_DE_LA_CAPTURA }),
     });
     return;
+  }
+}
+
+/**
+ * La plataforma desplegable (§8 y §9 del objetivo vivo): los textos legales y el aviso de cookies.
+ *
+ * **Este bloque solo corre con las banderas encendidas** (`OPOFUENTE_SCREENS_PLATAFORMA=1` y la API
+ * arrancada con `OPOFUENTE_LEGAL_ENABLED=1`). Es a propósito: con las banderas apagadas estas rutas
+ * no existen, y una captura de «No hay páginas legales» no enseña lo que hay que revisar. Se lanza
+ * aparte, con su propia carpeta de salida (`OPOFUENTE_SCREENS_SALIDA`), para no pisar las capturas de
+ * la configuración de siempre.
+ *
+ * Y no se limita a retratar: **comprueba** lo que el entregable exige, para que la evidencia no
+ * dependa de que alguien mire el PNG.
+ *
+ * 1. **cero violaciones** de accesibilidad en las tres páginas y en el aviso —el aviso de cookies es
+ *    donde más se falla, y por eso se comprueba y no se supone—;
+ * 2. **cero palabras prohibidas**: los textos legales son interfaz, y la interfaz de la zona del
+ *    alumno no puede llevar la jerga interna ni rutas del propietario;
+ * 3. que el aviso está **de verdad** delante en Inicio, con sus dos botones.
+ */
+if (process.env.OPOFUENTE_SCREENS_PLATAFORMA === '1') {
+  const PAGINAS: readonly { ruta: string; fichero: string; titulo: string }[] = [
+    { ruta: '/legal/aviso-legal', fichero: '/legal-aviso-legal', titulo: 'Aviso legal' },
+    { ruta: '/legal/privacidad', fichero: '/legal-privacidad', titulo: 'Privacidad' },
+    { ruta: '/legal/cookies', fichero: '/legal-cookies', titulo: 'Cookies' },
+  ];
+
+  for (const { ancho, alto, etiqueta } of ANCHOS) {
+    for (const { ruta, fichero, titulo } of PAGINAS) {
+      test(`plataforma: ${fichero} a ${ancho} px`, async ({ page }) => {
+        const violaciones = await retratar(page, ruta, fichero, ancho, alto, etiqueta);
+        await expect(page.getByRole('heading', { level: 1, name: titulo })).toBeVisible();
+        // El texto tiene que estar de verdad: una página legal vacía pasa axe y no sirve de nada.
+        await expect(page.locator('.legal__parrafo').first()).toBeVisible();
+        const textos = await textosDeLaPantalla(page);
+        expect(
+          revisarPantalla(textos.interfaz, textos.todo),
+          `palabras prohibidas en ${ruta}`,
+        ).toEqual([]);
+        expect(violaciones, `axe en ${ruta}: ${violaciones.join(', ')}`).toEqual([]);
+        if (ancho === 390) {
+          const medido = await page.evaluate(() => window.innerWidth);
+          expect(medido, 'el ancho de la captura de móvil').toBe(390);
+        }
+      });
+    }
+
+    test(`plataforma: el aviso de cookies a ${ancho} px`, async ({ page }) => {
+      const violaciones = await retratar(page, '/', '/aviso-cookies', ancho, alto, etiqueta);
+      const aviso = page.getByRole('region', { name: 'Cookies' });
+      await expect(aviso).toBeVisible();
+      // Aceptar y rechazar, los dos delante y con el mismo peso: es lo que el §9 exige.
+      await expect(aviso.getByRole('button', { name: 'Aceptar' })).toBeVisible();
+      await expect(aviso.getByRole('button', { name: 'Rechazar' })).toBeVisible();
+      const textos = await textosDeLaPantalla(page);
+      expect(
+        revisarPantalla(textos.interfaz, textos.todo),
+        'palabras prohibidas en el aviso',
+      ).toEqual([]);
+      expect(violaciones, `axe en el aviso: ${violaciones.join(', ')}`).toEqual([]);
+    });
   }
 }

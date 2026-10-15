@@ -17,17 +17,23 @@ from pydantic import BaseModel, Field
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from opofuente.domain.errors import (
+    AccountsDisabledError,
     AttemptFrozenError,
     ClassificationConflictError,
+    ConsentRequiredError,
+    InvalidAccountInputError,
     InvalidAnswerError,
     InvalidBatchStateError,
+    InvalidCredentialsError,
     InvalidReviewError,
     InvalidSourceError,
     InvalidStateError,
+    LegalDisabledError,
     MappingMismatchError,
     NotFoundError,
     OpoFuenteError,
     SessionStateError,
+    TooManyAttemptsError,
     UnsafeContentError,
     UnsupportedError,
     UrlRejectedError,
@@ -47,6 +53,7 @@ _ERROR_CODES: dict[int, str] = {
     408: "timeout",
     409: "conflict",
     422: "validation_error",
+    429: "too_many_requests",
     500: "internal_error",
     503: "not_ready",
 }
@@ -60,6 +67,7 @@ _ERROR_TITLES: dict[int, str] = {
     408: "Request Timeout",
     409: "Conflict",
     422: "Unprocessable Entity",
+    429: "Too Many Requests",
     500: "Internal Server Error",
     503: "Service Unavailable",
 }
@@ -209,6 +217,60 @@ def register_exception_handlers(app: FastAPI) -> None:
                 code=exc.code,
                 field_errors=[FieldError(field=exc.field, message=exc.reason)],
             )
+        if isinstance(exc, InvalidAccountInputError):
+            # §8: un correo sin forma de correo o una contraseña demasiado corta son entrada
+            # inválida, con su campo, y se contestan como cualquier otra (422 con `field_errors`)
+            # en lugar de con un 500 por una regla que rompió quien escribía.
+            return problem_response(
+                status_code=422,
+                detail=str(exc),
+                instance=request.url.path,
+                code=exc.code,
+                field_errors=[FieldError(field=exc.field, message=exc.reason)],
+            )
+        if isinstance(exc, ConsentRequiredError):
+            return problem_response(
+                status_code=403,
+                detail=str(exc),
+                instance=request.url.path,
+                code="consent_required",
+            )
+        if isinstance(exc, LegalDisabledError):
+            return problem_response(
+                status_code=404,
+                detail="Esta instalación no sirve los textos legales ni el aviso de cookies.",
+                instance=request.url.path,
+                code="not_found",
+            )
+        if isinstance(exc, AccountsDisabledError):
+            # Con la bandera apagada la función **no existe**: no hay cuentas, ni rutas vivas, ni
+            # nada que alcanzar de otra forma. Se contesta 404 y no 403 por eso mismo.
+            return problem_response(
+                status_code=404,
+                detail="Esta instalación no tiene cuentas activadas.",
+                instance=request.url.path,
+                code="not_found",
+            )
+        if isinstance(exc, InvalidCredentialsError):
+            # Un solo texto para «ese correo no está» y «esa contraseña no es»: distinguirlos sería
+            # decir quién tiene cuenta aquí (ver el docstring del error).
+            return problem_response(
+                status_code=401,
+                detail=str(exc),
+                instance=request.url.path,
+                code="invalid_credentials",
+            )
+        if isinstance(exc, TooManyAttemptsError):
+            # El 429 lleva `Retry-After`: un «demasiados intentos» sin decir cuándo se puede volver
+            # deja sin salida a quien de verdad se equivocó de contraseña.
+            respuesta = problem_response(
+                status_code=429,
+                detail=str(exc),
+                instance=request.url.path,
+                code="too_many_attempts",
+            )
+            respuesta.headers["Retry-After"] = str(exc.retry_after_seconds)
+            return respuesta
         if isinstance(exc, MappingMismatchError):
             # El 422 de esta aplicación siempre lleva `field_errors`, así que el mapeo que hay que
             # corregir se dice igual que el de una validación de esquema. Va antes que el resto de
