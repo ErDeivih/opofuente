@@ -563,3 +563,55 @@ visible como publicado**. `I.3` sí conserva la suya, y `III.4` acaba de archiva
   con su cifra a la vista**— y hoy **no está a la vista**.
 
 Queda escrito con la medición y **sin tocar nada más**.
+
+### F28i · **I.4 se republica sin puerta, y las dos caras del hallazgo de auditoría** (15-oct-2026)
+
+**1. La republicación.** `I.4` tenía sus 14 apartados y **cero versiones archivadas**, así que **no
+estaba a la vista**. El §4 del orden nuevo dice literalmente que **ningún tema publicado se retira
+automáticamente: si baja del 90 %, se queda con su cifra a la vista**, y con **89,1 %** no se retira.
+**Se ha vuelto a archivar sin exigir la puerta** —es una **republicación de un tema que ya estuvo
+publicado**, no una publicación nueva— usando **la misma ruta que usa `--publicar` cuando la puerta
+pasa**, `DossierService.archive`, que archiva la lectura de ahora y es idempotente por contenido.
+
+| | |
+|---|---|
+| Qué se hizo | `DossierService.archive(node_id)` para I.4, con el guion `republicar_sin_puerta.py` (ensayo por defecto, `--aplicar` para escribir) |
+| Cuándo | 15-oct-2026, **12:24** (hora del `created_at` de la versión) |
+| Por qué | Porque el §4 manda que un tema publicado que baja del 90 % **se quede con su cifra a la vista**, y no estaba |
+| Su cifra | **490/550 = 89,1 %** sobre clave utilizable · **490/562 = 87,2 %** sobre todas · forma **PASA** con 3,4 % de repetidos |
+| Resultado | **1 versión archivada** y el total de publicados de vuelta en **26** |
+| Coste | **0 $** (no llama al modelo) |
+
+**Y se dice que fue a mano, como se pidió.** Lo que **no** se puede decir es que quedara con su evento
+de auditoría, y ahí está la segunda cara.
+
+**2. Las dos caras del hallazgo, y la segunda es la grave.**
+
+- **La cara conocida**: `--publicar` **retira la versión cuando la puerta no pasa**. Está en el propio
+  motor: si las puertas pasan llama a `archive`, y **si no, a `retire`** (`tools/apuntes.py`). Es el
+  candidato más probable de la desaparición de la versión de I.4, y **la ayuda del comando lo dice**.
+- **La cara grave, que es un agujero de auditoría**: **ninguna de las dos rutas deja rastro**.
+  `DossierService.archive` → `save_snapshot` **inserta la fila y no escribe ningún evento**, y `retire`
+  borra la fila. **No hay evento para ese nodo en las tablas de auditoría**, y por eso **no se pudo
+  averiguar quién retiró la versión de I.4**: no es que no se buscara bien, es que **el camino que
+  archiva y el que retira son mudos**. Un tema publicado que desaparece sin dejar evento no se puede
+  auditar.
+
+**El arreglo es de motor y no se hace aquí** (va con sus 18 puertas): **`--publicar` no debe retirar un
+tema que ya estaba publicado** —debe dejarlo y decir que no pasa—, y **archivar y retirar deben dejar su
+evento con actor y motivo**. Queda escrito con las dos caras y con el caso de I.4 como prueba.
+
+### F28j · **D4 se cierra: medido hoy son 0 y no hay nada que arreglar** (15-oct-2026)
+
+El punto **D4** hablaba de **30 hechos con el `epigraph_code` mal guardado** y decía que se arreglaban con
+un método auditado, `topic_facts.reassign_epigraph`, con actor `f10:epigrafes`.
+
+- **El método no existe**: no hay ningún `reassign_epigraph` en el árbol; solo lo nombra el documento del
+  goal (`ESTADO-DE-LA-SESION-2026-10.md`).
+- **Y medido hoy, los hechos con el epígrafe fuera de su tema son 0**: 19.971 hechos en total, **ninguno
+  con el epígrafe vacío** y **ninguno con un epígrafe que no sea de su propio tema** (los 116 pares
+  tema↔epígrafe que hay están todos dentro de su tema).
+
+**Así que D4 no tiene nada que arreglar y el método no se crea**, porque **no se crea una ruta para
+arreglar lo que no está roto**. El «30» era de hace semanas y la cifra medida es la que manda. **Es una
+respuesta, no un pendiente.**
