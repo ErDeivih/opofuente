@@ -373,3 +373,51 @@ prueba que falla antes y las 18 puertas.
 | **14-oct-2026** | **No se escribe ni una fila en la base del propietario**: toda la medición es de solo lectura (`servicio.medir` sobre `F:\OpoFuente\datos`, con el modelo sustituido por uno que se niega a usarse) | Es un bloque de motor y de medida: lo que cambia es qué cuenta la puerta, no lo que hay escrito. Los apartados que pierden hechos se rehacen **la próxima vez que se corra el tema** (la regla que ya existía), y eso cuesta dinero: lo decide quien corra, no este bloque | Correr los temas afectados (I.2, I.3 e I.4 tienen cajones) reescribe sus apartados y vuelve a comprobar con el reparto nuevo |
 | **14-oct-2026** | **La caída de la puerta 18 se arregla en la semilla de la prueba, no en la expectativa.** El spec del panel de apuntes (`apuntes-revision.spec.ts`) sembraba su apartado con la clave `powershell-y-cmdlet`, que **no es una materia del catálogo de IV.1**; se cambia a la clave real, `administracion-de-windows`, que es donde el índice de IV.1 manda esa pregunta (`powershell\|cmdlet\|…`). La expectativa (`1/1 = 100.0 %`, «Aprobarlo la publica») **no se toca** | El escenario solo pasaba **por el respaldo que este bloque quita**: la comprobación se anclaba al «primer apartado del epígrafe» y daba igual que la clave del apartado existiera o no. Con la puerta nueva, una clave que no es materia del tema **no ancla nada** —y es lo correcto: en la base real la clave de un apartado la pone `plan_de` desde el catálogo, así que el escenario era irreal—. Se corrige la semilla (que es lo que estaba mal), no la cifra que se espera | Volver la clave vieja (la prueba vuelve a medir 0 de 1 y a caer) |
 | **14-oct-2026** | **Consecuencia dicha del arranque: si a una materia del catálogo se le cambia la clave, el apartado guardado deja de anclar** hasta que el tema se vuelva a correr | El ancla sale del **índice de hoy**, no de la clave guardada: es lo que hace que un ancla ajena no cuente, y tiene esta otra cara. Pasó ya en esta serie que un catálogo se toca entre corridas (títulos de II.3, patrones muertos de siete temas): ninguno cambió una **clave**, y por eso no ha hecho daño todavía. La reparación es la que ya existe: al volver a correr, `plan_de` deja el apartado viejo en `sobran` y el texto se rehace | Volver a leer `section_key` en el ancla (vuelve el lavado que este bloque quita) |
+
+### F28a · **La reextracción de las plantillas recortadas necesita una ruta nueva** (15-oct-2026)
+
+**Lo primero del orden nuevo (`SIGUIENTE-TANDA-CIERRE-DEL-OBJETIVO-2026-10.md` §3, `OBJETIVO-VIVO` A3): devolver
+los dos exámenes oficiales reextrayendo la evidencia recortada de la biblioteca.** Se ha mirado si eso se puede
+hacer por una ruta auditada, y **la respuesta es que no: hace falta construirla**. Se dice con lo medido, y no
+se fuerza ni se hace con SQL.
+
+**La ruta no existe**, comprobado sobre el código:
+
+| Qué se buscó | Qué hay |
+|---|---|
+| Un comando que vuelva a trocear la evidencia | **Ninguno**: las trece herramientas de `tools/` reparan preguntas, incidencias, procedencia o clasificación, no evidencia |
+| Quién trocea la evidencia | `evidence_cuts` (`domain/evidence.py`), usada **solo** por `document_repository._evidence`, a la que se llega por **`promote_artifact`**, o sea **en la ingesta** |
+| Un método para redibujar la estructura de una versión ya guardada | **No lo hay**: la API pública del repositorio de documentos es `promote_artifact`, `accept_version`, `withdraw_version`, `reinstate_version`, `list_*`, `get_*`, `version_detail`, `version_text`, `version_artifact`, `document_diff` y las colecciones |
+| El almacén de donde saldría el texto | **Está**: `extracted` tiene **11.778 ficheros (0,63 GB)** y **las 2.031 versiones afectadas conservan su representación de origen** |
+
+**Y el alcance, vuelto a medir hoy** (la cifra del 13-oct —3.474 versiones y 1,71 M de caracteres— **no coincide
+con la de hoy y manda la de hoy**, con la definición dicha):
+
+| Qué | Cifra de hoy |
+|---|---|
+| Secciones con evidencia en la biblioteca | **700.759** |
+| De ellas, troceadas en varias evidencias (lo que hace el código nuevo) | **0** — **toda la biblioteca se construyó con el código viejo** |
+| Secciones **recortadas** (su evidencia llega al tope del fallo, 1.198–1.200, y la sección es más larga) | **40.396** |
+| Versiones de documento afectadas | **2.031** |
+| Caracteres que no se pueden citar | **64.723.281** (64,7 M) |
+
+**La definición, para que la cifra sea comprobable**: la cobertura de una sección es
+`max(char_end) − min(char_start)` sobre **todas** sus evidencias; está recortada cuando esa cobertura llega al
+tope **y** la sección es más larga. Una sección partida en tres trozos que la cubren entera **no** está
+recortada. La primera medida que hice comparaba la evidencia **más larga** con la sección y marcaba como
+recortada cualquier sección bien troceada; se corrigió, y por eso la cifra de arriba es la buena.
+
+**Los dos exámenes del goal, medidos**: de los **19 conjuntos oficiales**, **doce no tienen ni una comprobación
+de clave** —entre ellos **TAI ingreso libre 2022** y **TAI ingreso libre 2025 extraordinario**, que son los dos
+que el goal nombra—; los de 2025 modelo A y B y promoción interna 2025 tienen 43, 47, 26 y 29 comprobadas y
+**cero discrepantes**.
+
+**Qué haría falta, para quien lo coja** (es **motor**, no contenido, y por tanto lleva sus 18 puertas y su
+prueba que falla antes): un método en el repositorio de documentos —del estilo `rederive_evidence(version_id)`—
+que, **para una versión ya guardada**, vuelva a leer su representación, vuelva a trocear con `evidence_cuts` las
+secciones recortadas, **sustituya** sus evidencias y **vuelva a enlazar** `question_evidence`, con su evento de
+auditoría. El patrón de la casa ya existe: `tools/reparar_preguntas.py` hace exactamente eso —ensaño por defecto,
+`--aplicar`, copia verificada antes, idempotente— para otro objeto.
+
+**No se ha tocado nada**: ni la base, ni el motor, ni la biblioteca. Queda escrito con su alcance y su causa para
+que el bloque que lo coja no tenga que volver a medirlo.
