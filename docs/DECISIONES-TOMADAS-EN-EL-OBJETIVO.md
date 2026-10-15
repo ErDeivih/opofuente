@@ -515,3 +515,51 @@ en el destino (el motor agrupa por firma, y dos enunciados iguales son un solo t
 **su valor también**, así que la fila de la tabla de valor que lo pone en 140 claves utilizables **ya no
 vale** y hay que volver a medirla antes de decidir cuándo se escribe. Las **67 propuestas de la cola**
 esperan la decisión del propietario y **no cuentan** en el diagnóstico mientras estén así.
+
+### F28g · **III.4, escrito después de arreglar su banco, y publicado al 98,8 %** (15-oct-2026)
+
+| Qué | Valor |
+|---|---|
+| Cobertura (**clave utilizable**) | **244/247 = 98,8 % PASA** · última medida **243/246 = 98,8 %** |
+| Cobertura (todas las claves) | 244/260 = 93,8 % · última 243/257 = 94,6 % |
+| Techo medido antes de pagar | 254/260 = **97,7 %** |
+| Hechos · apartados | **530 guardados** → 363 en el plan · **15** |
+| Forma · índice | **PASA** 0,0 % repetidos · PASA con 2 grupos y 30 hechos sin materia |
+| Bandeja | **16**: 13 `norma_cambiada`, 2 `pregunta_ambigua`, 1 `clave_sospechosa` |
+| Llamadas · coste | **83 (0 fallidas) · 0,2437 $** (previsión 0,36–0,63 $) |
+
+**Y se dan las dos medidas, que es la regla de hoy**: la de la corrida (**244/247**) y **la última**
+(**243/246**), dos minutos después y sobre la misma base. El denominador se mueve solo mientras otros
+bloques escriben; **vale la última** y las dos coinciden en el 98,8 %.
+
+**Dos arreglos de 0 $ que valieron diez puntos de techo**, y los dos son lecciones de forma:
+
+1. **Faltaba un apartado entero**: el epígrafe oficial **III.4.3 es «Ventajas e inconvenientes»** y el
+   catálogo no lo cubría, así que las preguntas de «¿cuál **NO** es una ventaja de la POO?» no tenían
+   dónde caer. **Fallo de lectura del enunciado, no de los patrones.**
+2. **Un patrón que no casaba por la forma de la palabra**: los enunciados dicen «orientad**a** a
+   objetos» y el patrón buscaba «orientaci**ón** a objetos». **Es el mismo error de forma que la barra
+   de `/etc/passwd` y el punto de `802.11`: tres veces el mismo, y las tres cazadas a 0 $.**
+
+### F28h · **Una alerta que hay que decir: I.4 aparece sin versión archivada** (15-oct-2026)
+
+**El hecho, medido**: `I.4` tiene **14 apartados escritos y 0 versiones archivadas**, así que **no está
+visible como publicado**. `I.3` sí conserva la suya, y `III.4` acaba de archivarla.
+
+**Lo que sí se puede afirmar, porque está comparado**:
+
+- **La copia verificada de las 13:16 ya tenía a I.4 con cero versiones.** Se comparó **tema por tema**
+  la copia con la base viva y **el único cambio es III.4** (0 → 1 versión, 0 → 15 apartados): **ningún
+  otro tema ha perdido nada** en ese tramo.
+- **No he ejecutado ningún comando que borre versiones**: lo mío sobre I.4 fue una corrida con
+  `--sin-version` (que por definición no toca la versión archivada) y un `--publicar` que **midió NO
+  PASA**. El `--publicar` dice en su ayuda que si la puerta no pasa «la retira con su motivo», así que
+  **es el candidato más probable**, pero **no lo puedo afirmar**: entre esa comprobación y la copia hay
+  otros bloques escribiendo (el re-medido y el de claves derivadas), y no he encontrado el rastro en
+  las tablas de auditoría para ese nodo.
+- **Lo que no se hace es inventar la forma de restaurarla**: archivar una versión pasa por
+  `--publicar`, y con **89,1 %** no la archivaría. **Se pide criterio antes de forzar nada**, porque la
+  regla del §4 es clara —**ningún tema publicado se retira automáticamente: si baja del 90 %, se queda
+  con su cifra a la vista**— y hoy **no está a la vista**.
+
+Queda escrito con la medición y **sin tocar nada más**.
