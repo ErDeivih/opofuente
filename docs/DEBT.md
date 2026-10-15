@@ -33,7 +33,7 @@ Reglas:
 | [DEBT-019](#debt-019--el-estado-conservado-sin-extractor-no-llega-a-la-pantalla) | S12 | `unsupported_preserved` se guarda y se sirve, pero no hay prueba de interfaz ni de contrato que lo muestre legible | **cerrada** (el estado se enseña con su nombre y su motivo, y hay prueba de la API de punta a punta y prueba de interfaz) |
 | [DEBT-020](#debt-020--la-clave-oficial-de-celador-está-escaneada-y-no-se-puede-importar) | S09+ | La plantilla oficial de respuestas correctas de Celador es un escaneo sin capa de texto: la clave existe y no entra en la aplicación | abierta (OCR hecho; falta el importador revisado o la transcripción) |
 | [DEBT-021](#debt-021--la-puerta-e2e-puede-correr-contra-un-servidor-ajeno) | antes de dar por buena una corrida E2E | La suite E2E reutiliza cualquier servidor que escuche en el 8765: corre contra su base de datos y escribe en ella | abierta |
-| [DEBT-022](#debt-022--la-suite-e2e-no-distingue-la-máquina-está-cargada-de-esto-se-ha-roto) | antes de dar por buena la puerta E2E | La suite tarda 1,8 min en vacío y 11 cargada, y sus esperas fijas pueden caducar sin decir si el problema es el código o el ordenador (los cuatro rojos que primero se le atribuyeron eran del servidor reutilizado, DEBT-021) | abierta |
+| [DEBT-022](#debt-022--la-suite-e2e-no-distingue-la-máquina-está-cargada-de-esto-se-ha-roto) | antes de dar por buena la puerta E2E | La suite tarda 1,8 min en vacío y 11 cargada, y sus esperas fijas pueden caducar sin decir si el problema es el código o el ordenador (los cuatro rojos que primero se le atribuyeron eran del servidor reutilizado, DEBT-021; y el 15-oct-2026 se sumó una tercera forma: **el propio `vite preview` muriéndose a mitad**, `npm error code 4294967295`, que deja 15-18 rojos de `ERR_CONNECTION_REFUSED` en ~250 ms) | abierta |
 | [DEBT-023](#debt-023--una-tarjeta-de-anki-no-puede-ser-una-pregunta-porque-no-hay-dónde-guardar-su-respuesta) | S12.6 | El modelo tiene el tipo `free_text_reference` y no tiene dónde guardar la respuesta de referencia: el reverso de una tarjeta no entra | abierta |
 | [DEBT-024](#debt-024--la-clasificación-se-pide-de-forma-síncrona-y-con-el-corpus-entero-tarda-demasiado) | S12.6 | «Buscar propuestas ahora» clasifica todo el corpus en la misma petición: con material real tarda decenas de segundos y bloquea la pantalla | cerrada |
 | [DEBT-025](#debt-025--corregir-una-pregunta-infla-el-conjunto-y-puede-volver-a-preguntarse-el-texto-viejo) | S12.6 | La versión sustituida de una pregunta corregida cuenta como pregunta: el conjunto se infla, el banco enseña el enunciado viejo y una sesión nueva puede componerse con él | **cerrada** (22 de septiembre de 2026: las consultas del banco dejan fuera `superseded`, y la historia se sigue leyendo pidiéndola) |
@@ -1289,6 +1289,20 @@ el terreno es el mismo y hoy ha caído la otra punta. Medido:
 **Lo que sigue faltando, y que este apunte ya pedía**: que la suite **declare la espera** en lugar de
 producir un rojo indistinguible cuando la máquina va cargada. Hoy, para saberlo, hay que repetir a mano
 los ficheros en aislamiento — que es exactamente lo que un rojo no debería obligar a hacer.
+
+  **Añadido el 15/10/2026 (medición de las tres baterías del cierre): son DOS fallos distintos con el mismo síntoma, y solo uno está cubierto.** Los dos acaban igual —la suite pierde el servidor de vista previa y todo lo que venga detrás cae—, pero **el que se muere es distinto**:
+
+  | | **Cara A: un proceso AJENO ocupa el puerto** | **Cara B: el servidor PROPIO se muere** |
+  |---|---|---|
+  | Qué pasa | otro proyecto levanta su `vite preview` en el 4173 (o su API en el 8765) y el nuestro no puede escuchar | el `vite preview` de la propia corrida **termina de forma anormal** a mitad de la suite |
+  | Cómo se ve | `strictPort` impide arrancar, o el navegador habla con el servidor de otro | `[WebServer] npm error code 4294967295` en el `stderr`, y desde ahí **todos** los `page.goto` dan `ERR_CONNECTION_REFUSED` en ~250 ms cada uno |
+  | Medido el 15-oct | plataforma `b2c76f5`: otro proyecto con su `vite preview` en el 4173, arrancado a las 21:06:17 (`F:\aprendizaje\scrap\plataforma\web\app`) | plataforma `b2c76f5`: **63 verdes y 15 rojos** (los 4 de `topic-review` y los 11 de `tray`); bandeja `0cf4cc1`: **58 verdes y 18 rojos** por esta causa (más 7 reales, que son otra cosa) |
+  | ¿Se cura al reintentar? | sí, cuando el ajeno termina | sí: **plataforma `78/78` en 3,4 min**, y bandeja sin una sola ocurrencia del `4294967295` |
+  | ¿Quién lo caza? | la **guarda de puerto** de `scripts/common.ps1` (bloque de plataforma, 15-oct): mira 8765 y 4173 antes y después de cada puerta y **aborta con código 4** diciendo PID, proceso y ruta; distingue por **propiedad del proceso** subiendo por `ParentProcessId`, así que un escucha **propio** no la dispara | **nadie**: la guarda **no la cubre a propósito**, porque el que se muere es el nuestro y para la guarda es legítimo |
+
+  **La cifra del terreno, para que no se confunda con «carga»: dos de cada cuatro corridas de E2E de esa tarde perdieron su servidor de vista previa a mitad.** No es lentitud ni una espera que caduca: es un proceso que **deja de existir**, y el `stderr` lo firma con su código. Y el aislamiento lo confirma: las mismas pruebas, el mismo árbol y el mismo juez, **sin la muerte, pasan**.
+
+  **Lo que haría falta** —el criterio 1 de esta deuda, aplicado al transporte—: que la suite **detecte que su `vite preview` ya no está** y **falle una vez diciéndolo**, con el código de salida del servidor y su PID, en lugar de producir quince rojos que parecen del código. Hoy, para saber de quién era el rojo, hay que leer a mano el `stderr` del `[WebServer]`.
 
 ---
 
