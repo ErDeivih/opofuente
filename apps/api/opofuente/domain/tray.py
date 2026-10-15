@@ -95,22 +95,23 @@ ACCIONES: tuple[TrayAction, ...] = (
 #: Qué hace cada acción, dicho para poder decidirla sin abrir nada. Es el texto que lee el
 #: propietario en la pantalla, y se calcula en el servidor para que no haya dos versiones.
 #:
-#: El vocabulario es **el suyo**: «examen» y «respuesta correcta», no «conjunto», «bandeja» ni
+#: El vocabulario es **el suyo**: «banco» y «respuesta correcta», no «conjunto», «bandeja» ni
 #: «clave». Esas tres son palabras de dentro y la interfaz las tiene vetadas (la puerta 18 las busca
 #: fuera del contenido): decirlas aquí sería colar por el texto del servidor lo que la pantalla no
-#: puede decir.
+#: puede decir. Y «banco» y no «examen» porque la fila es un conjunto de preguntas y **casi todos
+#: son bancos privados**: los exámenes oficiales van en su propia sección y no llevan estos botones.
 TEXTO_DE_ACCION: dict[TrayAction, str] = {
     TrayAction.ACEPTAR_DERIVADAS: (
-        "acepta todas las respuestas derivadas de este examen: la letra que coinciden los apuntes "
+        "acepta todas las respuestas derivadas de este banco: la letra que coinciden los apuntes "
         "y una respuesta independiente del modelo pasa a ser la respuesta correcta, y sus avisos "
         "quedan resueltos"
     ),
     TrayAction.DEJAR_FUERA: (
-        "deja este examen fuera de tests, simulacros y repasos: su respuesta correcta no se usa "
+        "deja este banco fuera de tests, simulacros y repasos: su respuesta correcta no se usa "
         "para nada hasta que se arregle, y sus avisos quedan resueltos"
     ),
     TrayAction.NO_SON_PREGUNTAS: (
-        "lo que hay en este examen no son preguntas contestables: sale del temario con su motivo y "
+        "lo que hay en este banco no son preguntas contestables: sale del temario con su motivo y "
         "se queda en la base, fuera de tests, simulacros y comprobaciones"
     ),
 }
@@ -247,7 +248,7 @@ def _etiqueta(categoria: str, cuantas: int) -> str:
     return singular if cuantas == 1 else plural
 
 
-#: El nombre de cada categoría en la fila del examen, en **sus dos formas** (singular, plural).
+#: El nombre de cada categoría en la fila del banco, en **sus dos formas** (singular, plural).
 #:
 #: Están las dos escritas y no se deriva una de la otra con una regla: en español el plural no es
 #: añadir una «s» —«norma» → «normas» sí, pero «pregunta que no se puede juzgar» → «preguntas que no

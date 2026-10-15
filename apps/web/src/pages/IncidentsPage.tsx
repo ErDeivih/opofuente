@@ -233,7 +233,7 @@ export function IncidentsPage() {
         </p>
         {bandeja.data !== undefined && (
           <p className="hint">
-            {conNumero(bandeja.data.filas, 'examen con algo dentro', 'exámenes con algo dentro')} ·{' '}
+            {conNumero(bandeja.data.filas, 'fila con algo dentro', 'filas con algo dentro')} ·{' '}
             {conNumero(
               bandeja.data.total_pendiente,
               'aviso esperando criterio',
@@ -433,19 +433,19 @@ export function IncidentsPage() {
           )}
 
           <section className="card" aria-labelledby="bandeja-por-conjunto">
-            <h2 id="bandeja-por-conjunto">Avisos agrupados por examen</h2>
+            <h2 id="bandeja-por-conjunto">Avisos agrupados por banco</h2>
             <p className="page__lead">
-              <strong>Una fila por examen</strong>, no cincuenta avisos. Lo que espera dentro se decide
-              de una vez: aceptar las respuestas derivadas, dejar ese examen fuera del estudio o marcar
+              <strong>Una fila por banco</strong>, no cincuenta avisos. Lo que espera dentro se decide
+              de una vez: aceptar las respuestas derivadas, dejar ese banco fuera del estudio o marcar
               que lo que hay ahí no son preguntas. Cada decisión queda auditada.
             </p>
             {(bandeja.data.rest ?? []).length === 0 ? (
               <EmptyState
-                title="Ningún examen esperando"
-                description="Cuando el motor señale algo que no pueda cerrar solo, su examen saldrá aquí con lo que tiene dentro y con lo que se puede hacer de una vez."
+                title="Ningún banco esperando"
+                description="Cuando el motor señale algo que no pueda cerrar solo, saldrá aquí agrupado por banco, con lo que tiene dentro y con lo que se puede hacer de una vez."
               />
             ) : (
-              <ul className="conjuntos" aria-label="Avisos agrupados por examen">
+              <ul className="conjuntos" aria-label="Avisos agrupados por banco">
                 {seccion(bandeja.data.rest ?? [])}
               </ul>
             )}

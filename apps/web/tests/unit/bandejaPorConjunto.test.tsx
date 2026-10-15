@@ -134,7 +134,7 @@ function urlDe(url: RequestInfo | URL): string {
 
 /** La fila de un conjunto, por su título. */
 async function filaDe(titulo: string): Promise<HTMLElement> {
-  const lista = await screen.findByRole('list', { name: /avisos agrupados por examen/i });
+  const lista = await screen.findByRole('list', { name: /avisos agrupados por banco/i });
   const filas = within(lista).getAllByRole('listitem');
   const fila = filas.find((cual) => within(cual).queryByText(titulo) !== null);
   if (fila === undefined) {

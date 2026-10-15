@@ -32,7 +32,7 @@ export interface SetRowProps {
   detalle: { cargando: boolean; error: boolean; incidencias: NotesIncident[] | null };
   onDesplegar: () => void;
   onBulk: (action: TrayAction) => void;
-  /** Cómo se pinta un aviso dentro del examen: es la misma fila que la de la lista. */
+  /** Cómo se pinta un aviso dentro de la fila: es la misma fila que la de la lista. */
   renderIncidencia: (incidencia: NotesIncident) => ReactElement;
 }
 
@@ -127,7 +127,7 @@ export function SetRow({
           aria-label={`Qué hacer con ${conjunto.title}`}
         >
           {acciones.length === 0 ? (
-            <p className="hint">Este examen no admite acciones en bloque.</p>
+            <p className="hint">Este banco no admite acciones en bloque.</p>
           ) : (
             acciones.map((accion) => (
               <Button
@@ -163,7 +163,7 @@ export function SetRow({
           {detalle.cargando && <p className="hint">Leyendo lo que hay dentro…</p>}
           {detalle.error && (
             <p className="hint">
-              No se pudieron leer los avisos de este examen. Vuelve a intentarlo.
+              No se pudieron leer los avisos de este banco. Vuelve a intentarlo.
             </p>
           )}
           {detalle.incidencias !== null && detalle.incidencias.length === 0 && (

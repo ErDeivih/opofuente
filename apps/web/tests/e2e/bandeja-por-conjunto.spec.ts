@@ -318,7 +318,7 @@ test('E2E-F31 la bandeja se agrupa por conjunto y una acción en bloque la despa
   try {
     await page.goto('/admin/incidencias');
     await expect(
-      page.getByRole('heading', { level: 2, name: 'Avisos agrupados por examen' }),
+      page.getByRole('heading', { level: 2, name: 'Avisos agrupados por banco' }),
     ).toBeVisible();
 
     // --- 1. Lo oficial, aparte y arriba, y sin botones -------------------------------------------
@@ -332,7 +332,7 @@ test('E2E-F31 la bandeja se agrupa por conjunto y una acción en bloque la despa
     ).toHaveCount(0);
 
     // --- 2. El conjunto no oficial es **una** fila, y despliega ----------------------------------
-    const lista = page.getByRole('list', { name: 'Avisos agrupados por examen' });
+    const lista = page.getByRole('list', { name: 'Avisos agrupados por banco' });
     const filaPrivada = page.locator(`li[data-conjunto="${conjuntos.privado}"]`);
     await expect(filaPrivada).toBeVisible();
     await expect(filaPrivada).toContainText('2 claves sospechosas');
@@ -392,7 +392,7 @@ for (const viewport of [
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
       await page.goto('/admin/incidencias');
       await expect(
-        page.getByRole('heading', { level: 2, name: 'Avisos agrupados por examen' }),
+        page.getByRole('heading', { level: 2, name: 'Avisos agrupados por banco' }),
       ).toBeVisible();
       await expect(page.getByRole('region', { name: 'Exámenes oficiales' })).toBeVisible();
 
