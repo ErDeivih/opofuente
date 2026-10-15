@@ -3258,6 +3258,59 @@ en disco; `dev.ps1` ya lo dice: «aquí no lo está»). Su `Test-OpoFuenteExitCo
   aceptación a una persona y una versión. `s14` mueve el cuello de botella, no lo quita; decidir si se
   acepta en bloque (agrupando por documento) es una decisión de diseño que no toma este bloque.
 
+### 6. La segunda medición, sobre `c6f9184`, y por qué hacía falta
+
+La medición de arriba certificó **`4f7a1f0`**, pero lo que entró en `main` fue **`c6f9184`**, y entre los
+dos `main` había ganado 918 líneas del bloque de apuntes —incluidas **9 líneas de
+`apps/web/tests/e2e/apuntes-revision.spec.ts`**, que es un fichero que **la puerta 18 ejecuta**—. Por eso
+la cifra se volvió a medir **sobre el commit que está en `main`**. Esto es lo que salió.
+
+**El árbol medido es exactamente `c6f9184`**: `HEAD` desacoplado en ese commit, con
+`git status --porcelain` **vacío** antes y después de las dos corridas. `main`, en cambio, se movió **dos
+veces más** mientras se medía (`5a62d0d` → `6b3db4ab` → `cef3308`); eso ya no se pierde, porque **los dos
+registros llevan su procedencia** (ver el punto 4 y **DEBT-030**).
+
+| Tramo | Cuándo | Puertas | Resultado |
+|---|---|---|---|
+| **1** | 12:45:36 → 13:51:11 (65 min) | 1–9 | **1–8 OK** · **9 FALLO (código 1)** · 10–18 no llegaron a correr |
+| *diagnóstico* | 13:52 | — | los **dos ficheros** que cayeron pasan **42/42 en aislamiento**, mismo árbol y mismo juez |
+| **2** | 14:59:24 → 15:06:02 (**06:39**) | 9–18 | **9–18 OK, `exit 0`** · componentes **389/389** · E2E **80/80** |
+
+**Veredicto: `c6f9184` pasa las 18, en dos tramos**, y el único rojo del camino fue un **falso negativo
+por contención**, medido y no supuesto:
+
+- Los dos fallos del tramo 1 son `TestingLibraryElementError: Unable to find role="button"` dentro de dos
+  `waitFor` que esperan un botón que aparece **tras una petición asíncrona** (`promote.test.tsx:150` y
+  `questions.test.tsx:217`): firma de tiempo, no de expectativa.
+- **`questions.test.tsx` no viene de `s14`**: la rama aporta **9 ficheros** (`git diff 4f7a1f0^2
+  4f7a1f0`) y ese no es uno de ellos. Un fallo en un fichero que la rama no toca no puede ser de la rama.
+- Los dos ficheros **pasan 42/42 en aislamiento**, sobre el mismo árbol y con el mismo juez.
+- Y el terreno, con la cifra: en el tramo 1 la puerta 7 tardó **1:00:20** (frente a **45:11** en la primera
+  medición) y Vitest creó jsdom **43 veces con 471 s de tiempo rastreado (53 %)**. Es **DEBT-022**.
+
+**El tramo 2 no repite el tramo 1, y se dice por qué**: el árbol es byte-idéntico (mismo `HEAD`, árbol
+limpio) y las puertas 1–8 ya estaban verdes sobre él, así que solo se re-juzga **lo que quedó sin
+veredicto**. Es el mismo criterio con el que **F24-panel** quedó «18/18 repartidas en tres corridas», con
+el mismo `common.ps1`. Y el tramo 2 se corrió **a propósito con la máquina cargada** (CPU 90–100 %, cuatro
+suites de integración ajenas): que la puerta 9 pase ahí **es un veredicto más fuerte**, no uno más cómodo
+— el riesgo que se corría era un falso **rojo**, que es justo lo que sabemos detectar; un falso verde es
+lo que no estaba en juego y no se ha fabricado.
+
+**Los dos registros, con su procedencia** (lo que **DEBT-030** pedía, y ya está en el acta):
+
+| Fichero | Qué es | Procedencia que lleva dentro |
+|---|---|---|
+| `F:\temp-opofuente\gates-s14.txt` (43.995 B) | tramo 1, salida literal, `exit=1` | `ANTES … main=5a62d0d…` → `DESPUES … main=6b3db4ab…` |
+| `F:\temp-opofuente\gates-s14-tramo2.txt` (38.963 B) | tramo 2, salida literal, `exit=0` | `ANTES … main=cef3308…` → `DESPUES … main=cef3308…` |
+
+*(Sus `.err.txt` van al lado: 30.498 y 15.321 bytes, sin un error real — son los `INFO` de alembic, el
+aviso de tamaño de trozo de Vite y las salidas de `uv build`.)*
+
+**Y el instrumento hizo su trabajo el primer día que se usó**: en el tramo 1, `main` **se movió de verdad
+durante los 65 minutos** (`5a62d0d` → `6b3db4ab`, las 83 líneas de `DECISIONES` del commit `F28b`). Sin
+esa cabecera, hoy habría vuelto a escribirse una cifra contra un commit que no era el medido — que es
+exactamente el agujero que **DEBT-030** describía y que ya está cerrado.
+
 
 ## F29 · Devolver al estudio las preguntas en cuarentena: la clave derivada (15-oct-2026)
 
