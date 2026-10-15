@@ -379,8 +379,8 @@ class TopicNotesService:
     ) -> None:
         """La puerta de cobertura, contada **una vez por pregunta** y **solo con anclas propias**.
 
-        Tres reglas, y las tres son el mismo agujero visto desde tres sitios (F25c: «nadie comprueba
-        que el sitio donde acaba un hecho o una comprobación sea suyo»):
+        Cuatro reglas, y las tres primeras son el mismo agujero visto desde tres sitios (F25c:
+        «nadie comprueba que el sitio donde acaba un hecho o una comprobación sea suyo»):
 
         1. **una vez por pregunta.** Antes la misma pregunta entraba dos veces —una como hueco, por
            estar en `grupos_sin_materia`, y otra con su comprobación guardada, anclada por el
@@ -397,11 +397,15 @@ class TopicNotesService:
            anclada en un apartado que no era el suyo (`i-3-1-otros`);
         3. **lo que no tiene apartado propio cuenta como no cubierto**, y no se cae del denominador:
            si se cayera, la puerta se mediría sobre un conjunto del que se han ido justo las que
-           peor están.
-
-        Lo que **no** cambia, porque es un hallazgo ya medido y no es de este encargo: un grupo con
-        apartado propio y **sin comprobación guardada** no entra en la puerta (ni en el numerador ni
-        en el denominador).
+           peor están;
+        4. **lo que tiene apartado propio y no tiene comprobación guardada es PENDIENTE DE
+           COMPROBAR**: cuenta en el denominador y no en el numerador, y se cuenta aparte
+           (`CoverageReport.pendientes`). Es el §4 de
+           `SIGUIENTE-TANDA-CIERRE-DEL-OBJETIVO-2026-10`, y es la regla que faltaba: antes este
+           grupo se caía de la puerta por los dos lados (`continue`), así que un tema con
+           apartados y sin comprobaciones medía **«0 de 0»** —denominador vacío— y el trabajo que
+           le quedaba por hacer desaparecía de la cifra. Un grupo así **no** se da por cubierto
+           (sería mentira) ni se cae del denominador (sería peor: esconde trabajo por hacer).
         """
         informe.coverage = CoverageReport()
         informe.coverage.preguntas = informe.questions
@@ -444,7 +448,16 @@ class TopicNotesService:
                     informe.coverage.incidencias_clave_marcada += 1
                 continue
             if apartados:
-                # Tiene apartado propio y no hay comprobación guardada: no entra en la puerta.
+                # Tiene apartado propio y **no** hay comprobación guardada: es el quinto desenlace,
+                # «pendiente de comprobar». Ni cubierta —no hay nada que lo demuestre— ni ausente
+                # —hay apartado escrito para ella y trabajo hecho—: entra en el denominador y no en
+                # el numerador, y se cuenta aparte. Antes se caía de la puerta por los dos lados y
+                # un tema con apartados y sin comprobaciones medía «0 de 0».
+                informe.coverage.add_pendiente(
+                    preguntas=len(grupo.questions),
+                    clave_utilizable=firma not in dudosos_de_la_clave,
+                    tiene_clave=grupo.key_status is not KeyStatus.NINGUNA,
+                )
                 continue
             if resultado is None and firma not in sin_materia:
                 # Su apartado propio está vacío y nunca se comprobó: no hay nada que contar.

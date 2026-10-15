@@ -48,6 +48,13 @@ UMBRAL_DUDOSA = 0.15
 #: no un booleano: el alumno tiene que poder entender por que se le avisa.
 MARCA_EN_REVISION = "clave en revisión"
 
+#: Y lo que se le ensena cuando la clave de **su** pregunta se derivo: dos fuentes independientes
+#: dijeron la misma letra (§1 del encargo). Es distinto de «en revision» y por eso es otra marca:
+#: «en revision» es una clave de la que se duda, y esta es una clave que se sostiene en dos apoyos
+#: que no dependen el uno del otro. Va aqui, con la otra marca, porque las dos son **el vocabulario
+#: del alumno sobre la clave**, y tenerlo repartido es como se acaba con dos textos para lo mismo.
+MARCA_DERIVADA = "clave revisada automáticamente"
+
 #: El actor con el que se auditan los cambios de fiabilidad. Uno solo, para que la auditoria diga
 #: siempre quien los hizo: la puerta de datos del final de cada tema.
 ACTOR = "f19:puerta-de-claves"
@@ -395,6 +402,7 @@ class Desplazamiento:
 __all__ = [
     "ACTOR",
     "LETRAS",
+    "MARCA_DERIVADA",
     "MARCA_EN_REVISION",
     "MINIMO_COMPROBADAS",
     "UMBRAL_DUDOSA",

@@ -1,17 +1,14 @@
-"""La forma de lo que crea `0039` y su vuelta atrás, medidas en la base (S28).
+"""Migración 0039: la clave derivada y el motivo por el que una pregunta sigue fuera (F29).
 
-El método del proyecto es «escrito no es hecho; ejecutado es hecho», y una migración que declara
-columnas no está probada hasta que se mira la tabla que dejó. Aquí se comprueba lo que el §8 al §11
-necesita que sea verdad **en el esquema**, y no en un comentario:
+Lo que se prueba, y es todo lo que la migración promete:
 
-1. las seis tablas existen al llegar a la cabeza;
-2. las restricciones que hacen imposible guardar lo que no se puede guardar **rechazan de verdad**
-   (`password_algo` que no sea argon2id, un suceso de analítica con un tipo inventado, un fin de
-   consentimiento que no sea 0 o 1, un bloqueo que empieza antes de su ventana);
-3. la clave única de la dirección normalizada impide dos cuentas con el mismo correo;
-4. la vuelta atrás **se lleva las seis tablas**;
-5. y —lo que sostiene el inventario de datos del §9— **no hay ninguna columna de dirección de red ni
-   de navegador** en ninguna de las seis.
+- las dos tablas entran **vacías**, así que ninguna fila existente cambia de significado;
+- el **vocabulario está cerrado** donde se puede cerrar: una clave derivada **no** se puede guardar
+  como `active` (el `CHECK` solo admite `derived`) y el motivo de fuera solo admite los tres del
+  encargo;
+- las dos fuentes tienen que **coincidir en la propia fila**: una fila con dos letras distintas no
+  entra, y eso es la definición de la clave derivada impuesta donde no se puede saltar;
+- la **vuelta atrás** se lleva las dos tablas y su índice, y volver a subir las devuelve.
 """
 
 from __future__ import annotations
@@ -25,30 +22,28 @@ from sqlalchemy.exc import IntegrityError
 from alembic import command
 from opofuente.config import Settings
 from opofuente.infrastructure.db import build_engine
-from opofuente.infrastructure.migrations import alembic_config, run_migrations, script_head
+from opofuente.infrastructure.migrations import alembic_config, run_migrations
 
-TABLAS: tuple[str, ...] = (
-    "accounts",
-    "account_sessions",
-    "password_resets",
-    "login_throttles",
-    "consent_records",
-    "analytics_events",
+DESDE = "0038_revision_de_apuntes"
+
+#: La fila mínima de una clave derivada. Se apagan las claves foráneas: aquí no hay pregunta de
+#: verdad (haría falta un conjunto, una oposición y un ancla), y lo que se prueba son los `CHECK` de
+#: la tabla, que es lo que la migración añade.
+_INSERT_CLAVE = (
+    "INSERT INTO question_derived_keys "
+    "(question_version_id, question_set_id, correct_option_keys_json, key_state, notes_letter, "
+    "notes_quote, notes_anchor_id, notes_key_status, model_letter, model_name, model_version, "
+    "prompt_version, actor, created_at) "
+    "VALUES (:id, 'set-1', '[\"b\"]', :estado, :letra_apuntes, 'La cita que la sostiene', "
+    "'ancla-1', 'active', :letra_modelo, 'deepseek-flash', 'flash', 'clave-derivada-1', 'prueba', "
+    "'2026-10-15')"
 )
 
-#: Fragmentos que **no** pueden aparecer en el nombre de ninguna columna de estas tablas. Es la
-#: mitad del §9 que casi nunca se escribe: lo que **no** se recoge, comprobado contra el esquema.
-PROHIBIDOS: tuple[str, ...] = (
-    "ip",
-    "remote_addr",
-    "client_address",
-    "user_agent",
-    "browser",
-    "platform",
-    "visitor_id",
-    "third_party",
-    "ga_id",
-    "cookie_id",
+#: Y la del motivo de fuera.
+_INSERT_MOTIVO = (
+    "INSERT INTO question_key_gaps "
+    "(question_version_id, question_set_id, reason, actor, created_at) "
+    "VALUES (:id, 'set-1', :motivo, 'prueba', '2026-10-15')"
 )
 
 
@@ -56,20 +51,25 @@ def _settings(tmp_path: Path) -> Settings:
     return Settings(data_dir=tmp_path / "datos", _env_file=None)
 
 
-def _columnas(settings: Settings, tabla: str) -> list[str]:
+def _ejecutar(settings: Settings, sentencia: str, parametros: dict[str, object]) -> None:
     engine = build_engine(settings.data_paths.database)
     try:
-        with engine.connect() as conexion:
-            return [str(fila[1]) for fila in conexion.execute(text(f"PRAGMA table_info({tabla})"))]
+        with engine.begin() as conexion:
+            conexion.execute(text("PRAGMA foreign_keys=OFF"))
+            conexion.execute(text(sentencia), parametros)
     finally:
         engine.dispose()
 
 
-def _ejecutar(settings: Settings, sentencia: str) -> None:
+def _rechaza(settings: Settings, sentencia: str, parametros: dict[str, object]) -> str:
+    """Ejecuta una fila que **tiene** que ser rechazada y devuelve el mensaje del fallo."""
     engine = build_engine(settings.data_paths.database)
     try:
         with engine.begin() as conexion:
-            conexion.execute(text(sentencia))
+            conexion.execute(text("PRAGMA foreign_keys=OFF"))
+            with pytest.raises(IntegrityError) as fallo:
+                conexion.execute(text(sentencia), parametros)
+            return str(fallo.value)
     finally:
         engine.dispose()
 
@@ -82,111 +82,114 @@ def _tablas(settings: Settings) -> set[str]:
                 str(fila[0])
                 for fila in conexion.execute(
                     text("SELECT name FROM sqlite_master WHERE type = 'table'")
-                )
+                ).all()
             }
     finally:
         engine.dispose()
 
 
-@pytest.fixture
-def migrada(tmp_path: Path) -> Settings:
+def _indices(settings: Settings, tabla: str) -> set[str]:
+    engine = build_engine(settings.data_paths.database)
+    try:
+        with engine.connect() as conexion:
+            return {
+                str(fila[1])
+                for fila in conexion.execute(text(f"PRAGMA index_list('{tabla}')")).all()
+            }
+    finally:
+        engine.dispose()
+
+
+def _parametros(**campos: object) -> dict[str, object]:
+    """Los valores de la fila de prueba: por defecto, una clave derivada que **sí** es válida."""
+    return {
+        "id": campos.get("identificador", "q-1"),
+        "estado": campos.get("estado", "derived"),
+        "letra_apuntes": campos.get("letra_apuntes", "b"),
+        "letra_modelo": campos.get("letra_modelo", "b"),
+    }
+
+
+def test_la_clave_derivada_no_se_puede_guardar_como_active(tmp_path: Path) -> None:
+    """`derived` es el único estado que cabe: guardarla como `active` falla en la base."""
     settings = _settings(tmp_path)
     run_migrations(settings, revision="head")
-    return settings
+    _ejecutar(settings, _INSERT_CLAVE, _parametros(identificador="q-bien"))
+
+    mensaje = _rechaza(settings, _INSERT_CLAVE, _parametros(identificador="q-mal", estado="active"))
+
+    assert "ck_derived_key_state" in mensaje, mensaje
 
 
-def test_la_cabeza_es_la_migracion_de_la_plataforma(migrada: Settings) -> None:
-    assert script_head(migrada) == "0039_cuentas_y_consentimiento"
+def test_las_dos_fuentes_tienen_que_decir_la_misma_letra(tmp_path: Path) -> None:
+    """La coincidencia no es una regla del código: una fila con dos letras distintas no entra."""
+    settings = _settings(tmp_path)
+    run_migrations(settings, revision="head")
 
-
-def test_las_seis_tablas_estan_y_no_tienen_donde_guardar_una_persona(migrada: Settings) -> None:
-    """Lo que el inventario del §9 declara: estas columnas existen, y estas otras no."""
-    presentes = _tablas(migrada)
-    for tabla in TABLAS:
-        assert tabla in presentes, tabla
-        columnas = [columna.lower() for columna in _columnas(migrada, tabla)]
-        assert columnas, f"{tabla} no tiene columnas"
-        for prohibido in PROHIBIDOS:
-            for columna in columnas:
-                assert prohibido not in columna, f"{tabla}.{columna} no debería existir"
-
-    # Y la contraseña se guarda en un resumen, con su algoritmo declarado al lado.
-    columnas_cuenta = _columnas(migrada, "accounts")
-    assert "password_hash" in columnas_cuenta
-    assert "password_algo" in columnas_cuenta
-    assert "password" not in columnas_cuenta, "no puede haber una columna de contraseña en claro"
-
-
-def test_el_algoritmo_de_la_contrasena_esta_acotado(migrada: Settings) -> None:
-    """Un algoritmo que no sea argon2id no entra: lo impide la base, no solo el código."""
-    with pytest.raises(IntegrityError):
-        _ejecutar(
-            migrada,
-            "INSERT INTO accounts (id, email, email_normalized, password_hash, password_algo, "
-            "owner_id, created_at, updated_at, password_changed_at) VALUES "
-            "('a', 'a@b.es', 'a@b.es', 'x', 'sha256', 'acct:x', '2026-10-15', '2026-10-15', "
-            "'2026-10-15')",
-        )
-
-
-def test_no_hay_dos_cuentas_con_la_misma_direccion(migrada: Settings) -> None:
-    sentencia = (
-        "INSERT INTO accounts (id, email, email_normalized, password_hash, password_algo, "
-        "owner_id, created_at, updated_at, password_changed_at) VALUES "
-        "('{id}', '{email}', 'ana@ejemplo.es', 'x', 'argon2id', 'acct:{id}', '2026-10-15', "
-        "'2026-10-15', '2026-10-15')"
+    mensaje = _rechaza(
+        settings,
+        _INSERT_CLAVE,
+        _parametros(identificador="q-discorde", letra_modelo="c"),
     )
-    _ejecutar(migrada, sentencia.format(id="cuenta-1", email="ana@ejemplo.es"))
-    with pytest.raises(IntegrityError):
-        _ejecutar(migrada, sentencia.format(id="cuenta-2", email="ana@ejemplo.es"))
+
+    assert "ck_derived_key_fuentes" in mensaje, mensaje
 
 
-def test_los_contadores_solo_admiten_su_vocabulario(migrada: Settings) -> None:
-    """Un suceso de analítica con un tipo inventado no se guarda: el vocabulario es cerrado."""
+def test_el_motivo_de_fuera_solo_admite_los_tres_del_encargo(tmp_path: Path) -> None:
+    settings = _settings(tmp_path)
+    run_migrations(settings, revision="head")
+
+    for motivo in ("sin_material", "sin_cita", "sin_coincidencia"):
+        _ejecutar(settings, _INSERT_MOTIVO, {"id": f"q-{motivo}", "motivo": motivo})
+
+    mensaje = _rechaza(settings, _INSERT_MOTIVO, {"id": "q-malo", "motivo": "porque_si"})
+
+    assert "ck_key_gap_reason" in mensaje, mensaje
+
+
+def test_las_dos_tablas_nacen_vacias_y_la_clave_activa_no_se_toca(tmp_path: Path) -> None:
+    """Migrar **no** deriva nada: añade dos tablas vacías y no toca ni una clave existente."""
+    settings = _settings(tmp_path)
+    run_migrations(settings, revision=DESDE)
     _ejecutar(
-        migrada,
-        "INSERT INTO analytics_events (id, occurred_on, name, label, recorded_at) VALUES "
-        "('e1', '2026-10-15', 'page_view', 'inicio', '2026-10-15')",
+        settings,
+        "INSERT INTO question_sets (id, title, opposition_id, set_type, status, distribution, "
+        "origin_scope, key_reliability, created_at, updated_at) VALUES ('set-1', 'Banco', 'op-1', "
+        "'private_bank', 'draft', 'personal', 'desconocida', 'no_fiable', '2026-10-15', "
+        "'2026-10-15')",
+        {},
     )
-    with pytest.raises(IntegrityError):
-        _ejecutar(
-            migrada,
-            "INSERT INTO analytics_events (id, occurred_on, name, label, recorded_at) VALUES "
-            "('e2', '2026-10-15', 'click', 'inicio', '2026-10-15')",
-        )
+
+    run_migrations(settings, revision="head")
+
+    engine = build_engine(settings.data_paths.database)
+    try:
+        with engine.connect() as conexion:
+            derivadas = conexion.execute(
+                text("SELECT count(*) FROM question_derived_keys")
+            ).scalar()
+            motivos = conexion.execute(text("SELECT count(*) FROM question_key_gaps")).scalar()
+            veredicto = conexion.execute(
+                text("SELECT key_reliability FROM question_sets WHERE id = 'set-1'")
+            ).scalar()
+    finally:
+        engine.dispose()
+    assert derivadas == 0, "la tabla nace vacía: la migración no deriva nada"
+    assert motivos == 0
+    assert veredicto == "no_fiable", "el veredicto del conjunto se queda como estaba"
 
 
-def test_el_consentimiento_solo_admite_dos_valores(migrada: Settings) -> None:
-    with pytest.raises(IntegrityError):
-        _ejecutar(
-            migrada,
-            "INSERT INTO consent_records (id, decided_at, policy_version, analytics, preferences) "
-            "VALUES ('c1', '2026-10-15', 1, 2, 0)",
-        )
-
-
-def test_un_bloqueo_no_puede_empezar_antes_de_su_ventana(migrada: Settings) -> None:
-    with pytest.raises(IntegrityError):
-        _ejecutar(
-            migrada,
-            "INSERT INTO login_throttles (key_hash, failures, window_started_at, locked_until) "
-            "VALUES ('k', 5, '2026-10-15 12:00:00', '2026-10-15 11:00:00')",
-        )
-
-
-def test_la_vuelta_atras_se_lleva_las_seis_tablas(tmp_path: Path) -> None:
+def test_la_vuelta_atras_se_lleva_las_dos_tablas_y_volver_a_subir_las_devuelve(
+    tmp_path: Path,
+) -> None:
     settings = _settings(tmp_path)
     run_migrations(settings, revision="head")
-    assert set(TABLAS) <= _tablas(settings)
+    assert {"question_derived_keys", "question_key_gaps"} <= _tablas(settings)
+    assert "ix_derived_keys_set" in _indices(settings, "question_derived_keys")
 
-    command.downgrade(alembic_config(settings), "0038_revision_de_apuntes")
+    command.downgrade(alembic_config(settings), DESDE)
+    assert not ({"question_derived_keys", "question_key_gaps"} & _tablas(settings))
 
-    presentes = _tablas(settings)
-    for tabla in TABLAS:
-        assert tabla not in presentes, f"{tabla} sigue ahí tras bajar a 0038"
-
-    # Y volver a subir las recrea: bajar no deja el esquema en un estado del que no se pueda salir.
-    run_migrations(settings, revision="head")
-    presentes = _tablas(settings)
-    for tabla in TABLAS:
-        assert tabla in presentes, f"{tabla} no se ha recreado al volver a subir"
+    command.upgrade(alembic_config(settings), "head")
+    assert {"question_derived_keys", "question_key_gaps"} <= _tablas(settings)
+    assert "ix_key_gaps_set" in _indices(settings, "question_key_gaps")

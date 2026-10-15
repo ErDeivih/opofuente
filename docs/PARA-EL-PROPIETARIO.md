@@ -3,6 +3,32 @@
 Lo que conviene que sepas y **no** hace falta que contestes para que el trabajo siga. Lo que sí
 necesita tu criterio está marcado como **«Decide tú»**.
 
+## 15 oct 2026 — El material de la Bandeja ya se puede pasar a la Biblioteca
+
+**Lo que cambia para ti:** hasta hoy, para que algo llegara a la **Biblioteca** había que llamar a la
+API a mano. La pantalla de la Bandeja copiaba el material y le sacaba el texto, y la Biblioteca seguía
+**vacía**. Ahora, cuando una importación termina, la Bandeja te enseña el paso que faltaba
+—**«Pasar a la biblioteca»**—: marcas lo que sí es un documento, pulsas, y entra.
+
+**Y entra sin aceptar nada**, que es lo importante: lo que pasa a la Biblioteca son versiones
+**candidatas** —se ven, se citan, se les pueden colgar derechos— pero **no cuentan para estudiar**
+hasta que las aceptas, una a una, en la Biblioteca. La pantalla lo dice con esas palabras.
+
+Tres cosas que conviene que sepas:
+
+- **Vienen marcadas las que tienen texto** (lo que se puede leer y citar); un escaneo no viene marcado,
+  pero lo puedes marcar tú. Y si el lote es **grande** —más de 25 artefactos— **no viene marcado nada**
+  y la pantalla dice por qué: en tu lote de TAI hay **1.191 artefactos y 1.090 con texto**, y un clic
+  habría creado 1.090 versiones que después habría que aceptar una a una.
+- **Repetirlo no duplica**: si pasas dos veces el mismo fichero, la segunda dice «ya estaba».
+- **El cuello de botella se mueve, no desaparece.** Con un lote así, aceptar sigue siendo un clic por
+  versión. **Decide tú** si merece la pena cambiar eso —agrupar el material en documentos de verdad (un
+  temario, unos apuntes) y aceptar decenas en vez de miles—, porque hoy la aplicación no lo hace sola y
+  no es una decisión que deba tomar yo.
+
+*(Este paso venía de una entrega del 29 de septiembre que se quedó sin fusionar. No se ha metido a
+ciegas: se ha pasado por las 18 puertas sobre el código de hoy, en verde.)*
+
 ## 13 oct 2026 — Ya puedes hacerte un test a tu medida (la zona del alumno queda cerrada)
 
 **Lo que cambia para ti:** la pantalla **Tests** ya existe. Era la última del menú del alumno que
@@ -1072,3 +1098,100 @@ pie, y los textos legales también.
 ## 6. Lo que cuesta
 
 **0 $.** Este bloque no llama a ningún modelo: lo que ha costado es tiempo y memoria de las puertas.
+
+## 15-oct-2026 · Las primeras preguntas que vuelven al estudio (F29)
+
+Lo que hay que saber, sin jerga:
+
+1. **59 preguntas vuelven a poder practicarse.** Son preguntas de conjuntos que estaban en cuarentena
+   —su clave estaba mal extraída del material— y a las que se les ha **reconstruido la respuesta con
+   dos fuentes que no dependen la una de la otra**: la frase de tus apuntes que la sostiene y lo que
+   contesta el modelo cuando se le pregunta **solo** el enunciado y las opciones, sin apuntes. Cuando
+   las dos coinciden, la letra se guarda como **derivada** (no como la clave del conjunto) y tú la ves
+   en el test con la marca **«clave revisada automáticamente»**.
+2. **48 de esas 59 se pueden ya practicar en un test por tema**; las otras 11 no están situadas en
+   ningún tema (el índice no las reconoce), así que vuelven por la práctica de un conjunto o por el
+   repaso.
+3. **Ningún conjunto vuelve entero a los tests**, y no es un fallo: el listón es que el 90 % de sus
+   preguntas tengan clave fiable y **el mejor está en el 35,7 %**. Por eso no he devuelto ningún
+   conjunto: lo que vuelve es cada pregunta que se ha podido reconstruir.
+4. **Lo que sigue fuera son 936 preguntas, y ahora se sabe por qué**: 628 porque tus apuntes no
+   contestan a esa pregunta (falta material), 293 porque dan una letra **sin la frase que la
+   sostenga** (una letra sin cita no es una fuente) y **15 porque los apuntes y el modelo no dicen lo
+   mismo**. Esas **15 son tuyas**: son las que la bandeja tendrá que enseñarte agrupadas por conjunto
+   (§2 del encargo, que hace otro bloque; el dato y el motivo ya están guardados).
+5. **Las claves oficiales no se han tocado.** 5 conjuntos de la AGE con su respuesta publicada se han
+   **rechazado** (122 preguntas) y el rechazo queda escrito con su motivo. No se deriva ni se cambia
+   una clave oficial, y la ruta **se niega** a intentarlo.
+6. **Lo que ha costado**: **4,8 céntimos** (0,0478 $) en 13 llamadas al modelo. La previsión que hice
+   **antes de pagar** decía 0,3 céntimos y se quedó corta porque el modelo devuelve mucho más texto
+   del que se lee; la he corregido con lo medido para que la próxima no engañe. El acumulado del
+   objetivo sigue muy por debajo de los 40 $.
+7. **Antes de escribir hice copia verificada** de tu base (811 MB, comprobada entera: integridad,
+   claves foráneas y CRC). La base ha subido a la revisión `0039` y, de paso, a la `0038` que ya estaba
+   en `main` y tu base no tenía (la tabla de tu revisión de apuntes del panel).
+8. **Ojo con las cifras y con el orden**: mientras yo trabajaba, el bloque de contenido cerró el tema
+   I.4 y su puerta de claves **sacó 6 conjuntos de la cuarentena** (de 21 a 15). Mis números son los
+   del final, medidos después de su corrida, no los del principio.
+
+9. **Una clave derivada se sostiene en su cita, y con la cita se va.** Si un tema se vuelve a
+   escribir, sus apartados se rehacen y la frase que sostenía una letra puede desaparecer: esa
+   pregunta vuelve a quedarse fuera hasta que se derive otra vez. Ha pasado ya: la corrida dejó
+   **59** preguntas dentro a las 13:12 y a las 14:25 el bloque de contenido rehízo apartados de
+   baquedano, con lo que **6 de esas 59** (todas de baquedano) se han quedado sin su cita y han
+   vuelto a la cuarentena. **Quedan 53.** Volver a derivarlas cuesta céntimos (≈0,0006 $ por
+   pregunta): lo suyo es correr `--derivar` al cerrar cada tema, y eso lo decides tú.
+
+---
+
+## 15-oct-2026 · El medidor contaba «0 de 0» en los temas a medio comprobar, y eso ya no pasa
+
+### Qué pasaba
+
+Cuando un tema tiene apartados escritos pero **no** tiene guardada la comprobación de todas sus
+preguntas, el medidor **no contaba esas preguntas de ninguna manera**: ni como cubiertas ni como
+pendientes. Se caían de la cuenta por los dos lados. El efecto era que la cifra de ese tema se calculaba
+sobre un conjunto pequeño —las pocas que sí estaban comprobadas— y salía **más alta de lo que es**, y en
+el caso extremo (apartados escritos y ninguna comprobación guardada) el tema medía «**0 de 0**»: una
+casilla vacía que no dice ni si está bien ni cuánto le falta.
+
+### Qué se ha cambiado
+
+Esas preguntas ahora cuentan como **pendientes de comprobar**: **no** suman cobertura —sería mentirte— y
+**sí** se quedan dentro del denominador, porque son trabajo que queda por hacer. El informe de cada tema
+lo dice con su número («N grupos pendientes de comprobar»).
+
+### A quién le cambia la cifra (y a quién no)
+
+- **I.8** (en borrador): pasa de **261/320 = 81,6 %** a **261/488 = 53,5 %**. No es que el tema haya
+  empeorado: es que antes se medía sobre 320 preguntas y tiene 488. Le faltan **150 grupos por
+  comprobar** (201 preguntas), y eso es exactamente lo que la cifra vieja escondía.
+- **I.4** (publicado): gana **1 grupo pendiente** que **no** entra en el número que decide, así que su
+  **89,1 % no se mueve**; solo cambia su segunda cifra (87,2 % → 87,0 %).
+- **Los otros 31 temas dan exactamente la misma cifra que ayer**, con decimal incluido.
+- **Ninguno cambia de veredicto y no se retira ninguno.** I.3 (84,0 %) e I.4 (89,1 %) siguen
+  **publicados con su cifra a la vista**, como se decidió: **lo que ha cambiado es la medición, no el
+  material** — lo que tú lees está igual que ayer.
+- **I.9, III.2, III.6 y IV.3** siguen sin línea de puerta, y es correcto: **no tienen ningún apartado
+  escrito**. No es el caso de arriba: en ellos no hay nada que esté a medias.
+
+### Una cosa que te debo decir sobre las cifras
+
+Mientras medía, **tu base estaba cambiando** (otro bloque estaba guardando comprobaciones), y dos
+medidas seguidas del mismo programa daban cifras distintas para el mismo tema: I.8 salió **81,6 %** en
+una y **80,9 %** en la siguiente, con el denominador cambiado solo (de 320 a 367) **sin que nadie
+tocara los apuntes**. Por eso la tabla de este bloque se mide sobre una **copia congelada** de tu base:
+así la comparación de antes y después es de verdad del cambio que he hecho yo y no de lo que estaba
+haciendo otro a la vez.
+
+**Y una buena noticia de ese lío**: con el arreglo, el denominador de un tema **ya no cambia cuando otro
+bloque guarda comprobaciones**. En I.8, entre las dos copias, el denominador se queda **clavado en 488**
+y lo único que sube es lo cubierto (261 → 297), que es lo que tiene que pasar cuando se avanza. La cifra
+de un tema a medio comprobar ya no baila sola.
+
+### Lo que no cambia
+
+- **Tus datos no se han tocado**: todo es lectura, y esta vez ni siquiera sobre tu base viva sino sobre
+  una copia. Coste: **0 $**.
+- **El listón sigue en el 90 %** y **nada se ha publicado ni retirado** en esta tanda.
+- **La zona del alumno no cambia**: lee lo mismo.

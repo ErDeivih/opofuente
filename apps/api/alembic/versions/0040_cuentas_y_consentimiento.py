@@ -1,7 +1,7 @@
 """Cuentas, sesiones, recuperación, freno de intentos, consentimiento y contadores (S28).
 
-Revision ID: 0039_cuentas_y_consentimiento
-Revises: 0038_revision_de_apuntes
+Revision ID: 0040_cuentas_y_consentimiento
+Revises: 0039_claves_derivadas
 Create Date: 2026-10-15
 
 **Para qué sirve.** El §8 del objetivo vivo pide cuentas con sesión propia y rutas auditadas, el §9
@@ -45,8 +45,8 @@ import sqlalchemy as sa
 
 from alembic import op
 
-revision = "0039_cuentas_y_consentimiento"
-down_revision = "0038_revision_de_apuntes"
+revision = "0040_cuentas_y_consentimiento"
+down_revision = "0039_claves_derivadas"
 branch_labels = None
 depends_on = None
 

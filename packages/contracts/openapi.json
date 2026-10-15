@@ -15850,6 +15850,12 @@
               }
             ]
           },
+          "derived_key": {
+            "default": false,
+            "description": "La clave de esta pregunta es derivada: los apuntes (con su cita verificada) y el modelo preguntado sin apuntes dicen la misma letra. Se enseña como «clave revisada automáticamente».",
+            "title": "Derived Key",
+            "type": "boolean"
+          },
           "in_review": {
             "default": false,
             "description": "La clave de esta pregunta está en revisión: su conjunto discrepa de los apuntes entre el 15 % y el 30 % de las preguntas medidas.",
@@ -15966,6 +15972,12 @@
             },
             "title": "Correct",
             "type": "array"
+          },
+          "derived_key": {
+            "default": false,
+            "description": "La clave de esta pregunta es derivada (los apuntes, con su cita verificada, y el modelo sin apuntes dicen la misma letra): se enseña como «clave revisada automáticamente».",
+            "title": "Derived Key",
+            "type": "boolean"
           },
           "elapsed_ms": {
             "anyOf": [
@@ -16190,6 +16202,13 @@
                 "type": "null"
               }
             ]
+          },
+          "questions_derived": {
+            "default": 0,
+            "description": "Cuántas preguntas del test llevan la marca «clave revisada automáticamente»: su clave es derivada y no sale de la plantilla del conjunto.",
+            "minimum": 0.0,
+            "title": "Questions Derived",
+            "type": "integer"
           },
           "questions_in_review": {
             "default": 0,

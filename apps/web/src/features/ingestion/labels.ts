@@ -37,6 +37,11 @@ export const BATCH_KIND_LABEL: Record<string, string> = {
   paste: 'texto pegado',
   url: 'descarga de una URL',
   upload: 'ficheros subidos',
+  //: Los lotes de la bandeja tienen dos clases más, y faltaban: sin ellas la pantalla enseñaba el
+  //: valor crudo del enum («import · …/OpoFuente/TAI»), que es justo lo que esta tabla existe para
+  //: evitar. Son los dos lotes que se ven siempre: el inventario en lectura y su importación.
+  inventory: 'inventario (solo lectura)',
+  import: 'importación',
 };
 
 export const SEVERITY_TONE: Record<string, StatusTone> = {

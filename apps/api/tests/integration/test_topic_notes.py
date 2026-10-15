@@ -27,6 +27,7 @@ from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import delete
 
 from opofuente.application.topic_notes_models import TopicNotesReport
 from opofuente.application.topic_notes_service import TopicNotesService
@@ -57,6 +58,7 @@ from opofuente.domain.topic_notes import (
     RedaccionBatch,
 )
 from opofuente.infrastructure.clock import SystemClock
+from opofuente.infrastructure.db_models import QuestionNoteAnchorRecord
 from opofuente.infrastructure.dossier_repository import SqlAlchemyDossierRepository
 from opofuente.infrastructure.run_lock import (
     CLAVE_APUNTES,
@@ -1264,6 +1266,65 @@ def _tema_con_una_pregunta_que_no_cabe(
     assert indice is not None
     assert len(indice.grupos_sin_materia) == 1
     return informe, repositorio, node_id, indice.grupos_sin_materia[0].signature
+
+
+def test_un_tema_con_apartados_y_sin_comprobaciones_no_mide_cero_de_cero(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """El «0 de 0» del §4: un grupo con apartado propio y **sin comprobación guardada** no se cae.
+
+    Es el estado que deja una corrida **parada por su tope de tiempo** entre la redacción y la
+    comprobación: los apartados están escritos, con su texto y con los hechos de cada pregunta
+    sentados en el suyo, y no hay ninguna comprobación guardada. Medido así, el medidor viejo no
+    contaba **nada**: el grupo no entraba ni en el numerador ni en el denominador, así que el
+    denominador se quedaba vacío y el tema salía con «0 de 0» —una cifra que no dice ni si está bien
+    ni cuánto le falta—. En la base real es el caso de I.8, que con 409 grupos sólo tiene 67
+    comprobados.
+
+    La regla del §4 es que ese grupo es **pendiente de comprobar**: entra en el denominador y no en
+    el numerador, así que el tema mide **0 de las que le faltan por comprobar** y el trabajo que
+    queda se ve. Se mide sobre lo guardado (`medir`), que es como se mide un tema de verdad.
+
+    El estado se reproduce quitando las comprobaciones guardadas (la fila de
+    `question_note_anchors`, la misma que borra la ruta auditada de «olvidar apartados»): no hay
+    ruta de producto que escriba apartados con texto y deje cero comprobaciones, porque eso es
+    justo lo que pasa cuando la corrida se corta.
+    """
+    repositorio, _preguntas_del_tema, node_id = _escenario(seeded_client, titulo="El 0 de 0")
+    _servicio(seeded_client, _ModeloFalso()).run("IV.7", now=SystemClock().now())
+    assert len(repositorio.checks(node_id)) == 2, "la corrida entera sí comprueba las dos"
+    assert all(apartado.body_markdown.strip() for apartado in repositorio.sections(node_id))
+
+    with seeded_client.app.state.session_factory() as session:
+        session.execute(
+            delete(QuestionNoteAnchorRecord).where(
+                QuestionNoteAnchorRecord.curriculum_node_id == node_id
+            )
+        )
+        session.commit()
+    assert repositorio.checks(node_id) == (), "apartados escritos y ninguna comprobación guardada"
+
+    informe = _servicio(seeded_client, _ModeloFalso()).medir("IV.7")
+
+    assert informe.coverage.groups == 2, "los dos apartados siguen escritos"
+    assert informe.coverage.covered == 0
+    # El orden importa: primero el defecto **medido** —el denominador vacío— y después la cuenta
+    # nueva que lo arregla. Así el rojo de antes del arreglo es el «0 de 0» y no un atributo que
+    # todavía no existe.
+    assert informe.coverage.preguntas_con_clave_utilizable == 2, (
+        "las pendientes entran en el denominador que decide: antes se caían y quedaba en cero"
+    )
+    assert informe.coverage.preguntas_con_clave == 2
+    assert informe.coverage.preguntas_cubiertas_con_clave_utilizable == 0
+    assert not informe.coverage.pasa_cobertura
+
+    lineas = "\n".join(informe.lines())
+    assert "0/2 = 0.0 %" in lineas, "se mide 0 de 2, no 0 de 0"
+    assert "0 de 0" not in lineas
+
+    assert informe.coverage.pendientes == 2, "los dos grupos son trabajo pendiente, y se cuentan"
+    assert informe.coverage.preguntas_pendientes == 2
+    assert "pendientes de comprobar" in lineas
 
 
 def test_una_comprobacion_anclada_en_un_apartado_ajeno_no_cuenta_como_cobertura(

@@ -3205,3 +3205,561 @@ Las tres pruebas de integración del bloque, ejecutadas contra el árbol **sin**
 
 **0 $**: este bloque no llama a ningún modelo. Su coste es de memoria y de tiempo de puertas, no de API.
 
+
+
+---
+## D11 · La entrega antigua `s14-promover-sin-guardar`, medida y fusionada (15-oct-2026)
+
+El goal (D11) pide **una** cosa con esta rama: pasarla por las puertas **una vez**; si da 18/18,
+fusionarla; si no, anotarla en `DEBT.md` y no volver a ella. **Dio 18/18 y entró.**
+
+La rama es del **29 de septiembre** (`8f3718d`, «S14 sin guardar: promover de la Bandeja a la
+Biblioteca») y se rescató del árbol de trabajo. Aporta **9 ficheros y 1.472 líneas, ninguna borrada**:
+`apps/web/src/api/library.ts` (+40), `apps/web/src/api/queries.ts` (+69),
+`apps/web/src/features/ingestion/PromotePanel.tsx` (+344),
+`apps/web/src/features/ingestion/labels.ts` (+5), `apps/web/src/pages/TrayPage.tsx` (+11),
+`apps/web/tests/e2e/promote.spec.ts` (+169), `apps/web/tests/unit/promote.test.tsx` (+363),
+`docs/slices/S14.md` (+114) y `docs/TRASPASO-DE-MATERIAL-A-CLAUDE.md` (+357). De los nueve, **cinco ya
+existían sin rastrear en `main`** (copias byte-idénticas, comprobadas con `git hash-object`), que es lo
+que hizo fallar la primera fusión: se registraron en `1aa0f87` sin cambiar un byte y la fusión entró.
+
+### 1. Qué se midió, y contra qué `main` (que no es el mismo árbol)
+
+- **Lo que se midió:** `4f7a1f0` = `main@4290817` + `s14` — el merge que el encargo pide **antes** de medir.
+- **Lo que entró en `main`:** `c6f9184` = `main@195cbb8` + `s14`.
+
+Las dos cosas **no son el mismo árbol y se dice con la cifra**: entre `4290817` (14-oct 17:18) y
+`195cbb8` (15-oct 11:28, **diez minutos antes de que arrancara la batería**) `main` ganó el trabajo del
+bloque de apuntes —**918 líneas**: `application/topic_notes_service.py`, `domain/topic_index.py`, sus
+dos pruebas y 9 líneas de `apps/web/tests/e2e/apuntes-revision.spec.ts`—. Así que:
+
+- **la entrega `s14` está medida** (sus 9 ficheros son byte-idénticos en los dos árboles);
+- **la composición `195cbb8 + s14` no la midió esta batería**, la midió el bloque de apuntes en su rama;
+- poner «18/18» a secas sobre `c6f9184` sería **heredar** la cifra, que es lo que prohíbe el §1.4.
+
+Queda ofrecida la re-medición sobre `c6f9184` (una pasada, ~54 min con la máquina cargada) para poder
+anotar la cifra a nombre de ese commit.
+
+### 2. La fusión: limpia, y contada en cuatro niveles
+
+`git merge --no-edit main` desde el árbol `s14` con `main@4290817`: **auto-merge, 0 conflictos, exit 0**,
+`git ls-files -u` **vacío** y ningún fichero tocado a mano. El único fichero con auto-merge real fue
+`apps/web/src/api/queries.ts`, que `main` también había tocado: git **sumó** las dos partes.
+
+La verificación no es «no parece que se perdiera nada». Se extrajeron los cuatro árboles con
+`git archive` y se comprobó, **fichero a fichero**, `Counter(merge) == Counter(main) + Counter(s14) −
+Counter(base)`:
+
+| Qué | main | s14 | base | esperado | medido |
+|---|---|---|---|---|---|
+| ficheros | 836 | 649 | 644 | 841 | **841** |
+| líneas | 323.564 | 241.947 | 240.475 | 325.036 | **325.036** |
+| líneas de contenido | 294.564 | 220.880 | 219.593 | 295.851 | **295.851** |
+| identidad por fichero (843 ficheros × 2 métricas) | | | | 0 | **0 discrepancias** |
+
+Y lo que no se ve en un total: **0 marcadores de conflicto** en los 841 ficheros rastreados, **234 filas
+de decisión** y **18 entradas del propietario** antes y después, con
+`docs/DECISIONES-TOMADAS-EN-EL-OBJETIVO.md` y `docs/PARA-EL-PROPIETARIO.md` **byte-idénticos** (mismo
+SHA-256). Los dos únicos ficheros de `s14` ausentes del merge son `HomePage.tsx` y `home.test.tsx`, que
+**`main` había borrado a propósito**: la identidad cuadra igual (0 + 132 − 132 = 0).
+
+### 3. Las 18 puertas: 18/18, una pasada, sin códigos nativos
+
+Registro: **`F:\temp-opofuente\gates-s14.txt`** (y `gates-s14.err.txt`, 15.321 bytes **sin un solo
+error**: son los `INFO` de alembic, el aviso de tamaño de trozo de Vite y la salida de `uv build`).
+Lanzadas con `Start-Process -RedirectStandardOutput/-RedirectStandardError`, **sin tuberías**, y con
+**Windows PowerShell 5.1** porque `pwsh` **no está instalado en esta máquina** (no hay ningún `pwsh.exe`
+en disco; `dev.ps1` ya lo dice: «aquí no lo está»). Su `Test-OpoFuenteExitCodeDetection` comprobó
+**antes de la primera puerta** que este intérprete ve los códigos de salida.
+
+- **Una sola pasada**, **código de salida 0**, **54:00 minutos** (el reloj de fuera mide 54:01).
+- **Ninguna puerta cayó con código nativo y por tanto ninguna se reintentó.** No hubo ni un rojo: **no
+  hay intentos que contar**.
+- Lo que midió cada suite, **literal del registro**: unitarias backend **853**, integración **724**
+  (**45:11** — es la puerta que se come el tiempo: con la máquina cargada, más del doble de lo normal),
+  contrato **29**, componentes **389** (43 ficheros, 61,39 s) y E2E **80** (3,5 min).
+- **Las dos pruebas del entregable pasan y salen nombradas**: `promote.spec.ts` **2/2** en verde
+  (E2E-20, «se pasa a la biblioteca desde la pantalla, y sin aceptar» y «volver a pasar el mismo
+  material no duplica documentos») y `promote.test.tsx` dentro de los 389 de componentes.
+- **La RAM no tumbó nada**: se midió antes (1,4 GB libres y sin tendencia a subir —37 procesos `node`
+  aparcados—), así que no se esperó, y la batería terminó con 4,27 GB libres.
+
+### 4. Las migraciones: la rama no trae ninguna
+
+`s14` aporta **0 ficheros** en `apps/api/alembic/versions/`, así que no hay nada que reencadenar. El
+árbol fusionado tiene **una sola cabeza**: `alembic heads` → **`0038_revision_de_apuntes (head)`**, y
+`alembic branches` **no imprime nada** (ningún punto de rama), con la cadena lineal
+`0034 → 0035 → 0036 → 0037 → 0038`. La trampa existe y ya está resuelta en `main`:
+`0036_claves_no_fiables` resuelve su revisión previa **al importar** (`0035` si está en el directorio,
+`0034` si no), justo para que dos bloques no dejen dos cabezas al fusionar.
+
+### 5. Lo que queda fuera, con el porqué
+
+- **No se corrieron capturas** (`npm run screens` **no** forma parte de las 18). Esta entrega no
+  construye una pantalla nueva: mete una que ya estaba escrita dentro de una pantalla que ya existía, y
+  lo que la respalda son las pruebas de componentes y el E2E, no una captura.
+- **El entregable entra sin retoques**, y dos cosas suyas se dicen para que no sorprendan: el panel
+  enlaza a **`/biblioteca`**, que es una dirección de antes y **redirige** a `/admin/biblioteca` (las
+  direcciones viejas se conservan a propósito en `ROUTE_REDIRECTS`, para no romper marcadores ni las
+  pruebas que entran por URL), y trae un `eslint-disable-next-line react-hooks/exhaustive-deps` **con su
+  motivo escrito**. La puerta 4 (eslint) pasa con él.
+- **`docs/TRASPASO-DE-MATERIAL-A-CLAUDE.md`** (29-sep, 357 líneas) entra en el árbol y convive con los
+  traspasos de octubre (`PARA-CLAUDE-RESUMEN-DE-LAS-RONDAS…`, `RESUMEN-COMPLETO-DE-LAS-RONDAS…`,
+  `OBJETIVO-VIVO-2026-10.md`). Es el más antiguo de los cuatro; se anota, no se borra.
+- **La entrega no está obsoleta, y esto se comprobó antes de fusionar**: `main` **no tenía** la
+  promoción en la interfaz —no hay ningún fichero `promote*` rastreado y **ningún** `POST
+  /api/v1/documents` desde la web; los únicos POST a `/documents/…` son versiones de un documento que ya
+  existe—. El hueco que `s14` tapa seguía abierto.
+- **La limitación que la propia entrega declara** (y que se deja escrita, no arreglada): con un lote
+  grande, aceptar sigue siendo **un clic por versión** en la Biblioteca, porque ADR-009 reserva la
+  aceptación a una persona y una versión. `s14` mueve el cuello de botella, no lo quita; decidir si se
+  acepta en bloque (agrupando por documento) es una decisión de diseño que no toma este bloque.
+
+### 6. La segunda medición, sobre `c6f9184`, y por qué hacía falta
+
+La medición de arriba certificó **`4f7a1f0`**, pero lo que entró en `main` fue **`c6f9184`**, y entre los
+dos `main` había ganado 918 líneas del bloque de apuntes —incluidas **9 líneas de
+`apps/web/tests/e2e/apuntes-revision.spec.ts`**, que es un fichero que **la puerta 18 ejecuta**—. Por eso
+la cifra se volvió a medir **sobre el commit que está en `main`**. Esto es lo que salió.
+
+**El árbol medido es exactamente `c6f9184`**: `HEAD` desacoplado en ese commit, con
+`git status --porcelain` **vacío** antes y después de las dos corridas. `main`, en cambio, se movió **dos
+veces más** mientras se medía (`5a62d0d` → `6b3db4ab` → `cef3308`); eso ya no se pierde, porque **los dos
+registros llevan su procedencia** (ver el punto 4 y **DEBT-030**).
+
+| Tramo | Cuándo | Puertas | Resultado |
+|---|---|---|---|
+| **1** | 12:45:36 → 13:51:11 (65 min) | 1–9 | **1–8 OK** · **9 FALLO (código 1)** · 10–18 no llegaron a correr |
+| *diagnóstico* | 13:52 | — | los **dos ficheros** que cayeron pasan **42/42 en aislamiento**, mismo árbol y mismo juez |
+| **2** | 14:59:24 → 15:06:02 (**06:39**) | 9–18 | **9–18 OK, `exit 0`** · componentes **389/389** · E2E **80/80** |
+
+**Veredicto: `c6f9184` pasa las 18, en dos tramos**, y el único rojo del camino fue un **falso negativo
+por contención**, medido y no supuesto:
+
+- Los dos fallos del tramo 1 son `TestingLibraryElementError: Unable to find role="button"` dentro de dos
+  `waitFor` que esperan un botón que aparece **tras una petición asíncrona** (`promote.test.tsx:150` y
+  `questions.test.tsx:217`): firma de tiempo, no de expectativa.
+- **`questions.test.tsx` no viene de `s14`**: la rama aporta **9 ficheros** (`git diff 4f7a1f0^2
+  4f7a1f0`) y ese no es uno de ellos. Un fallo en un fichero que la rama no toca no puede ser de la rama.
+- Los dos ficheros **pasan 42/42 en aislamiento**, sobre el mismo árbol y con el mismo juez.
+- Y el terreno, con la cifra: en el tramo 1 la puerta 7 tardó **1:00:20** (frente a **45:11** en la primera
+  medición) y Vitest creó jsdom **43 veces con 471 s de tiempo rastreado (53 %)**. Es **DEBT-022**.
+
+**El tramo 2 no repite el tramo 1, y se dice por qué**: el árbol es byte-idéntico (mismo `HEAD`, árbol
+limpio) y las puertas 1–8 ya estaban verdes sobre él, así que solo se re-juzga **lo que quedó sin
+veredicto**. Es el mismo criterio con el que **F24-panel** quedó «18/18 repartidas en tres corridas», con
+el mismo `common.ps1`. Y el tramo 2 se corrió **a propósito con la máquina cargada** (CPU 90–100 %, cuatro
+suites de integración ajenas): que la puerta 9 pase ahí **es un veredicto más fuerte**, no uno más cómodo
+— el riesgo que se corría era un falso **rojo**, que es justo lo que sabemos detectar; un falso verde es
+lo que no estaba en juego y no se ha fabricado.
+
+**Los dos registros, con su procedencia** (lo que **DEBT-030** pedía, y ya está en el acta):
+
+| Fichero | Qué es | Procedencia que lleva dentro |
+|---|---|---|
+| `F:\temp-opofuente\gates-s14.txt` (43.995 B) | tramo 1, salida literal, `exit=1` | `ANTES … main=5a62d0d…` → `DESPUES … main=6b3db4ab…` |
+| `F:\temp-opofuente\gates-s14-tramo2.txt` (38.963 B) | tramo 2, salida literal, `exit=0` | `ANTES … main=cef3308…` → `DESPUES … main=cef3308…` |
+
+*(Sus `.err.txt` van al lado: 30.498 y 15.321 bytes, sin un error real — son los `INFO` de alembic, el
+aviso de tamaño de trozo de Vite y las salidas de `uv build`.)*
+
+**Y el instrumento hizo su trabajo el primer día que se usó**: en el tramo 1, `main` **se movió de verdad
+durante los 65 minutos** (`5a62d0d` → `6b3db4ab`, las 83 líneas de `DECISIONES` del commit `F28b`). Sin
+esa cabecera, hoy habría vuelto a escribirse una cifra contra un commit que no era el medido — que es
+exactamente el agujero que **DEBT-030** describía y que ya está cerrado.
+
+
+## F29 · Devolver al estudio las preguntas en cuarentena: la clave derivada (15-oct-2026)
+
+**Rama `f29-claves-derivadas`** (worktree `F:\temp-opofuente\opofuente-claves2`, desde `main = e03b354`),
+migración **`0039_claves_derivadas`**. Sin fusionar. Cierra el **§1** de
+`SIGUIENTE-TANDA-CIERRE-DEL-OBJETIVO-2026-10.md`, que es el encargo.
+
+**Lo que cambia, en una frase.** Una pregunta de un conjunto en cuarentena vuelve al estudio cuando
+**dos fuentes independientes dicen la misma letra** —los apuntes, con su cita verificada, y el modelo
+preguntado **sin apuntes**— y su clave se guarda como `derived` (**nunca** `active`), con la marca
+«clave revisada automáticamente» en la zona del alumno. Las que no consiguen esa coincidencia siguen
+fuera **con su motivo escrito**.
+
+### 1. La copia verificada (paso 0)
+
+`F:\OpoFuente\datos\backups\20261015-101027-00483c.zip` · **811.170.724 bytes** · SHA-256 del ZIP
+`adc596ef4d916de8841aba97d35792953680b7c599f268a7f8830701a6e9b2bb`. Método del proyecto
+(`BackupService.create` con alcance `database` → ZIP con manifiesto → `verify` → extracción a un
+temporal y `integrity_check`): **verify 2/2 entradas, 0 problemas**, base extraída 2.746.511.360
+bytes, `integrity_check` **ok**, `quick_check` **ok**, `foreign_key_check` **0 filas**, revisión de la
+copia `0037_origin_scope`. No se ha borrado ninguna copia.
+
+### 2. Lo que se ha construido, con su prueba que falla antes
+
+| # | Pieza | Qué hace | Prueba (rojo antes) |
+|---|---|---|---|
+| 1 | `domain/derived_keys.py` | La coincidencia de las dos fuentes, los **tres motivos** de quedarse fuera (en ese orden), la protección de la clave oficial por **tres caminos** y la decisión del 90 %. Puro: se prueba sin base de datos | `tests/unit/test_derived_keys.py` (**20 pruebas**) |
+| 2 | `alembic/versions/0039_claves_derivadas.py` | `question_derived_keys` (una fila por pregunta, con sus dos fuentes y su cita; `CHECK (key_state = 'derived')`) y `question_key_gaps` (por qué sigue fuera). **Vuelta atrás probada** | `tests/integration/test_migrations_0039.py` (**5**) |
+| 3 | `infrastructure/derived_key_repository.py` | La ruta **auditada**: guarda la clave con su evento, los motivos con un evento por conjunto, el rechazo del oficial y la decisión | `tests/integration/test_claves_derivadas.py` (**12**) |
+| 4 | `ports.AnswerKeyModel` + `DeepSeekNotesModel.responder` | La segunda fuente: la pregunta **sola** (enunciado y opciones), `temperature=0`, sin apuntes en el mensaje | lectura pura `read_respuestas_independientes` |
+| 5 | `tools/claves_derivadas.py` | `--listar`, `--prever`, `--derivar` (`--tope-usd`, `--limite`, `--seco`), `--decidir`, `--informe` | — |
+| 6 | `study_service`: `_banco`, `_correccion_de` y los **cinco sitios** que eligen preguntas | La pregunta entra por **su** clave: derivada sí; motivo escrito no (**aunque el conjunto vuelva**); si no, el veredicto del conjunto | `test_la_pregunta_derivada_entra_en_el_test_con_su_letra`, `test_la_pregunta_sin_clave_fiable_sigue_fuera_aunque_el_conjunto_vuelva` |
+| 7 | Zona del alumno: `derived_key` en la API y la marca en el test y en el resultado | El alumno ve **«clave revisada automáticamente»**, distinta de «clave en revisión» (una dice de dónde sale la letra; la otra, que se duda) | `apps/web/tests/unit/marcaClaveDerivada.test.tsx` (2) |
+
+**El rojo, tal cual salió** (`F:\temp-opofuente\f29-scratch\rojo-antes.txt`), revirtiendo **una**
+regla y corriendo **solo** la prueba que la fija:
+
+1. sin mirar la clave derivada en la composición → `UnsupportedError: no hay ninguna pregunta que se
+   pueda poner` (la pregunta vuelve a quedarse fuera, como antes);
+2. guardando la clave derivada como `active` → `sqlite3.IntegrityError: CHECK constraint failed:
+   ck_derived_key_state` (la base la rechaza: «nunca `active`» **no** depende de que alguien se
+   acuerde).
+
+### 3. La copia de la base y la migración
+
+La copia del §1 es de la revisión `0037_origin_scope`. Al empezar la corrida se aplicó la cabeza
+(`0039`) sobre la base real: **sube también la `0038_revision_de_apuntes` de F24**, que ya está en
+`main` y la base real no tenía —sin ella el código de `main` no arranca—. Las dos son aditivas y las
+dos tienen vuelta atrás probada.
+
+### 4. La corrida, con su previsión delante y su tope
+
+`--prever` (0 $, antes de pagar): **10 conjuntos entran, 5 se rechazan por clave oficial** (122
+preguntas de la AGE), **74 preguntas** con letra y cita por preguntar, 8 llamadas,
+**0,0030–0,0033 $**. Tope puesto en **0,50 $ y 200 llamadas**.
+
+Corrida real (`--derivar`):
+
+| | |
+|---|---|
+| llamadas | **13** (0 fallidas) |
+| preguntas preguntadas | **74** |
+| tokens | 16.701 de entrada (1.536 de caché) · **75.510 de salida** |
+| coste medido | **0,0478 $** |
+| coste por pregunta | **0,000646 $** |
+| claves derivadas | **59 (79,7 % de las preguntas preguntadas)** |
+
+**Y una corrección dicha: la previsión se quedó 14,5 veces corta.** Estimaba 12 tokens de salida por
+pregunta (lo que ocupa una letra en JSON) y el modelo devolvió ≈1.020: **la previsión era
+0,0030 $ y costó 0,0478 $**. La constante está corregida con lo medido
+(`TOKENS_DE_SALIDA_POR_PREGUNTA = 1020`) para que la próxima avise de verdad. El tope no se acercó
+ni de lejos y el total es de cinco céntimos, así que la corrida no se paró; con una base 16 veces
+mayor (los 1.283 candidatos posibles de hoy, si todos tuvieran cita) sí habría que decidir si merece
+la pena: costaría ≈0,8 $.
+
+### 5. El antes/después por conjunto, contado en la base y con el motor
+
+«Antes» es **0** por el veredicto `no_fiable` (la cuarentena cortaba el conjunto entero: lo demuestra
+el rojo del §2, no una suposición). «Después» está contado **llamando a `_candidatas`**, que es el
+embudo real de la composición, y sin escribir nada
+(`F:\temp-opofuente\f29-scratch\antes-despues.txt`):
+
+| conjunto | preguntas | devueltas al estudio (test por tema) | derivadas | corroboradas | % con clave fiable | ¿vuelve a tests? |
+|---|---|---|---|---|---|---|
+| TAI · SIMULACROS y TEST | 28 | **9** | 10 | 0 | 35,7 % | no (faltan 16) |
+| TAI · 1600-Preguntas-Constitución | 75 | **3** | 3 | 20 | 30,7 % | no (faltan 45) |
+| TAI · TEST B1 | 75 | **3** | 3 | 20 | 30,7 % | no (faltan 45) |
+| TAI · Supuestos Practicos Bloque IV | 67 | **1** | 1 | 14 | 22,4 % | no (faltan 46) |
+| TAI · Test por temas | 90 | **7** | 8 | 0 | 8,9 % | no (faltan 73) |
+| TAI · Test Aragón 2015 | 102 | **1** | 1 | 8 | 8,8 % | no (faltan 83) |
+| TAI · baquedano | 318 | **19** | 23 | 5 | 8,8 % | no (faltan 259) |
+| TAI · 2019 GSI promoción | 80 | **1** | 1 | 6 | 8,8 % | no (faltan 65) |
+| TAI · TEST VARIOS | 192 | **4** | 9 | 7 | 8,3 % | no (faltan 157) |
+| TAI · C_ejer_1_libre_DZA_2026 | 50 | **0** | 0 | 2 | 4,0 % | no (faltan 43) |
+| **TOTAL** | **1.077** | **48** | **59** | **82** | **13,1 %** | **0 conjuntos** |
+
+**Ningún conjunto alcanza el listón del 90 %** (el mejor mide 35,7 %), así que la decisión de volver
+—tomada y auditada conjunto a conjunto con su cifra— es **que ninguno vuelve entero**. Lo que vuelve
+es cada pregunta con su clave derivada.
+
+**Los dos números de «devueltas» no son el mismo a propósito**: hay **59 claves derivadas** y **48**
+alcanzables por un test por tema; las **11** restantes no están catalogadas en ningún tema (no las
+sitúa el índice), así que vuelven por la **práctica de un conjunto** o el **repaso**, que son los
+otros caminos que eligen preguntas.
+
+### 6. Lo que sigue fuera, y por qué (contado en la base)
+
+De las **1.077** preguntas de los 10 conjuntos procesados: **628 sin material** (los apuntes no las
+contestan), **293 sin cita** (dan una letra pero no la frase que la sostenga) y **15 sin
+coincidencia** (las dos fuentes hablan y no dicen lo mismo: **esas 15 son del propietario**, y son las
+que la bandeja del §2 tiene que enseñar agrupadas por conjunto). Las **82 corroboradas** (los apuntes
+confirman la letra de la plantilla activa) cuentan para el listón pero **no entran hasta que su
+conjunto vuelva**, porque su letra sale de la plantilla que está en cuarentena.
+
+Y **las claves oficiales no se han tocado**: 5 conjuntos de la AGE con su respuesta publicada
+**rechazados** y auditados (`question_set.derived_key_refused`), 122 preguntas.
+
+### 7. Las 18 puertas, y la fusión con `main`
+
+**18/18 en una sola pasada.** El registro literal está en
+`F:\temp-opofuente\gates-f29-claves-derivadas.txt`, lanzado con `Start-Process` y **sin
+tuberías**, con el `gates.ps1` del árbol y su mismo juez. Lo que midió cada suite (literal en el
+registro): unitarias **876**, integración **742** (1:07:39), contrato **29**, componentes **381** (43
+ficheros), E2E **78** (3,9 min), migración desde base vacía, siembra idempotente y fixtures de perfil
+en verde. **Ninguna puerta cayó y no hubo ningún código nativo.** El puerto (8765/4173) estaba libre
+cuando se lanzó la 18, comprobado con `netstat` antes.
+
+**Una prueba se añadió después de que la 7 arrancara** (`test_el_alumno_ve_la_marca_de_la_clave_derivada`,
+la que comprueba `derived_key` por la API del alumno). Se corrió aparte y está verde (**12 pruebas**
+del fichero). Decir que la 7 la midió sería falso; el fichero entero se ha vuelto a correr después.
+
+**La fusión con `main` (`cef3308`, que trae el contenido —III.4 publicado, I.4 republicado, D4—, D11
+y `s14`) se resuelve SUMANDO, y se verifica contando**: los dos únicos conflictos eran
+`DECISIONES-TOMADAS-EN-EL-OBJETIVO.md` y `ESTADO-DEL-OBJETIVO.md` (cada bloque añade lo suyo al
+final). La comprobación es `Counter(fusión) == Counter(main) + Counter(mía) − Counter(base)` línea a
+línea, con `base = e03b354`:
+
+| documento | base | main | mía | fusión | faltan | sobran | marcadores | filas de decisión (base → main → mía → fusión) |
+|---|---|---|---|---|---|---|---|---|
+| `DECISIONES` | 375 | 617 | 383 | **625** | 0 | 0 | **0** | 191 → 201 → 199 → **209** |
+| `ESTADO` | 3.150 | 3.259 | 3.294 | **3.403** | 0 | 0 | **0** | 165 → 165 → 166 → **166** |
+
+Las dos filas cuadran: **209 = 201 + 199 − 191** (mis ocho decisiones entran enteras y ninguna de
+`main` se pierde). Sobre el resultado: **`ruff check .` limpio, `mypy` estricto limpio** (240
+ficheros) y **128 pruebas de integración** de los ficheros que tocan esto y lo que trajo `main`
+(derivadas, cuarentena, apuntes, migraciones, estudio y alumno) **en verde**.
+
+**Aviso de tráfico que queda dicho**: el bloque de la bandeja por conjunto crea
+`0039_bandeja_por_conjunto` colgando de `0038`; como esta rama entra primero con
+`0039_claves_derivadas`, **su `down_revision` tiene que re-apuntar a la mía** (él ya lo sabe). Con las
+dos colgando de `0038` habría dos cabezas y `alembic upgrade head` no sabría por dónde seguir.
+
+**Tres pruebas existentes se tocan, y se dice por qué** (no es relajar el juez):
+
+- `test_migrations_downgrade.py`: la cadena se recorre hacia atrás y **cada migración añade su
+  escalón**; el de `0039` entra con las dos tablas que su vuelta atrás se lleva. Sin él, la prueba
+  afirmaba estar en `0038` cuando la cabeza ya es `0039`.
+- `test_study_session.py` y `test_study_api.py` («sin clave activa no hay sesión»): el camino nuevo
+  permitía montar una sesión de un conjunto **sin plantilla activa y sin ninguna clave derivada**, que
+  no se podría corregir. `_correccion_de` vuelve a negarse con **el mismo** `ClassificationConflictError`
+  que publicaba el contrato; la expectativa **no** se ha tocado.
+
+### 8. Lo que queda fuera de este bloque, y por qué
+
+- **El §2 (la bandeja por conjunto) no se hace aquí**: el encargo pide **dejar el dato y el motivo**, y
+  están (`question_key_gaps`, con su recuento por conjunto y su evento de auditoría).
+- **La interacción con la puerta de datos del §1.4**: si un conjunto llegara al 90 % y volviera a
+  `fiable`, la puerta que se recalcula al cerrar cada tema lo mediría **con las anclas guardadas** —que
+  no cambian con la derivación— y podría devolverlo a cuarentena. Hoy **no le pasa a ninguno** (ninguno
+  llega al 90 %), pero queda dicho.
+- **La previsión de salida estaba mal** (§4) y el cliente del modelo **no lleva `max_tokens`**: el
+  modelo devuelve ~1.020 tokens de salida por pregunta cuando solo se lee una letra. Recortarlo sería
+  un cambio en un camino compartido con los apuntes y no se ha hecho aquí.
+- **Una clave derivada se va con su ancla, y eso se ha visto en vivo.** La fila guarda el **ancla**
+  que la sostiene (la cita verificada) y su clave foránea es `ON DELETE CASCADE`: si el tema se vuelve
+  a correr y el apartado se rehace, el ancla desaparece y **la clave derivada se va con ella** —que es
+  lo correcto: una letra sin la cita que la sostiene no es una clave derivada—. Medido: la corrida
+  escribió **59** claves a las 13:12 (local); a las 14:25 el bloque de contenido corrió **I.8**, se
+  rehicieron apartados de baquedano y **6 de sus 23 claves** se fueron con sus anclas (medido a las
+  16:00: **53 claves**, y las 6 preguntas se han quedado **sin ninguna ancla**). No es un fallo: es el
+  precio de que la clave dependa de su evidencia. **La consecuencia práctica hay que decirla**: un
+  tema que se reescriba puede devolver a la cuarentena preguntas que ya habían vuelto, y la forma de
+  que no pase es **volver a correr `--derivar` al cerrar cada tema** (cuesta ~0,0006 $ por pregunta y
+  salta las ya derivadas: con los 1.283 candidatos de hoy, ≈0,8 $). Queda como recomendación, no como
+  puerta automática: hacerlo puerta es una decisión del propietario.
+
+---
+
+## F32 · El «0 de 0» del medidor: un grupo con apartado propio y sin comprobación guardada pasa a ser trabajo pendiente (15-oct-2026 · §4 de `SIGUIENTE-TANDA-CIERRE-DEL-OBJETIVO-2026-10`)
+
+### 1. El defecto, medido, y por qué movía el denominador de todos los temas
+
+`TopicNotesService._contar_cobertura` recorre los grupos del tema y le da a cada uno un desenlace. Tenía
+cuatro y un `continue` de más:
+
+```python
+if apartados:
+    # Tiene apartado propio y no hay comprobación guardada: no entra en la puerta.
+    continue
+```
+
+Un grupo **con apartado propio escrito y sin comprobación guardada** se caía de la puerta **por los dos
+lados**: no entraba en el numerador (no hay comprobación que lo demuestre) **ni en el denominador** (el
+`continue` lo saltaba entero). Las consecuencias, y las dos se midieron:
+
+1. la cifra de ese tema se calculaba sobre un conjunto **más pequeño** —solo las preguntas que sí tenían
+   comprobación guardada—, así que salía **más alta de lo que es**;
+2. en el caso extremo —apartados escritos y **ninguna** comprobación guardada— el denominador se quedaba
+   **vacío**, la línea de puerta no se imprimía y el tema medía «**0 de 0**»: una casilla vacía que no
+   dice ni si está bien ni cuánto le falta.
+
+El hallazgo se apuntó el 14-oct como «medido y **no** tocado» (`DECISIONES`, el párrafo de los dos
+hallazgos del motor) precisamente porque cambiarlo mueve el denominador de todos los temas. El §4 del
+documento de cierre lo convierte en encargo.
+
+### 2. La regla que entra
+
+Un grupo **con apartado propio y sin comprobación guardada** cuenta como **pendiente de comprobar**:
+**entra en el denominador y no en el numerador**, y se cuenta aparte. Ni suma cobertura (sería mentira:
+no hay nada que la demuestre) ni se cae del denominador (sería peor: esconde trabajo por hacer).
+
+El quinto desenlace **no** se ha metido en el enumerado `Coverage` a propósito: `Coverage` es lo que dice
+una fila guardada en `question_note_anchors`, y esa tabla tiene un `CHECK` de cuatro valores
+(`ck_anchor_result`, `apps/api/opofuente/infrastructure/db_models.py`). Un «pendiente» **no se guarda
+nunca** —lo que hace el medidor al encontrárselo es contarlo—, así que meterlo en el enumerado que se
+persiste sería declarar un valor que no puede existir en la base. Vive en `CoverageReport.add_pendiente`
+y en tres campos nuevos (`pendientes`, `preguntas_pendientes`,
+`preguntas_pendientes_con_clave_utilizable`), y el `elif` de la línea de puerta garantiza que **nunca más
+se imprime un «0 de 0»**: si no hay denominador con clave, se dice por qué.
+
+### 3. La prueba que falla antes
+
+Dos pruebas, y las dos se vieron **en rojo** sobre el árbol sin el arreglo:
+
+- **unitaria** (`apps/api/tests/unit/test_puerta_de_cobertura.py`, 5 pruebas nuevas): el recuento. Sin el
+  arreglo fallan con `AttributeError: 'CoverageReport' object has no attribute 'add_pendiente'`.
+- **de integración** (`apps/api/tests/integration/test_topic_notes.py::test_un_tema_con_apartados_y_sin_comprobaciones_no_mide_cero_de_cero`):
+  el caso real. Corre un tema entero (dos apartados con texto, dos comprobaciones guardadas), borra las
+  comprobaciones —que es el estado que deja una corrida parada por su tope de tiempo entre la redacción
+  y la comprobación— y **mide**. Sin el arreglo, la primera aserción que cae es la que mide el defecto:
+  `assert informe.coverage.preguntas_con_clave_utilizable == 2` → **`assert 0 == 2`**. El orden de las
+  aserciones es a propósito: primero el defecto **medido** (el denominador vacío) y después la cuenta
+  nueva, para que el rojo de antes del arreglo sea el «0 de 0» y no un atributo que aún no existe.
+
+Con el arreglo: **14 pruebas verdes** entre las dos (las 8 de la puerta que ya existían, las 5 nuevas y
+la de integración).
+
+### 4. Cómo se midió, y por qué no sobre la base viva
+
+La base del propietario **se estaba moviendo mientras se medía**: los bloques de plataforma y de claves
+estaban corriendo. Se vio de la forma más incómoda: dos medidas seguidas del **mismo** medidor dieron
+para I.8 `261/320 = 81,6 %` (la primera) y `297/367 = 80,9 %` (la segunda), con el **denominador
+cambiado solo**, de 320 a 367, sin que nadie tocara los apuntes.
+
+Así que la tabla de este bloque sale de una **instantánea consistente** de la base
+(`sqlite3.Connection.backup` sobre `F:\OpoFuente\datos\opofuente.sqlite3`, 2 748 469 248 bytes, 25 s,
+**solo lectura**) y **las dos versiones del medidor se miden sobre la misma instantánea**. Se comprobó
+con una huella del contenido de las siete tablas que deciden la puerta (`question_note_anchors`,
+`answer_key_entries`, `answer_key_versions`, `curriculum_mappings`, `topic_note_sections`, `topic_facts`,
+`question_derived_keys`): **idéntica antes, en medio y después** de las dos medidas
+(`5754bf1b…`). Coste: **0 $** y ni una fila escrita.
+
+### 5. La tabla de los 33, antes y después
+
+«Antes» = `main` en `cef3308` (la definición de hoy). «Ahora» = `f32-medidor`. Las dos columnas que
+deciden son las de **clave utilizable**; las de «todas» se miden y se enseñan pero no deciden. «con
+apartado» son los grupos con apartado propio y texto (los que la puerta puede medir) y «comprobadas» los
+que tienen comprobación guardada.
+
+| Tema | grupos | con apartado | comprobadas | antes (utilizable) | ahora | antes (todas) | ahora | pendientes | veredicto |
+|---|---|---|---|---|---|---|---|---|---|
+| **I.1** | 1998 | 1998 | 1998 | 1958/1985 = 98,6 % | 1958/1985 = 98,6 % | 1958/2016 = 97,1 % | 1958/2016 = 97,1 % | — | PASA |
+| **I.2** | 613 | 612 | 612 | 626/656 = 95,4 % | 626/656 = 95,4 % | 626/682 = 91,8 % | 626/682 = 91,8 % | — | PASA |
+| **I.3** | 168 | 158 | 158 | 152/181 = 84,0 % | 152/181 = 84,0 % | 152/182 = 83,5 % | 152/182 = 83,5 % | — | NO PASA |
+| **I.4** | 536 | 533 | 532 | 490/550 = 89,1 % | 490/550 = 89,1 % **«cambia»** | 490/562 = 87,2 % | 490/563 = 87,0 % | 1 grupo(s) · 1 preg. (0 en la que decide) | NO PASA |
+| **I.5** | 334 | 332 | 332 | 343/375 = 91,5 % | 343/375 = 91,5 % | 343/385 = 89,1 % | 343/385 = 89,1 % | — | PASA |
+| **I.6** | 168 | 168 | 168 | 171/240 = 71,2 % | 171/240 = 71,2 % | 171/249 = 68,7 % | 171/249 = 68,7 % | — | NO PASA |
+| **I.7** | 364 | 361 | 257 | 291/495 = 58,8 % | 291/495 = 58,8 % | 291/528 = 55,1 % | 291/528 = 55,1 % | — | NO PASA |
+| **I.8** | 409 | 405 | 213 | 261/320 = 81,6 % | 261/488 = 53,5 % **«cambia»** | 261/337 = 77,4 % | 261/516 = 50,6 % | 150 grupo(s) · 201 preg. (168 en la que decide) | NO PASA |
+| **I.9** | 131 | 0 | 0 | sin línea | sin línea | sin línea | sin línea | — | sin línea (sin apartados) |
+| **II.1** | 212 | 212 | 211 | 202/205 = 98,5 % | 202/205 = 98,5 % | 202/214 = 94,4 % | 202/214 = 94,4 % | — | PASA |
+| **II.2** | 173 | 173 | 173 | 162/164 = 98,8 % | 162/164 = 98,8 % | 162/170 = 95,3 % | 162/170 = 95,3 % | — | PASA |
+| **II.3** | 170 | 167 | 167 | 174/183 = 95,1 % | 174/183 = 95,1 % | 174/187 = 93,0 % | 174/187 = 93,0 % | — | PASA |
+| **II.4** | 445 | 445 | 445 | 424/436 = 97,2 % | 424/436 = 97,2 % | 424/468 = 90,6 % | 424/468 = 90,6 % | — | PASA |
+| **II.5** | 143 | 139 | 139 | 149/153 = 97,4 % | 149/153 = 97,4 % | 149/158 = 94,3 % | 149/158 = 94,3 % | — | PASA |
+| **III.1** | 273 | 273 | 273 | 281/284 = 98,9 % | 281/284 = 98,9 % | 281/294 = 95,6 % | 281/294 = 95,6 % | — | PASA |
+| **III.2** | 294 | 0 | 0 | sin línea | sin línea | sin línea | sin línea | — | sin línea (sin apartados) |
+| **III.3** | 178 | 173 | 173 | 177/191 = 92,7 % | 177/191 = 92,7 % | 177/197 = 89,8 % | 177/197 = 89,8 % | — | PASA |
+| **III.4** | 246 | 244 | 244 | 243/246 = 98,8 % | 243/246 = 98,8 % | 243/257 = 94,6 % | 243/257 = 94,6 % | — | PASA |
+| **III.5** | 252 | 251 | 251 | 251/253 = 99,2 % | 251/253 = 99,2 % | 251/259 = 96,9 % | 251/259 = 96,9 % | — | PASA |
+| **III.6** | 141 | 0 | 0 | sin línea | sin línea | sin línea | sin línea | — | sin línea (sin apartados) |
+| **III.7** | 230 | 229 | 229 | 216/233 = 92,7 % | 216/233 = 92,7 % | 216/257 = 84,0 % | 216/257 = 84,0 % | — | PASA |
+| **III.8** | 145 | 145 | 145 | 154/157 = 98,1 % | 154/157 = 98,1 % | 154/167 = 92,2 % | 154/167 = 92,2 % | — | PASA |
+| **III.9** | 332 | 325 | 325 | 319/332 = 96,1 % | 319/332 = 96,1 % | 319/354 = 90,1 % | 319/354 = 90,1 % | — | PASA |
+| **IV.1** | 227 | 227 | 227 | 218/222 = 98,2 % | 218/222 = 98,2 % | 218/226 = 96,5 % | 218/226 = 96,5 % | — | PASA |
+| **IV.2** | 747 | 747 | 747 | 738/738 = 100,0 % | 738/738 = 100,0 % | 738/753 = 98,0 % | 738/753 = 98,0 % | — | PASA |
+| **IV.3** | 125 | 0 | 0 | sin línea | sin línea | sin línea | sin línea | — | sin línea (sin apartados) |
+| **IV.4** | 149 | 145 | 145 | 138/142 = 97,2 % | 138/142 = 97,2 % | 138/147 = 93,9 % | 138/147 = 93,9 % | — | PASA |
+| **IV.5** | 381 | 381 | 380 | 367/377 = 97,3 % | 367/377 = 97,3 % | 367/389 = 94,3 % | 367/389 = 94,3 % | — | PASA |
+| **IV.6** | 305 | 301 | 301 | 285/294 = 96,9 % | 285/294 = 96,9 % | 285/308 = 92,5 % | 285/308 = 92,5 % | — | PASA |
+| **IV.7** | 431 | 431 | 431 | 419/428 = 97,9 % | 419/428 = 97,9 % | 419/450 = 93,1 % | 419/450 = 93,1 % | — | PASA |
+| **IV.8** | 220 | 220 | 220 | 221/222 = 99,5 % | 221/222 = 99,5 % | 221/228 = 96,9 % | 221/228 = 96,9 % | — | PASA |
+| **IV.9** | 217 | 206 | 206 | 196/213 = 92,0 % | 196/213 = 92,0 % | 196/223 = 87,9 % | 196/223 = 87,9 % | — | PASA |
+| **IV.10** | 182 | 181 | 181 | 170/174 = 97,7 % | 170/174 = 97,7 % | 170/179 = 95,0 % | 170/179 = 95,0 % | — | PASA |
+
+### 6. Qué cambia de veredicto, y qué no
+
+- **Ningún tema cambia de veredicto.** I.4 e I.8 siguen en **NO PASA**, y los 31 restantes siguen en el
+  veredicto que ya tenían. La puerta no se ha movido: el umbral sigue en el 90 %.
+- **Los cuatro números que el encargo pedía vigilar no se mueven**: III.4 **98,8 %**, II.2 **98,8 %**,
+  III.8 **98,1 %** y II.5 **97,4 %**, idénticos al decimal con las dos definiciones.
+- **Los 26 temas publicados siguen publicados y ninguno se ha retirado.** Medido sobre la misma
+  instantánea: **26 nodos con versión archivada y apuntes** (`dossier_snapshots` con `notes`), 7 sin
+  versión (I.6, I.7, I.8, I.9, III.2, III.6 y IV.3). A **ninguno** de los 26 le cambia el número que
+  decide. Y dos de ellos siguen **por debajo del listón con su cifra a la vista**, como se decidió:
+  **I.3 = 152/181 = 84,0 %** e **I.4 = 490/550 = 89,1 %**. Lo que ha cambiado es **la medición, no el
+  material**.
+- **Y la razón de que no haya nada que decidir con los publicados, medida**: los dos **únicos** temas con
+  grupos pendientes de comprobar son I.8 (en borrador) e I.4; y el grupo pendiente de I.4 es uno cuya
+  clave marcó el paso B como contraria a la norma, así que **no entra en el denominador que decide** (sí
+  en el segundo, que es el que movió 562 → 563). Dicho de otro modo: **ningún tema publicado tiene
+  preguntas pendientes de comprobar dentro del número que decide si pasa**, así que este arreglo no
+  despublica ni baja del listón a ninguno. Si algún día lo tuviera, la regla ya escrita es la del §4: se
+  queda publicado **con su cifra a la vista** y decide el propietario.
+- **Los cuatro temas sin línea de puerta** (I.9, III.2, III.6 y IV.3) **siguen sin ella, y es correcto**:
+  tienen **0 apartados**. La regla del §4 es para grupos **con apartado propio**; un tema sin nada escrito
+  no tiene trabajo pendiente de comprobar, tiene trabajo pendiente de escribir, y su cifra la dice el
+  panel con su motivo («todavía no tiene apuntes»). No es el «0 de 0» del §4 y no se ha tocado.
+
+### 7. La volatilidad del denominador que el encargo pedía juzgar: **mejora**
+
+El encargo pedía decir si el cambio **empeora o mejora** que «las cifras de un tema puedan moverse entre
+dos medidas seguidas porque el denominador cambia solo cuando otro bloque escribe en la base». Se midió
+con **dos instantáneas** separadas en el tiempo y las **dos** versiones del medidor sobre cada una:
+
+| instantánea | medidor viejo (I.8) | medidor nuevo (I.8) |
+|---|---|---|
+| 1 | 261/**320** = 81,6 % | 261/**488** = 53,5 % (150 grupos pendientes) |
+| 2 | 297/**367** = 80,9 % | 297/**488** = 60,9 % (113 grupos pendientes) |
+
+**Mejora, y es el mecanismo lo que cambia**: el denominador del medidor viejo **se movió** (320 → 367)
+porque otro bloque guardó comprobaciones —cada comprobación nueva metía su pregunta en el denominador—,
+y el del nuevo **no se movió** (488 = 488). Con la regla del §4 el denominador lo decide **quién tiene
+apartado propio con texto**, que no cambia cuando alguien guarda una comprobación; lo único que se mueve
+es el numerador, y **hacia arriba** (261 → 297), que es lo que tiene que pasar cuando se hace el trabajo.
+
+**Lo que no arregla, y se dice**: este cambio quita **una** de las causas de movimiento —la que dependía
+de qué comprobaciones había guardadas en el instante de la lectura—, no todas. Una reescritura de los
+apuntes, una reclasificación de preguntas o un tema nuevo corriendo siguen moviendo denominadores, y eso
+es de los bloques que **escriben** en la base, no del medidor. La solución de fondo —medir siempre sobre
+una copia congelada, como se ha hecho aquí para comparar— es una decisión sobre el procedimiento de
+medida, no sobre el medidor, y no es de este encargo.
+
+### 8. Las 18 puertas
+
+**Medido el 15-oct-2026 sobre `6a13358`** (el código de `e824123` + los tres documentos de cierre), con la **guarda de mutación** puesta: `HEAD` y `git status --porcelain` comprobados **antes y después de cada puerta**, y las tres piezas declarando `arbol=limpio`. **18/18, en tres piezas** —no porque se saltara nada, sino porque la puerta 7 cayó **una vez por contención demostrada** y se reintentó—:
+
+| Pieza | Puertas | Resultado | Registro |
+|---|---|---|---|
+| Batería completa | **1-6** | verdes | `F:\temp-opofuente\gates-f32-medidor-completa.txt` |
+| ↳ la misma corrida | **7** | **rojo por contención**: `1 failed, 726 passed, 1 error` de 727, en **44:28** | ídem |
+| Tramo 2 | **8-18** | **verdes**, en **00:05:31**: Vitest 43 ficheros/389 pruebas, los dos builds, migraciones, siembra y E2E **80/80** | `F:\temp-opofuente\gates-f32-medidor-tramo2.txt` |
+| Tramo 3 | **7** (reintento) | **verde**: `727 passed in 2234.54s (0:37:14)` | `F:\temp-opofuente\gates-f32-medidor-tramo3.txt` |
+
+**La contención está demostrada con su cifra**, no afirmada. En aislamiento sobre el **mismo** árbol: `test_classification.py` da **14/14 en 76,21 s** y `test_library_api.py` **16/16 en 70,75 s**, y las dos pruebas que cayeron —`test_classification.py::test_resolver_un_duplicado_queda_auditado_y_no_borra_nada` (`assert 'running' == 'succeeded'`) y el teardown de `test_library_api.py::test_el_diff_compara_dos_versiones_del_mismo_documento` (`InvariantViolationError: el trabajo pertenece a otro worker`)— dan **6/6 en tres vueltas**. La puerta 7 sola tarda **37-44 minutos**; las **once** del tramo 2 caben en **5:31**. Es el poste largo por naturaleza y el primero que se rompe cuando la máquina va cargada. **No se tocó ninguna prueba ni ninguna configuración.**
+
+Cabeceras de procedencia (tomadas al arrancar, no reconstruidas después):
+
+```
+batería completa  ANTES fecha=2026-10-15T17:31:50+02:00  commit_medido=6a133584b7a13d2d1e156bcc1383406bc014e0af  main=e64c030cc22fb0afdfda8697e0a46bcd7bfa2ee0  arbol=limpio
+tramo 2           ANTES fecha=2026-10-15T18:25:30+02:00  commit_medido=6a133584b7a13d2d1e156bcc1383406bc014e0af  main=b9a29239b41fd55b6a59a9e49a12d9d2644c6e03  arbol=limpio
+tramo 3           ANTES fecha=2026-10-15T18:31:14+02:00  commit_medido=6a133584b7a13d2d1e156bcc1383406bc014e0af  main=b9a29239b41fd55b6a59a9e49a12d9d2644c6e03  arbol=limpio
+```
+
+Y una nota de instrumento que va aquí porque afecta a la procedencia: en la batería completa el `main` **sí se movió** durante la corrida —de `e64c030` a `b9a2923`, un commit del agente que corre las baterías que solo toca `docs/DEBT.md` y **cero líneas de código**—, pero la línea `DESPUES` de aquel registro lo decía mal, porque **reutilizaba el `main` del arranque en vez de releerlo**. El fallo es del lanzador, está **corregido** (la línea `DESPUES` vuelve a leer `main`), y queda **escrito en el propio registro** con las dos cifras. Ninguna puerta cambia de resultado: el commit medido no se movió en ningún momento.
+
+### 9. Lo que queda fuera, con el porqué
+
+- **No se ha escrito ni una fila en la base del propietario.** Toda la medición es de solo lectura, y esta
+  vez ni siquiera sobre la base viva: sobre una instantánea. Coste de API: **0 $**.
+- **No se ha corrido ningún tema, ni siquiera los afectados.** I.8 tiene 150 grupos pendientes de
+  comprobar y ahora se ve; **comprobarlos cuesta dinero** y lo decide quien corra el tema, no este bloque.
+  Con la regla nueva, correr I.8 (o I.4) **sí vuelve a contar** lo que compruebe: cada grupo que pase de
+  pendiente a comprobado mueve el numerador y no el denominador.
+- **Los informes por tema no se han tocado** (`docs/apuntes/INFORME-*.md`): el encargo de este bloque solo
+  permite escribir en los tres documentos de seguimiento. La corrección de la cifra de I.8 está, por
+  tanto, **en esta sección y en `PARA-EL-PROPIETARIO`**, no en su informe.
+- **El caso «apartado propio vacío y sin comprobación» sigue como estaba**: un grupo cuyo apartado existe
+  en la base pero **sin texto** (`resultado is None and firma not in sin_materia`) se sigue saltando. No
+  es el caso del §4 —la regla habla de un grupo **con apartado**, y un apartado sin texto no es un
+  apartado— y el trabajo que le falta es **redactar**, no comprobar. Queda dicho aquí y no se toca.
+- **La cifra de I.8 se mueve sola mientras otros bloques trabajen**: lo medido en la instantánea 2 es
+  `297/488 = 60,9 %` y en la 1 era `261/488 = 53,5 %`. Las dos son verdad y la diferencia es trabajo
+  hecho. Por eso la tabla del apartado 5 lleva su fecha y su huella y no se presenta como un número
+  eterno.
