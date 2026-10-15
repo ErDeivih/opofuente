@@ -39,8 +39,8 @@ Reglas:
 | [DEBT-025](#debt-025--corregir-una-pregunta-infla-el-conjunto-y-puede-volver-a-preguntarse-el-texto-viejo) | S12.6 | La versión sustituida de una pregunta corregida cuenta como pregunta: el conjunto se infla, el banco enseña el enunciado viejo y una sesión nueva puede componerse con él | **cerrada** (22 de septiembre de 2026: las consultas del banco dejan fuera `superseded`, y la historia se sigue leyendo pidiéndola) |
 | [DEBT-026](#debt-026--la-suite-e2e-toma-su-directorio-de-datos-del-entorno-y-escribe-donde-le-digan) | S12.6 | Playwright resuelve su directorio de datos con `OPOFUENTE_DATA_DIR`: con esa variable puesta apuntando a una copia del corpus del propietario, correr la suite a mano escribe las pruebas **dentro de su material** | **cerrada** (22 de septiembre de 2026: la suite usa siempre `.e2e-data` y, para apuntarla a otro sitio, una variable propia) |
 | [DEBT-027](#debt-027--07_ui-ux-no-está-aplicada-entera) | S12.6 | La especificación de interfaz pide cosas que no existen: pausar un lote, tabla de revisión virtualizada, columnas de preguntas y próxima revisión en el Programa, lector sincronizado y explicación por opción | **cerrada** (23 de septiembre de 2026: las cinco pasadas, con pausar/cancelar, las columnas del Programa y el banco paginado) |
-| [DEBT-029](#debt-029--el-registro-de-las-puertas-sale-con-los-acentos-doblemente-codificados-en-windows) | antes de dar por buena una corrida de puertas | Los `.ps1` del repositorio están en UTF-8 **sin BOM** y Windows PowerShell 5.1 —el único intérprete de esta máquina— los lee como ANSI: el registro de las puertas sale con los acentos rotos (`código` acaba como `cÃ³digo`), y ese registro es el documento con el que se justifica un «18/18» | abierta (**arreglo probado**: el BOM lo arregla, medido en bytes; falta aplicarlo a `scripts/*.ps1`) |
-| [DEBT-030](#debt-030--el-registro-de-una-batería-no-dice-contra-qué-main-se-midió) | antes de dar por buena una corrida de puertas | Una batería tarda ~54 minutos y `main` puede avanzar mientras corre: la cifra queda sin dueño si nadie anota **qué `main` se midió**. Pasó el 15-oct-2026 con `s14`: se midió `main@4290817` y lo que entró fue `main@195cbb8` + la rama | **cerrada** (15-oct-2026: el registro lleva `commit_medido` y `main` al empezar y al terminar, y **cazó a `main` moviéndose durante el tramo 1**) |
+| [DEBT-029](#debt-029--el-registro-de-las-puertas-sale-con-los-acentos-doblemente-codificados-en-windows) | antes de dar por buena una corrida de puertas | Los `.ps1` del repositorio están en UTF-8 **sin BOM** y Windows PowerShell 5.1 —el único intérprete de esta máquina— los lee como ANSI: el registro de las puertas sale con los acentos rotos (`código` acaba como `cÃ³digo`), y ese registro es el documento con el que se justifica un «18/18» | **cerrada en el instrumento** (15-oct-2026: el lanzador lleva BOM **y** fija la salida a UTF-8 **y** lee `common.ps1` como UTF-8 en memoria sin tocar el árbol; el registro trae `código` con `C3 B3` —6 veces— y `cÃ³digo` **0 veces**. Queda abierta la mitad del repositorio: poner el BOM a `scripts/*.ps1`) |
+| [DEBT-030](#debt-030--el-registro-de-una-batería-no-dice-contra-qué-main-se-midió) | antes de dar por buena una corrida de puertas | Una batería tarda ~54 minutos y `main` puede avanzar mientras corre: la cifra queda sin dueño si nadie anota **qué `main` se midió**. Pasó el 15-oct-2026 con `s14`: se midió `main@4290817` y lo que entró fue `main@195cbb8` + la rama | **cerrada** (15-oct-2026: el registro lleva `commit_medido` y `main` al empezar y al terminar —**cazó a `main` moviéndose durante el tramo 1**—; y el lanzador lleva una **guarda de mutación** que aborta si el árbol se mueve a mitad de corrida, estrenada el 15-oct con el merge que entró en `opofuente-bandeja`) |
 
 ---
 
@@ -1748,6 +1748,36 @@ los registros viejos.
 registro: la línea `OK: 1. ruff format --check (código 0)` tiene que traer `código` **con sus acentos
 correctos** y, en bytes, `C3 B3` en lugar de `C3 83 C2 B3`.
 
+**Medido el 15-oct-2026: el criterio se cumple, y la causa tenía DOS mitades (no una).** El criterio de
+arriba pedía `OK: 1. ruff format --check (código 0)` con los acentos bien. En
+`F:\temp-opofuente\gates-f32-medidor-completa.txt`, contado en bytes:
+
+```
+'código'  (63 C3 B3 64 69 67 6F)         ->  6 ocurrencias
+'cÃ³digo' (63 C3 83 C2 B3 64 69 67 6F)    ->  0 ocurrencias
+```
+
+Y la causa no era solo el BOM del lanzador, que era lo que esta entrada daba por probado. Son **dos**:
+
+1. **el `.ps1` sin BOM** (ya estaba medido aquí), y
+2. **la codificación con la que el intérprete escribe su PROPIA salida** cuando se le redirige el flujo.
+   Con el BOM puesto en el lanzador pero sin tocar esto, la palabra `código` que añade `common.ps1` —que
+   no tiene BOM— sale como **un solo byte `F3`** (el `ó` del codepage ANSI), que no es UTF-8 válido y se
+   lee como `códig<?>`: no es el `cÃ³digo` de antes, pero sigue estando roto. Las dos mitades, medido.
+
+**El arreglo, en el instrumento y sin tocar el árbol medido.** El lanzador hace las tres cosas: (a) su
+propio fichero va **con BOM**; (b) fija `[Console]::OutputEncoding` a **UTF-8** antes de nada, que es la
+mitad que faltaba; y (c) lee `scripts/common.ps1` **como UTF-8 en memoria** en vez de dejar que el
+intérprete lo lea con el codepage ANSI — el texto que ejecuta es el del árbol, **sin modificar el fichero
+del árbol**. Arreglar el instrumento sin tocar lo que se está midiendo es justo lo que hace que el
+registro valga como prueba.
+
+**Lo que sigue abierto, y a propósito.** Poner el BOM a `scripts/*.ps1` del repositorio. **No se hace
+aquí**: los árboles están bajo medición (dos baterías en marcha el 15-oct) y meter un cambio en un árbol
+después de medirlo, o mientras se mide, es exactamente lo que la guarda de mutación de DEBT-030 aborta.
+Va con la fusión, no con la medición. Mientras tanto, **cualquier corrida que use el lanzador de
+`F:\temp-opofuente\puertas-18b.ps1` sale con los acentos correctos**.
+
 **Estado: abierta, con el arreglo probado.** No afecta a ningún veredicto de puerta; afecta a la
 legibilidad y a la cita literal del registro. Lo que falta es **aplicarlo**, no averiguarlo.
 
@@ -1803,3 +1833,21 @@ se acuerde.
 
 **Estado: cerrada** (15/10/2026). No afecta a si una puerta pasa o falla; afecta a **a qué commit
 pertenece la cifra**, y eso ya está en el acta.
+
+### Segunda parte del cierre (15-oct-2026): la procedencia no basta, hace falta la **guarda**
+
+Lo de arriba dice **contra qué** `main` se midió. Ese mismo día se vio que anotar la procedencia **no impide** medir un árbol que se mueve, y que hay **tres** maneras distintas de medir sin querer algo que no es el commit de la cabecera. Las tres ocurrieron el **15-oct-2026**:
+
+| Cuál | Qué se movió | Cómo se descubrió | Qué lo caza |
+|---|---|---|---|
+| **1 · `main` avanzando durante la corrida** (D11, `s14` tramo 1) | `main` pasó de `5a62d0d` a `6b3db4ab` —**83 líneas** del commit `F28b`— **durante los 65 minutos** de la batería | comparando los árboles a mano (`git diff --stat main HEAD`); el registro ya lo decía, con las dos fechas | la línea `ANTES`/`DESPUES` con el `main` de cada momento (**ya está**) |
+| **2 · un `git merge` dentro del árbol medido** (`opofuente-bandeja`, 15-oct **17:29:35**) | a las **17:27:52** el árbol estaba limpio en `6e0beaf`; a las **17:29:35** empezó una fusión en ese worktree (`MERGE_HEAD` vivo, `UU` en los tres documentos) que metió un `0039_claves_derivadas` junto al `0039_bandeja_por_conjunto` del bloque → **dos cabezas de alembic** | la **puerta 6 cayó con código 4 y sin una sola línea de salida**; el `stderr` decía `alembic.util.exc.CommandError: multiple heads (due to branching)`. El rojo era del árbol, no del commit | la **guarda de mutación** (abajo): habría abortado en el segundo en que cambió |
+| **3 · puertas midiendo el `.venv` de otro árbol** | el `.venv` de `main` apunta a `main`; correr una batería en un árbol cuyo `.venv` es de otro hace que las puertas **midan el código del vecino** | leyendo el `_editable_impl_opofuente.pth` de cada árbol **antes** de lanzar | la comprobación del `.pth` en la lista previa (no automática todavía) |
+
+**El mecanismo que cierra esta entrada —y no una recomendación— es la guarda de mutación del lanzador:** antes y **después de cada una** de las 18 puertas se comprueba que el árbol sigue en el mismo `HEAD` y con el mismo `git status --porcelain` (ficheros ya seguidos) que al arrancar. Si algo cambió, **aborta con código 4 y lo dice** —con el `HEAD` de antes y el de ahora y el `status` nuevo— y **no juzga ninguna puerta más**, porque la cifra ya no tendría dueño. Se estrena en la medición de `f32-medidor` del 15-oct-2026 (`F:\temp-opofuente\puertas-18b.ps1`); el caso 2 de la tabla es exactamente lo que caza.
+
+Se comprueban solo los ficheros **ya seguidos** a propósito: así una puerta que deje un artefacto nuevo sin seguir (un informe de Playwright, por ejemplo) no dispara un aborto falso, pero una fusión o una edición concurrente sí, porque tocan ficheros que `git` ya sigue.
+
+**Lo que sigue en pie, y se dice para que nadie se llame a engaño:** la guarda vive en **el lanzador**, no en `scripts/gates.ps1`. Portarla al script de las puertas (las dos comprobaciones alrededor de cada `Invoke-OpoFuenteStep`) es el paso que falta para que no dependa de que quien lanza se acuerde.
+
+**Y la regla de operación que esto obliga**, que nació del caso 2: **un árbol con una batería en marcha queda cerrado a todo el mundo**; si alguien necesita tocarlo, **se para la batería, se toca, se cierra y se relanza**, en ese orden. El 15-oct se le pidió a un bloque que arreglara ese mismo árbol mientras su batería corría, y el resultado fue un rojo falso que parecía del commit.
