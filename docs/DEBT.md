@@ -41,6 +41,8 @@ Reglas:
 | [DEBT-027](#debt-027--07_ui-ux-no-está-aplicada-entera) | S12.6 | La especificación de interfaz pide cosas que no existen: pausar un lote, tabla de revisión virtualizada, columnas de preguntas y próxima revisión en el Programa, lector sincronizado y explicación por opción | **cerrada** (23 de septiembre de 2026: las cinco pasadas, con pausar/cancelar, las columnas del Programa y el banco paginado) |
 | [DEBT-029](#debt-029--el-registro-de-las-puertas-sale-con-los-acentos-doblemente-codificados-en-windows) | antes de dar por buena una corrida de puertas | Los `.ps1` del repositorio están en UTF-8 **sin BOM** y Windows PowerShell 5.1 —el único intérprete de esta máquina— los lee como ANSI: el registro de las puertas sale con los acentos rotos (`código` acaba como `cÃ³digo`), y ese registro es el documento con el que se justifica un «18/18» | **cerrada en el instrumento** (15-oct-2026: el lanzador lleva BOM **y** fija la salida a UTF-8 **y** lee `common.ps1` como UTF-8 en memoria sin tocar el árbol; el registro trae `código` con `C3 B3` —6 veces— y `cÃ³digo` **0 veces**. Queda abierta la mitad del repositorio: poner el BOM a `scripts/*.ps1`) |
 | [DEBT-030](#debt-030--el-registro-de-una-batería-no-dice-contra-qué-main-se-midió) | antes de dar por buena una corrida de puertas | Una batería tarda ~54 minutos y `main` puede avanzar mientras corre: la cifra queda sin dueño si nadie anota **qué `main` se midió**. Pasó el 15-oct-2026 con `s14`: se midió `main@4290817` y lo que entró fue `main@195cbb8` + la rama | **cerrada** (15-oct-2026: el registro lleva `commit_medido` y `main` al empezar y al terminar —**cazó a `main` moviéndose durante el tramo 1**—; y el lanzador lleva una **guarda de mutación** que aborta si el árbol se mueve a mitad de corrida, estrenada el 15-oct con el merge que entró en `opofuente-bandeja`) |
+| [DEBT-031](#debt-031--el-detector-de-palabras-prohibidas-policía-el-selector-del-panel) | antes de leer el informe de capturas | El detector marca **«Celador»** en 4 de las 18 capturas del panel: el texto señalado es **el selector de oposición del propio panel**, que tiene que ofrecer las otras oposiciones porque si no el propietario no puede elegir. La regla es de la **zona del alumno** y aquí se aplica a la pantalla equivocada | **decisión tomada, arreglo pendiente** (15-oct-2026: no se quita «Celador» de la lista —eso debilitaría la comprobación donde sí importa—; se excluye el **selector de oposición del panel** por su rol/nombre) |
+| [DEBT-032](#debt-032--la-herramienta-de-capturas-da-por-hecha-una-siembra-que-no-existe) | antes de dar por buenas las capturas | **2 de 58** capturas no se toman: «la revisión de apuntes» a 1280 y 390 falla en `screens.spec.ts:252` esperando un `%` que no llega, porque ese árbol **no tiene apuntes que revisar** y la pantalla dice, correctamente, «Este tema todavía no tiene apuntes escritos: no hay nada que revisar». Faltan dos pantallas del informe y no se nota: el resto pasa | **decisión tomada, arreglo pendiente** (15-oct-2026: lo preferido es **capturar el estado vacío como lo que es** —el propietario va a verlo— en vez de añadir una siembra que finja datos; decide quien escribió la herramienta) |
 
 ---
 
@@ -1865,3 +1867,48 @@ Se comprueban solo los ficheros **ya seguidos** a propósito: así una puerta qu
 **Lo que sigue en pie, y se dice para que nadie se llame a engaño:** la guarda vive en **el lanzador**, no en `scripts/gates.ps1`. Portarla al script de las puertas (las dos comprobaciones alrededor de cada `Invoke-OpoFuenteStep`) es el paso que falta para que no dependa de que quien lanza se acuerde.
 
 **Y la regla de operación que esto obliga**, que nació del caso 2: **un árbol con una batería en marcha queda cerrado a todo el mundo**; si alguien necesita tocarlo, **se para la batería, se toca, se cierra y se relanza**, en ese orden. El 15-oct se le pidió a un bloque que arreglara ese mismo árbol mientras su batería corría, y el resultado fue un rojo falso que parecía del commit.
+
+---
+
+## DEBT-031 — El detector de palabras prohibidas policía el selector del panel
+
+**Origen:** la corrida de capturas del 15-oct-2026 (`npm run screens` sobre el árbol de la bandeja, `fa878c9`). El informe (`artifacts/screens/report.md`) marca **«Celador»** en **4 de las 18 capturas**, y en las cuatro el texto señalado es el mismo: **el selector de oposición del propio panel** —
+
+```
+…istración
+Buscar en el corpus
+Oposición
+Celador/a del Servicio de Salud de Castilla y L…
+```
+
+**Las dos caras, porque mañana alguien verá el aviso y volverá a dudar:**
+
+1. **Puede ser una fuga real**: «Celador» está en `OPOSICIONES_PROHIBIDAS` (`apps/web/tests/palabrasProhibidas.ts`) y esa lista existe porque **el propietario no quiere que su alumno vea que esto también sirve para Celador**. Si el selector estuviera en una pantalla del alumno, sacarlo sería lo correcto.
+2. **Es un falso positivo**: el selector está en la **zona del panel**, que es la vista privada del propietario, y **tiene que ofrecer las otras oposiciones** —si no las ofrece, no puede elegir—. El detector aplica a esa pantalla una regla escrita para la **zona del alumno**.
+
+**Decisión (propietario, 15-oct-2026): es la cara 2, y el arreglo va por donde no debilita nada.**
+
+- **NO se quita «Celador» de la lista**: quitarlo apagaría la comprobación justo donde sí importa —la zona del alumno—, que es el error que esta casa no comete.
+- **Lo que hay que hacer**: que el detector **no mire el selector de oposición del panel**, excluyéndolo **por su rol y su nombre accesible** (no por su texto, que es justo lo que se vigila), y que esa exclusión quede **escrita con sus dos caras** en el propio fichero de la lista.
+
+**Estado: decisión tomada, arreglo pendiente.** No rompe ninguna puerta —la herramienta **informa**, no bloquea— pero ensucia el informe con un aviso que no es una fuga, y un informe que grita en falso deja de leerse.
+
+---
+
+## DEBT-032 — La herramienta de capturas da por hecha una siembra que no existe
+
+**Origen:** la misma corrida. **`2 failed | 56 passed`**: «la revisión de apuntes a 1280 px» y «a 390 px» fallan las dos en `apps/web/tests/screens/screens.spec.ts:252`:
+
+```
+Locator: locator('.apuntes-revision__motivos')
+Expected pattern: /%/
+Received string:  " Este tema todavía no tiene apuntes escritos: no hay nada que revisar."
+```
+
+**Lo que pasa**: la herramienta espera **un tema con apuntes pendientes de revisión y su porcentaje**, y ese árbol **no tiene apuntes escritos**. La pantalla responde **correctamente** con su estado vacío. **No es un fallo de interfaz: es que falta la siembra que la herramienta da por hecha.**
+
+**Y lo que se pierde no es un rojo, son dos capturas**: el informe sale con las otras 18 pantallas y **nadie echa en falta las dos que faltan** salvo quien lea la lista de PNG.
+
+**Decisión (propietario, 15-oct-2026):** entre (a) añadir la siembra que la herramienta asume y (b) **capturar el estado vacío como lo que es**, se prefiere **(b)** — porque **una pantalla vacía también es una pantalla que el propietario va a ver**, y retratarla es más honesto que fabricar datos para que salga «bonita»—. **Decide quien escribió la herramienta**, que es quien conoce su siembra.
+
+**Estado: decisión tomada, arreglo pendiente.** Y deja una lección para la próxima herramienta de capturas: **una captura que no se toma es un dato que falta, y el informe debería decirlo en su tabla en vez de encogerse en silencio.**
