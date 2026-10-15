@@ -23,6 +23,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { PolicyProvider } from '../../src/app/policy';
+import { usePolicy } from '../../src/app/policyContext';
 import { CookieNotice } from '../../src/features/legal/CookieNotice';
 import { LegalPage } from '../../src/features/legal/LegalPage';
 import {
@@ -114,8 +115,20 @@ const INVENTARIO = {
   notice: 'Sin cuenta no se recoge ningún dato tuyo.',
 };
 
-/** Borra todas las cookies del documento: el almacén de jsdom vive entre pruebas del mismo fichero. */
-function borrarCookies(): void {
+/**
+ * Una sonda de la política: dice «cargada» en cuanto el servidor ha contestado.
+ *
+ * Existe para que una prueba pueda esperar a **saber** la configuración en lugar de esperar un rato:
+ * «no aparece el aviso» solo significa algo cuando ya se sabe que las páginas legales están apagadas.
+ * Usa el mismo hook que la aplicación, así que si la política dejara de estar disponible la sonda
+ * también lo notaría.
+ */
+function SondaDeLaPolitica() {
+  const politica = usePolicy();
+  return <span>{politica === null ? 'pendiente' : 'cargada'}</span>;
+}
+
+/** Borra todas las cookies del documento: el almacén de jsdom vive entre pruebas del mismo fichero. */function borrarCookies(): void {
   for (const trozo of document.cookie.split(';')) {
     const nombre = trozo.split('=')[0]?.trim();
     if (nombre) {
@@ -237,9 +250,20 @@ describe('el aviso de cookies y la puerta de las cookies', () => {
   });
 
   it('con las páginas legales apagadas no hay ningún aviso', async () => {
-    montar(<CookieNotice />, { politica: POLITICA_SIN_LEGALES });
+    montar(
+      <>
+        <CookieNotice />
+        <SondaDeLaPolitica />
+      </>,
+      { politica: POLITICA_SIN_LEGALES },
+    );
 
-    // No se encuentra el aviso: no es que esté escondido, es que no se pinta.
+    // Se espera a que la política **haya llegado**. Sin esto, «no hay aviso» sería cierto también
+    // mientras no se sabe la configuración, y la prueba pasaría por el motivo equivocado: no porque
+    // las páginas legales estén apagadas, sino porque todavía no se ha preguntado.
+    await screen.findByText('cargada');
+
+    // Ahora sí: la configuración se conoce, dice que no hay páginas legales, y no se pinta nada.
     expect(screen.queryByRole('heading', { name: 'Cookies' })).toBeNull();
     expect(readConsent()).toBeNull();
   });

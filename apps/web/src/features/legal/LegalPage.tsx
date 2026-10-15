@@ -10,7 +10,7 @@ import {
   type CookiesDocument,
   type DataInventory,
 } from '../../api/platform';
-import { usePolicy } from '../../app/policy';
+import { usePolicy } from '../../app/policyContext';
 import { ErrorState } from '../../components/ErrorState';
 import { LoadingState } from '../../components/LoadingState';
 import { describeError } from '../../features/system/labels';

@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 
 import { decideConsent } from '../../api/platform';
-import { usePolicy } from '../../app/policy';
+import { usePolicy } from '../../app/policyContext';
 import { Button } from '../../ui/Button';
 import { clearNonEssentialCookie, readConsent, writeConsent } from '../../lib/consent';
 

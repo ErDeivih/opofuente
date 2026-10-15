@@ -3,7 +3,7 @@ import { Link, NavLink } from 'react-router-dom';
 import { ApiUnavailableNotice } from '../components/ApiUnavailableNotice';
 import { CookieNotice } from '../features/legal/CookieNotice';
 import { usePageView } from '../lib/analytics';
-import { usePolicy } from './policy';
+import { usePolicy } from './policyContext';
 import {
   IconExamenes,
   IconFallos,

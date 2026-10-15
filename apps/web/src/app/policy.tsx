@@ -1,11 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
-import { createContext, useContext, useEffect, useMemo, type ReactNode } from 'react';
+import { useEffect, useMemo, type ReactNode } from 'react';
 
-import { getPlatformPolicy, type PlatformPolicy } from '../api/platform';
+import { getPlatformPolicy } from '../api/platform';
 import { setApiCredentials } from '../api/client';
+import { PolicyContext } from './policyContext';
 
 /**
- * Qué está encendido en esta instalación, preguntado **al servidor** (§8 a §11).
+ * Qué está encendido en esta instalación, preguntado **al servidor** (§8 a §11 del objetivo vivo).
  *
  * Existe por un motivo concreto y no por elegancia: la web se construye una vez y se sirve en varias
  * configuraciones —con cuentas y sin ellas, con las páginas legales y sin ellas—. Si las banderas se
@@ -13,12 +14,9 @@ import { setApiCredentials } from '../api/client';
  * aplicación, y las dos acabarían diciendo cosas diferentes. Se pregunta una vez al arrancar, se
  * guarda, y lo que diga el servidor es lo que hay.
  *
- * **La política no decide permisos**: la puerta de las rutas de administración y el 401 de la cuenta
- * los decide el servidor. Esto solo decide **qué se enseña**, que es lo único que una pantalla puede
- * decidir sin mentir.
+ * Los ganchos para leerla viven en `policyContext.ts`, aparte, para que este fichero exporte solo el
+ * componente.
  */
-const PolicyContext = createContext<PlatformPolicy | null>(null);
-
 export function PolicyProvider({ children }: { children: ReactNode }) {
   const consulta = useQuery({
     queryKey: ['platform-policy'],
@@ -41,14 +39,4 @@ export function PolicyProvider({ children }: { children: ReactNode }) {
   const valor = useMemo(() => consulta.data ?? null, [consulta.data]);
 
   return <PolicyContext.Provider value={valor}>{children}</PolicyContext.Provider>;
-}
-
-/** La política, o `null` mientras se pregunta (o si la API no contesta). */
-export function usePolicy(): PlatformPolicy | null {
-  return useContext(PolicyContext);
-}
-
-/** ¿Se puede estudiar sin cuenta? Siempre, y el servidor lo declara: es la regla que manda. */
-export function useAnonymousStudy(): boolean {
-  return usePolicy()?.accounts.anonymous_study ?? true;
 }

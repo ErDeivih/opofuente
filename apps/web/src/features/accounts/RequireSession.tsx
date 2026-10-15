@@ -5,7 +5,7 @@ import type { ReactNode } from 'react';
 import { getMe } from '../../api/platform';
 import { isApiError } from '../../api/client';
 import { LoadingState } from '../../components/LoadingState';
-import { usePolicy } from '../../app/policy';
+import { usePolicy } from '../../app/policyContext';
 
 /**
  * La guarda de rutas de la cuenta (§8 del objetivo vivo).

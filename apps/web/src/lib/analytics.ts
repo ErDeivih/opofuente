@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 
 import { recordAnalyticsEvent } from '../api/platform';
-import { usePolicy } from '../app/policy';
+import { usePolicy } from '../app/policyContext';
 
 /**
  * La analítica propia, contada desde la pantalla (§10 del objetivo vivo).
