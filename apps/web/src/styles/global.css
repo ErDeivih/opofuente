@@ -3473,3 +3473,30 @@ kbd {
     gap: var(--s1);
   }
 }
+
+/* La zona que se desplaza en pantalla estrecha, cuando se llega a ella con el teclado: el foco tiene
+   que verse. Sin esto, la tabla se puede recorrer con las flechas pero nadie sabe que está ahí. */
+.tabla-scroll:focus-visible {
+  outline: var(--foco);
+  outline-offset: var(--foco-separacion);
+}
+
+/* En pantalla estrecha la tabla **se reparte el ancho** en vez de desplazarse: así no hay ninguna
+   zona que se desplace a la que quien navega con el teclado no pueda llegar (axe lo exige y con
+   razón), y no hace falta poner el foco en un elemento no interactivo (que es lo que eslint impide).
+   Las palabras largas —«opofuente_consent»— parten en cualquier punto en vez de ensanchar la tabla. */
+@media (max-width: 720px) {
+  .tabla-scroll {
+    overflow-x: visible;
+  }
+
+  .legal__tabla {
+    table-layout: fixed;
+  }
+
+  .legal__tabla th,
+  .legal__tabla td {
+    padding: var(--s1) var(--s2);
+    overflow-wrap: anywhere;
+  }
+}

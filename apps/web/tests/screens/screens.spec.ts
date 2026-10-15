@@ -989,7 +989,7 @@ if (process.env.OPOFUENTE_SCREENS_PLATAFORMA === '1') {
 
   for (const { ancho, alto, etiqueta } of ANCHOS) {
     for (const { ruta, fichero, titulo } of PAGINAS) {
-      test(`${fichero} a ${ancho} px`, async ({ page }) => {
+      test(`plataforma: ${fichero} a ${ancho} px`, async ({ page }) => {
         const violaciones = await retratar(page, ruta, fichero, ancho, alto, etiqueta);
         await expect(page.getByRole('heading', { level: 1, name: titulo })).toBeVisible();
         // El texto tiene que estar de verdad: una página legal vacía pasa axe y no sirve de nada.
@@ -1007,7 +1007,7 @@ if (process.env.OPOFUENTE_SCREENS_PLATAFORMA === '1') {
       });
     }
 
-    test(`el aviso de cookies a ${ancho} px`, async ({ page }) => {
+    test(`plataforma: el aviso de cookies a ${ancho} px`, async ({ page }) => {
       const violaciones = await retratar(page, '/', '/aviso-cookies', ancho, alto, etiqueta);
       const aviso = page.getByRole('region', { name: 'Cookies' });
       await expect(aviso).toBeVisible();

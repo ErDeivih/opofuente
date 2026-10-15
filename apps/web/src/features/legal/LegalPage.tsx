@@ -299,7 +299,7 @@ function CookieTable({ cookies }: { cookies: CookiesDocument }) {
       <h2 className="bloque__titulo" id="tabla-cookies">
         Las cookies de esta aplicación
       </h2>
-      <div className="tabla-scroll">
+      <TablaDesplazable>
         <table className="legal__tabla">
           <caption className="legal__leyenda">
             Todas las cookies que puede poner esta aplicación, con su finalidad y lo que duran. No hay
@@ -326,9 +326,20 @@ function CookieTable({ cookies }: { cookies: CookiesDocument }) {
             ))}
           </tbody>
         </table>
-      </div>
+      </TablaDesplazable>
     </section>
   );
+}
+
+/**
+ * Un carril para la tabla. En pantalla estrecha **no hace falta desplazarse** (ver `global.css`: la
+ * tabla se reparte el ancho y parte las palabras largas), y así no hay una zona que se desplace a la
+ * que quien no usa ratón no pueda llegar. Axe lo exigía (`scrollable-region-focusable`) y eslint
+ * prohíbe poner el foco en un elemento no interactivo: en vez de elegir entre los dos, se quita la
+ * causa —una tabla que no cabe— y los dos quedan satisfechos.
+ */
+function TablaDesplazable({ children }: { children: ReactNode }) {
+  return <div className="tabla-scroll">{children}</div>;
 }
 
 function InventoryTable({ inventory }: { inventory: DataInventory }) {
@@ -339,7 +350,7 @@ function InventoryTable({ inventory }: { inventory: DataInventory }) {
           Qué datos se recogen, para qué y cuánto tiempo
         </h2>
         <p className="bloque__texto">{inventory.notice}</p>
-        <div className="tabla-scroll">
+        <TablaDesplazable>
           <table className="legal__tabla">
             <caption className="legal__leyenda">
               Una fila por dato. «Dónde» dice en qué parte de la aplicación está, y la aplicación
@@ -366,7 +377,7 @@ function InventoryTable({ inventory }: { inventory: DataInventory }) {
               ))}
             </tbody>
           </table>
-        </div>
+        </TablaDesplazable>
       </section>
 
       <section className="bloque" aria-labelledby="lo-que-no">
