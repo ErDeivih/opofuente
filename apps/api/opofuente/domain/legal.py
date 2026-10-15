@@ -175,8 +175,10 @@ DATA_INVENTORY: tuple[DataUse, ...] = (
         why="Que veas tu progreso, tus fallos y tus simulacros.",
         where="La base de datos de la aplicación, en las tablas del estudio.",
         retention=(
-            "Mientras la cuenta exista; se borra al cerrar la cuenta. Sin cuenta, vive en este "
-            "ordenador y no sale de él."
+            "Sin cuenta, vive en este ordenador y no sale de él. Con cuenta, hoy se guarda igual, "
+            "sin separarse por cuenta: lo que se borra al cerrar la cuenta son la cuenta, sus "
+            "sesiones, sus enlaces y su auditoría. Separar el progreso de cada cuenta está "
+            "pendiente y no se promete hasta que esté."
         ),
         lawful_basis="Ejecución de un contrato (art. 6.1.b del RGPD).",
         tables=(
