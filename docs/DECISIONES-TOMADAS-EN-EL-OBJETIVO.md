@@ -461,3 +461,57 @@ cifra, y **no se fuerza ninguno** para llegar al listón.
 
 **Coste de las dos corridas: 1,0608 $**, dentro de lo previsto (0,13–0,32 $ para I.3 y 0,44–0,90 $ para
 I.4). Es el precio de que las dos cifras que hay en los documentos sean las de verdad.
+
+### F28d · **La reclasificación de III.4 a III.2, hecha por la ruta auditada** (15-oct-2026)
+
+El §5.2 del orden nuevo: el banco de III.4 tiene preguntas de otra materia, se reclasifican **a su tema
+por la ruta auditada** —las dudosas, a la cola— y **después** se escribe III.4 con lo que quede.
+
+**Copia verificada antes** (`20261015-131613-e55348.zip`, revisión **`0039_claves_derivadas`**,
+2.746.548.224 B, `verify_archive` sin problemas, CRC de las 2 entradas correcto, `extracted_equals_snapshot`,
+`integrity_check` ok, `quick_check` ok y `foreign_key_check` 0 filas). **Y se hizo con la base sin nadie
+escribiendo**: cero candados de corrida y última escritura 31 minutos antes.
+
+**La ruta es la que ya existe y pasó sus puertas**: `QuestionService.assign_topic` —la misma que usan la
+clasificación por lotes y la ficha de pregunta del panel—, con actor **`f28:reclasificacion-iii4`**, su
+motivo y su evento de auditoría. **Ni un `UPDATE` suelto.** El guion es de `f25-scratch`
+(`reclasificar_iii4_a_iii2.py`), **ensayo por defecto y `--aplicar` para escribir**, y **no añade ningún
+fichero a `apps/`**: es una migración de datos de una vez, no una capacidad nueva del producto.
+
+**La frontera entre los dos temas**, por regla escrita y discutible (`frontera_iii4_iii2.py`): es de
+**III.2** lo que habla de lenguajes y su clasificación, tipado, operadores, estructuras de control,
+recursividad, funciones y parámetros, vectores y registros; es de **III.4** lo de clase, objeto,
+herencia, polimorfismo, sobrecarga, encapsulación, cohesión y acoplamiento, los lenguajes **en cuanto a
+su orientación a objetos**, los patrones y UML; **si salen los dos, manda lo específico** (la sobrecarga
+**de operadores** es de III.4; el resultado de `5<<2` es de III.2); y **lo que no cae claramente en
+ninguno va a la cola**.
+
+| | Preguntas | Qué se hizo |
+|---|---|---|
+| Se quedan en **III.4** | **275** | nada |
+| Se van a **III.2** como decisión (`accepted`) | **92** | asignadas con su motivo |
+| A **III.2** como propuesta (`provisional`, **la cola**) | **67** | propuestas, no decididas |
+| **Total movido** | **159** | con `retire_others`, que retira el mapeo viejo en la misma operación |
+
+**El «40 %» del documento era una estimación y la cifra medida manda**: lo que no es claramente de III.4
+es el **36,6 %** (92 + 67). Las 67 dudosas van a la cola en vez de repartirlas a ojo: **no se inventa una
+frontera para llegar antes.**
+
+**Idempotencia probada, no supuesta** (era una de las tres condiciones): se aplicó **dos veces**. La
+segunda pasada encontró **0 que mover**, escribió **0 asignaciones** y no añadió ni un mapeo.
+
+**Y el antes/después de III.2, medido sobre la copia y sobre la base viva**, que es lo que pedía la
+tercera condición — **su banco y su valor cambian, y se sabe cuánto**:
+
+| Tema | Antes (copia verificada) | **Después (base viva)** | Cambio |
+|---|---|---|---|
+| **III.2** | 142 grupos · 147 preguntas · **142/147 con clave utilizable** | **294 grupos · 299 preguntas · 294/299** | **+152 grupos y +152 preguntas** |
+| **III.4** | 400 grupos · 413 preguntas · 400/413 | **248 grupos · 261 preguntas · 248/261** | **−152 grupos y −152 preguntas** |
+
+**De 159 asignaciones movidas salen 152 grupos**: los 7 que faltan son preguntas cuyo contenido ya estaba
+en el destino (el motor agrupa por firma, y dos enunciados iguales son un solo trabajo).
+
+**Lo que esto deja dicho para cuando le toque a III.2**: **su banco se ha doblado** (142 → 294 grupos) y
+**su valor también**, así que la fila de la tabla de valor que lo pone en 140 claves utilizables **ya no
+vale** y hay que volver a medirla antes de decidir cuándo se escribe. Las **67 propuestas de la cola**
+esperan la decisión del propietario y **no cuentan** en el diagnóstico mientras estén así.
