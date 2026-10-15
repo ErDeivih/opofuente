@@ -3666,7 +3666,26 @@ medida, no sobre el medidor, y no es de este encargo.
 
 ### 8. Las 18 puertas
 
-<!-- GATES-F32 -->
+**Medido el 15-oct-2026 sobre `6a13358`** (el código de `e824123` + los tres documentos de cierre), con la **guarda de mutación** puesta: `HEAD` y `git status --porcelain` comprobados **antes y después de cada puerta**, y las tres piezas declarando `arbol=limpio`. **18/18, en tres piezas** —no porque se saltara nada, sino porque la puerta 7 cayó **una vez por contención demostrada** y se reintentó—:
+
+| Pieza | Puertas | Resultado | Registro |
+|---|---|---|---|
+| Batería completa | **1-6** | verdes | `F:\temp-opofuente\gates-f32-medidor-completa.txt` |
+| ↳ la misma corrida | **7** | **rojo por contención**: `1 failed, 726 passed, 1 error` de 727, en **44:28** | ídem |
+| Tramo 2 | **8-18** | **verdes**, en **00:05:31**: Vitest 43 ficheros/389 pruebas, los dos builds, migraciones, siembra y E2E **80/80** | `F:\temp-opofuente\gates-f32-medidor-tramo2.txt` |
+| Tramo 3 | **7** (reintento) | **verde**: `727 passed in 2234.54s (0:37:14)` | `F:\temp-opofuente\gates-f32-medidor-tramo3.txt` |
+
+**La contención está demostrada con su cifra**, no afirmada. En aislamiento sobre el **mismo** árbol: `test_classification.py` da **14/14 en 76,21 s** y `test_library_api.py` **16/16 en 70,75 s**, y las dos pruebas que cayeron —`test_classification.py::test_resolver_un_duplicado_queda_auditado_y_no_borra_nada` (`assert 'running' == 'succeeded'`) y el teardown de `test_library_api.py::test_el_diff_compara_dos_versiones_del_mismo_documento` (`InvariantViolationError: el trabajo pertenece a otro worker`)— dan **6/6 en tres vueltas**. La puerta 7 sola tarda **37-44 minutos**; las **once** del tramo 2 caben en **5:31**. Es el poste largo por naturaleza y el primero que se rompe cuando la máquina va cargada. **No se tocó ninguna prueba ni ninguna configuración.**
+
+Cabeceras de procedencia (tomadas al arrancar, no reconstruidas después):
+
+```
+batería completa  ANTES fecha=2026-10-15T17:31:50+02:00  commit_medido=6a133584b7a13d2d1e156bcc1383406bc014e0af  main=e64c030cc22fb0afdfda8697e0a46bcd7bfa2ee0  arbol=limpio
+tramo 2           ANTES fecha=2026-10-15T18:25:30+02:00  commit_medido=6a133584b7a13d2d1e156bcc1383406bc014e0af  main=b9a29239b41fd55b6a59a9e49a12d9d2644c6e03  arbol=limpio
+tramo 3           ANTES fecha=2026-10-15T18:31:14+02:00  commit_medido=6a133584b7a13d2d1e156bcc1383406bc014e0af  main=b9a29239b41fd55b6a59a9e49a12d9d2644c6e03  arbol=limpio
+```
+
+Y una nota de instrumento que va aquí porque afecta a la procedencia: en la batería completa el `main` **sí se movió** durante la corrida —de `e64c030` a `b9a2923`, un commit del agente que corre las baterías que solo toca `docs/DEBT.md` y **cero líneas de código**—, pero la línea `DESPUES` de aquel registro lo decía mal, porque **reutilizaba el `main` del arranque en vez de releerlo**. El fallo es del lanzador, está **corregido** (la línea `DESPUES` vuelve a leer `main`), y queda **escrito en el propio registro** con las dos cifras. Ninguna puerta cambia de resultado: el commit medido no se movió en ningún momento.
 
 ### 9. Lo que queda fuera, con el porqué
 
