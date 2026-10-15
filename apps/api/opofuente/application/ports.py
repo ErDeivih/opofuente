@@ -51,6 +51,7 @@ from opofuente.domain.classification import (
     Proposal,
     ProposalStatus,
 )
+from opofuente.domain.derived_keys import RespuestasBatch
 from opofuente.domain.dossier import PassageFacts, TopicDossier
 from opofuente.domain.duplicates import TextDocument
 from opofuente.domain.ingestion import (
@@ -806,4 +807,30 @@ class NotesModel(Protocol):
         en
         lo que el modelo recuerde.
         """
+        ...
+
+
+@runtime_checkable
+class AnswerKeyModel(Protocol):
+    """Un motor que contesta una pregunta **sin apuntes**: la segunda fuente de la clave derivada.
+
+    Es un puerto aparte del de los apuntes a proposito, aunque hoy lo implemente el mismo cliente:
+    lo que se le pide es **lo contrario** —la pregunta sola, sin material— y esa diferencia es la
+    que hace que su respuesta sea independiente. Tenerlo en el mismo protocolo invitaria a
+    reutilizar el camino de `comprobar`, que lleva los apuntes dentro.
+
+    No decide nada: devuelve la letra que contesto y el servicio aplica la regla (coincidencia con
+    los apuntes, o motivo de fuera). Asi la derivacion se prueba entera con un doble que no llama a
+    nadie y sin gastar.
+    """
+
+    name: str
+
+    @property
+    def version(self) -> str:
+        """La version del motor: dos modelos distintos contestan cosas distintas."""
+        ...
+
+    def responder(self, preguntas: Sequence[ClassifiableQuestion]) -> RespuestasBatch:
+        """La letra de cada pregunta del lote, con los tokens que costo."""
         ...

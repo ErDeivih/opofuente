@@ -995,3 +995,38 @@ sostengo.
   sin llamar a ningún modelo. Coste: **0 $**.
 - **El listón sigue en el 90 %** y aprobar un tema del 82 % **no** lo publica.
 - **La zona del alumno no cambia**: lee lo mismo.
+
+## 15-oct-2026 · Las primeras preguntas que vuelven al estudio (F29)
+
+Lo que hay que saber, sin jerga:
+
+1. **59 preguntas vuelven a poder practicarse.** Son preguntas de conjuntos que estaban en cuarentena
+   —su clave estaba mal extraída del material— y a las que se les ha **reconstruido la respuesta con
+   dos fuentes que no dependen la una de la otra**: la frase de tus apuntes que la sostiene y lo que
+   contesta el modelo cuando se le pregunta **solo** el enunciado y las opciones, sin apuntes. Cuando
+   las dos coinciden, la letra se guarda como **derivada** (no como la clave del conjunto) y tú la ves
+   en el test con la marca **«clave revisada automáticamente»**.
+2. **48 de esas 59 se pueden ya practicar en un test por tema**; las otras 11 no están situadas en
+   ningún tema (el índice no las reconoce), así que vuelven por la práctica de un conjunto o por el
+   repaso.
+3. **Ningún conjunto vuelve entero a los tests**, y no es un fallo: el listón es que el 90 % de sus
+   preguntas tengan clave fiable y **el mejor está en el 35,7 %**. Por eso no he devuelto ningún
+   conjunto: lo que vuelve es cada pregunta que se ha podido reconstruir.
+4. **Lo que sigue fuera son 936 preguntas, y ahora se sabe por qué**: 628 porque tus apuntes no
+   contestan a esa pregunta (falta material), 293 porque dan una letra **sin la frase que la
+   sostenga** (una letra sin cita no es una fuente) y **15 porque los apuntes y el modelo no dicen lo
+   mismo**. Esas **15 son tuyas**: son las que la bandeja tendrá que enseñarte agrupadas por conjunto
+   (§2 del encargo, que hace otro bloque; el dato y el motivo ya están guardados).
+5. **Las claves oficiales no se han tocado.** 5 conjuntos de la AGE con su respuesta publicada se han
+   **rechazado** (122 preguntas) y el rechazo queda escrito con su motivo. No se deriva ni se cambia
+   una clave oficial, y la ruta **se niega** a intentarlo.
+6. **Lo que ha costado**: **4,8 céntimos** (0,0478 $) en 13 llamadas al modelo. La previsión que hice
+   **antes de pagar** decía 0,3 céntimos y se quedó corta porque el modelo devuelve mucho más texto
+   del que se lee; la he corregido con lo medido para que la próxima no engañe. El acumulado del
+   objetivo sigue muy por debajo de los 40 $.
+7. **Antes de escribir hice copia verificada** de tu base (811 MB, comprobada entera: integridad,
+   claves foráneas y CRC). La base ha subido a la revisión `0039` y, de paso, a la `0038` que ya estaba
+   en `main` y tu base no tenía (la tabla de tu revisión de apuntes del panel).
+8. **Ojo con las cifras y con el orden**: mientras yo trabajaba, el bloque de contenido cerró el tema
+   I.4 y su puerta de claves **sacó 6 conjuntos de la cuarentena** (de 21 a 15). Mis números son los
+   del final, medidos después de su corrida, no los del principio.

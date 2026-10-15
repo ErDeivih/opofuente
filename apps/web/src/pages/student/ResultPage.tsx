@@ -241,11 +241,19 @@ function PreguntaCorregida({ pregunta }: { pregunta: StudentResultQuestion }) {
           {pregunta.is_reserve ? 'Reserva · ' : ''}
           {pregunta.position}
         </span>
-        {pregunta.in_review ? (
+        {pregunta.in_review && !pregunta.derived_key ? (
           // En el resultado importa más que en el test: si la clave no es de fiar, un fallo puede ser
           // de la clave y no del alumno (§1), y eso hay que poder verlo justo al mirar qué se falló.
+          // Si la clave es derivada manda la otra marca: decir las dos confunde.
           <span className="marca marca-clave-en-revision" title="clave en revisión">
             clave en revisión
+          </span>
+        ) : null}
+        {pregunta.derived_key ? (
+          // Y la otra marca dice de dónde sale la letra con la que se corrigió (§1 de F29): es una
+          // clave derivada, no la plantilla del conjunto.
+          <span className="marca marca-clave-derivada" title="clave revisada automáticamente">
+            clave revisada automáticamente
           </span>
         ) : null}
         {pregunta.topics.map((tema) => (

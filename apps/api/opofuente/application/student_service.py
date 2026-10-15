@@ -798,7 +798,7 @@ class StudentService:
         """El test en curso: la sesión, la pregunta que toca y la hoja de respuestas entera."""
         sesion = self._sesion_del_alumno(session_id)
         vista = self._study.runner_view(session_id)
-        return StudentService._run(vista, sesion, self._en_revision(vista))
+        return StudentService._run(vista, sesion, self._en_revision(vista), self._derivadas(vista))
 
     def start(self, session_id: str) -> StudentRunView:
         """Arranca el test (arrancar uno que ya corre no cambia nada) y devuelve su estado."""
@@ -883,6 +883,9 @@ class StudentService:
         en_revision = self._study.key_reliability_of(
             [entrada.question_version_id for entrada in revision.entries]
         )
+        derivadas = self._study.derived_key_questions(
+            [entrada.question_version_id for entrada in revision.entries]
+        )
         preguntas = tuple(
             StudentService._pregunta_corregida(
                 entrada,
@@ -893,6 +896,7 @@ class StudentService:
                     for pregunta_id, veredicto in en_revision.items()
                     if veredicto == KeyReliability.DUDOSA.value
                 ),
+                derivadas,
             )
             for entrada in revision.entries
         )
@@ -1291,6 +1295,7 @@ class StudentService:
         partes: Mapping[str, str],
         temas: Mapping[str, tuple[StudentTopicRefView, ...]],
         en_revision: frozenset[str] = frozenset(),
+        derivadas: frozenset[str] = frozenset(),
     ) -> StudentResultQuestionView:
         """Una pregunta de la revisión, con su corrección y sin nada que no se pueda enseñar."""
         correccion = entrada.correction
@@ -1312,6 +1317,7 @@ class StudentService:
             elapsed_ms=entrada.elapsed_ms,
             topics=temas.get(entrada.question_version_id, ()),
             in_review=entrada.question_version_id in en_revision,
+            derived_key=entrada.question_version_id in derivadas,
         )
 
     @staticmethod
@@ -1450,6 +1456,7 @@ class StudentService:
         vista: RunnerView,
         sesion: StudentSessionView,
         en_revision: frozenset[str] = frozenset(),
+        derivadas: frozenset[str] = frozenset(),
     ) -> StudentRunView:
         """El estado del test en curso, con la hoja de respuestas entera."""
         return StudentRunView(
@@ -1462,11 +1469,14 @@ class StudentService:
             question=(
                 None
                 if vista.current is None
-                else StudentService._pregunta(vista.current, en_revision)
+                else StudentService._pregunta(vista.current, en_revision, derivadas)
             ),
             sheet=tuple(StudentService._fila(pregunta) for pregunta in vista.questions),
             questions_in_review=sum(
                 1 for pregunta in vista.questions if pregunta.question_version_id in en_revision
+            ),
+            questions_derived=sum(
+                1 for pregunta in vista.questions if pregunta.question_version_id in derivadas
             ),
         )
 
@@ -1486,9 +1496,21 @@ class StudentService:
             if veredicto == KeyReliability.DUDOSA.value
         )
 
+    def _derivadas(self, vista: RunnerView) -> frozenset[str]:
+        """Las preguntas de esta sesión con **clave derivada** (§1 del encargo F29).
+
+        Se piden igual que las de revisión —una vez por vista— y por el mismo motivo: la marca se
+        pinta pregunta a pregunta y una consulta por pregunta para pintar un rótulo no se sostiene.
+        """
+        return self._study.derived_key_questions(
+            [pregunta.question_version_id for pregunta in vista.questions]
+        )
+
     @staticmethod
     def _pregunta(
-        pregunta: SessionQuestionView, en_revision: frozenset[str] = frozenset()
+        pregunta: SessionQuestionView,
+        en_revision: frozenset[str] = frozenset(),
+        derivadas: frozenset[str] = frozenset(),
     ) -> StudentQuestionView:
         return StudentQuestionView(
             position=pregunta.position,
@@ -1503,6 +1525,7 @@ class StudentService:
             chosen_option_keys=tuple(pregunta.chosen_option_keys),
             confidence=None if pregunta.confidence is None else pregunta.confidence.value,
             in_review=pregunta.question_version_id in en_revision,
+            derived_key=pregunta.question_version_id in derivadas,
             correction=(
                 None
                 if pregunta.correction is None

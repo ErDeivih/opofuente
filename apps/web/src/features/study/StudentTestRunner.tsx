@@ -230,12 +230,24 @@ export function StudentTestRunner() {
               <p className="test-pregunta__numero">
                 {pregunta.is_reserve ? 'Reserva · ' : ''}
                 {pregunta.position}
-                {pregunta.in_review ? (
+                {pregunta.in_review && !pregunta.derived_key ? (
                   // La clave de esta pregunta está en revisión (§1): el conjunto discrepa de los
                   // apuntes entre el 15 % y el 30 %. Entra en el test, pero el alumno lo ve **antes**
-                  // de fiarse de la corrección. El texto es el mismo que devuelve la API.
+                  // de fiarse de la corrección. El texto es el mismo que devuelve la API. Si su clave
+                  // es derivada manda la otra marca: es más específica y decir las dos confunde.
                   <span className="marca marca-clave-en-revision" title="clave en revisión">
                     clave en revisión
+                  </span>
+                ) : null}
+                {pregunta.derived_key ? (
+                  // Y esta otra dice de dónde sale la letra (§1 del encargo F29): la clave es
+                  // derivada —los apuntes, con su cita verificada, y el modelo preguntado sin
+                  // apuntes dicen lo mismo—, así que no es la plantilla del conjunto.
+                  <span
+                    className="marca marca-clave-derivada"
+                    title="clave revisada automáticamente"
+                  >
+                    clave revisada automáticamente
                   </span>
                 ) : null}
               </p>

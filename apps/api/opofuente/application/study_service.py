@@ -19,7 +19,7 @@ from __future__ import annotations
 import json
 import random
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from datetime import datetime, timedelta
 from fractions import Fraction
 from typing import Literal
@@ -28,6 +28,7 @@ from opofuente.application.ports import Clock
 from opofuente.application.question_models import (
     AnswerKeyView,
     KeyEntryView,
+    QuestionSetView,
     QuestionView,
 )
 from opofuente.application.read_models import ConvocationDetail, NodeView, OppositionDetail
@@ -292,14 +293,86 @@ class _Candidata:
     motor de apuntes: dos bancos pueden traer la misma pregunta y en una sesión no puede caer dos
     veces. `node_id` es el nodo del programa por el que entró: una pregunta catalogada en dos temas
     cuenta en el **primero** que la pidió, para que el reparto no la sume dos veces.
+
+    `key_id` es `None` cuando la pregunta se corrige con su **clave derivada** (§1 del encargo F29):
+    esa letra no vive en ninguna plantilla del conjunto: no hay identificador que
+    apuntar, y la sesión no puede decir que se corrige con una.
     """
 
     question: QuestionView
-    key_id: str
+    key_id: str | None
     entry: KeyEntryView
     signature: str
     node_id: str
     reserve_order: int | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class _ClavesDelBanco:
+    """Lo que la derivación (§1 del encargo F29) cambió en el banco, por pregunta.
+
+    - **`derivadas`**: la letra de la clave derivada de cada pregunta. La pregunta se corrige con
+      ella, tenga o no plantilla activa su conjunto, y su conjunto esté o no en cuarentena.
+    - **`fuera`**: las preguntas con **motivo de fuera** escrito, que la derivación no pudo
+      arreglar. Siguen fuera **aunque su conjunto vuelva** a los tests, que es la mitad del encargo
+      que dice que las que no tienen clave fiable siguen fuera de ese conjunto.
+
+    Se lee una vez por operación y se pasa a los sitios que eligen preguntas. Las dos tablas están
+    vacías hasta que se corre la derivación, y entonces esto no cambia nada de lo de siempre.
+    """
+
+    derivadas: Mapping[str, tuple[str, ...]] = field(default_factory=dict)
+    fuera: frozenset[str] = frozenset()
+    conjuntos: frozenset[str] = frozenset()
+
+    @property
+    def vacio(self) -> bool:
+        return not self.derivadas and not self.fuera
+
+    def letras(self, question_version_id: str) -> tuple[str, ...] | None:
+        """La letra derivada de esa pregunta, o `None` si no tiene."""
+        return self.derivadas.get(question_version_id)
+
+    def es_derivada(self, set_id: str) -> bool:
+        """¿Este conjunto tiene alguna clave derivada? Lo pregunta el diagnóstico, que elige
+        conjuntos enteros y no puede dejar fuera uno con letras derivadas dentro."""
+        return set_id in self.conjuntos
+
+    def entrada(self, question_version_id: str) -> KeyEntryView | None:
+        """La entrada de clave de esa pregunta, si su clave es **derivada**."""
+        letras = self.letras(question_version_id)
+        if letras is None:
+            return None
+        return KeyEntryView(
+            question_version_id=question_version_id,
+            outcome=KeyOutcome.KEYED.value,
+            correct_option_keys=letras,
+            notes="clave derivada: los apuntes (con su cita) y el modelo sin apuntes coinciden",
+        )
+
+    def sigue_fuera(self, question_version_id: str) -> bool:
+        """¿Esta pregunta tiene escrito su motivo de fuera?"""
+        return question_version_id in self.fuera
+
+    def con_letra_propia(self, question_ids: Sequence[str]) -> int:
+        """Cuántas de esas preguntas traen su clave derivada."""
+        return sum(1 for question_id in question_ids if self.letras(question_id) is not None)
+
+
+@dataclass(frozen=True, slots=True)
+class _Correccion:
+    """Con qué se corrige un conjunto: su plantilla (o ninguna) y la entrada de cada pregunta.
+
+    `key_id` es `None` cuando el conjunto **no tiene plantilla activa** y solo corrige por claves
+    derivadas: la sesión no se corrige con una plantilla y no puede decir que sí.
+    """
+
+    key_id: str | None
+    label: str
+    entradas: Mapping[str, KeyEntryView]
+
+    def entrada(self, question_version_id: str) -> KeyEntryView | None:
+        return self.entradas.get(question_version_id)
 
 
 class StudyService:
@@ -352,6 +425,7 @@ class StudyService:
         claves: set[str] = set()
         etiquetas: list[str] = []
         limite_tiempo: int | None = None
+        banco = self._banco()
         conjunto_unico: str | None = request.sources[0].question_set_id
         #: Preguntas del simulacro que ya se habían visto hace poco. Se cuentan para poder decirlo:
         #: un
@@ -368,22 +442,31 @@ class StudyService:
         for fuente in request.sources:
             parte = self._parte(convocatoria, fuente.part_code)
             contexto[parte.code] = parte
-            clave = self._clave_activa(fuente.question_set_id)
-            claves.add(clave.id)
-            etiquetas.append(f"{parte.name}: plantilla v{clave.version_no}")
-            preguntas = self._preguntas(fuente, parte, request.mode, recently_seen=vistas_hace_poco)
+            conjunto_fuente = self._questions.get_set(fuente.question_set_id)
+            preguntas = self._preguntas(
+                fuente, parte, request.mode, recently_seen=vistas_hace_poco, banco=banco
+            )
+            correccion = (
+                self._correccion_de(conjunto_fuente, preguntas, banco)
+                if conjunto_fuente is not None
+                else None
+            )
+            if correccion is not None and correccion.key_id is not None:
+                claves.add(correccion.key_id)
+            etiquetas.append(
+                f"{parte.name}: {correccion.label if correccion is not None else 'sin plantilla'}"
+            )
             if request.mode is SessionMode.MOCK_EXAM:
                 # Cuántas de las elegidas se habían visto hace poco: el orden de `_preguntas`
                 # prefiere
                 # las frescas, y lo que no se puede evitar se dice en la nota de la sesión.
                 repetidas += sum(1 for pregunta in preguntas if pregunta.id in vistas_hace_poco)
-            entradas = {entrada.question_version_id: entrada for entrada in clave.entries}
             # Las reservas se numeran al congelarlas: la convocatoria las valora **por su orden**, y
             # una reserva sin orden no se puede sustituir por la primera. Si el material ya traía un
             # orden, se respeta; si no, es el de presentación dentro de la parte.
             orden_reserva = 0
             for pregunta in preguntas:
-                entrada = entradas.get(pregunta.id)
+                entrada = correccion.entrada(pregunta.id) if correccion is not None else None
                 if pregunta.is_reserve:
                     orden_reserva += 1
                 congeladas.append(
@@ -505,6 +588,8 @@ class StudyService:
         sin_respuesta = 0
         no_practicables = 0
         en_cuarentena = 0
+        derivadas = 0
+        banco = self._banco()
         for question_id in candidatas:
             pregunta = self._questions.get_question(question_id)
             if pregunta is None or pregunta.question_type not in _SUPPORTED_QUESTION_TYPES:
@@ -515,29 +600,49 @@ class StudyService:
                 no_practicables += 1
                 continue
             conjunto = self._questions.get_set(pregunta.question_set_id)
-            if conjunto is None or conjunto.active_key_id is None:
+            propia = banco.entrada(pregunta.id)
+            if propia is not None:
+                # La clave derivada de la pregunta manda sobre la plantilla del conjunto y sobre su
+                # cuarentena (§1 del encargo F29): es la letra que la devuelve al estudio.
+                entrada: KeyEntryView | None = propia
+                derivadas += 1
+                if pregunta.question_set_id not in claves:
+                    activa = self._clave_activa_o_none(pregunta.question_set_id)
+                    if activa is not None:
+                        claves[pregunta.question_set_id] = activa.id
+                    etiqueta = (
+                        f"{conjunto.title}: plantilla v{activa.version_no}"
+                        if activa is not None and conjunto is not None
+                        else f"{conjunto.title if conjunto else pregunta.question_set_id}: "
+                        "claves derivadas"
+                    )
+                    if etiqueta not in etiquetas:
+                        etiquetas.append(etiqueta)
+            elif conjunto is None or conjunto.active_key_id is None:
                 # Sin plantilla activa no hay con qué corregir: se queda fuera y se cuenta.
                 sin_clave += 1
                 continue
-            if conjunto.key_is_unreliable:
-                # Cuarentena de clave (§1): la práctica por tema es uno de los sitios donde se
-                # eligen preguntas, así que se salta aquí también. No es «no se puede corregir»
-                # —la clave existe—: es que la clave no es de fiar.
+            elif conjunto.key_is_unreliable or banco.sigue_fuera(pregunta.id):
+                # Cuarentena de clave (§1) o motivo de fuera escrito (§1 de F29): la práctica por
+                # tema es uno de los sitios donde se eligen preguntas: se salta aquí también.
+                # No es «no se puede corregir»: es que la clave no es de fiar y su letra no se pudo
+                # derivar.
                 en_cuarentena += 1
                 continue
-            clave = self._clave_activa(pregunta.question_set_id)
-            claves[pregunta.question_set_id] = clave.id
-            etiqueta = f"{conjunto.title}: plantilla v{clave.version_no}"
-            if etiqueta not in etiquetas:
-                etiquetas.append(etiqueta)
-            entrada = next(
-                (
-                    candidata
-                    for candidata in clave.entries
-                    if candidata.question_version_id == pregunta.id
-                ),
-                None,
-            )
+            else:
+                clave = self._clave_activa(pregunta.question_set_id)
+                claves[pregunta.question_set_id] = clave.id
+                etiqueta = f"{conjunto.title}: plantilla v{clave.version_no}"
+                if etiqueta not in etiquetas:
+                    etiquetas.append(etiqueta)
+                entrada = next(
+                    (
+                        candidata
+                        for candidata in clave.entries
+                        if candidata.question_version_id == pregunta.id
+                    ),
+                    None,
+                )
             if entrada is None or entrada.outcome != KeyOutcome.KEYED.value:
                 # La plantilla activa no dice cuál es la buena (no tiene entrada, o la anula, o se
                 # contradice): la pregunta no se puede corregir y responderla no contaría. Antes
@@ -584,6 +689,7 @@ class StudyService:
                 sin_respuesta=sin_respuesta,
                 no_practicables=no_practicables,
                 en_cuarentena=en_cuarentena,
+                derivadas=derivadas,
             ),
             context_label=self._etiqueta_del_tema(request.curriculum_node_id),
         )
@@ -629,6 +735,7 @@ class StudyService:
         convocatoria = self._convocatoria_de(oposicion.opposition.convocation_id)
 
         vistas = self._estado_de_quien_estudia(spec, opposition_id)
+        banco = self._banco()
         contexto: dict[str, _PartContext] = {}
         congeladas: list[FrozenQuestion] = []
         claves: set[str] = set()
@@ -670,12 +777,15 @@ class StudyService:
                 else None
             )
 
-            candidatas, disponibles = self._candidatas(parte, spec, vistas)
+            candidatas, disponibles = self._candidatas(parte, spec, vistas, banco)
             elegidas = self._repartir(parte, candidatas, firmas)
             reservas = self._reservas(parte, candidatas, firmas, elegidas)
             for candidata in (*elegidas, *reservas):
                 firmas.add(candidata.signature)
-                claves.add(candidata.key_id)
+                if candidata.key_id is not None:
+                    # Sin plantilla activa no hay identificador que apuntar: la pregunta se corrige
+                    # con su clave derivada y la sesión no dice que se corrige con una plantilla.
+                    claves.add(candidata.key_id)
                 conjuntos.add(candidata.question.question_set_id)
                 congeladas.append(
                     FrozenQuestion(
@@ -707,6 +817,14 @@ class StudyService:
             )
 
         etiquetas = self._etiquetas_de_conjuntos(conjuntos)
+        derivadas = banco.con_letra_propia(
+            [congelada.question_version_id for congelada in congeladas]
+        )
+        if derivadas:
+            # Se dice en la etiqueta de la clave de la sesión: una sesión corregida en parte con
+            # claves derivadas no se corrige igual que una con la plantilla entera: el alumno tiene
+            # que poder verlo después.
+            etiquetas.append(f"{derivadas} clave(s) derivada(s)")
 
         # Un examen y un simulacro corrigen al terminar: enseñar la corrección mientras se contesta
         # filtraría la solución, y `SessionConfiguration` lo exige también desde el dominio.
@@ -764,12 +882,13 @@ class StudyService:
         parte: PartSpec,
         spec: CompositionSpec,
         vistas: Mapping[str, tuple[str | None, str | None]],
+        banco: _ClavesDelBanco,
     ) -> tuple[tuple[_Candidata, ...], int]:
         """Las preguntas que pueden entrar en una parte, en orden estable, y cuántas hay.
 
         Las reglas son las del contrato de la composición, y ninguna se improvisa aquí:
 
-        - solo preguntas con **clave activa que diga su respuesta**: sin ella responder no cuenta;
+        - solo preguntas con **clave utilizable**: sin ella responder no cuenta;
         - **nunca dos de la misma pregunta**: dos bancos pueden traer el mismo enunciado, y
           repetirlo
           en un test de 25 sería medir dos veces lo mismo (se agrupa con la firma del motor de
@@ -777,6 +896,11 @@ class StudyService:
         - fuera las marcadas **fuera de temario** y los **enunciados rotos**: no son preguntas;
         - en modo público, solo conjuntos publicables;
         - y el filtro de lo ya hecho (`unseen`, `failed`, `flagged`) cuando se pide.
+
+        **Y la clave, que es lo que cambió con la derivación (§1 de F29)**: una pregunta con
+        clave derivada **entra** aunque su conjunto esté en cuarentena; una con motivo de fuera
+        escrito **no entra**, aunque su conjunto no esté en cuarentena; y las demás entran con la
+        plantilla de su conjunto, como siempre.
         """
         candidatas: list[_Candidata] = []
         vistas_del_tema: set[str] = set()
@@ -789,14 +913,35 @@ class StudyService:
                 if pregunta is None or pregunta.question_type not in _SUPPORTED_QUESTION_TYPES:
                     continue
                 conjunto = self._questions.get_set(pregunta.question_set_id)
-                if conjunto is None or conjunto.active_key_id is None:
+                if conjunto is None:
                     continue
-                if conjunto.key_is_unreliable:
-                    # Cuarentena de clave (§1): la pregunta **no entra** en la parte. No se dice
-                    # aquí porque el contrato de la composición ya enseña `available`, que es el
-                    # número de preguntas que de verdad se pueden poner; lo que sí se hace es no
-                    # contarla como disponible, que es lo que haría creer al alumno que tiene 80
-                    # preguntas cuando solo puede contestar 60.
+                propia = banco.entrada(pregunta.id)
+                if propia is not None:
+                    # La clave derivada manda sobre la plantilla del conjunto y sobre su cuarentena:
+                    # es una letra con dos apoyos independientes y no depende de la extracción.
+                    entrada: KeyEntryView | None = propia
+                    clave_id: str | None = None
+                elif conjunto.key_is_unreliable or banco.sigue_fuera(pregunta.id):
+                    # Cuarentena de clave (§1) o motivo de fuera escrito (§1 de F29): la pregunta
+                    # **no entra** en la parte. No se dice aquí porque el contrato de la composición
+                    # ya enseña `available`, que es el número de preguntas que de verdad se pueden
+                    # poner; lo que sí se hace es no contarla como disponible, que es lo que haría
+                    # creer al alumno que tiene 80 preguntas cuando solo puede contestar 60.
+                    continue
+                elif conjunto.active_key_id is None:
+                    continue
+                else:
+                    clave = self._clave_activa(pregunta.question_set_id)
+                    entrada = next(
+                        (
+                            candidata
+                            for candidata in clave.entries
+                            if candidata.question_version_id == pregunta.id
+                        ),
+                        None,
+                    )
+                    clave_id = clave.id
+                if entrada is None or entrada.outcome != KeyOutcome.KEYED.value:
                     continue
                 if spec.public_only and conjunto.distribution != "public":
                     continue
@@ -809,23 +954,12 @@ class StudyService:
                     continue
                 if pregunta.id in self._excluidas(pregunta.question_set_id):
                     continue
-                clave = self._clave_activa(pregunta.question_set_id)
-                entrada = next(
-                    (
-                        candidata
-                        for candidata in clave.entries
-                        if candidata.question_version_id == pregunta.id
-                    ),
-                    None,
-                )
-                if entrada is None or entrada.outcome != KeyOutcome.KEYED.value:
-                    continue
                 if not self._pasa_el_filtro(spec.filter, pregunta.id, vistas):
                     continue
                 candidatas.append(
                     _Candidata(
                         question=pregunta,
-                        key_id=clave.id,
+                        key_id=clave_id,
                         entry=entrada,
                         signature=firma_de_grupo(
                             pregunta.stem,
@@ -856,6 +990,19 @@ class StudyService:
         como se acaba enseñando una marca que no corresponde.
         """
         return self._questions.key_reliability_by_question(question_ids)
+
+    def derived_key_questions(self, question_ids: Sequence[str]) -> frozenset[str]:
+        """Las preguntas de esa lista cuya clave es **derivada** (§1 del encargo F29).
+
+        Son las que el alumno ve con la marca **«clave revisada automáticamente»**: su letra no sale
+        de la plantilla del conjunto (que está en cuarentena o en borrador) sino de dos fuentes
+        independientes que dicen lo mismo. Va aquí, con `key_reliability_of`, por el mismo motivo:
+        quien sabe de la clave de una pregunta es el motor que la elige.
+        """
+        if not question_ids:
+            return frozenset()
+        derivadas = self._questions.derived_keys()
+        return frozenset(question_id for question_id in question_ids if question_id in derivadas)
 
     def _preguntas_del_nodo(self, node_id: str) -> tuple[str, ...]:
         """Las preguntas de un nodo **y de sus descendientes**.
@@ -1033,14 +1180,22 @@ class StudyService:
         )
 
     def _etiquetas_de_conjuntos(self, conjuntos: set[str]) -> list[str]:
-        """De qué conjuntos salió la composición, para la etiqueta de la clave que se congeló."""
+        """De qué conjuntos salió la composición, para la etiqueta de la clave que se congeló.
+
+        Un conjunto cuya única clave utilizable es una **derivada** (su plantilla está en borrador o
+        en cuarentena) se etiqueta como tal: decir «plantilla vN» de un conjunto del que no se ha
+        usado ninguna plantilla sería mentir sobre con qué se corrigió la sesión.
+        """
         etiquetas: list[str] = []
         for set_id in sorted(conjuntos):
             conjunto = self._questions.get_set(set_id)
-            if conjunto is None or conjunto.active_key_id is None:
+            if conjunto is None:
                 continue
-            clave = self._clave_activa(set_id)
-            etiquetas.append(f"{conjunto.title}: plantilla v{clave.version_no}")
+            activa = self._clave_activa_o_none(set_id)
+            if activa is None:
+                etiquetas.append(f"{conjunto.title}: claves derivadas")
+                continue
+            etiquetas.append(f"{conjunto.title}: plantilla v{activa.version_no}")
         return etiquetas
 
     def _etiqueta_de_fuentes(self, fuentes: Sequence[SourceInput]) -> str | None:
@@ -1083,12 +1238,18 @@ class StudyService:
         no_practicables: int,
         sin_respuesta: int = 0,
         en_cuarentena: int = 0,
+        derivadas: int = 0,
     ) -> str:
         """Lo que una práctica por tema deja fuera, dicho: si no, el número no cuadraría."""
         nota = (
             f"Práctica de un tema: {total} pregunta(s) catalogadas en él, sin parte declarada y "
             "corregidas en directo (la parte la fija la convocatoria para un examen)."
         )
+        if derivadas:
+            nota += (
+                f" {derivadas} se corrigen con su **clave derivada** (los apuntes, con su "
+                "modelo sin apuntes dicen la misma letra)."
+            )
         if en_cuarentena:
             nota += (
                 f" {en_cuarentena} se quedaron fuera con la clave en cuarentena (su conjunto "
@@ -1137,12 +1298,20 @@ class StudyService:
         conjuntos: set[str] = set()
         limite_tiempo: int | None = None
         en_cuarentena = 0
+        derivadas = 0
+        banco = self._banco()
         for posicion, vencida in enumerate(vencidas, start=1):
             conjunto_vencido = self._questions.get_set(vencida.question_set_id)
-            if conjunto_vencido is not None and conjunto_vencido.key_is_unreliable:
-                # Cuarentena de clave (§1): el repaso es el tercero de los sitios donde se eligen
-                # preguntas. Volver a preguntar lo que se falló **con una clave que no es de fiar**
-                # es la peor forma de este defecto: se falló por la clave, no por no saberlo.
+            propia = banco.entrada(vencida.question_version_id)
+            if propia is None and (
+                (conjunto_vencido is not None and conjunto_vencido.key_is_unreliable)
+                or banco.sigue_fuera(vencida.question_version_id)
+            ):
+                # Cuarentena de clave (§1) o motivo de fuera escrito (§1 de F29): el repaso es el
+                # tercero de los sitios donde se eligen preguntas. Repreguntar lo que se falló
+                # **con una clave que no es de fiar** es la peor forma de este defecto: se falló por
+                # la clave, no por no saberlo. Una con clave derivada sí se repasa: su letra
+                # tiene dos apoyos independientes.
                 en_cuarentena += 1
                 continue
             if vencida.part_code is None:
@@ -1153,20 +1322,32 @@ class StudyService:
                 )
             parte = self._parte(convocatoria, vencida.part_code)
             contexto[parte.code] = parte
-            clave = self._clave_activa(vencida.question_set_id)
-            claves.add(clave.id)
+            activa = self._clave_activa_o_none(vencida.question_set_id)
+            if propia is not None:
+                entrada: KeyEntryView | None = propia
+                derivadas += 1
+            else:
+                if activa is None:
+                    # Sin plantilla activa y sin clave derivada no hay con qué corregir: se queda
+                    # fuera y se cuenta como si su clave no fuera de fiar (es la verdad: no la hay).
+                    en_cuarentena += 1
+                    continue
+                entrada = next(
+                    (
+                        candidata
+                        for candidata in activa.entries
+                        if candidata.question_version_id == vencida.question_version_id
+                    ),
+                    None,
+                )
+            if activa is not None:
+                claves.add(activa.id)
+                etiqueta = f"{parte.name}: plantilla v{activa.version_no}"
+            else:
+                etiqueta = f"{parte.name}: claves derivadas"
             conjuntos.add(vencida.question_set_id)
-            etiqueta = f"{parte.name}: plantilla v{clave.version_no}"
             if etiqueta not in etiquetas:
                 etiquetas.append(etiqueta)
-            entrada = next(
-                (
-                    candidata
-                    for candidata in clave.entries
-                    if candidata.question_version_id == vencida.question_version_id
-                ),
-                None,
-            )
             congeladas.append(
                 FrozenQuestion(
                     question_version_id=vencida.question_version_id,
@@ -1273,11 +1454,13 @@ class StudyService:
             )
         ahora = self._clock.now()
         intentos_previos = self._study.attempt_counts(request.opposition_id)
+        banco = self._banco()
         conjuntos = self._questions.list_sets(opposition_id=request.opposition_id, limit=200).sets
         con_clave = [
             conjunto
             for conjunto in conjuntos
-            if conjunto.active_key_id is not None and not conjunto.key_is_unreliable
+            if (conjunto.active_key_id is not None and not conjunto.key_is_unreliable)
+            or banco.es_derivada(conjunto.id)
         ]
         if not con_clave:
             raise UnsupportedError(
@@ -1293,13 +1476,19 @@ class StudyService:
         sin_tema = 0
         for conjunto in con_clave:
             temas_del_conjunto = self._questions.node_titles_of_set(conjunto.id)
-            # Solo cuenta lo que la plantilla activa puede corregir: una pregunta sin respuesta en
-            # ella se corregiría como «excluida» y el diagnóstico mediría menos de lo que dice.
-            corregibles = {
-                entrada.question_version_id
-                for entrada in self._clave_activa(conjunto.id).entries
-                if entrada.outcome == KeyOutcome.KEYED.value
-            }
+            # Solo cuenta lo que se puede corregir: lo que la plantilla activa responde **y** lo que
+            # tiene clave derivada (§1 del encargo F29). Una pregunta sin respuesta se corregiría
+            # como «excluida» y el diagnóstico mediría menos de lo que dice.
+            activa = self._clave_activa_o_none(conjunto.id)
+            corregibles = (
+                {
+                    entrada.question_version_id
+                    for entrada in activa.entries
+                    if entrada.outcome == KeyOutcome.KEYED.value
+                }
+                if activa is not None
+                else set()
+            )
             for pregunta in self._questions.all_questions(conjunto.id):
                 if pregunta.question_type not in _SUPPORTED_QUESTION_TYPES or pregunta.is_reserve:
                     continue
@@ -1307,7 +1496,10 @@ class StudyService:
                 if not suyos:
                     sin_tema += 1
                     continue
-                if pregunta.id not in corregibles:
+                if banco.sigue_fuera(pregunta.id) and banco.letras(pregunta.id) is None:
+                    # Su motivo de fuera está escrito: sigue fuera aunque su conjunto entre.
+                    continue
+                if pregunta.id not in corregibles and banco.letras(pregunta.id) is None:
                     continue
                 # El **primer** tema de la pregunta (el de ruta anterior) es el que la estratifica:
                 # una
@@ -1360,24 +1552,29 @@ class StudyService:
         congeladas: list[FrozenQuestion] = []
         for posicion, question_id in enumerate(muestra.question_ids, start=1):
             pregunta = por_id[question_id]
-            clave = self._clave_activa(pregunta.question_set_id)
-            claves[pregunta.question_set_id] = clave.id
+            propia = banco.entrada(pregunta.id)
+            activa = self._clave_activa_o_none(pregunta.question_set_id)
+            if activa is not None:
+                claves[pregunta.question_set_id] = activa.id
+            if propia is not None:
+                entrada: KeyEntryView | None = propia
+            else:
+                clave = self._clave_activa(pregunta.question_set_id)
+                entrada = next(
+                    (
+                        candidata
+                        for candidata in clave.entries
+                        if candidata.question_version_id == pregunta.id
+                    ),
+                    None,
+                )
             # La etiqueta lleva el conjunto: la muestra puede salir de varios, y dos plantillas «v1»
             # de conjuntos distintos no son la misma clave (decir «plantilla v1» a secas mentiría).
-            etiqueta = (
-                f"{titulos_por_conjunto.get(pregunta.question_set_id, 'conjunto')}: "
-                f"plantilla v{clave.version_no}"
+            etiqueta = f"{titulos_por_conjunto.get(pregunta.question_set_id, 'conjunto')}: " + (
+                f"plantilla v{activa.version_no}" if activa is not None else "claves derivadas"
             )
             if etiqueta not in etiquetas:
                 etiquetas.append(etiqueta)
-            entrada = next(
-                (
-                    candidata
-                    for candidata in clave.entries
-                    if candidata.question_version_id == pregunta.id
-                ),
-                None,
-            )
             congeladas.append(
                 FrozenQuestion(
                     question_version_id=pregunta.id,
@@ -2071,9 +2268,7 @@ class StudyService:
 
     def _clave_activa(self, set_id: str) -> AnswerKeyView:
         """La clave **activa** del conjunto: es la que corrige. Una en borrador no corrige nada."""
-        activa = next(
-            (clave for clave in self._questions.list_keys(set_id) if clave.status == "active"), None
-        )
+        activa = self._clave_activa_o_none(set_id)
         if activa is None:
             raise ClassificationConflictError(
                 "el conjunto no tiene ninguna clave activa: activar una plantilla es lo que decide "
@@ -2081,12 +2276,84 @@ class StudyService:
             )
         return activa
 
+    def _clave_activa_o_none(self, set_id: str) -> AnswerKeyView | None:
+        """La clave activa del conjunto, o `None` si no tiene ninguna.
+
+        `_clave_activa` **revienta** cuando no la hay y eso es lo correcto donde la plantilla es
+        obligatoria. Aquí no: un conjunto cuya clave está en cuarentena puede no tener plantilla
+        activa —sus claves están en borrador— y aun así tener preguntas con **clave derivada** (§1
+        del encargo F29). Esas preguntas se corrigen con su clave derivada y sin plantilla.
+        """
+        return next(
+            (clave for clave in self._questions.list_keys(set_id) if clave.status == "active"), None
+        )
+
+    def _banco(self) -> _ClavesDelBanco:
+        """Lo que la derivación cambió en el banco: **se lee una vez por operación**.
+
+        Pregunta a pregunta serían miles de consultas en una composición de un tema con 600
+        preguntas; las dos tablas son pequeñas por construcción (las derivadas son las de cita
+        verificada y coinciden con el modelo; los motivos de fuera, las de los conjuntos en
+        cuarentena).
+        """
+        return _ClavesDelBanco(
+            derivadas=self._questions.derived_keys(),
+            fuera=self._questions.questions_without_reliable_key(),
+            conjuntos=self._questions.sets_with_derived_keys(),
+        )
+
+    def _correccion_de(
+        self,
+        conjunto: QuestionSetView,
+        preguntas: Sequence[QuestionView],
+        banco: _ClavesDelBanco,
+    ) -> _Correccion:
+        """Con qué se corrige cada pregunta: la plantilla del conjunto **con las derivadas encima**.
+
+        Es el único sitio donde se junta lo uno con lo otro, y por eso está aquí y no repartido por
+        los cinco sitios que eligen preguntas. Una pregunta con clave derivada se corrige **con su
+        letra**, tenga o no plantilla activa su conjunto; las demás, con la plantilla de siempre.
+        """
+        activa = self._clave_activa_o_none(conjunto.id)
+        entradas: dict[str, KeyEntryView] = (
+            {entrada.question_version_id: entrada for entrada in activa.entries}
+            if activa is not None
+            else {}
+        )
+        derivadas = 0
+        for pregunta in preguntas:
+            propia = banco.entrada(pregunta.id)
+            if propia is not None:
+                entradas[pregunta.id] = propia
+                derivadas += 1
+        if activa is not None:
+            etiqueta = f"plantilla v{activa.version_no}"
+            identificador: str | None = activa.id
+        else:
+            # Sin plantilla activa, lo único que corrige son las claves derivadas. `None` y no un
+            # identificador inventado: la sesión no se corrige con una plantilla y no puede decir
+            # sí (la clave del conjunto es una clave foránea, y una inventada no existe).
+            if not entradas:
+                # Ni plantilla ni una sola clave derivada: esta sesión no se podría corregir, y
+                # montarla sería enseñar preguntas que no cuentan. Se dice lo mismo que decía
+                # `_clave_activa`, que es el error que el contrato de la sesión ya publica.
+                raise ClassificationConflictError(
+                    "el conjunto no tiene ninguna clave activa: activar una plantilla es lo que "
+                    "decide con qué se corrige el examen"
+                )
+            etiqueta = "claves derivadas"
+            identificador = None
+        if derivadas:
+            etiqueta += f" + {derivadas} derivada(s)"
+        return _Correccion(key_id=identificador, label=etiqueta, entradas=entradas)
+
     def _preguntas(
         self,
         fuente: SourceInput,
         parte: _PartContext,
         modo: SessionMode,
         *,
+        banco: _ClavesDelBanco,
         recently_seen: frozenset[str] = frozenset(),
     ) -> tuple[QuestionView, ...]:
         """Las preguntas de una fuente: ordinarias primero y reservas después, sin inventar.
@@ -2099,26 +2366,40 @@ class StudyService:
         otra administración no caen en el examen de TAI, y un simulacro que las metiera mediría
         otra cosa. En un test por tema y en los apuntes sí cuentan —son material para estudiar—, y
         por eso el filtro vive aquí y no en el recuento de preguntas.
+
+        **Y la cuarentena ya no corta el conjunto entero** (§1 de F29): corta lo que no tiene
+        clave de la que fiarse. Sus preguntas con **clave derivada** entran con su letra, y las que
+        tienen el motivo de fuera escrito quedan fuera. Un conjunto en cuarentena sin ninguna
+        derivada se corta entero, con su motivo y con sus dos números, como antes.
         """
         conjunto = self._questions.get_set(fuente.question_set_id)
         if conjunto is None:
             raise NotFoundError("conjunto de preguntas", fuente.question_set_id)
-        if conjunto.key_is_unreliable:
-            # La clave de este conjunto discrepa de los apuntes en más del 30 % de sus preguntas
-            # medidas: el alumno aprendería respuestas equivocadas. `_preguntas` es el embudo de
-            # práctica por conjuntos, examen oficial y simulacro, así que se corta aquí y se dice
-            # por qué, con los dos números delante, en lugar de montar una sesión con material en
-            # cuarentena.
-            raise UnsupportedError(
-                f"la clave de «{conjunto.title}» está en cuarentena "
-                f"({conjunto.key_discrepant_count} de {conjunto.key_checked_count} preguntas "
-                "medidas no coinciden con sus apuntes): sus preguntas no entran en tests, "
-                "simulacros ni repasos hasta que se arregle la clave"
-            )
         todas = self._questions.all_questions(fuente.question_set_id)
         validas = [
             pregunta for pregunta in todas if pregunta.question_type in _SUPPORTED_QUESTION_TYPES
         ]
+        if conjunto.key_is_unreliable or any(banco.sigue_fuera(p.id) for p in validas):
+            # La cuarentena de clave (§1) o un motivo de fuera escrito (§1 de F29) dejan la pregunta
+            # sin clave de la que fiarse: el alumno aprendería respuestas equivocadas. `_preguntas`
+            # es el embudo de práctica por conjuntos, examen oficial y simulacro, así que se corta
+            # aquí —pregunta a pregunta, no el conjunto entero— y se dice por qué con los números
+            # delante, en lugar de montar una sesión con material en cuarentena.
+            admitidas = [
+                pregunta
+                for pregunta in validas
+                if banco.letras(pregunta.id) is not None
+                or (not conjunto.key_is_unreliable and not banco.sigue_fuera(pregunta.id))
+            ]
+            if not admitidas:
+                raise UnsupportedError(
+                    f"la clave de «{conjunto.title}» está en cuarentena "
+                    f"({conjunto.key_discrepant_count} de {conjunto.key_checked_count} preguntas "
+                    f"medidas no coinciden con sus apuntes) y ninguna de sus {len(validas)} "
+                    "pregunta(s) tiene clave derivada: sus preguntas no entran en tests, "
+                    "simulacros ni repasos hasta que se arregle la clave"
+                )
+            validas = admitidas
         if modo in (SessionMode.OFFICIAL_EXAM, SessionMode.MOCK_EXAM):
             fuera_del_temario = self._questions.excluded_question_ids(fuente.question_set_id)
             validas = [pregunta for pregunta in validas if pregunta.id not in fuera_del_temario]

@@ -9188,6 +9188,12 @@ export interface components {
             confidence?: ("low" | "medium" | "high") | null;
             correction?: components["schemas"]["StudentCorrectionSchema"] | null;
             /**
+             * Derived Key
+             * @description La clave de esta pregunta es derivada: los apuntes (con su cita verificada) y el modelo preguntado sin apuntes dicen la misma letra. Se enseña como «clave revisada automáticamente».
+             * @default false
+             */
+            derived_key: boolean;
+            /**
              * In Review
              * @description La clave de esta pregunta está en revisión: su conjunto discrepa de los apuntes entre el 15 % y el 30 % de las preguntas medidas.
              * @default false
@@ -9250,6 +9256,12 @@ export interface components {
             chosen?: string[];
             /** Correct */
             correct?: string[];
+            /**
+             * Derived Key
+             * @description La clave de esta pregunta es derivada (los apuntes, con su cita verificada, y el modelo sin apuntes dicen la misma letra): se enseña como «clave revisada automáticamente».
+             * @default false
+             */
+            derived_key: boolean;
             /** Elapsed Ms */
             elapsed_ms?: number | null;
             /**
@@ -9326,6 +9338,12 @@ export interface components {
             /** Position */
             position?: number | null;
             question?: components["schemas"]["StudentQuestionSchema"] | null;
+            /**
+             * Questions Derived
+             * @description Cuántas preguntas del test llevan la marca «clave revisada automáticamente»: su clave es derivada y no sale de la plantilla del conjunto.
+             * @default 0
+             */
+            questions_derived: number;
             /**
              * Questions In Review
              * @description Cuántas preguntas del test llevan la marca «clave en revisión».

@@ -67,7 +67,9 @@ from opofuente.infrastructure.db_models import (
     AuditEventRecord,
     CurriculumMappingRecord,
     CurriculumNodeRecord,
+    DerivedKeyRecord,
     EvidenceSpanRecord,
+    KeyGapRecord,
     OppositionRecord,
     OptionVersionRecord,
     QuestionCurriculumExclusionRecord,
@@ -1484,6 +1486,49 @@ class SqlAlchemyQuestionRepository:
                 for pregunta_id, veredicto in filas:
                     salida[str(pregunta_id)] = str(veredicto)
         return salida
+
+    def derived_keys(self) -> dict[str, tuple[str, ...]]:
+        """Las letras de las claves **derivadas** de cada pregunta (`0039`, §1 del encargo).
+
+        Se leen **todas** y de una vez, no pregunta a pregunta: la composición recorre el banco
+        entero de los temas pedidos (miles de identificadores) y una consulta por pregunta sería
+        justo lo que el motor no puede permitirse. La tabla tiene una fila por pregunta derivada, y
+        el conjunto de las que lo están es pequeño por construcción: solo las que tienen cita
+        verificada en los apuntes **y** coinciden con la respuesta del modelo sin apuntes.
+        """
+        with self._session_factory() as session:
+            filas = session.execute(
+                select(
+                    DerivedKeyRecord.question_version_id,
+                    DerivedKeyRecord.correct_option_keys_json,
+                )
+            ).all()
+        return {
+            str(pregunta_id): tuple(str(letra) for letra in json.loads(str(crudo)))
+            for pregunta_id, crudo in filas
+        }
+
+    def sets_with_derived_keys(self) -> frozenset[str]:
+        """Los conjuntos con **alguna** clave derivada. Una consulta, y de una sola vez.
+
+        Lo necesita el diagnóstico, que elige conjuntos enteros: uno en cuarentena del que se
+        han derivado letras **sí** puede aportar sus preguntas derivadas a la muestra.
+        """
+        with self._session_factory() as session:
+            filas = session.execute(select(DerivedKeyRecord.question_set_id).distinct()).all()
+        return frozenset(str(fila[0]) for fila in filas)
+
+    def questions_without_reliable_key(self) -> frozenset[str]:
+        """Las preguntas que la derivación dejó **fuera** y con su motivo escrito.
+
+        Son las preguntas de un conjunto en cuarentena cuya clave no se pudo derivar. Se excluyen
+        **aunque su conjunto vuelva** a los tests: es la mitad del encargo que dice que las que no
+        tienen clave fiable siguen fuera de ese conjunto. Una pregunta sin fila aquí entra por el
+        camino de siempre (la clave de su conjunto), así que ningún conjunto sano cambia.
+        """
+        with self._session_factory() as session:
+            filas = session.execute(select(KeyGapRecord.question_version_id)).all()
+        return frozenset(str(fila[0]) for fila in filas)
 
     def clear_exclusion(
         self, question_version_id: str, *, now: datetime, actor: str = "local"
