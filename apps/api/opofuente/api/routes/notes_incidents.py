@@ -37,6 +37,10 @@ from opofuente.api.notes_incident_schemas import (
     NotesIncidentListSchema,
     NotesIncidentSchema,
     NotesIncidentUpdateSchema,
+    TrayBulkRequestSchema,
+    TrayBulkResultSchema,
+    TraySchema,
+    TraySetSchema,
 )
 from opofuente.application.notes_report_service import ACTOR_PROPIETARIO
 from opofuente.domain.notes_incidents import IncidentStatus, NotesIncident
@@ -46,6 +50,7 @@ from opofuente.domain.topic_notes import (
     CategoriaIncidencia,
     Motivo,
 )
+from opofuente.domain.tray import TEXTO_DE_ACCION, TrayAction, TraySet
 
 router = APIRouter(tags=["panel"])
 
@@ -107,6 +112,24 @@ def _actor(*, declared: str | None, header: str | None) -> str:
     return ACTOR_PROPIETARIO
 
 
+def _fila(conjunto: TraySet) -> TraySetSchema:
+    """Una fila de la bandeja agrupada, con su resumen y las acciones que admite."""
+    return TraySetSchema(
+        set_id=conjunto.set_id,
+        title=conjunto.title,
+        section=conjunto.seccion.value,
+        origin_scope=conjunto.origin_scope,
+        key_reliability=conjunto.key_reliability,
+        official=conjunto.es_oficial,
+        pendientes=dict(conjunto.pendientes),
+        total_pendiente=conjunto.total_pendiente,
+        propuestas=conjunto.propuestas,
+        entradas_de_decision=conjunto.entradas_de_decision,
+        resumen=conjunto.resumen(),
+        acciones=[action.value for action in conjunto.acciones],
+    )
+
+
 @router.get(
     "/notes-incidents",
     response_model=NotesIncidentListSchema,
@@ -127,6 +150,13 @@ def list_notes_incidents(
         str | None,
         Query(description="Código legible del tema, como `I.2`, para ver solo las de un tema."),
     ] = None,
+    set_id: Annotated[
+        str | None,
+        Query(
+            max_length=36,
+            description="Conjunto de origen: es lo que despliega una fila de la bandeja agrupada.",
+        ),
+    ] = None,
     q: Annotated[
         str | None,
         Query(
@@ -146,11 +176,14 @@ def list_notes_incidents(
     cuenta las cuatro categorías **en la base entera**, con un `GROUP BY`: es la cifra de cada
     clase,
     medida y no heredada. El `total`, en cambio, es el del filtro.
+
+    `set` es el filtro que **despliega** una fila de la bandeja agrupada (F31): la fila de un
+    conjunto no enseña sus incidencias dentro, las pide por aquí.
     """
     categoria = None if category is None else CategoriaIncidencia(category)
     estado = None if status is None else IncidentStatus(status)
     incidencias = service.list_incidents(
-        category=categoria, status=estado, topic_code=topic, q=q, limit=limit
+        category=categoria, status=estado, topic_code=topic, set_id=set_id, q=q, limit=limit
     )
     contados = service.status_counts()
     return NotesIncidentListSchema(
@@ -158,7 +191,9 @@ def list_notes_incidents(
         in_progress=contados[IncidentStatus.IN_PROGRESS],
         reviewed=contados[IncidentStatus.REVIEWED],
         dismissed=contados[IncidentStatus.DISMISSED],
-        total=service.total(category=categoria, status=estado, topic_code=topic, q=q),
+        total=service.total(
+            category=categoria, status=estado, topic_code=topic, set_id=set_id, q=q
+        ),
         totals_by_category={
             cual.value: cuantas for cual, cuantas in service.category_counts().items()
         },
@@ -193,3 +228,80 @@ def update_notes_incident(
         actor=_actor(declared=body.actor, header=actor),
     )
     return _incidencia(incidencia)
+
+
+@router.get(
+    "/notes-incidents/tray",
+    response_model=TraySchema,
+    responses=RESOURCE_ERRORS,
+    summary="La bandeja por conjunto: una fila por conjunto, con lo que admite en bloque",
+)
+def read_tray(service: NotesIncidentsServiceDep) -> TraySchema:
+    """La bandeja agrupada por conjunto, con lo oficial **aparte y arriba**.
+
+    Es la vista con la que se trabaja: una fila por conjunto, su resumen («50 claves sospechosas»),
+    las acciones que admite y **la cifra** que decide si la bandeja sirve —las entradas que de
+    verdad dependen del criterio del propietario—. Los conjuntos oficiales van en su propia sección
+    porque sus incidencias no se deciden en bloque: su clave es la que publicó la administración.
+
+    Se cuenta en la base, no en la pantalla: `entradas_de_decision` sale del dominio y viaja
+    calculado, para que no haya dos versiones de la cifra que mide la medida de éxito.
+    """
+    bandeja = service.tray()
+    return TraySchema(
+        official_section=[_fila(conjunto) for conjunto in bandeja.oficial],
+        rest=[_fila(conjunto) for conjunto in bandeja.resto],
+        filas=bandeja.filas,
+        total_pendiente=bandeja.total_pendiente,
+        propuestas=bandeja.propuestas,
+        entradas_de_decision=bandeja.entradas_de_decision,
+    )
+
+
+@router.get(
+    "/notes-incidents/tray/actions",
+    response_model=dict[str, str],
+    responses=RESOURCE_ERRORS,
+    summary="Qué hace cada acción en bloque, dicho por el servidor",
+)
+def read_tray_actions() -> dict[str, str]:
+    """El texto de las tres acciones, calculado en el servidor.
+
+    Vive aquí y no en la pantalla por la misma razón que `category_help`: dos versiones del mismo
+    texto acaban diciendo cosas distintas, y la que se queda vieja es la que nadie lee.
+    """
+    return {action.value: TEXTO_DE_ACCION[action] for action in TrayAction}
+
+
+@router.post(
+    "/notes-incidents/tray/bulk",
+    response_model=TrayBulkResultSchema,
+    responses=WRITE_ERRORS,
+    summary="Aplica una acción en bloque a un conjunto (y rechaza los oficiales)",
+)
+def dispatch_tray_bulk(
+    service: NotesIncidentsServiceDep,
+    body: TrayBulkRequestSchema,
+    actor: Annotated[str | None, Header(alias=ACTOR_HEADER)] = None,
+) -> TrayBulkResultSchema:
+    """Acepta todas las derivadas, deja el conjunto fuera o lo marca como «no son preguntas».
+
+    **Una clave oficial no se cambia jamás**: si el conjunto es un examen oficial —o su plantilla
+    viene de un documento—, la ruta **rechaza** la acción con el motivo que ya usa la ficha de la
+    pregunta, y no escribe nada. El rechazo es un `409` con el texto, no un 200 que no hizo nada.
+
+    Aplicar dos veces la misma acción no duplica nada: la segunda pasada no encuentra incidencias
+    esperando y devuelve cero. La memoria de lo hecho **es** el estado de la incidencia.
+    """
+    resumen = service.dispatch_bulk(
+        action=TrayAction(body.action),
+        set_id=body.set_id,
+        note=body.note,
+        actor=_actor(declared=body.actor, header=actor),
+    )
+    return TrayBulkResultSchema(
+        action=body.action,
+        set_id=resumen.set_id,
+        incidents=resumen.incidents,
+        keys_written=resumen.keys_written,
+    )

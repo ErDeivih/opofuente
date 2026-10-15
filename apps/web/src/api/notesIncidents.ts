@@ -18,6 +18,13 @@ import { apiFetch } from './client';
 export type IncidentPage = components['schemas']['NotesIncidentListSchema'];
 export type NotesIncident = components['schemas']['NotesIncidentSchema'];
 export type IncidentUpdate = components['schemas']['NotesIncidentUpdateSchema'];
+export type TrayPage = components['schemas']['TraySchema'];
+export type TraySet = components['schemas']['TraySetSchema'];
+export type TrayBulkRequest = components['schemas']['TrayBulkRequestSchema'];
+export type TrayBulkResult = components['schemas']['TrayBulkResultSchema'];
+
+/** Las tres acciones en bloque del §2.1 del cierre del objetivo. */
+export type TrayAction = TrayBulkRequest['action'];
 
 /** El vocabulario del estado, tal y como lo publica el servidor. */
 export type IncidentStatus = NotesIncident['status'];
@@ -94,6 +101,8 @@ export const INCIDENT_STATUS_LABELS: Record<IncidentStatus, string> = {
   in_progress: 'En curso',
   reviewed: 'Resuelta',
   dismissed: 'Descartada',
+  propuesta_lista: 'Propuesta lista',
+  no_son_preguntas: 'No son preguntas',
 };
 
 /** Lo que se lee bajo el estado, para saber qué significa cada uno sin abrir nada. */
@@ -102,12 +111,16 @@ export const INCIDENT_STATUS_HELP: Record<IncidentStatus, string> = {
   in_progress: 'La tienes en la mano.',
   reviewed: 'Has hecho lo que pedía su categoría.',
   dismissed: 'Has decidido que el motor se equivoca.',
+  propuesta_lista: 'La resolvió una regla: hay clave derivada y solo falta aprobarla en bloque.',
+  no_son_preguntas: 'Una regla mecánica la sacó de la bandeja: no hay nada que decidir.',
 };
 
 /** El orden de los filtros: el del trabajo, no el alfabético. */
 export const INCIDENT_STATUSES: readonly IncidentStatus[] = [
   'open',
   'in_progress',
+  'propuesta_lista',
+  'no_son_preguntas',
   'reviewed',
   'dismissed',
 ];
@@ -118,10 +131,14 @@ export const INCIDENT_STATUSES: readonly IncidentStatus[] = [
  * El `open` de la incidencia se cuenta en el campo `pending`, que es el nombre que ese número tiene
  * en el contrato: el estado se llama `open` y lo que espera al propietario se llama «pendiente».
  * Traducirlo aquí, en un solo sitio, evita que cada pantalla invente su propia correspondencia.
+ *
+ * Los dos estados que añade la resolución automática (`propuesta_lista` y `no_son_preguntas`) **no
+ * tienen contador propio** en la lista: su cifra se cuenta donde se decide, que es en la bandeja por
+ * conjunto —las propuestas de un conjunto y lo que ya no espera—. Poner aquí un cero fijo sería
+ * enseñar un número que nadie ha medido.
  */
-export const INCIDENT_COUNT_FIELD: Record<
-  IncidentStatus,
-  'pending' | 'in_progress' | 'reviewed' | 'dismissed'
+export const INCIDENT_COUNT_FIELD: Partial<
+  Record<IncidentStatus, 'pending' | 'in_progress' | 'reviewed' | 'dismissed'>
 > = {
   open: 'pending',
   in_progress: 'in_progress',
@@ -191,6 +208,7 @@ export function fetchNotesIncidents(input: {
   category?: IncidentCategory | null;
   status?: IncidentStatus | null;
   topic?: string | null;
+  set_id?: string | null;
   q?: string | null;
   limit?: number;
 }): Promise<IncidentPage> {
@@ -205,6 +223,9 @@ export function fetchNotesIncidents(input: {
   }
   if (input.topic !== null && input.topic !== undefined && input.topic !== '') {
     params.set('topic', input.topic);
+  }
+  if (input.set_id !== null && input.set_id !== undefined && input.set_id !== '') {
+    params.set('set', input.set_id);
   }
   if (input.q !== null && input.q !== undefined && input.q.trim() !== '') {
     params.set('q', input.q.trim());
@@ -229,6 +250,46 @@ export function updateNotesIncident(
   }
   return apiFetch<NotesIncident>(`/api/v1/notes-incidents/${encodeURIComponent(id)}`, {
     method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(cuerpo),
+  });
+}
+
+/**
+ * La bandeja **agrupada por conjunto** (F31, §2 del cierre del objetivo).
+ *
+ * Una fila por conjunto, con lo que espera dentro y las acciones que admite, más **la cifra** que
+ * mide si la bandeja sirve: las entradas que de verdad dependen del criterio del propietario. La
+ * cifra la calcula el servidor —`entradas_de_decision`— y la pantalla no la recompone: contarla en
+ * dos sitios acaba diciendo dos cosas.
+ */
+export function fetchNotesTray(): Promise<TrayPage> {
+  return apiFetch<TrayPage>('/api/v1/notes-incidents/tray');
+}
+
+/** Qué hace cada acción en bloque, dicho por el servidor: aquí no se reescribe. */
+export function fetchTrayActions(): Promise<Record<string, string>> {
+  return apiFetch<Record<string, string>>('/api/v1/notes-incidents/tray/actions');
+}
+
+/**
+ * Aplica una acción en bloque a un conjunto entero.
+ *
+ * Es **una** llamada por conjunto y no una por incidencia: la decisión es del conjunto —«sus claves
+ * derivadas», «fuera», «no son preguntas»— y mandar doscientas peticiones sería contar doscientas
+ * decisiones donde hubo una. El servidor rechaza los conjuntos oficiales con un 409 y su motivo.
+ */
+export function dispatchTrayBulk(input: {
+  action: TrayAction;
+  set_id: string;
+  note?: string | null;
+}): Promise<TrayBulkResult> {
+  const cuerpo: TrayBulkRequest = { action: input.action, set_id: input.set_id };
+  if (input.note !== null && input.note !== undefined && input.note.trim() !== '') {
+    cuerpo.note = input.note;
+  }
+  return apiFetch<TrayBulkResult>('/api/v1/notes-incidents/tray/bulk', {
+    method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(cuerpo),
   });

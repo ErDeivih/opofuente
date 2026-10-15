@@ -45,8 +45,24 @@ IncidentReasonName = Literal[
 #: El desenlace de la comprobación: una duda o un conflicto de letra.
 IncidentCoverageName = Literal["doubtful", "conflict"]
 
-#: En qué punto está la incidencia. Es el vocabulario de bandeja que la aplicación ya tenía.
-IncidentStatusName = Literal["open", "in_progress", "reviewed", "dismissed"]
+#: En qué punto está la incidencia. Es el vocabulario de bandeja que la aplicación ya tenía, más los
+#: dos estados que añade la resolución automática (F31): `propuesta_lista` (una regla la resolvió y
+#: espera aprobación en bloque) y `no_son_preguntas` (una regla mecánica la sacó de la bandeja).
+IncidentStatusName = Literal[
+    "open",
+    "in_progress",
+    "reviewed",
+    "dismissed",
+    "propuesta_lista",
+    "no_son_preguntas",
+]
+
+#: Dónde se enseña un conjunto en la bandeja agrupada. Lo **oficial** va aparte y arriba.
+TraySectionName = Literal["oficial", "resto"]
+
+#: Las tres acciones en bloque del §2.1 del cierre del objetivo. Vocabulario cerrado: la ruta
+#: rechaza cualquier otra cosa antes de tocar la base.
+TrayActionName = Literal["aceptar_derivadas", "dejar_fuera", "no_son_preguntas"]
 
 
 class NotesIncidentSchema(BaseModel):
@@ -140,3 +156,86 @@ class NotesIncidentUpdateSchema(BaseModel):
     def _una_linea(cls, valor: str | None) -> str | None:
         """La nota viaja en una línea: los saltos se quitan aquí, no en la pantalla."""
         return None if valor is None else " ".join(valor.split())
+
+
+class TraySetSchema(BaseModel):
+    """Una **fila** de la bandeja: un conjunto y lo que espera dentro.
+
+    Es la pieza que hace trabajable una bandeja de cientos de filas. `pendientes` cuenta por
+    categoría lo que espera criterio; `propuestas` lo que ya está resuelto por regla y solo falta
+    aprobar en bloque. `resumen` es el título de la fila —«50 claves sospechosas»—, calculado por el
+    dominio para que la pantalla no tenga que componerlo y no haya dos versiones del mismo texto.
+
+    `acciones` viaja **calculado**: los conjuntos oficiales llegan con la lista vacía, porque su
+    clave no se toca y sus incidencias las decide el propietario una a una. La pantalla no tiene que
+    saberse la regla; la lee.
+    """
+
+    set_id: str
+    title: str
+    section: TraySectionName
+    origin_scope: str
+    key_reliability: str
+    official: bool
+    pendientes: dict[str, int] = Field(default_factory=dict)
+    total_pendiente: int = Field(ge=0)
+    propuestas: int = Field(ge=0)
+    entradas_de_decision: int = Field(ge=0)
+    resumen: str
+    acciones: list[TrayActionName] = Field(default_factory=list)
+
+
+class TraySchema(BaseModel):
+    """La bandeja entera, en dos secciones, con **la cifra** de la medida de éxito del §2.4.
+
+    `entradas_de_decision` no es el número de incidencias ni el de filas: es lo que de verdad
+    depende del criterio del propietario, contado con la regla de `domain.tray` —una por conjunto no
+    oficial, una por incidencia oficial—. Va en la respuesta y no se calcula en la pantalla porque
+    es la cifra que decide si la bandeja sirve, y una cifra que se calcula en dos sitios acaba
+    diciendo dos cosas.
+    """
+
+    official_section: list[TraySetSchema] = Field(default_factory=list)
+    rest: list[TraySetSchema] = Field(default_factory=list)
+    filas: int = Field(ge=0, description="Cuántas filas enseña la bandeja.")
+    total_pendiente: int = Field(ge=0, description="Incidencias que esperan criterio.")
+    propuestas: int = Field(
+        ge=0, description="Incidencias ya propuestas, que se aprueban en bloque."
+    )
+    entradas_de_decision: int = Field(
+        ge=0, description="La medida de éxito: lo que de verdad depende del propietario."
+    )
+
+
+class TrayBulkRequestSchema(BaseModel):
+    """Una acción en bloque sobre un conjunto: qué se hace, dónde y quién lo hace.
+
+    La nota es potestativa —una acción en bloque tiene su propio texto por defecto— y, cuando viene,
+    es **una línea**, como la del despacho de una en una: es la misma regla y se normaliza igual.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    action: TrayActionName
+    set_id: str = Field(min_length=1, max_length=36)
+    note: str | None = Field(default=None, max_length=MAX_REASON_CHARS)
+    actor: str | None = Field(default=None, min_length=1, max_length=64)
+
+    @field_validator("note")
+    @classmethod
+    def _una_linea(cls, valor: str | None) -> str | None:
+        return None if valor is None else " ".join(valor.split())
+
+
+class TrayBulkResultSchema(BaseModel):
+    """Qué hizo la acción en bloque: cuántas incidencias cerró y cuántas claves escribió.
+
+    Los dos números van separados porque no tienen por qué coincidir: aceptar las derivadas escribe
+    una clave por propuesta —salvo las que ya estuvieran escritas— y cerrar un conjunto entero no
+    escribe ninguna.
+    """
+
+    action: TrayActionName
+    set_id: str
+    incidents: int = Field(ge=0)
+    keys_written: int = Field(ge=0)

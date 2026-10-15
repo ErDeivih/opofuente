@@ -22,6 +22,10 @@ const TONO: Record<IncidentStatus, StatusTone> = {
   in_progress: 'info',
   reviewed: 'ok',
   dismissed: 'info',
+  // Los dos que resuelve una regla: una propuesta espera una aprobación —información, no alarma— y
+  // «no son preguntas» ya está fuera de la bandeja.
+  propuesta_lista: 'info',
+  no_son_preguntas: 'ok',
 };
 
 /** El día, sin la hora: en una bandeja de texto largo la hora no cambia ninguna decisión. */

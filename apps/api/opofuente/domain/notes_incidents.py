@@ -61,13 +61,23 @@ class IncidentStatus(StrEnum):
 
     Se declara aquí, y no se importa del aviso del alumno, porque son dos ciclos de vida distintos
     en dos tablas distintas, cada una con su `CHECK`: si mañana una bandeja necesita un estado más,
-    no tiene por qué cambiar la otra.
+    no tiene por qué cambiar la otra. Y le han hecho falta dos (F31): la bandeja del motor es la
+    única que tiene **resolución automática**, y un estado que no existe obligaría a la pantalla a
+    inventarse de dónde sale una fila que nadie ha escrito.
+
+    - **`PROPUESTA_LISTA`**: una regla la ha resuelto —la clave derivada, que no necesita criterio—
+      y espera la aprobación **en bloque** del propietario. No es `open` (no hay nada que averiguar)
+      ni `reviewed` (nadie la ha aprobado todavía);
+    - **`NO_SON_PREGUNTAS`**: la pregunta está mal importada y sale de la bandeja directa a «No son
+      preguntas». Tampoco espera criterio: lo decidió una regla mecánica, sin modelo y sin red.
     """
 
     OPEN = "open"
     IN_PROGRESS = "in_progress"
     REVIEWED = "reviewed"
     DISMISSED = "dismissed"
+    PROPUESTA_LISTA = "propuesta_lista"
+    NO_SON_PREGUNTAS = "no_son_preguntas"
 
 
 class IncidentCoverage(StrEnum):
@@ -84,8 +94,13 @@ class IncidentCoverage(StrEnum):
 
 
 #: Los estados con los que una incidencia está **cerrada**: nadie tiene que volver a mirarla.
+#:
+#: `NO_SON_PREGUNTAS` entra aquí aunque no la haya cerrado el propietario: la cerró una regla
+#: mecánica, y `reviewed_at` dice **cuándo dejó de esperar**, no quién la despachó —el quién está en
+#: el evento de auditoría—. `PROPUESTA_LISTA` **no** entra: espera una aprobación, y una incidencia
+#: que espera con fecha de revisión es la traza que miente que el dominio ya evitaba al reabrir.
 CLOSED_STATUSES: frozenset[IncidentStatus] = frozenset(
-    {IncidentStatus.REVIEWED, IncidentStatus.DISMISSED}
+    {IncidentStatus.REVIEWED, IncidentStatus.DISMISSED, IncidentStatus.NO_SON_PREGUNTAS}
 )
 
 
@@ -153,16 +168,19 @@ class NotesIncident:
 
 @dataclass(frozen=True, slots=True)
 class IncidentFilter:
-    """Lo que se puede pedir al listar la bandeja: por categoría, por estado, por tema y por texto.
+    """Lo que se puede pedir al listar la bandeja: por categoría, estado, tema, conjunto y texto.
 
     `q` busca en el enunciado de la pregunta, en el motivo, en la frase verificada y en el título
     del apartado: entre 453 incidencias, esas cuatro cosas son las que permiten encontrar la que se
-    tiene en la cabeza sin recorrerlas. Los filtros se combinan, no se excluyen.
+    tiene en la cabeza sin recorrerlas. `set_id` es lo que **despliega una fila** de la bandeja
+    agrupada (F31): sin él, la fila de un conjunto no podría enseñar lo que tiene dentro, y agrupar
+    sin poder abrir el grupo es esconder, no resumir. Los filtros se combinan, no se excluyen.
     """
 
     category: CategoriaIncidencia | None = None
     status: IncidentStatus | None = None
     topic_code: str | None = None
+    set_id: str | None = None
     q: str | None = None
     limit: int = field(default=200)
 
@@ -354,6 +372,74 @@ def categoria_reclasificada(
 #: apilar una cabecera sobre otra.
 MARCA_DE_RECLASIFICACION = "reclasificada:"
 
+#: Con lo que empieza el detalle de una incidencia que resolvió una regla (F31). Va aparte de la
+#: marca de reclasificación porque son dos cosas distintas: la reclasificación **cambia la
+#: etiqueta** y la resolución **cierra o propone**.
+MARCA_DE_RESOLUCION = "resuelta por regla:"
+
+
+def estado_resuelto(
+    *, categoria: CategoriaIncidencia | None, tiene_propuesta: bool
+) -> IncidentStatus | None:
+    """El estado en el que deja la resolución automática a una incidencia, o `None` si no la toca.
+
+    Es la regla del §3 del cierre del objetivo, y el orden importa porque las tres cosas no son
+    excluyentes:
+
+    1. **un falso positivo** (`categoria is None`) no cambia de categoría: **sale**. Se marca
+       `dismissed` y no se borra la fila —borrarla la dejaría volver en la corrida siguiente del
+       motor, y «los falsos positivos ya descartados no vuelven a entrar» es justo lo que se pidió—;
+    2. **una pregunta mal importada** se va a `no_son_preguntas`: lo decidió una regla mecánica, sin
+       modelo y sin red. Nadie tiene que mirarla;
+    3. **una incidencia con propuesta** pasa a `propuesta_lista` y espera la aprobación en bloque.
+
+    Lo que no cae en ninguna de las tres se queda `open`: eso sí necesita el criterio del
+    propietario, y es lo que cuenta la medida de éxito.
+    """
+    if categoria is None:
+        return IncidentStatus.DISMISSED
+    if categoria is CategoriaIncidencia.PREGUNTA_MAL_IMPORTADA:
+        return IncidentStatus.NO_SON_PREGUNTAS
+    if tiene_propuesta:
+        return IncidentStatus.PROPUESTA_LISTA
+    return None
+
+
+@dataclass(frozen=True, slots=True)
+class ResolucionDeBandeja:
+    """Lo que la resolución automática escribe sobre una incidencia: el estado en que la deja.
+
+    Va aparte de `Reclasificacion` porque hace otra cosa: aquella cambia la **categoría** —y borra
+    la fila del falso positivo—, y esta **cierra o propone**, dejando la fila viva para que el motor
+    no la traiga otra vez. La etiqueta la sigue escribiendo la reclasificación, que es la dueña de
+    esa decisión: dos sitios que reetiqueten la misma incidencia acabarían discrepando.
+    """
+
+    incident_id: str
+    status: IncidentStatus
+    note: str
+
+
+def detalle_resuelto(*, motivo: str, detalle: str, fecha: datetime) -> str:
+    """El detalle de una incidencia que resolvió una regla: la cabecera y lo que dijo el motor.
+
+    La cabecera se **sustituye**, no se acumula: ejecutar dos veces la resolución deja el mismo
+    texto que ejecutarla una. Es la misma regla que la de la reclasificación, y por el mismo motivo.
+    """
+    lineas = detalle.split("\n")
+    inicio = 0
+    while inicio < len(lineas) and (
+        lineas[inicio].startswith(MARCA_DE_RESOLUCION)
+        or lineas[inicio].startswith(MARCA_DE_RECLASIFICACION)
+        or lineas[inicio].startswith(PREFIJO_DE_REGLA)
+    ):
+        inicio += 1
+    limpio = "\n".join(lineas[inicio:]).strip()
+    return "\n".join(
+        [f"{MARCA_DE_RESOLUCION} {fecha.date().isoformat()} · {motivo}", limpio]
+    ).strip()
+
+
 #: La línea que dice qué regla mecánica disparó. También es cabecera: se reescribe, no se apila.
 PREFIJO_DE_REGLA = "regla mecánica:"
 
@@ -440,6 +526,7 @@ __all__ = [
     "CLOSED_STATUSES",
     "LARGO_MINIMO_TRUNCADO",
     "MARCA_DE_RECLASIFICACION",
+    "MARCA_DE_RESOLUCION",
     "MINIMO_COMPROBADO",
     "MOTIVO_FALSO_POSITIVO",
     "PATRON_REFERENCIA_PEGADA",
@@ -456,9 +543,12 @@ __all__ = [
     "IncidentStatus",
     "NotesIncident",
     "Reclasificacion",
+    "ResolucionDeBandeja",
     "categoria_reclasificada",
     "detalle_reclasificado",
+    "detalle_resuelto",
     "es_falso_positivo",
+    "estado_resuelto",
     "fiabilidad_por_discrepancia",
     "motivo_reclasificacion",
     "normalise_note",

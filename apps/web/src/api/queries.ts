@@ -65,10 +65,14 @@ import {
   type SubjectType,
 } from './library';
 import {
+  dispatchTrayBulk,
   fetchNotesIncidents,
+  fetchNotesTray,
+  fetchTrayActions,
   updateNotesIncident,
   type IncidentCategory,
   type IncidentStatus,
+  type TrayAction,
 } from './notesIncidents';
 import {
   fetchNoteReports,
@@ -2029,6 +2033,47 @@ export function useUpdateNotesIncident() {
 
 /** Reexporta el vocabulario de la incidencia para que las pantallas no importen del contrato. */
 export type { IncidentCategory, IncidentStatus };
+
+/**
+ * La bandeja agrupada por conjunto (F31, §2 del cierre del objetivo).
+ *
+ * Se cachea como la lista y se refresca igual: cada acción en bloque invalida la raíz entera, porque
+ * cerrar un conjunto cambia sus cifras, las del resumen y **la cifra** de la medida de éxito.
+ */
+export function useNotesTray() {
+  return useQuery({
+    queryKey: ['note-incidents', 'tray'],
+    queryFn: fetchNotesTray,
+    staleTime: 15_000,
+  });
+}
+
+/** Qué hace cada acción en bloque, en las palabras del servidor. */
+export function useTrayActions() {
+  return useQuery({
+    queryKey: ['note-incidents', 'tray', 'actions'],
+    queryFn: fetchTrayActions,
+    staleTime: 5 * 60_000,
+  });
+}
+
+/**
+ * Aplica una acción en bloque a un conjunto y recarga la bandeja.
+ *
+ * Se invalida la raíz `note-incidents` —la lista y la bandeja agrupada— porque una acción en bloque
+ * cierra incidencias, cambia el veredicto de un conjunto y puede dejarlo sin fila: dejar cacheada
+ * cualquiera de las dos vistas enseñaría lo que ya no está.
+ */
+export function useDispatchTrayBulk() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { action: TrayAction; set_id: string; note?: string | null }) =>
+      dispatchTrayBulk(input),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['note-incidents'] });
+    },
+  });
+}
 
 /**
  * La tabla de la revisión de apuntes (F24): los temas con su estado y el motivo de los borradores.

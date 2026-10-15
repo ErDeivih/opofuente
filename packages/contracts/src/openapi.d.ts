@@ -1601,10 +1601,91 @@ export interface paths {
          *     cuenta las cuatro categorías **en la base entera**, con un `GROUP BY`: es la cifra de cada
          *     clase,
          *     medida y no heredada. El `total`, en cambio, es el del filtro.
+         *
+         *     `set` es el filtro que **despliega** una fila de la bandeja agrupada (F31): la fila de un
+         *     conjunto no enseña sus incidencias dentro, las pide por aquí.
          */
         get: operations["list_notes_incidents_api_v1_notes_incidents_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/notes-incidents/tray": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * La bandeja por conjunto: una fila por conjunto, con lo que admite en bloque
+         * @description La bandeja agrupada por conjunto, con lo oficial **aparte y arriba**.
+         *
+         *     Es la vista con la que se trabaja: una fila por conjunto, su resumen («50 claves sospechosas»),
+         *     las acciones que admite y **la cifra** que decide si la bandeja sirve —las entradas que de
+         *     verdad dependen del criterio del propietario—. Los conjuntos oficiales van en su propia sección
+         *     porque sus incidencias no se deciden en bloque: su clave es la que publicó la administración.
+         *
+         *     Se cuenta en la base, no en la pantalla: `entradas_de_decision` sale del dominio y viaja
+         *     calculado, para que no haya dos versiones de la cifra que mide la medida de éxito.
+         */
+        get: operations["read_tray_api_v1_notes_incidents_tray_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/notes-incidents/tray/actions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Qué hace cada acción en bloque, dicho por el servidor
+         * @description El texto de las tres acciones, calculado en el servidor.
+         *
+         *     Vive aquí y no en la pantalla por la misma razón que `category_help`: dos versiones del mismo
+         *     texto acaban diciendo cosas distintas, y la que se queda vieja es la que nadie lee.
+         */
+        get: operations["read_tray_actions_api_v1_notes_incidents_tray_actions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/notes-incidents/tray/bulk": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Aplica una acción en bloque a un conjunto (y rechaza los oficiales)
+         * @description Acepta todas las derivadas, deja el conjunto fuera o lo marca como «no son preguntas».
+         *
+         *     **Una clave oficial no se cambia jamás**: si el conjunto es un examen oficial —o su plantilla
+         *     viene de un documento—, la ruta **rechaza** la acción con el motivo que ya usa la ficha de la
+         *     pregunta, y no escribe nada. El rechazo es un `409` con el texto, no un 200 que no hizo nada.
+         *
+         *     Aplicar dos veces la misma acción no duplica nada: la segunda pasada no encuentra incidencias
+         *     esperando y devuelve cero. La memoria de lo hecho **es** el estado de la incidencia.
+         */
+        post: operations["dispatch_tray_bulk_api_v1_notes_incidents_tray_bulk_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6282,7 +6363,7 @@ export interface components {
              * Status
              * @enum {string}
              */
-            status: "open" | "in_progress" | "reviewed" | "dismissed";
+            status: "open" | "in_progress" | "reviewed" | "dismissed" | "propuesta_lista" | "no_son_preguntas";
             /** Stem */
             stem: string;
             /** Topic Code */
@@ -6312,7 +6393,7 @@ export interface components {
              * Status
              * @enum {string}
              */
-            status: "open" | "in_progress" | "reviewed" | "dismissed";
+            status: "open" | "in_progress" | "reviewed" | "dismissed" | "propuesta_lista" | "no_son_preguntas";
         };
         /**
          * NotesReviewChecksSchema
@@ -9627,6 +9708,127 @@ export interface components {
             annulled_question_version_id: string;
             /** Reserve Question Version Id */
             reserve_question_version_id?: string | null;
+        };
+        /**
+         * TrayBulkRequestSchema
+         * @description Una acción en bloque sobre un conjunto: qué se hace, dónde y quién lo hace.
+         *
+         *     La nota es potestativa —una acción en bloque tiene su propio texto por defecto— y, cuando viene,
+         *     es **una línea**, como la del despacho de una en una: es la misma regla y se normaliza igual.
+         */
+        TrayBulkRequestSchema: {
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "aceptar_derivadas" | "dejar_fuera" | "no_son_preguntas";
+            /** Actor */
+            actor?: string | null;
+            /** Note */
+            note?: string | null;
+            /** Set Id */
+            set_id: string;
+        };
+        /**
+         * TrayBulkResultSchema
+         * @description Qué hizo la acción en bloque: cuántas incidencias cerró y cuántas claves escribió.
+         *
+         *     Los dos números van separados porque no tienen por qué coincidir: aceptar las derivadas escribe
+         *     una clave por propuesta —salvo las que ya estuvieran escritas— y cerrar un conjunto entero no
+         *     escribe ninguna.
+         */
+        TrayBulkResultSchema: {
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "aceptar_derivadas" | "dejar_fuera" | "no_son_preguntas";
+            /** Incidents */
+            incidents: number;
+            /** Keys Written */
+            keys_written: number;
+            /** Set Id */
+            set_id: string;
+        };
+        /**
+         * TraySchema
+         * @description La bandeja entera, en dos secciones, con **la cifra** de la medida de éxito del §2.4.
+         *
+         *     `entradas_de_decision` no es el número de incidencias ni el de filas: es lo que de verdad
+         *     depende del criterio del propietario, contado con la regla de `domain.tray` —una por conjunto no
+         *     oficial, una por incidencia oficial—. Va en la respuesta y no se calcula en la pantalla porque
+         *     es la cifra que decide si la bandeja sirve, y una cifra que se calcula en dos sitios acaba
+         *     diciendo dos cosas.
+         */
+        TraySchema: {
+            /**
+             * Entradas De Decision
+             * @description La medida de éxito: lo que de verdad depende del propietario.
+             */
+            entradas_de_decision: number;
+            /**
+             * Filas
+             * @description Cuántas filas enseña la bandeja.
+             */
+            filas: number;
+            /** Official Section */
+            official_section?: components["schemas"]["TraySetSchema"][];
+            /**
+             * Propuestas
+             * @description Incidencias ya propuestas, que se aprueban en bloque.
+             */
+            propuestas: number;
+            /** Rest */
+            rest?: components["schemas"]["TraySetSchema"][];
+            /**
+             * Total Pendiente
+             * @description Incidencias que esperan criterio.
+             */
+            total_pendiente: number;
+        };
+        /**
+         * TraySetSchema
+         * @description Una **fila** de la bandeja: un conjunto y lo que espera dentro.
+         *
+         *     Es la pieza que hace trabajable una bandeja de cientos de filas. `pendientes` cuenta por
+         *     categoría lo que espera criterio; `propuestas` lo que ya está resuelto por regla y solo falta
+         *     aprobar en bloque. `resumen` es el título de la fila —«50 claves sospechosas»—, calculado por el
+         *     dominio para que la pantalla no tenga que componerlo y no haya dos versiones del mismo texto.
+         *
+         *     `acciones` viaja **calculado**: los conjuntos oficiales llegan con la lista vacía, porque su
+         *     clave no se toca y sus incidencias las decide el propietario una a una. La pantalla no tiene que
+         *     saberse la regla; la lee.
+         */
+        TraySetSchema: {
+            /** Acciones */
+            acciones?: ("aceptar_derivadas" | "dejar_fuera" | "no_son_preguntas")[];
+            /** Entradas De Decision */
+            entradas_de_decision: number;
+            /** Key Reliability */
+            key_reliability: string;
+            /** Official */
+            official: boolean;
+            /** Origin Scope */
+            origin_scope: string;
+            /** Pendientes */
+            pendientes?: {
+                [key: string]: number;
+            };
+            /** Propuestas */
+            propuestas: number;
+            /** Resumen */
+            resumen: string;
+            /**
+             * Section
+             * @enum {string}
+             */
+            section: "oficial" | "resto";
+            /** Set Id */
+            set_id: string;
+            /** Title */
+            title: string;
+            /** Total Pendiente */
+            total_pendiente: number;
         };
         /**
          * UrlRequest
@@ -15084,9 +15286,11 @@ export interface operations {
                 /** @description Filtra por categoría; sin ella salen todas. */
                 category?: ("hueco_sin_material" | "clave_sospechosa" | "pregunta_ambigua" | "norma_cambiada" | "pregunta_mal_importada" | "clave_no_fiable") | null;
                 /** @description Filtra por estado; sin él salen todas. */
-                status?: ("open" | "in_progress" | "reviewed" | "dismissed") | null;
+                status?: ("open" | "in_progress" | "reviewed" | "dismissed" | "propuesta_lista" | "no_son_preguntas") | null;
                 /** @description Código legible del tema, como `I.2`, para ver solo las de un tema. */
                 topic?: string | null;
+                /** @description Conjunto de origen: es lo que despliega una fila de la bandeja agrupada. */
+                set_id?: string | null;
                 /** @description Busca en el enunciado de la pregunta, el motivo, la frase y el apartado. */
                 q?: string | null;
                 /** @description Cuántas incidencias se devuelven como mucho. */
@@ -15105,6 +15309,164 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["NotesIncidentListSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    read_tray_api_v1_notes_incidents_tray_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TraySchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    read_tray_actions_api_v1_notes_incidents_tray_actions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: string;
+                    };
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    dispatch_tray_bulk_api_v1_notes_incidents_tray_bulk_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-OpoFuente-Actor"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TrayBulkRequestSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrayBulkResultSchema"];
+                };
+            };
+            /** @description Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
                 };
             };
             /** @description El recurso no existe. */
