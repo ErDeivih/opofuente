@@ -2172,7 +2172,8 @@ class NotesIncidentRecord(Base):
         CheckConstraint("length(trim(detail)) > 0", name="ck_notes_incident_detail"),
         CheckConstraint("attempts >= 1", name="ck_notes_incident_attempts"),
         CheckConstraint(
-            "status IN ('open', 'in_progress', 'reviewed', 'dismissed')",
+            "status IN ('open', 'in_progress', 'reviewed', 'dismissed', 'propuesta_lista', "
+            "'no_son_preguntas')",
             name="ck_notes_incident_status",
         ),
         CheckConstraint(

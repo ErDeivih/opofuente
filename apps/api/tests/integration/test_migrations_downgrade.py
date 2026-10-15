@@ -11,6 +11,17 @@ comprueba en cada uno tres cosas:
 3. volver a subir a la cabeza las recrea: bajar no deja el esquema en un estado del que no se pueda
    salir.
 
+**Esta lista está escrita a mano, y eso ha roto cinco fusiones en un día** (15-oct-2026): el panel
+(`0038_revision_de_apuntes`), el medidor (`0037_origin_scope`), la bandeja
+(`0039_bandeja_por_conjunto`, dos veces: al re-apuntarla a `0039_claves_derivadas` y otra vez al
+entrar `0040`) y la plataforma desplegable (`0040_cuentas_y_consentimiento`). Cada vez el síntoma es
+el mismo y no parece de quien lo sufre: la puerta 7 cae en el **primer** escalón diciendo que
+esperaba otra revisión.
+
+Si acabas de añadir una migración y esta prueba se cae, **no es que la prueba estorbe**: es que le
+falta tu escalón. Añádelo **arriba del todo**, con la revisión a la que baja y las tablas que su
+`downgrade` se lleva (vacío si solo ensancha una restricción o añade una columna).
+
 No comprueba la forma de cada tabla recreada (eso lo hacen las pruebas de cada migración): comprueba
 que la bajada existe, se ejecuta y devuelve el esquema a su sitio.
 """
@@ -36,11 +47,11 @@ ESCALONES: tuple[tuple[str, str, tuple[str, ...]], ...] = (
         # lleva: al bajar de este escalón **desaparecen las seis**, y es lo que se mide aquí. Que su
         # forma sea la declarada lo comprueba `test_migrations_0040_cuentas.py`.
         #
-        # Es la **cuarta vez hoy** que una migración nueva rompe esta lista escrita a mano (panel,
-        # medidor, bandeja y esta). Por eso el rojo de la puerta 7 al añadirla fue un aviso legítimo
-        # y no una prueba que estorbara.
+        # Va **detrás de la bandeja**: nació colgando de `0039_claves_derivadas` y al fusionar la
+        # rama de F31 se re-apuntó a `0039_bandeja_por_conjunto`, porque dos migraciones con el
+        # mismo padre son **dos cabezas** y alembic se niega a subir.
         "0040_cuentas_y_consentimiento",
-        "0039_claves_derivadas",
+        "0039_bandeja_por_conjunto",
         (
             "accounts",
             "account_sessions",
@@ -49,6 +60,19 @@ ESCALONES: tuple[tuple[str, str, tuple[str, ...]], ...] = (
             "consent_records",
             "analytics_events",
         ),
+    ),
+    (
+        # `0039_bandeja_por_conjunto` (F31) solo **ensancha** el `CHECK` del estado de la bandeja
+        # —de cuatro valores a seis— y añade un índice: ninguna tabla desaparece al bajar, por eso
+        # su escalón va vacío. Que los dos estados nuevos se van de verdad, con su `CHECK`, lo
+        # comprueba `test_migrations_0039_bandeja.py`, donde se mide la forma de la tabla.
+        #
+        # Va **detrás** de `0039_claves_derivadas`: las dos ramas colgaban de `0038` y al
+        # fusionarlas esta se re-apuntó, porque dos migraciones con el mismo padre son **dos
+        # cabezas**.
+        "0039_bandeja_por_conjunto",
+        "0039_claves_derivadas",
+        (),
     ),
     (
         # `0039` crea las dos tablas de la clave derivada (F29) y su vuelta atrás se las lleva: al

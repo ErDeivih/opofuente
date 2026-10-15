@@ -46,7 +46,7 @@ import sqlalchemy as sa
 from alembic import op
 
 revision = "0040_cuentas_y_consentimiento"
-down_revision = "0039_claves_derivadas"
+down_revision = "0039_bandeja_por_conjunto"
 branch_labels = None
 depends_on = None
 

@@ -22,8 +22,8 @@ Tres cosas y las tres con una regla detrás:
 from __future__ import annotations
 
 import json
-from collections.abc import Sequence
-from dataclasses import dataclass
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass, field
 from datetime import datetime
 from uuid import uuid4
 
@@ -31,6 +31,7 @@ from sqlalchemy import Select, func, inspect, or_, select, text
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.sql.elements import ColumnElement
 
+from opofuente.domain.key_reliability import letras_de_clave, normalizar_letra
 from opofuente.domain.notes_incidents import (
     MINIMO_COMPROBADO,
     UMBRAL_NO_FIABLE,
@@ -39,14 +40,19 @@ from opofuente.domain.notes_incidents import (
     IncidentStatus,
     NotesIncident,
     Reclasificacion,
+    ResolucionDeBandeja,
     fiabilidad_por_discrepancia,
     normalise_note,
     reviewed_at_for,
 )
 from opofuente.domain.topic_notes import CategoriaIncidencia, Motivo
+from opofuente.domain.tray import ESTADOS_ESPERANDO, TrayRefusalError, TraySet
 from opofuente.infrastructure.db_models import (
+    AnswerKeyEntryRecord,
+    AnswerKeyVersionRecord,
     AuditEventRecord,
     CurriculumNodeRecord,
+    DerivedKeyRecord,
     DocumentSectionRecord,
     DocumentVersionRecord,
     LogicalDocumentRecord,
@@ -69,6 +75,63 @@ ACCION_RETIRADA = "notes.incident_dropped"
 
 #: El objeto de la auditoría es **la incidencia**, no el tema: el despacho es de la incidencia.
 OBJETO_INCIDENCIA = "note_incident"
+
+#: La acción del despacho **en bloque** (F31): una incidencia de un conjunto que se decide entero.
+#: Va aparte del despacho de una en una porque la decisión fue otra —«todo el conjunto»— y la
+#: auditoría tiene que poder decir cuál de las dos se tomó.
+ACCION_BLOQUE = "notes.incident_bulk_dispatched"
+
+#: Y la del conjunto que se deja fuera de tests: es la misma escritura que la puerta de datos del §1
+#: hace sola, pero aquí la pidió una persona y el evento lo dice.
+ACCION_CLAVE_DERIVADA_ACEPTADA = "answer_key.derived_accepted"
+
+#: La acción de la **resolución automática** (F31, §3): una regla cierra o propone una incidencia.
+ACCION_RESOLUCION = "notes.incident_resolved_by_rule"
+
+
+@dataclass(frozen=True, slots=True)
+class IncidentProposal:
+    """Una clave derivada que espera la aprobación del propietario, con sus dos fuentes.
+
+    `letters` es la letra **derivada** —la que coinciden los apuntes con cita y una respuesta
+    independiente del modelo—, y por eso es distinta de la clave que el conjunto tiene hoy: si
+    coincidieran, no habría nada que proponer. Las dos fuentes viajan para que el propietario pueda
+    juzgar la propuesta sin abrir la pregunta.
+    """
+
+    incident_id: str
+    question_version_id: str
+    set_id: str
+    letters: tuple[str, ...]
+    notes_letter: str
+    model_letter: str
+    quote: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class BulkSummary:
+    """Lo que hizo una acción en bloque: cuántas incidencias cerró y cuántas claves escribió."""
+
+    action: str
+    set_id: str
+    incidents: int
+    keys_written: int = 0
+
+
+@dataclass(slots=True)
+class _FilaEnConstruccion:
+    """Un conjunto mientras se cuenta la bandeja: los datos fijos y lo que espera por categoría.
+
+    Es un tipo con nombre y no un diccionario de objetos porque `mypy` en estricto no puede
+    comprobar un `dict[str, object]` sin `type: ignore`, y un `ignore` en el sitio donde se cuenta
+    la cifra de la medida de éxito es justo donde no se quiere.
+    """
+
+    title: str
+    set_type: str
+    origin_scope: str
+    key_reliability: str
+    pendientes: dict[str, int] = field(default_factory=dict)
 
 
 @dataclass(frozen=True, slots=True)
@@ -157,6 +220,10 @@ class SqlAlchemyNotesIncidentRepository:
             consulta = consulta.where(NotesIncidentRecord.status == efecto.status.value)
         if efecto.topic_code is not None:
             consulta = consulta.where(CurriculumNodeRecord.path == efecto.topic_code)
+        if efecto.set_id is not None:
+            # El `JOIN` de la pregunta ya está en `_consulta()`: aquí solo se filtra por su
+            # conjunto, que es lo que despliega una fila de la bandeja agrupada.
+            consulta = consulta.where(QuestionVersionRecord.question_set_id == efecto.set_id)
         if efecto.q is not None:
             consulta = consulta.where(_busqueda(efecto.q))
         consulta = consulta.limit(efecto.limit)
@@ -181,6 +248,7 @@ class SqlAlchemyNotesIncidentRepository:
         category: CategoriaIncidencia | None = None,
         status: IncidentStatus | None = None,
         topic_code: str | None = None,
+        set_id: str | None = None,
         q: str | None = None,
     ) -> int:
         """Cuántas incidencias hay con ese filtro, sin traerse las filas para contarlas.
@@ -211,6 +279,11 @@ class SqlAlchemyNotesIncidentRepository:
                 & (TopicNoteSectionRecord.anchor == NotesIncidentRecord.anchor),
             )
             consulta = consulta.where(_busqueda(q))
+        if set_id is not None:
+            consulta = consulta.join(
+                QuestionVersionRecord,
+                QuestionVersionRecord.id == NotesIncidentRecord.question_version_id,
+            ).where(QuestionVersionRecord.question_set_id == set_id)
         if category is not None:
             consulta = consulta.where(NotesIncidentRecord.category == category.value)
         if status is not None:
@@ -523,6 +596,540 @@ class SqlAlchemyNotesIncidentRepository:
             actualizadas=actualizadas, retiradas=retiradas, total=len(cambios)
         )
 
+    # --------------------------------------------------- la bandeja por conjunto (F31, §2)
+
+    def resolve_by_rule(
+        self, resoluciones: Sequence[ResolucionDeBandeja], *, actor: str, now: datetime
+    ) -> ReclassificationSummary:
+        """Aplica la resolución automática del §3: cierra lo que decide una regla, propone lo demás.
+
+        Lo que la distingue de `reclassify` (y por lo que no se reutiliza) es que **no borra nada**:
+        un falso positivo se marca `dismissed` y su fila se queda, porque el motor vuelve a
+        comprobar los temas y «los falsos positivos ya descartados no vuelven a entrar» exige que
+        haya algo que lo recuerde. El motor respeta estas columnas al reescribir (desde `0035`), así
+        que la decisión sobrevive a la corrida siguiente.
+
+        Solo toca incidencias que **siguen esperando** (`open`): una que el propietario ya puso en
+        curso o resolvió es su decisión, y una regla no la reabre. En cambio, `propuesta_lista` sí
+        vuelve a resolver, porque una propuesta no es una decisión: es lo que una regla dejó dicho.
+        """
+        actualizadas = 0
+        retiradas = 0
+        with self._session_factory() as session:
+            for resolucion in resoluciones:
+                fila = session.get(NotesIncidentRecord, resolucion.incident_id)
+                if fila is None:
+                    continue
+                if str(fila.status) not in {
+                    IncidentStatus.OPEN.value,
+                    IncidentStatus.PROPUESTA_LISTA.value,
+                }:
+                    continue
+                antes = {
+                    "incident_id": resolucion.incident_id,
+                    "category": str(fila.category),
+                    "status": str(fila.status),
+                }
+                fila.status = resolucion.status.value
+                fila.reviewed_at = reviewed_at_for(resolucion.status, now)
+                fila.resolution_note = resolucion.note
+                if resolucion.status is IncidentStatus.DISMISSED:
+                    retiradas += 1
+                else:
+                    actualizadas += 1
+                despues = {
+                    "incident_id": resolucion.incident_id,
+                    "category": str(fila.category),
+                    "status": resolucion.status.value,
+                }
+                session.add(
+                    AuditEventRecord(
+                        id=str(uuid4()),
+                        actor=actor,
+                        action=ACCION_RESOLUCION,
+                        object_type=OBJETO_INCIDENCIA,
+                        object_id=resolucion.incident_id,
+                        before_json=json.dumps(antes, ensure_ascii=False, sort_keys=True),
+                        after_json=json.dumps(despues, ensure_ascii=False, sort_keys=True),
+                        correlation_id=None,
+                        created_at=now,
+                    )
+                )
+            session.commit()
+        return ReclassificationSummary(
+            actualizadas=actualizadas, retiradas=retiradas, total=len(resoluciones)
+        )
+
+    def tray_sets(self) -> tuple[TraySet, ...]:
+        """La bandeja agrupada por **conjunto de origen**: una fila por conjunto, con lo que espera.
+
+        Se cuenta en la base con un `GROUP BY` de dos columnas —estado y categoría— y no en Python
+        sobre la lista entera: la bandeja tiene cientos de filas y la pantalla solo necesita los
+        números de cada conjunto.
+
+        Los conjuntos **sin nada pendiente no salen**: una fila que no hay que atender es ruido en
+        una bandeja que existe justo para que no lo haya. Las que sí salen traen sus dos cifras
+        separadas —lo que espera criterio y lo que ya está propuesto—, porque significan cosas
+        distintas y la medida de éxito del §2.4 se cuenta con la primera.
+        """
+        with self._session_factory() as session:
+            conteos = session.execute(
+                select(
+                    QuestionSetRecord.id,
+                    QuestionSetRecord.title,
+                    QuestionSetRecord.set_type,
+                    QuestionSetRecord.origin_scope,
+                    QuestionSetRecord.key_reliability,
+                    NotesIncidentRecord.status,
+                    NotesIncidentRecord.category,
+                    func.count(NotesIncidentRecord.id),
+                )
+                .join(
+                    QuestionVersionRecord,
+                    QuestionVersionRecord.id == NotesIncidentRecord.question_version_id,
+                )
+                .join(
+                    QuestionSetRecord, QuestionSetRecord.id == QuestionVersionRecord.question_set_id
+                )
+                .where(
+                    NotesIncidentRecord.status.in_(
+                        [
+                            estado.value
+                            for estado in (*ESTADOS_ESPERANDO, IncidentStatus.PROPUESTA_LISTA)
+                        ]
+                    )
+                )
+                .group_by(
+                    QuestionSetRecord.id,
+                    NotesIncidentRecord.status,
+                    NotesIncidentRecord.category,
+                )
+            ).all()
+            plantillas = {
+                str(set_id)
+                for (set_id,) in session.execute(
+                    select(AnswerKeyVersionRecord.question_set_id)
+                    .where(AnswerKeyVersionRecord.source_document_version_id.is_not(None))
+                    .distinct()
+                ).all()
+            }
+
+        acumulado: dict[str, _FilaEnConstruccion] = {}
+        for set_id, titulo, tipo, origen, fiabilidad, estado, categoria, cuantas in conteos:
+            clave = str(set_id)
+            fila = acumulado.setdefault(
+                clave,
+                _FilaEnConstruccion(
+                    title=str(titulo),
+                    set_type=str(tipo),
+                    origin_scope=str(origen),
+                    key_reliability=str(fiabilidad),
+                ),
+            )
+            if str(estado) == IncidentStatus.PROPUESTA_LISTA.value:
+                # Una propuesta **no** se cuenta aquí: lo que el conjunto tiene propuesto lo dice
+                # `proposals()`, que es la única fuente de las propuestas, y contarlas en los dos
+                # sitios las contaría dos veces. El estado `propuesta_lista` solo sirve para que la
+                # corrida de resolución deje dicho qué ya está resuelto por regla.
+                continue
+            fila.pendientes[str(categoria)] = int(cuantas)
+
+        return tuple(
+            TraySet(
+                set_id=set_id,
+                title=fila.title,
+                set_type=fila.set_type,
+                origin_scope=fila.origin_scope,
+                key_reliability=fila.key_reliability,
+                tiene_plantilla_enlazada=set_id in plantillas,
+                pendientes=dict(fila.pendientes),
+            )
+            for set_id, fila in acumulado.items()
+        )
+
+    def tray_set(self, set_id: str) -> TraySet | None:
+        """Un conjunto con lo que espera, **aunque ya no quede nada pendiente**, o `None` si no hay.
+
+        Es la lectura que necesita una acción en bloque para ser idempotente: la segunda pasada no
+        encuentra la fila en la bandeja —la primera la cerró— y tiene que poder contestar «cero» en
+        vez de «no existe». Una acción que se puede pedir dos veces y la segunda revienta no es
+        idempotente; es frágil.
+        """
+        with self._session_factory() as session:
+            fila = session.get(QuestionSetRecord, set_id)
+            if fila is None:
+                return None
+            pendientes = session.execute(
+                select(NotesIncidentRecord.category, func.count(NotesIncidentRecord.id))
+                .join(
+                    QuestionVersionRecord,
+                    QuestionVersionRecord.id == NotesIncidentRecord.question_version_id,
+                )
+                .where(
+                    QuestionVersionRecord.question_set_id == set_id,
+                    NotesIncidentRecord.status.in_([estado.value for estado in ESTADOS_ESPERANDO]),
+                )
+                .group_by(NotesIncidentRecord.category)
+            ).all()
+            plantilla = session.execute(
+                select(AnswerKeyVersionRecord.id)
+                .where(
+                    AnswerKeyVersionRecord.question_set_id == set_id,
+                    AnswerKeyVersionRecord.source_document_version_id.is_not(None),
+                )
+                .limit(1)
+            ).first()
+        return TraySet(
+            set_id=set_id,
+            title=str(fila.title),
+            set_type=str(fila.set_type),
+            origin_scope=str(fila.origin_scope),
+            key_reliability=str(fila.key_reliability),
+            tiene_plantilla_enlazada=plantilla is not None,
+            pendientes={str(categoria): int(cuantas) for categoria, cuantas in pendientes},
+        )
+
+    def proposals(self) -> tuple[IncidentProposal, ...]:
+        """Las claves derivadas que esperan aprobación, con sus dos fuentes.
+
+        La tabla `question_derived_keys` la escribe la ruta de las claves derivadas (el §1 del
+        encargo) y la crea **su** migración, `0039_claves_derivadas`, que va **delante** de la de
+        esta bandeja: por eso esta migración se re-apuntó a ella al fusionar —dos migraciones
+        colgando del mismo padre son dos cabezas— y por eso aquí no hay guarda que valga. Si no
+        estuviera, el esquema estaría por debajo de su revisión, y eso no es un caso que esta
+        lectura tenga que disimular: lo dice `alembic current`.
+
+        Se leen las cuatro columnas que hacen falta y no la fila entera: la forma de esa tabla no es
+        de este bloque, y una consulta que se traiga todo se rompe el día que el §1 le añada una
+        columna.
+
+        Una propuesta es una fila con `key_state = 'derived'` cuya letra **no está** en la clave que
+        el conjunto tiene hoy: si estuviera, el motor ya la habría dado por buena y no habría
+        incidencia que aprobar.
+        """
+        with self._session_factory() as session:
+            filas = session.execute(
+                select(
+                    NotesIncidentRecord.id,
+                    NotesIncidentRecord.question_version_id,
+                    QuestionVersionRecord.question_set_id,
+                    DerivedKeyRecord.correct_option_keys_json,
+                    DerivedKeyRecord.notes_letter,
+                    DerivedKeyRecord.model_letter,
+                    DerivedKeyRecord.notes_quote,
+                    QuestionNoteAnchorRecord.expected_letters,
+                )
+                .join(
+                    QuestionVersionRecord,
+                    QuestionVersionRecord.id == NotesIncidentRecord.question_version_id,
+                )
+                .join(
+                    DerivedKeyRecord,
+                    DerivedKeyRecord.question_version_id == NotesIncidentRecord.question_version_id,
+                )
+                .outerjoin(
+                    QuestionNoteAnchorRecord,
+                    (
+                        QuestionNoteAnchorRecord.question_version_id
+                        == NotesIncidentRecord.question_version_id
+                    )
+                    & (
+                        QuestionNoteAnchorRecord.curriculum_node_id
+                        == NotesIncidentRecord.curriculum_node_id
+                    ),
+                )
+                .where(
+                    NotesIncidentRecord.status.in_(
+                        [
+                            estado.value
+                            for estado in (*ESTADOS_ESPERANDO, IncidentStatus.PROPUESTA_LISTA)
+                        ]
+                    ),
+                    NotesIncidentRecord.category.in_(
+                        [
+                            CategoriaIncidencia.CLAVE_SOSPECHOSA.value,
+                            CategoriaIncidencia.CLAVE_NO_FIABLE.value,
+                        ]
+                    ),
+                    DerivedKeyRecord.key_state == "derived",
+                )
+                .order_by(NotesIncidentRecord.id)
+            ).all()
+
+        propuestas: list[IncidentProposal] = []
+        for fila in filas:
+            letras = letras_de_clave(str(fila[3]))
+            if len(letras) != 1:
+                continue
+            esperadas = {
+                normalizar_letra(cual)
+                for cual in letras_de_clave(None if fila[7] is None else str(fila[7]))
+            }
+            if letras[0] in esperadas:
+                continue
+            propuestas.append(
+                IncidentProposal(
+                    incident_id=str(fila[0]),
+                    question_version_id=str(fila[1]),
+                    set_id=str(fila[2]),
+                    letters=letras,
+                    notes_letter=normalizar_letra(str(fila[4])),
+                    model_letter=normalizar_letra(str(fila[5])),
+                    quote=None if fila[6] is None else str(fila[6]),
+                )
+            )
+        return tuple(propuestas)
+
+    def accept_derived(
+        self,
+        *,
+        set_id: str,
+        plan: Sequence[IncidentProposal],
+        note: str,
+        actor: str,
+        now: datetime,
+    ) -> BulkSummary:
+        """Acepta en bloque las claves derivadas de un conjunto, y cierra sus incidencias.
+
+        Escribe la letra derivada en la entrada de la **clave que manda** en el conjunto —la activa
+        y, si no hay ninguna activa todavía, la última plantilla, la misma regla con la que la
+        lee el banco— y deja la incidencia resuelta. Las dos escrituras y sus eventos entran en
+        **una sola transacción**: una aprobación a medias dejaría claves escritas sin su incidencia
+        cerrada, o al revés.
+
+        Lo que **no** hace, a propósito: comprobar si el conjunto es oficial. Eso lo decide
+        `protege_cambiar_la_clave` y lo comprueba el servicio antes de llamar; aquí solo se escribe
+        lo que se ha aprobado.
+        """
+        escritas = 0
+        cerradas = 0
+        with self._session_factory() as session:
+            clave = self._manda_la_clave(session, set_id)
+            if clave is None:
+                raise TrayRefusalError(
+                    "este conjunto no tiene ninguna plantilla de respuestas donde escribir la "
+                    "clave derivada: no hay nada que aprobar"
+                )
+            for propuesta in plan:
+                entrada = session.execute(
+                    select(AnswerKeyEntryRecord).where(
+                        AnswerKeyEntryRecord.answer_key_version_id == clave.id,
+                        AnswerKeyEntryRecord.question_version_id == propuesta.question_version_id,
+                    )
+                ).scalar_one_or_none()
+                if entrada is not None:
+                    nuevo = json.dumps(list(propuesta.letters), ensure_ascii=False)
+                    if str(entrada.correct_option_keys_json) != nuevo:
+                        antes = str(entrada.correct_option_keys_json)
+                        entrada.correct_option_keys_json = nuevo
+                        escritas += 1
+                        session.add(
+                            AuditEventRecord(
+                                id=str(uuid4()),
+                                actor=actor,
+                                action=ACCION_CLAVE_DERIVADA_ACEPTADA,
+                                object_type="question_version",
+                                object_id=propuesta.question_version_id,
+                                before_json=json.dumps(
+                                    {"correct_option_keys": antes}, ensure_ascii=False
+                                ),
+                                after_json=json.dumps(
+                                    {
+                                        "correct_option_keys": nuevo,
+                                        "from": "derived",
+                                        "notes_letter": propuesta.notes_letter,
+                                        "model_letter": propuesta.model_letter,
+                                    },
+                                    ensure_ascii=False,
+                                ),
+                                correlation_id=None,
+                                created_at=now,
+                            )
+                        )
+                if self._cerrar(
+                    session,
+                    incident_id=propuesta.incident_id,
+                    status=IncidentStatus.REVIEWED,
+                    note=note,
+                    actor=actor,
+                    now=now,
+                    action=ACCION_BLOQUE,
+                    extra={"set_id": set_id, "letters": list(propuesta.letters)},
+                ):
+                    cerradas += 1
+            session.commit()
+        return BulkSummary(
+            action="aceptar_derivadas", set_id=set_id, incidents=cerradas, keys_written=escritas
+        )
+
+    def leave_out(self, *, set_id: str, note: str, actor: str, now: datetime) -> BulkSummary:
+        """Deja el conjunto fuera de tests y cierra lo que esperaba criterio dentro de él.
+
+        El veredicto (`key_reliability`) **no** se escribe aquí: lo escribe la ruta auditada que ya
+        existe para eso (`SqlAlchemyKeyReliabilityRepository.set_verdict`), y este método solo
+        cierra las incidencias, para que no haya dos sitios que decidan lo mismo.
+        """
+        return self._cerrar_todo(
+            set_id=set_id,
+            status=IncidentStatus.REVIEWED,
+            note=note,
+            actor=actor,
+            now=now,
+            action="dejar_fuera",
+        )
+
+    def close_as_not_questions(
+        self, *, set_id: str, note: str, actor: str, now: datetime
+    ) -> BulkSummary:
+        """Saca de la bandeja lo que hay en un conjunto que no son preguntas contestables.
+
+        Las preguntas salen del temario por la ruta auditada de siempre
+        (`QuestionService.apply_topic_batch`, con `enunciado_roto`), que escribe la marca y
+        su evento; aquí solo se cierra la bandeja, que es de lo que este repositorio es dueño.
+        """
+        return self._cerrar_todo(
+            set_id=set_id,
+            status=IncidentStatus.NO_SON_PREGUNTAS,
+            note=note,
+            actor=actor,
+            now=now,
+            action="no_son_preguntas",
+        )
+
+    def question_ids_of_set(self, set_id: str) -> tuple[str, ...]:
+        """Las preguntas que este conjunto tiene **dentro de la bandeja**, sin repetir.
+
+        Es lo que la acción «no son preguntas» saca del temario: lo que está señalado, no el banco
+        entero. Sacar del temario las 900 preguntas de un conjunto porque tres estén rotas sería
+        exactamente el daño que esta bandeja viene a evitar.
+        """
+        with self._session_factory() as session:
+            filas = session.execute(
+                select(NotesIncidentRecord.question_version_id)
+                .join(
+                    QuestionVersionRecord,
+                    QuestionVersionRecord.id == NotesIncidentRecord.question_version_id,
+                )
+                .where(
+                    QuestionVersionRecord.question_set_id == set_id,
+                    NotesIncidentRecord.status.in_([estado.value for estado in ESTADOS_ESPERANDO]),
+                )
+                .distinct()
+            ).all()
+        return tuple(str(fila[0]) for fila in filas)
+
+    def _cerrar_todo(
+        self,
+        *,
+        set_id: str,
+        status: IncidentStatus,
+        note: str,
+        actor: str,
+        now: datetime,
+        action: str,
+    ) -> BulkSummary:
+        """Cierra de una vez lo que espera criterio en un conjunto, con su evento por incidencia."""
+        cerradas = 0
+        with self._session_factory() as session:
+            ids = [
+                str(fila[0])
+                for fila in session.execute(
+                    select(NotesIncidentRecord.id)
+                    .join(
+                        QuestionVersionRecord,
+                        QuestionVersionRecord.id == NotesIncidentRecord.question_version_id,
+                    )
+                    .where(
+                        QuestionVersionRecord.question_set_id == set_id,
+                        NotesIncidentRecord.status.in_(
+                            [estado.value for estado in ESTADOS_ESPERANDO]
+                        ),
+                    )
+                ).all()
+            ]
+            for incident_id in ids:
+                if self._cerrar(
+                    session,
+                    incident_id=incident_id,
+                    status=status,
+                    note=note,
+                    actor=actor,
+                    now=now,
+                    action=ACCION_BLOQUE,
+                    extra={"set_id": set_id, "bulk": action},
+                ):
+                    cerradas += 1
+            session.commit()
+        return BulkSummary(action=action, set_id=set_id, incidents=cerradas)
+
+    def _cerrar(
+        self,
+        session: Session,
+        *,
+        incident_id: str,
+        status: IncidentStatus,
+        note: str,
+        actor: str,
+        now: datetime,
+        action: str,
+        extra: Mapping[str, object],
+    ) -> bool:
+        """Cierra una incidencia dentro de la transacción que le pasa quien llama.
+
+        Devuelve `False` si la incidencia ya no estaba esperando: es lo que hace **idempotente** una
+        acción en bloque. Aplicarla dos veces no vuelve a escribir ni a proponer nada, porque la
+        segunda pasada encuentra las incidencias ya cerradas y no las toca.
+        """
+        fila = session.get(NotesIncidentRecord, incident_id)
+        if fila is None or str(fila.status) not in {estado.value for estado in ESTADOS_ESPERANDO}:
+            return False
+        antes = {"incident_id": incident_id, "status": str(fila.status)}
+        fila.status = status.value
+        fila.reviewed_at = reviewed_at_for(status, now)
+        fila.resolution_note = note
+        despues: dict[str, object] = {
+            "incident_id": incident_id,
+            "status": status.value,
+            **extra,
+        }
+        session.add(
+            AuditEventRecord(
+                id=str(uuid4()),
+                actor=actor,
+                action=action,
+                object_type=OBJETO_INCIDENCIA,
+                object_id=incident_id,
+                before_json=json.dumps(antes, ensure_ascii=False, sort_keys=True),
+                after_json=json.dumps(despues, ensure_ascii=False, sort_keys=True),
+                correlation_id=None,
+                created_at=now,
+            )
+        )
+        return True
+
+    @staticmethod
+    def _manda_la_clave(session: Session, set_id: str) -> AnswerKeyVersionRecord | None:
+        """La clave que manda en un conjunto: la activa y, si no la hay, la última plantilla.
+
+        Es la misma regla con la que el banco lee la clave de una pregunta (`_active_entries`), y se
+        repite aquí a propósito: si escribiéramos en una plantilla que la pantalla no lee, la clave
+        aprobada no le llegaría a nadie.
+        """
+        claves = (
+            session.execute(
+                select(AnswerKeyVersionRecord).where(
+                    AnswerKeyVersionRecord.question_set_id == set_id
+                )
+            )
+            .scalars()
+            .all()
+        )
+        if not claves:
+            return None
+        return sorted(
+            claves, key=lambda fila: (str(fila.status) == "active", int(fila.version_no))
+        )[-1]
+
 
 def _consulta() -> Select[_Fila]:
     """La incidencia con su tema, su apartado, su pregunta y el material del que salió.
@@ -648,11 +1255,16 @@ def _incidencia(
 
 
 __all__ = [
+    "ACCION_BLOQUE",
+    "ACCION_CLAVE_DERIVADA_ACEPTADA",
     "ACCION_DESPACHO",
     "ACCION_RECLASIFICACION",
+    "ACCION_RESOLUCION",
     "ACCION_RETIRADA",
     "OBJETO_INCIDENCIA",
+    "BulkSummary",
     "IncidentEvidence",
+    "IncidentProposal",
     "KeyReliability",
     "ReclassificationSummary",
     "SqlAlchemyNotesIncidentRepository",

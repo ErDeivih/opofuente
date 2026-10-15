@@ -84,6 +84,9 @@ from opofuente.infrastructure.filesystem_inventory import FilesystemInventory
 from opofuente.infrastructure.housekeeping_repository import SqlAlchemyHousekeepingRepository
 from opofuente.infrastructure.ingestion_repository import SqlAlchemyIngestionRepository
 from opofuente.infrastructure.job_repository import SqlAlchemyJobRepository
+from opofuente.infrastructure.key_reliability_repository import (
+    SqlAlchemyKeyReliabilityRepository,
+)
 from opofuente.infrastructure.migrations import database_revision, run_migrations, script_head
 from opofuente.infrastructure.notes_incident_repository import (
     SqlAlchemyNotesIncidentRepository,
@@ -324,8 +327,17 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     # toca)
     # y la lee y la despacha el propietario desde el panel, con su estado, su nota y su evento
     # (bloque C, §4.1 del objetivo).
+    # F31: además se agrupa por conjunto y admite acciones en bloque. Las dos acciones que escriben
+    # fuera de la bandeja van por las rutas auditadas que ya existían —el veredicto de fiabilidad
+    # del §1 y la asignación de temario— en vez de por una escritura propia: un segundo camino para
+    # el mismo cambio es como acabas con una clave cambiada sin su marca.
     notes_incidents_repository = SqlAlchemyNotesIncidentRepository(session_factory)
-    notes_incidents_service = NotesIncidentsService(notes_incidents_repository, clock=clock)
+    notes_incidents_service = NotesIncidentsService(
+        notes_incidents_repository,
+        clock=clock,
+        keys=SqlAlchemyKeyReliabilityRepository(session_factory),
+        questions=question_service,
+    )
     # F24: la revisión de los apuntes (§4.3 del objetivo). El propietario ve los temas con su motivo
     # medido, lee un borrador dentro del panel y lo aprueba o lo rechaza. El servicio de apuntes
     # entra **solo para medir** (lee lo guardado y no llama a nadie: le acompaña un motor que se

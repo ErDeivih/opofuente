@@ -8163,7 +8163,9 @@
               "open",
               "in_progress",
               "reviewed",
-              "dismissed"
+              "dismissed",
+              "propuesta_lista",
+              "no_son_preguntas"
             ],
             "title": "Status",
             "type": "string"
@@ -8235,7 +8237,9 @@
               "open",
               "in_progress",
               "reviewed",
-              "dismissed"
+              "dismissed",
+              "propuesta_lista",
+              "no_son_preguntas"
             ],
             "title": "Status",
             "type": "string"
@@ -16973,6 +16977,230 @@
         "title": "SubstitutionSchema",
         "type": "object"
       },
+      "TrayBulkRequestSchema": {
+        "additionalProperties": false,
+        "description": "Una acción en bloque sobre un conjunto: qué se hace, dónde y quién lo hace.\n\nLa nota es potestativa —una acción en bloque tiene su propio texto por defecto— y, cuando viene,\nes **una línea**, como la del despacho de una en una: es la misma regla y se normaliza igual.",
+        "properties": {
+          "action": {
+            "enum": [
+              "aceptar_derivadas",
+              "dejar_fuera",
+              "no_son_preguntas"
+            ],
+            "title": "Action",
+            "type": "string"
+          },
+          "actor": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "set_id": {
+            "maxLength": 36,
+            "minLength": 1,
+            "title": "Set Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "action",
+          "set_id"
+        ],
+        "title": "TrayBulkRequestSchema",
+        "type": "object"
+      },
+      "TrayBulkResultSchema": {
+        "description": "Qué hizo la acción en bloque: cuántas incidencias cerró y cuántas claves escribió.\n\nLos dos números van separados porque no tienen por qué coincidir: aceptar las derivadas escribe\nuna clave por propuesta —salvo las que ya estuvieran escritas— y cerrar un conjunto entero no\nescribe ninguna.",
+        "properties": {
+          "action": {
+            "enum": [
+              "aceptar_derivadas",
+              "dejar_fuera",
+              "no_son_preguntas"
+            ],
+            "title": "Action",
+            "type": "string"
+          },
+          "incidents": {
+            "minimum": 0.0,
+            "title": "Incidents",
+            "type": "integer"
+          },
+          "keys_written": {
+            "minimum": 0.0,
+            "title": "Keys Written",
+            "type": "integer"
+          },
+          "set_id": {
+            "title": "Set Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "action",
+          "set_id",
+          "incidents",
+          "keys_written"
+        ],
+        "title": "TrayBulkResultSchema",
+        "type": "object"
+      },
+      "TraySchema": {
+        "description": "La bandeja entera, en dos secciones, con **la cifra** de la medida de éxito del §2.4.\n\n`entradas_de_decision` no es el número de incidencias ni el de filas: es lo que de verdad\ndepende del criterio del propietario, contado con la regla de `domain.tray` —una por conjunto no\noficial, una por incidencia oficial—. Va en la respuesta y no se calcula en la pantalla porque\nes la cifra que decide si la bandeja sirve, y una cifra que se calcula en dos sitios acaba\ndiciendo dos cosas.",
+        "properties": {
+          "entradas_de_decision": {
+            "description": "La medida de éxito: lo que de verdad depende del propietario.",
+            "minimum": 0.0,
+            "title": "Entradas De Decision",
+            "type": "integer"
+          },
+          "filas": {
+            "description": "Cuántas filas enseña la bandeja.",
+            "minimum": 0.0,
+            "title": "Filas",
+            "type": "integer"
+          },
+          "official_section": {
+            "items": {
+              "$ref": "#/components/schemas/TraySetSchema"
+            },
+            "title": "Official Section",
+            "type": "array"
+          },
+          "propuestas": {
+            "description": "Incidencias ya propuestas, que se aprueban en bloque.",
+            "minimum": 0.0,
+            "title": "Propuestas",
+            "type": "integer"
+          },
+          "rest": {
+            "items": {
+              "$ref": "#/components/schemas/TraySetSchema"
+            },
+            "title": "Rest",
+            "type": "array"
+          },
+          "total_pendiente": {
+            "description": "Incidencias que esperan criterio.",
+            "minimum": 0.0,
+            "title": "Total Pendiente",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "filas",
+          "total_pendiente",
+          "propuestas",
+          "entradas_de_decision"
+        ],
+        "title": "TraySchema",
+        "type": "object"
+      },
+      "TraySetSchema": {
+        "description": "Una **fila** de la bandeja: un conjunto y lo que espera dentro.\n\nEs la pieza que hace trabajable una bandeja de cientos de filas. `pendientes` cuenta por\ncategoría lo que espera criterio; `propuestas` lo que ya está resuelto por regla y solo falta\naprobar en bloque. `resumen` es el título de la fila —«50 claves sospechosas»—, calculado por el\ndominio para que la pantalla no tenga que componerlo y no haya dos versiones del mismo texto.\n\n`acciones` viaja **calculado**: los conjuntos oficiales llegan con la lista vacía, porque su\nclave no se toca y sus incidencias las decide el propietario una a una. La pantalla no tiene que\nsaberse la regla; la lee.",
+        "properties": {
+          "acciones": {
+            "items": {
+              "enum": [
+                "aceptar_derivadas",
+                "dejar_fuera",
+                "no_son_preguntas"
+              ],
+              "type": "string"
+            },
+            "title": "Acciones",
+            "type": "array"
+          },
+          "entradas_de_decision": {
+            "minimum": 0.0,
+            "title": "Entradas De Decision",
+            "type": "integer"
+          },
+          "key_reliability": {
+            "title": "Key Reliability",
+            "type": "string"
+          },
+          "official": {
+            "title": "Official",
+            "type": "boolean"
+          },
+          "origin_scope": {
+            "title": "Origin Scope",
+            "type": "string"
+          },
+          "pendientes": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Pendientes",
+            "type": "object"
+          },
+          "propuestas": {
+            "minimum": 0.0,
+            "title": "Propuestas",
+            "type": "integer"
+          },
+          "resumen": {
+            "title": "Resumen",
+            "type": "string"
+          },
+          "section": {
+            "enum": [
+              "oficial",
+              "resto"
+            ],
+            "title": "Section",
+            "type": "string"
+          },
+          "set_id": {
+            "title": "Set Id",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "total_pendiente": {
+            "minimum": 0.0,
+            "title": "Total Pendiente",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "set_id",
+          "title",
+          "section",
+          "origin_scope",
+          "key_reliability",
+          "official",
+          "total_pendiente",
+          "propuestas",
+          "entradas_de_decision",
+          "resumen"
+        ],
+        "title": "TraySetSchema",
+        "type": "object"
+      },
       "UrlRequest": {
         "description": "URL que se descargará con la guarda de red (09_SECURITY §4).",
         "properties": {
@@ -25351,7 +25579,7 @@
     },
     "/api/v1/notes-incidents": {
       "get": {
-        "description": "Las incidencias, de la más nueva a la más vieja.\n\n`pending` cuenta las que están **sin despachar** (`open`) sin mirar el filtro: es el número que\nel propietario necesita ver aunque esté mirando las de una sola categoría. `totals_by_category`\ncuenta las cuatro categorías **en la base entera**, con un `GROUP BY`: es la cifra de cada\nclase,\nmedida y no heredada. El `total`, en cambio, es el del filtro.",
+        "description": "Las incidencias, de la más nueva a la más vieja.\n\n`pending` cuenta las que están **sin despachar** (`open`) sin mirar el filtro: es el número que\nel propietario necesita ver aunque esté mirando las de una sola categoría. `totals_by_category`\ncuenta las cuatro categorías **en la base entera**, con un `GROUP BY`: es la cifra de cada\nclase,\nmedida y no heredada. El `total`, en cambio, es el del filtro.\n\n`set` es el filtro que **despliega** una fila de la bandeja agrupada (F31): la fila de un\nconjunto no enseña sus incidencias dentro, las pide por aquí.",
         "operationId": "list_notes_incidents_api_v1_notes_incidents_get",
         "parameters": [
           {
@@ -25392,7 +25620,9 @@
                     "open",
                     "in_progress",
                     "reviewed",
-                    "dismissed"
+                    "dismissed",
+                    "propuesta_lista",
+                    "no_son_preguntas"
                   ],
                   "type": "string"
                 },
@@ -25420,6 +25650,25 @@
               ],
               "description": "Código legible del tema, como `I.2`, para ver solo las de un tema.",
               "title": "Topic"
+            }
+          },
+          {
+            "description": "Conjunto de origen: es lo que despliega una fila de la bandeja agrupada.",
+            "in": "query",
+            "name": "set_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 36,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Conjunto de origen: es lo que despliega una fila de la bandeja agrupada.",
+              "title": "Set Id"
             }
           },
           {
@@ -25499,6 +25748,204 @@
           }
         },
         "summary": "Las incidencias del motor, para la bandeja del propietario",
+        "tags": [
+          "panel"
+        ]
+      }
+    },
+    "/api/v1/notes-incidents/tray": {
+      "get": {
+        "description": "La bandeja agrupada por conjunto, con lo oficial **aparte y arriba**.\n\nEs la vista con la que se trabaja: una fila por conjunto, su resumen («50 claves sospechosas»),\nlas acciones que admite y **la cifra** que decide si la bandeja sirve —las entradas que de\nverdad dependen del criterio del propietario—. Los conjuntos oficiales van en su propia sección\nporque sus incidencias no se deciden en bloque: su clave es la que publicó la administración.\n\nSe cuenta en la base, no en la pantalla: `entradas_de_decision` sale del dominio y viaja\ncalculado, para que no haya dos versiones de la cifra que mide la medida de éxito.",
+        "operationId": "read_tray_api_v1_notes_incidents_tray_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TraySchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "La bandeja por conjunto: una fila por conjunto, con lo que admite en bloque",
+        "tags": [
+          "panel"
+        ]
+      }
+    },
+    "/api/v1/notes-incidents/tray/actions": {
+      "get": {
+        "description": "El texto de las tres acciones, calculado en el servidor.\n\nVive aquí y no en la pantalla por la misma razón que `category_help`: dos versiones del mismo\ntexto acaban diciendo cosas distintas, y la que se queda vieja es la que nadie lee.",
+        "operationId": "read_tray_actions_api_v1_notes_incidents_tray_actions_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Read Tray Actions Api V1 Notes Incidents Tray Actions Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Qué hace cada acción en bloque, dicho por el servidor",
+        "tags": [
+          "panel"
+        ]
+      }
+    },
+    "/api/v1/notes-incidents/tray/bulk": {
+      "post": {
+        "description": "Acepta todas las derivadas, deja el conjunto fuera o lo marca como «no son preguntas».\n\n**Una clave oficial no se cambia jamás**: si el conjunto es un examen oficial —o su plantilla\nviene de un documento—, la ruta **rechaza** la acción con el motivo que ya usa la ficha de la\npregunta, y no escribe nada. El rechazo es un `409` con el texto, no un 200 que no hizo nada.\n\nAplicar dos veces la misma acción no duplica nada: la segunda pasada no encuentra incidencias\nesperando y devuelve cero. La memoria de lo hecho **es** el estado de la incidencia.",
+        "operationId": "dispatch_tray_bulk_api_v1_notes_incidents_tray_bulk_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-OpoFuente-Actor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Opofuente-Actor"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrayBulkRequestSchema"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrayBulkResultSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Aplica una acción en bloque a un conjunto (y rechaza los oficiales)",
         "tags": [
           "panel"
         ]

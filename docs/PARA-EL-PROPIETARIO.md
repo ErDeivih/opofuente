@@ -1195,3 +1195,44 @@ de un tema a medio comprobar ya no baila sola.
   una copia. Coste: **0 $**.
 - **El listón sigue en el 90 %** y **nada se ha publicado ni retirado** en esta tanda.
 - **La zona del alumno no cambia**: lee lo mismo.
+
+## Tu bandeja: de 868 filas a 146 decisiones (15-oct-2026)
+
+**Todavía no se ha tocado tu base.** Todo lo de este bloque es lectura y código probado; lo que falta es
+tu turno para correr las puertas.
+
+### Lo que vas a ver
+
+En **Incidencias del motor** hay ahora dos secciones:
+
+1. **Exámenes oficiales**, arriba y sin botones. Lo que el motor señala en un examen del INAP se decide
+   **una a una**: su respuesta correcta es la que publicó la administración y no se cambia jamás, y la
+   ruta **rechaza** cualquier intento con el motivo escrito.
+2. **La bandeja por conjunto**, con **una fila por banco**: «TEST VARIOS: 50 claves sospechosas», y desde
+   ahí **aceptar todas las derivadas**, **dejar el conjunto fuera** o **marcar que no son preguntas**. La
+   fila se despliega para ver lo que tiene dentro.
+
+Cada acción en bloque deja su evento de auditoría, y pulsarla dos veces **no duplica nada**.
+
+### La cifra
+
+Hoy tu bandeja tiene **868** incidencias (no 603: el documento decía 603 y han crecido). Contadas con la
+regla nueva —lo que de verdad depende de tu criterio, con los conjuntos decididos de una vez— son
+**146**. Lo demás queda **resuelto por regla** o **propuesto para que lo apruebes en bloque**.
+
+El margen es corto: **146 de 150**. Cada corrida de apuntes añade incidencias, así que esta cifra puede
+volver a subir; está medida el 15 de octubre y se dice con su fecha.
+
+### Lo que te toca decidir a ti, y solo a ti
+
+- **Los conjuntos oficiales**, incidencia a incidencia. Son **24** hoy (12 después de descartar los
+  falsos positivos del motor).
+- **Lo que ninguna regla puede cerrar**: huecos sin material y preguntas que no se pueden juzgar.
+- Y, cuando quieras, **aplicar la resolución automática a tu base**: hoy no se ha escrito ni una fila.
+
+### Una cosa que conviene que sepas
+
+La **reclasificación de incidencias** que se construyó en la tanda anterior **no se había ejecutado
+nunca** sobre tu base: por eso tu bandeja todavía no distingue las preguntas mal importadas ni las claves
+de los conjuntos en cuarentena. El comando nuevo las clasifica y deja cada cosa en su sitio. Hasta que se
+corra, tu bandeja enseña las 868 como pendientes.

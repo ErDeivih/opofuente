@@ -3763,3 +3763,67 @@ Y una nota de instrumento que va aquí porque afecta a la procedencia: en la bat
   `297/488 = 60,9 %` y en la 1 era `261/488 = 53,5 %`. Las dos son verdad y la diferencia es trabajo
   hecho. Por eso la tabla del apartado 5 lleva su fecha y su huella y no se presenta como un número
   eterno.
+
+## F31 · La bandeja del propietario, agrupada por conjunto (15-oct-2026)
+
+**Rama `f31-bandeja`** sobre `main = 5a62d0d`. Es código: **las 18 puertas están pendientes de correr**
+(el encargo pide no lanzarlas hasta que el propietario dé el turno, porque hay tres baterías en marcha).
+Lo que sí está hecho y medido, por piezas:
+
+### La tabla del §1, medida en la base real (solo lectura, 15-oct-2026)
+
+| Categoría | Incidencias | Conjuntos |
+|---|---:|---:|
+| `norma_cambiada` | 502 | — |
+| `clave_sospechosa` | 173 | — |
+| `pregunta_ambigua` | 106 | — |
+| `hueco_sin_material` | 87 | — |
+| `pregunta_mal_importada` | **0** | — |
+| `clave_no_fiable` | **0** | — |
+| **Total** | **868** (todas `open`) | **150** |
+
+- La cifra de **603** del documento de cierre es de hace días: hoy hay **868**, y **88 más** de lo que
+  decía. Por eso todo se ha contado otra vez en la base.
+- **Oficiales** (`set_type='official_exam'`, 19 conjuntos): **24** incidencias, todas `pregunta_ambigua`;
+  12 de ellas son falsos positivos del motor (la letra de los apuntes está en la clave).
+- **La reclasificación del §2 (de `f18`) no se había ejecutado nunca sobre la base real**: por eso no
+  hay ni una `pregunta_mal_importada` ni una `clave_no_fiable` escritas. Aplicada, deja: `clave_sospechosa`
+  406 · `clave_no_fiable` 209 · falsos positivos **86** (salen) · `hueco_sin_material` 66 ·
+  `pregunta_mal_importada` **61** (a «No son preguntas») · `pregunta_ambigua` 40.
+
+### La cifra de la medida de éxito
+
+| | Entradas de decisión real |
+|---|---:|
+| Antes (todas las incidencias, una a una) | **868** |
+| Después de agrupar, de resolver por regla y de proponer en bloque | **146** |
+| Conjuntos no oficiales con algo pendiente | 134 |
+| Incidencias oficiales pendientes (una fila cada una) | 12 |
+
+**146 < 150**, y el margen es corto: la cifra la mueven 1.295 incidencias que pueden aparecer en
+cualquier corrida de apuntes. Queda dicho.
+
+### Qué se ha construido
+
+- **`domain/tray.py`**: la sección (oficial aparte), las tres acciones en bloque, el permiso y la regla
+  de la cifra. Puro, sin base de datos.
+- **`GET /notes-incidents/tray`**, **`GET /notes-incidents/tray/actions`** y
+  **`POST /notes-incidents/tray/bulk`** (con `409` y su motivo para un conjunto oficial).
+- **Migración `0039_bandeja_por_conjunto`**: dos estados nuevos (`propuesta_lista`, `no_son_preguntas`).
+- **`opofuente.tools.resolver_bandeja`**: la resolución automática del §3 (reclasifica, descarta los
+  falsos positivos, manda las mal importadas a «No son preguntas» y deja las derivadas en «propuesta
+  lista»). Ensayo por defecto.
+- **La pantalla**: sección «Exámenes oficiales» arriba y sin acciones, y «La bandeja por conjunto» con
+  una fila por conjunto, su resumen, sus acciones y su despliegue.
+- **Pruebas**: 12 unitarias del dominio y 5 de integración de la ruta (incluida la que rechaza tocar una
+  clave oficial), 4 de componente y 2 specs E2E con capturas a 1280/390, axe y errores de consola. Las
+  cuatro garantías tienen su **rojo previo** medido.
+
+### Lo que queda fuera y por qué
+
+- **Las 18 puertas**: se corren cuando el propietario dé el turno. El puerto 8765 lo necesitan tres
+  baterías.
+- **Aplicar la resolución a la base real**: `resolver_bandeja --aplicar` sobre una copia verificada. No
+  se ha hecho: escribir en la base del propietario con tres baterías dentro no es reversible de verdad.
+- **Los dos estados nuevos no los usa todavía el motor**: solo la resolución automática. Hasta que se
+  ejecute, la bandeja enseña las 868 como `open`.
