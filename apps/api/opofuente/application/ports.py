@@ -12,6 +12,14 @@ from datetime import datetime
 from pathlib import Path
 from typing import Protocol, runtime_checkable
 
+from opofuente.application.account_models import (
+    Account,
+    AccountAuditEntry,
+    AccountWithSecret,
+    ConsentSummary,
+    CountByLabel,
+    SessionView,
+)
 from opofuente.application.read_models import (
     AuditEventView,
     BatchDetail,
@@ -44,6 +52,8 @@ from opofuente.application.readiness_models import (
     QuestionSummary,
 )
 from opofuente.application.topic_notes_models import NotesNode
+from opofuente.domain.accounts import AccountEventKind, ThrottleState
+from opofuente.domain.analytics import AnalyticsEvent
 from opofuente.domain.artifacts import OriginType, Sha256, StoredArtifact
 from opofuente.domain.classification import (
     ClassificationSubject,
@@ -834,3 +844,144 @@ class AnswerKeyModel(Protocol):
     def responder(self, preguntas: Sequence[ClassifiableQuestion]) -> RespuestasBatch:
         """La letra de cada pregunta del lote, con los tokens que costo."""
         ...
+
+
+# --------------------------------------------------- S28: cuentas, consentimiento y contadores
+
+
+@runtime_checkable
+class PasswordHasher(Protocol):
+    """Escribe y comprueba el resumen de una contraseña (S28, §8).
+
+    Es un puerto y no una llamada directa por la misma razón que el reloj: una prueba que verifica
+    treinta contraseñas no tiene por qué pagar treinta derivaciones de memoria, y el día que se
+    cambie argon2id por otro derivador no hay que tocar el servicio.
+    """
+
+    @property
+    def algorithm(self) -> str: ...
+
+    def hash(self, password: str) -> str: ...
+
+    def verify(self, password: str, stored_hash: str) -> bool: ...
+
+    def needs_rehash(self, stored_hash: str) -> bool: ...
+
+
+@runtime_checkable
+class AccountStore(Protocol):
+    """Lo que el servicio de cuentas necesita de la base: cuentas, sesiones, freno y auditoría.
+
+    Ni una operación devuelve el resumen de la contraseña salvo `account_with_secret`, que existe
+    justamente para el único momento en el que hace falta: comprobar una contraseña.
+    """
+
+    def create_account(
+        self,
+        *,
+        email: str,
+        email_normalized: str,
+        password_hash: str,
+        password_algo: str,
+        owner_id: str,
+        now: datetime,
+    ) -> Account: ...
+
+    def account_with_secret(self, email_normalized: str) -> AccountWithSecret | None: ...
+
+    def account_by_id(self, account_id: str) -> Account | None: ...
+
+    def set_password(self, *, account_id: str, password_hash: str, now: datetime) -> None: ...
+
+    def close_account(self, account_id: str, *, keep_audit_event_id: str) -> dict[str, int]: ...
+
+    def write_event(
+        self,
+        *,
+        kind: AccountEventKind,
+        account_id: str,
+        occurred_at: datetime,
+        detail: dict[str, object] | None = ...,
+    ) -> str: ...
+
+    def events_for(self, account_id: str, *, limit: int = ...) -> list[AccountAuditEntry]: ...
+
+    def create_session(
+        self,
+        *,
+        account_id: str,
+        owner_id: str,
+        token_hash: str,
+        now: datetime,
+        expires_at: datetime,
+    ) -> str: ...
+
+    def live_session(self, token_hash: str, *, now: datetime) -> tuple[Account, str] | None: ...
+
+    def touch_session(self, session_id: str, *, now: datetime, expires_at: datetime) -> None: ...
+
+    def revoke_session(self, session_id: str, *, now: datetime) -> bool: ...
+
+    def revoke_all_sessions(self, account_id: str, *, now: datetime) -> int: ...
+
+    def sessions_for(
+        self, account_id: str, *, now: datetime, current_id: str
+    ) -> list[SessionView]: ...
+
+    def purge_expired_sessions(self, *, now: datetime) -> int: ...
+
+    def create_reset(
+        self, *, account_id: str, token_hash: str, now: datetime, expires_at: datetime
+    ) -> str: ...
+
+    def live_reset(self, token_hash: str, *, now: datetime) -> tuple[Account, str] | None: ...
+
+    def mark_reset_used(self, reset_id: str, *, now: datetime) -> None: ...
+
+    def purge_expired_resets(self, *, now: datetime) -> int: ...
+
+    def throttle(self, key_hash: str) -> ThrottleState: ...
+
+    def save_throttle(self, key_hash: str, state: ThrottleState, *, now: datetime) -> None: ...
+
+    def clear_throttle(self, key_hash: str) -> None: ...
+
+    def purge_stale_throttles(self, *, now: datetime, before: datetime) -> int: ...
+
+    def record_consent(
+        self, *, now: datetime, policy_version: int, analytics: bool, preferences: bool
+    ) -> str: ...
+
+    def consent_summary(self) -> ConsentSummary: ...
+
+    def counts(self) -> dict[str, int]: ...
+
+
+@runtime_checkable
+class ConsentStore(Protocol):
+    """Lo que el servicio legal necesita de la base: la constancia de las decisiones (§9).
+
+    Es un puerto aparte de `AccountStore` a propósito: el consentimiento existe **aunque no haya
+    cuentas**, y una instalación con `OPOFUENTE_ACCOUNTS_ENABLED=0` tiene que poder pedir y guardar
+    el
+    consentimiento sin montar el servicio de cuentas entero.
+    """
+
+    def record_consent(
+        self, *, now: datetime, policy_version: int, analytics: bool, preferences: bool
+    ) -> str: ...
+
+    def consent_summary(self) -> ConsentSummary: ...
+
+
+@runtime_checkable
+class AnalyticsStore(Protocol):
+    """Dónde se suman y se cuentan los contadores de uso (S28, §10)."""
+
+    def record(self, event: AnalyticsEvent, *, now: datetime) -> str: ...
+
+    def summary(self, *, days: int) -> list[CountByLabel]: ...
+
+    def totals_by_day(self, *, days: int) -> list[tuple[str, int]]: ...
+
+    def purge_older_than(self, *, day: str) -> int: ...

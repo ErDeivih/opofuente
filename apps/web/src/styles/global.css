@@ -3273,3 +3273,244 @@ kbd {
   margin: 0 0 var(--s3);
 }
 
+
+/* ----------------------------------------------------------------------------------------------
+ * La plataforma desplegable (S28, §8 a §11 del objetivo vivo)
+ *
+ * Tres bloques: el aviso de cookies, las páginas legales y la cuenta. Se escriben con los tokens de
+ * `tokens.css` y nada más —ni un color a mano, que la prueba de tokens lo comprueba— y con las
+ * mismas piezas que el resto de la zona del alumno: la jerarquía la hacen las líneas de 1px y el
+ * espacio, no las sombras.
+ * ------------------------------------------------------------------------------------------- */
+
+/* El aviso de cookies: va al final del marco, pegado al borde inferior, y no tapa el contenido. */
+.aviso-cookies {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s4);
+  align-items: flex-start;
+  justify-content: space-between;
+  border-top: 1px solid var(--linea);
+  background: var(--hoja);
+  padding: var(--s4) var(--s5);
+}
+
+.aviso-cookies__texto {
+  max-width: var(--medida-texto);
+}
+
+.aviso-cookies__titulo {
+  font-size: var(--t-cuerpo);
+  margin: 0 0 var(--s2);
+}
+
+.aviso-cookies__texto p {
+  margin: 0 0 var(--s2);
+  font-size: var(--t-sm);
+  color: var(--tinta-suave);
+}
+
+.aviso-cookies__acciones {
+  display: flex;
+  gap: var(--s3);
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* Las páginas legales: texto de lectura larga, con la medida de los apuntes. */
+.legal {
+  max-width: var(--medida-apuntes);
+}
+
+.legal__seccion {
+  font-size: var(--t-enunciado);
+  margin: var(--s6) 0 var(--s3);
+}
+
+.legal__subtitulo {
+  font-size: var(--t-cuerpo);
+  margin: var(--s5) 0 var(--s2);
+}
+
+.legal__parrafo {
+  margin: 0 0 var(--s3);
+  line-height: var(--lh-apuntes);
+}
+
+.legal__lista {
+  margin: 0 0 var(--s4);
+  padding-left: var(--s5);
+  line-height: var(--lh-apuntes);
+}
+
+.legal__lista li {
+  margin-bottom: var(--s2);
+}
+
+/* Lo que falta por rellenar del titular: visible arriba y con el color de aviso, no escondido. */
+.legal__pendiente {
+  border-left: 3px solid var(--dudosa);
+  background: var(--dudosa-suave);
+  padding: var(--s3) var(--s4);
+  margin: var(--s4) 0 0;
+  font-size: var(--t-sm);
+}
+
+.legal__aviso {
+  color: var(--acierto);
+  font-size: var(--t-sm);
+  margin: var(--s3) 0 0;
+}
+
+.legal__decision {
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  padding: var(--s4);
+  margin: var(--s4) 0;
+}
+
+.legal__fines {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 var(--s4);
+}
+
+.legal__fines li {
+  margin-bottom: var(--s2);
+}
+
+.legal__fines label {
+  display: flex;
+  gap: var(--s2);
+  align-items: center;
+  min-height: var(--objetivo-tactil);
+}
+
+/* Una tabla que no cabe se desplaza en su carril; nunca ensancha la página. */
+.tabla-scroll {
+  overflow-x: auto;
+  margin: var(--s4) 0;
+}
+
+.legal__tabla {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: var(--t-sm);
+}
+
+.legal__tabla th,
+.legal__tabla td {
+  border: 1px solid var(--linea-suave);
+  padding: var(--s2) var(--s3);
+  text-align: left;
+  vertical-align: top;
+}
+
+.legal__tabla thead th {
+  border-bottom: 2px solid var(--linea);
+  background: var(--papel);
+}
+
+.legal__leyenda {
+  caption-side: top;
+  text-align: left;
+  color: var(--tinta-suave);
+  padding-bottom: var(--s2);
+}
+
+/* La cuenta: un formulario de una columna, con la etiqueta encima del campo. */
+.cuenta__formulario {
+  max-width: 32rem;
+  margin: 0 0 var(--s5);
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  margin: 0 0 var(--s4);
+}
+
+.campo label {
+  font-size: var(--t-sm);
+  color: var(--tinta-suave);
+}
+
+.campo input {
+  min-height: var(--objetivo-tactil);
+  padding: var(--s2) var(--s3);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio-sm);
+  font: inherit;
+  color: var(--tinta);
+  background: var(--hoja);
+}
+
+.campo__ayuda {
+  font-size: var(--t-sm);
+  color: var(--tinta-suave);
+}
+
+.cuenta__eventos {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.cuenta__eventos li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--s4);
+  border-bottom: 1px solid var(--linea-suave);
+  padding: var(--s2) 0;
+  font-size: var(--t-sm);
+}
+
+/* El pie: los enlaces de información, en fila y discretos. */
+.pie__lista {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s4);
+  margin: 0;
+  padding: 0;
+}
+
+@media (max-width: 720px) {
+  .aviso-cookies {
+    /* En el móvil el aviso va **encima** de la barra inferior: taparla dejaría sin navegación. */
+    padding-bottom: calc(var(--alto-barra-inferior) + var(--s4));
+  }
+
+  .cuenta__eventos li {
+    flex-direction: column;
+    gap: var(--s1);
+  }
+}
+
+/* La zona que se desplaza en pantalla estrecha, cuando se llega a ella con el teclado: el foco tiene
+   que verse. Sin esto, la tabla se puede recorrer con las flechas pero nadie sabe que está ahí. */
+.tabla-scroll:focus-visible {
+  outline: var(--foco);
+  outline-offset: var(--foco-separacion);
+}
+
+/* En pantalla estrecha la tabla **se reparte el ancho** en vez de desplazarse: así no hay ninguna
+   zona que se desplace a la que quien navega con el teclado no pueda llegar (axe lo exige y con
+   razón), y no hace falta poner el foco en un elemento no interactivo (que es lo que eslint impide).
+   Las palabras largas —«opofuente_consent»— parten en cualquier punto en vez de ensanchar la tabla. */
+@media (max-width: 720px) {
+  .tabla-scroll {
+    overflow-x: visible;
+  }
+
+  .legal__tabla {
+    table-layout: fixed;
+  }
+
+  .legal__tabla th,
+  .legal__tabla td {
+    padding: var(--s1) var(--s2);
+    overflow-wrap: anywhere;
+  }
+}

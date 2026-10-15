@@ -5,6 +5,261 @@
  */
 
 export interface paths {
+    "/api/v1/accounts/configuration": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * ¿Esta instalación tiene cuentas, y se puede estudiar sin ellas?
+         * @description Lo que la interfaz necesita para no ofrecer un acceso que no existe.
+         *
+         *     **Se contesta siempre, también con las cuentas apagadas**: es justo lo que hay que poder saber
+         *     antes de decidir qué enseñar.
+         */
+        get: operations["configuration_api_v1_accounts_configuration_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/accounts/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Lo que ha pasado con mi cuenta, auditado
+         * @description El alta, los accesos, los cierres de sesión y la baja, cada uno con su fecha.
+         */
+        get: operations["events_api_v1_accounts_events_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/accounts/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Entrar
+         * @description Comprueba la contraseña y abre sesión. El testigo sale **solo** por la cookie.
+         */
+        post: operations["login_api_v1_accounts_login_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/accounts/logout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cerrar la sesión de esta pestaña
+         * @description Cierra la sesión. Se contesta 204 aunque no hubiera nada que cerrar: es idempotente.
+         */
+        post: operations["logout_api_v1_accounts_logout_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/accounts/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Quién soy, hasta cuándo dura esta sesión y qué ha pasado con mi cuenta
+         * @description La identidad de la sesión. **Sin sesión, 401**: es la respuesta que no se puede fingir.
+         */
+        get: operations["me_api_v1_accounts_me_get"];
+        put?: never;
+        post?: never;
+        /**
+         * Cerrar la cuenta y borrar sus datos
+         * @description Da de baja la cuenta: borra lo suyo y deja constancia.
+         *
+         *     Se devuelve **cuánto** se ha borrado de cada cosa: un «hecho» sin cifra no dice nada, y quien
+         *     ejerce el derecho de supresión tiene derecho a saber qué se ha ido.
+         */
+        delete: operations["close_account_api_v1_accounts_me_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/accounts/password-resets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Pedir un enlace para cambiar la contraseña
+         * @description Crea el enlace. **La respuesta no dice si la dirección tiene cuenta.**
+         */
+        post: operations["request_reset_api_v1_accounts_password_resets_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/accounts/password-resets/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cambiar la contraseña con el enlace
+         * @description Cambia la contraseña y **cierra las demás sesiones**: si no, el cambio no echa a nadie.
+         */
+        post: operations["confirm_reset_api_v1_accounts_password_resets_confirm_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/accounts/register": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Darse de alta
+         * @description Da de alta una cuenta. **La respuesta no dice si la dirección ya estaba.**
+         *
+         *     Se contesta 202 y no 201 a propósito: aceptado no es creado, y quien pregunta no tiene por qué
+         *     saber cuál de las dos cosas ha pasado. La cuenta, si es nueva, queda lista para entrar sin
+         *     confirmar el correo: sin servicio de correo contratado no hay forma de confirmarlo, y fingir que
+         *     se ha mandado un mensaje dejaría a quien se registra esperando algo que no va a llegar.
+         */
+        post: operations["register_api_v1_accounts_register_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/accounts/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Mis sesiones abiertas */
+        get: operations["sessions_api_v1_accounts_sessions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/accounts/sessions/{session_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Cerrar otra sesión mía
+         * @description Cierra otra sesión. **Nunca la que se está usando**: eso dejaría fuera a quien lo pide.
+         */
+        delete: operations["revoke_session_api_v1_accounts_sessions__session_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/analytics/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Contar una pantalla vista o una acción (necesita consentimiento)
+         * @description Cuenta un suceso **si** está encendida la analítica y **si** hay consentimiento.
+         *
+         *     El permiso se lee aquí, de la cookie, y no se acepta del cuerpo: si el permiso viajara en la
+         *     petición, bastaría con mandarlo para contar lo que no se puede contar.
+         */
+        post: operations["record_event_api_v1_analytics_events_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/analytics/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Lo contado, agrupado por etiqueta y por día
+         * @description El resumen va agregado: no se pueden pedir los sucesos uno a uno, porque no tienen sujeto.
+         */
+        get: operations["analytics_summary_api_v1_analytics_summary_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/answer-keys/{key_id}/mark-supersedes": {
         parameters: {
             query?: never;
@@ -1568,6 +1823,131 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/legal/consent": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Qué he decidido sobre las cookies (o nada, si no lo he decidido)
+         * @description `null` significa **sin decidir**, que no es lo mismo que haber rechazado.
+         */
+        get: operations["read_consent_api_v1_legal_consent_get"];
+        put?: never;
+        /**
+         * Decidir sobre las cookies (aceptar o rechazar, con el mismo cuerpo)
+         * @description Guarda la decisión en una cookie propia y deja constancia agregada, sin sujeto.
+         *
+         *     El cuerpo es el mismo para aceptar y para rechazar: dos booleanos. No hay ninguna ruta «fácil»
+         *     para aceptar ni ningún camino que exija explicar un rechazo.
+         */
+        post: operations["decide_consent_api_v1_legal_consent_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/legal/consent/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Cuántas decisiones se han tomado, sin decir quién
+         * @description La constancia agregada: demuestra que se preguntó, sin un registro de nadie.
+         */
+        get: operations["consent_summary_api_v1_legal_consent_summary_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/legal/cookies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Qué cookies se ponen y cuáles son necesarias */
+        get: operations["cookies_api_v1_legal_cookies_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/legal/data-inventory": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Qué datos se recogen, para qué, dónde y cuánto tiempo
+         * @description El inventario **verificable**: la prueba de integración lo cruza contra el esquema real.
+         *
+         *     Cada fila dice de qué tabla habla, y la prueba comprueba que esa tabla y esa columna existen.
+         *     También comprueba lo que el inventario dice que **no** se recoge: si alguien añadiera mañana una
+         *     columna de dirección de red, la prueba fallaría y este texto dejaría de poder mentir.
+         */
+        get: operations["data_inventory_api_v1_legal_data_inventory_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/legal/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Los tres textos legales, con lo que falta por rellenar
+         * @description Aviso legal, privacidad y cookies, tal como se leen en la aplicación.
+         */
+        get: operations["documents_api_v1_legal_documents_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/legal/documents/{key}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Un texto legal por su nombre corto */
+        get: operations["one_document_api_v1_legal_documents__key__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/mappings": {
         parameters: {
             query?: never;
@@ -1863,6 +2243,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/payments/plans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * El hueco de pagos: qué hay contratado (nada) y qué habría que contratar
+         * @description **No cobra nada y no puede cobrar nada.**
+         *
+         *     Con la bandera apagada —que es como nace— la respuesta dice que no está disponible y, aun así,
+         *     trae la propuesta escrita: qué pasarela, por qué, qué habría que contratar, qué costaría y qué
+         *     datos personales pasarían a un tercero. Es la respuesta al §11 sin contratar nada.
+         */
+        get: operations["payment_plans_api_v1_payments_plans_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/pending-actions": {
         parameters: {
             query?: never;
@@ -1875,6 +2279,32 @@ export interface paths {
          * @description Incidencias de importación, propuestas de clasificación, cambios y material sin aceptar.
          */
         get: operations["get_pending_actions_api_v1_pending_actions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/platform/policy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Qué funciones están encendidas en esta instalación
+         * @description La única llamada que necesita la interfaz para saber con qué configuración habla.
+         *
+         *     Es pública: dice qué está encendido, no nada de nadie. Existe porque la web se construye una vez
+         *     y se sirve en varias configuraciones; con las banderas dentro del paquete habría que construir
+         *     dos
+         *     veces la misma aplicación para probar la versión con cuentas y la versión sin ellas, y las dos
+         *     acabarían divergiendo.
+         */
+        get: operations["platform_policy_api_v1_platform_policy_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3526,6 +3956,158 @@ export interface components {
             value_label?: string | null;
         };
         /**
+         * AccountAcceptedSchema
+         * @description Respuesta **uniforme** del alta y de la petición de recuperación.
+         *
+         *     Es la misma si la dirección era nueva o no, y por eso no tiene ningún campo que lo diga. El
+         *     mensaje explica lo que hay que hacer a continuación sin informar de si la cuenta existía.
+         */
+        AccountAcceptedSchema: {
+            /** Message */
+            message: string;
+            /**
+             * Status
+             * @default accepted
+             * @constant
+             */
+            status: "accepted";
+        };
+        /**
+         * AccountClosedSchema
+         * @description Lo que se ha borrado al cerrar la cuenta, contado. Un «hecho» sin cifra no dice nada.
+         */
+        AccountClosedSchema: {
+            /** Audit Events */
+            audit_events: number;
+            /** Sessions */
+            sessions: number;
+            /**
+             * Status
+             * @default closed
+             * @constant
+             */
+            status: "closed";
+            /** Study Rows */
+            study_rows: number;
+        };
+        /**
+         * AccountEventSchema
+         * @description Un movimiento auditado de la cuenta, con lo que se puede contar de él.
+         */
+        AccountEventSchema: {
+            /** Detail */
+            detail: {
+                [key: string]: unknown;
+            };
+            /** Kind */
+            kind: string;
+            /**
+             * Occurred At
+             * Format: date-time
+             */
+            occurred_at: string;
+        };
+        /**
+         * AccountMeSchema
+         * @description Quién soy, hasta cuándo dura esta sesión y qué ha pasado con mi cuenta.
+         */
+        AccountMeSchema: {
+            account: components["schemas"]["AccountSchema"];
+            /** Events */
+            events: components["schemas"]["AccountEventSchema"][];
+            /**
+             * Session Expires At
+             * Format: date-time
+             */
+            session_expires_at: string;
+        };
+        /**
+         * AccountSchema
+         * @description La cuenta tal como se enseña: su dirección y sus fechas. Nada más.
+         */
+        AccountSchema: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Email */
+            email: string;
+            /** Id */
+            id: string;
+            /**
+             * Password Changed At
+             * Format: date-time
+             */
+            password_changed_at: string;
+        };
+        /**
+         * AccountSessionSchema
+         * @description Una sesión abierta. `current` marca la que se está usando.
+         */
+        AccountSessionSchema: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Current */
+            current: boolean;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /** Id */
+            id: string;
+            /**
+             * Last Seen At
+             * Format: date-time
+             */
+            last_seen_at: string;
+        };
+        /** AccountSessionsSchema */
+        AccountSessionsSchema: {
+            /** Sessions */
+            sessions: components["schemas"]["AccountSessionSchema"][];
+        };
+        /**
+         * AccountsAvailableSchema
+         * @description Si esta instalación tiene cuentas, y qué implica tenerlas o no.
+         *
+         *     La interfaz lo necesita para no ofrecer un acceso que no existe. Lo que **no** dice es si la
+         *     sesión actual es válida: eso lo contesta `GET /accounts/me` con un 200 o un 401, que es la única
+         *     respuesta que no se puede fingir desde la pantalla.
+         */
+        AccountsAvailableSchema: {
+            /** Anonymous Study */
+            anonymous_study: boolean;
+            /** Delivery Channel */
+            delivery_channel: string;
+            /** Enabled */
+            enabled: boolean;
+            /** Session Cookie Name */
+            session_cookie_name: string;
+            /** Session Days */
+            session_days: number;
+        };
+        /**
+         * AccountsPolicySchema
+         * @description Lo que la interfaz tiene que saber de las cuentas para ofrecer o no el acceso.
+         */
+        AccountsPolicySchema: {
+            /** Anonymous Study */
+            anonymous_study: boolean;
+            /** Delivery Channel */
+            delivery_channel: string;
+            /** Enabled */
+            enabled: boolean;
+            /** Session Cookie Name */
+            session_cookie_name: string;
+            /** Session Days */
+            session_days: number;
+        };
+        /**
          * ActiveConvocationSchema
          * @description Convocatoria activa de una oposición, en la forma mínima que necesita el selector.
          */
@@ -3568,6 +4150,78 @@ export interface components {
             confidence: number;
             /** Value */
             value: string;
+        };
+        /**
+         * AnalyticsCountSchema
+         * @description Un renglón del resumen: el tipo, la etiqueta y cuántas veces.
+         */
+        AnalyticsCountSchema: {
+            /** Label */
+            label: string;
+            /** Name */
+            name: string;
+            /** Total */
+            total: number;
+        };
+        /**
+         * AnalyticsDaySchema
+         * @description Cuántos sucesos hubo un día.
+         */
+        AnalyticsDaySchema: {
+            /** Day */
+            day: string;
+            /** Total */
+            total: number;
+        };
+        /**
+         * AnalyticsEventSchema
+         * @description El suceso que se cuenta. Solo dos campos, y los dos de una lista cerrada.
+         */
+        AnalyticsEventSchema: {
+            /** Label */
+            label: string;
+            /** Name */
+            name: string;
+        };
+        /**
+         * AnalyticsPolicySchema
+         * @description Si hay analítica y de qué depende.
+         */
+        AnalyticsPolicySchema: {
+            /** Enabled */
+            enabled: boolean;
+            /** Requires Consent */
+            requires_consent: boolean;
+            /** Retention Days */
+            retention_days: number;
+        };
+        /**
+         * AnalyticsRecordedSchema
+         * @description Acuse de un suceso contado. No devuelve lo contado: no hay nada que devolver.
+         */
+        AnalyticsRecordedSchema: {
+            /** Day */
+            day: string;
+            /** Recorded */
+            recorded: boolean;
+        };
+        /**
+         * AnalyticsSummarySchema
+         * @description Lo contado, agrupado por etiqueta y por día, con el plazo declarado.
+         */
+        AnalyticsSummarySchema: {
+            /** Counts */
+            counts: components["schemas"]["AnalyticsCountSchema"][];
+            /** Days */
+            days: components["schemas"]["AnalyticsDaySchema"][];
+            /** Enabled */
+            enabled: boolean;
+            /** Notice */
+            notice: string;
+            /** Requires Consent */
+            requires_consent: boolean;
+            /** Retention Days */
+            retention_days: number;
         };
         /** AnswerKeySchema */
         AnswerKeySchema: {
@@ -4279,6 +4933,66 @@ export interface components {
             mapping_id: string;
             topic: components["schemas"]["ProgrammeNodeRefSchema"];
         };
+        /**
+         * ConsentDecisionSchema
+         * @description Lo que se decide. Los dos fines son independientes y los dos nacen en falso.
+         *
+         *     Aceptar y rechazar usan **el mismo cuerpo**: la diferencia es el valor de dos booleanos, y por
+         *     eso
+         *     no hay ninguna forma de que un camino sea más fácil que el otro en el contrato. `necesarias` no
+         *     se
+         *     pide: no se puede rechazar lo que hace falta para que la aplicación funcione.
+         */
+        ConsentDecisionSchema: {
+            /**
+             * Analytics
+             * @default false
+             */
+            analytics: boolean;
+            /**
+             * Preferences
+             * @default false
+             */
+            preferences: boolean;
+        };
+        /**
+         * ConsentStateSchema
+         * @description Lo que se ha decidido, tal como queda guardado.
+         */
+        ConsentStateSchema: {
+            /** Analytics */
+            analytics: boolean;
+            /**
+             * Decided At
+             * Format: date-time
+             */
+            decided_at: string;
+            /** Necessary */
+            necessary: boolean;
+            /** Policy Version */
+            policy_version: number;
+            /** Preferences */
+            preferences: boolean;
+        };
+        /**
+         * ConsentSummarySchema
+         * @description Cuántas decisiones se han tomado, contadas por desenlace y **sin ningún sujeto**.
+         */
+        ConsentSummarySchema: {
+            /** Policy Version */
+            policy_version: number;
+            /**
+             * Since
+             * @description Cuándo se tomó la primera decisión que sigue guardada.
+             */
+            since?: string | null;
+            /** Total */
+            total: number;
+            /** With Analytics */
+            with_analytics: number;
+            /** With Preferences */
+            with_preferences: number;
+        };
         /** ConvocationDetailSchema */
         ConvocationDetailSchema: {
             /** Code */
@@ -4352,6 +5066,42 @@ export interface components {
          * @enum {string}
          */
         ConvocationStatus: "draft" | "active" | "available" | "superseded" | "archived";
+        /**
+         * CookieSchema
+         * @description Una cookie, con su finalidad, su duración y si es necesaria.
+         */
+        CookieSchema: {
+            /** Duration */
+            duration: string;
+            /** Essential */
+            essential: boolean;
+            /** Name */
+            name: string;
+            /** Purpose */
+            purpose: string;
+            /** Purpose Key */
+            purpose_key: string;
+            /** Set By */
+            set_by: string;
+        };
+        /**
+         * CookiesSchema
+         * @description Las cookies de esta aplicación y el texto vigente que se acepta.
+         */
+        CookiesSchema: {
+            /** Cookies */
+            cookies: components["schemas"]["CookieSchema"][];
+            /** Essential */
+            essential: string[];
+            /** Notice */
+            notice: string;
+            /** Policy Version */
+            policy_version: number;
+            /** Purposes */
+            purposes: string[];
+            /** Updated On */
+            updated_on: string;
+        };
         /**
          * CorrectionOutcomeSchema
          * @description La versión corregida y, si la tenía, la plantilla nueva que apunta a ella.
@@ -4627,6 +5377,38 @@ export interface components {
             nodes: components["schemas"]["CurriculumNodeSchema"][];
             /** Opposition Code */
             opposition_code: string;
+        };
+        /**
+         * DataInventorySchema
+         * @description El inventario completo: lo que se recoge y lo que no.
+         */
+        DataInventorySchema: {
+            /** Not Collected */
+            not_collected: components["schemas"]["NegativeClaimSchema"][];
+            /** Notice */
+            notice: string;
+            /** Uses */
+            uses: components["schemas"]["DataUseSchema"][];
+        };
+        /**
+         * DataUseSchema
+         * @description Una fila del inventario: qué, para qué, dónde y cuánto tiempo, con su base jurídica.
+         */
+        DataUseSchema: {
+            /** Lawful Basis */
+            lawful_basis: string;
+            /** Needs Account */
+            needs_account: boolean;
+            /** Needs Consent */
+            needs_consent: string | null;
+            /** Retention */
+            retention: string;
+            /** What */
+            what: string;
+            /** Where */
+            where: string;
+            /** Why */
+            why: string;
         };
         /** DecisionOutcomeSchema */
         DecisionOutcomeSchema: {
@@ -5179,6 +5961,23 @@ export interface components {
             subject_label?: string | null;
             /** Subject Type */
             subject_type: string;
+        };
+        /**
+         * EmailPasswordSchema
+         * @description Cuerpo común del alta y del acceso.
+         *
+         *     Las longitudes son las del contrato: una dirección de más de 254 caracteres no es una dirección,
+         *     y
+         *     una contraseña de más de 256 no se admite porque el coste de derivarla crece con ella. Que el
+         *     mínimo tenga que ser doce lo decide el dominio, no el esquema: así el mensaje de error dice
+         *     **por
+         *     qué** no vale, y no un «valor inválido» genérico.
+         */
+        EmailPasswordSchema: {
+            /** Email */
+            email: string;
+            /** Password */
+            password: string;
         };
         /** EmbeddingSettingsSchema */
         EmbeddingSettingsSchema: {
@@ -5793,6 +6592,58 @@ export interface components {
             without_entry: number;
         };
         /**
+         * LegalBundleSchema
+         * @description Los tres documentos, la fecha del texto vigente y lo que falta por rellenar.
+         */
+        LegalBundleSchema: {
+            /** Documents */
+            documents: components["schemas"]["LegalDocumentSchema"][];
+            /** Notice */
+            notice: string;
+            /** Owner Fields Pending */
+            owner_fields_pending: string[];
+            /** Pending Owner Notice */
+            pending_owner_notice: string;
+            /** Text Version */
+            text_version: number;
+            /** Updated On */
+            updated_on: string;
+        };
+        /**
+         * LegalDocumentSchema
+         * @description Un documento legal: su nombre corto, su título y su texto.
+         */
+        LegalDocumentSchema: {
+            /** Body Markdown */
+            body_markdown: string;
+            /** Key */
+            key: string;
+            /** Summary */
+            summary: string;
+            /** Title */
+            title: string;
+        };
+        /**
+         * LegalPolicySchema
+         * @description Lo que la interfaz necesita para pedir el consentimiento.
+         */
+        LegalPolicySchema: {
+            /** Enabled */
+            enabled: boolean;
+            /** Essential */
+            essential: string[];
+            /** Owner Fields Pending */
+            owner_fields_pending: boolean;
+            /** Policy Version */
+            policy_version: number;
+            /** Purposes */
+            purposes: string[];
+            /** Text Version */
+            text_version: number;
+            /** Updated On */
+            updated_on: string;
+        };
+        /**
          * LimitsSchema
          * @description Límites efectivos de la configuración (07_UI-UX §11: «límites» en Ajustes).
          *
@@ -6007,6 +6858,14 @@ export interface components {
             direction?: ("next" | "previous") | null;
             /** Position */
             position?: number | null;
+        };
+        /**
+         * NegativeClaimSchema
+         * @description Lo que **no** se recoge, declarado para poder comprobarlo.
+         */
+        NegativeClaimSchema: {
+            /** Claim */
+            claim: string;
         };
         /**
          * NodeMasterySchema
@@ -6780,6 +7639,18 @@ export interface components {
             /** Wrong */
             wrong: number;
         };
+        /** PasswordResetConfirmSchema */
+        PasswordResetConfirmSchema: {
+            /** Password */
+            password: string;
+            /** Token */
+            token: string;
+        };
+        /** PasswordResetRequestSchema */
+        PasswordResetRequestSchema: {
+            /** Email */
+            email: string;
+        };
         /**
          * PasteRequest
          * @description Texto pegado por el usuario (04_INGESTION §2).
@@ -6845,6 +7716,78 @@ export interface components {
             origin_scope?: ("age" | "otra_administracion" | "desconocida") | null;
         };
         /**
+         * PaymentCostSchema
+         * @description Una línea de coste, con la marca de si se ha podido comprobar.
+         */
+        PaymentCostSchema: {
+            /** Amount */
+            amount: string;
+            /** Concept */
+            concept: string;
+            /** Verified */
+            verified: boolean;
+        };
+        /**
+         * PaymentGatewaySchema
+         * @description Una pasarela considerada: por qué, qué contratar, qué costaría y qué datos saldrían.
+         */
+        PaymentGatewaySchema: {
+            /** Costs */
+            costs: components["schemas"]["PaymentCostSchema"][];
+            /** Integration Effort */
+            integration_effort: string;
+            /** Invoices In Spain */
+            invoices_in_spain: string;
+            /** Key */
+            key: string;
+            /** Name */
+            name: string;
+            /** Personal Data To Third Party */
+            personal_data_to_third_party: string[];
+            /** Price Page */
+            price_page: string;
+            /** Recommended */
+            recommended: boolean;
+            /** Rejected Because */
+            rejected_because: string;
+            /** What To Contract */
+            what_to_contract: string[];
+            /** Why */
+            why: string;
+        };
+        /**
+         * PaymentPlanSchema
+         * @description Un hueco de plan. Sin precio decidido: eso no lo decide este bloque.
+         */
+        PaymentPlanSchema: {
+            /** Detail */
+            detail: string;
+            /** Key */
+            key: string;
+            /** Name */
+            name: string;
+            /** Price */
+            price: string;
+        };
+        /**
+         * PaymentsSchema
+         * @description El estado de los pagos: apagados, con la propuesta escrita y nada contratado.
+         */
+        PaymentsSchema: {
+            /** Enabled */
+            enabled: boolean;
+            /** Gateways */
+            gateways: components["schemas"]["PaymentGatewaySchema"][];
+            /** Notice */
+            notice: string;
+            /** Plans */
+            plans: components["schemas"]["PaymentPlanSchema"][];
+            /** Provider */
+            provider: string;
+            /** Status */
+            status: string;
+        };
+        /**
          * PendingActionSchema
          * @description Algo que espera a una persona, con la cifra y la pantalla donde se resuelve.
          */
@@ -6871,6 +7814,24 @@ export interface components {
             actions: components["schemas"]["PendingActionSchema"][];
             /** Total */
             total: number;
+        };
+        /**
+         * PlatformPolicySchema
+         * @description **Una sola llamada** para saber qué está encendido en esta instalación.
+         *
+         *     Existe porque la web se construye una vez y se sirve en varias configuraciones: si las banderas
+         *     se hornearan en el paquete, habría que construir dos veces la misma aplicación para probar la
+         *     versión con cuentas y la versión sin ellas, y las dos acabarían divergiendo. Se pregunta al
+         *     servidor en cada arranque, y lo que diga el servidor es lo que hay.
+         *
+         *     Es pública a propósito: dice qué funciones están encendidas, no nada de nadie.
+         */
+        PlatformPolicySchema: {
+            accounts: components["schemas"]["AccountsPolicySchema"];
+            analytics: components["schemas"]["AnalyticsPolicySchema"];
+            legal: components["schemas"]["LegalPolicySchema"];
+            /** Payments */
+            payments: boolean;
         };
         /**
          * ProblemDetail
@@ -9816,6 +10777,628 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    configuration_api_v1_accounts_configuration_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountsAvailableSchema"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    events_api_v1_accounts_events_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountEventSchema"][];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    login_api_v1_accounts_login_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmailPasswordSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountMeSchema"];
+                };
+            };
+            /** @description Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    logout_api_v1_accounts_logout_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    me_api_v1_accounts_me_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountMeSchema"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    close_account_api_v1_accounts_me_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountClosedSchema"];
+                };
+            };
+            /** @description Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    request_reset_api_v1_accounts_password_resets_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordResetRequestSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountAcceptedSchema"];
+                };
+            };
+            /** @description Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    confirm_reset_api_v1_accounts_password_resets_confirm_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordResetConfirmSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountSchema"];
+                };
+            };
+            /** @description Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    register_api_v1_accounts_register_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmailPasswordSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountAcceptedSchema"];
+                };
+            };
+            /** @description Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    sessions_api_v1_accounts_sessions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountSessionsSchema"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    revoke_session_api_v1_accounts_sessions__session_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    record_event_api_v1_analytics_events_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnalyticsEventSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnalyticsRecordedSchema"];
+                };
+            };
+            /** @description Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    analytics_summary_api_v1_analytics_summary_get: {
+        parameters: {
+            query?: {
+                days?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnalyticsSummarySchema"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
     mark_answer_key_supersedes_api_v1_answer_keys__key_id__mark_supersedes_post: {
         parameters: {
             query?: never;
@@ -15046,6 +16629,260 @@ export interface operations {
             };
         };
     };
+    read_consent_api_v1_legal_consent_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConsentStateSchema"] | null;
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    decide_consent_api_v1_legal_consent_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConsentDecisionSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConsentStateSchema"];
+                };
+            };
+            /** @description Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    consent_summary_api_v1_legal_consent_summary_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConsentSummarySchema"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    cookies_api_v1_legal_cookies_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CookiesSchema"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    data_inventory_api_v1_legal_data_inventory_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DataInventorySchema"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    documents_api_v1_legal_documents_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegalBundleSchema"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    one_document_api_v1_legal_documents__key__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegalDocumentSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
     list_mappings_api_v1_mappings_get: {
         parameters: {
             query?: {
@@ -15783,6 +17620,35 @@ export interface operations {
             };
         };
     };
+    payment_plans_api_v1_payments_plans_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentsSchema"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
     get_pending_actions_api_v1_pending_actions_get: {
         parameters: {
             query?: never;
@@ -15799,6 +17665,35 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PendingActionsSchema"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    platform_policy_api_v1_platform_policy_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlatformPolicySchema"];
                 };
             };
             /** @description Error interno inesperado (RFC 9457). */

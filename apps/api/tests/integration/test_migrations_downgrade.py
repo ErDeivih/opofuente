@@ -31,6 +31,26 @@ from opofuente.infrastructure.migrations import alembic_config, run_migrations, 
 #: desaparecer al hacerlo. El orden es el de la cadena, de la más nueva a la más antigua.
 ESCALONES: tuple[tuple[str, str, tuple[str, ...]], ...] = (
     (
+        # `0040` crea las seis tablas de la plataforma desplegable (S28: cuentas, sesiones,
+        # recuperación, freno de intentos, consentimiento y contadores) y su vuelta atrás se las
+        # lleva: al bajar de este escalón **desaparecen las seis**, y es lo que se mide aquí. Que su
+        # forma sea la declarada lo comprueba `test_migrations_0040_cuentas.py`.
+        #
+        # Es la **cuarta vez hoy** que una migración nueva rompe esta lista escrita a mano (panel,
+        # medidor, bandeja y esta). Por eso el rojo de la puerta 7 al añadirla fue un aviso legítimo
+        # y no una prueba que estorbara.
+        "0040_cuentas_y_consentimiento",
+        "0039_claves_derivadas",
+        (
+            "accounts",
+            "account_sessions",
+            "password_resets",
+            "login_throttles",
+            "consent_records",
+            "analytics_events",
+        ),
+    ),
+    (
         # `0039` crea las dos tablas de la clave derivada (F29) y su vuelta atrás se las lleva: al
         # bajar de este escalón desaparecen las dos, que es lo que se mide aquí.
         "0039_claves_derivadas",
