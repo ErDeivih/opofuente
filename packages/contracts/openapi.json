@@ -15420,11 +15420,17 @@
         "type": "object"
       },
       "StudentNoteAnchorSchema": {
-        "description": "El apartado de los apuntes que contesta una pregunta, con su tema y su anclaje.\n\nEs lo que permite que «Ver en apuntes» del resultado deje al alumno **en el párrafo** que\nexplica su fallo (`/temario/IV.7#udp`) en vez de en la portada del tema, que no explica nada.",
+        "description": "El apartado de los apuntes que contesta una pregunta, con su tema, su capítulo y su anclaje.\n\nEs lo que permite que «Ver en apuntes» del resultado deje al alumno **en el párrafo** que\nexplica su fallo (`/temario/IV.7?capitulo=IV.7.2#apartado-udp`) en vez de en la portada del\ntema, que no explica nada. El **capítulo** viaja con el anclaje porque los apuntes se leen por\nepígrafes oficiales: sin él, la página abriría el primer capítulo de IV.7 y el párrafo no\nestaría en ella.",
         "properties": {
           "anchor": {
             "description": "El anclaje del apartado dentro de los apuntes del tema.",
             "title": "Anchor",
+            "type": "string"
+          },
+          "epigraph_code": {
+            "default": "",
+            "description": "El epígrafe oficial (capítulo) que contiene ese apartado, para abrir la página por él. Vacío si el apartado no dice a qué epígrafe pertenece.",
+            "title": "Epigraph Code",
             "type": "string"
           },
           "topic_code": {
@@ -15438,6 +15444,77 @@
           "anchor"
         ],
         "title": "StudentNoteAnchorSchema",
+        "type": "object"
+      },
+      "StudentNoteChapterSchema": {
+        "description": "Un capítulo de los apuntes: un **epígrafe oficial** del tema, con sus apartados.\n\n`code` es el código del epígrafe (`IV.7.2`), que es lo que lleva el parámetro `capitulo` de la\npetición y lo que viaja en el enlace «Ver en apuntes». `position` es su lugar en el tema (1..N),\npara poder ofrecer «anterior» y «siguiente» sin ordenar nada en la pantalla.",
+        "properties": {
+          "code": {
+            "minLength": 1,
+            "title": "Code",
+            "type": "string"
+          },
+          "position": {
+            "minimum": 1.0,
+            "title": "Position",
+            "type": "integer"
+          },
+          "sections": {
+            "items": {
+              "$ref": "#/components/schemas/StudentNoteChapterSectionSchema"
+            },
+            "title": "Sections",
+            "type": "array"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "title",
+          "position",
+          "sections"
+        ],
+        "title": "StudentNoteChapterSchema",
+        "type": "object"
+      },
+      "StudentNoteChapterSectionSchema": {
+        "description": "Un apartado **del índice**: sin su texto, para que viaje el índice entero.\n\nEs la mitad barata del contrato: con esto la pantalla puede enseñar todos los apartados de todos\nlos capítulos y resolver a qué capítulo pertenece un anclaje, sin que un tema de 314.000 px\nviaje de una vez.",
+        "properties": {
+          "anchor": {
+            "minLength": 1,
+            "title": "Anchor",
+            "type": "string"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "number": {
+            "minimum": 1.0,
+            "title": "Number",
+            "type": "integer"
+          },
+          "questions_covered": {
+            "minimum": 0.0,
+            "title": "Questions Covered",
+            "type": "integer"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "number",
+          "key",
+          "title",
+          "anchor",
+          "questions_covered"
+        ],
+        "title": "StudentNoteChapterSectionSchema",
         "type": "object"
       },
       "StudentNoteSectionSchema": {
@@ -15488,8 +15565,26 @@
         "type": "object"
       },
       "StudentNotesSchema": {
-        "description": "Los apuntes de un tema: cómo están y sus apartados en orden de lectura.\n\nUn tema en `draft` se sirve **igual** que uno en `published`: la marca distingue uno de otro y\nel alumno puede leer los dos. Un tema en `none` no trae apartados, y eso no es un error.",
+        "description": "Los apuntes de un tema: cómo están, **un capítulo** para leer y el índice completo.\n\nUn tema en `draft` se sirve **igual** que uno en `published`: la marca distingue uno de otro y\nel alumno puede leer los dos. Un tema en `none` no trae apartados, y eso no es un error.\n\n`sections` trae el texto del capítulo servido y `chapters` el índice de todos los capítulos, con\nsus apartados pero sin sus textos. `chapter` dice cuál de ellos viaja en `sections`, y puede no\nser el pedido: un `capitulo` que ya no existe sirve el primero, y la pantalla lo dice\ncorrigiendo la dirección en vez de dejar al alumno en un error.",
         "properties": {
+          "chapter": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chapter"
+          },
+          "chapters": {
+            "items": {
+              "$ref": "#/components/schemas/StudentNoteChapterSchema"
+            },
+            "title": "Chapters",
+            "type": "array"
+          },
           "code": {
             "title": "Code",
             "type": "string"
@@ -15526,7 +15621,8 @@
         "required": [
           "code",
           "state",
-          "sections"
+          "sections",
+          "chapters"
         ],
         "title": "StudentNotesSchema",
         "type": "object"
@@ -31849,7 +31945,7 @@
     },
     "/api/v1/student/topics/{codigo}/notes": {
       "get": {
-        "description": "Los apuntes del tema, tal como se leen.\n\nUn tema **en borrador se sirve igual** que uno publicado: el estado viaja con el texto\n(`draft`) y la pantalla lo dice. No se esconden apuntes por no haber pasado una puerta —para eso\nestá la marca— y un tema sin apuntes devuelve su estado y una lista vacía, no un 404: el tema\nexiste y lo que falta es el texto.",
+        "description": "Los apuntes del tema, **un capítulo cada vez**, tal como se leen.\n\nUn tema **en borrador se sirve igual** que uno publicado: el estado viaja con el texto\n(`draft`) y la pantalla lo dice. No se esconden apuntes por no haber pasado una puerta —para eso\nestá la marca— y un tema sin apuntes devuelve su estado y una lista vacía, no un 404: el tema\nexiste y lo que falta es el texto.\n\n`capitulo` elige el epígrafe oficial. No elegirlo sirve el primero, y pedir uno que no existe\n**también** sirve el primero: la respuesta dice en `chapter` cuál se sirvió de verdad y la\npantalla corrige la dirección. Un tema del programa son varios epígrafes y servirlos todos de\ngolpe es lo que hacía que I.1 midiera 314.000 px de alto.",
         "operationId": "student_topic_notes_api_v1_student_topics__codigo__notes_get",
         "parameters": [
           {
@@ -31864,6 +31960,27 @@
               ],
               "title": "Codigo",
               "type": "string"
+            }
+          },
+          {
+            "description": "El epígrafe oficial que se quiere leer, como `IV.7.2`. Sin él se sirve el primero.",
+            "in": "query",
+            "name": "capitulo",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "El epígrafe oficial que se quiere leer, como `IV.7.2`. Sin él se sirve el primero.",
+              "examples": [
+                "IV.7.2"
+              ],
+              "title": "Capitulo"
             }
           }
         ],
@@ -31909,7 +32026,7 @@
             "description": "Error interno inesperado (RFC 9457)."
           }
         },
-        "summary": "Los apuntes de un tema: su texto en orden de lectura y si están en borrador",
+        "summary": "Los apuntes de un tema: un capítulo para leer y el índice completo",
         "tags": [
           "alumno"
         ]
