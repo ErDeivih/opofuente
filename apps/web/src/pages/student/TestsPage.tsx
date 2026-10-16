@@ -17,6 +17,7 @@ import {
 import { ErrorState } from '../../components/ErrorState';
 import { LoadingState } from '../../components/LoadingState';
 import { describeError } from '../../features/system/labels';
+import { formatearPorcentaje } from '../../lib/numeros';
 
 /**
  * La pantalla de Tests (F22): elegir y empezar.
@@ -468,7 +469,7 @@ function contestadoDe(tema: StudentTopicProgress): string {
   if (tema.accuracy === null) {
     return `Contestadas ${String(tema.answered)}`;
   }
-  return `${String(tema.answered)} contestadas · ${String(Math.round(tema.accuracy * 100))} % de acierto`;
+  return `${String(tema.answered)} contestadas · ${formatearPorcentaje(tema.accuracy)} de acierto`;
 }
 
 /** El resumen de lo que se va a montar, con lo que de verdad hay. */

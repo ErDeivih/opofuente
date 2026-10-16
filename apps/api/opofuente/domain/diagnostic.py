@@ -28,6 +28,8 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from math import sqrt
 
+from opofuente.domain.numeros import nota
+
 # --- simulacro ------------------------------------------------------------------------------------
 
 #: Días en los que una pregunta cuenta como «vista hace poco». Es la misma ventana que usa la
@@ -226,17 +228,25 @@ def read_diagnostic(
     fichas: list[TopicOutcome] = []
     for node_id, (titulo, respondidas, acertadas) in outcomes.items():
         intervalo = wilson_interval(acertadas, respondidas, z=z)
+        # La frase va en `frase` y no en `nota`: `nota` es la función que formatea la cifra (§2.2),
+        # y una variable local con ese nombre la taparía dentro de esta función.
         if respondidas == 0:
-            nota = "no se contestó ninguna pregunta de este tema en la muestra"
+            frase = "no se contestó ninguna pregunta de este tema en la muestra"
         elif respondidas < per_topic:
-            nota = (
+            frase = (
                 f"la muestra solo trae {respondidas} pregunta(s) de este tema: el intervalo "
                 "es ancho y no se puede leer como un dominio"
             )
         else:
-            nota = (
+            # Las dos cifras del intervalo, **en español** (§2.2): la columna de al lado la pinta la
+            # pantalla con `Intl` (`0,34 - 1,00`), y esta frase es la nota de esa misma fila. Antes
+            # decía `0.3424 a 1.0` —los flotantes crudos—, así que la misma fila llevaba los dos
+            # formatos.
+            bajo = nota(intervalo.low) if intervalo else nota(0)
+            alto = nota(intervalo.high) if intervalo else nota(0)
+            frase = (
                 f"{acertadas} de {respondidas} en la muestra, con un intervalo del 95 % que va de "
-                f"{intervalo.low if intervalo else 0} a {intervalo.high if intervalo else 0}"
+                f"{bajo} a {alto}"
             )
         fichas.append(
             TopicOutcome(
@@ -245,7 +255,7 @@ def read_diagnostic(
                 answered=respondidas,
                 correct=acertadas,
                 interval=intervalo,
-                note=nota,
+                note=frase,
             )
         )
     fichas.sort(key=lambda ficha: ficha.title)

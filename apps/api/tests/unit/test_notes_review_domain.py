@@ -67,7 +67,7 @@ class TestElMotivoDeUnBorrador:
 
         razon = _razon(cifras, MotivoDelBorrador.A_LAS_PUERTAS)
 
-        assert razon.figure == "489/542 = 90.2 %"
+        assert razon.figure == "489/542 = 90,2 %"
         assert "Cumple las dos puertas" in razon.text
         assert "Aprobarlo la publica" in razon.text
         # Y **no** dice que le falte cobertura: sería mentira.
@@ -76,7 +76,10 @@ class TestElMotivoDeUnBorrador:
     def test_un_tema_que_no_llega_dice_cuantas_le_faltan_y_cual_es_el_liston(self) -> None:
         razon = _razon(_cifras(covered=40, with_key=100), MotivoDelBorrador.COBERTURA)
 
-        assert razon.figure == "40/100 = 40.0 %"
+        # El §2.2 alcanza también a la prosa del servidor: la cifra va con **coma**. Esta aserción
+        # esperaba `40.0 %`, el formato viejo —el punto del decimal—, que es el mismo defecto que el
+        # propietario vio en su captura.
+        assert razon.figure == "40/100 = 40,0 %"
         assert "le faltan 50 preguntas cubiertas" in razon.text
         assert UMBRAL_TEXTO in razon.text
 

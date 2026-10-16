@@ -143,7 +143,10 @@ export const overviewFixture: StudentOverview = {
         wrong: 4,
         blank: 2,
         points: '38/3',
-        points_decimal: '12,67',
+        // La API manda el decimal con **punto y cuatro cifras** (`decimal_text`), no con coma: la
+        // coma es de la interfaz, que lo formatea con `Intl`. Este dato estuvo escrito «12,67» y por
+        // eso la prueba no veía el «12.6667» que el propietario tenía delante.
+        points_decimal: '12.6667',
         maximum: null,
         passed: null,
       },
@@ -269,7 +272,7 @@ export const sessionResultFixture: StudentSessionResult = {
       wrong: 2,
       blank: 0,
       points: '1/3',
-      points_decimal: '0,33',
+      points_decimal: '0.3333',
       maximum: null,
       passed: null,
     },
@@ -284,16 +287,21 @@ export const sessionResultFixture: StudentSessionResult = {
       wrong: 2,
       blank: 0,
       score: '1/3',
-      score_decimal: '0,33',
+      score_decimal: '0.3333',
       score_max: 50,
       pass_score: 25,
       passed: null,
+      // El aviso lo compone el **dominio** y viaja tal cual. Sus cifras van en español desde el
+      // arreglo del §2.2 **en el servidor**: la nota con coma y dos decimales (`0,33`) y el máximo y
+      // el mínimo sin ceros de más (`sobre 50`, `(25)`). Antes este texto llevaba el decimal del
+      // contrato (`0.3333 sobre 50.00 ... (25.00)`), que es el formato de máquina.
       verdict_note:
-        'La estimación de «Primera parte: cuestionario de conocimientos» es 0,33 sobre 50.00. ' +
-        'Es una **estimación**: la puntuación directa (aciertos menos errores por su penalización) ' +
-        'escalada a la banda que publica la convocatoria para esta parte. La calificación oficial ' +
-        '0-50 resulta de los baremos que fija la Comisión de Selección, y esa tabla no está ' +
-        'importada: esto no es la calificación oficial.',
+        'La estimación de «Primera parte: cuestionario de conocimientos» es 0,33 sobre 50 y ' +
+        'no llega al mínimo publicado (25), pero Es una **estimación**: la puntuación directa ' +
+        '(aciertos menos errores por su penalización) escalada a la banda que publica la ' +
+        'convocatoria para esta parte. La calificación oficial 0-50 resulta de los baremos que fija ' +
+        'la Comisión de Selección, y esa tabla no está importada: esto no es la calificación ' +
+        'oficial.',
     },
   ],
   total: {
@@ -304,10 +312,13 @@ export const sessionResultFixture: StudentSessionResult = {
     wrong: 2,
     blank: 0,
     score: '1/3',
-    score_decimal: '0,33',
-    score_max: null,
+    score_decimal: '0.3333',
+    score_max: 50,
     pass_score: null,
     passed: null,
+    // El total no repite el aviso de la parte: cuando la sesión no declara parte, la nota total la
+    // explica `official_note`. Así la pantalla tiene **los dos** párrafos que el propietario vio —el de
+    // la parte y el del total—, que es lo que hay que plegar.
     verdict_note: null,
   },
   official_available: false,
@@ -334,6 +345,7 @@ export const sessionResultFixture: StudentSessionResult = {
       outcome: 'wrong',
       elapsed_ms: 2400,
       topics: [{ code: 'IV.7', title: 'El modelo TCP/IP y el modelo de referencia OSI de ISO.' }],
+      note_anchor: { topic_code: 'IV.7', anchor: 'tcpip-arquitectura' },
     },
     {
       position: 2,
@@ -352,6 +364,7 @@ export const sessionResultFixture: StudentSessionResult = {
       outcome: 'correct',
       elapsed_ms: 900,
       topics: [{ code: 'IV.1', title: 'Instalación y configuración de sistemas operativos.' }],
+      note_anchor: { topic_code: 'IV.1', anchor: 'instalacion-de-sistemas' },
     },
     {
       position: 3,
@@ -373,6 +386,7 @@ export const sessionResultFixture: StudentSessionResult = {
         { code: 'IV.7', title: 'El modelo TCP/IP y el modelo de referencia OSI de ISO.' },
         { code: 'IV.1', title: 'Instalación y configuración de sistemas operativos.' },
       ],
+      note_anchor: { topic_code: 'IV.7', anchor: 'udp' },
     },
     {
       position: 4,
@@ -391,6 +405,7 @@ export const sessionResultFixture: StudentSessionResult = {
       outcome: 'void',
       elapsed_ms: 300,
       topics: [{ code: 'IV.7', title: 'El modelo TCP/IP y el modelo de referencia OSI de ISO.' }],
+      note_anchor: { topic_code: 'IV.7', anchor: 'otros-protocolos' },
     },
   ],
   topics: [

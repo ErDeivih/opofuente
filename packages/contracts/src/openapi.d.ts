@@ -10057,6 +10057,25 @@ export interface components {
             variant: "full" | "short";
         };
         /**
+         * StudentNoteAnchorSchema
+         * @description El apartado de los apuntes que contesta una pregunta, con su tema y su anclaje.
+         *
+         *     Es lo que permite que «Ver en apuntes» del resultado deje al alumno **en el párrafo** que
+         *     explica su fallo (`/temario/IV.7#udp`) en vez de en la portada del tema, que no explica nada.
+         */
+        StudentNoteAnchorSchema: {
+            /**
+             * Anchor
+             * @description El anclaje del apartado dentro de los apuntes del tema.
+             */
+            anchor: string;
+            /**
+             * Topic Code
+             * @description El tema al que pertenece el apartado, por su código legible.
+             */
+            topic_code: string;
+        };
+        /**
          * StudentNoteSectionSchema
          * @description Un apartado de los apuntes, con su sitio en el índice y su dirección en la página.
          *
@@ -10314,6 +10333,8 @@ export interface components {
             in_review: boolean;
             /** Is Reserve */
             is_reserve: boolean;
+            /** @description El apartado de los apuntes que contesta esta pregunta. Con él, una fallada ofrece «Ver en apuntes» al párrafo exacto; sin él no se ofrece la salida, en vez de mandar al alumno a la portada del tema. */
+            note_anchor?: components["schemas"]["StudentNoteAnchorSchema"] | null;
             /** Options */
             options: components["schemas"]["StudentOptionSchema"][];
             /**

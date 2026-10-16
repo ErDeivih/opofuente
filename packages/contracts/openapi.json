@@ -15419,6 +15419,27 @@
         "title": "StudentMockExamVariantSchema",
         "type": "object"
       },
+      "StudentNoteAnchorSchema": {
+        "description": "El apartado de los apuntes que contesta una pregunta, con su tema y su anclaje.\n\nEs lo que permite que «Ver en apuntes» del resultado deje al alumno **en el párrafo** que\nexplica su fallo (`/temario/IV.7#udp`) en vez de en la portada del tema, que no explica nada.",
+        "properties": {
+          "anchor": {
+            "description": "El anclaje del apartado dentro de los apuntes del tema.",
+            "title": "Anchor",
+            "type": "string"
+          },
+          "topic_code": {
+            "description": "El tema al que pertenece el apartado, por su código legible.",
+            "title": "Topic Code",
+            "type": "string"
+          }
+        },
+        "required": [
+          "topic_code",
+          "anchor"
+        ],
+        "title": "StudentNoteAnchorSchema",
+        "type": "object"
+      },
       "StudentNoteSectionSchema": {
         "description": "Un apartado de los apuntes, con su sitio en el índice y su dirección en la página.\n\n`anchor` es lo que convierte el índice en navegable: el enlace del índice lleva al párrafo y el\naviso del alumno apunta a él. `questions_covered` es el dato que acompaña al párrafo («N\npreguntas de este tema se contestan aquí»), y es un recuento real de las comprobaciones del\ntema, no una afirmación sobre exámenes.",
         "properties": {
@@ -16004,6 +16025,17 @@
           "is_reserve": {
             "title": "Is Reserve",
             "type": "boolean"
+          },
+          "note_anchor": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StudentNoteAnchorSchema"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "El apartado de los apuntes que contesta esta pregunta. Con él, una fallada ofrece «Ver en apuntes» al párrafo exacto; sin él no se ofrece la salida, en vez de mandar al alumno a la portada del tema."
           },
           "options": {
             "items": {

@@ -6,10 +6,11 @@ import {
   type StudentTopicProgress,
 } from '../../api/studentStudy';
 import { ErrorState } from '../../components/ErrorState';
-import { LoadingState } from '../../components/LoadingState';
+import { EsqueletoDeLista } from '../../components/Esqueleto';
 import type { StudentSession } from '../../api/studentTests';
 import { describeError } from '../../features/system/labels';
 import { diaLegible } from '../../lib/fechas';
+import { formatearPorcentaje } from '../../lib/numeros';
 import { ProgressBar } from '../../ui/Progress';
 
 /**
@@ -35,7 +36,7 @@ export function ProgressPage() {
     return (
       <>
         <h1 className="pagina__titulo">Progreso</h1>
-        <LoadingState label="Sumando lo que llevas…" />
+        <EsqueletoDeLista nombre="el progreso" identificador="esqueleto-progreso" filas={3} />
       </>
     );
   }
@@ -193,7 +194,7 @@ function BarraDeProgreso({ accuracy, etiqueta }: { accuracy: number | null; etiq
 
 /** El porcentaje de acierto, escrito. */
 function porcentaje(accuracy: number | null): string {
-  return accuracy === null ? 'Sin empezar' : `${String(Math.round(accuracy * 100))} %`;
+  return accuracy === null ? 'Sin empezar' : formatearPorcentaje(accuracy);
 }
 
 /** El resumen de un test terminado: aciertos, fallos y blancos. */

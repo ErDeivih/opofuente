@@ -444,6 +444,19 @@ class StudentTopicRefSchema(BaseModel):
     title: str
 
 
+class StudentNoteAnchorSchema(BaseModel):
+    """El apartado de los apuntes que contesta una pregunta, con su tema y su anclaje.
+
+    Es lo que permite que «Ver en apuntes» del resultado deje al alumno **en el párrafo** que
+    explica su fallo (`/temario/IV.7#udp`) en vez de en la portada del tema, que no explica nada.
+    """
+
+    topic_code: str = Field(
+        description="El tema al que pertenece el apartado, por su código legible."
+    )
+    anchor: str = Field(description="El anclaje del apartado dentro de los apuntes del tema.")
+
+
 class StudentResultQuestionSchema(BaseModel):
     """Una pregunta corregida: sus opciones, lo que se marcó, la correcta y de qué era."""
 
@@ -470,6 +483,12 @@ class StudentResultQuestionSchema(BaseModel):
         description="La clave de esta pregunta es derivada (los apuntes, con su cita verificada, y "
         "el modelo sin apuntes dicen la misma letra): se enseña como «clave revisada "
         "automáticamente».",
+    )
+    note_anchor: StudentNoteAnchorSchema | None = Field(
+        default=None,
+        description="El apartado de los apuntes que contesta esta pregunta. Con él, una fallada "
+        "ofrece «Ver en apuntes» al párrafo exacto; sin él no se ofrece la salida, en vez de "
+        "mandar al alumno a la portada del tema.",
     )
 
 

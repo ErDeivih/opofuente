@@ -34,6 +34,7 @@ from opofuente.infrastructure.db_models import (
     AttemptRecord,
     CurriculumMappingRecord,
     DossierSnapshotRecord,
+    QuestionNoteAnchorRecord,
     QuestionSetRecord,
     QuestionVersionRecord,
     ReviewItemRecord,
@@ -556,6 +557,53 @@ class SqlAlchemyStudentRepository:
         for pregunta, nodo in filas:
             por_pregunta.setdefault(str(pregunta), []).append(str(nodo))
         return {pregunta: tuple(nodos) for pregunta, nodos in por_pregunta.items()}
+
+    def note_anchors_of_questions(
+        self, question_version_ids: Sequence[str]
+    ) -> Mapping[str, tuple[tuple[str, str], ...]]:
+        """El apartado de los apuntes que contesta cada pregunta: `{pregunta: ((nodo, ancla), …)}`.
+
+        Es lo que convierte «Ver en apuntes» en una salida útil: la dirección del apartado dentro
+        del tema (`/temario/IV.7#udp`), no la portada.
+
+        Tres decisiones, y las tres son sobre lo que **no** se devuelve:
+
+        1. solo las comprobaciones con desenlace `covered`: un hueco (`gap`) o una duda
+           (`doubtful`) no son un párrafo que explique nada, y enlazarlos mandaría al alumno a un
+           apartado que no contesta su pregunta;
+        2. solo si el apartado **existe hoy** (el `JOIN` con `topic_note_sections` por nodo y
+           ancla): los apuntes se reescriben, y un ancla guardada que ya no está daría un enlace
+           que no lleva a ninguna parte sin decirlo;
+        3. una pregunta puede estar en dos temas (D7) y tener un apartado en cada uno: se
+           devuelven todos y **quien decide** es el servicio, con el mismo orden del programa que
+           usa para los temas. Elegir aquí sería inventar cuál de los dos manda.
+        """
+        if not question_version_ids:
+            return {}
+        with self._session_factory() as session:
+            filas = session.execute(
+                select(
+                    QuestionNoteAnchorRecord.question_version_id,
+                    QuestionNoteAnchorRecord.curriculum_node_id,
+                    QuestionNoteAnchorRecord.anchor,
+                )
+                .join(
+                    TopicNoteSectionRecord,
+                    (
+                        TopicNoteSectionRecord.curriculum_node_id
+                        == QuestionNoteAnchorRecord.curriculum_node_id
+                    )
+                    & (TopicNoteSectionRecord.anchor == QuestionNoteAnchorRecord.anchor),
+                )
+                .where(
+                    QuestionNoteAnchorRecord.question_version_id.in_(list(question_version_ids)),
+                    QuestionNoteAnchorRecord.result == "covered",
+                )
+            ).all()
+        por_pregunta: dict[str, list[tuple[str, str]]] = {}
+        for pregunta, nodo, ancla in filas:
+            por_pregunta.setdefault(str(pregunta), []).append((str(nodo), str(ancla)))
+        return {pregunta: tuple(anclas) for pregunta, anclas in por_pregunta.items()}
 
     # ------------------------------------------------------- los exámenes oficiales (F14)
 

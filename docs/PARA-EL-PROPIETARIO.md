@@ -1,7 +1,63 @@
 # Para el propietario
 
 Lo que conviene que sepas y **no** hace falta que contestes para que el trabajo siga. Lo que sí
+## 16 oct 2026 — El acabado: los cinco arreglos que viste en las capturas
+
+**Lo que cambia para ti:** las cinco cosas que escribiste están arregladas y **demostradas con
+capturas a 1280 y a 390**, en `artifacts/acabado/antes/` y `artifacts/acabado/despues/` (y su medición,
+en `artifacts/acabado/ANTES-Y-DESPUES.md`).
+
+1. **El menú lateral ya llega abajo.** Medido: el carril medía **800 px** con la columna en **1.466,30**
+   —por debajo de los 800 se veía el gris del papel, literalmente lo que describiste—. Ahora mide
+   **1.466,30 px**: el carril es la columna entera y lo que viaja pegado es su contenido.
+2. **Los números, en español.** El «0.0000» era el decimal crudo del servidor pintado tal cual. Ahora
+   hay **un solo sitio** que decide el formato y **todas** las cifras pasan por él: notas con coma y
+   dos decimales («12,50»), máximos y mínimos sin ceros de más («sobre 50»), porcentajes sin decimales
+   salvo donde hacen falta. Eran **tres** formatos distintos conviviendo en siete pantallas.
+3. **El resultado abre en una línea**: «Puntuación directa: 0,00 (estimada)» —y «sobre 50» cuando la
+   convocatoria publica el máximo—. Los dos párrafos sobre baremos y mínimos **no se han borrado**:
+   están detrás del botón **«¿Por qué estimada?»**.
+4. **El resultado tiene la hoja de respuestas** del diseño v0 arriba (casillas A–D, la correcta en
+   verde y la fallada con el color del fallo), y **pulsar un número baja a esa pregunta**. Bajo cada
+   fallada hay **«Ver en apuntes»**, y lleva **al apartado que contesta esa pregunta**
+   (`/temario/IV.7#el-modelo-tcp-ip-y-sus-capas`), no a la portada del tema. Si los apuntes no
+   contestan a esa pregunta, no se ofrece la salida, en vez de mandarte a un sitio que no explica nada.
+5. **Esqueletos de carga** en Temario, Progreso y Tema cuando el servidor tarda más de 300 ms (y
+   **nada** de parpadeo si contesta rápido), respetando `prefers-reduced-motion`. Y **una sola** forma
+   de botón secundario, **una sola** etiqueta y el mismo espaciado entre secciones.
+
+**Y una cosa que se pedía y ya está:** `npm run screens -- --datos <carpeta>` captura contra una
+**copia de tu base real** (no toca tus datos: esa carpeta no se borra) y lo dice al arrancar, porque
+dentro de un mes nadie sabría cuál de las dos carpetas está mirando.
+
+### Decide tú
+
+- **El texto de la hoja no dice la palabra del color** («la que lleva el color del fallo»), porque el
+  detector de palabras prohibidas lee **«Rojo»** —el banco privado— **sin distinguir mayúsculas**, y
+  escribirlo tal cual habría metido un aviso nuevo en el informe de las capturas. Dime si prefieres que
+  el detector distinga la mayúscula en ese caso y que el texto diga el color.
+- **La palabra «Celador» sigue saliendo** en la puerta de Inicio según el detector, como ya salía en
+  las 60 capturas de antes. No lo he tocado: es la decisión de tu §1 y no es de este encargo.
+
+### Lo que queda fuera, y por qué
+
+- **Las 18 puertas**: las corre el bloque que mide, que tiene el protocolo y la máquina libre. Aquí se
+  han corrido las locales (ruff, mypy, tsc, eslint, las 434 de componente, 950 de unidad y contrato
+  del backend y las 273 de alumno/estudio/migraciones).
+- **El recorrido con los datos reales** (§3 del encargo, el otro punto que falta): sigue pendiente y lo
+  hará el bloque siguiente con `--datos`, que es la pieza que se ha construido aquí.
+- **Lo que estas capturas no demuestran**: los colores de dentro de la hoja están comprobados por la
+  prueba sobre la pantalla, no leyendo el PNG (esta máquina no ve imágenes). El PNG es para que lo
+  mires tú.
+
+
 necesita tu criterio está marcado como **«Decide tú»**.
+
+**Y una cosa más, que salió al comprobarlo todo:** el «0.0000» no estaba solo en la pantalla. **La
+frase que escribe el servidor** —la nota del diagnóstico, el mínimo publicado, la cobertura de tus
+apuntes— también llevaba el punto, así que en **la misma fila** de la tabla del diagnóstico podías leer
+`0,34 – 1,00` en una columna y `0.3424 a 1.0` en la nota de esa fila. Ya no: las frases que lees van
+**todas** en español (`0,33 sobre 50`, `el mínimo de 25`, `va de 0,34 a 1,00`, `489/542 = 90,2 %`).
 
 ## 15 oct 2026 — El material de la Bandeja ya se puede pasar a la Biblioteca
 

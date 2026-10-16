@@ -398,7 +398,10 @@ test('E2E-F24 la tabla enseña el estado de cada tema y el motivo del borrador c
     const fila = filaDelTema(page, TEMA);
     await expect(fila).toContainText('En borrador');
     // El motivo, con su cifra: el tema cumple las dos puertas y no está publicado.
-    await expect(fila).toContainText('1/1 = 100.0 %');
+    // Esta cifra la compone el **dominio**, y el §2.2 alcanza también a la prosa del servidor: salía
+    // con punto. La aserción esperaba el formato viejo; el que tiene razón es la pantalla (y ahora
+    // también el servidor).
+    await expect(fila).toContainText('1/1 = 100,0 %');
     await expect(fila).toContainText('Cumple las dos puertas');
     await expect(fila).toContainText('Aprobarlo la publica');
     await expect(fila).toContainText('Nadie ha revisado este tema todavía');

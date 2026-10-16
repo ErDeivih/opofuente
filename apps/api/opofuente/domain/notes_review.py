@@ -30,6 +30,7 @@ from enum import StrEnum
 
 from opofuente.domain.errors import InvalidReviewError
 from opofuente.domain.notes_reports import normalise_note
+from opofuente.domain.numeros import porcentaje
 from opofuente.domain.topic_notes import COBERTURA_MINIMA, CategoriaIncidencia
 
 #: El umbral del §2.3, en palabras, tal como se lee en la frase del motivo.
@@ -143,10 +144,15 @@ class CifrasDelTema:
 
     @property
     def cobertura_texto(self) -> str:
-        """La cifra de la puerta, tal como se enseña. Vacía si no se ha medido."""
+        """La cifra de la puerta, tal como se enseña. Vacía si no se ha medido.
+
+        En español y con **un** decimal (§2.2): aquí la décima **hace falta**, porque el listón es
+        el 90 % y una cobertura de 89,7 % no es lo mismo que una de 90,2 %. El docstring de `Razon`
+        escribe esta cifra con coma desde antes de este arreglo: el que estaba mal era el código.
+        """
         if not self.measured:
             return ""
-        return f"{self.covered}/{self.with_key} = {100 * self.cobertura:.1f} %"
+        return f"{self.covered}/{self.with_key} = {porcentaje(self.cobertura)}"
 
     @property
     def cobertura_todas_las_claves_texto(self) -> str:
@@ -154,7 +160,7 @@ class CifrasDelTema:
             return f"{self.covered_all_keys}/{self.with_key_all_keys}"
         return (
             f"{self.covered_all_keys}/{self.with_key_all_keys} = "
-            f"{100 * self.covered_all_keys / self.with_key_all_keys:.1f} %"
+            f"{porcentaje(self.covered_all_keys / self.with_key_all_keys)}"
         )
 
     @property
@@ -264,7 +270,7 @@ def razones_del_tema(cifras: CifrasDelTema) -> tuple[Razon, ...]:
         razones.append(
             Razon(
                 MotivoDelBorrador.COBERTURA,
-                f"Contesta al {100 * cifras.cobertura:.1f} % de las preguntas que se pueden "
+                f"Contesta al {porcentaje(cifras.cobertura)} de las preguntas que se pueden "
                 f"corregir y el listón es el {UMBRAL_TEXTO}: le faltan {cifras.le_faltan} "
                 "preguntas cubiertas.",
                 cobertura,

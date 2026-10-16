@@ -666,7 +666,11 @@ def test_la_estimacion_no_se_declara_aprobado_y_lo_dice() -> None:
     assert veredicto.passed is None, "la calificación oficial sale de los baremos, que no están"
     aviso = veredicto.reason or ""
     assert "estimación" in aviso
-    assert "28.1250" in aviso
+    # La cifra va **en español** (§2.2): la nota con coma y dos decimales, y el mínimo sin ceros de
+    # más. Esta aserción esperaba `28.1250` —el decimal del contrato dentro de una frase—, que es el
+    # punto del decimal que el propietario vio en su captura. `decimal_text` sigue dando `28.1250`
+    # donde de verdad es un dato de máquina (arriba, línea 655): lo que cambia es la **prosa**.
+    assert "es 28,13 sobre 50" in aviso
     assert "llega al mínimo publicado" in aviso, (
         "25 es alcanzable y se dice, sin declararlo aprobado"
     )

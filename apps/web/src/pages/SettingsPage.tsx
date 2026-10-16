@@ -2,6 +2,7 @@ import { useState } from 'react';
 
 import type { Backup } from '../api/maintenance';
 import { PURGE_ACTIONS, type PurgeActionValue } from '../api/maintenance';
+import { formatearNota } from '../lib/numeros';
 
 /** Las tres acciones de retirada, en el orden en que se enseñan. */
 const PURGE_ACTION_VALUES = Object.keys(PURGE_ACTIONS) as PurgeActionValue[];
@@ -522,7 +523,7 @@ export function SettingsPage() {
                   reindexar.mutate(undefined, {
                     onSuccess: (resultado) => {
                       setAviso(
-                        `${resultado.detail} (${resultado.took_seconds.toFixed(2)} s; antes ${String(resultado.before)}, ahora ${String(resultado.after)})`,
+                        `${resultado.detail} (${formatearNota(resultado.took_seconds)} s; antes ${String(resultado.before)}, ahora ${String(resultado.after)})`,
                       );
                     },
                   });

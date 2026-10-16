@@ -42,6 +42,7 @@ from opofuente.application.student_models import (
     StudentMockExamPlanView,
     StudentMockExamRequest,
     StudentMockExamVariantView,
+    StudentNoteAnchorView,
     StudentNoteSectionView,
     StudentNotesView,
     StudentOfficialExamsView,
@@ -886,6 +887,9 @@ class StudentService:
         derivadas = self._study.derived_key_questions(
             [entrada.question_version_id for entrada in revision.entries]
         )
+        anclas = self._anclas_de_apuntes(
+            [entrada.question_version_id for entrada in revision.entries], catalogo
+        )
         preguntas = tuple(
             StudentService._pregunta_corregida(
                 entrada,
@@ -897,6 +901,7 @@ class StudentService:
                     if veredicto == KeyReliability.DUDOSA.value
                 ),
                 derivadas,
+                anclas,
             )
             for entrada in revision.entries
         )
@@ -1296,6 +1301,7 @@ class StudentService:
         temas: Mapping[str, tuple[StudentTopicRefView, ...]],
         en_revision: frozenset[str] = frozenset(),
         derivadas: frozenset[str] = frozenset(),
+        anclas: Mapping[str, StudentNoteAnchorView] = {},
     ) -> StudentResultQuestionView:
         """Una pregunta de la revisión, con su corrección y sin nada que no se pueda enseñar."""
         correccion = entrada.correction
@@ -1318,7 +1324,41 @@ class StudentService:
             topics=temas.get(entrada.question_version_id, ()),
             in_review=entrada.question_version_id in en_revision,
             derived_key=entrada.question_version_id in derivadas,
+            note_anchor=anclas.get(entrada.question_version_id),
         )
+
+    def _anclas_de_apuntes(
+        self,
+        preguntas: Sequence[str],
+        catalogo: Mapping[str, tuple[int, str, str]],
+    ) -> dict[str, StudentNoteAnchorView]:
+        """El apartado de los apuntes que contesta cada pregunta, ya con su **código de tema**.
+
+        Dos reglas de la casa, las mismas que usa `_temas_de_preguntas`:
+
+        - un ancla de un nodo que **no está en el catálogo de esta convocatoria** se cae en
+          silencio: es un mapeo a un nodo de otro programa, y el enlace no llevaría a nada;
+        - si la pregunta tiene ancla en **dos** temas (D7), manda el primero **en el orden del
+          programa**, que es el mismo orden en que se enseñan sus temas. Elegirlo al azar daría un
+          enlace distinto en cada carga.
+        """
+        if not preguntas:
+            return {}
+        mapeos = self._student.note_anchors_of_questions(list(preguntas))
+        devueltas: dict[str, StudentNoteAnchorView] = {}
+        for pregunta, anclas in mapeos.items():
+            candidatas = sorted(
+                (
+                    (catalogo[nodo][0], catalogo[nodo][1], ancla)
+                    for nodo, ancla in anclas
+                    if nodo in catalogo
+                ),
+                key=lambda fila: fila[0],
+            )
+            if candidatas:
+                _, codigo, ancla = candidatas[0]
+                devueltas[pregunta] = StudentNoteAnchorView(topic_code=codigo, anchor=ancla)
+        return devueltas
 
     @staticmethod
     def _outcome(desenlace: str | None) -> str:

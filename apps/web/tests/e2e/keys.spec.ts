@@ -99,7 +99,10 @@ test('E2E-07 clave corregida: la v2 recalcula y la pantalla dice de dónde a dó
   await practicarMarcandoA(page, titulo, 3);
 
   // Con la clave v1 las tres respuestas son correctas: 3 puntos exactos.
-  await expect(page.getByText('3 puntos').first()).toBeVisible();
+  // **El formato es el nuevo** (§2.2 del cierre): la nota va en español, con coma y dos decimales. Esta
+  // aserción esperaba `3 puntos` —el formato de `decimal_text`, punto y cuatro cifras—, que es
+  // exactamente el «0.0000» que el propietario vio en sus capturas. El que tiene razón es la pantalla.
+  await expect(page.getByText('3,00 puntos').first()).toBeVisible();
   await expect(page.getByText(/3 aciertos · 0 fallos · 0 en blanco/).first()).toBeVisible();
 
   // La plantilla v2 corrige la clave: ahora la buena es la «b». Se importa sola y sustituye a la v1.
@@ -120,20 +123,27 @@ test('E2E-07 clave corregida: la v2 recalcula y la pantalla dice de dónde a dó
   // La sesión guardó su corrección con la v1 y no cambia sola: hay que pedir el recálculo.
   await page.goto('/estudiar');
   await expect(page.getByRole('heading', { name: 'Resultado' })).toBeVisible();
-  await expect(page.getByText('3 puntos').first()).toBeVisible();
+  // La nota guardada con la v1, en el formato nuevo (antes esperaba `3 puntos`).
+  await expect(page.getByText('3,00 puntos').first()).toBeVisible();
   await page.getByRole('button', { name: 'Recalcular con la plantilla activa' }).click();
 
   // Y ahora la pantalla explica el cambio: de 3 a -1, porque las tres respuestas pasan a erróneas.
   await expect(page.getByText(/Sesión recalculada/)).toBeVisible();
   await expect(page.getByRole('heading', { name: /Recálculo con una plantilla nueva/ })).toBeVisible();
   await expect(page.getByText('la puntuación cambió').first()).toBeVisible();
-  await expect(page.getByText(/-1 puntos/).first()).toBeVisible();
+  // `-1,00` y no `-1`: el §2.2 pide dos decimales en **todas** las cifras de nota, también en las
+  // negativas. Aquí la aserción era `/-1 puntos/`, que dejó de casar en cuanto la pantalla se arregló.
+  await expect(page.getByText(/-1,00 puntos/).first()).toBeVisible();
   await expect(page.getByText(/0 aciertos · 3 fallos · 0 en blanco/).first()).toBeVisible();
   // Y con el antes a la vista: la puntuación que se dio con la v1 no se borra.
-  await expect(page.getByText(/3 · Primera parte.*plantilla v1/)).toBeVisible();
+  // El «antes» es una cifra de nota y va **con dos decimales y coma** (`3,00`), igual que el «ahora»
+  // (`-1,00`). Esta aserción esperaba `3 · Primera parte…`, el formato viejo; y no se veía al mirar el
+  // rojo de la puerta, porque la prueba **moría antes**, en la aserción de `-1 puntos`. Es la lección
+  // del encargo: a las de este género hay que buscarlas por patrón, no por rojo.
+  await expect(page.getByText(/3,00 · Primera parte.*plantilla v1/)).toBeVisible();
 
   // Recargar no pierde la comparación: viaja con el resultado guardado.
   await page.reload();
   await expect(page.getByRole('heading', { name: /Recálculo con una plantilla nueva/ })).toBeVisible();
-  await expect(page.getByText(/-1 puntos/).first()).toBeVisible();
+  await expect(page.getByText(/-1,00 puntos/).first()).toBeVisible();
 });

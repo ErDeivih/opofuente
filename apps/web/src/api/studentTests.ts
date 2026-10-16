@@ -129,6 +129,19 @@ export interface StudentTopicRef {
   title: string;
 }
 
+/**
+ * El apartado de los apuntes que contesta una pregunta concreta.
+ *
+ * Va con el **tema** y con el **anclaje** (`/temario/IV.7#udp`), no con el tema solo: «Ver en
+ * apuntes» tiene que dejar al alumno en el párrafo que le explica su fallo, y la portada del tema no
+ * lo explica. El servidor lo resuelve de la comprobación del motor (`question_note_anchors`), que es
+ * donde está la frase que se verificó contra el texto.
+ */
+export interface StudentNoteAnchor {
+  topic_code: string;
+  anchor: string;
+}
+
 /** Una pregunta corregida, con lo que se marcó, la correcta y su tema. */
 export interface StudentResultQuestion {
   position: number;
@@ -142,6 +155,8 @@ export interface StudentResultQuestion {
   outcome: StudentResultOutcome;
   elapsed_ms: number | null;
   topics: StudentTopicRef[];
+  /** `null` cuando los apuntes no contestan a esta pregunta: entonces no se ofrece la salida. */
+  note_anchor: StudentNoteAnchor | null;
   /** La clave de esta pregunta está en revisión (§1). En el resultado importa más que en el test:
    * un fallo puede ser de la clave y no del alumno. */
   in_review: boolean;

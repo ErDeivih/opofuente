@@ -175,24 +175,38 @@ test('E2E-06 sesión: acertar, fallar, dejar en blanco y ver la puntuación por 
   await page.getByLabel('A) Verdadero').check();
   await page.getByRole('button', { name: 'Enviar la respuesta' }).click();
   await expect(page.getByText('fallada')).toBeVisible();
-  await expect(page.getByText('-0.3333 (-1/3) puntos')).toBeVisible();
+  // El formato de la nota es **el nuevo** (§2.2 del cierre): coma y dos decimales. Esta aserción
+  // esperaba `-0.3333 (-1/3)`, el decimal crudo del servidor —el «0.0000» que el propietario vio en sus
+  // capturas—. La que tiene razón es la pantalla; lo que se actualiza es la expectativa.
+  await expect(page.getByText('-0,33 (-1/3) puntos')).toBeVisible();
 
   // 3) En blanco: no puntúa ni a favor ni en contra.
   await page.getByRole('button', { name: 'Ir a la pregunta siguiente' }).click();
   await expect(page.getByRole('heading', { name: 'Pregunta 3' })).toBeVisible();
   await page.getByRole('button', { name: 'Dejar la pregunta en blanco' }).click();
   await expect(page.getByText('en blanco')).toBeVisible();
-  // Un blanco vale cero exacto: la puntuación entera se enseña sin decimales de relleno.
-  await expect(page.getByText('0 puntos')).toBeVisible();
+  // Un blanco vale cero, y el cero de una **nota** también va con dos decimales: `0,00 puntos`. Aquí
+  // ponía `0 puntos` y **pasaba por casualidad**: `0,00 puntos` contiene `0 puntos` como trozo, así que
+  // la aserción no habría notado nunca un cambio de formato. Es el caso que el aislamiento no ve,
+  // porque solo mira las que fallan.
+  await expect(page.getByText('0,00 puntos')).toBeVisible();
 
   // Terminar: un acierto menos un tercio es 2/3 exacto.
   await page.getByRole('button', { name: 'Terminar la sesión' }).click();
   await expect(page.getByRole('heading', { name: 'Resultado' })).toBeVisible();
-  await expect(page.getByText('0.6667 (2/3) puntos').first()).toBeVisible();
+  // La fracción exacta sigue detrás —`(2/3)`—, y delante va la cifra en español: `0,67`.
+  await expect(page.getByText('0,67 (2/3) puntos').first()).toBeVisible();
   await expect(page.getByText(/1 aciertos · 1 fallos · 1 en blanco/).first()).toBeVisible();
   await expect(page.getByText('calificación oficial no disponible')).toBeVisible();
   await expect(page.getByText(/no se declara aprobado ni suspenso/)).toBeVisible();
-  await expect(page.getByText(/el mínimo de 25.0 es de la calificación oficial/)).toBeVisible();
+  // El aviso del mínimo lo compone **el dominio**, no la interfaz, y sigue con su punto (`25.0`): el
+  // §2.2 formatea las cifras que pinta la pantalla, y este texto viaja ya escrito desde el servidor.
+  // El punto va **escapado** a propósito: con `/25.0/` el `.` era un comodín y la aserción casaba
+  // también con `25,0`, así que no habría cazado nunca un cambio de formato. Ahora sí lo caza.
+  // El mínimo va **sin ceros de más** (`25`, no `25.0` ni `25,00`): es una escala publicada, no una
+  // nota. Antes decía `25.0` —el flotante crudo del servidor— y esta aserción lo daba por bueno
+  // porque el `.` del regex era un comodín, así que no habría cazado nunca un cambio de formato.
+  await expect(page.getByText('el mínimo de 25 es de la calificación oficial')).toBeVisible();
 
   // La revisión queda a la vista, pregunta a pregunta.
   await expect(page.getByRole('heading', { name: 'Revisión, pregunta a pregunta' })).toBeVisible();
@@ -244,8 +258,9 @@ test('E2E-06 activar una clave corregida avisa y recalcula lo ya corregido (DEBT
   }
   await page.getByRole('button', { name: 'Terminar la sesión' }).click();
   await expect(page.getByRole('heading', { name: 'Resultado' })).toBeVisible();
-  // Tres fallos con un tercio de castigo: −1 exacto.
-  await expect(page.getByText('-1 puntos').first()).toBeVisible();
+  // Tres fallos con un tercio de castigo: −1 exacto, y escrito como el §2.2 pide (`-1,00`). La
+  // aserción esperaba `-1 puntos`, que es el formato viejo del servidor.
+  await expect(page.getByText('-1,00 puntos').first()).toBeVisible();
 
   // La plantilla estaba mal: la buena es la A. Se importa corregida y se activa desde la pantalla.
   // Importar **no** activa nada (es la regla del importador), así que la activación es el clic
@@ -354,7 +369,9 @@ test('E2E-06 un diagnóstico reparte la muestra por temas y la lee con su interv
   // El tema se llama como el programa oficial (el nodo del temario), no como la columna del CSV.
   const filaTema = tabla.getByRole('row', { name: /Constitución Española de 1978/ });
   await expect(filaTema).toContainText('2 de 2');
-  await expect(filaTema).toContainText('0.34 – 1.00');
+  // El intervalo del diagnóstico, en el formato nuevo: era el **otro** sitio donde la pantalla pintaba
+  // un número con punto (`0.34 – 1.00`), y el §2.2 lo manda en español. Misma razón que arriba.
+  await expect(filaTema).toContainText('0,34 – 1,00');
   // Y el resultado no se llama nota: es el recuento de una muestra.
   await expect(page.getByText(/no son una nota ni un dominio/)).toBeVisible();
 });
