@@ -180,13 +180,53 @@ export const topicFixture: StudentTopic = {
 };
 
 /**
- * Los apuntes de un tema: tres apartados, con tabla en el primero, una cifra de preguntas por
- * apartado y el último sin ninguna —el caso en el que no se pinta nota al margen.
+ * Los apuntes de un tema: dos **capítulos** (epígrafes oficiales) y tres apartados, con tabla en el
+ * primero, una cifra de preguntas por apartado y el último sin ninguna —el caso en el que no se
+ * pinta nota al margen—. El primero va en su propio capítulo para que se pueda probar que el índice
+ * lleva al capítulo que toca y que un anclaje de otro capítulo abre el suyo.
  */
 export const notesFixture: StudentNotes = {
   code: 'IV.7',
   state: 'draft',
   generated_at: '2026-10-10T18:09:00Z',
+  chapter: 'IV.7.1',
+  chapters: [
+    {
+      code: 'IV.7.1',
+      title: 'El modelo TCP/IP y el modelo de referencia OSI.',
+      position: 1,
+      sections: [
+        {
+          number: 1,
+          key: 'tcpip-arquitectura',
+          title: 'La arquitectura TCP/IP: capas, protocolos y familias',
+          anchor: 'tcpip-arquitectura',
+          questions_covered: 7,
+        },
+      ],
+    },
+    {
+      code: 'IV.7.2',
+      title: 'Protocolos TCP/IP.',
+      position: 2,
+      sections: [
+        {
+          number: 2,
+          key: 'udp',
+          title: 'UDP: datagramas sin conexión',
+          anchor: 'udp',
+          questions_covered: 1,
+        },
+        {
+          number: 3,
+          key: 'otros-protocolos',
+          title: 'Otros protocolos',
+          anchor: 'otros-protocolos',
+          questions_covered: 0,
+        },
+      ],
+    },
+  ],
   sections: [
     {
       number: 1,
@@ -199,6 +239,17 @@ export const notesFixture: StudentNotes = {
         '| Capa | Unidad |\n| --- | --- |\n| Transporte | Segmento |\n| Internet | Paquete |\n',
       questions_covered: 7,
     },
+  ],
+};
+
+/**
+ * Los mismos apuntes con el **segundo** capítulo abierto: es el caso del anclaje que vive en un
+ * capítulo que no es el primero (`#apartado-udp`), que es el que se rompía al paginar.
+ */
+export const notesSegundoCapituloFixture: StudentNotes = {
+  ...notesFixture,
+  chapter: 'IV.7.2',
+  sections: [
     {
       number: 2,
       key: 'udp',
@@ -345,7 +396,7 @@ export const sessionResultFixture: StudentSessionResult = {
       outcome: 'wrong',
       elapsed_ms: 2400,
       topics: [{ code: 'IV.7', title: 'El modelo TCP/IP y el modelo de referencia OSI de ISO.' }],
-      note_anchor: { topic_code: 'IV.7', anchor: 'tcpip-arquitectura' },
+      note_anchor: { topic_code: 'IV.7', anchor: 'tcpip-arquitectura', epigraph_code: 'IV.7.1' },
     },
     {
       position: 2,
@@ -364,7 +415,7 @@ export const sessionResultFixture: StudentSessionResult = {
       outcome: 'correct',
       elapsed_ms: 900,
       topics: [{ code: 'IV.1', title: 'Instalación y configuración de sistemas operativos.' }],
-      note_anchor: { topic_code: 'IV.1', anchor: 'instalacion-de-sistemas' },
+      note_anchor: { topic_code: 'IV.1', anchor: 'instalacion-de-sistemas', epigraph_code: 'IV.1.1' },
     },
     {
       position: 3,
@@ -386,7 +437,7 @@ export const sessionResultFixture: StudentSessionResult = {
         { code: 'IV.7', title: 'El modelo TCP/IP y el modelo de referencia OSI de ISO.' },
         { code: 'IV.1', title: 'Instalación y configuración de sistemas operativos.' },
       ],
-      note_anchor: { topic_code: 'IV.7', anchor: 'udp' },
+      note_anchor: { topic_code: 'IV.7', anchor: 'udp', epigraph_code: 'IV.7.2' },
     },
     {
       position: 4,
@@ -405,7 +456,7 @@ export const sessionResultFixture: StudentSessionResult = {
       outcome: 'void',
       elapsed_ms: 300,
       topics: [{ code: 'IV.7', title: 'El modelo TCP/IP y el modelo de referencia OSI de ISO.' }],
-      note_anchor: { topic_code: 'IV.7', anchor: 'otros-protocolos' },
+      note_anchor: { topic_code: 'IV.7', anchor: 'otros-protocolos', epigraph_code: 'IV.7.2' },
     },
   ],
   topics: [

@@ -43,6 +43,8 @@ from opofuente.application.student_models import (
     StudentMockExamRequest,
     StudentMockExamVariantView,
     StudentNoteAnchorView,
+    StudentNoteChapterSectionView,
+    StudentNoteChapterView,
     StudentNoteSectionView,
     StudentNotesView,
     StudentOfficialExamsView,
@@ -98,7 +100,7 @@ from opofuente.domain.study import (
     SessionStatus,
     exact_fraction,
 )
-from opofuente.domain.topic_notes import NoteSection, NotesState
+from opofuente.domain.topic_notes import NoteSection, NotesState, SectionNotes
 from opofuente.infrastructure.notes_report_repository import SqlAlchemyNotesReportRepository
 from opofuente.infrastructure.profile_repository import SqlAlchemyProfileRepository
 from opofuente.infrastructure.student_repository import (
@@ -232,6 +234,100 @@ def _normalizar_codigo(codigo: str) -> str:
     return f"{coincidencia.group('bloque').upper()}.{coincidencia.group('tema')}"
 
 
+@dataclass(frozen=True, slots=True)
+class _CapituloLeido:
+    """Un capítulo de los apuntes ya repartido: su identidad y los apartados que le tocan.
+
+    `apartados` son las vistas **con su texto** —las del capítulo que se va a leer— y `indice` la
+    misma lista sin él, que es lo que viaja con los demás capítulos para que la pantalla pueda
+    enseñar el índice entero.
+    """
+
+    code: str
+    title: str
+    position: int
+    apartados: tuple[StudentNoteSectionView, ...]
+
+    @property
+    def indice(self) -> StudentNoteChapterView:
+        return StudentNoteChapterView(
+            code=self.code,
+            title=self.title,
+            position=self.position,
+            sections=tuple(
+                StudentNoteChapterSectionView(
+                    key=apartado.key,
+                    number=apartado.number,
+                    title=apartado.title,
+                    anchor=apartado.anchor,
+                    questions_covered=apartado.questions_covered,
+                )
+                for apartado in self.apartados
+            ),
+        )
+
+
+def _leer_por_capitulos(
+    tema: NodeView, apartados: tuple[SectionNotes, ...]
+) -> tuple[_CapituloLeido, ...]:
+    """Reparte los apartados de un tema en sus **epígrafes oficiales**, en orden de lectura.
+
+    Los capítulos y su orden salen del **programa** (`tema.children`, los epígrafes oficiales); los
+    apartados, de los apuntes, cada uno en el epígrafe que tiene guardado. El número del apartado es
+    su lugar en el tema entero (1..N) y no se reinicia en cada capítulo: es el número con el que se
+    cita un apartado y el que sale en el índice completo, que es el mismo en todas las pantallas.
+
+    Dos casos límite que no pueden perder texto:
+
+    - un apartado cuyo epígrafe **no es** un epígrafe del programa (el programa se reorganizó y los
+      apuntes se quedaron con el código viejo) abre su propio capítulo al final, titulado con su
+      código. Es feo, pero perder el párrafo es peor;
+    - un apartado **sin** código de epígrafe cae en un capítulo que es el tema, con su título. Hoy
+      no hay ninguno de los dos casos (medido sobre los 29 temas con apuntes: 0 apartados fuera de
+      su programa), y por eso el camino está escrito pero no probado con datos: se prueba con los
+      suyos.
+    """
+    if not apartados:
+        return ()
+
+    numeros = {apartado.key: numero for numero, apartado in enumerate(apartados, start=1)}
+    oficiales = [hijo for hijo in tema.children if hijo.node_type is NodeType.EPIGRAPH]
+    titulos = {epigrafe.path: epigrafe.title for epigrafe in oficiales}
+    orden = {epigrafe.path: posicion for posicion, epigrafe in enumerate(oficiales, start=1)}
+
+    por_codigo: dict[str, list[SectionNotes]] = {}
+    for apartado in apartados:
+        por_codigo.setdefault(apartado.epigraph_code, []).append(apartado)
+
+    # El orden es el del programa; lo que no está en el programa va detrás, por orden de aparición.
+    codigos = [epigrafe.path for epigrafe in oficiales if epigrafe.path in por_codigo]
+    codigos.extend(codigo for codigo in por_codigo if codigo not in orden)
+
+    leidos: list[_CapituloLeido] = []
+    for posicion, codigo in enumerate(codigos, start=1):
+        suyos = tuple(
+            StudentNoteSectionView(
+                key=apartado.key,
+                number=numeros[apartado.key],
+                title=apartado.title,
+                epigraph_code=apartado.epigraph_code,
+                anchor=apartado.anchor,
+                body_markdown=apartado.body_markdown,
+                questions_covered=apartado.covered,
+            )
+            for apartado in por_codigo[codigo]
+        )
+        leidos.append(
+            _CapituloLeido(
+                code=codigo,
+                title=titulos.get(codigo) or codigo or tema.title,
+                position=posicion,
+                apartados=suyos,
+            )
+        )
+    return tuple(leidos)
+
+
 class StudentService:
     """Lee el progreso y compone las vistas de la zona del alumno."""
 
@@ -362,8 +458,8 @@ class StudentService:
 
     # ------------------------------------------------------- los apuntes: leerlos y avisar
 
-    def notes(self, codigo: str) -> StudentNotesView:
-        """Los apuntes de un tema, para la pantalla de lectura.
+    def notes(self, codigo: str, capitulo: str | None = None) -> StudentNotesView:
+        """Los apuntes de un tema, **un capítulo cada vez**, para la pantalla de lectura.
 
         Un tema **en borrador se sirve igual** que uno publicado: la decisión D2 es que el alumno
         pueda leerlo y que se le diga que está en revisión, no que se le esconda. Lo único que
@@ -371,30 +467,32 @@ class StudentService:
 
         Un tema sin apuntes tampoco es un error: devuelve su estado (`none`) y una lista vacía. El
         tema existe —si no, `_nodo_por_codigo` habría lanzado el 404— y lo que falta es el texto.
+
+        **Por qué un capítulo y no el tema entero.** Un tema del programa son varios epígrafes
+        oficiales y cada uno tiene sus apartados. Servirlos todos de una vez es lo que hacía que I.1
+        midiera 314.000 px de alto y que el índice (1.405 px, `sticky`, en una ventana de 800) no se
+        pudiera recorrer entero. Con `capitulo` se elige el epígrafe, `sections` trae **solo** sus
+        apartados con su texto, y `chapters` trae el índice completo **sin los textos**, que es lo
+        que la pantalla necesita para el índice y para saber a qué capítulo pertenece un anclaje.
+
+        Un `capitulo` que no existe **no es un 404**: se sirve el primero y el campo `chapter` dice
+        cuál se sirvió de verdad, para que la pantalla corrija la dirección. Un enlace guardado a un
+        epígrafe que el programa reorganizó tiene que llevar a leer, no a un error.
         """
         oposicion = self._opposition()
-        node_id = self._nodo_por_codigo(oposicion, codigo)
-        apartados = self._notes.notes_for_node(node_id)
+        tema = self._tema_por_codigo(oposicion, codigo)
+        apuntes = self._notes.notes_for_node(tema.id)
+        leidos = _leer_por_capitulos(tema, () if apuntes is None else apuntes.sections)
+        servido = next((leido for leido in leidos if leido.code == capitulo), None)
+        if servido is None and leidos:
+            servido = leidos[0]
         return StudentNotesView(
             code=_normalizar_codigo(codigo),
-            state=self._estado_de(self._student.notes_states(), node_id),
-            generated_at=None if apartados is None else apartados.generated_at,
-            sections=(
-                ()
-                if apartados is None
-                else tuple(
-                    StudentNoteSectionView(
-                        key=apartado.key,
-                        number=numero,
-                        title=apartado.title,
-                        epigraph_code=apartado.epigraph_code,
-                        anchor=apartado.anchor,
-                        body_markdown=apartado.body_markdown,
-                        questions_covered=apartado.covered,
-                    )
-                    for numero, apartado in enumerate(apartados.sections, start=1)
-                )
-            ),
+            state=self._estado_de(self._student.notes_states(), tema.id),
+            generated_at=None if apuntes is None else apuntes.generated_at,
+            sections=() if servido is None else servido.apartados,
+            chapter=None if servido is None else servido.code,
+            chapters=tuple(leido.indice for leido in leidos),
         )
 
     def report(self, codigo: str, section_key: str, reason: str) -> StudentReportView:
@@ -1130,10 +1228,19 @@ class StudentService:
 
     def _nodo_por_codigo(self, oposicion: OppositionSummary, codigo: str) -> str:
         """El nodo del programa de un tema, por su código legible (`IV.10` o `IV-10`)."""
+        return self._tema_por_codigo(oposicion, codigo).id
+
+    def _tema_por_codigo(self, oposicion: OppositionSummary, codigo: str) -> NodeView:
+        """El tema del programa, entero: hace falta su `children` para leerlo por capítulos.
+
+        Los capítulos de los apuntes son los **epígrafes oficiales** del tema, y su título y su
+        orden viven en el programa, no en `topic_note_sections` (que solo guarda el código del
+        epígrafe al que pertenece cada apartado). Sin el nodo no se puede titular un capítulo.
+        """
         buscado = _normalizar_codigo(codigo)
         for tema in self._temas_con_codigo(self._curriculum(oposicion)):
             if tema.path.upper() == buscado:
-                return tema.id
+                return tema
         raise NotFoundError("tema del programa", buscado)
 
     @staticmethod
@@ -1341,6 +1448,11 @@ class StudentService:
         - si la pregunta tiene ancla en **dos** temas (D7), manda el primero **en el orden del
           programa**, que es el mismo orden en que se enseñan sus temas. Elegirlo al azar daría un
           enlace distinto en cada carga.
+
+        Y el **capítulo** viaja con el ancla: los apuntes se leen por epígrafes oficiales, así que
+        decir solo `#osi-capas` no basta —ese apartado vive en `IV.7.2`, y la página abriría el
+        primero—. Es el fallo que se midió en el recorrido: `scrollY = 0` con el apartado a
+        10.288 px.
         """
         if not preguntas:
             return {}
@@ -1349,15 +1461,17 @@ class StudentService:
         for pregunta, anclas in mapeos.items():
             candidatas = sorted(
                 (
-                    (catalogo[nodo][0], catalogo[nodo][1], ancla)
-                    for nodo, ancla in anclas
+                    (catalogo[nodo][0], catalogo[nodo][1], ancla, epigrafe)
+                    for nodo, ancla, epigrafe in anclas
                     if nodo in catalogo
                 ),
                 key=lambda fila: fila[0],
             )
             if candidatas:
-                _, codigo, ancla = candidatas[0]
-                devueltas[pregunta] = StudentNoteAnchorView(topic_code=codigo, anchor=ancla)
+                _, codigo, ancla, epigrafe = candidatas[0]
+                devueltas[pregunta] = StudentNoteAnchorView(
+                    topic_code=codigo, anchor=ancla, epigraph_code=epigrafe
+                )
         return devueltas
 
     @staticmethod

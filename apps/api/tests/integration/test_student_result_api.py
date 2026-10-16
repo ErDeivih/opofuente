@@ -31,9 +31,11 @@ from fastapi.testclient import TestClient
 from sqlalchemy import select, text
 
 from opofuente.config import Settings
+from opofuente.domain.topic_notes import Coverage, KeyStatus, NotesCheck, NoteSection
 from opofuente.infrastructure.db import build_engine, build_session_factory
-from opofuente.infrastructure.db_models import ReviewItemRecord
+from opofuente.infrastructure.db_models import ReviewItemRecord, SessionQuestionRecord
 from opofuente.infrastructure.review_repository import SqlAlchemyReviewRepository
+from opofuente.infrastructure.topic_notes_repository import SqlAlchemyTopicNotesRepository
 from opofuente.main import create_app
 
 ALLOWED_ORIGIN = {"Origin": "http://127.0.0.1:5173"}
@@ -390,6 +392,129 @@ def test_el_resultado_dice_de_que_tema_era_cada_pregunta(cierre: Cierre) -> None
     # Y el tiempo que duró el test, que es la otra cifra de la cabecera.
     assert cuerpo["duration_seconds"] is not None
     assert cuerpo["duration_seconds"] >= 0
+
+
+def test_el_ancla_del_resultado_dice_el_capitulo_que_hay_que_abrir(cierre: Cierre) -> None:
+    """«Ver en apuntes» necesita el **capítulo** además del anclaje (F35, §3.1).
+
+    Desde que los apuntes se leen por epígrafes oficiales, un anclaje solo no resuelve: el párrafo
+    puede estar en un capítulo que no es el que la página abre por defecto, y entonces el enlace
+    deja al alumno arriba. Medido antes de este cambio: `scrollY = 0` con el apartado a 10.288 px.
+
+    El anclaje se escribe por la ruta de verdad (el repositorio de apuntes, como hace el motor)
+    sobre una pregunta del test que se acaba de contestar, y en el **segundo** epígrafe del tema a
+    propósito: si fuera el primero, la prueba pasaría aunque el capítulo no viajara.
+    """
+    resultado = cierre.client.get(f"/api/v1/student/sessions/{cierre.sesion}/result")
+    assert resultado.status_code == 200, resultado.text
+    primera = resultado.json()["questions"][0]
+    tema = str(primera["topics"][0]["code"])
+    capitulos = _epigrafes(cierre.client, tema)
+    assert len(capitulos) >= 2, f"{tema} necesita dos epígrafes para esta prueba"
+    segundo = capitulos[1]
+    pregunta = _pregunta_del_test(cierre, int(primera["position"]))
+    _anclar_en_el_epigrafe(cierre, tema, segundo, pregunta)
+
+    otra_vez = cierre.client.get(f"/api/v1/student/sessions/{cierre.sesion}/result")
+    assert otra_vez.status_code == 200, otra_vez.text
+    ancladas = [fila for fila in otra_vez.json()["questions"] if fila["note_anchor"] is not None]
+    assert len(ancladas) == 1, "la pregunta anclada tiene que ofrecer «Ver en apuntes»"
+    ancla = ancladas[0]["note_anchor"]
+    assert ancla["topic_code"] == tema
+    assert ancla["anchor"] == "correo-electronico"
+    assert ancla["epigraph_code"] == segundo, "el capítulo que hay que abrir viaja con el anclaje"
+
+
+def _epigrafes(client: TestClient, tema: str) -> list[str]:
+    """Los epígrafes oficiales de un tema, en el orden del programa."""
+    alumno = _oposicion(client, OPOSICION_ALUMNO)
+    convocatoria = alumno["active_convocation"]["id"]
+    programa = client.get(f"/api/v1/convocations/{convocatoria}/curriculum").json()
+    nodo = next(
+        fila
+        for fila in _aplanar(programa["nodes"])
+        if fila["path"] == tema and fila["node_type"] == "topic"
+    )
+    return [hijo["path"] for hijo in nodo.get("children", [])]
+
+
+def _pregunta_del_test(cierre: Cierre, posicion: int) -> str:
+    """La versión de la pregunta que ocupa esa posición del test, leída de la base de la prueba."""
+    engine = build_engine(cierre.settings.data_paths.database)
+    try:
+        factoria = build_session_factory(engine)
+        with factoria() as session:
+            fila = session.execute(
+                select(SessionQuestionRecord).where(
+                    SessionQuestionRecord.session_id == cierre.sesion,
+                    SessionQuestionRecord.position == posicion,
+                )
+            ).scalar_one()
+            return str(fila.question_version_id)
+    finally:
+        engine.dispose()
+
+
+def _anclar_en_el_epigrafe(cierre: Cierre, tema: str, epigrafe: str, pregunta: str) -> None:
+    """Escribe el apartado de los apuntes y ancla ahí la pregunta, por la ruta de verdad.
+
+    Es lo que hace la corrida de apuntes del motor: el apartado y su comprobación. La prueba no
+    escribe filas a mano porque la consulta que se está probando es justo la que las lee.
+    """
+    alumno = _oposicion(cierre.client, OPOSICION_ALUMNO)
+    convocatoria = alumno["active_convocation"]["id"]
+    programa = cierre.client.get(f"/api/v1/convocations/{convocatoria}/curriculum").json()
+    nodo = next(
+        fila
+        for fila in _aplanar(programa["nodes"])
+        if fila["path"] == tema and fila["node_type"] == "topic"
+    )
+    ahora = datetime.now(UTC)
+    engine = build_engine(cierre.settings.data_paths.database)
+    try:
+        notas = SqlAlchemyTopicNotesRepository(build_session_factory(engine))
+        (apartado,) = notas.save_sections(
+            str(nodo["id"]),
+            [
+                NoteSection(
+                    key="correo-electronico",
+                    epigraph_code=epigrafe,
+                    title="El correo electrónico y sus protocolos",
+                    anchor="correo-electronico",
+                    position=1,
+                )
+            ],
+            now=ahora,
+        )
+        notas.save_section_body(
+            apartado,
+            title=None,
+            body="El correo electrónico se transporta con SMTP, POP3 e IMAP.",
+            needs_review_reason=None,
+            model="modelo-de-la-prueba",
+            now=ahora,
+        )
+        notas.save_checks(
+            str(nodo["id"]),
+            [
+                NotesCheck(
+                    question_version_id=pregunta,
+                    group_signature="firma-de-la-prueba",
+                    section_key=apartado.key,
+                    anchor=apartado.anchor,
+                    coverage=Coverage.CUBIERTA,
+                    note=None,
+                    quote="El correo electrónico se transporta con SMTP, POP3 e IMAP",
+                    letter="a",
+                    expected=("a",),
+                    key_status=KeyStatus.ACTIVE,
+                    attempts=1,
+                )
+            ],
+            now=ahora,
+        )
+    finally:
+        engine.dispose()
 
 
 def test_un_test_sin_terminar_no_tiene_resultado(cierre: Cierre) -> None:

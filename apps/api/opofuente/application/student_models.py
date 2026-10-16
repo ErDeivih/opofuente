@@ -393,19 +393,60 @@ class StudentNoteSectionView:
 
 
 @dataclass(frozen=True, slots=True)
+class StudentNoteChapterSectionView:
+    """Un apartado **del índice**: lo justo para poder ir a él, sin su texto.
+
+    Existe porque el índice tiene que estar entero y siempre a la vista aunque la página sirva un
+    solo capítulo: con el número, el título y el anclaje de cada apartado de todos los capítulos, la
+    pantalla puede enseñar el índice completo y resolver a qué capítulo pertenece un anclaje —que es
+    lo que hace falta cuando alguien llega con `#osi-capas` y ese apartado no es del capítulo
+    servido—. El cuerpo no viaja aquí: es lo que hace que un tema de 314.000 px quepa en una
+    pantalla.
+    """
+
+    key: str
+    number: int
+    title: str
+    anchor: str
+    questions_covered: int = 0
+
+
+@dataclass(frozen=True, slots=True)
+class StudentNoteChapterView:
+    """Un capítulo de los apuntes: un **epígrafe oficial** del tema, con sus apartados.
+
+    `code` es el código del epígrafe (`IV.7.2`) y `title` su título oficial. `position` es su lugar
+    en el tema (1..N), para poder ofrecer «anterior» y «siguiente» sin que la pantalla tenga que
+    ordenar nada.
+    """
+
+    code: str
+    title: str
+    position: int
+    sections: tuple[StudentNoteChapterSectionView, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
 class StudentNotesView:
-    """Los apuntes de un tema: cómo están y sus apartados en orden de lectura.
+    """Los apuntes de un tema: cómo están, **un capítulo** para leer y el índice completo.
 
     `state` es `published`, `draft` o `none` (`domain.topic_notes.NotesState`). Un tema en borrador
     **se sirve igual** que uno publicado: la decisión D2/D12 es que se pueda leer y que se diga que
     está en revisión, no que se esconda. Un tema sin apuntes no es un error: es una lista vacía con
     su estado, y la pantalla lo dice.
+
+    `chapter` es el capítulo que viaja en `sections` (el pedido, o el primero si no se pidió
+    ninguno) y `chapters` el índice completo del tema, con los apartados de cada capítulo pero sin
+    sus textos. Servir un capítulo cada vez es lo que convierte un tema en una pantalla que se lee:
+    I.1 mide 314.000 px entero, y sus apartados son 21.
     """
 
     code: str
     state: str
     generated_at: datetime | None = None
     sections: tuple[StudentNoteSectionView, ...] = ()
+    chapter: str | None = None
+    chapters: tuple[StudentNoteChapterView, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -440,19 +481,24 @@ class StudentTopicRefView:
 
 @dataclass(frozen=True, slots=True)
 class StudentNoteAnchorView:
-    """El apartado de los apuntes que **contesta** una pregunta, con su tema y su anclaje.
+    """El apartado de los apuntes que **contesta** una pregunta, con su tema, su capítulo y su
+    anclaje.
 
     Existe para que «Ver en apuntes» del resultado lleve al párrafo que explica el fallo
-    (`/temario/IV.7#udp`) y no a la portada del tema, que no explica nada. Sale de la
-    comprobación del motor (`question_note_anchors`), que es donde está la letra que los apuntes
-    dieron con su cita.
+    (`/temario/IV.7?capitulo=IV.7.2#apartado-udp`) y no a la portada del tema, que no explica nada.
+    Sale de la comprobación del motor (`question_note_anchors`), que es donde está la letra que los
+    apuntes dieron con su cita.
 
     Una pregunta puede estar en dos temas (D7) y el apartado pertenece a **uno**: viaja con su
-    código de tema para que el enlace no dependa de cuál de los dos se enseñe primero.
+    código de tema para que el enlace no dependa de cuál de los dos se enseñe primero. Y desde que
+    los apuntes se leen **por capítulos**, el anclaje solo no basta: `#osi-capas` vive en el
+    capítulo `IV.7.2`, y sin decir cuál, la página abriría el primero y el párrafo no estaría en
+    ella. Por eso viaja también `epigraph_code`, que es el capítulo que hay que abrir.
     """
 
     topic_code: str
     anchor: str
+    epigraph_code: str = ""
 
 
 @dataclass(frozen=True, slots=True)

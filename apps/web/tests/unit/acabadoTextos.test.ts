@@ -30,6 +30,15 @@ const TEXTOS_DEL_ACABADO: readonly string[] = [
   'Cargando el temario…',
   'Cargando el progreso…',
   'Cargando los apuntes…',
+  // Y los de la lectura por capítulos (F35, §3.1): esto es lo que se añade a la pantalla de los
+  // apuntes, que es la que más texto nuevo pone delante del alumno.
+  'Apartados',
+  'Esto se pregunta',
+  'Esto está mal',
+  'Capítulos del tema',
+  'Anterior: IV.7.1',
+  'Siguiente: IV.7.2',
+  'Tabla: Capa, Unidad',
 ];
 
 describe('los textos nuevos del acabado', () => {

@@ -39,10 +39,13 @@ ALLOWED_ORIGIN = {"Origin": "http://127.0.0.1:5173"}
 #: El tema con apuntes de esta prueba. Es un tema de verdad del programa sembrado.
 TEMA = "IV.1"
 
-#: Los dos apartados que se escriben: el texto es de la prueba, no del propietario.
+#: Los tres apartados que se escriben: el texto es de la prueba, no del propietario. El tercero va
+#: en **otro epígrafe oficial** (`IV.1.2`) para poder probar la lectura por capítulos (F35, §3.1):
+#: con todos en el mismo epígrafe no habría nada que paginar.
 APARTADOS: tuple[tuple[str, str, str], ...] = (
     ("redes-tcpip", "IV.1.1", "El modelo TCP/IP y sus cuatro capas"),
     ("puertos-familias", "IV.1.1", "Puertos bien conocidos, por familias"),
+    ("correo-electronico", "IV.1.2", "El correo electrónico y sus protocolos"),
 )
 
 CUERPO = "\n".join(
@@ -270,11 +273,12 @@ def test_los_apuntes_de_un_tema_publicado_salen_con_su_indice_y_su_texto(
     assert cuerpo["state"] == "published"
     assert cuerpo["generated_at"] is not None, "los apuntes escritos dicen de cuándo son"
     assert [apartado["number"] for apartado in cuerpo["sections"]] == [1, 2]
+    # Y solo los del **capítulo servido**: el tercero vive en `IV.1.2` y se lee en su capítulo.
     assert [apartado["key"] for apartado in cuerpo["sections"]] == [
-        clave for clave, _, _ in APARTADOS
+        clave for clave, _, _ in APARTADOS[:2]
     ]
     assert [apartado["title"] for apartado in cuerpo["sections"]] == [
-        titulo for _, _, titulo in APARTADOS
+        titulo for _, _, titulo in APARTADOS[:2]
     ]
     assert all(apartado["anchor"] for apartado in cuerpo["sections"]), "el índice necesita anclas"
     primero = cuerpo["sections"][0]
@@ -314,8 +318,79 @@ def test_un_tema_sin_apuntes_no_es_un_error(
         "state": "none",
         "generated_at": None,
         "sections": [],
+        # Un tema sin apuntes no tiene capítulos que enseñar, y eso no es un error.
+        "chapter": None,
+        "chapters": [],
     }
     assert seeded_client.get("/api/v1/student/topics/XX.99/notes").status_code == 404
+
+
+# ------------------------------------------------- 1-bis. leerlos **por capítulos** (F35, §3.1)
+
+
+def test_los_apuntes_se_sirven_por_capitulos_y_el_indice_viaja_entero(
+    alumno: tuple[TestClient, Settings, dict[str, Any]],
+) -> None:
+    """Un capítulo por respuesta, con el índice completo **sin los textos**.
+
+    Es lo que convierte un tema de 314.000 px en una pantalla que se lee: `sections` trae el texto
+    del capítulo abierto y `chapters` el índice de todos, con sus apartados y sin sus cuerpos.
+    Servir el tema entero fue lo que dejó el índice en 1.405 px dentro de una ventana de 800.
+    """
+    client, _settings_sin_version, _tema = alumno
+
+    respuesta = client.get(f"/api/v1/student/topics/{TEMA}/notes")
+
+    assert respuesta.status_code == 200, respuesta.text
+    cuerpo = respuesta.json()
+    assert cuerpo["chapter"] == "IV.1.1", "sin pedir capítulo se sirve el primero"
+    # El índice completo: los dos epígrafes oficiales del tema, en su orden, con lo que tienen
+    # dentro.
+    assert [capitulo["code"] for capitulo in cuerpo["chapters"]] == ["IV.1.1", "IV.1.2"]
+    assert [capitulo["position"] for capitulo in cuerpo["chapters"]] == [1, 2]
+    assert [len(capitulo["sections"]) for capitulo in cuerpo["chapters"]] == [2, 1]
+    assert all(capitulo["title"] for capitulo in cuerpo["chapters"]), "el capítulo se titula"
+    # Los apartados del índice llevan su anclaje y **no** su texto: es lo que hace que el índice
+    # quepa.
+    del_indice = cuerpo["chapters"][1]["sections"][0]
+    assert del_indice["anchor"] == "correo-electronico"
+    assert "body_markdown" not in del_indice
+    assert all(apartado["anchor"] for apartado in cuerpo["sections"])
+
+
+def test_el_capitulo_se_elige_por_la_peticion(
+    alumno: tuple[TestClient, Settings, dict[str, Any]],
+) -> None:
+    """`?capitulo=` sirve el epígrafe pedido, con sus apartados y con su número del tema entero."""
+    client, _settings_sin_version, _tema = alumno
+
+    respuesta = client.get(f"/api/v1/student/topics/{TEMA}/notes", params={"capitulo": "IV.1.2"})
+
+    assert respuesta.status_code == 200, respuesta.text
+    cuerpo = respuesta.json()
+    assert cuerpo["chapter"] == "IV.1.2"
+    assert [apartado["key"] for apartado in cuerpo["sections"]] == ["correo-electronico"]
+    # El número es el del tema entero (3), no el de dentro del capítulo: es el que se cita en todas
+    # las pantallas y el que sale en el índice completo.
+    assert [apartado["number"] for apartado in cuerpo["sections"]] == [3]
+
+
+def test_un_capitulo_que_ya_no_existe_no_es_un_404(
+    alumno: tuple[TestClient, Settings, dict[str, Any]],
+) -> None:
+    """Un enlace guardado a un epígrafe que el programa reorganizó tiene que llevar a leer.
+
+    No es un 404: se sirve el primero y la respuesta dice **cuál** se sirvió, para que la pantalla
+    corrija la dirección en vez de dejar al alumno en un error que él no puede arreglar.
+    """
+    client, _settings_sin_version, _tema = alumno
+
+    respuesta = client.get(f"/api/v1/student/topics/{TEMA}/notes", params={"capitulo": "IV.1.9"})
+
+    assert respuesta.status_code == 200, respuesta.text
+    cuerpo = respuesta.json()
+    assert cuerpo["chapter"] == "IV.1.1", "se sirve el primero y se dice cuál"
+    assert len(cuerpo["sections"]) == 2
 
 
 def test_el_estado_de_los_apuntes_viaja_con_cada_tema_del_temario(
