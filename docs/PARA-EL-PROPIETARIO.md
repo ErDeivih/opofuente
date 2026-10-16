@@ -37,6 +37,10 @@ la pregunta contestada y el resultado), con **0 violaciones de accesibilidad y 0
 comprobado por la prueba y no a ojo. La zona del alumno no enseña ninguna otra oposición: lo comprueba
 el detector de palabras prohibidas en cada captura.
 
+**Y una cosa más, que era el otro extremo del mismo defecto:** si el servidor **no** acepta una
+respuesta —solo pasa ya con el test terminado, cuyas respuestas quedan congeladas—, la pantalla **lo
+dice** con su motivo. Antes pulsabas y no pasaba nada: ni cambiaba ni se explicaba por qué.
+
 ### Lo que queda fuera, y por qué
 
 - **La corrección no se ve justo al contestar**, porque el test avanza solo a la siguiente (que es lo

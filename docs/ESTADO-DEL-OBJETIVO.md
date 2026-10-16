@@ -4057,7 +4057,9 @@ doce veces.
   inesperado **por dentro** de CORS.
 - **Web** (`apps/web`): `StudentTestRunner` tiene la fila que se está mirando (`posicion`), pasa `onIr`
   a `AnswerSheet`, implementa `←`/`→`, dice la verdad en la ayuda, avanza solo al contestar y **no**
-  se mueve al cambiar; `getStudentRun` acepta la posición.
+  se mueve al cambiar; y **dice** el motivo cuando el servidor no acepta una respuesta (con el test
+  terminado, las respuestas están congeladas), que era el otro extremo del defecto 5: pulsar y que no
+  pasara nada. `getStudentRun` acepta la posición.
 
 ### Rojas antes, verdes después
 
@@ -4080,7 +4082,7 @@ Capturadas con el código de `main` y estas pruebas encima (`git stash` de `apps
   un dato prohibido** (el detector de `palabrasProhibidas.ts`: rutas del propietario, bancos ajenos y
   otras oposiciones). 2 pasan. `artifacts/contestar/medidas.json` es el fichero que se publica.
 - **Locales**: `ruff format --check .` y `ruff check .` limpios, `mypy` (262 ficheros) limpio,
-  `eslint` limpio, `tsc` limpio (incluye `tests/`), **458** de componente (53 ficheros, todas) y la
+  `eslint` limpio, `tsc` limpio (incluye `tests/`), **459** de componente (53 ficheros, todas) y la
   suite de backend entera.
 - **Las 18 puertas no las corre este bloque** (las corre el que mide, con su protocolo).
 
