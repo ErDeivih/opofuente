@@ -2286,8 +2286,11 @@ kbd {
     justify-content: start;
   }
 
+  /* La nota al margen cae **a la altura del texto**, no a la del título: la fila 1 es el título y la
+     nota empieza donde empieza el párrafo al que se refiere. */
   .apartado__lateral {
     grid-column: 2;
+    grid-row: 2 / span 2;
   }
 }
 
