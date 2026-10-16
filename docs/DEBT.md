@@ -1317,6 +1317,17 @@ los ficheros en aislamiento — que es exactamente lo que un rojo no debería ob
 
   **Y la regla que faltaba, dicha porque ya ha costado un diagnóstico falso:** cuando la puerta que cae es la de **componentes**, el aislamiento se pide **por fichero** (`npx vitest run tests/unit/<fichero>.test.tsx`), **no corriendo la suite entera**. La suite entera **repite el mismo flake** —el fichero tarda ~47 s acompañado y ~13 s solo— y entonces el aislamiento **parece confirmar** un fallo que no existe. Medido el 16/10/2026 en `f33-acabado`: la puerta 9 cayó con `1 failed | 433 passed`; la suite entera sola volvió a fallar **las dos veces**, pero **en un fichero distinto cada una** (`promote.test.tsx` y luego `questions.test.tsx`, este último con el `Unable to find role="button"` de arriba); y los dos ficheros **por separado** dieron **10/10 en tres vueltas** y **32/32 en tres vueltas**. La prueba que falla **se mueve** y cada fichero pasa solo: eso es el terreno. El reintento de la 9 dio **434/434**.
 
+  **Añadido el 16/10/2026 (misma tarde, midiendo `ce5999e`): dos formas más, y una de ellas NO la provoca nadie de fuera.**
+
+  | # | La forma | Cómo se ve | Quién la caza |
+  |---|---|---|---|
+  | 5 | **El pool de `vitest` no puede ARRANCAR sus workers** | `Vitest caught 11 unhandled errors` · `Error: [vitest-pool]: Failed to start forks worker for test files …` · la corrida se corta y el resumen dice **que todo lo que corrió pasó** (`Test Files 41 passed (41) · Tests 249 passed (249)`) **pero el código de salida es 1** | **ninguna guarda**: hay que leer el `stderr` y **contar los ficheros** (41 de 52: once no llegaron a correr) |
+  | 6 | **La puerta E2E cae por lo que corrieron las puertas ANTERIORES de la misma batería** | `expect` con `Timeout` de 10 s y `Test timeout of 30000ms exceeded`, **cero `ERR_CONNECTION_REFUSED`** y el servidor de vista previa **vivo**; la suite tarda **4,5 veces más** de lo normal (15,1 min por 3,3) | **ninguna guarda**: solo el **aislamiento de la puerta** |
+
+  **La forma 6 es la que enseña algo nuevo, y conviene decirla entera porque contradice la intuición:** en `ce5999e` la puerta 18 cayó con **17 de 83** y **15,1 minutos** viniendo **detrás de las puertas 9-17** (vitest con 52 workers, dos builds, migraciones y siembras). **En aislamiento dio 83/83 en 4,1 minutos… con la máquina igual de cargada** —CPU al **94-100 %** y 1,2-3,6 GB libres durante toda la corrida—. Es decir: **el rojo no lo causó la carga ajena, lo causaron las puertas anteriores de la propia batería**. Para la puerta E2E, «aislar» no es esperar a que la máquina esté tranquila: es **correrla sin las diecisiete que van delante**.
+
+  Y la forma 5 deja una comprobación barata que conviene hacer siempre que la 9 devuelva 1 sin rojos: **contar los ficheros del resumen contra los que hay en `tests/unit`**. Si no cuadran, no falló una prueba: **no llegaron a correr**.
+
 ---
 
 ## DEBT-023 — Una tarjeta de Anki no puede ser una pregunta porque no hay dónde guardar su respuesta
