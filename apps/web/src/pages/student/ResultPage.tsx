@@ -5,6 +5,7 @@ import { isApiError } from '../../api/client';
 import {
   createStudentTest,
   getStudentResult,
+  type StudentNoteAnchor,
   type StudentPartScore,
   type StudentResultOutcome,
   type StudentResultQuestion,
@@ -356,16 +357,36 @@ function PreguntaCorregida({ pregunta }: { pregunta: StudentResultQuestion }) {
       </ul>
       {repasar !== null && (
         <p className="resultado__repaso">
-          <Link
-            className="ui-button ui-button--secondary"
-            to={`/temario/${repasar.topic_code}#${repasar.anchor}`}
-          >
+          {/* La dirección lleva **el capítulo y el párrafo**, que desde que los apuntes se leen por
+              epígrafes oficiales son dos cosas distintas (§3.1 del encargo): el anclaje solo no
+              resuelve, porque `#osi-capas` vive en `IV.7.2` y sin decir cuál la página abriría el
+              primero y el párrafo no estaría en ella. Y el `#` lleva el prefijo `apartado-`, que es
+              el `id` que el apartado tiene en la página: sin él, el enlace no bajaba a ninguna parte
+              —medido: `scrollY = 0` con el párrafo a 10.288 px—. */}
+          <Link className="ui-button ui-button--secondary" to={direccionDeLosApuntes(repasar)}>
             Ver en apuntes
           </Link>
         </p>
       )}
     </li>
   );
+}
+
+/**
+ * La dirección de «Ver en apuntes»: el tema, **el capítulo** y el párrafo.
+ *
+ * Tres cosas y ninguna sobra:
+ *
+ * - el **tema**, por su código (`/temario/IV.7`);
+ * - el **capítulo** (`?capitulo=IV.7.2`), porque los apuntes se leen por epígrafes oficiales y el
+ *   párrafo puede no estar en el que se abre por defecto;
+ * - el **párrafo** (`#apartado-osi-capas`), con el prefijo `apartado-`, que es el `id` que tiene en
+ *   la página. Sin el prefijo el enlace no bajaba a ninguna parte: medido, `scrollY = 0` con el
+ *   apartado a 10.288 px.
+ */
+function direccionDeLosApuntes(repasar: StudentNoteAnchor): string {
+  const capitulo = repasar.epigraph_code === '' ? '' : `?capitulo=${encodeURIComponent(repasar.epigraph_code)}`;
+  return `/temario/${repasar.topic_code}${capitulo}#apartado-${repasar.anchor}`;
 }
 
 /** El desenlace, en las palabras de la pantalla. */

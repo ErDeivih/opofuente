@@ -1,0 +1,91 @@
+[
+  {
+    "ruta": "/temario/IV.7",
+    "ancho": 1280,
+    "altoDocumento": 20433,
+    "anchoDocumento": 1280,
+    "anchoVentana": 1280,
+    "columnaTexto": 647,
+    "capituloAbierto": "IV.7.1",
+    "apartadosServidos": 6,
+    "capitulosEnIndice": 2,
+    "indiceAlto": 610,
+    "indicePosicion": "sticky",
+    "indiceScrollPropio": 0,
+    "tablas": 12,
+    "tablasQueSeDesplazan": 7
+  },
+  {
+    "ruta": "/temario/I.1",
+    "ancho": 1280,
+    "altoDocumento": 118982,
+    "anchoDocumento": 1280,
+    "anchoVentana": 1280,
+    "columnaTexto": 647,
+    "capituloAbierto": "I.1.1",
+    "apartadosServidos": 12,
+    "capitulosEnIndice": 4,
+    "indiceAlto": 752,
+    "indicePosicion": "sticky",
+    "indiceScrollPropio": 446,
+    "tablas": 42,
+    "tablasQueSeDesplazan": 37
+  },
+  {
+    "ruta": "/temario/IV.7#apartado-puertos",
+    "ancho": 1280,
+    "scrollY": 34971,
+    "capituloAbierto": "IV.7.2",
+    "apartadoALaVista": true
+  },
+  {
+    "ruta": "/temario/IV.7",
+    "ancho": 390,
+    "altoDocumento": 34853,
+    "anchoDocumento": 390,
+    "anchoVentana": 390,
+    "columnaTexto": 324,
+    "capituloAbierto": "IV.7.1",
+    "apartadosServidos": 6,
+    "capitulosEnIndice": 2,
+    "indiceAlto": 422,
+    "indicePosicion": "static",
+    "indiceScrollPropio": 0,
+    "tablas": 12,
+    "tablasQueSeDesplazan": 11
+  },
+  {
+    "ruta": "/temario/I.1",
+    "ancho": 390,
+    "altoDocumento": 217661,
+    "anchoDocumento": 390,
+    "anchoVentana": 390,
+    "columnaTexto": 324,
+    "capituloAbierto": "I.1.1",
+    "apartadosServidos": 12,
+    "capitulosEnIndice": 4,
+    "indiceAlto": 782,
+    "indicePosicion": "static",
+    "indiceScrollPropio": 0,
+    "tablas": 42,
+    "tablasQueSeDesplazan": 42
+  },
+  {
+    "ruta": "/temario/IV.7#apartado-puertos",
+    "ancho": 390,
+    "scrollY": 61022,
+    "capituloAbierto": "IV.7.2",
+    "apartadoALaVista": true
+  },
+  {
+    "ruta": "/temario/IV.7#pantalla-ancha",
+    "ancho": 1600,
+    "anchoTexto": 647,
+    "izquierdaDelTexto": 525,
+    "izquierdaDeLaNota": 525,
+    "arribaDeLaNota": 4207,
+    "abajoDelTexto": 4191,
+    "notaEnLaColumnaDelTexto": true,
+    "notaDebajoDelTexto": true
+  }
+]

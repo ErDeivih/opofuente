@@ -3730,13 +3730,18 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Los apuntes de un tema: su texto en orden de lectura y si están en borrador
-         * @description Los apuntes del tema, tal como se leen.
+         * Los apuntes de un tema: un capítulo para leer y el índice completo
+         * @description Los apuntes del tema, **un capítulo cada vez**, tal como se leen.
          *
          *     Un tema **en borrador se sirve igual** que uno publicado: el estado viaja con el texto
          *     (`draft`) y la pantalla lo dice. No se esconden apuntes por no haber pasado una puerta —para eso
          *     está la marca— y un tema sin apuntes devuelve su estado y una lista vacía, no un 404: el tema
          *     existe y lo que falta es el texto.
+         *
+         *     `capitulo` elige el epígrafe oficial. No elegirlo sirve el primero, y pedir uno que no existe
+         *     **también** sirve el primero: la respuesta dice en `chapter` cuál se sirvió de verdad y la
+         *     pantalla corrige la dirección. Un tema del programa son varios epígrafes y servirlos todos de
+         *     golpe es lo que hacía que I.1 midiera 314.000 px de alto.
          */
         get: operations["student_topic_notes_api_v1_student_topics__codigo__notes_get"];
         put?: never;
@@ -10058,10 +10063,13 @@ export interface components {
         };
         /**
          * StudentNoteAnchorSchema
-         * @description El apartado de los apuntes que contesta una pregunta, con su tema y su anclaje.
+         * @description El apartado de los apuntes que contesta una pregunta, con su tema, su capítulo y su anclaje.
          *
          *     Es lo que permite que «Ver en apuntes» del resultado deje al alumno **en el párrafo** que
-         *     explica su fallo (`/temario/IV.7#udp`) en vez de en la portada del tema, que no explica nada.
+         *     explica su fallo (`/temario/IV.7?capitulo=IV.7.2#apartado-udp`) en vez de en la portada del
+         *     tema, que no explica nada. El **capítulo** viaja con el anclaje porque los apuntes se leen por
+         *     epígrafes oficiales: sin él, la página abriría el primer capítulo de IV.7 y el párrafo no
+         *     estaría en ella.
          */
         StudentNoteAnchorSchema: {
             /**
@@ -10070,10 +10078,54 @@ export interface components {
              */
             anchor: string;
             /**
+             * Epigraph Code
+             * @description El epígrafe oficial (capítulo) que contiene ese apartado, para abrir la página por él. Vacío si el apartado no dice a qué epígrafe pertenece.
+             * @default
+             */
+            epigraph_code: string;
+            /**
              * Topic Code
              * @description El tema al que pertenece el apartado, por su código legible.
              */
             topic_code: string;
+        };
+        /**
+         * StudentNoteChapterSchema
+         * @description Un capítulo de los apuntes: un **epígrafe oficial** del tema, con sus apartados.
+         *
+         *     `code` es el código del epígrafe (`IV.7.2`), que es lo que lleva el parámetro `capitulo` de la
+         *     petición y lo que viaja en el enlace «Ver en apuntes». `position` es su lugar en el tema (1..N),
+         *     para poder ofrecer «anterior» y «siguiente» sin ordenar nada en la pantalla.
+         */
+        StudentNoteChapterSchema: {
+            /** Code */
+            code: string;
+            /** Position */
+            position: number;
+            /** Sections */
+            sections: components["schemas"]["StudentNoteChapterSectionSchema"][];
+            /** Title */
+            title: string;
+        };
+        /**
+         * StudentNoteChapterSectionSchema
+         * @description Un apartado **del índice**: sin su texto, para que viaje el índice entero.
+         *
+         *     Es la mitad barata del contrato: con esto la pantalla puede enseñar todos los apartados de todos
+         *     los capítulos y resolver a qué capítulo pertenece un anclaje, sin que un tema de 314.000 px
+         *     viaje de una vez.
+         */
+        StudentNoteChapterSectionSchema: {
+            /** Anchor */
+            anchor: string;
+            /** Key */
+            key: string;
+            /** Number */
+            number: number;
+            /** Questions Covered */
+            questions_covered: number;
+            /** Title */
+            title: string;
         };
         /**
          * StudentNoteSectionSchema
@@ -10102,12 +10154,21 @@ export interface components {
         };
         /**
          * StudentNotesSchema
-         * @description Los apuntes de un tema: cómo están y sus apartados en orden de lectura.
+         * @description Los apuntes de un tema: cómo están, **un capítulo** para leer y el índice completo.
          *
          *     Un tema en `draft` se sirve **igual** que uno en `published`: la marca distingue uno de otro y
          *     el alumno puede leer los dos. Un tema en `none` no trae apartados, y eso no es un error.
+         *
+         *     `sections` trae el texto del capítulo servido y `chapters` el índice de todos los capítulos, con
+         *     sus apartados pero sin sus textos. `chapter` dice cuál de ellos viaja en `sections`, y puede no
+         *     ser el pedido: un `capitulo` que ya no existe sirve el primero, y la pantalla lo dice
+         *     corrigiendo la dirección en vez de dejar al alumno en un error.
          */
         StudentNotesSchema: {
+            /** Chapter */
+            chapter?: string | null;
+            /** Chapters */
+            chapters: components["schemas"]["StudentNoteChapterSchema"][];
             /** Code */
             code: string;
             /** Generated At */
@@ -21682,7 +21743,10 @@ export interface operations {
     };
     student_topic_notes_api_v1_student_topics__codigo__notes_get: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description El epígrafe oficial que se quiere leer, como `IV.7.2`. Sin él se sirve el primero. */
+                capitulo?: string | null;
+            };
             header?: never;
             path: {
                 /** @description Código legible del tema, como `IV.10` (también se acepta `IV-10`). */

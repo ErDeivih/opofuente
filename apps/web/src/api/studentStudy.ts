@@ -85,11 +85,41 @@ export interface StudentNoteSection {
   questions_covered: number;
 }
 
+/**
+ * Un apartado **del índice**, sin su texto.
+ *
+ * Es lo que permite que el índice viaje entero aunque la página sirva un solo capítulo: con esto se
+ * puede enseñar la lista completa de apartados y saber a qué capítulo pertenece un anclaje que no es
+ * del capítulo abierto.
+ */
+export interface StudentNoteChapterSection {
+  number: number;
+  key: string;
+  title: string;
+  anchor: string;
+  questions_covered: number;
+}
+
+/** Un capítulo de los apuntes: un **epígrafe oficial** del tema, con sus apartados. */
+export interface StudentNoteChapter {
+  /** El código del epígrafe (`IV.7.2`): es lo que lleva `?capitulo=` en la dirección. */
+  code: string;
+  title: string;
+  /** Su lugar en el tema (1..N), para «anterior» y «siguiente». */
+  position: number;
+  sections: StudentNoteChapterSection[];
+}
+
 export interface StudentNotes {
   code: string;
   state: NotesState;
   generated_at: string | null;
+  /** El texto del capítulo abierto. */
   sections: StudentNoteSection[];
+  /** El capítulo que viaja en `sections`; `null` si el tema no tiene apuntes. */
+  chapter: string | null;
+  /** El índice completo: todos los capítulos con sus apartados, sin sus textos. */
+  chapters: StudentNoteChapter[];
 }
 
 export interface StudentReport {
@@ -258,9 +288,19 @@ export function getStudentTopic(code: string): Promise<StudentTopic> {
   return apiFetch<StudentTopic>(`/api/v1/student/topics/${encodeURIComponent(code)}`);
 }
 
-/** Los apuntes del tema, en orden de lectura, con su estado. Un borrador también se lee. */
-export function getStudentNotes(code: string): Promise<StudentNotes> {
-  return apiFetch<StudentNotes>(`/api/v1/student/topics/${encodeURIComponent(code)}/notes`);
+/**
+ * Los apuntes de un tema, **un capítulo cada vez**, con el índice completo y su estado.
+ *
+ * `capitulo` es el código del epígrafe oficial (`IV.7.2`). Sin él, el servidor sirve el primero. Un
+ * capítulo que ya no existe **también** sirve el primero: la respuesta dice en `chapter` cuál se
+ * sirvió y la pantalla corrige la dirección, en vez de dejar al alumno en un error.
+ *
+ * Un borrador también se lee.
+ */
+export function getStudentNotes(code: string, capitulo?: string): Promise<StudentNotes> {
+  const ruta = `/api/v1/student/topics/${encodeURIComponent(code)}/notes`;
+  const consulta = capitulo === undefined ? '' : `?capitulo=${encodeURIComponent(capitulo)}`;
+  return apiFetch<StudentNotes>(`${ruta}${consulta}`);
 }
 
 /**

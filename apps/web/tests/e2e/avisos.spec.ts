@@ -289,6 +289,11 @@ test('E2E-F16 el ciclo del aviso: el alumno lo manda y el propietario lo ve y lo
  * (`/temario/IV.1#apartado-<ancla>`) y el ancla del navegador **no basta**, porque los apuntes llegan
  * por la API después del primer pintado. Aquí se mide con el apartado detrás de 120 párrafos: si la
  * vista no baja, la prueba falla.
+ *
+ * Y desde F35 los apuntes se leen **por capítulos** (§3.1 del encargo): este apartado va en `IV.1.2`,
+ * que **no** es el capítulo que la página abre por defecto, así que la pantalla abre el suyo y la
+ * dirección se queda con el capítulo **y** el párrafo. Es la expectativa la que cambia, no la
+ * pantalla: el enlace al que apunta el aviso sigue siendo el mismo ancla.
  */
 test('E2E-F16 el enlace al apartado deja el apartado a la vista', async ({ page, request }) => {
   const tema = await nodoDelTema(request);
@@ -305,12 +310,45 @@ test('E2E-F16 el enlace al apartado deja el apartado a la vista', async ({ page,
   await expect(fila).toBeVisible();
   await fila.getByRole('link', { name: /Ver el apartado en los apuntes/ }).click();
 
-  await expect(page).toHaveURL(new RegExp(`/temario/${TEMA}#apartado-${CLAVE_LEJANA}$`));
+  await expect(page).toHaveURL(
+    new RegExp(`/temario/${TEMA}\\?capitulo=IV\\.1\\.2#apartado-${CLAVE_LEJANA}$`),
+  );
   const apartado = page.locator(`#apartado-${CLAVE_LEJANA}`);
   await expect(apartado).toHaveClass(/apartado/);
   await expect(apartado, 'el apartado tiene que quedar a la vista, no al principio').toBeInViewport();
-  const desplazamiento = await page.evaluate(() => Math.round(window.scrollY));
-  expect(desplazamiento, 'la vista tiene que haber bajado').toBeGreaterThan(1000);
+
+  // Y la vista **bajó al párrafo**. Antes esta prueba pedía `scrollY > 1000`, porque el tema entero
+  // era **una sola página** y el apartado estaba detrás de los 120 párrafos del primer apartado;
+  // desde F35 el enlace **abre el capítulo que lo contiene** —eso es lo que se acaba de comprobar en
+  // la dirección— y este apartado es el primero de su capítulo, así que lo que se mide es que la
+  // vista haya ido **hasta él**: el filo del apartado en el filo de la ventana o, si la página es más
+  // corta que la ventana y no da para tanto, hasta el final de lo que se puede desplazar. Medido en
+  // esta pantalla: el apartado está en 377 y la página solo se desplaza 153, así que la vista llega
+  // hasta el final y el apartado queda a la vista. Exigir `scrollY == offsetTop` sería exigirle a la
+  // página que sea más larga de lo que es.
+  //
+  // Y se **espera** a que se mueva, porque el salto es asíncrono: el capítulo que contiene el
+  // apartado llega por la API después de la navegación y el efecto que baja al párrafo reintenta
+  // hasta encontrarlo. Medirlo en el mismo instante que la dirección es una carrera —la primera
+  // corrida de esta prueba dio 153 px y la segunda 0, sin que nada hubiera cambiado—.
+  await expect
+    .poll(
+      async () =>
+        page.evaluate((ancla) => {
+          const elemento = document.getElementById(ancla);
+          if (elemento === null) {
+            return Number.NEGATIVE_INFINITY;
+          }
+          const maximo = document.documentElement.scrollHeight - window.innerHeight;
+          const destino = Math.min(
+            Math.round(elemento.getBoundingClientRect().top + window.scrollY),
+            maximo,
+          );
+          return Math.round(window.scrollY) - destino;
+        }, `apartado-${CLAVE_LEJANA}`),
+      { timeout: 15_000 },
+    )
+    .toBeGreaterThanOrEqual(-8);
 });
 
 test('E2E-F16 el propietario también puede dejarlo en curso y volver a abrirlo', async ({

@@ -1,5 +1,6 @@
 import { notesBlocks, tableCells } from '../dossier/notesMarkdownParser';
 import { renderInline } from '../../ui/inlineMarkdown';
+import { MarcoDeTabla } from './MarcoDeTabla';
 
 /**
  * El texto de un apartado de los apuntes, **tal como se lee** (pantalla del alumno, F13).
@@ -8,14 +9,17 @@ import { renderInline } from '../../ui/inlineMarkdown';
  * dibujo es el del diseño de lectura: headings de sección, listas, tablas con su cabecera y, en el
  * centro, párrafos en Source Serif 4 con su medida de 68 caracteres.
  *
- * Dos decisiones que se ven en el código:
+ * Tres decisiones que se ven en el código:
  *
  * 1. **la primera fila de una tabla es la cabecera** y todas las celdas del cuerpo son `td`: las
  *    tablas de los apuntes son datos (puerto, servicio, familia), no una comparación con fila de
  *    encabezado, y marcar la primera columna como `th scope="row"` cambiaría lo que lee un lector de
  *    pantalla;
  * 2. **no se interpretan enlaces ni HTML**: los apuntes son texto generado y lo generado no se
- *    ejecuta. Lo que se ve es lo que hay.
+ *    ejecuta. Lo que se ve es lo que hay;
+ * 3. **la tabla lleva su propio ancho** (`MarcoDeTabla`): las palabras no se parten y, si no cabe, se
+ *    desplaza ella. Antes se forzaba al ancho de la columna y las celdas rompían las palabras
+ *    («Aplic|ación»), que es lo que el propietario vio en las capturas.
  */
 export function NotesBody({ markdown }: { markdown: string }) {
   return (
@@ -50,13 +54,11 @@ export function NotesBody({ markdown }: { markdown: string }) {
           if (cabecera === undefined) {
             return null;
           }
-          // La tabla no vive dentro de un contenedor que se desplaza a propósito: en el móvil tiene
-          // que **caber**, y para eso sus celdas parten las palabras largas (ver `.apuntes__tabla`).
-          // Un `overflow-x: auto` aquí sería una región que se desplaza y que nadie puede recorrer
-          // con el teclado (axe lo marca, `scrollable-region-focusable`), y arreglarlo con
-          // `tabindex` en un elemento no interactivo es justo lo que eslint prohíbe. La tabla cabe.
+          // La tabla lleva su propio ancho y, si no cabe, se desplaza ella (`MarcoDeTabla`): las
+          // palabras no se parten nunca, que es lo que el propietario vio roto en las capturas. El
+          // `tabIndex` es lo que hace que esa región se pueda recorrer con el teclado (axe lo exige).
           return (
-            <div className="apuntes__tabla-marco" key={clave}>
+            <MarcoDeTabla key={clave} etiqueta={`Tabla: ${cabecera.join(', ')}`} tabIndex={0}>
               <table className="apuntes__tabla">
                 <thead>
                   <tr>
@@ -77,7 +79,7 @@ export function NotesBody({ markdown }: { markdown: string }) {
                   ))}
                 </tbody>
               </table>
-            </div>
+            </MarcoDeTabla>
           );
         }
         return <p key={clave}>{renderInline(block.lines.join(' '))}</p>;

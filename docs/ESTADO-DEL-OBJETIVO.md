@@ -3927,3 +3927,76 @@ Medido: `ruff format --check .` (560 ficheros), `ruff check .`, `mypy` (262), `e
 de unidad y contrato del backend, **136** de integración de alumno/estudio/apuntes, **434** de
 componente (433 en la corrida completa y 10/10 en aislamiento: el fallo era el `promote.test.tsx` de
 siempre por carga) y la **puerta 18 entera: 83 pasan**. Las capturas del acabado, regeneradas.
+
+---
+
+## f35 — La lectura de los apuntes: un capítulo por pantalla (16-oct-2026)
+
+**Base `main = c4a7d8d`, rama `f35-lectura`.** Es el **punto 1 del §3** de
+`docs/REVISION-DEL-RECORRIDO-Y-ARREGLOS-2026-10.md`: los cinco defectos de la pantalla con la que se
+estudia, medidos sobre una **copia verificada** de la base real (`F:\temp-opofuente\f35-datos`,
+SHA-256 `622aaa6f…`; la real, con el mismo SHA-256 al terminar).
+
+### Por qué esta pantalla y no otra
+
+El recorrido la dejó la primera de la lista «por lo que más molesta a quien estudia», y con razón: es
+**el índice y la página con los que se estudia**. Los tres defectos del §3.1 estaban medidos y los dos
+del propietario, descritos. Todo lo de abajo está medido antes y después, con la misma copia y los
+mismos dos anchos (1280 y 390).
+
+### Las tres cifras
+
+| Cifra | Antes | Después |
+|---|---|---|
+| Altura de la página del tema (1280 px) | IV.7 **110.427 px** · I.1 **314.402 px** | IV.7 **20.433** (capítulo IV.7.1) · I.1 **118.982** (capítulo I.1.1) |
+| Ancho de la columna de texto (1280 px) | **370 px** | **647 px** (68 caracteres) |
+| `scrollY` al pulsar «Ver en apuntes» | **0**, con el párrafo a **10.288 px** | **6.640**, con el párrafo arriba y a la vista |
+
+Y el mismo enlace con un apartado del segundo capítulo (`#apartado-puertos`), que es el caso que
+obliga a abrir el capítulo que lo contiene: **0 → 34.971 px** a 1280 y **0 → 61.022 px** a 390, con el
+párrafo a 0 px de la ventana en los dos.
+
+El índice, que era lo que más molestaba: **1.415 px / 1.405 px** `sticky` en una ventana de 800 —su
+mitad de abajo no se alcanzaba ni desplazándose— pasa a **610 px / 752 px**, pegado y con su propio
+scroll (446 px de recorrido en I.1). El 20.º apartado, que no se podía pulsar, ahora sí.
+
+Las tablas: el ancho natural de las de los apuntes es mediana de **919 px** en IV.7 y **1.205 px** en
+I.1 (máximo 3.295), así que **no caben** en una columna de lectura y cabían **partiendo las palabras**
+(«Aplic|ación»). Ahora la tabla mide lo suyo (`max-content`) y **se desplaza su marco**: a 1280 se
+desplazan 7 de 12 en IV.7 y 37 de 42 en I.1, y ninguna celda parte una palabra.
+
+### Qué se ha tocado
+
+- **Servidor** (`apps/api`): `GET /student/topics/{código}/notes` acepta `?capitulo=`; la respuesta
+  trae `chapter` (el capítulo servido), `chapters` (el índice completo **sin los cuerpos** —lo que
+  hace que el índice quepa y que un anclaje se pueda situar en su capítulo—) y `sections` con el texto
+  del capítulo abierto. El anclaje de repaso (`StudentNoteAnchorView`) viaja con su `epigraph_code`.
+- **Web** (`apps/web`): `TopicNotesPage` lee por capítulos (índice con scroll propio, capítulo y
+  apartado en curso marcados, «Anterior / Siguiente», corrección de la dirección cuando el capítulo
+  pedido ya no existe), `NotesBody` pinta cada tabla en su marco, `ResultPage` construye el enlace con
+  el capítulo y el prefijo `apartado-`, y `global.css` trae la rejilla nueva. El efecto del ancla
+  acepta el anclaje pelado (marcas del navegador de antes) y **revisa** la colocación cuando la página
+  crece al cargar la fuente.
+
+### Lo que no mejora, dicho por su nombre
+
+**I.1.1 sigue midiendo 118.982 px**: el programa oficial da a la Constitución **cuatro** epígrafes y
+los 21 apartados se reparten 12 / 5 / 2 / 2, así que el primer capítulo se lleva el **66 % del texto**.
+Paginar por epígrafes es lo que se pidió; el capítulo que queda gordo es el que el programa define
+como gordo. Si esa página sigue siendo incómoda, lo que hay que revisar es **la granularidad de los
+epígrafes de I.1**, y eso es una decisión sobre el programa, no sobre la pantalla.
+
+### Pruebas
+
+- **Rojas antes, verdes después**: 8 de componente/contrato en la web (`studentApuntes` y
+  `acabadoResultado`) y 7 en la API (`test_student_notes_api` 6 + `test_student_result_api` 1),
+  capturadas con el código de `main` y estas pruebas encima.
+- **Capturas y cifras**: `apps/web/tests/screens/lectura.spec.ts`, seis casos (IV.7, I.1 y el ancla ×
+  1280 y 390), que exigen **0 violaciones de axe** y **0 errores de consola** y comprueban cada cifra
+  de arriba. La corrida buena: **6 pasan**. Las cifras quedan en `artifacts/lectura/medidas.json` y el
+  antes y el después en `artifacts/lectura/MEDIDAS.md`.
+- **Locales**: `ruff check .` limpio, `ruff format --check .` (562 ficheros), `mypy` (262 ficheros)
+  limpio, `eslint` limpio, `tsc` limpio, **453** de componente (todas) y las de API de apuntes,
+  resultado y alumno/estudio.
+- **Las 18 puertas no las corre este bloque** (las corre el que mide, con su protocolo).
+

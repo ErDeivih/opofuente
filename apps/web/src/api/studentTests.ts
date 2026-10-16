@@ -132,14 +132,22 @@ export interface StudentTopicRef {
 /**
  * El apartado de los apuntes que contesta una pregunta concreta.
  *
- * Va con el **tema** y con el **anclaje** (`/temario/IV.7#udp`), no con el tema solo: «Ver en
- * apuntes» tiene que dejar al alumno en el párrafo que le explica su fallo, y la portada del tema no
- * lo explica. El servidor lo resuelve de la comprobación del motor (`question_note_anchors`), que es
- * donde está la frase que se verificó contra el texto.
+ * Va con el **tema**, con el **capítulo** y con el **anclaje**
+ * (`/temario/IV.7?capitulo=IV.7.2#apartado-udp`), no con el tema solo: «Ver en apuntes» tiene que
+ * dejar al alumno en el párrafo que le explica su fallo, y la portada del tema no lo explica. El
+ * servidor lo resuelve de la comprobación del motor (`question_note_anchors`), que es donde está la
+ * frase que se verificó contra el texto.
+ *
+ * El **capítulo** (`epigraph_code`) hace falta desde que los apuntes se leen por epígrafes
+ * oficiales: el párrafo puede estar en un capítulo que no es el primero, y abrir el primero dejaría
+ * al alumno arriba, con el apartado fuera de la página. Es el fallo que se midió en el recorrido
+ * (`scrollY = 0` con el apartado a 10.288 px).
  */
 export interface StudentNoteAnchor {
   topic_code: string;
   anchor: string;
+  /** El epígrafe oficial que contiene ese apartado. Vacío si el apartado no lo declara. */
+  epigraph_code: string;
 }
 
 /** Una pregunta corregida, con lo que se marcó, la correcta y su tema. */

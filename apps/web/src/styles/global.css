@@ -2072,23 +2072,33 @@ kbd {
   color: var(--tinta-suave);
 }
 
-/* --- La lectura de los apuntes: tres columnas ----------------------------------------- */
+/* --- La lectura de los apuntes: índice, texto y notas (F35, §3.1) ---------------------- */
 
 .apuntes {
   display: grid;
-  grid-template-columns: minmax(12rem, 14rem) minmax(0, 1fr);
-  gap: var(--s6);
+  /* El índice, con un ancho de casa (11–13 rem): cabe un título de epígrafe en dos o tres líneas y
+     no se come la columna de lectura, que es la que tiene que llegar a su medida. */
+  grid-template-columns: minmax(11rem, 13rem) minmax(0, 1fr);
+  gap: var(--s4);
   align-items: start;
   /* Las palabras largas que no se pueden partir con un espacio —«fallecimiento/incapacidad/…»,
      un `HKEY_LOCAL_MACHINE\...`, una URL— se parten antes de desbordar la columna. `anywhere`
      (y no `break-word`) porque además reduce el ancho **mínimo** del bloque: es lo que hace que la
-     pantalla no se desplace en horizontal en el móvil. */
+     pantalla no se desplace en horizontal en el móvil. En las tablas **no** se aplica: allí lo que
+     no cabe se desplaza, para no partir palabras (ver `.apuntes__tabla`). */
   overflow-wrap: anywhere;
 }
 
+/* El índice: pegado al hacer scroll, **nunca más alto que la ventana** y con **su propio scroll**.
+   Medido antes de este cambio: medía 1.415 px (IV.7) y 1.405 px (I.1) y era `sticky` en una ventana
+   de 800, así que su mitad de abajo no se alcanzaba ni desplazándose y en IV.7 no se podía pulsar ni
+   el 20.º de sus 25 apartados. */
 .apuntes__indice {
   position: sticky;
   top: var(--s5);
+  max-height: calc(100vh - var(--s5) * 2);
+  display: flex;
+  flex-direction: column;
   background: var(--hoja);
   border: 1px solid var(--linea);
   border-radius: var(--radio);
@@ -2100,11 +2110,49 @@ kbd {
   padding-bottom: var(--s3);
   border-bottom: 1px solid var(--linea);
   font-size: var(--t-sm);
+  flex: 0 0 auto;
+}
+
+/* El desplazamiento vive aquí, no en el `nav`: así el título no se va con el scroll y el alto que se
+   limita es el de la lista. `min-height: 0` es lo que deja a un hijo flexible encogerse. */
+.apuntes__indice-lista-marco {
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .apuntes__indice-lista {
   list-style: none;
   margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--s1);
+}
+
+.apuntes__indice-capitulo-enlace {
+  display: block;
+  padding: var(--s1) var(--s2);
+  border-left: 2px solid transparent;
+  border-radius: var(--radio-sm);
+  color: var(--tinta);
+  text-decoration: none;
+  font-size: var(--t-sm);
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.apuntes__indice-capitulo-codigo {
+  color: var(--tinta-suave);
+  font-variant-numeric: tabular-nums;
+}
+
+.apuntes__indice-capitulo-enlace[aria-current='page'] {
+  border-left-color: var(--azul);
+  color: var(--azul);
+}
+
+.apuntes__indice-apartados {
+  list-style: none;
+  margin: 0 0 var(--s2) 0;
   padding: 0;
   display: grid;
   gap: var(--s1);
@@ -2121,11 +2169,21 @@ kbd {
   line-height: 1.35;
 }
 
+/* El apartado que se está leyendo. Se marca con el filo y el peso, no solo con el color. */
+.apuntes__indice-enlace[aria-current='location'] {
+  border-left-color: var(--azul);
+  color: var(--tinta);
+  font-weight: 700;
+  background: var(--papel);
+}
+
+.apuntes__indice-capitulo-enlace:hover,
 .apuntes__indice-enlace:hover {
   background: var(--papel);
   color: var(--tinta);
 }
 
+.apuntes__indice-capitulo-enlace:focus-visible,
 .apuntes__indice-enlace:focus-visible {
   outline: var(--foco);
   outline-offset: var(--foco-separacion);
@@ -2135,15 +2193,55 @@ kbd {
   background: var(--hoja);
   border: 1px solid var(--linea);
   border-radius: var(--radio);
-  padding: var(--s5) var(--s6) var(--s6);
+  padding: var(--s5) var(--s5) var(--s6);
+  min-width: 0;
 }
 
-/* Cada apartado es su propia rejilla: el texto a la izquierda y su nota al margen a la derecha, de
-   modo que la nota cae **a la altura de su párrafo** y en el móvil justo debajo. */
+/* El capítulo que se está leyendo, arriba y en una línea: es la respuesta a «¿dónde estoy?». */
+.apuntes__capitulo {
+  margin: 0 0 var(--s5);
+  padding-bottom: var(--s3);
+  border-bottom: 1px solid var(--linea);
+  font-size: var(--t-sm);
+  color: var(--tinta-suave);
+}
+
+.apuntes__capitulo-codigo {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: var(--azul);
+}
+
+/* «Anterior» y «Siguiente»: los dos del mismo tamaño y separados del texto. */
+.apuntes__paso {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+  margin-top: var(--s6);
+  padding-top: var(--s4);
+  border-top: 1px solid var(--linea);
+}
+
+.apuntes__paso-enlace {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Cada apartado: el texto en su medida de lectura y, **debajo**, su nota al margen.
+ *
+ * La nota al margen no vuelve a su columna a ninguna anchura, y es una decisión **medida**: la pantalla
+ * del alumno tiene el lienzo limitado a `--ancho-contenido` (1080 px, del diseño) y dentro de él caben
+ * el índice (208), el hueco, el relleno de la tarjeta y **o** el texto con sus 68 caracteres **o** la
+ * columna de la nota. A 1600 px, con las tres columnas, el texto se quedaba en **582 px** (61
+ * caracteres) en vez de sus **647**; con la nota debajo recupera su medida entera. El dueño del
+ * encargo lo pidió al revés —«el texto tiene que ocupar un ancho de lectura cómodo»—, así que manda
+ * el texto. Medido con la prueba de `tests/screens/lectura.spec.ts` a 1600 px. */
 .apartado {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 15rem;
-  gap: var(--s4) var(--s5);
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--s4);
   padding-top: var(--s5);
   margin-top: var(--s5);
   border-top: 1px solid var(--linea-suave);
@@ -2168,6 +2266,8 @@ kbd {
 
 .apartado__cuerpo {
   grid-column: 1;
+  /* La medida de lectura es de la **columna**, no un tope: con el tope, la columna se estiraba a lo
+     que sobraba y el texto quedaba a 370 px con la mitad de la pantalla vacía. */
   max-width: var(--medida-apuntes);
   font-family: var(--fuente-apuntes);
   font-size: var(--t-apuntes);
@@ -2175,10 +2275,9 @@ kbd {
 }
 
 .apartado__lateral {
-  grid-column: 2;
-  grid-row: 2 / span 2;
+  grid-column: 1;
   display: grid;
-  gap: var(--s4);
+  gap: var(--s3);
   align-content: start;
 }
 
@@ -2208,16 +2307,30 @@ kbd {
   color: var(--tinta-suave);
 }
 
-/* Las tablas de los apuntes: cabecera con línea de 1px y filas separadas, sin cebra. **Caben** en el
-   móvil: las celdas parten las palabras largas (`overflow-wrap: anywhere` reduce el ancho mínimo de
-   la tabla), así que no hace falta una región que se desplace en horizontal —que sería inalcanzable
-   con el teclado sin añadir un `tabindex` a un elemento no interactivo—. */
+/* Las tablas de los apuntes: **su propio ancho**, sin partir palabras.
+ *
+ * Antes se forzaba el ancho de la tabla al de la columna y las celdas partían las palabras
+ * («Aplic|ación», «Trans|porte»). El ancho natural de estas tablas es grande —medido: mediana de
+ * 919 px en IV.7 y 1.205 px en I.1, máximo 3.295 px—, así que cabían **a costa de romper las
+ * palabras**. Ahora la tabla mide lo que necesita (`width: max-content`, suelo del ancho de su
+ * contenido) y, si no cabe, **se desplaza ella**: el texto no se mueve y las palabras no se parten.
+ *
+ * El marco lleva `tabindex="0"` y `role="region"` (`MarcoDeTabla`): una región que se desplaza tiene
+ * que poder recorrerse con el teclado, y axe lo comprueba (`scrollable-region-focusable`). */
 .apuntes__tabla-marco {
   margin: 0 0 var(--s5);
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+.apuntes__tabla-marco:focus-visible {
+  outline: var(--foco);
+  outline-offset: var(--foco-separacion);
 }
 
 .apuntes__tabla {
-  width: 100%;
+  width: max-content;
+  min-width: 100%;
   border-collapse: collapse;
   font-family: var(--fuente-interfaz);
   font-size: var(--t-sm);
@@ -2230,7 +2343,9 @@ kbd {
   vertical-align: top;
   padding: var(--s2) var(--s3);
   border-bottom: 1px solid var(--linea-suave);
-  overflow-wrap: anywhere;
+  /* Las palabras **no** se parten: el ancho lo pone la tabla y, si no cabe, se desplaza el marco. */
+  overflow-wrap: normal;
+  word-break: normal;
 }
 
 .apuntes__tabla thead th {
@@ -2245,8 +2360,10 @@ kbd {
   font-size: 0.95em;
 }
 
-/* La nota al margen: un filo azul, sin caja de color, como el diseño. */
+/* La nota al margen: un filo azul, sin caja de color, como el diseño. La usan la ficha de pregunta
+   del panel y —con su frase plegada— los apuntes del alumno. */
 .nota-margen {
+  margin: 0;
   border-left: 2px solid var(--azul);
   padding-left: var(--s3);
 }
@@ -2369,23 +2486,25 @@ kbd {
     gap: var(--s4);
   }
 
-  .apuntes__indice {
-    position: static;
-  }
-
   .apuntes__lectura {
     padding: var(--s4) var(--s4) var(--s5);
   }
 
-  /* La nota al margen cae debajo de su párrafo, que es lo que pide el diseño en el móvil. */
-  .apartado {
-    grid-template-columns: minmax(0, 1fr);
+  /* En el móvil el índice **fluye con la página**: no se pega ni se limita su alto, porque un índice
+     con su propio scroll dentro de una pantalla que ya se desplaza son dos desplazamientos que el
+     dedo no distingue. El límite de alto y el scroll propio son de la pantalla de escritorio, que es
+     donde el índice quedaba fuera de la ventana. */
+  .apuntes__indice {
+    position: static;
+    max-height: none;
   }
 
-  .apartado__lateral {
-    grid-column: 1;
-    grid-row: auto;
+  .apuntes__indice-lista-marco {
+    overflow-y: visible;
   }
+
+  /* Y la nota al margen cae debajo de su párrafo, que es lo que pide el diseño: la rejilla de una
+     columna de `.apartado` ya es la de por defecto. */
 
   .temario__bloque {
     grid-template-columns: 2rem minmax(0, 1fr);

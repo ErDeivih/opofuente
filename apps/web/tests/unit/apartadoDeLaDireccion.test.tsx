@@ -89,4 +89,18 @@ describe('el apartado que dice la dirección', () => {
     vi.advanceTimersByTime(1000);
     expect(desplazamientos).toEqual([]);
   });
+
+  it('acepta el anclaje pelado, que es como lo escribía «Ver en apuntes» antes de F35', () => {
+    // El elemento se llama `apartado-<anclaje>` y el enlace del resultado traía `#redes-tcpip` a
+    // secas: por eso el enlace no bajaba a ninguna parte (medido: `scrollY = 0` con el apartado a
+    // 10.288 px). Una marca del navegador de antes de este cambio no se puede arreglar desde el
+    // servidor, así que se aceptan las dos formas.
+    const apartado = document.createElement('section');
+    apartado.id = 'apartado-redes-tcpip';
+    document.body.append(apartado);
+
+    montar('/temario/IV.7#redes-tcpip');
+
+    expect(desplazamientos).toEqual(['apartado-redes-tcpip']);
+  });
 });

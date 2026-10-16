@@ -375,17 +375,53 @@ class StudentNoteSectionSchema(BaseModel):
     questions_covered: int = Field(ge=0)
 
 
+class StudentNoteChapterSectionSchema(BaseModel):
+    """Un apartado **del índice**: sin su texto, para que viaje el índice entero.
+
+    Es la mitad barata del contrato: con esto la pantalla puede enseñar todos los apartados de todos
+    los capítulos y resolver a qué capítulo pertenece un anclaje, sin que un tema de 314.000 px
+    viaje de una vez.
+    """
+
+    number: int = Field(ge=1)
+    key: str
+    title: str
+    anchor: str = Field(min_length=1)
+    questions_covered: int = Field(ge=0)
+
+
+class StudentNoteChapterSchema(BaseModel):
+    """Un capítulo de los apuntes: un **epígrafe oficial** del tema, con sus apartados.
+
+    `code` es el código del epígrafe (`IV.7.2`), que es lo que lleva el parámetro `capitulo` de la
+    petición y lo que viaja en el enlace «Ver en apuntes». `position` es su lugar en el tema (1..N),
+    para poder ofrecer «anterior» y «siguiente» sin ordenar nada en la pantalla.
+    """
+
+    code: str = Field(min_length=1)
+    title: str
+    position: int = Field(ge=1)
+    sections: list[StudentNoteChapterSectionSchema]
+
+
 class StudentNotesSchema(BaseModel):
-    """Los apuntes de un tema: cómo están y sus apartados en orden de lectura.
+    """Los apuntes de un tema: cómo están, **un capítulo** para leer y el índice completo.
 
     Un tema en `draft` se sirve **igual** que uno en `published`: la marca distingue uno de otro y
     el alumno puede leer los dos. Un tema en `none` no trae apartados, y eso no es un error.
+
+    `sections` trae el texto del capítulo servido y `chapters` el índice de todos los capítulos, con
+    sus apartados pero sin sus textos. `chapter` dice cuál de ellos viaja en `sections`, y puede no
+    ser el pedido: un `capitulo` que ya no existe sirve el primero, y la pantalla lo dice
+    corrigiendo la dirección en vez de dejar al alumno en un error.
     """
 
     code: str
     state: StudentNotesStateName
     generated_at: datetime | None = None
     sections: list[StudentNoteSectionSchema]
+    chapter: str | None = None
+    chapters: list[StudentNoteChapterSchema]
 
 
 class StudentReportRequestSchema(BaseModel):
@@ -445,16 +481,24 @@ class StudentTopicRefSchema(BaseModel):
 
 
 class StudentNoteAnchorSchema(BaseModel):
-    """El apartado de los apuntes que contesta una pregunta, con su tema y su anclaje.
+    """El apartado de los apuntes que contesta una pregunta, con su tema, su capítulo y su anclaje.
 
     Es lo que permite que «Ver en apuntes» del resultado deje al alumno **en el párrafo** que
-    explica su fallo (`/temario/IV.7#udp`) en vez de en la portada del tema, que no explica nada.
+    explica su fallo (`/temario/IV.7?capitulo=IV.7.2#apartado-udp`) en vez de en la portada del
+    tema, que no explica nada. El **capítulo** viaja con el anclaje porque los apuntes se leen por
+    epígrafes oficiales: sin él, la página abriría el primer capítulo de IV.7 y el párrafo no
+    estaría en ella.
     """
 
     topic_code: str = Field(
         description="El tema al que pertenece el apartado, por su código legible."
     )
     anchor: str = Field(description="El anclaje del apartado dentro de los apuntes del tema.")
+    epigraph_code: str = Field(
+        default="",
+        description="El epígrafe oficial (capítulo) que contiene ese apartado, para abrir la "
+        "página por él. Vacío si el apartado no dice a qué epígrafe pertenece.",
+    )
 
 
 class StudentResultQuestionSchema(BaseModel):

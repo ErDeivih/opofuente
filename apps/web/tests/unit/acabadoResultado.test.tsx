@@ -136,19 +136,28 @@ describe('el resultado: la hoja de respuestas', () => {
 });
 
 describe('el resultado: «Ver en apuntes»', () => {
-  it('lleva al apartado que contesta la pregunta, no a la portada del tema', async () => {
+  it('lleva al apartado que contesta la pregunta, con su capítulo y su párrafo', async () => {
     montar();
 
     const lista = await screen.findByRole('list', { name: /pregunta a pregunta/i });
     const preguntas = Array.from(lista.querySelectorAll<HTMLElement>(':scope > li'));
 
+    // Desde que los apuntes se leen por epígrafes oficiales (F35, §3.1), el enlace lleva **el
+    // capítulo y el párrafo**, y el `#` con el prefijo `apartado-`, que es el `id` de la página. Las
+    // tres cosas hacían falta: con `#tcpip-arquitectura` a secas el enlace no bajaba a ninguna parte
+    // (medido: `scrollY = 0` con el apartado a 10.288 px).
     const enlace = within(preguntas[0]!).getByRole('link', { name: /ver en apuntes/i });
-    expect(enlace).toHaveAttribute('href', '/temario/IV.7#tcpip-arquitectura');
+    expect(enlace).toHaveAttribute(
+      'href',
+      '/temario/IV.7?capitulo=IV.7.1#apartado-tcpip-arquitectura',
+    );
 
-    // La tercera pregunta trae dos temas; el apartado dice cuál de los dos explica el fallo.
+    // La tercera pregunta trae dos temas; el apartado dice cuál de los dos explica el fallo, y su
+    // capítulo (`IV.7.2`) es uno que **no** se sirve por defecto: sin él, el párrafo no estaría en la
+    // página.
     expect(within(preguntas[2]!).getByRole('link', { name: /ver en apuntes/i })).toHaveAttribute(
       'href',
-      '/temario/IV.7#udp',
+      '/temario/IV.7?capitulo=IV.7.2#apartado-udp',
     );
   });
 

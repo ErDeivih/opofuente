@@ -23,7 +23,7 @@ por la composición declarada de `StudyService` (`compose`), y las cuatro rutas 
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Path, status
+from fastapi import APIRouter, Path, Query, status
 
 from opofuente.api.deps import StudentServiceDep
 from opofuente.api.error_responses import RESOURCE_ERRORS, WRITE_ERRORS
@@ -42,6 +42,8 @@ from opofuente.api.student_schemas import (
     StudentMockExamRequestSchema,
     StudentMockExamVariantSchema,
     StudentNoteAnchorSchema,
+    StudentNoteChapterSchema,
+    StudentNoteChapterSectionSchema,
     StudentNoteSectionSchema,
     StudentNotesSchema,
     StudentOfficialExamSchema,
@@ -237,6 +239,25 @@ def _notes(view: StudentNotesView) -> StudentNotesSchema:
             )
             for apartado in view.sections
         ],
+        chapter=view.chapter,
+        chapters=[
+            StudentNoteChapterSchema(
+                code=capitulo.code,
+                title=capitulo.title,
+                position=capitulo.position,
+                sections=[
+                    StudentNoteChapterSectionSchema(
+                        number=apartado.number,
+                        key=apartado.key,
+                        title=apartado.title,
+                        anchor=apartado.anchor,
+                        questions_covered=apartado.questions_covered,
+                    )
+                    for apartado in capitulo.sections
+                ],
+            )
+            for capitulo in view.chapters
+        ],
     )
 
 
@@ -286,7 +307,9 @@ def _result_question(view: StudentResultQuestionView) -> StudentResultQuestionSc
             None
             if view.note_anchor is None
             else StudentNoteAnchorSchema(
-                topic_code=view.note_anchor.topic_code, anchor=view.note_anchor.anchor
+                topic_code=view.note_anchor.topic_code,
+                anchor=view.note_anchor.anchor,
+                epigraph_code=view.note_anchor.epigraph_code,
             )
         ),
     )
@@ -495,7 +518,7 @@ def student_topic(
     "/topics/{codigo}/notes",
     response_model=StudentNotesSchema,
     responses=RESOURCE_ERRORS,
-    summary="Los apuntes de un tema: su texto en orden de lectura y si están en borrador",
+    summary="Los apuntes de un tema: un capítulo para leer y el índice completo",
 )
 def student_topic_notes(
     service: StudentServiceDep,
@@ -503,15 +526,27 @@ def student_topic_notes(
         description="Código legible del tema, como `IV.10` (también se acepta `IV-10`).",
         examples=["IV.10"],
     ),
+    capitulo: str | None = Query(
+        default=None,
+        description=(
+            "El epígrafe oficial que se quiere leer, como `IV.7.2`. Sin él se sirve el primero."
+        ),
+        examples=["IV.7.2"],
+    ),
 ) -> StudentNotesSchema:
-    """Los apuntes del tema, tal como se leen.
+    """Los apuntes del tema, **un capítulo cada vez**, tal como se leen.
 
     Un tema **en borrador se sirve igual** que uno publicado: el estado viaja con el texto
     (`draft`) y la pantalla lo dice. No se esconden apuntes por no haber pasado una puerta —para eso
     está la marca— y un tema sin apuntes devuelve su estado y una lista vacía, no un 404: el tema
     existe y lo que falta es el texto.
+
+    `capitulo` elige el epígrafe oficial. No elegirlo sirve el primero, y pedir uno que no existe
+    **también** sirve el primero: la respuesta dice en `chapter` cuál se sirvió de verdad y la
+    pantalla corrige la dirección. Un tema del programa son varios epígrafes y servirlos todos de
+    golpe es lo que hacía que I.1 midiera 314.000 px de alto.
     """
-    return _notes(service.notes(codigo))
+    return _notes(service.notes(codigo, capitulo))
 
 
 @router.post(

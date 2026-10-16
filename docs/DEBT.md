@@ -43,6 +43,8 @@ Reglas:
 | [DEBT-030](#debt-030--el-registro-de-una-batería-no-dice-contra-qué-main-se-midió) | antes de dar por buena una corrida de puertas | Una batería tarda ~54 minutos y `main` puede avanzar mientras corre: la cifra queda sin dueño si nadie anota **qué `main` se midió**. Pasó el 15-oct-2026 con `s14`: se midió `main@4290817` y lo que entró fue `main@195cbb8` + la rama | **cerrada** (15-oct-2026: el registro lleva `commit_medido` y `main` al empezar y al terminar —**cazó a `main` moviéndose durante el tramo 1**—; y el lanzador lleva una **guarda de mutación** que aborta si el árbol se mueve a mitad de corrida, estrenada el 15-oct con el merge que entró en `opofuente-bandeja`) |
 | [DEBT-031](#debt-031--el-detector-de-palabras-prohibidas-policía-el-selector-del-panel) | antes de leer el informe de capturas | El detector marca **«Celador»** en 4 de las 18 capturas del panel: el texto señalado es **el selector de oposición del propio panel**, que tiene que ofrecer las otras oposiciones porque si no el propietario no puede elegir. La regla es de la **zona del alumno** y aquí se aplica a la pantalla equivocada | **decisión tomada, arreglo pendiente** (15-oct-2026: no se quita «Celador» de la lista —eso debilitaría la comprobación donde sí importa—; se excluye el **selector de oposición del panel** por su rol/nombre) |
 | [DEBT-032](#debt-032--la-herramienta-de-capturas-da-por-hecha-una-siembra-que-no-existe) | antes de dar por buenas las capturas | **2 de 58** capturas no se toman: «la revisión de apuntes» a 1280 y 390 falla en `screens.spec.ts:252` esperando un `%` que no llega, porque ese árbol **no tiene apuntes que revisar** y la pantalla dice, correctamente, «Este tema todavía no tiene apuntes escritos: no hay nada que revisar». Faltan dos pantallas del informe y no se nota: el resto pasa | **decisión tomada, arreglo pendiente** (15-oct-2026: lo preferido es **capturar el estado vacío como lo que es** —el propietario va a verlo— en vez de añadir una siembra que finja datos; decide quien escribió la herramienta) |
+| [DEBT-033](#debt-033--la-regla-de-tabindex-y-axe-se-contradicen-en-las-regiones-que-se-desplazan) | antes de volver a tocar las tablas de los apuntes | `jsx-a11y/no-noninteractive-tabindex` (error) y `scrollable-region-focusable` de axe piden cosas contrarias en una región que se desplaza; hoy el `tabIndex` viaja como propiedad del componente `MarcoDeTabla` | **abierta** (no bloquea; el porqué está escrito en el componente) |
+| [DEBT-034](#debt-034--el-capítulo-i11-de-los-apuntes-concentra-el-66--del-tema) | antes de dar la lectura por terminada | El epígrafe **I.1.1 se lleva 12 de los 21 apartados de I.1** (el 66 % del texto) y su página mide **118.982 px** a 1280: paginar por epígrafes oficiales no lo arregla porque el programa da cuatro epígrafes y nada más | **abierta** (decide el propietario: la granularidad es del programa, no de la pantalla) |
 
 ---
 
@@ -1934,3 +1936,60 @@ Received string:  " Este tema todavía no tiene apuntes escritos: no hay nada qu
 **Decisión (propietario, 15-oct-2026):** entre (a) añadir la siembra que la herramienta asume y (b) **capturar el estado vacío como lo que es**, se prefiere **(b)** — porque **una pantalla vacía también es una pantalla que el propietario va a ver**, y retratarla es más honesto que fabricar datos para que salga «bonita»—. **Decide quien escribió la herramienta**, que es quien conoce su siembra.
 
 **Estado: decisión tomada, arreglo pendiente.** Y deja una lección para la próxima herramienta de capturas: **una captura que no se toma es un dato que falta, y el informe debería decirlo en su tabla en vez de encogerse en silencio.**
+
+---
+
+## DEBT-033 — La regla de `tabindex` y axe se contradicen en las regiones que se desplazan
+
+**Origen:** F35 (la lectura de los apuntes por capítulos), al poner el ancho propio a las tablas.
+
+**Lo que pasa.** Para que las tablas no partan las palabras, su marco **se desplaza en horizontal**
+(`overflow-x: auto`). Y una región que se desplaza tiene que poder recorrerse **con el teclado**:
+axe lo comprueba en `scrollable-region-focusable` y, medido, sin `tabindex` la captura sale con una
+violación. Pero `jsx-a11y/no-noninteractive-tabindex` —que el repositorio tiene como **error**—
+prohíbe `tabindex` en un elemento no interactivo, y un `div` con `role="region"` lo es.
+
+**Lo que se hizo (y por qué es deuda y no la solución buena).** El `tabIndex` se pasa como propiedad
+del componente `MarcoDeTabla`, que lo reparte a su `div` con el resto de atributos. La regla **no
+examina las propiedades de un componente** —lo dice ella: no puede saber qué elemento es—, así que
+pasa; el elemento queda declarado en un solo sitio y con su porqué al lado. No se usa
+`eslint-disable` ni se ha tocado la configuración (§4 del contrato del agente).
+
+**Por qué queda abierto.** Es una esquina de una regla, no una decisión de diseño. Lo correcto sería
+que la lista de roles permitidos por esa regla incluyera las regiones que se desplazan (`region`,
+`group`), o que la comprobación de accesibilidad y la de lint dijeran lo mismo. Eso es **tocar la
+configuración de una puerta**, y eso lo decide el propietario.
+
+**Criterio de cierre:** que `no-noninteractive-tabindex` no marque un `tabindex` en una región con
+nombre que se desplaza —porque su configuración lo permite o porque el elemento se sustituye por uno
+que ambas herramientas acepten— y que el `tabIndex` vuelva a escribirse donde se lee, sin pasar por
+una propiedad. Comprobación: `eslint` limpio **y** `scrollable-region-focusable` en cero en la captura
+de `tests/screens/lectura.spec.ts`.
+
+**Estado: abierta (deuda declarada, no bloquea).** Mientras siga así, el `porqué` está escrito en
+`apps/web/src/features/student/MarcoDeTabla.tsx`, que es donde lo va a leer quien lo toque.
+
+---
+
+## DEBT-034 — El capítulo I.1.1 de los apuntes concentra el 66 % del tema
+
+**Origen:** F35, al medir la altura de cada capítulo de I.1 con los datos reales.
+
+**Lo que pasa.** Paginar por **epígrafes oficiales** (que es lo que pidió el propietario) deja el tema
+de la Constitución en cuatro capítulos de **12 / 5 / 2 / 2** apartados, porque el programa oficial le
+da cuatro epígrafes y nada más. El primero se lleva **247.505 de los 373.329 caracteres** y su página
+mide **118.982 px** a 1280: mejor que los 314.402 del tema entero, pero sigue siendo una página
+enorme.
+
+**Por qué no se arregla aquí.** La granularidad de los epígrafes es del **programa oficial**, no de la
+pantalla. Inventar capítulos más finos (por título, por tamaño, por número de apartados) sería
+inventarse la estructura que el alumno va a ver en la convocatoria, y eso no lo decide la interfaz.
+
+**Criterio de cierre:** que la estructura de epígrafes de I.1 (y de cualquier tema con un capítulo que
+se lleve más de la mitad del texto) salga del programa oficial con la granularidad suficiente, o que
+el propietario decida explícitamente que un capítulo se puede partir por su tamaño. Se comprueba con
+`artifacts/lectura/MEDIDAS.md`: ningún capítulo por encima de una página razonable.
+
+**Estado: abierta (decide el propietario).** El número está medido y publicado, con el reparto de
+apartados y caracteres por capítulo.
+

@@ -560,11 +560,12 @@ class SqlAlchemyStudentRepository:
 
     def note_anchors_of_questions(
         self, question_version_ids: Sequence[str]
-    ) -> Mapping[str, tuple[tuple[str, str], ...]]:
-        """El apartado de los apuntes que contesta cada pregunta: `{pregunta: ((nodo, ancla), …)}`.
+    ) -> Mapping[str, tuple[tuple[str, str, str], ...]]:
+        """El apartado que contesta cada pregunta: su nodo, su ancla y **su capítulo**.
 
-        Es lo que convierte «Ver en apuntes» en una salida útil: la dirección del apartado dentro
-        del tema (`/temario/IV.7#udp`), no la portada.
+        Se devuelve `{pregunta: ((nodo, ancla, capítulo), …)}`. Es lo que convierte «Ver en
+        apuntes» en una salida útil: la dirección del apartado dentro del tema
+        (`/temario/IV.7?capitulo=IV.7.2#apartado-udp`), no la portada.
 
         Tres decisiones, y las tres son sobre lo que **no** se devuelve:
 
@@ -577,6 +578,11 @@ class SqlAlchemyStudentRepository:
         3. una pregunta puede estar en dos temas (D7) y tener un apartado en cada uno: se
            devuelven todos y **quien decide** es el servicio, con el mismo orden del programa que
            usa para los temas. Elegir aquí sería inventar cuál de los dos manda.
+
+        El **capítulo** (el `epigraph_code` del apartado) sale del mismo `JOIN` y por eso se
+        devuelve aquí y no se busca después: desde que los apuntes se leen por epígrafes, el anclaje
+        solo no resuelve —`#osi-capas` no está en el primer capítulo de IV.7— y el enlace necesita
+        saber qué epígrafe abrir. Resolverlo en el servicio sería una consulta más por pregunta.
         """
         if not question_version_ids:
             return {}
@@ -586,6 +592,7 @@ class SqlAlchemyStudentRepository:
                     QuestionNoteAnchorRecord.question_version_id,
                     QuestionNoteAnchorRecord.curriculum_node_id,
                     QuestionNoteAnchorRecord.anchor,
+                    TopicNoteSectionRecord.epigraph_code,
                 )
                 .join(
                     TopicNoteSectionRecord,
@@ -600,9 +607,11 @@ class SqlAlchemyStudentRepository:
                     QuestionNoteAnchorRecord.result == "covered",
                 )
             ).all()
-        por_pregunta: dict[str, list[tuple[str, str]]] = {}
-        for pregunta, nodo, ancla in filas:
-            por_pregunta.setdefault(str(pregunta), []).append((str(nodo), str(ancla)))
+        por_pregunta: dict[str, list[tuple[str, str, str]]] = {}
+        for pregunta, nodo, ancla, epigrafe in filas:
+            por_pregunta.setdefault(str(pregunta), []).append(
+                (str(nodo), str(ancla), str(epigrafe))
+            )
         return {pregunta: tuple(anclas) for pregunta, anclas in por_pregunta.items()}
 
     # ------------------------------------------------------- los exámenes oficiales (F14)

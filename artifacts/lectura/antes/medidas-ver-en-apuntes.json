@@ -1,0 +1,99 @@
+{
+  "sembrado": {
+    "sesion": "f7ba4c11-aca8-4abe-952e-9107a3176481",
+    "reancladas": [
+      {
+        "position": 1,
+        "ancla": "osi-capas",
+        "filas": 1
+      },
+      {
+        "position": 2,
+        "ancla": "puertos",
+        "filas": 1
+      }
+    ],
+    "apartados": {
+      "osi-capas": {
+        "section_id": "b6316840-e65c-4b67-917c-8141460f66fd",
+        "node_id": "8d4dd4c0-bd95-42ce-beeb-a358ec5ade33",
+        "anchor": "osi-capas",
+        "epigraph_code": "IV.7.1",
+        "title": "Las siete capas del modelo OSI, una a una"
+      },
+      "puertos": {
+        "section_id": "ed23837d-2f14-4671-8224-ee92766581d0",
+        "node_id": "8d4dd4c0-bd95-42ce-beeb-a358ec5ade33",
+        "anchor": "puertos",
+        "epigraph_code": "IV.7.2",
+        "title": "Puertos bien conocidos (una sola tabla)"
+      }
+    }
+  },
+  "informe": [
+    {
+      "ancho": 1280,
+      "etiqueta": "escritorio",
+      "pregunta": 1,
+      "ancla": "osi-capas",
+      "capituloDelAncla": "IV.7.1",
+      "hrefDelEnlace": "/temario/IV.7#osi-capas",
+      "urlTrasPulsar": "http://127.0.0.1:4173/temario/IV.7#osi-capas",
+      "scrollY": 0,
+      "encontradoEnLaPagina": true,
+      "offsetTop": 10288,
+      "topEnVentana": 10288,
+      "aLaVista": false,
+      "altoDocumento": 110427,
+      "errores": []
+    },
+    {
+      "ancho": 1280,
+      "etiqueta": "escritorio",
+      "pregunta": 2,
+      "ancla": "puertos",
+      "capituloDelAncla": "IV.7.2",
+      "hrefDelEnlace": "/temario/IV.7#puertos",
+      "urlTrasPulsar": "http://127.0.0.1:4173/temario/IV.7#puertos",
+      "scrollY": 0,
+      "encontradoEnLaPagina": true,
+      "offsetTop": 87623,
+      "topEnVentana": 87623,
+      "aLaVista": false,
+      "altoDocumento": 110427,
+      "errores": []
+    },
+    {
+      "ancho": 390,
+      "etiqueta": "movil",
+      "pregunta": 1,
+      "ancla": "osi-capas",
+      "capituloDelAncla": "IV.7.1",
+      "hrefDelEnlace": "/temario/IV.7#osi-capas",
+      "urlTrasPulsar": "http://127.0.0.1:4173/temario/IV.7#osi-capas",
+      "scrollY": 0,
+      "encontradoEnLaPagina": true,
+      "offsetTop": 13062,
+      "topEnVentana": 13062,
+      "aLaVista": false,
+      "altoDocumento": 129303,
+      "errores": []
+    },
+    {
+      "ancho": 390,
+      "etiqueta": "movil",
+      "pregunta": 2,
+      "ancla": "puertos",
+      "capituloDelAncla": "IV.7.2",
+      "hrefDelEnlace": "/temario/IV.7#puertos",
+      "urlTrasPulsar": "http://127.0.0.1:4173/temario/IV.7#puertos",
+      "scrollY": 0,
+      "encontradoEnLaPagina": true,
+      "offsetTop": 102528,
+      "topEnVentana": 102528,
+      "aLaVista": false,
+      "altoDocumento": 129303,
+      "errores": []
+    }
+  ]
+}

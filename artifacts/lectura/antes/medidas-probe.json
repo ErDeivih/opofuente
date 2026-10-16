@@ -1,0 +1,294 @@
+[
+  {
+    "ruta": "/temario/IV.7",
+    "ancho": 1280,
+    "etiqueta": "escritorio",
+    "url": "http://127.0.0.1:4173/temario/IV.7",
+    "altoDocumento": 110427,
+    "anchoDocumento": 1280,
+    "anchoVentana": 1280,
+    "altoVentana": 800,
+    "scrollY": 0,
+    "columnaTexto": {
+      "ancho": 370,
+      "alto": 6238
+    },
+    "indice": {
+      "ancho": 224,
+      "alto": 1415
+    },
+    "indiceScroll": {
+      "alto": 1415,
+      "desplazable": 0,
+      "posicion": "sticky",
+      "desbordaVentana": true
+    },
+    "apartadosServidos": 25,
+    "apartadosEnIndice": 25,
+    "capitulosEnIndice": 0,
+    "tablaDesborda": 0,
+    "tablas": 36,
+    "parrafos": 232,
+    "detalle": [
+      {
+        "id": "apartado-tcpip-arquitectura",
+        "top": 319
+      },
+      {
+        "id": "apartado-osi-que-es",
+        "top": 6685
+      },
+      {
+        "id": "apartado-osi-capas",
+        "top": 10288
+      }
+    ],
+    "ancla": null,
+    "errores": []
+  },
+  {
+    "ruta": "/temario/I.1",
+    "ancho": 1280,
+    "etiqueta": "escritorio",
+    "url": "http://127.0.0.1:4173/temario/I.1",
+    "altoDocumento": 314402,
+    "anchoDocumento": 1280,
+    "anchoVentana": 1280,
+    "altoVentana": 800,
+    "scrollY": 0,
+    "columnaTexto": {
+      "ancho": 370,
+      "alto": 36825
+    },
+    "indice": {
+      "ancho": 224,
+      "alto": 1405
+    },
+    "indiceScroll": {
+      "alto": 1405,
+      "desplazable": 0,
+      "posicion": "sticky",
+      "desbordaVentana": true
+    },
+    "apartadosServidos": 21,
+    "apartadosEnIndice": 21,
+    "capitulosEnIndice": 0,
+    "tablaDesborda": 0,
+    "tablas": 70,
+    "parrafos": 570,
+    "detalle": [
+      {
+        "id": "apartado-constitucion-caracteres-1",
+        "top": 319
+      },
+      {
+        "id": "apartado-constitucion-caracteres-2",
+        "top": 37308
+      },
+      {
+        "id": "apartado-titulo-preliminar",
+        "top": 41373
+      }
+    ],
+    "ancla": null,
+    "errores": []
+  },
+  {
+    "ruta": "/temario/IV.7#osi-capas",
+    "ancho": 1280,
+    "etiqueta": "escritorio",
+    "url": "http://127.0.0.1:4173/temario/IV.7#osi-capas",
+    "altoDocumento": 110427,
+    "anchoDocumento": 1280,
+    "anchoVentana": 1280,
+    "altoVentana": 800,
+    "scrollY": 0,
+    "columnaTexto": {
+      "ancho": 370,
+      "alto": 6238
+    },
+    "indice": {
+      "ancho": 224,
+      "alto": 1415
+    },
+    "indiceScroll": {
+      "alto": 1415,
+      "desplazable": 0,
+      "posicion": "sticky",
+      "desbordaVentana": true
+    },
+    "apartadosServidos": 25,
+    "apartadosEnIndice": 25,
+    "capitulosEnIndice": 0,
+    "tablaDesborda": 0,
+    "tablas": 36,
+    "parrafos": 232,
+    "detalle": [
+      {
+        "id": "apartado-tcpip-arquitectura",
+        "top": 319
+      },
+      {
+        "id": "apartado-osi-que-es",
+        "top": 6685
+      },
+      {
+        "id": "apartado-osi-capas",
+        "top": 10288
+      }
+    ],
+    "ancla": {
+      "encontrado": false,
+      "offsetTop": null,
+      "scrollY": 0
+    },
+    "errores": []
+  },
+  {
+    "ruta": "/temario/IV.7#apartado-osi-capas",
+    "ancho": 1280,
+    "etiqueta": "escritorio",
+    "url": "http://127.0.0.1:4173/temario/IV.7#apartado-osi-capas",
+    "altoDocumento": 110427,
+    "anchoDocumento": 1280,
+    "anchoVentana": 1280,
+    "altoVentana": 800,
+    "scrollY": 10288,
+    "columnaTexto": {
+      "ancho": 370,
+      "alto": 6238
+    },
+    "indice": {
+      "ancho": 224,
+      "alto": 1415
+    },
+    "indiceScroll": {
+      "alto": 1415,
+      "desplazable": 0,
+      "posicion": "sticky",
+      "desbordaVentana": true
+    },
+    "apartadosServidos": 25,
+    "apartadosEnIndice": 25,
+    "capitulosEnIndice": 0,
+    "tablaDesborda": 0,
+    "tablas": 36,
+    "parrafos": 232,
+    "detalle": [
+      {
+        "id": "apartado-tcpip-arquitectura",
+        "top": -9969
+      },
+      {
+        "id": "apartado-osi-que-es",
+        "top": -3603
+      },
+      {
+        "id": "apartado-osi-capas",
+        "top": 0
+      }
+    ],
+    "ancla": {
+      "encontrado": true,
+      "scrollY": 10288,
+      "offsetTop": 10288,
+      "topEnVentana": 0,
+      "aLaVista": true
+    },
+    "errores": []
+  },
+  {
+    "ruta": "/temario/IV.7",
+    "ancho": 390,
+    "etiqueta": "movil",
+    "url": "http://127.0.0.1:4173/temario/IV.7",
+    "altoDocumento": 129303,
+    "anchoDocumento": 390,
+    "anchoVentana": 390,
+    "altoVentana": 844,
+    "scrollY": 0,
+    "columnaTexto": {
+      "ancho": 324,
+      "alto": 7023
+    },
+    "indice": {
+      "ancho": 358,
+      "alto": 999
+    },
+    "indiceScroll": {
+      "alto": 999,
+      "desplazable": 0,
+      "posicion": "static",
+      "desbordaVentana": true
+    },
+    "apartadosServidos": 25,
+    "apartadosEnIndice": 25,
+    "capitulosEnIndice": 0,
+    "tablaDesborda": 0,
+    "tablas": 36,
+    "parrafos": 232,
+    "detalle": [
+      {
+        "id": "apartado-tcpip-arquitectura",
+        "top": 1524
+      },
+      {
+        "id": "apartado-osi-que-es",
+        "top": 8811
+      },
+      {
+        "id": "apartado-osi-capas",
+        "top": 13062
+      }
+    ],
+    "ancla": null,
+    "errores": []
+  },
+  {
+    "ruta": "/temario/I.1",
+    "ancho": 390,
+    "etiqueta": "movil",
+    "url": "http://127.0.0.1:4173/temario/I.1",
+    "altoDocumento": 362605,
+    "anchoDocumento": 390,
+    "anchoVentana": 390,
+    "altoVentana": 844,
+    "scrollY": 0,
+    "columnaTexto": {
+      "ancho": 324,
+      "alto": 42373
+    },
+    "indice": {
+      "ancho": 358,
+      "alto": 1065
+    },
+    "indiceScroll": {
+      "alto": 1065,
+      "desplazable": 0,
+      "posicion": "static",
+      "desbordaVentana": true
+    },
+    "apartadosServidos": 21,
+    "apartadosEnIndice": 21,
+    "capitulosEnIndice": 0,
+    "tablaDesborda": 0,
+    "tablas": 70,
+    "parrafos": 570,
+    "detalle": [
+      {
+        "id": "apartado-constitucion-caracteres-1",
+        "top": 1684
+      },
+      {
+        "id": "apartado-constitucion-caracteres-2",
+        "top": 44394
+      },
+      {
+        "id": "apartado-titulo-preliminar",
+        "top": 49277
+      }
+    ],
+    "ancla": null,
+    "errores": []
+  }
+]
