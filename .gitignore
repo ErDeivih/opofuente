@@ -77,3 +77,9 @@ artifacts/acabado/*.txt
 # Y la carpeta de las capturas hechas contra una copia de los datos reales (`--datos <dir>`): es la
 # misma clase de artefacto generado que `artifacts/screens/`.
 artifacts/screens-datos/
+
+# Las capturas del recorrido con los datos reales (§3 del cierre) son la misma clase de artefacto que
+# las de `artifacts/screens/`: 60 PNG de 17-27 MB que se rehacen en cada pasada. Se generan en
+# `artifacts/recorrido/` y no viven en el control de versiones; el informe que las mide (`RECORRIDO.md`,
+# `TIEMPOS.md`, `filas.json`) y el guion que las produce, sí.
+artifacts/recorrido/*.png
