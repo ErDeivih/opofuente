@@ -1306,6 +1306,17 @@ los ficheros en aislamiento — que es exactamente lo que un rojo no debería ob
 
   **Lo que haría falta** —el criterio 1 de esta deuda, aplicado al transporte—: que la suite **detecte que su `vite preview` ya no está** y **falle una vez diciéndolo**, con el código de salida del servidor y su PID, en lugar de producir quince rojos que parecen del código. Hoy, para saber de quién era el rojo, hay que leer a mano el `stderr` del `[WebServer]`.
 
+  **Añadido el 16/10/2026 (batería de `f33-acabado`): la familia entera, y la regla que faltaba.** Con el `vite preview` ya son **cuatro** las formas medidas de que un rojo **no sea del código**, y conviene tenerlas juntas porque se parecen:
+
+  | # | La forma | Cómo se ve | Quién la caza |
+  |---|---|---|---|
+  | 1 | **El árbol se mueve a mitad de corrida** (un merge, una edición de otro bloque) | una puerta cae con un error que no es del commit medido —p. ej. `multiple heads (due to branching)` en la 6— | la **guarda de mutación**: `HEAD` + `status` antes y después de cada puerta, **aborta con código 4** |
+  | 2 | **Un proceso AJENO tiene 8765 o 4173** | `strictPort` no deja escuchar, o el navegador habla con el servidor de otro | la **guarda de puerto** de `scripts/common.ps1`: **aborta con código 4** con PID, proceso y ruta |
+  | 3 | **El `vite preview` PROPIO se muere** a mitad | `[WebServer] npm error code 4294967295` y, desde ahí, **todos** los `page.goto` con `ERR_CONNECTION_REFUSED` en ~250 ms | **ninguna guarda**: solo el `stderr` del `[WebServer]` |
+  | 4 | **Una prueba de componentes pierde su `waitFor`** cuando las 434 comparten la CPU | `TestingLibraryElementError: Unable to find role="button"…`, **en un fichero distinto cada vuelta** | **ninguna guarda**: solo el **aislamiento POR FICHERO** |
+
+  **Y la regla que faltaba, dicha porque ya ha costado un diagnóstico falso:** cuando la puerta que cae es la de **componentes**, el aislamiento se pide **por fichero** (`npx vitest run tests/unit/<fichero>.test.tsx`), **no corriendo la suite entera**. La suite entera **repite el mismo flake** —el fichero tarda ~47 s acompañado y ~13 s solo— y entonces el aislamiento **parece confirmar** un fallo que no existe. Medido el 16/10/2026 en `f33-acabado`: la puerta 9 cayó con `1 failed | 433 passed`; la suite entera sola volvió a fallar **las dos veces**, pero **en un fichero distinto cada una** (`promote.test.tsx` y luego `questions.test.tsx`, este último con el `Unable to find role="button"` de arriba); y los dos ficheros **por separado** dieron **10/10 en tres vueltas** y **32/32 en tres vueltas**. La prueba que falla **se mueve** y cada fichero pasa solo: eso es el terreno. El reintento de la 9 dio **434/434**.
+
 ---
 
 ## DEBT-023 — Una tarjeta de Anki no puede ser una pregunta porque no hay dónde guardar su respuesta
