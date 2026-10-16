@@ -58,6 +58,13 @@ las de antes, en `artifacts/lectura/antes/medidas-probe.json` y `…/medidas-ver
 PNG (antes y después, a 1280 y 390) están en `artifacts/lectura/antes/` y `artifacts/lectura/despues/`
 y **no se rastrean**: son artefactos generados, como los de `artifacts/screens/`.
 
+**La nota al margen cae debajo del párrafo a todas las anchuras**, y no es una preferencia: el lienzo
+del alumno está limitado a **1080 px** por el diseño, y dentro de él caben el índice (208), los huecos,
+el relleno de la tarjeta y **o** el texto con sus 68 caracteres **o** la columna de la nota. Medido a
+**1600 px** con las tres columnas: el texto se quedaba en **582 px (61 caracteres)** en vez de 647.
+Como lo que el propietario pidió es que el texto tenga un ancho de lectura cómodo, manda el texto. Lo
+comprueba la prueba de `tests/screens/lectura.spec.ts` a 1600 px.
+
 ## 5. Lo que NO mejora, dicho por su nombre
 
 **El capítulo más grande de I.1 sigue midiendo 118.982 px.** El tema de la Constitución tiene **cuatro

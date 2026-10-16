@@ -248,3 +248,52 @@ for (const { ancho, alto, etiqueta } of ANCHOS) {
     });
   });
 }
+
+/**
+ * La medida de lectura **también en una pantalla ancha** (F35-bis).
+ *
+ * La nota al margen no vuelve a su columna a ninguna anchura, y eso es una decisión **medida**: el
+ * lienzo del alumno está limitado a 1080 px por el diseño, y dentro de él caben el índice, el hueco,
+ * el relleno de la tarjeta y **o** el texto con sus 68 caracteres **o** la columna de la nota.
+ * Medido a 1600 px con las tres columnas: el texto se quedaba en **582 px** (61 caracteres) en vez
+ * de 647. Como lo que el propietario pidió es que el texto tenga un ancho de lectura cómodo, manda el
+ * texto y la nota cae debajo de su párrafo.
+ *
+ * Esta prueba existe porque es una decisión de maquetación: sin ella, la siguiente pantalla que toque
+ * la rejilla se lleva por delante la medida sin que nadie se entere.
+ */
+test('lectura: a 1600 px el texto conserva su medida y la nota sigue debajo', async ({ page }) => {
+  await page.setViewportSize({ width: 1600, height: 900 });
+  await page.goto('/temario/IV.7', { waitUntil: 'networkidle' });
+  await expect(page.locator('main')).toBeVisible();
+  // El `ch` de la medida se resuelve con la fuente de los apuntes: hasta que no está cargada, la
+  // columna mide otra cosa. `document.fonts.ready` es la espera que lo garantiza.
+  await page.evaluate(() => document.fonts.ready);
+
+  const medidas = await page.evaluate(() => {
+    const apartado = document.querySelector('.apartado');
+    const cuerpo = apartado?.querySelector('.apartado__cuerpo');
+    const lateral = apartado?.querySelector('.apartado__lateral');
+    if (!cuerpo || !lateral) return null;
+    const c = cuerpo.getBoundingClientRect();
+    const l = lateral.getBoundingClientRect();
+    return {
+      anchoTexto: Math.round(c.width),
+      izquierdaDelTexto: Math.round(c.left),
+      izquierdaDeLaNota: Math.round(l.left),
+      arribaDeLaNota: Math.round(l.top),
+      abajoDelTexto: Math.round(c.bottom),
+      notaEnLaColumnaDelTexto: Math.abs(Math.round(l.left) - Math.round(c.left)) <= 2,
+      notaDebajoDelTexto: Math.round(l.top) >= Math.round(c.bottom) - 2,
+    };
+  });
+
+  MEDIDAS.push({ ruta: '/temario/IV.7#pantalla-ancha', ancho: 1600, ...medidas });
+  expect(medidas, 'el apartado tiene que estar pintado').not.toBeNull();
+  expect(medidas?.anchoTexto, 'el texto conserva su medida de lectura').toBeGreaterThanOrEqual(600);
+  expect(medidas?.notaEnLaColumnaDelTexto, 'la nota va en la columna del texto').toBe(true);
+  expect(medidas?.notaDebajoDelTexto, 'y debajo de él, no al lado').toBe(true);
+
+  mkdirSync(SALIDA, { recursive: true });
+  await page.screenshot({ path: path.join(SALIDA, 'pantalla-ancha-1600.png'), fullPage: false });
+});

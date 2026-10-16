@@ -26,10 +26,13 @@ const ESPERA_MAXIMA_MS = 5000;
  * Hace falta porque el apartado se coloca **antes de que la página acabe de medirse**: el texto llega
  * en `Source Serif 4`, que se carga después, y al entrar cambia el alto de todos los párrafos de
  * arriba —y las tablas anchas ganan su barra de desplazamiento—. Medido con los datos reales: la
- * primera colocación dejaba el párrafo a **2.760 px** por debajo, y con estas revisiones acaba a la
+ * primera colocación dejaba el párrafo a **2.760 px** por debajo; con estas revisiones acaba a la
  * vista. Son cuatro comprobaciones y ninguna deja un bucle vivo.
  */
 const REVISIONES = 4;
+
+/** El hueco entre revisiones: crece con cada una, así que cubren medio segundo largo. */
+const PASO_MS = 120;
 
 /** Lo que se considera «colocado»: el filo del apartado en el filo de arriba de la ventana. */
 const TOLERANCIA_PX = 8;
@@ -77,28 +80,39 @@ export function useApartadoDeLaDireccion(): void {
 
     /** Vuelve a colocar la vista si la página ha crecido y el apartado se ha ido hacia abajo. */
     const revisar = (elemento: HTMLElement): void => {
-      const arriba = elemento.getBoundingClientRect().top;
-      if (Math.abs(arriba) > TOLERANCIA_PX) {
+      if (Math.abs(elemento.getBoundingClientRect().top) > TOLERANCIA_PX) {
         colocar(elemento);
       }
       revisiones += 1;
       if (revisiones < REVISIONES) {
         pendiente = window.setTimeout(() => {
           revisar(elemento);
-        }, 120 * revisiones);
+        }, PASO_MS * revisiones);
       }
     };
 
     const buscar = (): void => {
       const elemento = elementoDelApartado(id);
-      if (elemento !== null) {
-        colocar(elemento);
-        revisar(elemento);
+      if (elemento === null) {
+        intentos += 1;
+        if (intentos * 100 < ESPERA_MAXIMA_MS) {
+          pendiente = window.setTimeout(buscar, 100);
+        }
         return;
       }
-      intentos += 1;
-      if (intentos * 100 < ESPERA_MAXIMA_MS) {
-        pendiente = window.setTimeout(buscar, 100);
+      colocar(elemento);
+      revisar(elemento);
+      // Y una última vez cuando las **fuentes** han terminado: el texto de los apuntes llega en su
+      // propia fuente y, al entrar, cambia el alto de todos los párrafos de arriba. Es el momento en
+      // que la página deja de moverse, así que es la comprobación que de verdad cierra el salto.
+      const fuentes = document.fonts;
+      if (fuentes !== undefined) {
+        void fuentes.ready.then(
+          () => {
+            revisar(elemento);
+          },
+          () => undefined,
+        );
       }
     };
     buscar();

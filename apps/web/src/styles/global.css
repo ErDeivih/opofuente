@@ -2229,9 +2229,15 @@ kbd {
   white-space: nowrap;
 }
 
-/* Cada apartado: el texto en su medida de lectura y, cuando la pantalla da para ello, su nota al
-   margen. `justify-content: start` es lo que mantiene la nota **pegada** al texto: sin él, el hueco
-   que sobra se reparte entre las dos columnas y la nota se va al otro extremo de la pantalla. */
+/* Cada apartado: el texto en su medida de lectura y, **debajo**, su nota al margen.
+ *
+ * La nota al margen no vuelve a su columna a ninguna anchura, y es una decisión **medida**: la pantalla
+ * del alumno tiene el lienzo limitado a `--ancho-contenido` (1080 px, del diseño) y dentro de él caben
+ * el índice (208), el hueco, el relleno de la tarjeta y **o** el texto con sus 68 caracteres **o** la
+ * columna de la nota. A 1600 px, con las tres columnas, el texto se quedaba en **582 px** (61
+ * caracteres) en vez de sus **647**; con la nota debajo recupera su medida entera. El dueño del
+ * encargo lo pidió al revés —«el texto tiene que ocupar un ancho de lectura cómodo»—, así que manda
+ * el texto. Medido con la prueba de `tests/screens/lectura.spec.ts` a 1600 px. */
 .apartado {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -2273,25 +2279,6 @@ kbd {
   display: grid;
   gap: var(--s3);
   align-content: start;
-}
-
-/* La nota al margen —y con ella la columna del texto, que es lo primero— solo cuando hay sitio para
-   las dos cosas: a partir de aquí el texto llega a su medida **y** sobra el margen. Medido en este
-   repositorio: a 1280 px la pantalla da 968 px para las tres columnas y el texto se quedaba en
-   370 px; con la nota debajo, el texto ocupa su medida entera (68 caracteres). Es el mismo criterio
-   que el diseño ya aplicaba en el móvil. */
-@media (min-width: 1400px) {
-  .apartado {
-    grid-template-columns: minmax(0, var(--medida-apuntes)) 13rem;
-    justify-content: start;
-  }
-
-  /* La nota al margen cae **a la altura del texto**, no a la del título: la fila 1 es el título y la
-     nota empieza donde empieza el párrafo al que se refiere. */
-  .apartado__lateral {
-    grid-column: 2;
-    grid-row: 2 / span 2;
-  }
 }
 
 .apuntes__prosa p {

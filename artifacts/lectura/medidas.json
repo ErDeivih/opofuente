@@ -76,5 +76,16 @@
     "scrollY": 61022,
     "capituloAbierto": "IV.7.2",
     "apartadoALaVista": true
+  },
+  {
+    "ruta": "/temario/IV.7#pantalla-ancha",
+    "ancho": 1600,
+    "anchoTexto": 647,
+    "izquierdaDelTexto": 525,
+    "izquierdaDeLaNota": 525,
+    "arribaDeLaNota": 4207,
+    "abajoDelTexto": 4191,
+    "notaEnLaColumnaDelTexto": true,
+    "notaDebajoDelTexto": true
   }
 ]
