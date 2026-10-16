@@ -1,6 +1,7 @@
 import type { DiagnosticReading } from '../../api/study';
 import { ErrorState } from '../../components/ErrorState';
 import { LoadingState } from '../../components/LoadingState';
+import { formatearNota } from '../../lib/numeros';
 
 export interface DiagnosticPanelProps {
   reading: DiagnosticReading | null;
@@ -66,7 +67,7 @@ export function DiagnosticPanel({ reading, isPending, isError, onRetry }: Diagno
               <td>
                 {ficha.interval === null || ficha.interval === undefined
                   ? 'sin respuestas'
-                  : `${ficha.interval.low.toFixed(2)} – ${ficha.interval.high.toFixed(2)}`}
+                  : `${formatearNota(ficha.interval.low)} – ${formatearNota(ficha.interval.high)}`}
               </td>
               <td className="hint">{ficha.note}</td>
             </tr>

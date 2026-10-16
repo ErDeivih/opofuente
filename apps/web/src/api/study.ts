@@ -1,5 +1,6 @@
 import type { components } from '@opofuente/contracts';
 
+import { formatearNota } from '../lib/numeros';
 import { apiFetch } from './client';
 
 /**
@@ -174,9 +175,16 @@ export function fetchDiagnosticReading(sessionId: string): Promise<DiagnosticRea
   );
 }
 
-/** La puntuación, con su fracción exacta delante: el decimal es para leerlo (ADR-010). */
+/**
+ * La puntuación, con su fracción exacta detrás cuando no es un entero: `12,67 (38/3)`.
+ *
+ * La cifra se calcula de la **fracción exacta** y se formatea con `Intl` (§2.2 del cierre): el
+ * `decimal` que manda el servidor viene con punto y cuatro cifras (`12.6667`), y enseñarlo tal cual era
+ * el «0.0000» que el propietario vio en las capturas.
+ */
 export function formatScore(score: Score): string {
-  return score.denominator === 1 ? score.fraction : `${score.decimal} (${score.fraction})`;
+  const nota = formatearNota(score.numerator / score.denominator);
+  return score.denominator === 1 ? nota : `${nota} (${score.fraction})`;
 }
 
 /** ¿Se puede corregir lo que se acaba de responder? Lo decide el modo, no la pantalla. */

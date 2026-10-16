@@ -41,6 +41,7 @@ from opofuente.api.student_schemas import (
     StudentMockExamPlanSchema,
     StudentMockExamRequestSchema,
     StudentMockExamVariantSchema,
+    StudentNoteAnchorSchema,
     StudentNoteSectionSchema,
     StudentNotesSchema,
     StudentOfficialExamSchema,
@@ -281,6 +282,13 @@ def _result_question(view: StudentResultQuestionView) -> StudentResultQuestionSc
         topics=[_topic_ref(tema) for tema in view.topics],
         in_review=view.in_review,
         derived_key=view.derived_key,
+        note_anchor=(
+            None
+            if view.note_anchor is None
+            else StudentNoteAnchorSchema(
+                topic_code=view.note_anchor.topic_code, anchor=view.note_anchor.anchor
+            )
+        ),
     )
 
 

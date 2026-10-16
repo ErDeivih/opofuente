@@ -7,6 +7,7 @@ import { ErrorState } from '../../components/ErrorState';
 import { LoadingState } from '../../components/LoadingState';
 import { NotesStateChip } from '../../features/student/NotesStateChip';
 import { describeError } from '../../features/system/labels';
+import { formatearPorcentaje } from '../../lib/numeros';
 
 /**
  * Inicio de la zona del alumno (F13).
@@ -194,7 +195,7 @@ function BarraDeBloque({ bloque }: { bloque: StudentBlockProgress }) {
       <span className="barras__barra" aria-hidden="true">
         <span className="barras__relleno" style={{ width: `${String(porcentaje)}%` }} />
       </span>
-      <span className="barras__cifra">{`${String(porcentaje)} %`}</span>
+      <span className="barras__cifra">{formatearPorcentaje(bloque.accuracy)}</span>
     </>
   );
 }

@@ -1,4 +1,4 @@
-"""La vuelta atrás de las migraciones de S05 a S12, **ejecutada de verdad**.
+"""La vuelta atrás de las migraciones, **derivada del guion de alembic** y ejecutada de verdad.
 
 El método del proyecto es explícito: «escrito no es hecho; ejecutado es hecho». Varios slices
 declaraban que su `downgrade` estaba probado y no había ninguna prueba que lo ejecutara (solo 0011 y
@@ -6,21 +6,30 @@ declaraban que su `downgrade` estaba probado y no había ninguna prueba que lo e
 comprueba en cada uno tres cosas:
 
 1. la revisión marcada es la que se pidió;
-2. las tablas que esa migración había creado **ya no están** (una migración que solo ensancha una
-   restricción no retira ninguna tabla, y por eso su escalón va vacío);
+2. las tablas que esa migración creó **ya no están** (una migración que solo ensancha una
+   restricción añade columnas o `CHECK`, no tablas, y por eso su escalón va vacío);
 3. volver a subir a la cabeza las recrea: bajar no deja el esquema en un estado del que no se pueda
    salir.
 
-**Esta lista está escrita a mano, y eso ha roto cinco fusiones en un día** (15-oct-2026): el panel
-(`0038_revision_de_apuntes`), el medidor (`0037_origin_scope`), la bandeja
-(`0039_bandeja_por_conjunto`, dos veces: al re-apuntarla a `0039_claves_derivadas` y otra vez al
-entrar `0040`) y la plataforma desplegable (`0040_cuentas_y_consentimiento`). Cada vez el síntoma es
-el mismo y no parece de quien lo sufre: la puerta 7 cae en el **primer** escalón diciendo que
-esperaba otra revisión.
+**La escalera se deriva, no se enumera.** Antes había aquí una lista escrita a mano y **rompió cinco
+fusiones en un día** (15-oct-2026): el panel (`0038_revision_de_apuntes`), el medidor
+(`0037_origin_scope`), la bandeja (`0039_bandeja_por_conjunto`, dos veces: al re-apuntarla a
+`0039_claves_derivadas` y otra vez al entrar `0040`) y la plataforma desplegable
+(`0040_cuentas_y_consentimiento`). El síntoma era siempre el mismo y no parecía de quien lo sufría:
+la puerta 7 caía en el **primer** escalón diciendo que esperaba otra revisión, porque la lista se
+había quedado corta al añadir una migración.
 
-Si acabas de añadir una migración y esta prueba se cae, **no es que la prueba estorbe**: es que le
-falta tu escalón. Añádelo **arriba del todo**, con la revisión a la que baja y las tablas que su
-`downgrade` se lleva (vacío si solo ensancha una restricción o añade una columna).
+Ahora los escalones salen de dos sitios que **no se pueden olvidar**:
+
+- la **cadena**: `ScriptDirectory.walk_revisions()` recorre `down_revision` desde la cabeza hasta la
+  raíz, así que una migración nueva entra sola, en su sitio y con su padre;
+- las **tablas** que se lleva cada bajada: se leen del propio guion de la migración
+  (`op.create_table(...)`), resolviendo el nombre aunque venga de una constante del módulo.
+
+Lo único que sigue escrito a mano es lo que **no** se puede deducir de un guion: nada. Si alguien
+escribe un `create_table` con un nombre calculado (una f-string, una variable que no sea una
+constante de texto), esta prueba **falla y lo dice**: es mejor que comprobar en silencio menos de lo
+que cree.
 
 No comprueba la forma de cada tabla recreada (eso lo hacen las pruebas de cada migración): comprueba
 que la bajada existe, se ejecuta y devuelve el esquema a su sitio.
@@ -28,9 +37,11 @@ que la bajada existe, se ejecuta y devuelve el esquema a su sitio.
 
 from __future__ import annotations
 
+import ast
 from pathlib import Path
 
 import pytest
+from alembic.script import Script, ScriptDirectory
 from sqlalchemy import text
 
 from alembic import command
@@ -38,205 +49,75 @@ from opofuente.config import Settings
 from opofuente.infrastructure.db import build_engine
 from opofuente.infrastructure.migrations import alembic_config, run_migrations, script_head
 
-#: Revisión de partida y, por cada escalón, la revisión a la que se baja y las tablas que deben
-#: desaparecer al hacerlo. El orden es el de la cadena, de la más nueva a la más antigua.
-ESCALONES: tuple[tuple[str, str, tuple[str, ...]], ...] = (
-    (
-        # `0040` crea las seis tablas de la plataforma desplegable (S28: cuentas, sesiones,
-        # recuperación, freno de intentos, consentimiento y contadores) y su vuelta atrás se las
-        # lleva: al bajar de este escalón **desaparecen las seis**, y es lo que se mide aquí. Que su
-        # forma sea la declarada lo comprueba `test_migrations_0040_cuentas.py`.
-        #
-        # Va **detrás de la bandeja**: nació colgando de `0039_claves_derivadas` y al fusionar la
-        # rama de F31 se re-apuntó a `0039_bandeja_por_conjunto`, porque dos migraciones con el
-        # mismo padre son **dos cabezas** y alembic se niega a subir.
-        "0040_cuentas_y_consentimiento",
-        "0039_bandeja_por_conjunto",
-        (
-            "accounts",
-            "account_sessions",
-            "password_resets",
-            "login_throttles",
-            "consent_records",
-            "analytics_events",
-        ),
-    ),
-    (
-        # `0039_bandeja_por_conjunto` (F31) solo **ensancha** el `CHECK` del estado de la bandeja
-        # —de cuatro valores a seis— y añade un índice: ninguna tabla desaparece al bajar, por eso
-        # su escalón va vacío. Que los dos estados nuevos se van de verdad, con su `CHECK`, lo
-        # comprueba `test_migrations_0039_bandeja.py`, donde se mide la forma de la tabla.
-        #
-        # Va **detrás** de `0039_claves_derivadas`: las dos ramas colgaban de `0038` y al
-        # fusionarlas esta se re-apuntó, porque dos migraciones con el mismo padre son **dos
-        # cabezas**.
-        "0039_bandeja_por_conjunto",
-        "0039_claves_derivadas",
-        (),
-    ),
-    (
-        # `0039` crea las dos tablas de la clave derivada (F29) y su vuelta atrás se las lleva: al
-        # bajar de este escalón desaparecen las dos, que es lo que se mide aquí.
-        "0039_claves_derivadas",
-        "0038_revision_de_apuntes",
-        ("question_derived_keys", "question_key_gaps"),
-    ),
-    (
-        # `0038` crea la tabla de la revisión de los apuntes del propietario (F24) y su vuelta atrás
-        # se la lleva: al bajar de este escalón la tabla **desaparece**, y es lo que se mide aquí.
-        "0038_revision_de_apuntes",
-        "0037_origin_scope",
-        ("topic_notes_reviews",),
-    ),
-    (
-        # `0037` añade una columna a `question_sets` con su `CHECK` y su índice, y su vuelta atrás
-        # los quita: ninguna tabla desaparece al bajar, por eso su escalón va vacío. Que la columna
-        # se va de verdad (con su `CHECK` y su índice) lo comprueba `test_migrations_0037.py`, donde
-        # se mide la forma de la tabla.
-        "0037_origin_scope",
-        "0036_claves_no_fiables",
-        (),
-    ),
-    (
-        # `0036` solo añade columnas a `question_sets` y su vuelta atrás las quita: ninguna tabla
-        # desaparece al bajar, por eso su escalón va vacío. Que las columnas se van de verdad lo
-        # comprueba `test_migrations_0036.py`, que es donde se mide la forma de la tabla.
-        "0036_claves_no_fiables",
-        "0035_incidencias_despachables",
-        (),
-    ),
-    (
-        "0035_incidencias_despachables",
-        "0034_avisos_en_curso_y_nota",
-        (),
-    ),
-    (
-        "0034_avisos_en_curso_y_nota",
-        "0033_avisos_del_alumno",
-        (),
-    ),
-    (
-        "0033_avisos_del_alumno",
-        "0032_huella_del_texto_comprobado",
-        ("notes_reports",),
-    ),
-    (
-        "0032_huella_del_texto_comprobado",
-        "0031_incidencias_apuntes",
-        (),
-    ),
-    (
-        "0031_incidencias_apuntes",
-        "0030_ancla_en_conflicto",
-        ("notes_incidents",),
-    ),
-    (
-        "0030_ancla_en_conflicto",
-        "0029_apuntes_por_preguntas",
-        (),
-    ),
-    (
-        "0029_apuntes_por_preguntas",
-        "0028_fuera_de_temario",
-        ("topic_facts", "topic_note_sections", "question_note_anchors"),
-    ),
-    (
-        "0028_fuera_de_temario",
-        "0027_owner_id",
-        ("question_curriculum_exclusions",),
-    ),
-    (
-        "0027_owner_id",
-        "0026_examenes_oficiales_publicos",
-        (),
-    ),
-    (
-        "0026_examenes_oficiales_publicos",
-        "0025_question_set_distribution",
-        (),
-    ),
-    (
-        "0025_question_set_distribution",
-        "0024_dossier_snapshots",
-        (),
-    ),
-    (
-        "0024_dossier_snapshots",
-        "0023_pause_batch",
-        ("dossier_snapshots",),
-    ),
-    (
-        "0023_pause_batch",
-        "0022_convocation_exam_date_note",
-        (),
-    ),
-    (
-        "0022_convocation_exam_date_note",
-        "0021_convocation_available",
-        (),
-    ),
-    (
-        "0021_convocation_available",
-        "0020_changes_and_derivatives",
-        (),
-    ),
-    (
-        "0020_changes_and_derivatives",
-        "0019_errors_and_reviews",
-        ("derived_artifacts", "dependency_edges", "change_sets"),
-    ),
-    (
-        "0019_errors_and_reviews",
-        "0018_search_and_rag",
-        ("learning_errors", "review_items", "review_events"),
-    ),
-    (
-        "0018_search_and_rag",
-        "0017_previous_result",
-        ("rag_queries", "retrieval_hits", "generated_answers", "answer_claims"),
-    ),
-    (
-        "0017_previous_result",
-        "0016_study_sessions",
-        (),
-    ),
-    (
-        "0016_study_sessions",
-        "0015_question_notes_and_issues",
-        ("study_sessions", "session_questions", "attempts", "attempt_evaluations"),
-    ),
-    (
-        "0015_question_notes_and_issues",
-        "0014_questions_and_keys",
-        ("question_issue_reports",),
-    ),
-    (
-        "0014_questions_and_keys",
-        "0013_documents_versions_and_rights",
-        (
-            "question_sets",
-            "question_versions",
-            "option_versions",
-            "answer_key_versions",
-            "answer_key_entries",
-            "question_explanations",
-            "question_evidence",
-        ),
-    ),
-    (
-        "0013_documents_versions_and_rights",
-        "0012_classification_and_review",
-        (
-            "logical_documents",
-            "document_versions",
-            "document_sections",
-            "evidence_spans",
-            "rights_statuses",
-            "collections",
-            "collection_items",
-        ),
-    ),
-)
+#: La raíz de la cadena: la migración más antigua, la que ya no baja a ninguna parte.
+BASE = "0001_app_metadata"
+
+#: Un escalón: de qué revisión se baja, a cuál, y qué tablas desaparecen al hacerlo.
+Escalon = tuple[str, str, tuple[str, ...]]
+
+
+def _tablas_creadas(script: Script) -> tuple[str, ...]:
+    """Las tablas que la migración crea, leídas de su `op.create_table(...)`.
+
+    El nombre puede ser un literal o una constante de texto del propio módulo
+    (`0028_fuera_de_temario` usa `TABLA = "question_curriculum_exclusions"`). Si no se puede
+    resolver, esto **falla**: una comprobación que se salta en silencio lo que no entiende es peor
+    que no tenerla.
+    """
+    arbol = ast.parse(Path(script.path).read_text(encoding="utf-8"))
+    constantes = {
+        nodo.targets[0].id: nodo.value.value
+        for nodo in arbol.body
+        if isinstance(nodo, ast.Assign)
+        and len(nodo.targets) == 1
+        and isinstance(nodo.targets[0], ast.Name)
+        and isinstance(nodo.value, ast.Constant)
+        and isinstance(nodo.value.value, str)
+    }
+    nombres: list[str] = []
+    for nodo in ast.walk(arbol):
+        if not isinstance(nodo, ast.Call):
+            continue
+        if not isinstance(nodo.func, ast.Attribute) or nodo.func.attr != "create_table":
+            continue
+        if not nodo.args:
+            continue
+        primero = nodo.args[0]
+        if isinstance(primero, ast.Constant) and isinstance(primero.value, str):
+            nombres.append(primero.value)
+        elif isinstance(primero, ast.Name) and primero.id in constantes:
+            nombres.append(constantes[primero.id])
+        else:
+            raise AssertionError(
+                f"{Path(script.path).name}: `op.create_table` con un nombre que no se puede leer "
+                f"({ast.unparse(primero)}). Deja el nombre como texto (o como constante de "
+                "texto del módulo): la escalera de esta prueba se deriva del guion y no puede "
+                "adivinar."
+            )
+    return tuple(nombres)
+
+
+def _escalones(settings: Settings) -> tuple[Escalon, ...]:
+    """La escalera entera, **derivada**: de la cabeza a la raíz, un escalón por migración.
+
+    Cada escalón es `(desde, hasta, tablas_que_se_van)`. Ni la cadena ni las tablas están
+    escritas a mano: la primera la da alembic y las segundas, el guion de cada migración.
+    """
+    guion = ScriptDirectory.from_config(alembic_config(settings))
+    escalones: list[Escalon] = []
+    for script in guion.walk_revisions():
+        padre = script.down_revision
+        if padre is None:
+            break
+        # Una revisión de fusión tendría dos padres y esta cadena no las tiene: si aparece una, se
+        # dice en lugar de comparar con el texto de una tupla.
+        assert isinstance(padre, str), (
+            f"{script.revision} declara varios padres ({padre!r}): la escalera no sabe bajar por "
+            "una "
+            "fusión y hay que decidir cómo se recorre"
+        )
+        escalones.append((str(script.revision), padre, _tablas_creadas(script)))
+    return tuple(escalones)
 
 
 def _settings(tmp_path: Path) -> Settings:
@@ -271,12 +152,35 @@ def _revision(settings: Settings) -> str:
         engine.dispose()
 
 
-def test_la_cadena_de_s05_a_s09_se_puede_recorrer_hacia_atras(tmp_path: Path) -> None:
+def test_la_escalera_es_la_cadena_de_alembic_sin_saltos(tmp_path: Path) -> None:
+    """La escalera llega de la cabeza a la raíz y **cada escalón baja un paso**.
+
+    Esto es lo que impide que vuelva a colarse una lista escrita a mano: una lista se queda corta
+    al añadir una migración, y aquí un hueco se ve enseguida —el padre de `desde` tiene que ser
+    `hasta`—.
+    """
+    settings = _settings(tmp_path)
+    escalera = _escalones(settings)
+
+    assert escalera, "la cadena de migraciones está vacía"
+    assert escalera[0][0] == script_head(settings), "la escalera no empieza en la cabeza"
+    assert escalera[-1][1] == BASE, f"la escalera no llega a la raíz ({BASE})"
+
+    guion = ScriptDirectory.from_config(alembic_config(settings))
+    for desde, hasta, _ in escalera:
+        revision = guion.get_revision(desde)
+        assert revision is not None, f"{desde} no está en el guion de alembic"
+        assert revision.down_revision == hasta, (
+            f"{desde} baja a {revision.down_revision!r}, y la escalera dice {hasta}"
+        )
+
+
+def test_la_cadena_entera_se_puede_recorrer_hacia_atras(tmp_path: Path) -> None:
     settings = _settings(tmp_path)
     run_migrations(settings, revision="head")
     assert _revision(settings) == script_head(settings)
 
-    for desde, hasta, tablas_que_se_van in ESCALONES:
+    for desde, hasta, tablas_que_se_van in _escalones(settings):
         assert _revision(settings) == desde, f"se esperaba estar en {desde}"
         _bajar_a(settings, hasta)
         assert _revision(settings) == hasta, f"no se bajó de {desde} a {hasta}"
@@ -290,11 +194,13 @@ def test_volver_a_subir_recrea_lo_que_la_bajada_retiro(tmp_path: Path) -> None:
     settings = _settings(tmp_path)
     run_migrations(settings, revision="head")
 
-    _bajar_a(settings, "0012_classification_and_review")
-    retiradas = {tabla for _, _, tablas in ESCALONES for tabla in tablas}
+    escalones = _escalones(settings)
+    _bajar_a(settings, BASE)
+    assert _revision(settings) == BASE
+    retiradas = {tabla for _, _, tablas in escalones for tabla in tablas}
     presentes = _tablas(settings)
     for tabla in sorted(retiradas):
-        assert tabla not in presentes, f"{tabla} debería haber desaparecido al bajar a 0012"
+        assert tabla not in presentes, f"{tabla} debería haber desaparecido al bajar a {BASE}"
 
     run_migrations(settings, revision="head")
 

@@ -8,9 +8,10 @@ import {
   type StudentTopicProgress,
 } from '../../api/studentStudy';
 import { ErrorState } from '../../components/ErrorState';
-import { LoadingState } from '../../components/LoadingState';
+import { EsqueletoDeLista } from '../../components/Esqueleto';
 import { NotesStateChip } from '../../features/student/NotesStateChip';
 import { describeError } from '../../features/system/labels';
+import { formatearPorcentaje } from '../../lib/numeros';
 
 /**
  * El temario del alumno (F13), como el índice de un programa oficial.
@@ -57,7 +58,7 @@ export function SyllabusPage() {
     return (
       <>
         <h1 className="pagina__titulo">Temario</h1>
-        <LoadingState label="Cargando el temario…" />
+        <EsqueletoDeLista nombre="el temario" identificador="esqueleto-temario" filas={5} />
       </>
     );
   }
@@ -138,7 +139,7 @@ function TemaFila({ tema }: { tema: StudentTopicProgress }) {
         {tema.accuracy === null ? (
           <span className="tema-fila__sin-datos">Sin empezar</span>
         ) : (
-          <span className="tema-fila__cifra">{`${String(Math.round(tema.accuracy * 100))} %`}</span>
+          <span className="tema-fila__cifra">{formatearPorcentaje(tema.accuracy)}</span>
         )}
         <NotesStateChip state={tema.notes_state} />
       </p>
@@ -177,7 +178,7 @@ function BarraDeBloque({ bloque }: { bloque: StudentBlockProgress }) {
       <span className="barras__barra" aria-hidden="true">
         <span className="barras__relleno" style={{ width: `${String(porcentaje)}%` }} />
       </span>
-      <span className="barras__cifra">{`${String(porcentaje)} %`}</span>
+      <span className="barras__cifra">{formatearPorcentaje(bloque.accuracy)}</span>
     </p>
   );
 }

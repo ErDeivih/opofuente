@@ -641,7 +641,10 @@ describe('estudiar: el resultado', () => {
     renderEstudiar();
 
     expect(await screen.findByRole('heading', { name: 'Resultado' })).toBeInTheDocument();
-    expect(screen.getByText('1.6667 (5/3) puntos')).toBeInTheDocument();
+    // La nota va **en español** (§2.2 del cierre): coma y dos decimales. Antes esta prueba pedía
+    // «1.6667 (5/3)», que es el decimal crudo del servidor —el «0.0000» que el propietario vio en las
+    // capturas—, así que era la prueba la que estaba fijando el formato equivocado.
+    expect(screen.getByText('1,67 (5/3) puntos')).toBeInTheDocument();
     expect(screen.getByText('calificación oficial no disponible')).toBeInTheDocument();
     expect(screen.getByText(/no se declara aprobado ni suspenso/)).toBeInTheDocument();
     // Los recuentos salen dos veces: los de la parte y los del total (que aquí coinciden).
@@ -927,7 +930,8 @@ describe('estudiar: simulacro y diagnóstico (DEBT-012)', () => {
     const tabla = screen.getByRole('table', { name: /Muestra por tema con su intervalo/ });
     const primera = within(tabla).getByRole('row', { name: /La Constitución Española de 1978/ });
     expect(within(primera).getByText('1 de 1')).toBeInTheDocument();
-    expect(within(primera).getByText('0.21 – 1.00')).toBeInTheDocument();
+    // El intervalo también va en español (§2.2): era el otro sitio donde el número salía con punto.
+    expect(within(primera).getByText('0,21 – 1,00')).toBeInTheDocument();
     expect(within(primera).getByText(/el intervalo es ancho/)).toBeInTheDocument();
     const tercera = within(tabla).getByRole('row', { name: /El Gobierno/ });
     expect(within(tercera).getByText('sin respuestas')).toBeInTheDocument();

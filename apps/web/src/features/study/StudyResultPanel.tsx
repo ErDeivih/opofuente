@@ -3,6 +3,7 @@ import { formatScore } from '../../api/study';
 import { StatusBadge } from '../../components/StatusBadge';
 import { LoadingState } from '../../components/LoadingState';
 import { ErrorState } from '../../components/ErrorState';
+import { formatearEscala } from '../../lib/numeros';
 import type { SessionReview } from '../../api/study';
 import {
   feedbackLabel,
@@ -66,7 +67,7 @@ function PartRow({ part }: { part: PartScore }) {
           <p className="hint">{part.verdict_note}</p>
         )}
         {part.score_max !== null && part.score_max !== undefined && (
-          <p className="hint">máximo de la prueba: {String(part.score_max)}</p>
+          <p className="hint">máximo de la prueba: {formatearEscala(part.score_max)}</p>
         )}
       </td>
     </tr>

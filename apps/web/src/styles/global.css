@@ -407,34 +407,39 @@ button:focus-visible,
 
 /* --- Estados --------------------------------------------------------------- */
 
-.empty {
-  border: 1px dashed var(--color-borde);
+/* Los tres estados —vacío, error y carga— comparten forma y espaciado en todas las pantallas (§2.6):
+   misma línea, mismo radio, mismo hueco interior. Lo que cambia es el color, que es lo que dice de qué
+   estado se trata, y que el error lleva además su título y su acción. */
+.empty,
+.error-state {
   border-radius: var(--radio);
-  padding: 0.85rem 1rem;
-  background: var(--color-fondo);
+  padding: var(--s4) var(--s5);
+}
+
+.empty {
+  border: 1px dashed var(--linea);
+  background: var(--hoja);
 }
 
 .empty__title {
-  margin: 0 0 0.25rem;
+  margin: 0 0 var(--s1);
   font-weight: 600;
 }
 
 .empty__description,
 .empty__hint {
   margin: 0;
-  color: var(--color-texto-suave);
-  font-size: 0.88rem;
+  color: var(--tinta-suave);
+  font-size: var(--t-sm);
 }
 
 .empty__hint {
-  margin-top: 0.35rem;
+  margin-top: var(--s2);
 }
 
 .error-state {
-  border: 1px solid var(--color-bloqueo);
-  background: var(--color-bloqueo-fondo);
-  border-radius: var(--radio);
-  padding: 0.75rem 1rem;
+  border: 1px solid var(--fallo);
+  background: var(--fallo-suave);
 }
 
 .error-state__title {
@@ -443,26 +448,101 @@ button:focus-visible,
 }
 
 .error-state__message {
-  margin: 0.25rem 0 0.6rem;
+  margin: var(--s1) 0 var(--s3);
 }
 
 .loading {
   margin: 0;
-  color: var(--color-texto-suave);
+  color: var(--tinta-suave);
 }
 
+/* --- El esqueleto de una lista que tarda (§2.5) ---------------------------- */
+
+.esqueleto {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  margin: var(--s4) 0;
+}
+
+.esqueleto__fila {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  padding: var(--s3) 0;
+  border-bottom: 1px solid var(--linea-suave);
+}
+
+.esqueleto__barra {
+  display: block;
+  height: 0.75rem;
+  border-radius: var(--radio-sm);
+  background: var(--desactivado-fondo);
+}
+
+.esqueleto__barra--titulo {
+  width: 60%;
+}
+
+.esqueleto__barra--dato {
+  width: 30%;
+}
+
+/* La única animación del esqueleto —que se note que sigue esperando— va **detrás** de
+   `prefers-reduced-motion: no-preference`: quien ha pedido menos movimiento no la ve, y sin ella el
+   esqueleto sigue diciendo lo mismo (es estático y sigue anunciándose). Nada de animaciones de entrada
+   decorativas: entran sin moverse. */
+@media (prefers-reduced-motion: no-preference) {
+  .esqueleto__barra {
+    animation: opofuente-latido 1.4s ease-in-out infinite;
+  }
+}
+
+@keyframes opofuente-latido {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+/*
+ * El **botón secundario es uno solo** (§2.6 del cierre del objetivo).
+ *
+ * Conviviían dos: `.button` (el nombre viejo, el del panel) y `.ui-button--secondary` (el de la zona
+ * del alumno). El mismo acto —«Reintentar», «Apuntes», «Esto está mal»— se veía de dos maneras según la
+ * pantalla, y eso es lo que el propietario pidió quitar. Ahora declaran lo mismo: misma forma, mismo
+ * alto táctil y mismo par de colores. Se conservan **los dos nombres** porque renombrarlos en 46
+ * ficheros no arregla nada y sí rompe pantallas; lo que no puede haber es dos estilos distintos.
+ */
 .button {
-  font: inherit;
-  padding: 0.35rem 0.8rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s2);
+  min-height: var(--objetivo-tactil);
+  padding: 0 var(--s4);
   border-radius: var(--radio);
-  border: 1px solid var(--color-acento);
-  background: var(--color-superficie);
-  color: var(--color-acento);
+  border: 1px solid var(--linea);
+  background: var(--hoja);
+  color: var(--tinta);
+  font: inherit;
+  font-weight: 600;
   cursor: pointer;
 }
 
 .button:hover {
-  background: var(--color-acento-suave);
+  background: var(--desactivado-fondo);
+}
+
+.button:disabled {
+  background: var(--desactivado-fondo);
+  color: var(--tinta-suave);
+  border-style: dashed;
+  font-weight: 500;
+  cursor: not-allowed;
 }
 
 /* --- Selector de oposición ------------------------------------------------- */
@@ -1497,6 +1577,12 @@ kbd {
   min-height: 100vh;
 }
 
+/* La **columna** del carril: se estira con la fila, así que su fondo y su línea llegan hasta el
+   final del contenido (§2.1 del cierre). Lo que viaja pegado es `.carril__interior`.
+
+   Antes el `height: 100vh` estaba aquí y el blanco acababa en los 800 px de la ventana: por debajo se
+   veía el gris del papel. Con un contenido más corto que la ventana no se notaba, y con uno más largo
+   (Inicio, Resultado) sí —que es lo que el propietario vio en las capturas—. */
 .carril {
   flex: 0 0 var(--ancho-carril);
   width: var(--ancho-carril);
@@ -1504,10 +1590,18 @@ kbd {
   border-right: 1px solid var(--linea);
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  align-self: stretch;
+}
+
+/* El contenido del carril, pegado arriba mientras se desplaza lo demás. `100vh` es el alto de la
+   ventana; la columna que lo contiene es la que manda si el contenido es más alto. */
+.carril__interior {
   position: sticky;
   top: 0;
-  height: 100vh;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 .carril__marca {
@@ -2316,12 +2410,18 @@ kbd {
 }
 
 .resultado__puntos {
-  margin: 0 0 var(--s2);
+  margin: 0 0 var(--s3);
   font-size: var(--t-titulo);
 }
 
 .resultado__puntos strong {
   font-variant-numeric: tabular-nums;
+}
+
+/* La salida al apartado que explica un fallo (§2.4). Va **dentro** de la pregunta fallada, debajo de
+   sus opciones, para que se lea con lo que explica y no como una acción suelta de la pantalla. */
+.resultado__repaso {
+  margin: var(--s3) 0 0;
 }
 
 .resultado__aviso {
@@ -2440,14 +2540,26 @@ kbd {
   font-weight: 700;
 }
 
+/*
+ * **Una sola etiqueta** (§2.6 del cierre del objetivo): el código del tema (`IV.1`), el desenlace
+ * («Acertada», «Fallada») y la marca de la clave comparten caja —radio, relleno lateral, tamaño y un
+ * borde de 1 px, aunque sea transparente—, y lo único que cambia entre ellas es el color. Antes el
+ * desenlace no llevaba borde y quedaba 2 px más bajo que la etiqueta de al lado, en la misma línea.
+ */
+.resultado__etiqueta-tema,
+.fallos__etiqueta-tema,
+.resultado__desenlace {
+  border: 1px solid transparent;
+  border-radius: var(--radio-etiqueta);
+  padding: 0 var(--s2);
+  font-size: var(--t-sm);
+}
+
 .resultado__etiqueta-tema,
 .fallos__etiqueta-tema {
   color: var(--azul);
   text-decoration: none;
-  border: 1px solid var(--linea);
-  border-radius: var(--radio-etiqueta);
-  padding: 0 var(--s2);
-  font-size: var(--t-sm);
+  border-color: var(--linea);
 }
 
 .resultado__etiqueta-tema:hover,
@@ -2456,8 +2568,6 @@ kbd {
 }
 
 .resultado__desenlace {
-  border-radius: var(--radio-etiqueta);
-  padding: 0 var(--s2);
   font-weight: 700;
 }
 

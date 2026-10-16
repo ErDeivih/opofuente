@@ -5,14 +5,19 @@ import { isApiError } from '../../api/client';
 import {
   createStudentTest,
   getStudentResult,
+  type StudentPartScore,
   type StudentResultOutcome,
   type StudentResultQuestion,
   type StudentSessionResult,
 } from '../../api/studentTests';
 import { EmptyState } from '../../components/EmptyState';
 import { LoadingState } from '../../components/LoadingState';
+import { AnswerSheet } from '../../features/study/AnswerSheet';
+import { filasDeResultado, letrasDeLaHoja } from '../../features/study/answerSheetModel';
 import { fechaLegible } from '../../lib/fechas';
+import { formatearEscala, formatearPorcentaje, notaDeFraccion } from '../../lib/numeros';
 import { renderInline } from '../../ui/inlineMarkdown';
+import { Plegable } from '../../ui/Disclosure';
 
 /**
  * El resultado de un test terminado (F14, paso 3 del §3 del objetivo).
@@ -104,6 +109,18 @@ export function ResultPage() {
   const aciertos = resultado.total.correct;
   const fallos = resultado.total.wrong;
   const blancos = resultado.total.blank;
+  // La cifra se calcula de la **fracción exacta**, no del decimal del servidor (§2.2), y el
+  // «(estimada)» sale de cómo se corrigió la parte, que lo dice el servidor: la pantalla no inventa el
+  // matiz que impide leer la cifra como la calificación oficial.
+  const notaDelTotal = notaDeParte(resultado.total);
+  const esEstimada = resultado.total.kind === 'estimated' || !resultado.official_available;
+  // Los párrafos que explican la cifra: el del total y los de cada parte. Los compone el dominio y se
+  // enseñan tal cual, pero **plegados**: por defecto no hay ningún párrafo explicativo a la vista.
+  const explicaciones = [
+    resultado.total.verdict_note,
+    ...resultado.parts.map((parte) => parte.verdict_note),
+    resultado.official_note,
+  ].filter((texto): texto is string => texto !== null && texto !== undefined);
 
   return (
     <>
@@ -128,17 +145,33 @@ export function ResultPage() {
           {aciertos} {aciertos === 1 ? 'acierto' : 'aciertos'} · {fallos}{' '}
           {fallos === 1 ? 'fallo' : 'fallos'} · {blancos} en blanco
         </p>
+        {/*
+          §2.3 del cierre: **una línea**. Antes esto abría con dos párrafos sobre los baremos de la
+          Comisión y el mínimo de 25, que es lo que el propietario vio en su captura. Ahora la cifra se
+          lee de un vistazo y la explicación **no se ha borrado**: se pliega (abajo).
+        */}
         <p className="resultado__puntos">
-          <strong>{resultado.total.score_decimal}</strong>
+          Puntuación directa:{' '}
+          <strong>{notaDelTotal}</strong>
           {resultado.total.score_max === null
             ? null
-            : ` sobre ${String(resultado.total.score_max)}`}
+            : ` sobre ${formatearEscala(resultado.total.score_max)}`}
+          {esEstimada ? ' (estimada)' : ''}
         </p>
-        {resultado.total.verdict_note === null ? null : (
-          <p className="resultado__aviso">{renderInline(resultado.total.verdict_note)}</p>
-        )}
-        {resultado.official_note === null ? null : (
-          <p className="resultado__aviso">{renderInline(resultado.official_note)}</p>
+
+        {/*
+          Lo que explica la cifra va **plegado**, y en el mismo sitio para las dos cosas que la
+          explican: el aviso del total y el de cada parte. El texto es el del servidor, tal cual: es el
+          mismo que usa el motor, y reescribirlo sería tener dos versiones de la misma advertencia.
+        */}
+        {explicaciones.length > 0 && (
+          <Plegable titulo={esEstimada ? '¿Por qué estimada?' : '¿Qué significa esta puntuación?'}>
+            {explicaciones.map((texto, indice) => (
+              <p className="resultado__aviso" key={indice}>
+                {renderInline(texto)}
+              </p>
+            ))}
+          </Plegable>
         )}
 
         {resultado.parts.length > 0 && (
@@ -147,24 +180,46 @@ export function ResultPage() {
               <li className="resultado__parte" key={parte.part_code ?? 'unica'}>
                 <p className="resultado__parte-nombre">{parte.part_name ?? 'Parte'}</p>
                 <p className="resultado__parte-nota">
-                  {parte.score_decimal}
-                  {parte.score_max === null ? null : ` sobre ${String(parte.score_max)}`}
+                  {notaDeParte(parte)}
+                  {parte.score_max === null
+                    ? null
+                    : ` sobre ${formatearEscala(parte.score_max)}`}
                   {parte.pass_score === null
                     ? null
-                    : ` · mínimo ${String(parte.pass_score)}`}
+                    : ` · mínimo ${formatearEscala(parte.pass_score)}`}
                 </p>
                 <p className="resultado__parte-cifras">
                   {parte.correct} de {parte.correct + parte.wrong + parte.blank} corregidas
                 </p>
-                {parte.verdict_note === null ? null : (
-                  <p className="resultado__aviso">{renderInline(parte.verdict_note)}</p>
-                )}
               </li>
             ))}
           </ul>
         )}
       </section>
 
+      {/*
+        §2.4: **la hoja de respuestas que elegimos** (la del diseño v0), arriba y corregida —casillas
+        A–D por pregunta, verde la correcta y rojo la fallada—. Pulsar un número baja a esa pregunta.
+        Es la misma hoja que se usa mientras se contesta (`AnswerSheet`), con las filas ya corregidas:
+        dos dibujos distintos de la misma hoja serían dos maneras de leer el mismo resultado.
+      */}
+      {resultado.questions.length > 0 && (
+        <section className="bloque" aria-labelledby="tu-hoja">
+          <h2 className="bloque__titulo" id="tu-hoja">
+            Tu hoja de respuestas
+          </h2>
+          <p className="bloque__texto">
+            Cada casilla dice lo que pasó: la verde es la que era correcta, y la que lleva el color del
+            fallo es la que marcaste y no lo era. Pulsa un número para bajar a esa pregunta.
+          </p>
+          <AnswerSheet
+            filas={filasDeResultado(resultado.questions)}
+            actual={null}
+            letras={letrasDeLaHoja(resultado.questions)}
+            onIr={bajarALaPregunta}
+          />
+        </section>
+      )}
       <section className="bloque" aria-labelledby="por-tema">
         <h2 className="bloque__titulo" id="por-tema">
           Por tema
@@ -234,8 +289,12 @@ export function ResultPage() {
 /** Una pregunta ya corregida: sus opciones, lo que se marcó y de qué tema era. */
 function PreguntaCorregida({ pregunta }: { pregunta: StudentResultQuestion }) {
   const desenlace = textoDelDesenlace(pregunta.outcome);
+  // §2.4: «Ver en apuntes» **solo** bajo las falladas, y **solo** cuando los apuntes contestan a esa
+  // pregunta: el anclaje lo resuelve el servidor a partir de la comprobación del motor. Sin anclaje no
+  // se ofrece la salida, porque mandar al alumno a la portada del tema no le explica su fallo.
+  const repasar = pregunta.outcome === 'wrong' ? pregunta.note_anchor : null;
   return (
-    <li className="resultado__pregunta">
+    <li className="resultado__pregunta" id={`pregunta-${String(pregunta.position)}`} tabIndex={-1}>
       <p className="resultado__pregunta-cabecera">
         <span className="resultado__posicion">
           {pregunta.is_reserve ? 'Reserva · ' : ''}
@@ -295,6 +354,16 @@ function PreguntaCorregida({ pregunta }: { pregunta: StudentResultQuestion }) {
           );
         })}
       </ul>
+      {repasar !== null && (
+        <p className="resultado__repaso">
+          <Link
+            className="ui-button ui-button--secondary"
+            to={`/temario/${repasar.topic_code}#${repasar.anchor}`}
+          >
+            Ver en apuntes
+          </Link>
+        </p>
+      )}
     </li>
   );
 }
@@ -315,7 +384,28 @@ function textoDelDesenlace(desenlace: StudentResultOutcome): string {
 
 /** El porcentaje de acierto, escrito. Sin nada corregido se dice que no hay nada que medir. */
 function porcentaje(accuracy: number | null): string {
-  return accuracy === null ? '—' : `${String(Math.round(accuracy * 100))} %`;
+  return accuracy === null ? '—' : formatearPorcentaje(accuracy);
+}
+
+/**
+ * La nota de una parte, en español y **calculada de la fracción exacta**.
+ *
+ * El servidor manda la fracción (`1/3`) y su decimal (`0.3333`). Se usa la fracción: el decimal es un
+ * dato para leer, no una cifra para mirar, y enseñarlo tal cual era el «0.0000» de las capturas
+ * (§2.2). Y si el texto no es una fracción —una parte que no se evalúa— se enseña como llegó, que es
+ * lo honesto: no hay cifra que formatear.
+ */
+function notaDeParte(parte: StudentPartScore): string {
+  return notaDeFraccion(parte.score) ?? parte.score;
+}
+
+/** Bajar a la pregunta que se ha pulsado en la hoja de respuestas. */
+function bajarALaPregunta(position: number): void {
+  const pregunta = document.getElementById(`pregunta-${String(position)}`);
+  // Con `block: 'start'` la pregunta queda pegada arriba, que es donde se lee. El foco va detrás para
+  // que el teclado siga el mismo camino que la vista.
+  pregunta?.scrollIntoView({ block: 'start' });
+  pregunta?.focus({ preventScroll: true });
 }
 
 /** «12 min 30 s»: el tiempo que se ha tardado, con las unidades que se leen. */

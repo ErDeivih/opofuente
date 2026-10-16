@@ -3827,3 +3827,75 @@ cualquier corrida de apuntes. Queda dicho.
   se ha hecho: escribir en la base del propietario con tres baterías dentro no es reversible de verdad.
 - **Los dos estados nuevos no los usa todavía el motor**: solo la resolución automática. Hasta que se
   ejecute, la bandeja enseña las 868 como `open`.
+
+## F33 · El acabado de la interfaz: los cinco arreglos del §2, vistos en las capturas (16-oct-2026)
+
+**Rama:** `f33-acabado` · **Base:** `main = 1caefb7` · **Encargo:** §2 de
+`RECORRIDO-Y-ACABADO-2026-10.md`, tal como el propietario lo escribió **mirando sus capturas**. Nada de
+esto es una opinión sobre el diseño: son cinco defectos que él vio.
+
+**Nada fusionado.** Las 18 puertas las corre el bloque que mide.
+
+### Los cinco arreglos, con lo que se mide
+
+| # | Lo que vio | Lo que se ha hecho | La cifra |
+| --- | --- | --- | --- |
+| 1 | «el menú lateral no llega abajo: acaba a media pantalla» | el carril es la **columna** (se estira con la fila) y lo que viaja pegado es `.carril__interior` | carril **800 px** con la columna en **1.466,30** → ahora **1.466,30**. Y el píxel: `x=5` dejaba de ser blanco en `y=800` y ahora lo es hasta el final |
+| 2 | «las notas salen como 0.0000 en vez de 0,00» | **un solo** módulo decide (`src/lib/numeros.ts`) y **todos** los sitios lo consumen | 7 sitios en 3 formatos distintos (punto-4-cifras, `toFixed(2)`, `toFixed(1).replace`) → 1 formato |
+| 3 | «la pantalla de resultado abre con dos párrafos» | **una línea** + botón «¿Por qué estimada?»; los párrafos **no se borran**, se pliegan | la prueba exige el texto en el documento **y** `not.toBeVisible()` |
+| 4 | «el resultado no muestra la hoja de respuestas ni Ver en apuntes» | `AnswerSheet` (diseño v0) arriba, con «bajar a la pregunta»; «Ver en apuntes» **al apartado** | `/temario/IV.7#el-modelo-tcp-ip-y-sus-capas`, resuelto por el servidor desde `question_note_anchors` |
+| 5 | «indicadores de carga y el mismo estilo en todas las pantallas» | esqueleto a los **300 ms** en Temario, Progreso y Tema; un botón secundario, una etiqueta, un espaciado | 3 pruebas de esqueleto en rojo previo; axe **0** y consola **0** en las 8 capturas |
+
+### La prueba, con su rojo previo
+
+Se escribieron **antes** del arreglo y se corrieron contra el árbol sin él:
+
+- **componente** (`vitest`): **10 fallos · 3 pasan** (guardado en `artifacts/acabado/rojo-unitario.txt`);
+- **capturas** (`playwright`, el mismo guion a 1280 y 390): **3 fallos · 5 pasan** → después **8 pasan**;
+- **la escalera de migraciones**: la lista a mano tenía **29** escalones y la cadena real de alembic
+  **40** — **11 no estaban**, y son exactamente los que hacían caer la puerta 7 al añadir una migración.
+
+### El §1 que se sumó a la tanda: la escalera, derivada
+
+La prueba de la vuelta atrás de las migraciones **ya no tiene una lista escrita a mano**. Los escalones
+salen de `ScriptDirectory.walk_revisions()` (la cadena, de la cabeza a la raíz) y las tablas que se lleva
+cada bajada, del propio guion de la migración (`op.create_table`, resolviendo constantes de texto). Si un
+nombre no se puede leer, la prueba **falla y lo dice** en lugar de comprobar menos de lo que cree. Con
+eso, la migración nueva entra sola: `test_migrations_downgrade.py` pasa de 29 a 40 escalones y **9
+pruebas en verde**.
+
+### El §3.2 que se ha construido: `npm run screens -- --datos <dir>`
+
+El otro punto que faltaba (§3, el recorrido con los datos reales) empieza por aquí. `--datos <carpeta>`
+captura contra una **copia**, sin tocar la siembra: se mapea a `OPOFUENTE_E2E_DATA_DIR`, que es la
+variable que `playwright.config.ts` **ya** respetaba y que **no** borra el directorio, y las capturas
+salen a `artifacts/screens-datos` para no pisar las de la siembra. Al arrancar **dice contra cuál está
+capturando**.
+
+### Lo que se ha cambiado, fichero a fichero
+
+- **API (5 ficheros + contrato)**: `StudentNoteAnchorSchema` en el resultado del alumno
+  (`topic_code` + `anchor`), resuelto con una consulta nueva del repositorio que une
+  `question_note_anchors` con `topic_note_sections` y solo acepta `result='covered'`. Contrato OpenAPI y
+  tipos regenerados (`contracts:check` en verde).
+- **Web (22 ficheros)**: `lib/numeros.ts` y `components/Esqueleto.tsx` nuevos; `ui/Disclosure.tsx` gana
+  `Plegable`; `AppShell.tsx` parte el carril en dos; `ResultPage.tsx` junta los arreglos 2, 3 y 4;
+  `answerSheetModel.ts` traduce el resultado a filas de la hoja; `global.css` unifica botón, etiqueta,
+  estados y espaciado.
+- **Pruebas**: 6 ficheros de componente nuevos (`numeros`, `acabadoResultado`, `acabadoTextos`,
+  `cargaEsqueleto`, `capturasDatos`) y un guion de capturas nuevo (`tests/screens/acabado.spec.ts`,
+  8 capturas). Dos pruebas viejas del formato del número, actualizadas **con su razón escrita dentro**.
+
+### Lo que queda fuera y por qué
+
+- **El recorrido con los datos reales (§3, el punto 7 del objetivo)**: no se ha hecho. Es el bloque
+  siguiente; esta tanda deja construida la pieza que le hacía falta (`--datos`) y las capturas del
+  acabado.
+- **Las 18 puertas**: no las corre este bloque. Se han corrido las locales: `ruff format --check .` (558
+  ficheros), `ruff check .`, `mypy` (261 ficheros), `eslint`, `tsc`, las **434** de componente, las
+  **950** de unidad y contrato del backend y las **273** de alumno/estudio/migraciones.
+- **Los colores de dentro de la hoja de respuestas** están comprobados por la prueba sobre la pantalla
+  (`data-estado="correcta"` / `"fallada"`), no leyendo el PNG: esta máquina no ve imágenes.
+- **La palabra «rojo»**: el detector la lee como el banco privado «Rojo» sin distinguir mayúsculas, así
+  que el texto nuevo dice «el color del fallo». Queda anotado en `PARA-EL-PROPIETARIO.md` para que el
+  propietario decida si el detector debería distinguir la mayúscula.

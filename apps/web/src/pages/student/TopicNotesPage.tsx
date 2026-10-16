@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 
 import { getStudentNotes, getStudentTopic, type StudentNoteSection } from '../../api/studentStudy';
 import { ErrorState } from '../../components/ErrorState';
-import { LoadingState } from '../../components/LoadingState';
+import { EsqueletoDeLista } from '../../components/Esqueleto';
 import { NotesBody } from '../../features/student/NotesBody';
 import { NotesStateChip } from '../../features/student/NotesStateChip';
 import { ReportMistake } from '../../features/student/ReportMistake';
@@ -42,7 +42,7 @@ export function TopicNotesPage() {
   });
 
   if (tema.isPending || apuntes.isPending) {
-    return <LoadingState label="Cargando los apuntes…" />;
+    return <EsqueletoDeLista nombre="los apuntes" identificador="esqueleto-tema" filas={6} />;
   }
   if (tema.isError || apuntes.isError) {
     const error = tema.error ?? apuntes.error;

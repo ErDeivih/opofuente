@@ -57,6 +57,44 @@ export function Tabs({ tabs, active, onChange, children }: TabsProps) {
   );
 }
 
+export interface PlegableProps {
+  /** Lo que se lee en el botón, y lo que dice **qué** hay dentro: «¿Por qué estimada?». */
+  titulo: string;
+  children: ReactNode;
+}
+
+/**
+ * Un párrafo explicativo que se pliega (§2.3 del cierre del objetivo).
+ *
+ * La regla que lo justifica es general: **ningún párrafo explicativo visible por defecto en la zona del
+ * alumno**. La explicación no se borra —hay cosas que hay que poder leer y comprobar—, se pliega: el
+ * botón dice qué hay dentro y `aria-expanded` dice si está abierto.
+ *
+ * Se apoya en las clases del acordeón (`ui-accordion__*`) a propósito: es el mismo mecanismo, y dos
+ * maneras de plegar algo en la misma pantalla serían dos maneras de que el alumno no lo encuentre.
+ */
+export function Plegable({ titulo, children }: PlegableProps) {
+  const [abierto, setAbierto] = useState(false);
+  const panel = useId();
+  return (
+    <div className="ui-accordion__item">
+      <button
+        type="button"
+        className="ui-accordion__trigger"
+        aria-expanded={abierto}
+        aria-controls={panel}
+        onClick={() => setAbierto(!abierto)}
+      >
+        {titulo}
+        <span aria-hidden="true">{abierto ? '−' : '+'}</span>
+      </button>
+      <div id={panel} className="ui-accordion__panel" hidden={!abierto}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
 export interface AccordionItem {
   id: string;
   title: string;

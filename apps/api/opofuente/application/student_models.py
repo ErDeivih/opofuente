@@ -439,6 +439,23 @@ class StudentTopicRefView:
 
 
 @dataclass(frozen=True, slots=True)
+class StudentNoteAnchorView:
+    """El apartado de los apuntes que **contesta** una pregunta, con su tema y su anclaje.
+
+    Existe para que «Ver en apuntes» del resultado lleve al párrafo que explica el fallo
+    (`/temario/IV.7#udp`) y no a la portada del tema, que no explica nada. Sale de la
+    comprobación del motor (`question_note_anchors`), que es donde está la letra que los apuntes
+    dieron con su cita.
+
+    Una pregunta puede estar en dos temas (D7) y el apartado pertenece a **uno**: viaja con su
+    código de tema para que el enlace no dependa de cuál de los dos se enseñe primero.
+    """
+
+    topic_code: str
+    anchor: str
+
+
+@dataclass(frozen=True, slots=True)
 class StudentResultQuestionView:
     """Una pregunta ya corregida, con las tres cosas que el alumno necesita ver juntas.
 
@@ -468,6 +485,11 @@ class StudentResultQuestionView:
     #: por lo mismo que la otra: dice de dónde sale la letra con la que se corrigió, y con la marca
     #: «clave revisada automáticamente» el alumno sabe que la letra no es la de la plantilla.
     derived_key: bool = False
+    #: El apartado de los apuntes que contesta esta pregunta, o `None` si los apuntes no la
+    #: contestan. Con él, una fallada ofrece «Ver en apuntes» **al párrafo**, que es lo que el
+    #: alumno necesita para entender el fallo; sin él no se ofrece la salida, en vez de mandarlo a
+    #: la portada del tema.
+    note_anchor: StudentNoteAnchorView | None = None
 
 
 @dataclass(frozen=True, slots=True)

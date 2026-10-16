@@ -66,3 +66,14 @@ artifacts/screens/
 # rastrearlas deja el árbol sucio cada vez que alguien mide. Un artefacto que cambia en cada pasada no
 # es fuente; se generan donde toca —`artifacts/capturas-f31/`— y no viven en el control de versiones.
 artifacts/capturas-f31/
+
+# Las capturas del acabado (§2 del cierre del objetivo) son el mismo tipo de artefacto que las de
+# `artifacts/screens`: **se reescriben en cada corrida** (y hay una carpeta de «antes» y otra de
+# «después»), asi que rastrearlas deja el arbol sucio cada vez que alguien mide. Se generan donde toca
+# y no viven en el control de versiones; el documento que las mide, si.
+artifacts/acabado/antes/
+artifacts/acabado/despues/
+artifacts/acabado/*.txt
+# Y la carpeta de las capturas hechas contra una copia de los datos reales (`--datos <dir>`): es la
+# misma clase de artefacto generado que `artifacts/screens/`.
+artifacts/screens-datos/

@@ -1,5 +1,6 @@
 import type { components } from '@opofuente/contracts';
 
+import { formatearPorcentaje } from '../lib/numeros';
 import { apiFetch } from './client';
 
 /**
@@ -97,7 +98,10 @@ export function coveragePercent(coverage: [number, number] | null | undefined): 
   if (total <= 0) {
     return null;
   }
-  return `${((100 * cubiertas) / total).toFixed(1).replace('.', ',')} %`;
+  // Aquí la décima **hace falta**: el listón es el 90 % y una cobertura de 89,7 % no es lo mismo que
+  // una de 90,2 %. Se pide con el formateador común (§2.2), no con un `toFixed` que se acuerde o no de
+  // la coma según el día.
+  return formatearPorcentaje(cubiertas / total, { decimales: 1 });
 }
 
 /** La tabla de la revisión: los temas con su estado, sus cifras y el motivo de los borradores. */

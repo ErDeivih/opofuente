@@ -54,30 +54,41 @@ export function AppShell({ children }: AppShellProps) {
 
       <div className="marco-alumno__cuerpo">
         <aside className="carril">
-          <div>
-            <p className="carril__marca">
-              <span className="carril__punto" aria-hidden="true" />
-              <span className="carril__nombre">OpoFuente</span>
-              <span className="carril__etiqueta">TAI</span>
-            </p>
-            <nav className="carril__navegacion" aria-label="Secciones de la aplicación">
-              <ul className="carril__lista">
-                {carril.map((item) => (
-                  <li key={item.path}>
-                    <NavLink
-                      to={item.path}
-                      end={item.path === '/'}
-                      className={({ isActive }) =>
-                        isActive ? 'carril__enlace carril__enlace--activo' : 'carril__enlace'
-                      }
-                    >
-                      <IconoDe ruta={item.path} />
-                      <span className="carril__texto">{item.label}</span>
-                    </NavLink>
-                  </li>
-                ))}
-              </ul>
-            </nav>
+          {/*
+            El carril tiene **dos** piezas y no una (§2.1 del cierre del objetivo):
+
+            - `.carril` es la **columna**: se estira con la fila, así que su fondo blanco y su línea
+              llegan hasta abajo del todo aunque el contenido sea largo. Antes era el propio carril el
+              que llevaba `height: 100vh` y el blanco acababa a los 800 px de la ventana: debajo se
+              veía el gris del papel (lo que el propietario vio en las capturas);
+            - `.carril__interior` es lo que **viaja pegado** mientras se desplaza el contenido.
+          */}
+          <div className="carril__interior">
+            <div>
+              <p className="carril__marca">
+                <span className="carril__punto" aria-hidden="true" />
+                <span className="carril__nombre">OpoFuente</span>
+                <span className="carril__etiqueta">TAI</span>
+              </p>
+              <nav className="carril__navegacion" aria-label="Secciones de la aplicación">
+                <ul className="carril__lista">
+                  {carril.map((item) => (
+                    <li key={item.path}>
+                      <NavLink
+                        to={item.path}
+                        end={item.path === '/'}
+                        className={({ isActive }) =>
+                          isActive ? 'carril__enlace carril__enlace--activo' : 'carril__enlace'
+                        }
+                      >
+                        <IconoDe ruta={item.path} />
+                        <span className="carril__texto">{item.label}</span>
+                      </NavLink>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+            </div>
           </div>
         </aside>
 
