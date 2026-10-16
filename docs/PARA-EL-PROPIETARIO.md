@@ -53,6 +53,12 @@ dentro de un mes nadie sabría cuál de las dos carpetas está mirando.
 
 necesita tu criterio está marcado como **«Decide tú»**.
 
+**Y una cosa más, que salió al comprobarlo todo:** el «0.0000» no estaba solo en la pantalla. **La
+frase que escribe el servidor** —la nota del diagnóstico, el mínimo publicado, la cobertura de tus
+apuntes— también llevaba el punto, así que en **la misma fila** de la tabla del diagnóstico podías leer
+`0,34 – 1,00` en una columna y `0.3424 a 1.0` en la nota de esa fila. Ya no: las frases que lees van
+**todas** en español (`0,33 sobre 50`, `el mínimo de 25`, `va de 0,34 a 1,00`, `489/542 = 90,2 %`).
+
 ## 15 oct 2026 — El material de la Bandeja ya se puede pasar a la Biblioteca
 
 **Lo que cambia para ti:** hasta hoy, para que algo llegara a la **Biblioteca** había que llamar a la

@@ -3899,3 +3899,31 @@ capturando**.
 - **La palabra «rojo»**: el detector la lee como el banco privado «Rojo» sin distinguir mayúsculas, así
   que el texto nuevo dice «el color del fallo». Queda anotado en `PARA-EL-PROPIETARIO.md` para que el
   propietario decida si el detector debería distinguir la mayúscula.
+
+### El cierre de la puerta 18: las diez aserciones y la prosa del servidor
+
+La puerta 18 dio **4 fallos / 79 pasan**, y las cuatro eran el mismo hecho: las pruebas E2E seguían
+fijando el formato **viejo** del número. Buscadas **por patrón** y no por rojo, eran **diez**:
+
+| fichero | líneas | lo que esperaban |
+| --- | --- | --- |
+| `keys.spec.ts` | 102, 123, 130, 133, 138 | `3 puntos`, `-1 puntos` y **`3 · Primera parte…`** |
+| `study.spec.ts` | 178, 186, 191, 248, 357 | `-0.3333 (-1/3)`, `0 puntos`, `0.6667 (2/3)`, `-1 puntos`, `0.34 – 1.00` |
+
+Una de ellas —`getByText('0 puntos')`— **no habría fallado nunca**: casaba con `0,00 puntos` porque lo
+contiene como trozo. Es el caso que el aislamiento no ve. Y una onceava (`25.0`, con el `.` del regex
+sin escapar) no habría cazado nunca un cambio de formato. Las once llevan su razón escrita dentro.
+
+**Y la prosa del servidor**, que era el otro lado del mismo encargo: el frontend quedó unificado en
+siete sitios y **la frase del servidor se quedó con el punto**, así que en la **misma fila** de la tabla
+del diagnóstico convivían `0,34 – 1,00` (la columna, pintada por la pantalla) y `0.3424 a 1.0` (la nota
+de esa fila). Se añade `apps/api/opofuente/domain/numeros.py` —el hermano de `src/lib/numeros.ts`— y
+pasan por él las cuatro frases que lee una persona: la estimación de una parte (`0,33 sobre 50 … (25)`),
+el mínimo publicado (`el mínimo de 25`), la nota del diagnóstico (`0,34 a 1,00`) y la cobertura del
+panel (`489/542 = 90,2 %`, que es **como su propio docstring decía que se enseña**). `decimal_text` no se
+toca: sigue siendo el decimal del contrato. Los identificadores y los informes de consola tampoco.
+
+Medido: `ruff format --check .` (560 ficheros), `ruff check .`, `mypy` (262), `eslint`, `tsc`, **962**
+de unidad y contrato del backend, **136** de integración de alumno/estudio/apuntes, **434** de
+componente (433 en la corrida completa y 10/10 en aislamiento: el fallo era el `promote.test.tsx` de
+siempre por carga) y la **puerta 18 entera: 83 pasan**. Las capturas del acabado, regeneradas.

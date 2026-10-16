@@ -146,3 +146,59 @@ no ha roto nada.
   mirarlo, y esta máquina no ve imágenes.
 * El carril se ha medido como **altura de caja** y como **píxel**; no se ha medido su comportamiento al
   desplazar la página a mano en un navegador con ventana real.
+
+## El cierre: las diez aserciones de E2E y la prosa del servidor
+
+Dos cosas más, las dos del mismo género —una expectativa que fijaba el formato viejo y una cifra que se
+quedó fuera del arreglo—, y las dos **medidas**:
+
+### Las diez aserciones del formato viejo
+
+La puerta 18 dio **4 fallos**, pero eran **diez** las que fijaban el punto del decimal: cada prueba se
+para en su **primera** aserción fallida, así que las demás no se ven en el registro. Buscadas por
+**patrón** y no por rojo:
+
+| fichero | líneas (antes) | lo que esperaban |
+| --- | --- | --- |
+| `keys.spec.ts` | 102, 123, 130, 138 | `3 puntos`, `-1 puntos` |
+| `keys.spec.ts` | 133 | **`3 · Primera parte…`** — la quinta escondida: moría *detrás* de la de `-1 puntos` |
+| `study.spec.ts` | 178, 186, 191, 248 | `-0.3333 (-1/3)`, `0 puntos`, `0.6667 (2/3)`, `-1 puntos` |
+| `study.spec.ts` | 357 | `0.34 – 1.00` (el intervalo del diagnóstico) |
+
+De las diez, **una no habría fallado nunca**: `getByText('0 puntos')` casaba con `0,00 puntos` porque
+`0,00 puntos` **contiene** `0 puntos` como trozo. Es exactamente el caso que el aislamiento no ve, porque
+el aislamiento solo mira las que fallan. Todas llevan ahora su razón escrita dentro, y la de `0 puntos`
+dice por qué pasaba por casualidad.
+
+Y una **onceava** cambió de forma sin cambiar de valor: el mínimo de una parte (`25.0`) llevaba un regex
+con el `.` **sin escapar**, que casaba igual con `25.0` que con `25,0`: no habría cazado nunca un cambio
+de formato. Ahora es una comprobación literal.
+
+### La prosa del servidor: la misma fila llevaba los dos formatos
+
+El frontend quedó unificado en siete sitios, y **la frase que compone el servidor se quedó fuera**. Se
+midió y el sitio no podía ser peor: en la **misma fila** de la tabla del diagnóstico convivían
+
+- `0,34 – 1,00` — la columna, que la pinta la pantalla con `Intl`;
+- `0.3424 a 1.0` — la nota de esa fila, que la escribía el servidor con los flotantes crudos.
+
+Ahora hay un módulo en el dominio (`apps/api/opofuente/domain/numeros.py`, el hermano del
+`src/lib/numeros.ts`) y pasan por él las cuatro frases que lee una persona:
+
+| dónde | antes | después |
+| --- | --- | --- |
+| la estimación de una parte (`study.py`) | `es 0.3333 sobre 50.00 … (25.00)` | `es 0,33 sobre 50 … (25)` |
+| el mínimo de una parte directa (`study.py`) | `el mínimo de 25.0` | `el mínimo de 25` |
+| la nota del diagnóstico (`diagnostic.py`) | `va de 0.3424 a 1.0` | `va de 0,34 a 1,00` |
+| la cobertura del panel (`notes_review.py`) | `489/542 = 90.2 %` | `489/542 = 90,2 %` |
+
+Dos detalles que sostienen el arreglo:
+
+1. **`decimal_text` no se toca**: sigue dando `0.3333` donde de verdad es un dato de máquina (el campo
+   del contrato), y su prueba sigue en verde. Lo que cambia es la **frase**.
+2. **La cifra del panel llevaba la coma escrita en su propio docstring** desde antes
+   (`figura` es «489/542 = 90,2 %»): el que estaba mal era el código, no la expectativa.
+
+Lo que **no** se toca, a propósito: los identificadores y códigos (`IV.1`, `50 preguntas`, una versión,
+un tamaño en KB) y los **informes de consola** de los comandos (`apuntes --medir`,
+`claves_derivadas`), que no los lee nadie desde la interfaz.

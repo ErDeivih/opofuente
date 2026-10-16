@@ -142,7 +142,7 @@ const RESULTADO: SessionResult = {
     score: { numerator: 5, denominator: 3, fraction: '5/3', decimal: '1.6667' },
     official_available: false,
     verdict_note:
-      'el mínimo de 25.0 es de la calificación oficial, que necesita los baremos de la convocatoria: no se aplica a la puntuación directa',
+      'el mínimo de 25 es de la calificación oficial, que necesita los baremos de la convocatoria: no se aplica a la puntuación directa',
   },
   substitutions: [],
   unfinished: 1,
@@ -650,7 +650,7 @@ describe('estudiar: el resultado', () => {
     // Los recuentos salen dos veces: los de la parte y los del total (que aquí coinciden).
     expect(screen.getAllByText(/2 aciertos · 1 fallos · 1 en blanco/)).toHaveLength(2);
     expect(
-      screen.getByText(/el mínimo de 25.0 es de la calificación oficial/),
+      screen.getByText(/el mínimo de 25 es de la calificación oficial/),
     ).toBeInTheDocument();
     // Cómo se corrigió, en la parte y en el total (los dos son puntuación directa aquí).
     expect(

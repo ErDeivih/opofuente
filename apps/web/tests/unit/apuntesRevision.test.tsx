@@ -94,7 +94,7 @@ const TABLA: NotesReviewPage = {
         {
           code: 'a_las_puertas',
           text: 'Cumple las dos puertas y **no está publicado**: no es que le falte nada, es que nadie ha archivado su versión. Aprobarlo la publica.',
-          figure: '489/542 = 90.2 %',
+          figure: '489/542 = 90,2 %',
         },
         {
           code: 'conflictos',
@@ -212,7 +212,7 @@ const RESULTADO: NotesReviewResult = {
       {
         code: 'publicado',
         text: 'Está publicado: su versión se archivó al pasar las dos puertas.',
-        figure: '489/542 = 90.2 %',
+        figure: '489/542 = 90,2 %',
       },
     ],
   },
@@ -313,7 +313,9 @@ describe('la tabla de la revisión de apuntes', () => {
     // La cifra de la puerta, tal cual la manda el servidor: 489 de 542, con su porcentaje.
     expect(within(borrador).getByText(/489 de 542/)).toBeInTheDocument();
     expect(within(borrador).getByText('(90,2 %)')).toBeInTheDocument();
-    expect(within(borrador).getByText('489/542 = 90.2 %')).toBeInTheDocument();
+    // La cifra la compone el servidor, y el §2.2 alcanza también a su prosa: era la última frase
+    // con el punto del decimal. La aserción esperaba el formato viejo.
+    expect(within(borrador).getByText('489/542 = 90,2 %')).toBeInTheDocument();
     expect(within(borrador).getByText(/Cumple las dos puertas/i)).toBeInTheDocument();
     expect(within(borrador).getByText(/nadie ha revisado este tema todavía/i)).toBeInTheDocument();
     expect(within(borrador).getByText('30 pregunta(s)')).toBeInTheDocument();

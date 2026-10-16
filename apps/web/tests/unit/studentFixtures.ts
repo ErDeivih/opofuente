@@ -291,13 +291,13 @@ export const sessionResultFixture: StudentSessionResult = {
       score_max: 50,
       pass_score: 25,
       passed: null,
-      // El aviso lo compone el dominio y viaja tal cual, con sus cifras en el formato de
-      // `decimal_text` (punto y cuatro decimales). Es el texto que el propietario veía al abrir el
-      // resultado; ahora va **plegado**, pero el dato tiene que ser el de verdad para que la prueba
-      // mida lo que hay.
+      // El aviso lo compone el **dominio** y viaja tal cual. Sus cifras van en español desde el
+      // arreglo del §2.2 **en el servidor**: la nota con coma y dos decimales (`0,33`) y el máximo y
+      // el mínimo sin ceros de más (`sobre 50`, `(25)`). Antes este texto llevaba el decimal del
+      // contrato (`0.3333 sobre 50.00 ... (25.00)`), que es el formato de máquina.
       verdict_note:
-        'La estimación de «Primera parte: cuestionario de conocimientos» es 0.3333 sobre 50.00 y ' +
-        'no llega al mínimo publicado (25.00), pero Es una **estimación**: la puntuación directa ' +
+        'La estimación de «Primera parte: cuestionario de conocimientos» es 0,33 sobre 50 y ' +
+        'no llega al mínimo publicado (25), pero Es una **estimación**: la puntuación directa ' +
         '(aciertos menos errores por su penalización) escalada a la banda que publica la ' +
         'convocatoria para esta parte. La calificación oficial 0-50 resulta de los baremos que fija ' +
         'la Comisión de Selección, y esa tabla no está importada: esto no es la calificación ' +

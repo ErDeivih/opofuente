@@ -363,7 +363,9 @@ class TestLaTabla:
         assert "a_las_puertas" in codigos
         assert "sin_decision" in codigos
         puertas = next(razon for razon in borrador["reasons"] if razon["code"] == "a_las_puertas")
-        assert puertas["figure"] == "1/1 = 100.0 %"
+        # La cifra de la puerta, con **coma** (§2.2): la compone el servidor y viaja ya escrita.
+        # Esta aserción esperaba `1/1 = 100.0 %`, el formato viejo.
+        assert puertas["figure"] == "1/1 = 100,0 %"
         assert "Aprobarlo la publica" in puertas["text"]
 
     def test_no_mide_los_temas_publicados_y_lo_dice(self, panel: Panel) -> None:

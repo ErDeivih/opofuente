@@ -23,6 +23,7 @@ from enum import StrEnum
 from fractions import Fraction
 
 from opofuente.domain.errors import InvariantViolationError, SessionStateError
+from opofuente.domain.numeros import escala, nota
 
 # --- vocabularios (los mismos que la migración 0016) --------------------------------------------
 
@@ -725,15 +726,15 @@ def verdict_for(rule: PartRule, score: Fraction, *, wrong: int) -> PartVerdict:
             passed=score >= Fraction(str(rule.pass_score)),
             reason=(
                 f"la puntuación de la prueba se calcula con la fórmula publicada y su mínimo es "
-                f"{rule.pass_score}"
+                f"{escala(rule.pass_score)}"
             ),
         )
     # `direct`: el umbral publicado es de la calificación oficial, no de la puntuación directa.
     return PartVerdict(
         passed=None,
         reason=(
-            f"el mínimo de {rule.pass_score} es de la calificación oficial, que necesita los "
-            "baremos de la convocatoria: no se aplica a la puntuación directa"
+            f"el mínimo de {escala(rule.pass_score)} es de la calificación oficial, que necesita "
+            "los baremos de la convocatoria: no se aplica a la puntuación directa"
         ),
     )
 
@@ -754,16 +755,18 @@ def estimated_verdict_note(rule: PartRule, score: Fraction) -> str:
 
     Se dice lo que se puede afirmar —la estimación y el mínimo, los dos en la misma banda— y **no**
     se declara superada la prueba: eso lo diría la calificación oficial, que no se puede calcular.
+
+    Las tres cifras van **en español**, con dos reglas distintas a propósito (§2.2): la **nota** con
+    coma y dos decimales (`0,33`), y el **máximo y el mínimo sin ceros de más** (`sobre 50`, `25`),
+    porque son la cifra que publica la convocatoria y no se le añade precisión. Antes esto escribía
+    el decimal del contrato tal cual (`0.3333 sobre 50.00`), que es el formato de máquina y no el de
+    una frase que lee una persona.
     """
-    maximo = (
-        "?" if rule.score_max is None else decimal_text(Fraction(str(rule.score_max)), decimales=2)
-    )
-    cabecera = (
-        f"La estimación de «{rule.name or rule.code}» es {decimal_text(score)} sobre {maximo}"
-    )
+    maximo = "?" if rule.score_max is None else escala(Fraction(str(rule.score_max)))
+    cabecera = f"La estimación de «{rule.name or rule.code}» es {nota(score)} sobre {maximo}"
     if rule.pass_score is None:
         return f"{cabecera}. {ESTIMATED_SCORE_NOTE}"
-    minimo = decimal_text(Fraction(str(rule.pass_score)), decimales=2)
+    minimo = escala(Fraction(str(rule.pass_score)))
     alcanza = (
         "llega al mínimo publicado"
         if score >= Fraction(str(rule.pass_score))

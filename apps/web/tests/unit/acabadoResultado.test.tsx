@@ -67,13 +67,11 @@ describe('el resultado: la nota en una línea', () => {
     montar();
 
     await screen.findByText(/^Puntuación directa:/);
-    // De la pantalla se quita **lo plegado**, que es lo único que puede traer el decimal del servidor
-    // tal cual: los párrafos los compone el dominio y viajan con su formato (`0.3333 sobre 50.00`).
-    // Lo que se exige es que **lo que se ve** esté en español.
+    // Se mira la pantalla **entera**, plegado incluido: desde el arreglo del servidor, la prosa que
+    // compone el dominio también va en español (`0,33 sobre 50 ... (25)`), así que ya no queda ningún
+    // rincón de esta pantalla —tampoco el que se despliega— con el punto del decimal.
     const pantalla = document.body.textContent ?? '';
-    const plegado = document.querySelector('.ui-accordion__panel')?.textContent ?? '';
-    const sinLoPlegado = pantalla.split(plegado).join(' ');
-    expect(sinLoPlegado).not.toMatch(/\d\.\d{2,}/);
+    expect(pantalla).not.toMatch(/\d\.\d{2,}/);
   });
 });
 
