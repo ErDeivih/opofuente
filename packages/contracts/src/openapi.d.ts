@@ -3537,7 +3537,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** El test en curso: la pregunta que toca y la hoja de respuestas entera */
+        /**
+         * El test en curso: la pregunta que toca y la hoja de respuestas entera
+         * @description El test en curso, en la pregunta que toca o en la **fila** que se pida.
+         *
+         *     Poder pedir una fila es lo que hace usable la hoja de respuestas: sin esto, una pregunta ya
+         *     contestada no se podía volver a abrir desde la pantalla (§3.2 del encargo F36).
+         */
         get: operations["student_session_api_v1_student_sessions__sesion__get"];
         put?: never;
         post?: never;
@@ -21298,7 +21304,10 @@ export interface operations {
     };
     student_session_api_v1_student_sessions__sesion__get: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Fila de la hoja de respuestas que se quiere leer. Sin ella se sirve la primera pregunta sin contestar, que es el avance de siempre. */
+                position?: number | null;
+            };
             header?: never;
             path: {
                 /** @description Identificador de la sesión, el que devolvió al montarla. */

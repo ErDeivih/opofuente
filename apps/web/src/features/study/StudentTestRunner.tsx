@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 
 import {
@@ -20,50 +20,92 @@ import { LETRAS_POR_DEFECTO } from './answerSheetModel';
  *
  * Es **modo examen**: desaparece la navegación (esta pantalla se monta fuera del marco del alumno).
  * A la izquierda el enunciado y sus opciones; a la derecha la hoja de respuestas, que en móvil se
- * abre con un botón. Se contesta con el ratón o con el teclado (`A`–`D`, `1`–`4`, `Intro`, `M`).
+ * abre con un botón. Se contesta con el ratón o con el teclado (`A`–`D`, `1`–`4`, `←`/`→` para
+ * recorrer la hoja, `M`).
  *
  * Lo que **no** hace, y es lo importante: no inventa la corrección. Si el test corrige al final y no
  * ha terminado, la respuesta del servidor no trae la solución y aquí no hay nada que enseñar; si
  * corrige al momento, se enseña lo que el servidor manda. La solución no vive en esta pantalla.
+ *
+ * `posicion` es **la fila de la hoja que se está mirando**, y es lo que convierte la hoja en algo
+ * que se usa y no solo se mira: `null` significa «la que toca» (la primera sin contestar, que decide
+ * el servidor) y un número es una fila elegida —pulsando su número o con las flechas—. Volver a una
+ * pregunta ya contestada es el defecto 5 del recorrido (§3.2 del encargo F36).
  */
 export function StudentTestRunner() {
   const { id = '' } = useParams<{ id: string }>();
   const navegar = useNavigate();
   const cliente = useQueryClient();
-  const [arrancado, setArrancado] = useState(false);
   const [hojaAbierta, setHojaAbierta] = useState(false);
+  const [posicion, setPosicion] = useState<number | null>(null);
 
   const run = useQuery({
-    queryKey: ['student-run', id],
-    queryFn: () => getStudentRun(id),
+    queryKey: ['student-run', id, posicion],
+    queryFn: () => getStudentRun(id, posicion ?? undefined),
     enabled: id !== '',
+    // Al saltar de una fila a otra —pulsando su número o con las flechas— se **conserva** la pregunta
+    // que se estaba viendo hasta que llega la nueva: sin esto, moverse por la hoja parpadeaba con la
+    // pantalla de «Abriendo el test…» en cada pulsación.
+    placeholderData: keepPreviousData,
   });
 
   // Un test recién montado está en borrador: se arranca al entrar, que es lo que espera quien pulsa
   // «Empezar». Arrancar uno que ya corre no cambia nada (la ruta es reintentable).
+  //
+  // El arranque es **uno y solo uno**, y por eso la guarda es un `ref` que se levanta **antes** de
+  // pedirlo y las dependencias del efecto son estables. Antes era un `useState` que se levantaba en
+  // el `onSuccess` y el objeto entero de la mutación en las dependencias: como ese objeto cambia de
+  // identidad en cada render, el efecto se volvía a ejecutar en cada uno y **cada render mandaba otro
+  // `POST /start`** mientras el primero no hubiera vuelto. Medido en el recorrido del 16-oct-2026:
+  // 4, 4, 4, 6 y hasta 12 peticiones por test abierto. No se tapa con un `debounce` ni con un `if` a
+  // la defensiva: se arregla donde estaba, en que el efecto se repita.
+  const arranqueHecho = useRef(false);
   const arrancar = useMutation({
     mutationFn: () => startStudentRun(id),
     onSuccess: (datos) => {
-      cliente.setQueryData(['student-run', id], datos);
-      setArrancado(true);
+      cliente.setQueryData(['student-run', id, null], datos);
     },
   });
+  const pedirArranque = arrancar.mutate;
   useEffect(() => {
-    if (run.data !== undefined && run.data.session.status === 'draft' && !arrancado) {
-      arrancar.mutate();
+    if (arranqueHecho.current) {
+      return;
     }
-  }, [run.data, arrancado, arrancar]);
+    if (run.data === undefined || run.data.session.status !== 'draft') {
+      return;
+    }
+    arranqueHecho.current = true;
+    pedirArranque();
+  }, [run.data, pedirArranque]);
 
   const contestar = useMutation({
-    mutationFn: (variables: { position: number; chosen: string[]; confidence: 'low' | null }) =>
+    mutationFn: (variables: {
+      position: number;
+      chosen: string[];
+      confidence: 'low' | null;
+      /** Si esa pregunta ya estaba contestada: cambiar una respuesta **no** mueve la pantalla. */
+      cambiaba: boolean;
+    }) =>
       answerStudentQuestion(id, {
         position: variables.position,
         chosen: variables.chosen,
         elapsed_ms: 0,
         confidence: variables.confidence,
       }),
-    onSuccess: (datos: StudentRun) => {
-      cliente.setQueryData(['student-run', id], datos);
+    onSuccess: (datos: StudentRun, variables) => {
+      cliente.setQueryData(['student-run', id, posicion], datos);
+      if (variables.cambiaba) {
+        // Se cambió una respuesta: el alumno se queda donde está, mirando la pregunta que acaba de
+        // corregir. Saltar a otra fila aquí sería quitarle de delante lo que está leyendo.
+        return;
+      }
+      // Y al contestar una pregunta por primera vez, el test avanza solo a la primera sin contestar
+      // —que es el avance de siempre—, pero lo decide la pantalla y no el servidor: el servidor
+      // devuelve la fila que se acaba de contestar (§3.2 del encargo F36).
+      const pendiente = datos.sheet.find((fila) => !fila.answered);
+      if (pendiente !== undefined) {
+        setPosicion(pendiente.position);
+      }
     },
   });
 
@@ -86,10 +128,20 @@ export function StudentTestRunner() {
       if (pregunta === null) {
         return;
       }
-      contestar.mutate({ position: pregunta.position, chosen: [letra], confidence });
+      contestar.mutate({
+        position: pregunta.position,
+        chosen: [letra],
+        confidence,
+        cambiaba: pregunta.answered,
+      });
     },
     [contestar, pregunta],
   );
+
+  /** Ir a una fila de la hoja: es lo que hace la hoja usable (pulsar su número o las flechas). */
+  const irA = useCallback((destino: number) => {
+    setPosicion(destino);
+  }, []);
 
   const letras = useMemo(
     () =>
@@ -99,8 +151,12 @@ export function StudentTestRunner() {
     [pregunta],
   );
 
-  // Teclado: `A`–`D` y `1`–`4` responden, `M` marca dudosa, `←`/`→` recorren la hoja e `Intro`
-  // confirma. Se ignora lo que se teclea dentro de un campo de texto.
+  // Teclado: `A`–`D` y `1`–`4` responden, `M` marca dudosa y `←`/`→` recorren la hoja. Se ignora lo
+  // que se teclea dentro de un campo de texto.
+  //
+  // Las flechas no existían: la ayuda del test las prometía desde el diseño v0 y no estaban
+  // implementadas (§3.2 del encargo F36, defecto 5 del recorrido). Ahora están, y la ayuda de la
+  // pantalla lo dice, para que la promesa y el código digan lo mismo.
   useEffect(() => {
     function alPulsar(evento: KeyboardEvent) {
       if (pregunta === null || evento.metaKey || evento.ctrlKey || evento.altKey) {
@@ -108,6 +164,17 @@ export function StudentTestRunner() {
       }
       const destino = evento.target as HTMLElement | null;
       if (destino !== null && ['INPUT', 'TEXTAREA', 'SELECT'].includes(destino.tagName)) {
+        return;
+      }
+      if (evento.key === 'ArrowLeft' || evento.key === 'ArrowRight') {
+        const paso = evento.key === 'ArrowLeft' ? -1 : 1;
+        const total = estado?.total ?? 0;
+        const objetivo = pregunta.position + paso;
+        if (objetivo < 1 || objetivo > total) {
+          return;
+        }
+        evento.preventDefault();
+        irA(objetivo);
         return;
       }
       const tecla = evento.key.toLowerCase();
@@ -127,7 +194,7 @@ export function StudentTestRunner() {
     return () => {
       window.removeEventListener('keydown', alPulsar);
     };
-  }, [letras, pregunta, responder]);
+  }, [estado?.total, irA, letras, pregunta, responder]);
 
   if (id === '') {
     return (
@@ -287,7 +354,9 @@ export function StudentTestRunner() {
                 })}
               </ul>
               <p className="test-ayuda">
-                Teclado: A–D o 1–4 para responder, M para marcarla como dudosa.
+                Teclado: A–D o 1–4 para responder, M para marcarla como dudosa y ← / → para recorrer
+                la hoja. Se puede volver a cualquier pregunta desde la hoja y cambiar la respuesta
+                mientras el test no haya terminado.
                 {puedeCorregir ? null : ' La corrección de este test se ve al terminar.'}
               </p>
             </>
@@ -299,7 +368,12 @@ export function StudentTestRunner() {
           aria-label="Hoja de respuestas"
         >
           <h2 className="test-hoja__titulo">Hoja</h2>
-          <AnswerSheet filas={estado.sheet} actual={estado.position} letras={letras} />
+          <AnswerSheet
+            filas={estado.sheet}
+            actual={estado.position}
+            letras={letras}
+            onIr={irA}
+          />
         </aside>
       </div>
     </main>

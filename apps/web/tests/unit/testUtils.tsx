@@ -38,6 +38,15 @@ export interface StubbedRoute {
   status?: number;
   body: unknown;
   contentType?: string;
+  /**
+   * Cuántos milisegundos tarda esta respuesta en llegar.
+   *
+   * Existe para poder probar lo que pasa **mientras una petición está en vuelo**, que es donde vivían
+   * dos fallos de verdad: un `POST /start` que se repetía en cada repintado (medido: 4–12 por test
+   * abierto) y una pantalla que no tenía nada que enseñar mientras esperaba. Con la respuesta
+   * inmediata, ese hueco no existe y la prueba no reproduce nada.
+   */
+  demoraMs?: number;
 }
 
 /** Sustituye `fetch` por respuestas fijas que imitan el contrato real de la API.
@@ -86,12 +95,18 @@ export function stubApi(routes: Record<string, StubbedRoute>) {
         );
       }
       const route = elegida.ruta;
-      return Promise.resolve(
-        new Response(JSON.stringify(route.body), {
-          status: route.status ?? 200,
-          headers: { 'content-type': route.contentType ?? 'application/json' },
-        }),
-      );
+      const respuesta = new Response(JSON.stringify(route.body), {
+        status: route.status ?? 200,
+        headers: { 'content-type': route.contentType ?? 'application/json' },
+      });
+      if (route.demoraMs === undefined || route.demoraMs <= 0) {
+        return Promise.resolve(respuesta);
+      }
+      return new Promise<Response>((resolver) => {
+        setTimeout(() => {
+          resolver(respuesta);
+        }, route.demoraMs);
+      });
     },
   );
   vi.stubGlobal('fetch', fetchMock);

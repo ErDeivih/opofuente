@@ -1741,19 +1741,23 @@ class StudyService:
             finished=session.status is SessionStatus.FINISHED,
         )
 
-    def runner_view(self, session_id: str) -> RunnerView:
+    def runner_view(self, session_id: str, *, position: int | None = None) -> RunnerView:
         """La sesión entera como la necesita la pantalla del test en curso, **sin evidencia**.
 
         Es la lectura de `current_question` más lo que la hoja de respuestas necesita de todas las
         preguntas (posición, si se contestó, qué se marcó y, cuando se puede enseñar, su
         corrección). No hay una segunda corrección: sale de `_componer`, que es la que ya existe,
         con la evidencia apagada.
+
+        Con `position` se sirve **esa fila** de la hoja en lugar de la primera sin contestar: es lo
+        que necesita la pantalla para volver a una pregunta ya contestada, que es el defecto 5 del
+        recorrido (§3.2 del encargo F36). Sin `position` el comportamiento es el de siempre.
         """
         session = self._session_or_404(session_id)
         preguntas = self._study.session_questions(session_id)
         intentos = self._indice_intentos(session_id)
         vistas = self._componer(session, preguntas, intentos, with_evidence=False)
-        return RunnerView(
+        vista = RunnerView(
             session=session,
             current=next((vista for vista in vistas if not vista.answered), None),
             questions=vistas,
@@ -1762,6 +1766,12 @@ class StudyService:
             pending=sum(1 for vista in vistas if not vista.answered),
             finished=session.status is SessionStatus.FINISHED,
         )
+        if position is None:
+            return vista
+        elegida = next((vista for vista in vistas if vista.position == position), None)
+        if elegida is None:
+            raise NotFoundError("pregunta del test", str(position))
+        return replace(vista, current=elegida)
 
     def navigate(
         self, session_id: str, *, position: int | None = None, direction: str | None = None
@@ -1805,9 +1815,26 @@ class StudyService:
         )
 
     def answer(self, session_id: str, entrada: AnswerInput) -> AnswerOutcomeView:
-        """Registra una respuesta, la corrige con la clave congelada y dice qué se puede enseñar."""
+        """Registra una respuesta, la corrige con la clave congelada y dice qué se puede enseñar.
+
+        Es **una sola máquina de estados** para el ciclo de contestar (§3.2 del encargo F36), y sus
+        tres reglas son estas:
+
+        1. **se contesta y se vuelve a contestar mientras la sesión está en marcha**. Cambiar de
+        opción
+           no es un error: se reescribe el intento, se rehace la corrección y el cambio queda en la
+           auditoría. Antes devolvía un 409 («esa pregunta ya está respondida y el intento no se
+           reescribe») y desde la pantalla el alumno pulsaba otra opción y no cambiaba nada;
+        2. **reenviar lo mismo es idempotente**: se devuelve el intento que ya había, sin escribir
+        nada.
+           Es lo que hace que recargar y volver a enviar —o pulsar dos veces deprisa— no reviente;
+        3. **un test terminado tiene las respuestas congeladas**: el intento no se reescribe y se
+        dice
+           con su código (`attempt_frozen`). El alumno ya vio la corrección y la nota está
+           calculada.
+        """
         session = self._session_or_404(session_id)
-        assert_can_answer(self._state(session))
+        estado = self._state(session)
 
         pregunta = next(
             (
@@ -1823,29 +1850,87 @@ class StudyService:
 
         existente = self._study.attempt_for_question(pregunta.session_question_id)
         if existente is not None:
-            if tuple(existente.chosen_option_keys) != tuple(entrada.chosen_option_keys):
-                raise AttemptFrozenError(
-                    "esa pregunta ya está respondida y el intento no se reescribe: "
-                    "para cambiarla, empieza otra sesión"
+            sin_cambios = tuple(existente.chosen_option_keys) == tuple(entrada.chosen_option_keys)
+            if sin_cambios:
+                # Nada que escribir: se contesta con lo que ya hay. La sesión tiene que estar en
+                # marcha igualmente —un test cerrado no admite respuestas—, así que la comprobación
+                # se hace aquí y no antes: así el reenvío tampoco se salta la máquina de estados.
+                assert_can_answer(estado)
+                return AnswerOutcomeView(
+                    saved=False,
+                    already_answered=True,
+                    attempt=existente,
+                    session=session,
+                    question=self._componer(
+                        session, [pregunta], {pregunta.question_version_id: existente}
+                    )[0],
+                    correction=self._correccion(session, pregunta, existente),
                 )
-            return AnswerOutcomeView(
-                saved=False,
-                already_answered=True,
-                attempt=existente,
-                session=session,
-                question=self._componer(
-                    session, [pregunta], {pregunta.question_version_id: existente}
-                )[0],
-                correction=self._correccion(session, pregunta, existente),
-            )
+            if estado.status is not SessionStatus.RUNNING:
+                raise AttemptFrozenError(
+                    "el test ya no está en marcha: la respuesta que diste queda congelada y no se "
+                    "reescribe; vuelve a montarlo para practicar esa pregunta otra vez"
+                )
+            return self._reescribir(session, pregunta, existente, entrada)
 
+        assert_can_answer(estado)
         ahora = self._clock.now()
-        intento = self._study.save_attempt(
+        intento, creado = self._study.save_attempt(
             session_question_id=pregunta.session_question_id,
             chosen_option_keys=entrada.chosen_option_keys,
             elapsed_ms=entrada.elapsed_ms,
             confidence=entrada.confidence,
             client_sequence=entrada.client_sequence,
+            now=ahora,
+        )
+        if not creado:
+            # Otra petición escribió el intento entre la lectura de arriba y esta escritura (el caso
+            # de pulsar dos veces deprisa). No se ha escrito nada nuevo: se devuelve lo que hay.
+            return AnswerOutcomeView(
+                saved=False,
+                already_answered=True,
+                attempt=intento,
+                session=session,
+                question=self._componer(
+                    session, [pregunta], {pregunta.question_version_id: intento}
+                )[0],
+                correction=self._correccion(session, pregunta, intento),
+            )
+        calificado = self._calificar(session, pregunta, entrada.chosen_option_keys)
+        evaluado = self._study.save_evaluation(
+            attempt_id=intento.id,
+            outcome=calificado.outcome.value,
+            score=calificado.score,
+            reason=calificado.reason,
+            answer_key_version_id=session.answer_key_version_id,
+            now=ahora,
+        )
+        self._registrar_repaso(session, pregunta, intento.id, calificado.outcome, entrada, ahora)
+        return AnswerOutcomeView(
+            saved=True,
+            already_answered=False,
+            attempt=evaluado or intento,
+            session=session,
+            question=self._componer(
+                session, [pregunta], {pregunta.question_version_id: evaluado or intento}
+            )[0],
+            correction=self._correccion(session, pregunta, evaluado or intento),
+        )
+
+    def _reescribir(
+        self,
+        session: SessionView,
+        pregunta: SessionQuestionView,
+        existente: AttemptView,
+        entrada: AnswerInput,
+    ) -> AnswerOutcomeView:
+        """Cambia la opción marcada de una pregunta y rehace su corrección (§3.2 del encargo)."""
+        ahora = self._clock.now()
+        intento = self._study.rewrite_attempt(
+            attempt_id=existente.id,
+            chosen_option_keys=entrada.chosen_option_keys,
+            elapsed_ms=entrada.elapsed_ms,
+            confidence=entrada.confidence,
             now=ahora,
         )
         calificado = self._calificar(session, pregunta, entrada.chosen_option_keys)
@@ -1856,7 +1941,11 @@ class StudyService:
             reason=calificado.reason,
             answer_key_version_id=session.answer_key_version_id,
             now=ahora,
+            replace_existing=True,
         )
+        # El repaso se vuelve a registrar con el desenlace nuevo: un fallo que pasa a acierto no
+        # puede
+        # quedarse en la cola de repaso, y al revés tampoco.
         self._registrar_repaso(session, pregunta, intento.id, calificado.outcome, entrada, ahora)
         return AnswerOutcomeView(
             saved=True,

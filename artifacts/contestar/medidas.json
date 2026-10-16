@@ -1,0 +1,22 @@
+[
+  {
+    "ancho": 1280,
+    "postStartPorTestAbierto": 1,
+    "segundaRespuestaSeguida": 200,
+    "cambioDeRespuesta": 200,
+    "respuestasObservadas": 3,
+    "erroresDeConsola": 0,
+    "violacionesAxe": [],
+    "datosProhibidos": []
+  },
+  {
+    "ancho": 390,
+    "postStartPorTestAbierto": 1,
+    "segundaRespuestaSeguida": 200,
+    "cambioDeRespuesta": 200,
+    "respuestasObservadas": 3,
+    "erroresDeConsola": 0,
+    "violacionesAxe": [],
+    "datosProhibidos": []
+  }
+]

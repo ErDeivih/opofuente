@@ -243,9 +243,17 @@ export function createStudentOfficialExam(position: number): Promise<StudentSess
   });
 }
 
-/** El test en curso: la pregunta que toca y la hoja de respuestas entera. */
-export function getStudentRun(sessionId: string): Promise<StudentRun> {
-  return apiFetch<StudentRun>(`/api/v1/student/sessions/${sessionId}`);
+/**
+ * El test en curso: la pregunta que toca y la hoja de respuestas entera.
+ *
+ * Con `position` se pide **una fila concreta** de la hoja, que es lo que hace usable la hoja de
+ * respuestas: sin esto, una pregunta ya contestada no se puede volver a abrir (§3.2 del encargo F36,
+ * defecto 5 del recorrido). Sin `position` la que toca es la primera sin contestar, que es el avance
+ * automático de siempre.
+ */
+export function getStudentRun(sessionId: string, position?: number): Promise<StudentRun> {
+  const consulta = position === undefined ? '' : `?position=${String(position)}`;
+  return apiFetch<StudentRun>(`/api/v1/student/sessions/${sessionId}${consulta}`);
 }
 
 /** Arranca el test. Arrancar uno que ya corre no cambia nada. */

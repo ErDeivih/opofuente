@@ -20,6 +20,7 @@ from fractions import Fraction
 from uuid import uuid4
 
 from sqlalchemy import delete, func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, sessionmaker
 
 from opofuente.application.question_models import OptionView
@@ -34,7 +35,7 @@ from opofuente.application.study_models import (
     SessionView,
     SubstitutionView,
 )
-from opofuente.domain.errors import InvariantViolationError
+from opofuente.domain.errors import InvariantViolationError, NotFoundError
 from opofuente.domain.study import (
     OWNER_ID_LOCAL,
     Confidence,
@@ -628,14 +629,31 @@ class SqlAlchemyStudyRepository:
         confidence: Confidence | None = None,
         client_sequence: int | None = None,
         actor: str = "local",
-    ) -> AttemptView:
-        """Guarda el intento de una pregunta. El intento se congela: no se reescribe.
+    ) -> tuple[AttemptView, bool]:
+        """Guarda el intento de una pregunta y dice **si lo ha creado esta llamada**.
+
+        Es **idempotente**, y eso es un arreglo, no una comodidad: dos peticiones que lean antes de
+        que ninguna escriba —pulsar dos veces deprisa— llegaban las dos al `INSERT` y la segunda
+        reventaba contra la clave única `uq_attempt_per_question` con un
+        `IntegrityError: UNIQUE constraint failed: attempts.session_question_id`, que la API servía
+        como **500**. Medido en el recorrido del 16-oct-2026, y era el único error de consola de
+        todo
+        el recorrido. Aquí la escritura se comprueba sola: si la fila ya está, se devuelve esa y
+        `creado=False`, sin tocar nada.
 
         El dueño **se copia de la sesión**, no se pone a `'local'` por comodidad: el intento cuelga
         de una pregunta congelada que cuelga de una sesión, y el dueño de la sesión es el que manda.
         Escribir el valor por defecto aquí sería crear progreso huérfano el día que haya cuentas.
         """
         with self._session_factory() as session:
+            existente = session.execute(
+                select(AttemptRecord).where(
+                    AttemptRecord.session_question_id == session_question_id
+                )
+            ).scalar_one_or_none()
+            if existente is not None:
+                return self._attempt_view_de(session, existente), False
+
             fila = AttemptRecord(
                 id=_new_id(),
                 session_question_id=session_question_id,
@@ -647,6 +665,22 @@ class SqlAlchemyStudyRepository:
                 answered_at=now,
             )
             session.add(fila)
+            try:
+                session.flush()
+            except IntegrityError:
+                # La otra petición escribió entre la lectura y la escritura. Se devuelve **lo
+                # suyo**:
+                # el intento es uno por pregunta, y la respuesta es la misma se pida cuando se pida.
+                session.rollback()
+                otra = session.execute(
+                    select(AttemptRecord).where(
+                        AttemptRecord.session_question_id == session_question_id
+                    )
+                ).scalar_one_or_none()
+                if otra is None:  # pragma: no cover - no es la clave única: se propaga el fallo
+                    raise
+                return self._attempt_view_de(session, otra), False
+
             self._audit(
                 session,
                 actor=actor,
@@ -662,7 +696,67 @@ class SqlAlchemyStudyRepository:
                 now=now,
             )
             session.commit()
-            return self._attempt_view(fila, None, question_version_id="")
+            return self._attempt_view(fila, None, question_version_id=""), True
+
+    def rewrite_attempt(
+        self,
+        *,
+        attempt_id: str,
+        chosen_option_keys: Sequence[str],
+        elapsed_ms: int,
+        now: datetime,
+        confidence: Confidence | None = None,
+        actor: str = "local",
+    ) -> AttemptView:
+        """Cambia la opción marcada en un intento ya registrado y rehace su corrección.
+
+        El **cambio** de una respuesta se decidió en el §3.2 del encargo F36: mientras el test no
+        esté
+        terminado, cambiar de opción se puede (lo que no se puede es reescribir un test ya cerrado,
+        y
+        eso lo corta la máquina de estados antes de llegar aquí). Lo que había antes no se pierde:
+        se
+        queda en la auditoría como un `attempt.rewritten` con la opción anterior y la nueva, que es
+        el
+        rastro que este proyecto guarda para todo lo que se reescribe.
+
+        La evaluación del intento se **actualiza en su sitio** en lugar de añadir una fila nueva: la
+        clave única `uq_evaluation_per_key` dice que un intento tiene una evaluación por clave, y la
+        respuesta anterior era provisional —no una versión distinta de la clave—, así que no hay
+        nada
+        que sustituir por versión.
+        """
+        with self._session_factory() as session:
+            fila = session.get(AttemptRecord, attempt_id)
+            if fila is None:
+                raise NotFoundError("intento", attempt_id)
+            anterior = list(json.loads(fila.chosen_option_keys_json or "[]"))
+            fila.chosen_option_keys_json = json.dumps(list(chosen_option_keys), ensure_ascii=False)
+            fila.elapsed_ms = max(0, elapsed_ms)
+            fila.confidence = confidence.value if confidence is not None else None
+            fila.answered_at = now
+            self._audit(
+                session,
+                actor=actor,
+                action="attempt.rewritten",
+                object_type="attempt",
+                object_id=fila.id,
+                before={"chosen": anterior},
+                after={"chosen": list(chosen_option_keys), "elapsed_ms": fila.elapsed_ms},
+                now=now,
+            )
+            session.commit()
+            return self._attempt_view_de(session, fila)
+
+    def _attempt_view_de(self, session: Session, fila: AttemptRecord) -> AttemptView:
+        """La vista de un intento ya leído, con su evaluación vigente y su pregunta."""
+        evaluaciones = self._latest_evaluations(session, [fila.id])
+        pregunta = session.get(SessionQuestionRecord, fila.session_question_id)
+        return self._attempt_view(
+            fila,
+            evaluaciones.get(fila.id),
+            question_version_id=pregunta.question_version_id if pregunta is not None else "",
+        )
 
     def save_evaluation(
         self,
@@ -675,8 +769,19 @@ class SqlAlchemyStudyRepository:
         reason: str | None = None,
         supersedes_id: str | None = None,
         actor: str = "local",
+        replace_existing: bool = False,
     ) -> AttemptView | None:
-        """Guarda la evaluación de un intento. Si ya existe para esa clave, no la duplica."""
+        """Guarda la evaluación de un intento. Si ya existe para esa clave, no la duplica.
+
+        `replace_existing` es el caso del **cambio de respuesta** (§3.2 del encargo F36): el alumno
+        reescribió su opción y la corrección de ese intento hay que rehacerla. La fila se actualiza
+        en
+        su sitio —la clave única `uq_evaluation_per_key` dice que un intento tiene una evaluación
+        por
+        clave, y la respuesta anterior era **provisional**, no una versión distinta de la clave— y
+        el
+        cambio queda en la auditoría con lo que se dijo antes y lo que se dice ahora.
+        """
         with self._session_factory() as session:
             intento = session.get(AttemptRecord, attempt_id)
             if intento is None:
@@ -687,7 +792,36 @@ class SqlAlchemyStudyRepository:
                     AttemptEvaluationRecord.answer_key_version_id == answer_key_version_id,
                 )
             ).scalar_one_or_none()
-            if existente is None:
+            if existente is not None:
+                if replace_existing:
+                    antes = {
+                        "outcome": existente.outcome,
+                        "score": f"{existente.score_numerator}/{existente.score_denominator}",
+                    }
+                    existente.outcome = outcome
+                    existente.score_numerator = score.numerator
+                    existente.score_denominator = score.denominator
+                    existente.reason = reason
+                    existente.evaluated_at = now
+                    self._audit(
+                        session,
+                        actor=actor,
+                        action="attempt.reevaluated",
+                        object_type="attempt",
+                        object_id=attempt_id,
+                        before=antes,
+                        after={
+                            "outcome": outcome,
+                            "score": f"{score.numerator}/{score.denominator}",
+                            "answer_key_version_id": answer_key_version_id,
+                        },
+                        now=now,
+                    )
+                    session.commit()
+                    existente = session.get(AttemptEvaluationRecord, existente.id)
+                # Y si no se pide reemplazar, la evaluación de esa clave ya está dicha: no se
+                # duplica.
+            else:
                 session.add(
                     AttemptEvaluationRecord(
                         id=_new_id(),

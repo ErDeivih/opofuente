@@ -25,6 +25,7 @@ from opofuente.api.errors import register_exception_handlers
 from opofuente.api.middleware import (
     CorrelationIdMiddleware,
     OriginCheckMiddleware,
+    ProblemErrorMiddleware,
     SecurityHeadersMiddleware,
 )
 from opofuente.api.openapi import apply_problem_media_type
@@ -574,6 +575,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     # # respuesta con credenciales si el servidor no las autoriza. Con las cuentas apagadas se queda
     # en
     # `False`, que es como estaba: ninguna petición de hoy cambia de comportamiento.
+    # Un fallo inesperado tiene que salir **por dentro** del middleware de CORS: es la única forma
+    # de
+    # que su respuesta lleve `Access-Control-Allow-Origin`. `add_middleware` mete cada middleware
+    # por
+    # delante del anterior, así que este se añade **antes** que el de CORS a propósito: el primero
+    # añadido es el más interno, y el de CORS tiene que envolverlo. Si se añadiera detrás, el 500
+    # saldría por fuera de CORS —como salía— y el navegador lo leería como un error de CORS.
+    app.add_middleware(ProblemErrorMiddleware)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=list(resolved.cors_origins),
