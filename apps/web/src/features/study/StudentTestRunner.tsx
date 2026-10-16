@@ -12,6 +12,7 @@ import {
 import { isApiError } from '../../api/client';
 import { EmptyState } from '../../components/EmptyState';
 import { LoadingState } from '../../components/LoadingState';
+import { describeError } from '../system/labels';
 import { AnswerSheet } from './AnswerSheet';
 import { LETRAS_POR_DEFECTO } from './answerSheetModel';
 
@@ -359,6 +360,17 @@ export function StudentTestRunner() {
                 mientras el test no haya terminado.
                 {puedeCorregir ? null : ' La corrección de este test se ve al terminar.'}
               </p>
+              {contestar.error !== null && (
+                // Una respuesta que el servidor no acepta se **dice**. El fallo medido en el
+                // recorrido era este: el alumno pulsaba otra opción, la máquina de estados la
+                // rechazaba y en la pantalla no pasaba nada —ni un aviso, ni un cambio—, que es la
+                // peor forma de contar algo. El texto es el del servidor, que es el que sabe por qué
+                // (con el test terminado, las respuestas están congeladas).
+                <section className="card notice notice--inline" role="alert">
+                  <h4>La respuesta no se ha guardado</h4>
+                  <p>{describeError(contestar.error)}</p>
+                </section>
+              )}
             </>
           )}
         </section>

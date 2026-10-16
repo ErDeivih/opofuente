@@ -471,4 +471,41 @@ describe('el ciclo de contestar', () => {
       expect(filasPedidas(fetchMock)).toContain(2);
     });
   });
+
+  it('si el servidor no acepta la respuesta, lo dice con su motivo', async () => {
+    const usuario = userEvent.setup();
+    // El caso de la máquina de estados que sigue diciendo que no: con el test terminado, las
+    // respuestas están congeladas. Antes, pulsar otra opción no hacía **nada**: ni cambiaba la
+    // respuesta ni se explicaba por qué.
+    const rutas: Record<string, StubbedRoute> = {
+      'GET /api/v1/student/sessions/ses-1': { body: runFixture() },
+      'POST /api/v1/student/sessions/ses-1/answers': {
+        status: 409,
+        contentType: 'application/problem+json',
+        body: {
+          type: 'about:blank',
+          title: 'Conflict',
+          status: 409,
+          detail: 'el test ya no está en marcha: la respuesta que diste queda congelada',
+          instance: '/api/v1/student/sessions/ses-1/answers',
+          code: 'attempt_frozen',
+          correlation_id: 'corr-de-prueba',
+        },
+      },
+    };
+    stubApi(rutas);
+    renderWithProviders(
+      <Routes>
+        <Route path="/test/:id" element={<StudentTestRunner />} />
+      </Routes>,
+      { route: '/test/ses-1' },
+    );
+    await screen.findByText('¿Cuántas capas tiene el modelo OSI?');
+
+    await usuario.click(screen.getByRole('button', { name: /Cuatro/ }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      /el test ya no está en marcha: la respuesta que diste queda congelada/,
+    );
+  });
 });
