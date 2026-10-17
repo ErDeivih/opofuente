@@ -4000,3 +4000,73 @@ epígrafes de I.1**, y eso es una decisión sobre el programa, no sobre la panta
   resultado y alumno/estudio.
 - **Las 18 puertas no las corre este bloque** (las corre el que mide, con su protocolo).
 
+
+## f37 — El simulacro en menos de 5 s y el reloj con «Abandonar» (17-oct-2026)
+
+**§3.3 y §3.4 de `docs/REVISION-DEL-RECORRIDO-Y-ARREGLOS-2026-10.md`.** Rama `f37-simulacro`, base
+`main = d312be0`. La base real no se ha tocado: todo se mide sobre una copia verificada con
+`snapshot_database` (2.748.612.608 bytes, SHA-256 `622aaa6f…`, el mismo que publicó el recorrido).
+
+### Dónde se iba el tiempo (lo que el documento pedía medir)
+
+**No era pintar ni el modelo: eran consultas.** Contadas con el gancho de SQLAlchemy sobre el motor
+(`artifacts/simulacro/medir.py`):
+
+| | consultas | tiempo (mismo arnés) |
+|---|---|---|
+| **antes** (`main`, misma copia) | **154.231** | **126,9 s** |
+| **después** | **441** | **3,2 s** y **3,7 s** |
+
+Y no eran consultas distintas: **13.828 repeticiones** de la misma consulta de un conjunto con sus
+tres `count(*)`, y **13.793** de la ficha de una pregunta con sus opciones, sus explicaciones y su
+clave. Un **N+1 de manual**: la composición recorría el banco pregunta a pregunta. El coste no lo
+ponía el test (106 preguntas) sino el banco (**13.793 preguntas de 246 conjuntos**).
+
+### El arreglo, en la consulta
+
+Cinco lecturas por lotes en `question_repository.py`, cada una una consulta para todo el lote y en
+tandas de 900 (SQLite admite 999 en un `IN`): `question_ids_of_nodes`, `questions_by_ids`
+(**sin opciones**), `sets_by_ids`, `active_key_entries_by_set` (**solo la plantilla activa**, no las
+584 versiones del banco) y `excluded_question_ids_by_set` + `options_by_question_ids` **solo para las
+que sobreviven a los filtros**. Y lo leído se reutiliza **dentro de la misma composición**: el
+supuesto sale de temas que la primera parte ya recorrió, así que antes el banco se leía dos veces.
+
+**Sin caché por delante ni `async` para que no bloquee**: el trabajo se hace entero y síncrono, con
+menos viajes. **Y el orden de recorrido no cambia**: se recorre una lista (el orden del programa), no
+un `set`, porque el reparto depende de ese orden y la misma semilla tiene que montar la misma sesión
+(comprobado con `artifacts/simulacro/reproducibilidad.py`).
+
+### El reloj del servidor y el de la pantalla, separados
+
+La respuesta del simulacro publica `Server-Timing` con lo que tardó la composición, y la medición se
+hace en los dos lados a la vez (`apps/web/tests/screens/simulacro.spec.ts`):
+
+| pasada | navegador | servidor | pintar y viajar |
+|---|---|---|---|
+| 1 | 3.812 ms | 3.734 ms | 78 ms |
+| 2 | 4.523 ms | 4.443 ms | 80 ms |
+
+**El 97–98 % de la espera es la composición.** Lo que quede por bajar hay que bajarlo del banco.
+
+### El reloj y «Abandonar»
+
+- Reloj en el runner del alumno —**el mismo componente del simulacro y del examen oficial**—: lo que
+  queda, lo que llevas, aviso a los cinco minutos y aviso al agotarse. La hora la pone el servidor
+  (`started_at` + `server_now`, del **mismo reloj**), así que un equipo con la hora mal puesta cuenta
+  lo mismo que uno en hora.
+- «Abandonar» con confirmación que dice cuántas llevas.
+- **La decisión, escrita**: el intento **se conserva y no cuenta** (no entra en notas ni en «tests
+  hechos», sirve para repasar); solo se descarta la sesión **sin ninguna respuesta**. Abandonar dos
+  veces devuelve **200** con el mismo parte, y la sesión abandonada **se vuelve a abrir**. Una sesión
+  **terminada** no se convierte en abandonada.
+- El reloj **informa, no corta**: llegar a cero no bloquea la pantalla, porque la regla de qué pasa al
+  agotarse el tiempo es del servidor y hoy no está escrita.
+
+### Pruebas
+
+- **467 de componente** (54 ficheros), con **8 nuevas** del reloj (`relojDeSesion.test.ts`), **4** del
+  reloj y del abandono en el runner y **1** del «Preparando tu simulacro…».
+- **4 de navegador** en `tests/screens/simulacro.spec.ts`, contra la copia y a **1280 y 390**, con
+  **0 axe y 0 consola** exigidos por la propia prueba; **4 de 4 pasan**. Capturas en
+  `artifacts/simulacro/` (PNG no rastreados) y cifras en `artifacts/simulacro/MEDIDAS.md`.
+- **API**: composición, sesiones, alumno y claves en verde. **Las 18 puertas no las corre este bloque.**

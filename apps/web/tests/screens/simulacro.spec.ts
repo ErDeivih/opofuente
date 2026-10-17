@@ -27,6 +27,12 @@ const SALIDA = process.env.OPOFUENTE_SCREENS_SALIDA
   : path.resolve(process.cwd(), '..', '..', 'artifacts', 'simulacro');
 
 /**
+ * Dónde escucha la API. La web la llama **en absoluto** (`client.ts`, `DEFAULT_BASE_URL`), así que una
+ * petición de esta prueba no puede ir contra el servidor de vista previa: allí no hay proxy y da 404.
+ */
+const API = process.env.OPOFUENTE_API_URL ?? 'http://127.0.0.1:8765';
+
+/**
  * Los anchos del encargo: escritorio y móvil, los dos del recorrido.
  */
 const ANCHOS: readonly { ancho: number; alto: number }[] = [
@@ -203,8 +209,11 @@ test.describe('el simulacro y el reloj, medidos en el navegador', () => {
     await expect(page.getByRole('link', { name: 'Salir' })).toBeVisible();
     await expect(page.getByText(/no admite respuestas/)).toBeVisible();
 
-    // Y abandonar **otra vez** (por API, que es lo que haría un reintento de la pantalla) no da 500.
-    const segunda = await page.request.post(`/api/v1/student/sessions/${sesion}/abandon`);
+    // Y abandonar **otra vez** (por API, que es lo que haría un reintento de la pantalla) no da 500
+    // ni 404: es idempotente y devuelve el mismo parte.
+    const segunda = await page.request.post(
+      `${API}/api/v1/student/sessions/${sesion}/abandon`,
+    );
     console.log(`ABANDONO 2ª · ${String(segunda.status())} · ${await segunda.text()}`);
     expect(segunda.status()).toBe(200);
 

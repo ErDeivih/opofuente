@@ -648,13 +648,20 @@ class SqlAlchemyQuestionRepository:
             claves = self._active_entries(session, [fila.question_set_id])
             return self._question_view(session, fila, claves, include_key=include_key)
 
-    def questions_by_ids(self, question_ids: Sequence[str]) -> dict[str, QuestionView]:
+    def questions_by_ids(
+        self, question_ids: Sequence[str], *, include_options: bool = True
+    ) -> dict[str, QuestionView]:
         """Las preguntas de esos identificadores, en **una** consulta y con sus opciones.
 
         Es la versión por lotes de `get_question`, y existe porque quien compone una sesión recorre
         el banco entero de los temas pedidos —miles de preguntas— y una consulta por pregunta (más
         sus opciones, sus explicaciones y su clave) es exactamente el N+1 que convertía montar un
         simulacro en dos minutos y medio. Los que no existen simplemente no salen en el mapa.
+
+        `include_options=False` deja las opciones fuera: la composición solo las necesita para la
+        firma de «la misma pregunta», y eso solo hace falta en las que de verdad van a poder entrar.
+        Cargar las 74.000 opciones por pregunta del banco para descartar casi todas por la clave era
+        el último tercio del tiempo del montaje.
         """
         if not question_ids:
             return {}
@@ -677,20 +684,54 @@ class SqlAlchemyQuestionRepository:
             if not filas:
                 return {}
             identificadores = [str(fila.id) for fila in filas]
-            conjuntos = list({fila.question_set_id for fila in filas})
-            claves = self._active_entries(session, conjuntos)
-            opciones = self._options_by_question(session, identificadores)
+            opciones = (
+                self._options_by_question(session, identificadores) if include_options else {}
+            )
             explicaciones = self._explanations_count(session, identificadores)
             return {
                 fila.id: self._question_view_con_datos(
                     fila,
-                    claves=claves,
+                    # **Sin claves**: la composición pide el desenlace de la clave por otro camino
+                    # (`active_key_entries_by_set`, que trae solo la plantilla que corrige de cada
+                    # conjunto). Leer aquí todas las plantillas de todos los conjuntos para rellenar
+                    # un `key_outcome` que la composición no mira era la mitad del tiempo que
+                    # quedaba: medido, 2,8 s de los 9,8 del montaje.
+                    claves={},
                     opciones=opciones.get(fila.id, ()),
                     explicaciones=explicaciones.get(fila.id, 0),
                     include_key=False,
                 )
                 for fila in filas
             }
+
+    def options_by_question_ids(
+        self, question_ids: Sequence[str]
+    ) -> dict[str, tuple[OptionView, ...]]:
+        """Las opciones de esas preguntas, en **una** consulta.
+
+        Es la segunda mitad de `questions_by_ids(include_options=False)`: la composición carga
+        primero las preguntas sin opciones, descarta las que no pueden entrar y solo entonces pide
+        las opciones de las que quedan, que son las únicas cuya firma hace falta.
+        """
+        if not question_ids:
+            return {}
+        unicos = [str(uno) for uno in dict.fromkeys(question_ids)]
+        with self._session_factory() as session:
+            agrupadas: dict[str, list[OptionView]] = {}
+            for inicio in range(0, len(unicos), _TANDA_DE_CONSULTA):
+                tanda = unicos[inicio : inicio + _TANDA_DE_CONSULTA]
+                for opcion in self._options_by_question(session, tanda).values():
+                    for vista in opcion:
+                        agrupadas.setdefault(vista.question_version_id, []).append(
+                            OptionView(
+                                id=vista.id,
+                                stable_key=str(vista.stable_key),
+                                text=str(vista.text),
+                                position=int(vista.position),
+                                label=vista.label,
+                            )
+                        )
+            return {pregunta_id: tuple(vistas) for pregunta_id, vistas in agrupadas.items()}
 
     def keys_of_set(self, set_id: str) -> dict[str, AnswerKeyEntry]:
         """Desenlaces de la clave **activa** del conjunto, por pregunta.
@@ -3086,6 +3127,77 @@ class SqlAlchemyQuestionRepository:
             .all()
         )
         return self._key_view_con_entradas(fila, entradas)
+
+    def active_key_entries_by_set(
+        self, set_ids: Sequence[str]
+    ) -> dict[str, tuple[str, dict[str, KeyEntryView]]]:
+        """La plantilla **activa** de cada conjunto, con su desenlace por pregunta.
+
+        Es lo que necesita la composición, y **solo eso**: la plantilla que corrige (su
+        identificador) y, por pregunta, qué letra manda. Se leen únicamente las plantillas activas
+        —no las 584 versiones que hay en el banco—, que es lo que hacía que esta lectura costara
+        1,7 s y se solapara con la de las preguntas. Cuando un conjunto tiene más de una activa,
+        manda la de número de versión más bajo, igual que `list_keys` + `next(… "active")`.
+        """
+        if not set_ids:
+            return {}
+        unicos = tuple(dict.fromkeys(set_ids))
+        with self._session_factory() as session:
+            activas: dict[str, AnswerKeyVersionRecord] = {}
+            for inicio in range(0, len(unicos), _TANDA_DE_CONSULTA):
+                tanda = unicos[inicio : inicio + _TANDA_DE_CONSULTA]
+                for fila in (
+                    session.execute(
+                        select(AnswerKeyVersionRecord)
+                        .where(
+                            AnswerKeyVersionRecord.question_set_id.in_(list(tanda)),
+                            AnswerKeyVersionRecord.status == "active",
+                        )
+                        .order_by(
+                            AnswerKeyVersionRecord.question_set_id,
+                            AnswerKeyVersionRecord.version_no,
+                        )
+                    )
+                    .scalars()
+                    .all()
+                ):
+                    activas.setdefault(fila.question_set_id, fila)
+            if not activas:
+                return {}
+            por_clave: dict[str, list[AnswerKeyEntryRecord]] = {}
+            identificadores = list(activas.values())
+            for inicio in range(0, len(identificadores), _TANDA_DE_CONSULTA):
+                tanda_actual = [
+                    str(clave.id) for clave in identificadores[inicio : inicio + _TANDA_DE_CONSULTA]
+                ]
+                for entrada in (
+                    session.execute(
+                        select(AnswerKeyEntryRecord)
+                        .where(AnswerKeyEntryRecord.answer_key_version_id.in_(tanda_actual))
+                        .order_by(AnswerKeyEntryRecord.question_version_id)
+                    )
+                    .scalars()
+                    .all()
+                ):
+                    por_clave.setdefault(entrada.answer_key_version_id, []).append(entrada)
+            salida: dict[str, tuple[str, dict[str, KeyEntryView]]] = {}
+            for set_id, clave in activas.items():
+                salida[set_id] = (
+                    clave.id,
+                    {
+                        entrada.question_version_id: KeyEntryView(
+                            question_version_id=entrada.question_version_id,
+                            outcome=str(entrada.outcome),
+                            correct_option_keys=tuple(
+                                str(letra)
+                                for letra in json.loads(entrada.correct_option_keys_json or "[]")
+                            ),
+                            notes=entrada.notes,
+                        )
+                        for entrada in por_clave.get(clave.id, [])
+                    },
+                )
+            return salida
 
     def keys_by_set_ids(self, set_ids: Sequence[str]) -> dict[str, tuple[AnswerKeyView, ...]]:
         """Las plantillas de esos conjuntos, todas y en **dos** consultas.

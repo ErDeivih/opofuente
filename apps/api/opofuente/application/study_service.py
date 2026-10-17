@@ -736,12 +736,12 @@ class StudyService:
 
         vistas = self._estado_de_quien_estudia(spec, opposition_id)
         banco = self._banco()
-        # Lo que ya se leyó para una parte, por sus nodos: en un simulacro completo el supuesto de
-        # la segunda parte sale de temas que la primera ya recorrió. Sin esto, el banco entero se
-        # lee y se filtra dos veces para montar una sola sesión. Las reglas no cambian: la clave
-        # del diccionario es el conjunto de nodos pedidos, que es lo único que decide qué
-        # candidatas salen.
-        leidas: dict[tuple[str, ...], tuple[tuple[_Candidata, ...], int]] = {}
+        # Lo que ya se leyó en esta composición, para no leerlo dos veces: en un simulacro completo,
+        # el supuesto sale de temas que la primera parte ya recorrió. Dos memorias —una por nodo y
+        # otra por pregunta— y las dos se llenan con las mismas lecturas por lotes de siempre. Las
+        # reglas no cambian: es cuándo se lee, no qué se lee.
+        preguntas_leidas: dict[str, QuestionView] = {}
+        preguntas_del_nodo: dict[str, tuple[str, ...]] = {}
         contexto: dict[str, _PartContext] = {}
         congeladas: list[FrozenQuestion] = []
         claves: set[str] = set()
@@ -783,7 +783,9 @@ class StudyService:
                 else None
             )
 
-            candidatas, disponibles = self._candidatas(parte, spec, vistas, banco, leidas)
+            candidatas, disponibles = self._candidatas(
+                parte, spec, vistas, banco, preguntas_leidas, preguntas_del_nodo
+            )
             elegidas = self._repartir(parte, candidatas, firmas)
             reservas = self._reservas(parte, candidatas, firmas, elegidas)
             for candidata in (*elegidas, *reservas):
@@ -889,7 +891,8 @@ class StudyService:
         spec: CompositionSpec,
         vistas: Mapping[str, tuple[str | None, str | None]],
         banco: _ClavesDelBanco,
-        leidas: dict[tuple[str, ...], tuple[tuple[_Candidata, ...], int]],
+        preguntas_leidas: dict[str, QuestionView],
+        preguntas_del_nodo: dict[str, tuple[str, ...]],
     ) -> tuple[tuple[_Candidata, ...], int]:
         """Las preguntas que pueden entrar en una parte, en orden estable, y cuántas hay.
 
@@ -911,10 +914,6 @@ class StudyService:
         """
         candidatas: list[_Candidata] = []
         vistas_del_tema: set[str] = set()
-        if parte.node_ids in leidas:
-            # Ya se recorrieron estos nodos para otra parte de la misma composición (el supuesto de
-            # un simulacro sale de temas que la primera parte ya recorrió): se reutiliza lo leído.
-            return leidas[parte.node_ids]
         # El nodo por el que entra cada pregunta: el **primero** de la parte que la contiene, que es
         # el orden en el que se pidieron. Se calcula aquí, sobre los identificadores que ya se
         # leyeron, y no llamando a `_preguntas_del_nodo` por pregunta (eso volvería a consultar la
@@ -924,7 +923,9 @@ class StudyService:
         # un `set` de Python las saque. El reparto depende de ese orden, así que barajarlo aquí
         # haría que la misma semilla montara sesiones distintas.
         ordenadas: list[str] = []
-        for node_id, del_nodo in self._preguntas_de_los_nodos(parte.node_ids).items():
+        for node_id, del_nodo in self._preguntas_de_los_nodos(
+            parte.node_ids, cache=preguntas_del_nodo
+        ).items():
             for pregunta_id in del_nodo:
                 if pregunta_id in vistas_del_tema:
                     continue
@@ -936,17 +937,21 @@ class StudyService:
         # cada una —su fila, sus opciones, su conjunto, su exclusión y su clave— es el N+1 que hacía
         # que montarlo tardara minutos. El orden de lectura y todas las reglas de abajo no cambian:
         # lo único que cambia es cuándo se leen los datos.
-        preguntas = self._questions.questions_by_ids(tuple(ordenadas))
+        preguntas = self._preguntas_de(
+            [pregunta_id for pregunta_id in ordenadas if pregunta_id not in preguntas_leidas],
+            preguntas_leidas,
+        )
         conjuntos = self._questions.sets_by_ids(
             [pregunta.question_set_id for pregunta in preguntas.values()]
         )
-        claves_activas: dict[str, AnswerKeyView] = {
-            conjunto_id: activa
-            for conjunto_id, claves in self._questions.keys_by_set_ids(list(conjuntos)).items()
-            if (activa := next((clave for clave in claves if clave.status == "active"), None))
-            is not None
-        }
+        # La plantilla activa de cada conjunto, con su desenlace por pregunta: es lo que decide qué
+        # entra y con qué letra se corrige. Se lee **una vez por parte**, no una por pregunta.
+        claves_activas = self._questions.active_key_entries_by_set(list(conjuntos))
         excluidas_por_conjunto = self._questions.excluded_question_ids_by_set(list(conjuntos))
+        # Las que pasan los filtros, todavía sin firma: la firma de «la misma pregunta» necesita las
+        # opciones, y las opciones de todo el banco son 74.000 filas que casi siempre se tiran. Se
+        # piden **después**, solo para estas.
+        supervivientes: list[tuple[QuestionView, str | None, KeyEntryView, str]] = []
         for pregunta_id in ordenadas:
             pregunta = preguntas.get(pregunta_id)
             if pregunta is None or pregunta.question_type not in _SUPPORTED_QUESTION_TYPES:
@@ -970,20 +975,13 @@ class StudyService:
             elif conjunto.active_key_id is None:
                 continue
             else:
-                clave = claves_activas.get(pregunta.question_set_id)
-                if clave is None:
+                activa = claves_activas.get(pregunta.question_set_id)
+                if activa is None:
                     # El conjunto dice tener plantilla activa y no se encontró: no se inventa una
                     # entrada, la pregunta se queda fuera como cualquier otra sin clave.
                     continue
-                entrada = next(
-                    (
-                        candidata
-                        for candidata in clave.entries
-                        if candidata.question_version_id == pregunta.id
-                    ),
-                    None,
-                )
-                clave_id = clave.id
+                clave_id, entradas = activa
+                entrada = entradas.get(pregunta.id)
             if entrada is None or entrada.outcome != KeyOutcome.KEYED.value:
                 continue
             if spec.public_only and conjunto.distribution != "public":
@@ -999,6 +997,13 @@ class StudyService:
                 continue
             if not self._pasa_el_filtro(spec.filter, pregunta.id, vistas):
                 continue
+            supervivientes.append((pregunta, clave_id, entrada, primer_nodo[pregunta.id]))
+        # Y ahora sí, las opciones de las que quedan: su firma es lo que evita poner dos veces la
+        # misma pregunta en una sesión.
+        opciones = self._questions.options_by_question_ids(
+            [pregunta.id for pregunta, _clave, _entrada, _nodo in supervivientes]
+        )
+        for pregunta, clave_id, entrada, nodo in supervivientes:
             candidatas.append(
                 _Candidata(
                     question=pregunta,
@@ -1006,10 +1011,13 @@ class StudyService:
                     entry=entrada,
                     signature=firma_de_grupo(
                         pregunta.stem,
-                        tuple((opcion.stable_key, opcion.text) for opcion in pregunta.options),
+                        tuple(
+                            (opcion.stable_key, opcion.text)
+                            for opcion in opciones.get(pregunta.id, ())
+                        ),
                     ),
                     # El nodo por el que entró: el primero de los pedidos que la contiene.
-                    node_id=primer_nodo[pregunta.id],
+                    node_id=nodo,
                 )
             )
         # Lo disponible para la parte son sus preguntas **ordinarias**: las reservas del banco no
@@ -1021,9 +1029,7 @@ class StudyService:
             # `random` a propósito y no un generador criptográfico: esto es una semilla
             # reproducible para volver a montar la misma sesión, no un secreto.
             random.Random(spec.seed).shuffle(candidatas)  # noqa: S311
-        resultado = (tuple(candidatas), disponibles)
-        leidas[parte.node_ids] = resultado
-        return resultado
+        return tuple(candidatas), disponibles
 
     def key_reliability_of(self, question_ids: Sequence[str]) -> dict[str, str]:
         """El veredicto de la clave del conjunto de cada pregunta (`fiable` · `dudosa` · `no`).
@@ -1048,7 +1054,28 @@ class StudyService:
         derivadas = self._questions.derived_keys()
         return frozenset(question_id for question_id in question_ids if question_id in derivadas)
 
-    def _preguntas_de_los_nodos(self, node_ids: Sequence[str]) -> dict[str, tuple[str, ...]]:
+    def _preguntas_de(
+        self, question_ids: Sequence[str], cache: dict[str, QuestionView]
+    ) -> dict[str, QuestionView]:
+        """Las preguntas pedidas, leyendo **solo las que faltan** en esta composición.
+
+        La memoria es de una composición, no del proceso: lo que se reutiliza es lo que ya se leyó
+        para otra parte de la misma sesión (el supuesto de un simulacro sale de temas que la primera
+        parte ya recorrió). Con el banco del propietario eso ahorra la mitad de la lectura.
+        """
+        faltan = [identificador for identificador in question_ids if identificador not in cache]
+        if faltan:
+            # Sin opciones: las pide la composición solo para las que sobreviven a los filtros.
+            cache.update(self._questions.questions_by_ids(tuple(faltan), include_options=False))
+        return {
+            identificador: cache[identificador]
+            for identificador in question_ids
+            if identificador in cache
+        }
+
+    def _preguntas_de_los_nodos(
+        self, node_ids: Sequence[str], *, cache: dict[str, tuple[str, ...]] | None = None
+    ) -> dict[str, tuple[str, ...]]:
         """Las preguntas de varios nodos **y de sus descendientes**, en **una** consulta.
 
         Es lo que usa la composición: pedir tema a tema son treinta consultas por parte y, en un
@@ -1056,24 +1083,35 @@ class StudyService:
         verdad que hay que preguntar (cada tema con sus hijos) se calculan aquí y las preguntas se
         leen de una vez. El orden es el del programa: primero las del nodo y después las de su
         subárbol, en orden de lectura, sin repetir ninguna.
+
+        Con `cache` se reutiliza lo ya leído de un nodo en otra parte de la misma composición y solo
+        se pregunta por los que faltan: el supuesto de un simulacro son temas que la primera parte
+        ya recorrió.
         """
         descendientes: dict[str, tuple[str, ...]] = {}
         todos: list[str] = []
         for node_id in node_ids:
+            if cache is not None and node_id in cache:
+                continue
             nodo = self._profiles.get_node(node_id)
             if nodo is None:
                 raise NotFoundError("nodo del programa", node_id)
             cadena = (node_id, *self._descendientes(nodo.node))
             descendientes[node_id] = cadena
             todos.extend(cadena)
-        por_nodo = self._questions.question_ids_of_nodes(tuple(todos))
+        if todos:
+            por_nodo = self._questions.question_ids_of_nodes(tuple(todos))
+            for node_id, cadena in descendientes.items():
+                ordenadas: dict[str, None] = {}
+                for uno in cadena:
+                    for pregunta_id in por_nodo.get(uno, ()):
+                        ordenadas.setdefault(pregunta_id, None)
+                if cache is not None:
+                    cache[node_id] = tuple(ordenadas)
         salida: dict[str, tuple[str, ...]] = {}
-        for node_id, cadena in descendientes.items():
-            ordenadas: dict[str, None] = {}
-            for uno in cadena:
-                for pregunta_id in por_nodo.get(uno, ()):
-                    ordenadas.setdefault(pregunta_id, None)
-            salida[node_id] = tuple(ordenadas)
+        for node_id in node_ids:
+            if cache is not None and node_id in cache:
+                salida[node_id] = cache[node_id]
         return salida
 
     @staticmethod
