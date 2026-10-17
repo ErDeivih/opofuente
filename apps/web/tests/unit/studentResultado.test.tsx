@@ -19,7 +19,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { StudentSessionResult } from '../../src/api/studentTests';
 import { ResultPage } from '../../src/pages/student/ResultPage';
-import { sessionResultFixture } from './studentFixtures';
+import { resultadoDeSimulacroFixture, sessionResultFixture } from './studentFixtures';
 import { renderWithProviders, stubApi } from './testUtils';
 
 function montar(resultado: StudentSessionResult = sessionResultFixture, status = 200) {
@@ -38,7 +38,10 @@ function montar(resultado: StudentSessionResult = sessionResultFixture, status =
 
 describe('la pantalla de resultado', () => {
   it('enseña la nota con el aviso de que es una estimación y el desglose por parte', async () => {
-    montar();
+    // F38: el desglose por parte y el aviso de la estimación son de un **examen** —simulacro u
+    // oficial—, que es donde hay banda 0-50 que enseñar. En un test de práctica la pantalla dice las
+    // cuatro cifras de la práctica y no esta escala (`resultadoPracticaYExamen.test.tsx`).
+    montar(resultadoDeSimulacroFixture);
 
     expect(await screen.findByRole('heading', { name: /resultado/i })).toBeInTheDocument();
     // El aviso vive en el dominio y se enseña tal cual: es lo que impide leer la cifra como oficial.

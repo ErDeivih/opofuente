@@ -16,7 +16,12 @@ import { LoadingState } from '../../components/LoadingState';
 import { AnswerSheet } from '../../features/study/AnswerSheet';
 import { filasDeResultado, letrasDeLaHoja } from '../../features/study/answerSheetModel';
 import { fechaLegible } from '../../lib/fechas';
-import { formatearEscala, formatearPorcentaje, notaDeFraccion } from '../../lib/numeros';
+import {
+  formatearEscala,
+  formatearPorcentaje,
+  notaNegativaExacta,
+  notaNoNegativa,
+} from '../../lib/numeros';
 import { renderInline } from '../../ui/inlineMarkdown';
 import { Plegable } from '../../ui/Disclosure';
 
@@ -110,11 +115,31 @@ export function ResultPage() {
   const aciertos = resultado.total.correct;
   const fallos = resultado.total.wrong;
   const blancos = resultado.total.blank;
+  // §3.5 del encargo: **un test de práctica no se puntúa como un examen**. La banda 0-50 y su mínimo
+  // son de la convocatoria y se aplican al **examen** (simulacro u oficial), que es donde la
+  // puntuación directa se convierte en calificación; en una práctica de diez preguntas esa banda no
+  // mide nada, y enseñarla («6,00 sobre 50 · mínimo 25») es lo que el propietario leyó como un examen
+  // que no era. Fuera de un examen se dicen las cuatro cifras de una práctica: aciertos, fallos,
+  // porcentaje y netos con penalización.
+  const esExamen =
+    resultado.session.mode === 'mock_exam' || resultado.session.mode === 'official_exam';
   // La cifra se calcula de la **fracción exacta**, no del decimal del servidor (§2.2), y el
   // «(estimada)» sale de cómo se corrigió la parte, que lo dice el servidor: la pantalla no inventa el
   // matiz que impide leer la cifra como la calificación oficial.
   const notaDelTotal = notaDeParte(resultado.total);
   const esEstimada = resultado.total.kind === 'estimated' || !resultado.official_available;
+  // §3.5: en pantalla la puntuación directa **nunca baja de 0,00** —el recorrido midió «-0,21»— y la
+  // cifra exacta no se pierde: se lee dentro del pliegue. Vale para el total y para cada parte, y las
+  // partes solo cuentan en un examen, que es donde se enseñan.
+  const exactasNegativas = [
+    { nombre: 'la puntuación del total', cifra: notaNegativaExacta(resultado.total.score) },
+    ...(esExamen
+      ? resultado.parts.map((parte) => ({
+          nombre: `la puntuación de «${parte.part_name ?? 'la parte'}»`,
+          cifra: notaNegativaExacta(parte.score),
+        }))
+      : []),
+  ].filter((entrada): entrada is { nombre: string; cifra: string } => entrada.cifra !== null);
   // Los párrafos que explican la cifra: el del total y los de cada parte. Los compone el dominio y se
   // enseñan tal cual, pero **plegados**: por defecto no hay ningún párrafo explicativo a la vista.
   const explicaciones = [
@@ -122,6 +147,17 @@ export function ResultPage() {
     ...resultado.parts.map((parte) => parte.verdict_note),
     resultado.official_note,
   ].filter((texto): texto is string => texto !== null && texto !== undefined);
+  // El pliegue tiene un nombre u otro según lo que haya dentro, para que diga qué se va a leer: la
+  // estimación (un examen), el cero que no es la cifra exacta, o la puntuación y punto.
+  const tituloDelPliegue = esExamen && esEstimada
+    ? '¿Por qué estimada?'
+    : exactasNegativas.length > 0
+      ? '¿Por qué 0,00?'
+      : '¿Qué significa esta puntuación?';
+  const porcentajeDeAcierto =
+    aciertos + fallos + blancos === 0
+      ? null
+      : formatearPorcentaje(aciertos / (aciertos + fallos + blancos));
 
   return (
     <>
@@ -145,28 +181,41 @@ export function ResultPage() {
         <p className="resultado__cifras">
           {aciertos} {aciertos === 1 ? 'acierto' : 'aciertos'} · {fallos}{' '}
           {fallos === 1 ? 'fallo' : 'fallos'} · {blancos} en blanco
+          {porcentajeDeAcierto === null ? null : ` · ${porcentajeDeAcierto} de acierto`}
         </p>
         {/*
           §2.3 del cierre: **una línea**. Antes esto abría con dos párrafos sobre los baremos de la
           Comisión y el mínimo de 25, que es lo que el propietario vio en su captura. Ahora la cifra se
           lee de un vistazo y la explicación **no se ha borrado**: se pliega (abajo).
+
+          Y desde F38 la línea dice lo que el test mide: en un examen, la puntuación directa sobre la
+          banda de la convocatoria; en una práctica, los **netos con penalización**, que es la misma
+          cuenta sin la escala que no le corresponde.
         */}
         <p className="resultado__puntos">
-          Puntuación directa:{' '}
+          {esExamen ? 'Puntuación directa: ' : 'Netos con penalización: '}
           <strong>{notaDelTotal}</strong>
-          {resultado.total.score_max === null
+          {!esExamen || resultado.total.score_max === null
             ? null
             : ` sobre ${formatearEscala(resultado.total.score_max)}`}
-          {esEstimada ? ' (estimada)' : ''}
+          {esExamen && esEstimada ? ' (estimada)' : ''}
         </p>
 
         {/*
-          Lo que explica la cifra va **plegado**, y en el mismo sitio para las dos cosas que la
-          explican: el aviso del total y el de cada parte. El texto es el del servidor, tal cual: es el
-          mismo que usa el motor, y reescribirlo sería tener dos versiones de la misma advertencia.
+          Lo que explica la cifra va **plegado**, y en el mismo sitio para las tres cosas que la
+          explican: la cifra exacta cuando es negativa (que en pantalla no se enseña), el aviso del
+          total y el de cada parte. El texto es el del servidor, tal cual: es el mismo que usa el
+          motor, y reescribirlo sería tener dos versiones de la misma advertencia.
         */}
-        {explicaciones.length > 0 && (
-          <Plegable titulo={esEstimada ? '¿Por qué estimada?' : '¿Qué significa esta puntuación?'}>
+        {(explicaciones.length > 0 || exactasNegativas.length > 0) && (
+          <Plegable titulo={tituloDelPliegue}>
+            {exactasNegativas.map((entrada) => (
+              <p className="resultado__aviso resultado__exacta" key={entrada.nombre}>
+                {`La cifra exacta de ${entrada.nombre} es `}
+                <strong>{entrada.cifra}</strong>
+                {': en pantalla no baja de 0,00, porque una nota por debajo de cero no se lee.'}
+              </p>
+            ))}
             {explicaciones.map((texto, indice) => (
               <p className="resultado__aviso" key={indice}>
                 {renderInline(texto)}
@@ -175,7 +224,12 @@ export function ResultPage() {
           </Plegable>
         )}
 
-        {resultado.parts.length > 0 && (
+        {/*
+          El desglose por parte es el de un **examen**: es donde hay más de una parte y cada una con su
+          banda. En una práctica —una sola parte y sin banda que aplicar— repetiría las tres cifras de
+          arriba con una escala que no le toca, que es justo lo que el propietario leyó.
+        */}
+        {esExamen && resultado.parts.length > 0 && (
           <ul className="resultado__partes" aria-label="Nota por parte">
             {resultado.parts.map((parte) => (
               <li className="resultado__parte" key={parte.part_code ?? 'unica'}>
@@ -203,16 +257,17 @@ export function ResultPage() {
         A–D por pregunta, verde la correcta y rojo la fallada—. Pulsar un número baja a esa pregunta.
         Es la misma hoja que se usa mientras se contesta (`AnswerSheet`), con las filas ya corregidas:
         dos dibujos distintos de la misma hoja serían dos maneras de leer el mismo resultado.
+
+        F38: encima llevaba una frase que explicaba lo que la hoja ya dice («Cada casilla dice lo que
+        pasó…»). Fuera: la regla de la zona del alumno es que no haya párrafos explicativos a la
+        vista, y el significado de una casilla se lee en la propia pregunta corregida —que dice «Tu
+        respuesta» y «Correcta»— y en el `aria-label` de la casilla.
       */}
       {resultado.questions.length > 0 && (
         <section className="bloque" aria-labelledby="tu-hoja">
           <h2 className="bloque__titulo" id="tu-hoja">
             Tu hoja de respuestas
           </h2>
-          <p className="bloque__texto">
-            Cada casilla dice lo que pasó: la verde es la que era correcta, y la que lleva el color del
-            fallo es la que marcaste y no lo era. Pulsa un número para bajar a esa pregunta.
-          </p>
           <AnswerSheet
             filas={filasDeResultado(resultado.questions)}
             actual={null}
@@ -409,15 +464,18 @@ function porcentaje(accuracy: number | null): string {
 }
 
 /**
- * La nota de una parte, en español y **calculada de la fracción exacta**.
+ * La nota de una parte, en español, **de la fracción exacta** y **nunca por debajo de 0,00**.
  *
  * El servidor manda la fracción (`1/3`) y su decimal (`0.3333`). Se usa la fracción: el decimal es un
  * dato para leer, no una cifra para mirar, y enseñarlo tal cual era el «0.0000» de las capturas
  * (§2.2). Y si el texto no es una fracción —una parte que no se evalúa— se enseña como llegó, que es
  * lo honesto: no hay cifra que formatear.
+ *
+ * El cero es de F38 (§3.5): la puntuación directa puede ser negativa —aciertos menos errores por su
+ * penalización—, pero en pantalla no se enseña por debajo de cero; la cifra exacta va al pliegue.
  */
 function notaDeParte(parte: StudentPartScore): string {
-  return notaDeFraccion(parte.score) ?? parte.score;
+  return notaNoNegativa(parte.score) ?? parte.score;
 }
 
 /** Bajar a la pregunta que se ha pulsado en la hoja de respuestas. */

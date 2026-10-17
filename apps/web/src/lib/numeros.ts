@@ -72,12 +72,14 @@ export function formatearPorcentaje(
 }
 
 /**
- * La nota de una fracción exacta en texto (`1/3`, `38/3`, `42`), que es como viaja la puntuación.
+ * El **valor** de una fracción exacta (`1/3`, `-1/6`, `42`), o `null` si el texto no es una fracción.
  *
- * Devuelve `null` —y no un cero— cuando el texto no es una fracción: `null` significa «aquí no hay
- * cifra que enseñar», y un cero significaría «la puntuación es cero», que es otra cosa.
+ * Es el paso de antes de formatear: hay decisiones —enseñar la puntuación sin bajar de cero, por
+ * ejemplo— que se toman sobre el número y no sobre su texto. Devuelve `null` —y no un cero— cuando el
+ * texto no es una fracción: `null` significa «aquí no hay cifra que enseñar», y un cero significaría
+ * «la puntuación es cero», que es otra cosa.
  */
-export function notaDeFraccion(fraccion: string): string | null {
+export function valorDeFraccion(fraccion: string): number | null {
   const limpio = fraccion.trim();
   if (limpio === '') {
     return null;
@@ -91,7 +93,31 @@ export function notaDeFraccion(fraccion: string): string | null {
   if (!Number.isFinite(numerador) || !Number.isFinite(denominador) || denominador === 0) {
     return null;
   }
-  return formatearNota(numerador / denominador);
+  return numerador / denominador;
+}
+
+/**
+ * La puntuación **para mirar**: nunca por debajo de `0,00` (F38, §3.5 del encargo).
+ *
+ * El recorrido midió «Puntuación directa: -0,21 (estimada)»: los números cuadran —aciertos menos
+ * errores por su penalización—, pero un alumno lee ahí una nota que no existe. En pantalla la cifra no
+ * baja de cero; la exacta no se pierde, se lee dentro del pliegue (`notaNegativaExacta`).
+ *
+ * `null` sigue significando «aquí no hay cifra»: un texto que no es una fracción se enseña como llegó
+ * y esta función no lo toca.
+ */
+export function notaNoNegativa(fraccion: string): string | null {
+  const valor = valorDeFraccion(fraccion);
+  return valor === null ? null : formatearNota(Math.max(0, valor));
+}
+
+/**
+ * La cifra exacta **cuando es negativa**, para el pliegue que la explica: `-0,33`. Si no hay negativa
+ * que explicar devuelve `null`, y entonces el pliegue no la menciona.
+ */
+export function notaNegativaExacta(fraccion: string): string | null {
+  const valor = valorDeFraccion(fraccion);
+  return valor === null || valor >= 0 ? null : formatearNota(valor);
 }
 
 /** El decimal que manda el servidor (`0.0000`, `1.6667`), leído en español. */

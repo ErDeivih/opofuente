@@ -43,6 +43,7 @@ from opofuente.domain.study import (
     SUPPORTED_MODES,
     Confidence,
     Feedback,
+    ScoringKind,
     SessionMode,
     SessionStatus,
 )
@@ -531,6 +532,29 @@ def test_el_resultado_separa_partes_fallos_y_blancos_y_no_inventa_la_oficial(
     guardado = servicio.result(session_id)
     assert guardado.total == resultado.total
     assert guardado.calculated_at == servicio.session(session_id).finished_at
+
+
+def test_una_practica_del_cuestionario_completo_no_se_escala_a_la_banda_del_examen(
+    seeded_settings: Settings,
+) -> None:
+    """F38 (§3.5 del encargo): la banda 0-50 es del **examen**; una práctica se queda en la directa.
+
+    Con el cuestionario entero —las 80 preguntas de la primera parte— el motor **sí** podía escalar,
+    y lo hacía: 80 aciertos salían como «50 sobre 50». Eso es puntuar una práctica como un examen, y
+    es lo que el propietario leyó en su resultado («6,00 sobre 50 · mínimo 25»).
+    """
+    servicio, session_id = _sesion_en_marcha(seeded_settings, cantidad=80)
+    _responder_todas(servicio, session_id)
+
+    resultado = servicio.finish(session_id)
+    parte = resultado.parts[0]
+
+    assert parte.correct == 80
+    assert parte.kind == ScoringKind.DIRECT.value, "una práctica no se escala a la banda del examen"
+    assert parte.score.fraction == "80", "los netos con penalización, sin escalar"
+    # La banda **sigue viajando**: es el dato declarado de la convocatoria, y quien decide si se
+    # enseña es la pantalla (en un examen, sí; en una práctica, no).
+    assert (parte.score_max, parte.pass_score) == (50.0, 25.0)
 
 
 def test_terminar_dos_veces_devuelve_el_mismo_resultado(seeded_settings: Settings) -> None:

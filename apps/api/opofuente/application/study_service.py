@@ -112,6 +112,12 @@ _SUPPORTED_QUESTION_TYPES = ("single_choice", "true_false", "multi_mark_error")
 REVIEW_SESSION_LIMIT = 20
 MAX_REVIEW_SESSION_LIMIT = 50
 
+#: Los dos modos que **son un examen** (F38). Es lo que decide si la puntuación directa se escala a
+#: la banda oficial 0-50 de la convocatoria: la banda es la calificación del examen, y un test de
+#: práctica no se puntúa como un examen. Los demás modos —práctica, repaso de fallos, diagnóstico—
+#: se quedan en la puntuación directa, que es lo que el alumno lee como «netos con penalización».
+MODOS_DE_EXAMEN = (SessionMode.OFFICIAL_EXAM, SessionMode.MOCK_EXAM)
+
 
 @dataclass(frozen=True, slots=True)
 class SourceInput:
@@ -2715,6 +2721,7 @@ class StudyService:
                 and regla.ordinary_items is not None
                 and regla.score_max is not None
                 and presentadas >= regla.ordinary_items
+                and session.mode in MODOS_DE_EXAMEN
             ):
                 # El cuestionario **completo** de una parte que publica su banda (TAI: 80 preguntas
                 # y 50 de máximo): la puntuación directa se puede escalar a esa banda, y esa es la
@@ -2722,6 +2729,13 @@ class StudyService:
                 # no hace falta inventar el número de alternativas (`options_per_question` sigue
                 # nulo en el perfil). Con la parte **incompleta** —una práctica de 20 de 80— no se
                 # escala: se muestra la directa, porque escalar una muestra sería inventar una nota.
+                #
+                # Y **solo se escala en un examen** (F38, §3.5 del encargo): la banda 0-50 es la
+                # calificación del examen —simulacro u oficial—, y un test de práctica no se puntúa
+                # como un examen aunque practique el cuestionario entero. Ahí la cifra es la directa
+                # —aciertos menos errores por su penalización, que es lo que el alumno lee como
+                # «netos con penalización»—, y la banda sigue viajando en el resultado como el dato
+                # declarado que es: quien decide si se enseña es la pantalla, no el cálculo.
                 regla = replace(regla, kind=ScoringKind.ESTIMATED)
             reglas[codigo] = regla
         return reglas

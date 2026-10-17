@@ -4,7 +4,9 @@
  * Lo que se comprueba es lo que él escribió, no una interpretación:
  *
  * 1. la nota es **una línea** —«Puntuación directa: 0,33 sobre 50 (estimada)»— y las notas van en
- *    español, con coma y dos decimales;
+ *    español, con coma y dos decimales. Desde F38 (§3.5) esta forma es la de un **examen**: en un test
+ *    de práctica la línea dice los netos con penalización y no lleva banda
+ *    (`resultadoPracticaYExamen.test.tsx`);
  * 2. los párrafos sobre baremos y mínimos **siguen ahí, pero plegados** (no se borran) y se despliegan
  *    con «¿Por qué estimada?»: por defecto no hay ningún párrafo explicativo a la vista;
  * 3. el resultado **usa la hoja de respuestas** del diseño v0 —casillas A–D por pregunta, verde la
@@ -20,7 +22,7 @@ import { Route, Routes } from 'react-router-dom';
 
 import type { StudentSessionResult } from '../../src/api/studentTests';
 import { ResultPage } from '../../src/pages/student/ResultPage';
-import { sessionResultFixture } from './studentFixtures';
+import { resultadoDeSimulacroFixture, sessionResultFixture } from './studentFixtures';
 import { renderWithProviders, stubApi } from './testUtils';
 
 function montar(resultado: StudentSessionResult = sessionResultFixture) {
@@ -55,7 +57,9 @@ beforeEach(() => {
 
 describe('el resultado: la nota en una línea', () => {
   it('escribe «Puntuación directa: 0,33 sobre 50 (estimada)» y ninguna cifra con punto', async () => {
-    montar();
+    // F38: la banda del examen se enseña en un examen. El caso de esta prueba es un simulacro; en un
+    // test de práctica la línea dice «Netos con penalización» y no lleva escala.
+    montar(resultadoDeSimulacroFixture);
 
     const linea = await screen.findByText(/^Puntuación directa:/);
     expect(linea.textContent?.replace(/\s+/g, ' ').trim()).toBe(
@@ -64,7 +68,7 @@ describe('el resultado: la nota en una línea', () => {
   });
 
   it('no deja ningún número con punto y dos o más decimales a la vista', async () => {
-    montar();
+    montar(resultadoDeSimulacroFixture);
 
     await screen.findByText(/^Puntuación directa:/);
     // Se mira la pantalla **entera**, plegado incluido: desde el arreglo del servidor, la prosa que
@@ -77,7 +81,7 @@ describe('el resultado: la nota en una línea', () => {
 
 describe('el resultado: la explicación, plegada', () => {
   it('no enseña ningún párrafo sobre baremos y mínimos por defecto', async () => {
-    montar();
+    montar(resultadoDeSimulacroFixture);
 
     const explicacion = await screen.findByText(/no es la calificación oficial/i);
     expect(explicacion).not.toBeVisible();
@@ -89,7 +93,7 @@ describe('el resultado: la explicación, plegada', () => {
 
   it('«¿Por qué estimada?» despliega la explicación, que no se ha borrado', async () => {
     const usuario = userEvent.setup();
-    montar();
+    montar(resultadoDeSimulacroFixture);
 
     const boton = await screen.findByRole('button', { name: /por qué estimada/i });
     expect(boton).toHaveAttribute('aria-expanded', 'false');

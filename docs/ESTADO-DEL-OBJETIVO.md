@@ -4000,3 +4000,126 @@ epígrafes de I.1**, y eso es una decisión sobre el programa, no sobre la panta
   resultado y alumno/estudio.
 - **Las 18 puertas no las corre este bloque** (las corre el que mide, con su protocolo).
 
+---
+
+## F38 — El Resultado del alumno: la hoja, la práctica y el cero (§3.5 del recorrido)
+
+**16 de octubre de 2026 · rama `f38-resultado`, sobre `main = a26eb1c` · encargo:
+`docs/REVISION-DEL-RECORRIDO-Y-ARREGLOS-2026-10.md` §3.5 y lo que el propietario vio en las
+imágenes.**
+
+Tres cosas que él vio en el Resultado, con su rojo medido y su verde medido. La frase que las une es
+la del §1.7 del documento: **ningún párrafo explicativo visible por defecto en la zona del alumno**.
+
+### 1 · La hoja de respuestas salía sin colores (y con una frase encima)
+
+**Lo que decía:** «las letras casi no se ven y no tienen colores, aunque durante el test sí se pintan
+bien». **La causa, medida:** los tokens de la hoja (`--hoja-acierto`, `--hoja-fallo`…) se declaraban
+**dentro de `.test-marco`**, que es el marco del test en curso. En el Resultado no existían, así que
+`background: var(--hoja-acierto)` quedaba **inválida en el momento de calcularse** —el fondo cae a
+`transparent`— mientras `color: var(--sobre-acento)` sí resolvía y dejaba la letra **blanca**. Blanco
+sobre papel blanco.
+
+| Medido en el navegador (valor computado) | Test en curso | Resultado **antes** | Resultado **después** |
+|---|---|---|---|
+| fondo de la casilla correcta | `rgb(21, 115, 74)` | **`rgba(0, 0, 0, 0)`** | `rgb(21, 115, 74)` |
+| letra de la casilla correcta | `rgb(255, 255, 255)` | `rgb(255, 255, 255)` | `rgb(255, 255, 255)` |
+| fondo de la casilla fallada | `rgb(180, 35, 24)` | **`rgba(0, 0, 0, 0)`** | `rgb(180, 35, 24)` |
+| letra de la casilla fallada | `rgb(255, 255, 255)` | `rgb(255, 255, 255)` | `rgb(255, 255, 255)` |
+
+Los PNG del test en curso son **idénticos byte a byte** antes y después (`SHA-256`
+`91339920…2655F` a 1280 y `EED111E5…BFF1E` a 390): la pantalla del test ya estaba bien, y el arreglo no
+la ha tocado. Los del resultado **sí cambian** (`313C46FF…C76F` → `C8379A09…C4A2` a 1280 y
+`2B301C2F…4FDA` → `69D44954…BE1A` a 390).
+
+**El arreglo:** los trece tokens `--hoja-*` se declaran en `:root` (en `global.css`, tomando sus
+valores de `tokens.css`), que es el único sitio del que heredan las dos pantallas; y `.test-marco` se
+queda con su maquetación. La frase «Cada casilla dice lo que pasó…» **se va**: el significado ya está
+en cada pregunta corregida («Tu respuesta», «Correcta») y en el `aria-label` de la casilla.
+
+### 2 · Un test de práctica no se puntúa como un examen
+
+Lo que decía, y lo que dice ahora —medido con la misma prueba sobre los dos códigos, con el caso del
+propietario (un test de práctica de 10 preguntas con 6 aciertos):
+
+| | Antes | Después |
+|---|---|---|
+| la línea de la nota | `Puntuación directa: 6,00 sobre 50 (estimada)` | `Netos con penalización: 6,00` |
+| el desglose por parte | `6,00 sobre 50 · mínimo 25` | *no se enseña: una práctica es una parte y no tiene banda* |
+| los recuentos | `6 aciertos · 0 fallos · 4 en blanco` | `6 aciertos · 0 fallos · 4 en blanco · 60 % de acierto` |
+
+La banda 0-50 con su mínimo se sigue enseñando **en simulacros y exámenes oficiales** (es donde hay
+dos partes y dos bandas). Y el motor solo **escala** la puntuación a esa banda en esos dos modos
+(`MODOS_DE_EXAMEN`): medido, una práctica de las 80 preguntas de la primera parte daba
+`kind: estimated` con `50` y ahora da `kind: direct` con `80`, que es la cuenta que el alumno lee como
+netos con penalización.
+
+**Sobre la convocatoria, sin inventar:** la escala sale del máximo y el mínimo que **publica** la
+convocatoria; si un test no la tiene (o es una práctica de una parte), no hay escala que enseñar y no
+se enseña.
+
+### 3 · La puntuación directa nunca por debajo de 0,00
+
+El recorrido midió «Puntuación directa: -0,21 (estimada)». Ahora, con 0 aciertos y 1 fallo
+(penalización de un tercio):
+
+| | Antes | Después |
+|---|---|---|
+| la línea de la nota | `Puntuación directa: -0,33 (estimada)` | `Netos con penalización: 0,00` |
+| la cifra exacta | a la vista, en la línea | `-0,33`, dentro del pliegue «¿Por qué 0,00?» |
+
+El pliegue se llama de una manera u otra según lo que haya dentro: «¿Por qué estimada?» en un examen,
+«¿Por qué 0,00?» cuando hay una cifra negativa que explicar y «¿Qué significa esta puntuación?» en el
+resto. La cifra exacta no se pierde; se lee a un clic.
+
+### Qué se ha tocado
+
+- **Servidor** (`apps/api`): `MODOS_DE_EXAMEN` y la condición de modo en
+  `study_service._reglas_de_partes` (solo se escala en simulacro y examen oficial).
+- **Web** (`apps/web`): `global.css` (los `--hoja-*` a `:root`), `ResultPage` (las cifras de la
+  práctica, el cero y el pliegue, y la frase de la hoja fuera) y `lib/numeros.ts` (`valorDeFraccion`,
+  `notaNoNegativa` y `notaNegativaExacta`: el cero se decide en un solo sitio, con el resto de las
+  cifras).
+
+### Pruebas
+
+- **Rojas antes, verdes después**: 7 de componente en `tests/unit/resultadoPracticaYExamen.test.tsx`
+  (el color de la hoja por su `data-estado`, la banda que no se enseña, el cero, la cifra exacta en el
+  pliegue y la frase que se va) y 1 de API en `test_study_session` (la práctica del cuestionario
+  completo). **Y cuatro de navegador** de las seis de `tests/e2e/resultado.spec.ts`: el resultado a
+  1280 y a 390 y el cero a 1280 y a 390. Con el código de antes, el navegador da
+  `rgba(0, 0, 0, 0)` donde tiene que dar `rgb(21, 115, 74)` y lee `Puntuación directa: -0,33`.
+- **Capturas y cifras**: `apps/web/tests/e2e/resultado.spec.ts`, seis casos (test en curso, resultado y
+  el cero × 1280 y 390), que exigen **0 violaciones de axe**, **0 errores de consola** y **ningún dato
+  prohibido** en toda la pantalla, y comprueban cada cifra de las tablas de arriba. La corrida buena:
+  **6 pasan**. El antes y el después están en `artifacts/capturas-f38/antes` y `/despues`.
+- **Y una contaminación que encontró la suite completa, no la prueba sola**: las cuatro preguntas
+  sembradas van catalogadas a IV.1 y IV.7 (hacen falta para que el resultado enseñe su desglose por
+  tema), y el **diagnóstico del panel** compone su muestra sobre todo el banco catalogado, dos
+  preguntas por tema: con ellas la muestra pasaba de 6 a 8 y `E2E-06 un diagnóstico reparte la muestra
+  por temas` se quedaba esperando «0 de 6 respondidas». La prueba retira **su catalogación** al
+  terminar (`afterAll`, `node:sqlite` sobre la base de la suite) y el diagnóstico vuelve a sus seis.
+  Comprobado ejecutando las dos pruebas seguidas: **13 de 13**.
+- **Locales**: `ruff check .` limpio, `ruff format --check .` (563 ficheros), `mypy` (262 ficheros)
+  limpio, `eslint` limpio, `tsc` limpio, **465** de componente y las de API de estudio y alumno
+  (`test_study_session`, `test_study_api`, `test_study_compose`, `test_study_domain`,
+  `test_numeros_en_prosa`, `test_student_api`, `test_student_result_api`, `test_student_notes_api`:
+  **148 pasan**). De las 465 de componente, **463–464 verdes según la pasada**: en las dos pasadas de
+  la suite entera cayeron una o dos pruebas **del panel** (`promote`, `questions`) por esperas de
+  `findByRole` bajo la carga —54 entornos de jsdom, 160 s—, y las dos pasan solas (42/42). No tocan
+  nada de este bloque y no se ha tocado su código.
+- **Suite E2E completa** (`npm run e2e`, 89 pruebas): **89 pasan** en 5,7 min. Las 18 puertas no las
+  corre este bloque (las corre el que mide, con su protocolo).
+
+### Lo que queda fuera, y por qué
+
+- **La explicación de la calificación oficial sigue en el pliegue aunque sea una práctica.** Es un
+  párrafo que ya existía, no está a la vista y dice algo cierto (la calificación 0-50 no está
+  importada). Quitarlo de una práctica es una decisión de texto que no estaba en el encargo.
+- **El desglose por parte solo se enseña en exámenes.** En una práctica de una sola parte repetía las
+  tres cifras de arriba con una banda que no le toca; si algún día una práctica puede tener dos partes,
+  habrá que volver a decidir qué se enseña.
+- **`/admin/estudiar` (panel) no cambia de aspecto**: su resultado sigue enseñando la fracción exacta y
+  la nota del mínimo, que es la vista del propietario y no la del alumno.
+
+
