@@ -1412,10 +1412,78 @@ kbd {
   color: var(--hoja-tinta-suave);
 }
 
+.test-cabecera__datos {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 1.25rem;
+}
+
+.test-reloj {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.75rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--hoja-tinta-suave);
+}
+
+.test-reloj__restante strong {
+  font-size: 1.15rem;
+  color: var(--hoja-tinta);
+}
+
+.test-reloj__transcurrido {
+  font-size: 0.9rem;
+}
+
+.test-reloj--apurado .test-reloj__restante strong {
+  color: var(--hoja-dudosa);
+}
+
+.test-reloj--vencido .test-reloj__restante strong {
+  color: var(--hoja-fallo);
+}
+
+.test-reloj__aviso {
+  flex-basis: 100%;
+  font-size: 0.9rem;
+  color: var(--hoja-dudosa);
+}
+
+.test-reloj--vencido .test-reloj__aviso {
+  color: var(--hoja-fallo);
+}
+
+.test-aviso {
+  margin: 0 0 1rem;
+  padding: 0.6rem 0.9rem;
+  border-left: 3px solid var(--hoja-azul);
+  background: var(--hoja-azul-suave);
+  border-radius: 4px;
+}
+
+.test-aviso--abandonado {
+  border-left-color: var(--hoja-dudosa);
+  background: var(--hoja-dudosa-suave);
+}
+
 .test-ayuda {
   margin-top: 1rem;
   color: var(--hoja-tinta-suave);
   font-size: 0.9rem;
+}
+
+.test-opcion:disabled {
+  cursor: default;
+  opacity: 0.75;
+}
+
+.simulacro__preparando {
+  margin: 0.75rem 0 0;
+  color: var(--tinta-suave);
+  font-variant-numeric: tabular-nums;
 }
 
 .test-hoja {

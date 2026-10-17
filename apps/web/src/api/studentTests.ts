@@ -42,6 +42,13 @@ export interface StudentSession {
   answered_questions: number;
   time_limit_minutes: number | null;
   started_at: string | null;
+  /**
+   * La hora del servidor en el momento de la respuesta, del **mismo reloj** que `started_at`.
+   *
+   * Es lo que permite poner el reloj del test en hora sin fiarse del reloj del navegador: la
+   * diferencia entre las dos horas es el tiempo que lleva corriendo el test, medida con un solo reloj.
+   */
+  server_now: string;
   finished_at: string | null;
   created_at: string;
   result: StudentScore | null;
@@ -273,6 +280,35 @@ export function answerStudentQuestion(
 /** Cierra el test y devuelve el resultado con la nota de cada parte. */
 export function finishStudentRun(sessionId: string): Promise<StudentResult> {
   return apiFetch<StudentResult>(`/api/v1/student/sessions/${sessionId}/finish`, {
+    method: 'POST',
+  });
+}
+
+/** Cómo cerrar un test a medias: lo que hay que decirle a quien pulsa «Abandonar». */
+export type StudentAbandonAction = 'deleted' | 'abandoned';
+
+/**
+ * Qué queda de un test abandonado.
+ *
+ * `deleted` no es un fallo: es que no se había contestado nada y no hay historial que conservar.
+ * `abandoned` es el caso normal: lo contestado se guarda para repasar y el test **no cuenta** como
+ * hecho ni entra en las notas.
+ */
+export interface StudentAbandon {
+  session_id: string;
+  action: StudentAbandonAction;
+  detail: string;
+}
+
+/**
+ * Abandona el test en curso y devuelve qué ha quedado de él.
+ *
+ * Es reintentable a propósito: abandonar dos veces devuelve el mismo parte en vez de fallar, y una
+ * sesión ya terminada no se toca. Lo contestado se conserva (`abandoned`) salvo que no hubiera nada
+ * contestado, y entonces la sesión se descarta.
+ */
+export function abandonStudentRun(sessionId: string): Promise<StudentAbandon> {
+  return apiFetch<StudentAbandon>(`/api/v1/student/sessions/${sessionId}/abandon`, {
     method: 'POST',
   });
 }

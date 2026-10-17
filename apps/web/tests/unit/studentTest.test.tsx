@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Route, Routes } from 'react-router-dom';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import type { StudentRun, StudentSheetRow } from '../../src/api/studentTests';
 import { AnswerSheet } from '../../src/features/study/AnswerSheet';
@@ -74,6 +74,9 @@ function runFixture(overrides: Partial<StudentRun> = {}): StudentRun {
       answered_questions: 2,
       time_limit_minutes: null,
       started_at: '2026-10-11T09:00:00Z',
+      // La hora del servidor, del **mismo reloj** que `started_at`: aquí es la del arranque, así que
+      // el test acaba de empezar. Cada prueba que quiera un transcurrido concreto mueve las dos.
+      server_now: '2026-10-11T09:00:00Z',
       finished_at: null,
       created_at: '2026-10-11T08:59:00Z',
       result: null,
@@ -111,6 +114,13 @@ function rutas(run: StudentRun): Record<string, StubbedRoute> {
   return {
     'GET /api/v1/student/sessions/ses-1': { body: run },
     'POST /api/v1/student/sessions/ses-1/answers': { body: run },
+    'POST /api/v1/student/sessions/ses-1/abandon': {
+      body: {
+        session_id: 'ses-1',
+        action: 'abandoned',
+        detail: 'tus respuestas se conservan para repasar, pero este test no cuenta como hecho',
+      },
+    },
     'POST /api/v1/student/sessions/ses-1/finish': {
       body: {
         session: { ...run.session, status: 'finished' },
@@ -266,5 +276,91 @@ describe('el test en curso', () => {
     expect(screen.getByText('Tu respuesta')).toBeInTheDocument();
     expect(screen.getByText('Correcta')).toBeInTheDocument();
     expect(screen.queryByText('La corrección de este test se ve al terminar.')).not.toBeInTheDocument();
+  });
+});
+
+/**
+ * El reloj visible y «Abandonar» (§3.4), que es lo que hoy no existía: el examen oficial no enseñaba
+ * el tiempo y no se podía salir de él.
+ */
+describe('el reloj y abandonar el test', () => {
+  it('enseña el tiempo que queda y el que llevas en un test con límite', async () => {
+    // El servidor responde diez minutos después de arrancar, con 120 de límite: quedan 110.
+    const conReloj = runFixture({
+      session: {
+        ...runFixture().session,
+        time_limit_minutes: 120,
+        started_at: '2026-10-16T10:00:00Z',
+        server_now: '2026-10-16T10:10:00Z',
+      },
+    });
+    pintarElTest(conReloj);
+
+    // El bloque del reloj lleva las dos cifras: lo que queda y lo que llevas.
+    await screen.findByText(/Quedan/);
+    const reloj = document.querySelector('.test-reloj');
+    expect(reloj).not.toBeNull();
+    expect(reloj).toHaveTextContent('Quedan 1:50:00');
+    expect(reloj).toHaveTextContent('Llevas 10:00');
+  });
+
+  it('no enseña reloj cuando el test no lleva tiempo', async () => {
+    pintarElTest(runFixture());
+
+    await screen.findByText('¿Cuántas capas tiene el modelo OSI?');
+    expect(screen.queryByText(/Quedan/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Llevas/)).not.toBeInTheDocument();
+  });
+
+  it('abandonar pide confirmación, avisa de lo que se pierde y dice qué ha quedado', async () => {
+    const usuario = userEvent.setup();
+    const confirmacion = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const fetchMock = pintarElTest(runFixture());
+    await screen.findByText('¿Cuántas capas tiene el modelo OSI?');
+
+    await usuario.click(screen.getByRole('button', { name: 'Abandonar' }));
+
+    // La confirmación dice **cuántas** llevas y qué pasa con ellas: es la decisión, escrita.
+    expect(confirmacion).toHaveBeenCalledWith(expect.stringContaining('2 de 3 contestadas'));
+    expect(confirmacion).toHaveBeenCalledWith(expect.stringContaining('se conservan para repasar'));
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.stringContaining('/api/v1/student/sessions/ses-1/abandon'),
+        expect.objectContaining({ method: 'POST' }),
+      );
+    });
+    expect(await screen.findByText(/no cuenta como hecho/)).toBeInTheDocument();
+    confirmacion.mockRestore();
+  });
+
+  it('si no se confirma, no se abandona nada', async () => {
+    const usuario = userEvent.setup();
+    const confirmacion = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    const fetchMock = pintarElTest(runFixture());
+    await screen.findByText('¿Cuántas capas tiene el modelo OSI?');
+
+    await usuario.click(screen.getByRole('button', { name: 'Abandonar' }));
+
+    expect(
+      fetchMock.mock.calls.some(([url]) => urlDe(url).includes('/abandon')),
+    ).toBe(false);
+    confirmacion.mockRestore();
+  });
+
+  it('un test abandonado no se puede contestar, lo dice y ofrece salir', async () => {
+    const abandonado = runFixture({
+      session: { ...runFixture().session, status: 'abandoned' },
+    });
+    pintarElTest(abandonado);
+
+    await screen.findByText('¿Cuántas capas tiene el modelo OSI?');
+    // Abandonar y volver a entrar funciona: la pantalla abre, dice qué es y no deja contestar.
+    expect(screen.getByRole('status')).toHaveTextContent(/no cuenta como test hecho/i);
+    expect(screen.getByRole('button', { name: 'Ir a la pregunta 1' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Salir' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Terminar' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Abandonar' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Siete/ })).toBeDisabled();
+    expect(screen.getByText(/no admite respuestas/)).toBeInTheDocument();
   });
 });

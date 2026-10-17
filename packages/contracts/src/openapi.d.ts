@@ -3547,6 +3547,33 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/student/sessions/{sesion}/abandon": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Abandona el test: lo que hayas contestado se conserva y el test no cuenta
+         * @description Salir de un test a medias, con lo que queda dicho.
+         *
+         *     **Qué pasa con el intento abandonado**: lo contestado se conserva, la sesión queda `abandoned`,
+         *     **no cuenta** como test hecho ni entra en las notas, y se puede abrir para repasar lo que se
+         *     llevaba. Cuando no se contestó nada, la sesión se descarta: no hay historial que conservar.
+         *
+         *     Es reintentable a propósito: abandonar dos veces no da un error, devuelve el mismo parte. Y una
+         *     sesión ya terminada no se toca: tiene su resultado y convertirla en abandono sería tirarlo.
+         */
+        post: operations["student_abandon_api_v1_student_sessions__sesion__abandon_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/student/sessions/{sesion}/answers": {
         parameters: {
             query?: never;
@@ -9849,6 +9876,24 @@ export interface components {
             days: number;
         };
         /**
+         * StudentAbandonSchema
+         * @description Qué queda de un test abandonado, en las palabras que se le enseñan al alumno.
+         *
+         *     Va aparte de `StudentSessionSchema` a propósito: lo que el alumno necesita saber al salirse de
+         *     un examen a medias no es el estado interno, es si lo contestado se conserva y si eso cuenta.
+         */
+        StudentAbandonSchema: {
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "deleted" | "abandoned";
+            /** Detail */
+            detail: string;
+            /** Session Id */
+            session_id: string;
+        };
+        /**
          * StudentAnswerRequestSchema
          * @description La respuesta a una pregunta, **por su fila en la hoja de respuestas**.
          */
@@ -10551,6 +10596,11 @@ export interface components {
             /** Practical Case Origin */
             practical_case_origin?: string | null;
             result?: components["schemas"]["StudentScoreSchema"] | null;
+            /**
+             * Server Now
+             * Format: date-time
+             */
+            server_now: string;
             /** Started At */
             started_at?: string | null;
             /**
@@ -21315,6 +21365,64 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StudentRunSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    student_abandon_api_v1_student_sessions__sesion__abandon_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sesion: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentAbandonSchema"];
+                };
+            };
+            /** @description Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
                 };
             };
             /** @description El recurso no existe. */

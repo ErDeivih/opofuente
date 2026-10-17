@@ -119,6 +119,7 @@ export const overviewFixture: StudentOverview = {
     answered_questions: 12,
     time_limit_minutes: null,
     started_at: '2026-10-11T09:00:00Z',
+    server_now: '2026-10-11T09:00:00Z',
     finished_at: null,
     created_at: '2026-10-11T08:59:00Z',
     result: null,
@@ -136,6 +137,7 @@ export const overviewFixture: StudentOverview = {
       answered_questions: 20,
       time_limit_minutes: null,
       started_at: '2026-10-10T09:00:00Z',
+      server_now: '2026-10-10T09:20:00Z',
       finished_at: '2026-10-10T09:20:00Z',
       created_at: '2026-10-10T08:59:00Z',
       result: {
@@ -316,6 +318,7 @@ export const sessionResultFixture: StudentSessionResult = {
     answered_questions: 4,
     time_limit_minutes: null,
     started_at: '2026-10-11T09:00:00Z',
+    server_now: '2026-10-11T09:00:00Z',
     finished_at: '2026-10-11T09:12:30Z',
     created_at: '2026-10-11T08:59:00Z',
     result: {

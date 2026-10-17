@@ -88,3 +88,9 @@ artifacts/recorrido/*.png
 # corrida y hay una carpeta de Â«antesÂ» y otra de Â«despuÃ©sÂ»â€”. Las cifras que las acompaÃ±an
 # (`artifacts/lectura/medidas.json`) sÃ­ se rastrean: son el nÃºmero que hay que poder citar.
 artifacts/lectura/**/*.png
+
+# Y las capturas del simulacro y del reloj (§3.3 y §3.4): misma clase de artefacto que las de
+# `artifacts/recorrido/` y `artifacts/lectura/` —se rehacen en cada corrida—. Lo que sí se rastrea es
+# la medición (`artifacts/simulacro/MEDIDAS.md`) y el guion que la produce, que es lo que hay que poder
+# volver a correr.
+artifacts/simulacro/*.png

@@ -209,9 +209,17 @@ export function MockExamPage() {
           }}
           disabled={montar.isPending}
         >
-          Empezar el simulacro
+          {montar.isPending ? 'Preparando tu simulacro…' : 'Empezar el simulacro'}
         </button>
       </p>
+      {montar.isPending ? (
+        // El montaje recorre el banco entero de los temas del simulacro y no es instantáneo: mientras
+        // dura, la pantalla **lo dice** y el botón se queda ocupado. No es una barra de progreso
+        // inventada —el servidor no publica en qué va—, es la frase que evita que parezca un cuelgue.
+        <p className="simulacro__preparando" role="status" aria-live="polite">
+          Estamos eligiendo las preguntas de tu simulacro. Puede tardar unos segundos.
+        </p>
+      ) : null}
       {montar.isError && <ErrorState title="No se pudo montar" message={describeError(montar.error)} />}
     </>
   );

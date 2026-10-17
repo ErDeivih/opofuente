@@ -304,6 +304,103 @@ class SqlAlchemyQuestionRepository:
                 return None
             return self._set_view(session, fila)
 
+    def sets_by_ids(self, set_ids: Sequence[str]) -> dict[str, QuestionSetView]:
+        """Los conjuntos de esos identificadores, en **una** consulta y con sus recuentos.
+
+        Es la versión por lotes de `get_set`, y existe por el mismo motivo que
+        `questions_by_ids`: quien compone una sesión recorre cientos o miles de preguntas de decenas
+        de temas, y una consulta por conjunto (más tres de recuento y una de claves cada una) es el
+        N+1 que hacía que montar un simulacro tardara minutos. Devuelve solo los que existen: pedir
+        un identificador que no está no es un error, es que no está.
+        """
+        if not set_ids:
+            return {}
+        unicos = tuple(dict.fromkeys(set_ids))
+        with self._session_factory() as session:
+            filas: list[QuestionSetRecord] = []
+            # En tandas: una composición de todo el temario pide más identificadores de los que
+            # SQLite admite en una sola cláusula `IN` (999 por defecto).
+            for inicio in range(0, len(unicos), _TANDA_DE_CONSULTA):
+                tanda = unicos[inicio : inicio + _TANDA_DE_CONSULTA]
+                filas.extend(
+                    session.execute(
+                        select(QuestionSetRecord).where(QuestionSetRecord.id.in_(list(tanda)))
+                    )
+                    .scalars()
+                    .all()
+                )
+            if not filas:
+                return {}
+            identificadores = [str(fila.id) for fila in filas]
+            # Los tres recuentos de `_set_view`, agrupados en tres consultas para todo el lote en
+            # lugar de tres por conjunto.
+            preguntas: dict[str, int] = {}
+            reservas: dict[str, int] = {}
+            incompletas: dict[str, int] = {}
+            claves_por_conjunto: dict[str, list[AnswerKeyVersionRecord]] = {}
+            for inicio in range(0, len(identificadores), _TANDA_DE_CONSULTA):
+                tanda_actual = identificadores[inicio : inicio + _TANDA_DE_CONSULTA]
+                preguntas.update(
+                    {
+                        str(set_id): int(total)
+                        for set_id, total in session.execute(
+                            select(QuestionVersionRecord.question_set_id, func.count())
+                            .where(
+                                QuestionVersionRecord.question_set_id.in_(tanda_actual),
+                                _NO_SUSTITUIDAS,
+                            )
+                            .group_by(QuestionVersionRecord.question_set_id)
+                        ).all()
+                    }
+                )
+                reservas.update(
+                    {
+                        str(set_id): int(total)
+                        for set_id, total in session.execute(
+                            select(QuestionVersionRecord.question_set_id, func.count())
+                            .where(
+                                QuestionVersionRecord.question_set_id.in_(tanda_actual),
+                                QuestionVersionRecord.is_reserve.is_(True),
+                                _NO_SUSTITUIDAS,
+                            )
+                            .group_by(QuestionVersionRecord.question_set_id)
+                        ).all()
+                    }
+                )
+                incompletas.update(
+                    {
+                        str(set_id): int(total)
+                        for set_id, total in session.execute(
+                            select(QuestionVersionRecord.question_set_id, func.count())
+                            .where(
+                                QuestionVersionRecord.question_set_id.in_(tanda_actual),
+                                QuestionVersionRecord.status == "incomplete",
+                            )
+                            .group_by(QuestionVersionRecord.question_set_id)
+                        ).all()
+                    }
+                )
+                for clave in (
+                    session.execute(
+                        select(AnswerKeyVersionRecord).where(
+                            AnswerKeyVersionRecord.question_set_id.in_(tanda_actual)
+                        )
+                    )
+                    .scalars()
+                    .all()
+                ):
+                    claves_por_conjunto.setdefault(clave.question_set_id, []).append(clave)
+            return {
+                fila.id: self._set_view_con_recuentos(
+                    fila,
+                    preguntas=preguntas.get(fila.id, 0),
+                    reservas=reservas.get(fila.id, 0),
+                    incompletas=incompletas.get(fila.id, 0),
+                    claves=tuple(claves_por_conjunto.get(fila.id, ())),
+                )
+                for fila in filas
+            }
+
     def set_distribution(
         self, set_id: str, distribution: str, *, now: datetime, actor: str = "local"
     ) -> bool:
@@ -550,6 +647,50 @@ class SqlAlchemyQuestionRepository:
                 return None
             claves = self._active_entries(session, [fila.question_set_id])
             return self._question_view(session, fila, claves, include_key=include_key)
+
+    def questions_by_ids(self, question_ids: Sequence[str]) -> dict[str, QuestionView]:
+        """Las preguntas de esos identificadores, en **una** consulta y con sus opciones.
+
+        Es la versión por lotes de `get_question`, y existe porque quien compone una sesión recorre
+        el banco entero de los temas pedidos —miles de preguntas— y una consulta por pregunta (más
+        sus opciones, sus explicaciones y su clave) es exactamente el N+1 que convertía montar un
+        simulacro en dos minutos y medio. Los que no existen simplemente no salen en el mapa.
+        """
+        if not question_ids:
+            return {}
+        unicos = tuple(dict.fromkeys(question_ids))
+        with self._session_factory() as session:
+            filas: list[QuestionVersionRecord] = []
+            # En tandas: la composición de un simulacro pide más identificadores de los que SQLite
+            # admite en una sola cláusula `IN` (999 por defecto).
+            for inicio in range(0, len(unicos), _TANDA_DE_CONSULTA):
+                tanda = unicos[inicio : inicio + _TANDA_DE_CONSULTA]
+                filas.extend(
+                    session.execute(
+                        select(QuestionVersionRecord).where(
+                            QuestionVersionRecord.id.in_(list(tanda))
+                        )
+                    )
+                    .scalars()
+                    .all()
+                )
+            if not filas:
+                return {}
+            identificadores = [str(fila.id) for fila in filas]
+            conjuntos = list({fila.question_set_id for fila in filas})
+            claves = self._active_entries(session, conjuntos)
+            opciones = self._options_by_question(session, identificadores)
+            explicaciones = self._explanations_count(session, identificadores)
+            return {
+                fila.id: self._question_view_con_datos(
+                    fila,
+                    claves=claves,
+                    opciones=opciones.get(fila.id, ()),
+                    explicaciones=explicaciones.get(fila.id, 0),
+                    include_key=False,
+                )
+                for fila in filas
+            }
 
     def keys_of_set(self, set_id: str) -> dict[str, AnswerKeyEntry]:
         """Desenlaces de la clave **activa** del conjunto, por pregunta.
@@ -1458,6 +1599,38 @@ class SqlAlchemyQuestionRepository:
                 .where(QuestionVersionRecord.question_set_id == set_id)
             ).scalars()
             return frozenset(str(fila) for fila in filas)
+
+    def excluded_question_ids_by_set(self, set_ids: Sequence[str]) -> dict[str, frozenset[str]]:
+        """Las preguntas excluidas de **cada** uno de esos conjuntos, en **una** consulta.
+
+        Es la versión por lotes de `excluded_question_ids`, y existe por el mismo motivo que las
+        demás: quien compone recorre los conjuntos de los temas pedidos y una consulta por conjunto,
+        cada una recorriendo la tabla entera de exclusiones en su unión, era otro de los N+1 del
+        montaje de un simulacro. Un conjunto sin exclusiones no sale en el mapa: quien pregunta
+        recibe el vacío.
+        """
+        if not set_ids:
+            return {}
+        unicos = tuple(dict.fromkeys(set_ids))
+        agrupadas: dict[str, set[str]] = {}
+        with self._session_factory() as session:
+            for inicio in range(0, len(unicos), _TANDA_DE_CONSULTA):
+                tanda = unicos[inicio : inicio + _TANDA_DE_CONSULTA]
+                filas = session.execute(
+                    select(
+                        QuestionVersionRecord.question_set_id,
+                        QuestionCurriculumExclusionRecord.question_version_id,
+                    )
+                    .join(
+                        QuestionVersionRecord,
+                        QuestionVersionRecord.id
+                        == QuestionCurriculumExclusionRecord.question_version_id,
+                    )
+                    .where(QuestionVersionRecord.question_set_id.in_(tanda))
+                ).all()
+                for set_id, pregunta_id in filas:
+                    agrupadas.setdefault(str(set_id), set()).add(str(pregunta_id))
+        return {set_id: frozenset(preguntas) for set_id, preguntas in agrupadas.items()}
 
     def key_reliability_by_question(self, question_ids: Sequence[str]) -> dict[str, str]:
         """El veredicto de la clave del conjunto de cada pregunta. Una consulta, no una por
@@ -2437,6 +2610,56 @@ class SqlAlchemyQuestionRepository:
             ordenadas.setdefault(str(pregunta_id), None)
         return tuple(ordenadas)
 
+    def question_ids_of_nodes(self, node_ids: Sequence[str]) -> dict[str, tuple[str, ...]]:
+        """Las preguntas de **cada** uno de esos nodos, en **una** consulta y en su orden estable.
+
+        Es la versión por lotes de `question_ids_of_node`, y existe porque una composición pide las
+        preguntas de un bloque entero —una treintena de temas— y una consulta por tema era otro de
+        los N+1 del montaje de un simulacro. El orden dentro de cada nodo es el mismo que el de la
+        consulta suelta: por título del conjunto, posición, clave estable e identificador. Un nodo
+        sin preguntas sale con la tupla vacía, no se omite: quien lo pide necesita saber que no hay.
+        """
+        if not node_ids:
+            return {}
+        unicos = tuple(dict.fromkeys(node_ids))
+        ordenadas: dict[str, dict[str, None]] = {node_id: {} for node_id in unicos}
+        with self._session_factory() as session:
+            for inicio in range(0, len(unicos), _TANDA_DE_CONSULTA):
+                tanda = unicos[inicio : inicio + _TANDA_DE_CONSULTA]
+                filas = session.execute(
+                    select(
+                        CurriculumMappingRecord.curriculum_node_id,
+                        QuestionVersionRecord.id,
+                        QuestionSetRecord.title,
+                        QuestionVersionRecord.position,
+                        QuestionVersionRecord.stable_key,
+                    )
+                    .join(
+                        CurriculumMappingRecord,
+                        CurriculumMappingRecord.subject_id == QuestionVersionRecord.id,
+                    )
+                    .join(
+                        QuestionSetRecord,
+                        QuestionSetRecord.id == QuestionVersionRecord.question_set_id,
+                    )
+                    .where(
+                        CurriculumMappingRecord.subject_type == "question_version",
+                        CurriculumMappingRecord.status == "accepted",
+                        CurriculumMappingRecord.curriculum_node_id.in_(list(tanda)),
+                        _NO_SUSTITUIDAS,
+                    )
+                    .order_by(
+                        CurriculumMappingRecord.curriculum_node_id,
+                        QuestionSetRecord.title,
+                        QuestionVersionRecord.position,
+                        QuestionVersionRecord.stable_key,
+                        QuestionVersionRecord.id,
+                    )
+                ).all()
+                for nodo_id, pregunta_id, _titulo, _posicion, _clave in filas:
+                    ordenadas[str(nodo_id)].setdefault(str(pregunta_id), None)
+        return {node_id: tuple(ordenadas[node_id]) for node_id in unicos}
+
     def questions_without_topic(self, set_id: str, *, limit: int = 500) -> tuple[str, ...]:
         """Preguntas del conjunto que **no** están catalogadas en ningún nodo del programa.
 
@@ -2739,6 +2962,29 @@ class SqlAlchemyQuestionRepository:
             .scalars()
             .all()
         )
+        return self._set_view_con_recuentos(
+            fila,
+            preguntas=preguntas,
+            reservas=reservas,
+            incompletas=incompletas,
+            claves=tuple(claves),
+        )
+
+    @staticmethod
+    def _set_view_con_recuentos(
+        fila: QuestionSetRecord,
+        *,
+        preguntas: int,
+        reservas: int,
+        incompletas: int,
+        claves: tuple[AnswerKeyVersionRecord, ...],
+    ) -> QuestionSetView:
+        """La vista del conjunto a partir de lo que ya se contó, sin volver a preguntar.
+
+        `_set_view` cuenta y luego llama aquí; `sets_by_ids` cuenta todo el lote de una vez y llama
+        aquí con los mismos números. Es **una** definición de qué se enseña de un conjunto, para que
+        el lote y la consulta suelta no puedan decir cosas distintas.
+        """
         activa = next((clave.id for clave in claves if clave.status == "active"), None)
         return QuestionSetView(
             id=fila.id,
@@ -2771,9 +3017,30 @@ class SqlAlchemyQuestionRepository:
         *,
         include_key: bool,
     ) -> QuestionView:
-        opciones = self._options_by_question(session, [fila.id]).get(fila.id, ())
+        return self._question_view_con_datos(
+            fila,
+            claves=claves,
+            opciones=self._options_by_question(session, [fila.id]).get(fila.id, ()),
+            explicaciones=self._explanations_count(session, [fila.id]).get(fila.id, 0),
+            include_key=include_key,
+        )
+
+    @staticmethod
+    def _question_view_con_datos(
+        fila: QuestionVersionRecord,
+        *,
+        claves: Mapping[str, Mapping[str, AnswerKeyEntry]],
+        opciones: Sequence[OptionVersionRecord],
+        explicaciones: int,
+        include_key: bool,
+    ) -> QuestionView:
+        """La vista de la pregunta a partir de lo que ya se leyó, sin volver a preguntar.
+
+        `_question_view` lee lo suyo y llama aquí; `questions_by_ids` lee todo el lote de una vez y
+        llama aquí con los mismos datos. Es **una** definición de qué se enseña de una pregunta,
+        para que el lote y la consulta suelta no puedan decir cosas distintas.
+        """
         entrada = claves.get(fila.question_set_id, {}).get(fila.id)
-        explicaciones = self._explanations_count(session, [fila.id]).get(fila.id, 0)
         return QuestionView(
             id=fila.id,
             question_set_id=fila.question_set_id,
@@ -2818,6 +3085,61 @@ class SqlAlchemyQuestionRepository:
             .scalars()
             .all()
         )
+        return self._key_view_con_entradas(fila, entradas)
+
+    def keys_by_set_ids(self, set_ids: Sequence[str]) -> dict[str, tuple[AnswerKeyView, ...]]:
+        """Las plantillas de esos conjuntos, todas y en **dos** consultas.
+
+        Es la versión por lotes de `list_keys`, y existe por el mismo motivo que las demás: quien
+        compone un simulacro pide la clave activa de cada conjunto que toca, y una consulta por
+        conjunto (más una por plantilla para sus entradas) es otra vez el N+1. El orden dentro de
+        cada conjunto es el de `list_keys` —por número de versión—, para que «la activa» sea la
+        misma en los dos caminos.
+        """
+        if not set_ids:
+            return {}
+        unicos = tuple(dict.fromkeys(set_ids))
+        with self._session_factory() as session:
+            filas: list[AnswerKeyVersionRecord] = []
+            for inicio in range(0, len(unicos), _TANDA_DE_CONSULTA):
+                tanda = unicos[inicio : inicio + _TANDA_DE_CONSULTA]
+                filas.extend(
+                    session.execute(
+                        select(AnswerKeyVersionRecord)
+                        .where(AnswerKeyVersionRecord.question_set_id.in_(list(tanda)))
+                        .order_by(AnswerKeyVersionRecord.version_no)
+                    )
+                    .scalars()
+                    .all()
+                )
+            if not filas:
+                return {}
+            entradas: dict[str, list[AnswerKeyEntryRecord]] = {}
+            identificadores = [str(fila.id) for fila in filas]
+            for inicio in range(0, len(identificadores), _TANDA_DE_CONSULTA):
+                tanda_actual = identificadores[inicio : inicio + _TANDA_DE_CONSULTA]
+                for entrada in (
+                    session.execute(
+                        select(AnswerKeyEntryRecord)
+                        .where(AnswerKeyEntryRecord.answer_key_version_id.in_(tanda_actual))
+                        .order_by(AnswerKeyEntryRecord.question_version_id)
+                    )
+                    .scalars()
+                    .all()
+                ):
+                    entradas.setdefault(entrada.answer_key_version_id, []).append(entrada)
+            agrupadas: dict[str, list[AnswerKeyView]] = {}
+            for fila in filas:
+                agrupadas.setdefault(fila.question_set_id, []).append(
+                    self._key_view_con_entradas(fila, entradas.get(fila.id, []))
+                )
+            return {set_id: tuple(claves) for set_id, claves in agrupadas.items()}
+
+    @staticmethod
+    def _key_view_con_entradas(
+        fila: AnswerKeyVersionRecord, entradas: Sequence[AnswerKeyEntryRecord]
+    ) -> AnswerKeyView:
+        """La vista de la plantilla a partir de sus entradas ya leídas."""
         return AnswerKeyView(
             id=fila.id,
             question_set_id=fila.question_set_id,
