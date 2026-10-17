@@ -185,8 +185,22 @@ export interface StudentOfficialExam {
   position: number;
   title: string;
   held_at: string | null;
+  /**
+   * El año que **declara** el documento de origen cuando no declara el día. Los cuestionarios del
+   * INAP rotulan el año en la cabecera («2025 - TAI-L (MODELO A)») y la fecha de celebración se
+   * anuncia aparte, así que lo único que se puede afirmar es el año. `null` cuando el título no
+   * declara ninguno: entonces se dice que no hay fecha y por qué, no se inventa.
+   */
+  held_year: number | null;
+  /** Las preguntas **que el examen tiene**: las que entran con la regla de la convocatoria. */
   questions: number;
   ready: boolean;
+  /**
+   * Si no se puede hacer, por qué: `faltan_respuestas` (no tiene plantilla activa con la que
+   * corregir) o `faltan_preguntas` (tiene menos de las que la convocatoria pide). Son dos cosas
+   * distintas y la pantalla las dice por su nombre.
+   */
+  blocked_reason: 'faltan_respuestas' | 'faltan_preguntas' | null;
   /** De dónde sale el examen (D10): `age`, `otra_administracion` o `desconocida`. */
   origin_scope: 'age' | 'otra_administracion' | 'desconocida';
 }
@@ -214,6 +228,12 @@ export interface StudentMistakeTopic {
 export interface StudentMistakes {
   total: number;
   due_total: number;
+  /**
+   * De los fallos, cuántos se pueden **corregir** y por tanto repasar: es lo que decide si se
+   * ofrece «Test con mis fallos» o se dice por qué no hay ninguno que montar. Una pregunta fallada
+   * sin clave no se puede corregir, y ofrecer el botón acababa en un 409.
+   */
+  servable_total: number;
   questions: StudentMistake[];
   topics: StudentMistakeTopic[];
 }

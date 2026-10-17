@@ -119,9 +119,28 @@ describe('la pantalla de fallos', () => {
   });
 
   it('sin fallos lo dice y no ofrece un test de nada', async () => {
-    montar({ total: 0, due_total: 0, questions: [], topics: [] });
+    montar({ total: 0, due_total: 0, servable_total: 0, questions: [], topics: [] });
 
     expect(await screen.findByText(/no tienes ninguna pregunta fallada/i)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /test con mis fallos/i })).not.toBeInTheDocument();
+  });
+
+  it('con fallos que no se pueden corregir no ofrece el test y dice por qué (§3.6)', async () => {
+    // Es el caso del propietario: la pregunta fallada es de un conjunto sin plantilla activa con su
+    // respuesta. Antes el botón se ofrecía igual y la API contestaba 409.
+    montar({
+      ...mistakesFixture,
+      total: 1,
+      due_total: 0,
+      servable_total: 0,
+      questions: [mistakesFixture.questions[1]!],
+      topics: [{ code: 'IV.1', title: 'Instalación de sistemas operativos.', failed: 1, due: 0 }],
+    });
+
+    const boton = await screen.findByRole('button', { name: /test con mis fallos/i });
+    expect(boton).toBeDisabled();
+    expect(screen.getByText(/no hay con qué corregirlas/i)).toBeInTheDocument();
+    // Y no promete un repaso que no hay: sin vencidas servibles, cero para hoy.
+    expect(screen.getByText(/0 para repasar hoy/)).toBeInTheDocument();
   });
 });
