@@ -4000,3 +4000,104 @@ epígrafes de I.1**, y eso es una decisión sobre el programa, no sobre la panta
   resultado y alumno/estudio.
 - **Las 18 puertas no las corre este bloque** (las corre el que mide, con su protocolo).
 
+## f40 · Inicio, Simulacros y el panel (§3.8 y §3.9 de la revisión del recorrido) · 17-18 oct 2026
+
+Rama `f40-inicio` sobre `main = a26eb1c`. Lo que se ha cerrado, con su cifra; debajo, lo que **no**.
+
+### Inicio y Simulacros, sin párrafos explicativos (§3.8)
+
+- **«67 %» en su línea.** La fila del bloque declaraba **tres** columnas y tenía **cuatro** hijos (numeral,
+  título, barra y cifra), así que la cifra caía a una fila implícita debajo de la barra. Ahora la fila
+  tiene cuatro columnas y la barra se queda lo que sobra. La prueba de componente exige que la cifra
+  cuelgue de la fila de su bloque y que la fila tenga su barra.
+- **«Seguir leyendo»** sustituye a los 29 temas con su título entero: el último apartado abierto, con su
+  enlace (`/temario/IV.7?capitulo=IV.7.2#apartado-osi-capas`) y un enlace al Temario. Sin nada abierto,
+  lo dice y ofrece el Temario; no inventa una lectura.
+- **Dónde se guarda «el último apartado».** No se guardaba en ninguna parte: no había ni tabla ni marca.
+  Se guarda en el **almacenamiento local del aparato** (`opofuente.ultimoApartado`, módulo
+  `apps/web/src/lib/ultimoApartado.ts`), que no requiere cuenta y caduca sola (la última visita sustituye
+  a la anterior). Se anota al abrir la pantalla de un tema, con su capítulo y, si la dirección trae ancla,
+  el apartado. Todo lo que puede fallar (almacenamiento lleno, prohibido, basura de una versión anterior)
+  falla hacia «no hay marca».
+- **Simulacros**: «**100 preguntas (+10 de reserva) · 120 min**» en vez de «110 preguntas · 120 minutos»
+  (sumaba las de reserva a las que se contestan); fuera el párrafo gris de la cabecera; fuera la lista de
+  los 9 temas del bloque bajo el supuesto (basta con elegir III o IV). La selección real sigue viajando:
+  la prueba comprueba que el `POST /student/mock-exams` lleva `{variant: 'full', case_block: 'IV'}`.
+
+### El panel (§3.9)
+
+- **Plurales de verdad y una sola forma.** Módulo nuevo `apps/api/opofuente/domain/plural.py`
+  (`con_numero`, `forma`), que es el mismo que ya usaba el resumen de la bandeja (`tray._etiqueta`) y el
+  hermano del de la pantalla (`apps/web/src/lib/plural.ts`). Pasan por él las frases del panel:
+  «1 pregunta no tiene…» / «20 preguntas no tienen…», «fila con 3 celdas y una cabecera de 2 columnas»,
+  «20 preguntas», «63 incidencias», «15 publicados y 4 en borrador», «1 tema con apuntes esperando tu
+  decisión», «300 cubiertas», «40 hechos · 12 palabras».
+- **La bandeja del motor, paginada de 50 en 50.** Son **157 filas** con cuatro acciones cada una: ahora
+  viajan 50 por hoja (4 hojas), con el paginador en la pantalla y la sección de exámenes oficiales entera
+  en cada hoja. **El total no se mueve al paginar**: `filas`, `total_pendiente`, `propuestas` y
+  `entradas_de_decision` son de la bandeja completa (prueba de dominio: 157 filas, cuatro hojas, los
+  mismos totales en las cuatro). La respuesta baja de **70 a 27 KiB**. Al desplegar un banco se piden 50
+  incidencias (antes 200 de golpe) y las que faltan se piden con «Ver 50 más».
+- **Por qué el texto salía tres veces.** No eran tres consultas ni tres estados: el motor escribe al
+  principio de `detail` **la misma frase** que la API manda como `category_help` —comprobado en la copia:
+  `detail` empieza literalmente por `TEXTO_DE_CATEGORIA[categoría]`—, y la fila pintaba las dos, una en el
+  cuerpo y otra al abrir el detalle. Se quita al pintar
+  (`detailSinLaFraseDeLaCategoria`, con su prueba): lo guardado no se reescribe. La frase de la categoría
+  se lee **una** vez y el detalle queda con lo que es de esa pregunta.
+- **Los dos tiempos del panel.** Medidos sobre una copia verificada de la base real
+  (`F:\temp-opofuente\f40-datos`, mismo SHA-256 que la copia del recorrido, `integrity_check`/`quick_check`
+  ok y `foreign_key_check` vacío) con la API en proceso (`TestClient`), mediana de cuatro vueltas:
+
+| endpoint | antes | después |
+|---|---|---|
+| `GET /notes-review` (la tabla de `/admin/apuntes`) | **3,35 s** | **0,047 s** |
+| `GET /notes-review/summary` (el contador del menú) | 0,032 s | 0,043 s |
+| `GET /notes-review/IV.7` (la ficha) | 1,86-2,31 s | 1,86-2,31 s |
+| `GET /notes-incidents/tray` (la bandeja) | 70 KiB, 157 filas | 27 KiB, 50 filas |
+
+  Dónde se iba: la tabla **medía los borradores** en cada visita. `medir` de un tema cuesta 1,4-2,1 s y
+  son dos (IV.7 e I.4) = 3,7 s de los 5,37 s de la pantalla entera (el resto, el navegador). Dentro de
+  `medir`, lo que se lleva el tiempo es el **índice de materias** (~1,0-1,1 s: un `re.search` por patrón
+  para cada hecho) y la **puerta de forma** (~0,6 s: los trigramas de los párrafos). La tabla ya no mide:
+  enseña estado, apartados, hechos, comprobaciones guardadas e incidencias con cinco consultas agregadas
+  (0,047 s) y dice **dónde está la cifra que falta** con la razón `sin_medida` («se miden al abrir su
+  ficha»), en vez de un cero que parecería un suspenso. La ficha **sí mide**, que es donde se decide; va
+  **paginada de seis apartados por hoja** (25 apartados con su cuerpo eran 131 KiB y el navegador los
+  convertía a HTML antes de pintar el primero; ahora son 40 KiB y 6) y el orden («los peores primero») lo
+  pone el servidor, que es el único que ve el tema entero.
+
+### Lo que no mejora, dicho por su nombre
+
+- **La ficha de un tema sigue tardando ~2 s**, no menos de 2. Lo que tarda es **medir el tema** (índice +
+  forma + cobertura), que es trabajo de dominio real y no un viaje de red: la paginación baja la respuesta
+  de 131 a 40 KiB y el pintado, pero no la medida. Bajarla de 2 s exige (a) **guardar la medida** en la
+  base —una migración, y otra columna que se puede quedar vieja— o (b) dejar de medir en la ficha, que es
+  donde el propietario decide con la cifra delante. Las dos son decisiones del propietario y ninguna cabe
+  en este encargo. Se deja medido y dicho.
+- **Los dos intentos de acelerar el índice** (juntar los patrones de cada materia en una sola expresión)
+  se midieron y **se descartaron**: 1,00× en IV.7 y 1,32× en I.4 (1,42→1,42 s y 2,48→1,88 s), porque el
+  tiempo se va en agrupar y deduplicar los hechos, no en las expresiones regulares. No se toca el motor de
+  los apuntes por un 0 %. Lo que sí se queda es `trigramas` con `zip` en vez de una rebanada por posición.
+- **Las capturas a 1280 y 390 con axe en cero no se han corrido en esta sesión**: el arnés de capturas del
+  repositorio tiene los servidores fijos en **8765 y 4173**, que son de quien mide la puerta 18, y el CSP
+  del propio `index.html` solo permite ese origen (`connect-src … http://127.0.0.1:8765`), así que
+  apuntarlo a 8775 no carga nada (medido: seis errores de consola, la pantalla vacía). El guion está
+  escrito y listo en `F:\temp-opofuente\f40-capturas.mjs` —retrata Inicio y Simulacros a 1280 y 390 y las
+  tres pantallas del panel, exige axe en 0 y consola en 0 y mide la altura de la cifra respecto de su
+  barra— y **se corre cuando los puertos estén libres**.
+- **El simulacro no se ha montado de verdad contra la API**: la prueba comprueba el cuerpo que se manda
+  (`{variant, case_block}`), no la sesión creada. Montar un simulacro tarda hoy **142 s** y eso es del
+  bloque del simulacro (§3.3), no de esta pantalla.
+
+### Pruebas
+
+- **De componente** (web): `studentInicio` (8), `studentSimulacro` (7), `apuntesRevision` (9),
+  `bandejaPorConjunto` (4), `incidencias`, `tray`, `plural`. La suite entera: **455**.
+- **De dominio y de API**: `test_tray_domain` trae las tres de las hojas (157 filas → cuatro hojas, los
+  totales intactos, lo oficial entero en cada hoja, una hoja fuera de rango se corrige);
+  `test_notes_review_api` (16) comprueba que la tabla **no** mide y lo dice, y que la ficha mide y da la
+  cifra de la puerta; `test_notes_quality` y `test_notes_review_domain`, con las concordancias nuevas.
+- **Locales**: `ruff check` y `ruff format --check` limpios, **936** pruebas de unidad de la API, los tres
+  ficheros de integración del panel (31), `tsc` limpio, `eslint` limpio y el contrato OpenAPI al día
+  (`contracts:check`).
+- **Las 18 puertas no las corre este bloque.**

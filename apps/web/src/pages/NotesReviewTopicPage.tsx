@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
 import {
@@ -8,7 +8,6 @@ import {
   REVIEW_BLOCK_LABELS,
   REVIEW_DECISION_LABELS,
   coveragePercent,
-  orderSections,
   thresholdPercent,
   type NotesReviewResult,
   type NotesReviewSection,
@@ -19,6 +18,7 @@ import { ErrorState } from '../components/ErrorState';
 import { LoadingState } from '../components/LoadingState';
 import { NotesBody } from '../features/student/NotesBody';
 import { describeError } from '../features/system/labels';
+import { conNumero } from '../lib/plural';
 
 /** El tope de la nota: el mismo que exige el servidor (una línea de bandeja). */
 const MAX_NOTA = 300;
@@ -47,17 +47,17 @@ const MAX_NOTA = 300;
  */
 export function NotesReviewTopicPage() {
   const { codigo = '' } = useParams();
-  const ficha = useNotesReviewFile(codigo);
+  const [peoresPrimero, setPeoresPrimero] = useState(false);
+  const [hoja, setHoja] = useState(1);
+  const ficha = useNotesReviewFile(codigo, hoja, peoresPrimero ? 'peores' : 'lectura');
   const decidir = useDecideNotesReview(codigo);
 
-  const [peoresPrimero, setPeoresPrimero] = useState(false);
   const [nota, setNota] = useState('');
   const [resultado, setResultado] = useState<NotesReviewResult | null>(null);
 
-  const secciones = useMemo(
-    () => orderSections(ficha.data?.sections ?? [], peoresPrimero),
-    [ficha.data, peoresPrimero],
-  );
+  // Los apartados llegan ya ordenados y cortados por el servidor: la hoja se sirve de seis en seis
+  // porque los cuerpos de los 25 apartados de un tema eran el 92 % de la respuesta.
+  const secciones = ficha.data?.sections ?? [];
 
   if (ficha.isPending) {
     return <LoadingState label="Leyendo los apuntes del tema y midiéndolos…" />;
@@ -168,7 +168,9 @@ export function NotesReviewTopicPage() {
         <section className="card" aria-labelledby="apartados-del-tema">
           <h2 id="apartados-del-tema">
             Los apuntes, apartado a apartado{' '}
-            <span className="hint">· {secciones.length} apartado(s)</span>
+            <span className="hint">
+              · {conNumero(ficha.data.sections_total, 'apartado', 'apartados')}
+            </span>
           </h2>
           <div className="form__row">
             <button
@@ -177,6 +179,9 @@ export function NotesReviewTopicPage() {
               aria-pressed={peoresPrimero}
               onClick={() => {
                 setPeoresPrimero((previo) => !previo);
+                // Cambiar el orden cambia qué apartados caen en la primera hoja: volver a ella es lo
+                // que hace que «los peores primero» enseñe de verdad los peores y no el final del tema.
+                setHoja(1);
               }}
             >
               {peoresPrimero ? 'Leer en orden' : 'Los peores primero'}
@@ -192,6 +197,34 @@ export function NotesReviewTopicPage() {
               <Apartado key={apartado.key} apartado={apartado} />
             ))}
           </div>
+          {ficha.data.pages > 1 && (
+            <nav className="apuntes__paso" aria-label="Hojas de la ficha">
+              <button
+                className="button button--secondary"
+                type="button"
+                disabled={ficha.data.page <= 1}
+                onClick={() => {
+                  setHoja((actual) => Math.max(1, actual - 1));
+                }}
+              >
+                Hoja anterior
+              </button>
+              <span className="hint">
+                Hoja {ficha.data.page} de {ficha.data.pages} ·{' '}
+                {conNumero(ficha.data.sections_total, 'apartado', 'apartados')} en total
+              </span>
+              <button
+                className="button button--secondary"
+                type="button"
+                disabled={ficha.data.page >= ficha.data.pages}
+                onClick={() => {
+                  setHoja((actual) => Math.min(ficha.data.pages, actual + 1));
+                }}
+              >
+                Hoja siguiente
+              </button>
+            </nav>
+          )}
         </section>
       )}
     </>
@@ -338,11 +371,12 @@ function Apartado({ apartado }: { apartado: NotesReviewSection }) {
       </div>
       <div className="apartado__lateral">
         <p className="hint">
-          {apartado.facts_total} hecho(s) · {apartado.words} palabra(s)
+          {conNumero(apartado.facts_total, 'hecho', 'hechos')} ·{' '}
+          {conNumero(apartado.words, 'palabra', 'palabras')}
         </p>
         <p className="hint">
-          {apartado.covered} cubierta(s) · {apartado.gaps} sin frase · {apartado.doubtful} dudosa(s)
-          · {apartado.conflicts} en conflicto
+          {conNumero(apartado.covered, 'cubierta', 'cubiertas')} · {apartado.gaps} sin frase ·{' '}
+          {conNumero(apartado.doubtful, 'dudosa', 'dudosas')} · {apartado.conflicts} en conflicto
         </p>
         {sinResolver > 0 && (
           <p className="hint">

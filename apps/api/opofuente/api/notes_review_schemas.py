@@ -31,6 +31,9 @@ ReviewDecisionName = Literal["approved", "rejected"]
 #: Qué puerta impide publicar cuando el tema está aprobado y no se ha podido archivar su versión.
 ReviewBlockName = Literal["cobertura", "forma"]
 
+#: En qué orden se sirven los apartados de la ficha: el del tema, o lo que queda sin resolver antes.
+ReviewOrderName = Literal["lectura", "peores"]
+
 
 class NotesReviewCountersSchema(BaseModel):
     """Los números de la cabecera: cuántos temas hay de cada clase y cuántos esperan decisión."""
@@ -165,12 +168,25 @@ class NotesReviewSectionSchema(BaseModel):
 
 
 class NotesReviewFileSchema(BaseModel):
-    """La ficha de un tema: su fila de la tabla y sus apartados en orden de lectura."""
+    """Una **página** de la ficha de un tema: su fila de la tabla y los apartados de la hoja.
+
+    `sections_total` es el número de apartados del tema y no el de la hoja: el título de la pantalla
+    dice cuántos hay, y la hoja que se está mirando se sabe por `page` y `pages`.
+    """
 
     topic: NotesReviewTopicSchema
     sections: list[NotesReviewSectionSchema] = Field(
-        description="Los apartados, en orden de lectura. Vacío si el tema no tiene texto escrito."
+        description=(
+            "Los apartados de la hoja servida, en el orden pedido. Vacío si el tema no tiene texto "
+            "escrito."
+        )
     )
+    sections_total: int = Field(
+        default=0, description="Apartados que tiene el tema entero, sumando todas las hojas."
+    )
+    page: int = Field(default=1, description="La hoja que va en `sections`, empezando por 1.")
+    pages: int = Field(default=1, description="Cuántas hojas tiene la ficha.")
+    page_size: int = Field(default=6, description="Cuántos apartados caben en una hoja.")
 
 
 class NotesReviewDecisionRequestSchema(BaseModel):

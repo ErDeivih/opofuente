@@ -149,12 +149,14 @@ class TestElMotivoDeUnBorrador:
             ),
         )
 
-        assert _razon(cifras, MotivoDelBorrador.HUECOS).figure == "20 pregunta(s)"
-        assert _razon(cifras, MotivoDelBorrador.CONFLICTOS).figure == "19 pregunta(s)"
-        assert _razon(cifras, MotivoDelBorrador.CLAVES_EN_REVISION).figure == "10 pregunta(s)"
-        assert _razon(cifras, MotivoDelBorrador.SIN_MATERIA).figure == "2 pregunta(s)"
+        # La cifra va en su forma: «20 preguntas», no «20 pregunta(s)». Y en singular también,
+        # que era el defecto que se vio en pantalla: «1 pregunta(s) 1 preguntas no tienen…».
+        assert _razon(cifras, MotivoDelBorrador.HUECOS).figure == "20 preguntas"
+        assert _razon(cifras, MotivoDelBorrador.CONFLICTOS).figure == "19 preguntas"
+        assert _razon(cifras, MotivoDelBorrador.CLAVES_EN_REVISION).figure == "10 preguntas"
+        assert _razon(cifras, MotivoDelBorrador.SIN_MATERIA).figure == "2 preguntas"
         incidencias = _razon(cifras, MotivoDelBorrador.INCIDENCIAS)
-        assert incidencias.figure == "63 incidencia(s)"
+        assert incidencias.figure == "63 incidencias"
         # El desglose va de mayor a menor, que es el orden en el que se trabaja la bandeja.
         assert incidencias.text.index("20 respuestas correctas") < incidencias.text.index(
             "3 preguntas que no se pueden juzgar"

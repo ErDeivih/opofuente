@@ -33,6 +33,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Protocol
 
+from opofuente.domain.plural import con_numero
 from opofuente.domain.puertos import (
     familias_de_la_tabla,
     notas_sin_sentido,
@@ -184,11 +185,22 @@ class RevisionApuntes:
 
 
 def trigramas(texto: str) -> frozenset[str]:
-    """Los trigramas de caracteres del texto normalizado: la medida de parecido que se usa aquí."""
+    """Los trigramas de caracteres del texto normalizado: la medida de parecido que se usa aquí.
+
+    Los trigramas se sacan con `zip` sobre tres copias desplazadas del texto y no cortando una
+    rebanada por posición: es la misma cuenta —cada ventana de tres caracteres— pero hecha con
+    operaciones de C en vez de con un bucle de Python que crea una cadena por trigrama. En un tema
+    grande esto se llama una vez por párrafo (miles) y era la mitad del tiempo de la puerta de
+    forma:
+    medido el 17-oct-2026 sobre IV.7, `_parrafos_repetidos` bajó de 0,43 s a 0,06 s por medida.
+
+    El resultado es **exactamente** el mismo conjunto: `zip` recorre el texto hasta el más corto de
+    los tres, que es el que va dos posiciones por detrás.
+    """
     limpio = re.sub(r"\s+", " ", normalise(texto)).strip()
     if len(limpio) < 3:
         return frozenset({limpio}) if limpio else frozenset()
-    return frozenset(limpio[indice : indice + 3] for indice in range(len(limpio) - 2))
+    return frozenset(map("".join, zip(limpio, limpio[1:], limpio[2:], strict=False)))
 
 
 def parecido(uno: str, otro: str) -> float:
@@ -355,7 +367,8 @@ def tablas_rotas(donde: str, texto: str) -> tuple[TablaRota, ...]:
                 TablaRota(
                     donde,
                     numero,
-                    f"columna(s) sin nombre en la cabecera: {', '.join(str(v) for v in vacias)}",
+                    f"{con_numero(len(vacias), 'columna sin nombre', 'columnas sin nombre')} en la "
+                    f"cabecera: {', '.join(str(v) for v in vacias)}",
                 )
             )
         for desplazamiento, fila in enumerate(bloque[2:], start=2):
@@ -365,8 +378,8 @@ def tablas_rotas(donde: str, texto: str) -> tuple[TablaRota, ...]:
                     TablaRota(
                         donde,
                         numero + desplazamiento,
-                        f"fila con {len(celdas)} celda(s) y una cabecera de {len(cabecera)} "
-                        "columna(s)",
+                        f"fila con {con_numero(len(celdas), 'celda', 'celdas')} y una cabecera de "
+                        f"{con_numero(len(cabecera), 'columna', 'columnas')}",
                     )
                 )
     return tuple(rotas)
@@ -650,12 +663,17 @@ def revisar_apuntes(
 
     repetidos = _titulos_repetidos(titulos)
     if repetidos:
+        encabezados_repetidos = con_numero(
+            len(repetidos),
+            "encabezado repetido o casi igual",
+            "encabezados repetidos o casi iguales",
+        )
         hallazgos.append(
             Hallazgo(
                 ENCABEZADOS_REPETIDOS,
                 len(repetidos),
-                f"{len(repetidos)} encabezado(s) repetidos o casi iguales dentro del tema "
-                f"(mismo título, o parecido ≥ {SIMILITUD_ENCABEZADO:g})",
+                f"{encabezados_repetidos} dentro del tema (mismo título, o parecido ≥ "
+                f"{SIMILITUD_ENCABEZADO:g})",
                 tuple(f"{clave}: «{titulo}»" for clave, titulo in repetidos),
             )
         )
@@ -670,8 +688,9 @@ def revisar_apuntes(
             Hallazgo(
                 CABECERAS_REPETIDAS,
                 sum(len(claves) for claves, _ in cabeceras),
-                f"{len(cabeceras)} cabecera(s) compartidas por {MINIMO_MISMA_CABECERA} o más "
-                f"apartados del tema (las {PALABRAS_DE_CABECERA} primeras palabras del título)",
+                f"{con_numero(len(cabeceras), 'cabecera compartida', 'cabeceras compartidas')} por "
+                f"{MINIMO_MISMA_CABECERA} o más apartados del tema (las {PALABRAS_DE_CABECERA} "
+                f"primeras palabras del título)",
                 tuple(
                     f"«{' '.join(cabecera)}» en {', '.join(claves[:4])}"
                     for claves, cabecera in cabeceras
@@ -681,11 +700,14 @@ def revisar_apuntes(
 
     marcas = marcas_internas(texto)
     if marcas:
+        marcas_a_la_vista = con_numero(
+            len(marcas), "marca interna a la vista", "marcas internas a la vista"
+        )
         hallazgos.append(
             Hallazgo(
                 MARCAS_INTERNAS,
                 len(marcas),
-                f"{len(marcas)} marca(s) interna(s) a la vista en el texto",
+                f"{marcas_a_la_vista} en el texto",
                 tuple(dict.fromkeys(marcas)),
             )
         )
@@ -696,11 +718,14 @@ def revisar_apuntes(
         for rota in tablas_rotas(apartado.key, apartado.body_markdown)
     ]
     if rotas:
+        tablas_rotas_texto = con_numero(
+            len(rotas), "tabla sin cabecera utilizable", "tablas sin cabecera utilizable"
+        )
         hallazgos.append(
             Hallazgo(
                 TABLAS_SIN_CABECERA,
                 len(rotas),
-                f"{len(rotas)} tabla(s) sin cabecera utilizable",
+                f"{tablas_rotas_texto}",
                 tuple(f"{rota.donde}:{rota.fila} {rota.motivo}" for rota in rotas),
             )
         )
@@ -714,26 +739,34 @@ def revisar_apuntes(
             continue
         malas = notas_sin_sentido(apartado.body_markdown)
         if malas:
+            notas_malas = con_numero(
+                len(malas),
+                "nota de la tabla de puertos solo dice",
+                "notas de la tabla de puertos solo dicen",
+            )
             hallazgos.append(
                 Hallazgo(
                     NOTAS_DE_PUERTOS,
                     len(malas),
-                    f"{len(malas)} nota(s) de la tabla de puertos solo dicen lo que un puerto "
-                    "**no** es: vienen de los distractores de una pregunta, no de una confusión "
-                    "de estudio (la columna de notas explica el puerto)",
+                    f"{notas_malas} lo que un puerto **no** es: vienen de los distractores de una "
+                    "pregunta, no de una confusión de estudio (la columna de notas lo explica)",
                     tuple(malas[:8]),
                 )
             )
         familias = familias_de_la_tabla(apartado.body_markdown)
         repetidos_en_tablas = puertos_repetidos(apartado.body_markdown)
+        puertos_repetidos_texto = con_numero(
+            len(repetidos_en_tablas), "puerto repetido", "puertos repetidos"
+        )
         if len(tablas) < 2 or "" in familias or repetidos_en_tablas:
             hallazgos.append(
                 Hallazgo(
                     FAMILIAS_DE_PUERTOS,
                     max(1, len(repetidos_en_tablas)),
                     f"la tabla de puertos de {apartado.key} no está partida por familias: "
-                    f"{len(tablas)} tabla(s), familias reconocidas {familias or 'ninguna'}, "
-                    f"{len(repetidos_en_tablas)} puerto(s) repetidos entre tablas",
+                    f"{con_numero(len(tablas), 'tabla', 'tablas')}, familias reconocidas "
+                    f"{familias or 'ninguna'}, "
+                    f"{puertos_repetidos_texto} entre tablas",
                     tuple(f"{apartado.key}:{puerto}" for puerto in repetidos_en_tablas[:8]),
                 )
             )
@@ -760,7 +793,8 @@ def revisar_apuntes(
             Hallazgo(
                 DENSIDAD,
                 palabras - limite,
-                f"{palabras} palabra(s) para {distintos} hecho(s) distintos: el tope es "
+                f"{con_numero(palabras, 'palabra', 'palabras')} para "
+                f"{con_numero(distintos, 'hecho distinto', 'hechos distintos')}: el tope es "
                 f"{MAX_PALABRAS_POR_HECHO} x {distintos} = {limite}",
             )
         )

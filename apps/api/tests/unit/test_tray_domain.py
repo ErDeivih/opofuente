@@ -20,11 +20,13 @@ from opofuente.domain.notes_incidents import IncidentStatus, estado_resuelto
 from opofuente.domain.topic_notes import CategoriaIncidencia
 from opofuente.domain.tray import (
     ACCIONES,
+    FILAS_POR_PAGINA,
     TrayAction,
     TraySection,
     TraySet,
     acciones_permitidas,
     agrupar,
+    paginar,
     rechazo_de_accion,
 )
 
@@ -231,3 +233,83 @@ def test_lo_que_necesita_criterio_se_queda_abierto() -> None:
         estado_resuelto(categoria=CategoriaIncidencia.HUECO_SIN_MATERIAL, tiene_propuesta=False)
         is None
     )
+
+
+# ----------------------------------------------------------------------------------- las hojas
+
+
+def _muchos(cuantos: int):
+    """Una bandeja con `cuantos` bancos, cada uno con una incidencia esperando."""
+    return agrupar(
+        [
+            _conjunto(
+                f"conjunto-{indice:03d}",
+                title=f"Banco {indice:03d}",
+                pendientes={CategoriaIncidencia.CLAVE_SOSPECHOSA.value: 1},
+            )
+            for indice in range(cuantos)
+        ]
+    )
+
+
+def test_la_bandeja_va_de_cincuenta_en_cincuenta_y_el_total_no_cambia_al_paginar() -> None:
+    """Paginada a cincuenta: 157 filas son cuatro hojas, y el total sigue siendo 157.
+
+    El encargo pide las dos condiciones a la vez: la bandeja no puede pintar 157 tarjetas de golpe y
+    **paginar no puede mover la cifra** que dice cuánto trabajo queda.
+    """
+    vista = _muchos(157)
+
+    hojas = [paginar(vista, page=numero) for numero in (1, 2, 3, 4)]
+
+    assert FILAS_POR_PAGINA == 50
+    assert [len(hoja.pagina) for hoja in hojas] == [50, 50, 50, 7]
+    assert {hoja.filas for hoja in hojas} == {157}
+    assert {hoja.resto_total for hoja in hojas} == {157}
+    assert {hoja.total_pendiente for hoja in hojas} == {157}
+    assert {hoja.entradas_de_decision for hoja in hojas} == {157}
+    assert {hoja.pages for hoja in hojas} == {4}
+    # Ninguna fila se pierde ni se repite: las cuatro hojas juntas son la bandeja entera, una vez.
+    vistas = [conjunto.set_id for hoja in hojas for conjunto in hoja.pagina]
+    assert len(vistas) == 157
+    assert len(set(vistas)) == 157
+
+
+def test_una_hoja_fuera_de_rango_se_corrige_a_la_ultima_y_no_es_un_error() -> None:
+    """El enlace de una bandeja se guarda: si entre dos visitas se despachan bancos, la hoja 4 puede
+    dejar de existir, y eso no es un fallo de quien pulsa el enlace."""
+    vista = _muchos(60)
+
+    ultima = paginar(vista, page=99)
+
+    assert ultima.page == 2
+    assert len(ultima.pagina) == 10
+    assert ultima.filas == 60
+
+
+def test_lo_oficial_no_se_pagina_y_viaja_entero_en_cada_hoja() -> None:
+    """Los exámenes oficiales son pocos y sus incidencias no se deciden en bloque: van enteros."""
+    vista = agrupar(
+        [
+            _conjunto(
+                "oficial-1",
+                title="Examen oficial",
+                set_type="official_exam",
+                pendientes={CategoriaIncidencia.HUECO_SIN_MATERIAL.value: 2},
+            ),
+            *[
+                _conjunto(
+                    f"conjunto-{indice:03d}",
+                    title=f"Banco {indice:03d}",
+                    pendientes={CategoriaIncidencia.CLAVE_SOSPECHOSA.value: 1},
+                )
+                for indice in range(60)
+            ],
+        ]
+    )
+
+    primera, segunda = paginar(vista, page=1), paginar(vista, page=2)
+
+    assert [conjunto.set_id for conjunto in primera.oficial] == ["oficial-1"]
+    assert [conjunto.set_id for conjunto in segunda.oficial] == ["oficial-1"]
+    assert primera.resto_total == 60

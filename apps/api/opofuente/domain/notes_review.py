@@ -31,6 +31,7 @@ from enum import StrEnum
 from opofuente.domain.errors import InvalidReviewError
 from opofuente.domain.notes_reports import normalise_note
 from opofuente.domain.numeros import porcentaje
+from opofuente.domain.plural import con_numero
 from opofuente.domain.topic_notes import COBERTURA_MINIMA, CategoriaIncidencia
 
 #: El umbral del §2.3, en palabras, tal como se lee en la frase del motivo.
@@ -81,6 +82,9 @@ class MotivoDelBorrador(StrEnum):
     SIN_MATERIA = "sin_materia"
     INCIDENCIAS = "incidencias"
     SIN_DECISION = "sin_decision"
+    #: La tabla del panel **no mide** los borradores (cuesta alrededor de un segundo por tema y la
+    #: pantalla tiene que abrirse sin esperar): esta razón dice dónde está la cifra que falta.
+    SIN_MEDIDA = "sin_medida"
 
 
 @dataclass(frozen=True, slots=True)
@@ -301,9 +305,14 @@ def razones_del_tema(cifras: CifrasDelTema) -> tuple[Razon, ...]:
         razones.append(
             Razon(
                 MotivoDelBorrador.HUECOS,
-                f"{cifras.sin_frase} preguntas no tienen ninguna frase en los apuntes que las "
-                "justifique: es material que falta, y se rellena escribiendo.",
-                f"{cifras.sin_frase} pregunta(s)",
+                con_numero(
+                    cifras.sin_frase,
+                    "pregunta no tiene ninguna frase en los apuntes que la justifique: es material "
+                    "que falta, y se rellena escribiendo.",
+                    "preguntas no tienen ninguna frase en los apuntes que las justifique: es "
+                    "material que falta, y se rellena escribiendo.",
+                ),
+                con_numero(cifras.sin_frase, "pregunta", "preguntas"),
             )
         )
 
@@ -311,9 +320,14 @@ def razones_del_tema(cifras: CifrasDelTema) -> tuple[Razon, ...]:
         razones.append(
             Razon(
                 MotivoDelBorrador.CONFLICTOS,
-                f"{cifras.conflictos} las contestan los apuntes con otra letra que su respuesta "
-                "correcta: hay que decidir cuál de las dos está mal.",
-                f"{cifras.conflictos} pregunta(s)",
+                con_numero(
+                    cifras.conflictos,
+                    "la contestan los apuntes con otra letra que su respuesta correcta: hay que "
+                    "decidir cuál de las dos está mal.",
+                    "las contestan los apuntes con otra letra que su respuesta correcta: hay que "
+                    "decidir cuál de las dos está mal.",
+                ),
+                con_numero(cifras.conflictos, "pregunta", "preguntas"),
             )
         )
 
@@ -321,10 +335,16 @@ def razones_del_tema(cifras: CifrasDelTema) -> tuple[Razon, ...]:
         razones.append(
             Razon(
                 MotivoDelBorrador.CLAVES_EN_REVISION,
-                f"{cifras.claves_marcadas} respuestas correctas están marcadas como contrarias a "
-                "la norma o al material: no cuentan en el listón (no hay respuesta con la que "
-                "acertar) y su sitio es la bandeja de incidencias.",
-                f"{cifras.claves_marcadas} pregunta(s)",
+                con_numero(
+                    cifras.claves_marcadas,
+                    "respuesta correcta está marcada como contraria a la norma o al material: no "
+                    "cuenta en el listón (no hay respuesta con la que acertar) y su sitio es la "
+                    "bandeja de incidencias.",
+                    "respuestas correctas están marcadas como contrarias a la norma o al "
+                    "material: no cuentan en el listón (no hay respuesta con la que acertar) y su "
+                    "sitio es la bandeja de incidencias.",
+                ),
+                con_numero(cifras.claves_marcadas, "pregunta", "preguntas"),
             )
         )
 
@@ -332,13 +352,23 @@ def razones_del_tema(cifras: CifrasDelTema) -> tuple[Razon, ...]:
         razones.append(
             Razon(
                 MotivoDelBorrador.SIN_MATERIA,
-                f"{cifras.sin_materia} preguntas no caben en ninguna materia del índice: están en "
-                "la bandeja sin apartado donde contestarlas.",
-                f"{cifras.sin_materia} pregunta(s)",
+                con_numero(
+                    cifras.sin_materia,
+                    "pregunta no cabe en ninguna materia del índice: está en la bandeja sin "
+                    "apartado donde contestarla.",
+                    "preguntas no caben en ninguna materia del índice: están en la bandeja sin "
+                    "apartado donde contestarlas.",
+                ),
+                con_numero(cifras.sin_materia, "pregunta", "preguntas"),
             )
         )
 
     if cifras.incidencias_abiertas:
+        incidencias_texto = con_numero(
+            cifras.incidencias_abiertas,
+            "incidencia del motor sin despachar",
+            "incidencias del motor sin despachar",
+        )
         desglose = ", ".join(
             f"{cuantas} {NOMBRE_DE_CATEGORIA[cual]}"
             for cual, cuantas in sorted(cifras.incidencias_por_categoria, key=lambda fila: -fila[1])
@@ -346,10 +376,8 @@ def razones_del_tema(cifras: CifrasDelTema) -> tuple[Razon, ...]:
         razones.append(
             Razon(
                 MotivoDelBorrador.INCIDENCIAS,
-                f"{cifras.incidencias_abiertas} incidencias del motor sin despachar"
-                + (f" ({desglose})" if desglose else "")
-                + ".",
-                f"{cifras.incidencias_abiertas} incidencia(s)",
+                f"{incidencias_texto}" + (f" ({desglose})" if desglose else "") + ".",
+                con_numero(cifras.incidencias_abiertas, "incidencia", "incidencias"),
             )
         )
 
@@ -358,6 +386,19 @@ def razones_del_tema(cifras: CifrasDelTema) -> tuple[Razon, ...]:
             Razon(
                 MotivoDelBorrador.SIN_DECISION,
                 "Nadie ha revisado este tema todavía: no hay ninguna decisión escrita sobre él.",
+            )
+        )
+
+    # La última, y a propósito: no es un motivo del tema, es **dónde está la cifra que falta**. La
+    # tabla del panel no mide los borradores (medirlos cuesta alrededor de un segundo por tema y la
+    # tabla tiene que abrirse sin esperar); la ficha sí los mide, y es donde se decide.
+    if cifras.has_sections and not cifras.published and not cifras.measured:
+        razones.append(
+            Razon(
+                MotivoDelBorrador.SIN_MEDIDA,
+                "La cobertura y la forma de este tema se miden al abrir su ficha: esta tabla no "
+                "las mide porque cada medida cuesta alrededor de un segundo y hay que poder "
+                "abrirla sin esperar. Abre el tema para ver las dos cifras antes de decidir.",
             )
         )
 

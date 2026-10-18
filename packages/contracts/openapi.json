@@ -8473,15 +8473,39 @@
         "type": "object"
       },
       "NotesReviewFileSchema": {
-        "description": "La ficha de un tema: su fila de la tabla y sus apartados en orden de lectura.",
+        "description": "Una **página** de la ficha de un tema: su fila de la tabla y los apartados de la hoja.\n\n`sections_total` es el número de apartados del tema y no el de la hoja: el título de la pantalla\ndice cuántos hay, y la hoja que se está mirando se sabe por `page` y `pages`.",
         "properties": {
+          "page": {
+            "default": 1,
+            "description": "La hoja que va en `sections`, empezando por 1.",
+            "title": "Page",
+            "type": "integer"
+          },
+          "page_size": {
+            "default": 6,
+            "description": "Cuántos apartados caben en una hoja.",
+            "title": "Page Size",
+            "type": "integer"
+          },
+          "pages": {
+            "default": 1,
+            "description": "Cuántas hojas tiene la ficha.",
+            "title": "Pages",
+            "type": "integer"
+          },
           "sections": {
-            "description": "Los apartados, en orden de lectura. Vacío si el tema no tiene texto escrito.",
+            "description": "Los apartados de la hoja servida, en el orden pedido. Vacío si el tema no tiene texto escrito.",
             "items": {
               "$ref": "#/components/schemas/NotesReviewSectionSchema"
             },
             "title": "Sections",
             "type": "array"
+          },
+          "sections_total": {
+            "default": 0,
+            "description": "Apartados que tiene el tema entero, sumando todas las hojas.",
+            "title": "Sections Total",
+            "type": "integer"
           },
           "topic": {
             "$ref": "#/components/schemas/NotesReviewTopicSchema"
@@ -17194,7 +17218,7 @@
         "type": "object"
       },
       "TraySchema": {
-        "description": "La bandeja entera, en dos secciones, con **la cifra** de la medida de éxito del §2.4.\n\n`entradas_de_decision` no es el número de incidencias ni el de filas: es lo que de verdad\ndepende del criterio del propietario, contado con la regla de `domain.tray` —una por conjunto no\noficial, una por incidencia oficial—. Va en la respuesta y no se calcula en la pantalla porque\nes la cifra que decide si la bandeja sirve, y una cifra que se calcula en dos sitios acaba\ndiciendo dos cosas.",
+        "description": "Una **hoja** de la bandeja, en dos secciones, con **la cifra** de la medida de éxito (§2.4).\n\n`entradas_de_decision` no es el número de incidencias ni el de filas: es lo que de verdad\ndepende del criterio del propietario, contado con la regla de `domain.tray` —una por conjunto no\noficial, una por incidencia oficial—. Va en la respuesta y no se calcula en la pantalla porque\nes la cifra que decide si la bandeja sirve, y una cifra que se calcula en dos sitios acaba\ndiciendo dos cosas.\n\n`rest` son las filas de **la hoja**; `filas`, `total_pendiente`, `propuestas` y\n`entradas_de_decision` son de la bandeja **entera** y no cambian al pasar de hoja: paginar no\npuede mover la cifra del trabajo que queda. La sección de oficiales va entera en todas las\nhojas: son ocho como mucho y sus incidencias no se deciden en bloque.",
         "properties": {
           "entradas_de_decision": {
             "description": "La medida de éxito: lo que de verdad depende del propietario.",
@@ -17203,7 +17227,7 @@
             "type": "integer"
           },
           "filas": {
-            "description": "Cuántas filas enseña la bandeja.",
+            "description": "Cuántas filas tiene la bandeja entera.",
             "minimum": 0.0,
             "title": "Filas",
             "type": "integer"
@@ -17215,6 +17239,27 @@
             "title": "Official Section",
             "type": "array"
           },
+          "page": {
+            "default": 1,
+            "description": "La hoja que va en `rest`, empezando por 1.",
+            "minimum": 1.0,
+            "title": "Page",
+            "type": "integer"
+          },
+          "page_size": {
+            "default": 50,
+            "description": "Cuántas filas caben en una hoja.",
+            "minimum": 1.0,
+            "title": "Page Size",
+            "type": "integer"
+          },
+          "pages": {
+            "default": 1,
+            "description": "Cuántas hojas tiene la lista de bancos.",
+            "minimum": 1.0,
+            "title": "Pages",
+            "type": "integer"
+          },
           "propuestas": {
             "description": "Incidencias ya propuestas, que se aprueban en bloque.",
             "minimum": 0.0,
@@ -17222,11 +17267,19 @@
             "type": "integer"
           },
           "rest": {
+            "description": "Las filas de la hoja que se está mirando.",
             "items": {
               "$ref": "#/components/schemas/TraySetSchema"
             },
             "title": "Rest",
             "type": "array"
+          },
+          "rest_total": {
+            "default": 0,
+            "description": "Filas de la sección de bancos, sumando todas las hojas.",
+            "minimum": 0.0,
+            "title": "Rest Total",
+            "type": "integer"
           },
           "total_pendiente": {
             "description": "Incidencias que esperan criterio.",
@@ -25883,8 +25936,23 @@
     },
     "/api/v1/notes-incidents/tray": {
       "get": {
-        "description": "La bandeja agrupada por conjunto, con lo oficial **aparte y arriba**.\n\nEs la vista con la que se trabaja: una fila por conjunto, su resumen («50 claves sospechosas»),\nlas acciones que admite y **la cifra** que decide si la bandeja sirve —las entradas que de\nverdad dependen del criterio del propietario—. Los conjuntos oficiales van en su propia sección\nporque sus incidencias no se deciden en bloque: su clave es la que publicó la administración.\n\nSe cuenta en la base, no en la pantalla: `entradas_de_decision` sale del dominio y viaja\ncalculado, para que no haya dos versiones de la cifra que mide la medida de éxito.",
+        "description": "Una hoja de la bandeja agrupada por conjunto, con lo oficial **aparte y arriba**.\n\nEs la vista con la que se trabaja: una fila por conjunto, su resumen («50 claves sospechosas»),\nlas acciones que admite y **la cifra** que decide si la bandeja sirve —las entradas que de\nverdad dependen del criterio del propietario—. Los conjuntos oficiales van en su propia sección\nporque sus incidencias no se deciden en bloque: su clave es la que publicó la administración.\n\nSe cuenta en la base, no en la pantalla: `entradas_de_decision` sale del dominio y viaja\ncalculado, para que no haya dos versiones de la cifra que mide la medida de éxito. Y **los\ntotales son de la bandeja entera**: pasar de hoja no cambia cuántas filas hay ni cuánto queda.",
         "operationId": "read_tray_api_v1_notes_incidents_tray_get",
+        "parameters": [
+          {
+            "description": "Qué hoja de la lista de bancos se sirve, empezando por la 1. Cincuenta filas por hoja: con los datos del propietario son 157 filas con cuatro acciones cada una.",
+            "in": "query",
+            "name": "pagina",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "description": "Qué hoja de la lista de bancos se sirve, empezando por la 1. Cincuenta filas por hoja: con los datos del propietario son 157 filas con cuatro acciones cada una.",
+              "minimum": 1,
+              "title": "Pagina",
+              "type": "integer"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -25927,7 +25995,7 @@
             "description": "Error interno inesperado (RFC 9457)."
           }
         },
-        "summary": "La bandeja por conjunto: una fila por conjunto, con lo que admite en bloque",
+        "summary": "Una hoja de la bandeja por conjunto, con lo que admite en bloque",
         "tags": [
           "panel"
         ]
@@ -26412,7 +26480,7 @@
     },
     "/api/v1/notes-review": {
       "get": {
-        "description": "La tabla del panel: los temas del programa activo, en orden, con su motivo medido.\n\nMide **solo** los temas que esperan una decisión (los borradores): los publicados ya pasaron las\npuertas y medirlos costaría la mitad de la página para repetir su estado. La medida sale de las\ncomprobaciones guardadas —el mismo camino que `apuntes --medir`— y no llama a ningún modelo.",
+        "description": "La tabla del panel: los temas del programa activo, en orden, con lo que se sabe **sin\nmedir**.\n\n**No mide** ningún tema: lee el estado, las cifras guardadas y la decisión escrita con cinco\nconsultas agregadas (0,03 s medidos sobre la copia del propietario, 17-oct-2026). Medir los dos\nborradores costaba 3,7 s de los 5,37 s de la pantalla, y la cifra de la puerta **no se hereda**:\nse mide al abrir la ficha del tema, que es donde se decide, y la fila lo dice con la razón\n`sin_medida` en vez de enseñar un cero que parecería un suspenso.",
         "operationId": "list_notes_review_api_v1_notes_review_get",
         "responses": {
           "200": {
@@ -26516,7 +26584,7 @@
     },
     "/api/v1/notes-review/{codigo}": {
       "get": {
-        "description": "Un tema, apartado a apartado, con su texto, su forma y lo que se ha comprobado en cada uno.\n\nUn tema sin apuntes escritos sale con su estado (`none`) y sin apartados: no es un error que un\ntema no tenga texto, y devolver un 404 obligaría a la pantalla a distinguir «no existe» de «no\nestá escrito», que es justo lo que el estado contesta.",
+        "description": "Una **página** de un tema, apartado a apartado, con su texto, su forma y lo comprobado.\n\nUn tema sin apuntes escritos sale con su estado (`none`) y sin apartados: no es un error que un\ntema no tenga texto, y devolver un 404 obligaría a la pantalla a distinguir «no existe» de «no\nestá escrito», que es justo lo que el estado contesta.\n\nEl orden lo decide el servidor porque la página se corta aquí: «los peores primero» ordena los\napartados del **tema**, no los de la hoja que se acaba de enviar.",
         "operationId": "notes_review_file_api_v1_notes_review__codigo__get",
         "parameters": [
           {
@@ -26530,6 +26598,35 @@
                 "I.4"
               ],
               "title": "Codigo",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Qué hoja de apartados se sirve, empezando por la 1. Una hoja son seis apartados: los cuerpos de todos a la vez eran el 92 % de la respuesta y el navegador tardaba en pintar el primero.",
+            "in": "query",
+            "name": "pagina",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "description": "Qué hoja de apartados se sirve, empezando por la 1. Una hoja son seis apartados: los cuerpos de todos a la vez eran el 92 % de la respuesta y el navegador tardaba en pintar el primero.",
+              "minimum": 1,
+              "title": "Pagina",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "`lectura` es el orden del tema; `peores`, lo que queda sin resolver antes.",
+            "in": "query",
+            "name": "orden",
+            "required": false,
+            "schema": {
+              "default": "lectura",
+              "description": "`lectura` es el orden del tema; `peores`, lo que queda sin resolver antes.",
+              "enum": [
+                "lectura",
+                "peores"
+              ],
+              "title": "Orden",
               "type": "string"
             }
           }
@@ -26576,7 +26673,7 @@
             "description": "Error interno inesperado (RFC 9457)."
           }
         },
-        "summary": "La ficha de un tema: sus apartados, tal como se leerán en la zona del alumno",
+        "summary": "Una página de la ficha: sus apartados, como se leerán en la zona del alumno",
         "tags": [
           "panel"
         ]

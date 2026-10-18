@@ -66,15 +66,11 @@ export function MockExamPage() {
 
   const plan = consulta.data;
   const elegida = variante === 'full' ? plan.full : plan.short;
-  const bloqueElegido = plan.case_blocks.find((bloqueDelPlan) => bloqueDelPlan.code === bloque);
 
   return (
     <>
       <header className="pagina__cabecera">
         <h1 className="pagina__titulo">Simulacros</h1>
-        <p className="pagina__entrada">
-          El mismo número de preguntas, el mismo tiempo y la misma penalización que el día del examen.
-        </p>
       </header>
 
       <section className="bloque" aria-labelledby="variante">
@@ -151,10 +147,12 @@ export function MockExamPage() {
           <h2 className="bloque__titulo" id="supuesto">
             El supuesto práctico
           </h2>
-          <p className="bloque__texto">
-            El supuesto se elige entre dos bloques del programa y solo se contesta uno: elige el que
-            quieras preparar.
-          </p>
+          {/*
+            Se elige el supuesto y **no se despliegan sus temas**: eran nueve filas con su título y
+            sus preguntas disponibles debajo de una decisión de dos opciones, y lo que hay que
+            decidir aquí es III o IV. Lo que cae en cada bloque se lee en el temario, y lo que
+            contesta el simulacro lo dice el servidor al montarlo.
+          */}
           <div className="opciones" role="radiogroup" aria-labelledby="supuesto">
             {plan.case_blocks.map((opcion) => (
               <div className="opcion" key={opcion.code}>
@@ -177,26 +175,6 @@ export function MockExamPage() {
               </div>
             ))}
           </div>
-          {bloqueElegido !== undefined && (
-            <ul
-              className="simulacro__temas"
-              aria-label={`Temas del bloque ${bloqueElegido.code}`}
-            >
-              {bloqueElegido.topics.map((tema) => (
-                <li className="simulacro__tema" key={tema.code}>
-                  <span className="simulacro__tema-codigo">{tema.code}</span>
-                  <span className="simulacro__tema-titulo" data-contenido>
-                    {tema.title}
-                  </span>
-                  <span className="simulacro__tema-preguntas">
-                    {tema.available_questions === 0
-                      ? 'Sin preguntas todavía'
-                      : `${String(tema.available_questions)} preguntas disponibles`}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
         </section>
       )}
 
@@ -217,13 +195,25 @@ export function MockExamPage() {
   );
 }
 
-/** El resumen de una variante para su opción: cuántas preguntas y cuánto dura. */
+/**
+ * El resumen de una variante para su opción: cuántas preguntas se contestan y cuánto dura.
+ *
+ * Las de **reserva** van aparte y en su propio paréntesis: «100 preguntas (+10 de reserva) · 120
+ * min». Sumarlas daba «110 preguntas», y eso no es lo que uno se encuentra al empezar: son cien las
+ * que se contestan y diez las que están por si falla alguna. El propietario lo leyó como un error y
+ * lo era de cuenta, no de datos.
+ *
+ * «min» y no «minutos» porque es una cifra en una línea de opción, no una frase; el dato completo
+ * —con su tiempo por parte— sigue en «Qué va a caer».
+ */
 function resumenDe(variante: StudentMockExamVariant): string {
-  const preguntas = variante.parts.reduce(
-    (total, parte) => total + (parte.ordinary_items ?? 0) + (parte.reserve_items ?? 0),
-    0,
-  );
+  const ordinarias = variante.parts.reduce((total, parte) => total + (parte.ordinary_items ?? 0), 0);
+  const reserva = variante.parts.reduce((total, parte) => total + (parte.reserve_items ?? 0), 0);
   const duracion =
-    variante.time_limit_minutes === null ? 'sin tiempo' : `${String(variante.time_limit_minutes)} minutos`;
-  return `${String(preguntas)} preguntas · ${duracion}`;
+    variante.time_limit_minutes === null ? 'sin tiempo' : `${String(variante.time_limit_minutes)} min`;
+  const preguntas =
+    reserva === 0
+      ? `${String(ordinarias)} preguntas`
+      : `${String(ordinarias)} preguntas (+${String(reserva)} de reserva)`;
+  return `${preguntas} · ${duracion}`;
 }

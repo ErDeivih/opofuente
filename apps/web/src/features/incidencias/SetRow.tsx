@@ -17,6 +17,9 @@ const ETIQUETA_DE_ACCION: Record<TrayAction, string> = {
   no_son_preguntas: 'Marcar como «no son preguntas»',
 };
 
+/** Cuántos avisos se añaden cada vez que se pide «ver más» dentro de un banco. */
+export const AVISOS_POR_TANDA = 50;
+
 export interface SetRowProps {
   conjunto: TraySet;
   /** Qué hace cada acción, en las palabras del servidor (`/tray/actions`). */
@@ -24,13 +27,24 @@ export interface SetRowProps {
   /** Si hay una escritura en vuelo, los botones se apagan: dos acciones a la vez no tienen sentido. */
   busy: boolean;
   /**
-   * El despliegue de la fila: los avisos del examen, o `null` mientras no se han pedido.
+   * El despliegue de la fila: los avisos del banco, o `null` mientras no se han pedido.
    *
-   * Lo pide la pantalla, que es quien tiene la consulta; la fila solo dice **qué** examen hay que
-   * abrir. Así el estado de la carga —que puede tardar, son hasta 70 filas— vive donde se pide.
+   * Lo pide la pantalla, que es quien tiene la consulta; la fila solo dice **qué** banco hay que
+   * abrir. Así el estado de la carga —que puede tardar— vive donde se pide.
+   *
+   * `total` y `limite` existen para pedir **de cincuenta en cincuenta**: una hoja de incidencias
+   * trae el enunciado de cada pregunta y su motivo, y doscientas de golpe hacen una página donde el
+   * trabajo real queda cuesta abajo.
    */
-  detalle: { cargando: boolean; error: boolean; incidencias: NotesIncident[] | null };
+  detalle: {
+    cargando: boolean;
+    error: boolean;
+    incidencias: NotesIncident[] | null;
+    total: number;
+    limite: number;
+  };
   onDesplegar: () => void;
+  onVerMas: (limite: number) => void;
   onBulk: (action: TrayAction) => void;
   /** Cómo se pinta un aviso dentro de la fila: es la misma fila que la de la lista. */
   renderIncidencia: (incidencia: NotesIncident) => ReactElement;
@@ -59,6 +73,7 @@ export function SetRow({
   busy,
   detalle,
   onDesplegar,
+  onVerMas,
   onBulk,
   renderIncidencia,
 }: SetRowProps) {
@@ -170,9 +185,31 @@ export function SetRow({
             <p className="hint">Aquí ya no queda nada esperando.</p>
           )}
           {detalle.incidencias !== null && detalle.incidencias.length > 0 && (
-            <ul className="avisos" aria-label={`Avisos de ${conjunto.title}`}>
-              {detalle.incidencias.map((incidencia) => renderIncidencia(incidencia))}
-            </ul>
+            <>
+              <ul className="avisos" aria-label={`Avisos de ${conjunto.title}`}>
+                {detalle.incidencias.map((incidencia) => renderIncidencia(incidencia))}
+              </ul>
+              {detalle.incidencias.length < detalle.total && (
+                <p className="hint">
+                  {conNumero(
+                    detalle.incidencias.length,
+                    'aviso a la vista',
+                    'avisos a la vista',
+                  )}{' '}
+                  de {detalle.total}.{' '}
+                  <button
+                    type="button"
+                    className="button button--secondary"
+                    disabled={detalle.cargando}
+                    onClick={() => {
+                      onVerMas(detalle.limite + AVISOS_POR_TANDA);
+                    }}
+                  >
+                    {`Ver ${String(AVISOS_POR_TANDA)} más`}
+                  </button>
+                </p>
+              )}
+            </>
           )}
         </div>
       )}

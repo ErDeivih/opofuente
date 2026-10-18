@@ -26,6 +26,9 @@ export type NotesReviewResult = components['schemas']['NotesReviewDecisionResult
 /** La decisión sobre un tema: son dos, aprobar y rechazar (el vocabulario lo fija el servidor). */
 export type ReviewDecisionName = 'approved' | 'rejected';
 
+/** En qué orden se piden los apartados de la ficha: el del tema, o lo que queda sin resolver antes. */
+export type NotesReviewOrder = 'lectura' | 'peores';
+
 /** El estado de los apuntes de un tema: el mismo vocabulario que la zona del alumno. */
 export type NotesStateName = NotesReviewTopic['state'];
 
@@ -114,9 +117,29 @@ export function fetchNotesReviewSummary(): Promise<NotesReviewCounters> {
   return apiFetch<NotesReviewCounters>('/api/v1/notes-review/summary');
 }
 
-/** La ficha de un tema: sus apartados tal como se leerán en la zona del alumno. */
-export function fetchNotesReviewFile(code: string): Promise<NotesReviewFile> {
-  return apiFetch<NotesReviewFile>(`/api/v1/notes-review/${encodeURIComponent(code)}`);
+/**
+ * Una **hoja** de la ficha de un tema: sus apartados, tal como se leerán en la zona del alumno.
+ *
+ * Va paginada porque los cuerpos de los 25 apartados de un tema son el 92 % de la respuesta y el
+ * navegador los convierte a HTML antes de que se pueda leer el primero. El orden lo pone el servidor
+ * por la misma razón: «los peores primero» tiene que ordenar los apartados del tema, no los de la
+ * hoja que se acaba de pedir.
+ */
+export function fetchNotesReviewFile(
+  code: string,
+  options: { page?: number; order?: NotesReviewOrder } = {},
+): Promise<NotesReviewFile> {
+  const consulta = new URLSearchParams();
+  if (options.page !== undefined && options.page > 1) {
+    consulta.set('pagina', String(options.page));
+  }
+  if (options.order !== undefined && options.order !== 'lectura') {
+    consulta.set('orden', options.order);
+  }
+  const sufijo = consulta.toString() === '' ? '' : `?${consulta.toString()}`;
+  return apiFetch<NotesReviewFile>(
+    `/api/v1/notes-review/${encodeURIComponent(code)}${sufijo}`,
+  );
 }
 
 /**
@@ -152,6 +175,10 @@ export function decideNotesReview(
  * «Peor» es lo que queda sin resolver en ese apartado (en conflicto con la respuesta correcta, dudoso
  * o sin frase), que es la cifra que el servidor manda en `worst`. El orden de lectura —el de verdad,
  * el que tiene el alumno— es el de `position`, y es el que se usa cuando no se piden los peores.
+ *
+ * **Hoy no lo usa la pantalla**: la ficha va paginada y el orden lo pone el servidor (`orden`), porque
+ * ordenar la hoja que llega no sería ordenar el tema. Se queda porque es la regla del orden, escrita
+ * una vez y probada, y es la que hay que mirar para saber qué significa «peor».
  */
 export function orderSections(
   sections: readonly NotesReviewSection[],

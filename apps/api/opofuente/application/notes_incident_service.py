@@ -35,9 +35,10 @@ from opofuente.domain.topic_classification import OutOfSyllabus
 from opofuente.domain.topic_notes import CategoriaIncidencia
 from opofuente.domain.tray import (
     TrayAction,
+    TrayPage,
     TrayRefusalError,
-    TrayView,
     agrupar,
+    paginar,
     rechazo_de_accion,
 )
 from opofuente.infrastructure.clock import SystemClock
@@ -178,13 +179,19 @@ class NotesIncidentsService:
 
     # --------------------------------------------------- la bandeja por conjunto (F31, §2)
 
-    def tray(self) -> TrayView:
-        """La bandeja agrupada por conjunto, en dos secciones y con la cifra que decide si sirve.
+    def tray(self, *, page: int = 1) -> TrayPage:
+        """Una **hoja** de la bandeja agrupada por conjunto, con la cifra que decide si sirve.
 
         Las propuestas salen de **una sola fuente** (`proposals()`): la tabla de claves derivadas
         del §1, que puede no estar —y entonces no hay propuestas, que es distinto de que no haya
         ninguna pendiente—. Un conjunto cuya clave está protegida no propone nada: su clave no se
         toca, así que aprobar una derivada ahí no sería una decisión, sería un error esperando.
+
+        Se pagina **solo la lista de bancos** (cincuenta por hoja): con los datos del
+        propietario son ciento cincuenta y siete filas, cada una con sus cuatro acciones y su
+        resumen, y pintarlas todas de golpe hace que la pantalla tarde y que el trabajo real se
+        haga cuesta abajo. Los totales que viajan con la hoja son los de la bandeja entera:
+        paginar no puede cambiar la cifra que mide lo que queda.
         """
         filas = {fila.set_id: fila for fila in self._incidents.tray_sets()}
         propuestas: Counter[str] = Counter()
@@ -193,12 +200,15 @@ class NotesIncidentsService:
             if fila is None or fila.es_oficial:
                 continue
             propuestas[propuesta.set_id] += 1
-        return agrupar(
-            [
-                replace(fila, propuestas=propuestas.get(set_id, 0))
-                for set_id, fila in filas.items()
-                if fila.total_pendiente > 0 or propuestas.get(set_id, 0) > 0
-            ]
+        return paginar(
+            agrupar(
+                [
+                    replace(fila, propuestas=propuestas.get(set_id, 0))
+                    for set_id, fila in filas.items()
+                    if fila.total_pendiente > 0 or propuestas.get(set_id, 0) > 0
+                ]
+            ),
+            page=page,
         )
 
     def dispatch_bulk(

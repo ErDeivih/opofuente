@@ -9,6 +9,7 @@ import {
   INCIDENT_STATUSES,
   INCIDENT_STATUS_HELP,
   INCIDENT_STATUS_LABELS,
+  INCIDENTS_LIMIT,
   fetchNotesIncidents,
   type IncidentCategory,
   type IncidentStatus,
@@ -76,7 +77,10 @@ export function IncidentsPage() {
 
   const incidencias = useNotesIncidents(categoria, estado, tema === '' ? null : tema, q);
   const despachar = useUpdateNotesIncident();
-  const bandeja = useNotesTray();
+  // La bandeja va paginada de cincuenta en cincuenta: con los datos del propietario son 157 filas,
+  // cada una con sus cuatro acciones, y pintarlas todas de golpe deja el trabajo cuesta abajo.
+  const [hoja, setHoja] = useState(1);
+  const bandeja = useNotesTray(hoja);
   const acciones = useTrayActions();
   const enBloque = useDispatchTrayBulk();
 
@@ -97,27 +101,59 @@ export function IncidentsPage() {
    * que sobrevivir a que la lista se vuelva a pintar tras una acción en bloque. Se pide **al
    * desplegar** y no al cargar: traer de golpe las incidencias de 150 conjuntos para que el
    * propietario abra uno es trabajo tirado.
+   *
+   * Y se pide **de cincuenta en cincuenta**, no de doscientas: una hoja de incidencias trae el
+   * enunciado entero de cada pregunta y su motivo, y doscientas de golpe hacen una página
+   * larguísima donde el trabajo real queda cuesta abajo. `total` guarda cuántas hay para poder decir
+   * «quedan N» sin volver a preguntar.
    */
   const [detalles, setDetalles] = useState<
-    Record<string, { cargando: boolean; error: boolean; incidencias: NotesIncident[] | null }>
+    Record<
+      string,
+      {
+        cargando: boolean;
+        error: boolean;
+        incidencias: NotesIncident[] | null;
+        total: number;
+        limite: number;
+      }
+    >
   >({});
 
-  const desplegar = useCallback((setId: string) => {
+  const desplegar = useCallback((setId: string, limite: number = INCIDENTS_LIMIT) => {
     setDetalles((actuales) => ({
       ...actuales,
-      [setId]: { cargando: true, error: false, incidencias: null },
+      [setId]: {
+        cargando: true,
+        error: false,
+        incidencias: actuales[setId]?.incidencias ?? null,
+        total: actuales[setId]?.total ?? 0,
+        limite,
+      },
     }));
-    void fetchNotesIncidents({ set_id: setId, limit: 200 })
+    void fetchNotesIncidents({ set_id: setId, limit: limite })
       .then((pagina) => {
         setDetalles((actuales) => ({
           ...actuales,
-          [setId]: { cargando: false, error: false, incidencias: pagina.incidents },
+          [setId]: {
+            cargando: false,
+            error: false,
+            incidencias: pagina.incidents,
+            total: pagina.total,
+            limite,
+          },
         }));
       })
       .catch(() => {
         setDetalles((actuales) => ({
           ...actuales,
-          [setId]: { cargando: false, error: true, incidencias: null },
+          [setId]: {
+            cargando: false,
+            error: true,
+            incidencias: null,
+            total: actuales[setId]?.total ?? 0,
+            limite,
+          },
         }));
       });
   }, []);
@@ -188,9 +224,20 @@ export function IncidentsPage() {
         conjunto={conjunto}
         ayuda={acciones.data ?? {}}
         busy={enBloque.isPending}
-        detalle={detalles[conjunto.set_id] ?? { cargando: false, error: false, incidencias: null }}
+        detalle={
+          detalles[conjunto.set_id] ?? {
+            cargando: false,
+            error: false,
+            incidencias: null,
+            total: 0,
+            limite: INCIDENTS_LIMIT,
+          }
+        }
         onDesplegar={() => {
           desplegar(conjunto.set_id);
+        }}
+        onVerMas={(limite) => {
+          desplegar(conjunto.set_id, limite);
         }}
         onBulk={(action) => {
           decidirEnBloque(action, conjunto.set_id);
@@ -248,7 +295,6 @@ export function IncidentsPage() {
             .
           </p>
         )}
-
         <h3 className="incidencias__titulo-filtro">Por categoría</h3>
         <div className="filtros" role="group" aria-label="Filtrar por categoría">
           <button
@@ -392,7 +438,8 @@ export function IncidentsPage() {
         </form>
         <p className="hint">
           Busca en el texto tal cual está guardado: <strong>no</strong> iguala acentos.
-          {q !== '' && ` Se están viendo ${String(total)} incidencia(s) con «${q}».`}
+          {q !== '' &&
+            ` Se está viendo ${conNumero(total, 'incidencia', 'incidencias')} con «${q}».`}
         </p>
       </section>
 
@@ -448,6 +495,35 @@ export function IncidentsPage() {
               <ul className="conjuntos" aria-label="Avisos agrupados por banco">
                 {seccion(bandeja.data.rest ?? [])}
               </ul>
+            )}
+            {bandeja.data.pages > 1 && (
+              <nav className="apuntes__paso" aria-label="Hojas de la bandeja">
+                <button
+                  className="button button--secondary"
+                  type="button"
+                  disabled={bandeja.data.page <= 1}
+                  onClick={() => {
+                    setHoja((actual) => Math.max(1, actual - 1));
+                  }}
+                >
+                  Hoja anterior
+                </button>
+                <span className="hint">
+                  Hoja {bandeja.data.page} de {bandeja.data.pages} ·{' '}
+                  {conNumero(bandeja.data.rest_total, 'banco', 'bancos')} en total,{' '}
+                  {conNumero(bandeja.data.page_size, 'fila por hoja', 'filas por hoja')}
+                </span>
+                <button
+                  className="button button--secondary"
+                  type="button"
+                  disabled={bandeja.data.page >= bandeja.data.pages}
+                  onClick={() => {
+                    setHoja((actual) => Math.min(bandeja.data.pages, actual + 1));
+                  }}
+                >
+                  Hoja siguiente
+                </button>
+              </nav>
             )}
           </section>
         </>
