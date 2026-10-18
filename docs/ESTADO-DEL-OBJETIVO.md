@@ -4118,10 +4118,26 @@ parametrizados). **No se ha reescrito el material**: el arreglo es de lectura, e
 
 ### 4. Las puertas, en local
 
-`ruff check .` limpio · `ruff format --check .` (564 ficheros) · `mypy` (263 ficheros) limpio ·
+`ruff check .` limpio · `ruff format --check .` (565 ficheros) · `mypy` (263 ficheros) limpio ·
 `eslint` limpio · `tsc` limpio · `build:web` construido · **457 pruebas de componente (53 ficheros)**
-· las de API de alumno, estudio, repaso, claves derivadas y el dominio de preguntas. **Las 18 no las
-corre este bloque**: las corre el que mide.
+· **1095 de API** (unit + alumno + estudio + composición + repaso + claves derivadas). **Las 18 no las
+corre este bloque**: las corre el que mide, y de su primera pasada sobre `21cd8ab` salieron **17 de
+18**.
+
+**El rojo que quedó, y por qué se arregló el juez y no el reo.** Era la redacción y nada más: el
+repaso se niega igual (`UnsupportedError`, ninguna sesión montada) y la aserción del motivo
+—«cuarentena»— seguía pasando; lo que ya no existía era la frase vieja, *«no se te puede preguntar
+por una clave de la que no nos fiamos»*, porque el mensaje nuevo dice **qué pasa** —«no se puede
+corregir: su conjunto está en cuarentena, no tiene plantilla activa o no dice su respuesta»—,
+**cuántas** son y que **volverán**. El mensaje nuevo es mejor para quien lo lee: el viejo solo decía
+que no.
+
+Ante un rojo así la pregunta no es cómo hacer que la prueba calle, sino **cuál de los dos tiene
+razón**; aquí la tenía el mensaje, así que se alineó la prueba. Y se alineó **por piezas** —se niega,
+nombra la cuarentena, cuenta las que se quedan fuera, dice que volverán y comprueba que no se montó
+ninguna sesión— y no copiando la frase entera: una prueba que exige el texto letra a letra se rompe
+otra vez en cuanto alguien lo mejore. El caso contrario —**con la clave servible el repaso no se
+niega**— está en `test_repaso_servible.py` (casos 1 y 3), que es el que de verdad importa.
 
 ### 5. Lo que queda fuera, con su porqué
 

@@ -319,6 +319,20 @@ def _vencida(client: TestClient, *, set_id: str, pregunta_id: str, part_code: st
 def test_el_repaso_no_pregunta_por_una_clave_en_cuarentena(
     seeded_settings: Settings, seeded_client: TestClient
 ) -> None:
+    """El repaso **se niega** si todo lo que vence es de un conjunto con la clave en cuarentena.
+
+    **Lo que se comprueba son las piezas, no la frase entera.** El mensaje decía «no se te puede
+    preguntar por una clave de la que no nos fiamos»; desde F39 dice **qué pasa** («no se puede
+    corregir: su conjunto está en cuarentena, no tiene plantilla activa o la plantilla no dice su
+    respuesta»), **cuántas** son y que **volverán**. Es mejor para quien lo lee, y esta prueba se
+    quedó con la redacción vieja.
+
+    Ante ese rojo la pregunta no era cómo callar la prueba, sino **cuál de los dos tenía razón**, y
+    la tenía el mensaje: por eso se ha alineado la aserción y no el texto. Y se alinea **por
+    piezas** —se niega, nombra la cuarentena, cuenta cuántas son y dice que volverán— y no copiando
+    la frase: una prueba que exige el texto letra a letra se rompe otra vez en cuanto alguien lo
+    mejore.
+    """
     malo, preguntas_malas = _conjunto(seeded_client, titulo="Banco en cuarentena")
     _cuarentena(seeded_client, malo, KeyReliability.NO_FIABLE)
 
@@ -333,6 +347,9 @@ def test_el_repaso_no_pregunta_por_una_clave_en_cuarentena(
                 part_code=_parte_de_la_convocatoria(seeded_client),
             )
         )
+        sesiones_antes = len(
+            servicio.list_sessions(opposition_id=_oposicion(seeded_client)["id"]).sessions
+        )
         with pytest.raises(UnsupportedError) as fallo:
             servicio.create_session(
                 CreateSessionInput(
@@ -341,8 +358,16 @@ def test_el_repaso_no_pregunta_por_una_clave_en_cuarentena(
                     sources=(),
                 )
             )
-        assert "cuarentena" in str(fallo.value)
-        assert "no se te puede preguntar" in str(fallo.value)
+        mensaje = str(fallo.value)
+        # 1. nombra la causa que importa: la clave de la que no se fía uno;
+        assert "cuarentena" in mensaje
+        # 2. dice **cuántas** preguntas se quedan sin repasar (la cifra, no la frase);
+        assert "1 pregunta(s)" in mensaje
+        # 3. y dice qué va a pasar, que es lo que la frase vieja no decía.
+        assert "volverán" in mensaje
+        # 4. y no se ha montado ninguna sesión: la negativa es la respuesta, no un aviso.
+        despues = servicio.list_sessions(opposition_id=_oposicion(seeded_client)["id"])
+        assert len(despues.sessions) == sesiones_antes
     finally:
         servicio._review = original
 
