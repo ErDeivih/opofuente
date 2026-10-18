@@ -344,7 +344,17 @@ def test_la_pregunta_de_la_sesion_no_lleva_la_solucion(seeded_settings: Settings
     assert [opcion.stable_key for opcion in actual.question.options] == ["a", "b", "c", "d"]
 
 
-def test_responder_corrige_y_el_intento_queda_congelado(seeded_settings: Settings) -> None:
+def test_responder_corrige_y_el_intento_se_puede_cambiar_mientras_corre(
+    seeded_settings: Settings,
+) -> None:
+    """Cambiar una respuesta se puede mientras la sesión corre; al cerrarla, se congela.
+
+    La decisión es del §3.2 del encargo F36 y **corrige** la que estaba escrita aquí («cambiar la
+    respuesta no se admite: el intento se congela al registrarlo»). Medido en el recorrido del
+    16-oct-2026: la pantalla ofrecía volver a una pregunta y pulsar otra opción, y el servidor
+    contestaba 409 —el alumno pulsaba y no cambiaba nada—. Lo que sigue congelado es el test
+    **terminado**: ahí la corrección ya se enseñó y la nota está calculada.
+    """
     servicio, session_id = _sesion_en_marcha(seeded_settings)
     actual = servicio.current_question(session_id)
     assert actual.question is not None
@@ -382,13 +392,29 @@ def test_responder_corrige_y_el_intento_queda_congelado(seeded_settings: Setting
     assert repetida.already_answered is True
     assert repetida.attempt.id == respuesta.attempt.id
 
-    # Y cambiar la respuesta no se admite: el intento se congela al registrarlo.
+    # Cambiar la respuesta sí se admite, y la corrección se rehace con la opción nueva.
+    cambiada = servicio.answer(
+        session_id,
+        AnswerInput(
+            question_version_id=actual.question.question_version_id,
+            chosen_option_keys=("a",),
+            elapsed_ms=10,
+        ),
+    )
+    assert cambiada.saved is True
+    assert cambiada.attempt.id == respuesta.attempt.id, "se reescribe el mismo intento"
+    assert tuple(cambiada.attempt.chosen_option_keys) == ("a",)
+    assert cambiada.correction is not None
+    assert cambiada.correction.outcome == "correct"
+
+    # Y una vez cerrada la sesión, el intento queda congelado: ni se contesta ni se cambia.
+    servicio.finish(session_id)
     with pytest.raises(AttemptFrozenError):
         servicio.answer(
             session_id,
             AnswerInput(
                 question_version_id=actual.question.question_version_id,
-                chosen_option_keys=("a",),
+                chosen_option_keys=("b",),
                 elapsed_ms=10,
             ),
         )

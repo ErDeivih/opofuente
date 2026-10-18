@@ -31387,6 +31387,7 @@
     },
     "/api/v1/student/sessions/{sesion}": {
       "get": {
+        "description": "El test en curso, en la pregunta que toca o en la **fila** que se pida.\n\nPoder pedir una fila es lo que hace usable la hoja de respuestas: sin esto, una pregunta ya\ncontestada no se podía volver a abrir desde la pantalla (§3.2 del encargo F36).",
         "operationId": "student_session_api_v1_student_sessions__sesion__get",
         "parameters": [
           {
@@ -31398,6 +31399,25 @@
               "description": "Identificador de la sesión, el que devolvió al montarla.",
               "title": "Sesion",
               "type": "string"
+            }
+          },
+          {
+            "description": "Fila de la hoja de respuestas que se quiere leer. Sin ella se sirve la primera pregunta sin contestar, que es el avance de siempre.",
+            "in": "query",
+            "name": "position",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Fila de la hoja de respuestas que se quiere leer. Sin ella se sirve la primera pregunta sin contestar, que es el avance de siempre.",
+              "title": "Position"
             }
           }
         ],

@@ -893,10 +893,18 @@ class StudentService:
         )
         return StudentService._sesion(resultado.session)
 
-    def run(self, session_id: str) -> StudentRunView:
-        """El test en curso: la sesión, la pregunta que toca y la hoja de respuestas entera."""
+    def run(self, session_id: str, *, position: int | None = None) -> StudentRunView:
+        """El test en curso: la sesión, la pregunta que toca y la hoja de respuestas entera.
+
+        Con `position` se sirve **esa fila** de la hoja. Es lo que necesita la pantalla para volver
+        a
+        una pregunta ya contestada: sin esto, la hoja de respuestas se puede mirar pero no usar
+        (defecto 5 del recorrido, §3.2 del encargo F36). Sin `position`, la que toca es la primera
+        sin
+        contestar, que es el avance automático de siempre.
+        """
         sesion = self._sesion_del_alumno(session_id)
-        vista = self._study.runner_view(session_id)
+        vista = self._study.runner_view(session_id, position=position)
         return StudentService._run(vista, sesion, self._en_revision(vista), self._derivadas(vista))
 
     def start(self, session_id: str) -> StudentRunView:
@@ -912,6 +920,12 @@ class StudentService:
         que el alumno tiene delante, y así ningún identificador de pregunta sale de esta capa. La
         traducción a la pregunta concreta la hace este método, sobre la composición **congelada** de
         la sesión (no sobre el banco de hoy).
+
+        Devuelve el test **en esa misma fila**: es la que el alumno acaba de contestar o de cambiar,
+        y
+        moverle la pantalla a otra pregunta mientras mira sería quitársela de delante. El avance
+        automático lo decide la pantalla, que es quien sabe si acaba de contestar o de cambiar una
+        respuesta ya dada (§3.2 del encargo F36).
         """
         self._sesion_del_alumno(session_id)
         if request.confidence not in (None, "low", "medium", "high"):
@@ -936,7 +950,7 @@ class StudentService:
                 ),
             ),
         )
-        return self.run(session_id)
+        return self.run(session_id, position=request.position)
 
     def finish(self, session_id: str) -> StudentResultView:
         """Termina el test y devuelve su resultado, con la nota de cada parte."""

@@ -1,6 +1,56 @@
 # Para el propietario
 
 Lo que conviene que sepas y **no** hace falta que contestes para que el trabajo siga. Lo que sí
+## 16 oct 2026 — Contestar: ya se puede volver, cambiar y no revienta
+
+**Lo que cambia para ti:** el ciclo de contestar era **una sola cosa rota** —el propio informe lo decía:
+los defectos 5, 6 y 8 son uno— y está arreglada entera. Son cuatro cosas que notabas al hacer un test:
+
+1. **Se puede volver a una pregunta contestada.** Los números de la hoja **ahora sí hacen algo**:
+   pulsas el 3 y vas a la 3. Y las flechas **`←` y `→`** recorren la hoja, que es lo que la ayuda del
+   test llevaba prometiendo desde el diseño y no existía (pulsar `→` no hacía nada). Desde el móvil, la
+   hoja se abre con su botón «Hoja», como siempre, y desde ahí también navega.
+2. **Cambiar una respuesta ya no da error.** Antes pulsabas otra opción y el servidor contestaba «esa
+   pregunta ya está respondida y no se reescribe»: se quedaba como estaba. Ahora se cambia —mientras el
+   test no haya terminado— y la corrección se rehace con la opción nueva. Con el test **terminado** sí
+   queda congelada, y es a propósito: la nota ya está calculada y la corrección ya la viste.
+3. **Contestar dos veces seguidas ya no revienta.** Era un error del servidor (500) y encima el
+   navegador lo contaba como un problema de CORS, que manda a mirar donde no es. Ahora la segunda vez
+   devuelve exactamente lo mismo que la primera: no se duplica nada y **no hay error**. Y de paso, un
+   fallo de verdad del servidor ya no se disfraza de CORS: sale con sus cabeceras y se lee como lo que
+   es.
+4. **Abrir un test pide el arranque una sola vez.** Estaba pidiéndolo **27 veces** por test abierto
+   (tú lo viste entre 4 y 12). Era un efecto de la pantalla que se volvía a disparar en cada repintado,
+   con su línea exacta: el objeto de la mutación en las dependencias y una guarda que llegaba tarde. Se
+   ha arreglado ahí, en la causa, no con un truco para que deje de notarse.
+
+**Las tres cifras, medidas** (no descritas), y están en `artifacts/contestar/medidas.json`:
+
+| | antes | ahora |
+|---|---|---|
+| `POST /start` por test abierto | **27** | **1** |
+| contestar dos veces la misma pregunta | **500** | **200**, lo mismo que la primera vez |
+| cambiar una respuesta | **409** | **200** |
+
+**Y las capturas**: seis PNG a **1280 y 390** en `artifacts/contestar/` (el test en curso, la vuelta a
+la pregunta contestada y el resultado), con **0 violaciones de accesibilidad y 0 errores de consola**,
+comprobado por la prueba y no a ojo. La zona del alumno no enseña ninguna otra oposición: lo comprueba
+el detector de palabras prohibidas en cada captura.
+
+**Y una cosa más, que era el otro extremo del mismo defecto:** si el servidor **no** acepta una
+respuesta —solo pasa ya con el test terminado, cuyas respuestas quedan congeladas—, la pantalla **lo
+dice** con su motivo. Antes pulsabas y no pasaba nada: ni cambiaba ni se explicaba por qué.
+
+### Lo que queda fuera, y por qué
+
+- **La corrección no se ve justo al contestar**, porque el test avanza solo a la siguiente (que es lo
+  que hacía siempre). Se llega a ella volviendo por la hoja —que es lo que acaba de arreglarse— o con
+  `←`. Cambiar ese avance es una decisión de pantalla que este encargo no pedía.
+- **Las 18 puertas** las corre el bloque que mide, con su protocolo.
+- **Lo que estas capturas no demuestran**: el color y el detalle de dentro de la hoja están
+  comprobados por la prueba sobre la pantalla, no leyendo el PNG (esta máquina no ve imágenes). Los
+  PNG son para que los mires tú.
+
 ## 16 oct 2026 — El acabado: los cinco arreglos que viste en las capturas
 
 **Lo que cambia para ti:** las cinco cosas que escribiste están arregladas y **demostradas con

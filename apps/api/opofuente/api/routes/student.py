@@ -751,8 +751,21 @@ def student_create_mock_exam(
 def student_session(
     service: StudentServiceDep,
     sesion: str = Path(description="Identificador de la sesión, el que devolvió al montarla."),
+    position: int | None = Query(
+        default=None,
+        ge=1,
+        description=(
+            "Fila de la hoja de respuestas que se quiere leer. Sin ella se sirve la primera "
+            "pregunta sin contestar, que es el avance de siempre."
+        ),
+    ),
 ) -> StudentRunSchema:
-    return _run(service.run(sesion))
+    """El test en curso, en la pregunta que toca o en la **fila** que se pida.
+
+    Poder pedir una fila es lo que hace usable la hoja de respuestas: sin esto, una pregunta ya
+    contestada no se podía volver a abrir desde la pantalla (§3.2 del encargo F36).
+    """
+    return _run(service.run(sesion, position=position))
 
 
 @router.post(

@@ -88,3 +88,9 @@ artifacts/recorrido/*.png
 # corrida y hay una carpeta de «antes» y otra de «después»—. Las cifras que las acompañan
 # (`artifacts/lectura/medidas.json`) sí se rastrean: son el número que hay que poder citar.
 artifacts/lectura/**/*.png
+
+# Las capturas del ciclo de contestar (§3.2 del encargo de F36): misma clase de artefacto —se rehacen
+# en cada corrida—. Y las **cifras** que las acompañan (`artifacts/contestar/medidas.json`) sí se
+# rastrean: los `POST /start` por test abierto, el código de la segunda respuesta seguida y el de
+# cambiar una respuesta son el número que hay que poder citar.
+artifacts/contestar/**/*.png

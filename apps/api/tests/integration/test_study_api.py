@@ -457,13 +457,35 @@ def test_responder_dos_veces_lo_mismo_no_crea_otro_intento(
     assert primera.json()["correction"]["score"]["fraction"] == "-1/3"
     assert primera.json()["correction"]["score"]["decimal"] == "-0.3333"
 
+    # Cambiar la respuesta **se admite** mientras la sesión corre (§3.2 del encargo F36, que corrige
+    # lo que decía aquí: «cambiar la respuesta no se admite»). La penalización se rehace: el acierto
+    # no
+    # descuenta nada.
     cambiada = seeded_client.post(
         f"/api/v1/study-sessions/{sesion['id']}/answers",
         json=dict(cuerpo, chosen_option_keys=["a"]),
         headers=ALLOWED_ORIGIN,
     )
-    assert cambiada.status_code == 409
-    assert cambiada.json()["code"] == "attempt_frozen"
+    assert cambiada.status_code == 201, cambiada.text
+    assert cambiada.json()["saved"] is True
+    assert cambiada.json()["attempt"]["id"] == primera.json()["attempt"]["id"]
+    assert cambiada.json()["attempt"]["chosen_option_keys"] == ["a"]
+    assert cambiada.json()["correction"]["outcome"] == "correct"
+    assert cambiada.json()["correction"]["score"]["fraction"] == "1"
+
+    # Lo que sigue congelado es el test **terminado**: ahí la corrección ya se enseñó y la nota está
+    # calculada. Se dice con su código, que no es el mismo que «la sesión no admite respuestas».
+    cerrada = seeded_client.post(
+        f"/api/v1/study-sessions/{sesion['id']}/finish", headers=ALLOWED_ORIGIN
+    )
+    assert cerrada.status_code == 200, cerrada.text
+    tarde = seeded_client.post(
+        f"/api/v1/study-sessions/{sesion['id']}/answers",
+        json=dict(cuerpo, chosen_option_keys=["b"]),
+        headers=ALLOWED_ORIGIN,
+    )
+    assert tarde.status_code == 409
+    assert tarde.json()["code"] == "attempt_frozen"
 
 
 def test_una_respuesta_invalida_es_un_422_con_su_campo(

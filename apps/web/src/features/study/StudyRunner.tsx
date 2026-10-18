@@ -227,13 +227,16 @@ function Question({ question }: { question: SessionQuestion }) {
 /**
  * La sesión en marcha (07_UI-UX §8).
  *
- * Lo que esta pantalla **no** puede hacer, y por qué:
+ * Lo que esta pantalla **no** decide, y por qué (el estado lo lleva el servidor, no ella):
  *
  * 1. **no enseña la corrección antes de tiempo**: solo pinta `question.correction` cuando el servidor
  *    la manda (corrección inmediata de algo ya respondido, o sesión terminada). La pantalla no tiene
  *    la clave en ningún otro sitio;
- * 2. **no reescribe un intento**: si se vuelve a enviar lo mismo, el servidor devuelve el intento que
- *    ya había; si se cambia, la pantalla explica el 409 y deja claro que no se ha tocado nada;
+ * 2. **no lleva la cuenta de los intentos**: la máquina de estados está en el servidor
+ *    (`StudyService.answer`, §3.2 del encargo F36). Reenviar lo mismo devuelve el intento que ya había
+ *    —sin escribir nada—; **cambiar la opción se admite mientras la sesión corre** y el servidor
+ *    rehace la corrección; y con el test terminado el intento está congelado (409 `attempt_frozen`),
+ *    que es lo que esta pantalla explica con su motivo en vez de suponerlo;
  * 3. **el cronómetro cuenta desde el inicio real de la sesión** (que lo puso el servidor), no desde
  *    que se abrió la pantalla.
  */

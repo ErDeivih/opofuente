@@ -4000,3 +4000,107 @@ epígrafes de I.1**, y eso es una decisión sobre el programa, no sobre la panta
   resultado y alumno/estudio.
 - **Las 18 puertas no las corre este bloque** (las corre el que mide, con su protocolo).
 
+## f36 — El ciclo de contestar, como una sola máquina de estados (16-oct-2026)
+
+**Base `main = d312be0`, rama `f36-contestar`.** Es el **punto 2 del §3** de
+`docs/REVISION-DEL-RECORRIDO-Y-ARREGLOS-2026-10.md`, que lo dice literal: «tus defectos 5, 6 y 8 son
+uno». Cuatro síntomas, un solo fallo, y por eso se arregla todo junto o no se ha arreglado:
+
+1. no se podía **volver** a una pregunta contestada (los números de la hoja parecían botones y no
+   hacían nada, y las flechas `←`/`→` que prometía la ayuda no existían);
+2. **cambiar** una respuesta daba **409**;
+3. contestar dos veces seguidas daba **500** (`UNIQUE constraint failed: attempts.session_question_id`)
+   y el navegador lo leía como un error de **CORS**;
+4. al abrir un test se repetía el `POST /start`.
+
+### Las tres cifras, medidas
+
+| Cifra | Antes | Después |
+|---|---|---|
+| `POST /start` por test abierto | **27** en el navegador (4 en la prueba de componente; el recorrido había medido 4–12) | **1** |
+| Código de la **segunda respuesta seguida** (la misma opción dos veces) | **500** `UNIQUE constraint failed: attempts.session_question_id` | **200**, idempotente: el mismo intento, sin escribir nada |
+| Código de **cambiar una respuesta** mientras el test corre | **409** `attempt_frozen` | **200**, con la corrección rehecha y la opción nueva en la hoja |
+
+Las tres, a 1280 y a 390, con **0 violaciones de axe** y **0 errores de consola** en el ciclo entero
+(lo comprueba la prueba, no el PNG). Quedan en `artifacts/contestar/medidas.json`.
+
+### El efecto que repetía el `POST /start`, con su línea
+
+En `apps/web/src/features/study/StudentTestRunner.tsx` el arranque era:
+
+```tsx
+const [arrancado, setArrancado] = useState(false);
+const arrancar = useMutation({ mutationFn: () => startStudentRun(id),
+  onSuccess: (datos) => { cliente.setQueryData(['student-run', id], datos); setArrancado(true); } });
+useEffect(() => {
+  if (run.data !== undefined && run.data.session.status === 'draft' && !arrancado) {
+    arrancar.mutate();
+  }
+}, [run.data, arrancado, arrancar]);   // ← la línea: `arrancar` cambia de identidad en cada render
+```
+
+`useMutation` devuelve un objeto **nuevo en cada render**, así que el efecto se volvía a ejecutar en
+cada uno; y la guarda (`arrancado`) solo se levantaba en el `onSuccess`, de modo que mientras la
+primera petición estaba en vuelo **cada render mandaba otra**. Se arregla en la causa —un `ref` que se
+levanta antes de pedirlo y dependencias estables (`run.data`, `arrancar.mutate`)—, no con un
+`debounce` ni con un `if` de más: que se llame doce veces quiere decir que alguien recrea el efecto
+doce veces.
+
+### Qué se ha tocado
+
+- **Servidor** (`apps/api`): `StudyService.answer` es la máquina de estados (contestar, recontestar
+  mientras corre, idempotente, congelado al terminar); `StudyService.runner_view` y
+  `StudentService.run` aceptan `position`, y `GET /student/sessions/{id}?position=N` sirve esa fila;
+  `StudentService.answer` devuelve la fila contestada; el repositorio gana `rewrite_attempt` y
+  `save_attempt` pasa a ser idempotente devolviendo `(intento, creado)`; `save_evaluation` sabe
+  rehacer la corrección; y `ProblemErrorMiddleware` (nuevo, en `api/middleware.py`) recoge el fallo
+  inesperado **por dentro** de CORS.
+- **Web** (`apps/web`): `StudentTestRunner` tiene la fila que se está mirando (`posicion`), pasa `onIr`
+  a `AnswerSheet`, implementa `←`/`→`, dice la verdad en la ayuda, avanza solo al contestar y **no**
+  se mueve al cambiar; y **dice** el motivo cuando el servidor no acepta una respuesta (con el test
+  terminado, las respuestas están congeladas), que era el otro extremo del defecto 5: pulsar y que no
+  pasara nada. `getStudentRun` acepta la posición.
+
+### Rojas antes, verdes después
+
+Capturadas con el código de `main` y estas pruebas encima (`git stash` de `apps/api/opofuente` y de
+`apps/web/src`, y la misma corrida):
+
+- **API**: 5 de `test_student_ciclo_api.py` fallan, con el `sqlite3.IntegrityError: UNIQUE constraint
+  failed: attempts.session_question_id` **dentro** del rojo y el 500 sin `access-control-allow-origin`.
+- **Componente**: 4 de `studentTest.test.tsx` fallan, una de ellas con `expected […] to have a length
+  of 1 but got 4` —las cuatro peticiones de arranque—.
+- **E2E**: el ciclo entero falla en la primera cifra con `Expected: 1 · Received: 27`.
+
+### Pruebas y capturas
+
+- `apps/web/tests/e2e/contestar.spec.ts`: el ciclo **contestar → volver → cambiar → terminar** por la
+  pantalla, más la hoja a 1280 y a 390 (que en el móvil se abre con su botón y entonces navega), más
+  una cuarta que exige que la prueba **no deje nada** en la base. 4 pasan.
+- `apps/web/tests/screens/contestar.spec.ts`: seis capturas (test en curso, vuelta a la pregunta
+  contestada y resultado, × 1280 y 390) que exigen 0 violaciones de axe, 0 errores de consola y **ni
+  un dato prohibido** (el detector de `palabrasProhibidas.ts`: rutas del propietario, bancos ajenos y
+  otras oposiciones). 2 pasan. `artifacts/contestar/medidas.json` es el fichero que se publica.
+- **La fuga que costó la puerta 18, y cómo se cerró.** La primera versión de esta spec sembraba su
+  banco y **no lo retiraba**: cuatro preguntas catalogadas en `IV.1` son un tema más para el
+  diagnóstico de `study.spec.ts`, que corre después por orden alfabético, y su aserción de «0 de 6
+  respondidas» caía. Comprobado con el orden real y la base limpia: **sin** retirada, `1 failed · 9
+  passed` en `study.spec.ts:346`; **con** ella, **11 passed** (`contestar` y después `study`). La
+  siembra y su retirada viven ahora en `apps/web/tests/cuestionarioDeContestar.ts`, compartido con la
+  herramienta de capturas —que con `--datos` escribe en una copia de la base del propietario y
+  tampoco puede dejar nada—, y la retirada se **verifica** exigiendo cero.
+- **Locales**: `ruff format --check .` y `ruff check .` limpios, `mypy` (262 ficheros) limpio,
+  `eslint` limpio, `tsc` limpio (incluye `tests/`), **459** de componente (53 ficheros, todas) y la
+  suite de backend entera.
+- **Las 18 puertas no las corre este bloque** (las corre el que mide, con su protocolo).
+
+### Lo que queda fuera, y por qué
+
+- **La corrección no se ve al instante al contestar** (el test avanza solo, que es lo que hacía
+  siempre): se llega a ella volviendo por la hoja o con `←`, que es justo lo que este bloque ha
+  arreglado. Cambiar el avance automático es una decisión de pantalla que el §3.2 no pide, y hacerla
+  aquí obligaría a re-medir el recorrido.
+- **Lo que estas capturas no demuestran**: los colores y el aspecto de dentro de la hoja están
+  comprobados por la prueba sobre la pantalla, no leyendo el PNG (esta máquina no ve imágenes). Los
+  PNG son para que los mire el propietario.
+
