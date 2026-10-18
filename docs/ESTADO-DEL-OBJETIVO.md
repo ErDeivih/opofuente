@@ -4075,12 +4075,20 @@ Capturadas con el código de `main` y estas pruebas encima (`git stash` de `apps
 ### Pruebas y capturas
 
 - `apps/web/tests/e2e/contestar.spec.ts`: el ciclo **contestar → volver → cambiar → terminar** por la
-  pantalla, más la hoja a 1280 y a 390 (que en el móvil se abre con su botón y entonces navega). 3
-  pasan.
+  pantalla, más la hoja a 1280 y a 390 (que en el móvil se abre con su botón y entonces navega), más
+  una cuarta que exige que la prueba **no deje nada** en la base. 4 pasan.
 - `apps/web/tests/screens/contestar.spec.ts`: seis capturas (test en curso, vuelta a la pregunta
   contestada y resultado, × 1280 y 390) que exigen 0 violaciones de axe, 0 errores de consola y **ni
   un dato prohibido** (el detector de `palabrasProhibidas.ts`: rutas del propietario, bancos ajenos y
   otras oposiciones). 2 pasan. `artifacts/contestar/medidas.json` es el fichero que se publica.
+- **La fuga que costó la puerta 18, y cómo se cerró.** La primera versión de esta spec sembraba su
+  banco y **no lo retiraba**: cuatro preguntas catalogadas en `IV.1` son un tema más para el
+  diagnóstico de `study.spec.ts`, que corre después por orden alfabético, y su aserción de «0 de 6
+  respondidas» caía. Comprobado con el orden real y la base limpia: **sin** retirada, `1 failed · 9
+  passed` en `study.spec.ts:346`; **con** ella, **11 passed** (`contestar` y después `study`). La
+  siembra y su retirada viven ahora en `apps/web/tests/cuestionarioDeContestar.ts`, compartido con la
+  herramienta de capturas —que con `--datos` escribe en una copia de la base del propietario y
+  tampoco puede dejar nada—, y la retirada se **verifica** exigiendo cero.
 - **Locales**: `ruff format --check .` y `ruff check .` limpios, `mypy` (262 ficheros) limpio,
   `eslint` limpio, `tsc` limpio (incluye `tests/`), **459** de componente (53 ficheros, todas) y la
   suite de backend entera.

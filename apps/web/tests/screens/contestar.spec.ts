@@ -25,19 +25,21 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
 import { datosEnElTexto, lenguajeInternoEnElTexto } from '../palabrasProhibidas';
+import {
+  quedaAlgoDeLaPrueba,
+  retirarLoDeLaPrueba,
+  sembrarCuestionario,
+  sesionDeLaDireccion,
+  TEMA,
+} from '../cuestionarioDeContestar';
 import { guardarFila, nombreDeFichero } from './informe';
 
 const SALIDA = process.env.OPOFUENTE_CONTESTAR_SALIDA
   ? path.resolve(process.env.OPOFUENTE_CONTESTAR_SALIDA)
   : path.resolve(process.cwd(), '..', '..', 'artifacts', 'contestar');
-
-const API_BASE = process.env.OPOFUENTE_API_URL ?? 'http://127.0.0.1:8765';
-const API = `${API_BASE}/api/v1`;
-const ORIGEN = 'http://127.0.0.1:4173';
-const TEMA = 'IV.1';
 
 const ANCHOS: readonly { ancho: number; alto: number; etiqueta: string }[] = [
   { ancho: 1280, alto: 800, etiqueta: 'escritorio' },
@@ -52,103 +54,6 @@ test.afterAll(() => {
   writeFileSync(path.join(SALIDA, 'medidas.json'), JSON.stringify(MEDIDAS, null, 2), 'utf-8');
 });
 
-interface NodoPrograma {
-  id: string;
-  node_type: string;
-  path: string;
-  children?: NodoPrograma[];
-}
-
-function aplanar(nodos: readonly NodoPrograma[]): NodoPrograma[] {
-  return nodos.flatMap((nodo) => [nodo, ...aplanar(nodo.children ?? [])]);
-}
-
-/** El mismo material que siembra `tests/e2e/contestar.spec.ts`: cuatro preguntas de la A. */
-async function sembrarCuestionario(request: APIRequestContext): Promise<void> {
-  const respuestaOposiciones = await request.get(`${API}/oppositions`);
-  expect(
-    respuestaOposiciones.status(),
-    `GET ${API}/oppositions: ${(await respuestaOposiciones.text()).slice(0, 200)}`,
-  ).toBe(200);
-  const oposiciones = (await respuestaOposiciones.json()) as {
-    id: string;
-    active: boolean;
-    active_convocation: { id: string } | null;
-  }[];
-  const activa = oposiciones.find((oposicion) => oposicion.active);
-  if (activa?.active_convocation == null) {
-    throw new Error('no hay oposición activa con convocatoria');
-  }
-  const programa = (await (
-    await request.get(`${API}/convocations/${activa.active_convocation.id}/curriculum`)
-  ).json()) as { nodes: NodoPrograma[] };
-  const tema = aplanar(programa.nodes).find(
-    (nodo) => nodo.node_type === 'topic' && nodo.path === TEMA,
-  );
-  if (tema === undefined) {
-    throw new Error(`el programa no tiene el tema ${TEMA}`);
-  }
-
-  const cabeceras = { Origin: ORIGEN, 'Content-Type': 'application/json' };
-  const conjunto = (await (
-    await request.post(`${API}/question-sets`, {
-      headers: cabeceras,
-      data: {
-        title: `Ciclo de contestar (capturas) ${String(Date.now())}`,
-        opposition_id: activa.id,
-        set_type: 'private_bank',
-        convocation_version_id: activa.active_convocation.id,
-      },
-    })
-  ).json()) as { id: string };
-
-  // Cuatro enunciados **distintos**: el importador quita los duplicados por la firma de la pregunta.
-  const enunciados = [
-    'El plazo del procedimiento del caso A es de diez días hábiles.',
-    'El plazo del procedimiento del caso B es de veinte días hábiles.',
-    'El plazo del procedimiento del caso C es de treinta días hábiles.',
-    'El plazo del procedimiento del caso D es de cuarenta días hábiles.',
-  ];
-  const lineas: string[] = [];
-  enunciados.forEach((enunciado, indice) => {
-    lineas.push(`${String(indice + 1)}. ${enunciado}`);
-    lineas.push('a) Verdadero');
-    lineas.push('b) Falso');
-    lineas.push('Respuesta correcta: a');
-    lineas.push('');
-  });
-  await request.post(`${API}/question-sets/${conjunto.id}/parse`, {
-    headers: cabeceras,
-    data: { kind: 'questions', text: lineas.join('\n') },
-  });
-
-  const claves = (await (
-    await request.get(`${API}/question-sets/${conjunto.id}/answer-keys`)
-  ).json()) as { id: string }[];
-  await request.post(
-    `${API}/question-sets/${conjunto.id}/answer-keys/${claves[0]?.id ?? ''}/activate`,
-    { headers: cabeceras },
-  );
-
-  const preguntas = (await (
-    await request.get(`${API}/questions?set_id=${conjunto.id}`)
-  ).json()) as { questions: { id: string }[] };
-  expect(preguntas.questions, 'el banco de la captura tiene sus cuatro preguntas').toHaveLength(4);
-  for (const pregunta of preguntas.questions) {
-    await request.post(`${API}/questions/${pregunta.id}/topics`, {
-      headers: cabeceras,
-      data: { curriculum_node_id: tema.id },
-    });
-  }
-}
-
-/**
- * Deja la hoja de respuestas a la vista.
- *
- * En el móvil la hoja nace plegada (`display: none` hasta `test-hoja--abierta`) y se abre con el
- * botón «Hoja» de la cabecera: es el diseño, no un fallo. Sin abrirla, sus números no se pueden
- * pulsar —y la captura de móvil no enseñaría la hoja, que es justo lo que se quiere revisar—.
- */
 async function abrirLaHoja(page: Page): Promise<void> {
   const hoja = page.getByRole('complementary', { name: 'Hoja de respuestas' });
   if (!(await hoja.isVisible())) {
@@ -220,108 +125,134 @@ for (const { ancho, alto, etiqueta } of ANCHOS) {
     page,
     request,
   }) => {
-    await sembrarCuestionario(request);
+    // Lo que la captura deja en la base, para poder retirarlo **aunque falle a mitad**: el `try`
+    // envuelve también la siembra, que es el patrón de `bandeja-por-conjunto.spec.ts`. Aquí importa el
+    // doble: con `--datos` esta herramienta escribe en una **copia de la base del propietario**, y
+    // dejar la siembra ahí no es una fuga de una corrida, es escribir en sus datos.
+    const creados: string[] = [];
+    const sesiones: string[] = [];
 
-    const errores: string[] = [];
-    page.on('console', (mensaje) => {
-      if (mensaje.type() === 'error') {
-        errores.push(mensaje.text());
+    try {
+      await sembrarCuestionario(request, creados);
+
+      const errores: string[] = [];
+      page.on('console', (mensaje) => {
+        if (mensaje.type() === 'error') {
+          errores.push(mensaje.text());
+        }
+      });
+      page.on('pageerror', (error) => errores.push(String(error)));
+
+      // --- la cifra 1: cuántos `POST /start` por test abierto -------------------------------------
+      const arranques: string[] = [];
+      page.on('request', (peticion) => {
+        if (peticion.method() === 'POST' && peticion.url().includes('/start')) {
+          arranques.push(peticion.url());
+        }
+      });
+      const respuestas: number[] = [];
+      page.on('response', (respuesta) => {
+        if (respuesta.request().method() === 'POST' && respuesta.url().includes('/answers')) {
+          respuestas.push(respuesta.status());
+        }
+      });
+
+      await page.setViewportSize({ width: ancho, height: alto });
+      await page.goto(`/tests?tema=${TEMA}&count=4`, { waitUntil: 'networkidle' });
+      await page.getByRole('button', { name: 'Empezar el test' }).click();
+      await expect(page.getByText(/^Pregunta 1 de \d+$/)).toBeVisible({ timeout: 20_000 });
+      await page.waitForTimeout(300);
+      const sesion = sesionDeLaDireccion(page.url());
+      if (sesion !== null) {
+        sesiones.push(sesion);
       }
-    });
-    page.on('pageerror', (error) => errores.push(String(error)));
 
-    // --- la cifra 1: cuántos `POST /start` por test abierto ---------------------------------------
-    const arranques: string[] = [];
-    page.on('request', (peticion) => {
-      if (peticion.method() === 'POST' && peticion.url().includes('/start')) {
-        arranques.push(peticion.url());
-      }
-    });
-    const respuestas: number[] = [];
-    page.on('response', (respuesta) => {
-      if (respuesta.request().method() === 'POST' && respuesta.url().includes('/answers')) {
-        respuestas.push(respuesta.status());
-      }
-    });
+      const enCurso = await retratar(
+        page,
+        `/test (en curso) a ${String(ancho)}`,
+        'test-en-curso',
+        ancho,
+        alto,
+        etiqueta,
+        errores,
+      );
 
-    await page.setViewportSize({ width: ancho, height: alto });
-    await page.goto(`/tests?tema=${TEMA}&count=4`, { waitUntil: 'networkidle' });
-    await page.getByRole('button', { name: 'Empezar el test' }).click();
-    await expect(page.getByText(/^Pregunta 1 de \d+$/)).toBeVisible({ timeout: 20_000 });
-    await page.waitForTimeout(300);
+      // --- contestar, volver y cambiar -------------------------------------------------------------
+      await page.getByRole('button', { name: /Falso/ }).click();
+      await expect(page.getByText(/^Pregunta 2 de \d+$/)).toBeVisible({ timeout: 20_000 });
+      await abrirLaHoja(page);
+      await page.getByRole('button', { name: 'Ir a la pregunta 1' }).click();
+      await expect(page.getByText(/^Pregunta 1 de \d+$/)).toBeVisible({ timeout: 20_000 });
+      // La vuelta a una pregunta contestada **es** la captura del arreglo: antes no se podía.
+      const vuelta = await retratar(
+        page,
+        `/test (vuelta a la pregunta 1) a ${String(ancho)}`,
+        'test-vuelta',
+        ancho,
+        alto,
+        etiqueta,
+        errores,
+      );
 
-    const enCurso = await retratar(
-      page,
-      `/test (en curso) a ${String(ancho)}`,
-      'test-en-curso',
-      ancho,
-      alto,
-      etiqueta,
-      errores,
-    );
+      await page.getByRole('button', { name: /Falso/ }).click();
+      await expect.poll(() => respuestas.length).toBeGreaterThanOrEqual(2);
 
-    // --- contestar, volver y cambiar ---------------------------------------------------------------
-    await page.getByRole('button', { name: /Falso/ }).click();
-    await expect(page.getByText(/^Pregunta 2 de \d+$/)).toBeVisible({ timeout: 20_000 });
-    await abrirLaHoja(page);
-    await page.getByRole('button', { name: 'Ir a la pregunta 1' }).click();
-    await expect(page.getByText(/^Pregunta 1 de \d+$/)).toBeVisible({ timeout: 20_000 });
-    // La vuelta a una pregunta contestada **es** la captura del arreglo: antes esto no se podía hacer.
-    const vuelta = await retratar(
-      page,
-      `/test (vuelta a la pregunta 1) a ${String(ancho)}`,
-      'test-vuelta',
-      ancho,
-      alto,
-      etiqueta,
-      errores,
-    );
+      await page.getByRole('button', { name: /Verdadero/ }).click();
+      await expect(page.locator('.test-opcion--correcta')).toHaveCount(1, { timeout: 20_000 });
+      await expect.poll(() => respuestas.length).toBeGreaterThanOrEqual(3);
 
-    await page.getByRole('button', { name: /Falso/ }).click();
-    await expect.poll(() => respuestas.length).toBeGreaterThanOrEqual(2);
+      await page.getByRole('button', { name: 'Terminar' }).click();
+      await expect(page).toHaveURL(/\/resultado\//, { timeout: 20_000 });
+      await expect(page.getByRole('heading', { level: 1, name: /Resultado/ })).toBeVisible({
+        timeout: 20_000,
+      });
+      const resultado = await retratar(
+        page,
+        `/resultado a ${String(ancho)}`,
+        'resultado-ciclo',
+        ancho,
+        alto,
+        etiqueta,
+        errores,
+      );
 
-    await page.getByRole('button', { name: /Verdadero/ }).click();
-    await expect(page.locator('.test-opcion--correcta')).toHaveCount(1, { timeout: 20_000 });
-    await expect.poll(() => respuestas.length).toBeGreaterThanOrEqual(3);
+      const capturas = [enCurso, vuelta, resultado];
 
-    await page.getByRole('button', { name: 'Terminar' }).click();
-    await expect(page).toHaveURL(/\/resultado\//, { timeout: 20_000 });
-    await expect(page.getByRole('heading', { level: 1, name: /Resultado/ })).toBeVisible({
-      timeout: 20_000,
-    });
-    const resultado = await retratar(
-      page,
-      `/resultado a ${String(ancho)}`,
-      'resultado-ciclo',
-      ancho,
-      alto,
-      etiqueta,
-      errores,
-    );
+      // --- las tres cifras, medidas --------------------------------------------------------------
+      const cifras = {
+        ancho,
+        postStartPorTestAbierto: arranques.length,
+        segundaRespuestaSeguida: respuestas[1] ?? null,
+        cambioDeRespuesta: respuestas[2] ?? null,
+        respuestasObservadas: respuestas.length,
+        erroresDeConsola: errores.length,
+        violacionesAxe: capturas.flatMap((captura) => captura.violaciones),
+        datosProhibidos: capturas.flatMap((captura) => captura.datos),
+      };
+      MEDIDAS.push(cifras);
 
-    const capturas = [enCurso, vuelta, resultado];
-
-    // --- las tres cifras, medidas --------------------------------------------------------------
-    const cifras = {
-      ancho,
-      postStartPorTestAbierto: arranques.length,
-      segundaRespuestaSeguida: respuestas[1] ?? null,
-      cambioDeRespuesta: respuestas[2] ?? null,
-      respuestasObservadas: respuestas.length,
-      erroresDeConsola: errores.length,
-      violacionesAxe: capturas.flatMap((captura) => captura.violaciones),
-      datosProhibidos: capturas.flatMap((captura) => captura.datos),
-    };
-    MEDIDAS.push(cifras);
-
-    expect(cifras.postStartPorTestAbierto, 'un test abierto arranca una vez').toBe(1);
-    expect(cifras.segundaRespuestaSeguida, 'la segunda respuesta seguida es idempotente').toBe(200);
-    expect(cifras.cambioDeRespuesta, 'cambiar la respuesta se admite mientras el test corre').toBe(
-      200,
-    );
-    expect(errores, `consola: ${errores.join(' | ')}`).toEqual([]);
-    expect(cifras.violacionesAxe, 'axe en el ciclo entero').toEqual([]);
-    // La zona del alumno no enseña las otras oposiciones, ni bancos ajenos, ni rutas del propietario.
-    expect(cifras.datosProhibidos, 'datos prohibidos en la zona del alumno').toEqual([]);
+      expect(cifras.postStartPorTestAbierto, 'un test abierto arranca una vez').toBe(1);
+      expect(cifras.segundaRespuestaSeguida, 'la segunda respuesta seguida es idempotente').toBe(
+        200,
+      );
+      expect(
+        cifras.cambioDeRespuesta,
+        'cambiar la respuesta se admite mientras el test corre',
+      ).toBe(200);
+      expect(errores, `consola: ${errores.join(' | ')}`).toEqual([]);
+      expect(cifras.violacionesAxe, 'axe en el ciclo entero').toEqual([]);
+      // La zona del alumno no enseña las otras oposiciones, ni bancos ajenos, ni rutas del propietario.
+      expect(cifras.datosProhibidos, 'datos prohibidos en la zona del alumno').toEqual([]);
+    } finally {
+      retirarLoDeLaPrueba(creados, sesiones);
+      // Y se comprueba que la retirada ha corrido de verdad, en vez de suponerlo: con `--datos` esto
+      // es la diferencia entre dejar la copia del propietario como estaba y escribir en sus datos.
+      expect(quedaAlgoDeLaPrueba(creados, sesiones), 'la captura ha dejado datos').toEqual({
+        conjuntos: 0,
+        sesiones: 0,
+        preguntas: 0,
+        catalogaciones: 0,
+      });
+    }
   });
 }
