@@ -4129,3 +4129,27 @@ El paginador de la bandeja y el de la ficha viven en el estado de la pantalla, n
 de hoja no cambia la URL. La de la ficha es una decisión que se puede revertir (la página ya sabe leer
 `?pagina=`/`?orden=` del servidor); se deja así porque el panel se usa en una sesión seguida y el enlace
 con hoja caducaría al despachar incidencias.
+
+### El entorno de este árbol, rehecho (18-oct-2026)
+
+La puerta 3 (`mypy`) cayó en `fb8ea26` con **cinco errores, todos en `password_hashing.py`** y todos por
+`Cannot find implementation or library stub for module named "argon2"`. No era el código ni la config: el
+`.venv` de este árbol se había hecho **copiando** el de `opofuente-main` (y repuntando su `.pth`), y un
+`.venv` copiado no es un `.venv` hecho: `argon2-cffi` estaba declarado, instalado, importaba bien y tenía
+`py.typed`, pero mypy no lo resolvía dentro de él. El que mide comprobó una por una las explicaciones
+fáciles (declaración, instalación, import, `py.typed`, caché, el fichero byte-idéntico, la config, los
+metadatos, `uv sync` limpio) y el control pasaba en los otros dos árboles.
+
+**Lo que se hizo**: `.venv` fuera y `uv sync --frozen` (53 paquetes, `argon2-cffi` entre ellos). Después:
+
+| puerta | resultado |
+|---|---|
+| `uv run mypy` | **`Success: no issues found in 263 source files`** (exit 0) |
+| `uv run ruff check .` | limpio |
+| `uv run ruff format --check .` | 565 ficheros ya formateados |
+| `uv run pytest apps/api/tests/unit` | **936 pasan** |
+
+**No se ha tocado ni una línea de código por esto**: el contenido de `fb8ea26` es el mismo, y lo único
+que cambió es el entorno de este árbol (que no se versiona). La lección, para el que venga: un `.venv`
+**copiado** de otro árbol arranca (los `import` funcionan) pero puede no ser el intérprete que las
+herramientas resuelven; lo que vale es `uv sync`, y cuesta un minuto.
