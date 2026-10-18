@@ -1,9 +1,9 @@
-"""La clave derivada, en los sitios reales: la ruta auditada, la composiciÃ³n y la decisiÃ³n (F29).
+"""La clave derivada, en los sitios reales: la ruta auditada, la composición y la decisión (F29).
 
-Lo que se prueba aquÃ­ no es que exista una tabla: es que la pregunta **vuelve al estudio** con su
+Lo que se prueba aquí no es que exista una tabla: es que la pregunta **vuelve al estudio** con su
 letra, que esa letra **nunca** se guarda como la clave del conjunto, que una clave **oficial** se
 rechaza, que una pregunta sin clave fiable **sigue fuera** aunque su conjunto vuelva, y que la
-decisiÃ³n de cada conjunto **queda auditada con su cifra**.
+decisión de cada conjunto **queda auditada con su cifra**.
 
 Las dos fuentes se escriben por las rutas del proyecto: la de los apuntes, con el mismo
 `save_checks` que usa la corrida de un tema; la del modelo, con un doble que contesta lo que se le
@@ -56,7 +56,7 @@ from opofuente.tools.claves_derivadas import Preparado, _decisiones, _derivar, p
 ALLOWED_ORIGIN = {"Origin": "http://127.0.0.1:5173"}
 AHORA = datetime(2026, 10, 15, 9, 0, tzinfo=UTC)
 
-CITA = "La respuesta correcta es la b, segÃºn el artÃ­culo 18."
+CITA = "La respuesta correcta es la b, según el artículo 18."
 
 
 # --- el andamiaje ---------------------------------------------------------------------------------
@@ -296,10 +296,10 @@ def test_la_corrida_guarda_la_clave_derivada_cuando_las_dos_fuentes_coinciden(
 def test_la_corrida_no_toca_la_clave_del_conjunto(
     seeded_settings: Settings, seeded_client: TestClient
 ) -> None:
-    """La clave extraÃ­da del material sigue donde estaba: la derivada vive a su lado.
+    """La clave extraída del material sigue donde estaba: la derivada vive a su lado.
 
-    Es la comprobaciÃ³n de que Â«nunca `active`Â» no es una promesa: la plantilla del conjunto no
-    cambia ni de estado ni de letras, y **no se crea ninguna versiÃ³n de plantilla nueva**.
+    Es la comprobación de que «nunca `active`» no es una promesa: la plantilla del conjunto no
+    cambia ni de estado ni de letras, y **no se crea ninguna versión de plantilla nueva**.
     """
     rutas = _rutas(seeded_client)
     malo, preguntas = _conjunto(seeded_client, titulo="Banco con la clave mal")
@@ -348,8 +348,8 @@ def test_una_clave_derivada_no_se_puede_guardar_como_active(
 ) -> None:
     """La base **rechaza** una clave derivada guardada como `active`: no es una regla de estilo.
 
-    Es la prueba de que Â«nunca `active`Â» no depende de que alguien se acuerde: el `CHECK` de la
-    tabla solo admite `derived`, asÃ­ que la escritura imposible falla donde no se puede saltar.
+    Es la prueba de que «nunca `active`» no depende de que alguien se acuerde: el `CHECK` de la
+    tabla solo admite `derived`, así que la escritura imposible falla donde no se puede saltar.
     """
     rutas = _rutas(seeded_client)
     malo, preguntas = _conjunto(seeded_client, titulo="Banco con la clave mal")
@@ -381,7 +381,7 @@ def test_una_clave_derivada_no_se_puede_guardar_como_active(
         )
         with pytest.raises(IntegrityError) as fallo:
             session.commit()
-    # La prueba dice **por quÃ©** falla: no es una clave forÃ¡nea ni una columna que falta, es el
+    # La prueba dice **por qué** falla: no es una clave foránea ni una columna que falta, es el
     # `CHECK` que solo admite `derived`.
     assert "ck_derived_key_state" in str(fallo.value), fallo.value
 
@@ -401,7 +401,7 @@ def test_la_corrida_no_deriva_dos_veces_por_lo_mismo(
     repo = SqlAlchemyDerivedKeyRepository(seeded_client.app.state.session_factory)
     preparado = Preparado(repo)
 
-    assert preguntas[0] not in preparado.pedidas, "ya estÃ¡ derivada y no se vuelve a pedir"
+    assert preguntas[0] not in preparado.pedidas, "ya está derivada y no se vuelve a pedir"
 
 
 # --- 2. lo que no coincide: el motivo, para la bandeja ---------------------------------------
@@ -457,7 +457,7 @@ def test_un_examen_oficial_no_se_deriva_y_queda_auditado(
 def test_un_ejercicio_de_la_age_no_se_deriva(
     seeded_settings: Settings, seeded_client: TestClient
 ) -> None:
-    """Tercer camino de Â«oficialÂ»: de la AGE con su respuesta publicada, sin plantilla."""
+    """Tercer camino de «oficial»: de la AGE con su respuesta publicada, sin plantilla."""
     rutas = _rutas(seeded_client)
     de_la_age, preguntas = _conjunto(seeded_client, titulo="Ejercicio de la AGE")
     _catalogar(seeded_client, preguntas[0], tema="IV.1")
@@ -549,9 +549,9 @@ def test_la_pregunta_sin_clave_fiable_sigue_fuera_aunque_el_conjunto_vuelva(
 ) -> None:
     """La mitad del encargo que se olvida: las que no tienen clave fiable siguen fuera.
 
-    Aunque el conjunto vuelva a los tests â€”aquÃ­ se le devuelve `fiable` por la vÃ­a auditadaâ€”, la
-    pregunta con su motivo de fuera escrito **no entra**: no hay letra de la que fiarse. Y la que sÃ­
-    tiene clave derivada **sÃ­** entra, con la del conjunto o sin ella.
+    Aunque el conjunto vuelva a los tests �”aquí se le devuelve `fiable` por la vía auditada�”, la
+    pregunta con su motivo de fuera escrito **no entra**: no hay letra de la que fiarse. Y la que sí
+    tiene clave derivada **sí** entra, con la del conjunto o sin ella.
     """
     rutas = _rutas(seeded_client)
     malo, preguntas = _conjunto(seeded_client, titulo="Banco con la clave mal")
@@ -560,7 +560,7 @@ def test_la_pregunta_sin_clave_fiable_sigue_fuera_aunque_el_conjunto_vuelva(
     _cuarentena(seeded_client, malo, KeyReliability.NO_FIABLE)
     _ancla(seeded_client, pregunta_id=preguntas[0], node_id=rutas["IV.1"], letra="b")
     _ancla(seeded_client, pregunta_id=preguntas[1], node_id=rutas["IV.1"], letra="b", cita=None)
-    # La 2 no coincide, la 1 no tiene cita y las demÃ¡s no tienen ancla: las tres quedan fuera.
+    # La 2 no coincide, la 1 no tiene cita y las demás no tienen ancla: las tres quedan fuera.
     assert (
         _corrida(
             seeded_client,
@@ -584,7 +584,7 @@ def test_la_pregunta_sin_clave_fiable_sigue_fuera_aunque_el_conjunto_vuelva(
     }
     assert usadas == {preguntas[0]}, (
         "vuelve la que tiene clave derivada; las que tienen motivo de fuera siguen fuera "
-        "aunque el conjunto ya no estÃ© en cuarentena"
+        "aunque el conjunto ya no esté en cuarentena"
     )
 
 
@@ -594,10 +594,10 @@ def test_la_pregunta_sin_clave_fiable_sigue_fuera_aunque_el_conjunto_vuelva(
 def test_la_decision_queda_auditada_con_su_cifra_y_no_cambia_el_veredicto(
     seeded_settings: Settings, seeded_client: TestClient
 ) -> None:
-    """La decisiÃ³n de volver se toma **por conjunto y con su nÃºmero**, y queda escrita.
+    """La decisión de volver se toma **por conjunto y con su número**, y queda escrita.
 
-    Y no cambia el veredicto del conjunto: devolverlo a `fiable` meterÃ­a en los tests, por la puerta
-    de atrÃ¡s, las preguntas cuyo motivo de fuera sigue escrito.
+    Y no cambia el veredicto del conjunto: devolverlo a `fiable` metería en los tests, por la puerta
+    de atrás, las preguntas cuyo motivo de fuera sigue escrito.
     """
     rutas = _rutas(seeded_client)
     malo, preguntas = _conjunto(seeded_client, titulo="Banco con la clave mal")
