@@ -88,3 +88,8 @@ artifacts/recorrido/*.png
 # corrida y hay una carpeta de «antes» y otra de «después»—. Las cifras que las acompañan
 # (`artifacts/lectura/medidas.json`) sí se rastrean: son el número que hay que poder citar.
 artifacts/lectura/**/*.png
+
+# Las capturas de este bloque (f40): misma clase de artefacto generado que rtifacts/screens/ —se
+# rehacen en cada corrida y son 20 MB de PNG—. Lo que se rastrea es **la medicion** (capturas.md y
+# capturas.json), que es lo que hay que poder citar dentro de un mes.
+artifacts/f40/*.png

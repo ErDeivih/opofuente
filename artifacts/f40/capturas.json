@@ -1,0 +1,178 @@
+[
+  {
+    "ruta": "/",
+    "ancho": "1280Ã—800",
+    "ms": 2527,
+    "violaciones": [],
+    "errores": [],
+    "fichero": "inicio-escritorio.png",
+    "medida": {
+      "hayBarraYCifra": true,
+      "diferenciaDeAltura": 0,
+      "seguirLeyendo": "Seguir leyendoTodavía no has abierto ningún apartado de los apuntes.Ver el temario",
+      "temasListados": 0,
+      "cifra": "67 %"
+    }
+  },
+  {
+    "ruta": "/simulacros",
+    "ancho": "1280Ã—800",
+    "ms": 1787,
+    "violaciones": [],
+    "errores": [],
+    "fichero": "simulacros-escritorio.png",
+    "medida": {
+      "opciones": [
+        "100 preguntas (+10 de reserva) · 120 min",
+        "40 preguntas · 48 min",
+        "Desarrollo de sistemas",
+        "Sistemas y comunicaciones"
+      ],
+      "parrafoGris": false,
+      "listasDeTemas": 0
+    }
+  },
+  {
+    "ruta": "/",
+    "ancho": "390Ã—844",
+    "ms": 1733,
+    "violaciones": [],
+    "errores": [],
+    "fichero": "inicio-movil.png",
+    "medida": {
+      "hayBarraYCifra": true,
+      "diferenciaDeAltura": 0,
+      "seguirLeyendo": "Seguir leyendoTodavía no has abierto ningún apartado de los apuntes.Ver el temario",
+      "temasListados": 0,
+      "cifra": "67 %"
+    }
+  },
+  {
+    "ruta": "/simulacros",
+    "ancho": "390Ã—844",
+    "ms": 1342,
+    "violaciones": [],
+    "errores": [],
+    "fichero": "simulacros-movil.png",
+    "medida": {
+      "opciones": [
+        "100 preguntas (+10 de reserva) · 120 min",
+        "40 preguntas · 48 min",
+        "Desarrollo de sistemas",
+        "Sistemas y comunicaciones"
+      ],
+      "parrafoGris": false,
+      "listasDeTemas": 0
+    }
+  },
+  {
+    "ruta": "/admin/incidencias",
+    "ancho": "1280Ã—800",
+    "ms": 962,
+    "violaciones": [],
+    "errores": [],
+    "fichero": "incidencias-hoja-1-escritorio.png",
+    "medida": {
+      "conjuntos": 58,
+      "resumen": "173 avisos que esperan tu criterio — el motor las señaló y nadie ha decidido todavía · 0 en curso · 0 resueltas · 0 descartadas",
+      "pista": "Hoja anteriorHoja 1 de 3 · 149 bancos en total, 50 filas por hojaHoja siguiente"
+    }
+  },
+  {
+    "ruta": "/admin/incidencias?pagina=2",
+    "ancho": "1280Ã—800",
+    "ms": 949,
+    "violaciones": [],
+    "errores": [],
+    "fichero": "incidencias-hoja-2-escritorio.png",
+    "medida": {
+      "conjuntos": 58,
+      "resumen": "173 avisos que esperan tu criterio — el motor las señaló y nadie ha decidido todavía · 0 en curso · 0 resueltas · 0 descartadas",
+      "pista": "Hoja anteriorHoja 1 de 3 · 149 bancos en total, 50 filas por hojaHoja siguiente"
+    }
+  },
+  {
+    "ruta": "/admin/apuntes",
+    "ancho": "1280Ã—800",
+    "ms": 835,
+    "violaciones": [],
+    "errores": [],
+    "fichero": "apuntes-escritorio.png",
+    "medida": {
+      "motivos": [
+        "Está publicado: su versión se archivó al pasar las dos puertas.",
+        "61 incidencias 61 incidencias del motor sin despachar (35 normas cambiadas, 15 respuestas correctas que no cuadran, 10 huecos sin material, 1 preguntas que no se pueden juzgar).",
+        "Está publicado: su versión se archivó al pasar las dos puertas.",
+        "13 incidencias 13 incidencias del motor sin despachar (10 normas cambiadas, 2 respuestas correctas que no cuadran, 1 huecos sin material).",
+        "Está publicado: su versión se archivó al pasar las dos puertas.",
+        "17 incidencias 17 incidencias del motor sin despachar (13 normas cambiadas, 4 respuestas correctas que no cuadran).",
+        "Está publicado: su versión se archivó al pasar las dos puertas.",
+        "8 incidencias 8 incidencias del motor sin despachar (4 normas cambiadas, 3 respuestas correctas que no cuadran, 1 huecos sin material).",
+        "Está publicado: su versión se archivó al pasar las dos puertas.",
+        "99 incidencias 99 incidencias del motor sin despachar (73 normas cambiadas, 19 respuestas correctas que no cuadran, 6 huecos sin material, 1 preguntas que no se pueden juzgar).",
+        "Está publicado: su versión se archivó al pasar las dos puertas.",
+        "9 incidencias 9 incidencias del motor sin despachar (7 normas cambiadas, 2 respuestas correctas que no cuadran).",
+        "Está publicado: su versión se archivó al pasar las dos puertas.",
+        "36 incidencias 36 incidencias del motor sin despachar (35 normas cambiadas, 1 respuestas correctas que no cuadran).",
+        "Está publicado: su versión se archivó al pasar las dos puertas.",
+        "29 incidencias 29 incidencias del motor sin despachar (18 preguntas que no se pueden juzgar, 8 huecos sin material, 3 respuestas correctas que no cuadran).",
+        "Está publicado: su versión se archivó al pasar las dos puertas.",
+        "13 incidencias 13 incidencias del motor sin despachar (6 preguntas que no se pueden juzgar, 4 normas cambiadas, 3 respuestas correctas que no cuadran).",
+        "Está publicado: su versión se archivó al pasar las dos puertas.",
+        "20 incidencias 20 incidencias del motor sin despachar (13 preguntas que no se pueden juzgar, 4 normas cambiadas, 3 respuestas correctas que no cuadran).",
+        "Está publicado: su versión se archivó al pasar las dos puertas.",
+        "50 incidencias 50 incidencias del motor sin despachar (28 respuestas correctas que no cuadran, 11 normas cambiadas, 10 preguntas que no se pueden juzgar, 1 huecos sin material).",
+        "Está publicado: su versión se archivó al pasar las dos puertas.",
+        "84 incidencias 84 incidencias del motor sin despachar (71 normas cambiadas, 11 respuestas correctas que no cuadran, 2 preguntas que no se pueden juzgar).",
+        "Está publicado: su versión se archivó al pasar las dos puertas.",
+        "16 incidencias 16 incidencias del motor sin despachar (13 normas cambiadas, 2 preguntas que no se pueden juzgar, 1 respuestas correctas que no cuadran).",
+        "Está publicado: su versión se archivó al pasar las dos puertas.",
+        "10 incidencias 10 incidencias del motor sin despachar (6 normas cambiadas, 4 preguntas que no se pueden juzgar).",
+        "Está publicado: su versión se archivó al pasar las dos puertas.",
+        "38 incidencias 38 incidencias del motor sin despachar (11 respuestas correctas que no cuadran, 11 normas cambiadas, 9 huecos sin material, 7 preguntas que no se pueden juzgar).",
+        "Está publicado: su versión se archivó al pasar las dos puertas.",
+        "9 incidencias 9 incidencias del motor sin despachar (5 normas cambiadas, 4 preguntas que no se pueden juzgar).",
+        "Está publicado: su versión se archivó al pasar las dos puertas.",
+        "12 incidencias 12 incidencias del motor sin despachar (10 normas cambiadas, 1 respuestas correctas que no cuadran, 1 preguntas que no se pueden juzgar).",
+        "Está publicado: su versión se archivó al pasar las dos puertas.",
+        "26 incidencias 26 incidencias del motor sin despachar (16 normas cambiadas, 6 respuestas correctas que no cuadran, 4 huecos sin material).",
+        "63 incidencias 63 incidencias del motor sin despachar (20 respuestas correctas que no cuadran, 20 huecos sin material, 20 normas cambiadas, 3 preguntas que no se pueden juzgar).",
+        "Nadie ha revisado este tema todavía: no hay ninguna decisión escrita sobre él.",
+        "La cobertura y la forma de este tema se miden al abrir su ficha: esta tabla no las mide porque cada medida cuesta alrededor de un segundo y hay que poder abrirla sin esperar. Abre el tema para ver las dos cifras antes de decidir.",
+        "Está publicado: su versión se archivó al pasar las dos puertas.",
+        "25 incidencias 25 incidencias del motor sin despachar (14 normas cambiadas, 5 preguntas que no se pueden juzgar, 4 respuestas correctas que no cuadran, 2 huecos sin material).",
+        "Está publicado: su versión se archivó al pasar las dos puertas.",
+        "41 incidencias 41 incidencias del motor sin despachar (26 normas cambiadas, 6 respuestas correctas que no cuadran, 6 huecos sin material, 3 preguntas que no se pueden juzgar).",
+        "Está publicado: su versión se archivó al pasar las dos puertas.",
+        "55 incidencias 55 incidencias del motor sin despachar (40 normas cambiadas, 14 respuestas correctas que no cuadran, 1 huecos sin material).",
+        "75 incidencias 75 incidencias del motor sin despachar (23 normas cambiadas, 19 huecos sin material, 18 respuestas correctas que no cuadran, 15 preguntas que no se pueden juzgar).",
+        "Nadie ha revisado este tema todavía: no hay ninguna decisión escrita sobre él.",
+        "La cobertura y la forma de este tema se miden al abrir su ficha: esta tabla no las mide porque cada medida cuesta alrededor de un segundo y hay que poder abrirla sin esperar. Abre el tema para ver las dos cifras antes de decidir.",
+        "Está publicado: su versión se archivó al pasar las dos puertas.",
+        "10 incidencias 10 incidencias del motor sin despachar (8 normas cambiadas, 1 respuestas correctas que no cuadran, 1 huecos sin material).",
+        "Está publicado: su versión se archivó al pasar las dos puertas.",
+        "10 incidencias 10 incidencias del motor sin despachar (8 normas cambiadas, 2 respuestas correctas que no cuadran).",
+        "Está publicado: su versión se archivó al pasar las dos puertas.",
+        "44 incidencias 44 incidencias del motor sin despachar (31 normas cambiadas, 8 preguntas que no se pueden juzgar, 5 respuestas correctas que no cuadran).",
+        "Está publicado: su versión se archivó al pasar las dos puertas.",
+        "34 incidencias 34 incidencias del motor sin despachar (15 preguntas que no se pueden juzgar, 11 normas cambiadas, 4 respuestas correctas que no cuadran, 4 huecos sin material).",
+        "Está publicado: su versión se archivó al pasar las dos puertas.",
+        "10 incidencias 10 incidencias del motor sin despachar (6 normas cambiadas, 2 huecos sin material, 1 respuestas correctas que no cuadran, 1 preguntas que no se pueden juzgar)."
+      ],
+      "publicado": "2 esperan tu decisión · 28 temas con apuntes: 26 publicados y 2 en borrador · 26 aprobados · 0 rechazados · 5 sin apuntes escritos"
+    }
+  },
+  {
+    "ruta": "/admin/apuntes/IV.7",
+    "ancho": "1280Ã—800",
+    "ms": 3183,
+    "violaciones": [],
+    "errores": [],
+    "fichero": "apuntes-IV7-escritorio.png",
+    "medida": {
+      "articulos": 6,
+      "pista": "Hoja anteriorHoja 1 de 5 · 25 apartados en totalHoja siguiente",
+      "titulo": "Los apuntes, apartado a apartado · 25 apartados"
+    }
+  }
+]
