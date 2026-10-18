@@ -199,16 +199,18 @@ for (const { ancho, alto, etiqueta } of ANCHOS) {
     const captura = await retratar(page, `/resultado/${sesion}`, '/acabado-resultado', ancho, alto, etiqueta);
     exigirLimpias(captura, 'resultado');
 
-    // §2.3: **una línea**, con la cifra en español y el «(estimada)» al lado. El «sobre N» solo sale si
-    // la convocatoria publica el máximo de la parte: con la sesión sembrada —que no declara parte— no
-    // hay máximo que enseñar, y la pantalla no se lo inventa.
+    // §2.3: **una línea**, con la cifra en español. El «sobre N» solo sale si la convocatoria publica
+    // el máximo de la parte **y la sesión es un examen**: con la sesión sembrada —una práctica, que no
+    // declara parte— no hay banda que enseñar, y desde F38 (§3.5) la línea dice los **netos con
+    // penalización** en vez de la puntuación directa de un examen que no es. El pliegue sigue ahí con
+    // otro nombre cuando no hay estimación que explicar.
     const linea = page.locator('.resultado__puntos');
     await expect(linea).toHaveCount(1);
-    await expect(linea).toContainText(/^Puntuación directa: \d+,\d{2}( sobre \d+)? \(estimada\)$/);
+    await expect(linea).toContainText(/^(Puntuación directa|Netos con penalización): \d+,\d{2}/);
     await expect(linea).not.toContainText(/\d\.\d/);
 
     // Y la explicación **no se borra**: se pliega.
-    const boton = page.getByRole('button', { name: /por qué estimada/i });
+    const boton = page.getByRole('button', { name: /por qué estimada|por qué 0,00|qué significa/i });
     await expect(boton).toHaveAttribute('aria-expanded', 'false');
     const aviso = page.locator('.resultado__aviso').first();
     await expect(aviso).not.toBeVisible();

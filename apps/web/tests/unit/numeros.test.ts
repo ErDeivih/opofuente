@@ -1,5 +1,6 @@
 /**
- * Los números de la interfaz, en español (§2.2 del cierre del objetivo).
+ * Los números de la interfaz, en español (§2.2 del cierre del objetivo) y **nunca por debajo de cero**
+ * en pantalla (F38, §3.5 del encargo).
  *
  * El propietario lo vio en las capturas: las notas salían «0.0000» en vez de «0,00». El dato viaja
  * del servidor con **punto y cuatro decimales** (`decimal_text`, que es el decimal de la fracción
@@ -14,7 +15,9 @@ import {
   formatearNota,
   formatearPorcentaje,
   notaDeDecimal,
-  notaDeFraccion,
+  notaNegativaExacta,
+  notaNoNegativa,
+  valorDeFraccion,
 } from '../../src/lib/numeros';
 
 describe('los números de la interfaz', () => {
@@ -27,17 +30,30 @@ describe('los números de la interfaz', () => {
 
   it('la nota se calcula de la fracción exacta, no del decimal que manda el servidor', () => {
     // El decimal del servidor viene con cuatro cifras y con punto: la pantalla no lo enseña tal cual.
-    expect(notaDeFraccion('1/3')).toBe('0,33');
-    expect(notaDeFraccion('38/3')).toBe('12,67');
-    expect(notaDeFraccion('42')).toBe('42,00');
-    expect(notaDeFraccion('-1/3')).toBe('-0,33');
-    expect(notaDeFraccion(' 128/3 ')).toBe('42,67');
+    expect(valorDeFraccion('1/3')).toBeCloseTo(1 / 3, 10);
+    expect(valorDeFraccion('42')).toBe(42);
+    expect(valorDeFraccion('-1/3')).toBeCloseTo(-1 / 3, 10);
+    expect(valorDeFraccion(' 128/3 ')).toBeCloseTo(128 / 3, 10);
+    // Y una vez formateada, en español.
+    expect(notaNoNegativa(' 128/3 ')).toBe('42,67');
   });
 
   it('un texto que no es una fracción no se inventa', () => {
-    expect(notaDeFraccion('')).toBeNull();
-    expect(notaDeFraccion('sin clave')).toBeNull();
-    expect(notaDeFraccion('1/0')).toBeNull();
+    expect(valorDeFraccion('')).toBeNull();
+    expect(valorDeFraccion('sin clave')).toBeNull();
+    expect(valorDeFraccion('1/0')).toBeNull();
+    expect(notaNoNegativa('sin clave')).toBeNull();
+  });
+
+  it('una puntuación negativa se enseña como 0,00 y su cifra exacta se puede leer aparte', () => {
+    // Es lo que el recorrido midió: «Puntuación directa: -0,21 (estimada)». En pantalla no existe una
+    // nota por debajo de cero; la cifra exacta va al pliegue.
+    expect(notaNoNegativa('-1/3')).toBe('0,00');
+    expect(notaNegativaExacta('-1/3')).toBe('-0,33');
+    // Y cuando no hay negativa que explicar, el pliegue no la menciona.
+    expect(notaNoNegativa('1/3')).toBe('0,33');
+    expect(notaNegativaExacta('1/3')).toBeNull();
+    expect(notaNegativaExacta('0')).toBeNull();
   });
 
   it('el decimal suelto del servidor también se lee en español', () => {

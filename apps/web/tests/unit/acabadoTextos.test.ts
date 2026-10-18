@@ -24,7 +24,13 @@ const TEXTOS_DEL_ACABADO: readonly string[] = [
   'Puntuación directa: 12,50 sobre 50 (estimada)',
   '¿Por qué estimada?',
   'Tu hoja de respuestas',
-  'Cada casilla dice lo que pasó: la verde es la que era correcta, y la que lleva el color del fallo es la que marcaste y no lo era. Pulsa un número para bajar a esa pregunta.',
+  // F38 (§3.5 del encargo): la frase que explicaba la hoja salió de la pantalla —ningún párrafo
+  // explicativo visible por defecto— y en su lugar van las cifras de la práctica y el pliegue del cero.
+  '1 acierto · 2 fallos · 0 en blanco · 33 % de acierto',
+  'Netos con penalización: 0,33',
+  '¿Por qué 0,00?',
+  '¿Qué significa esta puntuación?',
+  'La cifra exacta de la puntuación del total es -0,33: en pantalla no baja de 0,00, porque una nota por debajo de cero no se lee.',
   'Ver en apuntes',
   'Ir a la pregunta 12',
   'Cargando el temario…',
@@ -55,10 +61,12 @@ describe('los textos nuevos del acabado', () => {
   });
 
   it('el detector sigue leyendo «Rojo» como el banco: por eso el texto no dice ese color', () => {
-    // Es la razón de que la frase de la hoja diga «el color del fallo» en vez del nombre del color: el
+    // Es la razón de que las frases del resultado hablen del «fallo» y no del nombre del color: el
     // detector lee «Rojo» (el banco privado) sin distinguir mayúsculas, así que escribirlo en la
     // pantalla del alumno habría metido un aviso nuevo en el informe de capturas. Queda anotado para
-    // que el propietario decida si el detector debería distinguir la mayúscula en ese caso.
+    // que el propietario decida si el detector debería distinguir la mayúscula en ese caso. (La frase
+    // de la hoja que lo esquivaba salió de la pantalla en F38; la regla sigue valiendo para lo que
+    // venga.)
     expect(datosEnElTexto('la correcta va en rojo').map((hallado) => hallado.palabra)).toEqual([
       'Rojo',
     ]);

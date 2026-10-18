@@ -333,12 +333,16 @@ export const sessionResultFixture: StudentSessionResult = {
     {
       part_code: 'primera_parte',
       part_name: 'Primera parte: cuestionario de conocimientos',
-      kind: 'estimated',
+      // F38: en un test de práctica la puntuación es la **directa**, no una estimación escalada a la
+      // banda del examen: la escala sobre 50 es del simulacro y del examen oficial.
+      kind: 'direct',
       correct: 1,
       wrong: 2,
       blank: 0,
       score: '1/3',
       score_decimal: '0.3333',
+      // La banda viaja igual —es el dato declarado de la convocatoria— y la pantalla **no la enseña**
+      // fuera de un examen: por eso esta prueba sirve para exigirlo.
       score_max: 50,
       pass_score: 25,
       passed: null,
@@ -347,18 +351,14 @@ export const sessionResultFixture: StudentSessionResult = {
       // el mínimo sin ceros de más (`sobre 50`, `(25)`). Antes este texto llevaba el decimal del
       // contrato (`0.3333 sobre 50.00 ... (25.00)`), que es el formato de máquina.
       verdict_note:
-        'La estimación de «Primera parte: cuestionario de conocimientos» es 0,33 sobre 50 y ' +
-        'no llega al mínimo publicado (25), pero Es una **estimación**: la puntuación directa ' +
-        '(aciertos menos errores por su penalización) escalada a la banda que publica la ' +
-        'convocatoria para esta parte. La calificación oficial 0-50 resulta de los baremos que fija ' +
-        'la Comisión de Selección, y esa tabla no está importada: esto no es la calificación ' +
-        'oficial.',
+        'el mínimo de 25 es de la calificación oficial, que necesita los baremos de la ' +
+        'convocatoria: no se aplica a la puntuación directa',
     },
   ],
   total: {
     part_code: null,
     part_name: null,
-    kind: 'estimated',
+    kind: 'direct',
     correct: 1,
     wrong: 2,
     blank: 0,
@@ -479,6 +479,70 @@ export const sessionResultFixture: StudentSessionResult = {
       accuracy: 0.5,
     },
   ],
+};
+
+/**
+ * El mismo resultado, pero de un **simulacro**: aquí sí hay banda oficial (0–50) y mínimo.
+ *
+ * Es el caso que el propietario vio bien resuelto y el que el arreglo de F38 deja intacto: la
+ * puntuación sobre 50 con su mínimo solo se enseña en simulacros y exámenes oficiales. El aviso es el
+ * de la estimación, compuesto por el dominio, con sus cifras en español.
+ */
+export const resultadoDeSimulacroFixture: StudentSessionResult = {
+  ...sessionResultFixture,
+  session: {
+    ...sessionResultFixture.session,
+    mode: 'mock_exam',
+    title: 'Simulacro completo · 4 preguntas',
+    time_limit_minutes: 120,
+  },
+  parts: [
+    {
+      ...sessionResultFixture.parts[0]!,
+      kind: 'estimated',
+      verdict_note:
+        'La estimación de «Primera parte: cuestionario de conocimientos» es 0,33 sobre 50 y ' +
+        'no llega al mínimo publicado (25), pero Es una **estimación**: la puntuación directa ' +
+        '(aciertos menos errores por su penalización) escalada a la banda que publica la ' +
+        'convocatoria para esta parte. La calificación oficial 0-50 resulta de los baremos que fija ' +
+        'la Comisión de Selección, y esa tabla no está importada: esto no es la calificación ' +
+        'oficial.',
+    },
+  ],
+  total: { ...sessionResultFixture.total, kind: 'estimated', score_max: 50 },
+};
+
+/**
+ * Un resultado con **puntuación directa negativa**, que es lo que el recorrido midió: 0 aciertos y 1
+ * fallo con la penalización de un tercio dan `-1/3`.
+ *
+ * Es la cifra que **no se puede enseñar**: en pantalla la puntuación no baja de 0,00 y la exacta va
+ * dentro del pliegue. Vale igual para la práctica (netos) y para el examen (puntuación directa).
+ */
+export const resultadoNegativoFixture: StudentSessionResult = {
+  ...sessionResultFixture,
+  parts: [{ ...sessionResultFixture.parts[0]!, correct: 0, wrong: 1, score: '-1/3' }],
+  total: { ...sessionResultFixture.total, correct: 0, wrong: 1, score: '-1/3' },
+};
+
+/**
+ * El caso que el propietario leyó en su captura: **un test de práctica de 10 preguntas** con 6
+ * aciertos. Es el que decía «6,00 sobre 50 · mínimo 25» y el que ahora dice las cuatro cifras de una
+ * práctica.
+ *
+ * Las preguntas y los temas son los del resultado de arriba: lo que cambia —y es lo que se mide— es la
+ * nota y los recuentos, que son los de su caso.
+ */
+export const resultadoDePracticaDeDiezFixture: StudentSessionResult = {
+  ...sessionResultFixture,
+  session: {
+    ...sessionResultFixture.session,
+    title: 'Test · 10 preguntas',
+    total_questions: 10,
+    answered_questions: 10,
+  },
+  parts: [{ ...sessionResultFixture.parts[0]!, correct: 6, wrong: 0, blank: 4, score: '6' }],
+  total: { ...sessionResultFixture.total, correct: 6, wrong: 0, blank: 4, score: '6' },
 };
 
 /** El simulacro tal como lo declara el perfil de TAI: 80 + 5 y 20 + 5, en 120 minutos. */

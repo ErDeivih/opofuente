@@ -94,3 +94,8 @@ artifacts/lectura/**/*.png
 # rastrean: los `POST /start` por test abierto, el código de la segunda respuesta seguida y el de
 # cambiar una respuesta son el número que hay que poder citar.
 artifacts/contestar/**/*.png
+# Las capturas del resultado del alumno (F38, §3.5 del encargo): las dos pantallas —el test y el
+# resultado— a 1280 y a 390, con su carpeta de «antes» y de «después», para que el propietario las
+# compare. Se rehacen en cada corrida; lo que se rastrea es la prueba que las mide
+# (`apps/web/tests/e2e/resultado.spec.ts`), que es donde están las cifras.
+artifacts/capturas-f38/**/*.png

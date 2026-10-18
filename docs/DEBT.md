@@ -45,6 +45,7 @@ Reglas:
 | [DEBT-032](#debt-032--la-herramienta-de-capturas-da-por-hecha-una-siembra-que-no-existe) | antes de dar por buenas las capturas | **2 de 58** capturas no se toman: «la revisión de apuntes» a 1280 y 390 falla en `screens.spec.ts:252` esperando un `%` que no llega, porque ese árbol **no tiene apuntes que revisar** y la pantalla dice, correctamente, «Este tema todavía no tiene apuntes escritos: no hay nada que revisar». Faltan dos pantallas del informe y no se nota: el resto pasa | **decisión tomada, arreglo pendiente** (15-oct-2026: lo preferido es **capturar el estado vacío como lo que es** —el propietario va a verlo— en vez de añadir una siembra que finja datos; decide quien escribió la herramienta) |
 | [DEBT-033](#debt-033--la-regla-de-tabindex-y-axe-se-contradicen-en-las-regiones-que-se-desplazan) | antes de volver a tocar las tablas de los apuntes | `jsx-a11y/no-noninteractive-tabindex` (error) y `scrollable-region-focusable` de axe piden cosas contrarias en una región que se desplaza; hoy el `tabIndex` viaja como propiedad del componente `MarcoDeTabla` | **abierta** (no bloquea; el porqué está escrito en el componente) |
 | [DEBT-034](#debt-034--el-capítulo-i11-de-los-apuntes-concentra-el-66--del-tema) | antes de dar la lectura por terminada | El epígrafe **I.1.1 se lleva 12 de los 21 apartados de I.1** (el 66 % del texto) y su página mide **118.982 px** a 1280: paginar por epígrafes oficiales no lo arregla porque el programa da cuatro epígrafes y nada más | **abierta** (decide el propietario: la granularidad es del programa, no de la pantalla) |
+| [DEBT-035](#debt-035--la-banda-del-examen-viaja-en-el-resultado-de-una-práctica-y-solo-la-pantalla-la-esconde) | antes de que otra pantalla enseñe la nota del alumno | El resultado de una **práctica** sigue trayendo `score_max` y `pass_score` de la convocatoria; que no se enseñen fuera de un examen lo decide `esExamen` en la pantalla del resultado | **abierta** (deuda declarada, no bloquea) |
 
 ---
 
@@ -1997,4 +1998,31 @@ el propietario decida explícitamente que un capítulo se puede partir por su ta
 
 **Estado: abierta (decide el propietario).** El número está medido y publicado, con el reparto de
 apartados y caracteres por capítulo.
+
+---
+
+## DEBT-035 — La banda del examen viaja en el resultado de una práctica y solo la pantalla la esconde
+
+**Origen:** F38, al arreglar «un test de práctica no se puntúa como un examen» (§3.5 del recorrido).
+
+**Lo que pasa.** El motor sigue sirviendo `score_max` (50) y `pass_score` (25) en las partes de un test
+de práctica: es el dato **declarado** de la convocatoria, no una afirmación sobre esa sesión. Quien
+decide no enseñarlo es la pantalla —`esExamen` en `apps/web/src/pages/student/ResultPage.tsx`—, y eso
+funciona hoy porque **hay una sola** pantalla que enseña la nota del alumno. El día que otra pinte
+`parts[].score_max` sin preguntarse por el modo, una práctica de diez preguntas volverá a parecer un
+examen.
+
+**Por qué no se arregla aquí.** Quitarlo del servidor borraría un dato publicado que usan el panel y el
+resto del contrato, y obligaría a tocar el motor y sus pruebas para esconder algo que es una decisión
+de qué se pinta. La alternativa —un campo `band_applies` en el resultado— es un cambio de contrato que
+merece su propio bloque, no un arreglo de pantalla.
+
+**Criterio de cierre:** que el resultado del alumno diga **si la banda se aplica a esa sesión**
+(`band_applies: false` en práctica, repaso y diagnóstico) y que las pantallas lean eso en vez de
+comparar el modo; con una prueba de contrato que lo fije y la de navegador de
+`apps/web/tests/e2e/resultado.spec.ts` siguiendo en verde.
+
+**Estado: abierta (deuda declarada, no bloquea).** La regla está escrita en los dos sitios donde se
+lee: el comentario de `MODOS_DE_EXAMEN` en el servidor y el de `esExamen` en la pantalla.
+
 

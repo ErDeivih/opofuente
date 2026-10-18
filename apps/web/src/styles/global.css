@@ -1276,8 +1276,16 @@ kbd {
  * mismos nombres porque la pantalla los usa, pero su valor ahora sale de `tokens.css`, que es donde
  * vive el diseño. Los colores son los mismos que tenía (papel, tinta y el azul de lectura óptica),
  * así que la pantalla se ve igual que antes y el día que el azul cambie cambiará también aquí.
+ *
+ * **Y se declaran en `:root`, no dentro del marco del test** (F38, §3.5 del encargo). La hoja de
+ * respuestas es la misma pieza en las dos pantallas —se contesta en el test y se corrige en el
+ * resultado—, pero mientras estos tokens vivieron en `.test-marco` solo existían en el test: en el
+ * Resultado, `background: var(--hoja-acierto)` quedaba **inválida** y el fondo de la casilla se caía a
+ * `transparent`, mientras `color: var(--sobre-acento)` sí resolvía y pintaba la letra de blanco. El
+ * resultado era una casilla blanca sobre papel blanco: «las letras casi no se ven y no tienen
+ * colores». Un token de una pieza compartida va donde las dos pantallas lo heredan.
  */
-.test-marco {
+:root {
   --hoja-papel: var(--papel);
   --hoja-superficie: var(--hoja);
   --hoja-tinta: var(--tinta);
@@ -1291,7 +1299,9 @@ kbd {
   --hoja-fallo-suave: var(--fallo-suave);
   --hoja-dudosa: var(--dudosa);
   --hoja-dudosa-suave: var(--dudosa-suave);
+}
 
+.test-marco {
   background: var(--hoja-papel);
   color: var(--hoja-tinta);
   font-family: var(--fuente-interfaz);
