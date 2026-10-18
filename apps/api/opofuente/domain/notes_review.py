@@ -39,13 +39,26 @@ UMBRAL_TEXTO = f"{100 * COBERTURA_MINIMA:.0f} %"
 
 #: Nombres de las categorías de la bandeja del motor, para las frases del motivo. Es el vocabulario
 #: del §2 de los ajustes: son **los nombres de lo que el motor registró**, no frases nuestras.
-NOMBRE_DE_CATEGORIA: dict[CategoriaIncidencia, str] = {
-    CategoriaIncidencia.HUECO_SIN_MATERIAL: "huecos sin material",
-    CategoriaIncidencia.CLAVE_SOSPECHOSA: "respuestas correctas que no cuadran",
-    CategoriaIncidencia.PREGUNTA_AMBIGUA: "preguntas que no se pueden juzgar",
-    CategoriaIncidencia.NORMA_CAMBIADA: "normas cambiadas",
-    CategoriaIncidencia.PREGUNTA_MAL_IMPORTADA: "preguntas mal importadas",
-    CategoriaIncidencia.CLAVE_NO_FIABLE: "claves en cuarentena",
+#:
+#: Las **dos formas** de cada nombre, como en `ETIQUETA_DE_CATEGORIA` (el resumen de la bandeja):
+#: con una sola forma se leía «1 huecos sin material» y «1 preguntas que no se pueden juzgar», el
+#: mismo defecto que el encargo señala en el resto del panel.
+NOMBRE_DE_CATEGORIA: dict[CategoriaIncidencia, tuple[str, str]] = {
+    CategoriaIncidencia.HUECO_SIN_MATERIAL: ("hueco sin material", "huecos sin material"),
+    CategoriaIncidencia.CLAVE_SOSPECHOSA: (
+        "respuesta correcta que no cuadra",
+        "respuestas correctas que no cuadran",
+    ),
+    CategoriaIncidencia.PREGUNTA_AMBIGUA: (
+        "pregunta que no se puede juzgar",
+        "preguntas que no se pueden juzgar",
+    ),
+    CategoriaIncidencia.NORMA_CAMBIADA: ("norma cambiada", "normas cambiadas"),
+    CategoriaIncidencia.PREGUNTA_MAL_IMPORTADA: (
+        "pregunta mal importada",
+        "preguntas mal importadas",
+    ),
+    CategoriaIncidencia.CLAVE_NO_FIABLE: ("clave en cuarentena", "claves en cuarentena"),
 }
 
 
@@ -370,7 +383,7 @@ def razones_del_tema(cifras: CifrasDelTema) -> tuple[Razon, ...]:
             "incidencias del motor sin despachar",
         )
         desglose = ", ".join(
-            f"{cuantas} {NOMBRE_DE_CATEGORIA[cual]}"
+            con_numero(cuantas, *NOMBRE_DE_CATEGORIA[cual])
             for cual, cuantas in sorted(cifras.incidencias_por_categoria, key=lambda fila: -fila[1])
         )
         razones.append(
