@@ -4101,3 +4101,31 @@ Rama `f40-inicio` sobre `main = a26eb1c`. Lo que se ha cerrado, con su cifra; de
   ficheros de integración del panel (31), `tsc` limpio, `eslint` limpio y el contrato OpenAPI al día
   (`contracts:check`).
 - **Las 18 puertas no las corre este bloque.**
+
+### Las capturas, corridas (18-oct-2026)
+
+Se corrieron con el guion `F:\temp-opofuente\f40-capturas.mjs` contra la **copia verificada** de la base, con
+la API en **8775** y el paquete construido servido en **8786** (los puertos 8765 y 4173 son de quien mide la
+puerta 18 y no se han tocado). El CSP del `index.html` solo permite `http://127.0.0.1:8765`, así que el guion
+**sustituye esa lista de orígenes en el documento servido** —nada más: la aplicación, el DOM, el CSS y la API
+son los de verdad— y se dice aquí porque es una manipulación del arnés, no de la aplicación. Los PNG y las
+tablas quedan en `F:\temp-opofuente\f40-capturas` (`capturas.md`, `capturas.json`).
+
+| pantalla | ancho | tiempo | axe | consola | lo que se comprobó |
+|---|---|---|---|---|---|
+| Inicio | 1280×800 | 2.527 ms (primera) | **0** | **0** | el «67 %» está a **0 px** del centro de su barra; «Seguir leyendo» con su enlace; **0** temas listados |
+| Inicio | 390×844 | 1.733 ms | **0** | **0** | lo mismo |
+| Simulacros | 1280×800 | 1.787 ms | **0** | **0** | «100 preguntas (+10 de reserva) · 120 min», la corta «40 preguntas · 48 min», **sin** párrafo gris y con **0** listas de temas |
+| Simulacros | 390×844 | 1.342 ms | **0** | **0** | lo mismo |
+| `/admin/incidencias` | 1280×800 | 962 ms | **0** | **0** | **58** filas (50 bancos + 8 oficiales) y «Hoja 1 de 3 · 149 bancos en total, 50 filas por hoja» |
+| `/admin/apuntes` | 1280×800 | **835 ms** | **0** | **0** | «2 esperan tu decisión · 28 temas con apuntes: 26 publicados y 2 en borrador · 26 aprobados · 0 rechazados · 5 sin apuntes escritos» y los dos borradores con la razón `sin_medida` |
+| `/admin/apuntes/IV.7` | 1280×800 | **3.183 ms** | **0** | **0** | **6** apartados en la hoja y «Hoja 1 de 5 · 25 apartados en total» |
+
+Las dos cifras que el encargo pedía por debajo de 2 s: **`/admin/apuntes` 835 ms** (antes 5,37 s de
+pantalla) y **la revisión de IV.7 3.183 ms** (antes 3,45 s: baja, pero **no** llega a 2 s, y el motivo
+está dicho arriba: lo que cuesta es medir el tema, no el viaje ni el pintado).
+
+El paginador de la bandeja y el de la ficha viven en el estado de la pantalla, no en la dirección: pasar
+de hoja no cambia la URL. La de la ficha es una decisión que se puede revertir (la página ya sabe leer
+`?pagina=`/`?orden=` del servidor); se deja así porque el panel se usa en una sesión seguida y el enlace
+con hoja caducaría al despachar incidencias.
