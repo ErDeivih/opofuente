@@ -31138,7 +31138,7 @@
         ]
       },
       "post": {
-        "description": "El simulacro del perfil: 80 + 5 y el supuesto de 20 + 5 del bloque III o del IV.\n\nLos dos supuestos son excluyentes y se monta el elegido. Si sus preguntas salen de los temas del\nbloque, la sesión lo dice (`practical_case_origin`).",
+        "description": "El simulacro del perfil: 80 + 5 y el supuesto de 20 + 5 del bloque III o del IV.\n\nLos dos supuestos son excluyentes y se monta el elegido. Si sus preguntas salen de los temas del\nbloque, la sesión lo dice (`practical_case_origin`).\n\nLa respuesta lleva `Server-Timing` con lo que tardó **la composición** (medido en el servidor,\nque es donde está el trabajo). Se publica porque el encargo de la velocidad pide separar lo que\ncuesta elegir las preguntas de lo que cuesta pintarlas, y esa frontera no se ve desde el\nnavegador.",
         "operationId": "student_create_mock_exam_api_v1_student_mock_exams_post",
         "requestBody": {
           "content": {

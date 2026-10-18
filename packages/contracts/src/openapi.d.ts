@@ -3433,6 +3433,11 @@ export interface paths {
          *
          *     Los dos supuestos son excluyentes y se monta el elegido. Si sus preguntas salen de los temas del
          *     bloque, la sesión lo dice (`practical_case_origin`).
+         *
+         *     La respuesta lleva `Server-Timing` con lo que tardó **la composición** (medido en el servidor,
+         *     que es donde está el trabajo). Se publica porque el encargo de la velocidad pide separar lo que
+         *     cuesta elegir las preguntas de lo que cuesta pintarlas, y esa frontera no se ve desde el
+         *     navegador.
          */
         post: operations["student_create_mock_exam_api_v1_student_mock_exams_post"];
         delete?: never;
