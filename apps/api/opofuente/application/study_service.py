@@ -1493,8 +1493,9 @@ class StudyService:
             note=(
                 None
                 if not en_cuarentena
-                else f"{en_cuarentena} pregunta(s) de tu cola de repaso se han dejado fuera: su "
-                "conjunto tiene la clave en cuarentena"
+                else f"{en_cuarentena} pregunta(s) de tu cola de repaso se han dejado "
+                "fuera: no hay con qué corregirlas (su conjunto está en cuarentena, "
+                "no tiene plantilla activa o la plantilla no dice su respuesta)"
             ),
         )
         return self._study.create_session(
