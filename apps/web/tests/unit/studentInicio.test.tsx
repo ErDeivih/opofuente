@@ -6,16 +6,20 @@
  * 1. **qué toca hacer** —seguir el test a medias, repasar los fallos vencidos y las tres acciones
  *    rápidas—, con la ruta a la que lleva cada una;
  * 2. **cómo va**: una barra fina por bloque con su porcentaje escrito, que es el dibujo del diseño;
- * 3. **los temas con apuntes y su estado** (publicado o borrador) y, cuando están publicados, la
- *    marca «Versión generada · en revisión» —lo que el alumno tiene que saber antes de fiarse del
- *    texto—;
+ * 3. **por dónde ibas**: «Seguir leyendo» con el último apartado abierto y su enlace, y un enlace al
+ *    Temario —en lugar de la lista de los 29 temas con su título entero, que era lo que había—;
  * 4. y que un tema **sin apuntes no se ofrece** como si los tuviera.
  */
 
 import { screen, within } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 import { StudentHomePage } from '../../src/pages/student/StudentHomePage';
+import {
+  CLAVE_ULTIMO_APARTADO,
+  guardarUltimoApartado,
+  olvidarUltimoApartado,
+} from '../../src/lib/ultimoApartado';
 import { overviewFixture } from './studentFixtures';
 import { renderWithProviders, stubApi } from './testUtils';
 
@@ -27,6 +31,10 @@ function montar(overrides: Record<string, unknown> = {}) {
 }
 
 describe('Inicio del alumno', () => {
+  beforeEach(() => {
+    olvidarUltimoApartado();
+  });
+
   it('enseña qué toca hacer, con la ruta de cada acción', async () => {
     montar();
 
@@ -60,26 +68,63 @@ describe('Inicio del alumno', () => {
     expect(within(filas[1]!).getByText('75 %')).toBeInTheDocument();
   });
 
-  it('lista los temas con apuntes con su estado y la marca de la versión generada', async () => {
+  it('la cifra del bloque va en la fila de su bloque, no en una línea aparte', async () => {
     montar();
 
-    const temas = await screen.findByRole('list', { name: /temas con apuntes/i });
-    // I.1 y IV.1 están publicados; I.6 y IV.7, en borrador. IV.10 no tiene apuntes y no sale.
-    const filas = within(temas).getAllByRole('listitem');
-    expect(filas).toHaveLength(4);
-    expect(within(filas[0]!).getByText('Versión generada · en revisión')).toBeInTheDocument();
-    expect(within(filas[1]!).getByText('Borrador')).toBeInTheDocument();
-    expect(within(filas[2]!).getByRole('link', { name: /^IV\.1/ })).toHaveAttribute(
+    const bloques = await screen.findByRole('list', { name: /progreso por bloque/i });
+    const filas = within(bloques).getAllByRole('listitem');
+    // La cifra cuelga de la misma fila que su bloque: es lo que se arregló del «67 %» que saltaba
+    // a una línea propia debajo de la barra (la fila declaraba tres columnas y tenía cuatro hijos).
+    for (const fila of filas) {
+      expect(fila.querySelector('.barras__cifra')).not.toBeNull();
+    }
+    expect(filas[0]!.querySelector('.barras__barra')).not.toBeNull();
+  });
+
+  it('después de abrir un apartado, Inicio ofrece «Seguir leyendo» con su enlace', async () => {
+    guardarUltimoApartado({
+      codigo: 'IV.7',
+      titulo: 'Redes y comunicaciones',
+      capitulo: 'IV.7.2',
+      tituloCapitulo: 'Protocolos de red',
+      apartado: 'osi-capas',
+      tituloApartado: 'El modelo OSI',
+    });
+    montar();
+
+    const seguir = await screen.findByRole('heading', { name: /seguir leyendo/i });
+    const bloque = seguir.closest('section');
+    expect(bloque).not.toBeNull();
+    const enlace = within(bloque as HTMLElement).getByRole('link', { name: /IV\.7\.2/ });
+    expect(enlace).toHaveAttribute('href', '/temario/IV.7?capitulo=IV.7.2#apartado-osi-capas');
+    expect(within(bloque as HTMLElement).getByRole('link', { name: /ver el temario/i })).toHaveAttribute(
       'href',
-      '/temario/IV.1',
+      '/temario',
     );
   });
 
-  it('no ofrece apuntes de un tema que no los tiene', async () => {
+  it('sin nada abierto todavía lo dice y ofrece el Temario, sin inventarse una lectura', async () => {
     montar();
 
-    await screen.findByRole('list', { name: /temas con apuntes/i });
-    expect(screen.queryByRole('link', { name: /^IV\.10/ })).not.toBeInTheDocument();
+    const seguir = await screen.findByRole('heading', { name: /seguir leyendo/i });
+    const bloque = seguir.closest('section') as HTMLElement;
+    expect(
+      within(bloque).getByText(/todavía no has abierto ningún apartado/i),
+    ).toBeInTheDocument();
+    expect(within(bloque).getByRole('link', { name: /ver el temario/i })).toHaveAttribute(
+      'href',
+      '/temario',
+    );
+  });
+
+  it('ya no lista los 29 temas con su título entero', async () => {
+    montar();
+
+    await screen.findByRole('heading', { name: /seguir leyendo/i });
+    // La sección «Tus apuntes» con la lista completa desapareció: su sitio lo ocupa «Seguir leyendo».
+    expect(screen.queryByRole('list', { name: /temas con apuntes/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /tus apuntes/i })).not.toBeInTheDocument();
+    expect(window.localStorage.getItem(CLAVE_ULTIMO_APARTADO)).toBeNull();
   });
 
   it('cuando no hay test a medias lo dice y ofrece empezar uno', async () => {

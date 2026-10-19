@@ -1342,3 +1342,49 @@ La **reclasificación de incidencias** que se construyó en la tanda anterior **
 nunca** sobre tu base: por eso tu bandeja todavía no distingue las preguntas mal importadas ni las claves
 de los conjuntos en cuarentena. El comando nuevo las clasifica y deja cada cosa en su sitio. Hasta que se
 corra, tu bandeja enseña las 868 como pendientes.
+
+## Lo que viste en Inicio, en Simulacros y en el panel (18-oct-2026)
+
+### Inicio
+
+El **«67 %» del bloque I ya no salta a una línea aparte**: se lee junto a su barra, que es donde se
+mira. Era un defecto de dibujo —la fila del bloque tenía sitio para tres cosas y metía cuatro—, no un
+dato mal puesto.
+
+Y **«Tus apuntes» ya no lista los 29 temas con su título entero**. Su sitio lo ocupa **«Seguir
+leyendo»**: el último apartado que abriste, con su enlace (te lleva al capítulo y al párrafo), y un
+enlace al Temario. Eso hay que recordarlo en algún sitio y se guarda **en el aparato donde lees**, no en
+una cuenta: no hay registro, no hay nada que identifique a nadie, y la última visita sustituye a la
+anterior. Si abres la aplicación en otro ordenador, allí no sabrá por dónde ibas (y es lo correcto: son
+dos sitios distintos). Si todavía no has abierto nada, lo dice y te ofrece el Temario; no se inventa una
+lectura.
+
+### Simulacros
+
+- El resumen dice ahora «**100 preguntas (+10 de reserva) · 120 min**»: son cien las que se contestan y
+  diez por si falla alguna. El «110» anterior sumaba las dos cosas y se leía como un error.
+- Ha desaparecido el párrafo gris de la cabecera y la frase que explicaba el supuesto: ningún párrafo
+  explicativo por defecto en tu zona. Los datos del plan (partes, tiempos, puntuación, mínimo y
+  penalización) siguen en «Qué va a caer», que son cifras.
+- Bajo el supuesto **ya no se despliegan los nueve temas del bloque**: eliges III o IV y punto. Lo que
+  cae en cada bloque lo lees en el temario.
+
+### El panel
+
+- **Concordancias**: se acabaron el «1 pregunta(s) 1 preguntas no tienen…» y el «10 fila con 3
+  celda(s)». Ahora «1 pregunta no tiene…» y «20 preguntas no tienen…», con un solo módulo para todo el
+  panel.
+- **La bandeja del motor va de 50 en 50** (tiene 157 bancos esperando): el paginador está al final de la
+  lista y **los totales no cambian al pasar de hoja**. Dentro de un banco se abren 50 avisos y los demás
+  se piden con «Ver 50 más».
+- **El texto que salía tres veces** era la misma frase guardada dos veces: el motor la escribe al
+  empezar el detalle de la corrida y la API la manda otra vez como explicación de la categoría, y la
+  pantalla pintaba las dos. Ahora se lee **una vez**, y lo guardado no se ha tocado (es el rastro de lo
+  que pasó).
+- **Los dos tiempos**: `/admin/apuntes` tardaba 5,37 s y ahora abre en una décima de segundo (la tabla
+  ya no mide cada tema al abrirse: la cifra de las puertas se mide al abrir la ficha, y la fila te dice
+  que está ahí). **La ficha de un tema sigue tardando unos dos segundos**, y eso no es el viaje: es
+  medir el tema (su índice, su forma y su cobertura). La he paginado de seis apartados en seis, así que
+  la página pesa un tercio y el primer párrafo llega enseguida, pero la medida sigue costando lo que
+  cuesta. Para bajar de dos segundos habría que **guardar la medida** en la base o dejar de medir en la
+  ficha: las dos son decisiones tuyas y no las he tomado.

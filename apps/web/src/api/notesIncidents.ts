@@ -35,8 +35,14 @@ export type IncidentCategory = NotesIncident['category'];
 /** El vocabulario del motivo: qué pasó exactamente. */
 export type IncidentReason = NotesIncident['reason'];
 
-/** Cuántas incidencias se leen de una vez. */
-export const INCIDENTS_LIMIT = 200;
+/**
+ * Cuántas incidencias se leen de una vez al desplegar un banco.
+ *
+ * Cincuenta y no doscientas: cada incidencia viaja con el enunciado entero de su pregunta, su
+ * motivo y su apartado, y doscientas llenan la pantalla de texto donde el trabajo real queda cuesta
+ * abajo. Lo que no cabe se pide con «ver más» (`AVISOS_POR_TANDA` en la fila del banco).
+ */
+export const INCIDENTS_LIMIT = 50;
 
 /**
  * La categoría en palabras, en el orden del §2 del documento de ajustes.
@@ -145,6 +151,32 @@ export const INCIDENT_COUNT_FIELD: Partial<
   reviewed: 'reviewed',
   dismissed: 'dismissed',
 };
+
+/**
+ * Lo que anotó la corrida, **sin la frase que ya se está leyendo encima**.
+ *
+ * El motor escribe en `detail` la explicación de la categoría y, detrás, lo que pasó en esa
+ * pregunta concreta («pregunta: … clave: c (draft) · los apuntes dicen: a · vueltas: 1»). La
+ * explicación de la categoría viaja además en `category_help`, y la ficha de una incidencia enseña
+ * las dos: el resultado era la misma frase tres veces —en el título, en el cuerpo y otra vez al
+ * empezar el detalle—, que es lo que el propietario vio en la bandeja.
+ *
+ * No son tres cosas distintas, es **una frase guardada dos veces**: la escribe el motor al dejar la
+ * incidencia y la API la manda otra vez como texto de la categoría. Se quita aquí, al pintar, y no
+ * en la base: lo guardado es el rastro de la corrida y no se reescribe para que una pantalla se lea
+ * mejor.
+ */
+export function detailSinLaFraseDeLaCategoria(
+  detail: string,
+  categoryHelp: string,
+): string {
+  const anotado = detail.trim();
+  const frase = categoryHelp.trim();
+  if (frase === '' || !anotado.startsWith(frase)) {
+    return anotado;
+  }
+  return anotado.slice(frase.length).trim();
+}
 
 /**
  * La dirección del apartado de los apuntes del que habla la incidencia.
@@ -263,8 +295,9 @@ export function updateNotesIncident(
  * cifra la calcula el servidor —`entradas_de_decision`— y la pantalla no la recompone: contarla en
  * dos sitios acaba diciendo dos cosas.
  */
-export function fetchNotesTray(): Promise<TrayPage> {
-  return apiFetch<TrayPage>('/api/v1/notes-incidents/tray');
+export function fetchNotesTray(page = 1): Promise<TrayPage> {
+  const consulta = page > 1 ? `?pagina=${String(page)}` : '';
+  return apiFetch<TrayPage>(`/api/v1/notes-incidents/tray${consulta}`);
 }
 
 /** Qué hace cada acción en bloque, dicho por el servidor: aquí no se reescribe. */

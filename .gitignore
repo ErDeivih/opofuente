@@ -1,11 +1,11 @@
-# --- Secretos y configuración local -----------------------------------------
+# --- Secretos y configuraciÃ³n local -----------------------------------------
 .env
 .env.*
 !.env.example
 
 # --- Datos locales: nunca en git ---------------------------------------------
 # DB SQLite, artefactos por hash, representaciones, Qdrant, logs, backups,
-# exportaciones y temporales. Ver docs/product-spec/02_ARCHITECTURE.md §5.
+# exportaciones y temporales. Ver docs/product-spec/02_ARCHITECTURE.md Â§5.
 /data/
 /.e2e-data/
 /.gates-data/
@@ -62,14 +62,14 @@ Heap.*.heapsnapshot
 # Capturas de pantalla del guion de F0 (se generan, no se guardan).
 artifacts/screens/
 
-# Capturas de la puerta 18 de la bandeja por banco (F31): **se reescriben en cada corrida**, así que
-# rastrearlas deja el árbol sucio cada vez que alguien mide. Un artefacto que cambia en cada pasada no
-# es fuente; se generan donde toca —`artifacts/capturas-f31/`— y no viven en el control de versiones.
+# Capturas de la puerta 18 de la bandeja por banco (F31): **se reescriben en cada corrida**, asÃ­ que
+# rastrearlas deja el Ã¡rbol sucio cada vez que alguien mide. Un artefacto que cambia en cada pasada no
+# es fuente; se generan donde toca â€”`artifacts/capturas-f31/`â€” y no viven en el control de versiones.
 artifacts/capturas-f31/
 
-# Las capturas del acabado (§2 del cierre del objetivo) son el mismo tipo de artefacto que las de
-# `artifacts/screens`: **se reescriben en cada corrida** (y hay una carpeta de «antes» y otra de
-# «después»), asi que rastrearlas deja el arbol sucio cada vez que alguien mide. Se generan donde toca
+# Las capturas del acabado (Â§2 del cierre del objetivo) son el mismo tipo de artefacto que las de
+# `artifacts/screens`: **se reescriben en cada corrida** (y hay una carpeta de Â«antesÂ» y otra de
+# Â«despuÃ©sÂ»), asi que rastrearlas deja el arbol sucio cada vez que alguien mide. Se generan donde toca
 # y no viven en el control de versiones; el documento que las mide, si.
 artifacts/acabado/antes/
 artifacts/acabado/despues/
@@ -78,15 +78,15 @@ artifacts/acabado/*.txt
 # misma clase de artefacto generado que `artifacts/screens/`.
 artifacts/screens-datos/
 
-# Las capturas del recorrido con los datos reales (§3 del cierre) son la misma clase de artefacto que
+# Las capturas del recorrido con los datos reales (Â§3 del cierre) son la misma clase de artefacto que
 # las de `artifacts/screens/`: 60 PNG de 17-27 MB que se rehacen en cada pasada. Se generan en
 # `artifacts/recorrido/` y no viven en el control de versiones; el informe que las mide (`RECORRIDO.md`,
-# `TIEMPOS.md`, `filas.json`) y el guion que las produce, sí.
+# `TIEMPOS.md`, `filas.json`) y el guion que las produce, sÃ­.
 artifacts/recorrido/*.png
 
-# Y las capturas de la lectura por capítulos (§3.1 del encargo de F35): mismo caso —se rehacen en cada
-# corrida y hay una carpeta de «antes» y otra de «después»—. Las cifras que las acompañan
-# (`artifacts/lectura/medidas.json`) sí se rastrean: son el número que hay que poder citar.
+# Y las capturas de la lectura por capÃ­tulos (Â§3.1 del encargo de F35): mismo caso â€”se rehacen en cada
+# corrida y hay una carpeta de Â«antesÂ» y otra de Â«despuÃ©sÂ»â€”. Las cifras que las acompaÃ±an
+# (`artifacts/lectura/medidas.json`) sÃ­ se rastrean: son el nÃºmero que hay que poder citar.
 artifacts/lectura/**/*.png
 
 # Las capturas del ciclo de contestar (§3.2 del encargo de F36): misma clase de artefacto —se rehacen
@@ -104,3 +104,7 @@ artifacts/capturas-f38/**/*.png
 # la medición (`artifacts/simulacro/MEDIDAS.md`) y el guion que la produce, que es lo que hay que poder
 # volver a correr.
 artifacts/simulacro/*.png
+# Las capturas de este bloque (f40): misma clase de artefacto generado que `artifacts/screens/` —se
+# rehacen en cada corrida y son 20 MB de PNG—. Lo que se rastrea es **la medición** (`capturas.md` y
+# `capturas.json`), que es lo que hay que poder citar dentro de un mes.
+artifacts/f40/*.png

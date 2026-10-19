@@ -85,6 +85,7 @@ import {
   fetchNotesReview,
   fetchNotesReviewFile,
   fetchNotesReviewSummary,
+  type NotesReviewOrder,
   type ReviewDecisionName,
 } from './notesReview';
 import {
@@ -314,7 +315,8 @@ export const queryKeys = {
      alumno. La ficha cuelga de la misma raíz para que una decisión no deje la tabla y la ficha
      diciendo cosas distintas. */
   notesReview: ['notes-review'] as const,
-  notesReviewFile: (code: string) => ['notes-review', 'ficha', code] as const,
+  notesReviewFile: (code: string, page = 1, order = 'lectura') =>
+    ['notes-review', 'ficha', code, page, order] as const,
 };
 
 export function useReadiness() {
@@ -2040,10 +2042,10 @@ export type { IncidentCategory, IncidentStatus };
  * Se cachea como la lista y se refresca igual: cada acción en bloque invalida la raíz entera, porque
  * cerrar un conjunto cambia sus cifras, las del resumen y **la cifra** de la medida de éxito.
  */
-export function useNotesTray() {
+export function useNotesTray(page = 1) {
   return useQuery({
-    queryKey: ['note-incidents', 'tray'],
-    queryFn: fetchNotesTray,
+    queryKey: ['note-incidents', 'tray', page] as const,
+    queryFn: () => fetchNotesTray(page),
     staleTime: 15_000,
   });
 }
@@ -2106,11 +2108,20 @@ export function useNotesReviewCounters() {
   });
 }
 
-/** La ficha de un tema: sus apartados, tal como se leerán en la zona del alumno. */
-export function useNotesReviewFile(code: string | null) {
+/**
+ * Una **hoja** de la ficha de un tema: sus apartados, tal como se leerán en la zona del alumno.
+ *
+ * La hoja y el orden forman parte de la clave de la consulta: cambiar de hoja es otra lectura, y una
+ * caché que no lo supiera enseñaría los apartados de la hoja anterior.
+ */
+export function useNotesReviewFile(
+  code: string | null,
+  page = 1,
+  order: NotesReviewOrder = 'lectura',
+) {
   return useQuery({
-    queryKey: queryKeys.notesReviewFile(code ?? 'ninguno'),
-    queryFn: () => fetchNotesReviewFile(code ?? ''),
+    queryKey: queryKeys.notesReviewFile(code ?? 'ninguno', page, order),
+    queryFn: () => fetchNotesReviewFile(code ?? '', { page, order }),
     enabled: code !== null && code !== '',
   });
 }

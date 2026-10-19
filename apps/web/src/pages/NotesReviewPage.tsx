@@ -13,6 +13,7 @@ import { useNotesReview } from '../api/queries';
 import { ErrorState } from '../components/ErrorState';
 import { LoadingState } from '../components/LoadingState';
 import { describeError } from '../features/system/labels';
+import { conNumero } from '../lib/plural';
 
 /**
  * La revisión de los apuntes (F24, §4.3 del objetivo): la tabla de los temas.
@@ -71,12 +72,18 @@ export function NotesReviewPage() {
       <section className="card" aria-labelledby="resumen-apuntes">
         <h2 id="resumen-apuntes">Cómo están los apuntes</h2>
         <p className="avisos__resumen">
-          <strong>{contadores.pending_decision}</strong> esperan tu decisión
+          <strong>{contadores.pending_decision}</strong>{' '}
+          {contadores.pending_decision === 1
+            ? 'espera tu decisión'
+            : 'esperan tu decisión'}
           <span className="hint">
             {' '}
-            · {contadores.with_notes} tema(s) con apuntes: {contadores.published} publicado(s) y{' '}
-            {contadores.draft} en borrador · {contadores.approved} aprobado(s) ·{' '}
-            {contadores.rejected} rechazado(s) · {contadores.without_notes} sin apuntes escritos
+            · {conNumero(contadores.with_notes, 'tema con apuntes', 'temas con apuntes')}:{' '}
+            {conNumero(contadores.published, 'publicado', 'publicados')} y{' '}
+            {conNumero(contadores.draft, 'en borrador', 'en borrador')} ·{' '}
+            {conNumero(contadores.approved, 'aprobado', 'aprobados')} ·{' '}
+            {conNumero(contadores.rejected, 'rechazado', 'rechazados')} · {contadores.without_notes}{' '}
+            sin apuntes escritos
           </span>
         </p>
         <p className="hint">

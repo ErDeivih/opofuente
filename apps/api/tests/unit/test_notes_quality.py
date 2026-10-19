@@ -326,7 +326,9 @@ def test_una_columna_sin_nombre_en_la_cabecera_se_detecta() -> None:
 
     rotas = tablas_rotas("i-1-1-1", texto)
 
-    assert any("columna(s) sin nombre" in rota.motivo for rota in rotas)
+    # La forma de la cifra la decide `con_numero`: aquí hay **una** columna sin nombre, así que la
+    # frase va en singular («1 columna sin nombre»). Antes decía «columna(s)» en todos los casos.
+    assert any("sin nombre en la cabecera" in rota.motivo for rota in rotas)
 
 
 def test_una_fila_con_mas_celdas_que_la_cabecera_es_una_columna_sin_nombre() -> None:
@@ -341,7 +343,7 @@ def test_una_fila_con_mas_celdas_que_la_cabecera_es_una_columna_sin_nombre() -> 
     rotas = tablas_rotas("iv-7-2-1", texto)
 
     assert len(rotas) == 2, "las dos filas enseñan una columna que nadie ha titulado"
-    assert all("3 celda(s) y una cabecera de 2 columna(s)" in rota.motivo for rota in rotas)
+    assert all("fila con 3 celdas y una cabecera de 2 columnas" in rota.motivo for rota in rotas)
     assert [rota.fila for rota in rotas] == [3, 4]
 
 

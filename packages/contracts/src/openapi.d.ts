@@ -2002,8 +2002,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * La bandeja por conjunto: una fila por conjunto, con lo que admite en bloque
-         * @description La bandeja agrupada por conjunto, con lo oficial **aparte y arriba**.
+         * Una hoja de la bandeja por conjunto, con lo que admite en bloque
+         * @description Una hoja de la bandeja agrupada por conjunto, con lo oficial **aparte y arriba**.
          *
          *     Es la vista con la que se trabaja: una fila por conjunto, su resumen («50 claves sospechosas»),
          *     las acciones que admite y **la cifra** que decide si la bandeja sirve —las entradas que de
@@ -2011,7 +2011,8 @@ export interface paths {
          *     porque sus incidencias no se deciden en bloque: su clave es la que publicó la administración.
          *
          *     Se cuenta en la base, no en la pantalla: `entradas_de_decision` sale del dominio y viaja
-         *     calculado, para que no haya dos versiones de la cifra que mide la medida de éxito.
+         *     calculado, para que no haya dos versiones de la cifra que mide la medida de éxito. Y **los
+         *     totales son de la bandeja entera**: pasar de hoja no cambia cuántas filas hay ni cuánto queda.
          */
         get: operations["read_tray_api_v1_notes_incidents_tray_get"];
         put?: never;
@@ -2153,11 +2154,14 @@ export interface paths {
         };
         /**
          * Los temas con su estado, sus puertas y el motivo de los que están en borrador
-         * @description La tabla del panel: los temas del programa activo, en orden, con su motivo medido.
+         * @description La tabla del panel: los temas del programa activo, en orden, con lo que se sabe **sin
+         *     medir**.
          *
-         *     Mide **solo** los temas que esperan una decisión (los borradores): los publicados ya pasaron las
-         *     puertas y medirlos costaría la mitad de la página para repetir su estado. La medida sale de las
-         *     comprobaciones guardadas —el mismo camino que `apuntes --medir`— y no llama a ningún modelo.
+         *     **No mide** ningún tema: lee el estado, las cifras guardadas y la decisión escrita con cinco
+         *     consultas agregadas (0,03 s medidos sobre la copia del propietario, 17-oct-2026). Medir los dos
+         *     borradores costaba 3,7 s de los 5,37 s de la pantalla, y la cifra de la puerta **no se hereda**:
+         *     se mide al abrir la ficha del tema, que es donde se decide, y la fila lo dice con la razón
+         *     `sin_medida` en vez de enseñar un cero que parecería un suspenso.
          */
         get: operations["list_notes_review_api_v1_notes_review_get"];
         put?: never;
@@ -2196,12 +2200,15 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * La ficha de un tema: sus apartados, tal como se leerán en la zona del alumno
-         * @description Un tema, apartado a apartado, con su texto, su forma y lo que se ha comprobado en cada uno.
+         * Una página de la ficha: sus apartados, como se leerán en la zona del alumno
+         * @description Una **página** de un tema, apartado a apartado, con su texto, su forma y lo comprobado.
          *
          *     Un tema sin apuntes escritos sale con su estado (`none`) y sin apartados: no es un error que un
          *     tema no tenga texto, y devolver un 404 obligaría a la pantalla a distinguir «no existe» de «no
          *     está escrito», que es justo lo que el estado contesta.
+         *
+         *     El orden lo decide el servidor porque la página se corta aquí: «los peores primero» ordena los
+         *     apartados del **tema**, no los de la hoja que se acaba de enviar.
          */
         get: operations["notes_review_file_api_v1_notes_review__codigo__get"];
         put?: never;
@@ -7434,14 +7441,41 @@ export interface components {
         };
         /**
          * NotesReviewFileSchema
-         * @description La ficha de un tema: su fila de la tabla y sus apartados en orden de lectura.
+         * @description Una **página** de la ficha de un tema: su fila de la tabla y los apartados de la hoja.
+         *
+         *     `sections_total` es el número de apartados del tema y no el de la hoja: el título de la pantalla
+         *     dice cuántos hay, y la hoja que se está mirando se sabe por `page` y `pages`.
          */
         NotesReviewFileSchema: {
             /**
+             * Page
+             * @description La hoja que va en `sections`, empezando por 1.
+             * @default 1
+             */
+            page: number;
+            /**
+             * Page Size
+             * @description Cuántos apartados caben en una hoja.
+             * @default 6
+             */
+            page_size: number;
+            /**
+             * Pages
+             * @description Cuántas hojas tiene la ficha.
+             * @default 1
+             */
+            pages: number;
+            /**
              * Sections
-             * @description Los apartados, en orden de lectura. Vacío si el tema no tiene texto escrito.
+             * @description Los apartados de la hoja servida, en el orden pedido. Vacío si el tema no tiene texto escrito.
              */
             sections: components["schemas"]["NotesReviewSectionSchema"][];
+            /**
+             * Sections Total
+             * @description Apartados que tiene el tema entero, sumando todas las hojas.
+             * @default 0
+             */
+            sections_total: number;
             topic: components["schemas"]["NotesReviewTopicSchema"];
         };
         /**
@@ -10883,13 +10917,18 @@ export interface components {
         };
         /**
          * TraySchema
-         * @description La bandeja entera, en dos secciones, con **la cifra** de la medida de éxito del §2.4.
+         * @description Una **hoja** de la bandeja, en dos secciones, con **la cifra** de la medida de éxito (§2.4).
          *
          *     `entradas_de_decision` no es el número de incidencias ni el de filas: es lo que de verdad
          *     depende del criterio del propietario, contado con la regla de `domain.tray` —una por conjunto no
          *     oficial, una por incidencia oficial—. Va en la respuesta y no se calcula en la pantalla porque
          *     es la cifra que decide si la bandeja sirve, y una cifra que se calcula en dos sitios acaba
          *     diciendo dos cosas.
+         *
+         *     `rest` son las filas de **la hoja**; `filas`, `total_pendiente`, `propuestas` y
+         *     `entradas_de_decision` son de la bandeja **entera** y no cambian al pasar de hoja: paginar no
+         *     puede mover la cifra del trabajo que queda. La sección de oficiales va entera en todas las
+         *     hojas: son ocho como mucho y sus incidencias no se deciden en bloque.
          */
         TraySchema: {
             /**
@@ -10899,18 +10938,45 @@ export interface components {
             entradas_de_decision: number;
             /**
              * Filas
-             * @description Cuántas filas enseña la bandeja.
+             * @description Cuántas filas tiene la bandeja entera.
              */
             filas: number;
             /** Official Section */
             official_section?: components["schemas"]["TraySetSchema"][];
             /**
+             * Page
+             * @description La hoja que va en `rest`, empezando por 1.
+             * @default 1
+             */
+            page: number;
+            /**
+             * Page Size
+             * @description Cuántas filas caben en una hoja.
+             * @default 50
+             */
+            page_size: number;
+            /**
+             * Pages
+             * @description Cuántas hojas tiene la lista de bancos.
+             * @default 1
+             */
+            pages: number;
+            /**
              * Propuestas
              * @description Incidencias ya propuestas, que se aprueban en bloque.
              */
             propuestas: number;
-            /** Rest */
+            /**
+             * Rest
+             * @description Las filas de la hoja que se está mirando.
+             */
             rest?: components["schemas"]["TraySetSchema"][];
+            /**
+             * Rest Total
+             * @description Filas de la sección de bancos, sumando todas las hojas.
+             * @default 0
+             */
+            rest_total: number;
             /**
              * Total Pendiente
              * @description Incidencias que esperan criterio.
@@ -17349,7 +17415,10 @@ export interface operations {
     };
     read_tray_api_v1_notes_incidents_tray_get: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Qué hoja de la lista de bancos se sirve, empezando por la 1. Cincuenta filas por hoja: con los datos del propietario son 157 filas con cuatro acciones cada una. */
+                pagina?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -17787,7 +17856,12 @@ export interface operations {
     };
     notes_review_file_api_v1_notes_review__codigo__get: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Qué hoja de apartados se sirve, empezando por la 1. Una hoja son seis apartados: los cuerpos de todos a la vez eran el 92 % de la respuesta y el navegador tardaba en pintar el primero. */
+                pagina?: number;
+                /** @description `lectura` es el orden del tema; `peores`, lo que queda sin resolver antes. */
+                orden?: "lectura" | "peores";
+            };
             header?: never;
             path: {
                 /** @description Código legible del tema, como `I.4` (también se acepta `I-4`). */

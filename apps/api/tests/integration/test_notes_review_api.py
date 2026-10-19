@@ -356,17 +356,19 @@ class TestLaTabla:
 
         borrador = panel.fila(BORRADOR)
         assert borrador["state"] == "draft"
-        assert borrador["measured"] is True
-        assert borrador["coverage"] == [1, 1]
+        # La tabla **no mide**: medir los borradores costaba 3,7 s de los 5,37 s que tardaba la
+        # pantalla, así que la cifra de la puerta se mide al abrir la ficha. La fila lo dice con su
+        # razón `sin_medida` en vez de enseñar un cero que parecería un suspenso.
+        assert borrador["measured"] is False
+        assert borrador["coverage"] is None
         assert borrador["coverage_threshold"] == 0.9
         codigos = [razon["code"] for razon in borrador["reasons"]]
-        assert "a_las_puertas" in codigos
+        assert "sin_medida" in codigos
         assert "sin_decision" in codigos
-        puertas = next(razon for razon in borrador["reasons"] if razon["code"] == "a_las_puertas")
-        # La cifra de la puerta, con **coma** (§2.2): la compone el servidor y viaja ya escrita.
-        # Esta aserción esperaba `1/1 = 100.0 %`, el formato viejo.
-        assert puertas["figure"] == "1/1 = 100,0 %"
-        assert "Aprobarlo la publica" in puertas["text"]
+        assert "a_las_puertas" not in codigos
+        sin_medida = next(razon for razon in borrador["reasons"] if razon["code"] == "sin_medida")
+        assert sin_medida["figure"] is None
+        assert "se miden al abrir su ficha" in sin_medida["text"]
 
     def test_no_mide_los_temas_publicados_y_lo_dice(self, panel: Panel) -> None:
         fila = panel.fila(PUBLICADO)
@@ -390,6 +392,28 @@ class TestLaTabla:
 
 
 class TestLaFichaDeUnBorrador:
+    def test_mide_el_tema_y_ensena_la_cifra_de_la_puerta(self, panel: Panel) -> None:
+        """La medida vive donde se decide: abrir la ficha la hace, y la tabla dice dónde está."""
+        datos = panel.client.get(f"/api/v1/notes-review/{BORRADOR}").json()
+
+        tema = datos["topic"]
+        assert tema["measured"] is True
+        assert tema["coverage"] == [1, 1]
+        puertas = next(razon for razon in tema["reasons"] if razon["code"] == "a_las_puertas")
+        # La cifra de la puerta, con **coma** (§2.2): la compone el servidor y viaja ya escrita.
+        assert puertas["figure"] == "1/1 = 100,0 %"
+        assert "Aprobarlo la publica" in puertas["text"]
+        assert "sin_medida" not in [razon["code"] for razon in tema["reasons"]]
+
+    def test_sirve_una_hoja_de_seis_apartados_y_dice_cuantas_hojas_hay(self, panel: Panel) -> None:
+        """La ficha va paginada: los cuerpos de todos los apartados eran el 92 % de la respuesta."""
+        datos = panel.client.get(f"/api/v1/notes-review/{BORRADOR}").json()
+
+        assert datos["page"] == 1
+        assert datos["page_size"] == 6
+        assert datos["pages"] == 1
+        assert datos["sections_total"] == len(datos["sections"])
+
     def test_trae_sus_apartados_con_su_texto_y_su_forma(self, panel: Panel) -> None:
         ficha = panel.client.get(f"/api/v1/notes-review/{BORRADOR}")
 

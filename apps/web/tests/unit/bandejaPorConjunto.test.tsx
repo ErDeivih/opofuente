@@ -61,10 +61,14 @@ const BANDEJA: TrayPage = {
       acciones: ['aceptar_derivadas', 'dejar_fuera', 'no_son_preguntas'],
     },
   ],
-  filas: 2,
+  filas: 3,
+  rest_total: 2,
   total_pendiente: 55,
   propuestas: 12,
   entradas_de_decision: 3,
+  page: 1,
+  pages: 1,
+  page_size: 50,
 };
 
 const INCIDENCIA = {

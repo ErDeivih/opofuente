@@ -7,6 +7,7 @@ import {
   usePendingActions,
   useReviewQueue,
 } from '../api/queries';
+import { conNumero } from '../lib/plural';
 
 /**
  * Los contadores del menú de administración (07_UI-UX §2, movidos a `/admin` en F1).
@@ -75,7 +76,7 @@ export function useSectionCounts(): SectionCounts {
   if (avisosAlumno > 0) {
     contadores['/admin/avisos'] = {
       count: avisosAlumno,
-      label: `${avisosAlumno} avisos de los apuntes sin mirar`,
+      label: `${conNumero(avisosAlumno, 'aviso', 'avisos')} de los apuntes sin mirar`,
     };
   }
 
@@ -87,19 +88,19 @@ export function useSectionCounts(): SectionCounts {
   if (incidencias > 0) {
     contadores['/admin/incidencias'] = {
       count: incidencias,
-      label: `${incidencias} incidencias del motor sin decidir`,
+      label: `${conNumero(incidencias, 'incidencia', 'incidencias')} del motor sin decidir`,
     };
   }
 
   // La revisión de apuntes (F24): los borradores que esperan una decisión del propietario. Sale de
-  // una ruta **barata** propia (`/notes-review/summary`), no de la tabla de la pantalla: esa mide los
-  // borradores —de medio segundo a tres por tema— y el contador se pide en todas las pantallas del
-  // panel. Un tema publicado no cuenta: ya pasó las puertas y no espera a nadie.
+  // una ruta **barata** propia (`/notes-review/summary`), no de la tabla de la pantalla: el contador
+  // se pide en todas las pantallas del panel y no puede costar lo que cuesta medir un tema. Un tema
+  // publicado no cuenta: ya pasó las puertas y no espera a nadie.
   const apuntes = apuntesApendientes.data?.pending_decision ?? 0;
   if (apuntes > 0) {
     contadores['/admin/apuntes'] = {
       count: apuntes,
-      label: `${apuntes} tema(s) con apuntes esperando tu decisión`,
+      label: `${conNumero(apuntes, 'tema con apuntes esperando', 'temas con apuntes esperando')} tu decisión`,
     };
   }
 

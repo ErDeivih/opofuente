@@ -1859,10 +1859,23 @@ kbd {
   max-width: var(--medida-texto);
 }
 
-.barras__fila,
+/*
+ * La fila de un bloque son **cuatro** cosas: el numeral, el título, la barra y su cifra. Declaraba
+ * tres columnas con cuatro hijos, así que la cifra caía a una fila implícita debajo de la barra: el
+ * «67 %» del bloque I se leía en una línea propia, lejos de lo que mide. Ahora la cifra tiene su
+ * columna, y la barra se queda con lo que sobre.
+ */
+.barras__fila {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) minmax(4rem, 0.5fr) auto;
+  align-items: center;
+  gap: var(--s3);
+}
+
+/* La barra suelta de una fila de bloque (el temario): su barra y su cifra, sin numeral ni título. */
 .barras--bloque {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: minmax(4rem, 1fr) auto;
   align-items: center;
   gap: var(--s3);
 }

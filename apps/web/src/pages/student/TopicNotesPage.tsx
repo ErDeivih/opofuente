@@ -20,6 +20,7 @@ import { NotesBody } from '../../features/student/NotesBody';
 import { NotesStateChip } from '../../features/student/NotesStateChip';
 import { ReportMistake } from '../../features/student/ReportMistake';
 import { describeError } from '../../features/system/labels';
+import { guardarUltimoApartado } from '../../lib/ultimoApartado';
 import { Plegable } from '../../ui/Disclosure';
 
 /**
@@ -75,6 +76,31 @@ export function TopicNotesPage() {
     servido,
     delAncla: capituloQueContiene(capitulos, ancla),
   });
+
+  // La marca de por dónde va: se guarda en cuanto se sabe qué capítulo se está leyendo, para que el
+  // Inicio pueda ofrecer «Seguir leyendo». Es del aparato, no de una cuenta: ver `lib/ultimoApartado`.
+  // Se guarda también el apartado cuando la dirección trae un ancla, y solo entonces: inventar el
+  // apartado «actual» por el scroll guardaría un sitio al que el alumno no ha decidido ir.
+  useEffect(() => {
+    const ficha = tema.data;
+    const notas = apuntes.data;
+    if (ficha === undefined || notas === undefined) {
+      return;
+    }
+    const capitulo = notas.chapters.find((cual) => cual.code === notas.chapter);
+    if (capitulo === undefined) {
+      return;
+    }
+    const seccion = notas.sections.find((cual) => cual.anchor === ancla) ?? null;
+    guardarUltimoApartado({
+      codigo: ficha.code,
+      titulo: ficha.title,
+      capitulo: capitulo.code,
+      tituloCapitulo: capitulo.title,
+      apartado: seccion === null ? null : seccion.anchor,
+      tituloApartado: seccion === null ? null : seccion.title,
+    });
+  }, [tema.data, apuntes.data, ancla]);
 
   useEffect(() => {
     if (abrir === null) {
