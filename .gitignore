@@ -99,3 +99,8 @@ artifacts/contestar/**/*.png
 # compare. Se rehacen en cada corrida; lo que se rastrea es la prueba que las mide
 # (`apps/web/tests/e2e/resultado.spec.ts`), que es donde están las cifras.
 artifacts/capturas-f38/**/*.png
+# Y las capturas del simulacro y del reloj (§3.3 y §3.4): misma clase de artefacto que las de
+# `artifacts/recorrido/` y `artifacts/lectura/` —se rehacen en cada corrida—. Lo que sí se rastrea es
+# la medición (`artifacts/simulacro/MEDIDAS.md`) y el guion que la produce, que es lo que hay que poder
+# volver a correr.
+artifacts/simulacro/*.png

@@ -23,11 +23,14 @@ por la composición declarada de `StudyService` (`compose`), y las cuatro rutas 
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Path, Query, status
+import time
+
+from fastapi import APIRouter, Path, Query, Response, status
 
 from opofuente.api.deps import StudentServiceDep
 from opofuente.api.error_responses import RESOURCE_ERRORS, WRITE_ERRORS
 from opofuente.api.student_schemas import (
+    StudentAbandonSchema,
     StudentAnswerRequestSchema,
     StudentBlockProgressSchema,
     StudentCorrectionSchema,
@@ -73,6 +76,7 @@ from opofuente.api.student_schemas import (
     StudentTopicSchema,
 )
 from opofuente.application.student_models import (
+    StudentAbandonView,
     StudentAnswerRequest,
     StudentBlockProgressView,
     StudentMistakesView,
@@ -135,6 +139,7 @@ def _session(view: StudentSessionView) -> StudentSessionSchema:
         answered_questions=view.answered_questions,
         time_limit_minutes=view.time_limit_minutes,
         started_at=view.started_at,
+        server_now=view.server_now,
         finished_at=view.finished_at,
         created_at=view.created_at,
         result=None if view.result is None else _score(view.result),
@@ -725,13 +730,19 @@ def student_create_test(
     summary="Monta el simulacro con el perfil del examen y el bloque elegido para el supuesto",
 )
 def student_create_mock_exam(
-    service: StudentServiceDep, request: StudentMockExamRequestSchema
+    service: StudentServiceDep, request: StudentMockExamRequestSchema, response: Response
 ) -> StudentSessionSchema:
     """El simulacro del perfil: 80 + 5 y el supuesto de 20 + 5 del bloque III o del IV.
 
     Los dos supuestos son excluyentes y se monta el elegido. Si sus preguntas salen de los temas del
     bloque, la sesión lo dice (`practical_case_origin`).
+
+    La respuesta lleva `Server-Timing` con lo que tardó **la composición** (medido en el servidor,
+    que es donde está el trabajo). Se publica porque el encargo de la velocidad pide separar lo que
+    cuesta elegir las preguntas de lo que cuesta pintarlas, y esa frontera no se ve desde el
+    navegador.
     """
+    inicio = time.perf_counter()
     view: StudentSessionView = service.create_mock_exam(
         StudentMockExamRequest(
             variant=request.variant,
@@ -739,6 +750,8 @@ def student_create_mock_exam(
             owner_id=service.owner_id,
         )
     )
+    transcurrido_ms = (time.perf_counter() - inicio) * 1000
+    response.headers["Server-Timing"] = f"composicion;dur={transcurrido_ms:.1f}"
     return _session(view)
 
 
@@ -804,6 +817,28 @@ def student_answer(
                 confidence=request.confidence,
             ),
         )
+    )
+
+
+@router.post(
+    "/sessions/{sesion}/abandon",
+    response_model=StudentAbandonSchema,
+    responses=WRITE_ERRORS,
+    summary="Abandona el test: lo que hayas contestado se conserva y el test no cuenta",
+)
+def student_abandon(service: StudentServiceDep, sesion: str = Path()) -> StudentAbandonSchema:
+    """Salir de un test a medias, con lo que queda dicho.
+
+    **Qué pasa con el intento abandonado**: lo contestado se conserva, la sesión queda `abandoned`,
+    **no cuenta** como test hecho ni entra en las notas, y se puede abrir para repasar lo que se
+    llevaba. Cuando no se contestó nada, la sesión se descarta: no hay historial que conservar.
+
+    Es reintentable a propósito: abandonar dos veces no da un error, devuelve el mismo parte. Y una
+    sesión ya terminada no se toca: tiene su resultado y convertirla en abandono sería tirarlo.
+    """
+    vista: StudentAbandonView = service.abandon(sesion)
+    return StudentAbandonSchema(
+        session_id=vista.session_id, action=vista.action, detail=vista.detail
     )
 
 

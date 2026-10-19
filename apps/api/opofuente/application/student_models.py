@@ -17,6 +17,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date, datetime
+from typing import Literal
 
 from opofuente.domain.topic_notes import NotesState
 
@@ -62,6 +63,11 @@ class StudentSessionView:
     answered_questions: int
     time_limit_minutes: int | None
     started_at: datetime | None
+    #: La hora del **servidor** en el momento de esta respuesta, del mismo reloj que escribió
+    #: `started_at`. Es lo que permite al navegador poner el reloj del test en hora sin depender de
+    #: que el equipo del alumno la tenga bien: la diferencia entre las dos horas es el tiempo que
+    #: lleva corriendo el test, medida con un solo reloj.
+    server_now: datetime
     finished_at: datetime | None
     created_at: datetime
     result: StudentScoreView | None = None
@@ -72,6 +78,26 @@ class StudentSessionView:
     @property
     def finished(self) -> bool:
         return self.status == "finished"
+
+    @property
+    def abandoned(self) -> bool:
+        return self.status == "abandoned"
+
+
+@dataclass(frozen=True, slots=True)
+class StudentAbandonView:
+    """Qué pasó al abandonar un test, con las palabras que se le enseñan al alumno.
+
+    No es el `action` del panel: aquí lo que importa es **qué queda** y **qué no cuenta**, y eso se
+    dice en una frase. El alumno acaba de pedir salirse de un examen a medias y tiene derecho a
+    saber si lo contestado se conserva.
+    """
+
+    session_id: str
+    #: `deleted` (no había nada contestado: la sesión se va) o `abandoned` (había respuestas: se
+    #: conservan y quedan para repasar).
+    action: Literal["deleted", "abandoned"]
+    detail: str
 
 
 @dataclass(frozen=True, slots=True)

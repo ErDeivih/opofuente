@@ -29,6 +29,7 @@ from opofuente.application.read_models import (
     OppositionSummary,
 )
 from opofuente.application.student_models import (
+    StudentAbandonView,
     StudentAnswerRequest,
     StudentBlockProgressView,
     StudentCorrectionView,
@@ -695,8 +696,7 @@ class StudentService:
             fuentes = {vista.question_set_id}
         return bool(fuentes) and fuentes <= publicables
 
-    @staticmethod
-    def _en_curso(sesiones: tuple[SessionView, ...]) -> StudentSessionView | None:
+    def _en_curso(self, sesiones: tuple[SessionView, ...]) -> StudentSessionView | None:
         """El test «a medias»: el que está en marcha o, si no, el borrador ya empezado.
 
         Un borrador **sin ninguna respuesta** no se enseña como «continuar»: es una sesión montada y
@@ -706,10 +706,10 @@ class StudentService:
         """
         for vista in sesiones:
             if vista.status is SessionStatus.RUNNING:
-                return StudentService._sesion(vista)
+                return self._sesion(vista)
         for vista in sesiones:
             if vista.status is SessionStatus.DRAFT and vista.answered_questions > 0:
-                return StudentService._sesion(vista)
+                return self._sesion(vista)
         return None
 
     # ------------------------------------------------------------------ montar y correr un test
@@ -804,7 +804,7 @@ class StudentService:
             ),
             opposition_id=oposicion.id,
         )
-        return StudentService._sesion(resultado.session)
+        return self._sesion(resultado.session)
 
     def create_mock_exam(self, request: StudentMockExamRequest) -> StudentSessionView:
         """Monta el simulacro con el perfil del examen: 80 + 5 y su supuesto de 20 + 5.
@@ -891,7 +891,7 @@ class StudentService:
             ),
             opposition_id=oposicion.id,
         )
-        return StudentService._sesion(resultado.session)
+        return self._sesion(resultado.session)
 
     def run(self, session_id: str, *, position: int | None = None) -> StudentRunView:
         """El test en curso: la sesión, la pregunta que toca y la hoja de respuestas entera.
@@ -912,6 +912,53 @@ class StudentService:
         self._sesion_del_alumno(session_id)
         self._study.start(session_id)
         return self.run(session_id)
+
+    def abandon(self, session_id: str) -> StudentAbandonView:
+        """Abandona el test en curso y dice qué queda de él.
+
+        **La decisión, escrita**: abandonar **no borra el intento**. Lo que ya se contestó se
+        conserva, la sesión queda `abandoned` y **no cuenta** ni como test terminado ni como nota
+        —Inicio y Progreso solo miran los terminados—, y sirve para volver a mirar lo que se llevaba
+        hecho. Solo se borra la sesión en la que no se contestó **nada**: ahí no hay historial que
+        perder, y dejar una fila vacía es lo que llenó el banco de sesiones «sin empezar» el 5 de
+        octubre.
+
+        Es **idempotente y sin trampa**: abandonar una ya abandonada devuelve el mismo parte en vez
+        de fallar, y abandonar una **terminada** no la toca —un test entregado tiene su resultado y
+        marcarlo abandonado sería tirar la nota que el alumno ya vio—. Por eso el estado en el que
+        deja la sesión es del que se puede **volver a salir**: la sesión se puede abrir y mirar, y
+        para seguir estudiando se monta otra, sin quedar atrapado en ninguna.
+        """
+        sesion = self._sesion_del_alumno(session_id)
+        if sesion.finished:
+            # Terminar es terminar: el resultado ya está calculado y no se convierte en abandono.
+            return StudentAbandonView(
+                session_id=session_id,
+                action="abandoned",
+                detail=(
+                    "el test ya estaba terminado: se conserva tal y como lo entregaste, con su "
+                    "resultado"
+                ),
+            )
+        if sesion.abandoned:
+            return StudentAbandonView(
+                session_id=session_id,
+                action="abandoned",
+                detail=(
+                    "este test ya estaba abandonado: sigue conservado para repasar y no cuenta "
+                    "como test hecho"
+                ),
+            )
+        accion = self._study.discard_session(session_id)
+        return StudentAbandonView(
+            session_id=session_id,
+            action="deleted" if accion == "deleted" else "abandoned",
+            detail=(
+                "no habías contestado nada: el test se ha descartado y no queda nada pendiente"
+                if accion == "deleted"
+                else "tus respuestas se conservan para repasar, pero este test no cuenta como hecho"
+            ),
+        )
 
     def answer(self, session_id: str, request: StudentAnswerRequest) -> StudentRunView:
         """Contesta la pregunta de una **posición** de la hoja y devuelve el test como queda.
@@ -957,7 +1004,7 @@ class StudentService:
         self._sesion_del_alumno(session_id)
         resultado = self._study.finish(session_id)
         return StudentResultView(
-            session=StudentService._sesion(self._study.session(session_id)),
+            session=self._sesion(self._study.session(session_id)),
             parts=tuple(StudentService._parte(parte) for parte in resultado.parts),
             total=StudentService._parte(resultado.total),
             official_available=resultado.official_available,
@@ -985,7 +1032,7 @@ class StudentService:
         self._sesion_del_alumno(session_id)
         calculado = self._study.result(session_id)
         revision = self._study.review(session_id)
-        sesion = StudentService._sesion(self._study.session(session_id))
+        sesion = self._sesion(self._study.session(session_id))
         catalogo = self._catalogo_de_temas(oposicion)
         temas = self._temas_de_preguntas(
             [entrada.question_version_id for entrada in revision.entries], catalogo
@@ -1158,7 +1205,7 @@ class StudentService:
                 sources=(SourceInput(question_set_id=examen.question_set_id, part_code=parte),),
             )
         )
-        return StudentService._sesion(vista)
+        return self._sesion(vista)
 
     # --------------------------------------------------- los fallos (F14)
 
@@ -1283,7 +1330,7 @@ class StudentService:
             vista, self._student.public_set_ids(oposicion.id)
         ):
             raise NotFoundError("sesión de estudio", session_id)
-        return StudentService._sesion(vista)
+        return self._sesion(vista)
 
     def _etiqueta_del_test(self, oposicion: OppositionSummary, nodos: tuple[str, ...]) -> str:
         """De qué es el test: sus temas, en orden, y cuántos son."""
@@ -1602,8 +1649,14 @@ class StudentService:
         nombre = NOMBRES_DE_MODO.get(vista.mode.value, "Test")
         return f"{nombre} · {vista.total_questions} preguntas"
 
-    @staticmethod
-    def _sesion(vista: SessionView) -> StudentSessionView:
+    def _sesion(self, vista: SessionView) -> StudentSessionView:
+        """La sesión como la enseña la zona del alumno, con la hora del servidor al lado.
+
+        `server_now` sale del **mismo reloj** que escribió `started_at` (el del servicio): es lo que
+        permite al navegador poner el reloj del test en hora sin depender de que el equipo del
+        alumno tenga la hora bien. Y son dos relojes distintos, así que ponerlo aquí —y no en el
+        navegador— es lo único que garantiza que la resta signifique algo.
+        """
         return StudentSessionView(
             id=vista.id,
             mode=vista.mode.value,
@@ -1613,6 +1666,7 @@ class StudentService:
             answered_questions=vista.answered_questions,
             time_limit_minutes=vista.time_limit_minutes,
             started_at=vista.started_at,
+            server_now=self._clock.now(),
             finished_at=vista.finished_at,
             created_at=vista.created_at,
             result=StudentService._resultado(vista.result),
