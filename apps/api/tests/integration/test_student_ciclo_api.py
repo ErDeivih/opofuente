@@ -306,7 +306,13 @@ def test_contestar_dos_veces_lo_mismo_devuelve_el_mismo_intento(en_marcha: EnMar
 
     assert primera.status_code == 200, primera.text
     assert segunda.status_code == 200, segunda.text
-    assert segunda.json() == primera.json(), "la segunda vez devuelve el mismo resultado"
+    # `server_now` es el reloj del test en marcha (§3.4, F37): cambia en cada respuesta A PROPOSITO.
+    # Lo que esta prueba fija es que la SEGUNDA no cree un intento nuevo. Todo lo demas, igual.
+    segunda_cuerpo = segunda.json()
+    primera_cuerpo = primera.json()
+    segunda_cuerpo["session"].pop("server_now", None)
+    primera_cuerpo["session"].pop("server_now", None)
+    assert segunda_cuerpo == primera_cuerpo, "la segunda vez devuelve el mismo resultado"
 
 
 def test_dos_peticiones_a_la_vez_para_la_misma_pregunta_no_revientan(en_marcha: EnMarcha) -> None:
