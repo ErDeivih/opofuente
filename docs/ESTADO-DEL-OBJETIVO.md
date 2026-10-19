@@ -4000,7 +4000,6 @@ epígrafes de I.1**, y eso es una decisión sobre el programa, no sobre la panta
   resultado y alumno/estudio.
 - **Las 18 puertas no las corre este bloque** (las corre el que mide, con su protocolo).
 
-<<<<<<< ours
 ---
 
 ## F38 — El Resultado del alumno: la hoja, la práctica y el cero (§3.5 del recorrido)
@@ -4226,5 +4225,4 @@ Capturadas con el código de `main` y estas pruebas encima (`git stash` de `apps
 - **Lo que estas capturas no demuestran**: los colores y el aspecto de dentro de la hoja están
   comprobados por la prueba sobre la pantalla, no leyendo el PNG (esta máquina no ve imágenes). Los
   PNG son para que los mire el propietario.
->>>>>>> theirs
 
