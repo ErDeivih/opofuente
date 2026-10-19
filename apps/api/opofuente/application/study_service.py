@@ -1516,6 +1516,40 @@ class StudyService:
             opposition_id, since=ahora - timedelta(days=DIAS_VISTA_HACE_POCO)
         )
 
+    def exam_size(
+        self, *, opposition_id: str, part_code: str, ordinary: int, reserve: int
+    ) -> tuple[int, bool]:
+        """Cuántas preguntas tendría un examen oficial, y si se puede montar con ellas.
+
+        Es la regla con la que `_preguntas` monta un examen —las primeras `ordinary_items`
+        ordinarias y las primeras `reserve_items` reservas de la parte que publica la
+        convocatoria— aplicada sin montarlo, para que la **fila** de la lista de exámenes diga lo
+        mismo que el examen (§3.7 del recorrido: la fila decía 135 y el examen tenía 85).
+
+        El segundo valor es la otra mitad de la verdad: un examen al que le faltan preguntas para lo
+        que la convocatoria pide **no se puede montar** —`_preguntas` contesta 409— y una fila que
+        ofreciera el botón estaría ofreciendo un examen que revienta. Hoy hay seis así, los de
+        promoción interna: 74 preguntas para una parte que pide 80.
+
+        Se escribe aquí, junto a la composición, y no en la pantalla ni en la consulta: la regla de
+        cuántas preguntas entran es la de la convocatoria, y tenerla dos veces es cómo se acaba
+        prometiendo un examen que no existe. Si la parte no se puede resolver, tampoco se puede
+        montar y se dice con un cero.
+        """
+        oposicion = self._profiles.get_opposition(opposition_id)
+        if oposicion is None:
+            return 0, False
+        try:
+            convocatoria = self._convocatoria_de(oposicion.opposition.convocation_id)
+            parte = self._parte(convocatoria, part_code)
+        except (NotFoundError, UnsupportedError):
+            return 0, False
+        faltan = parte.ordinary_items is not None and ordinary < parte.ordinary_items
+        elegidas = ordinary if parte.ordinary_items is None else min(ordinary, parte.ordinary_items)
+        reservas = reserve if parte.reserve_items is None else min(reserve, parte.reserve_items)
+        return elegidas + reservas, not faltan
+
+    @staticmethod
     @staticmethod
     def _nota_del_simulacro(repetidas: int, *, total: int) -> str:
         """Lo que un simulacro dice de su propia composición: cuánto ha tenido que repetir.
