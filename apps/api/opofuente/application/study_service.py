@@ -938,6 +938,10 @@ class StudyService:
                 vistas_del_tema.add(pregunta_id)
                 primer_nodo[pregunta_id] = node_id
                 ordenadas.append(pregunta_id)
+        # La política de claves, una sola: la misma que usan los tests de práctica y el
+        # repaso de fallos (`key_policy.clave_servible`). Se pregunta UNA vez por parte,
+        # sobre los identificadores que ya se leyeron, no una vez por pregunta.
+        servibles = self._questions.servable_question_ids(ordenadas)
         # Todo lo que la parte necesita se lee **de una vez** (una consulta por cosa, no por
         # pregunta): el banco de los temas de un simulacro son miles de preguntas, y preguntar por
         # cada una —su fila, sus opciones, su conjunto, su exclusión y su clave— es el N+1 que hacía
@@ -971,7 +975,7 @@ class StudyService:
                 # es una letra con dos apoyos independientes y no depende de la extracción.
                 entrada: KeyEntryView | None = propia
                 clave_id: str | None = None
-            elif conjunto.key_is_unreliable or banco.sigue_fuera(pregunta.id):
+            elif pregunta.id not in servibles:
                 # Cuarentena de clave (§1) o motivo de fuera escrito (§1 de F29): la pregunta
                 # **no entra** en la parte. No se dice aquí porque el contrato de la composición
                 # ya enseña `available`, que es el número de preguntas que de verdad se pueden
