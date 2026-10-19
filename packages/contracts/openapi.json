@@ -15177,6 +15177,12 @@
             "title": "Questions",
             "type": "array"
           },
+          "servable_total": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Servable Total",
+            "type": "integer"
+          },
           "topics": {
             "items": {
               "$ref": "#/components/schemas/StudentMistakeTopicSchema"
@@ -15658,6 +15664,21 @@
       "StudentOfficialExamSchema": {
         "description": "Un examen oficial, por su sitio en la lista: título, fecha, tamaño y si se puede hacer.",
         "properties": {
+          "blocked_reason": {
+            "anyOf": [
+              {
+                "enum": [
+                  "faltan_respuestas",
+                  "faltan_preguntas"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Blocked Reason"
+          },
           "held_at": {
             "anyOf": [
               {
@@ -15669,6 +15690,19 @@
               }
             ],
             "title": "Held At"
+          },
+          "held_year": {
+            "anyOf": [
+              {
+                "maximum": 2100.0,
+                "minimum": 1900.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Held Year"
           },
           "origin_scope": {
             "default": "desconocida",

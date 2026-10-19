@@ -93,6 +93,7 @@ from opofuente.domain.errors import NotFoundError, UnsupportedError
 from opofuente.domain.key_reliability import KeyReliability
 from opofuente.domain.notes_reports import normalise_reason
 from opofuente.domain.profiles import ExamPart, NodeType
+from opofuente.domain.questions import ano_del_titulo, mostrar_huecos
 from opofuente.domain.study import (
     OWNER_ID_LOCAL,
     Confidence,
@@ -1163,19 +1164,61 @@ class StudentService:
         no enseña de dónde salen las preguntas de un test (F2 §4), así que un examen se pide por su
         sitio, como una fila de la hoja de respuestas.
         """
-        return StudentOfficialExamsView(
-            exams=tuple(
+        oposicion = self._opposition()
+        examenes = self._examenes_oficiales()
+        vistas: list[StudentOfficialExamView] = []
+        for posicion, fila in enumerate(examenes, start=1):
+            preguntas, bloqueo = self._preguntas_del_examen(oposicion, fila)
+            vistas.append(
                 StudentOfficialExamView(
                     position=posicion,
                     title=fila.title,
                     held_at=fila.held_at,
-                    questions=fila.questions,
-                    ready=fila.ready,
+                    # El año que **declara** el documento (está en su título: «2025 - TAI-L (MODELO
+                    # A)»). El origen no publica el día —la fecha de celebración se anuncia aparte—,
+                    # así que lo único que se puede afirmar es el año y eso es lo que se enseña.
+                    held_year=(
+                        fila.held_at.year
+                        if fila.held_at is not None
+                        else ano_del_titulo(fila.title)
+                    ),
+                    questions=preguntas,
+                    ready=bloqueo is None,
+                    blocked_reason=bloqueo,
                     origin_scope=fila.origin_scope,
                 )
-                for posicion, fila in enumerate(self._examenes_oficiales(), start=1)
             )
+        return StudentOfficialExamsView(exams=tuple(vistas))
+
+    def _preguntas_del_examen(
+        self, oposicion: OppositionSummary, fila: OfficialExamRow
+    ) -> tuple[int, str | None]:
+        """Cuántas preguntas **tiene** el examen y, si no se puede hacer, por qué.
+
+        La regla es la de la convocatoria —su parte de test pide N ordinarias y M de reserva— y la
+        aplica el motor que monta el examen, en `StudyService`: un cuestionario del INAP trae 135
+        preguntas y el examen de TAI sirve 85, así que la fila tiene que decir 85, que es lo que el
+        alumno va a ver al abrirlo (§3.7).
+
+        Y las dos razones por las que un examen no se puede correr se distinguen, porque no son lo
+        mismo: **faltan sus respuestas** (no tiene plantilla activa con la que corregir) o **faltan
+        preguntas** (tiene menos de las que la convocatoria pide y el examen no se puede montar).
+        Ofrecer el botón en cualquiera de los dos casos acaba en un 409.
+        """
+        parte = self._parte_de_test(oposicion)
+        if parte is None:  # pragma: no cover - la convocatoria servida publica su parte de test
+            return fila.ordinary_questions + fila.reserve_questions, "faltan_preguntas"
+        preguntas, montable = self._study.exam_size(
+            opposition_id=oposicion.id,
+            part_code=parte,
+            ordinary=fila.ordinary_questions,
+            reserve=fila.reserve_questions,
         )
+        # El tamaño se dice siempre —es lo que el examen tiene—; lo que cambia es si se puede correr
+        # y por qué no. Un cero en la fila diría que el examen está vacío, y no lo está.
+        if not fila.ready:
+            return preguntas, "faltan_respuestas"
+        return preguntas, None if montable else "faltan_preguntas"
 
     def create_official_exam(self, position: int) -> StudentSessionView:
         """Monta el examen oficial que ocupa esa posición de la lista.
@@ -1233,9 +1276,10 @@ class StudentService:
         return StudentMistakesView(
             total=fallos.total,
             due_total=fallos.due_total,
+            servable_total=fallos.servable_total,
             questions=tuple(
                 StudentMistakeView(
-                    stem=fila.stem,
+                    stem=mostrar_huecos(fila.stem),
                     topics=referencias.get(fila.question_version_id, ()),
                     last_failed_at=fila.last_failed_at,
                     times_failed=fila.times_failed,
@@ -1478,7 +1522,7 @@ class StudentService:
             is_reserve=entrada.is_reserve,
             part_code=entrada.part_code,
             part_name=None if entrada.part_code is None else partes.get(entrada.part_code),
-            stem=entrada.stem,
+            stem=mostrar_huecos(entrada.stem),
             options=tuple(
                 StudentOptionView(key=opcion.stable_key, text=opcion.text)
                 for opcion in entrada.options
@@ -1737,7 +1781,7 @@ class StudentService:
         return StudentQuestionView(
             position=pregunta.position,
             is_reserve=pregunta.is_reserve,
-            stem=pregunta.stem,
+            stem=mostrar_huecos(pregunta.stem),
             question_type=pregunta.question_type,
             options=tuple(
                 StudentOptionView(key=opcion.stable_key, text=opcion.text)

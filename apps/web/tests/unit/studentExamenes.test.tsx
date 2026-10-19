@@ -49,13 +49,43 @@ describe('la pantalla de exámenes oficiales', () => {
 
     const lista = await screen.findByRole('list', { name: /exámenes oficiales/i });
     const filas = within(lista).getAllByRole('listitem');
-    expect(filas).toHaveLength(2);
+    expect(filas).toHaveLength(4);
     expect(within(filas[0]!).getByText(/TAI ingreso libre 2025/)).toBeInTheDocument();
     expect(within(filas[0]!).getByText(/22 nov 2025/)).toBeInTheDocument();
     expect(within(filas[0]!).getByText(/85 preguntas/)).toBeInTheDocument();
     expect(
       within(filas[0]!).getByRole('button', { name: /hacer este examen/i }),
     ).toBeInTheDocument();
+  });
+
+  it('sin día pero con año, la fecha es el año que declara el documento (§3.7)', async () => {
+    montar(officialExamsFixture);
+
+    const lista = await screen.findByRole('list', { name: /exámenes oficiales/i });
+    const tercera = within(lista).getAllByRole('listitem')[2]!;
+    // Ni «sin fecha publicada» ni un 1 de enero inventado: el año, que es lo que el cuestionario
+    // del INAP rotula en su cabecera.
+    expect(within(tercera).getByText(/ejercicio de 2019/i)).toBeInTheDocument();
+    expect(within(tercera).queryByText(/sin fecha publicada/i)).toBeNull();
+    expect(within(tercera).getByText(/85 preguntas/)).toBeInTheDocument();
+  });
+
+  it('sin año en el origen, se dice que no hay fecha y por qué', async () => {
+    montar(officialExamsFixture);
+
+    const lista = await screen.findByRole('list', { name: /exámenes oficiales/i });
+    const cuarta = within(lista).getAllByRole('listitem')[3]!;
+    expect(within(cuarta).getByText(/sin fecha publicada/i)).toBeInTheDocument();
+    expect(within(cuarta).getByText(/el documento de origen no la declara/i)).toBeInTheDocument();
+  });
+
+  it('faltan preguntas y faltan respuestas no se dicen con la misma frase', async () => {
+    montar(officialExamsFixture);
+
+    const lista = await screen.findByRole('list', { name: /exámenes oficiales/i });
+    const filas = within(lista).getAllByRole('listitem');
+    expect(within(filas[1]!).getByText(/faltan sus respuestas/i)).toBeInTheDocument();
+    expect(within(filas[3]!).getByText(/menos preguntas de las que pide/i)).toBeInTheDocument();
   });
 
   it('un examen que todavía no se puede corregir lo dice y no ofrece el botón', async () => {

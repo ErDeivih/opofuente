@@ -641,8 +641,16 @@ class StudentOfficialExamSchema(BaseModel):
     position: int = Field(ge=1)
     title: str
     held_at: date | None = None
+    #: El año que declara el documento de origen cuando no declara el día (ver
+    #: `StudentOfficialExamView.held_year`). La pantalla lo enseña en lugar de «sin fecha»: es lo
+    #: único que el origen dice, y no se inventa el día y el mes.
+    held_year: int | None = Field(default=None, ge=1900, le=2100)
     questions: int = Field(ge=0)
     ready: bool
+    #: Si no se puede hacer, por qué: `faltan_respuestas` o `faltan_preguntas`. Vocabulario cerrado
+    #: y traducido en la pantalla (F39): son dos motivos distintos y decir «faltan sus respuestas»
+    #: cuando lo que falta son preguntas sería mentir con una frase concreta.
+    blocked_reason: Literal["faltan_respuestas", "faltan_preguntas"] | None = None
     #: De dónde sale el examen (D10): `age`, `otra_administracion` o `desconocida`. La pantalla lo
     #: enseña para que el alumno sepa **qué está practicando**.
     origin_scope: OriginScopeName = "desconocida"
@@ -681,5 +689,8 @@ class StudentMistakesSchema(BaseModel):
 
     total: int = Field(ge=0)
     due_total: int = Field(ge=0)
+    #: De los fallos, cuántos se pueden corregir y por tanto repasar (F39): es lo que decide si la
+    #: pantalla ofrece el test de fallos o dice por qué no hay ninguno que montar.
+    servable_total: int = Field(default=0, ge=0)
     questions: list[StudentMistakeSchema]
     topics: list[StudentMistakeTopicSchema]

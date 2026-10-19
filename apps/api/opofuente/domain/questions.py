@@ -333,6 +333,58 @@ def normalise_question_text(text: str) -> str:
     return normalise_for_comparison(text)
 
 
+# --- el hueco de una frase para completar -------------------------------------------------------
+
+#: Cómo escriben el hueco los mazos de los que viene el material: dos corchetes vacíos.
+HUECO_ESCRITO = "[]"
+
+#: Y cómo se enseña: una raya continua. Se lee como lo que es —falta una palabra— y no se confunde
+#: con un error de importación, que es lo que parecía (`«deben ser [] para el resto»`).
+HUECO_VISIBLE = "_____"
+
+#: Un `[]` es un hueco cuando **no** cuelga de una palabra: pegado a un identificador es un corchete
+#: de código (`int[]`, `float[] saldoMensual`, `notas[] = {...}`, `String[] args`) y no se toca. La
+#: comprobación mira el carácter de delante: si es una letra, un número, un subrayado, un `$` o un
+#: corchete/paréntesis que cierra, el `[]` forma parte de algo que se escribe así.
+_HUECO_DE_VERDAD = re.compile(r"(?<![\w$\]\)>.])\[\]")
+
+
+def mostrar_huecos(texto: str) -> str:
+    """Enseña el hueco de una frase para completar como un hueco, no como `[]`.
+
+    De las 28 preguntas del banco del propietario que traen `[]`, **21 son un hueco de verdad** —una
+    palabra que falta y que está entre las opciones— y 7 son corchetes de código Java o C. Las dos
+    cosas se distinguen por lo que tienen delante, y por eso esta función no sustituye a ciegas: un
+    `int[]` convertido en `int_____` sería un error nuevo, y una pregunta de código rota se lee peor
+    que un hueco con corchetes.
+
+    Se aplica al **enunciado** y no a las opciones: una opción que dice «el bloque va entre
+    corchetes `[]`» está nombrando los corchetes, no dejando un hueco.
+    """
+    return _HUECO_DE_VERDAD.sub(HUECO_VISIBLE, texto)
+
+
+#: Un año de cuatro cifras dentro de un título del INAP o de una administración. Se pide el rango
+#: completo para no confundir un número de norma o de modelo con un año.
+_ANO_EN_EL_TITULO = re.compile(r"\b(19\d{2}|20\d{2})\b")
+
+
+def ano_del_titulo(titulo: str) -> int | None:
+    """El año que **declara** el título de un examen, o `None` si no declara ninguno.
+
+    Sirve para lo que el origen sí dice y para nada más. Los cuestionarios del INAP rotulan su
+    año en la cabecera —`2025 - TAI-L (MODELO A)`, `2022 - TAI-P`— y **no** publican el día: la
+    fecha de celebración la anuncia el órgano de selección aparte. Por eso lo que se puede
+    afirmar de un examen de esos es el año, y poner un 1 de enero sería inventarse el día y el mes.
+
+    Si el título trae más de un año, manda **el primero**: los títulos de estos exámenes empiezan
+    por el cuerpo y el año del ejercicio, y lo que venga después es el nombre del fichero o la
+    versión («TAI · Exámenes TAI - Test GSI (v2024)»).
+    """
+    encontrado = _ANO_EN_EL_TITULO.search(titulo)
+    return int(encontrado.group(1)) if encontrado is not None else None
+
+
 @dataclass(frozen=True, slots=True)
 class QuestionFingerprint:
     """Huella de una pregunta: enunciado normalizado y conjunto de opciones, sin orden.
@@ -1405,9 +1457,11 @@ __all__ = [
     "SetDistribution",
     "SetStatus",
     "SetType",
+    "ano_del_titulo",
     "can_activate",
     "find_question_duplicates",
     "key_alignment",
+    "mostrar_huecos",
     "normalise_question_text",
     "numbering_match",
     "ordered_key_mapping",

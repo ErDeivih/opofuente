@@ -120,8 +120,7 @@ export function OfficialExamsPage() {
                   </button>
                 ) : (
                   <span className="examenes__espera">{motivoDeEspera(examen)}</span>
-                )}
-              </li>
+                )}              </li>
             ))}
           </ul>
         </section>
@@ -134,9 +133,25 @@ export function OfficialExamsPage() {
   );
 }
 
-/** «22 nov 2025 · 85 preguntas». Sin fecha, se dice que no la tiene en vez de dejarlo vacío. */
+/**
+ * «22 nov 2025 · 85 preguntas», y cuando el origen solo declara el año, «Ejercicio de 2025».
+ *
+ * Las tres formas son las tres cosas que se pueden afirmar, y se distinguen a propósito: una fecha
+ * completa se enseña tal cual; un año se dice como año —los cuestionarios del INAP rotulan «2025 -
+ * TAI-L (MODELO A)» y no publican el día, y poner un 1 de enero sería inventarse el día y el mes—;
+ * y un examen sin ninguna de las dos **dice por qué**, en vez de dejar el hueco o de rellenarlo con
+ * una fecha que nadie ha publicado.
+ *
+ * Y el número de preguntas es el del **examen**, no el del conjunto: 85 y no 135, que es lo que el
+ * alumno se va a encontrar al abrirlo.
+ */
 function datosDe(examen: StudentOfficialExam): string {
-  const fecha = examen.held_at === null ? 'Sin fecha publicada' : diaLegible(examen.held_at);
+  const fecha =
+    examen.held_at !== null
+      ? diaLegible(examen.held_at)
+      : examen.held_year !== null
+        ? `Ejercicio de ${String(examen.held_year)}`
+        : 'Sin fecha publicada: el documento de origen no la declara';
   return `${fecha} · ${String(examen.questions)} preguntas`;
 }
 
@@ -159,10 +174,24 @@ function procedenciaDe(examen: StudentOfficialExam): string {
   return 'Procedencia sin declarar';
 }
 
-/** Por qué un examen no se puede hacer todavía, con el motivo que le corresponde. */
+/**
+ * Por qué un examen no se puede hacer todavía, con el motivo que le corresponde.
+ *
+ * Los dos motivos son distintos y no se pueden decir con la misma frase: **faltan sus respuestas**
+ * es un examen que está a medio importar (sin plantilla activa con la que corregir) y **faltan
+ * preguntas** es un examen que tiene menos de las que la convocatoria pide —los seis de promoción
+ * interna traen 74 para una parte de 80—. El servidor manda el motivo en `blocked_reason` y aquí
+ * solo se traduce: adivinarlo por el número de preguntas dejaría dos verdades sobre lo mismo.
+ */
 function motivoDeEspera(examen: StudentOfficialExam): string {
+  if (examen.blocked_reason === 'faltan_preguntas') {
+    return 'Todavía no se puede hacer: tiene menos preguntas de las que pide la convocatoria.';
+  }
+  if (examen.blocked_reason === 'faltan_respuestas') {
+    return 'Todavía no se puede hacer: faltan sus respuestas.';
+  }
   if (examen.questions === 0) {
     return 'Todavía no se puede hacer: no tiene preguntas.';
   }
-  return 'Todavía no se puede hacer: faltan sus respuestas.';
+  return 'Todavía no se puede hacer.';
 }

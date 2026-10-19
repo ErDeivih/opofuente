@@ -68,7 +68,12 @@ export function MistakesPage() {
   }
 
   const fallos = consulta.data;
-  const temas = fallos.topics.map((tema) => tema.code);
+  const temasDeLosFallos = fallos.topics.map((tema) => tema.code);
+  // Los temas con los que se puede montar el test: los de los fallos que **se pueden corregir**.
+  // Montar el test con un tema cuyas preguntas falladas no tienen clave acaba en un 409, y ofrecer
+  // un botón que revienta es peor que decir por qué no hay nada que montar.
+  const hayAlgoQueRepasar = fallos.servable_total > 0;
+  const temas = hayAlgoQueRepasar ? temasDeLosFallos : [];
 
   return (
     <>
@@ -105,15 +110,20 @@ export function MistakesPage() {
               onClick={() => {
                 montar.mutate(temas);
               }}
-              disabled={montar.isPending || temas.length === 0}
+              disabled={montar.isPending || !hayAlgoQueRepasar || temas.length === 0}
             >
               Test con mis fallos
             </button>
           </p>
-          {temas.length === 0 && (
+          {temasDeLosFallos.length === 0 && (
             <p className="bloque__texto">
               Ninguna de estas preguntas está catalogada en un tema del programa, así que todavía no se
               puede montar un test con ellas. El propietario las tiene en su bandeja.
+            </p>
+          )}
+          {temasDeLosFallos.length > 0 && !hayAlgoQueRepasar && (
+            <p className="bloque__texto">
+              {`Todavía no se puede montar un test con ${fallos.total === 1 ? 'esta pregunta' : 'estas preguntas'}: no hay con qué corregirlas. Su conjunto no tiene una plantilla activa que diga la respuesta, o la que tiene no la incluye. Se arregla en el panel, y entonces vuelven.`}
             </p>
           )}
 

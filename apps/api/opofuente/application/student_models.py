@@ -693,8 +693,19 @@ class StudentOfficialExamView:
     position: int
     title: str
     held_at: date | None
+    #: El **año** que declara el documento de origen, cuando no declara el día. Es lo que se puede
+    #: afirmar de un examen del INAP: sus cuestionarios rotulan el año en la cabecera («2025 - TAI-L
+    #: (MODELO A)») y la fecha de celebración se anuncia aparte, así que un 1 de enero sería
+    #: inventarse el día y el mes. `None` cuando el título no declara año: entonces la pantalla dice
+    #: que no hay fecha y **por qué**.
+    held_year: int | None
     questions: int
     ready: bool
+    #: Si no se puede hacer, por qué: `faltan_respuestas` (no tiene plantilla activa con la que
+    #: corregir) o `faltan_preguntas` (tiene menos de las que la convocatoria pide y el examen no se
+    #: puede montar). Son dos cosas distintas y la pantalla las dice por su nombre; un botón que
+    #: acaba en 409 es peor que la frase que lo explica.
+    blocked_reason: str | None = None
     #: De dónde sale el examen (D10): `age`, `otra_administracion` o `desconocida`. Va en la vista
     #: porque **la pantalla lo tiene que decir**: el alumno tiene que saber qué está practicando.
     origin_scope: str = "desconocida"
@@ -751,5 +762,9 @@ class StudentMistakesView:
 
     total: int
     due_total: int
+    #: De esos fallos, cuántos se pueden **corregir** y por tanto repasar (F39). Es lo que decide si
+    #: la pantalla ofrece «Test con mis fallos» o dice por qué no hay ninguno que montar: una
+    #: pregunta fallada sin clave no se puede corregir, y ofrecer el botón acababa en un 409.
+    servable_total: int = 0
     questions: tuple[StudentMistakeView, ...] = ()
     topics: tuple[StudentMistakeTopicView, ...] = ()

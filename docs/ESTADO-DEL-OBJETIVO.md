@@ -4226,3 +4226,152 @@ Capturadas con el código de `main` y estas pruebas encima (`git stash` de `apps
   comprobados por la prueba sobre la pantalla, no leyendo el PNG (esta máquina no ve imágenes). Los
   PNG son para que los mire el propietario.
 
+
+---
+
+## Tanda f39 — El repaso de fallos y los tres datos raros (17 oct 2026)
+
+**De dónde sale.** `docs/REVISION-DEL-RECORRIDO-Y-ARREGLOS-2026-10.md` §2 y §3.6–3.7, con la
+corrección del propietario: **repasar fallos no fallaba por falta de material, es un fallo del
+programa**. Sin llamadas al modelo: **0 $**.
+
+### 0. La copia verificada, y la real intacta
+
+| | |
+|---|---|
+| la real | `F:\OpoFuente\datos\opofuente.sqlite3` · **2.748.612.608 bytes** · SHA-256 `a0a21413…c5aff8` **antes y después** |
+| la copia | `F:\temp-opofuente\f39-datos\opofuente.sqlite3` · mismos 2.748.612.608 bytes · SHA-256 `622aaa6f…e3f238` |
+| el archivo | `F:\temp-opofuente\f39-datos\backups\f39-004325.zip` · **811.750.195 bytes** · SHA-256 `e1698609…89a586` |
+| método de la casa | instantánea con la API de respaldo de SQLite (origen en `mode=ro`) → ZIP con manifiesto y `force_zip64` → **`verify_archive`: sin problemas** → extracción → comprobaciones |
+| la copia comprobada | `integrity_check` **ok** · `quick_check` **ok** · `foreign_key_check` **0 filas** · **65 tablas** · 671.048 páginas × 4.096 = el tamaño exacto · la extraída coincide con la instantánea (`622aaa6f…`) |
+| migraciones | `0039_claves_derivadas → 0039_bandeja_por_conjunto → 0040_cuentas_y_consentimiento`, **14,3 s**, solo en la copia |
+| la API | levantada contra la copia. **Puerto 8775**: el 8765 lo ocupa la batería de las 18 |
+
+### 1. El repaso: Inicio dice N y el repaso sirve N
+
+**Lo que había** (medido sobre la copia, con el código de `main`):
+
+- `GET /student/overview` → `due_reviews` **5**.
+- `POST /study-sessions` `mode=error_review` → **409**: «el repaso de q001 no sabe a qué parte del
+  examen pertenece».
+- `POST /student/tests` con `filter: failed` (el botón «Test con mis fallos») → **409**: «no hay
+  ninguna pregunta que se pueda poner: … ninguna tiene plantilla activa con su respuesta».
+
+**Por qué eran dos políticas.** La práctica por conjuntos y la práctica por tema aceptaban **clave
+derivada** (`0039`) además de la plantilla activa; el repaso exigía plantilla `active` y, encima, una
+parte declarada. Y el contador de Inicio contaba `review_items` vencidos **sin preguntar si se podían
+corregir**.
+
+**Lo que hay ahora**, con `infrastructure/key_policy.py` como única fuente de la regla:
+
+| | antes | después |
+|---|---|---|
+| `due_reviews` de Inicio | **5** | **1** |
+| preguntas que sirve la sesión de repaso | **0** (409) | **1** |
+| las dos cifras coinciden | no | **sí** |
+| lo que el repaso dice haber dejado fuera | — | 4, con su motivo, en la nota de la sesión |
+
+**Por qué 1 y no 5, con los cinco nombres.** De las cinco vencidas, cuatro son del conjunto
+`b9798368` —una **segunda copia** del INAP 2025 modelo A que el importador dejó archivada— y su única
+plantilla está en `superseded`: **ninguna sesión puede corregirlas**, ni el repaso ni un test. La
+quinta es de un banco privado con plantilla activa y su entrada, pero la práctica en la que se falló
+no declaró parte; antes eso abortaba el repaso entero y ahora se corrige al momento, como una práctica
+por tema. Prometer 5 sería prometer lo que la corrección no puede dar. Queda en **DEBT-035** con su
+criterio de cierre.
+
+**La prueba** (`apps/api/tests/integration/test_repaso_servible.py`, 4 casos):
+
+1. **la cifra de Inicio es la que el repaso sirve** — dos fallos vencidos, uno corregible: Inicio dice
+   1 y el repaso sirve 1. Con la política vieja falla en la primera línea (contaba 2);
+2. el fallo sin clave **no se cuenta ni se ofrece** (`servable_total`) y la pantalla dice por qué;
+3. **un fallo con clave derivada se puede repasar** — conjunto en cuarentena, derivada de dos fuentes
+   independientes, y la pregunta se congela con la letra derivada (`("b",)`), no con la del banco;
+4. la fila del examen cuenta lo que el examen tiene (85 preguntas de conjunto → **80** servidas).
+
+Y la política se comprueba contra sí misma: el caso 1 saca las dos cifras de sitios distintos —el
+contador, en SQL, y la sesión, por el motor— y tienen que dar lo mismo.
+
+### 2. Los tres datos raros
+
+**2.1 · El 135 contra el 85: de dónde salía.** **No era un error de importación.** El conjunto del
+INAP de ingreso libre trae **135 versiones vigentes: 115 ordinarias y 20 de reserva**, y así las
+publica el cuestionario. El examen sirve **85** porque la convocatoria de TAI publica **80 ordinarias
++ 5 de reserva** para su primera parte y `_preguntas` toma esas. La fila contaba las del conjunto;
+ahora cuenta las que el examen tiene, con la **misma** regla que lo monta
+(`StudyService.exam_size`).
+
+| fila | antes | después |
+|---|---|---|
+| INAP ingreso libre (×7) | 135 | **85** |
+| INAP promoción interna (×6) | 85 | **79** |
+
+Y por el camino salió otra mentira de la misma fila: los seis de promoción interna **no se pueden
+montar** —74 ordinarias para una parte de 80— y la fila ofrecía el botón, que contestaba 409. Ahora
+dicen **79** y el motivo por su nombre (`faltan_preguntas`); los dos sin plantilla activa dicen
+`faltan_respuestas`. Queda en **DEBT-036**.
+
+**2.2 · La fecha de los 13 exámenes.** **13 de 13 tienen fecha ahora**, y es **el año**, sacado del
+título —que el importador copió del propio documento—: «TAI ingreso libre 2019 …» → 2019. **No hay
+día en el origen**: comprobado abriendo los PDF, la cabecera rotula `2025 - TAI-L (MODELO A)`,
+`2022 - TAI-P`, `2024 - TAI-P · MODELO A` y el `2019` va en el pie; las fechas completas que aparecen
+en el texto son **citas de normas** —«27 de abril de 2016», el RGPD—, no la del examen. La fecha de
+celebración la anuncia el órgano de selección aparte. Por eso `held_at` sigue vacío —poner un 1 de
+enero sería inventarse el día y el mes— y la fila enseña «**Ejercicio de 2019**». Un título que no
+declare año diría «Sin fecha publicada: el documento de origen no la declara».
+
+**2.3 · Los 28 `[]`, separados por caso.** Medidos sobre el texto crudo de las 28:
+
+| caso | cuántas | qué es | qué se hace |
+|---|---|---|---|
+| **hueco de una frase para completar** | **21** | todas del conjunto «B4 - ::Modelo OSI»: «los cambios en una capa deben ser **[]** para el resto de niveles» | se enseña **`_____`** |
+| **corchete de código** (`int[][]`, `float[] saldoMensual`, `notas[] = {…}`, `int v[]={…}`, `String[] args`) | **7** | POO (2), Java/Jakarta (1), MUCHOS_TESTS (1), Tai_BBDD_2025 (1), baquedano (1) y el supuesto práctico de 2006 (1) | se queda **como está**: convertirlo daría `int_____` |
+
+La regla es una sola y está en `domain/questions.py`: un `[]` es hueco cuando **no cuelga de una
+palabra**. Las 28 están en la prueba del dominio, una por una (`HUECOS_DEL_PROPIETARIO`, 28 casos
+parametrizados). **No se ha reescrito el material**: el arreglo es de lectura, en la capa del alumno
+(la pregunta del test, el resultado y la lista de fallos).
+
+### 3. Lo que se ha tocado
+
+- **nuevo** `infrastructure/key_policy.py` — la política de claves, en SQL y una sola vez.
+- `study_service` — la usan los tres sitios que eligen preguntas; el repaso ya no exige parte;
+  `exam_size` para la fila del examen.
+- `student_repository` / `question_repository` — el contador, los fallos y el tamaño de la fila.
+- `student_service`, `student_schemas`, `routes/student` — `held_year`, `blocked_reason`,
+  `servable_total`, los huecos y el año.
+- `domain/questions.py` — `mostrar_huecos` y `ano_del_titulo`.
+- web — la fila del examen (año y motivo) y el botón de fallos (solo si hay algo que corregir).
+- contratos regenerados (`openapi.json` y `openapi.d.ts`).
+
+### 4. Las puertas, en local
+
+`ruff check .` limpio · `ruff format --check .` (565 ficheros) · `mypy` (263 ficheros) limpio ·
+`eslint` limpio · `tsc` limpio · `build:web` construido · **457 pruebas de componente (53 ficheros)**
+· **1095 de API** (unit + alumno + estudio + composición + repaso + claves derivadas). **Las 18 no las
+corre este bloque**: las corre el que mide, y de su primera pasada sobre `21cd8ab` salieron **17 de
+18**.
+
+**El rojo que quedó, y por qué se arregló el juez y no el reo.** Era la redacción y nada más: el
+repaso se niega igual (`UnsupportedError`, ninguna sesión montada) y la aserción del motivo
+—«cuarentena»— seguía pasando; lo que ya no existía era la frase vieja, *«no se te puede preguntar
+por una clave de la que no nos fiamos»*, porque el mensaje nuevo dice **qué pasa** —«no se puede
+corregir: su conjunto está en cuarentena, no tiene plantilla activa o no dice su respuesta»—,
+**cuántas** son y que **volverán**. El mensaje nuevo es mejor para quien lo lee: el viejo solo decía
+que no.
+
+Ante un rojo así la pregunta no es cómo hacer que la prueba calle, sino **cuál de los dos tiene
+razón**; aquí la tenía el mensaje, así que se alineó la prueba. Y se alineó **por piezas** —se niega,
+nombra la cuarentena, cuenta las que se quedan fuera, dice que volverán y comprueba que no se montó
+ninguna sesión— y no copiando la frase entera: una prueba que exige el texto letra a letra se rompe
+otra vez en cuanto alguien lo mejore. El caso contrario —**con la clave servible el repaso no se
+niega**— está en `test_repaso_servible.py` (casos 1 y 3), que es el que de verdad importa.
+
+### 5. Lo que queda fuera, con su porqué
+
+- **DEBT-035**: los cuatro repasos que apuntan al conjunto duplicado archivado. Se podrán contar y
+  servir cuando el importador no deje dos copias del mismo examen o el historial se repunte; la
+  decisión es del propietario.
+- **DEBT-036**: los seis exámenes de promoción interna con 74 preguntas para una parte de 80: o falta
+  material o la parte que se juega es otra.
+- **El `[]` del material no se reescribe** (decisión del 17-oct): el arreglo es de lectura.
+

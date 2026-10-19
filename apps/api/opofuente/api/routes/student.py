@@ -408,8 +408,10 @@ def _official_exam(view: StudentOfficialExamView) -> StudentOfficialExamSchema:
         position=view.position,
         title=view.title,
         held_at=view.held_at,
+        held_year=view.held_year,
         questions=view.questions,
         ready=view.ready,
+        blocked_reason=view.blocked_reason,  # type: ignore[arg-type]
         origin_scope=view.origin_scope,  # type: ignore[arg-type]
     )
 
@@ -441,6 +443,7 @@ def _mistakes(view: StudentMistakesView) -> StudentMistakesSchema:
     return StudentMistakesSchema(
         total=view.total,
         due_total=view.due_total,
+        servable_total=view.servable_total,
         questions=[_mistake(fallo) for fallo in view.questions],
         topics=[_mistake_topic(tema) for tema in view.topics],
     )

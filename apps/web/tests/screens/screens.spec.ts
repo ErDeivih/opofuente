@@ -303,7 +303,12 @@ for (const { ancho, alto, etiqueta } of ANCHOS) {
       etiqueta,
     );
     await expect(page.getByText('Administración General del Estado').first()).toBeVisible();
-    await expect(page.getByText('135 preguntas').first()).toBeVisible();
+    // **85 y no 135** (F39, §3.7): el conjunto sembrado trae las 135 del cuestionario —120 ordinarias
+    // y 15 de reserva—, y el examen sirve 85, porque la primera parte de TAI publica 80 + 5. La fila
+    // decía la cifra del banco y el examen servía otra; ahora dice la del examen, que es lo que el
+    // alumno se va a encontrar. Antes de F39 esta línea pedía «135 preguntas», y esa expectativa era
+    // parte del defecto.
+    await expect(page.getByText('85 preguntas').first()).toBeVisible();
     expect(violaciones, `axe en la pantalla de exámenes: ${violaciones.join(', ')}`).toEqual([]);
   });
 }
@@ -331,7 +336,8 @@ for (const { ancho, alto, etiqueta } of ANCHOS) {
  * tiene que enseñar: la procedencia y el número de preguntas.
  *
  * Todo va por las rutas de la API (conjunto `official_exam` con `origin_scope: 'age'`, sus 135
- * preguntas con sus reservas, su clave, la activación) menos el enlace de la plantilla, que se escribe
+ * preguntas con sus reservas —que la pantalla ya no enseña todas, ver la aserción—, su clave, la
+ * activación) menos el enlace de la plantilla, que se escribe
  * con `node:sqlite` sobre `.e2e-data` por el mismo motivo que en la prueba de la ficha: activar la
  * clave de un examen oficial exige la plantilla enlazada a una versión de documento, y no hay ninguna
  * ruta que invente un material sin pasar por la extracción entera.

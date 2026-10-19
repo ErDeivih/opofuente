@@ -79,6 +79,7 @@ from opofuente.infrastructure.db_models import (
     QuestionSetRecord,
     QuestionVersionRecord,
 )
+from opofuente.infrastructure.key_policy import clave_servible
 
 
 def _new_id() -> str:
@@ -1672,6 +1673,32 @@ class SqlAlchemyQuestionRepository:
                 for set_id, pregunta_id in filas:
                     agrupadas.setdefault(str(set_id), set()).add(str(pregunta_id))
         return {set_id: frozenset(preguntas) for set_id, preguntas in agrupadas.items()}
+    def servable_question_ids(self, question_ids: Sequence[str]) -> frozenset[str]:
+        """Las que se pueden **corregir**, con la política de claves de siempre y en una consulta.
+
+        Lo usan los tres sitios del motor que eligen preguntas —el test de práctica por conjuntos,
+        la práctica por tema y el repaso de fallos— y por eso está aquí y no en cada uno: lo que se
+        puede practicar se puede repasar, y tener la regla tres veces es cómo se acaba con dos
+        políticas (el repaso pedía plantilla activa y la práctica no).
+
+        Se pide el bloque entero de identificadores, no pregunta a pregunta: una composición recorre
+        cientos de preguntas y una consulta por cada una es justo lo que el motor no puede pagar.
+        """
+        if not question_ids:
+            return frozenset()
+        identificadores = list(question_ids)
+        servibles: set[str] = set()
+        with self._session_factory() as session:
+            for inicio in range(0, len(identificadores), _TANDA_DE_CONSULTA):
+                tanda = identificadores[inicio : inicio + _TANDA_DE_CONSULTA]
+                filas = session.execute(
+                    select(QuestionVersionRecord.id).where(
+                        QuestionVersionRecord.id.in_(tanda),
+                        clave_servible(QuestionVersionRecord.id),
+                    )
+                ).scalars()
+                servibles.update(str(fila) for fila in filas)
+        return frozenset(servibles)
 
     def key_reliability_by_question(self, question_ids: Sequence[str]) -> dict[str, str]:
         """El veredicto de la clave del conjunto de cada pregunta. Una consulta, no una por

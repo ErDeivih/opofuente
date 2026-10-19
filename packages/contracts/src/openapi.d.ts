@@ -10018,6 +10018,11 @@ export interface components {
             due_total: number;
             /** Questions */
             questions: components["schemas"]["StudentMistakeSchema"][];
+            /**
+             * Servable Total
+             * @default 0
+             */
+            servable_total: number;
             /** Topics */
             topics: components["schemas"]["StudentMistakeTopicSchema"][];
             /** Total */
@@ -10242,8 +10247,12 @@ export interface components {
          * @description Un examen oficial, por su sitio en la lista: título, fecha, tamaño y si se puede hacer.
          */
         StudentOfficialExamSchema: {
+            /** Blocked Reason */
+            blocked_reason?: ("faltan_respuestas" | "faltan_preguntas") | null;
             /** Held At */
             held_at?: string | null;
+            /** Held Year */
+            held_year?: number | null;
             /**
              * Origin Scope
              * @default desconocida
