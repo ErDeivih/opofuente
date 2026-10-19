@@ -596,9 +596,6 @@ class StudyService:
         en_cuarentena = 0
         derivadas = 0
         banco = self._banco()
-        # La política de claves, la misma del repaso y del test por conjuntos (`key_policy`):
-        # se pide el bloque entero de identificadores, no pregunta a pregunta.
-        servibles = self._questions.servable_question_ids(candidatas)
         for question_id in candidatas:
             pregunta = self._questions.get_question(question_id)
             if pregunta is None or pregunta.question_type not in _SUPPORTED_QUESTION_TYPES:
@@ -627,21 +624,16 @@ class StudyService:
                     )
                     if etiqueta not in etiquetas:
                         etiquetas.append(etiqueta)
-            elif pregunta.id not in servibles:
-                # La política de claves ya la ha dejado fuera. El motivo se cuenta —la nota del tema
-                # lo explica— y el orden es el de la política: primero la clave de la que no se
-                # fía uno, después la que falta y por último la que no dice la letra.
-                if conjunto is None:
-                    sin_clave += 1
-                elif conjunto.key_is_unreliable or banco.sigue_fuera(pregunta.id):
-                    en_cuarentena += 1
-                elif conjunto.active_key_id is None:
-                    sin_clave += 1
-                else:
-                    sin_respuesta += 1
-                continue
-            elif conjunto is None:  # pragma: no cover - la política ya lo ha descartado
+            elif conjunto is None or conjunto.active_key_id is None:
+                # Sin plantilla activa no hay con qué corregir: se queda fuera y se cuenta.
                 sin_clave += 1
+                continue
+            elif conjunto.key_is_unreliable or banco.sigue_fuera(pregunta.id):
+                # Cuarentena de clave (§1) o motivo de fuera escrito (§1 de F29): la práctica por
+                # tema es uno de los sitios donde se eligen preguntas: se salta aquí también.
+                # No es «no se puede corregir»: es que la clave no es de fiar y su letra no se pudo
+                # derivar.
+                en_cuarentena += 1
                 continue
             else:
                 clave = self._clave_activa(pregunta.question_set_id)
@@ -921,14 +913,10 @@ class StudyService:
         - en modo público, solo conjuntos publicables;
         - y el filtro de lo ya hecho (`unseen`, `failed`, `flagged`) cuando se pide.
 
-        **Y la clave, que es lo que cambió con la derivación (§1 de F29)**: la decide
-        `key_policy.clave_servible`, **la misma** para los tests de práctica, la práctica por tema y
-        el repaso de fallos. Aquí no se reescribe: se pide el bloque de identificadores de la
-        parte y se deja fuera lo que no se puede corregir. Una pregunta con clave derivada **entra**
-        aunque su conjunto esté en cuarentena; una con motivo de fuera escrito **no entra**,
-        aunque su conjunto no esté en cuarentena; y las demás entran con la plantilla activa de su
-        conjunto,
-        como siempre.
+        **Y la clave, que es lo que cambió con la derivación (§1 de F29)**: una pregunta con
+        clave derivada **entra** aunque su conjunto esté en cuarentena; una con motivo de fuera
+        escrito **no entra**, aunque su conjunto no esté en cuarentena; y las demás entran con la
+        plantilla de su conjunto, como siempre.
         """
         candidatas: list[_Candidata] = []
         vistas_del_tema: set[str] = set()
@@ -945,12 +933,6 @@ class StudyService:
             parte.node_ids, cache=preguntas_del_nodo
         ).items():
             for pregunta_id in del_nodo:
-        ids_de_la_parte: list[str] = []
-        for node_id in parte.node_ids:
-            ids_de_la_parte.extend(self._preguntas_del_nodo(node_id))
-        servibles = self._questions.servable_question_ids(ids_de_la_parte)
-        for node_id in parte.node_ids:
-            for pregunta_id in self._preguntas_del_nodo(node_id):
                 if pregunta_id in vistas_del_tema:
                     continue
                 vistas_del_tema.add(pregunta_id)
@@ -1038,32 +1020,6 @@ class StudyService:
                         tuple(
                             (opcion.stable_key, opcion.text)
                             for opcion in opciones.get(pregunta.id, ())
-                conjunto = self._questions.get_set(pregunta.question_set_id)
-                if conjunto is None:
-                    continue
-                propia = banco.entrada(pregunta.id)
-                if propia is not None:
-                    # La clave derivada manda sobre la plantilla del conjunto y sobre su cuarentena:
-                    # es una letra con dos apoyos independientes y no depende de la extracción.
-                    entrada: KeyEntryView | None = propia
-                    clave_id: str | None = None
-                elif pregunta.id not in servibles:
-                    # Sin clave con la que corregirla (política de `key_policy`, la misma del
-                    # repaso): la pregunta **no entra** en la parte. No se dice aquí porque el
-                    # contrato de la composición ya enseña `available`, que es el número de
-                    # preguntas que de verdad se pueden poner; lo que sí se hace es no contarla como
-                    # disponible, que es lo que haría creer al alumno que tiene 80 preguntas cuando
-                    # solo puede contestar 60.
-                    continue
-                else:
-                    clave = self._clave_activa_o_none(pregunta.question_set_id)
-                    if clave is None:  # pragma: no cover - la política ya lo ha descartado
-                        continue
-                    entrada = next(
-                        (
-                            candidata
-                            for candidata in clave.entries
-                            if candidata.question_version_id == pregunta.id
                         ),
                     ),
                     # El nodo por el que entró: el primero de los pedidos que la contiene.
@@ -1440,46 +1396,40 @@ class StudyService:
         etiquetas: list[str] = []
         conjuntos: set[str] = set()
         limite_tiempo: int | None = None
-        sin_clave = 0
-        sin_parte = 0
+        en_cuarentena = 0
         derivadas = 0
         banco = self._banco()
-        # La política de claves es **la misma** que la de los tests de práctica (`key_policy`): lo
-        # que se puede practicar se puede repasar. Antes el repaso era más estricto que la práctica
-        # —pedía plantilla activa— y por eso Inicio prometía lo que el repaso no podía servir.
-        servibles = self._questions.servable_question_ids(
-            [vencida.question_version_id for vencida in vencidas]
-        )
         for posicion, vencida in enumerate(vencidas, start=1):
+            conjunto_vencido = self._questions.get_set(vencida.question_set_id)
             propia = banco.entrada(vencida.question_version_id)
-            if propia is None and vencida.question_version_id not in servibles:
-                # No hay con qué corregirla (conjunto en cuarentena, motivo de fuera escrito, sin
-                # plantilla activa o plantilla que no dice su respuesta): se deja fuera y se cuenta.
-                # Repreguntar lo que se falló con una clave que no es de fiar es la peor forma de
-                # este defecto —se falló por la clave, no por no saberlo—, y preguntar sin clave no
-                # corrige nada.
-                sin_clave += 1
+            if propia is None and (
+                (conjunto_vencido is not None and conjunto_vencido.key_is_unreliable)
+                or banco.sigue_fuera(vencida.question_version_id)
+            ):
+                # Cuarentena de clave (§1) o motivo de fuera escrito (§1 de F29): el repaso es el
+                # tercero de los sitios donde se eligen preguntas. Repreguntar lo que se falló
+                # **con una clave que no es de fiar** es la peor forma de este defecto: se falló por
+                # la clave, no por no saberlo. Una con clave derivada sí se repasa: su letra
+                # tiene dos apoyos independientes.
+                en_cuarentena += 1
                 continue
-            # La parte con la que se corrige la pregunta **no** es obligatoria: una práctica por
-            # tema se contesta y se corrige en directo, sin parte declarada. Cuando la sesión en la
-            # que se falló no la registró, el repaso hace lo mismo que esa práctica —se corrige al
-            # momento— en vez de negarse a montar el repaso entero por una pregunta.
-            parte = (
-                self._parte(convocatoria, vencida.part_code)
-                if vencida.part_code is not None
-                else None
-            )
-            if parte is None:
-                sin_parte += 1
-            else:
-                contexto[parte.code] = parte
+            if vencida.part_code is None:
+                raise UnsupportedError(
+                    f"el repaso de «{vencida.stable_key}» no sabe a qué parte del examen "
+                    "pertenece: la sesión en la que se falló no lo registró, así que no se puede "
+                    "componer la sesión de repaso"
+                )
+            parte = self._parte(convocatoria, vencida.part_code)
+            contexto[parte.code] = parte
             activa = self._clave_activa_o_none(vencida.question_set_id)
             if propia is not None:
                 entrada: KeyEntryView | None = propia
                 derivadas += 1
             else:
-                if activa is None:  # pragma: no cover - la política ya lo ha descartado
-                    sin_clave += 1
+                if activa is None:
+                    # Sin plantilla activa y sin clave derivada no hay con qué corregir: se queda
+                    # fuera y se cuenta como si su clave no fuera de fiar (es la verdad: no la hay).
+                    en_cuarentena += 1
                     continue
                 entrada = next(
                     (
@@ -1489,12 +1439,11 @@ class StudyService:
                     ),
                     None,
                 )
-            donde = parte.name if parte is not None else "Repaso sin parte declarada"
             if activa is not None:
                 claves.add(activa.id)
-                etiqueta = f"{donde}: plantilla v{activa.version_no}"
+                etiqueta = f"{parte.name}: plantilla v{activa.version_no}"
             else:
-                etiqueta = f"{donde}: claves derivadas"
+                etiqueta = f"{parte.name}: claves derivadas"
             conjuntos.add(vencida.question_set_id)
             if etiqueta not in etiquetas:
                 etiquetas.append(etiqueta)
@@ -1503,7 +1452,7 @@ class StudyService:
                     question_version_id=vencida.question_version_id,
                     stable_key=vencida.stable_key,
                     position=posicion,
-                    part_code=parte.code if parte is not None else None,
+                    part_code=parte.code,
                     is_reserve=False,
                     reserve_order=None,
                     key_outcome=entrada.outcome if entrada is not None else None,
@@ -1512,7 +1461,7 @@ class StudyService:
                     ),
                 )
             )
-            if parte is not None and parte.time_minutes is not None:
+            if parte.time_minutes is not None:
                 limite_tiempo = (
                     parte.time_minutes
                     if limite_tiempo is None
@@ -1520,12 +1469,12 @@ class StudyService:
                 )
 
         if not congeladas:
-            # Todo lo vencido se quedó sin clave: una sesión de repaso vacía no es un repaso, y
+            # Todo lo vencido estaba en cuarentena: una sesión de repaso vacía no es un repaso, y
             # decir «no hay nada vencido» sería mentira (había, y no se puede preguntar).
             raise UnsupportedError(
-                f"lo que te toca repasar ({sin_clave} pregunta(s)) no se puede corregir: "
-                "su conjunto está en cuarentena, no tiene plantilla activa o la plantilla no dice "
-                "su respuesta. Se arreglará la clave y volverán"
+                f"lo que te toca repasar ({en_cuarentena} pregunta(s)) es de conjuntos con la "
+                "clave en cuarentena: no se te puede preguntar por una clave de la que no nos "
+                "fiamos. Se arreglará la clave y volverán"
             )
 
         configuracion = SessionConfiguration(
@@ -1537,7 +1486,12 @@ class StudyService:
             time_limit_minutes=limite_tiempo,
             shuffle=request.shuffle,
             context_label="Repaso de tus fallos",
-            note=self._nota_del_repaso(sin_clave=sin_clave, sin_parte=sin_parte),
+            note=(
+                None
+                if not en_cuarentena
+                else f"{en_cuarentena} pregunta(s) de tu cola de repaso se han dejado fuera: su "
+                "conjunto tiene la clave en cuarentena"
+            ),
         )
         return self._study.create_session(
             opposition_id=request.opposition_id,
@@ -1551,68 +1505,12 @@ class StudyService:
             key_label=" · ".join(etiquetas),
         )
 
-    @staticmethod
-    def _nota_del_repaso(*, sin_clave: int, sin_parte: int) -> str | None:
-        """Lo que el repaso dice de su propia composición, y solo cuando hay algo que decir.
-
-        Dos cosas y ninguna es un detalle: cuántas preguntas vencidas se han quedado fuera porque no
-        hay con qué corregirlas, y cuántas se corrigen **al momento** porque la sesión en la que se
-        fallaron no declaró su parte. Callarlas dejaría al alumno con un repaso de tres preguntas
-        creyendo que tenía cinco, que es exactamente el defecto que esto cierra.
-        """
-        frases: list[str] = []
-        if sin_clave:
-            frases.append(
-                f"{sin_clave} pregunta(s) de tu cola de repaso se han dejado fuera: no hay con qué "
-                "corregirlas (su conjunto está en cuarentena, no tiene plantilla activa o la "
-                "plantilla no dice su respuesta)"
-            )
-        if sin_parte:
-            frases.append(
-                f"{sin_parte} pregunta(s) se corrigen al momento: la sesión en la que se fallaron "
-                "no declaró a qué parte del examen pertenecen"
-            )
-        return "; ".join(frases) if frases else None
-
     def _vistas_hace_poco(self, opposition_id: str) -> frozenset[str]:
         """Las preguntas intentadas en la ventana reciente de la oposición (DEBT-012)."""
         ahora = self._clock.now()
         return self._study.recently_attempted_question_ids(
             opposition_id, since=ahora - timedelta(days=DIAS_VISTA_HACE_POCO)
         )
-
-    def exam_size(
-        self, *, opposition_id: str, part_code: str, ordinary: int, reserve: int
-    ) -> tuple[int, bool]:
-        """Cuántas preguntas tendría un examen oficial, y si se puede montar con ellas.
-
-        Es la regla con la que `_preguntas` monta un examen —las primeras `ordinary_items`
-        ordinarias y las primeras `reserve_items` reservas de la parte que publica la
-        convocatoria— aplicada sin montarlo, para que la **fila** de la lista de exámenes diga lo
-        mismo que el examen (§3.7 del recorrido: la fila decía 135 y el examen tenía 85).
-
-        El segundo valor es la otra mitad de la verdad: un examen al que le faltan preguntas para lo
-        que la convocatoria pide **no se puede montar** —`_preguntas` contesta 409— y una fila que
-        ofreciera el botón estaría ofreciendo un examen que revienta. Hoy hay seis así, los de
-        promoción interna: 74 preguntas para una parte que pide 80.
-
-        Se escribe aquí, junto a la composición, y no en la pantalla ni en la consulta: la regla de
-        cuántas preguntas entran es la de la convocatoria, y tenerla dos veces es cómo se acaba
-        prometiendo un examen que no existe. Si la parte no se puede resolver, tampoco se puede
-        montar y se dice con un cero.
-        """
-        oposicion = self._profiles.get_opposition(opposition_id)
-        if oposicion is None:
-            return 0, False
-        try:
-            convocatoria = self._convocatoria_de(oposicion.opposition.convocation_id)
-            parte = self._parte(convocatoria, part_code)
-        except (NotFoundError, UnsupportedError):
-            return 0, False
-        faltan = parte.ordinary_items is not None and ordinary < parte.ordinary_items
-        elegidas = ordinary if parte.ordinary_items is None else min(ordinary, parte.ordinary_items)
-        reservas = reserve if parte.reserve_items is None else min(reserve, parte.reserve_items)
-        return elegidas + reservas, not faltan
 
     @staticmethod
     def _nota_del_simulacro(repetidas: int, *, total: int) -> str:
