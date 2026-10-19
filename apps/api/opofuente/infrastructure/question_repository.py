@@ -1673,6 +1673,7 @@ class SqlAlchemyQuestionRepository:
                 for set_id, pregunta_id in filas:
                     agrupadas.setdefault(str(set_id), set()).add(str(pregunta_id))
         return {set_id: frozenset(preguntas) for set_id, preguntas in agrupadas.items()}
+
     def servable_question_ids(self, question_ids: Sequence[str]) -> frozenset[str]:
         """Las que se pueden **corregir**, con la política de claves de siempre y en una consulta.
 
