@@ -10,6 +10,7 @@ import {
   incidentSectionHref,
   incidentSourceHref,
   incidentVersionText,
+  detailSinLaFraseDeLaCategoria,
   type IncidentStatus,
   type NotesIncident,
 } from '../../api/notesIncidents';
@@ -69,6 +70,10 @@ export function IncidentRow({ incidencia, busy, onDispatch }: IncidentRowProps) 
   // «norma cambiada», así que el estado no se esconde.
   const version = [incidencia.source_version_label, incidentVersionText(incidencia.source_version_status)]
     .filter((parte): parte is string => parte !== null && parte !== undefined && parte !== '');
+  const anotadoPorLaCorrida = detailSinLaFraseDeLaCategoria(
+    incidencia.detail,
+    incidencia.category_help,
+  );
 
   return (
     <li className="avisos__fila">
@@ -173,7 +178,10 @@ export function IncidentRow({ incidencia, busy, onDispatch }: IncidentRowProps) 
 
       <details className="incidencias__detalle">
         <summary>Lo que anotó la corrida</summary>
-        <p data-contenido>{incidencia.detail}</p>
+        {/* El detalle que escribe el motor empieza repitiendo la frase de la categoría, que ya se
+            está leyendo arriba en `category_help`: se quita al pintar y queda lo que de verdad es
+            de esta pregunta. Ver `detailSinLaFraseDeLaCategoria`. */}
+        <p data-contenido>{anotadoPorLaCorrida}</p>
       </details>
 
       <p className="avisos__meta hint">

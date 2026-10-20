@@ -38,6 +38,7 @@ from enum import StrEnum
 
 from opofuente.domain.errors import InvalidStateError
 from opofuente.domain.notes_incidents import IncidentStatus
+from opofuente.domain.plural import forma
 from opofuente.domain.question_file import protege_cambiar_la_clave
 from opofuente.domain.topic_notes import CategoriaIncidencia
 
@@ -240,12 +241,16 @@ def _etiqueta(categoria: str, cuantas: int) -> str:
 
     Una categoría que el vocabulario no conozca sale **tal cual** —es lo que ya hacía— y no se
     inventa un plural: la fila enseña el nombre del dominio antes que una palabra mal formada.
+
+    La elección de la forma la hace `con_numero`, que es el **único** sitio del servidor donde se
+    decide un singular o un plural: el resumen de esta fila y las frases de la revisión de apuntes
+    tienen que decir «1 pregunta» y «3 preguntas» de la misma manera.
     """
     formas = ETIQUETA_DE_CATEGORIA.get(categoria)
     if formas is None:
         return categoria
     singular, plural = formas
-    return singular if cuantas == 1 else plural
+    return forma(cuantas, singular, plural)
 
 
 #: El nombre de cada categoría en la fila del banco, en **sus dos formas** (singular, plural).
@@ -318,17 +323,79 @@ def agrupar(filas: Sequence[TraySet]) -> TrayView:
     )
 
 
+#: Cuántas filas viajan por hoja de la bandeja. Cincuenta es lo que se despacha en una sesión de
+#: trabajo sin que la pantalla tenga que pintar ciento cincuenta y siete tarjetas con sus acciones.
+FILAS_POR_PAGINA = 50
+
+
+@dataclass(frozen=True, slots=True)
+class TrayPage:
+    """Una **hoja** de la bandeja: las filas de esa hoja y los totales de la bandeja entera.
+
+    Los totales (`filas`, `total_pendiente`, `propuestas`, `entradas_de_decision`) son de la
+    bandeja completa y **no cambian al pasar de hoja**: paginar no puede cambiar la cifra que mide
+    el trabajo que queda. Lo que cambia es qué filas se enseñan.
+
+    La sección de oficiales **no se pagina**: son ocho como mucho y su clave no se decide en bloque,
+    así que partirlas por hojas solo estorbaría.
+    """
+
+    pagina: Sequence[TraySet]
+    oficial: tuple[TraySet, ...]
+    resto_total: int
+    filas: int
+    total_pendiente: int
+    propuestas: int
+    entradas_de_decision: int
+    page: int = 1
+    page_size: int = FILAS_POR_PAGINA
+
+    @property
+    def pages(self) -> int:
+        """Cuántas hojas tiene la lista de bancos. Siempre al menos una, aunque esté vacía."""
+        return max(1, -(-self.resto_total // self.page_size))
+
+
+def paginar(vista: TrayView, *, page: int = 1, page_size: int = FILAS_POR_PAGINA) -> TrayPage:
+    """Corta la bandeja en hojas y deja los totales de la bandeja entera intactos.
+
+    Se pagina **solo la sección de bancos**: la de exámenes oficiales va entera y arriba, porque sus
+    incidencias no se despachan en bloque y verlas todas es barato. Una hoja fuera de rango se
+    corrige a la última en vez de devolver un error: el enlace de una bandeja se guarda y, si entre
+    dos visitas se despachan bancos, la hoja que existía puede dejar de existir.
+    """
+    tamano = max(1, page_size)
+    total_resto = len(vista.resto)
+    hojas = max(1, -(-total_resto // tamano))
+    elegida = min(max(1, page), hojas)
+    desde = (elegida - 1) * tamano
+    return TrayPage(
+        pagina=vista.resto[desde : desde + tamano],
+        oficial=vista.oficial,
+        resto_total=total_resto,
+        filas=vista.filas,
+        total_pendiente=vista.total_pendiente,
+        propuestas=vista.propuestas,
+        entradas_de_decision=vista.entradas_de_decision,
+        page=elegida,
+        page_size=tamano,
+    )
+
+
 __all__ = [
     "ACCIONES",
     "ESTADOS_ESPERANDO",
     "ETIQUETA_DE_CATEGORIA",
+    "FILAS_POR_PAGINA",
     "TEXTO_DE_ACCION",
     "TrayAction",
+    "TrayPage",
     "TrayRefusalError",
     "TraySection",
     "TraySet",
     "TrayView",
     "acciones_permitidas",
     "agrupar",
+    "paginar",
     "rechazo_de_accion",
 ]

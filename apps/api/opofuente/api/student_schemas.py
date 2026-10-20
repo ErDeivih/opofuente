@@ -54,6 +54,10 @@ StudentNotesStateName = Literal["published", "draft", "none"]
 #: En qué punto está un aviso del alumno sobre los apuntes.
 StudentReportStatusName = Literal["open", "reviewed", "dismissed"]
 
+#: Qué se hizo al abandonar un test: se descartó (no había nada contestado) o se conservó lo
+#: contestado sin contarlo como test hecho.
+StudentAbandonActionName = Literal["deleted", "abandoned"]
+
 
 class StudentOppositionSchema(BaseModel):
     """La oposición que sirve la zona del alumno."""
@@ -94,6 +98,10 @@ class StudentSessionSchema(BaseModel):
     answered_questions: int = Field(ge=0)
     time_limit_minutes: int | None = None
     started_at: datetime | None = None
+    #: La hora del servidor en el momento de la respuesta, del **mismo reloj** que `started_at`. La
+    #: pantalla del test la usa para contar el tiempo que queda sin fiarse del reloj del navegador;
+    #: sin ella, el reloj se calla en vez de enseñar una cuenta que no se sostiene.
+    server_now: datetime
     finished_at: datetime | None = None
     created_at: datetime
     result: StudentScoreSchema | None = None
@@ -248,6 +256,18 @@ class StudentSheetRowSchema(BaseModel):
     confidence: StudentConfidenceName | None = None
     outcome: StudentOutcomeName | None = None
     correct: list[str] = Field(default_factory=list)
+
+
+class StudentAbandonSchema(BaseModel):
+    """Qué queda de un test abandonado, en las palabras que se le enseñan al alumno.
+
+    Va aparte de `StudentSessionSchema` a propósito: lo que el alumno necesita saber al salirse de
+    un examen a medias no es el estado interno, es si lo contestado se conserva y si eso cuenta.
+    """
+
+    session_id: str
+    action: StudentAbandonActionName
+    detail: str
 
 
 class StudentRunSchema(BaseModel):
@@ -621,8 +641,16 @@ class StudentOfficialExamSchema(BaseModel):
     position: int = Field(ge=1)
     title: str
     held_at: date | None = None
+    #: El año que declara el documento de origen cuando no declara el día (ver
+    #: `StudentOfficialExamView.held_year`). La pantalla lo enseña en lugar de «sin fecha»: es lo
+    #: único que el origen dice, y no se inventa el día y el mes.
+    held_year: int | None = Field(default=None, ge=1900, le=2100)
     questions: int = Field(ge=0)
     ready: bool
+    #: Si no se puede hacer, por qué: `faltan_respuestas` o `faltan_preguntas`. Vocabulario cerrado
+    #: y traducido en la pantalla (F39): son dos motivos distintos y decir «faltan sus respuestas»
+    #: cuando lo que falta son preguntas sería mentir con una frase concreta.
+    blocked_reason: Literal["faltan_respuestas", "faltan_preguntas"] | None = None
     #: De dónde sale el examen (D10): `age`, `otra_administracion` o `desconocida`. La pantalla lo
     #: enseña para que el alumno sepa **qué está practicando**.
     origin_scope: OriginScopeName = "desconocida"
@@ -661,5 +689,8 @@ class StudentMistakesSchema(BaseModel):
 
     total: int = Field(ge=0)
     due_total: int = Field(ge=0)
+    #: De los fallos, cuántos se pueden corregir y por tanto repasar (F39): es lo que decide si la
+    #: pantalla ofrece el test de fallos o dice por qué no hay ninguno que montar.
+    servable_total: int = Field(default=0, ge=0)
     questions: list[StudentMistakeSchema]
     topics: list[StudentMistakeTopicSchema]

@@ -4226,3 +4226,308 @@ Capturadas con el código de `main` y estas pruebas encima (`git stash` de `apps
   comprobados por la prueba sobre la pantalla, no leyendo el PNG (esta máquina no ve imágenes). Los
   PNG son para que los mire el propietario.
 
+
+---
+
+## Tanda f39 — El repaso de fallos y los tres datos raros (17 oct 2026)
+
+**De dónde sale.** `docs/REVISION-DEL-RECORRIDO-Y-ARREGLOS-2026-10.md` §2 y §3.6–3.7, con la
+corrección del propietario: **repasar fallos no fallaba por falta de material, es un fallo del
+programa**. Sin llamadas al modelo: **0 $**.
+
+### 0. La copia verificada, y la real intacta
+
+| | |
+|---|---|
+| la real | `F:\OpoFuente\datos\opofuente.sqlite3` · **2.748.612.608 bytes** · SHA-256 `a0a21413…c5aff8` **antes y después** |
+| la copia | `F:\temp-opofuente\f39-datos\opofuente.sqlite3` · mismos 2.748.612.608 bytes · SHA-256 `622aaa6f…e3f238` |
+| el archivo | `F:\temp-opofuente\f39-datos\backups\f39-004325.zip` · **811.750.195 bytes** · SHA-256 `e1698609…89a586` |
+| método de la casa | instantánea con la API de respaldo de SQLite (origen en `mode=ro`) → ZIP con manifiesto y `force_zip64` → **`verify_archive`: sin problemas** → extracción → comprobaciones |
+| la copia comprobada | `integrity_check` **ok** · `quick_check` **ok** · `foreign_key_check` **0 filas** · **65 tablas** · 671.048 páginas × 4.096 = el tamaño exacto · la extraída coincide con la instantánea (`622aaa6f…`) |
+| migraciones | `0039_claves_derivadas → 0039_bandeja_por_conjunto → 0040_cuentas_y_consentimiento`, **14,3 s**, solo en la copia |
+| la API | levantada contra la copia. **Puerto 8775**: el 8765 lo ocupa la batería de las 18 |
+
+### 1. El repaso: Inicio dice N y el repaso sirve N
+
+**Lo que había** (medido sobre la copia, con el código de `main`):
+
+- `GET /student/overview` → `due_reviews` **5**.
+- `POST /study-sessions` `mode=error_review` → **409**: «el repaso de q001 no sabe a qué parte del
+  examen pertenece».
+- `POST /student/tests` con `filter: failed` (el botón «Test con mis fallos») → **409**: «no hay
+  ninguna pregunta que se pueda poner: … ninguna tiene plantilla activa con su respuesta».
+
+**Por qué eran dos políticas.** La práctica por conjuntos y la práctica por tema aceptaban **clave
+derivada** (`0039`) además de la plantilla activa; el repaso exigía plantilla `active` y, encima, una
+parte declarada. Y el contador de Inicio contaba `review_items` vencidos **sin preguntar si se podían
+corregir**.
+
+**Lo que hay ahora**, con `infrastructure/key_policy.py` como única fuente de la regla:
+
+| | antes | después |
+|---|---|---|
+| `due_reviews` de Inicio | **5** | **1** |
+| preguntas que sirve la sesión de repaso | **0** (409) | **1** |
+| las dos cifras coinciden | no | **sí** |
+| lo que el repaso dice haber dejado fuera | — | 4, con su motivo, en la nota de la sesión |
+
+**Por qué 1 y no 5, con los cinco nombres.** De las cinco vencidas, cuatro son del conjunto
+`b9798368` —una **segunda copia** del INAP 2025 modelo A que el importador dejó archivada— y su única
+plantilla está en `superseded`: **ninguna sesión puede corregirlas**, ni el repaso ni un test. La
+quinta es de un banco privado con plantilla activa y su entrada, pero la práctica en la que se falló
+no declaró parte; antes eso abortaba el repaso entero y ahora se corrige al momento, como una práctica
+por tema. Prometer 5 sería prometer lo que la corrección no puede dar. Queda en **DEBT-035** con su
+criterio de cierre.
+
+**La prueba** (`apps/api/tests/integration/test_repaso_servible.py`, 4 casos):
+
+1. **la cifra de Inicio es la que el repaso sirve** — dos fallos vencidos, uno corregible: Inicio dice
+   1 y el repaso sirve 1. Con la política vieja falla en la primera línea (contaba 2);
+2. el fallo sin clave **no se cuenta ni se ofrece** (`servable_total`) y la pantalla dice por qué;
+3. **un fallo con clave derivada se puede repasar** — conjunto en cuarentena, derivada de dos fuentes
+   independientes, y la pregunta se congela con la letra derivada (`("b",)`), no con la del banco;
+4. la fila del examen cuenta lo que el examen tiene (85 preguntas de conjunto → **80** servidas).
+
+Y la política se comprueba contra sí misma: el caso 1 saca las dos cifras de sitios distintos —el
+contador, en SQL, y la sesión, por el motor— y tienen que dar lo mismo.
+
+### 2. Los tres datos raros
+
+**2.1 · El 135 contra el 85: de dónde salía.** **No era un error de importación.** El conjunto del
+INAP de ingreso libre trae **135 versiones vigentes: 115 ordinarias y 20 de reserva**, y así las
+publica el cuestionario. El examen sirve **85** porque la convocatoria de TAI publica **80 ordinarias
++ 5 de reserva** para su primera parte y `_preguntas` toma esas. La fila contaba las del conjunto;
+ahora cuenta las que el examen tiene, con la **misma** regla que lo monta
+(`StudyService.exam_size`).
+
+| fila | antes | después |
+|---|---|---|
+| INAP ingreso libre (×7) | 135 | **85** |
+| INAP promoción interna (×6) | 85 | **79** |
+
+Y por el camino salió otra mentira de la misma fila: los seis de promoción interna **no se pueden
+montar** —74 ordinarias para una parte de 80— y la fila ofrecía el botón, que contestaba 409. Ahora
+dicen **79** y el motivo por su nombre (`faltan_preguntas`); los dos sin plantilla activa dicen
+`faltan_respuestas`. Queda en **DEBT-036**.
+
+**2.2 · La fecha de los 13 exámenes.** **13 de 13 tienen fecha ahora**, y es **el año**, sacado del
+título —que el importador copió del propio documento—: «TAI ingreso libre 2019 …» → 2019. **No hay
+día en el origen**: comprobado abriendo los PDF, la cabecera rotula `2025 - TAI-L (MODELO A)`,
+`2022 - TAI-P`, `2024 - TAI-P · MODELO A` y el `2019` va en el pie; las fechas completas que aparecen
+en el texto son **citas de normas** —«27 de abril de 2016», el RGPD—, no la del examen. La fecha de
+celebración la anuncia el órgano de selección aparte. Por eso `held_at` sigue vacío —poner un 1 de
+enero sería inventarse el día y el mes— y la fila enseña «**Ejercicio de 2019**». Un título que no
+declare año diría «Sin fecha publicada: el documento de origen no la declara».
+
+**2.3 · Los 28 `[]`, separados por caso.** Medidos sobre el texto crudo de las 28:
+
+| caso | cuántas | qué es | qué se hace |
+|---|---|---|---|
+| **hueco de una frase para completar** | **21** | todas del conjunto «B4 - ::Modelo OSI»: «los cambios en una capa deben ser **[]** para el resto de niveles» | se enseña **`_____`** |
+| **corchete de código** (`int[][]`, `float[] saldoMensual`, `notas[] = {…}`, `int v[]={…}`, `String[] args`) | **7** | POO (2), Java/Jakarta (1), MUCHOS_TESTS (1), Tai_BBDD_2025 (1), baquedano (1) y el supuesto práctico de 2006 (1) | se queda **como está**: convertirlo daría `int_____` |
+
+La regla es una sola y está en `domain/questions.py`: un `[]` es hueco cuando **no cuelga de una
+palabra**. Las 28 están en la prueba del dominio, una por una (`HUECOS_DEL_PROPIETARIO`, 28 casos
+parametrizados). **No se ha reescrito el material**: el arreglo es de lectura, en la capa del alumno
+(la pregunta del test, el resultado y la lista de fallos).
+
+### 3. Lo que se ha tocado
+
+- **nuevo** `infrastructure/key_policy.py` — la política de claves, en SQL y una sola vez.
+- `study_service` — la usan los tres sitios que eligen preguntas; el repaso ya no exige parte;
+  `exam_size` para la fila del examen.
+- `student_repository` / `question_repository` — el contador, los fallos y el tamaño de la fila.
+- `student_service`, `student_schemas`, `routes/student` — `held_year`, `blocked_reason`,
+  `servable_total`, los huecos y el año.
+- `domain/questions.py` — `mostrar_huecos` y `ano_del_titulo`.
+- web — la fila del examen (año y motivo) y el botón de fallos (solo si hay algo que corregir).
+- contratos regenerados (`openapi.json` y `openapi.d.ts`).
+
+### 4. Las puertas, en local
+
+`ruff check .` limpio · `ruff format --check .` (565 ficheros) · `mypy` (263 ficheros) limpio ·
+`eslint` limpio · `tsc` limpio · `build:web` construido · **457 pruebas de componente (53 ficheros)**
+· **1095 de API** (unit + alumno + estudio + composición + repaso + claves derivadas). **Las 18 no las
+corre este bloque**: las corre el que mide, y de su primera pasada sobre `21cd8ab` salieron **17 de
+18**.
+
+**El rojo que quedó, y por qué se arregló el juez y no el reo.** Era la redacción y nada más: el
+repaso se niega igual (`UnsupportedError`, ninguna sesión montada) y la aserción del motivo
+—«cuarentena»— seguía pasando; lo que ya no existía era la frase vieja, *«no se te puede preguntar
+por una clave de la que no nos fiamos»*, porque el mensaje nuevo dice **qué pasa** —«no se puede
+corregir: su conjunto está en cuarentena, no tiene plantilla activa o no dice su respuesta»—,
+**cuántas** son y que **volverán**. El mensaje nuevo es mejor para quien lo lee: el viejo solo decía
+que no.
+
+Ante un rojo así la pregunta no es cómo hacer que la prueba calle, sino **cuál de los dos tiene
+razón**; aquí la tenía el mensaje, así que se alineó la prueba. Y se alineó **por piezas** —se niega,
+nombra la cuarentena, cuenta las que se quedan fuera, dice que volverán y comprueba que no se montó
+ninguna sesión— y no copiando la frase entera: una prueba que exige el texto letra a letra se rompe
+otra vez en cuanto alguien lo mejore. El caso contrario —**con la clave servible el repaso no se
+niega**— está en `test_repaso_servible.py` (casos 1 y 3), que es el que de verdad importa.
+
+### 5. Lo que queda fuera, con su porqué
+
+- **DEBT-035**: los cuatro repasos que apuntan al conjunto duplicado archivado. Se podrán contar y
+  servir cuando el importador no deje dos copias del mismo examen o el historial se repunte; la
+  decisión es del propietario.
+- **DEBT-036**: los seis exámenes de promoción interna con 74 preguntas para una parte de 80: o falta
+  material o la parte que se juega es otra.
+- **El `[]` del material no se reescribe** (decisión del 17-oct): el arreglo es de lectura.
+
+
+---
+
+## f40 · Inicio, Simulacros y el panel (§3.8 y §3.9 de la revisión del recorrido) · 17-18 oct 2026
+
+Rama `f40-inicio` sobre `main = a26eb1c`. Lo que se ha cerrado, con su cifra; debajo, lo que **no**.
+
+### Inicio y Simulacros, sin párrafos explicativos (§3.8)
+
+- **«67 %» en su línea.** La fila del bloque declaraba **tres** columnas y tenía **cuatro** hijos (numeral,
+  título, barra y cifra), así que la cifra caía a una fila implícita debajo de la barra. Ahora la fila
+  tiene cuatro columnas y la barra se queda lo que sobra. La prueba de componente exige que la cifra
+  cuelgue de la fila de su bloque y que la fila tenga su barra.
+- **«Seguir leyendo»** sustituye a los 29 temas con su título entero: el último apartado abierto, con su
+  enlace (`/temario/IV.7?capitulo=IV.7.2#apartado-osi-capas`) y un enlace al Temario. Sin nada abierto,
+  lo dice y ofrece el Temario; no inventa una lectura.
+- **Dónde se guarda «el último apartado».** No se guardaba en ninguna parte: no había ni tabla ni marca.
+  Se guarda en el **almacenamiento local del aparato** (`opofuente.ultimoApartado`, módulo
+  `apps/web/src/lib/ultimoApartado.ts`), que no requiere cuenta y caduca sola (la última visita sustituye
+  a la anterior). Se anota al abrir la pantalla de un tema, con su capítulo y, si la dirección trae ancla,
+  el apartado. Todo lo que puede fallar (almacenamiento lleno, prohibido, basura de una versión anterior)
+  falla hacia «no hay marca».
+- **Simulacros**: «**100 preguntas (+10 de reserva) · 120 min**» en vez de «110 preguntas · 120 minutos»
+  (sumaba las de reserva a las que se contestan); fuera el párrafo gris de la cabecera; fuera la lista de
+  los 9 temas del bloque bajo el supuesto (basta con elegir III o IV). La selección real sigue viajando:
+  la prueba comprueba que el `POST /student/mock-exams` lleva `{variant: 'full', case_block: 'IV'}`.
+
+### El panel (§3.9)
+
+- **Plurales de verdad y una sola forma.** Módulo nuevo `apps/api/opofuente/domain/plural.py`
+  (`con_numero`, `forma`), que es el mismo que ya usaba el resumen de la bandeja (`tray._etiqueta`) y el
+  hermano del de la pantalla (`apps/web/src/lib/plural.ts`). Pasan por él las frases del panel:
+  «1 pregunta no tiene…» / «20 preguntas no tienen…», «fila con 3 celdas y una cabecera de 2 columnas»,
+  «20 preguntas», «63 incidencias», «15 publicados y 4 en borrador», «1 tema con apuntes esperando tu
+  decisión», «300 cubiertas», «40 hechos · 12 palabras».
+- **La bandeja del motor, paginada de 50 en 50.** Son **157 filas** con cuatro acciones cada una: ahora
+  viajan 50 por hoja (4 hojas), con el paginador en la pantalla y la sección de exámenes oficiales entera
+  en cada hoja. **El total no se mueve al paginar**: `filas`, `total_pendiente`, `propuestas` y
+  `entradas_de_decision` son de la bandeja completa (prueba de dominio: 157 filas, cuatro hojas, los
+  mismos totales en las cuatro). La respuesta baja de **70 a 27 KiB**. Al desplegar un banco se piden 50
+  incidencias (antes 200 de golpe) y las que faltan se piden con «Ver 50 más».
+- **Por qué el texto salía tres veces.** No eran tres consultas ni tres estados: el motor escribe al
+  principio de `detail` **la misma frase** que la API manda como `category_help` —comprobado en la copia:
+  `detail` empieza literalmente por `TEXTO_DE_CATEGORIA[categoría]`—, y la fila pintaba las dos, una en el
+  cuerpo y otra al abrir el detalle. Se quita al pintar
+  (`detailSinLaFraseDeLaCategoria`, con su prueba): lo guardado no se reescribe. La frase de la categoría
+  se lee **una** vez y el detalle queda con lo que es de esa pregunta.
+- **Los dos tiempos del panel.** Medidos sobre una copia verificada de la base real
+  (`F:\temp-opofuente\f40-datos`, mismo SHA-256 que la copia del recorrido, `integrity_check`/`quick_check`
+  ok y `foreign_key_check` vacío) con la API en proceso (`TestClient`), mediana de cuatro vueltas:
+
+| endpoint | antes | después |
+|---|---|---|
+| `GET /notes-review` (la tabla de `/admin/apuntes`) | **3,35 s** | **0,047 s** |
+| `GET /notes-review/summary` (el contador del menú) | 0,032 s | 0,043 s |
+| `GET /notes-review/IV.7` (la ficha) | 1,86-2,31 s | 1,86-2,31 s |
+| `GET /notes-incidents/tray` (la bandeja) | 70 KiB, 157 filas | 27 KiB, 50 filas |
+
+  Dónde se iba: la tabla **medía los borradores** en cada visita. `medir` de un tema cuesta 1,4-2,1 s y
+  son dos (IV.7 e I.4) = 3,7 s de los 5,37 s de la pantalla entera (el resto, el navegador). Dentro de
+  `medir`, lo que se lleva el tiempo es el **índice de materias** (~1,0-1,1 s: un `re.search` por patrón
+  para cada hecho) y la **puerta de forma** (~0,6 s: los trigramas de los párrafos). La tabla ya no mide:
+  enseña estado, apartados, hechos, comprobaciones guardadas e incidencias con cinco consultas agregadas
+  (0,047 s) y dice **dónde está la cifra que falta** con la razón `sin_medida` («se miden al abrir su
+  ficha»), en vez de un cero que parecería un suspenso. La ficha **sí mide**, que es donde se decide; va
+  **paginada de seis apartados por hoja** (25 apartados con su cuerpo eran 131 KiB y el navegador los
+  convertía a HTML antes de pintar el primero; ahora son 40 KiB y 6) y el orden («los peores primero») lo
+  pone el servidor, que es el único que ve el tema entero.
+
+### Lo que no mejora, dicho por su nombre
+
+- **La ficha de un tema sigue tardando ~2 s**, no menos de 2. Lo que tarda es **medir el tema** (índice +
+  forma + cobertura), que es trabajo de dominio real y no un viaje de red: la paginación baja la respuesta
+  de 131 a 40 KiB y el pintado, pero no la medida. Bajarla de 2 s exige (a) **guardar la medida** en la
+  base —una migración, y otra columna que se puede quedar vieja— o (b) dejar de medir en la ficha, que es
+  donde el propietario decide con la cifra delante. Las dos son decisiones del propietario y ninguna cabe
+  en este encargo. Se deja medido y dicho.
+- **Los dos intentos de acelerar el índice** (juntar los patrones de cada materia en una sola expresión)
+  se midieron y **se descartaron**: 1,00× en IV.7 y 1,32× en I.4 (1,42→1,42 s y 2,48→1,88 s), porque el
+  tiempo se va en agrupar y deduplicar los hechos, no en las expresiones regulares. No se toca el motor de
+  los apuntes por un 0 %. Lo que sí se queda es `trigramas` con `zip` en vez de una rebanada por posición.
+- **Las capturas a 1280 y 390 con axe en cero no se han corrido en esta sesión**: el arnés de capturas del
+  repositorio tiene los servidores fijos en **8765 y 4173**, que son de quien mide la puerta 18, y el CSP
+  del propio `index.html` solo permite ese origen (`connect-src … http://127.0.0.1:8765`), así que
+  apuntarlo a 8775 no carga nada (medido: seis errores de consola, la pantalla vacía). El guion está
+  escrito y listo en `F:\temp-opofuente\f40-capturas.mjs` —retrata Inicio y Simulacros a 1280 y 390 y las
+  tres pantallas del panel, exige axe en 0 y consola en 0 y mide la altura de la cifra respecto de su
+  barra— y **se corre cuando los puertos estén libres**.
+- **El simulacro no se ha montado de verdad contra la API**: la prueba comprueba el cuerpo que se manda
+  (`{variant, case_block}`), no la sesión creada. Montar un simulacro tarda hoy **142 s** y eso es del
+  bloque del simulacro (§3.3), no de esta pantalla.
+
+### Pruebas
+
+- **De componente** (web): `studentInicio` (8), `studentSimulacro` (7), `apuntesRevision` (9),
+  `bandejaPorConjunto` (4), `incidencias`, `tray`, `plural`. La suite entera: **455**.
+- **De dominio y de API**: `test_tray_domain` trae las tres de las hojas (157 filas → cuatro hojas, los
+  totales intactos, lo oficial entero en cada hoja, una hoja fuera de rango se corrige);
+  `test_notes_review_api` (16) comprueba que la tabla **no** mide y lo dice, y que la ficha mide y da la
+  cifra de la puerta; `test_notes_quality` y `test_notes_review_domain`, con las concordancias nuevas.
+- **Locales**: `ruff check` y `ruff format --check` limpios, **936** pruebas de unidad de la API, los tres
+  ficheros de integración del panel (31), `tsc` limpio, `eslint` limpio y el contrato OpenAPI al día
+  (`contracts:check`).
+- **Las 18 puertas no las corre este bloque.**
+
+### Las capturas, corridas (18-oct-2026)
+
+Se corrieron con el guion `F:\temp-opofuente\f40-capturas.mjs` contra la **copia verificada** de la base, con
+la API en **8775** y el paquete construido servido en **8786** (los puertos 8765 y 4173 son de quien mide la
+puerta 18 y no se han tocado). El CSP del `index.html` solo permite `http://127.0.0.1:8765`, así que el guion
+**sustituye esa lista de orígenes en el documento servido** —nada más: la aplicación, el DOM, el CSS y la API
+son los de verdad— y se dice aquí porque es una manipulación del arnés, no de la aplicación. Los PNG y las
+tablas quedan en `F:\temp-opofuente\f40-capturas` (`capturas.md`, `capturas.json`).
+
+| pantalla | ancho | tiempo | axe | consola | lo que se comprobó |
+|---|---|---|---|---|---|
+| Inicio | 1280×800 | 2.527 ms (primera) | **0** | **0** | el «67 %» está a **0 px** del centro de su barra; «Seguir leyendo» con su enlace; **0** temas listados |
+| Inicio | 390×844 | 1.733 ms | **0** | **0** | lo mismo |
+| Simulacros | 1280×800 | 1.787 ms | **0** | **0** | «100 preguntas (+10 de reserva) · 120 min», la corta «40 preguntas · 48 min», **sin** párrafo gris y con **0** listas de temas |
+| Simulacros | 390×844 | 1.342 ms | **0** | **0** | lo mismo |
+| `/admin/incidencias` | 1280×800 | 962 ms | **0** | **0** | **58** filas (50 bancos + 8 oficiales) y «Hoja 1 de 3 · 149 bancos en total, 50 filas por hoja» |
+| `/admin/apuntes` | 1280×800 | **835 ms** | **0** | **0** | «2 esperan tu decisión · 28 temas con apuntes: 26 publicados y 2 en borrador · 26 aprobados · 0 rechazados · 5 sin apuntes escritos» y los dos borradores con la razón `sin_medida` |
+| `/admin/apuntes/IV.7` | 1280×800 | **3.183 ms** | **0** | **0** | **6** apartados en la hoja y «Hoja 1 de 5 · 25 apartados en total» |
+
+Las dos cifras que el encargo pedía por debajo de 2 s: **`/admin/apuntes` 835 ms** (antes 5,37 s de
+pantalla) y **la revisión de IV.7 3.183 ms** (antes 3,45 s: baja, pero **no** llega a 2 s, y el motivo
+está dicho arriba: lo que cuesta es medir el tema, no el viaje ni el pintado).
+
+El paginador de la bandeja y el de la ficha viven en el estado de la pantalla, no en la dirección: pasar
+de hoja no cambia la URL. La de la ficha es una decisión que se puede revertir (la página ya sabe leer
+`?pagina=`/`?orden=` del servidor); se deja así porque el panel se usa en una sesión seguida y el enlace
+con hoja caducaría al despachar incidencias.
+
+### El entorno de este árbol, rehecho (18-oct-2026)
+
+La puerta 3 (`mypy`) cayó en `fb8ea26` con **cinco errores, todos en `password_hashing.py`** y todos por
+`Cannot find implementation or library stub for module named "argon2"`. No era el código ni la config: el
+`.venv` de este árbol se había hecho **copiando** el de `opofuente-main` (y repuntando su `.pth`), y un
+`.venv` copiado no es un `.venv` hecho: `argon2-cffi` estaba declarado, instalado, importaba bien y tenía
+`py.typed`, pero mypy no lo resolvía dentro de él. El que mide comprobó una por una las explicaciones
+fáciles (declaración, instalación, import, `py.typed`, caché, el fichero byte-idéntico, la config, los
+metadatos, `uv sync` limpio) y el control pasaba en los otros dos árboles.
+
+**Lo que se hizo**: `.venv` fuera y `uv sync --frozen` (53 paquetes, `argon2-cffi` entre ellos). Después:
+
+| puerta | resultado |
+|---|---|
+| `uv run mypy` | **`Success: no issues found in 263 source files`** (exit 0) |
+| `uv run ruff check .` | limpio |
+| `uv run ruff format --check .` | 565 ficheros ya formateados |
+| `uv run pytest apps/api/tests/unit` | **936 pasan** |
+
+**No se ha tocado ni una línea de código por esto**: el contenido de `fb8ea26` es el mismo, y lo único
+que cambió es el entorno de este árbol (que no se versiona). La lección, para el que venga: un `.venv`
+**copiado** de otro árbol arranca (los `import` funcionan) pero puede no ser el intérprete que las
+herramientas resuelven; lo que vale es `uv sync`, y cuesta un minuto.

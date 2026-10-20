@@ -15,7 +15,7 @@
 
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { MockExamPage } from '../../src/pages/student/MockExamPage';
 import { mockPlanFixture } from './studentFixtures';
@@ -73,6 +73,17 @@ describe('la pantalla del simulacro', () => {
     expect(within(filas[1]!).getByText(/20 preguntas/)).toBeInTheDocument();
   });
 
+  it('no enseña ningún párrafo explicativo por defecto: la regla de la zona del alumno', async () => {
+    montar();
+
+    await screen.findByRole('radiogroup', { name: /supuesto práctico/i });
+    // El párrafo gris que abría la pantalla («el mismo número de preguntas, el mismo tiempo y la
+    // misma penalización que el día del examen») ya no está: ruega por defecto, no explica.
+    expect(
+      screen.queryByText(/el mismo número de preguntas, el mismo tiempo/i),
+    ).not.toBeInTheDocument();
+  });
+
   it('avisa de que no es un examen oficial y de que la nota es una estimación', async () => {
     montar();
 
@@ -80,15 +91,26 @@ describe('la pantalla del simulacro', () => {
     expect(screen.getAllByText(/estimación/i).length).toBeGreaterThan(0);
   });
 
-  it('deja elegir el bloque del supuesto y enseña sus temas antes de empezar', async () => {
+  it('deja elegir el supuesto sin desplegarle los nueve temas debajo', async () => {
     montar();
 
     const bloques = await screen.findByRole('radiogroup', { name: /supuesto práctico/i });
     expect(within(bloques).getByRole('radio', { name: /bloque III/i })).toBeInTheDocument();
     expect(within(bloques).getByRole('radio', { name: /bloque IV/i })).toBeInTheDocument();
+    expect(within(bloques).getByRole('radio', { name: /bloque IV/i })).toBeChecked();
 
-    const temas = screen.getByRole('list', { name: /temas del bloque IV/i });
-    expect(within(temas).getByText('IV.7')).toBeInTheDocument();
+    // La lista de temas del bloque sobraba: lo que hay que decidir aquí es III o IV, y lo que cae en
+    // cada bloque se lee en el temario. La elegida sigue viajando al montar (la prueba de abajo).
+    expect(screen.queryByRole('list', { name: /temas del bloque/i })).not.toBeInTheDocument();
+  });
+
+  it('el resumen de la variante cuenta las de reserva aparte: «100 preguntas (+10 de reserva)»', async () => {
+    montar();
+
+    // Sumarlas daba «110 preguntas» y son 100 las que se contestan más 10 de reserva.
+    expect(await screen.findByText(/100 preguntas \(\+10 de reserva\)/)).toBeInTheDocument();
+    expect(screen.getAllByText(/· 120 min/).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/110 preguntas/)).not.toBeInTheDocument();
   });
 
   it('monta el simulacro completo con el bloque elegido', async () => {
@@ -126,5 +148,45 @@ describe('la pantalla del simulacro', () => {
     await waitFor(() => {
       expect(cuerpoDe(fetchMock, '/student/mock-exams')).toMatchObject({ variant: 'short' });
     });
+  });
+
+  it('mientras monta, la pantalla lo dice y el botón se queda ocupado', async () => {
+    // Se retiene la respuesta a propósito: es la única forma de mirar la pantalla **durante** el
+    // montaje, que es justo el momento en el que antes no se decía nada.
+    let resolver: ((respuesta: Response) => void) | undefined;
+    const retenida = new Promise<Response>((listo) => {
+      resolver = listo;
+    });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+        const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+        if ((init?.method ?? 'GET') === 'POST' && url.includes('/student/mock-exams')) {
+          return retenida;
+        }
+        return Promise.resolve(
+          new Response(JSON.stringify(mockPlanFixture), {
+            status: 200,
+            headers: { 'content-type': 'application/json' },
+          }),
+        );
+      }),
+    );
+    renderWithProviders(<MockExamPage />, { route: '/simulacros' });
+
+    const boton = await screen.findByRole('button', { name: /empezar el simulacro/i });
+    await userEvent.setup().click(boton);
+
+    const ocupado = await screen.findByRole('button', { name: /preparando tu simulacro/i });
+    expect(ocupado).toBeDisabled();
+    expect(screen.getByRole('status')).toHaveTextContent(/puede tardar unos segundos/i);
+
+    resolver?.(
+      new Response(JSON.stringify({ ...mockPlanFixture, id: 'ses-simulacro' }), {
+        status: 201,
+        headers: { 'content-type': 'application/json' },
+      }),
+    );
+    vi.unstubAllGlobals();
   });
 });

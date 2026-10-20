@@ -247,7 +247,7 @@ test('E2E-F16 el ciclo del aviso: el alumno lo manda y el propietario lo ve y lo
 
   // El contador del menú enseña lo que espera: es el número que el propietario mira al entrar.
   await expect(
-    page.getByRole('link', { name: /Avisos: 1 avisos de los apuntes sin mirar/ }),
+    page.getByRole('link', { name: /Avisos: 1 aviso de los apuntes sin mirar/ }),
   ).toBeVisible();
 
   const fila = page.getByRole('listitem').filter({ hasText: MOTIVO });

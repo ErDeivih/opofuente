@@ -186,18 +186,28 @@ class TraySetSchema(BaseModel):
 
 
 class TraySchema(BaseModel):
-    """La bandeja entera, en dos secciones, con **la cifra** de la medida de éxito del §2.4.
+    """Una **hoja** de la bandeja, en dos secciones, con **la cifra** de la medida de éxito (§2.4).
 
     `entradas_de_decision` no es el número de incidencias ni el de filas: es lo que de verdad
     depende del criterio del propietario, contado con la regla de `domain.tray` —una por conjunto no
     oficial, una por incidencia oficial—. Va en la respuesta y no se calcula en la pantalla porque
     es la cifra que decide si la bandeja sirve, y una cifra que se calcula en dos sitios acaba
     diciendo dos cosas.
+
+    `rest` son las filas de **la hoja**; `filas`, `total_pendiente`, `propuestas` y
+    `entradas_de_decision` son de la bandeja **entera** y no cambian al pasar de hoja: paginar no
+    puede mover la cifra del trabajo que queda. La sección de oficiales va entera en todas las
+    hojas: son ocho como mucho y sus incidencias no se deciden en bloque.
     """
 
     official_section: list[TraySetSchema] = Field(default_factory=list)
-    rest: list[TraySetSchema] = Field(default_factory=list)
-    filas: int = Field(ge=0, description="Cuántas filas enseña la bandeja.")
+    rest: list[TraySetSchema] = Field(
+        default_factory=list, description="Las filas de la hoja que se está mirando."
+    )
+    filas: int = Field(ge=0, description="Cuántas filas tiene la bandeja entera.")
+    rest_total: int = Field(
+        default=0, ge=0, description="Filas de la sección de bancos, sumando todas las hojas."
+    )
     total_pendiente: int = Field(ge=0, description="Incidencias que esperan criterio.")
     propuestas: int = Field(
         ge=0, description="Incidencias ya propuestas, que se aprueban en bloque."
@@ -205,6 +215,9 @@ class TraySchema(BaseModel):
     entradas_de_decision: int = Field(
         ge=0, description="La medida de éxito: lo que de verdad depende del propietario."
     )
+    page: int = Field(default=1, ge=1, description="La hoja que va en `rest`, empezando por 1.")
+    pages: int = Field(default=1, ge=1, description="Cuántas hojas tiene la lista de bancos.")
+    page_size: int = Field(default=50, ge=1, description="Cuántas filas caben en una hoja.")
 
 
 class TrayBulkRequestSchema(BaseModel):

@@ -32,8 +32,10 @@ from opofuente.domain.questions import (
     QuestionType,
     QuestionVersion,
     SetType,
+    ano_del_titulo,
     can_activate,
     find_question_duplicates,
+    mostrar_huecos,
     parse_answer_key,
     parse_questions,
     parse_questions_json,
@@ -622,3 +624,135 @@ def test_el_json_declara_los_campos_que_no_guarda() -> None:
 
     assert resultado.ignored_fields == ("tags", "source")
     assert len(resultado.questions) == 1
+
+
+# --- el hueco `[]` y el año del título (F39, §3.7) ------------------------------------------------
+
+#: Los enunciados reales del banco del propietario que traen `[]`, con lo que cada uno es. Son los
+#: 28 medidos sobre su copia verificada: 21 huecos de frase para completar (todos del conjunto
+#: del modelo OSI) y 7 corchetes de código. La lista va aquí entera porque la regla tiene que
+#: acertar en los 28 y en el mismo sentido.
+#: en el mismo sentido; un heurístico que solo se prueba con un caso bonito no se puede fiar.
+HUECOS_DEL_PROPIETARIO: tuple[tuple[str, bool], ...] = (
+    ("En el modelo OSI, los cambios en una capa deben ser [] para el resto de niveles", True),
+    (
+        "Las capas superiores definen cómo deben comunicarse las aplicaciones entre sí y con "
+        "los []",
+        True,
+    ),
+    ("Las capas inferiores definen cómo deben ser transmitidos los datos de [] a []", True),
+    ("La capa física se encarga de la transmisión de bits a través de un canal de []", True),
+    (
+        "Definir los niveles de tensión y el tipo de señal eléctrica es una función de la capa []",
+        True,
+    ),
+    (
+        "La capa de [] toma el medio de transmisión en bruto y lo transforma en una línea libre de "
+        "errores",
+        True,
+    ),
+    (
+        "La capa de enlace regula el tráfico mediante el control de [] para evitar saturar al "
+        "receptor",
+        True,
+    ),
+    (
+        "Para aumentar el volumen de transmisión, el nivel 4 puede crear múltiples conexiones de "
+        "[] para una sola de transporte",
+        True,
+    ),
+    (
+        "En el nivel de transporte, los datos [] pueden saltarse los mecanismos de control de "
+        "flujo",
+        True,
+    ),
+    (
+        "El manejo de turnos mediante fichas o testigos (tokens) es parte del control del [] en la "
+        "capa de sesión",
+        True,
+    ),
+    ("En la capa de sesión, los dispositivos se referencian por [] y no por dirección", True),
+    ("La conversión entre códigos como ASCII y EBCDIC es responsabilidad la capa de []", True),
+    (
+        "La capa de presentación realiza la [] de datos para reducir el ancho de banda necesario",
+        True,
+    ),
+    ("El elemento ROSE de la capa de aplicación facilita la petición de operaciones []", True),
+    ("La capa de [] gestiona el direccionamiento lógico y el control de tráfico", True),
+    (
+        "En las comunicaciones [] de la capa 5, el tráfico puede ir en ambas direcciones al mismo "
+        "tiempo",
+        True,
+    ),
+    (
+        "El control de acceso al canal compartido en redes de difusión es función de la capa de []",
+        True,
+    ),
+    (
+        "La división de mensajes en unidades más complejas y la asignación de rutas es tarea de la "
+        "capa de []",
+        True,
+    ),
+    (
+        "La capa de [] proporciona medios para que las entidades de presentación sincronicen su "
+        "diálogo",
+        True,
+    ),
+    (
+        "En la capa física, los conectores mecánicos y niveles de tensión son características []",
+        True,
+    ),
+    (
+        "El elemento de servicio [] garantiza fiabilidad manejando funciones de nivel 5 desde la "
+        "capa de aplicación",
+        True,
+    ),
+    ("Si declaramos int[][] matriz = new int[3][4], ¿cuántos elementos contiene la matriz?", False),
+    (
+        "Supongamos que existe una matriz saldoMensual declarada de la siguiente forma: float[] "
+        "saldoMensual = new float[12]",
+        False,
+    ),
+    (
+        "Dado el siguiente código Java: int notas[] = {7,8,5,6,7,5}; elegido = notas [posicion];",
+        False,
+    ),
+    ('01. El siguiente código C int v[]={1,2,3,4,5}; int *i = v; printf("%d\\n", *(i+4));', False),
+    ("(EXAMEN 2016) float[] SaldoMensual = new float[12]", False),
+    ("public static void main(String[] args) { }", False),
+    ("La capa de aplicación ejecuta operaciones sobre los []", True),
+)
+
+
+@pytest.mark.parametrize(("enunciado", "es_hueco"), HUECOS_DEL_PROPIETARIO)
+def test_el_hueco_se_ensena_y_el_corchete_de_codigo_no_se_toca(
+    enunciado: str, es_hueco: bool
+) -> None:
+    """`[]` es un hueco cuando cuelga del aire; pegado a un identificador es un corchete de código.
+
+    Es la separación medida sobre las 28 preguntas del propietario: 21 son huecos (se enseñan como
+    `_____`) y 7 son `int[]`, `float[] saldoMensual`, `notas[] = {...}` o `String[] args`, que se
+    quedan como están. Convertir un `int[]` en un `int_____` sería un error nuevo.
+    """
+    visible = mostrar_huecos(enunciado)
+
+    if es_hueco:
+        assert "[]" not in visible, "el hueco no se enseña como corchetes"
+        assert "_____" in visible
+    else:
+        assert visible == enunciado, "el código se queda tal cual"
+
+
+def test_el_ano_del_titulo_es_el_que_declara_el_documento() -> None:
+    """Los títulos de los 13 exámenes declaran su año; el del INAP lo rotula en la cabecera.
+
+    Ninguno declara el día, así que lo único que se puede afirmar —y lo que la fila enseña— es el
+    año. Poner un 1 de enero sería inventarse el día y el mes.
+    """
+    assert ano_del_titulo("TAI ingreso libre 2019 · ejercicio único (examen oficial INAP)") == 2019
+    assert ano_del_titulo("TAI ingreso libre 2025 · modelo A (examen oficial INAP)") == 2025
+    assert ano_del_titulo("TAI promoción interna 2024 · modelo B (examen oficial INAP)") == 2024
+    # Un título sin año no lo inventa.
+    assert ano_del_titulo("Examen oficial sin año en el título") is None
+    # Y si hay dos, manda el primero: el del ejercicio va delante del nombre de la versión.
+    assert ano_del_titulo("TAI 2019 · Test GSI (v2024)") == 2019

@@ -33,7 +33,7 @@ comprobación del motor.
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import NoReturn
+from typing import Literal, NoReturn
 
 from opofuente.application.dossier_service import DossierService
 from opofuente.application.notes_review_models import (
@@ -67,6 +67,13 @@ from opofuente.infrastructure.notes_review_repository import (
 #: Qué puerta del §2.3 impide publicar cuando el tema está aprobado y no se puede archivar.
 BLOQUEO_POR_COBERTURA: ReviewBlockName = "cobertura"
 BLOQUEO_POR_FORMA: ReviewBlockName = "forma"
+
+#: Cómo se ordenan los apartados de la ficha: el de lectura, o lo que queda sin resolver antes.
+ReviewOrder = Literal["lectura", "peores"]
+
+#: Cuántos apartados viajan por hoja en la ficha. Seis llena una pantalla de 1280 sin que el primer
+#: párrafo llegue tarde y es el mismo tamaño que sirve la zona del alumno.
+SECCIONES_POR_PAGINA = 6
 
 
 class MedidaSinModelo:
@@ -129,12 +136,24 @@ class NotesReviewService:
     # ------------------------------------------------------------------ la tabla
 
     def revisar(self) -> RevisionDeApuntes:
-        """Los temas del programa activo, con su estado y el motivo de los que esperan decisión."""
+        """Los temas del programa activo, con su estado y lo que se sabe **sin medir**.
+
+        La tabla del panel **no mide** los borradores, y eso es una decisión medida: medirlos
+        costaba 3,7 s de los 5,37 s que tardaba la pantalla entera (17-oct-2026, copia verificada de
+        la base: IV.7 1,86 s e I.4 1,5 s, con el índice de materias y la puerta de forma dentro).
+        Lo que la tabla enseña —estado, apartados, hechos, comprobaciones guardadas, incidencias sin
+        despachar y la decisión escrita— sale de la base en cinco consultas agregadas y se lee en
+        0,03 s.
+
+        La cifra de la puerta **no se hereda ni se inventa**: la ficha del tema la mide al abrirlo,
+        y la fila lo dice con la razón `sin_medida` en lugar de enseñar un cero que parecería un
+        suspenso. Decidir se decide allí, con el texto delante, así que la medida sigue estando
+        donde se toma la decisión.
+        """
         filas = self._reviews.topics(self._convocatoria())
-        medidos = self._medir_los_borradores(filas)
         return RevisionDeApuntes(
             counters=contadores(filas),
-            topics=tuple(self._tema(fila, informe=medidos.get(fila.node_id)) for fila in filas),
+            topics=tuple(self._tema(fila, informe=None) for fila in filas),
         )
 
     def contadores_del_menu(self) -> ContadoresDeRevision:
@@ -143,21 +162,42 @@ class NotesReviewService:
 
     # ------------------------------------------------------------------ la ficha
 
-    def ficha(self, code: str) -> FichaDeRevision:
-        """Un tema, apartado a apartado, tal como se lee. Un código que no existe es un 404."""
+    def ficha(self, code: str, *, page: int = 1, order: ReviewOrder = "lectura") -> FichaDeRevision:
+        """Una **página** de un tema, apartado a apartado, tal como se lee.
+
+        Un código que no existe es un 404. El orden lo pone el servidor porque la página se corta
+        aquí: «los peores primero» tiene que ordenar los 25 apartados del tema, no los seis que se
+        envían, o el propietario vería primero los peores de la primera hoja y no del tema.
+
+        Se pide **una** página y no todas: los cuerpos de los apartados son el 92 % de la respuesta
+        —121 de 131 KiB en IV.7— y el navegador tiene que convertir cada uno a HTML antes de que se
+        pueda leer el primero. Con seis apartados por hoja, la ficha baja a unos 40 KiB.
+        """
         fila = self._fila(code)
         informe = self._topic_notes.medir(fila.code) if fila.has_notes else None
         apuntes = self._notes.notes_for_node(fila.node_id)
+        todas = (
+            []
+            if apuntes is None
+            else [
+                _seccion(apartado, posicion)
+                for posicion, apartado in enumerate(apuntes.sections, start=1)
+            ]
+        )
+        if order == "peores":
+            # Lo que queda sin resolver manda; a igualdad, el orden de lectura, para que dos
+            # apartados con la misma cifra no cambien de sitio entre dos visitas.
+            todas.sort(key=lambda apartado: (-apartado.peor, apartado.position))
+        total = len(todas)
+        paginas = max(1, -(-total // SECCIONES_POR_PAGINA))
+        elegida = min(max(1, page), paginas)
+        desde = (elegida - 1) * SECCIONES_POR_PAGINA
         return FichaDeRevision(
             topic=self._tema(fila, informe=informe),
-            sections=(
-                ()
-                if apuntes is None
-                else tuple(
-                    _seccion(apartado, posicion)
-                    for posicion, apartado in enumerate(apuntes.sections, start=1)
-                )
-            ),
+            sections=tuple(todas[desde : desde + SECCIONES_POR_PAGINA]),
+            sections_total=total,
+            page=elegida,
+            page_size=SECCIONES_POR_PAGINA,
         )
 
     # ------------------------------------------------------------------ la decisión
@@ -248,16 +288,16 @@ class NotesReviewService:
     def _medir_los_borradores(self, filas: Sequence[ResumenDeTema]) -> dict[str, TopicNotesReport]:
         """Mide **solo** los temas con apuntes que no están publicados, y sin llamar a nadie.
 
-        Son los únicos cuyo motivo hay que enseñar en la tabla: los publicados ya pasaron las
-        puertas y medirlos costaría la mitad de la página para repetir su estado. Cada uno cuesta
-        entre medio segundo y tres (I.4, con 542 preguntas, es el más caro), y con los datos del
-        14 de octubre de 2026 son **cuatro**: I.4, I.6, I.7 e I.8, y la tabla entera tarda **7,6 s**
-        (medido con la base real, tres vueltas).
+        **Hoy no se llama desde ninguna ruta**: la tabla del panel dejó de medir para poder abrirse
+        sin esperar (ver `revisar`). Se queda porque es la pieza que mide «lo que espera una
+        decisión» y es la que habría que volver a usar el día que la medida se guarde en la base en
+        vez de repetirse en cada visita; borrarla y reescribirla después sería peor.
 
-        **Se miden en serie a propósito**: se probó a medirlos a la vez con cuatro hilos y **no
-        mejora nada** —7,6 a 8,1 s con hilos frente a 7,0 a 7,8 s en serie—, porque el trabajo es de
-        Python y no suelta el GIL. Un `ThreadPoolExecutor` que no gana tiempo es complejidad que
-        alguien tendrá que leer sin nada a cambio, así que no está.
+        Cada tema cuesta entre medio segundo y dos (I.4, con 589 preguntas, es el más caro), y con
+        los datos del propietario son **dos**: IV.7 e I.4. Se miden en serie a propósito: se probó a
+        medirlos a la vez con cuatro hilos y **no mejora nada** —el trabajo es de Python y no suelta
+        el GIL—, así que un `ThreadPoolExecutor` que no gana tiempo sería complejidad sin nada a
+        cambio.
         """
         medidos: dict[str, TopicNotesReport] = {}
         for fila in filas:

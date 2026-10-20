@@ -2,10 +2,12 @@
 
 Es la pantalla que faltaba del punto (4) del objetivo. Lo que estas rutas garantizan:
 
-- **se ven los temas con su estado** y, en los que esperan una decisión, **el motivo con su cifra**,
-  medido sobre lo que el motor ya comprobó (sin modelo y sin coste) y no heredado de un documento;
-- **un borrador se lee entero dentro del panel**, apartado a apartado, con el mismo texto que
-  sirve la zona del alumno;
+- **se ven los temas con su estado** y, en los que esperan una decisión, **lo que se sabe sin
+  medir**; la cifra de la puerta se mide al abrir la ficha, que es donde se decide, y la fila dice
+  dónde está (razón `sin_medida`) en lugar de enseñar un cero;
+- **un borrador se lee entero dentro del panel**, apartado a apartado —**de seis en seis**, porque
+  los cuerpos de todos eran el 92 % de la respuesta—, con el mismo texto que sirve la zona del
+  alumno;
 - **se decide por la ruta auditada**: `POST /notes-review/{codigo}/decision` escribe la decisión y
   su evento en la misma transacción, con el actor en el cuerpo o en la cabecera
   `X-OpoFuente-Actor` como el resto de escrituras del panel;
@@ -19,7 +21,7 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Header, Path
+from fastapi import APIRouter, Header, Path, Query
 
 from opofuente.api.deps import NotesReviewServiceDep
 from opofuente.api.error_responses import RESOURCE_ERRORS, WRITE_ERRORS
@@ -35,6 +37,7 @@ from opofuente.api.notes_review_schemas import (
     NotesReviewSectionSchema,
     NotesReviewTopicSchema,
     NotesReviewVersionSchema,
+    ReviewOrderName,
 )
 from opofuente.application.notes_report_service import ACTOR_PROPIETARIO
 from opofuente.application.notes_review_models import (
@@ -155,11 +158,14 @@ def _lista(vista: RevisionDeApuntes) -> NotesReviewListSchema:
     summary="Los temas con su estado, sus puertas y el motivo de los que están en borrador",
 )
 def list_notes_review(service: NotesReviewServiceDep) -> NotesReviewListSchema:
-    """La tabla del panel: los temas del programa activo, en orden, con su motivo medido.
+    """La tabla del panel: los temas del programa activo, en orden, con lo que se sabe **sin
+    medir**.
 
-    Mide **solo** los temas que esperan una decisión (los borradores): los publicados ya pasaron las
-    puertas y medirlos costaría la mitad de la página para repetir su estado. La medida sale de las
-    comprobaciones guardadas —el mismo camino que `apuntes --medir`— y no llama a ningún modelo.
+    **No mide** ningún tema: lee el estado, las cifras guardadas y la decisión escrita con cinco
+    consultas agregadas (0,03 s medidos sobre la copia del propietario, 17-oct-2026). Medir los dos
+    borradores costaba 3,7 s de los 5,37 s de la pantalla, y la cifra de la puerta **no se hereda**:
+    se mide al abrir la ficha del tema, que es donde se decide, y la fila lo dice con la razón
+    `sin_medida` en vez de enseñar un cero que parecería un suspenso.
     """
     return _lista(service.revisar())
 
@@ -179,7 +185,7 @@ def notes_review_summary(service: NotesReviewServiceDep) -> NotesReviewCountersS
     "/notes-review/{codigo}",
     response_model=NotesReviewFileSchema,
     responses=RESOURCE_ERRORS,
-    summary="La ficha de un tema: sus apartados, tal como se leerán en la zona del alumno",
+    summary="Una página de la ficha: sus apartados, como se leerán en la zona del alumno",
 )
 def notes_review_file(
     service: NotesReviewServiceDep,
@@ -187,17 +193,41 @@ def notes_review_file(
         description="Código legible del tema, como `I.4` (también se acepta `I-4`).",
         examples=["I.4"],
     ),
+    pagina: Annotated[
+        int,
+        Query(
+            ge=1,
+            description=(
+                "Qué hoja de apartados se sirve, empezando por la 1. Una hoja son seis apartados: "
+                "los cuerpos de todos a la vez eran el 92 % de la respuesta y el navegador tardaba "
+                "en pintar el primero."
+            ),
+        ),
+    ] = 1,
+    orden: Annotated[
+        ReviewOrderName,
+        Query(
+            description="`lectura` es el orden del tema; `peores`, lo que queda sin resolver antes."
+        ),
+    ] = "lectura",
 ) -> NotesReviewFileSchema:
-    """Un tema, apartado a apartado, con su texto, su forma y lo que se ha comprobado en cada uno.
+    """Una **página** de un tema, apartado a apartado, con su texto, su forma y lo comprobado.
 
     Un tema sin apuntes escritos sale con su estado (`none`) y sin apartados: no es un error que un
     tema no tenga texto, y devolver un 404 obligaría a la pantalla a distinguir «no existe» de «no
     está escrito», que es justo lo que el estado contesta.
+
+    El orden lo decide el servidor porque la página se corta aquí: «los peores primero» ordena los
+    apartados del **tema**, no los de la hoja que se acaba de enviar.
     """
-    ficha: FichaDeRevision = service.ficha(codigo)
+    ficha: FichaDeRevision = service.ficha(codigo, page=pagina, order=orden)
     return NotesReviewFileSchema(
         topic=_tema(ficha.topic),
         sections=[_seccion(apartado) for apartado in ficha.sections],
+        sections_total=ficha.sections_total,
+        page=ficha.page,
+        pages=ficha.pages,
+        page_size=ficha.page_size,
     )
 
 

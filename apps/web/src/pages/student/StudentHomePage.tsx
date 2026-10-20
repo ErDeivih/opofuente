@@ -1,13 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { getStudentOverview, type StudentBlockProgress } from '../../api/studentStudy';
 import type { StudentSession } from '../../api/studentTests';
 import { ErrorState } from '../../components/ErrorState';
 import { LoadingState } from '../../components/LoadingState';
-import { NotesStateChip } from '../../features/student/NotesStateChip';
 import { describeError } from '../../features/system/labels';
 import { formatearPorcentaje } from '../../lib/numeros';
+import { enlaceDeUltimoApartado, leerUltimoApartado } from '../../lib/ultimoApartado';
 
 /**
  * Inicio de la zona del alumno (F13).
@@ -26,6 +27,9 @@ import { formatearPorcentaje } from '../../lib/numeros';
  */
 export function StudentHomePage() {
   const consulta = useQuery({ queryKey: ['student-overview'], queryFn: getStudentOverview });
+  // La marca de por dónde iba se lee **una vez al montar**: es de este aparato y no cambia mientras
+  // la pantalla está abierta (para cambiarla hay que abrir otro apartado, y eso es otra pantalla).
+  const [ultimo] = useState(() => leerUltimoApartado());
 
   if (consulta.isPending) {
     return (
@@ -51,9 +55,6 @@ export function StudentHomePage() {
   }
 
   const { opposition, in_progress, due_reviews, blocks, recent_tests } = consulta.data;
-  const conApuntes = blocks
-    .flatMap((bloque) => bloque.topics)
-    .filter((tema) => tema.notes_state !== 'none');
 
   return (
     <>
@@ -142,25 +143,32 @@ export function StudentHomePage() {
         </p>
       </section>
 
-      <section className="bloque" aria-labelledby="tus-apuntes">
-        <h2 className="bloque__titulo" id="tus-apuntes">
-          Tus apuntes
+      <section className="bloque" aria-labelledby="seguir-leyendo">
+        <h2 className="bloque__titulo" id="seguir-leyendo">
+          Seguir leyendo
         </h2>
-        {conApuntes.length === 0 ? (
-          <p className="bloque__texto">Todavía no hay apuntes escritos de ningún tema.</p>
+        {ultimo === null ? (
+          <p className="bloque__texto">Todavía no has abierto ningún apartado de los apuntes.</p>
         ) : (
-          <ul className="lista-temas" aria-label="Temas con apuntes">
-            {conApuntes.map((tema) => (
-              <li className="lista-temas__fila" key={tema.code}>
-                <Link className="lista-temas__enlace" to={`/temario/${tema.code}`}>
-                  <span className="lista-temas__codigo">{tema.code}</span>
-                  <span data-contenido>{tema.title}</span>
-                </Link>
-                <NotesStateChip state={tema.notes_state} />
-              </li>
-            ))}
-          </ul>
+          <p className="bloque__texto">
+            <Link className="lista-temas__enlace" to={enlaceDeUltimoApartado(ultimo)}>
+              <span className="lista-temas__codigo">{ultimo.codigo}</span>{' '}
+              <span data-contenido>{ultimo.capitulo}</span> ·{' '}
+              <span data-contenido>{ultimo.tituloCapitulo}</span>
+            </Link>
+            {ultimo.tituloApartado !== null && (
+              <span className="lista-temas__cifra">
+                {' '}
+                · apartado: <span data-contenido>{ultimo.tituloApartado}</span>
+              </span>
+            )}
+          </p>
         )}
+        <p className="acciones">
+          <Link className="ui-button ui-button--secondary" to="/temario">
+            Ver el temario
+          </Link>
+        </p>
       </section>
 
       {recent_tests.length > 0 && (

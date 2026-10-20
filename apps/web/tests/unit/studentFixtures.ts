@@ -119,6 +119,7 @@ export const overviewFixture: StudentOverview = {
     answered_questions: 12,
     time_limit_minutes: null,
     started_at: '2026-10-11T09:00:00Z',
+    server_now: '2026-10-11T09:00:00Z',
     finished_at: null,
     created_at: '2026-10-11T08:59:00Z',
     result: null,
@@ -136,6 +137,7 @@ export const overviewFixture: StudentOverview = {
       answered_questions: 20,
       time_limit_minutes: null,
       started_at: '2026-10-10T09:00:00Z',
+      server_now: '2026-10-10T09:20:00Z',
       finished_at: '2026-10-10T09:20:00Z',
       created_at: '2026-10-10T08:59:00Z',
       result: {
@@ -316,6 +318,7 @@ export const sessionResultFixture: StudentSessionResult = {
     answered_questions: 4,
     time_limit_minutes: null,
     started_at: '2026-10-11T09:00:00Z',
+    server_now: '2026-10-11T09:00:00Z',
     finished_at: '2026-10-11T09:12:30Z',
     created_at: '2026-10-11T08:59:00Z',
     result: {
@@ -625,17 +628,44 @@ export const officialExamsFixture: StudentOfficialExams = {
       position: 1,
       title: 'TAI ingreso libre 2025 · examen oficial',
       held_at: '2025-11-22',
+      held_year: 2025,
       questions: 85,
       ready: true,
+      blocked_reason: null,
       origin_scope: 'age',
     },
     {
       position: 2,
       title: 'TAI ingreso libre 2024 · examen oficial',
       held_at: '2024-10-06',
+      held_year: 2024,
       questions: 85,
       ready: false,
+      blocked_reason: 'faltan_respuestas',
       origin_scope: 'otra_administracion',
+    },
+    {
+      // El caso del §3.7: el documento declara el año y no el día. La fila dice «Ejercicio de
+      // 2019» y **no** un 1 de enero inventado.
+      position: 3,
+      title: 'TAI ingreso libre 2019 · ejercicio único (examen oficial INAP)',
+      held_at: null,
+      held_year: 2019,
+      questions: 85,
+      ready: true,
+      blocked_reason: null,
+      origin_scope: 'age',
+    },
+    {
+      // Y el que no declara ni el año: se dice que no hay fecha y por qué.
+      position: 4,
+      title: 'Examen oficial sin año en el título',
+      held_at: null,
+      held_year: null,
+      questions: 79,
+      ready: false,
+      blocked_reason: 'faltan_preguntas',
+      origin_scope: 'desconocida',
     },
   ],
 };
@@ -644,6 +674,7 @@ export const officialExamsFixture: StudentOfficialExams = {
 export const mistakesFixture: StudentMistakes = {
   total: 2,
   due_total: 1,
+  servable_total: 2,
   questions: [
     {
       stem: '¿Cuántas capas tiene el modelo OSI?',

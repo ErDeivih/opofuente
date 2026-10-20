@@ -46,6 +46,8 @@ Reglas:
 | [DEBT-033](#debt-033--la-regla-de-tabindex-y-axe-se-contradicen-en-las-regiones-que-se-desplazan) | antes de volver a tocar las tablas de los apuntes | `jsx-a11y/no-noninteractive-tabindex` (error) y `scrollable-region-focusable` de axe piden cosas contrarias en una región que se desplaza; hoy el `tabIndex` viaja como propiedad del componente `MarcoDeTabla` | **abierta** (no bloquea; el porqué está escrito en el componente) |
 | [DEBT-034](#debt-034--el-capítulo-i11-de-los-apuntes-concentra-el-66--del-tema) | antes de dar la lectura por terminada | El epígrafe **I.1.1 se lleva 12 de los 21 apartados de I.1** (el 66 % del texto) y su página mide **118.982 px** a 1280: paginar por epígrafes oficiales no lo arregla porque el programa da cuatro epígrafes y nada más | **abierta** (decide el propietario: la granularidad es del programa, no de la pantalla) |
 | [DEBT-035](#debt-035--la-banda-del-examen-viaja-en-el-resultado-de-una-práctica-y-solo-la-pantalla-la-esconde) | antes de que otra pantalla enseñe la nota del alumno | El resultado de una **práctica** sigue trayendo `score_max` y `pass_score` de la convocatoria; que no se enseñen fuera de un examen lo decide `esExamen` en la pantalla del resultado | **abierta** (deuda declarada, no bloquea) |
+| [DEBT-035](#debt-035--cuatro-repasos-apuntan-a-un-conjunto-duplicado-que-el-importador-archivó) | antes de dar el repaso por cerrado | Cuatro fallos del propietario apuntan a preguntas de una copia del examen que el importador archivó; su plantilla se sustituyó y ninguna sesión las puede corregir. Inicio ya no las promete (F39), pero siguen en la cola sin poder servirse |
+| [DEBT-036](#debt-036--seis-exámenes-de-promoción-interna-tienen-menos-preguntas-de-las-que-pide-la-convocatoria) | antes de ofrecer los exámenes de promoción interna | El conjunto trae 74 preguntas ordinarias y la parte publicada pide 80: el examen no se puede montar. La fila ya lo dice (F39); falta el material o la decisión de qué parte se juega |
 
 ---
 
@@ -2026,3 +2028,51 @@ comparar el modo; con una prueba de contrato que lo fije y la de navegador de
 lee: el comentario de `MODOS_DE_EXAMEN` en el servidor y el de `esExamen` en la pantalla.
 
 
+
+---
+
+## DEBT-035 — Cuatro repasos apuntan a un conjunto duplicado que el importador archivó
+
+**Origen:** la copia verificada del propietario (F39, 17-oct-2026). Su cola de repaso tiene cinco
+preguntas vencidas; cuatro son del conjunto `b9798368` —«TAI ingreso libre 2025 · modelo A (examen
+oficial INAP)»—, que es **una segunda copia** del mismo examen que ya está importado, y que el
+importador dejó archivada: su única plantilla está en `superseded`, así que no hay letra con la que
+corregir esas cuatro preguntas. Las cuatro son **duplicados** de preguntas del conjunto vivo, que sí
+tiene plantilla activa con sus 135 entradas.
+
+**Por qué no se arregla aquí.** Repuntar los intentos y los repasos de un conjunto a otro es
+reescribir datos del propietario, y elegir cuál de las dos copias es «la buena» no es una decisión
+del agente: la aplicación ya decidió (la lista enseña la viva) y el historial se quedó en la
+archivada. Lo que sí se ha hecho es **dejar de prometerlo**: `due_counts` y la lista de fallos
+aplican la política de claves, así que Inicio dice **1** y no 5, y la sesión de repaso sirve **1**.
+
+**Criterio de cierre:** que el importador no deje dos copias del mismo examen (o que la segunda no
+se lleve por delante el historial), y que las cuatro preguntas se puedan repasar: se comprueba con
+`GET /api/v1/student/overview` sobre una copia nueva —`due_reviews` tiene que contar las cuatro— y
+con una sesión `error_review` que las sirva.
+
+**Estado: abierta (decide el propietario).** La cifra está medida y publicada en
+`docs/ESTADO-DEL-OBJETIVO.md` (tanda f39).
+
+---
+
+## DEBT-036 — Seis exámenes de promoción interna tienen menos preguntas de las que pide la convocatoria
+
+**Origen:** la copia verificada del propietario (F39, 17-oct-2026). Los seis conjuntos de
+**promoción interna** del INAP traen **74 preguntas ordinarias y 11 de reserva**; la convocatoria de
+TAI publica **80 + 5** para su primera parte. `_preguntas` lo dice con un 409 —«tiene 74 preguntas y
+la parte pide 80»—, así que el examen no se puede montar.
+
+**Qué se ha hecho ya:** la fila de la lista decía «85 preguntas» y ofrecía el botón, que respondía
+409. Ahora dice **79** (lo que el examen tendría con esas reservas) y **no ofrece el botón**, con el
+motivo por su nombre (`faltan_preguntas`).
+
+**Por qué no se arregla aquí.** O falta material (los cuestionarios de promoción interna de esos años
+tenían otro tamaño) o la parte que se juega no es la primera: las dos son decisiones sobre el
+contenido, no sobre el código.
+
+**Criterio de cierre:** que los seis se puedan montar —con más preguntas en el conjunto o con la
+parte que les corresponde— y que la fila y el examen digan la misma cifra. Se comprueba montando
+cada uno de los seis por `POST /api/v1/student/official-exams/{posicion}/sessions`.
+
+**Estado: abierta (decide el propietario).**

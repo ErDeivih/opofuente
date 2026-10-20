@@ -110,10 +110,29 @@ class RevisionDeApuntes:
 
 @dataclass(frozen=True, slots=True)
 class FichaDeRevision:
-    """La ficha de un tema: su fila de la tabla, sus apartados y su orden de lectura."""
+    """Una **página** de la ficha de un tema: su fila de la tabla y los apartados de esa página.
+
+    La ficha va paginada porque el tema entero no cabe de una vez: IV.7 tiene 25 apartados y
+    sus cuerpos son **121 de los 131 KiB** de la respuesta, y el navegador los convierte a HTML
+    uno a uno antes de que el propietario pueda leer el primero. Con la página de seis apartados
+    la respuesta baja a unos 40 KiB y el primer párrafo se lee enseguida.
+
+    `sections_total` viaja aparte de `sections` a propósito: es el número de apartados del tema —lo
+    que se enseña en el título— y no el de la página, que cambia al pasar de hoja.
+    """
 
     topic: TemaEnRevision
     sections: tuple[SeccionDeRevision, ...]
+    sections_total: int = 0
+    page: int = 1
+    page_size: int = 6
+
+    @property
+    def pages(self) -> int:
+        """Cuántas páginas tiene la ficha. Siempre al menos una, aunque no haya apartados."""
+        if self.page_size <= 0:
+            return 1
+        return max(1, -(-self.sections_total // self.page_size))
 
 
 @dataclass(frozen=True, slots=True)

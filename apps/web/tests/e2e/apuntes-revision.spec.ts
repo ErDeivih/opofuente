@@ -393,17 +393,15 @@ test('E2E-F24 la tabla enseña el estado de cada tema y el motivo del borrador c
 
     await expect(page.getByRole('heading', { level: 1, name: 'Apuntes' })).toBeVisible();
     // El contador de la cabecera: hay un borrador esperando decisión.
-    await expect(page.locator('.avisos__resumen')).toContainText('esperan tu decisión');
+    await expect(page.locator('.avisos__resumen')).toContainText(/espera[n]? tu decisión/);
 
     const fila = filaDelTema(page, TEMA);
     await expect(fila).toContainText('En borrador');
-    // El motivo, con su cifra: el tema cumple las dos puertas y no está publicado.
-    // Esta cifra la compone el **dominio**, y el §2.2 alcanza también a la prosa del servidor: salía
-    // con punto. La aserción esperaba el formato viejo; el que tiene razón es la pantalla (y ahora
-    // también el servidor).
-    await expect(fila).toContainText('1/1 = 100,0 %');
-    await expect(fila).toContainText('Cumple las dos puertas');
-    await expect(fila).toContainText('Aprobarlo la publica');
+    // El motivo, con su cifra. F40 cambio dos cosas aqui a proposito, y las dos se ven en la fila:
+    //  - la tabla ya NO mide la cobertura fila a fila (abrirla bajo de 5,37 s a 0,835 s) y lo DICE;
+    //  - el motivo del borrador es el que compone el dominio con lo que el tema tiene.
+    await expect(fila).toContainText('sin medir en esta tabla');
+    await expect(fila).toContainText('Tiene apartados escritos y su texto no está archivado');
     await expect(fila).toContainText('Nadie ha revisado este tema todavía');
 
     // Y sin jerga de la trastienda en la interfaz (el motivo va marcado como contenido).
@@ -504,7 +502,7 @@ test('E2E-F24 rechazar exige motivo y la decisión sobrevive a una corrida del m
     await page.reload();
     // La decisión sigue donde estaba, con su nota, y el motivo de datos se ha refrescado.
     await expect(page.locator('.apuntes-revision__decision')).toContainText(NOTA_RECHAZO);
-    await expect(page.locator('.apuntes-revision__motivos')).toContainText('1 incidencia(s)');
+    await expect(page.locator('.apuntes-revision__motivos')).toContainText('1 incidencia');
 
     // Y en la tabla del panel también.
     await page.goto('/admin/apuntes');

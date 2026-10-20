@@ -3,6 +3,7 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 import { Link, useNavigate, useParams } from 'react-router-dom';
 
 import {
+  abandonStudentRun,
   answerStudentQuestion,
   finishStudentRun,
   getStudentRun,
@@ -15,6 +16,7 @@ import { LoadingState } from '../../components/LoadingState';
 import { describeError } from '../system/labels';
 import { AnswerSheet } from './AnswerSheet';
 import { LETRAS_POR_DEFECTO } from './answerSheetModel';
+import { SessionClock } from './TestClock';
 
 /**
  * El test en curso, con la hoja de respuestas (diseño v0, §1 de `DISENO-V0-Y-STITCH-2026-10.md`).
@@ -39,6 +41,10 @@ export function StudentTestRunner() {
   const cliente = useQueryClient();
   const [hojaAbierta, setHojaAbierta] = useState(false);
   const [posicion, setPosicion] = useState<number | null>(null);
+  // La frase que devuelve el servidor al abandonar: qué queda de lo contestado. Se enseña hasta que
+  // se sale de la pantalla, porque es la respuesta a la pregunta que acaba de hacer el alumno.
+  const [avisoAbandono, setAvisoAbandono] = useState<string | null>(null);
+
 
   const run = useQuery({
     queryKey: ['student-run', id, posicion],
@@ -120,13 +126,38 @@ export function StudentTestRunner() {
     },
   });
 
+  // Abandonar es la salida que faltaba (§3.4): sin ella, el único modo de dejar un simulacro a
+  // medias era cerrar la pestaña, y la sesión se quedaba «en curso» para siempre. El servidor dice
+  // qué ha quedado de lo contestado y aquí solo se repite.
+  const abandonar = useMutation({
+    mutationFn: () => abandonStudentRun(id),
+    onSuccess: (hecho) => {
+      setAvisoAbandono(hecho.detail);
+      void cliente.invalidateQueries({ queryKey: ['student-run', id] });
+    },
+  });
+
   const estado: StudentRun | undefined = run.data;
   const pregunta = estado?.question ?? null;
   const puedeCorregir = pregunta?.correction != null;
+  const abandonado = estado?.session.status === 'abandoned';
+  const terminado = estado?.finished === true;
+  // Con el test terminado o abandonado no se contesta: el servidor tampoco lo admite, y ofrecer una
+  // opción que va a fallar es peor que no ofrecerla.
+  const puedeContestar = estado !== undefined && !terminado && !abandonado;
+  // El reloj se para cuando el test ya no corre: seguir contando después de terminar sería contar
+  // algo que ya no pasa.
+  // La base del reloj es **cuándo llegó la última lectura del servidor** (`dataUpdatedAt` de react
+  // query, que es el reloj del navegador en ese momento): lo único que se mide con el reloj local es
+  // lo que pasa desde ahí, así que un equipo con la hora mal puesta no inventa horas de examen. `0`
+  // es «no lo sé» —una lectura hecha antes de tener respuesta— y el reloj lo dice en lugar de
+  // inventarse una hora: no se llama a `Date.now()` aquí porque una pantalla no puede depender del
+  // reloj al pintarse (una medida impura dentro del render da resultados que cambian solos).
+  const baseDelReloj = run.dataUpdatedAt;
 
   const responder = useCallback(
     (letra: string, confidence: 'low' | null = null) => {
-      if (pregunta === null) {
+      if (pregunta === null || !puedeContestar) {
         return;
       }
       contestar.mutate({
@@ -136,7 +167,7 @@ export function StudentTestRunner() {
         cambiaba: pregunta.answered,
       });
     },
-    [contestar, pregunta],
+    [contestar, pregunta, puedeContestar],
   );
 
   /** Ir a una fila de la hoja: es lo que hace la hoja usable (pulsar su número o las flechas). */
@@ -239,10 +270,22 @@ export function StudentTestRunner() {
   return (
     <main className="test-marco">
       <header className="test-cabecera">
-        <p className="test-cabecera__progreso">
-          Pregunta {estado.position ?? estado.total} de {estado.total}
-        </p>
-        <p className="test-cabecera__titulo">{estado.session.title}</p>
+        <div className="test-cabecera__datos">
+          <p className="test-cabecera__progreso">
+            Pregunta {estado.position ?? estado.total} de {estado.total}
+          </p>
+          <p className="test-cabecera__titulo">{estado.session.title}</p>
+          <SessionClock
+            // Una lectura nueva del servidor vuelve a montar el reloj: su arranque es el instante de
+            // esa lectura, y así no puede quedarse contando desde una respuesta anterior.
+            key={`reloj-${String(baseDelReloj)}`}
+            startedAt={estado.session.started_at}
+            timeLimitMinutes={estado.session.time_limit_minutes}
+            serverNow={estado.session.server_now}
+            leidoEnMs={baseDelReloj}
+            detenido={terminado || abandonado}
+          />
+        </div>
         <div className="test-cabecera__acciones">
           <button
             type="button"
@@ -254,24 +297,58 @@ export function StudentTestRunner() {
           >
             Hoja
           </button>
-          {estado.finished ? (
+          {terminado || abandonado ? (
             <Link className="ui-button ui-button--secondary" to="/">
               Salir
             </Link>
           ) : (
-            <button
-              type="button"
-              className="ui-button ui-button--primary"
-              onClick={() => {
-                cerrar.mutate();
-              }}
-              disabled={cerrar.isPending}
-            >
-              Terminar
-            </button>
+            <>
+              <button
+                type="button"
+                className="ui-button ui-button--secondary"
+                onClick={() => {
+                  const nombre = estado.session.title;
+                  const mensaje =
+                    estado.answered === 0
+                      ? `¿Abandonar «${nombre}»? No has contestado nada: el test se descarta.`
+                      : `¿Abandonar «${nombre}»? Llevas ${String(estado.answered)} de ` +
+                        `${String(estado.total)} contestadas: se conservan para repasar, pero el ` +
+                        'test no contará como hecho.';
+                  if (typeof window !== 'undefined' && !window.confirm(mensaje)) {
+                    return;
+                  }
+                  abandonar.mutate();
+                }}
+                disabled={abandonar.isPending || cerrar.isPending}
+              >
+                Abandonar
+              </button>
+              <button
+                type="button"
+                className="ui-button ui-button--primary"
+                onClick={() => {
+                  cerrar.mutate();
+                }}
+                disabled={cerrar.isPending || abandonar.isPending}
+              >
+                Terminar
+              </button>
+            </>
           )}
         </div>
       </header>
+
+      {avisoAbandono === null ? null : (
+        <p className="test-aviso" role="status">
+          {avisoAbandono}
+        </p>
+      )}
+      {abandonado ? (
+        <p className="test-aviso test-aviso--abandonado" role="status">
+          Este test está abandonado: lo que contestaste se conserva para repasar y no cuenta como
+          test hecho. Para seguir estudiando, monta otro desde Inicio.
+        </p>
+      ) : null}
 
       <div className="test-cuerpo">
         <section className="test-pregunta" aria-label="Pregunta">
@@ -281,17 +358,18 @@ export function StudentTestRunner() {
                 title="No queda ninguna pregunta por contestar"
                 description="Puedes terminar el test y ver el resultado."
               />
-              {estado.finished ? null : (
+              {puedeContestar ? (
                 <button
                   type="button"
                   className="ui-button ui-button--primary"
                   onClick={() => {
                     cerrar.mutate();
                   }}
+                  disabled={cerrar.isPending}
                 >
                   Terminar y ver el resultado
                 </button>
-              )}
+              ) : null}
             </>
           ) : (
             <>
@@ -342,6 +420,7 @@ export function StudentTestRunner() {
                         onClick={() => {
                           responder(opcion.key);
                         }}
+                        disabled={!puedeContestar}
                         aria-pressed={elegida}
                       >
                         <span className="test-opcion__letra">{opcion.key.toUpperCase()}</span>
@@ -355,9 +434,9 @@ export function StudentTestRunner() {
                 })}
               </ul>
               <p className="test-ayuda">
-                Teclado: A–D o 1–4 para responder, M para marcarla como dudosa y ← / → para recorrer
-                la hoja. Se puede volver a cualquier pregunta desde la hoja y cambiar la respuesta
-                mientras el test no haya terminado.
+                {puedeContestar
+                  ? 'Teclado: A–D o 1–4 para responder, M para marcarla como dudosa y ← / → para recorrer la hoja. Se puede volver a cualquier pregunta desde la hoja y cambiar la respuesta mientras el test no haya terminado.'
+                  : 'Este test ya no admite respuestas.'}
                 {puedeCorregir ? null : ' La corrección de este test se ve al terminar.'}
               </p>
               {contestar.error !== null && (

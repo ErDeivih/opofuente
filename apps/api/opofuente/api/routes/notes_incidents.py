@@ -234,10 +234,22 @@ def update_notes_incident(
     "/notes-incidents/tray",
     response_model=TraySchema,
     responses=RESOURCE_ERRORS,
-    summary="La bandeja por conjunto: una fila por conjunto, con lo que admite en bloque",
+    summary="Una hoja de la bandeja por conjunto, con lo que admite en bloque",
 )
-def read_tray(service: NotesIncidentsServiceDep) -> TraySchema:
-    """La bandeja agrupada por conjunto, con lo oficial **aparte y arriba**.
+def read_tray(
+    service: NotesIncidentsServiceDep,
+    pagina: Annotated[
+        int,
+        Query(
+            ge=1,
+            description=(
+                "Qué hoja de la lista de bancos se sirve, empezando por la 1. Cincuenta filas por "
+                "hoja: con los datos del propietario son 157 filas con cuatro acciones cada una."
+            ),
+        ),
+    ] = 1,
+) -> TraySchema:
+    """Una hoja de la bandeja agrupada por conjunto, con lo oficial **aparte y arriba**.
 
     Es la vista con la que se trabaja: una fila por conjunto, su resumen («50 claves sospechosas»),
     las acciones que admite y **la cifra** que decide si la bandeja sirve —las entradas que de
@@ -245,16 +257,21 @@ def read_tray(service: NotesIncidentsServiceDep) -> TraySchema:
     porque sus incidencias no se deciden en bloque: su clave es la que publicó la administración.
 
     Se cuenta en la base, no en la pantalla: `entradas_de_decision` sale del dominio y viaja
-    calculado, para que no haya dos versiones de la cifra que mide la medida de éxito.
+    calculado, para que no haya dos versiones de la cifra que mide la medida de éxito. Y **los
+    totales son de la bandeja entera**: pasar de hoja no cambia cuántas filas hay ni cuánto queda.
     """
-    bandeja = service.tray()
+    bandeja = service.tray(page=pagina)
     return TraySchema(
         official_section=[_fila(conjunto) for conjunto in bandeja.oficial],
-        rest=[_fila(conjunto) for conjunto in bandeja.resto],
+        rest=[_fila(conjunto) for conjunto in bandeja.pagina],
         filas=bandeja.filas,
+        rest_total=bandeja.resto_total,
         total_pendiente=bandeja.total_pendiente,
         propuestas=bandeja.propuestas,
         entradas_de_decision=bandeja.entradas_de_decision,
+        page=bandeja.page,
+        pages=bandeja.pages,
+        page_size=bandeja.page_size,
     )
 
 

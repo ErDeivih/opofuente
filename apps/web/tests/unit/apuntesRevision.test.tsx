@@ -99,7 +99,7 @@ const TABLA: NotesReviewPage = {
         {
           code: 'conflictos',
           text: '30 las contestan los apuntes con otra letra que su respuesta correcta: hay que decidir cuál de las dos está mal.',
-          figure: '30 pregunta(s)',
+          figure: '30 preguntas',
         },
         {
           code: 'sin_decision',
@@ -142,6 +142,11 @@ const TABLA: NotesReviewPage = {
 
 const APARTADOS: NotesReviewFile = {
   topic: TABLA.topics[1]!,
+  // La ficha va paginada: tres apartados en una sola hoja de seis.
+  sections_total: 3,
+  page: 1,
+  pages: 1,
+  page_size: 6,
   sections: [
     {
       key: 'marco-constitucional',
@@ -318,7 +323,7 @@ describe('la tabla de la revisión de apuntes', () => {
     expect(within(borrador).getByText('489/542 = 90,2 %')).toBeInTheDocument();
     expect(within(borrador).getByText(/Cumple las dos puertas/i)).toBeInTheDocument();
     expect(within(borrador).getByText(/nadie ha revisado este tema todavía/i)).toBeInTheDocument();
-    expect(within(borrador).getByText('30 pregunta(s)')).toBeInTheDocument();
+    expect(within(borrador).getByText('30 preguntas')).toBeInTheDocument();
   });
 
   it('lleva a la ficha del tema para leerlo y decidirlo', async () => {
@@ -339,7 +344,7 @@ describe('la tabla de la revisión de apuntes', () => {
 
     expect(await screen.findByText(/esperan tu decisión/i)).toBeInTheDocument();
     expect(screen.getByText('4')).toBeInTheDocument();
-    expect(screen.getByText(/15 publicado\(s\) y 4 en borrador/i)).toBeInTheDocument();
+    expect(screen.getByText(/15 publicados y 4 en borrador/i)).toBeInTheDocument();
   });
 
   it('dice cuáles no tienen apuntes sin mezclarlos con los que se revisan', async () => {
@@ -366,14 +371,14 @@ describe('la ficha de un tema', () => {
     expect(screen.getByRole('columnheader', { name: 'Norma' })).toBeInTheDocument();
     // Y las cifras de cada apartado, que es lo que dice dónde mirar.
     const primero = apartados()[0]!;
-    expect(within(primero).getByText(/40 hecho\(s\) · 12 palabra/)).toBeInTheDocument();
-    expect(within(primero).getByText(/300 cubierta\(s\)/)).toBeInTheDocument();
+    expect(within(primero).getByText(/40 hechos · 12 palabras/)).toBeInTheDocument();
+    expect(within(primero).getByText(/300 cubiertas/)).toBeInTheDocument();
     expect(within(primero).getByText(/30 en conflicto/)).toBeInTheDocument();
     expect(screen.getByText(/El motor lo dejó marcado: sin material de apoyo/)).toBeInTheDocument();
   });
 
-  it('pone los peores primero sin cambiar el número que el apartado ocupa en el tema', async () => {
-    montarFicha();
+  it('pide los peores al servidor, que es quien ordena el tema entero y no la hoja', async () => {
+    const fetchMock = montarFicha();
     renderFicha(BORRADOR);
     const usuario = userEvent.setup();
 
@@ -386,14 +391,13 @@ describe('la ficha de un tema', () => {
 
     await usuario.click(await screen.findByRole('button', { name: /los peores primero/i }));
 
-    const peores = apartados().map(tituloDe);
-    // El apartado 1 es el peor (40 sin resolver: 30 en conflicto y 10 dudosas) y sigue el primero; el
-    // que se mueve es el 3, que pasa por delante del 2 (10 sin resolver frente a 1).
-    expect(peores[0]).toContain('1.');
-    expect(peores[1]).toContain('3.');
-    expect(peores[2]).toContain('2.');
-    // Y el número de cada apartado sigue siendo el de lectura, no el de la lista.
-    expect(peores[1]).toContain('Ley 19/2013, de transparencia');
+    // El orden ya no se compone en la pantalla: la ficha llega **cortada** por el servidor, así que
+    // ordenar aquí ordearía la hoja («los peores de estos seis») y no el tema. Se pide `orden=peores`
+    // y se vuelve a la primera hoja, que es donde están los peores.
+    await waitFor(() => {
+      const pedidas = fetchMock.mock.calls.map(([url]) => urlDe(url));
+      expect(pedidas.some((url) => url.includes('orden=peores'))).toBe(true);
+    });
   });
 
   it('aprueba por la ruta auditada y dice que el tema ha quedado publicado', async () => {
@@ -441,7 +445,7 @@ describe('la ficha de un tema', () => {
   });
 
   it('un tema sin apuntes no se puede aprobar y lo dice', async () => {
-    montarFicha({ topic: TABLA.topics[2]!, sections: [] });
+    montarFicha({ topic: TABLA.topics[2]!, sections: [], sections_total: 0, page: 1, pages: 1, page_size: 6 });
     renderFicha('I.3');
 
     expect(await screen.findByText(/no hay nada que leer ni que decidir/i)).toBeInTheDocument();

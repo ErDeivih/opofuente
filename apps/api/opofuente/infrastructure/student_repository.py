@@ -24,7 +24,7 @@ from dataclasses import dataclass
 from datetime import date, datetime
 from typing import Any
 
-from sqlalchemy import Select, func, select
+from sqlalchemy import ScalarSelect, Select, func, select
 from sqlalchemy.orm import Session, sessionmaker
 
 from opofuente.domain.topic_notes import NotesState
@@ -34,6 +34,7 @@ from opofuente.infrastructure.db_models import (
     AttemptRecord,
     CurriculumMappingRecord,
     DossierSnapshotRecord,
+    QuestionCurriculumExclusionRecord,
     QuestionNoteAnchorRecord,
     QuestionSetRecord,
     QuestionVersionRecord,
@@ -42,6 +43,7 @@ from opofuente.infrastructure.db_models import (
     StudySessionRecord,
     TopicNoteSectionRecord,
 )
+from opofuente.infrastructure.key_policy import clave_servible
 
 #: Los desenlaces que cuentan para el porcentaje de acierto: los tres que puntúan, con el blanco
 #: dentro. Un blanco no es un acierto, y dejarlo fuera subiría el porcentaje sin haber acertado
@@ -82,6 +84,11 @@ class MistakesView:
     total: int
     due_total: int
     topics: Mapping[str, tuple[int, int]]
+    #: De los fallos, cuántos se pueden **corregir** y por tanto se pueden repasar (F39). Es la
+    #: cifra que decide si la pantalla ofrece el test de fallos o explica por qué no hay ninguno que
+    #: montar: una pregunta fallada cuyo conjunto no tiene plantilla activa no se puede corregir, y
+    #: ofrecer el botón acababa en un 409.
+    servable_total: int = 0
 
 
 @dataclass(frozen=True, slots=True)
@@ -99,7 +106,12 @@ class OfficialExamRow:
     question_set_id: str
     title: str
     held_at: date | None
-    questions: int
+    #: Las preguntas **que el examen serviría**: las ordinarias y las reservas que entran con la
+    #: regla publicada por la convocatoria. No es el número de preguntas del conjunto: el
+    #: cuestionario del INAP trae 135 (115 ordinarias y 20 de reserva) y el examen de TAI sirve 85
+    #: (80 + 5), y una fila que dijera 135 estaría prometiendo un examen que no existe (§3.7).
+    ordinary_questions: int
+    reserve_questions: int
     ready: bool
     origin_scope: str = "desconocida"
 
@@ -294,6 +306,13 @@ class SqlAlchemyStudentRepository:
 
         El total **no** exige que la pregunta esté catalogada en un tema: una pregunta sin tema
         también se repasa, y el total tiene que cuadrar con la lista que la pantalla enseña.
+
+        **Y cuenta solo lo que el repaso puede servir** (F39, §2 de la revisión del recorrido): la
+        cola de repaso se llena sola al fallar, y una pregunta fallada puede no tener con qué
+        corregirse —su conjunto se archivó, su plantilla se sustituyó, la letra no está—. Contarla
+        hacía que Inicio prometiera «5 preguntas para repasar hoy» y el repaso contestara 409: la
+        cifra y lo que la cifra promete salen de la **misma** política de claves, que está en
+        `key_policy.clave_servible` y es la que usan los tests de práctica.
         """
         del_dueno = (
             select(func.count())
@@ -321,7 +340,9 @@ class SqlAlchemyStudentRepository:
                 ReviewItemRecord.opposition_id == opposition_id,
                 ReviewItemRecord.due_at <= now,
                 QuestionSetRecord.opposition_id == opposition_id,
+                QuestionSetRecord.status != "archived",
                 del_dueno,
+                clave_servible(ReviewItemRecord.question_version_id),
             )
         )
         with self._session_factory() as session:
@@ -450,9 +471,22 @@ class SqlAlchemyStudentRepository:
             filas = session.execute(_solo_publicos(consulta, public_only)).all()
             identificadores = [str(fila[0]) for fila in filas]
             vencidas: set[str] = set()
+            servibles: set[str] = set()
             por_nodo: dict[str, list[int]] = {}
             cuenta_de_fallos: dict[str, tuple[int, datetime]] = {}
             if identificadores:
+                # Lo que se puede corregir, con la política de claves de siempre (`key_policy`): un
+                # fallo sin clave no se puede repasar, y la pantalla no puede ofrecer un test que la
+                # API va a rechazar con un 409.
+                servibles = {
+                    str(pregunta)
+                    for pregunta in session.execute(
+                        select(QuestionVersionRecord.id).where(
+                            QuestionVersionRecord.id.in_(identificadores),
+                            clave_servible(QuestionVersionRecord.id),
+                        )
+                    ).scalars()
+                }
                 vencidas = {
                     str(pregunta)
                     for pregunta in session.execute(
@@ -460,6 +494,7 @@ class SqlAlchemyStudentRepository:
                             ReviewItemRecord.question_version_id.in_(identificadores),
                             ReviewItemRecord.opposition_id == opposition_id,
                             ReviewItemRecord.due_at <= now,
+                            clave_servible(ReviewItemRecord.question_version_id),
                         )
                     ).scalars()
                 }
@@ -528,6 +563,9 @@ class SqlAlchemyStudentRepository:
             total=len(filas),
             due_total=len(vencidas),
             topics={nodo: (cuenta[0], cuenta[1]) for nodo, cuenta in por_nodo.items()},
+            servable_total=sum(
+                1 for identificador in identificadores if identificador in servibles
+            ),
         )
 
     def topics_of_questions(
@@ -628,19 +666,41 @@ class SqlAlchemyStudentRepository:
         la
         lista sale vacía y la pantalla lo dice; no se rellena con bancos de práctica disfrazados.
 
-        `questions` cuenta las preguntas **vigentes** (una versión sustituida ya no se practica) y
+        **Lo que cuenta no es lo que el conjunto tiene, sino lo que el examen sirve.** Un
+        cuestionario del INAP trae 135 preguntas vigentes —115 ordinarias y 20 de reserva— y el
+        examen de TAI monta 85, porque la convocatoria publica 80 preguntas y 5 de reserva para su
+        primera
+        parte. Contar las del conjunto hacía que la fila dijera 135 y el examen tuviera 85, y el
+        alumno que elige «135 preguntas» se encuentra 85 sin saber si le falta algo (§3.7).
+
+        Se devuelven las **dos** cifras que hacen falta para aplicar esa regla —ordinarias y
+        reservas, ya sin las marcadas fuera de temario, que tampoco entran en el examen— y la regla
+        se aplica donde se conoce la parte, que es el servicio. Aquí no se adivina.
+
         `ready` mira la plantilla activa: sin ella el examen no se puede corregir, y ofrecerlo sería
         ofrecer un examen que no se puede terminar.
         """
-        preguntas = (
-            select(func.count(func.distinct(QuestionVersionRecord.id)))
+        fuera_de_temario = (
+            select(QuestionCurriculumExclusionRecord.question_version_id)
             .where(
-                QuestionVersionRecord.question_set_id == QuestionSetRecord.id,
-                QuestionVersionRecord.status != "superseded",
+                QuestionCurriculumExclusionRecord.question_version_id == QuestionVersionRecord.id
             )
-            .correlate(QuestionSetRecord)
-            .scalar_subquery()
+            .exists()
         )
+
+        def cuenta(*, reserva: bool) -> ScalarSelect[int]:
+            return (
+                select(func.count(func.distinct(QuestionVersionRecord.id)))
+                .where(
+                    QuestionVersionRecord.question_set_id == QuestionSetRecord.id,
+                    QuestionVersionRecord.status != "superseded",
+                    QuestionVersionRecord.is_reserve.is_(reserva),
+                    ~fuera_de_temario,
+                )
+                .correlate(QuestionSetRecord)
+                .scalar_subquery()
+            )
+
         plantillas = (
             select(func.count())
             .select_from(AnswerKeyVersionRecord)
@@ -656,7 +716,8 @@ class SqlAlchemyStudentRepository:
                 QuestionSetRecord.id,
                 QuestionSetRecord.title,
                 QuestionSetRecord.held_at,
-                preguntas,
+                cuenta(reserva=False),
+                cuenta(reserva=True),
                 plantillas,
                 QuestionSetRecord.origin_scope,
             )
@@ -681,9 +742,10 @@ class SqlAlchemyStudentRepository:
                 question_set_id=str(fila[0]),
                 title=str(fila[1]),
                 held_at=fila[2],
-                questions=int(fila[3]),
-                ready=int(fila[4]) > 0 and int(fila[3]) > 0,
-                origin_scope=str(fila[5]),
+                ordinary_questions=int(fila[3]),
+                reserve_questions=int(fila[4]),
+                ready=int(fila[5]) > 0 and (int(fila[3]) + int(fila[4])) > 0,
+                origin_scope=str(fila[6]),
             )
             for fila in filas
         )

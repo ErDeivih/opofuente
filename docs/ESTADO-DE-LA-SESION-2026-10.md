@@ -6,6 +6,35 @@
 > **plataforma desplegable** (cuentas, legales, analíticas, pagos detrás de bandera, acabado de
 > interfaz), **D5 resuelto con su medición** y las reglas que no se negocian. **Léelo antes que este.**
 
+## 17-oct · el simulacro, de 142 s a 3 s, y el reloj con «Abandonar» (§3.3 y §3.4)
+
+`main` = **`d312be0`** · rama **`f37-simulacro`** · base de trabajo: copia verificada de la real
+(2.748.612.608 bytes, SHA-256 `622aaa6f…`, el mismo que publicó el recorrido), con `0039` y `0040`
+encima. La base real **no se ha tocado**.
+
+1. **El simulacro tardaba por consultas, no por pintar.** Medido con la cuenta de sentencias:
+   **154.231 consultas**, con **13.828 repeticiones** de la misma consulta de un conjunto con sus tres
+   `count(*)`. Era un N+1: la composición recorría el banco **pregunta a pregunta**. Arreglado **en la
+   consulta** con cinco lecturas por lotes: **441 consultas** y **126,9 s → 3,2 s** con el mismo
+   arnés y la misma copia (−97,5 %). El detalle está en `artifacts/simulacro/MEDIDAS.md`.
+2. **La espera es la consulta, no la pantalla**: medido a la vez en el navegador y en el servidor
+   (`Server-Timing`, añadido para esto), el **97–98 %** del tiempo es la composición. Bajar más es
+   bajar del banco, no del navegador.
+3. **Reloj visible** en el runner del alumno, que es el mismo componente del simulacro y del examen
+   oficial: lo que queda, lo que llevas y aviso a los cinco minutos. La hora la pone **el servidor**
+   (`server_now`, del mismo reloj que `started_at`), no el navegador.
+4. **«Abandonar» con confirmación**, y la decisión escrita: **el intento se conserva y no cuenta**; la
+   sesión sin ninguna respuesta sí se descarta. Abandonar dos veces devuelve **200** y la sesión
+   abandonada **se puede volver a abrir**. Comprobado en el navegador, no razonado.
+5. **Trampa de este bloque, medida**: `ruff check .` **mira `artifacts/`**, así que tres guiones de
+   medida en Python rompían la puerta 1 con 32 errores mecánicos. Se arreglan, no se excluyen.
+6. **Trampa del entorno**: quedó una sesión de `pytest` de un turno anterior ocupando `.pytest-tmp`, y
+   una segunda sesión en paralelo da **192 errores de `PermissionError`** que parecen del código. Si
+   pasa: comprobar que no queda otra corriendo, borrar `.pytest-tmp` y repetir.
+
+**Lo que quedaba fuera al cerrar**: las **18 puertas** (las corre el bloque que mide) y la batería
+completa de API (este bloque ha corrido la de composición, sesiones, alumno y claves).
+
 ## 13-oct · lo que ha cambiado hoy (leer esto primero)
 
 **Autoridad nueva: `docs/AJUSTES-AL-OBJETIVO-CLAVES-Y-RITMO-2026-10.md`** (manda sobre el goal si choca):
