@@ -1118,6 +1118,25 @@ class SqlAlchemyQuestionRepository:
             for fila in filas
         )
 
+    def set_explanation_status(self, explanation_id: str, *, status: str) -> bool:
+        """Cambia el estado de una explicación: **aprobar o rechazar desde la bandeja** (M1).
+
+        Es lo único que el propietario decide: **que la explicación entra o que no**. **El texto
+        no se toca aquí** — para eso está la ruta de escribir explicaciones — y **la cita
+        tampoco**: si hay que corregirla, se regenera o se edita entera.
+
+        Devuelve `False` si la explicación no existe, para que la ruta pueda responder un 404 en
+        vez de fingir que ha cambiado algo. **El vocabulario de estados lo valida la base** con su
+        `CheckConstraint`: aquí no hay una segunda lista donde pueda quedarse vieja.
+        """
+        with self._session_factory() as session:
+            fila = session.get(QuestionExplanationRecord, explanation_id)
+            if fila is None:
+                return False
+            fila.status = status
+            session.commit()
+            return True
+
     def add_explanation(
         self,
         question_version_id: str,
