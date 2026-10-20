@@ -16,11 +16,15 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Annotated
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Response
 
 from opofuente.api.deps import ProfilesServiceDep, QuestionServiceDep, ReviewServiceDep
 from opofuente.api.error_responses import INGESTION_WRITE_ERRORS, RESOURCE_ERRORS
-from opofuente.api.question_schemas import ExplanationSchema, ExplanationTrayItemSchema
+from opofuente.api.question_schemas import (
+    ExplanationSchema,
+    ExplanationTrayItemSchema,
+    SetExplanationStatusRequestSchema,
+)
 from opofuente.api.review_schemas import (
     CompleteReviewSchema,
     ConceptGroupSchema,
@@ -107,6 +111,28 @@ def list_pending_explanations(
             )
         )
     return salida
+
+
+@router.patch(
+    "/explanations/{explanation_id}/status",
+    status_code=204,
+    summary="Aprobar o rechazar una explicación generada (M1 de la fase 3)",
+    responses=RESOURCE_ERRORS,
+)
+def set_explanation_status(
+    explanation_id: str,
+    cuerpo: SetExplanationStatusRequestSchema,
+    questions: QuestionServiceDep,
+) -> Response:
+    """Aprobar o rechazar una explicación de la bandeja.
+
+    **Solo cambia el estado.** El texto y la cita se corrigen por la ruta de escribir
+    explicaciones, y **regenerar** es otra cosa: pide al modelo una nueva y gasta, así que no
+    se esconde detrás de un cambio de estado.
+    """
+    if not questions.set_explanation_status(explanation_id, status=cuerpo.status):
+        raise NotFoundError("explicación", explanation_id)
+    return Response(status_code=204)
 
 
 def _item(view: ReviewItemView) -> ReviewItemSchema:

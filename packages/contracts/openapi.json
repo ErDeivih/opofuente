@@ -14892,6 +14892,25 @@
         "title": "SetExplanationRequestSchema",
         "type": "object"
       },
+      "SetExplanationStatusRequestSchema": {
+        "additionalProperties": false,
+        "description": "Aprobar o rechazar una explicación generada desde la bandeja (M1 de la fase 3).\n\n**Solo dos estados.** `draft` no se acepta: **devolver una explicación a la cola no es una\nacción** —se deshace aprobando otra vez o no se aprueba—, y `generated` es el origen, no un\nestado.",
+        "properties": {
+          "status": {
+            "enum": [
+              "reviewed",
+              "rejected"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "SetExplanationStatusRequestSchema",
+        "type": "object"
+      },
       "SettingsSchema": {
         "description": "Configuración efectiva sanitizada. Nunca incluye secretos.",
         "properties": {
@@ -23436,6 +23455,72 @@
           }
         },
         "summary": "La bandeja de explicaciones generadas: lo que falta por revisar (M1 de la fase 3)",
+        "tags": [
+          "errores y repaso"
+        ]
+      }
+    },
+    "/api/v1/explanations/{explanation_id}/status": {
+      "patch": {
+        "description": "Aprobar o rechazar una explicación de la bandeja.\n\n**Solo cambia el estado.** El texto y la cita se corrigen por la ruta de escribir\nexplicaciones, y **regenerar** es otra cosa: pide al modelo una nueva y gasta, así que no\nse esconde detrás de un cambio de estado.",
+        "operationId": "set_explanation_status_api_v1_explanations__explanation_id__status_patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "explanation_id",
+            "required": true,
+            "schema": {
+              "title": "Explanation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetExplanationStatusRequestSchema"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Aprobar o rechazar una explicación generada (M1 de la fase 3)",
         "tags": [
           "errores y repaso"
         ]

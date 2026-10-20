@@ -1322,6 +1322,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/explanations/{explanation_id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Aprobar o rechazar una explicación generada (M1 de la fase 3)
+         * @description Aprobar o rechazar una explicación de la bandeja.
+         *
+         *     **Solo cambia el estado.** El texto y la cita se corrigen por la ruta de escribir
+         *     explicaciones, y **regenerar** es otra cosa: pide al modelo una nueva y gasta, así que no
+         *     se esconde detrás de un cambio de estado.
+         */
+        patch: operations["set_explanation_status_api_v1_explanations__explanation_id__status_patch"];
+        trace?: never;
+    };
     "/api/v1/exports/anki-csv": {
         parameters: {
             query?: never;
@@ -9934,6 +9958,21 @@ export interface components {
             text: string;
         };
         /**
+         * SetExplanationStatusRequestSchema
+         * @description Aprobar o rechazar una explicación generada desde la bandeja (M1 de la fase 3).
+         *
+         *     **Solo dos estados.** `draft` no se acepta: **devolver una explicación a la cola no es una
+         *     acción** —se deshace aprobando otra vez o no se aprueba—, y `generated` es el origen, no un
+         *     estado.
+         */
+        SetExplanationStatusRequestSchema: {
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "reviewed" | "rejected";
+        };
+        /**
          * SettingsSchema
          * @description Configuración efectiva sanitizada. Nunca incluye secretos.
          */
@@ -15390,6 +15429,57 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ExplanationTrayItemSchema"][];
+                };
+            };
+        };
+    };
+    set_explanation_status_api_v1_explanations__explanation_id__status_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                explanation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetExplanationStatusRequestSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
                 };
             };
         };
