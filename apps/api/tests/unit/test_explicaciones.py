@@ -15,13 +15,16 @@ def test_una_explicacion_buena_no_tiene_ningun_problema() -> None:
         "La Administración tiene tres meses para resolver. "
         "Ese plazo es el que fija el apartado y el que corrige la letra b."
     )
-    assert problemas(
-        texto,
-        cita="El plazo de resolución es de tres meses",
-        apartado=APARTADO,
-        letra="b",
-        clave=("b",),
-    ) == ()
+    assert (
+        problemas(
+            texto,
+            cita="El plazo de resolución es de tres meses",
+            apartado=APARTADO,
+            letra="b",
+            clave=("b",),
+        )
+        == ()
+    )
 
 
 def test_la_cita_que_no_esta_para_la_explicacion() -> None:
