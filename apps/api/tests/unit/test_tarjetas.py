@@ -41,3 +41,8 @@ def test_un_reverso_no_arrastra_el_dato_siguiente() -> None:
     )
     assert tarjeta is not None
     assert "587" not in tarjeta.reverso
+
+
+def test_una_palabra_que_no_nombra_nada_no_es_un_servicio() -> None:
+    # Lo que el patrón capturó de rebote: «que» no es un servicio, y la tarjeta sería incontestable.
+    assert tarjeta_estructural("el puerto 123 utiliza que servicio") is None

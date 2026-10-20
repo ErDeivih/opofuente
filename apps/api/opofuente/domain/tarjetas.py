@@ -49,6 +49,55 @@ def _limpia(texto: str) -> str:
     return " ".join(corto.split()).strip(" .,;:")
 
 
+def _es_servicio(servicio: str) -> bool:
+    """¿El servicio es un nombre de verdad, o una palabra que el patrón capturó de rebote?
+
+    **El patrón no sabe gramática**: en «el puerto 123 utiliza que…» recoge «que» como si fuera
+    un servicio, y la tarjeta saldría con un anverso que nadie puede contestar. **Una tarjeta mal
+    formada es peor que un hueco**: el alumno memoriza una pregunta que no era. Así que las
+    palabras que no nombran nada se descartan, y el hecho se queda fuera **con su cifra**.
+    """
+    if len(servicio.strip()) < 2:
+        return False
+    # **Solo se descarta si el servicio ES una de esas palabras**, no si empieza por una:
+    # «El protocolo NTP» es un servicio de verdad y «Protocolo NTP» también; «que» no es nada.
+    return servicio.strip().lower() not in _NO_SON_NOMBRES
+
+
+#: Palabras que el patrón puede capturar y **no son** el nombre de un servicio.
+_NO_SON_NOMBRES = frozenset(
+    {
+        "que",
+        "el",
+        "la",
+        "los",
+        "las",
+        "un",
+        "una",
+        "su",
+        "sus",
+        "y",
+        "o",
+        "de",
+        "del",
+        "en",
+        "con",
+        "por",
+        "para",
+        "se",
+        "es",
+        "son",
+        "este",
+        "esta",
+        "estos",
+        "estas",
+        "cada",
+        "todo",
+        "todos",
+    }
+)
+
+
 def tarjeta_estructural(texto: str) -> Tarjeta | None:
     """La tarjeta que sale de una forma regular, o `None` si el hecho no encaja en ninguna."""
     if not texto.strip():
@@ -57,7 +106,7 @@ def tarjeta_estructural(texto: str) -> Tarjeta | None:
     if encontrado:
         puerto = encontrado.group("puerto")
         servicio = _limpia(encontrado.group("servicio"))
-        if servicio:
+        if servicio and _es_servicio(servicio):
             return Tarjeta(
                 anverso=f"¿Qué servicio corresponde al puerto {puerto}?",
                 reverso=servicio,
@@ -67,7 +116,7 @@ def tarjeta_estructural(texto: str) -> Tarjeta | None:
     if encontrado:
         servicio = _limpia(encontrado.group("servicio"))
         puerto = encontrado.group("puerto")
-        if servicio:
+        if servicio and _es_servicio(servicio):
             return Tarjeta(
                 anverso=f"¿Qué puerto utiliza {servicio}?",
                 reverso=puerto,
