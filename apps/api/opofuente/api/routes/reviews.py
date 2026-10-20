@@ -90,7 +90,6 @@ def _explicacion_de_la_bandeja(vista: ExplanationView, stem: str) -> Explanation
 )
 def list_pending_explanations(
     questions: QuestionServiceDep,
-    limit: Annotated[int, Query(ge=1, le=200)] = 50,
 ) -> list[ExplanationTrayItemSchema]:
     """Las explicaciones **generadas y en borrador**, por antigüedad, con su pregunta.
 
@@ -99,7 +98,7 @@ def list_pending_explanations(
     pueda decidir sin abrir otra pantalla.
     """
     salida: list[ExplanationTrayItemSchema] = []
-    for vista in questions.explanations_pending(limit=limit):
+    for vista in questions.explanations_pending(limit=50):
         pregunta = questions.question(vista.question_version_id)
         salida.append(
             _explicacion_de_la_bandeja(
@@ -264,7 +263,7 @@ def classify_error(
 def due_reviews(
     service: ReviewServiceDep,
     opposition_id: Annotated[str | None, Query()] = None,
-    limit: Annotated[int, Query(ge=1, le=200)] = 50,
+    limit: int = 50,
 ) -> ReviewQueueSchema:
     return _queue(service.queue(opposition_id=opposition_id, limit=limit))
 

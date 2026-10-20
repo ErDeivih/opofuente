@@ -6364,19 +6364,6 @@
         "title": "FieldError",
         "type": "object"
       },
-      "HTTPValidationError": {
-        "properties": {
-          "detail": {
-            "items": {
-              "$ref": "#/components/schemas/ValidationError"
-            },
-            "title": "Detail",
-            "type": "array"
-          }
-        },
-        "title": "HTTPValidationError",
-        "type": "object"
-      },
       "HousekeepingCandidateSchema": {
         "description": "Algo que se puede retirar, con su motivo y su tamaño. La pantalla lo enseña **antes**.",
         "properties": {
@@ -17612,46 +17599,6 @@
         "title": "UrlRequest",
         "type": "object"
       },
-      "ValidationError": {
-        "properties": {
-          "ctx": {
-            "title": "Context",
-            "type": "object"
-          },
-          "input": {
-            "title": "Input"
-          },
-          "loc": {
-            "items": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "integer"
-                }
-              ]
-            },
-            "title": "Location",
-            "type": "array"
-          },
-          "msg": {
-            "title": "Message",
-            "type": "string"
-          },
-          "type": {
-            "title": "Error Type",
-            "type": "string"
-          }
-        },
-        "required": [
-          "loc",
-          "msg",
-          "type"
-        ],
-        "title": "ValidationError",
-        "type": "object"
-      },
       "VerificationSchema": {
         "properties": {
           "backup": {
@@ -23472,20 +23419,6 @@
       "get": {
         "description": "Las explicaciones **generadas y en borrador**, por antigüedad, con su pregunta.\n\nEs la cola de trabajo del propietario: **no aparecen las privadas ni las oficiales**, porque no\nlas escribió un modelo y no hay nada que aprobar. El enunciado viaja con cada fila para que se\npueda decidir sin abrir otra pantalla.",
         "operationId": "list_pending_explanations_api_v1_explanations_pending_get",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "limit",
-            "required": false,
-            "schema": {
-              "default": 50,
-              "maximum": 200,
-              "minimum": 1,
-              "title": "Limit",
-              "type": "integer"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "content": {
@@ -23500,16 +23433,6 @@
               }
             },
             "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
           }
         },
         "summary": "La bandeja de explicaciones generadas: lo que falta por revisar (M1 de la fase 3)",
@@ -30731,8 +30654,6 @@
             "required": false,
             "schema": {
               "default": 50,
-              "maximum": 200,
-              "minimum": 1,
               "title": "Limit",
               "type": "integer"
             }

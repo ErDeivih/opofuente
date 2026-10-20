@@ -6514,11 +6514,6 @@ export interface components {
             /** Message */
             message: string;
         };
-        /** HTTPValidationError */
-        HTTPValidationError: {
-            /** Detail */
-            detail?: components["schemas"]["ValidationError"][];
-        };
         /**
          * HousekeepingCandidateSchema
          * @description Algo que se puede retirar, con su motivo y su tamaño. La pantalla lo enseña **antes**.
@@ -11103,19 +11098,6 @@ export interface components {
             /** Url */
             url: string;
         };
-        /** ValidationError */
-        ValidationError: {
-            /** Context */
-            ctx?: Record<string, never>;
-            /** Input */
-            input?: unknown;
-            /** Location */
-            loc: (string | number)[];
-            /** Message */
-            msg: string;
-            /** Error Type */
-            type: string;
-        };
         /** VerificationSchema */
         VerificationSchema: {
             backup: components["schemas"]["BackupSchema"];
@@ -15394,9 +15376,7 @@ export interface operations {
     };
     list_pending_explanations_api_v1_explanations_pending_get: {
         parameters: {
-            query?: {
-                limit?: number;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -15410,15 +15390,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ExplanationTrayItemSchema"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
