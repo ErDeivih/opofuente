@@ -1078,6 +1078,46 @@ class SqlAlchemyQuestionRepository:
             for fila in filas
         )
 
+    def explanations_pending(self, *, limit: int = 50) -> tuple[ExplanationView, ...]:
+        """Las explicaciones **generadas y en borrador**: la cola de la bandeja (M1).
+
+        No es «las explicaciones recientes»: es **la cola de trabajo del propietario**, así que
+        filtra por `origin = 'generated'` y `status = 'draft'` y **ordena por antigüedad** —la que
+        lleva más tiempo esperando va primero—. Las privadas y las oficiales no aparecen nunca
+        aquí: no las escribió un modelo y no hay nada que aprobar.
+
+        `limit` tiene tope de 200: una bandeja de mil filas no se revisa, se abandona.
+        """
+        if limit <= 0:
+            raise ValueError("el límite de la bandeja tiene que ser mayor que cero")
+        with self._session_factory() as session:
+            filas = (
+                session.execute(
+                    select(QuestionExplanationRecord)
+                    .where(QuestionExplanationRecord.origin == "generated")
+                    .where(QuestionExplanationRecord.status == "draft")
+                    .order_by(QuestionExplanationRecord.created_at, QuestionExplanationRecord.id)
+                    .limit(min(limit, 200))
+                )
+                .scalars()
+                .all()
+            )
+        return tuple(
+            ExplanationView(
+                id=str(fila.id),
+                question_version_id=str(fila.question_version_id),
+                option_stable_key=fila.option_stable_key,
+                text=str(fila.text),
+                origin=str(fila.origin),
+                status=str(fila.status),
+                model_name=fila.model_name,
+                created_at=fila.created_at,
+                citation=fila.citation,
+                note_anchor_id=fila.note_anchor_id,
+            )
+            for fila in filas
+        )
+
     def add_explanation(
         self,
         question_version_id: str,
