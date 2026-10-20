@@ -55,3 +55,52 @@ dentro.
 envoltorios que partían `def`, `Replace` que no cambiaban nada) **y en descubrir que cada dato tiene dos
 o tres caminos paralelos** (la corrección del alumno / de la sesión / del resultado; el contrato generado /
 las interfaces escritas a mano). **La batería entera son 90 minutos** y se come ocho o diez rondas.
+---
+
+## Actualización al cerrar la ronda 161
+
+**Lo que se ha hecho desde el folio original** (que era de la ronda 124):
+
+**M1 — la bandeja de revisión está construida entera**, y son cuatro eslabones, **cada uno commiteado y con
+las puertas verdes**:
+
+| eslabón | dónde | commit |
+|---|---|---|
+| la consulta | `question_repository.explanations_pending` | `197f527` |
+| el servicio | `QuestionService.explanations_pending` | `971e997` |
+| la fila de la bandeja | `ExplanationTrayItemSchema` | `c303722` |
+| la ruta | `GET /explanations/pending` | `e9f84ee` |
+
+**Su prueba está escrita y PASA**, pero **no vive en el árbol**: **`mypy` pide el `type: ignore` en la línea
+del `execute` y `ruff format` lo mueve al partir la llamada**, y **el helper que lo arreglaba cambia la
+semántica del `INSERT`**. **Está todo en `docs/hitos/M1.md`**, con los tres tropiezos resueltos y el cuarto
+diagnosticado.
+
+**M3 — tres piezas dentro y probadas**, y una medida que descarta una vía:
+
+```
+domain/tarjetas.py        la tarjeta desde una forma regular · 6 pruebas
+   y su cifra: 15 tarjetas de 19.316 hechos (0,1 %) — la vía sin modelo es un callejón
+domain/repaso.py          SM-2 en el dominio, sin dependencias nuevas · 5 pruebas
+domain/cola_del_dia.py    tarjetas y fallos entrelazados, tope que recorta la mezcla · 5 pruebas
+```
+
+**M2 — el paso 4 hecho**: **copia verificada con SHA-256 idéntica** (`A0A21413…C5AFF8`), `integrity_check`
+**ok**, `foreign_key_check` **0 filas**, y **la política de dos copias escrita con sus cuatro
+comprobaciones**. **Y el paso 3 medido**: **1.103 preguntas en cuarentena, 16 necesitan el modelo, y
+cuestan 0,0114 $** — **dos llamadas**.
+
+**Y la batería, corrida entera en la ronda 146**: **1-8 en la corrida** (la 7 con **824 pruebas de
+integración**), **9 sola con 494**, **10-17 a mano**, **18 con 93 de E2E**. **18/18 con todo lo de hoy
+dentro.**
+
+## Lo que sigue esperando al propietario, y son dos cosas
+
+1. **`DEEPSEEK_API_KEY` en el entorno** — **cierra el ensayo de M1, las 16 claves de M2 (un céntimo) y las
+   tarjetas de M3**;
+2. **los nombres de los tres escaneos del INAP** — **para el paso 2 de M2**.
+
+**Todo lo demás que falta no depende de nadie**: **la prueba de la bandeja** (con el choque
+`mypy`/`ruff` resuelto) y **su pantalla** (`TopicReviewPage` con otro mapa de teclas).
+
+**Gasto: 0 $ de 30. Base real: intacta, `A0A21413…C5AFF8`, cero escrituras en toda la sesión.**
