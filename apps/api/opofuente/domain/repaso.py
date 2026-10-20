@@ -6,7 +6,7 @@ eligió SM-2, y el motivo no es la licencia: es que añadir una dependencia nuev
 del arquitecto, no de quien escribe el hito** (es la primera regla de `AGENTS.md`). **SM-2 es un
 algoritmo publicado, pequeño y comprobable, y no compra nada que no se pueda escribir aquí.**
 
-**Lo que se guarda por tarjeta**: el **factor de facilidad** (cuánto crece el intervalo cuando se acierta),
+**Lo que se guarda por tarjeta**: el **factor de facilidad** (cuánto crece el intervalo al acertar),
 **el intervalo en días** y **cuántas veces seguidas se ha acertado**. **Nada más**: el historial de
 respuestas se guarda aparte, porque es lo que se mira al revisar y no lo que decide la fecha.
 """
@@ -61,8 +61,8 @@ def _factor(nuevo: float, nota: int) -> float:
 def repasar(estado: EstadoDeRepaso, respuesta: Respuesta) -> EstadoDeRepaso:
     """El estado siguiente. **Suspender vuelve a empezar**: no se castiga más que reiniciar.
 
-    Es la decisión de SM-2 y es la correcta para estudiar: **una tarjeta que se falla no se entierra**,
-    vuelve al día siguiente y se recupera con dos aciertos.
+    Es la decisión de SM-2 y es la correcta para estudiar: **una tarjeta que se falla no se
+    entierra**: vuelve al día siguiente y se recupera con dos aciertos.
     """
     nota = _NOTA[respuesta]
     factor = _factor(estado.factor, nota)
