@@ -3,6 +3,7 @@ import { Navigate, Outlet, Route, Routes, useLocation, useSearchParams } from 'r
 import { AdminUiPage } from '../pages/AdminUiPage';
 import { ChangesPage } from '../pages/ChangesPage';
 import { ErrorsPage } from '../pages/ErrorsPage';
+import { ExplanationTrayPage } from '../pages/ExplanationTrayPage';
 import { IncidentsPage } from '../pages/IncidentsPage';
 import { LibraryPage } from '../pages/LibraryPage';
 import { NotFoundPage } from '../pages/NotFoundPage';
@@ -178,6 +179,10 @@ export function AppRoutes() {
         <Route path="biblioteca" element={<LibraryPage />} />
         <Route path="revision" element={<ReviewPage />} />
         <Route path="clasificacion" element={<TopicReviewPage />} />
+        {/* M1 de la fase 3: la cola de las explicaciones que escribe el modelo y revisa el
+            propietario. Solo lectura por ahora: aprobar, editar y regenerar necesitan sus rutas
+            de escritura, y están apuntadas en `docs/hitos/M1.md`. */}
+        <Route path="explicaciones" element={<ExplanationTrayPage />} />
         {/* El bloque C del objetivo (F16): la bandeja de lo que avisa el alumno y lo que el motor
             dejó fuera de los tests (D6). Se separan a propósito: una se **despacha**, la otra se
             **mira**, y mezclarlas invitaría a tocar desde ahí lo que solo se consulta. */}
