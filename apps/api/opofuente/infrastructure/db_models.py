@@ -1329,6 +1329,10 @@ class QuestionExplanationRecord(Base):
     prompt_template_version: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
     text: Mapped[str] = mapped_column(Text, nullable=False)
+    #: La frase LITERAL de los apuntes que sostiene la explicación (§3 de la fase 3).
+    citation: Mapped[str | None] = mapped_column(Text, nullable=True)
+    #: El apartado de los apuntes al que pertenece esa cita: la explicación se ancla, no se inventa.
+    note_anchor_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
 
 
 class QuestionIssueReportRecord(Base):
