@@ -1072,6 +1072,8 @@ class SqlAlchemyQuestionRepository:
                 status=str(fila.status),
                 model_name=fila.model_name,
                 created_at=fila.created_at,
+                citation=fila.citation,
+                note_anchor_id=fila.note_anchor_id,
             )
             for fila in filas
         )

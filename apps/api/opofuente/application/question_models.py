@@ -77,6 +77,10 @@ class ExplanationView:
     status: str
     model_name: str | None = None
     created_at: datetime | None = None
+    #: La frase LITERAL de los apuntes que sostiene la explicación (M1 de la fase 3).
+    citation: str | None = None
+    #: El apartado al que se ancla: la pantalla lleva al párrafo con este id.
+    note_anchor_id: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -168,10 +172,6 @@ class AnswerKeyView:
     published_at: date | None = None
     approved_at: datetime | None = None
     created_at: datetime | None = None
-    #: La frase LITERAL de los apuntes que sostiene la explicación (M1 de la fase 3).
-    citation: str | None = None
-    #: El apartado de los apuntes al que se ancla: la explicación lleva a su párrafo.
-    note_anchor_id: str | None = None
     entries: tuple[KeyEntryView, ...] = ()
 
     @property
