@@ -6078,6 +6078,17 @@
       "ExplanationSchema": {
         "description": "Explicación de una pregunta entera o de una de sus opciones (07_UI-UX §7, S12.7).\n\n`option_stable_key` nulo es «la pregunta entera»; con valor, es la explicación de esa opción\n(«por qué la b no vale»). El origen y el estado no son adorno: una explicación generada por un\nmodelo queda en borrador y se dice con qué modelo se escribió.",
         "properties": {
+          "citation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Citation"
+          },
           "created_at": {
             "anyOf": [
               {
@@ -6104,6 +6115,17 @@
               }
             ],
             "title": "Model Name"
+          },
+          "note_anchor_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note Anchor Id"
           },
           "option_stable_key": {
             "anyOf": [

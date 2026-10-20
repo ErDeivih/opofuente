@@ -6381,12 +6381,16 @@ export interface components {
          *     modelo queda en borrador y se dice con qué modelo se escribió.
          */
         ExplanationSchema: {
+            /** Citation */
+            citation?: string | null;
             /** Created At */
             created_at?: string | null;
             /** Id */
             id: string;
             /** Model Name */
             model_name?: string | null;
+            /** Note Anchor Id */
+            note_anchor_id?: string | null;
             /** Option Stable Key */
             option_stable_key?: string | null;
             /**

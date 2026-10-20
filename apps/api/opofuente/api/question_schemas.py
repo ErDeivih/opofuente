@@ -328,6 +328,10 @@ class ExplanationSchema(BaseModel):
     status: Literal["draft", "reviewed", "rejected"]
     model_name: str | None = None
     created_at: datetime | None = None
+    #: La frase LITERAL de los apuntes que sostiene la explicación, para enseñarla tal cual.
+    citation: str | None = None
+    #: El apartado al que se ancla: la pantalla lleva al párrafo con este id.
+    note_anchor_id: str | None = None
 
 
 class SetExplanationRequestSchema(BaseModel):
