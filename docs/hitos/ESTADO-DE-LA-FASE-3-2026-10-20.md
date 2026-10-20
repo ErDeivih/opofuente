@@ -104,3 +104,38 @@ dentro.**
 `mypy`/`ruff` resuelto) y **su pantalla** (`TopicReviewPage` con otro mapa de teclas).
 
 **Gasto: 0 $ de 30. Base real: intacta, `A0A21413…C5AFF8`, cero escrituras en toda la sesión.**
+
+---
+
+## Para la sesión siguiente: por dónde se empieza
+
+**El §4 bis lo dice y hoy se ha cumplido**: **el estado vive en los ficheros**. **Estos cuatro se leen en
+quince minutos y bastan para continuar sin releer nada:**
+
+1. **este folio** — qué está hecho y qué falta;
+2. **`docs/hitos/M1.md`** — la bandeja, con los **cuatro muros** de su prueba y el diagnóstico del quinto;
+3. **`docs/hitos/M2.md`** — la copia verificada, la política de dos copias y la cifra de la cuarentena;
+4. **`docs/hitos/M3.md`** — la tarjeta, SM-2, la cola del día, **y el 0,1 % que descarta la vía sin modelo**.
+
+### Lo primero, en este orden
+
+1. **La prueba de la bandeja** (M1). **La siembra está resuelta y escrita**: `seeded_client`, el texto
+   legible con `kind="questions"`, y la privada en una opción. **Lo que falta es un helper del árbol que
+   envuelva las llamadas de SQLAlchemy** —una sola, con el único `type: ignore` en una línea corta— **y
+   que `ruff format` no pueda mover**. **Sin eso, el sexto intento fallará igual que el quinto.**
+2. **La pantalla de la bandeja** (M1): **`TopicReviewPage` con otro mapa de teclas**
+   (`{ a: aprobar, e: editar, r: regenerar, j: siguiente, k: anterior }`). **Sus tres guardas de teclado ya
+   están escritas y sirven tal cual.**
+3. **Con la clave**: **el ensayo de 20 preguntas** (`uv run python -m opofuente.tools.explicar_preguntas
+   --de-verdad --limite 20`), **las 16 claves en cuarentena** (`claves_derivadas --derivar`, **0,0114 $**)
+   **y las tarjetas de M3**.
+4. **Con los nombres de los tres escaneos**: **el OCR de M2**.
+
+### Las reglas que hoy han costado rondas, para no repetirlas
+
+- **La base del propietario no se escribe.** `A0A21413…C5AFF8`. Copia verificada al empezar cada tanda.
+- **Ningún commit con una puerta en rojo.** Ni «ya lo arreglo después».
+- **Las líneas de código no se editan por índice calculado.** Se lee la línea y se sustituye.
+- **Antes de decir «esto es nuevo», buscar la pantalla o el método.** **Cinco veces hoy estaba ya.**
+- **Antes de creer una cifra del plan, medirla.** El 0,1 % de las tarjetas y el céntimo de las claves solo
+  se supieron midiendo.
