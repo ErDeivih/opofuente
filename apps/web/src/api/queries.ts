@@ -88,6 +88,7 @@ import {
   type NotesReviewOrder,
   type ReviewDecisionName,
 } from './notesReview';
+import { fetchPendingExplanations } from './explanations';
 import {
   activateConvocation,
   activateOpposition,
@@ -2089,6 +2090,20 @@ export function useNotesReview() {
   return useQuery({
     queryKey: queryKeys.notesReview,
     queryFn: fetchNotesReview,
+    staleTime: 30_000,
+  });
+}
+
+/**
+ * La cola de la bandeja de explicaciones: lo que un modelo escribió y nadie ha revisado (M1).
+ *
+ * **Treinta segundos de `staleTime`**, como la revisión de apuntes: el propietario abre la bandeja,
+ * decide, y no necesita que la lista se refresque sola mientras piensa.
+ */
+export function usePendingExplanations() {
+  return useQuery({
+    queryKey: ['explanations', 'pending'] as const,
+    queryFn: fetchPendingExplanations,
     staleTime: 30_000,
   });
 }
