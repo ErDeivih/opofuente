@@ -162,6 +162,12 @@ function Correction({
       {correction.explanation !== null && correction.explanation !== undefined && (
         <p>{correction.explanation}</p>
       )}
+        {correction.explanation_citation !== null &&
+          correction.explanation_citation !== undefined && (
+            <blockquote className="cita-apuntes hint">
+              «{correction.explanation_citation}»
+            </blockquote>
+          )}
       {correction.evidence.length > 0 ? (
         <>
           <h4>Evidencia que la sostiene</h4>
