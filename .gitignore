@@ -108,3 +108,6 @@ artifacts/simulacro/*.png
 # rehacen en cada corrida y son 20 MB de PNG—. Lo que se rastrea es **la medición** (`capturas.md` y
 # `capturas.json`), que es lo que hay que poder citar dentro de un mes.
 artifacts/f40/*.png
+
+# Capturas del recorrido de M0 (artefactos: se regeneran, y pesan 33 MB).
+artifacts/recorrido-M0/*.png
