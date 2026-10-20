@@ -139,3 +139,43 @@ quince minutos y bastan para continuar sin releer nada:**
 - **Antes de decir «esto es nuevo», buscar la pantalla o el método.** **Cinco veces hoy estaba ya.**
 - **Antes de creer una cifra del plan, medirla.** El 0,1 % de las tarjetas y el céntimo de las claves solo
   se supieron midiendo.
+
+---
+
+## Cierre de la sesión: las cifras verificadas (rondas 178-179)
+
+**Todo lo de abajo está corrido, no supuesto:**
+
+```
+main = 83b1322
+ruff:        All checks passed            ·  645 ficheros
+ruff format: 645 ya formateados
+mypy:        Success — 275 ficheros
+unitarias + preguntas + alumno + estudio:  1.065 pruebas en verde (6:11)
+batería entera (ronda 146):  1-8 en la corrida, 9 sola (494), 10-17 a mano, 18 con 93 de E2E
+puerta de codificación:  SIN MOJIBAKE · 0 marcadores · 1.362 ficheros
+base del propietario:  A0A21413…C5AFF8 · 2.748.612.608 B · CERO ESCRITURAS
+gasto:  0 $ de 30
+```
+
+**Y lo que se ha añadido desde el handover de la ronda 163**: **`filas` y `ejecutar`** (la puerta única a
+SQLAlchemy en las pruebas, con su sonda), **el tool `tarjetas_estructurales`** con su cifra —**14 de
+19.316, y la tarjeta incontestable fuera**—, **la cabecera de M0 corregida** (decía «en curso» y llevaba
+cerrado sesenta rondas) y **el mapa de los seis muros de la prueba de la bandeja**.
+
+## Los cuatro bloqueos, y son todos del propietario
+
+| # | qué | qué desbloquea |
+|---|---|---|
+| 1 | **`DEEPSEEK_API_KEY` en el entorno** | el ensayo de M1 · las 16 claves de M2 (0,0114 $) · las tarjetas de M3 |
+| 2 | **los nombres de los tres escaneos del INAP** | el OCR de M2 |
+| 3 | **la decisión de DEBT-035** (cuál de los dos conjuntos duplicados es el bueno) | cuatro repasos que apuntan mal |
+| 4 | **el material de DEBT-036** (los seis exámenes de promoción interna) | seis exámenes que no se pueden montar |
+
+**Ninguno es código.** **Los tres primeros son una línea cada uno; el cuarto es material.**
+
+## Y lo que queda de código, que no necesita a nadie
+
+**La prueba de la bandeja** — **la vía es la de la API (pasó seis veces), con las cinco piezas ya escritas
+en `M1.md`** — **y su pantalla** (`TopicReviewPage` con `{ a, e, r, j, k }`). **Las dos son de una sesión
+con el fichero delante.**
