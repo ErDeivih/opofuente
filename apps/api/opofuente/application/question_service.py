@@ -1331,6 +1331,16 @@ class QuestionService:
             raise NotFoundError("pregunta", question_id)
         return self._questions.explanations_of(question_id)
 
+    def explanations_pending(self, *, limit: int = 50) -> tuple[ExplanationView, ...]:
+        """La cola de la bandeja: **las generadas en borrador**, por antigüedad (M1).
+
+        No es «las explicaciones recientes»: es **lo que al propietario le toca revisar**. Filtra
+        por `origin = 'generated'` y `status = 'draft'` en el repositorio, que es quien conoce la
+        tabla;
+        aquí no se decide nada más.
+        """
+        return self._questions.explanations_pending(limit=limit)
+
     def set_explanation(
         self,
         question_id: str,
