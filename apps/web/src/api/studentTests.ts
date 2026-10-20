@@ -178,6 +178,12 @@ export interface StudentResultQuestion {
   /** Y la clave de esta pregunta es derivada (§1 del encargo F29). En el resultado dice de dónde
    * sale la letra con la que se corrigió: no es la plantilla del conjunto. */
   derived_key: boolean;
+  /** La explicación de la pregunta, ya corregida (M1 de la fase 3). */
+  explanation?: string | null;
+  /** La frase LITERAL de los apuntes que la sostiene, para enseñarla tal cual. */
+  explanation_citation?: string | null;
+  /** El apartado al que se ancla, si la pantalla quiere llevar al párrafo. */
+  explanation_anchor_id?: string | null;
 }
 
 /** Cómo fue el test en un tema: es el desglose que dice qué hay que repasar. */

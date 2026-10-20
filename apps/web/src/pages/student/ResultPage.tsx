@@ -410,6 +410,17 @@ function PreguntaCorregida({ pregunta }: { pregunta: StudentResultQuestion }) {
           );
         })}
       </ul>
+        {pregunta.explanation !== null && pregunta.explanation !== undefined && (
+          <div className="resultado__explicacion" data-contenido>
+            <p>{pregunta.explanation}</p>
+            {pregunta.explanation_citation !== null &&
+              pregunta.explanation_citation !== undefined && (
+                <blockquote className="cita-apuntes hint">
+                  «{pregunta.explanation_citation}»
+                </blockquote>
+              )}
+          </div>
+        )}
       {repasar !== null && (
         <p className="resultado__repaso">
           {/* La dirección lleva **el capítulo y el párrafo**, que desde que los apuntes se leen por
