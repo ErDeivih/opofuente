@@ -539,6 +539,12 @@ class StudentResultQuestionSchema(BaseModel):
     chosen: list[str] = Field(default_factory=list)
     correct: list[str] = Field(default_factory=list)
     outcome: StudentResultOutcomeName
+    #: La explicación de la pregunta, ya corregida (M1 de la fase 3).
+    explanation: str | None = None
+    #: La frase LITERAL de los apuntes que la sostiene, para enseñarla tal cual.
+    explanation_citation: str | None = None
+    #: El apartado al que se ancla: la pantalla lleva al párrafo con este id.
+    explanation_anchor_id: str | None = None
     elapsed_ms: int | None = Field(default=None, ge=0)
     topics: list[StudentTopicRefSchema] = Field(default_factory=list)
     #: La clave de esta pregunta está en revisión (§1). En el resultado importa más que en el test:

@@ -10499,6 +10499,12 @@ export interface components {
             derived_key: boolean;
             /** Elapsed Ms */
             elapsed_ms?: number | null;
+            /** Explanation */
+            explanation?: string | null;
+            /** Explanation Anchor Id */
+            explanation_anchor_id?: string | null;
+            /** Explanation Citation */
+            explanation_citation?: string | null;
             /**
              * In Review
              * @description La clave de esta pregunta está en revisión: un fallo puede ser de la clave y no del alumno.

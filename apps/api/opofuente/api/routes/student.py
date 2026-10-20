@@ -310,6 +310,8 @@ def _result_question(view: StudentResultQuestionView) -> StudentResultQuestionSc
         elapsed_ms=view.elapsed_ms,
         topics=[_topic_ref(tema) for tema in view.topics],
         in_review=view.in_review,
+        explanation=view.explanation,
+        explanation_citation=view.explanation_citation,
         derived_key=view.derived_key,
         note_anchor=(
             None

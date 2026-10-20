@@ -1535,6 +1535,8 @@ class StudentService:
             elapsed_ms=entrada.elapsed_ms,
             topics=temas.get(entrada.question_version_id, ()),
             in_review=entrada.question_version_id in en_revision,
+            explanation=None if correccion is None else correccion.explanation,
+            explanation_citation=(None if correccion is None else correccion.explanation_citation),
             derived_key=entrada.question_version_id in derivadas,
             note_anchor=anclas.get(entrada.question_version_id),
         )

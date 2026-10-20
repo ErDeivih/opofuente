@@ -553,6 +553,10 @@ class StudentResultQuestionView:
     chosen_option_keys: tuple[str, ...] = ()
     correct_option_keys: tuple[str, ...] = ()
     outcome: str = "blank"
+    #: La explicación de la pregunta, ya corregida (M1 de la fase 3).
+    explanation: str | None = None
+    #: La frase LITERAL de los apuntes que la sostiene, para enseñarla tal cual.
+    explanation_citation: str | None = None
     elapsed_ms: int | None = None
     topics: tuple[StudentTopicRefView, ...] = ()
     #: La clave de esta pregunta está **en revisión** (§1). En el resultado importa más que en
