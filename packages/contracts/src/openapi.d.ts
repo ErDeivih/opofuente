@@ -1298,6 +1298,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/explanations/pending": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * La bandeja de explicaciones generadas: lo que falta por revisar (M1 de la fase 3)
+         * @description Las explicaciones **generadas y en borrador**, por antigüedad, con su pregunta.
+         *
+         *     Es la cola de trabajo del propietario: **no aparecen las privadas ni las oficiales**, porque no
+         *     las escribió un modelo y no hay nada que aprobar. El enunciado viaja con cada fila para que se
+         *     pueda decidir sin abrir otra pantalla.
+         */
+        get: operations["list_pending_explanations_api_v1_explanations_pending_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/exports/anki-csv": {
         parameters: {
             query?: never;
@@ -6413,6 +6437,25 @@ export interface components {
             text: string;
         };
         /**
+         * ExplanationTrayItemSchema
+         * @description Una fila de la bandeja de revisión: la explicación **y la pregunta a la que pertenece**.
+         *
+         *     No es `ExplanationSchema` con dos campos más: **aquí la pregunta es el contexto y tiene que
+         *     venir dentro**, porque el propietario aprueba una explicación **sabiendo de qué pregunta es**.
+         *     Servirla suelta obligaría a abrir otra pantalla por cada fila, que es lo que la bandeja existe
+         *     para evitar.
+         *
+         *     `options` no viene: quien revisa abre la ficha de la pregunta, y **la bandeja no repite la
+         *     pregunta entera** — su trabajo es decidir si la explicación sirve, no volver a leer el examen.
+         */
+        ExplanationTrayItemSchema: {
+            explanation: components["schemas"]["ExplanationSchema"];
+            /** Question Version Id */
+            question_version_id: string;
+            /** Stem */
+            stem: string;
+        };
+        /**
          * ExportRequestSchema
          * @description Qué se exporta: un conjunto concreto, un tema, o todo lo de una oposición.
          */
@@ -6470,6 +6513,11 @@ export interface components {
             field: string;
             /** Message */
             message: string;
+        };
+        /** HTTPValidationError */
+        HTTPValidationError: {
+            /** Detail */
+            detail?: components["schemas"]["ValidationError"][];
         };
         /**
          * HousekeepingCandidateSchema
@@ -11055,6 +11103,19 @@ export interface components {
             /** Url */
             url: string;
         };
+        /** ValidationError */
+        ValidationError: {
+            /** Context */
+            ctx?: Record<string, never>;
+            /** Input */
+            input?: unknown;
+            /** Location */
+            loc: (string | number)[];
+            /** Message */
+            msg: string;
+            /** Error Type */
+            type: string;
+        };
         /** VerificationSchema */
         VerificationSchema: {
             backup: components["schemas"]["BackupSchema"];
@@ -15327,6 +15388,37 @@ export interface operations {
                 };
                 content: {
                     "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    list_pending_explanations_api_v1_explanations_pending_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExplanationTrayItemSchema"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

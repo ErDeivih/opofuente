@@ -6197,6 +6197,29 @@
         "title": "ExplanationSchema",
         "type": "object"
       },
+      "ExplanationTrayItemSchema": {
+        "description": "Una fila de la bandeja de revisión: la explicación **y la pregunta a la que pertenece**.\n\nNo es `ExplanationSchema` con dos campos más: **aquí la pregunta es el contexto y tiene que\nvenir dentro**, porque el propietario aprueba una explicación **sabiendo de qué pregunta es**.\nServirla suelta obligaría a abrir otra pantalla por cada fila, que es lo que la bandeja existe\npara evitar.\n\n`options` no viene: quien revisa abre la ficha de la pregunta, y **la bandeja no repite la\npregunta entera** — su trabajo es decidir si la explicación sirve, no volver a leer el examen.",
+        "properties": {
+          "explanation": {
+            "$ref": "#/components/schemas/ExplanationSchema"
+          },
+          "question_version_id": {
+            "title": "Question Version Id",
+            "type": "string"
+          },
+          "stem": {
+            "title": "Stem",
+            "type": "string"
+          }
+        },
+        "required": [
+          "explanation",
+          "question_version_id",
+          "stem"
+        ],
+        "title": "ExplanationTrayItemSchema",
+        "type": "object"
+      },
       "ExportRequestSchema": {
         "description": "Qué se exporta: un conjunto concreto, un tema, o todo lo de una oposición.",
         "properties": {
@@ -6339,6 +6362,19 @@
           "message"
         ],
         "title": "FieldError",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
         "type": "object"
       },
       "HousekeepingCandidateSchema": {
@@ -17576,6 +17612,46 @@
         "title": "UrlRequest",
         "type": "object"
       },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      },
       "VerificationSchema": {
         "properties": {
           "backup": {
@@ -23389,6 +23465,56 @@
         "summary": "Una evidencia concreta, con su sección y su página",
         "tags": [
           "biblioteca"
+        ]
+      }
+    },
+    "/api/v1/explanations/pending": {
+      "get": {
+        "description": "Las explicaciones **generadas y en borrador**, por antigüedad, con su pregunta.\n\nEs la cola de trabajo del propietario: **no aparecen las privadas ni las oficiales**, porque no\nlas escribió un modelo y no hay nada que aprobar. El enunciado viaja con cada fila para que se\npueda decidir sin abrir otra pantalla.",
+        "operationId": "list_pending_explanations_api_v1_explanations_pending_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ExplanationTrayItemSchema"
+                  },
+                  "title": "Response List Pending Explanations Api V1 Explanations Pending Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "La bandeja de explicaciones generadas: lo que falta por revisar (M1 de la fase 3)",
+        "tags": [
+          "errores y repaso"
         ]
       }
     },

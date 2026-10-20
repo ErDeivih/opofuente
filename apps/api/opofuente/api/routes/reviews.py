@@ -18,8 +18,9 @@ from typing import Annotated
 
 from fastapi import APIRouter, Query
 
-from opofuente.api.deps import ProfilesServiceDep, ReviewServiceDep
+from opofuente.api.deps import ProfilesServiceDep, QuestionServiceDep, ReviewServiceDep
 from opofuente.api.error_responses import INGESTION_WRITE_ERRORS, RESOURCE_ERRORS
+from opofuente.api.question_schemas import ExplanationSchema, ExplanationTrayItemSchema
 from opofuente.api.review_schemas import (
     CompleteReviewSchema,
     ConceptGroupSchema,
@@ -41,6 +42,7 @@ from opofuente.api.review_schemas import (
     SnoozeReviewSchema,
 )
 from opofuente.application.profiles_service import ProfilesService
+from opofuente.application.question_models import ExplanationView
 from opofuente.application.read_models import NodeView, OppositionDetail
 from opofuente.application.review_models import (
     ConceptGroupView,
@@ -59,6 +61,53 @@ from opofuente.domain.review import MIN_INTENTOS_DOMINIO, ErrorCause, Mastery, R
 from opofuente.domain.study import Confidence
 
 router = APIRouter(tags=["errores y repaso"])
+
+
+def _explicacion_de_la_bandeja(vista: ExplanationView, stem: str) -> ExplanationTrayItemSchema:
+    """La fila de la bandeja: la explicación y el enunciado de su pregunta (M1)."""
+    return ExplanationTrayItemSchema(
+        explanation=ExplanationSchema(
+            id=vista.id,
+            question_version_id=vista.question_version_id,
+            option_stable_key=vista.option_stable_key,
+            text=vista.text,
+            origin=vista.origin,  # type: ignore[arg-type]
+            status=vista.status,  # type: ignore[arg-type]
+            model_name=vista.model_name,
+            created_at=vista.created_at,
+            citation=vista.citation,
+            note_anchor_id=vista.note_anchor_id,
+        ),
+        question_version_id=vista.question_version_id,
+        stem=stem,
+    )
+
+
+@router.get(
+    "/explanations/pending",
+    response_model=list[ExplanationTrayItemSchema],
+    summary="La bandeja de explicaciones generadas: lo que falta por revisar (M1 de la fase 3)",
+)
+def list_pending_explanations(
+    questions: QuestionServiceDep,
+    limit: Annotated[int, Query(ge=1, le=200)] = 50,
+) -> list[ExplanationTrayItemSchema]:
+    """Las explicaciones **generadas y en borrador**, por antigüedad, con su pregunta.
+
+    Es la cola de trabajo del propietario: **no aparecen las privadas ni las oficiales**, porque no
+    las escribió un modelo y no hay nada que aprobar. El enunciado viaja con cada fila para que se
+    pueda decidir sin abrir otra pantalla.
+    """
+    salida: list[ExplanationTrayItemSchema] = []
+    for vista in questions.explanations_pending(limit=limit):
+        pregunta = questions.question(vista.question_version_id)
+        salida.append(
+            _explicacion_de_la_bandeja(
+                vista,
+                "" if pregunta is None else pregunta.stem,
+            )
+        )
+    return salida
 
 
 def _item(view: ReviewItemView) -> ReviewItemSchema:
