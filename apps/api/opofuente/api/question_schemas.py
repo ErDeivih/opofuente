@@ -361,6 +361,19 @@ class SetExplanationRequestSchema(BaseModel):
     option_stable_key: str | None = Field(default=None, max_length=16)
 
 
+class SetExplanationStatusRequestSchema(BaseModel):
+    """Aprobar o rechazar una explicación generada desde la bandeja (M1 de la fase 3).
+
+    **Solo dos estados.** `draft` no se acepta: **devolver una explicación a la cola no es una
+    acción** —se deshace aprobando otra vez o no se aprueba—, y `generated` es el origen, no un
+    estado.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    status: Literal["reviewed", "rejected"]
+
+
 class QuestionEvidenceSchema(BaseModel):
     span_id: str
     role: Literal["stem", "correct", "distractor", "explanation"]
