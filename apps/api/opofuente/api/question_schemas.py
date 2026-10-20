@@ -334,6 +334,24 @@ class ExplanationSchema(BaseModel):
     note_anchor_id: str | None = None
 
 
+class ExplanationTrayItemSchema(BaseModel):
+    """Una fila de la bandeja de revisión: la explicación **y la pregunta a la que pertenece**.
+
+    No es `ExplanationSchema` con dos campos más: **aquí la pregunta es el contexto y tiene que
+    venir dentro**, porque el propietario aprueba una explicación **sabiendo de qué pregunta es**.
+    Servirla suelta obligaría a abrir otra pantalla por cada fila, que es lo que la bandeja existe
+    para evitar.
+
+    `options` no viene: quien revisa abre la ficha de la pregunta, y **la bandeja no repite la
+    pregunta entera** — su trabajo es decidir si la explicación sirve, no volver a leer el examen.
+    """
+
+    explanation: ExplanationSchema
+    #: La versión de la pregunta: el id con el que se abre su ficha si hace falta.
+    question_version_id: str
+    stem: str
+
+
 class SetExplanationRequestSchema(BaseModel):
     """Escribir (o sustituir) la explicación de una pregunta o de una de sus opciones."""
 
