@@ -20,9 +20,20 @@ from sqlalchemy import text
 
 
 def filas(conexion: Any, sql: str, params: Mapping[str, Any] | None = None) -> Sequence[Any]:
-    """Ejecuta el SQL y devuelve las filas.
+    """Ejecuta el SQL y devuelve las filas: **para las lecturas**.
 
-    **El único `type: ignore` del árbol de pruebas vive en la línea de abajo**, que son
-    sesenta caracteres y no hay formateador que quiera partir.
+    **Sin `type: ignore`**, y no por suerte: `conexion` está declarada `Any`, así que `mypy`
+    no ve el overload de `execute` que le disgusta y no hay nada que silenciar. `ruff` no
+    tiene entonces ningún comentario que mover.
     """
     return list(conexion.execute(text(sql), dict(params or {})))
+
+
+def ejecutar(conexion: Any, sql: str, params: Mapping[str, Any] | None = None) -> None:
+    """Ejecuta el SQL y **no devuelve nada**: para las escrituras.
+
+    **No es `filas` sin `list`**: envolver un `INSERT` en `list(...)` lo ejecuta igual, pero
+    deja un resultado que nadie mira y una prueba que parece leer cuando escribe. Aquí se
+    dice lo que hace.
+    """
+    conexion.execute(text(sql), dict(params or {}))
