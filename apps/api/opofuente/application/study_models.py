@@ -70,6 +70,10 @@ class CorrectionView:
     score: ScoreView
     reason: str | None = None
     explanation: str | None = None
+    #: La frase LITERAL de los apuntes que sostiene la explicación (M1 de la fase 3).
+    explanation_citation: str | None = None
+    #: El apartado al que se ancla: la pantalla lleva al párrafo con este id.
+    explanation_anchor_id: str | None = None
     evidence: tuple[QuestionEvidenceView, ...] = ()
 
     @property

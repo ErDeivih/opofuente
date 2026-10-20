@@ -5253,6 +5253,10 @@ export interface components {
             evidence: components["schemas"]["QuestionEvidenceSchema"][];
             /** Explanation */
             explanation?: string | null;
+            /** Explanation Anchor Id */
+            explanation_anchor_id?: string | null;
+            /** Explanation Citation */
+            explanation_citation?: string | null;
             /**
              * Outcome
              * @enum {string}

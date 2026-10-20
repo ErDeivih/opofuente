@@ -87,6 +87,8 @@ def _correction(view: CorrectionView) -> CorrectionSchema:
         score=_score(view.score),
         reason=view.reason,
         explanation=view.explanation,
+        explanation_citation=view.explanation_citation,
+        explanation_anchor_id=view.explanation_anchor_id,
         evidence=[
             QuestionEvidenceSchema(
                 span_id=cita.span_id,
