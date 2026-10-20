@@ -1341,6 +1341,16 @@ class QuestionService:
         """
         return self._questions.explanations_pending(limit=limit)
 
+    def set_explanation_status(self, explanation_id: str, *, status: str) -> bool:
+        """Aprueba o rechaza una explicación desde la bandeja (M1).
+
+        **No se comprueba el vocabulario aquí**: lo valida el `CheckConstraint` de la tabla, y
+        duplicar esa lista es tener dos sitios donde puede quedarse vieja. Si el estado no es
+        válido, la base lo dirá — y el propietario no puede llegar aquí con otro: la pantalla
+        manda `reviewed` o `rejected` y nada más.
+        """
+        return self._questions.set_explanation_status(explanation_id, status=status)
+
     def set_explanation(
         self,
         question_id: str,
