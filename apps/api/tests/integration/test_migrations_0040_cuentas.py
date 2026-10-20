@@ -96,7 +96,8 @@ def migrada(tmp_path: Path) -> Settings:
 
 
 def test_la_cabeza_es_la_migracion_de_la_plataforma(migrada: Settings) -> None:
-    assert script_head(migrada) == "0040_cuentas_y_consentimiento"
+    # La cabeza avanza con cada migración: aquí se fija cuál es, no cuál era en S28.
+    assert script_head(migrada) == "0041_explicaciones_cita_ancla"
 
 
 def test_las_seis_tablas_estan_y_no_tienen_donde_guardar_una_persona(migrada: Settings) -> None:
