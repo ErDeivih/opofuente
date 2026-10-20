@@ -215,6 +215,12 @@ class StudentCorrectionSchema(BaseModel):
     outcome: StudentOutcomeName
     correct: list[str] = Field(default_factory=list, description="Letras de la plantilla.")
     reason: str | None = None
+    #: La explicación que se enseña DESPUÉS de corregir (M1 de la fase 3).
+    explanation: str | None = None
+    #: La frase LITERAL de los apuntes que la sostiene, para enseñarla tal cual.
+    explanation_citation: str | None = None
+    #: El apartado al que se ancla: la pantalla lleva al párrafo con este id.
+    explanation_anchor_id: str | None = None
 
 
 class StudentQuestionSchema(BaseModel):

@@ -1799,6 +1799,7 @@ class StudentService:
                     outcome=pregunta.correction.outcome,
                     correct_option_keys=tuple(pregunta.correction.correct_option_keys),
                     reason=pregunta.correction.reason,
+                    explanation=pregunta.correction.explanation,
                 )
             ),
         )

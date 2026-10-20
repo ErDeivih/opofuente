@@ -181,6 +181,9 @@ def _question(view: StudentQuestionView) -> StudentQuestionSchema:
                 outcome=view.correction.outcome,  # type: ignore[arg-type]
                 correct=list(view.correction.correct_option_keys),
                 reason=view.correction.reason,
+                explanation=view.correction.explanation,
+                explanation_citation=view.correction.explanation_citation,
+                explanation_anchor_id=view.correction.explanation_anchor_id,
             )
         ),
         in_review=view.in_review,
