@@ -375,3 +375,22 @@ marcadores de conflicto:        0
 **La puerta pasa.** **Y el script hay que rehacerlo en la próxima sesión** — **su sitio natural es
 `scripts/comprobar-mojibake.ps1`, DENTRO del árbol** —, **que es lo que impide que una limpieza se lo lleve
 otra vez.** **El que había estaba fuera y por eso se perdió.**
+
+## El script de la puerta: el intento y su tropiezo (ronda 246)
+
+**Lo escribí dentro del árbol** —`scripts/comprobar-mojibake.ps1`, que es donde tiene que estar— **y
+PowerShell lo rechazó con un error de sintaxis en la línea del patrón de los marcadores**:
+
+```
+Falta la cadena en el terminador: ".
+  en comprobar-mojibake.ps1: 69
+```
+
+**Y lo he retirado en vez de dejarlo roto**: **un script de puerta que no arranca es peor que no tenerlo**,
+**porque parece que la puerta existe.** **El árbol queda como estaba: la puerta se corre a mano** (su
+resultado está en el apartado anterior) **y el script se rehace con el fichero delante**.
+
+**Lo que hay que saber para el siguiente intento, y es lo que tropezó**: **los patrones con `<` y `>`**
+—`'^(<<<<<<<|>>>>>>>)'`— **en PowerShell son un campo de minas de comillas y redirecciones**. **La forma
+que funciona**: **leer el fichero y comparar con `-match` sobre líneas**, **o construirlo con `[char]`**,
+**en vez de poner los siete caracteres dentro de una cadena de patrón**.
