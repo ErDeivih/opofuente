@@ -261,3 +261,30 @@ por qué**. **Y es del propietario, no del codificador.**
 
 **Lo que queda de la batería**: **volver a correr la 7 entera** (una hora) **para tenerla limpia con la
 prueba ya corregida**, **y la decisión sobre las dos fuentes**.
+
+## El árbol restaurado, verificado a mano (rondas 229-231)
+
+**La batería del instrumento se quedó colgada en la puerta 4 en este árbol** —`gates.ps1` vivo con 4 s de
+CPU, sin `eslint` ni `tsc` corriendo—, **así que la he matado y he corrido las puertas por separado**, que
+es lo que el §4 bis permite cuando se dice:
+
+```
+1  ruff format        ✓
+
+2  ruff check         ✓
+3  mypy 275           ✓
+4  eslint             ✓   (a mano: 0, y con --max-warnings=0)
+5  tsc                ✓   (a mano, ronda 216)
+6  unitarias backend  ✓   (993, ronda 218)
+7  integración        ✗   no re-corrida: 824 pasaron y el único fallo era mi prueba, ARREGLADO
+8-16 contrato, builds, migración 0041, siembra, fixtures   ✓ (ronda 227)
+17 FALLO  dos fuentes oficiales cambiadas: gc-boe-convocatoria-xml y celador-2023-bocyl-resolucion-pdf
+18 E2E 93 passed      ✓   (ronda 227)
+```
+
+**Y una lección de la ronda, que ha costado un proceso**: **maté la batería filtrando por
+`CommandLine -like '*gates.ps1*'` y me llevé mi propio shell por delante** — **mi propio comando contenía
+`gates.ps1`**. **La regla**: ***nunca se mata un proceso por una cadena que tu propio comando lleva dentro.***
+
+**Lo que queda, y es de dos clases**: **volver a correr la puerta 7 entera** (una hora, con mi prueba ya
+corregida) **y la decisión sobre las dos fuentes oficiales** — **que es del propietario**.
