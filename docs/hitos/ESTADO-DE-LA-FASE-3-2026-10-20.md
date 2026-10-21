@@ -179,3 +179,37 @@ cerrado sesenta rondas) y **el mapa de los seis muros de la prueba de la bandeja
 **La prueba de la bandeja** — **la vía es la de la API (pasó seis veces), con las cinco piezas ya escritas
 en `M1.md`** — **y su pantalla** (`TopicReviewPage` con `{ a, e, r, j, k }`). **Las dos son de una sesión
 con el fichero delante.**
+
+---
+
+## El árbol se perdió y se recuperó (20-oct, rondas 214-216)
+
+**Los árboles de `F:\temp-opofuente\opofuente-*` perdieron su `.git` y todos los ficheros de primer nivel
+menos `apps`.** **No fue un fallo de código**: **algo vació esos directorios** —no se sabe qué— **mientras la
+sesión se interrumpía dos veces seguidas.**
+
+**Lo que se perdió**: **los ficheros de enlace de los worktrees y, con ellos, su vista del árbol**.
+**Lo que NO se perdió**:
+- **el repositorio, que está en `F:\EspacioCodigo\opofuente`**, con **`main = 63fad50`** y **los 105 commits
+  de la sesión dentro**;
+- **y la base del propietario**, con la misma huella del primer minuto.
+
+**Cómo se recuperó, y son dos comandos**:
+
+```
+git -C F:\EspacioCodigo\opofuente worktree prune
+git -C F:\EspacioCodigo\opofuente worktree add F:\temp-opofuente\opofuente-restaurado main
+```
+
+**Y después, porque no se commitea**: `uv sync --frozen` y `npm ci`.
+
+## El árbol que hay que usar a partir de ahora
+
+```
+F:\temp-opofuente\opofuente-restaurado     ← el bueno
+F:\EspacioCodigo\opofuente                 ← el repositorio (de aquí salen los worktrees)
+F:\temp-opofuente\opofuente-main y demás   ← huérfanos; NO usar
+```
+
+**Y el aviso que queda para siempre**: ***lo que se commitea se recupera en dos comandos; lo que no, se
+reinstala.*** **Hoy el trabajo de 216 rondas volvió en dos minutos porque cada pieza estaba commiteada.**
