@@ -128,3 +128,20 @@ uv run python -m opofuente.tools.explicar_preguntas --limite 500 --de-verdad --g
 **Antes de la corrida grande**: **correr la batería de 18**, que **no se ha vuelto a pasar desde los
 cambios de hoy** (los de la cita, el reintento y el guardado). **Después**: la corrida por tandas de
 500, la segunda pasada de las caídas, **«regenerar»** y las capturas de `recorrido-M1`.
+
+---
+
+## M2 (§2), lo que he encontrado y lo que falta (ronda 9)
+
+**Los tres escaneos no están donde el documento decía.** import_issues de la copia **no tiene ni un
+ocr_pending con ruta del INAP**, y **sus 401 ocr_pending son de lotes del 28, 29 y 30 de septiembre**,
+no del 14 de octubre. **La copia es del 15-oct, así que la importación del 14 no dejó ahí su rastro.**
+
+**Lo que sí hay:**
+- **docs/decisions/ADR-020-ocr-al-importar.md** — la decisión de cómo se hace el OCR.
+- **F:\OpoFuente\fuentes\inap-tai** existe y tiene **32 PDF**.
+
+**El siguiente paso exacto de §2**: **recorrer esos 32 PDF y quedarse con los que tengan el texto
+extraído vacío o casi vacío por página** —esa es la definición del documento—, **que no hace falta
+buscarlos por nombre**. **Después**: OCR sobre una copia, comparar el número de preguntas con la
+plantilla, e importar con distribution = public y origin_scope = age.
