@@ -168,3 +168,25 @@ caracteres por página», que separa un escaneo de un PDF con capa.
 
 **El motor de OCR se llama `TesseractOcr` y la fábrica es `tesseract_from_settings(settings)`**, que
 **devuelve `None` si no encuentra el binario**: lo primero que hay que mirar al retomar es si está.
+
+## M2 (§3), el punto de partida exacto (ronda 13)
+
+**El manifiesto de las fuentes está en `fixtures/profiles/manifest.json`** —en la raíz del árbol, no en
+`apps/api`—, **y su clave `sources` es una LISTA, no un diccionario**, así que se busca la entrada por
+`name` dentro de ella y no con `.get(nombre)`.
+
+**Y la comparación que pide el documento tiene un problema que hay que resolver antes**:
+**«compara el texto extraído con el de la versión anterior del manifiesto»**. **El manifiesto guarda la
+HUELLA (`content_sha256`), no el texto**: **sin el fichero viejo, solo se sabe que cambió, no qué
+cambió.** **Para distinguir «forma» de «contenido» hacen falta las dos versiones.**
+
+**De dónde sacar la vieja**, por orden de menos a más trabajo:
+1. **`git log` del manifiesto** y **`git show`** de la versión anterior —sirve si la entrada antigua trae
+   el texto o una huella por página—;
+2. **los `import_issues` con `code = 'source_changed'`** —hay **54** en la copia—: **pueden decir qué
+   cambió y cuándo**;
+3. **volver a correr `scripts/fetch-sources.ps1`** con la red, que **descarga la versión actual a
+   `data/sources`** —lo hizo en la ronda 227—, **y entonces comparar la actual con la que sirve la app**.
+
+**Lo que NO hay que hacer**, y está escrito en el documento: **descargar en `data/sources` para que pase
+una prueba** —eso rompió las unitarias— **y actualizar la huella sin mirar qué cambió.**
