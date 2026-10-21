@@ -213,3 +213,19 @@ F:\temp-opofuente\opofuente-main y demás   ← huérfanos; NO usar
 
 **Y el aviso que queda para siempre**: ***lo que se commitea se recupera en dos comandos; lo que no, se
 reinstala.*** **Hoy el trabajo de 216 rondas volvió en dos minutos porque cada pieza estaba commiteada.**
+
+## Lo que la recuperación NO trajo: las capturas de M0 (ronda 223)
+
+**Los cinco documentos de hito están** (`M0.md` 31 KB, `M1.md` 60 KB, `M2.md` 8 KB, `M3.md` 6 KB y este
+folio 11 KB) **y `artifacts/recorrido-M1/README.md` también** — **lo que está en git, está**.
+
+**Y `artifacts/recorrido-M0/` NO está**: **sus 66 PNG (33 MB) se perdieron**, **y es lo correcto**: **estaban
+en `.gitignore` a propósito** — **33 MB de imágenes regenerables no entran en el repositorio** —, así que
+**la recuperación no podía traerlos**.
+
+**Se regeneran, y el comando está escrito**: `npm run screens --workspace @opofuente/web -- --datos <copia
+verificada>`, **que deja los PNG en `artifacts/screens-datos` y de ahí se copian a `recorrido-M0`**.
+
+**La regla que esto confirma, y no es nueva**: ***lo que se ignora en git es lo que hay que poder
+regenerar***. **Las capturas lo son —un comando—; el `.venv` y `node_modules` también —dos comandos—; y el
+trabajo de la sesión no lo era, y por eso estaba commiteado.**
