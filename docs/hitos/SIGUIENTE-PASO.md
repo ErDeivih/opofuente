@@ -237,3 +237,36 @@ plantilla vigente** (`active`), **reasignar los repasos, intentos y fallos del a
 
 **Y los dos conjuntos de cada par son del mismo examen**, así que **la comparación es 1 a 1 por
 posición**: si el del 29-sep tiene la misma pregunta en la posición 3 que el del 2-oct, se reasigna.
+
+## §5 (DEBT-036): el mapa para identificarlos (ronda 17)
+
+**El documento dice «los seis exámenes de promoción interna que no se pueden montar». Lo que hay:**
+
+```
+conjuntos de promoción interna:
+  TAI promoción interna 2019 · ejercicio único
+  TAI promoción interna 2022 · ejercicio único
+  TAI promoción interna 2024 · modelo A
+  TAI promoción interna 2024 · modelo B
+  TAI promoción interna 2025 · modelo A   (duplicado, §4)
+  TAI promoción interna 2025 · modelo B   (duplicado, §4)
+```
+
+**Y las tablas que dicen si se pueden montar:**
+
+| tabla | filas | para qué |
+|---|---|---|
+| `answer_key_versions` | 592 | la clave de cada conjunto, con `question_set_id` y `status` |
+| `answer_key_entries` | 19.266 | la respuesta de cada pregunta |
+| `question_key_gaps` | 936 | **por qué falta**, con `reason` |
+
+**Lo que ya sé**: **de todos los de promoción interna, solo UNO tiene huecos explícitos** —el
+«TAI 2019 Cuerpo de Gestión de Sistemas e Informática, GSI»—, **73 huecos con `sin_material` y
+`sin_cita`**. **Así que «los seis» no se identifican por los huecos: se identifican por conjuntos SIN
+`answer_key_versions`**.
+
+**El siguiente paso, con la tabla buena**: **listar los seis conjuntos de promoción interna que no tienen
+ninguna `answer_key_versions` en estado `active`**, **buscar su plantilla entre los 32 PDF de
+`fuentes\inap-tai`**, **y aplicar la decisión del documento**: si está, importarla; si no está pero es
+pública, descargarla; si no existe, **modo sin corrección con el aviso «sin plantilla oficial»**
+—la más simple de las dos opciones—.
