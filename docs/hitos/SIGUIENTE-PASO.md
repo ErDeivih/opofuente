@@ -214,3 +214,26 @@ huella a ciegas sería justo lo que el documento prohíbe.**
 
 **Y una línea en `DEBT.md`** con las dos huellas —la registrada y la medida— y **el motivo de no haber
 podido comparar**.
+
+## §4 (DEBT-035): no son dos conjuntos, son CUATRO pares (ronda 16)
+
+**El documento dice «los dos conjuntos duplicados del INAP 2025-A». Hay cuatro pares**, uno por
+modelo y por turno, **del 29 de septiembre y del 2 de octubre**:
+
+```
+TAI ingreso libre 2025 A       b9798368 (29-sep)   c545d893 (02-oct)
+TAI ingreso libre 2025 B       200c1c04 (29-sep)   b31483ab (02-oct)
+TAI promoción interna 2025 A   ee30a6d1 (29-sep)   ece32571 (02-oct)
+TAI promoción interna 2025 B   4b87ff6b (29-sep)   73109901 (02-oct)
+```
+
+**Y hay un quinto conjunto del 21 de octubre** —«TAI ingreso libre 2025 · modelo A · **capturas**»,
+`9c0db7e1`—, **que es la tanda de capturas de hoy**, no un examen nuevo.
+
+**Lo que hay que decidir, y ahora es más de lo que el documento contaba**: **cuál de cada par tiene la
+plantilla vigente** (`active`), **reasignar los repasos, intentos y fallos del archivado al bueno por
+`stable_key` o por enunciado y opciones normalizados**, **dejar huérfano lo que no tenga equivalente**,
+**y comprobar que Inicio promete lo mismo que sirve el repaso**.
+
+**Y los dos conjuntos de cada par son del mismo examen**, así que **la comparación es 1 a 1 por
+posición**: si el del 29-sep tiene la misma pregunta en la posición 3 que el del 2-oct, se reasigna.
