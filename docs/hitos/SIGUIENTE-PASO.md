@@ -145,3 +145,23 @@ no del 14 de octubre. **La copia es del 15-oct, así que la importación del 14 
 extraído vacío o casi vacío por página** —esa es la definición del documento—, **que no hace falta
 buscarlos por nombre**. **Después**: OCR sobre una copia, comparar el número de preguntas con la
 plantilla, e importar con distribution = public y origin_scope = age.
+
+## §2 resuelto a medias: los tres escaneos, identificados (ronda 10)
+
+**No hay que preguntar nombres.** **Recorridos los 32 PDF de `F:\OpoFuente\fuentes\inap-tai` con PyMuPDF**,
+**solo tres no tienen capa de texto** —cero caracteres en total—:
+
+```
+TAI-2018-libre-cuestionario-1.pdf      10 pag · 0 caracteres
+TAI-2018-libre-cuestionario-2.pdf      10 pag · 0 caracteres
+TAI-2018-pi-cuestionario-unico.pdf     10 pag · 0 caracteres
+```
+
+**Son los tres, y son de 2018.** **El resto de los 32 tiene texto**: el umbral usado es «menos de 40
+caracteres por página», que separa un escaneo de un PDF con capa.
+
+**Lo que queda de §2**, y es la mitad que gasta tiempo de máquina, no de ti:
+1. **OCR sobre una copia** con el extractor de la app (`infrastructure/ocr.py`, `text_of_pdf`, 300 ppp);
+2. **comparar el número de preguntas con la plantilla** de cada uno;
+3. **importar con `distribution = public` y `origin_scope = age`**;
+4. **el que no cuadre con su plantilla, fuera con su cifra.**
