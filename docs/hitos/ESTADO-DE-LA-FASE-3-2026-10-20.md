@@ -394,3 +394,20 @@ resultado está en el apartado anterior) **y el script se rehace con el fichero 
 —`'^(<<<<<<<|>>>>>>>)'`— **en PowerShell son un campo de minas de comillas y redirecciones**. **La forma
 que funciona**: **leer el fichero y comparar con `-match` sobre líneas**, **o construirlo con `[char]`**,
 **en vez de poner los siete caracteres dentro de una cadena de patrón**.
+
+## El fallo de las unitarias era la descarga de fuentes (ronda 247)
+
+**Al cerrar, las unitarias daban `1 failed, 993 passed`**, y **el fallo era
+`test_profile_fixtures.py:678`: `content_fingerprint(ruta) != sources[id]["content_sha256"]`** — **la
+huella de un documento descargado no coincidía con la del manifiesto**.
+
+**La causa era mía y de esta mañana**: **en la ronda 227 corrí `scripts/fetch-sources.ps1`** para que la
+puerta 17 tuviera fuentes, **y descargó los documentos oficiales que YA HAN CAMBIADO** — **el XML del BOE y
+un PDF del BOCYL** —. **Los dejó en `data/sources`, que está ignorado en git, y desde ahí rompen la prueba
+que compara las fuentes con el manifiesto.**
+
+**Quitados los 18 ficheros de `data/sources`, las unitarias vuelven a 994 en verde** — **que es el estado
+en el que estaban antes de que yo tocara las fuentes**.
+
+**Y la moraleja, que es la de la puerta 17**: ***no se descarga la fuente oficial para «arreglar» la puerta;
+se mira por qué cambió***. **El árbol tenía razón al negarse las dos veces.**
