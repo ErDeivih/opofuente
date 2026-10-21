@@ -33,6 +33,9 @@ _LO_QUE_NO_SE_PROMETE = re.compile(
     re.IGNORECASE,
 )
 
+#: Los comentarios del texto: no son material y no se citan.
+_COMENTARIO = re.compile(r"<!--.*?-->", re.DOTALL)
+
 #: Los cortes de frase: punto, interrogación o exclamación seguidos de espacio o final.
 _FIN_DE_FRASE = re.compile(r"[.!?…]+(?:\s+|$)")
 
@@ -72,7 +75,10 @@ def problemas(
     «rechazada» sin motivo obliga a mirarla otra vez para saber lo mismo.
     """
     fallos: list[str] = []
-    if not cita_literal(cita, apartado):
+    if not cita.strip():
+        fallos.append("no eligió ninguna frase del apartado")
+
+    elif not cita_literal(cita, apartado):
         fallos.append("la cita no está literalmente en el apartado")
     if letra.strip().lower() not in {clave_letra.strip().lower() for clave_letra in clave}:
         fallos.append(f"la explicación justifica la letra «{letra}», que no es la que corrige")
@@ -83,3 +89,65 @@ def problemas(
     if cuantas < MIN_FRASES or cuantas > MAX_FRASES:
         fallos.append(f"tiene {cuantas} frases y tiene que tener de {MIN_FRASES} a {MAX_FRASES}")
     return tuple(fallos)
+
+
+def _trozos(apartado: str) -> tuple[str, ...]:
+    """Las frases del apartado **con su puntuación y su texto original**.
+
+    **No vale rases()**: esa parte por el signo y **se come el punto**, así que una cita
+    compuesta con ella no está literalmente en el apartado. Aquí se corta **después** del signo.
+    """
+    trozos: list[str] = []
+    inicio = 0
+    for corte in _FIN_DE_FRASE.finditer(apartado):
+        trozo = apartado[inicio : corte.end()].strip()
+        if trozo:
+            trozos.append(trozo)
+        inicio = corte.end()
+    resto = apartado[inicio:].strip()
+    if resto:
+        trozos.append(resto)
+    return tuple(trozos)
+
+
+def apartado_numerado(apartado: str) -> str:
+    """El apartado con cada frase precedida de su número: `[1] …`, `[2] …`.
+
+    **Por qué numerado**: pedirle al modelo que copie una frase literal falla una de cada tres
+    veces —parafrasea—, y la comprobación lo rechaza con razón. **Pidiéndole el número, la cita la
+    compone el programa**, así que es literal por construcción.
+    """
+    return "\n".join(
+        f"[{numero}] {frase}" for numero, frase in enumerate(_trozos(apartado), start=1)
+    )
+
+
+def componer_cita(apartado: str, numeros: Sequence[int]) -> str:
+    """La cita, compuesta de las frases que el modelo eligió por número.
+
+    **Los números que no existen se ignoran**: no se inventa texto ni se recorta. Si ninguno vale,
+    la cita sale vacía y la comprobación la rechaza.
+    """
+    disponibles = _trozos(apartado)
+    elegidas = [
+        disponibles[numero - 1]
+        for numero in numeros
+        if 1 <= numero <= len(disponibles) and disponibles[numero - 1].strip()
+    ]
+    return " ".join(elegidas)
+
+
+def palabras_clave(texto: str) -> frozenset[str]:
+    """Las palabras que cargan significado: cinco letras o más, en minúsculas."""
+    patron = r"[^\W\d_]{5,}"
+    return frozenset(re.findall(patron, texto.lower(), flags=re.UNICODE))
+
+
+def la_cita_apoya_la_clave(cita: str, texto_correcto: str) -> bool:
+    """¿Comparte la cita alguna palabra de peso con la opción correcta?
+
+    **Es la comprobación que sustituye a «el modelo leyó la clave»**: si el apartado que citó no
+    habla de lo que dice la opción correcta, la explicación se apoya en otro sitio. **No pide la
+    misma frase**: pide **una** palabra de cinco letras o más en común.
+    """
+    return bool(palabras_clave(cita) & palabras_clave(texto_correcto))

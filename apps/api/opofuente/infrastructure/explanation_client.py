@@ -72,6 +72,7 @@ class DeepSeekExplanationProposer:
         respuesta = read_response(
             self._post(json.dumps(cuerpo, ensure_ascii=False)),
             requested=[p.question_version_id for p in lote],
+            apartados={p.question_version_id: p.apartado for p in lote},
         )
         self.ultimos_tokens = (respuesta.tokens_entrada, respuesta.tokens_salida)
         return respuesta.propuestas

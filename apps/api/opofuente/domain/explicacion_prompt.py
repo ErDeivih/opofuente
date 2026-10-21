@@ -1,33 +1,41 @@
 """El encargo al modelo y la lectura de su respuesta (M1 de la fase 3).
 
-Separado del cliente a propósito: **esto son funciones puras** —lo que se le pide y cómo se lee lo
-    que
-contesta— y se prueban sin red y sin gastar. El cliente que hace el POST es lo único que necesita
+Separado del cliente a propósito: **esto son funciones puras** —lo que se le pide y cómo
+se lee lo que contesta- y se prueban sin red y sin gastar.
 modelo de verdad.
+
+**La cita, por construcción.** Pedirle al modelo que copie una frase literal del apartado falla una
+de cada tres veces: parafrasea, y la comprobación lo rechaza con razón. Por eso **el apartado viaja
+con las frases numeradas**, el modelo **elige números** y **la cita la compone el programa** con el
+texto del propio apartado. Así la cita es literal siempre.
 """
 
 from __future__ import annotations
 
 import json
-from collections.abc import Sequence
+import re
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 
 from opofuente.application.explicaciones import ExplicacionPropuesta, PreguntaAExplicar
 from opofuente.domain.errors import ExternalServiceError
+from opofuente.domain.explicaciones import apartado_numerado, componer_cita
 
-#: Lo que se le pide al modelo, y las cuatro reglas que el servicio comprobará después.
+#: Lo que se le pide al modelo. **`numeros`, no `cita`**: la cita la pone el programa.
 SISTEMA = (
     "Eres un profesor que prepara oposiciones. Para cada pregunta escribes una explicación de"
     " DOS a CINCO frases, en español, que diga por qué la opción correcta lo es y por qué la"
-    "tentadora no lo es.\n\n"
+    " tentadora no lo es.\n\n"
     "Reglas que no puedes romper:\n"
-    "- La explicación se apoya SOLO en el texto del apartado que se te da.\n"
-    "- Copia LITERALMENTE, sin cambiar una coma, la frase del apartado en la que te apoyas.\n"
+    "- La explicación se apoya SOLO en el apartado que se te da, que viene con las frases"
+    " numeradas.\n"
+    "- Elige el NUMERO de la frase —o los números, como mucho dos— que justifican la respuesta."
+    " No copies el texto: con el número basta, y el texto lo pone el programa.\n"
     "- No hables nunca de exámenes, de frecuencias ni de probabilidad de que algo caiga.\n"
-    '- Devuelve JSON: {"explicaciones": [{"id", "texto", "cita", "letra"}]}, una por pregunta.'
-    "\n"
-    '- "letra" es la letra de la opción CORRECTA, la que se te da en la línea CLAVE. NUNCA la de la'
-    ' tentadora: esa se nombra en el texto, pero no es la que va en "letra".'
+    '- Devuelve JSON: {"explicaciones": [{"id", "texto", "numeros", "letra"}]}, una por pregunta.\n'
+    '- "numeros" es una lista de enteros con las frases elegidas, por ejemplo [2] o [2, 3].\n'
+    '- "letra" es la letra de la opción CORRECTA, la que se te da en la línea CLAVE. NUNCA la de'
+    " la tentadora."
 )
 
 
@@ -41,7 +49,7 @@ class RespuestaDelModelo:
 
 
 def build_user_prompt(preguntas: Sequence[PreguntaAExplicar]) -> str:
-    """El encargo: pregunta, opciones, clave y el apartado que la sostiene."""
+    """El encargo: pregunta, opciones, clave y el apartado **con las frases numeradas**."""
     partes: list[str] = []
     for pregunta in preguntas:
         opciones = "; ".join(f"{letra}) {texto}" for letra, texto in pregunta.opciones)
@@ -50,7 +58,7 @@ def build_user_prompt(preguntas: Sequence[PreguntaAExplicar]) -> str:
             f"PREGUNTA: {pregunta.enunciado}\n"
             f"OPCIONES: {opciones}\n"
             f"CLAVE (letras correctas): {', '.join(pregunta.clave)}\n"
-            f"APARTADO DE LOS APUNTES:\n{pregunta.apartado.strip()}"
+            f"APARTADO DE LOS APUNTES (frases numeradas):\n{apartado_numerado(pregunta.apartado)}"
         )
     return "\n\n---\n\n".join(partes)
 
@@ -59,10 +67,42 @@ def _texto(valor: object) -> str:
     return str(valor).strip() if valor is not None else ""
 
 
+def _numeros(valor: object) -> tuple[int, ...]:
+    """Los números de frase que devolvió el modelo, **como mucho dos** y sin repetidos.
+
+    **Acepta el número suelto, la lista y el texto**: el modelo devuelve a veces `"[2, 3]"` y otras
+    `[2, 3]`, y las dos cosas quieren decir lo mismo. Un número que no sea entero se ignora: **no se
+    adivina**. Y **el tope de dos** está aquí, no en el prompt, porque un modelo obediente no es una
+    garantía.
+    """
+    if isinstance(valor, bool):
+        return ()
+    if isinstance(valor, str):
+        return tuple(int(digitos) for digitos in re.findall(r"\d+", valor)[:2])
+    if isinstance(valor, int):
+        crudos: list[object] = [valor]
+    elif isinstance(valor, list):
+        crudos = list(valor)
+    else:
+        return ()
+    elegidos: list[int] = []
+    for crudo in crudos:
+        try:
+            numero = int(str(crudo))
+        except (TypeError, ValueError):
+            continue
+        if numero >= 1 and numero not in elegidos:
+            elegidos.append(numero)
+        if len(elegidos) == 2:
+            break
+    return tuple(elegidos)
+
+
 def contenido_del_sobre(sobre: dict[str, object]) -> str:
     """El texto que escribió el modelo, sacado del sobre de la API.
 
-    **El modelo no devuelve su JSON en la raíz**: lo devuelve dentro de `choices[0].message.content`,
+    **El modelo no devuelve su JSON en la raiz**: lo devuelve dentro de
+    `choices[0].message.content`, y el sobre trae ademas el `usage`.
     y el sobre trae además el `usage`. Por eso la lectura se hace en dos pasos —abrir el sobre y
     luego leer el contenido—: **mezclarlos fue el fallo que dejó a M1 sin ensayo**.
     """
@@ -81,12 +121,19 @@ def contenido_del_sobre(sobre: dict[str, object]) -> str:
     return contenido
 
 
-def read_response(payload: str, *, requested: Sequence[str]) -> RespuestaDelModelo:
-    """Lee la respuesta del modelo; **lo que no corresponde a una pregunta pedida se queda fuera**.
+def read_response(
+    payload: str,
+    *,
+    requested: Sequence[str],
+    apartados: Mapping[str, str],
+) -> RespuestaDelModelo:
+    """Lee la respuesta del modelo y **compone la cita** con los números elegidos.
 
-    **`payload` es el sobre entero**, el que devuelve el POST: **los tokens viajan en el sobre, no en
-    el contenido**, así que abrirlo aquí es lo que permite devolver la cifra del ensayo junto con las
-    propuestas. El contenido se abre con `contenido_del_sobre` y **ese** es el que se parsea.
+    **`payload` es el sobre entero**, el que devuelve el POST: **los tokens viajan
+    en el sobre**, asi que abrirlo devuelve la cifra del ensayo y las propuestas.
+    sobre**, así que abrirlo aquí devuelve la cifra del ensayo junto con las propuestas.
+    **`apartados` es la tabla `id -> apartado`**, y es lo que hace literal la cita:
+    sale de ese texto, no del modelo.
     """
     try:
         sobre = json.loads(payload)
@@ -115,7 +162,7 @@ def read_response(payload: str, *, requested: Sequence[str]) -> RespuestaDelMode
             ExplicacionPropuesta(
                 question_version_id=ident,
                 texto=_texto(cruda.get("texto")),
-                cita=_texto(cruda.get("cita")),
+                cita=componer_cita(apartados.get(ident, ""), _numeros(cruda.get("numeros"))),
                 letra=_texto(cruda.get("letra")).lower()[:1],
             )
         )
