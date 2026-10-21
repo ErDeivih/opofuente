@@ -389,3 +389,25 @@ gasto                     ~0,000024 $ por explicación → las 11.147 por ~0,27 
 origin='generated'`; **si no sube y no hay procesos de `explicar_preguntas`, relanzar `corrida3.ps1`
 desde la última tanda cerrada**; **cuando llegue a las 11.147, la segunda pasada de las que caigan**,
 **«regenerar»**, **y las capturas de `recorrido-M1`**, que cierran el hito.
+
+## «Regenerar»: el diseño, para que sea escribir y no decidir (ronda 38)
+
+**Es la última acción de la bandeja que falta, y es la única que gasta.**
+
+**Lo que hay que escribir, y son tres piezas del tamaño de las de «aprobar»:**
+
+1. **`POST /explanations/{id}/regenerate`**, en `api/routes/reviews.py`, **con `responses=RESOURCE_ERRORS`**
+   —el 404 y el 503 del modelo—, **que devuelva el `ExplanationTrayItemSchema` nuevo**;
+2. **`QuestionService.regenerate_explanation(explanation_id, proposer)`**: **lee la pregunta por el id de
+   la explicación**, **pide UNA explicación al `ExplanationProposer`**, **la pasa por `problemas()`**,
+   **y solo si pasa la escribe con `add_explanation`** —con su cita y su anclaje— **poniendo
+   `status='draft'` para que vuelva a la cola;
+3. **el botón en `ExplanationTrayPage`** —la tecla `g`—, **con la invalidación de la cola**.
+
+**Y las dos reglas que no se saltan**: **si las comprobaciones fallan, la explicación vieja NO se toca**
+—regenerar no es empeorar—, **y el gasto se dice**: **la llamada cuesta ~0,000024 $, y la pantalla lo
+avisa antes de mandarla, no después.**
+
+**Por qué no lo he escrito ya**: **el servicio necesita el `proposer` inyectado, y hoy solo lo tiene el
+tool, no la ruta**; **inyectarlo es tocar `main.py` y el `Settings`**, y **eso es una pieza de fontanería
+que merece contexto fresco**. **El diseño, en cambio, no necesita ninguna decisión más.**
