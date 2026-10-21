@@ -1423,3 +1423,19 @@ están identificados y esperando**.
 
 **Mientras tanto el §2 queda a medias a propósito** —los tres escaneos localizados, el OCR sin poder
 correr— **y sigo con lo que no depende de esto.**
+
+## Una decisión de contenido: los seis exámenes de promoción interna (DEBT-036)
+
+**No es un fallo de código y no lo puedo cerrar yo.** **Los seis conjuntos de promoción interna del
+INAP traen 74 preguntas ordinarias y 11 de reserva; la convocatoria de TAI publica 80 + 5 para su
+primera parte.** **El examen no se puede montar** —el servidor lo dice con un 409, «tiene 74 y la parte
+pide 80»— **y la lista ya lo refleja honestamente: dice 79 y no ofrece el botón, con el motivo
+(`faltan_preguntas`).**
+
+**Las dos salidas que la deuda plantea, y son las dos únicas:**
+1. **conseguir más preguntas** para esos seis conjuntos —los cuestionarios de esos años tenían otro
+   tamaño—;
+2. **o que la parte que se juega no sea la primera** —con lo que 74 sería el número correcto—.
+
+**No he inventado preguntas ni plantillas para que el botón vuelva.** **Elige una de las dos y la
+ejecuto.**
