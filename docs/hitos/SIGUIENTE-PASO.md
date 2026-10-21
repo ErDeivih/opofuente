@@ -343,3 +343,24 @@ archivado se reasignan a la pregunta equivalente del bueno»*— **se traduce a*
 **Y se hace sobre una copia, con la copia comprobada por huella antes y después** —la política de dos
 copias—. **Es la primera operación de esta fase que MUEVE datos del propietario**, así que **va con la
 copia verificada de `m0-capturas` y con la cuenta de filas afectadas escrita antes de tocarlas.**
+
+## La corrida: estado y cómo continuarla (ronda 29)
+
+**En marcha, con 779 escritas y todas con cita.** **El bucle lanzado cubre hasta `--desde 2000`**, o sea
+**unas 2.500 preguntas**. **Cuando acabe, hay que relanzarlo desde 2.500 con este mismo comando**,
+cambiando el `desde`:
+
+```powershell
+$env:DEEPSEEK_API_KEY = [Environment]::GetEnvironmentVariable('DEEPSEEK_API_KEY','User')
+$env:OPOFUENTE_DATA_DIR = 'F:\temp-opofuente\m0-capturas'
+foreach ($desde in 2500,3000,3500,4000,4500,5000,5500,6000,6500,7000,7500,8000,8500,9000,9500,10000,10500,11000) {
+  uv run python -m opofuente.tools.explicar_preguntas --limite 500 --desde $desde --de-verdad --guardar
+}
+```
+
+**El gasto medido en vuelo**: **54.182 + 2.682 tokens por 370 explicaciones = 0,000022 $ cada una**, así
+que **las 11.147 completas salen por unos 0,25 $**. **El límite no es el dinero: es el tiempo.**
+
+**Cómo saber dónde se quedó**, sin leer el registro: `select count(*) from question_explanations where
+origin='generated'` — **cada tanda de 500 deja unas 370**. **Y se reanuda con `--desde` a la última
+tanda cerrada**, que es lo que hace reanudable la corrida.
