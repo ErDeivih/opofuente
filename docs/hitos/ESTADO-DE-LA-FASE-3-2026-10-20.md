@@ -229,3 +229,35 @@ verificada>`, **que deja los PNG en `artifacts/screens-datos` y de ahí se copia
 **La regla que esto confirma, y no es nueva**: ***lo que se ignora en git es lo que hay que poder
 regenerar***. **Las capturas lo son —un comando—; el `.venv` y `node_modules` también —dos comandos—; y el
 trabajo de la sesión no lo era, y por eso estaba commiteado.**
+
+## La batería sobre el árbol restaurado, con sus dos rojos explicados (rondas 217-227)
+
+```
+1-6   verdes (ruff · format · mypy 275 · eslint · tsc · 993 unitarias)
+7     824 passed, 1 failed  ← MI prueba, y el fallo era mío: pedía ?limit=1 a una ruta que ya no
+                              tiene parámetro de consulta (se lo quité para que no metiera el 422
+                              en el contrato). ARREGLADO y verificado sola: 1 passed (084be2e).
+8     contrato (export --check + contracts:check)     ✓
+9     test:web · 55 ficheros · 494 pruebas            ✓
+10-12 contrato, uv build, build:web                   ✓
+13-16 migración (0041) · esquema · siembra · idempotente  ✓
+17    FALLO: dos fuentes oficiales han cambiado
+        gc-boe-convocatoria-xml           9f6b802314ac != 263900393c7b
+        celador-2023-bocyl-resolucion-pdf 80e3343ff075 != 30552d886eac
+      «Si la fuente oficial ha cambiado, hay que revisar los fixtures y actualizar el manifiesto.»
+18    E2E · 93 passed en 4,6 min                      ✓
+```
+
+**Y los dos rojos, explicados:**
+
+**El de la 7 era mío, y ya está**: **la prueba de la bandeja afirmaba un tope que se pedía por la
+dirección**, y **la dirección ya no lleva parámetro** — **porque cualquier parámetro tipado mete el 422 de
+FastAPI en el contrato y la puerta 8 lo rechaza**. **Arreglado y verificado**: `1 passed`.
+
+**El de la 17 no es mío**: **dos documentos oficiales han cambiado sus bytes desde que se registró el
+manifiesto** — **el XML del BOE y un PDF del BOCYL** —. **Eso no se arregla con un comando**: **es una
+decisión de contenido** — **o se acepta que la fuente cambió y se actualiza el manifiesto, o se investiga
+por qué**. **Y es del propietario, no del codificador.**
+
+**Lo que queda de la batería**: **volver a correr la 7 entera** (una hora) **para tenerla limpia con la
+prueba ya corregida**, **y la decisión sobre las dos fuentes**.
