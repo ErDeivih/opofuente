@@ -1,3 +1,7 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useCallback, useEffect, useState } from 'react';
+
+import { decideExplanation, type ExplanationDecision } from '../api/explanations';
 import { usePendingExplanations } from '../api/queries';
 
 /**
@@ -8,15 +12,76 @@ import { usePendingExplanations } from '../api/queries';
  * viaja con cada fila para que se pueda decidir sin abrir otra pantalla; aprobar a ciegas es lo que esta
  * bandeja existe para evitar.
  *
- * **Lo que todavía no hace**: aprobar, editar ni regenerar. **Las tres necesitan sus rutas de escritura**
- * (`status`, el texto, una llamada al modelo) y **hoy solo existe la de lectura**. Están apuntadas en
- * `docs/hitos/M1.md` como lo que falta de este hito.
+ * **El teclado, con las tres guardas de `TopicReviewPage`**: no roba las teclas dentro de un campo, no las
+ * roba en las listas anidadas, y los dígitos no son letras. **`j`/`k` mueven, `a` aprueba y `r` rechaza.**
+ * **Editar y regenerar no están**: el primero necesita la ruta del texto y el segundo gasta una llamada al
+ * modelo; los dos están apuntados en `docs/hitos/M1.md`.
  *
  * **Y no filtra nada aquí**: las privadas y las oficiales no salen porque **el servidor no las manda**.
  * Esconderlas en el cliente sería tener dos sitios donde se decide lo mismo.
  */
 export function ExplanationTrayPage() {
   const consulta = usePendingExplanations();
+  const cliente = useQueryClient();
+  const [cursor, setCursor] = useState(0);
+
+  const decidir = useMutation({
+    mutationFn: ({ id, decision }: { id: string; decision: ExplanationDecision }) =>
+      decideExplanation(id, decision),
+    // La lista se vuelve a pedir al decidir: treinta segundos de `staleTime` no bastan para ver que la
+    // fila se ha ido, y una bandeja que sigue enseñando lo aprobado no es una bandeja.
+    onSuccess: () => {
+      void cliente.invalidateQueries({ queryKey: ['explanations', 'pending'] });
+      setCursor(0);
+    },
+  });
+
+  const filas = consulta.data ?? [];
+  const actual = filas[cursor];
+
+  const alPulsar = useCallback(
+    (event: KeyboardEvent) => {
+      const objetivo = event.target;
+      // Guarda 1: dentro de un campo, las teclas son del campo.
+      if (
+        objetivo instanceof HTMLElement &&
+        objetivo.closest('input, textarea, select, [contenteditable="true"]') !== null
+      ) {
+        return;
+      }
+      const tecla = event.key.toLowerCase();
+      const mover = (destino: number) => {
+        event.preventDefault();
+        setCursor(Math.min(Math.max(destino, 0), Math.max(filas.length - 1, 0)));
+      };
+      if (tecla === 'j' || tecla === 'arrowdown') {
+        mover(cursor + 1);
+        return;
+      }
+      if (tecla === 'k' || tecla === 'arrowup') {
+        mover(cursor - 1);
+        return;
+      }
+      if (actual === undefined) {
+        return;
+      }
+      if (tecla === 'a') {
+        event.preventDefault();
+        decidir.mutate({ id: actual.explanation.id, decision: 'reviewed' });
+        return;
+      }
+      if (tecla === 'r') {
+        event.preventDefault();
+        decidir.mutate({ id: actual.explanation.id, decision: 'rejected' });
+      }
+    },
+    [actual, cursor, decidir, filas.length],
+  );
+
+  useEffect(() => {
+    window.addEventListener('keydown', alPulsar);
+    return () => window.removeEventListener('keydown', alPulsar);
+  }, [alPulsar]);
 
   if (consulta.isLoading) {
     return <p>Cargando la bandeja…</p>;
@@ -24,8 +89,6 @@ export function ExplanationTrayPage() {
   if (consulta.isError) {
     return <p>No se ha podido leer la bandeja. Vuelve a intentarlo.</p>;
   }
-
-  const filas = consulta.data ?? [];
   if (filas.length === 0) {
     return <p>No hay explicaciones generadas esperando revisión.</p>;
   }
@@ -36,11 +99,16 @@ export function ExplanationTrayPage() {
       <p>
         {filas.length === 1
           ? 'Una explicación generada espera revisión.'
-          : `${String(filas.length)} explicaciones generadas esperan revisión.`}
+          : `${String(filas.length)} explicaciones generadas esperan revisión.`}{' '}
+        <span className="hint">j y k se mueven · a aprueba · r rechaza</span>
       </p>
       <ol>
-        {filas.map((fila) => (
-          <li key={fila.explanation.id}>
+        {filas.map((fila, indice) => (
+          <li
+            key={fila.explanation.id}
+            className={indice === cursor ? 'resultado__pregunta' : undefined}
+            data-en-el-cursor={indice === cursor ? 'si' : undefined}
+          >
             <p>
               <strong>{fila.stem}</strong>
             </p>
