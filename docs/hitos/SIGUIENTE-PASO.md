@@ -190,3 +190,27 @@ cambió.** **Para distinguir «forma» de «contenido» hacen falta las dos vers
 
 **Lo que NO hay que hacer**, y está escrito en el documento: **descargar en `data/sources` para que pase
 una prueba** —eso rompió las unitarias— **y actualizar la huella sin mirar qué cambió.**
+
+## §3: la decisión que se puede tomar sin las dos versiones (ronda 14)
+
+**El manifiesto sí trae lo necesario para descargar y para saber qué se tenía:**
+
+```
+id:            gc-boe-convocatoria-xml
+retrieved_url: https://www.boe.es/diario_boe/xml.php?id=BOE-A-2026-9982
+sha256:        263900393c7bcd40e1a90e46307a7633e569b9c2094f23225f24debb6eec9708
+retrieved_at:  2026-09-14
+local_path:    data/sources/gc-2026-boe.xml
+```
+
+**Lo que no trae es el TEXTO**, y **`data/sources` está ignorado en git** (`.gitignore:9:/data/`), así
+que **la versión del 14 de septiembre no se puede recuperar**. **Comparar «forma» con «contenido» exige
+las dos, y solo hay una.**
+
+**La decisión, tomada y reversible**: **marcar las dos fuentes como `volatile`**. **Es la tercera opción
+del propio documento** —*«para que la puerta 17 las informe sin bloquear»*—, **y es la única honesta sin
+las dos versiones**: **no puedo decir que el cambio sea de forma, así que no lo digo.** **Actualizar la
+huella a ciegas sería justo lo que el documento prohíbe.**
+
+**Y una línea en `DEBT.md`** con las dos huellas —la registrada y la medida— y **el motivo de no haber
+podido comparar**.
