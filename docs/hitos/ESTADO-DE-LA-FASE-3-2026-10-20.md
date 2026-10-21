@@ -357,3 +357,21 @@ gasto 0 $ de 30 · base real A0A21413…C5AFF8 · cero escrituras
 **Y las tres reglas que esta sesión ha pagado caras**: **se commitea antes de seguir** (un árbol vaciado se
 recuperó en dos comandos), **se lee el molde antes de escribir** (la pantalla que llevaba 70 rondas
 pendiente se hizo en tres), **y se lee el mensaje entero de `mypy`** (once rondas por un `Substring`).
+
+## La puerta de codificación, a mano (ronda 245)
+
+**El script `comprobar-mojibake.ps1` se perdió con la limpieza** — vivía en `F:\temp-opofuente`, fuera del
+repositorio —, **así que la he corrido a mano, que son cinco líneas**:
+
+```
+ficheros de texto mirados:      1.311
+con mojibake:                   3   ← y son EXACTAMENTE las tres excepciones documentadas
+  docs/DEBT.md                              (los ejemplos de DEBT-029)
+  docs/FASE-3-ESTUDIO-DIARIO-SPEC-PLAN...md (describe la puerta y cita el patrón)
+  docs/LA-FUSION-2537eb3-RESUELTA-2026-10.md (documenta la reparación y cita las secuencias)
+marcadores de conflicto:        0
+```
+
+**La puerta pasa.** **Y el script hay que rehacerlo en la próxima sesión** — **su sitio natural es
+`scripts/comprobar-mojibake.ps1`, DENTRO del árbol** —, **que es lo que impide que una limpieza se lo lleve
+otra vez.** **El que había estaba fuera y por eso se perdió.**
