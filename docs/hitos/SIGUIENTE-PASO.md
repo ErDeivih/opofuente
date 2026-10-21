@@ -91,3 +91,40 @@ de 11.147 no deja nada.**
 **Orden**: `--guardar` → ensayo de 20 con escritura → **la corrida por exámenes oficiales primero**
 (con el fichero de progreso, reanudable) → **la segunda pasada de las caídas** → **«regenerar» y las
 capturas de M1**.
+
+---
+
+## Actualización (21 oct, ronda 3): la herramienta ya guarda
+
+**`--guardar` escribe y `--desde` reanuda.** Probado sobre la copia:
+
+```
+preguntas con ancla y clave: 20
+aceptadas: 17 · rechazadas: 3 · tokens: 58.954 / 2.664
+guardadas: 17
+
+en la copia:   explicaciones 11.321 · con cita 17 · generated draft 17
+muestra:       «Conviene no mezclar planos: el certificado electrónico cuali…»
+```
+
+**Y apareció un fallo que habría dejado la bandeja muda**: **`add_explanation` nunca escribía
+`citation` ni `note_anchor_id`** —las columnas existían desde la migración `0041` y **se quedaban a
+`NULL` siempre**—. **Arreglado: la cita viaja en la misma fila, porque sin ella una explicación no se
+puede comprobar después.**
+
+## Lo que queda, y es una sola cosa
+
+**Los 3 rechazos de 20**: **2 son «no eligió ninguna frase»** —el modelo devuelve números fuera de
+rango— **y 1 es «la cita no está literalmente»**. **Con 17/20 y segunda pasada cubierto, la corrida
+puede lanzarse.** **El comando, por tandas reanudables**:
+
+```powershell
+$env:DEEPSEEK_API_KEY = [Environment]::GetEnvironmentVariable('DEEPSEEK_API_KEY','User')
+$env:OPOFUENTE_DATA_DIR = 'F:\temp-opofuente\m0-capturas'
+uv run python -m opofuente.tools.explicar_preguntas --limite 500 --de-verdad --guardar
+# y para seguir donde se cortó:  --desde 500 --limite 500
+```
+
+**Antes de la corrida grande**: **correr la batería de 18**, que **no se ha vuelto a pasar desde los
+cambios de hoy** (los de la cita, el reintento y el guardado). **Después**: la corrida por tandas de
+500, la segunda pasada de las caídas, **«regenerar»** y las capturas de `recorrido-M1`.
