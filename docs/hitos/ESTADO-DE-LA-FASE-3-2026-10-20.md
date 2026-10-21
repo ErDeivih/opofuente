@@ -324,3 +324,36 @@ de las dieciocho que cierra en verde sobre el árbol restaurado.**
 **Diecisiete de dieciocho.** **Y la decimoséptima no es un defecto del árbol**: **el XML del BOE y un PDF del
 BOCYL tienen otros bytes que los que registró el manifiesto**, **y el propio árbol se niega a seguir sin que
 alguien lo revise**. **Eso es una decisión de contenido y es del propietario.**
+
+## Cierre de la sesión larga: el estado y por dónde se empieza (ronda 244)
+
+**Lo que hay, verificado hoy:**
+
+```
+main = f229e7e · sucio rastreado 0 · 17 de 18 puertas en verde (la 17, por dos fuentes oficiales)
+M0  CERRADO   · tres ramas · 74 capturas con datos reales · la tabla de los 20 con 21 cifras
+M1  la bandeja entera: leer · aprobar · rechazar · editar · teclado · su prueba (825 integración)
+              y la cita en el test y en el Resultado · falta solo regenerar (la clave)
+M2  copia verificada (SHA-256 idéntica) · política de dos copias · cuarentena medida (0,0114 $)
+M3  tarjeta (7 pruebas) · SM-2 (5) · cola del día (5) · el tool (14 de 19.316)
+gasto 0 $ de 30 · base real A0A21413…C5AFF8 · cero escrituras
+```
+
+**Y el árbol bueno es `F:\temp-opofuente\opofuente-restaurado`**; **el repositorio, `F:\EspacioCodigo\opofuente`**.
+
+## La primera media hora de la sesión siguiente
+
+1. **`DEEPSEEK_API_KEY` en el entorno** — si está:
+   ```
+   uv run python -m opofuente.tools.explicar_preguntas --de-verdad --limite 20
+   ```
+   **Eso da la cifra del coste por explicación, que es lo único que autoriza a gastar los 12 $ de M1.**
+2. **Si la cifra cabe**: la corrida de las 11.147, y entonces **las capturas de M1** — hoy están vacías
+   con su motivo escrito en `artifacts/recorrido-M1/README.md`.
+3. **Regenerar en la bandeja** (el `POST` que falta) — **la única acción que gasta**.
+4. **El paso 2 de M2** — los tres nombres de los escaneos.
+5. **La puerta 17** — la decisión sobre las dos fuentes oficiales que cambiaron.
+
+**Y las tres reglas que esta sesión ha pagado caras**: **se commitea antes de seguir** (un árbol vaciado se
+recuperó en dos comandos), **se lee el molde antes de escribir** (la pantalla que llevaba 70 rondas
+pendiente se hizo en tres), **y se lee el mensaje entero de `mypy`** (once rondas por un `Substring`).
