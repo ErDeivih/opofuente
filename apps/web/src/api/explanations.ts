@@ -18,3 +18,27 @@ export type ExplanationTrayItem = components['schemas']['ExplanationTrayItemSche
 export async function fetchPendingExplanations(): Promise<ExplanationTrayItem[]> {
   return apiFetch<ExplanationTrayItem[]>('/explanations/pending');
 }
+
+/** Los dos estados a los que se puede llevar una explicación desde la bandeja. */
+export type ExplanationDecision = 'reviewed' | 'rejected';
+
+/**
+ * Aprueba o rechaza una explicación (M1).
+ *
+ * **Solo el estado**: el texto y la cita se corrigen por otra ruta, y **regenerar** es otra cosa — pide
+ * al modelo una nueva y gasta, así que no se esconde detrás de un cambio de estado.
+ *
+ * La ruta responde **204 sin cuerpo**, y por eso el tipo es `void`: leer un cuerpo que no viene es la
+ * clase de error que se descubre en producción.
+ */
+export async function decideExplanation(
+  explanationId: string,
+  decision: ExplanationDecision,
+): Promise<void> {
+  await apiFetch<void>(`/explanations/${explanationId}/status`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status: decision }),
+  });
+}
+
