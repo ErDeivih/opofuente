@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { decideExplanation, type ExplanationDecision } from '../api/explanations';
 import { usePendingExplanations } from '../api/queries';
+import { setExplanation } from '../api/questions';
 
 /**
  * La bandeja de explicaciones generadas (M1 de la fase 3).
@@ -12,10 +13,13 @@ import { usePendingExplanations } from '../api/queries';
  * viaja con cada fila para que se pueda decidir sin abrir otra pantalla; aprobar a ciegas es lo que esta
  * bandeja existe para evitar.
  *
- * **El teclado, con las tres guardas de `TopicReviewPage`**: no roba las teclas dentro de un campo, no las
- * roba en las listas anidadas, y los dígitos no son letras. **`j`/`k` mueven, `a` aprueba y `r` rechaza.**
- * **Editar y regenerar no están**: el primero necesita la ruta del texto y el segundo gasta una llamada al
- * modelo; los dos están apuntados en `docs/hitos/M1.md`.
+ * **El teclado, con las guardas de `TopicReviewPage`**: no roba las teclas dentro de un campo —al editar,
+ * las teclas son del campo—, ni en las listas anidadas, y los dígitos no son letras. **`j`/`k` mueven,
+ * `a` aprueba, `r` rechaza y `e` abre el campo de editar.**
+ *
+ * **Editar empieza por el texto que ya hay**: el propietario corrige una explicación, no la escribe otra
+ * vez. **Y regenerar no está**: es la única acción que gasta una llamada al modelo y espera a saber cuánto
+ * cuesta cada una.
  *
  * **Y no filtra nada aquí**: las privadas y las oficiales no salen porque **el servidor no las manda**.
  * Esconderlas en el cliente sería tener dos sitios donde se decide lo mismo.
@@ -24,6 +28,7 @@ export function ExplanationTrayPage() {
   const consulta = usePendingExplanations();
   const cliente = useQueryClient();
   const [cursor, setCursor] = useState(0);
+  const [editando, setEditando] = useState<{ id: string; texto: string } | null>(null);
 
   const decidir = useMutation({
     mutationFn: ({ id, decision }: { id: string; decision: ExplanationDecision }) =>
@@ -33,6 +38,15 @@ export function ExplanationTrayPage() {
     onSuccess: () => {
       void cliente.invalidateQueries({ queryKey: ['explanations', 'pending'] });
       setCursor(0);
+    },
+  });
+
+  const guardar = useMutation({
+    mutationFn: ({ questionId, texto }: { questionId: string; texto: string }) =>
+      setExplanation(questionId, { text: texto, optionStableKey: null }),
+    onSuccess: () => {
+      void cliente.invalidateQueries({ queryKey: ['explanations', 'pending'] });
+      setEditando(null);
     },
   });
 
@@ -73,6 +87,11 @@ export function ExplanationTrayPage() {
       if (tecla === 'r') {
         event.preventDefault();
         decidir.mutate({ id: actual.explanation.id, decision: 'rejected' });
+        return;
+      }
+      if (tecla === 'e') {
+        event.preventDefault();
+        setEditando({ id: actual.question_version_id, texto: actual.explanation.text });
       }
     },
     [actual, cursor, decidir, filas.length],
@@ -100,8 +119,32 @@ export function ExplanationTrayPage() {
         {filas.length === 1
           ? 'Una explicación generada espera revisión.'
           : `${String(filas.length)} explicaciones generadas esperan revisión.`}{' '}
-        <span className="hint">j y k se mueven · a aprueba · r rechaza</span>
+        <span className="hint">
+          j y k se mueven · a aprueba · r rechaza · e edita
+        </span>
       </p>
+      {editando !== null && (
+        <form
+          onSubmit={(evento) => {
+            evento.preventDefault();
+            guardar.mutate({ questionId: editando.id, texto: editando.texto });
+          }}
+        >
+          <label htmlFor="explicacion-editada">La explicación, corregida</label>
+          <textarea
+            id="explicacion-editada"
+            value={editando.texto}
+            rows={4}
+            onChange={(evento) => setEditando({ id: editando.id, texto: evento.target.value })}
+          />
+          <button type="submit" disabled={guardar.isPending}>
+            Guardar
+          </button>
+          <button type="button" onClick={() => setEditando(null)}>
+            Cancelar
+          </button>
+        </form>
+      )}
       <ol>
         {filas.map((fila, indice) => (
           <li
