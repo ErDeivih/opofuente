@@ -25,6 +25,9 @@ SISTEMA = (
     "- Copia LITERALMENTE, sin cambiar una coma, la frase del apartado en la que te apoyas.\n"
     "- No hables nunca de exámenes, de frecuencias ni de probabilidad de que algo caiga.\n"
     '- Devuelve JSON: {"explicaciones": [{"id", "texto", "cita", "letra"}]}, una por pregunta.'
+    "\n"
+    '- "letra" es la letra de la opción CORRECTA, la que se te da en la línea CLAVE. NUNCA la de la'
+    ' tentadora: esa se nombra en el texto, pero no es la que va en "letra".'
 )
 
 
@@ -56,14 +59,47 @@ def _texto(valor: object) -> str:
     return str(valor).strip() if valor is not None else ""
 
 
+def contenido_del_sobre(sobre: dict[str, object]) -> str:
+    """El texto que escribió el modelo, sacado del sobre de la API.
+
+    **El modelo no devuelve su JSON en la raíz**: lo devuelve dentro de `choices[0].message.content`,
+    y el sobre trae además el `usage`. Por eso la lectura se hace en dos pasos —abrir el sobre y
+    luego leer el contenido—: **mezclarlos fue el fallo que dejó a M1 sin ensayo**.
+    """
+    elecciones = sobre.get("choices")
+    if not isinstance(elecciones, list) or not elecciones:
+        raise ExternalServiceError("el modelo no devolvió ninguna elección")
+    primera = elecciones[0]
+    if not isinstance(primera, dict):
+        raise ExternalServiceError("el modelo devolvió una elección que no es un objeto")
+    mensaje = primera.get("message")
+    if not isinstance(mensaje, dict):
+        raise ExternalServiceError("la elección del modelo no trae mensaje")
+    contenido = _texto(mensaje.get("content"))
+    if not contenido:
+        raise ExternalServiceError("el modelo devolvió un mensaje vacío")
+    return contenido
+
+
 def read_response(payload: str, *, requested: Sequence[str]) -> RespuestaDelModelo:
-    """Lee el JSON del modelo; **lo que no corresponde a una pregunta pedida se queda fuera**."""
+    """Lee la respuesta del modelo; **lo que no corresponde a una pregunta pedida se queda fuera**.
+
+    **`payload` es el sobre entero**, el que devuelve el POST: **los tokens viajan en el sobre, no en
+    el contenido**, así que abrirlo aquí es lo que permite devolver la cifra del ensayo junto con las
+    propuestas. El contenido se abre con `contenido_del_sobre` y **ese** es el que se parsea.
+    """
     try:
-        datos = json.loads(payload)
+        sobre = json.loads(payload)
     except json.JSONDecodeError as error:
         raise ExternalServiceError("el modelo no devolvió JSON") from error
-    if not isinstance(datos, dict):
+    if not isinstance(sobre, dict):
         raise ExternalServiceError("el modelo devolvió algo que no es un objeto JSON")
+    try:
+        datos = json.loads(contenido_del_sobre(sobre))
+    except json.JSONDecodeError as error:
+        raise ExternalServiceError("el modelo no devolvió JSON en su mensaje") from error
+    if not isinstance(datos, dict):
+        raise ExternalServiceError("el contenido del modelo no es un objeto JSON")
     crudas = datos.get("explicaciones")
     if not isinstance(crudas, list):
         raise ExternalServiceError("el modelo no devolvió la lista «explicaciones»")
@@ -83,7 +119,7 @@ def read_response(payload: str, *, requested: Sequence[str]) -> RespuestaDelMode
                 letra=_texto(cruda.get("letra")).lower()[:1],
             )
         )
-    uso = datos.get("usage")
+    uso = sobre.get("usage")
     uso = uso if isinstance(uso, dict) else {}
     return RespuestaDelModelo(
         propuestas=tuple(propuestas),

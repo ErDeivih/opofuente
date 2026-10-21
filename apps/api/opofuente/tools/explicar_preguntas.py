@@ -10,6 +10,7 @@ La clave se lee de `DEEPSEEK_API_KEY` y no se escribe en ningún fichero.
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import sqlite3
 import sys
@@ -27,7 +28,7 @@ _CONSULTA = (
     "join question_versions v on v.id = a.question_version_id "
     "join topic_note_sections s on s.id = a.section_id "
     "where a.result = 'covered' and a.expected_letters is not null "
-    "and length(a.expected_letters) > 0 and length(trim(s.body_markdown)) > 0 "
+    "and length(a.expected_letters) > 2 and length(trim(s.body_markdown)) > 0 "
     "limit ?"
 )
 
@@ -39,6 +40,13 @@ def _preguntas(limite: int) -> tuple[PreguntaAExplicar, ...]:
         filas = base.execute(_CONSULTA, (limite,)).fetchall()
         preguntas: list[PreguntaAExplicar] = []
         for qid, stem, letras, cuerpo, seccion in filas:
+            clave = tuple(
+                str(elemento).strip().lower()
+                for elemento in json.loads(str(letras))
+                if str(elemento).strip()
+            )
+            if not clave:
+                continue
             opciones = tuple(
                 (str(clave), str(texto))
                 for clave, texto in base.execute(
@@ -51,7 +59,7 @@ def _preguntas(limite: int) -> tuple[PreguntaAExplicar, ...]:
                     question_version_id=str(qid),
                     enunciado=str(stem),
                     opciones=opciones,
-                    clave=tuple(x.strip().lower() for x in str(letras).split(",") if x.strip()),
+                    clave=clave,
                     apartado=str(cuerpo),
                     note_anchor_id=str(seccion),
                 )
@@ -87,6 +95,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     salida = validar_lote(preguntas, proposer)  # type: ignore[arg-type]
     print(f"aceptadas: {len(salida.aceptadas)}")
     print(f"rechazadas: {len(salida.rechazadas)}")
+    for ident, motivos in salida.rechazadas[:5]:
+        print(f"  {ident}: {'; '.join(motivos)}")
     print(f"sin material: {len(salida.sin_material)}")
     if args.de_verdad:
         entrada, salida_tokens = proposer.ultimos_tokens  # type: ignore[attr-defined]
