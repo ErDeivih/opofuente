@@ -4,6 +4,11 @@ Se copia la forma de `topic_classification_client`: mismo `Bearer`, mismo
 `_post`, mismas reglas de error (sin la clave dentro del mensaje y con el
 codigo de estado y nada mas) y `temperature = 0`, porque la misma pregunta
 tiene que recibir la misma explicacion en dos pasadas.
+
+**Con reintento**: la API de DeepSeek corta la conexion (`ConnectionResetError 10054`) cuando se le
+piden varias tandas seguidas, y **sin reintento una corrida de once mil preguntas no llega al
+final**.
+arregla.
 """
 
 from __future__ import annotations
@@ -11,6 +16,7 @@ from __future__ import annotations
 import http.client
 import json
 import ssl
+import time
 from collections.abc import Sequence
 from urllib.parse import urlsplit
 
@@ -22,6 +28,9 @@ from opofuente.domain.explicacion_prompt import SISTEMA, build_user_prompt, read
 MODELO_POR_DEFECTO = "deepseek-chat"
 #: La base por defecto.
 BASE_URL_POR_DEFECTO = "https://api.deepseek.com/v1"
+#: Cuantos intentos por tanda, y cuanto se espera entre ellos. **Crece**: 2, 4 y 8 segundos.
+INTENTOS = 3
+ESPERA_BASE_SEGUNDOS = 2.0
 
 
 class DeepSeekExplanationProposer:
@@ -53,6 +62,8 @@ class DeepSeekExplanationProposer:
         self._timeout = timeout_seconds
         #: Lo que costo la ultima llamada: la cifra del ensayo.
         self.ultimos_tokens: tuple[int, int] = (0, 0)
+        #: Cuantos reintentos ha hecho la ultima tanda: la cifra de lo que cuesta la red.
+        self.reintentos: int = 0
 
     @property
     def version(self) -> str:
@@ -78,6 +89,29 @@ class DeepSeekExplanationProposer:
         return respuesta.propuestas
 
     def _post(self, body: str) -> str:
+        """El POST, **con reintento solo en lo transitorio**.
+
+        **Un 4xx no se reintenta**: repetir una peticion mal formada gasta el mismo error otra vez.
+        **Un corte de conexion si**: es lo que pasa cuando se piden tandas seguidas, y esperar unos
+        segundos lo resuelve.
+        """
+        self.reintentos = 0
+        ultimo: ExternalServiceError | None = None
+        for intento in range(INTENTOS):
+            try:
+                return self._post_una_vez(body)
+            except ExternalServiceError as error:
+                ultimo = error
+                if "respondio" in str(error):
+                    raise
+                self.reintentos += 1
+                if intento < INTENTOS - 1:
+                    time.sleep(ESPERA_BASE_SEGUNDOS * (2**intento))
+        if ultimo is not None:
+            raise ultimo
+        raise ExternalServiceError("el modelo no respondio")
+
+    def _post_una_vez(self, body: str) -> str:
         if self._scheme == "https":
             conectar: http.client.HTTPConnection = http.client.HTTPSConnection(
                 self._host,

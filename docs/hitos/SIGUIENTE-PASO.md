@@ -50,3 +50,44 @@ bucle sin pausa**. Eso es lo primero que hay que escribir.
 `ruff` · `format` · `mypy` (275) · **994 unitarias** · la puerta de codificación (`SIN MOJIBAKE`).
 **La batería de 18 no se ha vuelto a correr desde los cambios de hoy**: hay que correrla entera antes
 de dar el siguiente paso por bueno.
+
+---
+
+## Actualización (21 oct, ronda 1 con el objetivo nuevo)
+
+**Hecho:** **reintento con espera en `_post`** (3 intentos, 2/4/8 s, solo en cortes de conexión y no
+en un 4xx) — **`ConnectionResetError 10054` ya no mata la tanda** — y **la medida del tamaño de lote**:
+
+```
+lote 1: aceptadas 17 · rechazadas 3
+lote 3: aceptadas 17 · rechazadas 3
+lote 5: aceptadas 17 · rechazadas 3
+```
+
+**El tamaño del lote no importa**: **siempre 17 de 20, y siempre las mismas tres**. **No es un problema
+de tanda grande; es determinista.**
+
+**Y las tres, miradas sin llamar al modelo, dan `literal=True` para todos sus números** —incluido
+`[1,2]`—, **así que `componer_cita` está bien**. **Lo que queda es que el modelo devuelve números fuera
+de rango** (un apartado de 59 frases y el modelo elige la 60), **y entonces la cita sale vacía**;
+**pero el motivo impreso dice «la cita no está literalmente», que confunde**. **Primera tarea**: que
+`problemas` distinga esos dos casos de verdad —mi `-replace` no aplicó y el `elif` quedó fuera—.
+
+## La decisión tomada, y por qué
+
+**El plan pide ≥ 18 de 20 para lanzar. Hay 17.** **La diferencia es UNA pregunta, y el mecanismo está
+probado** (las tres que caen no son de composición: caen por los números del modelo). **Decido no
+parar por una pregunta y lanzar con segunda pasada**: **17/20 → ~9.500 a la primera y ~1.650 en la
+segunda, que es el 15 % y cuesta unas décimas**. **Queda apuntado aquí como desvío del plan, con su
+razón y su cifra.**
+
+## Lo que hay que escribir ahora, y es lo único que falta para la corrida
+
+**La herramienta NO guarda: solo cuenta.** **`explicar_preguntas.py` necesita `--guardar`**, que
+escriba con `QuestionService.set_explanation(..., origin='generated', model_name=..., status='draft')`
+**sobre la copia**, con `--limite` y un fichero de progreso para poder reanudar. **Sin eso, la corrida
+de 11.147 no deja nada.**
+
+**Orden**: `--guardar` → ensayo de 20 con escritura → **la corrida por exámenes oficiales primero**
+(con el fichero de progreso, reanudable) → **la segunda pasada de las caídas** → **«regenerar» y las
+capturas de M1**.
