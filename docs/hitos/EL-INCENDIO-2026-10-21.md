@@ -80,3 +80,28 @@ cada árbol, todo lo que no fuera `apps`, `artifacts` o los cuatro directorios d
 **la levantan entera** —, **y eso solo es cierto si el repositorio está fuera y cada pieza está
 commiteada**. **Las dos condiciones se cumplían, y por eso un barrido de seis árboles en cuatro minutos
 costó una tarde de reinstalar y ni una línea de trabajo.**
+
+## La pista de git, seguida y descartada (21 oct, ronda 2)
+
+**El propietario apuntó que se borraron «los ficheros rastreados por git y el `.git`», y que
+sobrevivieron «los ignorados», y que eso solo lo hace algo que funciona con git.** **Es una buena pista
+y la he seguido.**
+
+**Lo que sale:**
+
+- **`git reflog` del repositorio no tiene NINGUNA entrada en la franja 00:30–00:40 del 21 de octubre.**
+  **Ninguna operación de git corrió sobre el repositorio en ese momento**: ni checkout, ni reset, ni
+  prune, ni worktree add.
+- **Los `.git` de los árboles siguen ausentes**, y **`git worktree list` ya no los lista** (se podaron
+  al recuperar).
+- **Y la regla «rastreados fuera, ignorados dentro» no se sostiene del todo**: **`apps` y `artifacts`
+  están rastreados por git y SOBREVIVIERON**. **Los que se fueron son `docs`, `scripts`, `packages`,
+  `pyproject.toml`, `README.md` y el `.git`** — **o sea, la raíz de un proyecto y su control de
+  versiones**.
+
+**Conclusión honesta, y es la que queda**: **no fue git** (el reflog está limpio) **y no fue Defender**
+(sus detecciones son del 15-oct y de otro proyecto). **El patrón es el de un proceso que recorre
+`F:\temp-opofuente\*` y se lleva lo que identifica a un proyecto, dejando los directorios de
+aplicación y los de trabajo pesado** — **y con el diario del sistema de ficheros apagado en `F:`, el
+«quién» no está grabado en ningún sitio.** **Lo he buscado dos rondas, como pediste, y ni lo invento ni
+lo dejo a medias: queda escrito lo que hay.**
