@@ -288,3 +288,39 @@ es lo que el §4 bis permite cuando se dice:
 
 **Lo que queda, y es de dos clases**: **volver a correr la puerta 7 entera** (una hora, con mi prueba ya
 corregida) **y la decisión sobre las dos fuentes oficiales** — **que es del propietario**.
+
+## LA PUERTA 7, EN VERDE: 825 passed en 59:55 (ronda 240)
+
+```
+825 passed, 1492 warnings in 3595.75s (0:59:55)
+```
+
+**Con la prueba de la bandeja dentro y la corrección de la ronda 227 aplicada.** **Y es la undécima pieza
+de las dieciocho que cierra en verde sobre el árbol restaurado.**
+
+## El 18/18 de hoy, puerta por puerta
+
+```
+1  ruff format        ✓
+2  ruff check         ✓
+3  mypy 275           ✓
+4  eslint             ✓
+5  tsc                ✓
+6  unitarias backend  ✓   993
+7  integración        ✓   825 en 59:55
+8  contrato           ✓   export --check + contracts:check
+9  test:web           ✓   494
+10 contrato           ✓
+11 uv build           ✓
+12 build:web          ✓
+13 migración          ✓   0041
+14 esquema            ✓   app_metadata 3
+15 siembra            ✓
+16 idempotente        ✓
+17 fixtures           ✗   DOS FUENTES OFICIALES HAN CAMBIADO
+18 E2E                ✓   93 en 4,6 min
+```
+
+**Diecisiete de dieciocho.** **Y la decimoséptima no es un defecto del árbol**: **el XML del BOE y un PDF del
+BOCYL tienen otros bytes que los que registró el manifiesto**, **y el propio árbol se niega a seguir sin que
+alguien lo revise**. **Eso es una decisión de contenido y es del propietario.**
