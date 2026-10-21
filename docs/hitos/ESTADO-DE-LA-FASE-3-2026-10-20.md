@@ -432,3 +432,25 @@ puede leer es el mismo problema que este fichero existe para evitar**.
 resultado escrito en el apartado del 245 —, **y el script se escribe con el fichero delante y guardado
 en UTF-8 CON BOM** (el formato que PowerShell lee bien). **Lo que NO se hace**: dejarlo roto en
 `scripts/`, porque un guardián que no arranca es peor que ninguno.
+
+## La puerta de codificación está en el árbol y pasa (ronda 251)
+
+```
+scripts/puerta-codificacion.ps1
+
+mojibake: revisados 967 ficheros de texto
+12 linea(s) exceptuadas en 4 fichero(s), con su motivo arriba
+SIN MOJIBAKE        exit 0
+```
+
+**Y las cuatro excepciones, cada una con su motivo escrito al lado en el propio script**: `DEBT.md`
+(los ejemplos de DEBT-029) · `FASE-3-...md` (describe la puerta y cita el patrón) · `LA-FUSION-...md`
+(documenta la reparación) · **y este folio**, porque **cuenta la puerta y cita el mojibake como
+ejemplo**.
+
+**Y está DENTRO del árbol, que es lo que faltaba**: la versión anterior vivía en `F:\temp-opofuente`, y
+una limpieza se la llevó. **Esta se recupera con un `git checkout`.**
+
+**El truco que la hace funcionar**, y va escrito en el propio fichero: **es ASCII puro**, con cada
+carácter especial como `[char]0x00C3` y compañía. **Puesto como literal, PowerShell leía el `.ps1` en
+UTF-8 sin BOM como ANSI y el patrón de mojibake quedaba escrito roto dentro del guardia que lo busca.**
