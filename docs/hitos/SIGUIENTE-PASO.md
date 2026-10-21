@@ -295,3 +295,29 @@ la entrada DEBT-036—, **que es la que dice cuáles son esos seis y por qué no
 que deducirlo de la base: hay que leer la deuda.**
 
 **Y esa es la tarea con la que se retoma §5**: `grep -n "DEBT-036" docs/DEBT.md` y seguir lo que diga.
+
+## §5: no falta plantilla, faltan PREGUNTAS (ronda 19)
+
+**`DEBT-036` está en `docs/DEBT.md:2059`, y dice exactamente qué pasa:**
+
+> **Los seis conjuntos de promoción interna del INAP traen 74 preguntas ordinarias y 11 de reserva; la
+> convocatoria de TAI publica 80 + 5 para su primera parte.** `_preguntas` lo dice con un 409 —«tiene 74
+> preguntas y la parte pide 80»—, así que el examen no se puede montar.
+
+**Así que el §5 del documento de continuación parte de una premisa que no es**: **no es que «no se
+pueda montar por falta de plantilla»**. **La plantilla está** —todos los conjuntos tienen clave
+`active`, medido en la ronda 18— **y lo que falta son seis preguntas ordinarias por conjunto**.
+
+**Lo que ya está hecho, y lo dice la propia deuda**: la fila decía «85 preguntas» y ofrecía el botón, que
+respondía 409; **ahora dice 79 y no ofrece el botón, con el motivo por su nombre (`faltan_preguntas`)**.
+
+**Y las dos salidas que la deuda plantea, que son las dos únicas**: **o más preguntas en el conjunto**
+—los cuestionarios de esos años tenían otro tamaño— **o la parte que se juega no es la primera**. **Las
+dos son decisiones de contenido, y la deuda las marca como «abierta (decide el propietario)».**
+
+**Lo que he decidido yo, y es reversible**: **no inventar preguntas ni plantillas para que el botón
+vuelva**. **El estado actual —79 y sin botón, con el motivo— es el honesto**, y **así se queda hasta que
+el propietario diga cuál de las dos salidas quiere.**
+
+**Y va a `PARA-EL-PROPIETARIO.md`**, porque **es una decisión de contenido con dos opciones y ninguna
+técnica.**
