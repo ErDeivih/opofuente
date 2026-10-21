@@ -411,3 +411,23 @@ avisa antes de mandarla, no después.**
 **Por qué no lo he escrito ya**: **el servicio necesita el `proposer` inyectado, y hoy solo lo tiene el
 tool, no la ruta**; **inyectarlo es tocar `main.py` y el `Settings`**, y **eso es una pieza de fontanería
 que merece contexto fresco**. **El diseño, en cambio, no necesita ninguna decisión más.**
+
+## La corrida se corta y se reanuda: la cifra, y por qué no se pierde nada (ronda 44)
+
+**La corrida se paró en 7.554 de 11.147** —el bucle cubría hasta 11.000, así que se cortó a mitad—.
+**Se relanzó desde 7.500 con `corrida4.ps1` y siguió**, sin repetir nada de lo escrito.
+
+**Por qué no repite**: **`add_explanation` sustituye por identidad `(pregunta, opción)`**, así que
+**volver a pasar por una pregunta ya explicada la reescribe en vez de duplicarla**. **Y por qué se puede
+relanzar sin saber dónde se cortó**: `--desde` con un múltiplo de 500 **y la cuenta**:
+
+```sql
+select count(*) from question_explanations where origin='generated' and citation is not null
+```
+
+**El filtro va en las DOS partes de la consulta**. **Sin él, la cuenta mezcla las privadas y engaña** —pasó
+una vez, dio 4.638 contra 4.636, y era el `count` y no los datos—.
+
+**Y el bucle bueno, que es el que funciona**: **un `.ps1` escrito línea a línea**, con el `foreach` sobre
+los `desde` y el `*>> $log` para el registro. **El here-string se rompía al interpolar `$desde`**, y
+**costó dos lanzamientos perdidos antes de verlo**.
