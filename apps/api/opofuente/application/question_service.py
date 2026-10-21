@@ -1359,6 +1359,9 @@ class QuestionService:
         option_stable_key: str | None = None,
         origin: Origin = Origin.PRIVATE,
         actor: str = "local",
+        citation: str | None = None,
+        note_anchor_id: str | None = None,
+        model_name: str | None = None,
     ) -> ExplanationView | None:
         """Escribe (o sustituye) la explicación de una pregunta o de una de sus opciones.
 
@@ -1366,6 +1369,10 @@ class QuestionService:
         anterior en lugar de acumular versiones, porque dos explicaciones de lo mismo es una
         decisión editorial y no un dato más. Si la opción no existe, no se guarda nada y se dice:
         una explicación colgada de una opción que no está no explica nada.
+
+        **La cita y el anclaje viajan con ella**: los pone el generador, y **sin ellos la
+        explicación no se puede comprobar después**. El panel, cuando edita a mano, los deja como
+        estaban si no los manda.
         """
         vista = self._questions.get_question(question_id)
         if vista is None:
@@ -1384,6 +1391,9 @@ class QuestionService:
             origin=origin,
             now=self._clock.now(),
             option_stable_key=option_stable_key,
+            model_name=model_name,
+            citation=citation,
+            note_anchor_id=note_anchor_id,
             actor=actor,
         )
         if guardada is None:

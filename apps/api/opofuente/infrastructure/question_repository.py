@@ -1147,6 +1147,8 @@ class SqlAlchemyQuestionRepository:
         option_stable_key: str | None = None,
         model_name: str | None = None,
         prompt_template_version: str | None = None,
+        citation: str | None = None,
+        note_anchor_id: str | None = None,
         actor: str = "local",
     ) -> str | None:
         """Guarda (o reemplaza) la explicación de la pregunta entera o de una opción.
@@ -1154,6 +1156,9 @@ class SqlAlchemyQuestionRepository:
         La identidad es `(pregunta, opción)`: la segunda explicación de la misma opción sustituye a
         la primera en lugar de acumularse, porque dos explicaciones distintas de lo mismo es una
         decisión editorial, no un dato más.
+
+        **Y la cita se guarda con ella**: viaja en la misma fila porque **una explicación sin
+        su cita no se puede comprobar después**, y la bandeja la enseña para decidir.
         """
         if not text.strip():
             return None
@@ -1174,6 +1179,8 @@ class SqlAlchemyQuestionRepository:
                 existente.origin = origin.value
                 existente.model_name = model_name
                 existente.prompt_template_version = prompt_template_version
+                existente.citation = citation
+                existente.note_anchor_id = note_anchor_id
                 session.commit()
                 return existente.id
             fila = QuestionExplanationRecord(
@@ -1184,6 +1191,8 @@ class SqlAlchemyQuestionRepository:
                 status="draft",
                 model_name=model_name,
                 prompt_template_version=prompt_template_version,
+                citation=citation,
+                note_anchor_id=note_anchor_id,
                 created_at=now,
                 text=text.strip(),
             )
