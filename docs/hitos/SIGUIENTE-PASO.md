@@ -270,3 +270,28 @@ ninguna `answer_key_versions` en estado `active`**, **buscar su plantilla entre 
 `fuentes\inap-tai`**, **y aplicar la decisión del documento**: si está, importarla; si no está pero es
 pública, descargarla; si no existe, **modo sin corrección con el aviso «sin plantilla oficial»**
 —la más simple de las dos opciones—.
+
+## §5: el criterio de la clave no sirve; los seis son otra cosa (ronda 18)
+
+**Medido: TODOS los conjuntos de promoción interna tienen una clave `active`.**
+
+```
+claves 1  active       TAI promoción interna 2019 · ejercicio único
+claves 1  active       TAI promoción interna 2022 · ejercicio único
+claves 1  active       TAI promoción interna 2024 · modelo A
+claves 1  active       TAI promoción interna 2024 · modelo B
+claves 1  superseded   TAI promoción interna 2025 · modelo A   ← duplicado del 29-sep
+claves 1  active       TAI promoción interna 2025 · modelo A   ← el bueno
+claves 1  superseded   TAI promoción interna 2025 · modelo B   ← duplicado del 29-sep
+claves 1  active       TAI promoción interna 2025 · modelo B   ← el bueno
+claves 1  active       TAI 2019 · Cuerpo de Gestión de Sistemas e Informática (GSI)
+```
+
+**Así que «los seis exámenes de promoción interna que no se pueden montar» NO es «los que no tienen
+clave»**: **todos la tienen, y solo dos están `superseded`, que son los duplicados del §4.**
+
+**Dónde está la respuesta**: **en el sitio donde se encontró DEBT-036 la primera vez** —`docs/DEBT.md`,
+la entrada DEBT-036—, **que es la que dice cuáles son esos seis y por qué no se pueden montar.** **No hay
+que deducirlo de la base: hay que leer la deuda.**
+
+**Y esa es la tarea con la que se retoma §5**: `grep -n "DEBT-036" docs/DEBT.md` y seguir lo que diga.
