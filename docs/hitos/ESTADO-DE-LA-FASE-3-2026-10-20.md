@@ -411,3 +411,24 @@ en el que estaban antes de que yo tocara las fuentes**.
 
 **Y la moraleja, que es la de la puerta 17**: ***no se descarga la fuente oficial para «arreglar» la puerta;
 se mira por qué cambió***. **El árbol tenía razón al negarse las dos veces.**
+
+## El script de la puerta no se puede escribir así, y por qué (rondas 246-249)
+
+**Dos intentos, dos rechazos de PowerShell, y el segundo explica al primero**:
+
+```
+Token 'Â·Âª-Â¿]' inesperado
+```
+
+**El `write` escribe el fichero en UTF-8 SIN BOM. PowerShell 5.1 lee los `.ps1` en UTF-8 sin BOM
+como ANSI**, así que **`Ã` se convierte en `Ãƒ`, `·` en `Â·` y el patrón de mojibake queda escrito
+roto** — **el vigilante infectado por el virus que vigila**.
+
+**La solución existe y es fea**: **el script tiene que ser ASCII puro, con cada carácter especial
+puesto como `[char]0x00C3`**. **Funciona, pero ya no se lee** — **y un script de puerta que no se
+puede leer es el mismo problema que este fichero existe para evitar**.
+
+**Lo que queda decidido**: **la puerta se corre a mano** — cinco líneas de `Select-String`, con el
+resultado escrito en el apartado del 245 —, **y el script se escribe con el fichero delante y guardado
+en UTF-8 CON BOM** (el formato que PowerShell lee bien). **Lo que NO se hace**: dejarlo roto en
+`scripts/`, porque un guardián que no arranca es peor que ninguno.
