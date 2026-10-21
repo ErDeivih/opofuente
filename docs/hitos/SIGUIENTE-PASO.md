@@ -364,3 +364,28 @@ que **las 11.147 completas salen por unos 0,25 $**. **El límite no es el dinero
 **Cómo saber dónde se quedó**, sin leer el registro: `select count(*) from question_explanations where
 origin='generated'` — **cada tanda de 500 deja unas 370**. **Y se reanuda con `--desde` a la última
 tanda cerrada**, que es lo que hace reanudable la corrida.
+
+## La corrida: lo que funciona y lo que no (ronda 34)
+
+**Lo que funciona, y está lanzado**: **una tanda suelta en primer plano**, y **un bucle escrito LÍNEA A
+LÍNEA en un `.ps1`**, no con here-string. **El here-string se rompía al interpolar `$desde`** —dos
+lanzamientos perdidos por eso—, **y la tanda suelta siempre funciona**.
+
+**El script bueno está en `F:\temp-opofuente\corrida3.ps1`**, **diecisiete tandas de 500 desde 3.000
+hasta 11.000**, **con su registro en `corrida-m1-c.log`**. **Se relanza tal cual si se corta**; **no hay
+que reescribirlo**.
+
+**Medido hasta ahora**:
+
+```
+corrida 1 (0 → 2000)     1.973 escritas
+tanda suelta (2500)        367 escritas
+                          2.340 con cita, de las 11.147
+tokens por tanda          ~60.000 de entrada · ~2.600 de salida
+gasto                     ~0,000024 $ por explicación → las 11.147 por ~0,27 $
+```
+
+**Y lo que hay que mirar al retomar, en este orden**: `select count(*) from question_explanations where
+origin='generated'`; **si no sube y no hay procesos de `explicar_preguntas`, relanzar `corrida3.ps1`
+desde la última tanda cerrada**; **cuando llegue a las 11.147, la segunda pasada de las que caigan**,
+**«regenerar»**, **y las capturas de `recorrido-M1`**, que cierran el hito.
