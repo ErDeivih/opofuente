@@ -165,3 +165,6 @@ caracteres por página», que separa un escaneo de un PDF con capa.
 2. **comparar el número de preguntas con la plantilla** de cada uno;
 3. **importar con `distribution = public` y `origin_scope = age`**;
 4. **el que no cuadre con su plantilla, fuera con su cifra.**
+
+**El motor de OCR se llama `TesseractOcr` y la fábrica es `tesseract_from_settings(settings)`**, que
+**devuelve `None` si no encuentra el binario**: lo primero que hay que mirar al retomar es si está.
