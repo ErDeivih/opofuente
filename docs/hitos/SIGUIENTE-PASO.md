@@ -321,3 +321,25 @@ el propietario diga cuál de las dos salidas quiere.**
 
 **Y va a `PARA-EL-PROPIETARIO.md`**, porque **es una decisión de contenido con dos opciones y ninguna
 técnica.**
+
+## §4: las tablas que hay que mover (ronda 21)
+
+**Para reasignar del conjunto archivado al bueno hay que tocar estas, y son las que hay:**
+
+```
+study_sessions · session_questions · attempts · attempt_evaluations
+review_items · review_events
+```
+
+**Y el criterio del documento** —*«los repasos, intentos y fallos que apuntan a preguntas del conjunto
+archivado se reasignan a la pregunta equivalente del bueno»*— **se traduce a**:
+
+1. **emparejar por POSICIÓN** las preguntas de los dos conjuntos de cada par —son el mismo examen—;
+2. **`update ... set question_version_id = <la del bueno>` en `session_questions`, `attempts`,
+   `attempt_evaluations`, `review_items` y `review_events`**;
+3. **lo que no tenga equivalente, marcarlo `huérfano`** y sacarlo del repaso;
+4. **comprobarlo con la cifra de Inicio**: que prometa lo mismo que sirve el repaso.
+
+**Y se hace sobre una copia, con la copia comprobada por huella antes y después** —la política de dos
+copias—. **Es la primera operación de esta fase que MUEVE datos del propietario**, así que **va con la
+copia verificada de `m0-capturas` y con la cuenta de filas afectadas escrita antes de tocarlas.**
