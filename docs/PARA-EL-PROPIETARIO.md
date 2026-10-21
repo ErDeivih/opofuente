@@ -1410,3 +1410,16 @@ literal— sino **porque el modelo devuelve a veces números de frase que no exi
 `0041`, la bandeja la enseñaba y el esquema la mandaba, y `add_explanation` la dejaba siempre a
 `NULL`.** **Arreglado y probado: 17 escritas, 17 con cita.** **Lo digo porque es el tipo de fallo que
 no se ve hasta que se usa, y este se ha visto al conectar la generación con el guardado.**
+
+## Una cosa de instalación, para M2 (§2): falta `tesseract`
+
+**El OCR de la app existe** —`TesseractOcr`, `tesseract_from_settings`— **y la máquina no tiene el
+binario**: la fábrica devuelve `None`. **Sin él no se pueden leer los tres escaneos del INAP**
+(`TAI-2018-libre-cuestionario-1`, `-2` y `TAI-2018-pi-cuestionario-unico`), **que son los tres que
+están identificados y esperando**.
+
+**Qué hace falta**: **instalar `tesseract` con el paquete de idioma español** (`spa.traineddata`) y que
+`tesseract` quede en el `PATH`. **Es añadir software al sistema, y eso no lo decido yo.**
+
+**Mientras tanto el §2 queda a medias a propósito** —los tres escaneos localizados, el OCR sin poder
+correr— **y sigo con lo que no depende de esto.**
