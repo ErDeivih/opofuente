@@ -3725,3 +3725,48 @@ vez de `npx tsc`**, **que ademas es lo que evita que una herramienta se resuelva
 
 **Queda apuntado sin tocar la configuracion de la puerta**: **cambiar como se invoca no es relajar el juez**,
 **pero si lo es hacerlo sin decirlo, y por eso esta escrito aqui.**
+
+## M8: la suite de capturas no usa `npx`, y eso descarta la causa facil (ronda 261)
+
+**Leido `screens.mjs`, y el fallo de la suite no es el de `npx`:**
+
+```js
+const cli = path.join(RAIZ, 'node_modules', '@playwright', 'test', 'cli.js');
+const hijo = spawn(  …  );
+```
+
+**Lanza el `cli.js` directamente, sin `npx`.** **Asi que el fallo de las capturas es otro**, **y el unico
+sospechoso que queda en pie despues de descartar cuatro es el que ya estaba medido**:
+
+```
+declarado:  "@playwright/test": "1.63.0"   (antes ^1.63.0)
+instalado:  playwright@1.64.1
+error:      Playwright Test did not expect test.describe() to be called here
+            at apps\web\tests\screens\simulacro.spec.ts:86:6
+```
+
+**El runner de 1.64.1 carga ese fichero por un camino en el que `test.describe` no se puede llamar**, **y con
+la 1.63.0 que el repositorio pide no pasaba** —**porque las capturas funcionaban esta manana**—.
+
+**Y no se puede bajar la 1.63.0 sin registro.** **Ese es el unico bloqueo de las capturas, y es de red.**
+
+## Las cuatro causas que se han descartado, en orden
+
+1. ~~el cableado de espacios de trabajo~~ —**quitarlo no la arregla**—;
+2. ~~pnpm frente a npm~~ —**las dos dan el mismo error**—;
+3. ~~`node_modules` reinstalado~~ —**es cierto que cambio, pero la version es el cambio que importa**—;
+4. ~~`npx`~~ —**la suite no lo usa**—.
+
+**Y la que queda, con nombre y numero**: **`@playwright/test` 1.64.1 en vez de 1.63.0.**
+
+## Lo que hay que hacer, y es lo unico
+
+**Conseguir la 1.63.0**, **y hay dos caminos**:
+
+1. **`pnpm install` con acceso al registro** —**lo normal**—;
+2. **o, si otra maquina la tiene en su cache**, **copiar el paquete al almacen de pnpm**, **que es lo que hace
+   `pnpm store add` sin red**.
+
+**Y mientras tanto, el `package.json` ya pide la version exacta**: **el dia que haya red, `pnpm install` la
+trae y las capturas vuelven** —**y si no vuelven, entonces si es del codigo de la suite y se podra medir sin
+la excusa de la version.**
