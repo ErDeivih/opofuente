@@ -1767,3 +1767,49 @@ es generar los apuntes del programa nuevo, que es contenido y cuesta modelo.**
 - **el repositorio: hecho, con su defensa de "no guarda nada si falta una pregunta"**;
 - **la herramienta: hecha, y su guarda de los 6 $ funciona**;
 - **falta solo la corrida, y la corrida necesita apuntes del temario bueno.**
+
+## La copia tiene el temario viejo, y eso explica las cuatro cosas a la vez (ronda 190)
+
+**La herramienta de apuntes sabe escribir temas con el modelo:**
+
+```
+uv run python -m opofuente.tools.apuntes --tema IV.7
+  --dry-run, --seco   dice lo que haria sin escribir
+  --limite N          como mucho N grupos de preguntas
+  --modelo MODELO     por defecto deepseek-flash
+  --paralelo N        llamadas a la vez (4 por defecto)
+```
+
+**Pero no puede escribir `IV.7` en esta copia porque `IV.7` no existe en ella.**
+
+## Lo que la copia tiene, medido
+
+```
+los temas con notas            codigos `1` a `10`
+los bloques de la copia         «Bloque 1» y «Bloque unico»
+los bloques III y IV            no existen como tales
+las notas de III y IV           cero
+```
+
+**Y el manifiesto de fuentes descarga el temario de TAI de 2025**, **que es el que tiene los códigos `III` y `IV`**. **Así que la copia tiene el temario de ANTES de la reimportación**, **y las cuatro cosas que dependen de él están esperando lo mismo**:
+
+```
+lectura: IV.7 · contestar: IV.7        las capturas que piden IV.7
+la revision de apuntes                 `figure` vacio: no hay revisiones de esos temas
+el generador de M5                     cero apartados III o IV
+los repasos de M3                      los temas flojos se miden sobre los que hay
+```
+
+## Lo que eso significa para el cierre
+
+**No es un defecto de código, y no lo arregla una ronda de código.** **Es que la copia de trabajo tiene el banco de antes y el programa de después**, **y las dos mitades no se han vuelto a juntar.**
+
+**Lo que haría falta, y es contenido:**
+
+1. **importar el temario de TAI 2025 en la copia** —una importación, no un modelo—;
+2. **escribir las notas de los 33 bloques con `apuntes`** —y eso sí llama al modelo, con su gasto—;
+3. **volver a correr las capturas, el generador de M5 y el §4 de M2.**
+
+**Y es la misma cosa que el §2 de M2 esperaba**: **los apuntes del programa bueno.**
+
+**Queda apuntado en `PARA-EL-PROPIETARIO.md` como lo que es: el estado de la copia, no una pieza que falte programar.**
