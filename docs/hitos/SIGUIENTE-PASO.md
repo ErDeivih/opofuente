@@ -3322,3 +3322,32 @@ necesita ni red ni modelo ni al propietario.** **Y sin ella la beta es de uno.**
 
 **Y las capturas pasan de ser «lo siguiente» a ser «lo que espera a la red», porque hay trabajo que no
 espera a nada.**
+
+## M8: la tabla de invitaciones, hecha y probada (ronda 243)
+
+```
+migrar: 0 · version 0046_invitaciones
+bajar:  0 · subir otra vez: 0
+```
+
+**Las tres decisiones, escritas en la migracion:**
+
+1. **`token_hash` y no el token**: **el enlace se enseña una vez y no se guarda**, **igual que una
+   contrasena**. **Quien lea la base no puede invitar a nadie**;
+2. **`expires_at`**: **una invitacion sin caducidad es una puerta abierta con un cartel de «solo
+   invitados»**;
+3. **`used_at`**: **un solo uso**, **y se guarda cuando se usa en vez de borrar la fila**, **porque un enlace
+   usado hay que poder explicarlo**.
+
+**Y el correo va dentro**: **el enlace vale para esa direccion y no para otra**, **que es lo que impide que
+un enlace reenviado sirva a quien no se invito.**
+
+## Lo que falta para que la invitacion funcione
+
+1. **el comando que la crea** —**genera el token, guarda su hash y enseña el enlace UNA vez**—;
+2. **el canje**: **una ruta que reciba el token y el correo, compruebe caducidad y uso, y cree la cuenta**;
+3. **la pantalla** de «pon tu contrasena».
+
+**Y el paso 1 es el que tiene la decision delicada**: **el token se enseña y no se guarda**, **asi que si el
+propietario pierde el enlace, no hay forma de recuperarlo: hay que crear otro.** **Eso es correcto y hay que
+decirlo en la salida del comando.**
