@@ -1322,6 +1322,32 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/explanations/{explanation_id}/regenerate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Pide al modelo una explicación nueva para la misma pregunta (M1 de la fase 3)
+         * @description Regenera una explicación: **la pide al modelo, la comprueba y solo entonces la sustituye**.
+         *
+         *     **Si no pasa las comprobaciones, la vieja se queda**: regenerar no es empeorar. **Y si falta la
+         *     clave, esto responde 503**: la bandeja funciona sin modelo salvo esta acción, y decirlo es más
+         *     útil que fingir que la llamada ha fallado por otra cosa.
+         *
+         *     **Gasta**: una llamada al modelo por explicación, ~0,000024 $ con los datos de esta fase.
+         */
+        post: operations["regenerate_explanation_api_v1_explanations__explanation_id__regenerate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/explanations/{explanation_id}/status": {
         parameters: {
             query?: never;
@@ -15429,6 +15455,55 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ExplanationTrayItemSchema"][];
+                };
+            };
+        };
+    };
+    regenerate_explanation_api_v1_explanations__explanation_id__regenerate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                explanation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExplanationTrayItemSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
                 };
             };
         };

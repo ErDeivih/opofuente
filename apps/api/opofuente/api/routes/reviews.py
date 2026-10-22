@@ -18,7 +18,12 @@ from typing import Annotated
 
 from fastapi import APIRouter, Query, Response
 
-from opofuente.api.deps import ProfilesServiceDep, QuestionServiceDep, ReviewServiceDep
+from opofuente.api.deps import (
+    ExplanationProposerDep,
+    ProfilesServiceDep,
+    QuestionServiceDep,
+    ReviewServiceDep,
+)
 from opofuente.api.error_responses import INGESTION_WRITE_ERRORS, RESOURCE_ERRORS
 from opofuente.api.question_schemas import (
     ExplanationSchema,
@@ -60,7 +65,7 @@ from opofuente.application.review_models import (
     ReviewQueueView,
     ReviewStatsView,
 )
-from opofuente.domain.errors import NotFoundError
+from opofuente.domain.errors import ConfigurationError, NotFoundError
 from opofuente.domain.review import MIN_INTENTOS_DOMINIO, ErrorCause, Mastery, ReviewOutcome
 from opofuente.domain.study import Confidence
 
@@ -133,6 +138,36 @@ def set_explanation_status(
     if not questions.set_explanation_status(explanation_id, status=cuerpo.status):
         raise NotFoundError("explicación", explanation_id)
     return Response(status_code=204)
+
+
+@router.post(
+    "/explanations/{explanation_id}/regenerate",
+    response_model=ExplanationTrayItemSchema,
+    summary="Pide al modelo una explicación nueva para la misma pregunta (M1 de la fase 3)",
+    responses=RESOURCE_ERRORS,
+)
+def regenerate_explanation(
+    explanation_id: str,
+    questions: QuestionServiceDep,
+    proposer: ExplanationProposerDep,
+) -> ExplanationTrayItemSchema:
+    """Regenera una explicación: **la pide al modelo, la comprueba y solo entonces la sustituye**.
+
+    **Si no pasa las comprobaciones, la vieja se queda**: regenerar no es empeorar. **Y si falta la
+    clave, esto responde 503**: la bandeja funciona sin modelo salvo esta acción, y decirlo es más
+    útil que fingir que la llamada ha fallado por otra cosa.
+
+    **Gasta**: una llamada al modelo por explicación, ~0,000024 $ con los datos de esta fase.
+    """
+    if proposer is None:
+        raise ConfigurationError(
+            "falta DEEPSEEK_API_KEY: regenerar pide una explicación al modelo y no hay clave"
+        )
+    vista = questions.regenerate_explanation(explanation_id, proposer)
+    if vista is None:
+        raise NotFoundError("explicación", explanation_id)
+    pregunta = questions.question(vista.question_version_id)
+    return _explicacion_de_la_bandeja(vista, "" if pregunta is None else pregunta.stem)
 
 
 def _item(view: ReviewItemView) -> ReviewItemSchema:

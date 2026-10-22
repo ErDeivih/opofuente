@@ -23460,6 +23460,69 @@
         ]
       }
     },
+    "/api/v1/explanations/{explanation_id}/regenerate": {
+      "post": {
+        "description": "Regenera una explicación: **la pide al modelo, la comprueba y solo entonces la sustituye**.\n\n**Si no pasa las comprobaciones, la vieja se queda**: regenerar no es empeorar. **Y si falta la\nclave, esto responde 503**: la bandeja funciona sin modelo salvo esta acción, y decirlo es más\nútil que fingir que la llamada ha fallado por otra cosa.\n\n**Gasta**: una llamada al modelo por explicación, ~0,000024 $ con los datos de esta fase.",
+        "operationId": "regenerate_explanation_api_v1_explanations__explanation_id__regenerate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "explanation_id",
+            "required": true,
+            "schema": {
+              "title": "Explanation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExplanationTrayItemSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Pide al modelo una explicación nueva para la misma pregunta (M1 de la fase 3)",
+        "tags": [
+          "errores y repaso"
+        ]
+      }
+    },
     "/api/v1/explanations/{explanation_id}/status": {
       "patch": {
         "description": "Aprobar o rechazar una explicación de la bandeja.\n\n**Solo cambia el estado.** El texto y la cita se corrigen por la ruta de escribir\nexplicaciones, y **regenerar** es otra cosa: pide al modelo una nueva y gasta, así que no\nse esconde detrás de un cambio de estado.",
