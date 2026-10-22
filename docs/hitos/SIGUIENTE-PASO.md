@@ -804,3 +804,33 @@ del gasto antes de mandarla** — *«esta llamada cuesta ~0,000024 $»*.
 
 **Con esto, M1 queda entero salvo el contenido que falta y el contenido que da la API.** **Y la ronda del
 18/18 después.**
+
+## Los tres anclajes de la fontanería, localizados (ronda 102)
+
+**Ya no hay que buscarlos; están en estas líneas:**
+
+```
+api/deps.py:95     def get_question_service(request: Request) -> QuestionService:
+api/deps.py:213    QuestionServiceDep = Annotated[QuestionService, Depends(get_question_service)]
+main.py:538        app.state.session_factory = session_factory
+```
+
+**Lo que hay que hacer, y es calcado de esos tres:**
+
+1. **en `main.py`, junto a la línea 538**: **`app.state.explanation_proposer = _construir_proposer(settings)`**,
+   **donde la función lee `DEEPSEEK_API_KEY` del entorno y devuelve `None` si falta** — **sin lanzar: la
+   aplicación arranca igual y «regenerar» responde 503**;
+2. **en `deps.py`, junto a la línea 95**: **`def get_explanation_proposer(request: Request)`**, **que lee
+   `request.app.state.explanation_proposer`** — **y devuelve `None` si no está, sin excepción** —;
+3. **y junto a la 213**: **`ExplanationProposerDep = Annotated[ExplanationProposer | None, Depends(...)]`**,
+   **con el tipo opcional, que es lo que permite el 503**.
+
+**Y la ruta en `api/routes/reviews.py`**, **junto a `set_explanation_status`**, **con
+`response_model=ExplanationTrayItemSchema`**, **`responses=RESOURCE_ERRORS`**, **404 si el servicio
+devuelve `None`** y **503 si el proposer falta**.
+
+**Y el botón en `ExplanationTrayPage`**, **la tecla `g`**, **con la invalidación de la cola** y **el aviso
+del gasto antes de mandarla** — *«esta llamada cuesta ~0,000024 $»*.
+
+**Con eso M1 queda entero en código.** **Y después, la batería de 18 —que no se ha vuelto a correr desde
+los cambios de esta mañana—, y el contenido, que es lo único que depende de la API.**
