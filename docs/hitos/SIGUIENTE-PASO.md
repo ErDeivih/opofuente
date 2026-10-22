@@ -4343,3 +4343,40 @@ incidencias que no piden criterio.**
 automatizables son 825**, **no 733**. **El error venia de contar las 95 de `sin_materia_en_el_indice` y las 28
 de `clave_sin_definir` como si no estuvieran dentro de las 959.** **La herramienta nueva lo dice bien porque lo
 cuenta, no porque lo reste de memoria.**
+
+## M7 §3: la propuesta en bloque, visible (ronda 283)
+
+```
+lo automatizable, por motivo:
+  sin_frase_en_los_apuntes      106
+  clave_sin_definir              28
+
+y lo que pide decision, por motivo:
+  clave_contradice_la_norma     538
+  letra_no_coincide             192
+  sin_materia_en_el_indice       95
+```
+
+**Y las dos columnas suman lo que tiene que sumar**: **134 automatizables y 825 decisiones.**
+
+**El hito pide «todo lo automatizable propuesto en bloque», y esto es la mitad de «propuesto»**: **se puede
+leer antes de aprobarlo**. **Un bloque de 134 sin verlo no es una propuesta: es un boton a ciegas.**
+
+## Lo que falta, y es el boton
+
+**`--proponer` que aplique la accion en bloque**: **106 apartados sin frase se los pide al modelo** —**que es lo
+que ya sabe hacer `apuntes`**— **y 28 preguntas sin clave se retiran**, **cada una con su evento auditado**.
+
+**Eso si escribe en la base, y por eso no se hace sin una prueba al lado.** **Es lo siguiente y es codigo.**
+
+## El estado de M7, con esto
+
+```
+✓ el rendimiento bajo 2 s, con prueba
+✓ notes verify --all, con sus tres codigos de salida
+✓ la bandeja, partida y con su detalle por motivo
+· el boton que aplica la propuesta en bloque
+· y las 825 decisiones, que son del propietario
+```
+
+**Tres de los cuatro apartados del hito tienen su herramienta; el cuarto tiene su numero y le falta el boton.**

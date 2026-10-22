@@ -100,10 +100,53 @@ def repartir() -> Reparto:
     )
 
 
+def detalle() -> tuple[str, ...]:
+    """Las automatizables, **agrupadas por motivo**, que es la propuesta en bloque.
+
+    **Una propuesta que se puede leer antes de aprobarla**: **el hito pide
+    «propuesto en bloque», y un bloque de 134 sin verlo no es una propuesta, es
+    un boton a ciegas.**
+    """
+    motor = create_engine(f"sqlite+pysqlite:///{get_settings().data_paths.database}")
+    fabrica = sessionmaker(bind=motor)
+    lineas = ["", "lo automatizable, por motivo:"]
+    with fabrica() as session:
+        for motivo, cuantas in session.execute(
+            text(
+                "select reason, count(*) from notes_incidents "
+                "where status = 'open' "
+                "and reason in ('sin_frase_en_los_apuntes', 'clave_sin_definir') "
+                "group by reason order by count(*) desc"
+            )
+        ):
+            lineas.append(f"  {motivo!s:<28} {int(cuantas):>4}")
+        lineas.append("")
+        lineas.append("y lo que pide decision, por motivo:")
+        for motivo, cuantas in session.execute(
+            text(
+                "select reason, count(*) from notes_incidents "
+                "where status = 'open' "
+                "and reason not in ('sin_frase_en_los_apuntes', 'clave_sin_definir') "
+                "group by reason order by count(*) desc"
+            )
+        ):
+            lineas.append(f"  {motivo!s:<28} {int(cuantas):>4}")
+    return tuple(lineas)
+
+
 def main(argv: Sequence[str] | None = None) -> int:
-    argparse.ArgumentParser(description=__doc__).parse_args(argv)
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--detalle",
+        action="store_true",
+        help="y ademas, como se reparte cada grupo por motivo",
+    )
+    args = parser.parse_args(argv)
     for linea in repartir().lines():
         print(linea)
+    if args.detalle:
+        for linea in detalle():
+            print(linea)
     return 0
 
 
