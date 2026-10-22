@@ -3212,3 +3212,48 @@ rotos para las capturas, se queda el que ademas hace funcionar la web.**
    problema es del codigo de `screens.mjs` y no del entorno, y eso ya se puede medir**—.
 
 **Las capturas de M8 no se pueden hacer hasta el paso 4**, **y los tres primeros necesitan red.**
+
+---
+
+# Cierre de sesion — 22 de octubre de 2026
+
+**Estado: ocho hitos recorridos, ocho documentos, nada roto en `main`.** **Base real intacta
+(`A0A21413…C5AFF8`), 11.315 explicaciones privadas intactas, gasto de API 0,66 $ de 30.**
+
+```
+M1  cerrado          76 capturas · 12.924 explicaciones · la bandeja
+M2  cerrado salvo §2  el §2 son los tres escaneos del INAP: necesitan tesseract
+M3  cerrado          tarjetas y repaso · 80 capturas · 9 tarjetas reales
+M4  cerrado          plan de estudio · 7 semanas · 28 temas · 0 fuera
+M5  codigo hecho     la corrida esta parada por datos (apuntes de otro temario)
+M6  cerrado          nota 37 (0-74) · 4 flojos · 2,6 s · 3 semanas
+M7  3 de 4           rendimiento cerrado con prueba · bandeja: 2.529 decisiones del propietario
+M8  6 de 8           paquete · administrador · instalador · copia · guia · API y web sirviendo
+```
+
+## Lo primero de la proxima ronda, y no necesita red
+
+**Comprobar si el codigo de `screens.mjs` sigue sirviendo**: **el binario de Playwright no se resuelve
+desde `apps/web`** (`MODULE_NOT_FOUND`), **y `screens.mjs` da «Failed to load the ES module»**. **Las dos
+cosas son del entorno, no del producto**: **la web y la API arrancan y sirven** (comprobado en la ronda 236
+con `WEB -> 200` y `API -> 200` sobre la instalacion).
+
+## Lo que necesita al propietario, y esta en `PARA-EL-PROPIETARIO.md`
+
+1. **`tesseract` con español** — **desbloquea el §2 de M2 y el punto 2 de M5 a la vez**;
+2. **las 2.529 decisiones de la bandeja de M7** — **920 firmas distintas, no hay atajo**;
+3. **`pnpm install --lockfile-only` en una maquina con registro** — **para que la instalacion sea
+   reproducible**, **que es el punto 2 de M8 y lo que permitiria reconstruir `node_modules`**;
+4. **los apuntes del temario nuevo** — **desbloquean la corrida de M5 y cuatro capturas rojas**.
+
+## Y lo que esta sesion dejo aprendido, que vale mas que las cifras
+
+**Cinco hipotesis falsas escritas y comprobadas antes de actuar sobre ellas.** **Cinco fallos del
+empaquetado con la misma forma: algo funcionaba porque estaba puesto de antes.** **Y una regla que se ha
+ganado el sitio en cada ronda:**
+
+> **escrito no es hecho; ejecutado es hecho.**
+
+**Y su hermana, que ha salvado dos cambios hoy:**
+
+> **cifras iguales antes y despues; si cambian, el arreglo esta mal aunque tarde menos.**
