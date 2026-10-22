@@ -2802,3 +2802,44 @@ probadas y dos por hacer, una de ellas a medio camino con su fallo escrito.**
 
 **No se declara nada terminado que no se haya ejecutado**: **el instalador funciona hasta el paso 3 y ahi
 se para, y eso es lo que dice el folio.**
+
+## M8, punto 2: el instalador funciona, y falla solo al meter el paquete (ronda 225)
+
+**Con su fallo encontrado y arreglado, el instalador corre entero:**
+
+```
+  $ .\scripts\instalar.ps1 -Datos F:\temp-opofuente\inst-m8 -Correo dueno@ejemplo.test
+  instalando en F:\temp-opofuente\inst-m8
+  uv esta · pnpm esta
+  carpeta de datos creada
+  base migrada
+  sin paquete: la base queda con el esquema y sin contenido
+  administrador dueno@ejemplo.test: creada
+  instalado. Para arrancar: ...
+  codigo: 0 · 1 fichero (la base)
+```
+
+**La causa del fallo anterior, medida**: **`alembic upgrade head` se lanzaba desde `apps\api` y su
+configuracion vive en la raiz del repositorio** — **`FAILED: No 'script_location' key found in
+configuration`** —. **Se lanza desde la raiz y funciona.** **Por eso a mano funcionaba: siempre lo lance
+desde arriba.**
+
+## Y el fallo que queda, con su medida
+
+**Con `-Paquete`, la importacion falla con `no such table: answer_key_entries`.** **Y la tabla SI existe en
+una base recien migrada:**
+
+```
+tablas en una base recien migrada: 75
+answer_key_entries: True
+version: 0045_indice_de_mapeos
+```
+
+**Asi que el importador no esta abriendo la base que el instalador acaba de migrar: esta abriendo otra.**
+**Lo siguiente es una linea**: **imprimir `get_settings().data_paths.database` dentro del paso de
+importacion y ver que ruta dice**, **que es lo que separa «la variable no llega» de «hay una ruta por
+defecto que gana».**
+
+**Y el instalador se queda en `main` por lo que si hace**: **migra, crea el administrador y arranca desde
+cero**, **que es el camino sin paquete y esta ejecutado y verde.** **El camino con paquete esta escrito y no
+pasa, y eso lo dice el propio script al pararse.**
