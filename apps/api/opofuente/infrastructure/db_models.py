@@ -2679,3 +2679,27 @@ class PracticalCaseQuestionRecord(Base):
     question_version_id: Mapped[str] = mapped_column(String(36), nullable=False)
     #: Del 1 al 25, sin huecos.
     position: Mapped[int] = mapped_column(Integer, nullable=False)
+
+
+class AccountInvitationRecord(Base):
+    """Una invitacion de un solo uso (M8).
+
+    **El token no se guarda**: se guarda su hash, **igual que una contrasena**.
+    **Quien lea esta tabla no puede invitar a nadie**, **y por eso el enlace se
+    enseña una sola vez y no se puede recuperar**.
+
+    **`used_at` se escribe al canjear en vez de borrar la fila**: **una
+    invitacion usada hay que poder explicarla**.
+    """
+
+    __tablename__ = "account_invitations"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    #: El sha256 del token. **El token en claro no esta en ningun sitio.**
+    token_hash: Mapped[str] = mapped_column(String(128), nullable=False)
+    email: Mapped[str] = mapped_column(Text, nullable=False)
+    email_normalized: Mapped[str] = mapped_column(Text, nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
+    #: Nulo mientras no se haya canjeado.
+    used_at: Mapped[datetime | None] = mapped_column(UtcDateTime(), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)

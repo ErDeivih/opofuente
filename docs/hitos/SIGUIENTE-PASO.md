@@ -3351,3 +3351,30 @@ un enlace reenviado sirva a quien no se invito.**
 **Y el paso 1 es el que tiene la decision delicada**: **el token se enseña y no se guarda**, **asi que si el
 propietario pierde el enlace, no hay forma de recuperarlo: hay que crear otro.** **Eso es correcto y hay que
 decirlo en la salida del comando.**
+
+## M8: el comando de invitar, hecho y ejecutado (ronda 244)
+
+```
+uv run python -m opofuente.tools.invitar --correo Amigo@Ejemplo.TEST
+  invitacion creada para Amigo@Ejemplo.TEST
+  caduca: 2026-10-29T17:43:32+00:00 (7 dias)
+  enlace: http://127.0.0.1:5173/invitacion?token=ewHxCqkiE9xn…
+  GUARDA EL ENLACE AHORA: no se guarda en ningun sitio y no se puede recuperar.
+
+en la base: 1 invitacion · Amigo@Ejemplo.TEST | amigo@ejemplo.test | hash 64 | usado None
+```
+
+**Y las dos decisiones del comando:**
+
+1. **`secrets.token_urlsafe(32)` y no `uuid4`**: **un uuid tiene una estructura reconocible y no es un
+   secreto**; **esto son 32 bytes de azar del sistema**;
+2. **la advertencia al final no es un adorno**: **si el propietario no la lee, pierde el enlace y no lo
+   sabe hasta que lo necesita.** **El comando lo dice en la salida, que es donde se va a mirar.**
+
+## Lo que falta de la invitacion
+
+1. **el canje**: **una ruta que reciba token y correo, compruebe la caducidad y el uso, y cree la cuenta**;
+2. **la pantalla** de «pon tu contrasena»;
+3. **y su prueba**: **canjear dos veces el mismo enlace tiene que fallar la segunda**.
+
+**El canje es lo unico de M8 que queda sin red**, **y es la mitad que convierte el enlace en una cuenta.**
