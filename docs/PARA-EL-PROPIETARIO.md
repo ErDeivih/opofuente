@@ -1487,3 +1487,34 @@ solo, y hace bien: una fuente que cambia la acepta una persona.**
 
 **Y una que se quedó sin marca**: **el PDF del BOCYL de 2023 no había cambiado**, así que **le quité el
 `volatile` en vez de inventarle una huella**.
+
+## Una sola instalación, dos hitos (22 de octubre)
+
+**Lo que falta para M2 y lo que falta para M5 son lo mismo**, y conviene verlo junto para que no parezca
+que hay dos problemas:
+
+```
+M2, §2    los tres escaneos del INAP sin capa de texto
+          TAI-2018-libre-cuestionario-1/-2 · TAI-2018-pi-cuestionario-unico
+          0 caracteres en 10 páginas · necesitan OCR
+
+M5, paso 2  los «supuestos oficiales primero»
+          importar_inap busca esos MISMOS tres PDF
+          FileNotFoundError: 'data\sources\TAI-2018-libre-cuestionario-1.pdf'
+```
+
+**Y son los mismos por una razón**: **los únicos exámenes del INAP que el árbol sabe importar son los de
+2018, y son escaneos.** **Sin `tesseract` con español, ninguno de los dos se puede hacer.**
+
+**Y hay una segunda cosa que necesito de ti, más pequeña**: **esos tres PDF no están en el manifiesto de
+`fetch-sources.ps1`** —**que descarga los de 2024 y 2025**—, **así que aunque el OCR estuviera, faltarían
+los ficheros.** **Con el enlace de los tres (o con permiso para buscarlos en el BOE/INAP), se añaden al
+manifiesto y quedan descargables como los demás.**
+
+## Lo que ya está hecho y no depende de esto
+
+**M1 completo en código · M2 cerrado salvo el §2 · M3 completo · M4 completo · M5 con su tabla hecha y el
+generador por hacer.** **Y el `recorrido-M3` con sus ochenta capturas.**
+
+**Y lo que sí puedo seguir haciendo sin ti**: **M6, M7 y M8 no dependen de ningún `tesseract` ni de una
+clave.** **Así que el `tesseract` bloquea dos apartados de dos hitos, no la fase.**
