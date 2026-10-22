@@ -3869,3 +3869,36 @@ ronda**—. **El endpoint en si esta escrito y revisado por `ruff` y `mypy` sin 
 **La puerta de contrato tarda casi siete minutos.** **Eso hace que iterar sobre ella en rondas cortas sea
 imposible**: **cada intento cuesta una ronda entera.** **No es un problema del codigo; es una razon para
 hacerla aparte, y queda dicho.**
+
+## M8: el lockfile entra, y con el cambia el estado del hito (ronda 266)
+
+**Lo que llevaba rondas titulado «el bloqueo de la reproducibilidad» estaba en el arbol sin commitear:**
+
+```
+pnpm-lock.yaml   122,7 KB · 806 paquetes · lockfileVersion 9.0
+pnpm install --frozen-lockfile   ->  «Already up to date» · 570 ms
+```
+
+**Y entra en `main` junto con los dos documentos de la fase que tampoco estaban rastreados** —**uno de ellos es
+`docs/FASE-3-CONTINUACION-GOAL-2026-10-21.md`, el documento que gobierna todo este trabajo**—.
+
+**El instalador vuelve a `--frozen-lockfile`**, **que es lo que hace que dos instalaciones den lo mismo.**
+
+## Lo que queda de M8, y ya es solo esto
+
+```
+la pantalla de canje     comodidad · sin red
+las capturas de M8       playwright 1.64.1 frente a 1.63.0
+la ruta HTTP del canje   escrita y retirada: deja el contrato en rojo
+```
+
+**Tres cosas.** **Y la del medio ya no es de red**: **el lockfile fija la 1.64.1**, **asi que el arreglo es
+hacer que la suite funcione con la version que el repositorio ha adoptado**, **o bajar la 1.63.0 con un
+cambio del lockfile en una maquina con red.**
+
+**Y eso es una decision, no un bloqueo**: **la version que hay esta fijada y el fallo esta localizado en una
+prueba concreta.**
+
+## Y la leccion de la ronda, que vale por varias
+
+> **un fichero sin rastrear no existe para nadie menos para quien lo creo.**
