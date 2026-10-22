@@ -3996,3 +3996,45 @@ guia, la API y la web sirviendo, y la invitacion con sus cinco pruebas.** **Nuev
 rojo, y el contrato tarda siete minutos por corrida**— **y las capturas** —**esperan la 1.63**—.
 
 **Y las tres son de codigo o de red, ninguna de decision del propietario.**
+
+## M8: la version tampoco era, y queda una sola cosa por mirar (ronda 270)
+
+**Instalada la 1.63.0 —la red funcionaba, y el «registro bloqueado» de las rondas anteriores era falso— y
+comprobado que es la que resuelve:**
+
+```
+node -e "require('@playwright/test/package.json').version"   ->  1.63.0
+node_modules/@playwright/test -> ..\.pnpm\@playwright+test@1.63.0\...
+suite                                                        ->  MISMO ERROR
+```
+
+**Asi que la version NO era.** **Septima causa descartada.**
+
+## Las siete, y lo que queda
+
+```
+1 · el cableado de espacios de trabajo      NO
+2 · pnpm frente a npm                       NO
+3 · el node_modules reinstalado             NO
+4 · npx                                     NO
+5 · un describe anidado o un cross-import   NO
+6 · el import del test o la config base     NO
+7 · la version de Playwright                NO  ← la 1.63.0 esta puesta y falla igual
+```
+
+**Y cuando se caen siete y el sintoma persiste, lo que queda no es una causa del proyecto: es la forma de
+lanzarlo.** **Y la unica pieza que no he mirado linea a linea es `screens.mjs`** —**que ya sabemos que lanza
+`cli.js` directamente**—, **y su lista de argumentos**: **si le pasa los ficheros ademas del `--config`, o si
+el `--datos` se traduce en un argumento que Playwright interpreta como una ruta de prueba**, **el
+`test.describe` se carga fuera de su runner y el mensaje es exactamente ese.**
+
+**Eso es lo siguiente, y es leer cuarenta lineas de `screens.mjs` con los argumentos del `spawn` delante.**
+
+## Y una correccion importante de las rondas anteriores
+
+**Dije varias veces que el registro pedia autorizacion y que por eso no se podia instalar.** **`pnpm add -D -w
+@playwright/test@1.63.0` ha funcionado en 6,4 segundos.** **El bloqueo de red no existia**, **y lo he dado por
+bueno durante diez rondas sin volver a probarlo.**
+
+**Las consecuencias**: **el `pnpm-lock.yaml` se puede actualizar sin problema**, **y la instalacion reproducible
+sigue en pie.** **Lo que no estaba era el bloqueo.**

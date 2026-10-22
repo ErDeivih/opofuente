@@ -22,6 +22,7 @@
     "contracts:check": "npm run check --workspace @opofuente/contracts"
   },
   "devDependencies": {
+    "@playwright/test": "1.63.0",
     "typescript": "^5.9.3"
   }
 }
