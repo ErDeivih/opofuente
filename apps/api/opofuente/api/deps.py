@@ -14,6 +14,7 @@ from opofuente.application.accounts_service import AccountsService
 from opofuente.application.analytics_service import AnalyticsService
 from opofuente.application.auto_study_service import AutoStudyService
 from opofuente.application.backup_service import BackupService
+from opofuente.application.card_service import CardService
 from opofuente.application.change_service import ChangeService
 from opofuente.application.classification_service import ClassificationService
 from opofuente.application.diagnostic_service import DiagnosticService
@@ -95,6 +96,12 @@ def get_artifact_store(request: Request) -> ArtifactStore:
 
 def get_question_service(request: Request) -> QuestionService:
     service: QuestionService = request.app.state.question_service
+    return service
+
+
+def get_card_service(request: Request) -> CardService:
+    """Las tarjetas de repaso (M3): lo que vence, responder y reprogramar."""
+    service: CardService = request.app.state.card_service
     return service
 
 
@@ -223,6 +230,7 @@ ClassificationServiceDep = Annotated[ClassificationService, Depends(get_classifi
 LibraryServiceDep = Annotated[LibraryService, Depends(get_library_service)]
 ArtifactStoreDep = Annotated[ArtifactStore, Depends(get_artifact_store)]
 QuestionServiceDep = Annotated[QuestionService, Depends(get_question_service)]
+CardServiceDep = Annotated[CardService, Depends(get_card_service)]
 ExplanationProposerDep = Annotated[ExplanationProposer | None, Depends(get_explanation_proposer)]
 QuestionFileServiceDep = Annotated[QuestionFileService, Depends(get_question_file_service)]
 AutoStudyServiceDep = Annotated[AutoStudyService, Depends(get_auto_study_service)]

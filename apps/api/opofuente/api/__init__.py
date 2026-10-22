@@ -10,6 +10,7 @@ from fastapi import APIRouter
 from opofuente.api.routes import (
     accounts,
     backups,
+    cards,
     changes,
     classification,
     dossier,
@@ -40,6 +41,7 @@ api_router.include_router(ingestion.router)
 api_router.include_router(classification.router)
 api_router.include_router(library.router)
 api_router.include_router(questions.router)
+api_router.include_router(cards.router)
 api_router.include_router(study.router)
 api_router.include_router(search.router)
 api_router.include_router(reviews.router)

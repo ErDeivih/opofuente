@@ -74,20 +74,29 @@ class CardService:
         *,
         ahora: datetime | None = None,
         tope: int = 60,
-    ) -> tuple[EntradaDeLaCola, ...]:
-        """Lo que hay que repasar hoy: las tarjetas vencidas, con su tope.
+    ) -> tuple[CardView, ...]:
+        """Las tarjetas que hay que repasar hoy, **ya ordenadas y con el tope**.
 
-        **Los fallos van vacios todavia**: mezclarlos necesita la tabla de repasos
-        de las preguntas, que no es de este hito. Cuando exista, se pasa aqui y la
-        mezcla ya esta hecha en `cola_del_dia`.
+        **Devuelve las tarjetas, no sus identificadores**: la pantalla las necesita
+        enteras, y buscar cada una por su id despues seria una consulta por tarjeta.
+
+        **Los fallos van vacios todavia**: mezclarlos necesita la tabla de repasos de
+        las preguntas, que no es de este hito. Cuando exista, la mezcla ya esta hecha
+        en `cola_del_dia` y solo hay que traer las entradas por su id.
         """
         dia = ahora or datetime.now(UTC)
         vencidas = self._cards.due(dia=dia, limit=200)
-        return cola_del_dia(
+        por_id = {tarjeta.id: tarjeta for tarjeta in vencidas}
+        entradas = cola_del_dia(
             tarjetas=[tarjeta.id for tarjeta in vencidas],
             fallos=[],
             tope=tope,
         )
+        return tuple(por_id[e.id] for e in entradas if e.id in por_id)
+
+    def una(self, card_id: str) -> CardView | None:
+        """Una tarjeta por su id. `None` si no existe, para que la ruta diga 404."""
+        return self._cards.by_id(card_id)
 
     def vencen(self, *, ahora: datetime | None = None) -> int:
         """**Cuántas vencen**, para que la cola enseñe el número antes."""

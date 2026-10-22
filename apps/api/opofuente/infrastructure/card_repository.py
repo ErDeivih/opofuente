@@ -76,6 +76,12 @@ class SqlAlchemyCardRepository:
             ).all()
         return tuple((str(fila[0]), str(fila[1])) for fila in filas)
 
+    def by_id(self, card_id: str) -> CardView | None:
+        """Una tarjeta por su id, o `None` si no existe: la ruta responde 404."""
+        with self._session_factory() as session:
+            fila = session.get(CardRecord, card_id)
+            return None if fila is None else _view(fila)
+
     def add(
         self,
         *,

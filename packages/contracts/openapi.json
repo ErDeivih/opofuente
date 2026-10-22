@@ -603,6 +603,19 @@
         "title": "AnalyticsSummarySchema",
         "type": "object"
       },
+      "AnswerCardSchema": {
+        "description": "Lo que se responde a una tarjeta, con las cuatro opciones de SM-2.",
+        "properties": {
+          "respuesta": {
+            "$ref": "#/components/schemas/Respuesta"
+          }
+        },
+        "required": [
+          "respuesta"
+        ],
+        "title": "AnswerCardSchema",
+        "type": "object"
+      },
       "AnswerKeySchema": {
         "properties": {
           "approved_at": {
@@ -1968,6 +1981,80 @@
         ],
         "title": "CapabilityStatus",
         "type": "string"
+      },
+      "CardQueueSchema": {
+        "description": "La cola del dia: **las tarjetas y el total**, que son dos cosas distintas.",
+        "properties": {
+          "tarjetas": {
+            "items": {
+              "$ref": "#/components/schemas/CardSchema"
+            },
+            "title": "Tarjetas",
+            "type": "array"
+          },
+          "total": {
+            "description": "Cuántas vencen hoy, no cuántas caben en la pantalla",
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "tarjetas",
+          "total"
+        ],
+        "title": "CardQueueSchema",
+        "type": "object"
+      },
+      "CardSchema": {
+        "description": "Una tarjeta tal como la pinta la pantalla de repaso.",
+        "properties": {
+          "back": {
+            "title": "Back",
+            "type": "string"
+          },
+          "citation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Citation"
+          },
+          "due_at": {
+            "format": "date-time",
+            "title": "Due At",
+            "type": "string"
+          },
+          "front": {
+            "title": "Front",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "interval_days": {
+            "title": "Interval Days",
+            "type": "integer"
+          },
+          "repetitions": {
+            "title": "Repetitions",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "front",
+          "back",
+          "due_at",
+          "interval_days",
+          "repetitions"
+        ],
+        "title": "CardSchema",
+        "type": "object"
       },
       "ChangeOutcomeSchema": {
         "description": "El resultado de confirmar o descartar: qué se ha hecho exactamente.",
@@ -9823,6 +9910,20 @@
         "title": "PendingActionsSchema",
         "type": "object"
       },
+      "PendingSchema": {
+        "description": "Solo el numero: lo que la cola ensena antes de empezar.",
+        "properties": {
+          "vencen": {
+            "title": "Vencen",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "vencen"
+        ],
+        "title": "PendingSchema",
+        "type": "object"
+      },
       "PlatformPolicySchema": {
         "description": "**Una sola llamada** para saber qué está encendido en esta instalación.\n\nExiste porque la web se construye una vez y se sirve en varias configuraciones: si las banderas\nse hornearan en el paquete, habría que construir dos veces la misma aplicación para probar la\nversión con cuentas y la versión sin ellas, y las dos acabarían divergiendo. Se pregunta al\nservidor en cada arranque, y lo que diga el servidor es lo que hay.\n\nEs pública a propósito: dice qué funciones están encendidas, no nada de nadie.",
         "properties": {
@@ -13082,6 +13183,17 @@
         },
         "title": "ResolveErrorSchema",
         "type": "object"
+      },
+      "Respuesta": {
+        "description": "Las cuatro respuestas de la pantalla, que es lo que el alumno puede decir.",
+        "enum": [
+          "otra_vez",
+          "dificil",
+          "bien",
+          "facil"
+        ],
+        "title": "Respuesta",
+        "type": "string"
       },
       "RestorePreviewSchema": {
         "description": "Lo que una restauración haría **antes** de hacerlo: es el paso 1 y 2 del contrato.",
@@ -19195,6 +19307,123 @@
           }
         },
         "summary": "Capacidades reales y degradaciones"
+      }
+    },
+    "/api/v1/cards/pending": {
+      "get": {
+        "description": "El número de vencidas, **sin traerlas**: la cola lo enseña antes de empezar.",
+        "operationId": "pending_cards_api_v1_cards_pending_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PendingSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Cuántas tarjetas vencen hoy (M3)",
+        "tags": [
+          "tarjetas"
+        ]
+      }
+    },
+    "/api/v1/cards/queue": {
+      "get": {
+        "description": "Las tarjetas vencidas, entrelazadas y con el tope del día.\n\n**`total` es el de vencidas, no el de la página**: es lo que le queda al alumno,\ny contar solo lo que cabe en la pantalla mentiría hacia abajo.",
+        "operationId": "card_queue_api_v1_cards_queue_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CardQueueSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "La cola del día: las tarjetas que vencen (M3)",
+        "tags": [
+          "tarjetas"
+        ]
+      }
+    },
+    "/api/v1/cards/{card_id}/answer": {
+      "post": {
+        "description": "Aplica SM-2 y devuelve la tarjeta **con su nueva fecha de vuelta**.\n\n**404 si no existe**: un `True`/`False` no le dice nada al alumno sobre qué\npasó con la tarjeta que acaba de contestar.",
+        "operationId": "answer_card_api_v1_cards__card_id__answer_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "card_id",
+            "required": true,
+            "schema": {
+              "title": "Card Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnswerCardSchema"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CardSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Responde una tarjeta y devuelve cuándo vuelve (M3)",
+        "tags": [
+          "tarjetas"
+        ]
       }
     },
     "/api/v1/change-sets": {

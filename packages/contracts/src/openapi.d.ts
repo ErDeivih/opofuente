@@ -352,6 +352,72 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/cards/pending": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Cuántas tarjetas vencen hoy (M3)
+         * @description El número de vencidas, **sin traerlas**: la cola lo enseña antes de empezar.
+         */
+        get: operations["pending_cards_api_v1_cards_pending_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cards/queue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * La cola del día: las tarjetas que vencen (M3)
+         * @description Las tarjetas vencidas, entrelazadas y con el tope del día.
+         *
+         *     **`total` es el de vencidas, no el de la página**: es lo que le queda al alumno,
+         *     y contar solo lo que cabe en la pantalla mentiría hacia abajo.
+         */
+        get: operations["card_queue_api_v1_cards_queue_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cards/{card_id}/answer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Responde una tarjeta y devuelve cuándo vuelve (M3)
+         * @description Aplica SM-2 y devuelve la tarjeta **con su nueva fecha de vuelta**.
+         *
+         *     **404 si no existe**: un `True`/`False` no le dice nada al alumno sobre qué
+         *     pasó con la tarjeta que acaba de contestar.
+         */
+        post: operations["answer_card_api_v1_cards__card_id__answer_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/change-sets": {
         parameters: {
             query?: never;
@@ -4428,6 +4494,13 @@ export interface components {
             /** Retention Days */
             retention_days: number;
         };
+        /**
+         * AnswerCardSchema
+         * @description Lo que se responde a una tarjeta, con las cuatro opciones de SM-2.
+         */
+        AnswerCardSchema: {
+            respuesta: components["schemas"]["Respuesta"];
+        };
         /** AnswerKeySchema */
         AnswerKeySchema: {
             /** Approved At */
@@ -4943,6 +5016,42 @@ export interface components {
          * @enum {string}
          */
         CapabilityStatus: "enabled" | "disabled" | "unavailable" | "configured_unverified" | "planned";
+        /**
+         * CardQueueSchema
+         * @description La cola del dia: **las tarjetas y el total**, que son dos cosas distintas.
+         */
+        CardQueueSchema: {
+            /** Tarjetas */
+            tarjetas: components["schemas"]["CardSchema"][];
+            /**
+             * Total
+             * @description Cuántas vencen hoy, no cuántas caben en la pantalla
+             */
+            total: number;
+        };
+        /**
+         * CardSchema
+         * @description Una tarjeta tal como la pinta la pantalla de repaso.
+         */
+        CardSchema: {
+            /** Back */
+            back: string;
+            /** Citation */
+            citation?: string | null;
+            /**
+             * Due At
+             * Format: date-time
+             */
+            due_at: string;
+            /** Front */
+            front: string;
+            /** Id */
+            id: string;
+            /** Interval Days */
+            interval_days: number;
+            /** Repetitions */
+            repetitions: number;
+        };
         /**
          * ChangeOutcomeSchema
          * @description El resultado de confirmar o descartar: qué se ha hecho exactamente.
@@ -8075,6 +8184,14 @@ export interface components {
             total: number;
         };
         /**
+         * PendingSchema
+         * @description Solo el numero: lo que la cola ensena antes de empezar.
+         */
+        PendingSchema: {
+            /** Vencen */
+            vencen: number;
+        };
+        /**
          * PlatformPolicySchema
          * @description **Una sola llamada** para saber qué está encendido en esta instalación.
          *
@@ -9319,6 +9436,12 @@ export interface components {
              */
             resolved: boolean;
         };
+        /**
+         * Respuesta
+         * @description Las cuatro respuestas de la pantalla, que es lo que el alumno puede decir.
+         * @enum {string}
+         */
+        Respuesta: "otra_vez" | "dificil" | "bien" | "facil";
         /**
          * RestorePreviewSchema
          * @description Lo que una restauración haría **antes** de hacerlo: es el paso 1 y 2 del contrato.
@@ -12270,6 +12393,99 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CapabilitiesSchema"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    pending_cards_api_v1_cards_pending_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PendingSchema"];
+                };
+            };
+        };
+    };
+    card_queue_api_v1_cards_queue_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CardQueueSchema"];
+                };
+            };
+        };
+    };
+    answer_card_api_v1_cards__card_id__answer_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                card_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnswerCardSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CardSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
                 };
             };
             /** @description Error interno inesperado (RFC 9457). */
