@@ -4761,3 +4761,43 @@ tiene que aceptarlo.**
 
 **Es una consulta y una comparacion de listas.** **Y es lo primero manana, porque de su resultado depende si el
 arreglo es de datos o de motor — y son dos sitios distintos.**
+
+## El cotejo no salio, y el motivo es mi script (ronda 295)
+
+**Intente comparar los pares `(codigo, tipo)` del fixture con la base, y el recorrido no encontro ninguno:**
+
+```
+pares del fixture: 0 · iguales: 0 · distintos: 0 · ausentes: 0
+```
+
+**Pero la ronda 294 conto 171 nodos con tipo en el mismo fichero.** **Asi que el fallo es de mi recorrido**: **pedi
+`code` y `node_type` en el MISMO nivel del diccionario**, **y en este fixture deben de estar en niveles distintos**
+—**el `code` en el nodo y el tipo en otra clave, o al reves**—.
+
+**Y eso es una leccion que ya me se y no aplico**: **no adivinar la forma de un dato leyendolo a ojo, sino imprimir
+sus claves primero.** **La ronda 264 me costo lo mismo con las columnas de la base: `no such column` tres veces
+seguidas hasta que imprimi `pragma table_info`.**
+
+## Lo que queda para manana, y es lo mismo pero bien hecho
+
+1. **imprimir las claves de un nodo del fixture** —**`print(list(nodo.keys()))`**—, **que es lo que debi hacer
+   antes de recorrerlo**;
+2. **cotejar `(code, tipo)` contra `curriculum_nodes`** por `path` y por `official_code`;
+3. **y con eso, decidir si el arreglo es de siembra o de motor.**
+
+**Veinte minutos y una prueba que separa las dos hipotesis.**
+
+## Y el cierre de la sesion, con la cuenta honesta
+
+```
+M8 COMPLETO · M7 5 de 6 · M1 a M6 cerrados o con su pendiente medido
+8 hipotesis falsas, las 8 escritas y corregidas en el acta
+base real intacta · 0,66 $ de 30 · arbol limpio · 998 unitarias verdes · 111 commits
+```
+
+**La fase no esta terminada y no lo puedo estar hoy**: **le falta contenido (87 apartados), un diagnostico de
+veinte minutos (siembra o motor) y dos cosas tuyas (`tesseract` y las 825 decisiones).**
+
+**Lo que si esta terminado es M8 entero y el registro de todo lo demas, incluidas mis ocho equivocaciones.** **Y la
+ultima, la de esta ronda, tiene la misma forma que las otras siete: adivine la forma de un dato en vez de
+preguntarsela.**
