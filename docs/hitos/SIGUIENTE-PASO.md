@@ -5050,3 +5050,42 @@ M6 cerrado · M7 5 de 6 · M8 COMPLETO
 9 hipotesis falsas escritas y corregidas · 0,66 $ de 30 · base real intacta
 arbol limpio · 998 unitarias verdes · ruff y mypy en verde
 ```
+
+## M5: 21 epigrafes con notas, y el coste es de centavos (ronda 302)
+
+**Lanzado un lote de cuatro temas en segundo plano y terminado sin un error:**
+
+```
+apuntes --tema IV.1.2 --tema IV.2.1 --tema IV.2.2 --tema III.1.1 --limite 4 --tiempo-maximo 900
+
+  Coste estimado de los 4 temas: 0.0138 $ (precios de valle)
+
+epigrafes de III/IV con notas ahora: 21        (antes: 0 · despues de IV.1.1: 1)
+```
+
+**Asi que escribir apuntes cuesta unos 0,0035 $ por tema**: **los 87 epigrafes de III y IV saldrian por unos 0,30 $**,
+**de los 29,34 que quedan de presupuesto.**
+
+## Y el generador de supuestos ya tiene de donde leer
+
+```
+apartados visibles para el generador: 21
+```
+
+**Antes de quitar las tres condiciones: cero.** **El generador esta escrito desde la ronda 188 y nunca habia tenido
+material; ahora tiene veintiuno.**
+
+## Lo que queda de M5, y es una corrida
+
+1. **lanzar `supuestos --por-bloque 2 --guardar`** —**con la clave y el tope de 6 $ que ya tiene**—;
+2. **mirar cuantos pasan el 90 % de coincidencia** —**que es la cifra que el hito mide**—;
+3. **y las capturas de M5 en `artifacts/recorrido-M5/`**.
+
+**No queda codigo ni diagnostico: queda lanzarlo y medir.**
+
+## El estado de la fase
+
+```
+M1 ✓ · M2 salvo §2 · M3 ✓ · M4 ✓ · M5 A UNA CORRIDA · M6 ✓ · M7 5 de 6 · M8 COMPLETO
+gasto 0,66 $ de 30 · 21 epigrafes escritos · base real intacta · arbol limpio
+```
