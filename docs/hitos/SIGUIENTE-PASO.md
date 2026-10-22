@@ -1455,3 +1455,39 @@ test que pide lo que la pantalla promete.**
 ```
 
 **Las seis de `figure` tocan los apuntes, que es M2/M3 de otra fase, no M3 de esta.**
+
+## Las seis rojas: `topic_notes_reviews` está vacía (ronda 163)
+
+```
+notes_reports:         1      ← el informe, con pocas filas
+topic_notes_reviews:   0      ← NINGUNA revisión de tema
+notes_incidents:     959
+topic_note_sections: 406
+```
+
+**Y el `figure` no está «sin rellenar»**: **`razones_del_tema` lo pasa bien** —el tercer argumento de
+cada `Razon` es la cifra—, **y lo que ocurre es que las razones que salen son `SIN_MEDIDA`**, **que es
+la que dice «esto no se ha medido» y no lleva cifra a propósito**.
+
+**El `measured` sale de la revisión del tema**, **y no hay ninguna revisión**. **Sin medir, la pantalla
+no enseña cifras de puerta, y hace bien**: **un cero sin medir se leería como «cero preguntas
+cubiertas», que es mentira** —lo dice el docstring de `CifrasDelTema`—.
+
+## Lo que he probado y NO es la causa
+
+**`apuntes --medir` no mide los apuntes**: **mide la fiabilidad de las claves**, y su salida es la que
+reparte `no_fiable`/`dudosa` entre los conjuntos. **Lo he corrido y no ha cambiado nada de los motivos,
+porque no era su trabajo.**
+
+**Así que la cifra de los apuntes la produce otra cosa**, **y esa cosa no se ha corrido en esta copia** —
+**o se ha corrido y no ha dejado filas**.
+
+## Lo que eso significa para las seis
+
+**No son un test mal escrito ni una pantalla rota**: **son una pantalla que dice la verdad —«no se ha
+medido»— y un test que espera una cifra que solo existe después de medir los 33 temas.**
+
+**La decisión, y es reversible**: **medir los apuntes de la copia con la herramienta que corresponda y
+volver a capturar**. **Lo que NO se hace es poner el `%` opcional ni borrar la aserción.**
+
+**Y es de M2, no de M3**: **la revisión de apuntes es el §4 de la otra fase.**
