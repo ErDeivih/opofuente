@@ -102,6 +102,9 @@ const RUTAS: readonly { ruta: string; nombre: string }[] = [
   { ruta: '/buscar?q=constitucion', nombre: 'buscar' },
   { ruta: '/ajustes', nombre: 'ajustes' },
   { ruta: '/admin/ui', nombre: 'admin-ui' },
+  /* La bandeja de explicaciones (M1 de la fase 3): la cola que revisa el propietario, con el
+     enunciado de cada pregunta y la cita literal del apartado en el que se apoya. */
+  { ruta: '/admin/explicaciones', nombre: 'admin-explicaciones' },
   /* El bloque C del panel (F16): lo que el motor dejó fuera de los tests. Lee las marcas de fuera de
      temario que ya estén en los datos —con los del propietario, los 769 enunciados rotos— y se
      retrata tal cual. La bandeja de avisos va aparte, más abajo: necesita que haya un aviso dentro. */
