@@ -1849,3 +1849,49 @@ los supuestos por bloque y origen**, **y el simulacro declara hoy `"bloque"` en 
 
 **Cuando haya supuestos, el punto 4 son dos consultas y un campo nuevo en la composición** — **y esa
 estimación sí es honesta, porque el terreno está medido.**
+
+## M6: el terreno, medido antes de empezar (ronda 192)
+
+**La especificación está en `FASE-3-ESTUDIO-DIARIO-SPEC-PLAN-GOAL-2026-10.md`, líneas 111-114, y pide
+cuatro cosas:**
+
+```
+1. la nota estimada por parte, CON SU INTERVALO, a partir de los ultimos simulacros y tests,
+   ponderados por el peso de cada tema
+2. los CINCO epigrafes mas flojos, cada uno con su boton de practica
+3. el tiempo medio por pregunta frente al del examen (120 min / 100)
+4. la evolucion semanal
+   y la regla que manda: «todo calculado; nada de frases sin cifra»
+```
+
+**Y lo que ya existe, medido:**
+
+```
+ProgressPage (pages/student/ProgressPage.tsx)      SI · la pantalla esta
+StudentProgressSchema · BlockProgress · TopicProgress  SI · la API ya sirve progreso por bloque y tema
+StudentHomePage y TopicNotesPage enlazan a /progreso   SI
+la nota estimada                                    NO existe
+el intervalo de esa nota                            NO existe
+los cinco flojos con su boton                       NO existe
+el tiempo medio por pregunta                        NO existe
+la evolucion semanal                                NO existe
+```
+
+**Así que M6 no empieza de cero como M5: hay una pantalla y hay progreso por bloque y por tema.** **Lo
+que falta son las cuatro cifras**, y la que manda es la primera: **una nota con su intervalo**.
+
+## Y la decision que hay que tomar antes de escribir, y es una
+
+**De donde sale la nota.** **El hito dice «a partir de los ultimos simulacros y tests ponderados por el
+peso de cada tema»**, **y eso se puede calcular de dos maneras**:
+
+- **con los aciertos**: **la media de acierto en los ultimos intentos, ponderada por preguntas del tema**;
+- **con el modelo de dominio**: **la `mastery` que ya existe** (`domain/review.py`), **que no es una nota
+  sino un estado de dominio**.
+
+**La primera da una nota en la escala del examen y su intervalo sale de la varianza de los intentos.**
+**La segunda no da nota**, **y el hito pide nota.**
+
+**Así que se hace la primera**, **y el intervalo se calcula con la varianza de los intentos recientes**,
+**que es la unica forma de que el intervalo signifique algo**: **si no hay varianza —un solo intento—, el
+intervalo no se enseña**. **Una nota sola sin dispersión es una nota inventada.**
