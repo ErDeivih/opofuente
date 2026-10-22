@@ -3032,3 +3032,35 @@ las capturas                   necesitan la web
 ```
 
 **Y el arranque de la API, que era la mitad mas dificil, esta verificado desde la ronda 231.**
+
+## M8: el monorepo no esta cableado para pnpm, y por eso la web no arranca (ronda 234)
+
+**Al generar el lockfile sale el aviso que explica todo lo anterior:**
+
+```
+[WARN] The "workspaces" field in package.json is not supported by pnpm.
+       Create a "pnpm-workspace.yaml"
+Already up to date · Done in 407ms
+```
+
+**Y comprobado**: **`pnpm-workspace.yaml` no existe**, **y `package.json` declara `workspaces` al estilo de
+npm.**
+
+**Asi que el monorepo no esta cableado para pnpm**: **los paquetes internos (`@opofuente/contracts`) no se
+enlazan**, **y por eso `pnpm dev` los pide al registro de npm y se queda en un 404.** **El lockfile que sale
+pesa 0,4 KB y no tiene dependencias: no es un lockfile, es un fichero vacio con cabecera, y lo he borrado en
+vez de commitearlo.** **Un lockfile vacio es peor que ninguno: parece que hay y no fija nada.**
+
+## Lo que hay que hacer, y son dos ficheros pequenos
+
+1. **crear `pnpm-workspace.yaml`** con los paquetes del monorepo —**`apps/*` y `packages/*`**—;
+2. **quitar `workspaces` de `package.json`**, **que es lo que despista a pnpm**;
+3. **y entonces `pnpm install` genera un lockfile de verdad**, **y el instalador puede volver a
+   `--frozen-lockfile`**.
+
+**Es el unico sitio de la fase donde el problema no es ni el contenido ni el OCR ni una decision del
+propietario: es que el monorepo usa el sistema de espacios de trabajo de otro gestor.**
+
+**Y explica, de paso, que la web nunca se haya probado «desde cero»**: **en la maquina de desarrollo los
+`node_modules` estaban puestos de antes, y el enlace de los paquetes internos lo hizo alguien en un momento
+que no esta escrito en ningun sitio.**
