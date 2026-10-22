@@ -206,7 +206,7 @@ describe('el marco del alumno', () => {
     stubInicio();
     renderWithProviders(<AppRoutes />, { route: '/' });
 
-    expect(await screen.findByRole('heading', { level: 1, name: 'Inicio' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 1, name: 'Hoy' })).toBeInTheDocument();
     expect(await screen.findByText('Aún no has hecho ningún test.')).toBeInTheDocument();
 
     const { interfaz, todo } = textoDeLaPantalla();

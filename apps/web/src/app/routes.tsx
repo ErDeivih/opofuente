@@ -4,6 +4,7 @@ import { AdminUiPage } from '../pages/AdminUiPage';
 import { ChangesPage } from '../pages/ChangesPage';
 import { ErrorsPage } from '../pages/ErrorsPage';
 import { ExplanationTrayPage } from '../pages/ExplanationTrayPage';
+import { HoyPage } from '../pages/HoyPage';
 import { RepasoPage } from '../pages/RepasoPage';
 import { IncidentsPage } from '../pages/IncidentsPage';
 import { LibraryPage } from '../pages/LibraryPage';
@@ -129,7 +130,13 @@ export function AppRoutes() {
 
       {/* --- Zona del alumno -------------------------------------------------- */}
       <Route element={<StudentZone />}>
-        <Route path="/" element={<StudentHomePage />} />
+        {/*
+          **«Hoy» sustituye a Inicio** (M4 de la fase 3): la pantalla principal enseña lo que toca
+          hacer, no un resumen del progreso. Inicio se queda en `/inicio` porque sus cifras siguen
+          siendo utiles y no es una pantalla que haya que tirar.
+        */}
+        <Route path="/" element={<HoyPage />} />
+        <Route path="/inicio" element={<StudentHomePage />} />
         <Route path="/temario" element={<SyllabusPage />} />
         {/*
           La ficha del tema con sus apuntes: el código legible (`IV.7`) es la dirección, como en toda
