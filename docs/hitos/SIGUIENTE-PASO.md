@@ -4152,3 +4152,43 @@ la pantalla de canje      comodidad
 ```
 
 **Y con `npx` funcionando, la ruta se puede volver a intentar sin el estorbo de antes.**
+
+## M8: la ruta del canje, otra vez escrita y otra vez retirada (ronda 274)
+
+**Con `npx` ya funcionando, se restauro la ruta y se regenero el contrato limpiamente:**
+
+```
+npm run contracts:generate   ->  Tipos derivados escritos: src/openapi.d.ts
+packages/contracts           ->  233 lineas nuevas
+pytest tests/contract        ->  1 failed, 28 passed · 6 min 44 s
+```
+
+**Asi que el problema no era la generacion**: **una de las veintinueve pruebas de contrato no acepta la ruta
+nueva**, **y averiguar cual cuesta siete minutos por intento**.
+
+**Y por eso se retira otra vez** —**el fichero esta en `F:\temp-opofuente\invitations-en-curso.py`**—, **y el
+arbol vuelve a verde.**
+
+## Lo que hay que hacer, y es una sola corrida
+
+1. **restaurar el fichero, montarlo y regenerar** —**ya esta hecho dos veces, es de un minuto**—;
+2. **correr `pytest tests/contract -q --tb=line`** **y leer el nombre de la que falla**, **sin intentar
+   arreglarla en la misma corrida**;
+3. **con ese nombre, arreglarla** —**y suele ser una lista de rutas esperadas o un esquema de error que la ruta
+   nueva no declara**—.
+
+**Lo que NO hay que hacer es lo que he hecho dos veces**: **regenerar y volver a correr esperando otro
+resultado**, **que cuesta siete minutos y no aporta nada.**
+
+## Y la cuenta honesta de M8
+
+```
+el paquete, el administrador, el instalador, la instalacion reproducible,
+la copia, la guia, la API y la web sirviendo, la invitacion con 5 tests,
+y las 78 capturas                                        HECHO
+la ruta HTTP del canje                                    escrita, no entra
+la pantalla de canje                                      comodidad, depende de la ruta
+```
+
+**Nueve de once, y las dos que faltan son la misma cadena**: **la ruta y su pantalla.** **La funcionalidad existe
+por comando desde la ronda 245.**
