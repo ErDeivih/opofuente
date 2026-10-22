@@ -3621,3 +3621,44 @@ herramientas ya recibe la base** · **los tests del canje pasan cuatro de cinco 
 
 **Lo que sigue esperando a algo de fuera es solo esto**: **red** (lockfile y capturas), **`tesseract`** (M2
 §2 y M5 oficiales), **los apuntes del temario nuevo** (M5 corrida) **y 2.529 decisiones** (M7 bandeja).
+
+## M8: los cinco tests de la invitacion, en verde (ronda 255)
+
+**La cadena de la invitacion queda probada de punta a punta:**
+
+```
+5 passed
+  canjear crea la cuenta y no se puede repetir
+  el token no esta guardado en la base (se guarda su hash)
+  otra direccion no canjea
+  una caducada no canjea
+  un token inventado no canjea
+```
+
+**Y las tres cosas que hicieron falta, en orden, y ninguna era la primera que pense:**
+
+1. **la base por parametro** en `crear` y `canjear` —**hecho en la ronda 251**—;
+2. **depender de `migrated_settings`** y no de `get_settings()` —**el fixture si publica su base, la global
+   esta memorizada y devuelve la del repositorio**—;
+3. **y pasar la ruta en las cinco llamadas**: **en dos de ellas se me quedo sin pasar**, **y el test seguia
+   abriendo la base global** —**`no such table`, otra vez, por el mismo motivo y en sitios distintos**—.
+
+**La tercera es la leccion**: **un parametro opcional que se olvida en una llamada no falla en la firma,
+falla en la base**, **y el mensaje que da habla de una tabla que si existe.**
+
+## Lo que M8 tiene ahora
+
+```
+punto 1 · el paquete publico         HECHO · 13 tablas · 31.901 filas · ida y vuelta identica · 5 tests
+el administrador                     HECHO · probado, dos veces, sin duplicar
+punto 2 · el instalador              HECHO · con y sin paquete · codigo 0
+punto 3 · copia y restauracion       HECHO · integridad ok
+punto 4 · la guia                    HECHA
+la API y la web sirviendo            HECHO · 200 y 200 sobre la instalacion
+la invitacion: tabla, comando, canje HECHO · y ahora con 5 tests
+la pantalla de canje                 falta · comodidad
+las capturas de M8                   faltan · red
+```
+
+**De diez piezas, ocho hechas y probadas.** **Y las dos que faltan no son codigo de producto: una es una
+pantalla y la otra espera a la red.**
