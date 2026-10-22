@@ -76,6 +76,34 @@ async function marcarElConjuntoComoDudoso(setId: string): Promise<void> {
   }
 }
 
+/**
+ * Marca como dudoso el conjunto **del que sale una pregunta concreta**.
+ *
+ * **La sesión no dice a qué conjunto pertenece su pregunta** —no viaja en la respuesta, y no tiene por
+ * qué—, así que se resuelve con una consulta: la pregunta es de un conjunto y solo de uno.
+ *
+ * **Antes de crear la sesión se marcaba el conjunto nuevo del ayudante**, que es otro: la sesión se
+ * pide por tema, así que sus preguntas son las sembradas. **La captura salía sin marca y la prueba
+ * pasaba solo mientras el conjunto sembrado estuviera dudoso de una pasada anterior.**
+ */
+async function marcarElConjuntoDeLaPregunta(stem: string): Promise<void> {
+  const { DatabaseSync } = await import('node:sqlite');
+  const base = new DatabaseSync(path.join(DATOS_DE_LA_SUITE, 'opofuente.sqlite3'));
+  try {
+    // **Por el enunciado, que es lo unico que la sesion da**: su `question` trae el texto y las
+    // opciones, pero **ni el identificador de la version ni el del conjunto**, y no tiene por que
+    // traerlos: son cosas del banco, no de la pantalla del alumno.
+    base
+      .prepare(
+        'UPDATE question_sets SET key_reliability = ? WHERE id IN ' +
+          '(SELECT question_set_id FROM question_versions WHERE stem = ?)',
+      )
+      .run('dudosa', stem);
+  } finally {
+    base.close();
+  }
+}
+
 // El informe se escribe **después** de la última captura de este proceso. Si una captura se pasa de
 // tiempo, Playwright reinicia el proceso y este `afterAll` vuelve a correr: cada fila ya está en
 // disco, así que el informe sale completo igualmente.
@@ -939,10 +967,6 @@ async function montarTestDeAlumno(): Promise<{ sesion: string; conjunto: string 
     );
   }
 
-  // La clave del conjunto que se acaba de montar queda **en revisión**, que es lo que hay que ver en
-  // la captura: la marca sale en el test en curso y en el resultado.
-  await marcarElConjuntoComoDudoso(conjunto.id);
-
   const sesion = await leer<{ id: string }>(
     await fetch(`${API}/api/v1/student/tests`, {
       method: 'POST',
@@ -950,6 +974,18 @@ async function montarTestDeAlumno(): Promise<{ sesion: string; conjunto: string 
       body: JSON.stringify({ nodes: ['IV.1'], count: 3, filter: 'all', feedback: 'immediate' }),
     }),
   );
+
+  // **La marca va sobre el conjunto DEL QUE SALEN las preguntas de la sesión**, y no sobre el que se
+  // acaba de montar: la sesión se pide por tema (`IV.1`), así que sus preguntas son las sembradas, no
+  // las de este conjunto. **Marcar el otro dejaba la captura sin marca y la prueba en verde por
+  // suerte** —mientras el conjunto sembrado estuviera dudoso de otra pasada—.
+  const detalle = await leer<{ question: { stem: string } }>(
+    await fetch(`${API}/api/v1/student/sessions/${sesion.id}`, { headers: cabeceras }),
+  );
+  await marcarElConjuntoDeLaPregunta(detalle.question.stem);
+
+  // **Y se arranca DESPUÉS de marcar**: el `in_review` se calcula al servir la sesión, así que marcar
+  // más tarde dejaría la marca fuera de la respuesta que la captura retrata.
   await leer<unknown>(
     await fetch(`${API}/api/v1/student/sessions/${sesion.id}/start`, {
       method: 'POST',
