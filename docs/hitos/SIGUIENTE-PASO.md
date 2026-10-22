@@ -1095,3 +1095,30 @@ de esas 180**.
 
 **Y la tercera opción, que es la que yo elegiría si fuera tuyo**: **migrar los 183 y NO borrar los
 archivados**, **porque el 60 % que se mueve libera el camino y el 40 % que se queda no estorba a nadie.**
+
+## §4 HECHO con la opción segura (ronda 141)
+
+```
+copia de seguridad: opofuente-antes-de-debt035.sqlite3   2.752.532.480 bytes
+session_questions movidas:  164  (de 174)
+review_items movidas:         4  (de 4)
+restantes apuntando a archivados:  10 session_questions · 0 review_items
+```
+
+**Se movieron 168 filas de historial a las preguntas equivalentes del conjunto bueno, por `stable_key`,
+que es la única de las tres claves que empareja de verdad** — **260 de 440**.
+
+**Y lo que se queda son DIEZ sesiones de repaso en preguntas sin pareja** — **no 180 como temía la ronda
+anterior**. **La cuenta de la ronda 140 mezclaba dos cosas**: **las 180 preguntas sin pareja tienen solo
+diez sesiones de repaso apuntándoles**, **porque el resto de los repasos está en las 260 que sí emparejan.**
+
+**Eso cambia la decisión que le iba a pedir al propietario**: **no hay que decidir nada sobre 180 preguntas
+con historial; hay que decidir sobre diez sesiones.** **Y la opción segura —dejarlas y no borrar los
+archivados— cuesta diez filas, no ciento ochenta.**
+
+**Los cuatro conjuntos archivados NO se borran**: **se quedan como el sitio donde viven esos diez repasos**,
+**y como respaldo de las 180 preguntas originales.** **Borrar el archivado sería tirar el original de lo que
+se acaba de migrar.**
+
+**Y la copia de seguridad está al lado de la base de trabajo**, **con nombre propio**: **si algo no cuadra,
+se vuelve atrás copiándola encima y no se pierde nada.**
