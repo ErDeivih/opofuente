@@ -2417,3 +2417,44 @@ dejarlas separadas de las reales**, **que es la mitad «propuesto en bloque» de
 
 **Va a `PARA-EL-PROPIETARIO.md` como lo que es**: **el unico apartado de la fase que no se cierra con
 trabajo mio**, **y con la cuenta exacta de lo que falta.**
+
+## M7, punto 2: `notes verify --all` existe y encuentra un tema bajado (ronda 213)
+
+**El hito pide «comprobacion semanal automatica de los temas publicados que avise si alguno baja del
+liston»**, **y el comando no existia**. **Ahora existe:**
+
+```
+uv run python -m opofuente.tools.notes verify --all
+```
+
+**Y sobre la copia, lo que dice:**
+
+```
+1 de 29 han bajado del liston:
+  8:
+    revision de forma: NO PASA · 18 apartado(s) · 24.176 palabra(s) de 33.160
+    · 1 tabla sin cabecera utilizable · en nti-datos-y-comunicaciones:10
+```
+
+**Las tres decisiones del comando:**
+
+1. **los codigos de salida distinguen tres cosas**: **`0` todos pasan**, **`1` alguno ha bajado**, **`2`
+   no hay nada que revisar**. **Una tarea programada que solo mira «distinto de cero» confunde «esta mal»
+   con «no he mirado nada»**, **y lo segundo no es lo primero**;
+2. **sin `--all`, solo los temas con material publicado**: **revisar un tema que nadie puede leer es
+   trabajo que no cambia nada**;
+3. **la consulta va parametrizada**: **`ruff` marco la primera version como inyeccion por interpolar el
+   `--limite`**, **y tenia razon aunque hoy solo la llame una persona** — **la costumbre es lo que se
+   copia despues.**
+
+**Y lo que ha encontrado no es nuevo**: **el tema 8 con una tabla sin cabecera utilizable**. **Ese defecto
+lleva ahi desde que se escribio el tema**, **y no lo ha visto nadie porque la revision solo se pasaba al
+escribir.** **Es exactamente el caso que el hito describe**: **un tema que paso el liston y ya no lo pasa.**
+
+## Lo que falta del punto 2 para ser «semanal y automatica»
+
+**El comando esta; la tarea programada no.** **Y antes de ponerla hay que decidir donde**: **una tarea del
+Programador de Windows en la maquina del propietario** —**que solo corre si la maquina esta encendida**—
+**o un paso de CI** —**que corre siempre y no avisa a nadie que no mire el repositorio**—.
+
+**Lo apunto y sigo**: **el hito pide que avise**, **y avisar es una decision de por donde**.
