@@ -1813,3 +1813,39 @@ los repasos de M3                      los temas flojos se miden sobre los que h
 **Y es la misma cosa que el §2 de M2 esperaba**: **los apuntes del programa bueno.**
 
 **Queda apuntado en `PARA-EL-PROPIETARIO.md` como lo que es: el estado de la copia, no una pieza que falte programar.**
+
+## M5, punto 4: lo que falta para que el simulacro use un supuesto de verdad (ronda 191)
+
+**Lo que hay hoy, leído en `student_service.py`:**
+
+```python
+del_supuesto = bloques.get(request.case_block.upper(), ())     # los temas del bloque III o IV
+PartSpec(code="segunda_parte", node_ids=del_supuesto, count=20, reserve=5,
+         alternative_group="supuesto")
+practical_case_origin = "bloque"                                # ← y lo declara
+```
+
+**Así que el simulacro ya tiene su segunda parte, y ya dice la verdad sobre de dónde sale.** **Lo que el
+hito pide es que, si hay un supuesto real, se use ESE en vez de los temas del bloque.**
+
+## Lo que hay que cambiar, y son tres cosas
+
+1. **elegir el supuesto** —oficial primero, y si no hay, generado— **del bloque pedido**, con sus
+   veinticinco preguntas **en orden**;
+2. **componer la segunda parte con esas preguntas**, **no con los temas del bloque**, **y guardar en la
+   sesión a qué supuesto corresponde** —`practical_case_id` en `CompositionSpec`, que hoy no existe—;
+3. **enseñar el enunciado del caso** en la pantalla del test: **sin el enunciado, veinticinco preguntas
+   de supuesto son veinticinco preguntas sueltas.**
+
+## Y por qué no lo hago ahora
+
+**La tabla `practical_cases` está VACÍA** —**cero, porque el generador no ha podido correr**—, **y los
+oficiales necesitan el `tesseract`**. **Escribir la elección, la composición y la pantalla sin un solo
+supuesto con el que probarlo es escribir tres cosas a ciegas**, **y esta tarde ya ha pasado tres veces
+que algo «escrito y verde» no funcionaba porque el dato no existía**.
+
+**Lo que sí queda hecho y no depende de eso**: **el `origin` está en la tabla**, **el repositorio cuenta
+los supuestos por bloque y origen**, **y el simulacro declara hoy `"bloque"` en vez de mentir.**
+
+**Cuando haya supuestos, el punto 4 son dos consultas y un campo nuevo en la composición** — **y esa
+estimación sí es honesta, porque el terreno está medido.**
