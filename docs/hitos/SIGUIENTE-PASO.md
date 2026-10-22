@@ -3662,3 +3662,48 @@ las capturas de M8                   faltan · red
 
 **De diez piezas, ocho hechas y probadas.** **Y las dos que faltan no son codigo de producto: una es una
 pantalla y la otra espera a la red.**
+
+## M8: el cambio del monorepo tiene un precio, y lo he medido tarde (ronda 259)
+
+**Corriendo la puerta del web sobre todo `src` —y no solo sobre lo que toque— salen dos fallos:**
+
+```
+npx tsc -p tsconfig.json --noEmit        ->  codigo 1
+npx eslint src --max-warnings=0          ->  codigo 1
+Error: Cannot find module '…\node_modules\@opofuente\web\no…'
+```
+
+**Y no son dos fallos nuevos: es el mismo que dejo de arrancar la suite de capturas.** **Los tres empezaron a
+fallar despues del cambio de espacios de trabajo** —`pnpm-workspace.yaml` y `workspace:*`— **que hizo que
+`pnpm dev` sirviera (comprobado con `WEB -> 200`)** **y que cambio como pnpm dispone `node_modules`.**
+
+**Asi que el diagnostico de la ronda 239 estaba a medias**: **dije que el cableado del monorepo no era la
+causa porque quitar el fichero no arreglaba la suite**, **y era verdad a medias**: **quitarlo tampoco
+restauraba la disposicion anterior**, **porque para eso hay que reinstalar desde el estado de antes, y ese
+estado no esta guardado en ningun sitio sin lockfile.**
+
+## Lo que esto significa, y es lo mas importante que ha pasado hoy
+
+**Arregle una cosa —los paquetes internos se enlazan— y rompi otra —las herramientas del monorepo se
+resuelven mal—, y no lo supe durante veinte rondas porque estaba comprobando cada fichero por separado.**
+
+**La leccion es la misma que la de `ruff check .` en la ronda anterior, y ahora tiene dos ejemplos:**
+
+> **una comprobacion que solo mira lo que acabas de tocar no ve lo que rompiste al tocarlo.**
+
+## Lo que hay que decidir, y es una decision de verdad
+
+**O `pnpm-workspace.yaml` y `workspace:*`, con la web sirviendo y las herramientas del monorepo rotas**, **o
+volver atras y tener las herramientas y la web rota sin el enlace**.
+
+**Y la tercera opcion, que es la buena y necesita red**: **un `pnpm-lock.yaml` que fije la disposicion**, **y
+entonces las dos cosas a la vez.**
+
+**Hasta entonces, el estado se queda como esta** —**con la web sirviendo, que es lo que hace falta para las
+capturas**—, **y la decision se apunta aqui en vez de tomarla a ciegas.**
+
+## Y una cosa que hay que decir de la puerta
+
+**El `18/18` del objetivo no se ha cumplido hoy, y ahora se sabe por que**: **la puerta del web no pasa**, **y
+no por el codigo del producto: por la disposicion de `node_modules`.** **Eso es un bloqueo de entorno, y va a
+`PARA-EL-PROPIETARIO.md` como lo que es.**
