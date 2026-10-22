@@ -1679,3 +1679,45 @@ la copia** (se retiraron para las capturas).
 
 **Y la cifra de esta ronda es la que importa**: **0 supuestos oficiales en la copia**, **que es lo mismo
 que decir que el punto 2 del hito es trabajo de contenido y no de consulta.**
+
+## M5: la herramienta del INAP pide unos documentos que el manifiesto no tiene (ronda 181)
+
+**El extractor funciona y el fallo es de datos:**
+
+```
+FileNotFoundError: no such file: 'data\sources\TAI-2018-libre-cuestionario-1.pdf'
+banco: 257 conjuntos con preguntas en esta oposición
+```
+
+**`importar_inap` espera los exámenes de **2018** —`TAI-2018-libre-cuestionario-1.pdf`,
+`TAI-2018-libre-cuestionario-2.pdf`, `TAI-2018-pi-cuestionario-unico.pdf`— y el manifiesto de
+`fetch-sources.ps1` descarga los de **2024 y 2025**. Así que **el paso 2 de M5 no falla por código: falla
+porque los tres PDF que necesita no están en la lista de fuentes.**
+
+## Y esos tres son justo los escaneos sin texto
+
+**Son los mismos tres de M2**
+(`TAI-2018-libre-cuestionario-1`, `-2` y `TAI-2018-pi-cuestionario-unico`), **los que tienen 0 caracteres
+en 10 páginas y necesitan `tesseract`**, **que no está instalado**.
+
+**Así que el «supuestos oficiales primero» de M5 está bloqueado por la misma cosa que el §2 de M2**:
+**un OCR que no existe en esta máquina**. **La cadena completa es**: **sin tesseract no se leen los
+cuestionarios de 2018, sin esos cuestionarios no hay supuestos oficiales, y sin supuestos oficiales el
+simulacro sigue diciendo `practical_case_origin = "bloque"`.**
+
+## Lo que eso deja, y es lo importante
+
+**M5 no se puede cerrar entero sin el propietario**, **y es la primera vez que pasa en esta fase con un
+hito entero**: **M1 esperaba la API, M2 el `tesseract` para tres fuentes, M3 y M4 se cerraron solos. M5
+necesita el `tesseract` para su punto más importante.**
+
+**Pero lo demás de M5 sí se puede hacer, y en este orden:**
+
+1. **la tabla, hecha**;
+2. **el generador con segundo modelo** —**el punto 3**—, **que no necesita los oficiales: genera desde los
+   apuntes**;
+3. **el simulacro prefiriendo un oficial**, **que ya está escrito y hoy dice la verdad** (`"bloque"`);
+4. **y el paso 2, apuntado al propietario** **junto al §2 de M2**, **porque es la misma dependencia**.
+
+**Y una nota que conviene escribir en `PARA-EL-PROPIETARIO.md`**: **los dos bloqueos que quedan —el §2 de
+M2 y el supuesto oficial de M5— son el mismo `tesseract`.**
