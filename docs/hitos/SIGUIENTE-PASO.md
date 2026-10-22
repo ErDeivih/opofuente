@@ -4493,3 +4493,41 @@ que el hito pide con «propuesto en bloque».**
 **Se aplico sobre la copia** —`F:\temp-opofuente\m0-capturas`—, **no sobre la base real**, **que sigue con su
 huella**. **La copia tiene ahora 134 filas en `propuesta_lista`**, **que es el estado que la herramienta deja y
 el que habria que dejar en la real cuando el propietario lo decida.**
+
+## Lo que queda, y una puerta que puede no estar cerrada (ronda 287)
+
+**Los tres pendientes, y a que esperan de verdad:**
+
+```
+M2 §2   tesseract con espanol          → del propietario, sin vuelta
+M7      las 825 decisiones             → del propietario, sin vuelta
+M5      la corrida de los supuestos    → ¿del temario nuevo, o de algo mas?
+```
+
+**Y la tercera merece una segunda mirada, porque la di por cerrada demasiado pronto.**
+
+## El camino de M5, revisado
+
+**El generador de supuestos no corre porque la copia no tiene apartados `III` ni `IV`**, **porque sus apuntes
+son de otro temario**. **Y dije que eso necesitaba el mismo `tesseract` que M2 §2.**
+
+**Pero no es lo mismo**, y conviene separarlo:
+
+1. **los supuestos OFICIALES** —**los 538 del INAP**— **salen de los cuestionarios de 2018**, **que son escaneos**:
+   **eso si necesita OCR**;
+2. **los supuestos GENERADOS** —**el punto 3 del hito**— **salen de los apuntes del temario**, **y el temario es
+   texto**: **el BOE de TAI 2025 se lee sin OCR**.
+
+**Asi que la corrida de M5 puede desbloquearse sin `tesseract`**, **importando el temario nuevo y escribiendo sus
+apuntes con `apuntes`** —**que es contenido y cuesta modelo, no OCR**—.
+
+**Y eso cambia el mapa**: **de tres bloqueos del propietario a dos**, **y el tercero es una tanda de contenido que
+yo puedo hacer** —**con su gasto, que ahora mismo esta en 0,66 $ de 30**—.
+
+## Lo que hay que comprobar antes de lanzarla
+
+**Que el temario de TAI 2025 se pueda importar sin los escaneos**: **`importar_inap` pide los cuestionarios de
+2018 para el BANCO**, **pero el TEMARIO viene de otra fuente** —**el BOE, que es texto**—. **Hay que mirar si hay
+un camino de importacion que no toque los cuestionarios**, **y si lo hay, lanzarlo**.
+
+**Eso es lo primero de la proxima sesion, y no necesita a nadie.**
