@@ -3287,3 +3287,38 @@ version: es un rango**, **y un rango no reproduce nada.**
 
 **El paso 2 no necesita red**: **solo cambiar cinco caracteres en `package.json` y reinstalar desde la
 cache.** **Es lo primero de la proxima ronda, y por fin es un cambio de una linea con causa medida detras.**
+
+## M8: fijar la version no basta, porque no se puede bajar la que falta (ronda 242)
+
+**Hecho el cambio de una linea —`"@playwright/test": "1.63.0"`, sin `^`— y reinstalado:**
+
+```
+version en el arbol: playwright@1.64.1     ← sigue la misma
+Error: Playwright Test did not expect test.describe() to be called here.
+Error: No tests found
+```
+
+**El `pnpm install` no ha podido traer 1.63.0**: **el registro pide autorizacion**, **y en la cache solo esta
+la 1.64.1**. **Asi que fijar la version es correcto y no basta**: **hace falta poder descargar la que se fija.**
+
+**El `package.json` se queda con la version exacta** —**es lo correcto aunque hoy no se pueda instalar**—,
+**y queda escrito que el arbol tiene otra hasta que haya red.**
+
+## Lo que eso deja, y el orden nuevo
+
+**Las capturas de M8 no se pueden hacer sin red.** **Y hay una pieza de M8 que si se puede hacer sin red y
+que ademas es la que falta de verdad para una beta cerrada:**
+
+> **la invitacion por enlace.**
+
+**Tabla de invitaciones —token, caducidad, un solo uso—, su comando para crearlas y su pantalla.** **No
+necesita ni red ni modelo ni al propietario.** **Y sin ella la beta es de uno.**
+
+## El orden de la proxima ronda, corregido
+
+1. **la invitacion por enlace** —**sin red, y es lo que falta para que la beta sea una beta**—;
+2. **las capturas de M8** —**cuando haya red para bajar la 1.63.0**—;
+3. **el lockfile** —**en una maquina con registro**—, **que es lo que impide que esto vuelva a pasar**.
+
+**Y las capturas pasan de ser «lo siguiente» a ser «lo que espera a la red», porque hay trabajo que no
+espera a nada.**
