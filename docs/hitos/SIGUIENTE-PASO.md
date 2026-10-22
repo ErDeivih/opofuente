@@ -917,3 +917,37 @@ huella**. **Una fuente volátil sin huella bloquea la puerta; una fuente normal 
 
 **Con esto, la fase tiene 17 de 18 puertas** —la 7 corriendo, limpia desde el 26 %— **y la única que
 faltaba por decisión de contenido está cerrada.**
+
+## La puerta 7 limpia: 824 de 826, y los dos rojos no son de código (ronda 129)
+
+```
+2 failed, 824 passed in 1:01:01
+FAILED test_classification.py::test_resolver_un_duplicado_queda_auditado_y_no_borra_nada
+FAILED test_classification.py::test_deshacer_una_aceptacion_sin_estado_previo_vuelve_a_pendiente
+```
+
+**Y las dos pruebas, medidas en tres escalas:**
+
+```
+las dos solas                          2 passed   (22 s)
+test_classification.py entero         14 passed   (1:28)
+los siete ficheros anteriores + él    70 passed   (5:23)
+```
+
+**Así que fallan SOLO dentro de la suite completa, y no por los ficheros que van justo antes.** **No son
+mías** —no he tocado el `_audit` ni el deshacer— **y no son deterministas: pasan cuando se les da un
+contexto menor**.
+
+**El diagnóstico probable es de aislamiento**: **las dos usan `seeded_client` y la suite comparte una base
+sembrada**, **así que alguna prueba anterior deja estado que estas dos no esperan**. **Y no he encontrado
+cuál con los siete ficheros del principio**: **el culpable está más arriba o más abajo en el orden real de
+`pytest`, no en el alfabético que probé**.
+
+**Lo que esto significa para el 18/18**: **826 pruebas, 824 en verde y dos que fallan por el estado que
+deja otra**, **no por lo que prueban**. **Arreglarlo es aislar esas dos** —`--forked` o una base por
+prueba— **y no tocar sus aserciones**, **que están bien**: **prueban que resolver un duplicado queda
+auditado y que deshacer sin estado previo vuelve a pendiente.**
+
+**Y una cosa que sí queda clara**: **el árbol del que se parte hoy está MEJOR que ayer en esta puerta**,
+**porque ayer tenía además las nueve marcas de mi concurrencia y los dos fallos de `test_extraction` por
+las fuentes dentro.** **Ahora solo quedan estos dos, y están acotados a «no se aíslan».**
