@@ -2636,3 +2636,38 @@ acepta es `+` entre ellas ni un f-string**, **y el error de esta ronda fue no di
 
 **Y la importacion ya esta bien resuelta**: **`insert()` de SQLAlchemy con reflexion de la tabla y
 `prefix_with("OR REPLACE")`, sin una sentencia cruda.**
+
+## M8, punto 1: el paquete publico, hecho y con su prueba (ronda 219)
+
+**Las trece sentencias quedaron como literales completos, partidos a mano en trozos contiguos.** **`ruff` y
+`mypy` en verde**, **y el fichero esta en `main`.**
+
+```
+exportar  ->  13 tablas · 31.901 filas · 19,5 MB
+revisar   ->  «el paquete no lleva nada de una persona» · codigo 0
+importar  ->  31.901 filas en 13 tablas, dos veces
+exportar de nuevo -> IDA Y VUELTA IDENTICA: True
+```
+
+**Las dos pruebas del hito, pasadas**: **la ida y vuelta da lo mismo**, **y dentro no hay tabla de una
+persona ni una explicacion privada.**
+
+## Los dos fallos que aparecieron, y lo que ensenaron
+
+**1 · las fechas.** **El primer import fallaba con «SQLite DateTime type only accepts Python datetime»**,
+**porque al exportar se escribian como texto y nadie las devolvia a su tipo.** **Arreglado mirando el tipo
+de la columna reflejada**, **no el aspecto del texto**: **adivinar por la forma acierta casi siempre, y ese
+«casi» es un `TypeError` en la primera tabla con una fecha.**
+
+**2 · el formato de la fecha.** **Con `str(datetime)` la segunda exportacion salia distinta de la primera
+por un guion** — `2026-10-22 14:02:40` contra `2026-10-22T14:02:40` —. **Con `isoformat()` son iguales.**
+**Y eso es exactamente lo que la prueba de ida y vuelta sirve para encontrar**: **un paquete que se importa
+sin error y cambia diez microsegundos de formato en cada vuelta no es idempotente, aunque lo parezca.**
+
+## Lo que queda de M8
+
+- **punto 1, hecho**; **falta meter la prueba de la ida y vuelta como test**;
+- **punto 2**: el `.ps1` de instalacion, **probado sobre una carpeta vacia**;
+- **punto 3**: copia y restauracion sobre esa instalacion;
+- **punto 4**: la guia de una pagina;
+- **y las capturas en `artifacts/recorrido-M8/`**, que necesitan la instalacion funcionando.
