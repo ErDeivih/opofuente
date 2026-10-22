@@ -2594,3 +2594,32 @@ class AnalyticsEventRecord(Base):
     name: Mapped[str] = mapped_column(String(16), nullable=False)
     label: Mapped[str] = mapped_column(String(48), nullable=False)
     recorded_at: Mapped[datetime] = mapped_column(UtcDateTime(), nullable=False)
+
+
+class CardRecord(Base):
+    """Una tarjeta de repaso con su estado de SM-2 (M3).
+
+    **La tarjeta y su estado en la misma fila**: una tarjeta sin él no existe, y la cola del día se
+    pregunta en cada pantalla —un `join` por vuelta no se paga—.
+
+    **`origin` distingue la plantilla del modelo.** Las dos son del alumno, pero **la cifra del
+    0,1 % de la via sin modelo solo se sostiene si se separan**.
+    """
+
+    __tablename__ = "cards"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    #: El hecho de los apuntes del que sale. **Sin él no se puede adelantar al fallar.**
+    topic_fact_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    front: Mapped[str] = mapped_column(Text, nullable=False)
+    back: Mapped[str] = mapped_column(Text, nullable=False)
+    #: **La cita**: sin ella la tarjeta no se puede comprobar.
+    citation: Mapped[str | None] = mapped_column(Text, nullable=True)
+    origin: Mapped[str] = mapped_column(String(16), nullable=False, default="structural")
+    status: Mapped[str] = mapped_column(String(16), nullable=False, default="active")
+    ease: Mapped[float] = mapped_column(Float, nullable=False, default=2.5)
+    interval_days: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    repetitions: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    due_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
