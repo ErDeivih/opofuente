@@ -109,7 +109,7 @@ export function ExplanationTrayPage() {
         setEditando({ id: actual.question_version_id, texto: actual.explanation.text });
       }
     },
-    [actual, cursor, decidir, filas.length],
+    [actual, cursor, decidir, filas.length, regenerar],
   );
 
   useEffect(() => {
