@@ -3801,3 +3801,43 @@ cinco cosas con la medicion delante.**
 **Y cuando haya red, la prueba es de un minuto**: **`pnpm install` con la version fijada y lanzar la suite.**
 **Si vuelve, era la version. Si no vuelve, es la suite, y entonces se mira con la version correcta delante**
 —**que es la unica forma de mirarla sin dudas.**
+
+## La comprobacion final: el web esta verde (ronda 264)
+
+**Corridas las pruebas del frontend despues de todo el trajin de `node_modules`:**
+
+```
+Test Files  55 passed (55)
+```
+
+**Y eso cierra la duda que quedaba abierta desde el cambio del monorepo**: **el cableado de espacios de trabajo
+rompio `npx` —que resuelve por el enlace del propio paquete— y no rompio ni el codigo ni las pruebas.**
+
+## El estado completo, con las cinco puertas y las dos suites
+
+```
+ruff check .              All checks passed
+mypy opofuente            sin errores
+tsc (binario local)       codigo 0
+eslint (binario local)    codigo 0
+998 unitarias de la API    verdes
+10 de integracion          verdes (paquete, rendimiento, invitacion)
+55 ficheros del web        verdes
+```
+
+**Siete comprobaciones, siete en verde.** **Lo que no se ha corrido es el script de las 18 baterias entero, y
+se dice: la puerta se ha comprobado por partes y ninguna parte esta en rojo.**
+
+## Lo que queda, y es lo mismo desde hace rondas
+
+```
+la pantalla de canje     comodidad · sin red
+las capturas de M8       red (playwright 1.63.0)
+el lockfile              red
+M2 §2                    tesseract con espanol
+M5 corrida               los apuntes del temario nuevo
+M7 bandeja               2.529 decisiones del propietario
+```
+
+**Cuatro de las seis dependen de algo que no esta en esta maquina.** **Las otras dos son trabajo de una tarde y
+estan descritas al detalle.**
