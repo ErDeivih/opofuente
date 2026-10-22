@@ -431,3 +431,24 @@ una vez, dio 4.638 contra 4.636, y era el `count` y no los datos—.
 **Y el bucle bueno, que es el que funciona**: **un `.ps1` escrito línea a línea**, con el `foreach` sobre
 los `desde` y el `*>> $log` para el registro. **El here-string se rompía al interpolar `$desde`**, y
 **costó dos lanzamientos perdidos antes de verlo**.
+
+## Cuando la corrida se atasca: cómo se ve y cómo se desatasca (ronda 48)
+
+**Se ve así**: **la cuenta lleva horas en el mismo número**, **y los procesos de `explicar_preguntas` tienen
+CPU casi cero**. **No están calculando: están esperando a que la red conteste.**
+
+**Y así se desatasca**: **matar los procesos de esa tanda** —`Stop-Process` por PID, filtrando por
+`explicar_preguntas`—. **El `foreach` del bucle sigue solo con la tanda siguiente**, porque `uv run`
+devuelve y el bucle no se para. **Comprobado: pasó de «desde 9000» a «desde 9500» al matarlos.**
+
+**Lo que NO hay que hacer**: **matar por `CommandLine -like '*corrida*.ps1'`** — **eso se lleva por delante
+tu propio shell**, que también contiene esa cadena. **Pasó, y es la segunda vez.** **Se mata por PID, o
+filtrando por `explicar_preguntas`, que tu comando no lleva.**
+
+**Y el arreglo de fondo, que es de código**: **el `timeout_seconds` del cliente son 180 s**, y
+**`http.client` no siempre respeta ese plazo al leer**. **Bajarlo a 60 y poner un `socket` con plazo
+explícito** haría que una tanda atascada **fallara en un minuto en vez de quedarse colgada**. **Es el
+siguiente arreglo del cliente cuando haya contexto.**
+
+**Y la cifra de la fase, medida**: **7.605 generadas, 7.605 con cita, sin cita 0** — **68 % de las
+11.147**—, **a 0,000024 $ cada una**. **El gasto no es el problema; el tiempo de reloj sí.**
