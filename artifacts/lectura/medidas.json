@@ -1,12 +1,35 @@
 [
   {
+    "ruta": "/temario/I.1",
+    "ancho": 390,
+    "altoDocumento": 217661,
+    "anchoDocumento": 390,
+    "anchoVentana": 390,
+    "columnaTexto": 324,
+    "capituloAbierto": "I.1.1",
+    "apartadosServidos": 12,
+    "capitulosEnIndice": 4,
+    "indiceAlto": 782,
+    "indicePosicion": "static",
+    "indiceScrollPropio": 0,
+    "tablas": 42,
+    "tablasQueSeDesplazan": 42
+  },
+  {
+    "ruta": "/temario/IV.7#apartado-puertos",
+    "ancho": 390,
+    "scrollY": 61022,
+    "capituloAbierto": "IV.7.2",
+    "apartadoALaVista": true
+  },
+  {
     "ruta": "/temario/IV.7#pantalla-ancha",
     "ancho": 1600,
     "anchoTexto": 647,
     "izquierdaDelTexto": 525,
     "izquierdaDeLaNota": 525,
-    "arribaDeLaNota": 479,
-    "abajoDelTexto": 463,
+    "arribaDeLaNota": 4207,
+    "abajoDelTexto": 4191,
     "notaEnLaColumnaDelTexto": true,
     "notaDebajoDelTexto": true
   }
