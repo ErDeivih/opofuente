@@ -146,13 +146,17 @@ def _dar_de_alta(
                     created_at=ahora,
                 )
             )
-            for letra, texto in pregunta.opciones:
+            for orden, (letra, texto) in enumerate(pregunta.opciones, start=1):
                 session.add(
+                    # **`position` es obligatoria** y no es la letra: es el orden
+                    # en que las opciones se enseñan, y sin ella la base rechaza
+                    # la fila (lo dijo: `NOT NULL constraint failed`).
                     OptionVersionRecord(
                         id=str(uuid.uuid4()),
                         question_version_id=version_id,
                         stable_key=letra,
                         text=texto,
+                        position=orden,
                     )
                 )
             ids.append(version_id)

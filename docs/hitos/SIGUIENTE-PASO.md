@@ -5173,3 +5173,48 @@ sin leerlo.**
 3. **y las capturas de M5**.
 
 **La cifra que el hito mide ya esta saliendo: 2 de 2 aceptados con 25/25.**
+
+## M5: el ultimo campo es `opposition_id` (ronda 305)
+
+**Anadida `position` a las opciones —el campo que faltaba— y el error se mueve al ultimo sitio:**
+
+```
+NOT NULL constraint failed: question_sets.opposition_id
+[parameters: ('037d0157-…', 'Supuesto III generado 17abec95', None, None, None, …)]
+                                                            ^^^^ opposition_id
+```
+
+**Y el generador sigue aceptando:**
+
+```
+III.1.1: ACEPTADO · 25/25 coinciden
+```
+
+**Asi que faltan dos columnas del conjunto**: **`opposition_id`, que llega `None`**, **y `updated_at`**, **que la
+tabla tambien exige y el alta no pone**.
+
+## El arreglo, y de donde sale el dato
+
+**`opposition_id` no se inventa**: **sale del apartado**, **que es un nodo de currículo de una oposicion
+concreta**. **`_apartados` ya recorre esos nodos; lo unico que hace falta es que devuelva tambien su oposicion**,
+**y pasarla a `_dar_de_alta`.**
+
+**Y `updated_at` es `created_at` en el alta**: **un conjunto recien creado no se ha actualizado nunca**, **y poner la
+misma fecha es la verdad**.
+
+## Los tres campos que faltaban, en orden, y cada uno lo dijo la base
+
+```
+1 · question_sets: set_type, status, distribution, origin_scope, key_reliability   HECHO
+2 · option_versions: position                                                     HECHO
+3 · question_sets: opposition_id, updated_at                                      FALTA
+```
+
+**Los tres los dijo el `IntegrityError` con su nombre exacto**, **y en los tres el arreglo era leer `db_models` o
+`pragma table_info` en vez de suponer que los campos eran los que yo recordaba.**
+
+**Es literally la misma leccion de la ronda 295 con las claves del fixture**: **preguntarle al dato su forma.**
+
+## Y la cifra del hito, que ya no depende de esto
+
+**Dos apartados con notas, dos aceptados con 25/25.** **El alta es para guardarlos; la medida ya esta hecha.**
