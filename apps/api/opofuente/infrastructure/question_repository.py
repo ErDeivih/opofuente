@@ -1078,6 +1078,28 @@ class SqlAlchemyQuestionRepository:
             for fila in filas
         )
 
+    def explanation_by_id(self, explanation_id: str) -> ExplanationView | None:
+        """Una explicación por su identificador, para las acciones de la bandeja (M1).
+
+        **La necesita «regenerar»**: para pedirle al modelo una nueva hay que saber de qué pregunta
+        es y a qué apartado se ancla. **Devuelve `None` si no existe**, para que la ruta responda un
+        404 en vez de fingir que ha hecho algo.
+        """
+        with self._session_factory() as session:
+            fila = session.get(QuestionExplanationRecord, explanation_id)
+            if fila is None:
+                return None
+            return ExplanationView(
+                id=str(fila.id),
+                question_version_id=str(fila.question_version_id),
+                option_stable_key=fila.option_stable_key,
+                text=str(fila.text),
+                origin=str(fila.origin),
+                status=str(fila.status),
+                citation=fila.citation,
+                note_anchor_id=fila.note_anchor_id,
+            )
+
     def explanations_pending(self, *, limit: int = 50) -> tuple[ExplanationView, ...]:
         """Las explicaciones **generadas y en borrador**: la cola de la bandeja (M1).
 
