@@ -724,3 +724,40 @@ un `select body_markdown from topic_note_sections where id = ?` y devuelve `None
 3. **y el botón**, **al final**, **cuando las dos anteriores estén en verde**.
 
 **Con la regla de siempre**: **si las comprobaciones fallan, la explicación vieja no se toca.**
+
+## «Regenerar»: la incógnita de la clave, resuelta (ronda 98)
+
+**Leídos los tipos, `PreguntaAExplicar` pide cinco cosas y hay una que el servicio todavía no sabe sacar:**
+
+```python
+@dataclass(frozen=True, slots=True)
+class PreguntaAExplicar:
+    question_version_id: str
+    enunciado: str                       ← del QuestionView
+    opciones: tuple[tuple[str, str], ...] ← del QuestionView
+    clave: tuple[str, ...]                ← **del ancla: expected_letters**
+    apartado: str                         ← `section_body`, hecho
+    note_anchor_id: str                   ← de la explicación
+```
+
+**Las cuatro primeras se sacan con lo que hay** —`question()` da enunciado y opciones—, **y la quinta
+necesita un tercer método del repositorio**, **el mismo que ya usa la corrida en su consulta**:
+
+```python
+def expected_letters(self, question_version_id: str) -> tuple[str, ...]:
+    """La clave servible de la pregunta, del ancla de sus apuntes."""
+```
+
+**Ojo con el formato**: **`expected_letters` es una lista JSON** —`'["c"]'`— **y se deserializa**, **que es
+el fallo que esta mañana dejó 20 de 20 rechazadas**.
+
+**Así que «regenerar» son cuatro piezas, no tres**:
+
+```
+✓ explanation_by_id     la explicación por su id
+✓ section_body          el apartado por su ancla
+· expected_letters      la clave por la pregunta   ← y la deserialización
+· la ruta y el botón
+```
+
+**Y con eso, el servicio se escribe sin adivinar nada.**
