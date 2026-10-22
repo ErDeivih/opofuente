@@ -4038,3 +4038,51 @@ bueno durante diez rondas sin volver a probarlo.**
 
 **Las consecuencias**: **el `pnpm-lock.yaml` se puede actualizar sin problema**, **y la instalacion reproducible
 sigue en pie.** **Lo que no estaba era el bloqueo.**
+
+## M8: LA SUITE FUNCIONA — 76 pantallas y el bloqueo de veinte rondas roto (ronda 271)
+
+```
+76 passed · 9 failed · 4.3 min
+78 PNG nuevos en artifacts/screens-datos
+```
+
+**Antes decía «No tests found».** **Y la causa estaba en el mensaje de error desde el principio:**
+
+```
+Error: Playwright Test did not expect test.afterAll() to be called here.
+Most common reasons include:
+- You have two different versions of @playwright/test.
+```
+
+**Era la tercera.** **Y lo dijo `pnpm why playwright` en dos lineas:**
+
+```
+playwright@1.63.0  └─┬ @playwright/test@1.63.0  └── opofuente@0.0.0        (raiz)
+playwright@1.64.1  └─┬ @playwright/test@1.64.1  └── @opofuente/web@0.0.0  (apps/web)
+```
+
+**`apps/web` pedia la 1.64.1 en sus `devDependencies` y la raiz la 1.63.0.** **Dos copias, y cada hook de
+prueba fallaba en una distinta.** **Arreglado alineando las dos a `1.63.0`.**
+
+**Y una segunda cosa que estaba mal y nadie leia**: **pnpm 11 ya NO lee el campo `pnpm` de `package.json`** —
+**los overrides van en `pnpm-workspace.yaml`**—, **y avisaba de que lo ignoraba.** **Mi override de tres rondas
+atras no hacia nada.**
+
+## Los nueve fallos, y son de datos
+
+```
+lectura: IV.7 por capitulos      x2   IV.7 no tiene apuntes en esta base
+lectura: I.1 por capitulos       x2   lo mismo con I.1
+lectura: el enlace de un apartado x2
+la revision de apuntes           x2   la base de la instalacion no tiene revisiones
+el simulacro y el reloj          x1   el de siempre
+```
+
+**Ninguno es del empaquetado**: **son los mismos que la copia lleva dando toda la sesion** —**IV.7 sin
+apuntes**— **mas los de una base recien instalada, que no tiene historial de revisiones.**
+
+## Lo que esto cambia en M8
+
+**Las capturas ya se pueden hacer.** **Y para que vayan a `artifacts/recorrido-M8/` hay que lanzar la suite con
+`OPOFUENTE_SCREENS_SALIDA` apuntando alli** —**la suite escribe en `artifacts/screens-datos` por defecto**—.
+**Eso es el siguiente comando, y no una investigacion.**

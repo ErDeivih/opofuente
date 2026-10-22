@@ -9,3 +9,13 @@
 packages:
   - 'apps/*'
   - 'packages/*'
+
+# **Los overrides van aqui y no en `package.json`**: pnpm 11 ya no lee el campo
+# `pnpm` de alli, y avisa de que lo ignora. Con dos versiones de Playwright en
+# el arbol, cada hook de prueba falla en una distinta —«did not expect
+# test.afterAll() to be called here»— y el mensaje no dice que el problema sea
+# ese.
+overrides:
+  '@playwright/test': 1.63.0
+  playwright: 1.63.0
+  playwright-core: 1.63.0
