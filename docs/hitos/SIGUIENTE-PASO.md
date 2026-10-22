@@ -3576,3 +3576,48 @@ el lockfile           red
 
 **Y la sesion se cierra aqui, con `main` limpio y sin un test rojo.** **Lo que no se ha conseguido no es
 una idea: es media hora de refactor que ya se sabe como se hace.**
+
+## M8: cuatro de cinco pasan, y el quinto dice donde esta el problema de fondo (ronda 254)
+
+**Con la dependencia correcta —`migrated_settings`, que si publica su base—:**
+
+```
+4 passed, 1 failed
+```
+
+**Asi que la cadena de la invitacion se prueba**: **crea la cuenta, no se repite, otra direccion, token
+inventado y el token no guardado.** **Cuatro de cinco, y con eso queda demostrado que el diseño es correcto y
+que el fallo era de donde se leia la base.**
+
+**Y el quinto —`test_una_caducada_no_canjea`— falla por otra cosa:**
+
+```
+sqlite3.OperationalError: no such table: account_invitations
+[SQL: INSERT INTO account_invitations (...)]
+```
+
+**La tabla no esta cuando ese test corre.** **Y los otros cuatro ya han pasado con la misma dependencia**:
+**eso apunta a que `run_migrations` se ejecuta una vez y las bases de las funciones siguientes no llevan la
+tabla** —**o a que el ORDEN importa y la migracion se cachea**—. **Es un problema del fixture, no del
+codigo de las invitaciones.**
+
+## Lo que hay que hacer, y es corto
+
+1. **que la base de integracion sea de sesion y no de funcion** —**una sola base migrada, compartida, o una
+   por test con las migraciones aplicadas cada vez**—;
+2. **volver a poner el fichero**, **que ya esta en verde en cuatro de cinco**.
+
+**Y el fichero se retira de `main` otra vez porque cuatro verdes y un rojo no es un fichero verde**, **y un
+rojo en `main` se acaba ignorando.**
+
+## El resumen honesto de la sesion, que cabe en seis lineas
+
+**Ocho hitos recorridos, ocho documentos, 74 commits, `main` limpio, 998 unitarias verdes, la base real
+intacta y 0,66 $ gastados.**
+
+**Lo que falta son siete cosas, y hoy tres de ellas han cambiado de naturaleza**: **la firma de las
+herramientas ya recibe la base** · **los tests del canje pasan cuatro de cinco y el quinto es del fixture** ·
+**y el cableado del monorepo esta arreglado y probado**.
+
+**Lo que sigue esperando a algo de fuera es solo esto**: **red** (lockfile y capturas), **`tesseract`** (M2
+§2 y M5 oficiales), **los apuntes del temario nuevo** (M5 corrida) **y 2.529 decisiones** (M7 bandeja).
