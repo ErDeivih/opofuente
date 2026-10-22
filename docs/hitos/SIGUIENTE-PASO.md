@@ -4929,3 +4929,47 @@ condiciones repetidas en dos funciones.**
 2. **y lanzar el generador de supuestos**, que ya tendra de donde leer.
 
 **Los dos son contenido y modelo, no codigo.**
+
+## M5: el tercer sitio, y es el ultimo (ronda 299)
+
+**Lanzados los apuntes de IV.1.1 de verdad —con la clave del ambito de usuario y tope de 300 s—, y el motor se
+para un escalon mas alla:**
+
+```
+No se han podido escribir los apuntes: el tema «IV.1.1» no tiene epigrafes en el temario:
+sin epigrafes no hay apartados que escribir (revisa la siembra del programa)
+```
+
+**Y es el tercer sitio con la misma forma que los otros dos**: **`run()` comprueba `if not nodo.epigraphs` y se
+para**, **porque espera que un tema tenga epigrafes hijos** —**y un epigrafe no los tiene: el es su propio
+apartado**—.
+
+## Los tres sitios, y los dos ya estan
+
+```
+node_id    exigia node_type == 'topic'     HECHO · acepta el epigrafe
+_ambito    exigia node_type == 'topic'     HECHO · devuelve el nodo solo
+run()      exige nodo.epigraphs no vacio   FALTA · es el tercero y el ultimo
+```
+
+**El arreglo del tercero es el mismo patron**: **si el nodo no tiene epigrafes, el nodo es su propio epigrafe**,
+**y `epigraphs` devuelve una lista con el.**
+
+**Y como los otros dos, es una condicion y no un rediseno.**
+
+## Lo que hace falta saber antes de tocarlo
+
+**Como esta hecho `NotesNode` y que espera `run()` de `epigraphs`**: **si es solo para iterar sobre los apartados,
+una lista con el propio nodo basta**; **si ademas espera que los epigrafes tengan `key` y `title` distintos, hay
+que construir uno**.
+
+**Es una lectura de veinte lineas y una condicion** —**y despues si, 87 epigrafes escribibles, M5 con apartados y
+las cuatro capturas de IV.7 en verde**—.
+
+## Y la cuenta de la sesion, que hoy ha cambiado de signo
+
+```
+M8 COMPLETO · M7 5 de 6 · M5 desbloqueado hasta el tercer sitio
+el bloqueo de veinte rondas: node_type == 'topic' escrito tres veces
+0,66 $ de 30 · base real intacta · arbol limpio · 998 unitarias verdes
+```
