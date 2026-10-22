@@ -78,6 +78,7 @@ from opofuente.infrastructure.db_models import (
     QuestionIssueReportRecord,
     QuestionSetRecord,
     QuestionVersionRecord,
+    TopicNoteSectionRecord,
 )
 from opofuente.infrastructure.key_policy import clave_servible
 
@@ -1077,6 +1078,20 @@ class SqlAlchemyQuestionRepository:
             )
             for fila in filas
         )
+
+    def section_body(self, section_id: str) -> str | None:
+        """El texto del apartado de los apuntes, por su identificador (M1).
+
+        **Lo necesita «regenerar»**: para pedirle al modelo una explicación nueva hay que darle el
+        apartado **con las frases numeradas**, y el apartado no está en la explicación —está su
+        ancla—. **Devuelve `None` si el apartado ya no existe**, y entonces no hay nada que
+        regenerar: la explicación se apoya en material que se ha ido.
+        """
+        with self._session_factory() as session:
+            fila = session.get(TopicNoteSectionRecord, section_id)
+            if fila is None or not str(fila.body_markdown).strip():
+                return None
+            return str(fila.body_markdown)
 
     def explanation_by_id(self, explanation_id: str) -> ExplanationView | None:
         """Una explicación por su identificador, para las acciones de la bandeja (M1).
