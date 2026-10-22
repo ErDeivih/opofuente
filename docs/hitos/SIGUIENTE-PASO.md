@@ -4858,3 +4858,41 @@ escribir y que con esto si.**
 
 **Imprimir las claves antes de recorrer un dato.** **Las dos rondas anteriores se fueron en adivinar que el campo
 se llamaba `code` cuando se llama `official_code`.** **Veinte minutos de reloj y dos rondas de contexto.**
+
+## M5: el primer paso del motor, hecho — falta `_ambito` (ronda 297)
+
+**Quitada la condicion `node_type == 'topic'` de `node_id`, y el error cambio de sitio:**
+
+```
+antes:   no existe tema del programa con identificador IV.1.1      ← node_id devolvia None
+ahora:   «IV.1.1» no es un tema del programa                        ← node_id lo encuentra, node() no
+```
+
+**Y `I.1` sigue funcionando igual** —**su `--medir` da su informe**—, **asi que el cambio no rompe el caso que ya
+iba.**
+
+**998 unitarias verdes.** **El cambio esta commiteado.**
+
+## El paso que falta, y esta localizado
+
+**`node()` llama a `self._ambito(session, node_id)` y devuelve `None` si viene vacio.** **Un epigrafe no tiene
+hijos, asi que `_ambito` probablemente devuelve la nada.**
+
+**El arreglo**: **que `_ambito` devuelva el propio nodo cuando no tiene hijos** —**un epigrafe es su propio
+apartado**—, **y entonces `node()` construye un `NotesNode` con un solo elemento y `run()` deja de quejarse**.
+
+**Es una condicion mas en `_ambito`, y es el ultimo escalon de este camino.**
+
+## Lo que esto habria desbloqueado
+
+**Si `_ambito` acepta el epigrafe, entonces:**
+
+```
+apuntes --tema IV.1.1        escribiria los apuntes de ese epigrafe
+los 87 epigrafes de III y IV quedan escribibles
+M5 · el generador            tendria apartados con notas
+las 4 capturas de lectura    IV.7 dejaria de fallar
+M7 · la revision             tendria temas que medir
+```
+
+**Cinco cosas detras de una condicion.**

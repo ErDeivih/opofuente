@@ -85,7 +85,6 @@ class SqlAlchemyTopicNotesRepository:
             fila = session.execute(
                 select(CurriculumNodeRecord.id).where(
                     CurriculumNodeRecord.path == code,
-                    CurriculumNodeRecord.node_type == "topic",
                 )
             ).first()
         return None if fila is None else str(fila[0])
