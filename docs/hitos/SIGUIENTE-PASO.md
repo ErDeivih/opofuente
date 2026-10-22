@@ -3902,3 +3902,48 @@ prueba concreta.**
 ## Y la leccion de la ronda, que vale por varias
 
 > **un fichero sin rastrear no existe para nadie menos para quien lo creo.**
+
+## M8: la configuracion de las capturas, leida (ronda 268)
+
+**`playwright.screens.config.ts` hace lo correcto:**
+
+```ts
+export default defineConfig({
+  ...base,                                    // hereda de playwright.config.ts
+  testDir: path.join(here, 'tests', 'screens'),
+  timeout: 120_000,
+  fullyParallel: false,
+  workers: 1,
+  projects: [{ name: 'chromium', … }],
+});
+```
+
+**Un solo directorio de pruebas, un proyecto, un worker, y el resto heredado.** **No hay nada raro**: **ni un
+`testMatch` que recoja ficheros que no son pruebas, ni dos `testDir`, ni proyectos que se pisen.**
+
+**Asi que la causa no esta en la configuracion de las capturas.** **Queda en dos sitios y los dos son pequenos:**
+
+1. **`playwright.config.ts`** —**la base que se hereda**—, **que si puede traer un `testMatch` o un
+   `globalSetup` que cargue los ficheros por otro camino**;
+2. **`simulacro.spec.ts`**, **que ya sabemos que tiene un solo `describe` de nivel superior y no lo importa
+   nadie**, **pero puede estar usando un `test` que no es el de Playwright**.
+
+**Y eso, con la version fijada en el lockfile, es media hora de lectura y no un bloqueo.**
+
+## El estado de M8, con todo lo de hoy
+
+```
+punto 1 · el paquete publico        HECHO · 13 tablas · 31.901 filas · 5 tests
+el administrador                    HECHO · probado
+punto 2 · el instalador             HECHO · con y sin paquete
+la instalacion reproducible         HECHA · pnpm-lock.yaml en main · 806 paquetes
+punto 3 · copia y restauracion      HECHO · integridad ok
+punto 4 · la guia                   HECHA
+la API y la web sirviendo           HECHO · 200 y 200
+la invitacion: tabla, comando, canje HECHO · 5 tests
+la ruta HTTP del canje              escrita y retirada · deja el contrato en rojo
+la pantalla de canje                falta · comodidad
+las capturas de M8                  falta · causa localizada en dos ficheros pequenos
+```
+
+**Nueve de diez piezas, y la que falta tiene la causa en dos sitios que se leen en media hora.**
