@@ -3489,3 +3489,52 @@ verde.**
 
 **El paso 2 es el bueno y es mas trabajo**; **el 1 desbloquea los cinco tests hoy**. **Y los cinco tests
 siguen escritos en `F:\temp-opofuente\test_invitaciones-en-curso.py`.**
+
+## M8: aislar la configuracion no basto, y el motivo es la cache (ronda 250)
+
+**Restaurados los cinco tests con la configuracion apuntada al fixture:**
+
+```python
+monkeypatch.setenv("OPOFUENTE_DATA_DIR", str(ruta.parent))
+```
+
+**Y siguen fallando los cinco.** **La razon es que `get_settings()` esta memorizada**: **cambiar la variable
+de entorno despues de la primera llamada no cambia lo que devuelve.** **Hay que limpiar la cache** —**o, mejor
+todavia, no usar la global**—.
+
+**El fichero vuelve a `F:\temp-opofuente\test_invitaciones-en-curso.py`**, **y el arreglo correcto sigue
+siendo el de la ronda anterior**: **que `crear` y `canjear` reciban la ruta por parametro**, **que es lo que
+las hace probables sin tocar el entorno de nadie**.
+
+## Lo que esta ronda deja aprendido, y es lo ultimo que se apunta
+
+**`get_settings()` memorizada es comoda y es la razon de dos cosas**: **que las herramientas escriban donde
+no deben en una prueba**, **y que cambiar el entorno a mitad de un proceso no sirva de nada.** **No es un
+fallo del codigo: es una decision que se tomo por comodidad y que hoy se ha cobrado dos rondas.**
+
+**Y la regla que sale de ahi, que es la misma de toda la sesion**: **lo que lee del entorno deberia recibirlo
+por parametro**, **porque un parametro se ve en la firma y una variable de entorno se ve solo cuando falla.**
+
+---
+
+# Cierre de sesion — 22 de octubre de 2026 (continuacion)
+
+**Ocho hitos recorridos, ocho documentos, `main` limpio y sin un solo test rojo.** **Los cinco tests de la
+invitacion estan escritos y esperan un cambio de firma, no una idea.**
+
+```
+M1 ✓ · M2 ✓ salvo §2 · M3 ✓ · M4 ✓ · M5 codigo hecho · M6 ✓ · M7 3 de 4 · M8 8 de 10 piezas
+998 unitarias verdes · gasto 0,66 $ de 30 · base real intacta (A0A21413F6AB…)
+```
+
+**Y lo que falta, con su causa, en una lista que cabe en un vistazo:**
+
+```
+la pantalla de canje         comodidad · sin red
+los cinco tests              cambiar la firma de crear/canjear · sin red
+las capturas de M8           red
+el lockfile                  red
+M2 §2                        tesseract con espanol
+M5 corrida                   los apuntes del temario nuevo
+M7 bandeja                   2.529 decisiones del propietario
+```
