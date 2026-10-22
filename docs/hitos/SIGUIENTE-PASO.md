@@ -2106,3 +2106,41 @@ los nodos se queda para los temas sin intentos**, **que es lo que hace que salga
 
 **Eso ultimo es la regla del hito y de todo lo demas**: **optimizar es cambiar el tiempo sin cambiar el
 resultado, y si cambia el resultado no es optimizar.**
+
+## M7: mi hipótesis era falsa, y la consulta ya estaba bien escrita (ronda 205)
+
+**Dije que las dos consultas lentas «recorren los anclajes y buscan sus intentos». Las he leído y no: ya
+empiezan por `attempts`.**
+
+```python
+.select_from(AttemptRecord)
+.join(SessionQuestionRecord, ...)
+.join(StudySessionRecord, ...)
+.join(QuestionVersionRecord, ...)
+.join(QuestionSetRecord, ...)
+.join(CurriculumMappingRecord, (subject_id == question_version_id) & ...)
+.group_by(CurriculumMappingRecord.curriculum_node_id)
+```
+
+**El orden es el correcto, y el filtro por oposición y dueño está.** **Así que el tiempo no viene de
+recorrer 16.923 anclajes**: **viene del `join` contra `curriculum_mappings`**, **que es la tabla de
+mapeos entre preguntas y nodos** — **y con `subject_id = question_version_id` sobre una tabla grande, sin
+un índice que cubra esa combinación, cada intento paga una búsqueda completa.**
+
+## Lo que hay que medir antes de tocar
+
+**Cuantas filas tiene `curriculum_mappings` y que indices tiene.** **Si son cientos de miles sin indice por
+`subject_id` + `subject_type` + `status`, el arreglo es un indice y no una consulta** — **y un indice no
+cambia ni una cifra, que es justo lo que hay que exigirle.**
+
+**Y si el indice ya está**, **entonces es la subconsulta de `outcome_counts`** —**la evaluacion vigente
+por intento**—, **que hace una consulta correlacionada por cada intento**, **y eso si es un `N+1`
+disfrazado de `join`.**
+
+**Las dos cosas se distinguen en un minuto con `EXPLAIN QUERY PLAN`**, **y sin abrir el motor.**
+
+## La leccion, que es de metodo
+
+**Escribi «recorren los anclajes» en el folio como si lo hubiera visto, y no lo habia visto.** **Lo he
+corregido antes de tocar el codigo, y esa es la razon de leer antes de optimizar**: **un arreglo sobre una
+hipotesis falsa no arregla nada y estropea lo que funcionaba.**
