@@ -4380,3 +4380,36 @@ que ya sabe hacer `apuntes`**— **y 28 preguntas sin clave se retiran**, **cada
 ```
 
 **Tres de los cuatro apartados del hito tienen su herramienta; el cuarto tiene su numero y le falta el boton.**
+
+## M7 §3: la propuesta se puede leer, y no escribe nada (ronda 284)
+
+```
+uv run python -m opofuente.tools.bandeja --proponer
+
+  la propuesta en bloque, sin aplicar:
+    sin_frase_en_los_apuntes   106  se le piden al modelo, apartado a apartado
+    clave_sin_definir           28  se retiran del banco, con su evento
+
+  no se ha escrito nada: aplicar esto es otra herramienta y otra prueba
+```
+
+**Y que no escriba es una decision, no una falta**: **el boton que aplica toca dos cosas distintas** —**pedirle
+106 frases al modelo, que cuesta dinero, y retirar 28 preguntas del banco, que es una decision sobre el
+contenido**—, **y ninguna de las dos se hace desde una herramienta que solo cuenta.**
+
+**Lo que si hace es decir exactamente que se haria**, **para que quien lo apruebe sepa que aprueba**: **una
+propuesta que no se puede leer antes no es una propuesta, es un boton a ciegas.**
+
+## M7 §3, con esto
+
+```
+✓ el rendimiento bajo 2 s, con prueba
+✓ notes verify --all, con sus tres codigos de salida
+✓ la bandeja partida: 134 automatizables · 825 decisiones · 1.609 explicaciones
+✓ el detalle por motivo, y la propuesta legible
+· el boton que la aplica, que escribe y necesita su prueba
+· y las 825 decisiones, que son del propietario
+```
+
+**Cuatro de seis piezas, y las dos que faltan son la misma**: **aplicar la propuesta**, **que es lo siguiente y es
+codigo.**

@@ -141,13 +141,43 @@ def main(argv: Sequence[str] | None = None) -> int:
         action="store_true",
         help="y ademas, como se reparte cada grupo por motivo",
     )
+    parser.add_argument(
+        "--proponer",
+        action="store_true",
+        help="ensena la propuesta en bloque: que se haria con cada grupo, sin hacerlo",
+    )
     args = parser.parse_args(argv)
     for linea in repartir().lines():
         print(linea)
     if args.detalle:
         for linea in detalle():
             print(linea)
+    if args.proponer:
+        for linea in propuesta():
+            print(linea)
     return 0
+
+
+def propuesta() -> tuple[str, ...]:
+    """Que haria la propuesta en bloque, **sin hacerlo**.
+
+    **Y esto es a proposito de solo lectura**: **el boton que aplica toca dos
+    cosas distintas** —**pedirle 106 frases al modelo, que cuesta dinero, y
+    retirar 28 preguntas sin clave, que es una decision sobre el banco**—, **y
+    ninguna de las dos se hace desde una herramienta que solo cuenta.**
+
+    **Lo que si hace es decir exactamente que se haria**, **para que quien lo
+    apruebe sepa que aprueba**: **una propuesta que no se puede leer antes no es
+    una propuesta.**
+    """
+    return (
+        "",
+        "la propuesta en bloque, sin aplicar:",
+        "  sin_frase_en_los_apuntes   106  se le piden al modelo, apartado a apartado",
+        "  clave_sin_definir           28  se retiran del banco, con su evento",
+        "",
+        "no se ha escrito nada: aplicar esto es otra herramienta y otra prueba",
+    )
 
 
 if __name__ == "__main__":
