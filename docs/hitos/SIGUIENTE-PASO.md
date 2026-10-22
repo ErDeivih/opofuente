@@ -1527,3 +1527,45 @@ quedan rojas hasta que alguien genere los apuntes del programa nuevo.**
 
 **Que es exactamente lo que M2 de la otra fase dejó pendiente**, **y lo que el propietario verá cuando
 mire `PARA-EL-PROPIETARIO.md`.**
+
+## M4: el terreno, medido antes de empezar (ronda 168)
+
+**La especificación está en `FASE-3-ESTUDIO-DIARIO-SPEC-PLAN-GOAL-2026-10.md`, líneas 91-99, y pide
+cuatro cosas:**
+
+```
+1. modelo `study_plan` (fecha, horas por semana, dias de descanso) y un planificador
+   DETERMINISTA (sin modelo), con pruebas de propiedades: cubre los 33 temas antes del examen,
+   repite los flojos, y deja las DOS ULTIMAS SEMANAS para simulacros
+2. «Hoy»: 3-5 tareas concretas, cada una con su boton («Lee IV.7, capitulo 2 · 25 min»,
+   «Test de 20 de IV.7», «Repaso: 38 tarjetas», «Simulacro corto»). Se tachan solas
+3. «Vas bien / vas retrasado» con la cifra: temas leidos y practicados respecto al plan
+4. replanificar sola si pasan dias sin estudiar, sin culpar
+```
+
+**Y lo que existe hoy, medido:**
+
+```
+study_plan · StudyPlan          NO existe            ← el hito empieza de cero
+un planificador                 NO existe
+la pantalla «Hoy»               NO existe
+readiness (system.py)           SÍ · es la base de «vas bien / retrasado»
+StudyReadinessStepSchema        SÍ · la forma de una tarea con su cifra
+```
+
+**Así que M4 es la primera pieza de la fase que no tiene ni una línea**: **tabla nueva, planificador
+nuevo, pantalla nueva y la sustitución de Inicio por «Hoy».**
+
+## Lo que hay que decidir antes de escribir, y son dos cosas
+
+**1 · qué es «flojo».** **El planificador repite los temas flojos, y eso necesita una definición
+medida**: **¿los que tienen menos cobertura documental? ¿los que el alumno falla más? ¿los que nadie ha
+leído?** **El árbol ya tiene las tres cosas** —cobertura, fallos de tests y `readiness`—, **y elegir
+una sin medir sería inventar.**
+
+**2 · qué pasa cuando el examen está más cerca que el trabajo.** **Con la fecha puesta y menos tiempo
+que temas, el planificador no puede «cubrir todos los temas antes del examen».** **Tiene que decir qué
+deja fuera y por qué**, **no repartir un plan que no cabe.**
+
+**Las dos se resuelven mirando, no preguntando**, **y van apuntadas aquí para que la primera ronda de M4
+empiece por medir.**
