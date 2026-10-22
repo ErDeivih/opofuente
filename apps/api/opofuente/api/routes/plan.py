@@ -61,6 +61,17 @@ class HoySchema(BaseModel):
     motivos: list[str]
 
 
+class ProgresoSchema(BaseModel):
+    """Como va el alumno respecto al plan, con la frase ya compuesta."""
+
+    leidos: int
+    practicados: int
+    esperados: int
+    total: int
+    vas_bien: bool
+    frase: str
+
+
 class PlanGuardadoSchema(BaseModel):
     """Lo que hay guardado, o `null` si nadie ha puesto la fecha."""
 
@@ -133,6 +144,31 @@ def guardar_plan(cuerpo: GuardarPlanSchema, service: PlanServiceDep) -> PlanSche
     if plan is None:
         raise NotFoundError("temas que repartir", "plan")
     return _plan(plan)
+
+
+@router.get(
+    "/plan/progreso",
+    response_model=ProgresoSchema,
+    responses=RESOURCE_ERRORS,
+    summary="Vas bien o vas retrasado, con la cifra (M4)",
+)
+def progreso(service: PlanServiceDep) -> ProgresoSchema:
+    """Los temas leidos y practicados **frente a los que el plan pedia**.
+
+    **404 si no hay plan**: sin fecha no hay con que comparar, y decir «vas
+    bien» sin plan seria mentir.
+    """
+    avance = service.progreso()
+    if avance is None:
+        raise NotFoundError("plan", "progreso")
+    return ProgresoSchema(
+        leidos=avance.leidos,
+        practicados=avance.practicados,
+        esperados=avance.esperados,
+        total=avance.total,
+        vas_bien=avance.vas_bien,
+        frase=avance.frase,
+    )
 
 
 @router.get(

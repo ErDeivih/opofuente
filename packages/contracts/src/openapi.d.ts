@@ -2562,6 +2562,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/plan/progreso": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Vas bien o vas retrasado, con la cifra (M4)
+         * @description Los temas leidos y practicados **frente a los que el plan pedia**.
+         *
+         *     **404 si no hay plan**: sin fecha no hay con que comparar, y decir «vas
+         *     bien» sin plan seria mentir.
+         */
+        get: operations["progreso_api_v1_plan_progreso_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/platform/policy": {
         parameters: {
             query?: never;
@@ -8350,6 +8373,24 @@ export interface components {
             path: string;
             /** Title */
             title: string;
+        };
+        /**
+         * ProgresoSchema
+         * @description Como va el alumno respecto al plan, con la frase ya compuesta.
+         */
+        ProgresoSchema: {
+            /** Esperados */
+            esperados: number;
+            /** Frase */
+            frase: string;
+            /** Leidos */
+            leidos: number;
+            /** Practicados */
+            practicados: number;
+            /** Total */
+            total: number;
+            /** Vas Bien */
+            vas_bien: boolean;
         };
         /**
          * PromoteRequestSchema
@@ -18943,6 +18984,53 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HoySchema"];
+                };
+            };
+        };
+    };
+    progreso_api_v1_plan_progreso_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProgresoSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
                 };
             };
         };

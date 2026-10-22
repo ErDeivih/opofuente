@@ -83,6 +83,32 @@ class SqlAlchemyPlanRepository:
             for fila in filas
         )
 
+    def leido_y_practicado(self) -> tuple[int, int]:
+        """Cuantos temas tienen apuntes y cuantos tienen alguna pregunta contestada.
+
+        **«Leido» es tener texto** y no haberlo abierto: no hay registro de
+        lectura, y suponerlo seria inventar. **«Practicado» es haber contestado
+        al menos una pregunta de ese tema** en cualquier test. **Las dos cifras
+        son de temas, no de preguntas**, porque el plan reparte temas.
+        """
+        with self._session_factory() as session:
+            leidos = session.execute(
+                text("select count(distinct curriculum_node_id) from topic_note_sections")
+            ).scalar_one()
+            practicados = session.execute(
+                text(
+                    """
+                    select count(distinct a.curriculum_node_id)
+                    from question_note_anchors a
+                    join session_questions s
+                         on s.question_version_id = a.question_version_id
+                    join attempts t on t.session_question_id = s.id
+                    where t.answered_at is not null
+                    """
+                )
+            ).scalar_one()
+        return int(leidos), int(practicados)
+
     def guardado(self) -> PlanGuardado | None:
         """El plan que hay, **o `None` si nadie ha puesto la fecha**."""
         with self._session_factory() as session:
