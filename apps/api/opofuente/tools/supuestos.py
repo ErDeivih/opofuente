@@ -163,7 +163,7 @@ def _dar_de_alta(
                     question_type="single_choice",
                     position=posicion,
                     is_reserve=posicion > 20,
-                    status="draft",
+                    status="complete",
                     origin_type="generated",
                     created_at=ahora,
                 )

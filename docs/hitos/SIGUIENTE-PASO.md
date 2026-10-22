@@ -5260,3 +5260,21 @@ M5 cierra con sus cifras.**
 ```
 
 **Eso es lo que M5 pide medir, y esta medido.**
+
+## M5 CERRADO: tres supuestos guardados (ronda 307)
+
+```
+III.1.1  descartado · 26 preguntas
+IV.1.1   descartado · 24 preguntas
+IV.1.2   ACEPTADO · 25/25 · guardado
+IV.2.1   descartado · 20 preguntas
+IV.2.2   ACEPTADO · 25/25 · guardado
+
+en la base: 3 supuestos · III 1 · IV 2 · cada uno con sus 25 preguntas
+gastado: 0,30 $ de los 6 $ del hito
+```
+
+**Y `M5.md` esta escrito con estas cifras.**
+
+**Lo que queda del hito**: **los supuestos OFICIALES**, **que son los cuestionarios de 2018 y necesitan el
+`tesseract`** —**del propietario, y ya apuntado**—. **El generador, que era el punto 3, esta hecho.**
