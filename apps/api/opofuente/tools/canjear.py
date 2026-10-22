@@ -43,12 +43,14 @@ def _normalizar(correo: str) -> str:
     return unicodedata.normalize("NFKC", correo).strip().lower()
 
 
-def _fabrica() -> sessionmaker[Session]:
-    motor = create_engine(f"sqlite+pysqlite:///{get_settings().data_paths.database}")
+def _fabrica(ruta: str | None = None) -> sessionmaker[Session]:
+    motor = create_engine(f"sqlite+pysqlite:///{ruta or get_settings().data_paths.database}")
     return sessionmaker(bind=motor)
 
 
-def canjear(token: str, correo: str, contrasena: str) -> tuple[bool, str]:
+def canjear(
+    token: str, correo: str, contrasena: str, *, ruta: str | None = None
+) -> tuple[bool, str]:
     """Canjea o dice por que no. **No escribe nada si algo no cuadra.**"""
     if len(contrasena) < MINIMO:
         return (False, f"la contrasena tiene {len(contrasena)} y hacen falta {MINIMO}")
@@ -62,7 +64,7 @@ def canjear(token: str, correo: str, contrasena: str) -> tuple[bool, str]:
         memory_cost_kib=ajustes.password_hash_memory_cost_kib,
         parallelism=ajustes.password_hash_parallelism,
     )
-    fabrica = _fabrica()
+    fabrica = _fabrica(ruta)
     with fabrica() as session:
         invitacion = session.execute(
             select(AccountInvitationRecord).where(AccountInvitationRecord.token_hash == huella)

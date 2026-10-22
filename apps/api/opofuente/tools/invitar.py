@@ -46,8 +46,16 @@ def normalizar(correo: str) -> str:
     return unicodedata.normalize("NFKC", correo).strip().lower()
 
 
-def crear(correo: str, *, ahora: datetime | None = None) -> tuple[str, datetime]:
-    """Guarda la invitacion y **devuelve el token en claro, que no se guarda**."""
+def crear(
+    correo: str, *, ahora: datetime | None = None, ruta: str | None = None
+) -> tuple[str, datetime]:
+    """Guarda la invitacion y **devuelve el token en claro, que no se guarda**.
+
+    **`ruta` es para las pruebas**: **la base se recibe por parametro y no se
+    lee del entorno**, **porque una variable de entorno no se ve en la firma y
+    ademas `get_settings()` esta memorizada**: **cambiarla a mitad de un proceso
+    no cambia nada, y el test escribe donde no debe sin enterarse.**
+    """
     canonico = normalizar(correo)
     if not canonico:
         raise SystemExit("el correo no puede estar vacio")
@@ -58,7 +66,7 @@ def crear(correo: str, *, ahora: datetime | None = None) -> tuple[str, datetime]
     creada = ahora or datetime.now(UTC)
     caduca = creada + timedelta(days=DIAS)
 
-    motor = create_engine(f"sqlite+pysqlite:///{get_settings().data_paths.database}")
+    motor = create_engine(f"sqlite+pysqlite:///{ruta or get_settings().data_paths.database}")
     fabrica = sessionmaker(bind=motor)
     with fabrica() as session:
         session.add(

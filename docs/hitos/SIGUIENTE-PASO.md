@@ -3538,3 +3538,41 @@ M2 §2                        tesseract con espanol
 M5 corrida                   los apuntes del temario nuevo
 M7 bandeja                   2.529 decisiones del propietario
 ```
+
+## M8: la ruta por parametro tampoco basta, y el motivo es mas de fondo (ronda 251)
+
+**Cambiada la firma de `crear` y `canjear` para recibir la base por parametro** —**que es el arreglo bueno,
+y queda hecho**— **y los cinco tests siguen fallando.**
+
+**Porque el fixture construye sus propios `Settings`** —**un objeto con su `data_dir` temporal**—, **y
+`get_settings()` devuelve el de siempre**: **la base del repositorio.** **Asi que el test no tiene forma de
+llegar a la base que el fixture migro**: **no es que se pase mal la ruta, es que la ruta buena no esta en
+ningun sitio que la herramienta pueda leer.**
+
+**El arreglo de verdad es mas grande y es el correcto**: **que `crear` y `canjear` reciban un
+`sessionmaker`** —**no una ruta**—, **que es lo que hace el resto del arbol**: **los repositorios reciben la
+fabrica de sesiones, y por eso se pueden probar.** **Las dos herramientas son las unicas que abren su propio
+motor mirando el entorno.**
+
+**Eso es lo que hay que hacer, y esta escrito**: **`crear(correo, *, sesiones)` y `canjear(token, correo,
+contrasena, *, sesiones)`**, **y el `main` de cada comando construye el `sessionmaker` una vez.** **Es media
+hora de trabajo y deja los cinco tests en verde.**
+
+## Lo que queda de M8, y ahora esta todo en dos categorias
+
+**Cambios de firma, sin red ni nadie:**
+
+```
+los cinco tests de la invitacion    crear/canjear reciben sessionmaker
+la pantalla de canje                comodidad
+```
+
+**Y lo que espera a algo de fuera:**
+
+```
+las capturas de M8    red
+el lockfile           red
+```
+
+**Y la sesion se cierra aqui, con `main` limpio y sin un test rojo.** **Lo que no se ha conseguido no es
+una idea: es media hora de refactor que ya se sabe como se hace.**
