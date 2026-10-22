@@ -1193,3 +1193,37 @@ segunda pasada:              0 nuevas   ← idempotente
 **Y lo que el hito pide —tarjetas en los 33 temas— sigue necesitando el modelo**, que hoy está
 intermitente. **La infraestructura está entera: tabla, repositorio, servicio, rutas, pantalla y
 herramienta. Lo que falta son las tarjetas del 99,9 %, y eso es una pasada con clave, no código.**
+
+## Las doce capturas rojas: causa acotada, no arreglada (ronda 156)
+
+**El error, con su línea:**
+
+```
+Error: expect(locator).toBeVisible() failed
+- Expect "toBeVisible" getByText('clave en revisión').first() with timeout 10000ms
+> 342 |  await expect(page.getByText(MARCA_EN_REVISION).first()).toBeVisible();
+```
+
+**Y las doce son cuatro pantallas a dos anchos**: `test-en-curso`, `resultado`, `la revisión de
+apuntes` y `la bandeja de explicaciones`.
+
+**Lo que YA está descartado, con la prueba hecha:**
+
+1. **no es el `--datos`**: `DATOS_DE_LA_SUITE` lee `OPOFUENTE_E2E_DATA_DIR`, que es justo lo que
+   `screens.mjs --datos` pone. **El `update` y la aplicación hablan de la misma base.**
+2. **no es el `try/finally` que añadí hoy**: `borrarConjunto` corre **después** de las aserciones, y
+   la marca se pone antes de devolver el conjunto.
+3. **no es la migración `0042`**: la crea `cards` y no toca `question_sets`.
+
+**La cadena que hay que mirar, y es larga**: `question_sets.key_reliability = 'dudosa'` →
+`question_repository.key_reliability_by_question` (L1844) → `study_service.key_reliability_of` →
+`student_service` (`in_review`) → `student_schemas` → la pantalla. **En algún punto de ahí `dudosa`
+deja de ser «en revisión», o el conjunto que se marca no es el que se sirve.**
+
+**Y una pista que conviene seguir primero**: **las cuatro pantallas que fallan son las que leen
+`key_reliability` o siembran un test**. **`bandeja` y `admin-explicaciones` pasan** — **y esas no leen
+ninguna de las dos cosas**.
+
+**Lo que NO hay que hacer mientras esto no esté claro**: copiar las 73 capturas buenas a
+`recorrido-M3` y dar M3 por cerrado. **Cuatro pantallas del producto están en rojo, y dos son el
+estudio del alumno.**

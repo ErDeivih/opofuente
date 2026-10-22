@@ -90,6 +90,7 @@ const RUTAS: readonly { ruta: string; nombre: string }[] = [
   { ruta: '/temario/IV.7', nombre: 'tema-apuntes' },
   { ruta: '/temario/I.6', nombre: 'tema-borrador' },
   { ruta: '/simulacros', nombre: 'simulacros' },
+  { ruta: '/repaso', nombre: 'repaso' },
   { ruta: '/examenes', nombre: 'examenes' },
   { ruta: '/programa', nombre: 'programa' },
   { ruta: '/estudiar', nombre: 'estudiar' },
