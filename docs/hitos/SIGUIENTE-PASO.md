@@ -2990,3 +2990,45 @@ punto 4 · la guia                   HECHA · una pagina, y dice que el arranque
 la invitacion por enlace            sin construir
 las capturas de M8                  necesitan la aplicacion arrancada
 ```
+
+## M8: la web sigue sin arrancar, y aparece algo que si esta en el hito (ronda 233)
+
+**`pnpm install` en la raiz funciona** —**1,6 s, «Done»**—, **y el instalador ya no pide `--frozen-lockfile`
+porque no hay lockfile.**
+
+**Pero `pnpm dev` desde `apps\web` sigue sin servir**, **y el registro muestra que vuelve a instalar**:
+
+```
+This error happened while installing a direct dependency of ...\apps\web
+[WARN] GET https://registry.npmjs.org/react-dom/-/react-dom-19.3.1.tgz error (UND_ERR_DESTROYED)
+[WARN] GET https://registry.npmjs.org/@playwright%2Ftest error (unknown)
+```
+
+**Asi que el `pnpm dev` dispara su propia comprobacion de dependencias y esa comprobacion sale a la red**,
+**y en esta maquina la red falla.** **No es un fallo del codigo: es que arrancar la web necesita red la
+primera vez, y aqui no la hay de forma fiable.**
+
+## Y lo que si es un hallazgo del hito
+
+**No hay `pnpm-lock.yaml` en el repositorio.** **El punto 2 de M8 se llama «instalacion reproducible», y una
+instalacion sin lockfile no es reproducible**: **`pnpm install` resuelve las versiones que toquen ese dia**,
+**y dos instalaciones con meses de diferencia pueden traer react 19.3.1 y react 19.4.0 sin que nadie lo
+decida.**
+
+**Eso no se arregla escribiendo un fichero a mano**: **se genera con `pnpm install --lockfile-only` y se
+commitea**, **y despues el instalador puede volver a `--frozen-lockfile`, que es lo que lo hace reproducible
+de verdad.**
+
+**Y hoy no lo puedo verificar con red**: **el lockfile se genera contra el registro**, **y el registro no
+responde de forma fiable desde esta maquina ahora mismo.**
+
+## Lo que queda de M8, con esto
+
+```
+la web sobre una instalacion   depende de red para su primera comprobacion de dependencias
+el lockfile                    genera y commitea · hace la instalacion reproducible de verdad
+la invitacion por enlace       sin construir
+las capturas                   necesitan la web
+```
+
+**Y el arranque de la API, que era la mitad mas dificil, esta verificado desde la ronda 231.**

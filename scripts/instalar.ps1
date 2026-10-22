@@ -59,7 +59,7 @@ foreach ($herramienta in @('uv', 'pnpm')) {
     # bajarlos del registro de npm y falla con un 404 que no dice nada.
 Push-Location $raiz
 try {
-    pnpm install --frozen-lockfile
+    pnpm install
     if ($LASTEXITCODE -ne 0) { throw 'la instalacion de las dependencias de la web fallo' }
     Decir 'dependencias de la web instaladas'
 } finally {
@@ -125,5 +125,6 @@ Decir 'instalado. Para arrancar:'
 Decir "  `$env:OPOFUENTE_DATA_DIR='$Datos'"
 Decir '  cd apps\api; uv run uvicorn opofuente.main:app --port 8000'
 Decir '  cd apps\web; pnpm dev'
+
 
 
