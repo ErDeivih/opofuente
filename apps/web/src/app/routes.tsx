@@ -1,6 +1,7 @@
 import { Navigate, Outlet, Route, Routes, useLocation, useSearchParams } from 'react-router-dom';
 
 import { AdminUiPage } from '../pages/AdminUiPage';
+import { InvitacionPage } from '../pages/InvitacionPage';
 import { ChangesPage } from '../pages/ChangesPage';
 import { ErrorsPage } from '../pages/ErrorsPage';
 import { ExplanationTrayPage } from '../pages/ExplanationTrayPage';
@@ -137,6 +138,7 @@ export function AppRoutes() {
         */}
         <Route path="/" element={<HoyPage />} />
         <Route path="/inicio" element={<StudentHomePage />} />
+        <Route path="/invitacion" element={<InvitacionPage />} />
         <Route path="/temario" element={<SyllabusPage />} />
         {/*
           La ficha del tema con sus apuntes: el código legible (`IV.7`) es la dirección, como en toda

@@ -4230,3 +4230,23 @@ la pantalla de canje        comodidad                  FALTA
 
 **Con esto, la beta ya se puede invitar por HTTP y no solo por linea de comandos.** **Lo que queda es la
 pantalla, que ahora tiene a que llamar.**
+
+
+## M8: la pantalla de canje, hecha — y con ella M8 completo (ronda 278)
+
+```
+src/api/invitations.ts            la llamada a POST /invitations/accept
+src/pages/InvitacionPage.tsx      el formulario: correo, contrasena y el motivo del fallo
+src/app/routes.tsx                la ruta /invitacion
+tsc 0 · eslint 0
+```
+
+**Y las dos decisiones de la pantalla, escritas en su codigo:**
+
+1. **el token se lee de la direccion y no se puede editar**: **si la persona lo cambia, deja de ser el enlace que
+   le mandaron**, y **un campo editable solo sirve para pegar mal**;
+2. **el motivo de un fallo se ensena tal cual viene del servidor**: **no distingue «no existe» de «estaba mal» a
+   proposito**, **y la pantalla no puede ser mas lista que el servidor sin estropearlo**.
+
+**Con esto, la cadena de la invitacion esta completa por los dos caminos**: **por comando y por la web**, **y la
+beta ya se puede repartir con un enlace.**
