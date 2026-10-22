@@ -3102,3 +3102,40 @@ API y servir `GET /api/v1/stats` con 200.**
 **No funciona desde cero todavia**: **la web**, **porque el monorepo nunca se probo sin `node_modules` de
 antes**. **Y eso es justo lo que un empaquetado tiene que encontrar, porque es lo unico que la maquina de
 desarrollo no puede decir.**
+
+## M8, capturas: la suite se rompe, y es la consecuencia del lockfile (ronda 237)
+
+**Intentadas las capturas contra la instalacion, y no arrancan:**
+
+```
+Error: Playwright Test did not expect test.describe() to be called here.
+Error: No tests found
+```
+
+**Y el error no es de las capturas: es de Playwright.** **La version instalada es 1.64**, **y esta suite
+funcionaba esta misma manana con la que habia.**
+
+**La causa probable es la que ya estaba escrita como riesgo de M8**: **no hay `pnpm-lock.yaml`**, **asi que
+`pnpm install` resuelve las versiones que toque ese dia** —**y hoy toco otra de Playwright**—. **Es
+exactamente el fallo que el punto 2 del hito llama «instalacion reproducible», y se ha materializado en la
+misma sesion en que lo describi.**
+
+## Lo que eso confirma, y no es poco
+
+**Un repositorio sin lockfile no es reproducible**, **y su primer sintoma no es «una version distinta»: es
+que una herramienta que funcionaba deja de funcionar** — **y el mensaje que da habla de `test.describe`, que
+no tiene nada que ver con lo que se ha tocado.**
+
+**Y las capturas de M8 no se pueden hacer hasta que eso este resuelto**, **porque el instrumento con el que
+se hacen es justo el que se ha roto.**
+
+## Lo que queda de M8, y el orden ya no es opinable
+
+1. **el lockfile** —**en una maquina con registro**, **`pnpm install --lockfile-only`, commitearlo, y volver
+   a `--frozen-lockfile` en el instalador**—;
+2. **comprobar que las capturas vuelven a arrancar** con la version que fije el lockfile;
+3. **hacer las capturas de M8** en `artifacts/recorrido-M8/`;
+4. **la invitacion por enlace**.
+
+**Sin el 1 no hay 2, y sin el 2 no hay 3.** **Y el 1 no se puede hacer desde esta maquina**: **el registro
+pide autorizacion.**
