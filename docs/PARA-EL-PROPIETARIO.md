@@ -1463,3 +1463,27 @@ la real: la huella es idéntica.**
 **Lo que te pido, y es solo confirmación**: **si alguna vez ves una explicación tuya cambiada por texto de
 modelo en la aplicación, dímelo**, **porque querría saber por dónde entró** — **con estas tres capas no
 debería poder pasar, y si pasa, es que hay otro camino que no he mirado.**
+
+## Estado de los desbloqueos, al 22 de octubre
+
+**De los cuatro que dejaste decididos, uno cerrado y tres en curso, y ninguno espera nada de ti salvo
+donde lo digo:**
+
+```
+§2  los tres escaneos    IDENTIFICADOS (TAI-2018 libre 1 y 2, y PI único)
+                          · BLOQUEADO por `tesseract`, que es tuyo
+§3  las dos fuentes      CERRADO · la puerta 17 en verde
+                          · cuatro volátiles con su huella de TEXTO, no de bytes
+§4  DEBT-035             DIMENSIONADO · son CUATRO pares, no dos
+                          · falta la migración de repasos, que mueve datos tuyos
+§5  DEBT-036             RESUELTO HASTA DONDE SE PUEDE · es falta de PREGUNTAS (74+11 contra 80+5),
+                          no de plantilla · DECIDES TÚ: más preguntas, o la parte que no es la primera
+```
+
+**Y una cosa que quiero que sepas del §3**: **para cerrarlo no bastó marcar las fuentes `volatile`** —
+**una fuente volátil sin huella de contenido sigue bloqueando** —. **Hubo que descargarlas, dejar que el
+árbol calculara la huella de su texto visible, y aceptarla a mano** — **el programa se niega a aceptarla
+solo, y hace bien: una fuente que cambia la acepta una persona.**
+
+**Y una que se quedó sin marca**: **el PDF del BOCYL de 2023 no había cambiado**, así que **le quité el
+`volatile` en vez de inventarle una huella**.
