@@ -2144,3 +2144,48 @@ disfrazado de `join`.**
 **Escribi «recorren los anclajes» en el folio como si lo hubiera visto, y no lo habia visto.** **Lo he
 corregido antes de tocar el codigo, y esa es la razon de leer antes de optimizar**: **un arreglo sobre una
 hipotesis falsa no arregla nada y estropea lo que funcionaba.**
+
+## M7: los planes, y son dos problemas distintos (ronda 206)
+
+**`answered_counts`:**
+
+```
+SCAN m USING INDEX ix_mapping_node          ← recorre los 47.113 mapeos
+SEARCH v USING COVERING INDEX … (id=?)
+SEARCH q USING AUTOMATIC COVERING INDEX (question_version_id=?)
+SEARCH a USING INDEX … (session_question_id=?)
+USE TEMP B-TREE FOR count(DISTINCT)
+```
+
+**El `SCAN m` es la respuesta**: **aunque la consulta se escribe empezando por `attempts`, SQLite decide
+empezar por `m`** — **y con `ix_mapping_node` recorre los cuarenta y siete mil mapeos**—. **El `select_from`
+no fuerza el orden: el optimizador elige, y con 47.113 filas en un lado y 119 en el otro eligio mal.**
+
+**`outcome_counts`:**
+
+```
+SCAN e
+SEARCH a USING INDEX … (id=?)
+CORRELATED SCALAR SUBQUERY 1               ← una por cada evaluacion
+SEARCH e2 USING INDEX ix_evaluations_attempt (attempt_id=?)
+USE TEMP B-TREE FOR LAST TERM OF ORDER BY
+```
+
+**Esa si es el `N+1`**: **la evaluacion vigente se busca con una subconsulta correlacionada por cada
+fila**, **y por eso tarda 1,3 s.**
+
+## Los dos arreglos, y son de naturaleza distinta
+
+**1 · `answered_counts`: darle al optimizador un indice que empiece por lo que filtra.**
+**`ix_mapping_subject` existe** —**`(subject_type, subject_id)`**—, **pero el plan no lo usa**: **usa
+`ix_mapping_node` porque el `group by` es por nodo**. **Un indice que cubra
+`(subject_type, subject_id, status, curriculum_node_id)`** **le deja resolver el `join` y el `group by`
+sin recorrer la tabla**. **Es una migracion de una linea y no cambia ninguna cifra.**
+
+**2 · `outcome_counts`: quitar la subconsulta correlacionada.** **La evaluacion vigente se puede sacar
+con un `group by attempt_id` y `max(evaluated_at)` en una subconsulta**, **o con una ventana**, **y
+entonces el plan deja de tener un `CORRELATED SCALAR SUBQUERY`** — **que es lo que convierte 119 intentos
+en 119 busquedas—**.
+
+**Y la regla de siempre antes de dar esto por bueno**: **las cifras tienen que ser las mismas antes y
+despues.** **Un indice no puede cambiarlas; el arreglo de la subconsulta, si se hace mal, si.**
