@@ -1633,8 +1633,8 @@ cd apps\api; uv run python -m opofuente.tools.invitar --correo amigo@correo
 
 ## La puerta del web no pasa, y no es el código (22 de octubre)
 
-**`tsc` y `eslint` fallan sobre `apps\web` con un error de resolucion de modulos**, **y la suite de capturas
-falla con el mismo sintoma.** **Los tres empezaron despues de arreglar el enlace de los paquetes internos del
+**`npx tsc` y `npx eslint` fallan sobre `apps\web` con un error de resolucion de modulos** —**y con los
+binarios locales pasan: codigo 0 los dos**—. **La suite de capturas falla con el mismo sintoma de `npx`.** **Los tres empezaron despues de arreglar el enlace de los paquetes internos del
 monorepo** —**que era un fallo real: `@opofuente/contracts` se pedia al registro de npm**—. **El arreglo hizo
 que la web sirviera y cambio la disposicion de `node_modules`.**
 

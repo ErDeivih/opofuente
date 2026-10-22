@@ -3702,8 +3702,26 @@ entonces las dos cosas a la vez.**
 **Hasta entonces, el estado se queda como esta** —**con la web sirviendo, que es lo que hace falta para las
 capturas**—, **y la decision se apunta aqui en vez de tomarla a ciegas.**
 
-## Y una cosa que hay que decir de la puerta
+## Y una correccion de la ronda anterior, medida (ronda 260)
 
-**El `18/18` del objetivo no se ha cumplido hoy, y ahora se sabe por que**: **la puerta del web no pasa**, **y
-no por el codigo del producto: por la disposicion de `node_modules`.** **Eso es un bloqueo de entorno, y va a
-`PARA-EL-PROPIETARIO.md` como lo que es.**
+**La puerta del web SI pasa. Lo que falla es `npx`.**
+
+```
+npx tsc / npx eslint                                   ->  codigo 1
+Error: Cannot find module '...\node_modules\@opofuente\web\node_modules\typescript\bin\tsc'
+
+.\node_modules\.bin\tsc.cmd -p tsconfig.json --noEmit  ->  codigo 0
+.\node_modules\.bin\eslint.cmd src --max-warnings=0    ->  codigo 0
+```
+
+**El motivo**: **pnpm enlaza `node_modules/@opofuente/web -> apps/web`**, **y `npx` encuentra ahi el binario
+que busca**, **pero la ruta a traves del enlace no existe.** **El binario local si.**
+
+**Asi que el codigo del web esta verde y lo que esta roto es la forma de invocarlo.** **La diferencia importa**:
+**el `18/18` no se cae por el producto, se cae porque el comando de la puerta usa `npx`.**
+
+**Y el arreglo es de una linea en el comando**: **invocar el binario local** —**.\node_modules\.bin\tsc**— **en
+vez de `npx tsc`**, **que ademas es lo que evita que una herramienta se resuelva por azar entre dos copias.**
+
+**Queda apuntado sin tocar la configuracion de la puerta**: **cambiar como se invoca no es relajar el juez**,
+**pero si lo es hacerlo sin decirlo, y por eso esta escrito aqui.**
