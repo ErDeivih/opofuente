@@ -698,3 +698,29 @@ un `select body_markdown from topic_note_sections where id = ?` y devuelve `None
 
 **Y la regla que se mantiene**: **si las comprobaciones fallan, la explicación vieja NO se toca**.
 **Regenerar no es empeorar.**
+
+## «Regenerar», tercera pieza: lo que falta exactamente (ronda 96)
+
+**Dos de tres hechas**: **`explanation_by_id`** y **`section_body`**, **en verde**.
+
+**La tercera es la ruta, y su servicio necesita cuatro cosas que hay que mirar antes de escribirla**:
+
+1. **cómo se construye un `PreguntaAExplicar`** —enunciado, opciones, clave y apartado— **desde una
+   `question_version_id`**: **el `PreguntaAExplicar` está en `application/explicaciones.py`**, y **hoy
+   solo lo construye la herramienta de la corrida**; **la ruta tiene que construirlo igual**;
+2. **de dónde sale el `ExplanationProposer` en la ruta**: **hoy solo lo tiene la herramienta**, **no el
+   `main.py`**; **inyectarlo es tocar `Settings` y el ensamblado**, **y eso es la fontanería que dije que
+   merecía contexto fresco**;
+3. **la letra que corrige**: **`problemas()` la necesita**, **y la explicación que se regenera la tiene
+   en su `note_anchor_id` → `expected_letters`**;
+4. **y el aviso del gasto en el botón** — *«esta llamada cuesta ~0,000024 $»* — **antes, no después**.
+
+**El orden que yo seguiría, y es el de menos riesgo**:
+
+1. **`QuestionService.regenerate_explanation`** con **el proposer pasado por parámetro** —igual que la
+   herramienta, sin tocar `main.py`—, **y su prueba con `FakeExplanationProposer`**;
+2. **la ruta `POST /explanations/{id}/regenerate`**, **que en el `main.py` construya el proposer con la
+   clave del entorno y responda 503 si falta** —que es lo que ya hace la herramienta—;
+3. **y el botón**, **al final**, **cuando las dos anteriores estén en verde**.
+
+**Con la regla de siempre**: **si las comprobaciones fallan, la explicación vieja no se toca.**
