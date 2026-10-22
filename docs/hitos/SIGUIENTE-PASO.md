@@ -1261,3 +1261,41 @@ siguiente paso es mirar el valor que devuelve la API en la respuesta del test**,
 
 **Un `curl` a `/api/v1/student/sessions/{id}` y mirar si `in_review` viene en `true` dice en un minuto
 si el fallo está antes o después del servidor.**
+
+## Las doce rojas: la causa, y es un desajuste del propio test (ronda 158)
+
+**Las dos líneas, juntas, lo dicen todo:**
+
+```typescript
+await marcarElConjuntoComoDudoso(conjunto.id);        // ← marca el conjunto que acaba de crear
+const sesion = await leer<{ id: string }>(
+  await fetch(`${API}/api/v1/student/tests`, {
+    body: JSON.stringify({ nodes: ['IV.1'], count: 3, filter: 'all', ... })  // ← pide por TEMA
+  }),
+);
+```
+
+**Marca el conjunto nuevo, y la sesión se monta a partir de `IV.1`** — **es decir, de las preguntas
+sembradas del tema, que no son las del conjunto que se acaba de marcar**.
+
+**Así que la marca está puesta en un conjunto que la sesión no usa.** **`update` funciona, la columna
+dice `dudosa`, y la pantalla no enseña la marca porque su pregunta es de otro conjunto, que es
+`fiable`.**
+
+**Y lo que confirma el diagnóstico**: **que esta mañana pasara fue suerte**, **no corrección**: **si el
+conjunto sembrado de `IV.1` estaba dudoso por otra captura anterior, la marca salía**. **Con la copia
+más limpia de hoy —trece dudosos frente a los más de cien de otras pasadas—, ya no coincide.**
+
+## El arreglo, y es de dos líneas
+
+**Marcar el conjunto del que SÍ salen las preguntas de la sesión**, **que se puede leer de la propia
+sesión después de crearla**:
+
+1. **crear la sesión** (`/student/tests` con `nodes: ['IV.1']`);
+2. **leer su primera pregunta y su `question_set_id`** (`GET /student/sessions/{id}`);
+3. **marcar ESE conjunto** como dudoso;
+4. **y arrancar la sesión** —el orden importa: **la marca tiene que estar antes de que el alumno
+   empiece, o el `in_review` se calculó ya**.
+
+**Y el conjunto que crea el ayudante se sigue borrando**: **ese no se usa para la sesión, pero se usa
+para la captura de exámenes**, **y su `finally` está bien puesto**.
