@@ -4685,3 +4685,47 @@ base real intacta · 0,66 $ de 30 gastados · arbol limpio · 998 unitarias verd
 ```
 
 **Y el siguiente paso es leer veinte lineas de `apuntes`, no lanzar otra corrida.**
+
+## ENCONTRADO: una linea exige `topic` y el temario de TAI 2025 no tiene topics (ronda 293)
+
+**La busqueda del nodo, en `topic_notes_repository.node_id`:**
+
+```python
+select(CurriculumNodeRecord.id).where(
+    CurriculumNodeRecord.path == code,
+    CurriculumNodeRecord.node_type == "topic",     # <<<<<< ESTA
+)
+```
+
+**Y en TAI 2025, bajo III y IV, hay 87 `epigraph` y 2 `block`. Cero `topic`.**
+
+**Asi que `apuntes --tema IV.1.1` no lo encuentra porque lo busca entre los `topic`, y ahi no esta.**
+
+## Y esta es la causa unica de todo lo que llevamos veinte rondas atribuyendo a otras cosas
+
+```
+apuntes --tema IV.1.1        no lo encuentra                 ← node_type == 'topic'
+las notas de III y IV        no se pueden escribir           ← depende de lo anterior
+M5 · el generador            0 apartados                     ← no hay notas
+las 4 capturas de lectura    piden IV.7 y fallan             ← IV.7 es epigraph, no topic
+M7 · la revision de apuntes  vacia                           ← recorre topics
+```
+
+**Las cinco cosas son la misma, y yo las he ido atribuyendo a los apuntes, al temario, al OCR y a mi propio
+generador, por ese orden.** **Y la causa estaba en una condicion de una consulta.**
+
+## Lo que hay que decidir antes de tocarlo, y es una decision de verdad
+
+**`topic` es como estaba hecho el temario viejo**: **bloque, epigrafe y tema**. **El nuevo tiene dos niveles.**
+**Asi que hay dos caminos y no son equivalentes:**
+
+1. **aceptar tambien `epigraph` cuando no haya `topic`**: **una linea y desbloquea los cinco**; **el riesgo es
+   que el motor de apuntes espera que un tema tenga epigrafes hijos** —**y un epigrafe no los tiene**—;
+2. **sembrar los `topic` que faltan en el perfil de TAI 2025**: **mas correcto si el temario de verdad los tiene**,
+   **y mas trabajo** —**habria que ver si el fixture los trae y la siembra los pierde—**.
+
+**La 1 es reversible y de una linea; la 2 es de datos y hay que comprobar el fixture antes.**
+
+**Y conviene mirar primero si el fixture de TAI 2025 declara `topic` y la siembra los convierte en `epigraph`**,
+**porque entonces el fallo no seria del motor sino de la siembra** —**y eso seria el septimo diagnostico de la
+sesion, y el bueno.**
