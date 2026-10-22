@@ -951,3 +951,51 @@ auditado y que deshacer sin estado previo vuelve a pendiente.**
 **Y una cosa que sí queda clara**: **el árbol del que se parte hoy está MEJOR que ayer en esta puerta**,
 **porque ayer tenía además las nueve marcas de mi concurrencia y los dos fallos de `test_extraction` por
 las fuentes dentro.** **Ahora solo quedan estos dos, y están acotados a «no se aíslan».**
+
+## §4 medido, y un efecto colateral de las capturas (ronda 132)
+
+**Los cuatro pares del §4, con el estado de su clave:**
+
+```
+b9798368 · 29-sep · superseded   ← archivado
+c545d893 · 02-oct · active       ← el bueno
+200c1c04 · 29-sep · superseded   ← archivado
+b31483ab · 02-oct · active       ← el bueno
+ee30a6d1 · 29-sep · superseded   ← archivado
+ece32571 · 02-oct · active       ← el bueno
+4b87ff6b · 29-sep · superseded   ← archivado
+73109901 · 02-oct · active       ← el bueno
+```
+
+**Y lo que hay que mover, medido:**
+
+```
+preguntas en los cuatro archivados:   440
+session_questions:                    174
+review_items:                           4
+attempts:                               la columna no es question_version_id
+review_events:                          la columna no es question_version_id
+```
+
+**La migración mueve 178 filas de tres tablas**, **y las otras dos hay que mirarlas con sus columnas
+buenas antes de escribir nada.**
+
+## Y la sorpresa: seis conjuntos nuevos de HOY
+
+```
+30bbf14d · 2026-10-22 · active · TAI ingreso libre 2025 · modelo A
+7c80939a · 2026-10-22 · active · TAI ingreso libre 2025 · modelo A
+f0596eea · 2026-10-22 · active · TAI ingreso libre 2025 · modelo A
+27892bb5 · 2026-10-22 · active · TAI ingreso libre 2025 · modelo A
+9e64202d · 2026-10-22 · active · TAI ingreso libre 2025 · modelo A
+743e4e6d · 2026-10-22 · active · TAI ingreso libre 2025 · modelo A
+```
+
+**Son de las capturas de esta mañana**: **el recorrido crea exámenes para fotografiar la pantalla del
+alumno, y los deja**. **Seis duplicados más del mismo examen, todos `active`.**
+
+**Eso hay que limpiarlo antes de la migración del §4**, **o la migración reasignará repasos a un conjunto
+que creó una prueba de pantallas.** **Y no se limpia a mano: se mira qué prueba los crea y se le enseña a
+borrarlos al terminar.**
+
+**Y una nota para el informe de capturas**: **una captura no debería dejar datos de examen en la copia**.
