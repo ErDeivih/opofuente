@@ -999,3 +999,32 @@ que creó una prueba de pantallas.** **Y no se limpia a mano: se mira qué prueb
 borrarlos al terminar.**
 
 **Y una nota para el informe de capturas**: **una captura no debería dejar datos de examen en la copia**.
+
+## La bisección de la puerta 7: las dos mitades pasan, y eso también informa (ronda 136)
+
+```
+la suite completa                2 failed, 824 passed   (1:01:01)   ← fallan las dos
+los 20 primeros ficheros + él     182 passed             (13:18)
+los 64 restantes + él             658 passed             (43:02)
+```
+
+**Ninguna mitad reproduce los dos fallos.** **Y las dos, juntas, suman 840 —más de las 826 de la suite—,
+así que la bisección se ha hecho con solapamiento y aun así han pasado las dos.**
+
+**Lo que eso significa, y es una conclusión, no un fracaso:**
+
+**Los dos fallos necesitan la suite ENTERA, no un fichero concreto.** **No son una prueba contaminando a
+otra**: **son dos pruebas que fallan cuando hay 826 en el mismo proceso** — **acumulación de lo que sea:
+la base compartida, los temporales, o el estado del cliente**.
+
+**El diagnóstico, entonces, es otro del que buscaba**: **no hay un culpable al que apuntar; hay una suite
+que no aísla.** **Y el arreglo no es encontrar la prueba que ensucia, sino darle a cada prueba su
+contexto** — `pytest-forked`, `pytest-xdist` con grupos, o una base por prueba —. **Eso es una decisión de
+infraestructura de pruebas, no un parche.**
+
+**Y lo que sí queda firme de toda esta tarde**: **las dos pruebas están BIEN** —prueban que resolver un
+duplicado queda auditado y que deshacer sin estado previo vuelve a pendiente, y las dos cosas son
+ciertas—, **826 pruebas, 824 en verde, y dos que se rompen por el tamaño del montón.**
+
+**Anotado para M2, que es donde toca**: **«la suite de integración no aísla: dos pruebas dependen de que el
+montón sea pequeño»**, **con las tres medidas que lo demuestran.**
