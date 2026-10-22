@@ -1642,3 +1642,40 @@ reconoce la marca «SUPUESTO A», así que el dato puede estar ya dentro sin que
 **Y el punto 3 —el segundo modelo validando— es el gasto del hito**: **6 supuestos por bloque, 25
 preguntas cada uno, dos modelos.** **El tope del hito son 6 $ y eso hay que llevarlo contado desde la
 primera llamada.**
+
+## M5: los supuestos oficiales NO están en los datos (ronda 179)
+
+**La medición que la ronda 178 dejó pendiente, hecha:**
+
+```
+document_sections                         733.347 secciones
+  etiquetas mas repetidas                 None (633.644) · «página 1» (2.256) · «página 2» …
+  etiquetas que empiecen por «SUPUESTO»    NINGUNA
+  etiquetas que mencionen «upuesto»       1 · y es una cabecera de tabla
+question_sets de tipo practical_case      0
+preguntas con sección de origen           16.923  ← pero sus secciones son páginas
+```
+
+**Así que no hay nada que extraer**: **las preguntas de los supuestos, si están, están mezcladas con las
+demás y sin marca que las separe.** **El extractor del INAP reconoce «SUPUESTO A» en el texto de un
+documento, pero ese reconocimiento no se ha corrido sobre los exámenes de TAI en esta copia.**
+
+## Lo que eso cambia
+
+**El punto 2 del hito —«supuestos oficiales primero»— no es una consulta: es una importación con
+extracción.** **Y necesita los documentos**, **que están descargables con `fetch-sources.ps1` pero no en
+la copia** (se retiraron para las capturas).
+
+**Y el punto 1 —la tabla— sigue siendo lo primero**, **porque el 2 y el 3 la necesitan igual.**
+
+## El orden que queda para M5
+
+1. **la tabla `practical_cases`** —enunciado, bloque, y sus preguntas—, **que no depende de nada**;
+2. **descargar las fuentes y correr el extractor del INAP sobre los exámenes de TAI**, **y decir cuántos
+   supuestos salen y de qué bloques**;
+3. **el generador con segundo modelo**, **que es el gasto y va el último**;
+4. **el simulacro usando uno real**, **que ya está medio hecho**: `practical_case_origin` existe y hoy
+   dice honradamente «bloque».
+
+**Y la cifra de esta ronda es la que importa**: **0 supuestos oficiales en la copia**, **que es lo mismo
+que decir que el punto 2 del hito es trabajo de contenido y no de consulta.**
