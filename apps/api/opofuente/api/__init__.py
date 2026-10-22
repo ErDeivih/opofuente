@@ -22,6 +22,7 @@ from opofuente.api.routes import (
     notes_incidents,
     notes_reports,
     notes_review,
+    plan,
     platform,
     profiles,
     question_file,
@@ -42,6 +43,7 @@ api_router.include_router(classification.router)
 api_router.include_router(library.router)
 api_router.include_router(questions.router)
 api_router.include_router(cards.router)
+api_router.include_router(plan.router)
 api_router.include_router(study.router)
 api_router.include_router(search.router)
 api_router.include_router(reviews.router)

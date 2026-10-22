@@ -2515,6 +2515,53 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/plan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Lo que hay guardado del plan (M4)
+         * @description La fecha y las horas, **o `null` si no hay plan**. No calcula nada.
+         */
+        get: operations["leer_guardado_api_v1_plan_get"];
+        /**
+         * Pone la fecha del examen y devuelve el plan (M4)
+         * @description Guarda la fecha y **devuelve el plan calculado**, que es lo que la
+         *     pantalla necesita para pintarlo sin pedirlo otra vez.
+         *
+         *     **404 si no hay temas que repartir**: un plan vacio no es un plan.
+         */
+        put: operations["guardar_plan_api_v1_plan_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/plan/hoy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Lo que toca hoy, recortado de la semana en curso (M4)
+         * @description Las tareas de esta semana, **o el motivo de que no haya ninguna**.
+         */
+        get: operations["plan_de_hoy_api_v1_plan_hoy_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/platform/policy": {
         parameters: {
             query?: never;
@@ -6674,6 +6721,21 @@ export interface components {
             message: string;
         };
         /**
+         * GuardarPlanSchema
+         * @description Lo que decide el alumno: la fecha, las horas y los descansos.
+         */
+        GuardarPlanSchema: {
+            /**
+             * Exam Date
+             * Format: date
+             */
+            exam_date: string;
+            /** Hours Per Week */
+            hours_per_week: number;
+            /** Rest Days */
+            rest_days?: number[];
+        };
+        /**
          * HousekeepingCandidateSchema
          * @description Algo que se puede retirar, con su motivo y su tamaño. La pantalla lo enseña **antes**.
          */
@@ -6701,6 +6763,15 @@ export interface components {
             total_bytes: number;
             /** Usage */
             usage: components["schemas"]["AreaUsageSchema"][];
+        };
+        /**
+         * HoySchema
+         * @description La semana en curso, **o el motivo de que no haya nada**.
+         */
+        HoySchema: {
+            /** Motivos */
+            motivos: string[];
+            semana?: components["schemas"]["SemanaSchema"] | null;
         };
         /**
          * ImportQuestionsFromDocumentSchema
@@ -8190,6 +8261,35 @@ export interface components {
         PendingSchema: {
             /** Vencen */
             vencen: number;
+        };
+        /**
+         * PlanGuardadoSchema
+         * @description Lo que hay guardado, o `null` si nadie ha puesto la fecha.
+         */
+        PlanGuardadoSchema: {
+            /** Exam Date */
+            exam_date?: string | null;
+            /** Hours Per Week */
+            hours_per_week?: number | null;
+            /** Rest Days */
+            rest_days?: number[];
+        };
+        /**
+         * PlanSchema
+         * @description El plan entero, **con lo que no cabe dicho**.
+         */
+        PlanSchema: {
+            /** Cabe Todo */
+            cabe_todo: boolean;
+            /** Dentro */
+            dentro: string[];
+            /**
+             * Fuera
+             * @description Los temas que no entran antes del examen
+             */
+            fuera: string[];
+            /** Semanas */
+            semanas: components["schemas"]["SemanaSchema"][];
         };
         /**
          * PlatformPolicySchema
@@ -9885,6 +9985,18 @@ export interface components {
             /** Title */
             title?: string | null;
         };
+        /** SemanaSchema */
+        SemanaSchema: {
+            /**
+             * Empieza
+             * Format: date
+             */
+            empieza: string;
+            /** Numero */
+            numero: number;
+            /** Tareas */
+            tareas: components["schemas"]["TareaSchema"][];
+        };
         /**
          * SessionConfigurationSchema
          * @description La configuración congelada al crear la sesión.
@@ -11124,6 +11236,20 @@ export interface components {
             annulled_question_version_id: string;
             /** Reserve Question Version Id */
             reserve_question_version_id?: string | null;
+        };
+        /**
+         * TareaSchema
+         * @description Una tarea con su boton: el tipo dice a que pantalla lleva.
+         */
+        TareaSchema: {
+            /** Codigo */
+            codigo?: string | null;
+            /** Minutos */
+            minutos: number;
+            /** Tipo */
+            tipo: string;
+            /** Titulo */
+            titulo: string;
         };
         /**
          * TrayBulkRequestSchema
@@ -18726,6 +18852,97 @@ export interface operations {
                 };
                 content: {
                     "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    leer_guardado_api_v1_plan_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanGuardadoSchema"];
+                };
+            };
+        };
+    };
+    guardar_plan_api_v1_plan_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GuardarPlanSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    plan_de_hoy_api_v1_plan_hoy_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HoySchema"];
                 };
             };
         };

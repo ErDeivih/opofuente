@@ -6451,6 +6451,35 @@
         "title": "FieldError",
         "type": "object"
       },
+      "GuardarPlanSchema": {
+        "description": "Lo que decide el alumno: la fecha, las horas y los descansos.",
+        "properties": {
+          "exam_date": {
+            "format": "date",
+            "title": "Exam Date",
+            "type": "string"
+          },
+          "hours_per_week": {
+            "maximum": 80.0,
+            "minimum": 1.0,
+            "title": "Hours Per Week",
+            "type": "integer"
+          },
+          "rest_days": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Rest Days",
+            "type": "array"
+          }
+        },
+        "required": [
+          "exam_date",
+          "hours_per_week"
+        ],
+        "title": "GuardarPlanSchema",
+        "type": "object"
+      },
       "HousekeepingCandidateSchema": {
         "description": "Algo que se puede retirar, con su motivo y su tamaño. La pantalla lo enseña **antes**.",
         "properties": {
@@ -6522,6 +6551,33 @@
           "reclaimable_bytes"
         ],
         "title": "HousekeepingReportSchema",
+        "type": "object"
+      },
+      "HoySchema": {
+        "description": "La semana en curso, **o el motivo de que no haya nada**.",
+        "properties": {
+          "motivos": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Motivos",
+            "type": "array"
+          },
+          "semana": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SemanaSchema"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "motivos"
+        ],
+        "title": "HoySchema",
         "type": "object"
       },
       "ImportQuestionsFromDocumentSchema": {
@@ -9922,6 +9978,82 @@
           "vencen"
         ],
         "title": "PendingSchema",
+        "type": "object"
+      },
+      "PlanGuardadoSchema": {
+        "description": "Lo que hay guardado, o `null` si nadie ha puesto la fecha.",
+        "properties": {
+          "exam_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exam Date"
+          },
+          "hours_per_week": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hours Per Week"
+          },
+          "rest_days": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Rest Days",
+            "type": "array"
+          }
+        },
+        "title": "PlanGuardadoSchema",
+        "type": "object"
+      },
+      "PlanSchema": {
+        "description": "El plan entero, **con lo que no cabe dicho**.",
+        "properties": {
+          "cabe_todo": {
+            "title": "Cabe Todo",
+            "type": "boolean"
+          },
+          "dentro": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Dentro",
+            "type": "array"
+          },
+          "fuera": {
+            "description": "Los temas que no entran antes del examen",
+            "items": {
+              "type": "string"
+            },
+            "title": "Fuera",
+            "type": "array"
+          },
+          "semanas": {
+            "items": {
+              "$ref": "#/components/schemas/SemanaSchema"
+            },
+            "title": "Semanas",
+            "type": "array"
+          }
+        },
+        "required": [
+          "semanas",
+          "fuera",
+          "dentro",
+          "cabe_todo"
+        ],
+        "title": "PlanSchema",
         "type": "object"
       },
       "PlatformPolicySchema": {
@@ -14362,6 +14494,33 @@
         "title": "SectionSchema",
         "type": "object"
       },
+      "SemanaSchema": {
+        "properties": {
+          "empieza": {
+            "format": "date",
+            "title": "Empieza",
+            "type": "string"
+          },
+          "numero": {
+            "title": "Numero",
+            "type": "integer"
+          },
+          "tareas": {
+            "items": {
+              "$ref": "#/components/schemas/TareaSchema"
+            },
+            "title": "Tareas",
+            "type": "array"
+          }
+        },
+        "required": [
+          "numero",
+          "empieza",
+          "tareas"
+        ],
+        "title": "SemanaSchema",
+        "type": "object"
+      },
       "SessionConfigurationSchema": {
         "description": "La configuración congelada al crear la sesión.",
         "properties": {
@@ -17459,6 +17618,41 @@
           "annulled_question_version_id"
         ],
         "title": "SubstitutionSchema",
+        "type": "object"
+      },
+      "TareaSchema": {
+        "description": "Una tarea con su boton: el tipo dice a que pantalla lleva.",
+        "properties": {
+          "codigo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Codigo"
+          },
+          "minutos": {
+            "title": "Minutos",
+            "type": "integer"
+          },
+          "tipo": {
+            "title": "Tipo",
+            "type": "string"
+          },
+          "titulo": {
+            "title": "Titulo",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tipo",
+          "titulo",
+          "minutos"
+        ],
+        "title": "TareaSchema",
         "type": "object"
       },
       "TrayBulkRequestSchema": {
@@ -27734,6 +27928,110 @@
         "summary": "Lo que sigue esperando una decisión de una persona",
         "tags": [
           "sistema"
+        ]
+      }
+    },
+    "/api/v1/plan": {
+      "get": {
+        "description": "La fecha y las horas, **o `null` si no hay plan**. No calcula nada.",
+        "operationId": "leer_guardado_api_v1_plan_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanGuardadoSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Lo que hay guardado del plan (M4)",
+        "tags": [
+          "plan"
+        ]
+      },
+      "put": {
+        "description": "Guarda la fecha y **devuelve el plan calculado**, que es lo que la\npantalla necesita para pintarlo sin pedirlo otra vez.\n\n**404 si no hay temas que repartir**: un plan vacio no es un plan.",
+        "operationId": "guardar_plan_api_v1_plan_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GuardarPlanSchema"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Pone la fecha del examen y devuelve el plan (M4)",
+        "tags": [
+          "plan"
+        ]
+      }
+    },
+    "/api/v1/plan/hoy": {
+      "get": {
+        "description": "Las tareas de esta semana, **o el motivo de que no haya ninguna**.",
+        "operationId": "plan_de_hoy_api_v1_plan_hoy_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HoySchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Lo que toca hoy, recortado de la semana en curso (M4)",
+        "tags": [
+          "plan"
         ]
       }
     },

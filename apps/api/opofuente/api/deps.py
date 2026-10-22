@@ -31,6 +31,7 @@ from opofuente.application.library_service import LibraryService
 from opofuente.application.notes_incident_service import NotesIncidentsService
 from opofuente.application.notes_report_service import NotesReportsService
 from opofuente.application.notes_review_service import NotesReviewService
+from opofuente.application.plan_service import PlanService
 from opofuente.application.profiles_service import ProfilesService
 from opofuente.application.question_file_service import QuestionFileService
 from opofuente.application.question_service import QuestionService
@@ -96,6 +97,12 @@ def get_artifact_store(request: Request) -> ArtifactStore:
 
 def get_question_service(request: Request) -> QuestionService:
     service: QuestionService = request.app.state.question_service
+    return service
+
+
+def get_plan_service(request: Request) -> PlanService:
+    """El plan de estudio (M4): la fecha, el reparto y lo de hoy."""
+    service: PlanService = request.app.state.plan_service
     return service
 
 
@@ -231,6 +238,7 @@ LibraryServiceDep = Annotated[LibraryService, Depends(get_library_service)]
 ArtifactStoreDep = Annotated[ArtifactStore, Depends(get_artifact_store)]
 QuestionServiceDep = Annotated[QuestionService, Depends(get_question_service)]
 CardServiceDep = Annotated[CardService, Depends(get_card_service)]
+PlanServiceDep = Annotated[PlanService, Depends(get_plan_service)]
 ExplanationProposerDep = Annotated[ExplanationProposer | None, Depends(get_explanation_proposer)]
 QuestionFileServiceDep = Annotated[QuestionFileService, Depends(get_question_file_service)]
 AutoStudyServiceDep = Annotated[AutoStudyService, Depends(get_auto_study_service)]

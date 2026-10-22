@@ -52,6 +52,7 @@ from opofuente.application.library_service import LibraryService
 from opofuente.application.notes_incident_service import NotesIncidentsService
 from opofuente.application.notes_report_service import NotesReportsService
 from opofuente.application.notes_review_service import MedidaSinModelo, NotesReviewService
+from opofuente.application.plan_service import PlanService
 from opofuente.application.profiles_service import ProfilesService
 from opofuente.application.question_file_service import QuestionFileService
 from opofuente.application.question_service import QuestionService
@@ -102,6 +103,7 @@ from opofuente.infrastructure.notes_review_repository import SqlAlchemyNotesRevi
 from opofuente.infrastructure.observability import setup_logging
 from opofuente.infrastructure.ocr import tesseract_from_settings
 from opofuente.infrastructure.password_hashing import Argon2PasswordHasher
+from opofuente.infrastructure.plan_repository import SqlAlchemyPlanRepository
 from opofuente.infrastructure.probes import DatabaseProbe, DataDirectoryProbe
 from opofuente.infrastructure.profile_repository import SqlAlchemyProfileRepository
 from opofuente.infrastructure.question_file_repository import SqlAlchemyQuestionFileRepository
@@ -561,6 +563,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.artifact_store = artifact_store
     app.state.question_service = question_service
     app.state.card_service = CardService(SqlAlchemyCardRepository(session_factory))
+    app.state.plan_service = PlanService(SqlAlchemyPlanRepository(session_factory))
     app.state.explanation_proposer = _construir_proposer()
     app.state.question_file_service = question_file_service
     app.state.auto_study_service = auto_study_service
