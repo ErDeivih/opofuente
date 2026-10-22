@@ -1569,3 +1569,37 @@ deja fuera y por qué**, **no repartir un plan que no cabe.**
 
 **Las dos se resuelven mirando, no preguntando**, **y van apuntadas aquí para que la primera ronda de M4
 empiece por medir.**
+
+## M4: qué es «flojo», decidido con la medida delante (ronda 172)
+
+**Las tres candidatas que daba el árbol, medidas sobre la copia:**
+
+```
+preguntas por tema (via el ancla de los apuntes)   hay datos · 2.812 en el mayor
+secciones de apuntes por tema                      hay datos · de 21 a 61
+fallos de tests (review_items)                       11 EN TODA LA BASE
+```
+
+**Y los temas son 88 nodos de tipo `topic`**, no 33: **los 33 son los bloques del programa, y el plan
+reparte temas.**
+
+## La decisión, y por qué
+
+**«Flojo» = el tema con menos secciones de apuntes por pregunta que lo evalúa.**
+
+**Las razones, una por cada candidata descartada:**
+
+- **los fallos no sirven todavía**: **once en toda la base**, **y un plan que se ordena por once fallos
+  ordena por azar**;
+- **las preguntas solas tampoco**: **un tema con tres mil preguntas no está flojo, está cargado** —**y lo
+  que hay que repartir es la carencia, no el volumen**—;
+- **la proporción sí dice algo**: **secciones por pregunta es «cuánto apunte tengo para lo que me van a
+  preguntar»**, **y eso es exactamente lo que el plan tiene que compensar**.
+
+**Y es reversible**: **cuando haya fallos de verdad** —**cuando el alumno lleve semanas estudiando**—,
+**la definición se cambia a «falla más» y se deja escrito el cambio.** **La señal existe en el árbol y aún
+no tiene datos.**
+
+**Lo que se guarda en el planificador no cambia**: **sigue recibiendo un `flojo: bool` por tema**, **y
+quien lo rellena es el servicio, no el dominio.** **Que la definición cambie no toca la matemática del
+reparto.**
