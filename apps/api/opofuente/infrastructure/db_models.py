@@ -2643,3 +2643,39 @@ class StudyPlanRecord(Base):
     rest_days: Mapped[str] = mapped_column(String(16), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class PracticalCaseRecord(Base):
+    """Un supuesto practico y su enunciado (M5).
+
+    **El enunciado es lo que se lee antes de las preguntas**: sin el no hay
+    supuesto, solo veinte preguntas sueltas. **`origin` dice si es oficial o
+    generado**, y el hito exige que el simulacro prefiera uno oficial.
+    """
+
+    __tablename__ = "practical_cases"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    #: El bloque del examen: III o IV.
+    block: Mapped[str] = mapped_column(String(4), nullable=False)
+    statement: Mapped[str] = mapped_column(Text, nullable=False)
+    #: `official` (del INAP) o `generated` (del modelo).
+    origin: Mapped[str] = mapped_column(String(16), nullable=False)
+    source_document: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class PracticalCaseQuestionRecord(Base):
+    """Una pregunta dentro de un supuesto, **con su orden**.
+
+    Un supuesto es una serie —«con los datos del caso, conteste»—, y las
+    preguntas se numeran del 1 al 25: guardarlas sin orden las baraja.
+    """
+
+    __tablename__ = "practical_case_questions"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    practical_case_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    question_version_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    #: Del 1 al 25, sin huecos.
+    position: Mapped[int] = mapped_column(Integer, nullable=False)
