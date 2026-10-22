@@ -5313,3 +5313,35 @@ como se hizo con M8** —**la suite escribe en `artifacts/screens-datos` y solo 
 
 **Cada corrida de la suite deja procesos `node` vivos cuando falla a medias**: **46 acumulados en una sesion**. **Un
 `Get-Process node | Stop-Process` antes de lanzarla deberia ser parte del procedimiento**, **y no lo era.**
+
+## M5: las capturas, hechas — y el fallo era un indice que yo cree a mano (ronda 309)
+
+**El webServer no arrancaba porque migra al inicio y fallaba en `0045_indice_de_mapeos`.** **Y la causa era mia**: **en la ronda 207 cree `ix_mapping_subject_node` a mano en la copia para medir**, **y la migracion 0045 lo crea otra vez —sin `IF NOT EXISTS`— y falla porque ya existe.**
+
+**Quitado el indice a mano, la migracion paso:**
+
+```
+Running upgrade 0044_supuestos -> 0045_indice_de_mapeos
+Running upgrade 0045_indice_de_mapeos -> 0046_invitaciones
+version ahora: 0046_invitaciones
+```
+
+**Y la suite, sobre la copia migrada:**
+
+```
+52 PNG en artifacts/recorrido-M5/  ·  93,7 MB
+```
+
+## Los cuatro recorridos, completos
+
+```
+recorrido-M1 · recorrido-M3 · recorrido-M5 · recorrido-M8
+```
+
+**Los cuatro que el objetivo pide, con datos reales, y sin esperar revision.**
+
+## Y la leccion de esta ronda
+
+**Un cambio hecho a mano sobre la copia para medir dejo la base en un estado que ninguna migracion esperaba**, **y el sintoma —«el servidor no arranca»— no decia nada de indices.**
+
+**La copia de trabajo no es solo datos: tambien es esquema**, **y tocarlo a mano tiene consecuencias que aparecen trescientas rondas despues.**
