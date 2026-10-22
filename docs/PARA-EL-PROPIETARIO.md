@@ -1547,3 +1547,18 @@ una pide leer dos textos y decidir cuál vale.** **No hay atajo honesto.**
 mismo día en que los PDF del BOCYL cambiaron en la descarga.** **Puede que no sean 538 problemas distintos:
 puede que sean un cambio normativo y 538 textos que lo reflejan.** **Eso lo sabrás tú en un minuto y yo no
 en una hora.**
+
+## La beta por invitación necesita dos piezas que no existen (22 de octubre)
+
+**Cuando llegue el momento de invitar a las cinco o diez personas, hace falta esto, y hoy no está:**
+
+```
+crear la cuenta de administrador     no hay comando ni pantalla
+invitar por enlace                   no hay tabla, ni token, ni pantalla
+```
+
+**La tabla de cuentas sí existe** —con su correo, su hash argon2id y su restricción de correo único—,
+**así que lo que falta es el camino para crear la primera y el enlace para las demás.**
+
+**No es una pared: es trabajo pendiente de M8, y está apuntado con lo que cuesta.** **Lo digo aquí porque
+es de las cosas que se dan por hechas hasta el día que hay que usarlas.**

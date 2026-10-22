@@ -2736,3 +2736,37 @@ punto 1 · el paquete publico           HECHO · 13 tablas · 31.901 filas · id
 2. **copia y restauracion sobre esa instalacion**;
 3. **la guia de una pagina**;
 4. **las capturas en `artifacts/recorrido-M8/`**, **que necesitan la instalacion funcionando**.
+
+## M8, punto 2: ni el administrador ni la invitacion existen (ronda 222)
+
+**Antes de escribir el instalador mire lo que el instalador tendria que llamar, y falta:**
+
+```
+la tabla de cuentas     accounts · email, email_normalized, password_hash (argon2id)   EXISTE
+crear el administrador  ninguna herramienta, ninguna ruta, ningun comando              NO EXISTE
+invitar por enlace      ninguna coincidencia en la API ni en la web                   NO EXISTE
+```
+
+**Las cinco coincidencias de «invitar» que salen son prosa de comentarios** —«invitaria a leerla como si
+lo fuera»—, **no codigo de invitaciones.**
+
+**Asi que el punto 2 no es «escribir el `.ps1`»**: **es primero construir las dos piezas que el `.ps1`
+tendria que llamar.** **Un instalador que dice «crea el administrador» y no hay con que, es un instalador
+que miente en su tercer paso.**
+
+## Lo que eso cambia en el plan, y cuanto cuesta
+
+1. **un comando `crear-administrador`** —**lee la clave del entorno, no de un argumento**—, **que crea la
+   cuenta en `accounts` con argon2id y su rol**;
+2. **un flujo de invitacion**: **un enlace con un token de un solo uso**, **su tabla**, **su caducidad** y
+   **su pantalla**;
+3. **y despues si, el `.ps1`**, **que ya tendria las dos cosas que llamar**.
+
+**Las dos primeras son codigo de verdad, no un script.** **Y la segunda es la que menos se puede hacer a
+medias**: **una invitacion sin caducidad ni un solo uso es una puerta abierta con un cartel de «solo
+invitados».**
+
+## Y una cosa que conviene decir
+
+**El §2 de la fase ya decidio que la beta es por invitacion, gratis y sin nada contratado.** **Lo que no
+dijo —porque no le tocaba— es que las invitaciones habia que construirlas.** **No estan.**
