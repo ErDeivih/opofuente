@@ -592,3 +592,35 @@ select count(*) from question_note_anchors a ...                     -- pendient
 
 **El vigilante se para con `Stop-Process` sobre su PID**, y **conviene pararlo antes de relanzar el
 bucle**, para que no mate al primero que arranque mientras calienta.
+
+## La captura de la bandeja existe; lo que le falta es comprobar lo que enseña (ronda 83)
+
+**`admin-explicaciones-escritorio.png` (60 KB) y `admin-explicaciones-movil.png` (48,7 KB) están hechas y en
+verde** —`ok 52` y `ok 53`—, **y ya están en `artifacts/recorrido-M1` con las otras 74**.
+
+**Pero la captura solo comprueba accesibilidad y tamaño**, **no que la bandeja enseñe lo que tiene que
+enseñar**. **Y como la bandeja puede salir vacía sin que nada falle, eso importa.**
+
+**La prueba que falta, y su modelo está en el mismo fichero** —`la revisión de apuntes a 1280 px`, línea
+228 de `screens.spec.ts`—:
+
+```typescript
+test(`la bandeja de explicaciones a ${ancho} px`, async ({ page }) => {
+  await retratar(page, '/admin/explicaciones', '/admin/explicaciones', ancho, alto, etiqueta);
+  // 1. o hay filas, o la pantalla dice que no hay ninguna — las dos cosas son válidas
+  const vacia = page.getByText('No hay explicaciones generadas esperando revisión.');
+  const filas = page.locator('ol > li');
+  expect((await filas.count()) + (await vacia.count())).toBeGreaterThan(0);
+  // 2. si hay filas, cada una lleva su enunciado y su cita entre comillas angulares
+  if ((await filas.count()) > 0) {
+    await expect(filas.first().locator('strong').first()).not.toBeEmpty();
+    await expect(filas.first().locator('blockquote')).toContainText('«');
+  }
+});
+```
+
+**Y la comprobación que de verdad cierra el hito**: **que la cita esté ahí**, **porque es lo que la
+migración `0041` hizo para poder enseñar** — y **lo que la corrida escribe ahora en cada fila**.
+
+**Después de esa prueba en verde**, **M1 tiene sus cuatro entregables**: **el código**, **la cita guardada**,
+**las capturas con datos reales** **y las 8.870 que faltan cuando la API quiera**.
