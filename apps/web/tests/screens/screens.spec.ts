@@ -296,23 +296,30 @@ for (const { ancho, alto, etiqueta } of ANCHOS) {
  */
 for (const { ancho, alto, etiqueta } of ANCHOS) {
   test(`examenes-oficiales a ${ancho} px`, async ({ page }) => {
-    await montarExamenOficial();
-    const violaciones = await retratar(
-      page,
-      '/examenes',
-      '/examenes-oficiales',
-      ancho,
-      alto,
-      etiqueta,
-    );
-    await expect(page.getByText('Administración General del Estado').first()).toBeVisible();
+    // **El conjunto se borra al terminar, pase lo que pase** (M1): el ayudante devolvía su id y aquí se
+    // tiraba, así que cada pasada del guion dejaba un examen oficial de más en la copia. Se vieron SEIS
+    // el 22 de octubre, todos `active`, y la migración del §4 habría reasignado repasos a uno de ellos.
+    const creado = await montarExamenOficial();
+    try {
+      const violaciones = await retratar(
+        page,
+        '/examenes',
+        '/examenes-oficiales',
+        ancho,
+        alto,
+        etiqueta,
+      );
+      await expect(page.getByText('Administración General del Estado').first()).toBeVisible();
     // **85 y no 135** (F39, §3.7): el conjunto sembrado trae las 135 del cuestionario —120 ordinarias
     // y 15 de reserva—, y el examen sirve 85, porque la primera parte de TAI publica 80 + 5. La fila
     // decía la cifra del banco y el examen servía otra; ahora dice la del examen, que es lo que el
     // alumno se va a encontrar. Antes de F39 esta línea pedía «135 preguntas», y esa expectativa era
     // parte del defecto.
-    await expect(page.getByText('85 preguntas').first()).toBeVisible();
-    expect(violaciones, `axe en la pantalla de exámenes: ${violaciones.join(', ')}`).toEqual([]);
+      await expect(page.getByText('85 preguntas').first()).toBeVisible();
+      expect(violaciones, `axe en la pantalla de exámenes: ${violaciones.join(', ')}`).toEqual([]);
+    } finally {
+      await borrarExamenOficial(creado);
+    }
   });
 }
 
@@ -345,6 +352,45 @@ for (const { ancho, alto, etiqueta } of ANCHOS) {
  * clave de un examen oficial exige la plantilla enlazada a una versión de documento, y no hay ninguna
  * ruta que invente un material sin pasar por la extracción entera.
  */
+/**
+ * Borra el **examen oficial** que montó una captura, en el orden que no deja huérfanos (M1).
+ *
+ * **Se borra en cinco pasos y de dentro afuera**: las opciones, las entradas de la clave, las
+ * preguntas, la clave y el conjunto. **Un `DELETE` del conjunto con las claves apagadas dejaría 135
+ * preguntas sin padre por captura**, y la copia de trabajo la migra el §4.
+ *
+ * **Por qué con `node:sqlite` y no por la API**: no hay ruta que borre un conjunto con sus preguntas,
+ * igual que no la hay para enlazar la plantilla. Es el mismo atajo, y por el mismo motivo.
+ */
+async function borrarExamenOficial(conjunto: string): Promise<void> {
+  const { DatabaseSync } = await import('node:sqlite');
+  const base = new DatabaseSync(path.join(DATOS_DE_LA_SUITE, 'opofuente.sqlite3'));
+  try {
+    base.exec('PRAGMA foreign_keys = OFF');
+    base.exec(`BEGIN`);
+    try {
+      base.prepare(
+        `DELETE FROM option_versions WHERE question_version_id IN
+           (SELECT id FROM question_versions WHERE question_set_id = ?)`,
+      ).run(conjunto);
+      base.prepare(
+        `DELETE FROM answer_key_entries WHERE answer_key_version_id IN
+           (SELECT id FROM answer_key_versions WHERE question_set_id = ?)`,
+      ).run(conjunto);
+      base.prepare(`DELETE FROM question_versions WHERE question_set_id = ?`).run(conjunto);
+      base.prepare(`DELETE FROM answer_key_versions WHERE question_set_id = ?`).run(conjunto);
+      base.prepare(`DELETE FROM question_sets WHERE id = ?`).run(conjunto);
+      base.exec('COMMIT');
+    } catch (error) {
+      base.exec('ROLLBACK');
+      throw error;
+    }
+  } finally {
+    base.exec('PRAGMA foreign_keys = ON');
+    base.close();
+  }
+}
+
 async function montarExamenOficial(): Promise<string> {
   const cabeceras = { 'Content-Type': 'application/json', Origin: ORIGEN };
   const leer = async <T>(respuesta: Response): Promise<T> => {
