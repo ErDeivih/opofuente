@@ -15,7 +15,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 
-from opofuente.domain.cola_del_dia import EntradaDeLaCola, cola_del_dia
+from opofuente.domain.cola_del_dia import cola_del_dia
 from opofuente.domain.repaso import EstadoDeRepaso, Respuesta, repasar
 from opofuente.domain.tarjetas import tarjeta_estructural
 from opofuente.infrastructure.card_repository import (
