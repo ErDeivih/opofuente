@@ -867,3 +867,26 @@ bloquear**.
 **Y el fallo que encontró esta pasada, y que el 18/18 no habría visto sin ella**: **`eslint` con
 `--max-warnings=0` cazó un `useCallback` sin su dependencia `regenerar`** — **la tecla `g` habría usado
 siempre la primera versión de la mutación**.
+
+## Dos lecciones caras de la ronda 111, y las dos son mías
+
+**1 · No se corren `pytest` en paralelo con la batería larga.** **La puerta 7 y mis comprobaciones de
+`unit` comparten los directorios temporales de `pytest`**, **y la segunda bloquea al primero**:
+`PermissionError [WinError 32] El proceso no tiene acceso al archivo porque está siendo utilizado`.
+**Las 163 «errores» de `unit` y los `E` de la puerta 7 al 17 % son eso, no fallos de código.**
+
+**La regla**: **mientras una batería larga corre, no se lanza `pytest` a la vez.** **Se lee su registro y
+nada más.**
+
+**2 · El manifiesto NO admite `volatile: true` sin `content_sha256`.** **Al marcarlas así, la puerta 17
+falló con «fuentes volátiles sin huella de contenido en el manifiesto»** — **peor que antes**. **Revertido
+con `git checkout`.**
+
+**Y lo que sí funcionó de aquel intento, y merece recordarse**: **el `volatile` hace que
+`fetch-sources.ps1` compare dos de las fuentes POR SU TEXTO** —`TEXT gc-boe-convocatoria-xml se compara
+por su texto, no por sus bytes`— **en vez de fallar por la huella**. **Era la dirección correcta; lo que
+faltaba era el campo de huella de contenido**, **y eso hay que mirar cómo lo rellena el generador de
+fixtures antes de tocar nada.**
+
+**Y el estado del árbol, verificado**: `main = 8b24b0e` con **el manifiesto intacto** —cuatro volátiles,
+las de siempre—, **`data/sources` retirado**, **y `unit` sin poder medirse mientras la 7 corre**.
