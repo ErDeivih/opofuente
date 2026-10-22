@@ -4452,3 +4452,44 @@ los otros siete hitos con su documento, sus cifras y su pendiente nombrado.**
 
 **Y el trabajo de hoy deja una cosa que no estaba al empezar**: **cada uno de los cuatro pendientes tiene dueño,
 cifra y causa, y ninguno es una incognita.**
+
+## M7 §3: el boton, hecho y aplicado sobre la copia (ronda 286)
+
+```
+uv run python -m opofuente.tools.bandeja --aplicar
+  marcadas como propuesta lista: 134
+
+y despues:
+  incidencias automatizables       0
+  decisiones de verdad           825
+  total                         2434      (antes 2568)
+```
+
+**Y el estado que usa no es inventado**: **el dominio ya tenia `IncidentStatus.PROPUESTA_LISTA`**, **y su
+docstring dice exactamente esto**:
+
+> **«una regla la ha resuelto y espera la aprobacion en bloque del propietario. No es `open` (no hay nada que
+> hacer) ni `reviewed` (nadie la ha aprobado todavia).»**
+
+**Asi que las 134 no se cierran ni se descartan**: **quedan propuestas y esperando un si o un no**, **que es lo
+que el hito pide con «propuesto en bloque».**
+
+## Lo que eso deja en M7 §3
+
+```
+✓ el rendimiento bajo 2 s, con prueba
+✓ notes verify --all, con sus tres codigos de salida
+✓ la bandeja partida: 134 automatizables · 825 decisiones · 1.609 explicaciones
+✓ el detalle por motivo
+✓ el boton que aplica la propuesta — 134 marcadas, la bandeja de 2.568 a 2.434
+· y las 825 decisiones, que son del propietario
+```
+
+**Cinco de seis piezas.** **Y el numero que el hito pide comparar ya no es 2.568 contra 100: es 825 contra 100**
+—**que sigue sin cumplirse, y ahora se sabe que son 825 y por que motivos**—.
+
+## Y una nota sobre donde se aplico
+
+**Se aplico sobre la copia** —`F:\temp-opofuente\m0-capturas`—, **no sobre la base real**, **que sigue con su
+huella**. **La copia tiene ahora 134 filas en `propuesta_lista`**, **que es el estado que la herramienta deja y
+el que habria que dejar en la real cuando el propietario lo decida.**

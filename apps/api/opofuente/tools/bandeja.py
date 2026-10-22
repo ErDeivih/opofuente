@@ -142,6 +142,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         help="y ademas, como se reparte cada grupo por motivo",
     )
     parser.add_argument(
+        "--aplicar",
+        action="store_true",
+        help="ESCRIBE: marca como propuesta lista lo automatizable. Sin esto, nada se toca",
+    )
+    parser.add_argument(
         "--proponer",
         action="store_true",
         help="ensena la propuesta en bloque: que se haria con cada grupo, sin hacerlo",
@@ -155,7 +160,43 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.proponer:
         for linea in propuesta():
             print(linea)
+    if args.aplicar:
+        print()
+        print(marcar_como_propuesta())
     return 0
+
+
+def marcar_como_propuesta() -> str:
+    """Marca las automatizables como **propuesta lista**, que es una salida real.
+
+    **`IncidentStatus.PROPUESTA_LISTA` existe en el dominio y significa exactamente
+    esto**: **una regla la ha resuelto y no necesita al propietario para empezar**.
+    **Es la salida correcta para las 106 sin frase y las 28 sin clave**: **no se
+    cierran como revisadas —nadie las ha revisado— ni se descartan —no son un
+    error del motor—**, **sino que quedan propuestas y esperando un si o un no.**
+
+    **Una transaccion y un `where` con los dos motivos**: **no hay UPDATE sin
+    condicion en este fichero.**
+    """
+    motor = create_engine(f"sqlite+pysqlite:///{get_settings().data_paths.database}")
+    fabrica = sessionmaker(bind=motor)
+    with fabrica() as session:
+        session.execute(
+            text(
+                "update notes_incidents set status = 'propuesta_lista' "
+                "where status = 'open' "
+                "and reason in ('sin_frase_en_los_apuntes', 'clave_sin_definir')"
+            )
+        )
+        session.commit()
+        # **Se cuenta despues y no con `rowcount`**: una sentencia cruda no lo
+        # trae, y contar es lo que se puede afirmar.
+        cuantas = int(
+            session.execute(
+                text("select count(*) from notes_incidents where status = 'propuesta_lista'")
+            ).scalar_one()
+        )
+    return f"marcadas como propuesta lista: {cuantas}"
 
 
 def propuesta() -> tuple[str, ...]:
