@@ -2383,3 +2383,37 @@ bloque», es:**
 
 **Y esa es la cuenta honesta del punto 3**: **de 2.568 a 1.609 + 733 + 94 = 2.436**, **que sigue estando
 lejisimos de 100**. **El hito no se cumple hoy, y no por falta de codigo: por falta de 2.336 decisiones.**
+
+## M7, punto 3: agrupar no reduce nada, y la bandeja no puede bajar de 100 (ronda 213)
+
+**La ultima esperanza del punto 3 era agrupar: si las 959 fueran cien grupos, serian cien decisiones.**
+**Medido:**
+
+```
+firmas distintas entre las 959 abiertas: 920
+  norma_cambiada        538 items -> 538 firmas
+  clave_sospechosa      192 items -> 191 firmas
+  pregunta_ambigua      123 items ->  95 firmas
+  hueco_sin_material    106 items -> 104 firmas
+  la firma mas grande: 13 items
+```
+
+**920 firmas para 959 incidencias quiere decir que casi cada incidencia es su propio caso.** **No hay un
+patron repetido que se pueda aprobar de una vez**: **noventa y cinco firmas para ciento veintitres
+preguntas ambiguas son noventa y cinco decisiones distintas.**
+
+**Asi que la bandeja, contada en decisiones reales, son 920 incidentes + 1.609 explicaciones = 2.529.**
+**Y el hito pide menos de 100.**
+
+## Lo que esto significa, dicho sin adorno
+
+**El punto 3 de M7 no se puede cumplir con codigo.** **No es que falte una pantalla ni una agrupacion: es
+que hay 2.529 decisiones de contenido sin tomar**, **y tomarlas es exactamente el trabajo del propietario.**
+
+**Lo que si se puede hacer, y queda hecho**: **decir cuales son automatizables** —**134 de 959**— **y
+dejarlas separadas de las reales**, **que es la mitad «propuesto en bloque» del punto.**
+
+**Y lo que no**: **las 733 contradicciones entre apuntes y clave**, **que piden leer dos textos y decidir.**
+
+**Va a `PARA-EL-PROPIETARIO.md` como lo que es**: **el unico apartado de la fase que no se cierra con
+trabajo mio**, **y con la cuenta exacta de lo que falta.**

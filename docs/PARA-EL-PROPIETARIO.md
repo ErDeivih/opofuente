@@ -1518,3 +1518,32 @@ generador por hacer.** **Y el `recorrido-M3` con sus ochenta capturas.**
 
 **Y lo que sí puedo seguir haciendo sin ti**: **M6, M7 y M8 no dependen de ningún `tesseract` ni de una
 clave.** **Así que el `tesseract` bloquea dos apartados de dos hitos, no la fase.**
+
+## La bandeja de M7: 2.529 decisiones, y son tuyas (22 de octubre)
+
+**El punto 3 de M7 pide «bandeja por debajo de 100 decisiones reales». Hoy, medido en la copia:**
+
+```
+explicaciones generadas en borrador   1.609
+incidencias abiertas                    959
+  norma_cambiada (clave contradice)     538   · 538 firmas distintas
+  clave_sospechosa (frase y clave no coinciden)  192 · 191 firmas
+  pregunta_ambigua                      123   ·  95 firmas
+  hueco_sin_material (falta la frase)   106   · 104 firmas
+                                      ─────
+                                      2.529 decisiones
+```
+
+**Y 920 firmas distintas entre las 959 quiere decir que casi ninguna se parece a otra**: **no hay un
+patron que yo pueda aprobar en bloque sin decidir por ti.**
+
+**Lo que sí puedo hacer yo, y está identificado**: **106 incidencias donde falta la frase** —**el modelo la
+escribe**— **y 28 preguntas sin clave** —**se retiran o se les pone clave**—. **Eso son 134 de 959.**
+
+**Lo demás es tuyo**: **733 contradicciones entre lo que dicen los apuntes y lo que dice la clave.** **Cada
+una pide leer dos textos y decidir cuál vale.** **No hay atajo honesto.**
+
+**Y una cosa que conviene que sepas**: **538 de esas 733 son «la clave contradice la norma»**, **y son del
+mismo día en que los PDF del BOCYL cambiaron en la descarga.** **Puede que no sean 538 problemas distintos:
+puede que sean un cambio normativo y 538 textos que lo reflejan.** **Eso lo sabrás tú en un minuto y yo no
+en una hora.**
