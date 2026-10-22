@@ -1903,6 +1903,51 @@
         "title": "BulkTopicAssignmentsSchema",
         "type": "object"
       },
+      "CanjeResultadoSchema": {
+        "properties": {
+          "creada": {
+            "title": "Creada",
+            "type": "boolean"
+          },
+          "motivo": {
+            "title": "Motivo",
+            "type": "string"
+          }
+        },
+        "required": [
+          "creada",
+          "motivo"
+        ],
+        "title": "CanjeResultadoSchema",
+        "type": "object"
+      },
+      "CanjeSchema": {
+        "description": "Lo que manda la pantalla: el token del enlace y la contrasena nueva.",
+        "properties": {
+          "contrasena": {
+            "minLength": 12,
+            "title": "Contrasena",
+            "type": "string"
+          },
+          "correo": {
+            "minLength": 3,
+            "title": "Correo",
+            "type": "string"
+          },
+          "token": {
+            "minLength": 1,
+            "title": "Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "token",
+          "correo",
+          "contrasena"
+        ],
+        "title": "CanjeSchema",
+        "type": "object"
+      },
       "CapabilitiesSchema": {
         "properties": {
           "capabilities": {
@@ -25926,6 +25971,78 @@
           }
         },
         "summary": "Confirma la importación de una copia del inventario"
+      }
+    },
+    "/api/v1/invitations/accept": {
+      "post": {
+        "description": "**Un solo uso, con caducidad y para una direccion**: lo comprueba `canjear`.\n\n**La contrasena entra por el cuerpo y no se registra en ningun sitio**:\n**el log de una peticion no es lugar para un secreto.**",
+        "operationId": "accept_invitation_api_v1_invitations_accept_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CanjeSchema"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CanjeResultadoSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Canjea una invitacion y crea la cuenta (M8)",
+        "tags": [
+          "invitaciones"
+        ]
       }
     },
     "/api/v1/jobs": {

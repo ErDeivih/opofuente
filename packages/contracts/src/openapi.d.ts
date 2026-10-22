@@ -1858,6 +1858,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/invitations/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Canjea una invitacion y crea la cuenta (M8)
+         * @description **Un solo uso, con caducidad y para una direccion**: lo comprueba `canjear`.
+         *
+         *     **La contrasena entra por el cuerpo y no se registra en ningun sitio**:
+         *     **el log de una peticion no es lugar para un secreto.**
+         */
+        post: operations["accept_invitation_api_v1_invitations_accept_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/jobs": {
         parameters: {
             query?: never;
@@ -5081,6 +5104,25 @@ export interface components {
             actor?: string | null;
             /** Assignments */
             assignments: components["schemas"]["BulkTopicAssignmentSchema"][];
+        };
+        /** CanjeResultadoSchema */
+        CanjeResultadoSchema: {
+            /** Creada */
+            creada: boolean;
+            /** Motivo */
+            motivo: string;
+        };
+        /**
+         * CanjeSchema
+         * @description Lo que manda la pantalla: el token del enlace y la contrasena nueva.
+         */
+        CanjeSchema: {
+            /** Contrasena */
+            contrasena: string;
+            /** Correo */
+            correo: string;
+            /** Token */
+            token: string;
         };
         /** CapabilitiesSchema */
         CapabilitiesSchema: {
@@ -17387,6 +17429,66 @@ export interface operations {
                 };
                 content: {
                     "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    accept_invitation_api_v1_invitations_accept_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CanjeSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CanjeResultadoSchema"];
                 };
             };
             /** @description Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura. */

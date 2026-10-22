@@ -17,6 +17,7 @@ from opofuente.api.routes import (
     exports,
     housekeeping,
     ingestion,
+    invitations,
     legal,
     library,
     notes_incidents,
@@ -90,5 +91,6 @@ api_router.include_router(accounts.router)
 # **después** de la política de la instalación porque `/legal/documents` es literal y no encaja con
 # ninguna ruta con parámetro, y dentro del router la literal va antes que `/legal/documents/{key}`.
 api_router.include_router(legal.router)
+api_router.include_router(invitations.router)
 
 __all__ = ["api_router"]

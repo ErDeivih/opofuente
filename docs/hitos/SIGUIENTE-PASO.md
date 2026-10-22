@@ -4192,3 +4192,41 @@ la pantalla de canje                                      comodidad, depende de 
 
 **Nueve de once, y las dos que faltan son la misma cadena**: **la ruta y su pantalla.** **La funcionalidad existe
 por comando desde la ronda 245.**
+
+## M8: la ruta del canje ENTRA — `responses=WRITE_ERRORS` era lo que faltaba (ronda 275)
+
+**El nombre de la prueba que fallaba lo dijo todo:**
+
+```
+AssertionError: el contrato no debe documentar HTTPValidationError: el cuerpo real es ProblemDetail
+```
+
+**Y la causa era una linea que todas las rutas del proyecto tienen y la mia no:**
+
+```python
+responses=WRITE_ERRORS,
+```
+
+**Sin ella, FastAPI documenta su `HTTPValidationError` por defecto**, **y el proyecto documenta
+`ProblemDetail`**, **que es lo que de verdad devuelve su manejador de errores.**
+
+```
+despues:  29 passed · 33 s
+```
+
+**Y las dos corridas anteriores de siete minutos eran por otra cosa**: **esta ha tardado treinta y tres
+segundos** —**las de antes incluian la preparacion de los datos**—, **asi que el problema nunca fue el tiempo de
+la puerta: era que yo volvia a correr sin haber mirado el nombre de la que fallaba.**
+
+## La cadena de la invitacion, completa y por HTTP
+
+```
+tools/invitar.py            crea el enlace            HECHO
+tools/canjear.py            comprueba y crea la cuenta HECHO
+POST /invitations/accept    el canje por HTTP          HECHO · en el contrato
+5 tests de integracion      la cadena entera           HECHO
+la pantalla de canje        comodidad                  FALTA
+```
+
+**Con esto, la beta ya se puede invitar por HTTP y no solo por linea de comandos.** **Lo que queda es la
+pantalla, que ahora tiene a que llamar.**
