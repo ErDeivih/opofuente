@@ -1491,3 +1491,39 @@ medido»— y un test que espera una cifra que solo existe después de medir los
 volver a capturar**. **Lo que NO se hace es poner el `%` opcional ni borrar la aserción.**
 
 **Y es de M2, no de M3**: **la revisión de apuntes es el §4 de la otra fase.**
+
+## 81 de 85, y las cuatro que quedan son datos, no código (ronda 166)
+
+```
+antes:  8 failed · 77 passed
+ahora:  4 failed · 81 passed
+```
+
+**Las dos que se arreglaron eran las dos de la revisión de apuntes, con la aserción que acepta los
+cuatro motivos legítimos.** **Y las cuatro que quedan son `lectura: IV.7` y `contestar: el ciclo entero`,
+a los dos anchos.**
+
+## Y el porqué, medido
+
+```
+IV.7.1 · El modelo TCP/IP…              secciones: 0
+IV.7.2 · Protocolos TCP/IP              secciones: 0
+
+los nodos CON notas, por código:   1→53 · 2→49 · 3→37 · 4→61 · 5→51
+                                   6→29 · 7→56 · 8→37 · 9→21 · 10→12
+```
+
+**Los apuntes de la copia son de otro temario**: **están en los códigos `1` a `10`, y `IV.7` no tiene
+ninguno**. **Así que `lectura: IV.7 por capítulos` está pidiendo capítulos que no existen**, **y
+`contestar: el ciclo entero` pide un test sobre un tema sin apuntes**.
+
+**Las cuatro son un hueco de contenido, no un defecto de pantalla.** **Y es el mismo hueco que las seis
+de antes**: **la copia de trabajo tiene apuntes de una versión anterior del programa.**
+
+## Lo que eso cierra
+
+**De las doce rojas originales: ocho eran de los tests y están arregladas; cuatro son de datos y se
+quedan rojas hasta que alguien genere los apuntes del programa nuevo.**
+
+**Que es exactamente lo que M2 de la otra fase dejó pendiente**, **y lo que el propietario verá cuando
+mire `PARA-EL-PROPIETARIO.md`.**
