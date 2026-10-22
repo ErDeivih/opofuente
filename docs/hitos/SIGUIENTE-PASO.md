@@ -3139,3 +3139,38 @@ se hacen es justo el que se ha roto.**
 
 **Sin el 1 no hay 2, y sin el 2 no hay 3.** **Y el 1 no se puede hacer desde esta maquina**: **el registro
 pide autorizacion.**
+
+## M8, capturas: la version era la correcta, y la hipotesis del lockfile era falsa (ronda 238)
+
+**Comprobado antes de seguir, y me desmiente:**
+
+```
+package.json:  "@playwright/test": "^1.63.0"
+instalada:     1.63.0          ← la que pide
+```
+
+**Asi que `pnpm install` NO trajo otra version de Playwright**, **y la hipotesis de la ronda anterior —«sin
+lockfile se movio la version»— es falsa.** **La escribi como «probable» y la he comprobado antes de
+convertirla en una tarea para el propietario.**
+
+## Lo que si cambio, y es lo unico que cambie
+
+**`pnpm-workspace.yaml` y `workspace:*`.** **Las dos cosas cambian como pnpm dispone `node_modules`** —**los
+enlaces internos pasan a ser enlaces de espacio de trabajo**—, **y `screens.mjs` lanza el runner en un proceso
+hijo** (`import { spawn }`) **que resuelve su configuracion por la ruta**.
+
+**Asi que la hipotesis buena es la contraria**: **arreglar el enlace del monorepo cambio la disposicion de
+`node_modules` y la suite de capturas dependia de la anterior.**
+
+**Y eso se comprueba en un minuto, con un experimento que no rompe nada**: **quitar `pnpm-workspace.yaml` y
+volver `apps/web/package.json` a `^0.0.0`, hacer `pnpm install`, y lanzar la suite.** **Si vuelve a
+arrancar, la causa es esa** — **y entonces el arreglo no es volver atras, sino hacer que `screens.mjs`
+encuentre su configuracion con la disposicion nueva.**
+
+## Y lo que esto dice del orden del hito
+
+**El lockfile sigue siendo necesario** —**«instalacion reproducible» es el punto 2 y sin el no lo es**—,
+**pero ya no es lo que bloquea las capturas.** **Lo que las bloquea es que el cableado del monorepo cambio
+la disposicion de `node_modules`, y hay que comprobar si eso es cierto antes de tocar nada mas.**
+
+**Y esa comprobacion es lo primero de la proxima ronda.** **No hace falta ni red ni clave.**
