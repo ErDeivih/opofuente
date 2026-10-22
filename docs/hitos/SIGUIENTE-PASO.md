@@ -4801,3 +4801,60 @@ veinte minutos (siembra o motor) y dos cosas tuyas (`tesseract` y las 825 decisi
 **Lo que si esta terminado es M8 entero y el registro de todo lo demas, incluidas mis ocho equivocaciones.** **Y la
 ultima, la de esta ronda, tiene la misma forma que las otras siete: adivine la forma de un dato en vez de
 preguntarsela.**
+
+## RESUELTO: TAI 2025 tiene temas solo en el bloque I; III y IV son solo epigrafes (ronda 296)
+
+**El cotejo, bien hecho —imprimiendo las claves antes de recorrer—:**
+
+```
+fixture:  171 nodos = block 4 · topic 33 · epigraph 134
+base:     171 iguales · 0 distintos · 0 ausentes          ← la siembra esta PERFECTA
+```
+
+**Y los 33 topics del fixture:**
+
+```
+("1", "I.1", "La Constitucion Espanola de 1978...")
+("2", "I.2", "Las Cortes Generales...")
+...
+topics bajo III o IV:  []          ← NINGUNO
+```
+
+**Y comprobado con el motor:**
+
+```
+apuntes --tema I.1 --medir     ->  I.1 · hechos 3511 · apartados 21 · cubiertas 1945
+apuntes --tema IV.1.1 --medir  ->  no existe tema del programa con identificador IV.1.1
+```
+
+## Lo que eso significa, y es una diferencia de forma del temario
+
+**En TAI 2025:**
+
+```
+bloque I     block -> topic (33) -> epigraph        ← tres niveles, y el motor lo entiende
+bloques II, III, IV   block -> epigraph             ← dos niveles, y el motor NO lo entiende
+```
+
+**`node_id` exige `node_type = 'topic'`**, **y en los bloques II, III y IV no hay ninguno**: **sus 87 epigrafes no
+cuelgan de un tema porque no hay tema.**
+
+**Asi que no es que falten notas ni que falte el temario ni que falle la siembra** —**la siembra es exacta: 171 de
+171**—: **es que el temario nuevo es de dos niveles en tres de sus cuatro bloques, y el motor de apuntes solo
+trabaja con tres.**
+
+## Lo que hay que hacer, y es una decision de motor
+
+**Dos caminos, y ahora si estan claros:**
+
+1. **que el motor acepte un `epigraph` como unidad de notas cuando no tenga tema padre** —**es el cambio pequeno:
+   `node_id` que busque por `path` sin exigir tipo, y que `node()` sepa construir un nodo sin epigrafes hijos**—;
+2. **o sembrar temas bajo III y IV**, **que seria inventarse un nivel que el temario no tiene**.
+
+**El 1 es el correcto y el 2 no.** **Y el 1 es el desbloqueo de M5 entero**: **87 epigrafes que hoy no se pueden
+escribir y que con esto si.**
+
+## Y la leccion, que ya esta escrita ocho veces y hoy sirve
+
+**Imprimir las claves antes de recorrer un dato.** **Las dos rondas anteriores se fueron en adivinar que el campo
+se llamaba `code` cuando se llama `official_code`.** **Veinte minutos de reloj y dos rondas de contexto.**
