@@ -566,3 +566,29 @@ def test_la_consulta_no_devuelve_preguntas_ya_explicadas(tmp_path):
 ```
 
 **Y después de esas dos, relanzar la corrida.** **Antes no.**
+
+## Las tres piezas que hacen que una corrida larga no necesite a nadie (ronda 75)
+
+**Con las tres juntas, una corrida de once mil preguntas aguanta un servicio intermitente sin que nadie
+la mire:**
+
+1. **`--limite 100`**, no 500: **cabe en el plazo de 60 s cuando la API va lenta**, **y escribe 88 en vez
+   de fallar entera** — medido: 100 por minuto contra 3;
+2. **la consulta filtra las pendientes**, así que **`--desde` sobra** y **relanzar desde cero no repite
+   nada**;
+3. **el vigilante** (`F:\temp-opofuente\vigilante.ps1`): **cada dos minutos mata los procesos de
+   `explicar_preguntas` con menos de 15 s de CPU** —los que esperan a la red—, **y el bucle sigue solo**
+   con la tanda siguiente. **Deja rastro en `vigilante.log` con hora y PID.**
+
+**Y la comprobación que no se salta nunca**, antes y después de cada relanzamiento:
+
+```sql
+select count(*) from question_explanations where origin='private'   -- 11.315, siempre
+select count(*) from question_note_anchors a ...                     -- pendientes, que baja
+```
+
+**La primera tiene que dar 11.315. Si baja, algo está sustituyendo lo del propietario y hay que parar.**
+**Es la comprobación que esta mañana faltaba: yo miraba `generated` subir y no miraba `private` bajar.**
+
+**El vigilante se para con `Stop-Process` sobre su PID**, y **conviene pararlo antes de relanzar el
+bucle**, para que no mate al primero que arranque mientras calienta.
