@@ -1299,3 +1299,43 @@ sesión después de crearla**:
 
 **Y el conjunto que crea el ayudante se sigue borrando**: **ese no se usa para la sesión, pero se usa
 para la captura de exámenes**, **y su `finally` está bien puesto**.
+
+## 77 de 85: el arreglo quitó cuatro rojos, y quedan ocho de otra cosa (ronda 159)
+
+```
+antes:  12 failed · 73 passed
+ahora:   8 failed · 77 passed
+```
+
+**Y las cuatro que se arreglaron son las que dependían de la marca**: **`test-en-curso` y `resultado`,
+a los dos anchos.** **La hipótesis de la ronda 158 era correcta: era un desajuste entre el conjunto que
+se marcaba y el que la sesión usaba.**
+
+## Las ocho que quedan, y son dos grupos que NO he tocado
+
+```
+contestar: el ciclo entero      ×2   (contestar.spec.ts)
+lectura: IV.7 por capítulos     ×2   (lectura.spec.ts)
+la revisión de apuntes          ×2   (screens.spec.ts:260)
+la bandeja de explicaciones     ×2   (screens.spec.ts:1134)
+```
+
+**El error de la revisión de apuntes, con su línea:**
+
+```
+> 278 |  await expect(filaBorrador.locator('.apuntes-revision__motivos')).toContainText(/%/);
+```
+
+**Espera un `%` en los motivos de un tema en borrador y no lo encuentra.** **Y el recibido que aparece
+en el registro es de otra pantalla: `63 incidencias del motor sin despachar`.**
+
+**Ninguna de estas cuatro pantallas usa la marca de fiabilidad de la clave ni la sesión del alumno**, así
+que **son otra causa** —o dos—. **Y no las he tocado hoy**: lo que he cambiado es el manifest de fuentes,
+la migración `cards`, el servicio de tarjetas y las capturas.
+
+**Lo que sí es sospechoso y hay que mirar primero**: **`lectura` y `contestar` son las dos pantallas de
+los apuntes**, **y la revisión de apuntes también**. **Tres de los cuatro grupos leen apuntes.** **La
+cuarta, la bandeja, es mi prueba de M1.**
+
+**Y una nota honesta**: **M3 no se cierra con 8 de 85 en rojo**, **aunque las de repaso pasen**. **El
+recorrido de capturas es la evidencia del árbol entero, no solo de lo que uno toca.**
