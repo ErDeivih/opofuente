@@ -4531,3 +4531,39 @@ yo puedo hacer** —**con su gasto, que ahora mismo esta en 0,66 $ de 30**—.
 un camino de importacion que no toque los cuestionarios**, **y si lo hay, lanzarlo**.
 
 **Eso es lo primero de la proxima sesion, y no necesita a nadie.**
+
+## M5 y las cuatro capturas rojas: el temario nuevo existe y no necesita OCR (ronda 288)
+
+**Buscado un camino de importacion que no toque los cuestionarios de 2018, y esta:**
+
+```
+fixtures/profiles/tai-age-2025.curriculum.json   53,7 KB
+  codigos de bloque: I, II, III, IV          ← estan los dos que faltaban
+  total de codigos: 172
+  ejemplos: IV.1.1 · IV.1.2 · IV.2.1 · IV.2.2 · IV.2.3
+```
+
+**Y se instala con `opofuente.tools.seed_profiles`, que carga los perfiles de los fixtures.** **Nada de eso pasa
+por un PDF escaneado.**
+
+## Lo que eso desbloquea, y no es poco
+
+```
+M5 · el generador de supuestos    necesita apartados III y IV con notas   ← el temario los trae
+las 4 capturas rojas de lectura   piden IV.7                              ← el temario lo trae
+M7 · la revision de apuntes       vacia porque no hay temas del temario nuevo ← idem
+```
+
+**Los tres tenian la misma causa y yo la habia atribuido al `tesseract`.** **El `tesseract` hace falta para los
+CUESTIONARIOS de 2018 —los supuestos oficiales—, no para el TEMARIO.**
+
+## Lo que hay que hacer, y es contenido
+
+1. **sembrar el perfil de TAI 2025 en la copia** —**`seed_profiles`, segundos y sin modelo**—;
+2. **escribir los apuntes de los temas III y IV** —**`apuntes --tema ...`, y esto si cuesta modelo**—;
+3. **y entonces el generador de supuestos de M5 tiene apartados sobre los que escribir.**
+
+**El paso 1 no cuesta nada y se puede hacer hoy.** **El 2 es la tanda de contenido, con su gasto medido antes: el
+presupuesto esta en 0,66 $ de 30.**
+
+**Y con eso, M5 deja de depender del propietario y pasa a depender de horas de modelo.**
