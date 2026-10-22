@@ -4729,3 +4729,35 @@ generador, por ese orden.** **Y la causa estaba en una condicion de una consulta
 **Y conviene mirar primero si el fixture de TAI 2025 declara `topic` y la siembra los convierte en `epigraph`**,
 **porque entonces el fallo no seria del motor sino de la siembra** —**y eso seria el septimo diagnostico de la
 sesion, y el bueno.**
+
+## El fixture tiene 33 topics y la base no tiene ninguno de ellos (ronda 294)
+
+**Las dos medidas, juntas:**
+
+```
+en el fixture tai-age-2025:   block 4 · topic 33 · epigraph 134
+en la base (la copia):        block 54 · epigraph 259 · topic 88
+
+y los 88 topics de la base:   prefijo de codigo «otro» -> 88
+                              (ninguno empieza por I, II, III ni IV)
+```
+
+**Asi que el fixture declara 33 temas y en la base no hay ni uno bajo los bloques del temario nuevo**: **los 88
+topics que hay son del temario viejo, con codigos numericos `1` a `10`.**
+
+**Y eso cierra el diagnostico por el lado de los datos**: **no es que el motor exija `topic` y el temario no los
+tenga** —**el fixture SI los tiene**—, **es que la siembra los deja en otro tipo, o no los mete.**
+
+**`seed_profiles` decia «tai-age-2025: 0 nuevas, 0 actualizadas, 184 sin cambios»**, **asi que las 184 entidades
+que cuenta si estan**; **lo que no cuadra es que el fixture tenga 4+33+134 = 171 nodos y la base cuente 184
+entidades para ese perfil**: **sobran 13, o el conteo incluye otra cosa**.
+
+## Lo siguiente, y es una comparacion de dos listas
+
+**Cotejar los codigos `topic` del fixture con los `official_code` de la base**, **uno a uno**: **si el fixture dice
+que `IV.1` es un `topic` y la base lo tiene como `epigraph`, el fallo es de la siembra y se arregla ahi**;
+**si el fixture los declara solo como `epigraph`, entonces el temario nuevo tiene dos niveles de verdad y el motor
+tiene que aceptarlo.**
+
+**Es una consulta y una comparacion de listas.** **Y es lo primero manana, porque de su resultado depende si el
+arreglo es de datos o de motor — y son dos sitios distintos.**
