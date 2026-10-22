@@ -5278,3 +5278,38 @@ gastado: 0,30 $ de los 6 $ del hito
 
 **Lo que queda del hito**: **los supuestos OFICIALES**, **que son los cuestionarios de 2018 y necesitan el
 `tesseract`** —**del propietario, y ya apuntado**—. **El generador, que era el punto 3, esta hecho.**
+
+## M5: las capturas no salieron, y el motivo son mis procesos (ronda 308)
+
+**Lanzada la suite de capturas sobre la copia —que ya tiene los 21 epigrafes y los 3 supuestos— y no arranco:**
+
+```
+Error: Process from config.webServer was not able to start. Exit code: 1
+procesos node vivos: 46
+```
+
+**Y la API comprobada aparte, para descartar lo grave:**
+
+```
+GET /api/v1/student/progress  ->  200
+GET /api/v1/stats             ->  200
+```
+
+**Asi que no hay nada roto**: **lo que habia eran 46 procesos `node` de las corridas anteriores de la suite,
+ocupando el puerto**. **Matados.**
+
+**Y el error del WebServer hablaba de `curriculum_node_id`**, **que es la consulta del arranque**: **no es un fallo,
+es que no llegaba a arrancar porque el puerto estaba tomado.**
+
+## Lo que queda, y es una corrida limpia
+
+**Con los procesos muertos, la suite deberia arrancar.** **Y despues, copiar los PNG a `artifacts/recorrido-M5/`
+como se hizo con M8** —**la suite escribe en `artifacts/screens-datos` y solo `simulacro.spec.ts` mira
+`OPOFUENTE_SCREENS_SALIDA`**—.
+
+**Eso es lo unico que le falta a M5 para tener sus capturas.**
+
+## Y una nota que conviene dejar escrita
+
+**Cada corrida de la suite deja procesos `node` vivos cuando falla a medias**: **46 acumulados en una sesion**. **Un
+`Get-Process node | Stop-Process` antes de lanzarla deberia ser parte del procedimiento**, **y no lo era.**
