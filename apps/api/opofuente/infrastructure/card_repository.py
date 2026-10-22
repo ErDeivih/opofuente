@@ -16,7 +16,7 @@ from datetime import datetime
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, sessionmaker
 
-from opofuente.infrastructure.db_models import CardRecord
+from opofuente.infrastructure.db_models import CardRecord, TopicFactRecord
 
 
 @dataclass(frozen=True, slots=True)
@@ -57,6 +57,24 @@ class SqlAlchemyCardRepository:
 
     def __init__(self, session_factory: sessionmaker[Session]) -> None:
         self._session_factory = session_factory
+
+    def facts(self, *, limit: int) -> tuple[tuple[str, str], ...]:
+        """Los hechos de los apuntes que se pueden intentar memorizar, **por su id y su texto**.
+
+        **No filtra por encaje**: `tarjeta_estructural` decide qué se convierte en tarjeta y qué no.
+        **Sí filtra los dudosos**: un hecho que el árbol marcó como dudoso no se memoriza, o se
+        memoriza mal.
+        """
+        if limit <= 0:
+            raise ValueError("el límite de hechos tiene que ser mayor que cero")
+        with self._session_factory() as session:
+            filas = session.execute(
+                select(TopicFactRecord.id, TopicFactRecord.text)
+                .where(TopicFactRecord.doubtful.is_(False))
+                .order_by(TopicFactRecord.id)
+                .limit(limit)
+            ).all()
+        return tuple((str(fila[0]), str(fila[1])) for fila in filas)
 
     def add(
         self,
