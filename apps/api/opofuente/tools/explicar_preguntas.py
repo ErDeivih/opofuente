@@ -41,7 +41,7 @@ _CONSULTA = (
     # porque siempre empieza por las mismas y reescribe lo hecho. Con él, cada tanda toma las
     # siguientes pendientes y se puede relanzar desde cero sin repetir nada.
     "and not exists (select 1 from question_explanations e "
-    "where e.question_version_id = a.question_version_id and e.origin = 'generated') "
+    "where e.question_version_id = a.question_version_id) "
     "limit ?"
 )
 
