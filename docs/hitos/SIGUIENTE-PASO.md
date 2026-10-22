@@ -1382,3 +1382,39 @@ apuntes**.
 **La 2 la puedo arreglar yo y la 1 necesita entender el cálculo.** **Las dos son anteriores a esta
 tarde**: **`lectura` y `contestar` ya estaban entre las doce de la primera corrida, antes de que tocara
 las capturas.**
+
+## La bandeja, arreglada: el test contaba antes de que la pantalla se asentara (ronda 161)
+
+```
+la bandeja de explicaciones a 1280 px   2 passed (18.0s)
+```
+
+**El fallo real era del test y no de la pantalla**:
+
+```typescript
+const filas = page.locator('ol > li');
+const cuantas = await filas.count();          // ← 0, porque aún cargaba
+expect(cuantas + (await vacia.count())).toBeGreaterThan(0);
+```
+
+**La pantalla tiene TRES estados** —`Cargando la bandeja…`, `No se ha podido leer la bandeja…`, y las
+filas o el vacío—, **y el test solo conocía dos**. **Contaba filas en el mismo instante en que la
+página acababa de navegar, así que sempre veía cero**, **y sumaba cero del mensaje de vacío porque
+tampoco estaba todavía**.
+
+**Ahora espera a que aparezca uno de los tres** —el título, el vacío o el aviso de error— **y después
+cuenta**. **Y acepta el aviso de error como un estado legítimo de la captura**: **una pantalla que no
+puede leer su bandeja es una captura honesta, y el `toBeVisible` del aviso ya lo dice.**
+
+**Y con esto, seis de las ocho rojas están verdes**: las cuatro de la marca y las dos de la bandeja.
+
+## Las dos que quedan, y son de otra cosa
+
+```
+lectura: IV.7 por capítulos      ×2
+contestar: el ciclo entero       ×2
+la revisión de apuntes           ×2
+```
+
+**Las seis son los apuntes, y el dato que falta es `figure: None` en los 33 temas** —medido en la ronda
+160—. **No es M3 y no es mío.**

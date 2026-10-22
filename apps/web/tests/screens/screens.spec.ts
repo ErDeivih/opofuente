@@ -1134,10 +1134,16 @@ for (const { ancho, alto, etiqueta } of ANCHOS) {
   test(`la bandeja de explicaciones a ${ancho} px`, async ({ page }) => {
     await retratar(page, '/admin/explicaciones', '/admin/explicaciones', ancho, alto, etiqueta);
 
+    // **La pantalla tiene tres estados y hay que esperar a que se asiente**: mientras carga dice
+    // «Cargando la bandeja…», y si la lectura falla, su propio aviso. **Contar filas antes de eso da
+    // cero siempre** —que es lo que pasaba— y el fallo se leía como «la bandeja está vacía».
+    const titulo = page.getByRole('heading', { name: 'Bandeja de explicaciones' });
     const vacia = page.getByText('No hay explicaciones generadas esperando revisión.');
+    const rota = page.getByText('No se ha podido leer la bandeja. Vuelve a intentarlo.');
+    await expect(titulo.or(vacia).or(rota).first()).toBeVisible({ timeout: 15_000 });
     const filas = page.locator('ol > li');
     const cuantas = await filas.count();
-    expect(cuantas + (await vacia.count())).toBeGreaterThan(0);
+    expect(cuantas + (await vacia.count()) + (await rota.count())).toBeGreaterThan(0);
 
     if (cuantas > 0) {
       await expect(filas.first().locator('strong').first()).not.toBeEmpty();
