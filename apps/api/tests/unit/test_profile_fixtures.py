@@ -670,7 +670,14 @@ def test_las_paginas_que_cambian_en_cada_descarga_se_verifican_por_su_texto() ->
     manifest = json.loads((FIXTURES / "manifest.json").read_text(encoding="utf-8"))
     sources = {source["id"]: source for source in manifest["sources"]}
     volatiles = {source_id for source_id, source in sources.items() if source.get("volatile")}
-    assert volatiles == {"gc-pagina-oficial-html", "gc-nota-legal-html"}
+    # **Cuatro, no dos** (M2 §3): el 22 de octubre el BOE republicó la convocatoria y el BOCYL la
+    # resolución, así que se marcan volátiles para que se comparen por su TEXTO y no por sus bytes.
+    assert volatiles == {
+        "gc-pagina-oficial-html",
+        "gc-nota-legal-html",
+        "gc-boe-convocatoria-xml",
+        "celador-2022-bocyl-orden-pdf",
+    }
     for source_id in volatiles:
         assert len(sources[source_id]["content_sha256"]) == 64
         ruta = project_root() / sources[source_id]["local_path"]
