@@ -2189,3 +2189,47 @@ en 119 busquedas—**.
 
 **Y la regla de siempre antes de dar esto por bueno**: **las cifras tienen que ser las mismas antes y
 despues.** **Un indice no puede cambiarlas; el arreglo de la subconsulta, si se hace mal, si.**
+
+## M7: el índice baja 593 a 214 ms y NO arregla el `SCAN` (ronda 207)
+
+**Aplicado el índice `(subject_type, subject_id, status, curriculum_node_id)` sobre la copia:**
+
+```
+antes    593 ms · 5 nodos · suma 119
+despues  214 ms · 5 nodos · suma 119
+las mismas filas: True
+```
+
+**Y el plan sigue igual:**
+
+```
+SCAN m USING INDEX ix_mapping_node
+SEARCH v USING COVERING INDEX sqlite_autoindex_question_versions_1 (id=?)
+SEARCH q USING AUTOMATIC COVERING INDEX (question_version_id=?)
+SEARCH a USING INDEX sqlite_autoindex_attempts_2 (session_question_id=?)
+USE TEMP B-TREE FOR count(DISTINCT)
+```
+
+**Asi que el indice ayuda —2,8 veces— y no cambia la causa**: **SQLite sigue escaneando `m`**, **y lo que
+ha mejorado es el coste de ese escaneo, no su existencia.**
+
+## Lo que eso significa, y es la leccion de la ronda
+
+**Un indice que el optimizador no elige no arregla el plan; solo lo hace menos caro.** **El `SCAN m` es
+una decision del optimizador**, **y para cambiarla no basta con darle un indice: hay que escribir la
+consulta de forma que no pueda elegir mal.**
+
+**Y eso es lo siguiente, con nombre y apellidos**: **el `group by` por nodo es lo que empuja al motor a
+empezar por `m`**. **Si se agrupa primero por pregunta —que es lo que los 119 intentos tienen— y se une
+despues al mapeo, el motor empieza por `a`.**
+
+**El indice se queda**: **2,8 veces menos en ese camino, y las cifras idénticas.** **Pero no se apunta
+como «arreglado», porque no lo está.**
+
+## Lo que queda de M7 en rendimiento
+
+1. **`answered_counts`: reescribir para que agrupe por pregunta primero** — **y volver a mirar el plan**;
+2. **`outcome_counts`: quitar la subconsulta correlacionada** — **con `group by attempt_id` y `max`**;
+3. **y `/plan/hoy`: cachear el plan por la fecha del dia** — **una linea, sin consulta nueva**.
+
+**Las tres con la misma regla**: **las cifras iguales antes y despues; si cambian, el arreglo esta mal.**
