@@ -37,6 +37,11 @@ _CONSULTA = (
     "join topic_note_sections s on s.id = a.section_id "
     "where a.result = 'covered' and a.expected_letters is not null "
     "and length(a.expected_letters) > 2 and length(trim(s.body_markdown)) > 0 "
+    # **Solo las que NO tienen ya una explicación generada**: sin este filtro no converge,
+    # porque siempre empieza por las mismas y reescribe lo hecho. Con él, cada tanda toma las
+    # siguientes pendientes y se puede relanzar desde cero sin repetir nada.
+    "and not exists (select 1 from question_explanations e "
+    "where e.question_version_id = a.question_version_id and e.origin = 'generated') "
     "limit ?"
 )
 
