@@ -761,3 +761,46 @@ el fallo que esta mañana dejó 20 de 20 rechazadas**.
 ```
 
 **Y con eso, el servicio se escribe sin adivinar nada.**
+
+## «Regenerar»: la ruta, y la fontanería que necesita (ronda 101)
+
+**Las cuatro piezas del servicio están hechas y en verde.** **Falta la ruta, y la ruta necesita una cosa que
+hoy no existe: un `ExplanationProposer` que el `main.py` construya.**
+
+**El patrón está en `tools/explicar_preguntas.py`**, **que hace exactamente eso desde la línea de
+órdenes**:
+
+```python
+clave = os.environ.get("DEEPSEEK_API_KEY", "").strip()
+if not clave:
+    print("sin DEEPSEEK_API_KEY no hay llamada: se para sin gastar")
+    return 2
+proposer = DeepSeekExplanationProposer(api_key=clave)
+```
+
+**Lo que hay que añadir en `main.py`, y es el mismo patrón**:
+
+1. **una función que construya el proposer con la clave del entorno**, **y que devuelva `None` si no hay
+   clave** — **no una excepción: la aplicación arranca igual, solo que «regenerar» responde 503**;
+2. **el `app.state.explanation_proposer`**, **como ya están `session_factory` y `settings`**;
+3. **la dependencia `ExplanationProposerDep`**, **que lo lea de `app.state`**;
+4. **y la ruta**:
+
+```python
+@router.post(
+    "/explanations/{explanation_id}/regenerate",
+    response_model=ExplanationTrayItemSchema,
+    responses=RESOURCE_ERRORS,
+)
+def regenerate_explanation(explanation_id: str, questions: QuestionServiceDep, proposer: ProposerDep):
+    if proposer is None:
+        raise ConfigurationError("falta DEEPSEEK_API_KEY: regenerar necesita el modelo")
+    vista = questions.regenerate_explanation(explanation_id, proposer)
+    ...devolver el ExplanationTrayItemSchema, o 404 si es None...
+```
+
+**Y el botón de la bandeja, al final**: **la tecla `g`**, **con la invalidación de la cola** **y el aviso
+del gasto antes de mandarla** — *«esta llamada cuesta ~0,000024 $»*.
+
+**Con esto, M1 queda entero salvo el contenido que falta y el contenido que da la API.** **Y la ronda del
+18/18 después.**
