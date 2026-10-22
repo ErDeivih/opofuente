@@ -2330,3 +2330,56 @@ solas —un enlace roto, una cita que ya no esta— se resuelvan sin que nadie l
 
 **Asi que lo que hay que hacer en el punto 3 no es bajar 2.568 a 100 a mano**: **es que 2.468 dejen de
 necesitar a una persona.**
+
+## M7, punto 3: las 959 incidencias, clasificadas, y mi lectura era falsa (ronda 212)
+
+**El desglose, medido:**
+
+```
+norma_cambiada      clave_contradice_la_norma     538
+clave_sospechosa    letra_no_coincide             192
+pregunta_ambigua    sin_materia_en_el_indice       95
+hueco_sin_material  sin_frase_en_los_apuntes      106
+pregunta_ambigua    clave_sin_definir              28
+```
+
+**Y comprobe si las 192 de «letra no coincide» eran un defecto determinista** —**la clave fuera de sus
+opciones**— **y salieron 0 de 192**: **en las 192 la clave SI esta entre sus opciones**.
+
+**Entonces fui a leer el detector, y el nombre engaña:**
+
+```python
+Motivo.LETRA_NO_COINCIDE: "en conflicto: la frase está, pero la clave dice otra opción"
+```
+
+**`letra_no_coincide` no es «la letra no esta en la lista»**: **es que la frase de los apuntes apoya una
+opcion y la clave corrige otra.** **Eso no es un defecto de datos: es una contradiccion de contenido**, y
+**ningun programa la resuelve sin decidir cual de las dos tiene razon.**
+
+## Lo que eso dice del punto 3, y es lo importante
+
+**De las 959, solo dos grupos son automatizables de verdad:**
+
+- **`sin_frase_en_los_apuntes` (106)**: **falta la frase**, y **lo que hay que hacer es escribirla** — **eso
+  lo hace el modelo, no una persona**;
+- **`clave_sin_definir` (28)**: **la pregunta no tiene clave**, y **una pregunta sin clave no se puede
+  corregir**: **se retira o se le pone clave** — **es una decision pequena y repetida**.
+
+**Y las 733 restantes —538 + 192 + 95— son contradicciones entre los apuntes y la clave, o preguntas cuya
+materia no esta en el indice.** **Ninguna se arregla con una regla**: **cada una pide mirar dos textos y
+decidir cual vale.**
+
+## Asi que el punto 3 no se cumple bajando la bandeja por debajo de 100
+
+**Se cumple cuando la bandeja tiene menos de 100 decisiones reales** — **y hoy tiene 733 de esas, sin contar
+las 1.609 explicaciones.** **Lo que hay que hacer, y es lo que el hito pide con la palabra «propuesto en
+bloque», es:**
+
+1. **proponer en bloque las 106 `sin_frase_en_los_apuntes`**, **que el modelo puede escribir**;
+2. **agrupar las 28 `clave_sin_definir`** en una sola propuesta — **«estas 28 preguntas no tienen clave, se
+   retiran»**;
+3. **y dejar las 733 como lo que son**: **decisiones reales**, **que es exactamente lo que el hito llama
+   asi** — **y por eso el hito pone 100, no 0.**
+
+**Y esa es la cuenta honesta del punto 3**: **de 2.568 a 1.609 + 733 + 94 = 2.436**, **que sigue estando
+lejisimos de 100**. **El hito no se cumple hoy, y no por falta de codigo: por falta de 2.336 decisiones.**
