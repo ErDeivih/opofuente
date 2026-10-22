@@ -1122,3 +1122,47 @@ se acaba de migrar.**
 
 **Y la copia de seguridad está al lado de la base de trabajo**, **con nombre propio**: **si algo no cuadra,
 se vuelve atrás copiándola encima y no se pierde nada.**
+
+## M3: el terreno medido antes de empezar (ronda 143)
+
+**La especificación está en `docs/FASE-3-ESTUDIO-DIARIO-SPEC-PLAN-GOAL-2026-10.md`, líneas 81-89, y pide
+cuatro cosas:**
+
+```
+1. tarjetas de topic_facts y de «datos que caen» · sin modelo cuando el dato ya es pareja dato–valor
+2. SM-2: una tarjeta fallada vuelve pronto
+3. UNA cola diaria: tarjetas vencidas + fallos vencidos, tope configurable (60 por defecto),
+   y pantalla de repaso CON TECLADO: espacio para dar la vuelta, 1 a 4 para responder
+4. un fallo en un test crea o adelanta la tarjeta de su hecho
+```
+
+**Y lo que ya existe, medido en el árbol:**
+
+```
+domain/tarjetas.py            la tarjeta y `tarjeta_estructural`            ✓
+domain/repaso.py              SM-2: facilidad, intervalo, vuelta            ✓
+domain/cola_del_dia.py        tarjetas y fallos entrelazados, con tope      ✓
+tools/tarjetas_estructurales  la cifra: 15 tarjetas de 19.316 hechos (0,1 %) ✓
+```
+
+**Y lo que NO existe:**
+
+```
+tabla de tarjetas en la base           ✗  (no hay migración)
+servicio que las genere y las guarde   ✗
+rutas de la API                         ✗
+la pantalla de repaso con teclado       ✗
+la cola del día servida por la API      ✗
+```
+
+**Así que M3 está a un tercio**: **la lógica de la tarjeta, la de SM-2 y la de la cola están hechas y
+probadas** — **y ninguna tiene base, ni ruta, ni pantalla**.
+
+**Y hay una decisión que conviene tomar antes de escribir la migración, y es la del 0,1 %**: **la vía sin
+modelo da quince tarjetas de diecinueve mil hechos**. **El hito dice «hay tarjetas en los 33 temas (o en todos
+los publicados)»**, **y con quince tarjetas no se cumple**. **Así que M3 necesita el modelo para el 99,9 %
+restante**, **que es exactamente lo que hoy está intermitente**. **Eso no bloquea M3** —se puede construir
+todo con las quince y el modelo cuando haya— **pero sí cambia lo que se podrá decir al cerrarlo.**
+
+**Es la primera decisión de M3 y va escrita aquí**: **se construye la infraestructura entera y se generan
+las que se puedan; la cifra del cierre dirá cuántas salieron con modelo y cuántas sin.**
