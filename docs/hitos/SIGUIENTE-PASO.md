@@ -3445,3 +3445,47 @@ test rojo en `main` es peor que ninguno**: **se acaba ignorando, y con el se ign
 
 **Y el paso 1 no necesita red ni modelo**: **es mirar como se crea la base de los tests y hacer que use las
 migraciones como hace la aplicacion.**
+
+## M8: por que los tests no veian la tabla, y no era el fixture (ronda 249)
+
+**Comprobado paso a paso, y el fixture hacia su trabajo:**
+
+```
+conftest.py:  def migrated_settings(...):  run_migrations(settings)      ← si migra
+conftest.py:  def seeded_settings(...):    seed_official_profiles(...)   ← si siembra
+```
+
+**El problema es otro y es mas importante**: **las herramientas leen la configuracion GLOBAL, no la de la
+prueba.**
+
+```
+OPOFUENTE_DATA_DIR del proceso: None
+base por defecto:               F:\temp-opofuente\opofuente-restaurado\data\opofuente.sqlite3
+```
+
+**Asi que `crear()` y `canjear()` abrieron la base del repositorio —`data/`, que es vieja y no tiene la
+`0046`— en vez de la base sembrada por el fixture.** **Por eso `no such table`.**
+
+## Y lo que casi paso, que es lo que hay que apuntar
+
+**Si esa base por defecto hubiera sido la real, mis tests habrian escrito en ella.** **No lo fue** —**apunta
+a `data/`, dentro del repositorio**—, **y la real sigue con su huella**:
+
+```
+base real: A0A21413F6AB… · 2748612608 bytes
+```
+
+**Pero el riesgo es real y es de diseno**: **una herramienta que lee la configuracion global, llamada desde
+una prueba, escribe donde le digan las variables de entorno del proceso, no donde dice el fixture.** **Un
+test que use `invitar` o `canjear` sin aislar la configuracion puede tocar la base equivocada y pasar en
+verde.**
+
+## El arreglo, y son dos lineas en el test
+
+1. **en el test, apuntar `OPOFUENTE_DATA_DIR` a `migrated_settings.data_dir`** antes de llamar a las
+   herramientas —**o, mejor**—;
+2. **que las herramientas acepten la ruta por parametro**, **que es lo que hace que se puedan probar sin
+   tocar el entorno del proceso**.
+
+**El paso 2 es el bueno y es mas trabajo**; **el 1 desbloquea los cinco tests hoy**. **Y los cinco tests
+siguen escritos en `F:\temp-opofuente\test_invitaciones-en-curso.py`.**
