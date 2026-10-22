@@ -1227,3 +1227,37 @@ ninguna de las dos cosas**.
 **Lo que NO hay que hacer mientras esto no esté claro**: copiar las 73 capturas buenas a
 `recorrido-M3` y dar M3 por cerrado. **Cuatro pantallas del producto están en rojo, y dos son el
 estudio del alumno.**
+
+## El `update` funciona: trece dudosos en la copia (ronda 157)
+
+```
+m0-capturas   · conjuntos dudosos: 13 de 253     ← la marca SÍ se escribe
+.e2e-data     · conjuntos: 0                     ← esa base está vacía y no la usa esta suite
+```
+
+**Los trece lo son porque el guion los marcó**, uno por cada captura que necesita la marca:
+
+```
+bb4e5b10 · dudosa · Capturas del cierre 1792678560819
+f0fdaaa1 · dudosa · Capturas del cierre 1792678592754
+8850cbb4 · dudosa · Capturas del cierre 1792678607702
+```
+
+**Así que el cuarto descarte está hecho también**: **no es el `update`, ni la base, ni la migración.**
+
+## Y aparece un escape que sí es mío
+
+**Esas tres «Capturas del cierre» son de hoy, y son del ayudante que dejé cacheado a propósito**:
+**`sembrarUnTestTerminado` monta uno por pasada del guion y no lo borra**, **porque borrarlo rompería la
+segunda captura del cierre**. **Tres pasadas hoy son tres conjuntos.** **Es el precio que acepté, y era
+correcto; lo que no es aceptable es que se acumulen sin límite**: **tres por día, sin tope, en la copia
+que el §4 migra.**
+
+## Lo que queda, y es una sola cosa
+
+**La marca está en la base y no en la pantalla.** **La cadena es `key_reliability='dudosa'` →
+`key_reliability_by_question` → `study_service.key_reliability_of` → `in_review` → la pantalla**, **y el
+siguiente paso es mirar el valor que devuelve la API en la respuesta del test**, **no la columna.**
+
+**Un `curl` a `/api/v1/student/sessions/{id}` y mirar si `in_review` viene en `true` dice en un minuto
+si el fallo está antes o después del servidor.**
