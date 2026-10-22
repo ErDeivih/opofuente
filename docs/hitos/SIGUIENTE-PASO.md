@@ -1721,3 +1721,49 @@ necesita el `tesseract` para su punto más importante.**
 
 **Y una nota que conviene escribir en `PARA-EL-PROPIETARIO.md`**: **los dos bloqueos que quedan —el §2 de
 M2 y el supuesto oficial de M5— son el mismo `tesseract`.**
+
+## M5: el generador no encuentra apartados, y la causa es de datos (ronda 189)
+
+**La corrida se lanzó con la clave y se paró sola, sin gastar:**
+
+```
+--- bloque III: 0 apartados con notas
+--- bloque IV: 0 apartados con notas
+gastado: 0.00 $ de 6.0 $
+```
+
+**Y las dos causas, medidas:**
+
+1. **la copia no estaba migrada a `0044`** —arreglado, `version: 0044_supuestos`—;
+2. **los apartados de III y IV no existen en la copia**: **los temas con notas son los códigos `1` a `10`**,
+   **los bloques se llaman «Bloque 1» y «Bloque único»**, **y los temas con notas NO cuelgan de un bloque
+   III o IV**.
+
+**Y es el mismo hallazgo de la ronda 166**, **visto desde otro sitio**: **los apuntes de la copia son de
+otro temario**. **La `_apartados` busca `III%` y `IV%`, y en esta copia no hay nada que empiece por eso.**
+
+## Lo que eso significa
+
+**El generador de M5 está hecho y no puede correr en esta copia**: **le faltan los apuntes del programa
+nuevo**, **que es exactamente lo que la ronda 166 dejó dicho para las capturas de `lectura` y
+`contestar`.**
+
+**Son tres cosas y la misma causa:**
+
+```
+lectura: IV.7 y contestar      las capturas que pedian IV.7
+la revisión de apuntes         `figure` vacio porque no hay revisiones
+el generador de M5             no hay apartados III ni IV con notas
+```
+
+**Mientras la copia tenga apuntes de otro temario, las tres siguen igual.** **Y arreglarlo no es código:
+es generar los apuntes del programa nuevo, que es contenido y cuesta modelo.**
+
+## Lo que sí se puede cerrar de M5 sin esto
+
+- **la tabla y los modelos: hechos**;
+- **las reglas y la comprobación del 90 %: hechas y probadas**;
+- **el cliente y el servicio: hechos y probados con cliente falso**;
+- **el repositorio: hecho, con su defensa de "no guarda nada si falta una pregunta"**;
+- **la herramienta: hecha, y su guarda de los 6 $ funciona**;
+- **falta solo la corrida, y la corrida necesita apuntes del temario bueno.**
