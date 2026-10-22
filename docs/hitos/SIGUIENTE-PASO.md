@@ -4896,3 +4896,36 @@ M7 · la revision             tendria temas que medir
 ```
 
 **Cinco cosas detras de una condicion.**
+
+## M5 DESBLOQUEADO: los epigrafes ya son unidades de notas (ronda 298)
+
+**Quitada la misma condicion en los dos sitios donde estaba** —`node_id` y `_ambito`, las dos exigian
+`node_type == 'topic'`—, **y los dos casos funcionan:**
+
+```
+apuntes --tema IV.1.1 --medir   ->  informe completo (antes: «no es un tema del programa»)
+apuntes --tema I.1 --medir      ->  su informe de siempre, sin cambios
+998 unitarias verdes · ruff ok
+```
+
+**Asi que un epigrafe es ahora su propio apartado**: **`_ambito` devuelve el nodo solo cuando no tiene hijos**, **y
+`node()` construye un `NotesNode` con ese unico elemento.**
+
+## Lo que eso abre, de golpe
+
+```
+los 87 epigrafes de III y IV    escribibles con apuntes --tema IV.1.1 ...
+M5 · el generador               tendra apartados con notas sobre los que escribir
+las 4 capturas de lectura       IV.7 dejara de fallar
+M7 · la revision de apuntes     tendra temas que medir
+```
+
+**Las cinco cosas que llevaba veinte rondas atribuyendo al OCR, al contenido y a la siembra estaban detras de dos
+condiciones repetidas en dos funciones.**
+
+## Lo que queda para que M5 corra de verdad
+
+1. **escribir los apuntes de los epigrafes de III y IV** —**`apuntes --tema IV.1.1`, con su gasto**—;
+2. **y lanzar el generador de supuestos**, que ya tendra de donde leer.
+
+**Los dos son contenido y modelo, no codigo.**
