@@ -318,7 +318,7 @@ for (const { ancho, alto, etiqueta } of ANCHOS) {
       await expect(page.getByText('85 preguntas').first()).toBeVisible();
       expect(violaciones, `axe en la pantalla de exámenes: ${violaciones.join(', ')}`).toEqual([]);
     } finally {
-      await borrarExamenOficial(creado);
+      await borrarConjunto(creado);
     }
   });
 }
@@ -353,16 +353,16 @@ for (const { ancho, alto, etiqueta } of ANCHOS) {
  * ruta que invente un material sin pasar por la extracción entera.
  */
 /**
- * Borra el **examen oficial** que montó una captura, en el orden que no deja huérfanos (M1).
+ * Borra un **conjunto** que montó una captura, en el orden que no deja huérfanos (M1).
  *
  * **Se borra en cinco pasos y de dentro afuera**: las opciones, las entradas de la clave, las
  * preguntas, la clave y el conjunto. **Un `DELETE` del conjunto con las claves apagadas dejaría 135
  * preguntas sin padre por captura**, y la copia de trabajo la migra el §4.
  *
- * **Por qué con `node:sqlite` y no por la API**: no hay ruta que borre un conjunto con sus preguntas,
+ * Sirve para los tres ayudantes —el examen oficial, el test en curso y el cierre—: **los tres crean un\n * conjunto con sus preguntas y su clave**, y los tres lo dejaban.\n *\n * **Por qué con `node:sqlite` y no por la API**: no hay ruta que borre un conjunto con sus preguntas,
  * igual que no la hay para enlazar la plantilla. Es el mismo atajo, y por el mismo motivo.
  */
-async function borrarExamenOficial(conjunto: string): Promise<void> {
+async function borrarConjunto(conjunto: string): Promise<void> {
   const { DatabaseSync } = await import('node:sqlite');
   const base = new DatabaseSync(path.join(DATOS_DE_LA_SUITE, 'opofuente.sqlite3'));
   try {
