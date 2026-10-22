@@ -2233,3 +2233,29 @@ como «arreglado», porque no lo está.**
 3. **y `/plan/hoy`: cachear el plan por la fecha del dia** — **una linea, sin consulta nueva**.
 
 **Las tres con la misma regla**: **las cifras iguales antes y despues; si cambian, el arreglo esta mal.**
+
+## M7: la reescritura da cien veces menos (ronda 208)
+
+```
+answered_counts      1.093 ms → 11 ms   · 5 nodos · suma 119 (las mismas cifras)
+outcome_counts       1.314 ms → 1.004 ms · sin tocar todavia
+/student/progress    3.218 ms → 1.306 ms
+```
+
+**Y el arreglo era el que el plan pedia**: **primero los intentos por pregunta —119 filas— en una
+subconsulta, y despues el mapeo**. **Con el `group by` por nodo dentro de la misma consulta, SQLite
+elegia escanear los 47.113 mapeos; con la subconsulta no puede elegirlo.**
+
+**Las cifras son las mismas**: **cinco nodos y suma 119**, **que es lo que hay que exigirle a un arreglo
+de rendimiento.**
+
+## Lo que queda, y es el `N+1`
+
+**`outcome_counts` sigue en un segundo por la subconsulta correlacionada**: **una evaluacion vigente
+buscada por cada intento**. **El arreglo es el mismo patron que acaba de funcionar**: **sacar la
+evaluacion vigente en su propia consulta —con `group by attempt_id` y `max(evaluated_at)`— y unir
+despues.**
+
+**Y despues `/plan/hoy`**: **cachear el plan por la fecha del dia.**
+
+**Las tres con la misma regla, y la primera ya la cumple**: **cifras idénticas, o el arreglo se tira.**

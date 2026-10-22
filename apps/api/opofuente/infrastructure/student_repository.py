@@ -175,10 +175,14 @@ class SqlAlchemyStudentRepository:
         El intento cuenta aunque la sesión no se haya cerrado y la corrección no se pueda enseñar:
         «vistas» es lo que el alumno ha hecho, no lo que ya sabe.
         """
-        consulta = (
+        # **Dos pasos y no uno**: primero los intentos por pregunta —son 119—,
+        # y despues el mapeo. **En una sola consulta SQLite elegia escanear los
+        # 47.113 mapeos** aunque se le diera el indice: el `group by` por nodo lo
+        # empujaba a empezar por ahi. **Con la subconsulta no puede**.
+        intentos_por_pregunta = (
             select(
-                CurriculumMappingRecord.curriculum_node_id,
-                func.count(func.distinct(AttemptRecord.id)),
+                SessionQuestionRecord.question_version_id.label("pregunta"),
+                func.count(func.distinct(AttemptRecord.id)).label("intentos"),
             )
             .select_from(AttemptRecord)
             .join(
@@ -191,16 +195,25 @@ class SqlAlchemyStudentRepository:
                 QuestionVersionRecord.id == SessionQuestionRecord.question_version_id,
             )
             .join(QuestionSetRecord, QuestionSetRecord.id == QuestionVersionRecord.question_set_id)
-            .join(
-                CurriculumMappingRecord,
-                (CurriculumMappingRecord.subject_id == SessionQuestionRecord.question_version_id)
-                & (CurriculumMappingRecord.subject_type == "question_version")
-                & (CurriculumMappingRecord.status == "accepted"),
-            )
             .where(
                 StudySessionRecord.opposition_id == opposition_id,
                 StudySessionRecord.owner_id == owner_id,
                 QuestionSetRecord.opposition_id == opposition_id,
+            )
+            .group_by(SessionQuestionRecord.question_version_id)
+            .subquery()
+        )
+        consulta = (
+            select(
+                CurriculumMappingRecord.curriculum_node_id,
+                func.sum(intentos_por_pregunta.c.intentos),
+            )
+            .select_from(intentos_por_pregunta)
+            .join(
+                CurriculumMappingRecord,
+                (CurriculumMappingRecord.subject_id == intentos_por_pregunta.c.pregunta)
+                & (CurriculumMappingRecord.subject_type == "question_version")
+                & (CurriculumMappingRecord.status == "accepted"),
             )
             .group_by(CurriculumMappingRecord.curriculum_node_id)
         )
