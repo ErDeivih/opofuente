@@ -1,0 +1,11 @@
+﻿# Los espacios de trabajo del monorepo, en el formato que pnpm entiende (M8).
+#
+# **Por que existe este fichero**: `package.json` declara `workspaces` al estilo
+# de npm, **y pnpm no lo lee**. Sin esto, los paquetes internos —`@opofuente/contracts`—
+# **no se enlazan**, y `pnpm dev` los pide al registro de npm, donde no existen.
+#
+# **Se anade y NO se quita `workspaces` de `package.json`**: pnpm lo ignora, y
+# quitarlo romperia a quien instale con npm. Los dos conviven.
+packages:
+  - 'apps/*'
+  - 'packages/*'

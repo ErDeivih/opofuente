@@ -3064,3 +3064,41 @@ propietario: es que el monorepo usa el sistema de espacios de trabajo de otro ge
 **Y explica, de paso, que la web nunca se haya probado «desde cero»**: **en la maquina de desarrollo los
 `node_modules` estaban puestos de antes, y el enlace de los paquetes internos lo hizo alguien en un momento
 que no esta escrito en ningun sitio.**
+
+## M8: el cableado del monorepo, hecho; el lockfile no se puede generar aqui (ronda 235)
+
+**`pnpm-workspace.yaml` creado**, **con `apps/*` y `packages/*`**, **y con el porque escrito dentro**.
+
+**Y una decision que se apunta**: **se anade el fichero y NO se quita `workspaces` de `package.json`**.
+**pnpm lo ignora**, **y quitarlo romperia a quien instale con npm**. **Los dos conviven**, **y eso es
+reversible**: **si algun dia solo se usa pnpm, se quita entonces.**
+
+**Y el lockfile no se ha podido generar aqui:**
+
+```
+pnpm install --lockfile-only
+  No authorization header was set for the request.
+pnpm-lock.yaml: no existe
+```
+
+**El registro pide autorizacion desde esta maquina**, **asi que el lockfile no se puede generar hoy** —**y
+generarlo a mano es peor que no tenerlo**—. **Eso no es un fallo del repositorio: es que esta maquina no
+tiene acceso al registro en este momento.**
+
+## Lo que queda de M8, en orden de dificultad
+
+1. **el lockfile** —**`pnpm install --lockfile-only` en una maquina con registro**, **y despues el instalador
+   vuelve a `--frozen-lockfile`**—;
+2. **la web sobre una instalacion** —**con el cableado puesto, `pnpm dev` ya puede enlazar
+   `@opofuente/contracts` en vez de pedirlo al registro**—;
+3. **la invitacion por enlace**;
+4. **las capturas**, **que necesitan las dos anteriores**.
+
+## Y el resumen del empaquetado, que es lo que M8 dejo aprendido
+
+**Funciona desde cero**: **migrar, importar el paquete de 31.901 filas, crear el administrador, arrancar la
+API y servir `GET /api/v1/stats` con 200.**
+
+**No funciona desde cero todavia**: **la web**, **porque el monorepo nunca se probo sin `node_modules` de
+antes**. **Y eso es justo lo que un empaquetado tiene que encontrar, porque es lo unico que la maquina de
+desarrollo no puede decir.**
