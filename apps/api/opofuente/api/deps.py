@@ -18,6 +18,7 @@ from opofuente.application.change_service import ChangeService
 from opofuente.application.classification_service import ClassificationService
 from opofuente.application.diagnostic_service import DiagnosticService
 from opofuente.application.dossier_service import DossierService
+from opofuente.application.explicaciones import ExplanationProposer
 from opofuente.application.export_service import ExportService
 from opofuente.application.extraction_service import ExtractionService
 from opofuente.application.housekeeping_service import HousekeepingService
@@ -95,6 +96,17 @@ def get_artifact_store(request: Request) -> ArtifactStore:
 def get_question_service(request: Request) -> QuestionService:
     service: QuestionService = request.app.state.question_service
     return service
+
+
+def get_explanation_proposer(request: Request) -> ExplanationProposer | None:
+    """El modelo que escribe explicaciones, **o `None` si no hay clave** (M1).
+
+    **`None` es un estado válido, no un error**: la aplicación arranca sin clave y solo la acción de
+    regenerar responde 503. Devolverlo así —en vez de lanzar— es lo que permite que el resto de la
+    bandeja funcione sin modelo.
+    """
+    proposer: ExplanationProposer | None = request.app.state.explanation_proposer
+    return proposer
 
 
 def get_question_file_service(request: Request) -> QuestionFileService:
@@ -211,6 +223,7 @@ ClassificationServiceDep = Annotated[ClassificationService, Depends(get_classifi
 LibraryServiceDep = Annotated[LibraryService, Depends(get_library_service)]
 ArtifactStoreDep = Annotated[ArtifactStore, Depends(get_artifact_store)]
 QuestionServiceDep = Annotated[QuestionService, Depends(get_question_service)]
+ExplanationProposerDep = Annotated[ExplanationProposer | None, Depends(get_explanation_proposer)]
 QuestionFileServiceDep = Annotated[QuestionFileService, Depends(get_question_file_service)]
 AutoStudyServiceDep = Annotated[AutoStudyService, Depends(get_auto_study_service)]
 StudyServiceDep = Annotated[StudyService, Depends(get_study_service)]
