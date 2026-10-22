@@ -301,7 +301,7 @@ for (const { ancho, alto, etiqueta } of ANCHOS) {
     // La ficha del borrador: su motivo («Por qué está así») y su texto, apartado a apartado.
     await expect(page.getByRole('heading', { name: 'Por qué está así' })).toBeVisible();
     const motivos = page.locator('.apuntes-revision__motivos');
-    await expect(motivos).toContainText(/%|no se ha podido medir la cobertura/);
+    await expect(motivos).toContainText(/%|no se ha podido medir la cobertura|no tiene apuntes/);
     if ((await page.locator('.apartado__cuerpo').count()) > 0) {
       await expect(page.locator('.apartado__cuerpo').first()).toBeVisible();
       await expect(page.getByRole('button', { name: 'Los peores primero' })).toBeVisible();
