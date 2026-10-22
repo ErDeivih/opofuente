@@ -2033,3 +2033,38 @@ proporciones**, **que también se hace en cada peticion.**
    es lo unico que cambia dentro del mismo dia.**
 
 **Las dos son decisiones que se miden antes y despues, y el hito pide la cifra, no la intención.**
+
+## M7: el desglose de `/student/progress`, y es todo `_agregado` (ronda 203)
+
+```
+la vista entera        2.797 ms · 3.218 ms
+el agregado            3.354 ms · 3.350 ms   ← el 100 % del total
+los bloques            3.037 ms · 2.411 ms   ← que llaman al agregado
+```
+
+**El «120 %» sale de la varianza entre llamadas, no de que el agregado cueste más que la vista**: **las
+dos cifras son la misma medida con ruido.** **Y la conclusión no admite duda: `_agregado` es todo el
+tiempo.**
+
+## Donde esta el coste, y ahora si se puede decir
+
+**`_agregado(oposicion)` junta el progreso de TODOS los temas de una oposicion**: **por cada tema recorre
+sus anclajes contra los intentos**, **y con 16.923 anclajes eso es un `join` grande por cada llamada**.
+**Y lo pide la pantalla de progreso, la de inicio y el temario**: **tres pantallas pagan lo mismo cada
+vez que se abren.**
+
+## El arreglo, y hay dos caminos con precios distintos
+
+**1 · filtrar primero por los intentos.** **Los intentos son 119**: **si se recorren esos primero y
+despues se busca su anclaje, el `join` grande desaparece**. **Cambia una consulta y nada mas**; **el
+riesgo es que el acierto por tema sin intentos deje de estar**, **y eso ya lo resuelve el `left join`**.
+
+**2 · una tabla de acierto por tema, actualizada al contestar.** **Rapida siempre y escribe en cada
+respuesta**; **mas piezas, mas sitios donde puede quedar mal**, **y no hace falta mientras el banco no
+crezca.**
+
+**Elijo la 1**, **y lo apunto antes de hacerla**: **es una consulta y es reversible**; **la 2 se hace el
+dia que el banco sea diez veces mayor, y entonces se mide otra vez.**
+
+**Y el `/plan/hoy` va aparte**: **cachear el plan por la fecha del dia** **es una linea y no toca la
+consulta**.
