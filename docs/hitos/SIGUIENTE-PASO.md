@@ -1052,3 +1052,46 @@ encontraría sin nada que retratar.** **Un conjunto por pasada del guion es acep
 **El tipo de `montarTestDeAlumno` cambia**: **devuelve `{ sesion, conjunto }` en vez de la sesión**, **que
 era lo que impedía borrar desde fuera**: **el conjunto vivía dentro de la función y no tenía nombre por
 fuera.**
+
+## §4: lo que la migración puede mover y lo que no, medido (ronda 140)
+
+**El mapeo entre archivado y bueno, por tres claves distintas:**
+
+```
+por stable_key          260 de 440   (80+80+50+50)
+por position            60 de 135 en los de 135, 38 de 85 en los de 85
+por supersedes_id         0 de 440   ← no hay enlace explícito
+```
+
+**Y las filas que hay que mover, con sus columnas de verdad:**
+
+```
+session_questions.question_version_id   174
+review_items.question_version_id          4
+attempts.session_question_id              5   ← va por la PREGUNTA DE LA SESIÓN, no por la versión
+                                          ───
+                                          183 filas
+```
+
+## Lo que esto significa, y hay que decirlo claro
+
+**La migración puede mover 183 filas de forma segura SOLO si el mapeo es correcto**, **y el mejor mapeo
+mueve 260 de 440 preguntas**: **180 no tienen pareja con la misma clave**.
+
+**Y eso no se arregla con más SQL**: **son preguntas que el árbol consideró distintas al crear el
+conjunto bueno** — **o cambió el enunciado, o cambió la clave, o el conjunto nuevo trae menos** —. **Mover
+un repaso a una pregunta distinta es peor que dejarlo en una archivada**: **el propietario vería su
+historial apuntando a una pregunta que no contestó.**
+
+**Así que el §4 queda DIMENSIONADO, no hecho**, y con una pregunta para el propietario que antes no
+estaba formulada:
+
+> **¿Los repasos de las 180 preguntas sin pareja se quedan donde están, o aceptas que se muevan a la
+> pregunta equivalente más cercana?**
+
+**La opción segura es la primera**: **los repasos de las 260 que emparejan se mueven, los de las 180 se
+quedan, y el conjunto archivado NO se borra** — **se queda como lo que es: el sitio donde vive el historial
+de esas 180**.
+
+**Y la tercera opción, que es la que yo elegiría si fuera tuyo**: **migrar los 183 y NO borrar los
+archivados**, **porque el 60 % que se mueve libera el camino y el 40 % que se queda no estorba a nadie.**
