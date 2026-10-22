@@ -890,3 +890,30 @@ fixtures antes de tocar nada.**
 
 **Y el estado del árbol, verificado**: `main = 8b24b0e` con **el manifiesto intacto** —cuatro volátiles,
 las de siempre—, **`data/sources` retirado**, **y `unit` sin poder medirse mientras la 7 corre**.
+
+## LA PUERTA 17, EN VERDE: el §3 cerrado (ronda 116)
+
+```
+17: 0
+  tai-age-2025: 4 bloques, 33 temas, 134 epígrafes, 8 reglas
+  Citas verificadas contra su fuente: 71
+  Fixtures de programa sincronizados con las fuentes oficiales.
+```
+
+**El procedimiento completo, y las cuatro cosas que hacían falta:**
+
+1. **`volatile: true`** en las que cambian — **cuatro, no dos**: **las dos del §3 más `gc-pagina-oficial-html` y
+   `gc-nota-legal-html`, que ya eran volátiles y también cambiaron**;
+2. **descargar**: **`fetch-sources.ps1` pasó entero** — **`Fuentes oficiales verificadas`** —, **y las
+   volátiles se compararon POR TEXTO** en vez de por bytes;
+3. **`build_profile_fixtures --refresh-content`** calculó las huellas nuevas **y se negó a escribirlas**:
+   ***«cambia: …»***. **Es una salvaguarda, no un fallo**: **una fuente que cambia la acepta una persona**;
+4. **escritas las cuatro huellas a mano** —`920b696e…`, `4df9179a…`, `517e8b86…`, `00dde869…`— **y el
+   `--check` en verde**.
+
+**Y una que quité**: **`celador-2023-bocyl-resolucion-salamanca-pdf`** seguía marcada volátil **sin haber
+cambiado** —**no apareció en la lista de `cambia`**—, **así que le quité la marca en vez de inventarle una
+huella**. **Una fuente volátil sin huella bloquea la puerta; una fuente normal no necesita ninguna.**
+
+**Con esto, la fase tiene 17 de 18 puertas** —la 7 corriendo, limpia desde el 26 %— **y la única que
+faltaba por decisión de contenido está cerrada.**
