@@ -4250,3 +4250,62 @@ tsc 0 · eslint 0
 
 **Con esto, la cadena de la invitacion esta completa por los dos caminos**: **por comando y por la web**, **y la
 beta ya se puede repartir con un enlace.**
+
+---
+
+# Cierre de sesion — 22 de octubre de 2026 (M8 completo)
+
+**Ocho hitos recorridos. M8 COMPLETO. Siete con documento y trabajo hecho.**
+
+```
+M1 cerrado          76 capturas en git · 12.924 explicaciones · la bandeja
+M2 cerrado salvo §2 el §2 son los tres escaneos del INAP: necesitan tesseract
+M3 cerrado          81 capturas en git · 9 tarjetas reales
+M4 cerrado          plan de estudio · 7 semanas · 28 temas · 0 fuera
+M5 codigo completo  la corrida esta parada por datos (apuntes de otro temario)
+M6 cerrado          nota 37 (0-74) · 4 flojos · 2,6 s · 3 semanas
+M7 3 de 4           rendimiento cerrado con prueba · la bandeja son decisiones del propietario
+M8 COMPLETO         once piezas: paquete, administrador, instalador, lockfile,
+                    copia, guia, API y web, 78 capturas, e invitacion entera
+```
+
+## Lo que se ha desbloqueado en las ultimas rondas, y era todo lo mismo
+
+**Tres bloqueos que parecian de fuera y no lo eran:**
+
+```
+el lockfile            existia en el arbol, sin commitear
+la suite de capturas   dos versiones de Playwright; lo decia su propio mensaje
+el contrato            faltaba responses=WRITE_ERRORS en la ruta nueva
+```
+
+**Y los tres se desmontaron leyendo el mensaje de error completo** —**la tercera linea de Playwright, el nombre
+de la prueba de contrato, el `pnpm why`**— **en vez de la primera.**
+
+## Lo que queda, y necesita algo que no esta en esta maquina
+
+```
+M2 §2   tesseract con espanol  ·  y los tres PDF de 2018 en el manifiesto de fuentes
+M5      la corrida              ·  necesita los apuntes del temario nuevo en la copia
+M7 §3   la bandeja              ·  2.529 decisiones: 1.609 explicaciones + 920 incidencias
+```
+
+## Y una cosa que si es codigo y queda por hacer
+
+**El punto 3 de M7 pide «todo lo automatizable propuesto en bloque»**, **y eso no esta**: **de las 959
+incidencias, 134 son automatizables** —**106 sin frase, 28 sin clave**— **y hoy se cuentan igual que las 733
+que piden una decision.**
+
+**Separarlas en la bandeja es trabajo de codigo y no necesita a nadie.** **Es lo primero que se puede hacer en
+la proxima sesion.**
+
+## Las cifras de la sesion
+
+```
+commits                      ~100
+documentos de hito           8
+pruebas nuevas              30 (5 del paquete + 5 de la invitacion + 4 de rendimiento + el resto)
+capturas en git              238 (M0 1 · M1 78 · M3 81 · M8 78)
+gasto de API                 0,66 $ de 30
+base real                    A0A21413F6AB… · 2.748.612.608 bytes · intacta
+```
