@@ -1149,6 +1149,7 @@ class SqlAlchemyQuestionRepository:
         prompt_template_version: str | None = None,
         citation: str | None = None,
         note_anchor_id: str | None = None,
+        no_sustituir_lo_privado: bool = False,
         actor: str = "local",
     ) -> str | None:
         """Guarda (o reemplaza) la explicación de la pregunta entera o de una opción.
@@ -1175,6 +1176,11 @@ class SqlAlchemyQuestionRepository:
                 )
             ).scalar_one_or_none()
             if existente is not None:
+                # **Una explicación privada no se toca desde el generador.** La regla de «la segunda
+                # sustituye a la primera» vale para el panel —el propietario corrige la suya— y no
+                # para un modelo: sustituir aquí borró 5.368 privadas en una corrida.
+                if no_sustituir_lo_privado and existente.origin == Origin.PRIVATE.value:
+                    return None
                 existente.text = text.strip()
                 existente.origin = origin.value
                 existente.model_name = model_name

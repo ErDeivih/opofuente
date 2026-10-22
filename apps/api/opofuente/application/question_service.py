@@ -1362,6 +1362,7 @@ class QuestionService:
         citation: str | None = None,
         note_anchor_id: str | None = None,
         model_name: str | None = None,
+        no_sustituir_lo_privado: bool = False,
     ) -> ExplanationView | None:
         """Escribe (o sustituye) la explicación de una pregunta o de una de sus opciones.
 
@@ -1394,6 +1395,7 @@ class QuestionService:
             model_name=model_name,
             citation=citation,
             note_anchor_id=note_anchor_id,
+            no_sustituir_lo_privado=no_sustituir_lo_privado,
             actor=actor,
         )
         if guardada is None:

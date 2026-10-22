@@ -112,6 +112,7 @@ def _guardar(aceptadas: Sequence[object], *, modelo: str) -> int:
             origin=Origin.GENERATED,
             citation=propuesta.cita,  # type: ignore[attr-defined]
             model_name=modelo,
+            no_sustituir_lo_privado=True,
         )
         if vista is not None:
             guardadas = guardadas + 1
