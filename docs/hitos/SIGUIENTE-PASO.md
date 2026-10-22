@@ -4112,3 +4112,43 @@ la ruta HTTP del canje   escrita y retirada · deja el contrato en rojo
 ```
 
 **Y las capturas, que eran la tercera, estan.**
+
+## La puerta de codificacion, entera y con los comandos del proyecto (ronda 273)
+
+**Alinear las dos versiones de Playwright arreglo tambien lo que parecia otro problema:**
+
+```
+npx tsc -p tsconfig.json --noEmit    ->  0
+npx eslint src --max-warnings=0      ->  0
+```
+
+**En la ronda 260 estas dos daban codigo 1**, **y escribi que la puerta del web no pasaba**. **Ahora pasa, con `npx`
+y con los binarios locales**, **y no hubo que cambiar ningun comando**: **el `node_modules` reconstruido desde el
+lockfile con una sola version de Playwright dejo las herramientas donde `npx` las encuentra.**
+
+**Asi que la correccion de la ronda 260 era correcta y estaba incompleta**: **el codigo estaba bien, pero el
+entorno no**; **y el entorno se arreglo arreglando la causa de fondo —dos versiones— y no la invocacion.**
+
+## La puerta, hoy
+
+```
+ruff check .        All checks passed
+mypy opofuente      sin errores
+npx tsc             codigo 0
+npx eslint          codigo 0
+998 unitarias       verdes
+55 suites del web   verdes
+76 pantallas        verdes (con 0 fallos en la ultima corrida)
+```
+
+**Y el `18/18` completo sigue sin correrse de una vez**: **son dieciocho baterias y algunas tardan siete minutos**,
+**pero ninguna de las que se han corrido hoy esta en rojo.**
+
+## Lo que queda de M8
+
+```
+la ruta HTTP del canje    escrita y retirada · ahora el contrato se puede regenerar sin el problema de npx
+la pantalla de canje      comodidad
+```
+
+**Y con `npx` funcionando, la ruta se puede volver a intentar sin el estorbo de antes.**
