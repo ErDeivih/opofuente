@@ -496,3 +496,34 @@ cambia**, porque **se paga por token y no por llamada**.
 
 **Y la regla, para cuando vuelva a pasar**: **si la cuenta no sube, mirar la CPU (si está a cero, espera) y
 probar una tanda de 100 antes de tocar nada más**.
+
+## LO PRIMERO DE LA PRÓXIMA SESIÓN: la prueba de que una privada no se sustituye (ronda 61)
+
+**La regla está puesta en las tres capas** —repositorio, servicio y generador—, **y NO tiene prueba**.
+**Una regla sin prueba es una promesa, y esta noche ha habido promesas rotas.**
+
+**La prueba, escrita como se escribe en este árbol** (`apps/api/tests/unit/`, con el `seeded_client` o
+el repositorio sobre una base temporal):
+
+1. **sembrar una pregunta con su explicación `origin='private'`**;
+2. **llamar a `add_explanation(..., origin=Origin.GENERATED, no_sustituir_lo_privado=True)`**;
+3. **comprobar tres cosas**: **devuelve `None`**, **la fila sigue siendo la misma** —mismo `id`— **y su
+   `origin` sigue siendo `private`**;
+4. **y la contraria**: **con `no_sustituir_lo_privado=False` sí sustituye**, **porque el panel tiene que
+   poder corregir**.
+
+**Y una quinta, que es la que cerró el agujero de la consulta**: **`_preguntas(n)` no devuelve una
+pregunta que ya tiene explicación, sea del origen que sea.**
+
+**Solo después de que esas pruebas pasen**, **relanzar la corrida** con `corrida7.ps1` —o el bucle de
+tandas de 100— **sobre la copia restaurada**. **Y comprobar antes de lanzar**:
+`select count(*) from question_explanations where origin='private'` **tiene que dar 11.315**; **si da
+menos, la copia está mal y hay que recopiarla**.
+
+## Y la cifra del hito, con lo aprendido
+
+```
+privadas del propietario:  11.315   ← no se tocan, ni antes ni después
+pendientes de explicación:  9.839   ← las que el generador puede hacer
+gasto:                     ~0,60 $ de 30
+```
