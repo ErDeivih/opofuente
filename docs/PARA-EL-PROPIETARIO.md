@@ -1562,3 +1562,71 @@ invitar por enlace                   no hay tabla, ni token, ni pantalla
 
 **No es una pared: es trabajo pendiente de M8, y está apuntado con lo que cuesta.** **Lo digo aquí porque
 es de las cosas que se dan por hechas hasta el día que hay que usarlas.**
+
+---
+
+# Lo que necesito de ti, al día (22 de octubre, cierre de sesión)
+
+**Todo lo demás está hecho y medido.** **Lo que queda son tres cosas, y ninguna es código que yo pueda
+escribir sin ti.**
+
+## 1 · `tesseract` con el paquete de español
+
+**Desbloquea dos hitos a la vez**, y es la misma instalación:
+
+```
+M2 §2   los tres escaneos del INAP sin capa de texto
+        TAI-2018-libre-cuestionario-1/-2 · TAI-2018-pi-cuestionario-unico
+        0 caracteres en 10 páginas
+
+M5 p.2  los supuestos oficiales: importar_inap busca esos MISMOS tres PDF
+```
+
+**Y falta una segunda cosa, más pequeña**: **esos tres PDF no están en el manifiesto de
+`fetch-sources.ps1`**, **que descarga los de 2024 y 2025**. **Con el enlace de los tres, o con permiso para
+buscarlos en el BOE/INAP, se añaden.**
+
+## 2 · Las 2.529 decisiones de la bandeja
+
+```
+explicaciones generadas en borrador   1.609
+incidencias abiertas                    959   (920 firmas distintas)
+  norma_cambiada                        538   · clave contradice la norma
+  clave_sospechosa                      192   · la frase y la clave no coinciden
+  pregunta_ambigua                      123
+  hueco_sin_material                    106   · falta la frase
+```
+
+**De las 959, solo 134 son automatizables** (106 sin frase, 28 sin clave). **Las 733 restantes son
+contradicciones entre los apuntes y la clave**, **y cada una pide leer dos textos y decidir**.
+
+**Y un dato que te ahorrará tiempo**: **538 de esas 733 son «la clave contradice la norma» y son del día en
+que los PDF del BOCYL cambiaron en la descarga**. **Puede que no sean 538 problemas distintos: puede que sea
+un cambio normativo y 538 textos que lo reflejan.**
+
+## 3 · Red, para tres cosas del empaquetado
+
+**Esta máquina no llega al registro de npm de forma fiable, y eso bloquea tres cosas:**
+
+```
+el lockfile          pnpm install --lockfile-only    → «No authorization header was set»
+playwright 1.63.0    hace falta bajarla              → el árbol tiene 1.64.1
+las capturas de M8   necesitan las dos anteriores
+```
+
+**Y no es un capricho**: **sin lockfile, la instalación no es reproducible**, **y hoy se ha demostrado
+caro**: **al reinstalar, la suite de capturas dejó de arrancar porque trajo otra versión de Playwright.**
+**Eso es exactamente lo que el punto 2 de M8 tenía que encontrar.**
+
+## Y una cosa que ya puedes hacer, si quieres
+
+**La beta ya funciona sin esperar a nada de esto**:
+
+```powershell
+$env:OPOFUENTE_ADMIN_PASSWORD = 'una contraseña larga'
+.\scripts\instalar.ps1 -Datos F:\OpoFuente\datos -Paquete .\paquete.json -Correo tu@correo
+cd apps\api; uv run python -m opofuente.tools.invitar --correo amigo@correo
+```
+
+**El segundo comando imprime un enlace de un solo uso que caduca en siete días.** **Tu amigo lo canjea con
+`canjear.py` y ya tiene cuenta.** **La pantalla de canje todavía no está; son dos comandos por persona.**
