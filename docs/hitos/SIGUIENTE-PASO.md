@@ -2770,3 +2770,35 @@ invitados».**
 
 **El §2 de la fase ya decidio que la beta es por invitacion, gratis y sin nada contratado.** **Lo que no
 dijo —porque no le tocaba— es que las invitaciones habia que construirlas.** **No estan.**
+
+## M8, punto 2: el instalador no pasa de la migracion, y se retira (ronda 224)
+
+**El script esta escrito entero —comprueba `uv` y `pnpm`, crea la carpeta, migra, importa el paquete,
+crea el administrador y dice como arrancar— y al ejecutarlo se para en la migracion.** **Esta en
+`F:\temp-opofuente\instalar-en-curso.ps1` y NO va a `main`.**
+
+**Los dos fallos que aparecieron al correrlo, y los dos son de los que no se ven leyendo:**
+
+1. **una variable seguida de dos puntos dentro de una cadena** — **PowerShell la lee como una variable con
+   unidad y ni siquiera arranca**. **Hay que escribirla entre llaves**. **Este es el tipo de error que solo
+   aparece al ejecutar**, **y es exactamente lo que dice la regla del proyecto: escrito no es hecho**;
+2. **la migracion falla dentro del script** (`if ($LASTEXITCODE -ne 0) { throw ... }`), **y el mensaje de
+   `alembic` no se ve porque el script se traga la salida**. **Lo siguiente es lanzar el mismo
+   `uv run alembic upgrade head` con `$env:OPOFUENTE_DATA_DIR` puesto a mano y ver que dice** — **y
+   probablemente sea que la carpeta existe pero `alembic` no encuentra su configuracion al cambiar de
+   directorio—**.
+
+## Lo que si esta hecho de M8
+
+```
+punto 1 · el paquete publico        HECHO · 13 tablas · 31.901 filas · ida y vuelta identica · 5 tests
+el administrador                    HECHO · probado sobre una base vacia, dos veces, sin duplicar
+el instalador                       escrito y NO pasa la migracion · fuera de main
+la invitacion por enlace            sin construir
+```
+
+**Y la cuenta de la fase, con la cifra delante**: **siete hitos con documento; M8 con dos piezas hechas y
+probadas y dos por hacer, una de ellas a medio camino con su fallo escrito.**
+
+**No se declara nada terminado que no se haya ejecutado**: **el instalador funciona hasta el paso 3 y ahi
+se para, y eso es lo que dice el folio.**
