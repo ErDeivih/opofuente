@@ -4413,3 +4413,42 @@ propuesta que no se puede leer antes no es una propuesta, es un boton a ciegas.*
 
 **Cuatro de seis piezas, y las dos que faltan son la misma**: **aplicar la propuesta**, **que es lo siguiente y es
 codigo.**
+
+## M7 §3: lo que le falta al boton, comprobado antes de escribirlo (ronda 285)
+
+**Antes de aplicar la propuesta, mirado lo que hay:**
+
+```
+estados en notes_incidents:  ['open']       ← solo uno, y es el que no cierra nada
+columnas: id, curriculum_node_id, question_version_id, group_signature,
+          category, coverage, reason, section_key, ...
+```
+
+**Que solo exista `open` quiere decir dos cosas, y las dos son buenas noticias:**
+
+1. **que hoy nada cierra una incidencia** —**por eso hay 959**—, **y el boton seria lo primero que lo hace**;
+2. **que el vocabulario de estados hay que sacarlo del dominio**, **no de lo que hay guardado**, **porque en la
+   base no esta**: **un `update` a un estado inventado dejaria filas que ninguna consulta reconoce.**
+
+**Asi que el boton no es «un `update` en bloque»**: **es decidir tres cosas primero** —**que estado nuevo hay,
+que evento se escribe y que pasa con la pregunta cuando se retira**—, **y eso es una tanda de trabajo, no un
+añadido.**
+
+## Lo que queda de la fase, y es lo ultimo que hay que decir de hoy
+
+```
+M7 §3   el boton de la propuesta     codigo · necesita el vocabulario de estados del dominio
+M2 §2   tesseract con espanol        del propietario
+M5      los apuntes del temario      contenido
+        las 825 decisiones           del propietario
+```
+
+**Una es codigo y esta acotada**: **el estado nuevo, su evento y la prueba.** **Las otras tres son de fuera.**
+
+## Y el cierre de la sesion
+
+**La fase 3 no esta terminada y no se puede terminar hoy sin ti.** **Lo que si esta terminado es M8 entero, y
+los otros siete hitos con su documento, sus cifras y su pendiente nombrado.**
+
+**Y el trabajo de hoy deja una cosa que no estaba al empezar**: **cada uno de los cuatro pendientes tiene dueño,
+cifra y causa, y ninguno es una incognita.**
