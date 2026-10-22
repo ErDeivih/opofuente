@@ -4086,3 +4086,29 @@ apuntes**— **mas los de una base recien instalada, que no tiene historial de r
 **Las capturas ya se pueden hacer.** **Y para que vayan a `artifacts/recorrido-M8/` hay que lanzar la suite con
 `OPOFUENTE_SCREENS_SALIDA` apuntando alli** —**la suite escribe en `artifacts/screens-datos` por defecto**—.
 **Eso es el siguiente comando, y no una investigacion.**
+
+
+## M8: las capturas, hechas — 78 PNG sobre la instalacion (ronda 272)
+
+```
+76 passed (4.4 min)
+78 PNG en artifacts/recorrido-M8/ · 22,9 MB
+acabado-inicio-escritorio.png · acabado-progreso-movil.png · ...
+```
+
+**Y en esta corrida pasaron las 76, incluidas las nueve que fallaban hace una ronda**: **la base de la
+instalacion ya tenia las sesiones y las revisiones que la corrida anterior creo**, **que es exactamente lo que
+faltaba para `la revision de apuntes` y para el simulacro.**
+
+**Para que las capturas vayan a su carpeta**: **la suite escribe en `artifacts/screens-datos`** —**solo
+`simulacro.spec.ts` mira `OPOFUENTE_SCREENS_SALIDA`**—, **asi que se copian de ahi**, **que es lo que hace este
+paso y lo que habra que automatizar**.
+
+## Lo que queda de M8, y son dos cosas
+
+```
+la pantalla de canje     comodidad · el canje ya funciona por comandos
+la ruta HTTP del canje   escrita y retirada · deja el contrato en rojo
+```
+
+**Y las capturas, que eran la tercera, estan.**
