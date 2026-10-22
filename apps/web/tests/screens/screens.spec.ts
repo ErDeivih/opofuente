@@ -332,12 +332,16 @@ for (const { ancho, alto, etiqueta } of ANCHOS) {
  */
 for (const { ancho, alto, etiqueta } of ANCHOS) {
   test(`test-en-curso a ${ancho} px`, async ({ page }) => {
-    const sesion = await montarTestDeAlumno();
-    await retratar(page, `/test/${sesion}`, '/test-en-curso', ancho, alto, etiqueta);
-    // La marca «clave en revisión» es lo que esta captura tiene que enseñar: si no está, la captura
-    // no sirve de nada. Se comprueba aquí, sobre la pantalla ya cargada, para que la evidencia no
-    // dependa de que alguien mire el PNG.
-    await expect(page.getByText(MARCA_EN_REVISION).first()).toBeVisible();
+      const { sesion, conjunto } = await montarTestDeAlumno();
+      try {
+        await retratar(page, `/test/${sesion}`, '/test-en-curso', ancho, alto, etiqueta);
+        // La marca «clave en revisión» es lo que esta captura tiene que enseñar: si no está, la captura
+        // no sirve de nada. Se comprueba aquí, sobre la pantalla ya cargada, para que la evidencia no
+        // dependa de que alguien mire el PNG.
+        await expect(page.getByText(MARCA_EN_REVISION).first()).toBeVisible();
+      } finally {
+        await borrarConjunto(conjunto);
+      }
   });
 }
 
@@ -848,7 +852,7 @@ async function sembrarUnTestTerminado(): Promise<{ sesion: string }> {
 }
 
 /** Monta un test de tres preguntas de un tema y lo deja empezado: devuelve su identificador. */
-async function montarTestDeAlumno(): Promise<string> {  const cabeceras = { 'Content-Type': 'application/json', Origin: ORIGEN };
+async function montarTestDeAlumno(): Promise<{ sesion: string; conjunto: string }> {  const cabeceras = { 'Content-Type': 'application/json', Origin: ORIGEN };
   const leer = async <T>(respuesta: Response): Promise<T> => {
     if (!respuesta.ok) {
       throw new Error(`la API respondió ${respuesta.status} al montar el test`);
@@ -959,7 +963,9 @@ async function montarTestDeAlumno(): Promise<string> {  const cabeceras = { 'Con
       body: JSON.stringify({ position: 1, chosen: ['a'], elapsed_ms: 2400, confidence: 'low' }),
     }),
   );
-  return sesion.id;
+  // **Se devuelven las dos**: la sesión para la captura y el conjunto para borrarlo. Antes solo volvía la
+  // sesión, así que el conjunto quedaba dentro y cada pasada dejaba uno más (quince el 22 de octubre).
+  return { sesion: sesion.id, conjunto: conjunto.id };
 }
 
 interface NodoPrograma {

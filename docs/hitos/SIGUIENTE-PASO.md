@@ -1028,3 +1028,27 @@ ciertas—, **826 pruebas, 824 en verde, y dos que se rompen por el tamaño del 
 
 **Anotado para M2, que es donde toca**: **«la suite de integración no aísla: dos pruebas dependen de que el
 montón sea pequeño»**, **con las tres medidas que lo demuestran.**
+
+## Las capturas ya no dejan conjuntos: las dos de alumno y la de exámenes (ronda 139)
+
+**Tres ayudantes creaban un conjunto con sus preguntas y su clave, y los tres lo dejaban.** **Medido en
+la copia el 22 de octubre: 6 del examen oficial + 15 del test en curso y del cierre, todos `active`.**
+**Veintiún conjuntos de basura, y la migración del §4 habría podido reasignar repasos a uno de ellos.**
+
+**Lo que se ha hecho:**
+
+```
+borrarConjunto(id)   cinco DELETE de dentro afuera, en una transacción, con las claves apagadas
+                     (un DELETE del conjunto a secas dejaba 135 preguntas huérfanas por captura)
+las tres capturas    try/finally: se borra al terminar, falle o no la aserción
+los quince + los seis  borrados de la copia, con el mismo orden
+```
+
+**Y lo que queda distinto, a propósito**: **el ayudante del cierre —`sembrarUnTestTerminado`— sigue
+dejando su conjunto**, **porque está cacheado en `zonaSembrada()`**: **se monta una vez por pasada y lo
+comparten las capturas del cierre**. **Borrar uno cacheado es peor que dejarlo**: **la segunda captura se
+encontraría sin nada que retratar.** **Un conjunto por pasada del guion es aceptable; veintiuno, no.**
+
+**El tipo de `montarTestDeAlumno` cambia**: **devuelve `{ sesion, conjunto }` en vez de la sesión**, **que
+era lo que impedía borrar desde fuera**: **el conjunto vivía dentro de la función y no tenía nombre por
+fuera.**
