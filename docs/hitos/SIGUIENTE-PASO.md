@@ -3378,3 +3378,41 @@ en la base: 1 invitacion · Amigo@Ejemplo.TEST | amigo@ejemplo.test | hash 64 | 
 3. **y su prueba**: **canjear dos veces el mismo enlace tiene que fallar la segunda**.
 
 **El canje es lo unico de M8 que queda sin red**, **y es la mitad que convierte el enlace en una cuenta.**
+
+## M8: el canje, hecho y probado con el caso que importa (ronda 245)
+
+```
+invitar  -> token _D6XeVArkqhW…
+1ª vez   -> canjeada: cuenta creada y invitacion marcada
+2ª vez   -> NO canjeada: la invitacion ya se uso
+otro correo tras usarse -> NO canjeada: la invitacion ya se uso
+```
+
+**Y el orden de las comprobaciones es la decision que importa**: **existencia, uso, caducidad y correo, las
+cuatro ANTES de escribir nada**. **Una invitacion caducada que creara la cuenta y luego fallara al marcarse
+dejaria a alguien dentro con un enlace que deberia haber dejado de valer.**
+
+**Y un detalle que se decidio escribiendolo**: **si el token no existe, el mensaje no distingue entre «no
+existe» y «estaba mal»**, **porque decir «existe pero caduco» a quien no tiene el enlace le confirma que el
+enlace existe.**
+
+## La cadena de la invitacion, completa
+
+```
+tools/invitar.py       crea el token, guarda su hash y enseña el enlace UNA vez     HECHO
+tools/canjear.py       comprueba las cuatro cosas, crea la cuenta y marca el uso    HECHO
+0046_invitaciones      la tabla con hash, caducidad y used_at                       HECHA
+la pantalla            «pon tu contrasena»                                         FALTA
+```
+
+**Con los dos comandos, el propietario ya puede invitar a alguien de verdad**: **crea el enlace, se lo manda,
+la persona lo canjea por linea de comandos y tiene cuenta.** **La pantalla es comodidad, no requisito.**
+
+## Lo que queda de M8
+
+1. **la pantalla de canje** —**comodidad; la cadena ya funciona sin ella**—;
+2. **las capturas** —**esperan red para bajar playwright 1.63.0**—;
+3. **el lockfile** —**espera red**—.
+
+**Y una cosa que conviene decir en el `M8.md`**: **la beta ya puede tener dos personas sin que el
+propietario toque la base a mano**, **que es exactamente lo que el hito llamaba «beta cerrada».**
