@@ -44,7 +44,7 @@ class DeepSeekExplanationProposer:
         api_key: str,
         model: str = MODELO_POR_DEFECTO,
         base_url: str = BASE_URL_POR_DEFECTO,
-        timeout_seconds: float = 180.0,
+        timeout_seconds: float = 60.0,
     ) -> None:
         if not api_key.strip():
             raise ConfigurationError(
