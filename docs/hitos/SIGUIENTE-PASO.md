@@ -5009,3 +5009,44 @@ run()      exigia epigrafes hijos          HECHO · un nodo sin hijos es su prop
 tanda**—, **y despues lanzar el generador de supuestos, que ya tiene de donde leer.**
 
 **No queda codigo. Queda contenido, y cuesta modelo: 0,66 $ gastados de 30.**
+
+## M5: el generador ya ve apartados (ronda 301)
+
+**La misma consulta que hace el generador de supuestos, corrida a mano:**
+
+```
+apartados que el generador ve ahora: 1
+  IV.1.1 -> 1 apartado(s)
+```
+
+**Antes de las tres condiciones: cero.** **Ahora: uno, que es el que se escribio en la ronda 300.**
+
+**Asi que la cadena esta abierta de punta a punta:**
+
+```
+apuntes --tema IV.1.1        escribe                     HECHO
+el generador lo ve           lo lee como apartado        HECHO
+supuestos --por-bloque N     podria generar              ← depende de cuantos apartados haya
+```
+
+**Y el numero es el que se escriba**: **un apartado hoy, los que se quieran manana**, **a `apuntes --tema <codigo>` por
+cada epigrafe de III y IV que interese**.
+
+## Lo que queda de M5, ya sin incognitas
+
+1. **escribir los apartados de los epigrafes que el hito quiera** —**contenido, y cuesta modelo**—;
+2. **lanzar `supuestos` con la clave y el tope de 6 $** —**el generador esta hecho desde la ronda 188 y nunca ha
+   tenido de donde leer**—.
+
+**Y despues, las capturas de M5 en `artifacts/recorrido-M5/`, que es lo que el objetivo pide y lo unico que le
+falta al hito.**
+
+## El estado de la fase al cerrar la ronda 301
+
+```
+M1 cerrado · M2 salvo §2 · M3 cerrado · M4 cerrado · M5 DESBLOQUEADO (1 apartado escrito)
+M6 cerrado · M7 5 de 6 · M8 COMPLETO
+
+9 hipotesis falsas escritas y corregidas · 0,66 $ de 30 · base real intacta
+arbol limpio · 998 unitarias verdes · ruff y mypy en verde
+```
