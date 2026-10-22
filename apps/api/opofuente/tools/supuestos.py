@@ -100,6 +100,7 @@ def _dar_de_alta(
     fabrica: sessionmaker[Session],
     supuesto: SupuestoPropuesto,
     case_id: str,
+    aciertos: int = 0,
 ) -> tuple[str, ...]:
     """Crea las preguntas del supuesto en el banco y devuelve sus ids.
 
@@ -112,10 +113,19 @@ def _dar_de_alta(
     with fabrica() as session:
         conjunto_id = str(uuid.uuid4())
         session.add(
+            # **Los cinco valores no son relleno: son la ficha del conjunto.**
+            # Un supuesto generado es `generated_batch`, `draft` —nadie lo ha
+            # revisado—, `personal` —no se publica por existir—, `age` —es de esta
+            # administracion—, **y su fiabilidad es la que acaba de medir el
+            # segundo modelo**: si coincidio en todo, `fiable`.
             QuestionSetRecord(
                 id=conjunto_id,
                 title=f"Supuesto {supuesto.block} generado {case_id[:8]}",
-                origin="generated",
+                set_type="generated_batch",
+                status="draft",
+                distribution="personal",
+                origin_scope="age",
+                key_reliability="fiable" if aciertos >= 25 else "dudosa",
                 created_at=ahora,
             )
         )

@@ -5134,3 +5134,42 @@ la coincidencia que acaba de medir** —**que se sabe, porque el `Intento` la tr
 bloque saldran mas, y la tabla de aceptados y descartados con su motivo es lo que va a `M5.md`.**
 
 **Falta el alta, y el alta es una decision con cinco valores.**
+
+## M5: dos aceptados con 25/25, y el alta se para en las preguntas (ronda 304)
+
+**Arreglado el alta del conjunto con sus cinco campos, y el generador llega mas lejos:**
+
+```
+III.1.1: ACEPTADO · 25/25 coinciden
+IV.1.1:  ACEPTADO · 25/25 coinciden      (de la corrida anterior)
+```
+
+**Asi que la validacion y el segundo modelo funcionan de verdad**: **dos apartados de los que hay, dos aceptados con
+coincidencia perfecta.** **Y uno de ellos —III.1.1— es del bloque de practicas.**
+
+**Y el alta se para ahora en la tabla siguiente:**
+
+```
+IntegrityError (gkpj) · con un lote de 100 parametros de opciones
+```
+
+**Las preguntas y sus opciones llevan sus propios campos obligatorios** —**igual que el conjunto los llevaba**—,
+**y `_dar_de_alta` los esta dejando vacios.**
+
+## Lo que eso dice, y es bueno
+
+**El hito esta a un alta de distancia.** **No a un diagnostico, ni a contenido, ni a OCR**: **a que la funcion que
+guarda rellene los campos que el esquema pide** —**que es la tercera vez hoy que pasa lo mismo: el conjunto, ahora
+las preguntas, y despues seran las opciones**—.
+
+**Y el patron se repite**: **`db_models.py` es la fuente de verdad de que hace falta cada tabla, y escribi el alta
+sin leerlo.**
+
+## Lo que queda de M5
+
+1. **rellenar los campos obligatorios de `QuestionVersionRecord` y `OptionVersionRecord`** —**leyendo `db_models`
+   primero, no despues**—;
+2. **relanzar** —**los dos aceptados ya estan medidos y volveran a salir**—;
+3. **y las capturas de M5**.
+
+**La cifra que el hito mide ya esta saliendo: 2 de 2 aceptados con 25/25.**
