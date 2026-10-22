@@ -658,3 +658,25 @@ explicaciones buenas.**
 private   → 11.315
 generated → lo que haya, y no debe bajar al restaurar
 ```
+
+## El vigilante, versión 2 (ronda 90)
+
+**La primera versión mataba tandas que estaban arrancando**: **`uv run` tarda en levantar el intérprete y
+en ese rato la CPU es cero**, **así que el umbral de 15 segundos lo confundía con un atasco**.
+**Costaba una tanda por cada relanzamiento.**
+
+**La versión 2** —`F:\temp-opofuente\vigilante2.ps1`— **añade dos cosas**:
+
+```
+no mata a un proceso que lleve menos de 150 s vivo   ← la gracia del arranque
+y solo mata si su CPU es menor de 45 s               ← un atasco de verdad
+```
+
+**Y escribe en el registro la hora, el PID, la CPU y cuánto vivió**, **para poder distinguir después si
+acertó o se equivocó.**
+
+**Los dos ficheros** —`vigilante.ps1` y `vigilante2.ps1`— **se paran con `Stop-Process` sobre su PID**,
+**y solo debe haber uno corriendo**: **dos vigilantes matándose el trabajo el uno al otro sería el colmo.**
+
+**Y la cifra del hito, medida a las 12:00**: **1.007 generadas con cita**, **8.780 pendientes**, **11.315
+privadas intactas**. **La API sigue siendo el único límite.**
