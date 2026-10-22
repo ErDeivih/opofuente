@@ -3841,3 +3841,31 @@ M7 bandeja               2.529 decisiones del propietario
 
 **Cuatro de las seis dependen de algo que no esta en esta maquina.** **Las otras dos son trabajo de una tarde y
 estan descritas al detalle.**
+
+## M8: la ruta del canje por HTTP, escrita y retirada (ronda 265)
+
+**Escrita `POST /api/v1/invitations/accept`**, **montada**, **y comprobada en el contrato:**
+
+```
+en el contrato: ['/api/v1/invitations/accept']
+```
+
+**Y al correr la puerta de contrato, una de las veintinueve se pone en rojo.** **Regenerado el contrato
+(`export_openapi` y `npm run contracts:generate`), sigue en rojo una.**
+
+**Asi que se retira** —**esta en `F:\temp-opofuente\invitations-en-curso.py`**—, **y el arbol vuelve al estado de
+antes: contrato en verde y nada a medias en `main`.**
+
+**Un endpoint que deja la puerta de contrato en rojo no entra hoy**, **porque el contrato es lo que la web
+consume**, **y una ruta que no cuadra con su fichero generado es exactamente el tipo de fallo que se descubre
+en produccion y no en la prueba.**
+
+**Y lo que hay que hacer manana es corto**: **volver a poner el fichero, regenerar el contrato, y mirar cual de
+las veintinueve falla** —**que es una prueba que tarda siete minutos y por eso no da tiempo a iterar en una
+ronda**—. **El endpoint en si esta escrito y revisado por `ruff` y `mypy` sin un aviso.**
+
+## Y una nota sobre el tiempo
+
+**La puerta de contrato tarda casi siete minutos.** **Eso hace que iterar sobre ella en rondas cortas sea
+imposible**: **cada intento cuesta una ronda entera.** **No es un problema del codigo; es una razon para
+hacerla aparte, y queda dicho.**
