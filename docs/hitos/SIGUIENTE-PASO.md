@@ -527,3 +527,42 @@ privadas del propietario:  11.315   ← no se tocan, ni antes ni después
 pendientes de explicación:  9.839   ← las que el generador puede hacer
 gasto:                     ~0,60 $ de 30
 ```
+
+## Dónde va la prueba que falta, y por qué ahí (ronda 63)
+
+**No hay patrón que copiar de `add_explanation`**, **pero sí de cómo se siembra una pregunta con su
+repositorio**. **Está en `apps/api/tests/integration/test_question_bank.py`**:
+
+```python
+def _repositorio(tmp_path: Path) -> tuple[SqlAlchemyQuestionRepository, Settings]:
+    settings = Settings(data_dir=tmp_path / "datos", _env_file=None)
+    settings.data_paths.ensure_directories()
+    run_migrations(settings, revision="head")
+    engine = build_engine(settings.data_paths.database)
+    sesiones = build_session_factory(engine)
+    _sembrar_oposicion(settings)
+    return SqlAlchemyQuestionRepository(sesiones), settings
+```
+
+**Y el mismo fichero tiene el `_sembrar_oposicion` y, más abajo, lo que crea documentos y preguntas.**
+
+**Así que la prueba NO va en un fichero nuevo**: **va en `test_question_bank.py`, como una función más**,
+**aprovechando que allí ya está toda la fontanería de siembra** — **que es lo que me ha frenado: escribirla
+desde cero exige reproducir el grafo entero de `document_sets`, `document_versions`, `question_sets`,
+`question_versions` y `option_versions`, y eso son cien líneas de fontanería que allí ya están hechas**.
+
+**La función, con lo que hay que comprobar**:
+
+```python
+def test_una_explicacion_privada_no_se_sustituye_por_una_generada(tmp_path):
+    repositorio, settings = _repositorio(tmp_path)
+    # 1. sembrar la pregunta y su explicación privada (como hacen los tests de arriba)
+    # 2. add_explanation(..., origin=Origin.GENERATED, no_sustituir_lo_privado=True)
+    # 3. comprobar: devuelve None, el id es el mismo y el origin sigue siendo 'private'
+    # 4. y con no_sustituir_lo_privado=False: sí sustituye, porque el panel corrige
+
+def test_la_consulta_no_devuelve_preguntas_ya_explicadas(tmp_path):
+    # _preguntas(n) no devuelve una que ya tiene explicación, del origen que sea
+```
+
+**Y después de esas dos, relanzar la corrida.** **Antes no.**
