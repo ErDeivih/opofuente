@@ -624,3 +624,37 @@ migración `0041` hizo para poder enseñar** — y **lo que la corrida escribe a
 
 **Después de esa prueba en verde**, **M1 tiene sus cuatro entregables**: **el código**, **la cita guardada**,
 **las capturas con datos reales** **y las 8.870 que faltan cuando la API quiera**.
+
+## Restaurar la copia cuesta las generadas: cómo hacerlo sin perderlas (ronda 85)
+
+**Lo que pasó**: **al restaurar `m0-capturas` desde la base real** —para devolver las 11.315 privadas que el
+generador había sustituido— **se perdieron las ~2.200 explicaciones generadas que había en la copia**.
+**Cuadra**: **1.007 generadas + 8.832 pendientes = 9.839**, **que era el pendiente justo después de
+restaurar**.
+
+**No es grave** —las generadas se regeneran y cuestan décimas— **pero es un error de método**: **miré la
+cifra que quería arreglar y no la de al lado**.
+
+**Cómo se hace bien, y son dos formas:**
+
+1. **antes de restaurar, guardar las generadas**:
+   ```sql
+   -- en la copia, antes del Copy-Item
+   select id, question_version_id, origin, status, model_name, citation, note_anchor_id,
+          created_at, text
+   from question_explanations where origin = 'generated'
+   ```
+   **a un `.sqlite` aparte o a un CSV**, **y devolverlas después**;
+2. **o restaurar SOLO las filas privadas**, **no la base entera**: **la copia real no se toca**,
+   **y la copia de trabajo conserva lo suyo**.
+
+**La segunda es mejor**, **porque el problema original era de 5.368 filas privadas**, **no de la base**.
+**Restaurar la base entera es matar una mosca a cañonazos, y esta vez el cañonazo se llevó 2.200
+explicaciones buenas.**
+
+**Y la comprobación, siempre, antes y después**:
+
+```
+private   → 11.315
+generated → lo que haya, y no debe bajar al restaurar
+```
