@@ -16,7 +16,13 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { fetchHoy, fetchPlanGuardado, guardarPlan, type Tarea } from '../api/plan';
+import {
+  fetchHoy,
+  fetchPlanGuardado,
+  fetchProgreso,
+  guardarPlan,
+  type Tarea,
+} from '../api/plan';
 
 /** A dónde lleva cada tipo de tarea. */
 function destino(tarea: Tarea): string {
@@ -39,6 +45,13 @@ export function HoyPage() {
   const cliente = useQueryClient();
   const guardado = useQuery({ queryKey: ['plan', 'guardado'], queryFn: fetchPlanGuardado });
   const hoy = useQuery({ queryKey: ['plan', 'hoy'], queryFn: fetchHoy, staleTime: 0 });
+  const progreso = useQuery({
+    queryKey: ['plan', 'progreso'],
+    queryFn: fetchProgreso,
+    // **Sin plan no hay progreso**, y pedirlo solo para que diga 404 no aporta.
+    enabled: guardado.data?.exam_date != null,
+    retry: false,
+  });
 
   const [fecha, setFecha] = useState('');
   const [horas, setHoras] = useState(10);
@@ -170,6 +183,21 @@ export function HoyPage() {
             </li>
           ))}
         </ol>
+      )}
+
+      {/*
+        **Vas bien o vas retrasado, en la portada y con la cifra**: la frase la compone el servidor —dos
+        sitios que escriben la misma frase acaban diciendo cosas distintas—, y **si va retrasado lo dice
+        sin culpar**: el plan se recoloca y no hay reproche.
+      */}
+      {progreso.data !== undefined && (
+        <p
+          className={
+            progreso.data.vas_bien ? 'hoy__progreso hoy__progreso--bien' : 'hoy__progreso'
+          }
+        >
+          {progreso.data.frase}
+        </p>
       )}
 
       {restantes > 0 && (

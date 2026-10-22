@@ -43,6 +43,20 @@ export interface LoDeHoy {
   motivos: string[];
 }
 
+/** Como va el alumno frente al plan, **con la frase ya compuesta**. */
+export interface Progreso {
+  leidos: number;
+  practicados: number;
+  esperados: number;
+  total: number;
+  vas_bien: boolean;
+  frase: string;
+}
+
+export async function fetchProgreso(): Promise<Progreso> {
+  return apiFetch<Progreso>('/plan/progreso');
+}
+
 export async function fetchPlanGuardado(): Promise<PlanGuardado> {
   return apiFetch<PlanGuardado>('/plan');
 }
