@@ -67,7 +67,8 @@
       "rights_source_url": "https://www.boe.es/informacion/aviso_legal/index.php",
       "rights_quote": "Debe citarse la fuente de los documentos objeto de la reutilización, incluyendo en todo caso un enlace a la sede electrónica de la Agencia Estatal Boletín Oficial del Estado https://www.boe.es",
       "rights_note": "Reutilización autorizada por la Agencia Estatal BOE con las mismas condiciones indicadas en el aviso legal.",
-      "notes": "Las bases NO contienen el temario: remiten al «temario» publicado por la Guardia Civil. De aquí salen las pruebas, los tiempos, los umbrales y la fórmula."
+      "notes": "Las bases NO contienen el temario: remiten al «temario» publicado por la Guardia Civil. De aquí salen las pruebas, los tiempos, los umbrales y la fórmula.",
+      "volatile": true
     },
     {
       "id": "gc-boe-convocatoria-pdf",
@@ -261,7 +262,8 @@
       "rights_source_url": "https://bocyl.jcyl.es/verAvisoLegal.do",
       "rights_quote": "El acceso a la edición electrónica del Boletín Oficial de Castilla y León es universal, público y gratuito",
       "rights_note": "Mismas condiciones que el HTML del BOCYL: estado «unknown».",
-      "notes": "No alimenta los fixtures: se conserva como copia de verificación del mismo acto."
+      "notes": "No alimenta los fixtures: se conserva como copia de verificación del mismo acto.",
+      "volatile": true
     },
     {
       "id": "celador-2022-cuestionario-pdf",
