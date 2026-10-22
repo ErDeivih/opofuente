@@ -472,3 +472,27 @@ la siguiente**, **que también va lenta**. **Robusto sí, rápido no.**
 
 **Y el dato para decidir**: **7.638 escritas, todas con cita, cero sin cita**. **Lo que falta son 3.509.**
 **La mitad del trabajo está hecha y es buena; lo que no está es el resto del tiempo de reloj.**
+
+## Medido: con la API lenta, tandas PEQUEÑAS escriben más (ronda 54)
+
+**La prueba, cronometrada, en el mismo momento y con el mismo código:**
+
+```
+tanda de 500:   25 escritas en 8 minutos    →   3 por minuto
+tanda de 100:   88 escritas en 53 segundos  → 100 por minuto
+```
+
+**Treinta y tres veces más rápido con tandas más pequeñas.**
+
+**Por qué**: **500 preguntas en una sola llamada no caben en el plazo de 60 s cuando el servicio va
+lento**, así que **la tanda entera falla y no escribe nada**; **100 sí caben, y escribe 88**. **Se pierde
+el 12 % en rechazos y se gana el 100 % del tiempo.**
+
+**Contraintuitivo y comprobado**: **menos preguntas por llamada, más escritas por hora**. **Y el gasto no
+cambia**, porque **se paga por token y no por llamada**.
+
+**El bucle que está en marcha**: **tandas de 100 desde 7.900 hasta 11.000, treinta y tres tandas**,
+**con `corrida6.ps1`**. **A 88 por minuto, las 3.300 que quedan son unos cuarenta minutos.**
+
+**Y la regla, para cuando vuelva a pasar**: **si la cuenta no sube, mirar la CPU (si está a cero, espera) y
+probar una tanda de 100 antes de tocar nada más**.
