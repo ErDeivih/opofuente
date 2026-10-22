@@ -5089,3 +5089,48 @@ material; ahora tiene veintiuno.**
 M1 ✓ · M2 salvo §2 · M3 ✓ · M4 ✓ · M5 A UNA CORRIDA · M6 ✓ · M7 5 de 6 · M8 COMPLETO
 gasto 0,66 $ de 30 · 21 epigrafes escritos · base real intacta · arbol limpio
 ```
+
+## M5: EL GENERADOR FUNCIONA — y falla al guardar (ronda 303)
+
+**Lanzado de verdad, con la clave y el material nuevo:**
+
+```
+--- bloque III: 1 apartados con notas
+III.1.1: descartado · trae 26 preguntas y un supuesto tiene 25      ← la validacion hace su trabajo
+--- bloque IV: 4 apartados con notas
+IV.1.1: ACEPTADO · 25/25 coinciden                                  ← EL PRIMER SUPUESTO ACEPTADO
+```
+
+**Y despues se cae al guardar:**
+
+```
+TypeError: 'origin' is an invalid keyword argument for QuestionSetRecord
+```
+
+**Asi que la cadena entera funciona hasta el ultimo paso**: **genera, valida la forma (descarto uno con 26
+preguntas), pregunta a ciegas al segundo modelo y mide el 90 %** —**IV.1.1 paso con 25 de 25**—. **Lo unico que
+falla es darlo de alta como conjunto de preguntas.**
+
+## El fallo, y no es una linea
+
+**`QuestionSetRecord` no tiene `origin`: tiene `set_type`, `status`, `distribution`, `origin_scope` y
+`key_reliability`, cada uno con su `CHECK`:**
+
+```
+set_type      IN ('official_exam','private_bank','practice','generated_batch')
+status        IN ('draft','confirmed','archived')
+distribution  IN ('personal','public')
+origin_scope  IN ('age','otra_administracion','desconocida')
+key_reliability IN ('fiable','dudosa','no_fiable')
+```
+
+**Asi que `_dar_de_alta` hay que reescribirlo con esos cinco campos** —**y elegir sus valores es una decision, no
+un relleno**: **un supuesto generado es `generated_batch`, `draft`, `personal`, `age`, y su fiabilidad depende de
+la coincidencia que acaba de medir** —**que se sabe, porque el `Intento` la trae**—.
+
+## Y la cifra que el hito mide, ya la hay
+
+**De los 5 apartados con notas, uno descartado por forma y uno aceptado con 25/25.** **Con ocho apartados por
+bloque saldran mas, y la tabla de aceptados y descartados con su motivo es lo que va a `M5.md`.**
+
+**Falta el alta, y el alta es una decision con cinco valores.**
