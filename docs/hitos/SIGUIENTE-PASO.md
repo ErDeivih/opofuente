@@ -2534,3 +2534,55 @@ desde un aviso concreto, el aviso quede marcado como «atendido» y la propuesta
 
 **Y esa mitad es la que hace que el bucle sea un bucle**: **sin ella, el propietario regenera el parrafo y
 el aviso sigue abierto**, **que es casi peor que no regenerarlo, porque parece hecho.**
+
+## M8: el reconocimiento, antes de escribir nada (ronda 217)
+
+**La especificacion, lineas 125-131:**
+
+1. **paquete de contenido publico**: exportador que saca solo lo `distribution = public` mas los apuntes,
+   explicaciones y tarjetas generadas, **con ids estables**; e importador idempotente. **Prueba: exportar,
+   importar y volver a exportar da lo mismo, y dentro no hay palabra prohibida ni dato privado.**
+2. **instalacion reproducible**: `docker compose` **o** instalador de Windows, **el que sea mas simple
+   para el propietario: decidelo y apuntalo**. Arranca con el paquete publico, crea el administrador e
+   invita por enlace. **No se despliega en ningun sitio.**
+3. **copia y restauracion probadas sobre la instalacion.**
+4. **guia de una pagina** para el propietario.
+
+**Y capturas en `artifacts/recorrido-M8/`, como en M1, M3 y M5.**
+
+## Lo que ya existe, medido, y por que no sirve
+
+**`application/export_service.py` exporta el banco a Anki CSV y a Markdown.** **Es una exportacion para
+una persona**: **saca texto legible, con tope de 2.000 items**, **y no trae ids estables ni un importador**.
+**Para M8 hace falta lo contrario**: **un fichero que se pueda volver a meter tal cual y que al segundo
+import no cambie nada.**
+
+**Asi que el exportador de M8 es otro**, **y no se toca el que hay**: **el de Anki lo usa el alumno y el de
+M8 lo usa el propietario.**
+
+## La decision del punto 2, tomada y con su razon
+
+**Instalador para Windows y no `docker compose`**, **porque el propietario ya tiene el entorno que hace
+falta** —**`uv`, `pnpm` y el SQLite local funcionando**—, **y Docker seria una dependencia nueva que hoy no
+esta y que hay que instalar, actualizar y arrancar**. **El hito pide lo mas simple para el, no lo mas
+elegante.**
+
+**Lo que tendra el instalador, y es una lista corta**: **comprobar `uv` y `pnpm`**, **crear la carpeta de
+datos**, **migrar**, **importar el paquete publico**, **crear el administrador**, **y arrancar**. **Un
+`.ps1` de unas cuarenta lineas y una guia de una pagina.**
+
+**Y no se despliega en ningun sitio**: **no hay CI que publique, no hay dominio, no hay nada contratado.**
+
+## El orden en que lo voy a hacer
+
+1. **el exportador del paquete** —**JSON con ids estables, filtrado a lo publico**— **y su importador
+   idempotente**;
+2. **la prueba de la ida y vuelta**: **exportar, importar, volver a exportar y comparar**;
+3. **el `.ps1` de instalacion**, **probado sobre una carpeta vacia**;
+4. **copia y restauracion**, **probadas sobre esa instalacion**;
+5. **la guia de una pagina**;
+6. **las capturas**, **que necesitan la instalacion funcionando con el paquete dentro**.
+
+**Y el punto 1 es el unico que puede hacer dano si sale mal**: **si el paquete se lleva algo privado, se
+lleva 11.315 explicaciones del propietario**. **Asi que la prueba de «dentro no hay dato privado» no es un
+extra: es la que decide si el exportador sirve.**
