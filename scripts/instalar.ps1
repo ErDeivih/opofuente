@@ -53,6 +53,18 @@ foreach ($herramienta in @('uv', 'pnpm')) {
         throw "falta ${herramienta}: instalalo y vuelve a lanzar esto"
     }
     Decir "$herramienta esta"
+
+    # **Las dependencias de la web, y esto no es opcional**: los paquetes del monorepo
+    # (`@opofuente/contracts`) se enlazan al instalar; sin esto, `pnpm dev` intenta
+    # bajarlos del registro de npm y falla con un 404 que no dice nada.
+Push-Location $raiz
+try {
+    pnpm install --frozen-lockfile
+    if ($LASTEXITCODE -ne 0) { throw 'la instalacion de las dependencias de la web fallo' }
+    Decir 'dependencias de la web instaladas'
+} finally {
+    Pop-Location
+}
 }
 
 # 2. la carpeta de datos
