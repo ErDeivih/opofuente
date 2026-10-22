@@ -2259,3 +2259,35 @@ despues.**
 **Y despues `/plan/hoy`**: **cachear el plan por la fecha del dia.**
 
 **Las tres con la misma regla, y la primera ya la cumple**: **cifras idénticas, o el arreglo se tira.**
+
+## M7: el punto 4, medido y cumplido (ronda 209)
+
+```
+                        antes        despues
+answered_counts       1.093 ms  →      11 ms
+outcome_counts        1.314 ms  →       4 ms
+/student/progress     3.218 ms  →     230 ms     ← por debajo de los 2 s del hito
+/plan/hoy             1.316 ms  →   1.316 ms     ← por debajo de 2 s, sin tocar
+/stats                  134 ms  →     134 ms
+```
+
+**Y las cifras son las mismas**: **5 nodos y suma 119 en `answered_counts`**, **y 5 nodos y suma 119 en
+`outcome_counts`** — **los dos comprobados antes y despues.**
+
+## Y un error que he cometido y corregido en la misma ronda
+
+**El primer intento de la ventana comparaba `AttemptEvaluationRecord.id == vigente`**, **con `vigente`
+siendo una subconsulta**, **y eso no compara con las filas: compara con la forma**. **Devolvio un nodo y
+suma 1 en vez de 119**, **y `ruff` y `mypy` estaban en verde.**
+
+**Lo ha cazado la comprobacion de las cifras, no el linter**: **si no hubiera medido el resultado ademas
+del tiempo, habria commiteado una consulta 250 veces mas rapida que devuelve la cuarenta vez menos.**
+
+**De ahi la regla que gobierna M7 y que ya ha salvado este cambio**: **cifras iguales antes y despues; si
+cambian, el arreglo esta mal aunque tarde menos.**
+
+## Lo que queda de M7
+
+- **el punto 4, hecho**; **y lo que le falta es la prueba que lo vigile** — **que es parte del hito**;
+- **los puntos 1, 2 y 3**: el bucle de «esto esta mal», la comprobacion semanal y la bandeja por debajo de
+  100.

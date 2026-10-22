@@ -230,21 +230,26 @@ class SqlAlchemyStudentRepository:
         7): sumar todas contaría dos veces el mismo intento. La vigente es la última por fecha y, a
         igualdad, por identificador — el mismo desempate que usa el repositorio de estudio.
         """
-        vigente = (
-            select(AttemptEvaluationRecord.id)
-            .where(AttemptEvaluationRecord.attempt_id == AttemptRecord.id)
-            .order_by(
-                AttemptEvaluationRecord.evaluated_at.desc(),
-                AttemptEvaluationRecord.id.desc(),
+        # **La evaluacion vigente, con una ventana y no con una subconsulta**
+        # (M7): la version anterior pedia «la ultima evaluacion de este intento»
+        # con una subconsulta correlacionada, y eso es una consulta por intento.
+        # **Con `row_number()` la vigente se calcula de una pasada**, y el plan
+        # deja de tener un `CORRELATED SCALAR SUBQUERY`.
+        numeradas = select(
+            AttemptEvaluationRecord.id.label("id"),
+            AttemptEvaluationRecord.attempt_id.label("attempt_id"),
+            AttemptEvaluationRecord.outcome.label("outcome"),
+            func.row_number()
+            .over(
+                partition_by=AttemptEvaluationRecord.attempt_id,
+                order_by=(
+                    AttemptEvaluationRecord.evaluated_at.desc(),
+                    AttemptEvaluationRecord.id.desc(),
+                ),
             )
-            .limit(1)
-            # `correlate` explícito: la consulta de fuera también trae `attempt_evaluations`, así
-            # que sin esto SQLAlchemy autocorrelaciona **la propia tabla de dentro** y la
-            # subconsulta se queda sin `FROM` («returned no FROM clauses due to auto-correlation»).
-            # Solo se correlaciona el intento, que es lo único que viene de fuera.
-            .correlate(AttemptRecord)
-            .scalar_subquery()
-        )
+            .label("rango"),
+        ).subquery()
+        vigente = select(numeradas.c.id).where(numeradas.c.rango == 1).subquery()
         consulta = (
             select(
                 CurriculumMappingRecord.curriculum_node_id,
@@ -274,7 +279,7 @@ class SqlAlchemyStudentRepository:
                 StudySessionRecord.owner_id == owner_id,
                 QuestionSetRecord.opposition_id == opposition_id,
                 AttemptEvaluationRecord.outcome.in_(OUTCOMES_QUE_CUENTAN),
-                AttemptEvaluationRecord.id == vigente,
+                AttemptEvaluationRecord.id.in_(select(vigente)),
             )
             .group_by(CurriculumMappingRecord.curriculum_node_id, AttemptEvaluationRecord.outcome)
         )
@@ -476,7 +481,7 @@ class SqlAlchemyStudentRepository:
             .where(
                 QuestionSetRecord.opposition_id == opposition_id,
                 AttemptEvaluationRecord.outcome == OUTCOME_FALLADO,
-                AttemptEvaluationRecord.id == vigente,
+                AttemptEvaluationRecord.id.in_(select(vigente)),
             )
             .order_by(AttemptRecord.answered_at.desc(), QuestionVersionRecord.id.asc())
         )
@@ -550,7 +555,7 @@ class SqlAlchemyStudentRepository:
                         StudySessionRecord.opposition_id == opposition_id,
                         StudySessionRecord.owner_id == owner_id,
                         AttemptEvaluationRecord.outcome == OUTCOME_FALLADO,
-                        AttemptEvaluationRecord.id == vigente,
+                        AttemptEvaluationRecord.id.in_(select(vigente)),
                     )
                     .group_by(SessionQuestionRecord.question_version_id)
                 ).all()
