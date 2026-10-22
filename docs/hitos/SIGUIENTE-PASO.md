@@ -1962,3 +1962,39 @@ funciona.**
 
 **Y una nota sobre el metodo**: **las tres cifras se probaron contra la copia antes de llevarlas a la
 pantalla, y eso es lo que ha evitado que un 0 % universal llegara a mirarse como un dato.**
+
+## M7, punto 4: el rendimiento medido, y dos pantallas se pasan (ronda 201)
+
+**El hito pide «cualquier pantalla del alumno por debajo de 2 s y el simulacro por debajo de 5 s». Medido
+con `TestClient`, en caliente y sobre la copia:**
+
+```
+/stats               200    145 ms   ✓
+/plan/hoy            200  1.255 ms   ✗  ← se pasa de un segundo
+/cards/pending       200     10 ms   ✓
+/plan                200      6 ms   ✓
+/student/progress    200  3.589 ms   ✗✗ ← casi el doble del limite
+```
+
+**Y el 3,6 s de progreso no es del render ni de la red: es la consulta.** **`/student/progress` recorre
+los 16.923 anclajes para dar el acierto por tema**, **y eso se nota.**
+
+## La causa, y es de las que tienen arreglo claro
+
+**`stats_repository` hace el acierto por tema con tres `join` y un `case`**, **y hay un indice para
+`question_note_anchors.curriculum_node_id`** — **pero no para la combinacion que la consulta usa**:
+**`attempts.session_question_id` existe, `session_questions.question_version_id` existe, y el `join` a
+`answer_key_entries` va por `question_version_id`**. **Con 16.923 anclajes y 119 intentos, la consulta
+recorre mas de lo que necesita**: **el filtro por fecha de los intentos podria ir primero.**
+
+**Y `/plan/hoy` a 1,2 s tambien es la consulta**: **`plan()` recalcula el plan entero —28 temas, 7
+semanas— en cada llamada**, **y la pantalla lo pide al abrir.**
+
+## Lo que NO voy a hacer
+
+**No voy a bajar el limite del hito ni a medir con el servicio en caliente y llamarlo «por debajo de 2
+s».** **3,6 s es 3,6 s**, **y el hito lo dice con una cifra que se puede comprobar.**
+
+**Lo que si puedo medir primero, y es lo siguiente**: **cuanto de ese tiempo es la consulta y cuanto el
+arranque del `TestClient`** —**la primera llamada paga la construccion de la app**—. **Para eso hay que
+medir en caliente de verdad: dos llamadas y quedarse con la segunda.**
