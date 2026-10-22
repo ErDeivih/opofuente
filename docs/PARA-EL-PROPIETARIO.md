@@ -1439,3 +1439,27 @@ pide 80»— **y la lista ya lo refleja honestamente: dice 79 y no ofrece el bot
 
 **No he inventado preguntas ni plantillas para que el botón vuelva.** **Elige una de las dos y la
 ejecuto.**
+
+## Un incidente que tiene que saber: el generador borró explicaciones tuyas en una COPIA
+
+**Qué pasó.** **El 22 de octubre, al comprobar por qué una cuenta no cuadraba, encontré que la copia de
+trabajo tenía 5.947 explicaciones privadas donde la base real tiene 11.315.** **El generador había
+sustituido 5.368 suyas por explicaciones de un modelo.**
+
+**La causa.** **`add_explanation` reemplaza por identidad `(pregunta, opción)`** — «la segunda explicación
+sustituye a la primera» — **y cambiaba también el `origin`**. **Esa regla es correcta para el panel, que
+es donde tú corriges la tuya, y es un desastre para un generador.**
+
+**Tu base de datos NO se ha tocado.** **Todo se escribía sobre una copia, y esa copia se ha rehecho desde
+la real: la huella es idéntica.**
+
+**Lo que se ha puesto para que no vuelva a pasar, y son tres capas:**
+
+1. **el generador se salta cualquier pregunta que ya tenga explicación**, sea de quien sea;
+2. **`add_explanation` tiene `no_sustituir_lo_privado`**, y **el generador lo pone siempre**;
+3. **una prueba que lo comprueba**, **y que pasa**: con el parámetro, devuelve `None` y el origen no
+   cambia; **sin él, el panel sí sustituye**, porque para eso está.
+
+**Lo que te pido, y es solo confirmación**: **si alguna vez ves una explicación tuya cambiada por texto de
+modelo en la aplicación, dímelo**, **porque querría saber por dónde entró** — **con estas tres capas no
+debería poder pasar, y si pasa, es que hay otro camino que no he mirado.**
