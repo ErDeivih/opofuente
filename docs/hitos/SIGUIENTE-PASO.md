@@ -2586,3 +2586,53 @@ datos**, **migrar**, **importar el paquete publico**, **crear el administrador**
 **Y el punto 1 es el unico que puede hacer dano si sale mal**: **si el paquete se lleva algo privado, se
 lleva 11.315 explicaciones del propietario**. **Asi que la prueba de «dentro no hay dato privado» no es un
 extra: es la que decide si el exportador sirve.**
+
+## M8, punto 1: el exportador funciona y no pasa la puerta, y se retira (ronda 218)
+
+**Lo que se consiguio, medido:**
+
+```
+exportar  ->  13 tablas · 31.901 filas · 19,5 MB
+              oppositions 3 · curriculum_nodes 401 · question_sets 13
+              question_versions 1.455 · option_versions 5.820
+              answer_key_entries 1.455 · question_note_anchors ...
+revisar   ->  «el paquete no lleva nada de una persona» · codigo 0
+```
+
+**De 263 conjuntos, solo 13 son `public`**: **ese es el material que se reparte, y el paquete lo saca bien.**
+
+**Y la prueba que decide si el exportador sirve, pasada**: **ninguna tabla de una persona y ninguna de las
+11.315 explicaciones privadas.**
+
+## Y por que no esta en `main`
+
+**`ruff` no acepta una sola sentencia SQL construida con nada: ni con un f-string, ni concatenando dos
+literales, ni con una constante propia.** **S608.**
+
+**Y tiene razon en el fondo**: **un paquete es un fichero que puede venir de cualquier sitio.** **Lo que hice
+fue anadir la comprobacion de verdad** —**que la tabla este en la lista blanca y que cada columna exista en
+ella**— **y aun asi el linter sigue marcando la construccion**; **e intentando partir las cadenas para
+contentarlo deje el fichero roto**.
+
+**Asi que lo retiro del arbol** —**esta en `F:\temp-opofuente\paquete_publico-en-curso.py`, con el diseno y
+los datos medidos**— **en vez de dejarlo a medias en `main`.** **Un exportador roto es peor que ninguno:
+el que no existe se sabe, y el roto se usa.**
+
+## El paso exacto para retomarlo, y es mecanico
+
+**Escribir las trece sentencias como literales completos**, **una por tabla, sin concatenar nada**:
+
+```python
+VIAJAN = (
+    ("question_versions",
+     "select * from question_versions where question_set_id in "
+     "(select id from question_sets where distribution = 'public')"),
+)
+```
+
+**`ruff format` no parte cadenas**, **asi que la linea larga hay que partirla a mano en dos literales
+contiguos**, **y eso si lo acepta** —**lo comprobe en las otras diez sentencias, que pasaron**—. **Lo que no
+acepta es `+` entre ellas ni un f-string**, **y el error de esta ronda fue no distinguir las dos cosas.**
+
+**Y la importacion ya esta bien resuelta**: **`insert()` de SQLAlchemy con reflexion de la tabla y
+`prefix_with("OR REPLACE")`, sin una sentencia cruda.**
