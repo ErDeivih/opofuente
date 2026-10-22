@@ -1032,3 +1032,30 @@ if (process.env.OPOFUENTE_SCREENS_PLATAFORMA === '1') {
     });
   }
 }
+
+/**
+ * La bandeja de explicaciones (M1 de la fase 3): **que enseñe lo que tiene que enseñar**.
+ *
+ * La captura sola no lo garantiza —la pantalla puede salir vacía y pasar sus comprobaciones—, y
+ * esta es la pantalla cuyo centro es **la cita literal del apartado**. Así que aquí se comprueba
+ * que o hay filas o la pantalla dice que no hay ninguna, y que cada fila lleva su enunciado y su
+ * cita entre comillas angulares. Si la corrida de explicaciones ha escrito, las habrá.
+ */
+for (const { ancho, alto, etiqueta } of ANCHOS) {
+  test(`la bandeja de explicaciones a ${ancho} px`, async ({ page }) => {
+    await retratar(page, '/admin/explicaciones', '/admin/explicaciones', ancho, alto, etiqueta);
+
+    const vacia = page.getByText('No hay explicaciones generadas esperando revisión.');
+    const filas = page.locator('ol > li');
+    const cuantas = await filas.count();
+    expect(cuantas + (await vacia.count())).toBeGreaterThan(0);
+
+    if (cuantas > 0) {
+      await expect(filas.first().locator('strong').first()).not.toBeEmpty();
+      const citas = filas.first().locator('blockquote');
+      if ((await citas.count()) > 0) {
+        await expect(citas.first()).toContainText('«');
+      }
+    }
+  });
+}
