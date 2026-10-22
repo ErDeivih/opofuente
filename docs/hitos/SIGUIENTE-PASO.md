@@ -2458,3 +2458,43 @@ Programador de Windows en la maquina del propietario** —**que solo corre si la
 **o un paso de CI** —**que corre siempre y no avisa a nadie que no mire el repositorio**—.
 
 **Lo apunto y sigo**: **el hito pide que avise**, **y avisar es una decision de por donde**.
+
+## M7, punto 1: el bucle de «esto esta mal», y la pieza que faltaba (ronda 214)
+
+**Lo que ya existia, medido:**
+
+```
+el boton «Esto esta mal»          ReportMistake.tsx (F13)
+la bandeja del propietario        NoteReportsPage.tsx con filtros y cuatro estados
+despachar un aviso                PATCH /notes-reports/{id}, auditado
+escribir un apartado              ports.redactar(...)
+revisar las preguntas ancladas    ports.comprobar(grupos, apuntes=...)
+dejar algo en la bandeja          save_section_body(needs_review_reason=...)
+```
+
+**Las cinco piezas del bucle existen menos una: pasar la indicacion del alumno al modelo.** **`redactar`
+no tenia por donde recibirla**, **y sin ella «regenerar solo ese parrafo con la indicacion» no es
+regenerar con la indicacion: es regenerar igual y esperar otra cosa.**
+
+**Ya la tiene**, **en el puerto, en el adaptador y en el encargo**, **y comprobado con el texto delante:**
+
+```
+sin indicacion la lleva:        False
+con indicacion la lleva:        True
+el texto del alumno aparece:    True
+y los hechos siguen obligatorios: True
+```
+
+**Y esa ultima linea es la decision de diseno**: **la indicacion cambia como se cuenta el apartado, no
+que hay que contar.** **Los hechos obligatorios son la verdad del tema y no los toca un aviso**; **si el
+aviso dice que un hecho esta mal, lo que hay que corregir es el hecho, y eso no es este camino.**
+
+## Lo que falta para cerrar el punto 1
+
+1. **un comando `notes rehacer --aviso <id>`**: **carga el aviso, saca su apartado, llama a `redactar`
+   con el texto del alumno como indicacion, pasa `comprobar` a las preguntas ancladas y guarda el
+   resultado con `needs_review_reason`** — **que es la propuesta en la bandeja**;
+2. **y que el aviso quede enlazado a la propuesta**, **para que al aprobarla se cierre el aviso**.
+
+**Las dos piezas son pequenas y el terreno esta medido**; **lo que hice en esta ronda es lo que las hace
+posibles**, **y es el tipo de cambio que no se nota hasta que falta.**

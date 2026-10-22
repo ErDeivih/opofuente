@@ -316,12 +316,20 @@ class DeepSeekNotesModel:
         topic_title: str,
         material: Sequence[MaterialPassage],
         es_tabla_de_puertos: bool = False,
+        indicacion: str | None = None,
     ) -> RedaccionBatch:
-        """El texto de un apartado, con todos sus hechos dentro."""
+        """El texto de un apartado, con todos sus hechos dentro.
+
+        **`indicacion` es el aviso de quien lo leyo** (M7): va al encargo como lo
+        que hay que corregir, **sin tocar los hechos obligatorios**.
+        """
         cuerpo = self._cuerpo(
             system=build_system_prompt_redactar(topic_code=topic_code, topic_title=topic_title),
             user=build_user_prompt_redactar(
-                section, material, es_tabla_de_puertos=es_tabla_de_puertos
+                section,
+                material,
+                es_tabla_de_puertos=es_tabla_de_puertos,
+                indicacion=indicacion,
             ),
         )
         return read_redaccion(self._post(json.dumps(cuerpo, ensure_ascii=False)))

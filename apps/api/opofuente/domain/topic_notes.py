@@ -1329,6 +1329,7 @@ def build_user_prompt_redactar(
     material: Sequence[MaterialPassage],
     *,
     es_tabla_de_puertos: bool = False,
+    indicacion: str | None = None,
 ) -> str:
     """El encargo de un apartado: el título, los hechos obligatorios y el material que los
     sostiene.
@@ -1364,12 +1365,22 @@ def build_user_prompt_redactar(
     # `40 x hechos distintos` (la puerta de densidad del §2.3) y el redactor tiene que saberlo antes
     # de escribir, no descubrirlo en el informe. I.6 salió con 82 palabras por hecho y no pasó.
     tope = MAX_PALABRAS_POR_HECHO * max(len(section.facts), 1)
+    # **Lo que dijo quien lo leyo** (M7): el aviso del alumno llega hasta aqui y
+    # se le pone al redactor delante. **No cambia los hechos obligatorios** —esos
+    # siguen siendo la verdad del tema—, cambia como se cuentan.
+    aviso = ""
+    if indicacion:
+        aviso = (
+            "\n\nINDICACION DE QUIEN HA LEIDO ESTE APARTADO (esto es lo que hay que "
+            "corregir; los hechos obligatorios de arriba no se tocan):\n"
+            f"{indicacion.strip()}\n"
+        )
     return (
         f"Apartado: {section.title}\n"
         f"Epígrafe oficial: {section.epigraph_code}\n\n"
         f"HECHOS OBLIGATORIOS ({len(section.facts)}):\n{hechos}\n\n"
         f"MATERIAL DEL OPOSITOR (citas de su biblioteca; úsalo como apoyo, no lo copies entero):\n"
-        f"{cuerpo_material}{propio}{ya_puestos}\n\n"
+        f"{cuerpo_material}{propio}{ya_puestos}{aviso}\n"
         f"Escribe el apartado. No pases de unas {tope} palabras en total (son "
         f"{MAX_PALABRAS_POR_HECHO} por cada uno de los {len(section.facts)} hechos): lo que no sea "
         "explicar un hecho, no va."

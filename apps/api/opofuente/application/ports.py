@@ -795,6 +795,7 @@ class NotesModel(Protocol):
         topic_title: str,
         material: Sequence[MaterialPassage],
         es_tabla_de_puertos: bool = False,
+        indicacion: str | None = None,
     ) -> RedaccionBatch:
         """El texto de un apartado, con todos sus hechos dentro.
 
