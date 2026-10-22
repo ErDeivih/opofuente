@@ -51,12 +51,24 @@ export function HoyPage() {
     },
   });
 
+  // **El titulo va SIEMPRE, tambien cargando**: una pantalla sin encabezado no se anuncia, y ademas
+  // deja al lector sin saber donde esta mientras espera.
   if (guardado.isPending || hoy.isPending) {
-    return <p className="hoy__vacio">Cargando lo de hoy…</p>;
+    return (
+      <section className="hoy">
+        <h1>Hoy</h1>
+        <p className="hoy__vacio">Cargando lo de hoy…</p>
+      </section>
+    );
   }
 
   if (guardado.isError || hoy.isError) {
-    return <p className="hoy__error">No se pudo leer el plan. Reintenta en un momento.</p>;
+    return (
+      <section className="hoy">
+        <h1>Hoy</h1>
+        <p className="hoy__error">No se pudo leer el plan. Reintenta en un momento.</p>
+      </section>
+    );
   }
 
   // **Sin fecha no hay plan**: se pide, y se dice por qué.

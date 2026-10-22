@@ -207,7 +207,11 @@ describe('el marco del alumno', () => {
     renderWithProviders(<AppRoutes />, { route: '/' });
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Hoy' })).toBeInTheDocument();
-    expect(await screen.findByText('Aún no has hecho ningún test.')).toBeInTheDocument();
+      // **La portada es «Hoy» desde M4**: con la API sin simular se queda cargando, y
+      // aun así tiene que llevar su título. Es lo que esta prueba vigila.
+      expect(
+        await screen.findByText(/Cargando lo de hoy|Aún no has hecho ningún test/),
+      ).toBeInTheDocument();
 
     const { interfaz, todo } = textoDeLaPantalla();
     expect(revisarPantalla(interfaz, todo)).toEqual([]);
