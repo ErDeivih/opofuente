@@ -3416,3 +3416,32 @@ la persona lo canjea por linea de comandos y tiene cuenta.** **La pantalla es co
 
 **Y una cosa que conviene decir en el `M8.md`**: **la beta ya puede tener dos personas sin que el
 propietario toque la base a mano**, **que es exactamente lo que el hito llamaba «beta cerrada».**
+
+## M8: los tests de la invitacion no pueden correr, y el motivo es otro hallazgo (ronda 248)
+
+**Escritos los cinco tests del canje** —**crea la cuenta, no se repite, otra direccion, caducada, token
+inventado, y el token no esta guardado**—, **y los cinco fallan por lo mismo:**
+
+```
+sqlite3.OperationalError: no such table: account_invitations
+```
+
+**La base de los tests de integracion no llega a la migracion `0046`.** **El fixture crea su base y no
+incluye la tabla nueva**, **asi que un test que use una migracion recien anadida no puede pasar hasta que el
+fixture la recoja.**
+
+**Y eso es un hallazgo, no un estorbo**: **quiere decir que las pruebas de integracion y las migraciones
+pueden separarse sin que nadie lo note**, **y el dia que una migracion nueva rompa algo, el test que deberia
+cazarlo no la esta viendo.**
+
+**El fichero se retira del arbol** —**esta en `F:\temp-opofuente\test_invitaciones-en-curso.py`**— **porque un
+test rojo en `main` es peor que ninguno**: **se acaba ignorando, y con el se ignoran los que si valen.**
+
+## Lo que hay que hacer, y son dos pasos
+
+1. **que el fixture de integracion aplique `upgrade head`** en vez de un esquema fijo —**o que diga en voz
+   alta a que version llega**—;
+2. **volver a poner los cinco tests**, **que ya estan escritos y no hay que pensar**.
+
+**Y el paso 1 no necesita red ni modelo**: **es mirar como se crea la base de los tests y hacer que use las
+migraciones como hace la aplicacion.**
