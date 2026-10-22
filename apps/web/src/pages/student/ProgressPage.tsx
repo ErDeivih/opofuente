@@ -5,6 +5,7 @@ import {
   getStudentProgress,
   type StudentTopicProgress,
 } from '../../api/studentStudy';
+import { fetchStats, type Stats } from '../../api/stats';
 import { ErrorState } from '../../components/ErrorState';
 import { EsqueletoDeLista } from '../../components/Esqueleto';
 import type { StudentSession } from '../../api/studentTests';
@@ -31,6 +32,7 @@ import { ProgressBar } from '../../ui/Progress';
  */
 export function ProgressPage() {
   const consulta = useQuery({ queryKey: ['student-progress'], queryFn: getStudentProgress });
+  const stats = useQuery({ queryKey: ['stats'], queryFn: fetchStats });
 
   if (consulta.isPending) {
     return (
@@ -143,6 +145,13 @@ export function ProgressPage() {
         </section>
       )}
 
+      {/*
+        **Lo que responde a «¿que estudio ahora?»** (M6): la nota con su intervalo, los temas donde
+        falla con su boton, y el tiempo. **La frase la compone el servidor**: la pantalla no reescribe
+        cifras, y si no hay margen no lo inventa.
+      */}
+      {stats.data !== undefined && <QueEstudiar stats={stats.data} />}
+
       <section className="bloque" aria-labelledby="evolucion">
         <h2 className="bloque__titulo" id="evolucion">
           Cómo evolucionas
@@ -204,4 +213,67 @@ function resumenDe(sesion: StudentSession): string {
     return 'Sin corregir';
   }
   return `${String(resultado.correct)} aciertos · ${String(resultado.wrong)} fallos · ${String(resultado.blank)} en blanco`;
+}
+
+/**
+ * «Que estudio ahora»: la nota, los flojos y el tiempo (M6).
+ *
+ * **La nota va con su intervalo o sin el**, y el servidor ya decidio cual: con menos de dos intentos no
+ * hay dispersion con la que dar un margen, y un `+-0` seria una precision inventada.
+ *
+ * **Cada flojo lleva su boton a practicar ese tema**, que es lo que el hito pide para darse por hecho.
+ */
+function QueEstudiar({ stats }: { stats: Stats }) {
+  return (
+    <section className="bloque" aria-labelledby="que-estudiar">
+      <h2 className="bloque__titulo" id="que-estudiar">
+        Que estudiar ahora
+      </h2>
+
+      {stats.nota === null ? (
+        <p className="bloque__texto">
+          Todavia no hay intentos suficientes para estimar una nota. Haz un test y vuelve.
+        </p>
+      ) : (
+        <p className="progreso__nota">{stats.nota.frase}</p>
+      )}
+
+      {stats.flojos.length > 0 && (
+        <ul className="progreso__flojos" aria-label="Temas donde fallas">
+          {stats.flojos.map((tema) => (
+            <li className="progreso__flojo" key={tema.codigo}>
+              <span className="progreso__tema-codigo">{tema.codigo}</span>
+              <span className="progreso__flojo-titulo" data-contenido>
+                {tema.titulo}
+              </span>
+              <span className="progreso__tema-porcentaje">{tema.frase}</span>
+              <Link
+                className="ui-button ui-button--secondary"
+                to={`/tests?tema=${encodeURIComponent(tema.codigo)}`}
+              >
+                Practicar {tema.codigo}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {stats.comparacion_del_tiempo !== null && (
+        <p className="bloque__texto">{stats.comparacion_del_tiempo}</p>
+      )}
+
+      {stats.semanas.length > 0 && (
+        <ul className="progreso__semanas" aria-label="Acierto por semana">
+          {stats.semanas.map((semana) => (
+            <li className="progreso__semana" key={semana.empieza}>
+              <span className="progreso__semana-fecha">{semana.empieza}</span>
+              <span className="progreso__semana-cifra">
+                {`${String(Math.round(semana.acierto * 100))} % en ${String(semana.intentos)} ${semana.intentos === 1 ? 'intento' : 'intentos'}`}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
 }
