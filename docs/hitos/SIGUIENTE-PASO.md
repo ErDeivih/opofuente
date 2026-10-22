@@ -2671,3 +2671,35 @@ sin error y cambia diez microsegundos de formato en cada vuelta no es idempotent
 - **punto 3**: copia y restauracion sobre esa instalacion;
 - **punto 4**: la guia de una pagina;
 - **y las capturas en `artifacts/recorrido-M8/`**, que necesitan la instalacion funcionando.
+
+## M8, punto 1: la prueba de que no se lleva a nadie, ya es un test (ronda 220)
+
+**`apps/api/tests/unit/test_paquete_publico.py`, cuatro casos, 4 pasan:**
+
+```
+un paquete solo con material publico pasa
+una explicacion privada tumba el paquete
+una tabla de una persona tumba el paquete
+una tabla prohibida vacia no tumba nada
+```
+
+**Y el tercero y el cuarto son los que importan de verdad:**
+
+- **el filtro de las explicaciones es una condicion en el SQL**, **y una condicion mal puesta deja pasar
+  11.315 filas privadas**: **por eso hay un test que mete una `private` de mentira y exige que el paquete
+  se tumbe**;
+- **el exportador escribe las trece tablas aunque alguna venga a cero**, **y eso no puede dar el paquete
+  por malo**: **si una lista vacia contara como fuga, el test estaria rojo desde el primer dia y se
+  ignoraria.**
+
+**Y se prueban sin base de datos**: **`revisar` lee un fichero y decide**, **y esa decision es la que hay
+que poder afirmar sin montar nada**. **La ida y vuelta necesita la base y va en su test de integracion.**
+
+## Lo que queda de M8
+
+- **la ida y vuelta como test de integracion** — **hoy esta comprobada a mano: `IDA Y VUELTA IDENTICA:
+  True`** —;
+- **el `.ps1` de instalacion**, **probado sobre una carpeta vacia**;
+- **copia y restauracion**;
+- **la guia de una pagina**;
+- **las capturas en `artifacts/recorrido-M8/`**.
