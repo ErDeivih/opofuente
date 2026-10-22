@@ -2703,3 +2703,36 @@ que poder afirmar sin montar nada**. **La ida y vuelta necesita la base y va en 
 - **copia y restauracion**;
 - **la guia de una pagina**;
 - **las capturas en `artifacts/recorrido-M8/`**.
+
+## M8, punto 1: cerrado, con sus dos pruebas (ronda 221)
+
+**La ida y vuelta ya esta en un test de integracion, y pasa.** **Y al escribirlo aparecio algo que habia que
+decir en voz alta:**
+
+```
+la base sembrada de integracion NO trae material publico
+```
+
+**Mi primer test afirmaba `filas > 0` y fallo con `assert 0 > 0`.** **Y tenia razon en fallar**: **estaba
+afirmando algo del entorno que el entorno no tiene.** **Asi que el test afirma el contrato —que importar no
+cambie lo exportado— con material o sin el**, **y la cifra grande se queda donde se midio**: **31.901 filas
+contra la copia real, comprobadas a mano y apuntadas.**
+
+**No se baja el liston del test: se le quita lo que no podia afirmar.** **Un test que exige material a una
+base vacia es un test rojo que se acaba ignorando.**
+
+## Lo que M8 tiene hecho
+
+```
+punto 1 · el paquete publico           HECHO · 13 tablas · 31.901 filas · ida y vuelta identica
+          su prueba de privacidad      HECHO · 4 tests de unidad
+          su prueba de ida y vuelta    HECHO · 1 test de integracion
+```
+
+## Lo que queda, y por donde se sigue
+
+1. **el `.ps1` de instalacion** — **comprobar `uv` y `pnpm`, crear la carpeta de datos, migrar, importar el
+   paquete, crear el administrador y arrancar** — **y probarlo sobre una carpeta vacia de verdad**;
+2. **copia y restauracion sobre esa instalacion**;
+3. **la guia de una pagina**;
+4. **las capturas en `artifacts/recorrido-M8/`**, **que necesitan la instalacion funcionando**.
