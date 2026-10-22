@@ -378,3 +378,43 @@ def test_los_desenlaces_de_la_clave_activa_se_pueden_leer_para_duplicados(tmp_pa
 
     assert desenlaces[preguntas[0].id].correct_option_keys == ("b",)
     assert desenlaces[preguntas[1].id].outcome is KeyOutcome.ANNULLED
+
+
+def test_una_explicacion_privada_no_se_sustituye_por_una_generada(tmp_path: Path) -> None:
+    """**El generador no toca lo que escribió una persona.**
+
+    El 22 de octubre una corrida de explicaciones sustituyó 5.368 privadas porque
+    `add_explanation` reemplaza por identidad y nadie lo comprobaba. Esta prueba es la que
+    impide que vuelva a pasar: con `no_sustituir_lo_privado=True` no sustituye, y sin él sí,
+    porque el panel tiene que poder corregir la suya.
+    """
+    repositorio, _ = _repositorio(tmp_path)
+    set_id = _conjunto(repositorio)
+    parseado = parse_questions(TEXTO)
+    repositorio.save_questions(set_id, parseado.questions, origin_type=Origin.PRIVATE, now=AHORA)
+    pregunta = repositorio.list_questions(set_id=set_id).questions[0]
+
+    privada = repositorio.add_explanation(
+        pregunta.id, text="La explicación del propietario.", origin=Origin.PRIVATE, now=AHORA
+    )
+    assert privada is not None
+
+    generada = repositorio.add_explanation(
+        pregunta.id,
+        text="La que escribió un modelo.",
+        origin=Origin.GENERATED,
+        now=AHORA,
+        no_sustituir_lo_privado=True,
+    )
+    assert generada is None, "el generador no puede sustituir una explicación privada"
+
+    despues = repositorio.explanations_of(pregunta.id)
+    assert len(despues) == 1
+    assert despues[0].id == privada
+    assert str(despues[0].origin) == str(Origin.PRIVATE), "el origen no cambia"
+    assert despues[0].text == "La explicación del propietario."
+
+    corregida = repositorio.add_explanation(
+        pregunta.id, text="Corregida por el panel.", origin=Origin.PRIVATE, now=AHORA
+    )
+    assert corregida == privada, "el panel sí sustituye su propia explicación"
