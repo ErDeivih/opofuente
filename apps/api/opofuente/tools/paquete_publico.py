@@ -1,13 +1,13 @@
 """El paquete de contenido publico: exportarlo y volver a meterlo (M8).
 
-**Que es**: un unico fichero JSON con el material que se puede repartir —los
+**Que es**: un unico fichero JSON con el material que se puede repartir â€”los
 conjuntos `distribution = public`, sus preguntas, sus claves, los apuntes,
-las explicaciones generadas y las tarjetas— **con sus identificadores tal
+las explicaciones generadas y las tarjetasâ€” **con sus identificadores tal
 cual**, para que al importarlo en otra instalacion quede lo mismo.
 
 **Y de donde sale la lista de lo que viaja**: **una lista blanca escrita a
-mano, tabla por tabla, con su sentencia**. **No es una lista negra** —«todo
-menos estas»— **porque una tabla nueva entraria sola**: **si manana aparece
+mano, tabla por tabla, con su sentencia**. **No es una lista negra** â€”Â«todo
+menos estasÂ»â€” **porque una tabla nueva entraria sola**: **si manana aparece
 una tabla con datos de una persona, una lista negra se la lleva y una blanca
 no**.
 
@@ -38,13 +38,13 @@ from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Any
 
-from sqlalchemy import Date, DateTime, MetaData, Table, create_engine, text
+from sqlalchemy import Date, DateTime, MetaData, Table, create_engine, event, text
 from sqlalchemy.orm import Session, sessionmaker
 
 from opofuente.config import get_settings
 
-#: La version del formato. **Un importador viejo tiene que poder decir «esto no
-#: lo se leer»** en vez de meter medio paquete.
+#: La version del formato. **Un importador viejo tiene que poder decir Â«esto no
+#: lo se leerÂ»** en vez de meter medio paquete.
 FORMATO = 1
 
 #: **La lista blanca**: la tabla y la sentencia que saca sus filas.
@@ -117,8 +117,8 @@ class Paquete:
 
     def resumen(self) -> str:
         filas = sum(len(v) for v in self.tablas.values())
-        detalle = " · ".join(f"{k} {len(v)}" for k, v in self.tablas.items() if v)
-        return f"{len(self.tablas)} tabla(s) · {filas} fila(s)\n    {detalle}"
+        detalle = " Â· ".join(f"{k} {len(v)}" for k, v in self.tablas.items() if v)
+        return f"{len(self.tablas)} tabla(s) Â· {filas} fila(s)\n    {detalle}"
 
 
 def _fabrica() -> sessionmaker[Session]:
@@ -126,13 +126,23 @@ def _fabrica() -> sessionmaker[Session]:
     error, es una base ocupada un segundo.
 
     **Sin `timeout`, SQLite se rinde al instante y contesta lo primero que
-    puede** —que puede ser «no existe la tabla», que es mentira—. **Con
+    puede** â€”que puede ser Â«no existe la tablaÂ», que es mentiraâ€”. **Con
     treinta segundos, espera, y si sigue ocupada lo dice de verdad.**
     """
     motor = create_engine(
         f"sqlite+pysqlite:///{get_settings().data_paths.database}",
         connect_args={"timeout": 30},
     )
+
+    # **WAL, y no es un detalle (M8)**: en el modo por defecto, **leer bloquea a
+    # escribir**. El instalador revisa el paquete â€”solo leeâ€” y luego lo importa
+    # â€”escribeâ€”, **y con el diario clasico el segundo se queda esperando al
+    # primero hasta rendirse con `database is locked`**. Con WAL, leer no
+    # bloquea a escribir, **y el mismo instalador pasa**.
+    @event.listens_for(motor, "connect")
+    def _wal(conexion: Any, _registro: Any) -> None:
+        conexion.execute("PRAGMA journal_mode=WAL")
+
     return sessionmaker(bind=motor)
 
 
@@ -161,7 +171,7 @@ def _valor(tipo: Any, valor: Any) -> Any:
     **Un JSON no tiene fechas**: al exportar se escriben como texto ISO, y al
     importar hay que devolverlas a `datetime` **o la base las rechaza**.
     **Se mira el tipo de la columna, no el aspecto del texto**: adivinar por la
-    forma acierta casi siempre, y ese «casi» es un `TypeError` en la primera
+    forma acierta casi siempre, y ese Â«casiÂ» es un `TypeError` en la primera
     tabla con una fecha.
     """
     if valor is None:

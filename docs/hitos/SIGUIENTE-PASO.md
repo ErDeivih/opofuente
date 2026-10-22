@@ -2913,3 +2913,52 @@ que hay quien la tiene abierta y no la suelta.**
 **Lo que queda en `main` de esta ronda**: **el `timeout` del motor**, **que es correcto aunque no resuelva
 el caso**: **un programa que no espera a una base ocupada esta mal escrito aunque hoy la base no este
 ocupada.**
+
+## M8, punto 2: el instalador entero funciona, y la causa era WAL (ronda 228)
+
+**La hipotesis del WAL era la buena, y comprobada antes de tocar el codigo:**
+
+```
+journal: wal
+importadas 31.901 fila(s) en 13 tabla(s)
+```
+
+**En el modo por defecto de SQLite, leer bloquea a escribir.** **El instalador revisa el paquete —solo
+lee— y luego lo importa —escribe—**, **y con el diario clasico el segundo espera al primero hasta
+rendirse**, **y con treinta segundos de `timeout` tambien**, **porque el bloqueo no era pasajero**. **Con
+WAL, leer no bloquea a escribir.**
+
+**Y el instalador entero, con paquete, sobre una carpeta limpia:**
+
+```
+  instalando en F:\temp-opofuente\inst-m8e
+  uv esta · pnpm esta · carpeta de datos creada
+  base migrada
+  paquete importado
+  administrador dueno@ejemplo.test: creada
+  instalado. Para arrancar: ...
+  codigo: 0 · base de 23,8 MB
+```
+
+**Los tres fallos del instalador, en orden, y cada uno ensenado por el anterior:**
+
+1. **una variable seguida de dos puntos en una cadena** — **PowerShell ni arrancaba**;
+2. **`alembic` desde `apps\api`** — **su configuracion vive en la raiz**, **`FAILED: No 'script_location'
+   key found in configuration`**;
+3. **el bloqueo de SQLite** — **`database is locked`**, **que ademas miente como `no such table` cuando no
+   puede leer el esquema**.
+
+**Ninguno de los tres se ve leyendo el script.** **Los tres aparecieron al ejecutarlo, y esa es la razon de
+la regla del proyecto: escrito no es hecho, ejecutado es hecho.**
+
+## Lo que M8 tiene hecho ahora
+
+```
+punto 1 · el paquete publico        HECHO · 13 tablas · 31.901 filas · ida y vuelta identica · 5 tests
+el administrador                    HECHO · probado sobre una base vacia, dos veces, sin duplicar
+punto 2 · el instalador             HECHO · sin paquete y con paquete · codigo 0 · 23,8 MB
+la invitacion por enlace            sin construir
+punto 3 · copia y restauracion      por hacer
+punto 4 · la guia de una pagina     por hacer
+las capturas de M8                  necesitan la instalacion arrancada
+```
