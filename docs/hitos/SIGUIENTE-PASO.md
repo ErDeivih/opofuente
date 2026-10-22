@@ -1998,3 +1998,38 @@ s».** **3,6 s es 3,6 s**, **y el hito lo dice con una cifra que se puede compro
 **Lo que si puedo medir primero, y es lo siguiente**: **cuanto de ese tiempo es la consulta y cuanto el
 arranque del `TestClient`** —**la primera llamada paga la construccion de la app**—. **Para eso hay que
 medir en caliente de verdad: dos llamadas y quedarse con la segunda.**
+
+## El rendimiento, en caliente y con tres llamadas (ronda 202)
+
+**La misma medición, pero tres veces por ruta para que la primera pague el arranque y la tercera sea la
+de verdad:**
+
+```
+/student/progress    200   3.190 ms · 3.438 ms · 3.015 ms   ← TRES SEGUNDOS, no es el arranque
+/plan/hoy            200   1.250 ms · 1.523 ms · 1.316 ms   ← y aqui pasa lo mismo
+/stats               200     105 ms ·   134 ms ·   125 ms   ✓
+```
+
+**Así que el 3,6 s de la ronda 201 no era el `TestClient`: es la consulta, y se repite llamada tras
+llamada.** **Y `/plan/hoy` está en 1,3 s, que también es una consulta.**
+
+## De qué es el tiempo, y casi se puede decir sin medirlo
+
+**`/student/progress` junta el acierto por bloque y por tema recorriendo `question_note_anchors`** —
+**16.923 anclajes**— **y agrupando por nodo**, **y eso es lo que cuesta**: **no son 119 intentos, son
+16.923 filas las que se recorren.**
+
+**`/plan/hoy` recalcula el plan entero en cada llamada**: **28 temas, 7 semanas, y la mediana de las
+proporciones**, **que también se hace en cada peticion.**
+
+## Lo que hay que hacer, y es de M7
+
+1. **medir el desglose de `/student/progress`**: **cuanto es la consulta y cuanto es armar la vista**,
+   **con un cronometro dentro si hace falta**;
+2. **si es la consulta —que lo parece—**, **cambiar una de dos cosas**: **filtrar primero por los
+   intentos** —**119 filas**— **y despues unir a los anclajes**, **o dejar una tabla de acierto por tema
+   que se actualice al contestar**;
+3. **y en `/plan/hoy`, no recalcular el plan en cada llamada**: **cachearlo por la fecha de hoy**, **que
+   es lo unico que cambia dentro del mismo dia.**
+
+**Las dos son decisiones que se miden antes y despues, y el hito pide la cifra, no la intención.**
