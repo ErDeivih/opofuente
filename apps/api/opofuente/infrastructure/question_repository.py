@@ -76,6 +76,7 @@ from opofuente.infrastructure.db_models import (
     QuestionEvidenceRecord,
     QuestionExplanationRecord,
     QuestionIssueReportRecord,
+    QuestionNoteAnchorRecord,
     QuestionSetRecord,
     QuestionVersionRecord,
     TopicNoteSectionRecord,
@@ -1078,6 +1079,32 @@ class SqlAlchemyQuestionRepository:
             )
             for fila in filas
         )
+
+    def expected_letters(self, question_version_id: str) -> tuple[str, ...]:
+        """La clave servible de la pregunta, del ancla de sus apuntes (M1).
+
+        **`expected_letters` es una LISTA JSON** —`'["c"]'`—, **no una letra**: partirla
+        por comas da `'[]'` y **hace que todas se rechacen por letra equivocada**. Es el fallo
+        que dejó veinte de veinte fuera antes de verlo.
+
+        **Devuelve vacío si la pregunta no tiene ancla o el ancla no tiene clave**: sin clave no hay
+        nada que justificar, y el llamante decide qué hacer con eso.
+        """
+        with self._session_factory() as session:
+            crudas = session.execute(
+                select(QuestionNoteAnchorRecord.expected_letters).where(
+                    QuestionNoteAnchorRecord.question_version_id == question_version_id
+                )
+            ).scalar_one_or_none()
+        if not crudas:
+            return ()
+        try:
+            letras = json.loads(str(crudas))
+        except ValueError:
+            return ()
+        if not isinstance(letras, list):
+            return ()
+        return tuple(str(letra).strip().lower() for letra in letras if str(letra).strip())
 
     def section_body(self, section_id: str) -> str | None:
         """El texto del apartado de los apuntes, por su identificador (M1).
