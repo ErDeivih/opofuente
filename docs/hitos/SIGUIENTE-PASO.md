@@ -680,3 +680,21 @@ acertó o se equivocó.**
 
 **Y la cifra del hito, medida a las 12:00**: **1.007 generadas con cita**, **8.780 pendientes**, **11.315
 privadas intactas**. **La API sigue siendo el único límite.**
+
+## «Regenerar», primera pieza hecha (ronda 94)
+
+**`explanation_by_id`** en el repositorio: **devuelve la explicación por su identificador**, **o `None`**
+para que la ruta responda un 404 en vez de fingir. **Ruff, mypy y las 994 unitarias en verde.**
+
+**Lo que falta para que la acción funcione, y son dos cosas más:**
+
+**1. el apartado.** **`regenerate_explanation` necesita el texto del apartado al que se ancla la
+explicación** — `note_anchor_id` está en la fila— **para podérselo mandar al modelo con las frases
+numeradas**. **Falta un método del repositorio que lo lea**: **`section_body(note_anchor_id)`**, **que es
+un `select body_markdown from topic_note_sections where id = ?` y devuelve `None` si no existe.**
+
+**2. la ruta y el botón.** **`POST /explanations/{id}/regenerate`** con `responses=RESOURCE_ERRORS`,
+**y la tecla `g` en la bandeja con su invalidación** — **y avisando del gasto antes, no después**.
+
+**Y la regla que se mantiene**: **si las comprobaciones fallan, la explicación vieja NO se toca**.
+**Regenerar no es empeorar.**
