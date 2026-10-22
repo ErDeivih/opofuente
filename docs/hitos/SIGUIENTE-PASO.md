@@ -4613,3 +4613,38 @@ como esta hecho el temario.**
 
 **Dije que M5 esperaba «los apuntes del temario nuevo».** **El temario ya estaba.** **Lo que falta es que el codigo
 lo lea.**
+
+## Correccion: el generador NO asume tres niveles, y yo lo escribi mal (ronda 291)
+
+**Leida la consulta de `_apartados` en `tools/supuestos.py`:**
+
+```sql
+select n.official_code, s.body_markdown
+from curriculum_nodes n
+join topic_note_sections s on s.curriculum_node_id = n.id
+where n.official_code like 'III%' or n.official_code like 'IV%'
+group by n.official_code
+order by n.official_code
+```
+
+**Cruza por `curriculum_node_id` y filtra por codigo.** **No dice `node_type = 'topic'` en ningun sitio.** **Acepta
+cualquier nivel: bloque, epigrafe o tema.**
+
+**Asi que la ronda 289 estaba mal**: **no hay ningun fallo de codigo en el generador.** **Devuelve cero apartados
+porque hay CERO notas bajo III y IV** —**87 epigrafes, 0 con notas**—, **que es exactamente lo que mide la ronda
+290.**
+
+**Y es la sexta hipotesis falsa de la sesion que queda escrita como falsa.** **La diferencia con las otras cinco es
+que esta la habia dado por buena sin leer el fichero**: **escribi «el fallo es mio» mirando el sintoma —cero
+apartados— en vez de mirando la consulta.**
+
+## Lo que eso deja, y es una sola cosa
+
+**M5 no necesita ni `tesseract`, ni el temario, ni codigo nuevo.** **Necesita 87 apartados de apuntes escritos con
+el modelo**, **que es contenido y cuesta unos pocos dolares de los 29,34 que quedan.**
+
+**Y `apuntes` existe y sabe hacerlo**: **`uv run python -m opofuente.tools.apuntes --tema IV.1.1`**, **con su
+`--limite` para probar sin gastar en el tema entero.**
+
+**Eso es todo.** **El resto de la fase son las 825 decisiones del propietario y el `tesseract` para los
+cuestionarios de 2018.**
