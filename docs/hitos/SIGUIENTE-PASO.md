@@ -2882,3 +2882,34 @@ vez de fallar al primer intento**.
 **Y la leccion, que es la de esta sesion entera otra vez**: **`no such table` con la base bloqueada es un
 mensaje que miente**, **y yo lo crei durante una ronda.** **La comprobacion de la ruta y del esquema costo
 una linea y desmintio las dos hipotesis.**
+
+## M8: con treinta segundos de espera el bloqueo sigue, y eso acota la causa (ronda 227)
+
+**Anadido `connect_args={"timeout": 30}` al motor del paquete** —**una base ocupada un segundo no es un
+error, y sin `timeout` SQLite se rinde al instante y contesta lo primero que puede**—. **`ruff` y `mypy` en
+verde.**
+
+**Y el instalador con paquete sigue fallando igual:**
+
+```
+sqlite3.OperationalError: database is locked
+sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) database is locked
+```
+
+**Y eso acota la causa de verdad**: **treinta segundos de espera no bastan para un bloqueo pasajero**, **y
+la carpeta es nueva y no habia nadie mas usandola**. **Asi que no es «la base esta ocupada un momento»: es
+que hay quien la tiene abierta y no la suelta.**
+
+**Lo siguiente, y son dos comprobaciones de un minuto:**
+
+1. **`Get-Process python` mientras corre el instalador**: **si queda un proceso vivo entre el paso de la
+   migracion y el de la importacion, ahi esta el culpable** — **`uv run` lanza un hijo y el script no espera
+   a que muera**;
+2. **`PRAGMA journal_mode=WAL` en la base nueva**: **con WAL, leer no bloquea a escribir**, **y el paso de
+   `revisar` —que solo lee— no puede dejar fuera al de `importar`**.
+
+**Y el arreglo probable es el 2**, **porque el 1 explicaria un bloqueo de un segundo y no de treinta.**
+
+**Lo que queda en `main` de esta ronda**: **el `timeout` del motor**, **que es correcto aunque no resuelva
+el caso**: **un programa que no espera a una base ocupada esta mal escrito aunque hoy la base no este
+ocupada.**

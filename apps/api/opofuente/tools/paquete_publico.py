@@ -122,7 +122,17 @@ class Paquete:
 
 
 def _fabrica() -> sessionmaker[Session]:
-    motor = create_engine(f"sqlite+pysqlite:///{get_settings().data_paths.database}")
+    """El motor, **con tiempo de espera**: una base ocupada un segundo no es un
+    error, es una base ocupada un segundo.
+
+    **Sin `timeout`, SQLite se rinde al instante y contesta lo primero que
+    puede** —que puede ser «no existe la tabla», que es mentira—. **Con
+    treinta segundos, espera, y si sigue ocupada lo dice de verdad.**
+    """
+    motor = create_engine(
+        f"sqlite+pysqlite:///{get_settings().data_paths.database}",
+        connect_args={"timeout": 30},
+    )
     return sessionmaker(bind=motor)
 
 
