@@ -2068,3 +2068,41 @@ dia que el banco sea diez veces mayor, y entonces se mide otra vez.**
 
 **Y el `/plan/hoy` va aparte**: **cachear el plan por la fecha del dia** **es una linea y no toca la
 consulta**.
+
+## M7: el agregado son cuatro consultas, y dos son el 75 % del tiempo (ronda 204)
+
+```
+question_counts     199 ms   ✓
+answered_counts   1.093 ms   ✗
+outcome_counts    1.314 ms   ✗
+due_counts           10 ms   ✓
+                 ─────────
+                 2.616 ms   ← de los 3,3 s del agregado
+```
+
+**Y las dos lentas son la misma forma**: **agrupan por nodo recorriendo los anclajes** —**16.923 filas**—
+**contra lo contestado**. **`due_counts` es rapidisima porque filtra por fecha primero**, **y ahi esta la
+pista**: **el filtro por la fecha de hoy reduce los repasos a decenas antes de tocar los anclajes.**
+
+## El arreglo, con la forma exacta
+
+**`answered_counts` y `outcome_counts` tienen que hacer lo mismo que `due_counts`**: **empezar por las
+filas de `attempts`** —**119**—, **que ya traen su `session_question_id`**, **y desde ahi subir a la
+pregunta y al ancla**. **Hoy parece que recorren los anclajes y buscan sus intentos**, **que es el orden
+contrario al que necesita el motor**: **con 119 frente a 16.923, el que manda es el pequeño.**
+
+**La consulta nueva, en palabras**: **`from attempts t join session_questions q … join
+question_note_anchors a … group by a.curriculum_node_id`**, **y no al reves.** **Y el `left join` desde
+los nodos se queda para los temas sin intentos**, **que es lo que hace que salgan con su cero.**
+
+## Lo que hay que cuidar al cambiarlo
+
+- **los temas sin intentos tienen que seguir saliendo**, **con cero**: **si el `from` empieza en
+  `attempts`, los que no tienen desaparecen**, **y la pantalla de progreso perdería los 29 temas que
+  hoy enseña**;
+- **el `public_only` sigue mandando**: **un conjunto privado no entra en las cifras del alumno**;
+- **y el resultado tiene que dar las MISMAS cifras**, **no solo ser mas rapido**: **se compara antes y
+  despues sobre la copia**, **y si cambia un número, el arreglo esta mal aunque tarde menos.**
+
+**Eso ultimo es la regla del hito y de todo lo demas**: **optimizar es cambiar el tiempo sin cambiar el
+resultado, y si cambia el resultado no es optimizar.**
