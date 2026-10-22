@@ -2962,3 +2962,31 @@ punto 3 · copia y restauracion      por hacer
 punto 4 · la guia de una pagina     por hacer
 las capturas de M8                  necesitan la instalacion arrancada
 ```
+
+## M8, puntos 3 y 4: la copia funciona y la guia esta escrita (ronda 229)
+
+**Copia y restauracion, medidas sobre la instalacion de verdad:**
+
+```
+origen: question_versions 1455 · cuentas 1
+copia hecha en F:\temp-opofuente\copia-m8.sqlite3        (22,8 MB)
+restaurada: question_versions 1455 · cuentas 1 · integridad ok
+```
+
+**Con `VACUUM INTO` y no copiando el fichero**: **con WAL, copiar a mano puede dejarse la mitad de las
+ultimas escrituras**, **y una copia que parece buena y no lo es solo se descubre el dia que hace falta.**
+
+**Y la guia de una pagina esta en `docs/GUIA-DEL-PROPIETARIO.md`**, **con las cinco cosas y una sola
+advertencia**: **el arranque (paso 4) es lo unico que no he ejecutado yo**, **y lo dice**.
+
+## Lo que M8 tiene ahora
+
+```
+punto 1 · el paquete publico        HECHO · 13 tablas · 31.901 filas · ida y vuelta identica · 5 tests
+el administrador                    HECHO · probado, dos veces, sin duplicar
+punto 2 · el instalador             HECHO · con y sin paquete · codigo 0
+punto 3 · copia y restauracion      HECHO · 22,8 MB · integridad ok
+punto 4 · la guia                   HECHA · una pagina, y dice que el arranque no esta verificado
+la invitacion por enlace            sin construir
+las capturas de M8                  necesitan la aplicacion arrancada
+```
