@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
 import shutil
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager, suppress
@@ -38,6 +39,7 @@ from opofuente.application.change_service import ChangeService
 from opofuente.application.classification_service import ClassificationService
 from opofuente.application.diagnostic_service import DiagnosticService
 from opofuente.application.dossier_service import DossierService
+from opofuente.application.explicaciones import ExplanationProposer
 from opofuente.application.export_service import ExportService
 from opofuente.application.extraction_service import ExtractionService
 from opofuente.application.housekeeping_service import HousekeepingService
@@ -79,6 +81,7 @@ from opofuente.infrastructure.clock import SystemClock
 from opofuente.infrastructure.db import build_engine, build_session_factory
 from opofuente.infrastructure.document_repository import SqlAlchemyDocumentRepository
 from opofuente.infrastructure.dossier_repository import SqlAlchemyDossierRepository
+from opofuente.infrastructure.explanation_client import DeepSeekExplanationProposer
 from opofuente.infrastructure.extraction_repository import SqlAlchemyExtractionRepository
 from opofuente.infrastructure.extractors import ExtractorRegistry
 from opofuente.infrastructure.filesystem_inventory import FilesystemInventory
@@ -523,6 +526,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             engine.dispose()
             logger.info("opofuente.shutdown", extra={"event": "shutdown"})
 
+    # **El proposer del modelo, o None**: sin `DEEPSEEK_API_KEY` la aplicación arranca igual y solo
+    # «regenerar» responde 503. **No lanzar aquí es a propósito**: una clave que falta no puede
+    # impedir que se abra la aplicación.
+    def _construir_proposer() -> ExplanationProposer | None:
+        clave = os.environ.get("DEEPSEEK_API_KEY", "").strip()
+        if not clave:
+            return None
+        return DeepSeekExplanationProposer(api_key=clave)
+
     app = FastAPI(
         title="OpoFuente API",
         version=__version__,
@@ -546,6 +558,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.library_service = library_service
     app.state.artifact_store = artifact_store
     app.state.question_service = question_service
+    app.state.explanation_proposer = _construir_proposer()
     app.state.question_file_service = question_file_service
     app.state.auto_study_service = auto_study_service
     app.state.study_service = study_service
