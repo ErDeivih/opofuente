@@ -3947,3 +3947,52 @@ las capturas de M8                  falta · causa localizada en dos ficheros pe
 ```
 
 **Nueve de diez piezas, y la que falta tiene la causa en dos sitios que se leen en media hora.**
+
+## M8: las dos hipotesis de la ronda anterior, comprobadas y descartadas (ronda 269)
+
+**Leidos los dos ficheros que quedaban:**
+
+```
+simulacro.spec.ts:  import { expect, test, type Page } from '@playwright/test';   ← el correcto
+playwright.config:  testDir: './tests/e2e' · projects: chromium · sin testMatch · sin globalSetup
+```
+
+**Asi que tampoco es eso**: **el spec importa el `test` de Playwright y la configuracion base no tiene nada que
+cargue ficheros por otro camino.**
+
+## Seis causas descartadas, y la conclusion a la que obliga
+
+```
+1 · el cableado de espacios de trabajo      NO
+2 · pnpm frente a npm                       NO
+3 · el node_modules reinstalado             NO
+4 · npx                                     NO
+5 · un describe anidado o un cross-import   NO
+6 · el import del test o la config base     NO
+```
+
+**Cuando seis causas razonables se caen y el sintoma persiste, el sintoma no es un fallo de configuracion: es
+un CAMBIO DE COMPORTAMIENTO de la version.** **`Playwright Test did not expect test.describe() to be called
+here`** **es un mensaje que la 1.64 puede estar lanzando en un caso que la 1.63 permitia** —**y las capturas
+funcionaban esta manana con la 1.63**—.
+
+**Y eso no se arregla leyendo mas: se arregla teniendo la 1.63 delante.** **Con el lockfile ya en `main`, el
+cambio es de una linea en una maquina con red**:
+
+```
+pnpm add -D @playwright/test@1.63.0    # actualiza el lockfile y baja el paquete
+git add pnpm-lock.yaml apps/web/package.json
+```
+
+**Y entonces la prueba es de un minuto.** **Si las capturas vuelven, era la version; si no, sera la primera vez
+que el fallo no es la version y habra que mirarlo con la buena delante.**
+
+## Lo que se cierra hoy, y lo que no
+
+**Cerrado**: **el paquete, el administrador, el instalador, la instalacion reproducible (lockfile), la copia, la
+guia, la API y la web sirviendo, y la invitacion con sus cinco pruebas.** **Nueve de diez.**
+
+**Sin cerrar**: **la pantalla de canje** —**comodidad**—, **la ruta HTTP** —**escrita, deja el contrato en
+rojo, y el contrato tarda siete minutos por corrida**— **y las capturas** —**esperan la 1.63**—.
+
+**Y las tres son de codigo o de red, ninguna de decision del propietario.**
