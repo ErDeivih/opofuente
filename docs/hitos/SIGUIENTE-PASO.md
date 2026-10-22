@@ -3257,3 +3257,33 @@ ganado el sitio en cada ronda:**
 **Y su hermana, que ha salvado dos cambios hoy:**
 
 > **cifras iguales antes y despues; si cambian, el arreglo esta mal aunque tarde menos.**
+
+## M8: la deriva de versiones, con el numero exacto (ronda 241)
+
+**La suite de capturas no arranca, y el rastro da la version:**
+
+```
+at Function.describe (…\node_modules\.pnpm\playwright@1.64.1\…)
+Error: Playwright Test did not expect test.describe() to be called here.
+  at apps\web\tests\screens\simulacro.spec.ts:86:6
+Error: No tests found
+```
+
+**`package.json` pide `@playwright/test: ^1.63.0`**, **y el arbol tiene `playwright@1.64.1`**. **La suite carga
+una version distinta de la que declara el repositorio**, **y `simulacro.spec.ts` usa una forma de
+`test.describe` que esa version ya no admite al cargarse por ese camino.**
+
+**Es el punto 2 de M8 —«instalacion reproducible»— con nombre y apellido**: **`^1.63.0` permite 1.64.1**, **y
+sin lockfile nadie fijo nunca cual se instalo el dia que las capturas funcionaban.** **El `^` no es una
+version: es un rango**, **y un rango no reproduce nada.**
+
+## Lo que queda, y ahora si esta cerrado el diagnostico
+
+1. **`pnpm install --lockfile-only` en una maquina con registro** —**fija la version que haya**—;
+2. **o, mas rapido y sin red**: **fijar `@playwright/test` a una version exacta sin `^`** —**`1.63.0`**— **y
+   reinstalar**, **que es lo que hace que el arbol tenga una sola**;
+3. **comprobar que las capturas vuelven**;
+4. **y entonces si, las capturas de M8**.
+
+**El paso 2 no necesita red**: **solo cambiar cinco caracteres en `package.json` y reinstalar desde la
+cache.** **Es lo primero de la proxima ronda, y por fin es un cambio de una linea con causa medida detras.**
