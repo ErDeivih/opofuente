@@ -4309,3 +4309,37 @@ capturas en git              238 (M0 1 · M1 78 · M3 81 · M8 78)
 gasto de API                 0,66 $ de 30
 base real                    A0A21413F6AB… · 2.748.612.608 bytes · intacta
 ```
+
+## M7 §3: la bandeja, partida en dos — y el numero cambia de sentido (ronda 282)
+
+**Escrito `opofuente.tools.bandeja`, que cuenta y separa:**
+
+```
+explicaciones en borrador    1609   (se aprueban en bloque)
+incidencias automatizables    134   (sin frase, sin clave)
+decisiones de verdad          825   (apuntes contra clave)
+                            ------
+total                        2568
+
+el hito pide menos de 100 decisiones reales; hay 825
+```
+
+**Y lo que eso cambia**: **el hito pone un tope de 100 y lo que hay es 825**, **que sigue sin cumplirse** —**pero
+ahora se sabe que 1.743 de las 2.568 no son decisiones**: **1.609 explicaciones que se aprueban en bloque y 134
+incidencias que no piden criterio.**
+
+**De 2.568 a 825 es la diferencia entre «no hay forma» y «hay 825 decisiones y 1.743 tramites».**
+
+## Lo que falta de este punto, y es la mitad que queda
+
+**El numero esta; lo que no esta es el boton**: **proponer las 134 en bloque y aprobar las 1.609 de una vez**.
+**Las explicaciones ya tienen su bandeja con aprobacion multiple en M1**; **las 134 no tienen nada.**
+
+**Y eso es codigo, no necesita a nadie, y es lo siguiente.**
+
+## Y una correccion de mis propias cifras
+
+**En la ronda 212 escribi «733 contradicciones»** —**y era una resta mal hecha**: **959 menos las 134
+automatizables son 825**, **no 733**. **El error venia de contar las 95 de `sin_materia_en_el_indice` y las 28
+de `clave_sin_definir` como si no estuvieran dentro de las 959.** **La herramienta nueva lo dice bien porque lo
+cuenta, no porque lo reste de memoria.**
