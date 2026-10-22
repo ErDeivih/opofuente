@@ -4567,3 +4567,49 @@ CUESTIONARIOS de 2018 —los supuestos oficiales—, no para el TEMARIO.**
 presupuesto esta en 0,66 $ de 30.**
 
 **Y con eso, M5 deja de depender del propietario y pasa a depender de horas de modelo.**
+
+## El fallo es mio: el temario de TAI 2025 tiene DOS niveles, no tres (ronda 289)
+
+**Medido en la copia, que ya tiene el perfil de TAI 2025 sembrado** —`seed_profiles` decia «184 sin cambios»—:
+
+```
+nodos III: 43 · nodos IV: 46
+
+niveles bajo III y IV:
+  epigraph -> 87
+  block    ->  2
+
+ejemplo:  block    IV      Sistemas y comunicaciones
+          epigraph IV.1.1  Administracion del Sistema operativo y software
+```
+
+**Cero `topic`.** **Y mi generador de supuestos busca `node_type = 'topic'`**, **que es como estaba hecho el
+temario viejo —bloque, epigrafe y tema, tres niveles—**. **El de TAI 2025 tiene dos: bloque y epigrafe.**
+
+**Asi que el generador no encontraba apartados porque** ***mi consulta asumia un nivel que este temario no
+tiene***, **no porque faltaran apuntes ni porque faltara el temario.**
+
+## Lo que eso cambia, y es casi todo lo de las ultimas rondas
+
+```
+M5 · el generador         busca 'topic' y debe usar el nivel mas profundo que haya
+las 4 capturas de IV.7    IV.7 es un epigrafe, no un tema: la pantalla espera temas
+M7 · la revision          idem: recorre temas que en este temario no existen
+```
+
+**Los tres fallos tienen la misma forma**: **codigo escrito contra el temario viejo y probado solo con el.**
+
+## Lo que hay que hacer, y es de una tarde
+
+1. **que el generador use el nivel mas profundo con contenido** —**`epigraph` en TAI 2025, `topic` en el viejo**—,
+   **sin asumir cual es**;
+2. **y lo mismo en los sitios que recorren temas** para la lectura y la revision;
+3. **y entonces volver a medir**: **con 87 epigrafes bajo III y IV, el generador tiene donde escribir.**
+
+**Y no hace falta ni `tesseract`, ni contenido nuevo, ni decisiones: hace falta que el codigo no de por hecho
+como esta hecho el temario.**
+
+## Y la correccion de lo que escribi en las rondas anteriores
+
+**Dije que M5 esperaba «los apuntes del temario nuevo».** **El temario ya estaba.** **Lo que falta es que el codigo
+lo lea.**
