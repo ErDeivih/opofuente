@@ -21,6 +21,12 @@ from dataclasses import replace
 from datetime import date
 from typing import Any
 
+from opofuente.application.explicaciones import (
+    ExplanationProposer,
+    ExplicacionPropuesta,
+    PreguntaAExplicar,
+    validar_lote,
+)
 from opofuente.application.ports import Clock
 from opofuente.application.question_models import (
     AnswerKeyView,
@@ -1340,6 +1346,57 @@ class QuestionService:
         aquí no se decide nada más.
         """
         return self._questions.explanations_pending(limit=limit)
+
+    def regenerate_explanation(
+        self,
+        explanation_id: str,
+        proposer: ExplanationProposer,
+    ) -> ExplanationView | None:
+        """Pide al modelo una explicación nueva para la misma pregunta (M1).
+
+        **Solo sustituye si pasa las comprobaciones**: si la nueva no cita literalmente, o no
+        coincide con la clave servible, **la explicación vieja se queda como estaba** —
+        empeorar**. Devuelve la explicación resultante, o `None` si no se pudo regenerar.
+
+        **El proposer entra por parámetro**, como en la herramienta de la corrida: **la ruta lo
+        construye con la clave del entorno y responde 503 si falta**, y el servicio no sabe de red.
+        """
+        explicacion = self._questions.explanation_by_id(explanation_id)
+        if explicacion is None:
+            raise NotFoundError("explicación", explanation_id)
+        if not explicacion.note_anchor_id:
+            return None
+        apartado = self._questions.section_body(explicacion.note_anchor_id)
+        if not apartado:
+            return None
+        vista = self.question(explicacion.question_version_id)
+        if vista is None:
+            return None
+        clave = self._questions.expected_letters(explicacion.question_version_id)
+        if not clave:
+            return None
+        pregunta = PreguntaAExplicar(
+            question_version_id=explicacion.question_version_id,
+            enunciado=vista.stem,
+            opciones=tuple((opcion.stable_key, opcion.text) for opcion in vista.options),
+            clave=clave,
+            apartado=apartado,
+            note_anchor_id=explicacion.note_anchor_id,
+        )
+        validadas = validar_lote((pregunta,), proposer)
+        if not validadas.aceptadas:
+            return self._questions.explanation_by_id(explanation_id)
+        nueva: ExplicacionPropuesta = validadas.aceptadas[0]
+        self._questions.add_explanation(
+            explicacion.question_version_id,
+            text=nueva.texto,
+            origin=Origin.GENERATED,
+            now=self._clock.now(),
+            citation=nueva.cita,
+            note_anchor_id=explicacion.note_anchor_id,
+            no_sustituir_lo_privado=False,
+        )
+        return self._questions.explanation_by_id(explanation_id)
 
     def set_explanation_status(self, explanation_id: str, *, status: str) -> bool:
         """Aprueba o rechaza una explicación desde la bandeja (M1).
