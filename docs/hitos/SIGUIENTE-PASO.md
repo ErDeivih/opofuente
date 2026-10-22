@@ -4973,3 +4973,39 @@ M8 COMPLETO · M7 5 de 6 · M5 desbloqueado hasta el tercer sitio
 el bloqueo de veinte rondas: node_type == 'topic' escrito tres veces
 0,66 $ de 30 · base real intacta · arbol limpio · 998 unitarias verdes
 ```
+
+## M5 DESBLOQUEADO DEL TODO: IV.1.1 tiene apuntes escritos (ronda 300)
+
+**El tercer sitio estaba donde se dijo, y el arreglo es una linea:**
+
+```python
+epigraphs=tuple(... for nodo, path in ambito[1:])
+or ((ambito[0][1], titulos.get(node_id, "")),),   # un nodo sin hijos es su propio epigrafe
+```
+
+**Y lanzado de verdad —con la clave y tope de 420 s—, sin un solo error:**
+
+```
+apuntes --tema IV.1.1 --limite 3 --tiempo-maximo 420
+  ... cobertura por fuente, veredictos, cambios de veredicto ...
+  (ningun «No se han podido escribir los apuntes»)
+```
+
+**998 unitarias verdes · ruff ok · mypy sin errores.**
+
+## Los tres sitios, los tres cerrados
+
+```
+node_id    exigia node_type == 'topic'     HECHO
+_ambito    exigia node_type == 'topic'     HECHO
+run()      exigia epigrafes hijos          HECHO · un nodo sin hijos es su propio apartado
+```
+
+**Los tres eran la misma suposicion —que todo tema tiene tres niveles— escrita en tres funciones.**
+
+## Lo que queda para M5
+
+**Escribir los apartados de los epigrafes de III y IV que interesen** —**`apuntes --tema IV.1.1`, uno por uno o por
+tanda**—, **y despues lanzar el generador de supuestos, que ya tiene de donde leer.**
+
+**No queda codigo. Queda contenido, y cuesta modelo: 0,66 $ gastados de 30.**

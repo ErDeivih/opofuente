@@ -107,7 +107,13 @@ class SqlAlchemyTopicNotesRepository:
             node_id=node_id,
             code=ambito[0][1],
             title=titulos.get(node_id, ""),
-            epigraphs=tuple((path, titulos.get(nodo, "")) for nodo, path in ambito[1:]),
+            # **Un nodo sin hijos es su propio epigrafe** (M5): en el temario de
+            # TAI 2025 los bloques II, III y IV son `block -> epigraph`, **sin
+            # nivel de tema**, y **un epigrafe sin epigrafes hijos es un apartado
+            # en si mismo**. Sin esto, `run` se para con «no tiene epigrafes» y
+            # esos tres bloques no se pueden escribir nunca.
+            epigraphs=tuple((path, titulos.get(nodo, "")) for nodo, path in ambito[1:])
+            or ((ambito[0][1], titulos.get(node_id, "")),),
         )
 
     def _ambito(self, session: Session, node_id: str) -> tuple[tuple[str, str], ...]:
