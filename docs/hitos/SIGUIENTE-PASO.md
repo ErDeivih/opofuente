@@ -3770,3 +3770,34 @@ la 1.63.0 que el repositorio pide no pasaba** —**porque las capturas funcionab
 **Y mientras tanto, el `package.json` ya pide la version exacta**: **el dia que haya red, `pnpm install` la
 trae y las capturas vuelven** —**y si no vuelven, entonces si es del codigo de la suite y se podra medir sin
 la excusa de la version.**
+
+## M8: la quinta causa tambien se descarta, y queda una sola (ronda 263)
+
+**Comprobado lo que quedaba por comprobar en el codigo de la suite:**
+
+```
+describes en simulacro.spec.ts: 1 · en la linea 86 · de nivel superior
+specs que importan otros specs:  ninguno (importan utilidades y ./informe)
+```
+
+**Asi que el fichero no tiene un `describe` anidado ni se importa desde otro spec**, **que son las dos formas
+conocidas de provocar «did not expect test.describe() to be called here»**.
+
+**Eso deja la version como unica causa en pie, y ya no es una sospecha: es lo que queda despues de descartar
+cinco cosas con la medicion delante.**
+
+## Las cinco causas descartadas, y la que queda
+
+```
+1 · el cableado de espacios de trabajo   NO — quitarlo no la arregla
+2 · pnpm frente a npm                    NO — las dos dan el mismo error
+3 · el node_modules reinstalado          NO — cambio, pero la version es lo que importa
+4 · npx                                  NO — la suite lanza el cli.js directamente
+5 · un describe anidado o un cross-import NO — hay uno de nivel superior y ninguno se importa
+                                                                          ↓
+   @playwright/test 1.64.1 frente a 1.63.0        ← y sin registro no se puede bajar
+```
+
+**Y cuando haya red, la prueba es de un minuto**: **`pnpm install` con la version fijada y lanzar la suite.**
+**Si vuelve, era la version. Si no vuelve, es la suite, y entonces se mira con la version correcta delante**
+—**que es la unica forma de mirarla sin dudas.**
