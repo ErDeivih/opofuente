@@ -3174,3 +3174,41 @@ encuentre su configuracion con la disposicion nueva.**
 la disposicion de `node_modules`, y hay que comprobar si eso es cierto antes de tocar nada mas.**
 
 **Y esa comprobacion es lo primero de la proxima ronda.** **No hace falta ni red ni clave.**
+
+## M8, capturas: el experimento descarta las dos hipotesis (ronda 239)
+
+**Ejecutado el experimento que quedo escrito, y con dos brazos:**
+
+```
+sin pnpm-workspace.yaml y con ^0.0.0   ->  «Failed to load the ES module»
+npm install en la raiz                 ->  «Failed to load the ES module» otra vez
+```
+
+**Asi que la suite de capturas no se rompio por el cableado de espacios de trabajo**, **y tampoco por pnpm
+frente a npm**: **se rompio al reinstalar `node_modules`**, **que es lo unico que hice en las dos versiones
+del experimento.**
+
+**Y eso deja una conclusion que si sirve**: **la suite dependia de un `node_modules` que ya no se puede
+reconstruir desde el repositorio**, **porque no hay lockfile**. **Ni con pnpm ni con npm se obtiene la
+disposicion que habia**, **y las dos dan el mismo error de carga de modulo.**
+
+**Es la demostracion mas cara de la tesis de M8**: **un repositorio sin lockfile no guarda el estado que
+funcionaba**, **y el dia que se reinstala se pierde sin que nada lo avise.**
+
+## Lo que se ha restaurado, y por que
+
+**`pnpm-workspace.yaml` y `workspace:*` vuelven**, **porque es lo que hacia que la web sirviera** —**comprobado
+con `WEB -> 200` y la API a 200 en la ronda 236**—, **y quitarlos no arregla la suite**. **Entre dos estados
+rotos para las capturas, se queda el que ademas hace funcionar la web.**
+
+## Lo que queda, y ahora si esta claro que hace falta
+
+**Un `node_modules` reconstruido desde un lockfile**, **que hay que generar en una maquina con registro**:
+
+1. **`pnpm install --lockfile-only`** en una maquina con acceso al registro;
+2. **commitear `pnpm-lock.yaml`**;
+3. **`pnpm install --frozen-lockfile`** en una copia limpia del repositorio;
+4. **y entonces comprobar si las capturas vuelven** —**si con el lockfile tampoco vuelven, entonces el
+   problema es del codigo de `screens.mjs` y no del entorno, y eso ya se puede medir**—.
+
+**Las capturas de M8 no se pueden hacer hasta el paso 4**, **y los tres primeros necesitan red.**
