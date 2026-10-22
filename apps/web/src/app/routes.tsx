@@ -4,6 +4,7 @@ import { AdminUiPage } from '../pages/AdminUiPage';
 import { ChangesPage } from '../pages/ChangesPage';
 import { ErrorsPage } from '../pages/ErrorsPage';
 import { ExplanationTrayPage } from '../pages/ExplanationTrayPage';
+import { RepasoPage } from '../pages/RepasoPage';
 import { IncidentsPage } from '../pages/IncidentsPage';
 import { LibraryPage } from '../pages/LibraryPage';
 import { NotFoundPage } from '../pages/NotFoundPage';
@@ -145,6 +146,12 @@ export function AppRoutes() {
         <Route path="/simulacros" element={<MockExamPage />} />
         <Route path="/examenes" element={<OfficialExamsPage />} />
         <Route path="/fallos" element={<MistakesPage />} />
+        {/*
+          El repaso espaciado (M3 de la fase 3): las tarjetas que vencen hoy, con el teclado. Va al
+          lado de los fallos porque es lo otro que se repasa, pero es otra cosa: un fallo es una
+          pregunta que se contestó mal, y una tarjeta es un dato que hay que memorizar.
+        */}
+        <Route path="/repaso" element={<RepasoPage />} />
         <Route path="/progreso" element={<ProgressPage />} />
         {/*
           La plataforma desplegable (§8 y §9 del objetivo vivo). Va **dentro** del marco del alumno
