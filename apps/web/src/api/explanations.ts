@@ -42,3 +42,18 @@ export async function decideExplanation(
   });
 }
 
+/**
+ * Pide al modelo una explicación nueva para la misma pregunta (M1).
+ *
+ * **Gasta** —una llamada por explicación—, y **no siempre sustituye**: si la nueva no pasa las cuatro
+ * comprobaciones, **la vieja se queda** y la ruta devuelve la de antes. Regenerar no es empeorar.
+ *
+ * **Sin clave responde 503**, y eso es correcto: la bandeja funciona sin modelo salvo esta acción, y
+ * decirlo es más útil que fingir otro error.
+ */
+export async function regenerateExplanation(explanationId: string): Promise<ExplanationTrayItem> {
+  return apiFetch<ExplanationTrayItem>(
+    `/explanations/${explanationId}/regenerate`,
+    { method: 'POST' },
+  );
+}

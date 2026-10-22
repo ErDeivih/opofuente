@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useState } from 'react';
 
-import { decideExplanation, type ExplanationDecision } from '../api/explanations';
+import { decideExplanation, regenerateExplanation, type ExplanationDecision } from '../api/explanations';
 import { usePendingExplanations } from '../api/queries';
 import { setExplanation } from '../api/questions';
 
@@ -18,8 +18,8 @@ import { setExplanation } from '../api/questions';
  * `a` aprueba, `r` rechaza y `e` abre el campo de editar.**
  *
  * **Editar empieza por el texto que ya hay**: el propietario corrige una explicación, no la escribe otra
- * vez. **Y regenerar no está**: es la única acción que gasta una llamada al modelo y espera a saber cuánto
- * cuesta cada una.
+ * vez. **Regenerar sí está** —la tecla g— y **es la única que gasta**: una llamada al modelo por
+ * explicación, ~0,000024 $ con los datos de esta fase.
  *
  * **Y no filtra nada aquí**: las privadas y las oficiales no salen porque **el servidor no las manda**.
  * Esconderlas en el cliente sería tener dos sitios donde se decide lo mismo.
@@ -38,6 +38,15 @@ export function ExplanationTrayPage() {
     onSuccess: () => {
       void cliente.invalidateQueries({ queryKey: ['explanations', 'pending'] });
       setCursor(0);
+    },
+  });
+
+  const regenerar = useMutation({
+    mutationFn: (id: string) => regenerateExplanation(id),
+    // La fila cambia de texto al regenerar, así que se vuelve a pedir la cola: un `staleTime` de
+    // treinta segundos enseñaría la versión vieja justo cuando el propietario acaba de pedir la nueva.
+    onSuccess: () => {
+      void cliente.invalidateQueries({ queryKey: ['explanations', 'pending'] });
     },
   });
 
@@ -89,6 +98,12 @@ export function ExplanationTrayPage() {
         decidir.mutate({ id: actual.explanation.id, decision: 'rejected' });
         return;
       }
+      if (tecla === 'g') {
+        // **Gasta**: una llamada al modelo. El aviso va en la pantalla, no aquí.
+        event.preventDefault();
+        regenerar.mutate(actual.explanation.id);
+        return;
+      }
       if (tecla === 'e') {
         event.preventDefault();
         setEditando({ id: actual.question_version_id, texto: actual.explanation.text });
@@ -120,7 +135,7 @@ export function ExplanationTrayPage() {
           ? 'Una explicación generada espera revisión.'
           : `${String(filas.length)} explicaciones generadas esperan revisión.`}{' '}
         <span className="hint">
-          j y k se mueven · a aprueba · r rechaza · e edita
+          j y k se mueven · a aprueba · r rechaza · e edita · g regenera (gasta)
         </span>
       </p>
       {editando !== null && (
