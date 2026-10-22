@@ -3601,6 +3601,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Que estudiar, con la cifra: nota, flojos, tiempo y semanas (M6)
+         * @description **Nada de frases sin cifra**: todo lo que sale de aqui lleva su número.
+         *
+         *     **Y si no hay intentos**, la nota es `null` y las listas van vacías:
+         *     **la pantalla lo dice con palabras**, no con ceros.
+         */
+        get: operations["get_stats_api_v1_stats_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/student/mistakes": {
         parameters: {
             query?: never;
@@ -6794,7 +6817,7 @@ export interface components {
         HoySchema: {
             /** Motivos */
             motivos: string[];
-            semana?: components["schemas"]["SemanaSchema"] | null;
+            semana?: components["schemas"]["opofuente__api__routes__plan__SemanaSchema"] | null;
         };
         /**
          * ImportQuestionsFromDocumentSchema
@@ -7357,6 +7380,22 @@ export interface components {
          * @enum {string}
          */
         NodeType: "block" | "topic" | "epigraph";
+        /**
+         * NotaSchema
+         * @description La nota **con su intervalo**, y el intervalo puede no estar.
+         */
+        NotaSchema: {
+            /** Frase */
+            frase: string;
+            /** Intentos */
+            intentos: number;
+            /** Maximo */
+            maximo?: number | null;
+            /** Minimo */
+            minimo?: number | null;
+            /** Nota */
+            nota: number;
+        };
         /**
          * NoteReportListSchema
          * @description Los avisos, cuántos siguen sin despachar y cuántos hay en cada estado.
@@ -8312,7 +8351,7 @@ export interface components {
              */
             fuera: string[];
             /** Semanas */
-            semanas: components["schemas"]["SemanaSchema"][];
+            semanas: components["schemas"]["opofuente__api__routes__plan__SemanaSchema"][];
         };
         /**
          * PlatformPolicySchema
@@ -10026,18 +10065,6 @@ export interface components {
             /** Title */
             title?: string | null;
         };
-        /** SemanaSchema */
-        SemanaSchema: {
-            /**
-             * Empieza
-             * Format: date
-             */
-            empieza: string;
-            /** Numero */
-            numero: number;
-            /** Tareas */
-            tareas: components["schemas"]["TareaSchema"][];
-        };
         /**
          * SessionConfigurationSchema
          * @description La configuración congelada al crear la sesión.
@@ -10311,6 +10338,18 @@ export interface components {
         SnoozeReviewSchema: {
             /** Days */
             days: number;
+        };
+        /** StatsSchema */
+        StatsSchema: {
+            /** Comparacion Del Tiempo */
+            comparacion_del_tiempo?: string | null;
+            /** Flojos */
+            flojos: components["schemas"]["TemaFlojoSchema"][];
+            nota?: components["schemas"]["NotaSchema"] | null;
+            /** Segundos Por Pregunta */
+            segundos_por_pregunta?: number | null;
+            /** Semanas */
+            semanas: components["schemas"]["opofuente__api__routes__stats__SemanaSchema"][];
         };
         /**
          * StudentAbandonSchema
@@ -11292,6 +11331,19 @@ export interface components {
             /** Titulo */
             titulo: string;
         };
+        /** TemaFlojoSchema */
+        TemaFlojoSchema: {
+            /** Acierto */
+            acierto: number;
+            /** Codigo */
+            codigo: string;
+            /** Frase */
+            frase: string;
+            /** Intentos */
+            intentos: number;
+            /** Titulo */
+            titulo: string;
+        };
         /**
          * TrayBulkRequestSchema
          * @description Una acción en bloque sobre un conjunto: qué se hace, dónde y quién lo hace.
@@ -11605,6 +11657,27 @@ export interface components {
         WithdrawRequestSchema: {
             /** Reason */
             reason: string;
+        };
+        /** SemanaSchema */
+        opofuente__api__routes__plan__SemanaSchema: {
+            /**
+             * Empieza
+             * Format: date
+             */
+            empieza: string;
+            /** Numero */
+            numero: number;
+            /** Tareas */
+            tareas: components["schemas"]["TareaSchema"][];
+        };
+        /** SemanaSchema */
+        opofuente__api__routes__stats__SemanaSchema: {
+            /** Acierto */
+            acierto: number;
+            /** Empieza */
+            empieza: string;
+            /** Intentos */
+            intentos: number;
         };
     };
     responses: never;
@@ -21869,6 +21942,26 @@ export interface operations {
                 };
                 content: {
                     "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    get_stats_api_v1_stats_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatsSchema"];
                 };
             };
         };

@@ -38,6 +38,7 @@ from opofuente.application.question_service import QuestionService
 from opofuente.application.readiness_service import ReadinessService
 from opofuente.application.review_service import ReviewService
 from opofuente.application.search_service import SearchService
+from opofuente.application.stats_service import StatsService
 from opofuente.application.student_service import StudentService
 from opofuente.application.study_service import StudyService
 from opofuente.application.system_service import SystemService
@@ -97,6 +98,12 @@ def get_artifact_store(request: Request) -> ArtifactStore:
 
 def get_question_service(request: Request) -> QuestionService:
     service: QuestionService = request.app.state.question_service
+    return service
+
+
+def get_stats_service(request: Request) -> StatsService:
+    """Las estadisticas del alumno (M6): que estudiar, con la cifra."""
+    service: StatsService = request.app.state.stats_service
     return service
 
 
@@ -239,6 +246,7 @@ ArtifactStoreDep = Annotated[ArtifactStore, Depends(get_artifact_store)]
 QuestionServiceDep = Annotated[QuestionService, Depends(get_question_service)]
 CardServiceDep = Annotated[CardService, Depends(get_card_service)]
 PlanServiceDep = Annotated[PlanService, Depends(get_plan_service)]
+StatsServiceDep = Annotated[StatsService, Depends(get_stats_service)]
 ExplanationProposerDep = Annotated[ExplanationProposer | None, Depends(get_explanation_proposer)]
 QuestionFileServiceDep = Annotated[QuestionFileService, Depends(get_question_file_service)]
 AutoStudyServiceDep = Annotated[AutoStudyService, Depends(get_auto_study_service)]

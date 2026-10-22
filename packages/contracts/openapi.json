@@ -6566,7 +6566,7 @@
           "semana": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/SemanaSchema"
+                "$ref": "#/components/schemas/opofuente__api__routes__plan__SemanaSchema"
               },
               {
                 "type": "null"
@@ -7953,6 +7953,52 @@
         ],
         "title": "NodeType",
         "type": "string"
+      },
+      "NotaSchema": {
+        "description": "La nota **con su intervalo**, y el intervalo puede no estar.",
+        "properties": {
+          "frase": {
+            "title": "Frase",
+            "type": "string"
+          },
+          "intentos": {
+            "title": "Intentos",
+            "type": "integer"
+          },
+          "maximo": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maximo"
+          },
+          "minimo": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Minimo"
+          },
+          "nota": {
+            "title": "Nota",
+            "type": "number"
+          }
+        },
+        "required": [
+          "nota",
+          "intentos",
+          "frase"
+        ],
+        "title": "NotaSchema",
+        "type": "object"
       },
       "NoteReportListSchema": {
         "description": "Los avisos, cuántos siguen sin despachar y cuántos hay en cada estado.\n\nLos recuentos van aparte de la lista aunque se puedan contar de ella: la lista viene filtrada y\nlimitada (por estado, por tema y por búsqueda), y los números que el propietario necesita ver\nson los de la bandeja entera, no los de la página que está mirando. `pending` es solo `open`:\nun aviso «en curso» ya no espera a nadie, y por eso no cuenta ahí.",
@@ -10041,7 +10087,7 @@
           },
           "semanas": {
             "items": {
-              "$ref": "#/components/schemas/SemanaSchema"
+              "$ref": "#/components/schemas/opofuente__api__routes__plan__SemanaSchema"
             },
             "title": "Semanas",
             "type": "array"
@@ -14533,33 +14579,6 @@
         "title": "SectionSchema",
         "type": "object"
       },
-      "SemanaSchema": {
-        "properties": {
-          "empieza": {
-            "format": "date",
-            "title": "Empieza",
-            "type": "string"
-          },
-          "numero": {
-            "title": "Numero",
-            "type": "integer"
-          },
-          "tareas": {
-            "items": {
-              "$ref": "#/components/schemas/TareaSchema"
-            },
-            "title": "Tareas",
-            "type": "array"
-          }
-        },
-        "required": [
-          "numero",
-          "empieza",
-          "tareas"
-        ],
-        "title": "SemanaSchema",
-        "type": "object"
-      },
       "SessionConfigurationSchema": {
         "description": "La configuración congelada al crear la sesión.",
         "properties": {
@@ -15313,6 +15332,62 @@
           "days"
         ],
         "title": "SnoozeReviewSchema",
+        "type": "object"
+      },
+      "StatsSchema": {
+        "properties": {
+          "comparacion_del_tiempo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comparacion Del Tiempo"
+          },
+          "flojos": {
+            "items": {
+              "$ref": "#/components/schemas/TemaFlojoSchema"
+            },
+            "title": "Flojos",
+            "type": "array"
+          },
+          "nota": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/NotaSchema"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "segundos_por_pregunta": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Segundos Por Pregunta"
+          },
+          "semanas": {
+            "items": {
+              "$ref": "#/components/schemas/opofuente__api__routes__stats__SemanaSchema"
+            },
+            "title": "Semanas",
+            "type": "array"
+          }
+        },
+        "required": [
+          "flojos",
+          "semanas"
+        ],
+        "title": "StatsSchema",
         "type": "object"
       },
       "StudentAbandonSchema": {
@@ -17694,6 +17769,39 @@
         "title": "TareaSchema",
         "type": "object"
       },
+      "TemaFlojoSchema": {
+        "properties": {
+          "acierto": {
+            "title": "Acierto",
+            "type": "number"
+          },
+          "codigo": {
+            "title": "Codigo",
+            "type": "string"
+          },
+          "frase": {
+            "title": "Frase",
+            "type": "string"
+          },
+          "intentos": {
+            "title": "Intentos",
+            "type": "integer"
+          },
+          "titulo": {
+            "title": "Titulo",
+            "type": "string"
+          }
+        },
+        "required": [
+          "codigo",
+          "titulo",
+          "intentos",
+          "acierto",
+          "frase"
+        ],
+        "title": "TemaFlojoSchema",
+        "type": "object"
+      },
       "TrayBulkRequestSchema": {
         "additionalProperties": false,
         "description": "Una acción en bloque sobre un conjunto: qué se hace, dónde y quién lo hace.\n\nLa nota es potestativa —una acción en bloque tiene su propio texto por defecto— y, cuando viene,\nes **una línea**, como la del despacho de una en una: es la misma regla y se normaliza igual.",
@@ -18397,6 +18505,56 @@
           "reason"
         ],
         "title": "WithdrawRequestSchema",
+        "type": "object"
+      },
+      "opofuente__api__routes__plan__SemanaSchema": {
+        "properties": {
+          "empieza": {
+            "format": "date",
+            "title": "Empieza",
+            "type": "string"
+          },
+          "numero": {
+            "title": "Numero",
+            "type": "integer"
+          },
+          "tareas": {
+            "items": {
+              "$ref": "#/components/schemas/TareaSchema"
+            },
+            "title": "Tareas",
+            "type": "array"
+          }
+        },
+        "required": [
+          "numero",
+          "empieza",
+          "tareas"
+        ],
+        "title": "SemanaSchema",
+        "type": "object"
+      },
+      "opofuente__api__routes__stats__SemanaSchema": {
+        "properties": {
+          "acierto": {
+            "title": "Acierto",
+            "type": "number"
+          },
+          "empieza": {
+            "title": "Empieza",
+            "type": "string"
+          },
+          "intentos": {
+            "title": "Intentos",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "empieza",
+          "intentos",
+          "acierto"
+        ],
+        "title": "SemanaSchema",
         "type": "object"
       }
     }
@@ -32086,6 +32244,28 @@
           }
         },
         "summary": "Configuración efectiva sanitizada (sin secretos)"
+      }
+    },
+    "/api/v1/stats": {
+      "get": {
+        "description": "**Nada de frases sin cifra**: todo lo que sale de aqui lleva su número.\n\n**Y si no hay intentos**, la nota es `null` y las listas van vacías:\n**la pantalla lo dice con palabras**, no con ceros.",
+        "operationId": "get_stats_api_v1_stats_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatsSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Que estudiar, con la cifra: nota, flojos, tiempo y semanas (M6)",
+        "tags": [
+          "estadisticas"
+        ]
       }
     },
     "/api/v1/student/mistakes": {

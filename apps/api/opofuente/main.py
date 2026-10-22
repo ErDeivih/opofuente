@@ -59,6 +59,7 @@ from opofuente.application.question_service import QuestionService
 from opofuente.application.readiness_service import ReadinessService
 from opofuente.application.review_service import ReviewService
 from opofuente.application.search_service import SearchService
+from opofuente.application.stats_service import StatsService
 from opofuente.application.student_service import StudentService
 from opofuente.application.study_service import StudyService
 from opofuente.application.system_service import SystemService
@@ -112,6 +113,7 @@ from opofuente.infrastructure.readiness_repository import SqlAlchemyReadinessRep
 from opofuente.infrastructure.representation_store import RepresentationStore
 from opofuente.infrastructure.review_repository import SqlAlchemyReviewRepository
 from opofuente.infrastructure.search_repository import SqlAlchemySearchRepository
+from opofuente.infrastructure.stats_repository import SqlAlchemyStatsRepository
 from opofuente.infrastructure.student_repository import SqlAlchemyStudentRepository
 from opofuente.infrastructure.study_repository import SqlAlchemyStudyRepository
 from opofuente.infrastructure.topic_notes_repository import SqlAlchemyTopicNotesRepository
@@ -564,6 +566,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.question_service = question_service
     app.state.card_service = CardService(SqlAlchemyCardRepository(session_factory))
     app.state.plan_service = PlanService(SqlAlchemyPlanRepository(session_factory))
+    app.state.stats_service = StatsService(SqlAlchemyStatsRepository(session_factory))
     app.state.explanation_proposer = _construir_proposer()
     app.state.question_file_service = question_file_service
     app.state.auto_study_service = auto_study_service

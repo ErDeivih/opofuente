@@ -30,6 +30,7 @@ from opofuente.api.routes import (
     readiness,
     reviews,
     search,
+    stats,
     student,
     study,
     system,
@@ -44,6 +45,7 @@ api_router.include_router(library.router)
 api_router.include_router(questions.router)
 api_router.include_router(cards.router)
 api_router.include_router(plan.router)
+api_router.include_router(stats.router)
 api_router.include_router(study.router)
 api_router.include_router(search.router)
 api_router.include_router(reviews.router)
