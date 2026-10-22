@@ -1927,3 +1927,38 @@ más rápido» sería una frase sin sentido, y el hito prohíbe las frases sin c
 **Y una decision que tomo y apunto**: **el «tiempo medio» se enseña como referencia, no como juicio**.
 **Un alumno que practica en sesiones de tres preguntas siempre va a salir rapidísimo**, y **compararlo
 con el examen sin decir que son cosas distintas seria la clase de cifra que engaña.**
+
+## M6: `key_outcome` no es el acierto, y las tres consultas daban 0 % (ronda 195)
+
+**Las tres consultas corren y devuelven esto:**
+
+```
+los cinco flojos: 4
+  1: aciertas el 0% en 62 intentos
+  10: aciertas el 0% en 30 intentos
+  7: aciertas el 0% en 14 intentos
+tiempo medio: 2.64 s por pregunta
+semanas: 3   (2026-09-28 · 2026-10-05 · 2026-10-19, todas al 0%)
+```
+
+**Y el 0 % no es que el alumno falle todo: es que `key_outcome` no significa lo que supuse.**
+
+```
+valores de key_outcome:   'keyed' 2.888 · 'conflicting' 1
+```
+
+**`key_outcome` dice si la pregunta tiene clave y si esa clave es coherente** —`keyed` o `conflicting`—,
+**no si la respuesta del alumno fue correcta**. **El acierto hay que sacarlo comparando
+`attempts.chosen_option_keys_json` con la clave de la pregunta**, **y eso es un `join` con las entradas de
+la clave, no una columna que ya esté puesta.**
+
+**Y el fallo es de los que engañan**: **las tres cifras salían, con su formato y su frase, y todas decian
+que el alumno no acierta nada**. **Un cero que viene de una columna mal leida es peor que un error**:
+**el error se ve, y el cero se cree.**
+
+**Las tres consultas quedan escritas y hay que cambiar el acierto** — **una condición de cada una**—,
+**con la comparacion contra la clave**. **El resto —el tiempo medio, las semanas y los temas— ya
+funciona.**
+
+**Y una nota sobre el metodo**: **las tres cifras se probaron contra la copia antes de llevarlas a la
+pantalla, y eso es lo que ha evitado que un 0 % universal llegara a mirarse como un dato.**
