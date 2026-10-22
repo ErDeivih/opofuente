@@ -1603,3 +1603,42 @@ no tiene datos.**
 **Lo que se guarda en el planificador no cambia**: **sigue recibiendo un `flojo: bool` por tema**, **y
 quien lo rellena es el servicio, no el dominio.** **Que la definición cambie no toca la matemática del
 reparto.**
+
+## M5 medido antes de empezar (ronda 178)
+
+**La especificación está en `FASE-3-ESTUDIO-DIARIO-SPEC-PLAN-GOAL-2026-10.md`, líneas 101-109, y pide
+cuatro cosas:**
+
+```
+1. modelo `practical_case`: enunciado (texto, tablas o esquema), bloque y preguntas asociadas
+2. supuestos OFICIALES primero: extraer de los examenes INAP los de III y IV con su enunciado
+3. supuestos GENERADOS: el modelo escribe el caso y 25 preguntas con clave y explicacion, cada una
+   anclada a un parrafo; y un SEGUNDO modelo las responde a ciegas con >= 90 % de coincidencia,
+   o el supuesto se descarta
+4. el simulacro usa uno real del bloque elegido, y el examen oficial lo ensena como en el papel
+```
+
+**Y lo que existe hoy, medido:**
+
+```
+la tabla de supuestos                NO existe · 0 tablas practical*
+los conjuntos de tipo practical_case  0
+el tipo de documento `practical_case` SI · en classification.py
+el extractor del INAP               SI · inap.py reconoce «SUPUESTO A/B» y «escenario_de_supuesto»
+el simulacro ya declara su origen   SI · practical_case_origin («bloque» cuando no hay supuesto real)
+preguntas con seccion de origen     16.923  ← de ahi salen los supuestos oficiales si estan
+```
+
+**Así que M5 es grande y empieza casi de cero**: **tabla nueva, extracción de los oficiales, generador con
+segundo modelo, y el simulacro usando un supuesto de verdad.** **De los cuatro puntos, el 2 es el que no
+necesita la API**, y es por donde hay que empezar.
+
+## Lo que hay que medir antes de escribir, y es una cosa
+
+**Si los supuestos oficiales ESTÁN en las 16.923 preguntas con sección de origen.** **El extractor del INAP
+reconoce la marca «SUPUESTO A», así que el dato puede estar ya dentro sin que nadie lo haya separado.**
+**Eso se mide con una consulta y decide si el punto 2 es una extracción o una importación.**
+
+**Y el punto 3 —el segundo modelo validando— es el gasto del hito**: **6 supuestos por bloque, 25
+preguntas cada uno, dos modelos.** **El tope del hito son 6 $ y eso hay que llevarlo contado desde la
+primera llamada.**
