@@ -2843,3 +2843,42 @@ defecto que gana».**
 **Y el instalador se queda en `main` por lo que si hace**: **migra, crea el administrador y arranca desde
 cero**, **que es el camino sin paquete y esta ejecutado y verde.** **El camino con paquete esta escrito y no
 pasa, y eso lo dice el propio script al pararse.**
+
+## M8: el fallo del paquete no era la tabla ni la ruta: era un bloqueo (ronda 226)
+
+**Lo que escribi en la ronda anterior era falso, y lo he medido antes de seguir.** **Dije que el importador
+«no esta abriendo la base que el instalador migro: esta abriendo otra».** **Las dos cosas se comprueban en
+una linea, y las dos salen bien:**
+
+```
+base que ve: F:\temp-opofuente\inst-m8b\opofuente.sqlite3     ← la correcta
+tablas en una base recien migrada: 75 · answer_key_entries: True · version 0045
+```
+
+**Y el error de verdad, al volver a lanzar la importacion sobre esa misma base:**
+
+```
+sqlalchemy.exc.OperationalError: database is locked
+[SQL: PRAGMA main.table_xinfo("answer_key_entries")]
+```
+
+**`database is locked`.** **El mensaje anterior decia `no such table` porque SQLite, con la base bloqueada,
+a veces no puede ni leer el esquema y contesta lo que puede.** **Y yo lo lei como que faltaba la tabla.**
+
+## Lo que eso cambia
+
+**No hay nada que arreglar en el importador**: **la tabla esta, la ruta esta, el paquete esta.** **Hay que
+encontrar quien tiene la base abierta** —**una conexion que quedo viva de una corrida anterior, que es lo
+mas probable, porque el instalador fallido dejo su proceso**— **y darle al importador un tiempo de espera en
+vez de fallar al primer intento**.
+
+**Las dos cosas del arreglo, y son pequenas:**
+
+1. **`connect_args={"timeout": 30}`** al crear el motor del importador: **SQLite espera antes de rendirse**,
+   **que es lo que hace cualquier programa serio con una base que puede estar ocupada un segundo**;
+2. **y en el instalador, cerrar la sesion antes de lanzar el siguiente comando**: **cada paso abre y cierra
+   la suya**, **y el que fallaba la dejaba abierta al lanzar la excepcion**.
+
+**Y la leccion, que es la de esta sesion entera otra vez**: **`no such table` con la base bloqueada es un
+mensaje que miente**, **y yo lo crei durante una ronda.** **La comprobacion de la ruta y del esquema costo
+una linea y desmintio las dos hipotesis.**
