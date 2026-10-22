@@ -1166,3 +1166,30 @@ todo con las quince y el modelo cuando haya— **pero sí cambia lo que se podr�
 
 **Es la primera decisión de M3 y va escrita aquí**: **se construye la infraestructura entera y se generan
 las que se puedan; la cifra del cierre dirá cuántas salieron con modelo y cuántas sin.**
+
+## M3: las primeras tarjetas, guardadas y medidas (ronda 151)
+
+**La migración de la copia de trabajo no estaba hecha**: la tabla `cards` solo existía en las bases
+temporales donde probé la migración. **Corregido, y con eso la copia queda al día de `0042`.**
+
+**Y las tarjetas, generadas por la vía sin modelo:**
+
+```
+hechos no dudosos:          19.316
+tarjetas por plantilla:         14
+sin plantilla:              19.302     (el 99,9 %)
+guardadas en `cards`:            9     ← las 14 se quedan en 9 por el anverso unico
+segunda pasada:              0 nuevas   ← idempotente
+```
+
+**Los dos datos que cierran la pregunta de M3:**
+
+1. **la vía sin modelo da NUEVE tarjetas, no catorce**: **cinco comparten anverso** —son el mismo par
+   dato–valor dicho dos veces en los apuntes— **y el índice único las colapsa**. **Nueve tarjetas
+   buenas y verificables**, que es más de lo que parecía y muchísimo menos que las que pide el hito.
+2. **la herramienta es idempotente**: **la segunda pasada guarda cero**. **Se puede correr cada vez
+   que se toquen los apuntes sin miedo a duplicar el repaso del alumno.**
+
+**Y lo que el hito pide —tarjetas en los 33 temas— sigue necesitando el modelo**, que hoy está
+intermitente. **La infraestructura está entera: tabla, repositorio, servicio, rutas, pantalla y
+herramienta. Lo que falta son las tarjetas del 99,9 %, y eso es una pasada con clave, no código.**
