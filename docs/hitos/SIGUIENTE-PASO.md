@@ -452,3 +452,23 @@ siguiente arreglo del cliente cuando haya contexto.**
 
 **Y la cifra de la fase, medida**: **7.605 generadas, 7.605 con cita, sin cita 0** — **68 % de las
 11.147**—, **a 0,000024 $ cada una**. **El gasto no es el problema; el tiempo de reloj sí.**
+
+## La API se ha vuelto lenta, y qué se hace con eso (ronda 52)
+
+**A las 21:00 del 21-oct escribía 370 por tanda de 500 en seis minutos. A las 09:30 del 22 escribe 25 en
+ocho minutos: un factor de sesenta.** **El código no ha cambiado**; **lo que ha cambiado es el servicio**.
+
+**El plazo de 60 s hace lo que se le pidió**: **una tanda lenta falla en tres minutos y el bucle pasa a
+la siguiente**, **que también va lenta**. **Robusto sí, rápido no.**
+
+**Las tres salidas, y hay que probarlas en este orden:**
+
+1. **probar tandas de 100** —`--limite 100 --desde N`—: **con la API lenta, una tanda menor puede
+   completarse dentro del plazo y escribir algo**, **mientras que 500 falla entera y no escribe nada**;
+2. **esperar y relanzar** —a las 21:00 iba sesenta veces más rápido—;
+3. **dejarla correr** aceptando que tarde un día y no gaste más de 0,60 $.
+
+**Lo que NO se hace**: **bajar el plazo por debajo de 60 s**. **Las tandas buenas también fallarían.**
+
+**Y el dato para decidir**: **7.638 escritas, todas con cita, cero sin cita**. **Lo que falta son 3.509.**
+**La mitad del trabajo está hecha y es buena; lo que no está es el resto del tiempo de reloj.**
