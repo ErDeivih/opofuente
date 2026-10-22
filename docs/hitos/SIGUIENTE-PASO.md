@@ -4648,3 +4648,40 @@ el modelo**, **que es contenido y cuesta unos pocos dolares de los 29,34 que que
 
 **Eso es todo.** **El resto de la fase son las 825 decisiones del propietario y el `tesseract` para los
 cuestionarios de 2018.**
+
+## M5: `apuntes` no reconoce IV.1.1, y ahi esta el siguiente paso (ronda 292)
+
+**Lanzado el comando que la ronda anterior dejo escrito, con la clave del ambito de usuario y en ensayo:**
+
+```
+uv run python -m opofuente.tools.apuntes --tema IV.1.1 --limite 2 --dry-run --tiempo-maximo 240
+
+  marca de corrida de apuntes sin retirar desde 2026-10-15: se da por muerta
+  ENSAYO: se llama al modelo y NO se escribe nada.
+  No se han podido escribir los apuntes: no existe tema del programa con identificador IV.1.1
+```
+
+**Y el nodo `IV.1.1` SI existe en la base** —**lo midio la ronda 289: es un `epigraph` con ese codigo exacto**—.
+
+**Asi que `apuntes` no lo encuentra por alguna de estas tres razones, y hay que mirar cual:**
+
+1. **resuelve el codigo contra la oposicion ACTIVA**, **y la activa puede no ser TAI 2025**;
+2. **espera un nodo de tipo `topic`**, **y `IV.1.1` es `epigraph`** —**que seria el mismo error que yo supuse en el
+   generador y que alli no era**—;
+3. **o compara el codigo de otra forma** —**con el prefijo del epigrafe en vez del codigo—**.
+
+**La forma de saberlo es una lectura de veinte lineas**: **buscar donde `apuntes` resuelve `--tema`**, **y ver si
+filtra por tipo de nodo o por oposicion activa.**
+
+**Y conviene hacerlo antes de escribir una sola nota**: **si el obstaculo es el tipo de nodo, son 87 epigrafes que
+no se pueden escribir hasta arreglarlo, y escribir las que si se puedan seria gastar para nada.**
+
+## Lo que la sesion deja, sin adornos
+
+```
+M8 COMPLETO · M7 5 de 6 · M1 a M6 cerrados o con su pendiente medido
+6 hipotesis falsas, las 6 corregidas en el acta
+base real intacta · 0,66 $ de 30 gastados · arbol limpio · 998 unitarias verdes
+```
+
+**Y el siguiente paso es leer veinte lineas de `apuntes`, no lanzar otra corrida.**
