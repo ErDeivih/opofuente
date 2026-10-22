@@ -1339,3 +1339,46 @@ cuarta, la bandeja, es mi prueba de M1.**
 
 **Y una nota honesta**: **M3 no se cierra con 8 de 85 en rojo**, **aunque las de repaso pasen**. **El
 recorrido de capturas es la evidencia del árbol entero, no solo de lo que uno toca.**
+
+## Las ocho rojas: `figure` viene vacío en los 33 temas (ronda 160)
+
+```
+GET /api/v1/notes-review → 200 · 33 temas · 2 motivos cada uno
+  I.1  · primera figura: None
+  II.1 · primera figura: None
+  III.1 · primera figura: None
+  IV.1 · primera figura: None
+```
+
+**La aserción que falla espera un `%` dentro de `.apuntes-revision__motivos`:**
+
+```typescript
+await expect(filaBorrador.locator('.apuntes-revision__motivos')).toContainText(/%/);
+```
+
+**Y el `%` sale de `razon.figure`, que la API devuelve `null` para los 33 temas.** **No es que la
+pantalla no lo pinte: es que no llega.**
+
+## Lo que eso cambia del diagnóstico
+
+**Este grupo no lo ha roto M3.** **La revisión de apuntes no usa ni la marca de fiabilidad, ni la sesión
+del alumno, ni las tarjetas**: **usa `figure`, y `figure` viene vacío**.
+
+**Es un dato que falta en la copia o en el cálculo del servidor**, **y el candidato evidente es que la
+copia de trabajo no tiene lo que la cifra necesita** —**los motivos se calculan contra las citas y las
+incidencias**—. **Pero eso hay que medirlo, no suponerlo**: **la pregunta es qué campo del cálculo
+devuelve `None` y por qué.**
+
+**Y `lectura` y `contestar` van por la misma familia**: **las tres pantallas que fallan ahí leen los
+apuntes**.
+
+## Donde queda esto
+
+**Las ocho rojas son dos cosas distintas y ninguna es M3:**
+
+1. **`lectura`, `contestar` y `la revisión de apuntes`**: **los apuntes, con `figure` vacío**;
+2. **`la bandeja de explicaciones`**: **mi prueba de M1**, **que mira la cita entre comillas angulares**.
+
+**La 2 la puedo arreglar yo y la 1 necesita entender el cálculo.** **Las dos son anteriores a esta
+tarde**: **`lectura` y `contestar` ya estaban entre las doce de la primera corrida, antes de que tocara
+las capturas.**
