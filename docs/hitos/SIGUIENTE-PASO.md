@@ -5218,3 +5218,45 @@ misma fecha es la verdad**.
 ## Y la cifra del hito, que ya no depende de esto
 
 **Dos apartados con notas, dos aceptados con 25/25.** **El alta es para guardarlos; la medida ya esta hecha.**
+
+## M5: el alta avanza y el esquema da una sorpresa por ronda (ronda 306)
+
+**Corregido `question_type` a `single_choice`** —**la restriccion solo admite `single_choice`,
+`multi_mark_error`, `true_false` y `free_text_reference`, y yo habia escrito `multiple_choice`**—, **y el alta llega
+mas lejos: ya inserta el conjunto y las veinticinco preguntas, y se para en la siguiente restriccion.**
+
+**Y el generador, en la misma corrida, sigue midiendo bien:**
+
+```
+III.1.1: descartado · trae 26 preguntas y un supuesto tiene 25
+IV.1.1: ACEPTADO · 25/25 coinciden
+```
+
+## El patron de estas cuatro rondas, y conviene verlo junto
+
+```
+1 · question_sets: faltaban set_type, status, distribution, origin_scope, key_reliability
+2 · option_versions: faltaba position
+3 · question_sets: faltaban opposition_id y updated_at
+4 · question_versions: question_type='multiple_choice' no es un valor de la restriccion
+```
+
+**Cuatro rondas, cuatro cosas que el esquema ya decia y que yo escribi de memoria.** **Y ninguna era un problema
+de diseno: todas eran `db_models.py` sin leer.**
+
+## Lo que falta, y es la misma operacion una vez mas
+
+**Leer `db_models.py` para `question_versions` y `option_versions`** —**sus cinco restricciones `CHECK` y sus
+columnas obligatorias**— **y reescribir `_dar_de_alta` de una vez**, **en lugar de descubrir el esquema a golpe de
+`IntegrityError`**.
+
+**Es media hora de lectura y diez minutos de escritura.** **Y despues, el alta funciona, los supuestos se guardan, y
+M5 cierra con sus cifras.**
+
+## Y la medida del hito, que ya esta
+
+```
+2 apartados con notas · 1 aceptado con 25/25 · 1 descartado por 26 preguntas
+```
+
+**Eso es lo que M5 pide medir, y esta medido.**

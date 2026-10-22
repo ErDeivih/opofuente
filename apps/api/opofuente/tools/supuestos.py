@@ -68,6 +68,25 @@ def _fabrica() -> tuple[object, sessionmaker[Session]]:
     return motor, sessionmaker(bind=motor)
 
 
+def _oposicion(fabrica: sessionmaker[Session]) -> str:
+    """La oposicion de TAI, **por su codigo y no por ser la primera**.
+
+    **Un supuesto de TAI tiene que colgar de TAI**: **elegir «la primera»
+    funcionaria hoy con tres filas y apuntaria al examen equivocado el dia que
+    haya cuatro.**
+    """
+    with fabrica() as session:
+        fila = session.execute(
+            text(
+                "select id from oppositions where code like '%tai%' "
+                "or name like '%Tecnicos Auxiliares%' limit 1"
+            )
+        ).first()
+    if fila is None:
+        raise SystemExit("no hay oposicion de TAI en esta base")
+    return str(fila[0])
+
+
 def _apartados(limite: int, fabrica: sessionmaker[Session]) -> dict[str, list[tuple[str, str]]]:
     """Los apartados de cada bloque, **por su codigo y con su texto**.
 
@@ -100,6 +119,7 @@ def _dar_de_alta(
     fabrica: sessionmaker[Session],
     supuesto: SupuestoPropuesto,
     case_id: str,
+    opposition_id: str,
     aciertos: int = 0,
 ) -> tuple[str, ...]:
     """Crea las preguntas del supuesto en el banco y devuelve sus ids.
@@ -125,8 +145,10 @@ def _dar_de_alta(
                 status="draft",
                 distribution="personal",
                 origin_scope="age",
+                opposition_id=opposition_id,
                 key_reliability="fiable" if aciertos >= 25 else "dudosa",
                 created_at=ahora,
+                updated_at=ahora,
             )
         )
         for posicion, pregunta in enumerate(supuesto.preguntas, start=1):
@@ -138,7 +160,7 @@ def _dar_de_alta(
                     stable_key=f"supuesto-{case_id[:8]}-{posicion:02d}",
                     version_no=1,
                     stem=pregunta.enunciado,
-                    question_type="multiple_choice",
+                    question_type="single_choice",
                     position=posicion,
                     is_reserve=posicion > 20,
                     status="draft",
@@ -175,6 +197,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     _motor, fabrica = _fabrica()
     repositorio = SqlAlchemyPracticalCaseRepository(fabrica)
 
+    oposicion = _oposicion(fabrica)
     apartados = _apartados(args.limite, fabrica)
     gastado = 0.0
     for bloque in BLOQUES:
@@ -197,7 +220,12 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(f"  {codigo}: ACEPTADO · {intento.aciertos}/25 coinciden")
             if args.guardar and intento.supuesto is not None:
                 case_id = str(uuid.uuid4())
-                ids = _dar_de_alta(fabrica=fabrica, supuesto=intento.supuesto, case_id=case_id)
+                ids = _dar_de_alta(
+                    fabrica=fabrica,
+                    supuesto=intento.supuesto,
+                    case_id=case_id,
+                    opposition_id=oposicion,
+                )
                 guardado = repositorio.guardar(
                     case_id=case_id,
                     supuesto=intento.supuesto,
