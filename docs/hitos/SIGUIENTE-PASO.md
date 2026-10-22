@@ -2291,3 +2291,42 @@ cambian, el arreglo esta mal aunque tarde menos.**
 - **el punto 4, hecho**; **y lo que le falta es la prueba que lo vigile** — **que es parte del hito**;
 - **los puntos 1, 2 y 3**: el bucle de «esto esta mal», la comprobacion semanal y la bandeja por debajo de
   100.
+
+## M7, punto 3: la bandeja tiene 2.568 decisiones y el hito pide menos de 100 (ronda 211)
+
+**Medido en la copia:**
+
+```
+question_explanations      12.924
+  private   draft          11.315   ← las del propietario, se quedan como estan
+  generated draft           1.609   ← lo que queda de la corrida de M1
+notes_incidents open          959   ← incidencias sin despachar
+change_proposals          no existe la tabla
+```
+
+**Asi que la bandeja son 2.568 decisiones reales**, **y el hito pide menos de 100**. **No esta ni cerca**, y
+**no lo va a estar con la via actual**: **cada explicacion es una decision y nadie las ha despachado
+todavia**.
+
+## Y una buena noticia que sale de la misma medida
+
+**Las explicaciones generadas han bajado de 8.230 a 1.609**: **la corrida de M1 avanzo 6.621**, **y ya son
+el 88 % del total de las 13.588 que hacian falta**. **Cuando termine, la bandeja de explicaciones queda en
+cero.**
+
+## Y las 959 incidencias son otra cosa
+
+**`notes_incidents` abiertas son avisos de «esto esta mal» sin despachar.** **No son lo mismo que una
+explicacion en borrador**: **una incidencia pide mirar un texto, y una explicacion en borrador pide
+aprobar o rechazar una frase.**
+
+**Y el punto 3 del hito —«bandeja por debajo de 100 decisiones reales, con todo lo automatizable
+propuesto en bloque»— tiene dos mitades, y solo se ha mirado una**: **cuantas hay**, **y no si lo
+automatizable esta propuesto en bloque.**
+
+**La mitad que falta es la que de verdad pide el hito**: **que las explicaciones en borrador se puedan
+aprobar en bloque** — **que ya existe en la bandeja de M1**—, **y que las incidencias que se resuelven
+solas —un enlace roto, una cita que ya no esta— se resuelvan sin que nadie las mire**.
+
+**Asi que lo que hay que hacer en el punto 3 no es bajar 2.568 a 100 a mano**: **es que 2.468 dejen de
+necesitar a una persona.**
