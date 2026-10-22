@@ -1895,3 +1895,35 @@ peso de cada tema»**, **y eso se puede calcular de dos maneras**:
 **Así que se hace la primera**, **y el intervalo se calcula con la varianza de los intentos recientes**,
 **que es la unica forma de que el intervalo signifique algo**: **si no hay varianza —un solo intento—, el
 intervalo no se enseña**. **Una nota sola sin dispersión es una nota inventada.**
+
+## M6: las tres cifras que faltan tienen datos, y son consultas (ronda 194)
+
+**Medido en la copia:**
+
+```
+attempts con tiempo         119
+tiempo medio por pregunta   2.644 ms  ← 2,6 segundos
+la tabla de sesiones        se llama `study_sessions`, no `sessions`   ← el error de mi consulta
+key_outcome en session_questions  es donde vive si acerto, no en el JSON de opciones
+```
+
+**Así que las tres cifras que faltan —los cinco flojos, el tiempo medio y la evolución semanal— **tienen
+sus datos**: 119 intentos con su tiempo y su resultado. **No hay que generar nada: hay que consultarlo
+bien.**
+
+**Y el examen son 120 minutos para 100 preguntas: 72 segundos por pregunta.** **El alumno va a 2,6
+segundos por pregunta, que es 27 veces más rápido** — **porque son tests cortos de practicar, no un
+examen.** **Así que esa cifra hay que enseñarla con cuidado**: **«2,6 s por pregunta en tus tests, y el
+examen da 72 s»** **no es «vas sobrado», es «aquí se practica de otra manera».** **Decir «vas 27 veces
+más rápido» sería una frase sin sentido, y el hito prohíbe las frases sin cifra.**
+
+## Lo que queda de M6, y es todo consulta
+
+1. **los cinco temas con menos acierto y más intentos**, con su botón a practicar;
+2. **el tiempo medio por pregunta frente a los 72 s del examen**, **con la comparación dicha como es**;
+3. **la evolución semanal**: los aciertos de las últimas semanas, una por línea;
+4. **enseñarlo en la pantalla de progreso**, que ya existe.
+
+**Y una decision que tomo y apunto**: **el «tiempo medio» se enseña como referencia, no como juicio**.
+**Un alumno que practica en sesiones de tres preguntas siempre va a salir rapidísimo**, y **compararlo
+con el examen sin decir que son cosas distintas seria la clase de cifra que engaña.**
