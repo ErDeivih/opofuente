@@ -1418,3 +1418,40 @@ la revisión de apuntes           ×2
 
 **Las seis son los apuntes, y el dato que falta es `figure: None` en los 33 temas** —medido en la ronda
 160—. **No es M3 y no es mío.**
+
+## Las seis rojas: `figure` es un campo que nadie rellena (ronda 162)
+
+```
+domain/notes_review.py:116     figure: str | None = None        ← declarado, con valor por defecto
+api/routes/notes_review.py:119 figure=razon.figure              ← se lee y se manda
+```
+
+**Y no hay ni una asignación en todo `apps/api/opofuente`**: **el campo existe, viaja por el esquema, y
+siempre vale `None`.**
+
+**Así que el `%/` del test no está esperando un dato que se perdió: está esperando una función que no
+está.** **La aserción es correcta y el código está incompleto** — **y el árbol lo sabe desde antes de
+hoy: el `DEBT` y la nota del esquema hablan de una cifra que la pantalla debería enseñar.**
+
+## Lo que eso significa para las seis
+
+**No las voy a «arreglar» poniendo el `%/` como opcional o borrando la aserción**: **eso sería
+ajustar el test a un código incompleto, y es justo lo que el contrato prohíbe**.
+
+**Y tampoco las voy a rellenar a ciegas**: **la cifra que va en `figure` hay que decidirla** —¿el
+porcentaje de citas verificadas del tema? ¿la cobertura?— **y eso es una decisión de producto, no un
+arreglo de captura**.
+
+**Quedan, por tanto, como deuda declarada**: **seis capturas rojas, un campo declarado y vacío, y un
+test que pide lo que la pantalla promete.**
+
+## Y lo que sí se ha cerrado hoy
+
+```
+12 rojas → 6
+  · 4 eran la marca de fiabilidad mal puesta en el test       (arregladas)
+  · 2 eran el test contando filas antes de que la página cargara (arregladas)
+  · 6 son `figure`, un campo vacío desde antes de esta fase     (deuda)
+```
+
+**Las seis de `figure` tocan los apuntes, que es M2/M3 de otra fase, no M3 de esta.**
