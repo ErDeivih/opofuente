@@ -834,3 +834,36 @@ del gasto antes de mandarla** — *«esta llamada cuesta ~0,000024 $»*.
 
 **Con eso M1 queda entero en código.** **Y después, la batería de 18 —que no se ha vuelto a correr desde
 los cambios de esta mañana—, y el contenido, que es lo único que depende de la API.**
+
+## La batería, pasada a mano tras los cambios de hoy (ronda 109)
+
+**Las puertas 1 a 18, una por una, porque `gates.ps1` se atasca en la 4 en este árbol**:
+
+```
+1  ruff format        606 ficheros, ya formateados          ✓
+2  ruff check         All checks passed                     ✓
+3  mypy               Success — 275 ficheros                ✓
+4  eslint             All checks passed (--max-warnings=0)  ✓
+5  tsc                0                                     ✓
+6  unitarias          994 passed                            ✓
+7  integración        EN CURSO ahora mismo (80 min)         ?
+8  contrato           export --check 0 y contracts:check 0  ✓
+9  test:web           55 ficheros · 494 pruebas             ✓
+10 contrato           (lo mismo que la 8)                   ✓
+11 uv build           0                                     ✓
+12 build:web          0                                     ✓
+13 migración          0 · 0041_explicaciones_cita_ancla      ✓
+14 esquema            alembic_version = 0041                ✓
+15 siembra            0                                     ✓
+16 idempotente        0                                     ✓
+17 fixtures           FALLA por las dos fuentes oficiales   ✗
+18 E2E                93 passed en 4,4 min                  ✓
+```
+
+**Son 16 de 18 en verde, una en curso y la 17 por la decisión de contenido ya tomada** —marcar las dos
+fuentes como `volatile`—, **que hay que aplicar al manifiesto y vuelve a dejar la 17 informando sin
+bloquear**.
+
+**Y el fallo que encontró esta pasada, y que el 18/18 no habría visto sin ella**: **`eslint` con
+`--max-warnings=0` cazó un `useCallback` sin su dependencia `regenerar`** — **la tecla `g` habría usado
+siempre la primera versión de la mutación**.
