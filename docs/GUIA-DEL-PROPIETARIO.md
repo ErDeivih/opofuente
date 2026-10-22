@@ -54,9 +54,13 @@ cd apps\api; uv run uvicorn opofuente.main:app --port 8000
 cd apps\web; pnpm dev
 ```
 
-**Este paso es el único que no he ejecutado yo**: **el instalador imprime el comando, pero no arranca el
-servidor a propósito** — **si lo dejara corriendo, cerrar la ventana lo mataría y no sabrías si está
-instalado.**
+**La API arranca y sirve, comprobado sobre esta instalación**: `GET /api/v1/stats` responde 200 con la
+nota a `null` y las listas vacías, **que es lo correcto en una instalación sin actividad**.
+
+**El instalador no arranca nada a propósito** — **si lo dejara corriendo, cerrar la ventana lo mataría y no
+sabrías si está instalado.**
+
+**La web no la he verificado sobre una instalación.**
 
 ## 5. Apagar
 
@@ -65,4 +69,5 @@ instalado.**
 ## Lo que todavía no hay
 
 - **invitar a nadie**: **la beta es por invitación, pero el enlace de invitación no está construido**;
-- **capturas de M8**: **necesitan la aplicación arrancada**, **y el paso 4 es el que no está verificado**.
+- **capturas de M8**: **necesitan la aplicación arrancada y la web verificada**, **y la web es la mitad que
+  falta**.
