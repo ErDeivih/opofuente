@@ -39,7 +39,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 from datetime import datetime
 from functools import partial
-from typing import TypeVar
+from typing import NamedTuple, TypeVar
 
 from opofuente.application.ports import DossierRepository, NotesModel, TopicNotesRepository
 from opofuente.application.topic_notes_models import (
@@ -153,6 +153,21 @@ class _TiempoDeLaCorridaAgotadoError(Exception):
     """
 
 
+class IndicacionDeLectura(NamedTuple):
+    """Lo que dijo quien leyo un apartado, **y a que apartado se refiere** (M7).
+
+    **No es una instruccion general**: viaja atada a un `section_key`, **y solo
+    ese apartado se redacta con ella**. Un aviso sobre un parrafo no puede
+    cambiar los otros veinte del tema, **y una indicacion sin apartado no se
+    admite** — si se admite, se acaba pegando un aviso a un tema entero.
+    """
+
+    #: La clave del apartado, la misma que `--olvidar-apartado`.
+    section_key: str
+    #: El texto del alumno, tal cual.
+    text: str
+
+
 class TopicNotesService:
     """Escribe y comprueba los apuntes de un tema. No escribe por SQL: todo pasa por el
     repositorio."""
@@ -166,6 +181,7 @@ class TopicNotesService:
         workers: int = 1,
         lote_hechos: int = LOTE_HECHOS,
         lote_comprobacion: int = LOTE_COMPROBACION,
+        indicacion: IndicacionDeLectura | None = None,
     ) -> None:
         self._repository = repository
         self._dossier = dossier
@@ -173,6 +189,9 @@ class TopicNotesService:
         self._workers = max(1, workers)
         self._lote_hechos = max(1, lote_hechos)
         self._lote_comprobacion = max(1, lote_comprobacion)
+        #: **La indicacion de este aviso, si viene de uno** (M7): va al apartado
+        #: que dice y a ninguno mas.
+        self._indicacion = indicacion
         #: Cuándo se agota el tiempo de **esta** corrida (`time.monotonic()`), o `None` sin tope.
         #: Se pone al arrancar `run` y se consulta antes de cada llamada al modelo.
         self._se_acaba_a_las: float | None = None
@@ -929,6 +948,7 @@ class TopicNotesService:
                     topic_title=nodo.title,
                     material=selecciones[apartado.key],
                     es_tabla_de_puertos=tablas[apartado.key],
+                    indicacion=self._indicacion_de(apartado.key),
                 )
             )
             if resultado is None:
@@ -936,6 +956,12 @@ class TopicNotesService:
             escritos.append((apartado, resultado))
             usados.extend(titulo for _, titulo in encabezados(resultado.markdown))
         return escritos
+
+    def _indicacion_de(self, section_key: str) -> str | None:
+        """El aviso del alumno, **solo si este es el apartado del que habla**."""
+        if self._indicacion is None or self._indicacion.section_key != section_key:
+            return None
+        return self._indicacion.text
 
     def _modelo_o_nada(self, trabajo: Callable[[], T]) -> T | None:
         """Una llamada al modelo sin contar el fallo: lo cuenta quien la agrupa."""

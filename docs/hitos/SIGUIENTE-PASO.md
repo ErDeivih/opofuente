@@ -2498,3 +2498,39 @@ aviso dice que un hecho esta mal, lo que hay que corregir es el hecho, y eso no 
 
 **Las dos piezas son pequenas y el terreno esta medido**; **lo que hice en esta ronda es lo que las hace
 posibles**, **y es el tipo de cambio que no se nota hasta que falta.**
+
+## M7, punto 1: regenerar un apartado con la indicacion del alumno (ronda 215)
+
+**El comando ya puede hacer lo que el hito pide, y se comprueba por partes:**
+
+```
+uv run python -m opofuente.tools.apuntes --tema IV.7 \
+    --olvidar-apartado <clave> \
+    --indicacion "el puerto 443 es HTTPS, no HTTP" \
+    --indicacion-apartado <clave>
+```
+
+**Las decisiones que estan dentro:**
+
+1. **la indicacion viaja atada a un `section_key`**, **y solo ese apartado se redacta con ella**.
+   **Una indicacion sin apartado no se admite**, **y el comando se niega antes de gastar**:
+
+```
+--indicacion y --indicacion-apartado van juntos: el aviso dice que corregir y el apartado dice donde
+```
+
+**La razon esta escrita en el codigo**: **un aviso sobre un parrafo no puede reescribir el tema entero**,
+**y aceptarlo callando seria gastar dinero en reescribir veinte apartados por un aviso sobre uno**;
+
+2. **la indicacion no toca los hechos obligatorios**: **cambia como se cuenta el apartado, no que hay que
+   contar**;
+3. **y `--olvidar-apartado` sigue haciendo falta**: **una indicacion sobre un apartado que ya tiene texto no
+   lo reescribe sola**: **hay que olvidarlo primero**, **que es la misma pieza que ya existia**.
+
+## Lo que falta del punto 1, y es la mitad que enlaza
+
+**El texto se puede regenerar con el aviso; lo que no esta es el enlace de vuelta**: **que al regenerar
+desde un aviso concreto, el aviso quede marcado como «atendido» y la propuesta apunte a el.**
+
+**Y esa mitad es la que hace que el bucle sea un bucle**: **sin ella, el propietario regenera el parrafo y
+el aviso sigue abierto**, **que es casi peor que no regenerarlo, porque parece hecho.**

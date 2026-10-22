@@ -40,7 +40,7 @@ from typing import NoReturn
 
 from opofuente.application.dossier_service import DossierService
 from opofuente.application.topic_notes_models import TopicNotesReport
-from opofuente.application.topic_notes_service import TopicNotesService
+from opofuente.application.topic_notes_service import IndicacionDeLectura, TopicNotesService
 from opofuente.config import Settings, get_settings
 from opofuente.domain.errors import OpoFuenteError
 from opofuente.domain.key_reliability import ACTOR, KeyReliability
@@ -227,6 +227,20 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
         ),
     )
     parser.add_argument(
+        "--indicacion",
+        dest="indicacion",
+        default=None,
+        help="lo que dijo quien leyo el apartado: se le da al redactor como lo que hay "
+        "que corregir, y solo para el apartado de --indicacion-apartado",
+    )
+    parser.add_argument(
+        "--indicacion-apartado",
+        dest="indicacion_apartado",
+        default=None,
+        help="la clave del apartado al que se refiere --indicacion (una indicacion sin "
+        "apartado no se admite: un aviso sobre un parrafo no puede reescribir el tema)",
+    )
+    parser.add_argument(
         "--olvidar-apartado",
         dest="olvidar_apartado",
         action="append",
@@ -297,6 +311,26 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
         ),
     )
     return parser.parse_args(list(argv))
+
+
+def _la_indicacion(args: argparse.Namespace) -> IndicacionDeLectura | None:
+    """El aviso del alumno, **o un error si viene a medias**.
+
+    **Una indicacion sin apartado no se admite**: un aviso sobre un parrafo no
+    puede reescribir el tema entero, y aceptarlo callando seria gastar dinero en
+    reescribir veinte apartados por un aviso sobre uno. **Y un apartado sin
+    texto tampoco**: no hay nada que corregir y la corrida costaria lo mismo.
+    """
+    texto = getattr(args, "indicacion", None)
+    clave = getattr(args, "indicacion_apartado", None)
+    if not texto and not clave:
+        return None
+    if not texto or not clave:
+        raise SystemExit(
+            "--indicacion y --indicacion-apartado van juntos: el aviso dice que "
+            "corregir y el apartado dice donde"
+        )
+    return IndicacionDeLectura(section_key=str(clave), text=str(texto))
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -434,6 +468,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 timeout_seconds=args.tiempo,
             ),
             workers=max(1, args.paralelo),
+            indicacion=_la_indicacion(args),
         )
         reloj = SystemClock()
         if args.dry_run:
