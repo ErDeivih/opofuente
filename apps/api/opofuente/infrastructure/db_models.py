@@ -2623,3 +2623,23 @@ class CardRecord(Base):
     due_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class StudyPlanRecord(Base):
+    """El plan de estudio: el examen, las horas y los descansos (M4).
+
+    **Guarda lo que decide el alumno, no el reparto**: el reparto se
+    calcula con `domain/study_plan.py` cada vez, porque guardarlo seria
+    guardar una derivacion que miente en cuanto cambie un tema.
+    """
+
+    __tablename__ = "study_plans"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    #: El dia del examen: sin esto no hay plan.
+    exam_date: Mapped[date] = mapped_column(Date, nullable=False)
+    hours_per_week: Mapped[int] = mapped_column(Integer, nullable=False)
+    #: Los dias de descanso, como `"6"` o `"0,6"`: cero es lunes.
+    rest_days: Mapped[str] = mapped_column(String(16), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
