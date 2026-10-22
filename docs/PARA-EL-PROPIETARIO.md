@@ -1630,3 +1630,22 @@ cd apps\api; uv run python -m opofuente.tools.invitar --correo amigo@correo
 
 **El segundo comando imprime un enlace de un solo uso que caduca en siete días.** **Tu amigo lo canjea con
 `canjear.py` y ya tiene cuenta.** **La pantalla de canje todavía no está; son dos comandos por persona.**
+
+## La puerta del web no pasa, y no es el código (22 de octubre)
+
+**`tsc` y `eslint` fallan sobre `apps\web` con un error de resolucion de modulos**, **y la suite de capturas
+falla con el mismo sintoma.** **Los tres empezaron despues de arreglar el enlace de los paquetes internos del
+monorepo** —**que era un fallo real: `@opofuente/contracts` se pedia al registro de npm**—. **El arreglo hizo
+que la web sirviera y cambio la disposicion de `node_modules`.**
+
+**Lo que hace falta es `pnpm-lock.yaml`**, **que fija esa disposicion**, **y generarlo necesita acceso al
+registro**:
+
+```powershell
+pnpm install --lockfile-only
+git add pnpm-lock.yaml
+```
+
+**Con ese fichero, `pnpm install --frozen-lockfile` deja el arbol siempre igual**, **y entonces se puede
+comprobar si `tsc`, `eslint` y las capturas vuelven.** **Sin el, cada `pnpm install` deja una disposicion
+distinta y las herramientas del monorepo se resuelven como les toca.**
