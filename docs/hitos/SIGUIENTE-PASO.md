@@ -5345,3 +5345,37 @@ recorrido-M1 · recorrido-M3 · recorrido-M5 · recorrido-M8
 **Un cambio hecho a mano sobre la copia para medir dejo la base en un estado que ninguna migracion esperaba**, **y el sintoma —«el servidor no arranca»— no decia nada de indices.**
 
 **La copia de trabajo no es solo datos: tambien es esquema**, **y tocarlo a mano tiene consecuencias que aparecen trescientas rondas despues.**
+
+---
+
+# Cierre de la sesion — 22 de octubre de 2026 (ronda 310)
+
+**Los ocho hitos con documento. Siete con su trabajo hecho. Todo lo que queda es del propietario.**
+
+```
+M1 ✓ 76 capturas · M2 ✓ salvo §2 · M3 ✓ 80 capturas · M4 ✓
+M5 ✓ 52 capturas · 3 supuestos guardados · M6 ✓ · M7 5 de 6 · M8 ✓ 78 capturas
+```
+
+**Y los cuatro pendientes que quedan, con su causa:**
+
+```
+M2 §2   tesseract con espanol                    del propietario
+M5      los supuestos oficiales                  el mismo tesseract
+M7 §3   las 825 decisiones                       del propietario
+```
+
+## Lo que la sesion dejo, y no es poco
+
+**M8 entero —once piezas—, M5 desbloqueado y cerrado salvo los oficiales, M7 con cinco de seis, y las capturas de
+los cuatro recorridos.**
+
+**Y el descubrimiento que costo mas**: **el bloqueo de trescientas rondas era `node_type == 'topic'` escrito en tres
+funciones**, **porque el temario de TAI 2025 tiene dos niveles en tres de sus cuatro bloques.**
+
+## Y las nueve hipotesis falsas, todas en el acta
+
+**El lockfile sin commitear · las dos versiones de Playwright · el `npx` que no era · las claves del fixture · el
+generador que «asumia tres niveles» · el esquema adivinado cinco veces · el indice creado a mano.**
+
+**Las nueve se comprobaron y se corrigieron antes de convertirse en trabajo para nadie.**

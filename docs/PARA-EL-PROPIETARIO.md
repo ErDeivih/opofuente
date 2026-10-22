@@ -1649,3 +1649,49 @@ git add pnpm-lock.yaml
 **Con ese fichero, `pnpm install --frozen-lockfile` deja el arbol siempre igual**, **y entonces se puede
 comprobar si `tsc`, `eslint` y las capturas vuelven.** **Sin el, cada `pnpm install` deja una disposicion
 distinta y las herramientas del monorepo se resuelven como les toca.**
+
+---
+
+# Lo que queda de la fase 3, y es todo tuyo (cierre del 22 de octubre)
+
+**Siete hitos tienen su trabajo hecho. Lo que falta son tres cosas y las tres necesitan algo que no está en esta
+máquina.**
+
+## 1 · `tesseract` con el paquete de español
+
+**Desbloquea dos hitos a la vez:**
+
+```
+M2 §2   los tres escaneos del INAP sin capa de texto
+        TAI-2018-libre-cuestionario-1/-2 · TAI-2018-pi-cuestionario-unico
+
+M5      los supuestos OFICIALES: importar_inap busca esos MISMOS tres PDF
+```
+
+**Y falta una cosa más, pequeña**: **esos tres PDF no están en el manifiesto de `fetch-sources.ps1`**, **que
+descarga los de 2024 y 2025**. **Con el enlace, o con permiso para buscarlos, se añaden.**
+
+**Lo demás de M5 está hecho**: **el generador funciona y guarda** —**tres supuestos con sus 25 preguntas, 0,30 $**—.
+
+## 2 · Las 825 decisiones de la bandeja
+
+```
+explicaciones en borrador    1609   se aprueban en bloque
+incidencias automatizables    134   YA marcadas como propuesta_lista
+decisiones de verdad          825   apuntes contra clave
+                            ------
+total                        2568
+```
+
+**Y las 825, por motivo:** **538 la clave contradice la norma · 192 la frase y la clave no coinciden · 95 la
+materia no está en el índice.**
+
+**Las 538 son del día en que los PDF del BOCYL cambiaron en la descarga**: **puede que no sean 538 problemas
+distintos.**
+
+## 3 · Y nada más
+
+**Todo lo demás está hecho, medido y en `main`**: **el paquete público, el instalador, la copia, la guía, la
+invitación entera, las capturas de los cuatro recorridos y los ocho documentos de hito.**
+
+**Cuando el `tesseract` esté y las 825 estén decididas, la fase se cierra.**
