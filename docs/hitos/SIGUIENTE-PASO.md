@@ -5692,3 +5692,37 @@ accesibilidad.
 puertas 1 a 17   OK
 puerta  18       24 failed, 69 passed  (accesibilidad, axe)
 ```
+
+## La puerta 18, con la primera violacion localizada (ronda 26)
+
+**24 de las 93 pruebas de extremo a extremo fallan, y la primera dice de que van:**
+
+```
+axe en /admin/apuntes
+  id:     label-content-name-mismatch
+  impact: serious
+  help:   "Elements must have their visible text as part of their accessible name"
+  html:   <a aria-current="page" class="nav__link nav__link--active" href="/...
+```
+
+**Y el sitio esta localizado**: `apps/web/src/app/AdminShell.tsx`, la navegacion de administracion:
+
+```tsx
+<NavLink
+  aria-label={count === undefined ? undefined : `${item.label}: ${count.label}`}
+  ...>
+  <span className="nav__label">{item.label}</span>
+  {count !== undefined && <span className="nav__count" aria-hidden="true">{count.count}</span>}
+```
+
+**El nombre accesible es «Importaciones: 7 avisos o errores de importacion», y el texto visible del enlace
+incluye la insignia con el numero** —que esta `aria-hidden`, **pero el numero sigue estando a la vista**—.
+**La regla exige que todo el texto visible este dentro del nombre accesible, y el «7» no lo esta.**
+
+**Lo que hay que decidir, y no es un retoque cosmetico**: **o la insignia entra en el nombre accesible**
+(«Importaciones, 7: avisos o errores de importacion»), **o deja de ser un numero suelto a la vista**.
+**Cualquiera de las dos cambia lo que oye quien usa lector de pantalla**, asi que **la decision es de producto,
+no de estilo**.
+
+**Las otras 23 fallas estan sin identificar una a una**: solo se ha leido la primera. **Y no se ha tocado nada**:
+la puerta 18 sigue en 24 rojos y **no se ha desactivado `axe`**, que seria relajar el juez.
