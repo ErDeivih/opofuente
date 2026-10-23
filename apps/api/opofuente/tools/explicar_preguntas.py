@@ -2,10 +2,10 @@
 
 **Por defecto no llama a nadie y no escribe nada**: recorre el camino entero â€”las preguntas
 con ancla y clave servible, el texto de su apartado, los lotes y las comprobacionesâ€” con el
-doble, **a coste cero**, y dice quÃ© habrÃ­a pasado. Con `--de-verdad` llama al modelo y
+doble, **a coste cero**, y dice qué habría pasado. Con `--de-verdad` llama al modelo y
 gasta; con `--guardar` escribe las aceptadas.
 
-La clave se lee de `DEEPSEEK_API_KEY` y no se escribe en ningÃºn fichero.
+La clave se lee de `DEEPSEEK_API_KEY` y no se escribe en ningún fichero.
 """
 
 from __future__ import annotations
@@ -38,8 +38,8 @@ _CONSULTA = (
     "join topic_note_sections s on s.id = a.section_id "
     "where a.result = 'covered' and a.expected_letters is not null "
     "and length(a.expected_letters) > 2 and length(trim(s.body_markdown)) > 0 "
-    # **Solo las que NO tienen ya una explicaciÃ³n generada**: sin este filtro no converge,
-    # porque siempre empieza por las mismas y reescribe lo hecho. Con Ã©l, cada tanda toma las
+    # **Solo las que NO tienen ya una explicación generada**: sin este filtro no converge,
+    # porque siempre empieza por las mismas y reescribe lo hecho. Con él, cada tanda toma las
     # siguientes pendientes y se puede relanzar desde cero sin repetir nada.
     "and not exists (select 1 from question_explanations e "
     "where e.question_version_id = a.question_version_id "
@@ -103,11 +103,11 @@ def _servicio() -> QuestionService:
     )
 
 
-def _guardar(aceptadas: Sequence[object], *, modelo: str) -> int:
+def _guardar(aceptadas: Sequence[object], *, modelo: str, sustituir: bool = False) -> int:
     """Escribe las aceptadas en la base, **con su cita y su anclaje**.
 
-    **Devuelve cuÃ¡ntas entraron de verdad**: el servicio puede decir que no si la pregunta
-    desapareciÃ³ entre la lectura y la escritura, y contarlas como guardadas serÃ­a mentir en la
+    **Devuelve cuántas entraron de verdad**: el servicio puede decir que no si la pregunta
+    desapareció entre la lectura y la escritura, y contarlas como guardadas sería mentir en la
     cifra del hito.
     """
     servicio = _servicio()
@@ -119,7 +119,7 @@ def _guardar(aceptadas: Sequence[object], *, modelo: str) -> int:
             origin=Origin.GENERATED,
             citation=propuesta.cita,  # type: ignore[attr-defined]
             model_name=modelo,
-            no_sustituir_lo_privado=True,
+            no_sustituir_lo_privado=not sustituir,
         )
         if vista is not None:
             guardadas = guardadas + 1
@@ -128,7 +128,7 @@ def _guardar(aceptadas: Sequence[object], *, modelo: str) -> int:
 
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--limite", type=int, default=20, help="cuÃ¡ntas preguntas, por defecto 20")
+    parser.add_argument("--limite", type=int, default=20, help="cuántas preguntas, por defecto 20")
     parser.add_argument(
         "--desde",
         type=int,
@@ -139,6 +139,15 @@ def _parser() -> argparse.ArgumentParser:
         "--de-verdad",
         action="store_true",
         help="llama al modelo de verdad (gasta); sin esto usa el doble y no gasta nada",
+    )
+    parser.add_argument(
+        # **Apagada por defecto y a proposito**: el servicio se niega a pisar una explicacion
+        # privada, y eso protege el trabajo ya hecho. **Pero las 11.315 privadas de la base real
+        # no tienen cita, ni ancla, ni modelo** —medido—, **y una explicacion sin cita no se puede
+        # comprobar**; las generadas llevan cita literal y pasan las cuatro comprobaciones.
+        "--sustituir-lo-privado",
+        action="store_true",
+        help="reemplaza una explicacion privada sin cita por la generada (con la copia hecha)",
     )
     parser.add_argument(
         "--guardar",
@@ -173,13 +182,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     print(f"sin material: {len(salida.sin_material)}")
     if args.de_verdad:
         entrada, salida_tokens = proposer.ultimos_tokens  # type: ignore[attr-defined]
-        print(f"tokens: entrada {entrada} Â· salida {salida_tokens}")
+        print(f"tokens: entrada {entrada} · salida {salida_tokens}")
     if args.guardar:
         if not args.de_verdad:
             print("sin --de-verdad no se guarda nada: el doble escribe explicaciones de mentira")
             return 2
         modelo = proposer.version  # type: ignore[attr-defined]
-        print(f"guardadas: {_guardar(salida.aceptadas, modelo=modelo)}")
+        guardadas = _guardar(salida.aceptadas, modelo=modelo, sustituir=args.sustituir_lo_privado)
+        print(f"guardadas: {guardadas}")
     return 0
 
 
