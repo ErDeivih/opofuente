@@ -5592,3 +5592,30 @@ Leon no dice hoy lo que decia cuando se genero el fixture.
 pasa las otras pruebas**, asi que **no se ha hecho a la ligera**.
 
 **El paso 18 no se ha ejecutado**: la bateria se para en el primero que falla.
+
+## El paso 17, medido y sin tocar a ciegas (ronda 23)
+
+**16 de 18 puertas en verde.** El 17 es el unico que falla, y **no es codigo**: sus fuentes son documentos
+oficiales que han cambiado desde que se generaron los fixtures.
+
+**Lo que se hizo, en orden, y sin saltarse pasos:**
+
+1. **`fetch-sources.ps1`**: bajó las 18 fuentes, todas con su hash `OK`.
+2. **`build_profile_fixtures --check`**: fallo con «el texto de una fuente volatil ha cambiado».
+3. **Se leyo el mensaje entero**, que dice el camino: «actualiza la huella con `--refresh-content` (que antes
+   verifica las citas y no escribe si alguna falta)».
+4. **`--refresh-content`**: **verifico 71 citas antes de tocar nada**, y dijo que cambia
+   `celador-2022-bocyl-orden-pdf`. **La primera vez se cayo al imprimir** —un `UnicodeEncodeError` de la
+   consola, no de la logica— **y no escribio nada**; con `PYTHONIOENCODING=utf-8` escribio.
+5. **Y al repetir el check, falla otra cosa**: `celador-2023-bocyl-resolucion-salamanca.pdf` **no coincide con
+   el hash del manifiesto**. **Ese es un documento oficial que ha cambiado de bytes**, no una pagina volatil.
+
+**Y ahi se para.** **No se ha actualizado ese hash**: un PDF oficial que cambia es un dato que hay que mirar,
+no una huella que se refresca. **El cambio del manifiesto se ha revertido** para no dejar en `main` un fixture
+que no se ha podido comprobar entero.
+
+## Lo que hay que decidir, y es de ingenieria
+
+**Dos fuentes han cambiado**: una pagina volatil (su texto) y un PDF oficial (sus bytes). **Lo que hay que ver
+es si el PDF nuevo dice lo mismo que el viejo** —y si los perfiles citan lo que ya no esta—. **Eso es leer dos
+documentos y comparar, no ejecutar un comando.**
