@@ -363,7 +363,15 @@ def test_el_mismo_texto_pegado_dos_veces_se_reconoce_como_duplicado(
     clusters = seeded_client.get("/api/v1/duplicate-clusters").json()
     mismo_texto = [cluster for cluster in clusters if cluster["kind"] == "same_text"]
     assert mismo_texto, f"el mismo texto debería agruparse: {clusters}"
-    cluster = mismo_texto[0]
+    # **El cluster de ESTOS dos, no el primero de la lista**: con la suite
+    # entera hay otros `same_text` de otras pruebas, y coger el primero hacia
+    # que esta probara el de al lado: pasaba sola y fallaba en compania.
+    cluster = next(
+        uno
+        for uno in mismo_texto
+        if {"resumen-a.txt", "resumen-b.txt"}
+        <= {miembro.get("subject_label") for miembro in uno["members"]}
+    )
     assert len(cluster["members"]) == 2
     assert cluster["status"] == "open", "un duplicado no se resuelve solo"
 
