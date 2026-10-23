@@ -5874,3 +5874,32 @@ el nombre accesible**.
 3. **Si lo añade**, ese texto va al nombre accesible o deja de ser visible. **Si no lo añade**, la regla esta
    midiendo algo que solo aparece en el arbol accesible, y **entonces se necesita el dato de axe, que este
    informe no trae**: habria que volcar `violations` con `data` desde una prueba suelta.
+
+## La linea base de verdad: 26 (ronda 32)
+
+**Nunca se habia medido el codigo original con un paquete construido al dia.** El «24 fallos» que vengo citando
+desde la ronda 25 salia de un **paquete viejo**, y por eso no cuadraba con nada.
+
+```
+build del codigo ORIGINAL + e2e     ->   26 failed, 67 passed   (6,2 min)   <- LA LINEA BASE
+build + correccion A (aria-label)   ->   26 failed, 67 passed
+build + correccion B (sin aria-label)->  26 failed, 67 passed
+paquete VIEJO, sin build             ->  24 failed                  <- medicion invalida
+```
+
+**Asi que las dos correcciones fueron neutras, y el 24 era mentira.** **La cifra que hay que batir es 26.**
+
+## Lo que queda, con las dos familias identificadas
+
+```
+24 nodos  <button class="button" disabled aria-label="Aceptar con la correccion...">
+45 nodos  <a class="nav__link nav__link--active" aria-label="Apuntes: …">   (el ACTIVO)
+```
+
+**Y el dato que axe no da en este informe**: `"data": null`. **Para saber que texto falta hay que volcar
+`violations` con su `data` desde una prueba suelta**, no leer el recorte del log.
+
+## La leccion, que es la de toda la sesion y esta vez es cara
+
+**Cada medicion tiene que ser de lo que se cree que es.** **Un paquete sin construir me hizo creer durante siete
+rondas que habia arreglado algo, y luego que lo habia empeorado, y ninguna de las dos cosas era cierta.**
