@@ -5903,3 +5903,40 @@ paquete VIEJO, sin build             ->  24 failed                  <- medicion 
 
 **Cada medicion tiene que ser de lo que se cree que es.** **Un paquete sin construir me hizo creer durante siete
 rondas que habia arreglado algo, y luego que lo habia empeorado, y ninguna de las dos cosas era cierta.**
+
+## Lo que se sabe de la regla, y por que no basta (ronda 33)
+
+**Leido el ayudante de la prueba** (`apuntes-revision.spec.ts`, `sinViolaciones`):
+
+```ts
+const resultados = await new AxeBuilder({ page })
+  .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
+  .analyze();
+expect(resultados.violations, `axe en ${donde}`).toEqual([]);
+```
+
+**Y el objeto de la violacion trae `"data": null`**: **esta regla no rellena `data`**, asi que **el informe nunca
+va a decir que texto falta**. **No es que no lo haya leido: es que no esta.**
+
+## Lo que queda descartado por medicion, no por opinion
+
+```
+nombre accesible con el numero visible   ->  26   (neutro)
+nombre desde el contenido, sin aria-label->  26   (neutro)
+codigo original, paquete al dia          ->  26   (linea base)
+```
+
+**Las tres iguales.** Asi que **ni el numero de la insignia ni el `aria-label` de la navegacion son la causa.**
+**Y el nodo senalado es `.nav__link--active`, el activo** — el unico con `aria-current="page"`.
+
+## La hipotesis que queda viva, y como se comprueba sin adivinar
+
+**`aria-current="page"` es lo unico que distingue al nodo senalado de los que no lo estan.** **Si axe incluye
+en el «texto visible» algo que solo aparece en el activo**, ahi esta.
+
+**Comprobacion barata y decisiva**: **quitar `aria-current` del enlace activo en una copia y volver a medir**.
+**Si baja de 26, la causa esta ahi** y se decide como se marca la seccion actual de otra forma (clase, `aria-
+current` en otro sitio, o un texto oculto para lectores). **Si sigue en 26, la causa no es la navegacion** y hay
+que volcar los nodos uno a uno con un volcado propio, porque axe no los da.
+
+**Eso es una medicion, no una hipotesis mas**: 8 minutos (build + bateria) contra seguir suponiendo.
