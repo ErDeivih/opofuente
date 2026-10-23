@@ -6076,3 +6076,40 @@ paquete construido desde cero**. **Solo entonces habra una linea base.**
 **`git checkout` revierte a `HEAD`, no al original.** **Si el cambio se commiteo antes de intentar revertirlo,
 el «revertido» sigue teniendo el cambio.** **Y yo lo commitee.** **Cinco rondas midiendo un estado que creia
 otro.**
+
+## El espacio en el DOM y en el nombre: tampoco (ronda 38)
+
+**Aplicado lo que el mecanismo pedia, en los dos sitios a la vez:**
+
+```tsx
+aria-label={`${item.label} ${count.count}: ${count.label}`}   // nombre: «Avisos 3: …»
+<span className="nav__label">{item.label}</span>
+{count !== undefined && ' '}                                   // DOM: «Avisos 3», no «Avisos3»
+```
+
+**Build limpio (`dist` borrado), 27 fallos.** **Igual que antes.**
+
+**Y esta vez el cambio NO estaba commiteado antes de revertirlo**, asi que la reversion si devuelve el codigo
+anterior — **que lleva mi cambio de la ronda 28, y eso ya esta dicho y commiteado**.
+
+## Lo que queda demostrado y lo que no
+
+**Demostrado:**
+
+- **la regla compara el texto visible como trozo contiguo del nombre**;
+- **el nodo de «Aceptar corregido» desaparecio al alinear su nombre** — **un caso resuelto, medido**;
+- **la navegacion no se arregla** ni con el numero en el nombre, ni sin `aria-label`, ni con espacio en los dos
+  sitios.
+
+**No demostrado:** **por que** los enlaces de navegacion siguen saliendo. **Cinco formas distintas y las cinco
+iguales.**
+
+## Lo honesto sobre esta puerta
+
+**Seis rondas. Un nodo resuelto. La navegacion sin resolver.** **Y una medicion —la de la ronda 25— que era de un
+paquete viejo, y una reversion —la de la ronda 35— que devolvio un commit con mi cambio dentro.** **Los dos
+errores son mios y estan escritos.**
+
+**Lo que hay que hacer distinto la proxima vez**: **volcar el arbol accesible que axe calcula** (no el
+`violations`, que viene sin `data`) **para ver exactamente que cadena compara**. **Eso es un volcado propio con
+`page.evaluate`, no una bateria mas.**
