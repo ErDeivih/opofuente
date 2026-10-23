@@ -5515,3 +5515,24 @@ cluster = next(c for c in mismo_texto if {primero, segundo} <= ids_de(c))
 **Falta comprobar un dato**: **como se llama el campo del identificador dentro de `members`** —no se ha mirado
 aun, y no se adivina—. **Eso es lo primero de la siguiente tanda**: `curl` a `/api/v1/duplicate-clusters` o
 el esquema de la vista, y de ahi el nombre del campo.
+
+## El arreglo de la prueba en compania, hecho (ronda 17)
+
+**El campo se miro antes de escribirlo**: `DuplicateMemberSchema` tiene **`subject_id`**, `subject_type`,
+**`subject_label`** y `similarity`. **Y `_pegar` devuelve el id del LOTE, no el del artefacto** —asi que el
+identificador del miembro no servia para lo que yo queria—. **Se usa `subject_label`, que es el rotulo**:
+
+```python
+cluster = next(
+    uno
+    for uno in mismo_texto
+    if {"resumen-a.txt", "resumen-b.txt"}
+    <= {miembro.get("subject_label") for miembro in uno["members"]}
+)
+```
+
+**`len(cluster["members"]) == 2` sigue igual**: lo que cambia es **de que cluster se habla**, que era el
+defecto.
+
+**`test_classification.py`: 14 pasan** en solitario. **Falta la comprobacion que de verdad importa**: correr la
+suite entera, que es donde fallaba. **Eso son 58 minutos y hay que hacerlo antes de decir que esta.**
