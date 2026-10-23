@@ -223,7 +223,7 @@
       "rights_note": "Mismas condiciones que el HTML del BOCYL: el aviso legal no publica condiciones de reutilización, así que el estado queda como «unknown».",
       "notes": "No alimenta los fixtures: se conserva como copia de verificación del mismo acto. La copia que el portal de Salud ofrece del mismo documento tiene el mismo tamaño pero distinto hash (lleva su propia firma), así que se usa la del BOCYL, que es la publicación oficial.",
       "volatile": true,
-      "content_sha256": "00dde869152a2f33cbe7e50b28e1a28ff44357852bb84cd3003055c256c30785"
+      "content_sha256": "8a7bce83d3c4b583d51b155f6724f5cedf78d23750e78154658323426b65c431"
     },
     {
       "id": "celador-2023-bocyl-resolucion-salamanca-html",
@@ -258,7 +258,7 @@
       "retrieved_format": "pdf",
       "published_at": "2023-10-02",
       "retrieved_at": "2026-09-22",
-      "sha256": "30552d886eacd3c9eace123d8d09a1a3825f076e7503c9de501f7d41e6dc6400",
+      "sha256": "80e3343ff0759c61993e964f4234d0258558e679284c3cc1802c5fafb824f81f",
       "local_path": "data/sources/celador-2023-bocyl-resolucion-salamanca.pdf",
       "authority_tier": "A",
       "rights_status": "unknown",
