@@ -5970,3 +5970,43 @@ texto visible tal cual, seguido.**
 **Tres variantes medidas e iguales. Una regla cuyo `data` viene vacio. Un nodo senalado con un atributo que solo
 el tiene.** **Y una noche de intentos que han servido para descartar, que es menos de lo que queria y mas de lo
 que habia al empezar.**
+
+## Cuatro variantes sobre la navegacion, las cuatro en 26 (ronda 35)
+
+```
+nombre con el numero                        26
+sin aria-label, nombre desde el contenido   26
+codigo original, paquete al dia             26   <- linea base
+sin aria-label + espacio entre rotulo e insignia + insignia no oculta   26
+```
+
+**La navegacion queda DESCARTADA como causa.** **Cuatro formas distintas de nombrar el mismo enlace, y la cifra
+no se mueve.** **No hace falta una quinta.**
+
+## El foco pasa al boton, que es la familia de 24 nodos
+
+```
+24 x <button class="button" disabled="" aria-label="Aceptar con la correccion...">
+```
+
+**Ese es el nodo mas repetido de los dos.** **Y `disabled` no lo exime**: la regla mira el nombre accesible igual.
+
+**Lo que hay que mirar ahi**: `features/review/ProposalList.tsx:234`
+
+```tsx
+aria-label={`Aceptar con la corrección: ${sujeto}`}
+```
+
+**con su texto visible dentro.** **Si el texto visible es otra cosa** —el sujeto, un icono con texto, un
+`«Aceptar»` que no coincide con `«Aceptar con la corrección»`—, **ahi esta el desajuste**, y **es el mismo
+patron que descarte en la navegacion pero en otro componente**.
+
+**Y esta vez se comprueba antes de tocar**: leer el `render` de ese boton —**que texto lleva dentro y cual es su
+`aria-label`**— antes de escribir nada. **Las cuatro variantes anteriores se hicieron sin leer el `render`
+completo, y eso es lo que hay que dejar de hacer.**
+
+## Donde esta la fase, sin adornos
+
+**Puertas 1 a 17 en verde. La 18 en 26 fallos, una sola regla, dos familias, y la primera descartada por
+medicion.** **El objetivo no esta cumplido** y lo que falta es **una noche de leer componentes**, no de correr
+baterias.
