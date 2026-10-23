@@ -5493,7 +5493,7 @@ _clasificar(seeded_client)
 clusters = seeded_client.get("/api/v1/duplicate-clusters").json()
 mismo_texto = [cluster for cluster in clusters if cluster["kind"] == "same_text"]
 assert mismo_texto, ...
-cluster = mismo_texto[0]          # <-- EL PRIMERO DE LA LISTA
+cluster = mismo_texto[0]  # <-- EL PRIMERO DE LA LISTA
 assert len(cluster["members"]) == 2
 ```
 
@@ -5505,8 +5505,8 @@ miembros no son dos.
 se guardan los dos y se elige **el cluster que los contiene**:
 
 ```python
-primero = _pegar(...)      # resumen-a.txt
-segundo = _pegar(...)      # resumen-b.txt
+primero = _pegar(...)  # resumen-a.txt
+segundo = _pegar(...)  # resumen-b.txt
 cluster = next(c for c in mismo_texto if {primero, segundo} <= ids_de(c))
 ```
 
