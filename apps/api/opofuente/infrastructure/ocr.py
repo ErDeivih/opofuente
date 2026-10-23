@@ -237,7 +237,7 @@ class TesseractOcr:
         """Texto de una imagen. Lanza `OcrFailedError` si el OCR no se pudo hacer."""
         return self._ocr_fichero(path)
 
-    def text_of_pdf(self, path: Path, *, max_pages: int) -> PdfOcrText:
+    def text_of_pdf(self, path: Path, *, max_pages: int, psm: int | None = None) -> PdfOcrText:
         """Texto de las páginas de un PDF escaneado, una entrada por página.
 
         Cada página se renderiza a 300 ppp y se OCRiza por separado: así una página ilegible no
@@ -263,19 +263,23 @@ class TesseractOcr:
                 with tempfile.TemporaryDirectory(prefix="opofuente-ocr-") as carpeta:
                     png = Path(carpeta) / f"pagina-{numero + 1}.png"
                     pagina.get_pixmap(dpi=self._dpi).save(png)
-                    paginas.append(self._ocr_fichero(png).strip())
+                    paginas.append(self._ocr_fichero(png, psm=psm).strip())
             return PdfOcrText(pages=tuple(paginas), page_count=total)
         finally:
             documento.close()
 
-    def _ocr_fichero(self, path: Path) -> str:
+    def _ocr_fichero(self, path: Path, *, psm: int | None = None) -> str:
         sonda = self.probe()
         if not sonda.available:
             raise OcrFailedError(sonda.detail)
-        resultado = self._run(
-            [*self._base_command(), str(path), "stdout", "-l", self._languages],
-            self._timeout,
-        )
+        comando = [*self._base_command(), str(path), "stdout", "-l", self._languages]
+        # **El modo de segmentación importa y mucho en un examen escaneado**: con el
+        # automático, Tesseract pone el número de la pregunta en una línea y su
+        # enunciado en la siguiente, **y el parser no los une**. Con `6` —un bloque
+        # de texto uniforme— el número y el enunciado salen en la misma línea.
+        if psm is not None:
+            comando += ["--psm", str(psm)]
+        resultado = self._run(comando, self._timeout)
         if resultado.returncode != 0:
             motivo = resultado.stderr.strip()[:120]
             raise OcrFailedError(f"Tesseract terminó con código {resultado.returncode}: {motivo}")

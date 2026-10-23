@@ -199,15 +199,46 @@ def _lineas_del_ocr(path: Path, ocr: TesseractOcr, *, paginas: int) -> tuple[tup
     **El orden de página se conserva**: el adaptador devuelve el texto en el orden en que lee las
     páginas, **y de ese orden sale el orden de las preguntas del examen**.
     """
-    leido = ocr.text_of_pdf(path, max_pages=max(1, paginas))
+    leido = ocr.text_of_pdf(path, max_pages=max(1, paginas), psm=6)
     lineas: list[tuple[int, str]] = []
     numero = 0
     for cruda in leido.text.splitlines():
         numero += 1
         if _CABECERA.match(cruda):
             continue
-        lineas.append((numero, cruda))
+        lineas.append((numero, _arreglo_del_ocr(cruda)))
     return tuple(lineas)
+
+
+#: Un número de pregunta al que el OCR se le ha comido el punto: «7 El cumplimiento…».
+#: **Se le devuelve el punto y nada más**: no se toca el texto, **solo la forma que el
+#: parser necesita para reconocer que ahí empieza una pregunta**.
+_SIN_PUNTO = re.compile(r"^(\s*)(\d{1,3})\s+([A-ZÁÉÍÓÚÜÑ¿¡][^\n]*)$")
+
+#: Una letra de opción duplicada por el OCR: «Cc) El Consejo…».
+_LETRA_DOBLADA = re.compile(r"^(\s*)([a-dA-D])\2(\s*[.)\u2013-]\s*)(.*)$")
+
+
+def _arreglo_del_ocr(linea: str) -> str:
+    """Corrige dos artefactos del OCR **que rompen el parser**, y solo esos dos.
+
+    **El parser exige que la numeración de cada sección sea consecutiva** (`candidato ==
+    numero_esperado`): **en cuanto una línea pierde su punto, la secuencia se rompe y todas las
+    preguntas siguientes se descartan**. **Y una opción cuya letra sale doblada deja de ser una
+    opción**, **así que su pregunta se queda con menos de dos y se tira**.
+
+    **No se corrige nada más**: **ni acentos, ni palabras, ni el orden**. Lo que el OCR leyó mal en
+    el texto se queda como lo leyó, **que es lo que después se puede auditar**.
+    """
+    sin_punto = _SIN_PUNTO.match(linea)
+    if sin_punto is not None:
+        margen, cifra, resto = sin_punto.groups()
+        return f"{margen}{cifra}. {resto}"
+    doblada = _LETRA_DOBLADA.match(linea)
+    if doblada is not None:
+        margen, letra, cierre, resto = doblada.groups()
+        return f"{margen}{letra.lower()}{cierre}{resto}"
+    return linea
 
 
 def _rotulo(linea: str) -> tuple[str, bool] | None:
@@ -237,6 +268,10 @@ def extraer_cuestionario(path: Path, *, ocr: TesseractOcr | None = None) -> Cues
     no encaja ahí tampoco, se declara. Nunca se reordena ni se renumera nada.
     """
     lineas = lineas_del_pdf(path, ocr=ocr)
+    # **Un documento leido con OCR admite huecos en la numeracion**, y un PDF con capa de
+    # texto no: **ahi un salto es siempre un error de lectura**, y aqui es el OCR que no vio
+    # una cifra. Los huecos se declaran uno a uno, no se tapan.
+    tolerante = ocr is not None
     if not lineas or sum(len(texto.strip()) for _n, texto in lineas) == 0:
         return Cuestionario(
             fuente=path.name,
@@ -356,7 +391,24 @@ def extraer_cuestionario(path: Path, *, ocr: TesseractOcr | None = None) -> Cues
         numero = numbering_match(texto)
         if numero is not None:
             candidato = int(numero.group(1))
-            if candidato <= TOPE_DE_NUMERO and candidato == numero_esperado:
+            salta = candidato > numero_esperado
+            if candidato <= TOPE_DE_NUMERO and (
+                candidato == numero_esperado or (tolerante and salta)
+            ):
+                if tolerante and salta:
+                    # **Se dice qué números no se han leido**, en vez de dejar el hueco mudo:
+                    # **una pregunta que el OCR no vio tiene que poder contarse**.
+                    descartes.append(
+                        Desviacion(
+                            linea=numero_linea,
+                            clase="numero_no_leido",
+                            detalle=(
+                                "el OCR salta de "
+                                f"{numero_esperado} a {candidato}: faltan "
+                                f"{candidato - numero_esperado}"
+                            ),
+                        )
+                    )
                 cerrar_pregunta()
                 if rotulo_actual is None:
                     # Una pregunta antes de cualquier rótulo: el cuestionario no lo declara (los de

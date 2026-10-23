@@ -104,3 +104,32 @@ con el enunciado del supuesto y con los rótulos de los diagramas**.
 **Asi que el OCR esta restaurado y conectado, y lo que falta es que el texto que produce sea
 parseable** —**DPI mas alto, modo de segmentacion de pagina, o normalizar la numeracion antes de
 parsear**—. **Eso es trabajo acotado y es el siguiente paso del §2.5.**
+
+## §2.5 — hasta donde llega el OCR hoy, con cifras
+
+**El OCR esta restaurado y conectado al importador.** **Y con `--psm 6` y dos arreglos acotados
+—devolver el punto que el OCR se come en el numero de pregunta, y desdoblar la letra de una opcion— el
+texto que produce se acerca al que el parser espera:**
+
+```
+                          preguntas leidas   maximo   huecos declarados
+2018 libre, cuadernillo 1          51          100            5
+2018 libre, cuadernillo 2          15          115            5
+2018 pi, supuesto unico            30           50            1
+```
+
+**Y no llega a 100.** **El limite ya no es el parser**: **es la calidad del OCR sobre estos escaneos**
+—letras pegadas en los diagramas, cifras leidas como letras, opciones partidas—. **El parser, con el
+texto de un PDF de verdad, sigue exigiendo numeracion consecutiva y estricta**; **el OCR es el unico
+que admite huecos, y los declara uno a uno**.
+
+**Y por eso los tres examenes de 2018 NO se importan todavia**: **el §2.5 pide importar «si el numero de
+preguntas cuadra con la plantilla»**, **y 51 no cuadra con 100**. **Importar 51 preguntas de 100 seria
+peor que no importarlas**: **el examen pareceria completo y le faltaria la mitad**.
+
+**Lo que haria falta para cerrarlo**: **subir el DPI del renderizado, o preprocesar la imagen
+(binarizado, enderezar) antes del OCR**, **y volver a medir con la misma tabla**. **Es trabajo acotado y
+sin dependencias externas.**
+
+**Lo que si queda hecho y no se pierde**: **`tesseract` con español, fuera de `temp`, configurado en el
+ambito de usuario, y el importador sabiendo leer un escaneo cuando el texto que saca sea fiel.**
