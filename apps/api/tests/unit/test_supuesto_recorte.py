@@ -43,8 +43,9 @@ def test_veintiseis_preguntas_se_quedan_en_veinticinco() -> None:
 def test_se_quitan_las_ultimas_y_el_orden_se_respeta() -> None:
     recortado = recortar_al_numero(_supuesto(28))
 
-    assert [p.enunciado for p in recortado.preguntas][0] == "pregunta 1"
-    assert [p.enunciado for p in recortado.preguntas][-1] == f"pregunta {PREGUNTAS_DEL_SUPUESTO}"
+    enunciados = [p.enunciado for p in recortado.preguntas]
+    assert enunciados[0] == "pregunta 1"
+    assert enunciados[-1] == f"pregunta {PREGUNTAS_DEL_SUPUESTO}"
 
 
 def test_veinticinco_se_quedan_igual() -> None:
