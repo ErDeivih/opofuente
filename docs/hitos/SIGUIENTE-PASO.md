@@ -5742,3 +5742,37 @@ y antes no lo contenia — **es una mejora aunque no mueva la cuenta**.
 **Lo que eso dice**: **las 24 fallas no son una sola causa**. **Hay que leerlas una a una** —que es lo que no se
 ha hecho— en vez de arreglar la primera y suponer que las demas son lo mismo. **Es el mismo error de metodo que
 me costo rondas al principio de la sesion**: suponer en vez de leer.
+
+## Las 93 violaciones son UNA regla, y hay 58 sitios donde mirar (ronda 28)
+
+**Extraido del registro de la bateria, contando los identificadores:**
+
+```
+93 x label-content-name-mismatch
+```
+
+**Una sola regla, 93 nodos.** **No son 24 causas distintas**: es la misma —**el texto visible de un elemento no
+esta contenido en su nombre accesible**— repetida por toda la aplicacion.
+
+**Y donde mirar, contado**: **58 `aria-label` en `apps/web/src`**. Los que llevan texto visible dentro y un
+`aria-label` que no lo contiene son los que disparan la regla; **los que estan en un boton solo con icono no
+disparan nada**, porque no tienen texto visible.
+
+**Los candidatos mas probables, por lo que se ve en cada linea:**
+
+```
+AdminShell.tsx:63        ya corregido en la ronda 27 (lleva el numero visible) — y la cuenta no bajo
+SyllabusPage.tsx:106     <li aria-label={`Bloque ${code}`}>        con texto visible dentro
+SyllabusPage.tsx:132     <li aria-label={`Tema ${code}`}>
+Disclosure.tsx:173       aria-label={title}  con el titulo tambien dentro
+TopicNotes.tsx:67        <article aria-label={section.title}>
+MarcoDeTabla.tsx:34      role=region aria-label={etiqueta}
+CurriculumTree.tsx:47    <ul aria-label="Programa oficial">  con los temas dentro
+```
+
+**El patron esta claro**: **contenedores con `aria-label` cuyo texto interior no coincide con la etiqueta**.
+**La correccion, en cada uno, es decidir cual de las dos cosas manda**: **o el `aria-label` se quita** —y el
+nombre sale del contenido, que es lo que la regla prefiere—, **o se reescribe para incluir el texto visible**.
+
+**Y no se ha hecho**: son 58 sitios y cada uno es una decision de que oye quien usa lector de pantalla. **Lo que
+si esta hecho es dejarlos enumerados**, que es lo que faltaba para poder atacarlo sin volver a empezar.
