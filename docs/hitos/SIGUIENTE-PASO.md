@@ -6042,3 +6042,37 @@ una parafrasis, ni el texto con otras palabras, ni el numero por separado.
 **Otra vez 48 `nav__link`.** **Con el patron ya validado**, y sabiendo que el `aria-label` de la navegacion
 **si** empieza por el rotulo visible, **lo que queda por mirar es si el texto visible incluye algo mas que el
 rotulo** —la insignia— **en el paquete construido**. **Es lo siguiente despues de los botones.**
+
+## La «linea base» no era el codigo original (ronda 37)
+
+**Al mirar el paquete construido, el fuente y el historial a la vez:**
+
+```
+dist/assets/index-*.js    ->  `${n.count}: ${n.label}`      <- mi cambio de la ronda 29
+src/app/AdminShell.tsx    ->  aria-label={ (en varias lineas)  <- el mismo cambio
+git log                   ->  8148640 «el nombre accesible de la navegacion lleva el numero visible»
+```
+
+**El `git checkout -- AdminShell.tsx` de la ronda 35 revirtio a `HEAD`, y `HEAD` ya contenia mi propio commit
+de la ronda 28.** **Asi que nunca se restauro el codigo original**: **la «linea base de 26» se midio con mi
+cambio puesto.**
+
+**Consecuencias, dichas:**
+
+- **la comparacion «24 antes / 26 despues» nunca fue valida**: el 24 era un paquete viejo y el 26 llevaba mi
+  cambio;
+- **la conclusion «el `aria-label` no es la causa» esta sin fundamento**: **no se midio el original**;
+- **el texto visible real del enlace es `«Avisos3»`** —el rotulo y la insignia pegados en el DOM, sin espacio—
+  **y el nombre `«Avisos, 3: …»` no contiene `«Avisos3»` como trozo contiguo**. **Eso si encaja con la regla.**
+
+## Lo que hay que hacer, y es una linea
+
+**Restaurar el `aria-label` original** (`${item.label}: ${count.label}`), **poner un espacio real entre el rotulo
+y la insignia** (`{' '}`, que ya se probo pero sobre el codigo con mi cambio encima), **y medir contra un
+paquete construido desde cero**. **Solo entonces habra una linea base.**
+
+## La leccion, que es la de toda esta fase
+
+**`git checkout` revierte a `HEAD`, no al original.** **Si el cambio se commiteo antes de intentar revertirlo,
+el «revertido» sigue teniendo el cambio.** **Y yo lo commitee.** **Cinco rondas midiendo un estado que creia
+otro.**
