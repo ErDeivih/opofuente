@@ -59,3 +59,48 @@ apuntes que escribi alli). **El importador no toca `topic_note_sections`.**
 §2.4  M5                supuestos sobre la base real
 §2.7  M6 y M4           rendimiento < 2 s · por que el plan cubre 28 temas y no 33
 ```
+
+---
+
+# §2.5 — El OCR: restaurado y enganchado al importador
+
+## Lo que estaba mal, y no era lo que parecia
+
+**El binario seguia instalado**: `C:\Program Files\Tesseract-OCR\tesseract.exe`, **v5.4.0**. **Lo que
+faltaba era el modelo de español**, que vivia en `F:\temp-opofuente\tessdata` —**la carpeta temporal que
+se vacio**—. **Solo habia `eng` y `osd`.**
+
+## Lo que se ha hecho
+
+```
+1 · binario           ya estaba · v5.4.0.20240606
+2 · spa.traineddata   bajado de tessdata_best (12,9 MB) a F:\OpoFuente\ocr\tessdata
+3 · configuracion     OPOFUENTE_TESSERACT_PATH y ..._TESSDATA, en el ambito de usuario
+4 · comprobado        el adaptador de la app: «disponible · Tesseract v5.4.0, idiomas spa»
+5 · los 3 PDF         YA ESTABAN en F:\OpoFuente\fuentes\inap-tai, con sus plantillas
+```
+
+**El OCR lee**: 6 páginas y unos 21.000 caracteres por examen, **con texto limpio**
+—«INSTITUTO NACIONAL DE ADMINISTRACIÓN PÚBLICA · CUERPO DE TÉCNICOS AUXILIARES DE INFORMÁTICA»—.
+
+## Y enganchado al importador
+
+**`lineas_del_pdf` acepta ahora un OCR y cae a él solo cuando el PDF no trae capa de texto.** **El
+camino normal sigue siendo el texto del PDF**, **que es exacto y no depende de ningún binario**;
+**el OCR es la excepción, y solo para los escaneos.**
+
+## Y el problema que queda, medido
+
+```
+TAI-2018-libre-cuestionario-1.pdf   →   0 preguntas   (87,5 s)
+TAI-2018-libre-cuestionario-2.pdf   →   4 preguntas   (79,0 s)
+TAI-2018-pi-cuestionario-unico.pdf  →   3 preguntas   (77,1 s)
+```
+
+**De 25 que tiene un ejercicio.** **El texto sale, pero el parser no reconoce la numeración**: **en el
+escaneo el «1.» se lee como «1..M»**, **y en los de ingreso libre el texto de las preguntas se mezcla
+con el enunciado del supuesto y con los rótulos de los diagramas**.
+
+**Asi que el OCR esta restaurado y conectado, y lo que falta es que el texto que produce sea
+parseable** —**DPI mas alto, modo de segmentacion de pagina, o normalizar la numeracion antes de
+parsear**—. **Eso es trabajo acotado y es el siguiente paso del §2.5.**

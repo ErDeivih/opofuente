@@ -49,6 +49,7 @@ from pathlib import Path
 import pymupdf
 
 from opofuente.domain.questions import numbering_match
+from opofuente.infrastructure.ocr import TesseractOcr
 
 #: Hasta qué número puede llegar una pregunta de estos exámenes. El cuestionario más largo numera
 #: 80 por sección, así que un número por encima de este tope no es una pregunta: es una línea de
@@ -163,12 +164,17 @@ class Cuestionario:
         return sum(1 for pregunta in self.preguntas if pregunta.es_reserva)
 
 
-def lineas_del_pdf(path: Path) -> tuple[tuple[int, str], ...]:
+def lineas_del_pdf(path: Path, *, ocr: TesseractOcr | None = None) -> tuple[tuple[int, str], ...]:
     """Las líneas del PDF con su número (1-based), sin las cabeceras ni los pies repetidos.
 
     Se lee página a página y **en orden de página**: el orden importa porque el documento es la
     fuente del orden de las preguntas. La numeración de línea es la del documento entero, para que
     una incidencia pueda señalar una línea concreta.
+
+    **Si el PDF no trae capa de texto y se pasa un OCR, se lee con OCR** (fase 3, §2.5): los tres
+    cuestionarios de 2018 del INAP son escaneos, **y hasta ahora este módulo los rechazaba**.
+    **El OCR no es el camino normal**: solo se usa cuando la capa de texto viene vacía, **porque un
+    PDF con texto se lee exacto y sin depender de ningún binario**.
     """
     documento = pymupdf.open(path)
     try:
@@ -180,9 +186,28 @@ def lineas_del_pdf(path: Path) -> tuple[tuple[int, str], ...]:
                 if _CABECERA.match(cruda):
                     continue
                 lineas.append((numero, cruda))
+        if ocr is not None and not any(texto.strip() for _, texto in lineas):
+            return _lineas_del_ocr(path, ocr, paginas=documento.page_count)
         return tuple(lineas)
     finally:
         documento.close()
+
+
+def _lineas_del_ocr(path: Path, ocr: TesseractOcr, *, paginas: int) -> tuple[tuple[int, str], ...]:
+    """Las líneas de un PDF escaneado, **leídas con OCR**.
+
+    **El orden de página se conserva**: el adaptador devuelve el texto en el orden en que lee las
+    páginas, **y de ese orden sale el orden de las preguntas del examen**.
+    """
+    leido = ocr.text_of_pdf(path, max_pages=max(1, paginas))
+    lineas: list[tuple[int, str]] = []
+    numero = 0
+    for cruda in leido.text.splitlines():
+        numero += 1
+        if _CABECERA.match(cruda):
+            continue
+        lineas.append((numero, cruda))
+    return tuple(lineas)
 
 
 def _rotulo(linea: str) -> tuple[str, bool] | None:
@@ -202,7 +227,7 @@ def _rotulo(linea: str) -> tuple[str, bool] | None:
     return None
 
 
-def extraer_cuestionario(path: Path) -> Cuestionario:
+def extraer_cuestionario(path: Path, *, ocr: TesseractOcr | None = None) -> Cuestionario:
     """Convierte un cuestionario del INAP en secciones con sus preguntas.
 
     El algoritmo es de una pasada y **se apoya dos veces en el propio documento** para no confundir
@@ -211,7 +236,7 @@ def extraer_cuestionario(path: Path) -> Cuestionario:
     como continuación de lo que había (una opción partida en dos líneas, un enunciado largo) y, si
     no encaja ahí tampoco, se declara. Nunca se reordena ni se renumera nada.
     """
-    lineas = lineas_del_pdf(path)
+    lineas = lineas_del_pdf(path, ocr=ocr)
     if not lineas or sum(len(texto.strip()) for _n, texto in lineas) == 0:
         return Cuestionario(
             fuente=path.name,
