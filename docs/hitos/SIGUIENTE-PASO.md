@@ -5619,3 +5619,33 @@ que no se ha podido comprobar entero.
 **Dos fuentes han cambiado**: una pagina volatil (su texto) y un PDF oficial (sus bytes). **Lo que hay que ver
 es si el PDF nuevo dice lo mismo que el viejo** —y si los perfiles citan lo que ya no esta—. **Eso es leer dos
 documentos y comparar, no ejecutar un comando.**
+
+## El PDF oficial que ha cambiado de bytes (ronda 24)
+
+**Lo medido, sin suponer nada:**
+
+```
+data\sources\celador-2023-bocyl-resolucion-salamanca.pdf
+  existe: si · 867.349 bytes · sha256 80E3343FF0759C61…
+  cabecera: %PDF-1.4   <- es un PDF de verdad, no una pagina de error disfrazada
+manifiesto: espera otro sha256
+```
+
+**Asi que el fichero que sirve hoy el BOCYL no es byte a byte el que se congelo cuando se genero el fixture.**
+
+**Y aqui no hay atajo, a diferencia de la fuente volatil**: el mensaje de la herramienta ofrece
+`--refresh-content` **solo para las volatiles** (las que se comparan por texto). **Esta se compara por bytes**,
+y **actualizar su hash seria dar por bueno un documento que no se ha mirado**.
+
+## La comprobacion que hay que hacer, y es leer
+
+**Este documento es el que sostiene la cita «fecha, hora y lugar del ejercicio; listas definitivas de admitidos
+y excluidos» del perfil `celador-sacyl-2022`.** **Lo que hay que ver es si esa frase sigue en el PDF nuevo**:
+
+- **si sigue** —y el cambio es de maquetacion o de metadatos—: **la huella del manifiesto se actualiza y la
+  puerta 17 pasa**, porque el documento sigue diciendo lo mismo;
+- **si no sigue**: **el perfil cita algo que ya no esta**, y eso es un cambio de contenido que **rompe la
+  trazabilidad del perfil**, no una huella que refrescar.
+
+**Es extraer el texto del PDF y buscarlo.** **No se ha hecho en esta ronda**, y **no se ha tocado el
+manifiesto**: `main` esta limpio y con lo verificado.
