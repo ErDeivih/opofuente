@@ -1819,10 +1819,11 @@ los repasos de M3                      los temas flojos se miden sobre los que h
 **Lo que hay hoy, leído en `student_service.py`:**
 
 ```python
-del_supuesto = bloques.get(request.case_block.upper(), ())     # los temas del bloque III o IV
-PartSpec(code="segunda_parte", node_ids=del_supuesto, count=20, reserve=5,
-         alternative_group="supuesto")
-practical_case_origin = "bloque"                                # ← y lo declara
+del_supuesto = bloques.get(request.case_block.upper(), ())  # los temas del bloque III o IV
+PartSpec(
+    code="segunda_parte", node_ids=del_supuesto, count=20, reserve=5, alternative_group="supuesto"
+)
+practical_case_origin = "bloque"  # ← y lo declara
 ```
 
 **Así que el simulacro ya tiene su segunda parte, y ya dice la verdad sobre de dónde sale.** **Lo que el
@@ -2624,9 +2625,11 @@ el que no existe se sabe, y el roto se usa.**
 
 ```python
 VIAJAN = (
-    ("question_versions",
-     "select * from question_versions where question_set_id in "
-     "(select id from question_sets where distribution = 'public')"),
+    (
+        "question_versions",
+        "select * from question_versions where question_set_id in "
+        "(select id from question_sets where distribution = 'public')",
+    ),
 )
 ```
 
@@ -4204,7 +4207,7 @@ AssertionError: el contrato no debe documentar HTTPValidationError: el cuerpo re
 **Y la causa era una linea que todas las rutas del proyecto tienen y la mia no:**
 
 ```python
-responses=WRITE_ERRORS,
+responses = (WRITE_ERRORS,)
 ```
 
 **Sin ella, FastAPI documenta su `HTTPValidationError` por defecto**, **y el proyecto documenta
@@ -4693,7 +4696,7 @@ base real intacta · 0,66 $ de 30 gastados · arbol limpio · 998 unitarias verd
 ```python
 select(CurriculumNodeRecord.id).where(
     CurriculumNodeRecord.path == code,
-    CurriculumNodeRecord.node_type == "topic",     # <<<<<< ESTA
+    CurriculumNodeRecord.node_type == "topic",  # <<<<<< ESTA
 )
 ```
 
