@@ -179,7 +179,7 @@ class SqlAlchemyStudentRepository:
         # y despues el mapeo. **En una sola consulta SQLite elegia escanear los
         # 47.113 mapeos** aunque se le diera el indice: el `group by` por nodo lo
         # empujaba a empezar por ahi. **Con la subconsulta no puede**.
-        intentos_por_pregunta = (
+        seleccion_intentos = (
             select(
                 SessionQuestionRecord.question_version_id.label("pregunta"),
                 func.count(func.distinct(AttemptRecord.id)).label("intentos"),
@@ -200,6 +200,15 @@ class SqlAlchemyStudentRepository:
                 StudySessionRecord.owner_id == owner_id,
                 QuestionSetRecord.opposition_id == opposition_id,
             )
+        )
+        # **El filtro de modo publico va AQUI, donde `question_sets` SI esta unido.** Antes se
+        # aplicaba a la consulta de fuera, que solo une los mapeos: **referenciar `question_sets`
+        # alli sin unirlo es un producto cartesiano**, y la condicion pasaba a decir «existe algun
+        # conjunto publico» —**siempre verdadero**—, asi que **el modo publico servia los intentos
+        # de un banco privado**. Lo dijo la prueba del modo publico, que llevaba en rojo sin que
+        # constara.
+        intentos_por_pregunta = (
+            _solo_publicos(seleccion_intentos, public_only)
             .group_by(SessionQuestionRecord.question_version_id)
             .subquery()
         )
@@ -218,7 +227,7 @@ class SqlAlchemyStudentRepository:
             .group_by(CurriculumMappingRecord.curriculum_node_id)
         )
         with self._session_factory() as session:
-            filas = session.execute(_solo_publicos(consulta, public_only)).all()
+            filas = session.execute(consulta).all()
         return {str(nodo): int(total) for nodo, total in filas}
 
     def outcome_counts(
