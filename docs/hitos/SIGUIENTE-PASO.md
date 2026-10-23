@@ -5555,3 +5555,40 @@ apps/api/tests/integration  →  836 passed, 0 failed, 0 skipped   (57 min 17 s)
 **Lo que falta para poder decir «18/18»**: volver a correr **la bateria entera** —la que tiene los 18 pasos—
 porque **las puertas 8 a 18 no se han ejecutado nunca**: la bateria se detiene en la primera que falla, y
 hasta ahora el paso 7 no pasaba. **El paso 7 ya esta; los otros once, sin medir.**
+
+## La bateria, hasta donde ha llegado (ronda 22) — 16 de 18
+
+```
+OK: 1. ruff format --check            OK: 10. contrato OpenAPI y tipos sincronizados
+OK: 2. ruff check                     OK: 11. build backend
+OK: 3. mypy (estricto)                OK: 12. build frontend
+OK: 4. eslint                         OK: 13. migracion desde base vacia
+OK: 5. typecheck TypeScript           OK: 14. esquema migrado verificado con sqlite3
+OK: 6. pruebas unitarias backend      OK: 15. siembra de perfiles desde base vacia
+OK: 7. pruebas de integracion         OK: 16. siembra idempotente
+OK: 8. pruebas de contrato
+OK: 9. pruebas de componentes (Vitest)
+
+FALLO en '17. fixtures de perfil sincronizados con las fuentes oficiales'
+```
+
+**Y el paso 7 pasa por primera vez**: `OK: 7. pruebas de integracion backend`. **Los cuatro defectos cerrados
+en estas rondas eran reales y su arreglo se sostiene en la bateria entera.**
+
+## Por que falla el 17, y no es codigo
+
+**Primero fallaba porque faltaban las fuentes**: `InvariantViolationError: faltan fuentes locales; ejecuta
+scripts/fetch-sources.ps1`. **Se ejecuto**, y bajo 18 fuentes —**celador-2022, bocyl, saludcastillayleon…**,
+todas con su hash `OK`—.
+
+**Y ahora falla por otra cosa**: `el texto de una fuente volatil ha cambiado`. **El propio manifiesto avisa**:
+las fuentes marcadas `volatile` **son paginas que el servidor sirve distintas en cada descarga**, y **su texto
+visible lo comprueba `build_profile_fixtures --check` contra el que se congelo al construir el fixture**.
+**Es deriva del contenido externo, no un defecto del codigo**: el aviso legal del BOCYL o de Salud de Castilla y
+Leon no dice hoy lo que decia cuando se genero el fixture.
+
+**Lo que hay que decidir, y no es una averia**: **si se regenera el fixture con el texto de hoy**
+(`build_profile_fixtures` sin `--check`) **o se fija el texto esperado**. **Regenerar cambia el fixture que hoy
+pasa las otras pruebas**, asi que **no se ha hecho a la ligera**.
+
+**El paso 18 no se ha ejecutado**: la bateria se para en el primero que falla.
