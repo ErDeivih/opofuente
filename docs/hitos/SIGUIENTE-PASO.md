@@ -5813,3 +5813,29 @@ comparable**). **Se ha revertido**: `main` queda en el estado que estaba.
 
 **El error de metodo de esta ronda es el de siempre, y esta vez me lo he hecho a mi mismo**: **medi sin
 comprobar que lo medido era lo que habia escrito.**
+
+## Dos hipotesis medidas y refutadas, con el paquete al dia (ronda 30)
+
+**Las dos con `npm run build` antes de `npm run e2e`**, que era el error de la ronda 27.
+
+| hipotesis | que se hizo | resultado |
+|---|---|---|
+| **el `aria-label` de la nav no lleva el numero visible** | `aria-label` = `«Avisos, 3: …»` | **26 fallos** |
+| **mejor sin `aria-label`: que el nombre salga del contenido** | se quito el `aria-label` y se dejo de ocultar la insignia | **26 fallos** |
+
+**Y con el codigo de antes de las dos, tambien 26.** **Asi que no es ninguna de las dos**: el nombre accesible
+de los enlaces de la navegacion **no es lo que axe esta midiendo**, o hay otra cosa en esos nodos que no se ha
+mirado.
+
+**Las dos se han revertido**: `main` esta como estaba y no se queda nada sin comprobar.
+
+## Lo que hay que hacer distinto, y no es probar otra hipotesis
+
+**Dejar de mirar el recuento y mirar la violacion entera**: axe devuelve, por nodo, **el nombre accesible que
+calcula, el texto visible que detecta y la diferencia**. **Eso esta en el informe y no se ha leido** —se ha
+leido el `id` y el `html`, que no dicen **que texto falta**.
+
+**El siguiente paso, concreto**: correr **una sola prueba** (`npx playwright test -g "E2E-F24"` con el paquete al
+dia) y **volcar el objeto `violations` completo a un fichero**, en vez de leer el recorte del log. **Con eso se
+sabe que texto no coincide, y entonces la correccion es evidente o no es.** **Dos rondas probando a ciegas es
+suficiente.**
