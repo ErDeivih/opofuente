@@ -56,7 +56,13 @@ export function AdminShell({ children }: AdminShellProps) {
                     to={item.path}
                     // El nombre del enlace dice el número **y** qué es: quien no ve la insignia —o no
                     // distingue el color— oye «Importaciones: 7 avisos o errores de importación».
-                    aria-label={count === undefined ? undefined : `${item.label}: ${count.label}`}
+                    // **El numero va en el nombre accesible tal como se ve**: la insignia esta a la vista, y la
+                    // regla `label-content-name-mismatch` exige que todo el texto visible este dentro
+                    // del nombre. Sin el «7», el lector de pantalla oye un nombre que no coincide con lo
+                    // que hay en pantalla.
+                    aria-label={
+                      count === undefined ? undefined : `${item.label}, ${count.count}: ${count.label}`
+                    }
                     className={({ isActive }) =>
                       isActive ? 'nav__link nav__link--active' : 'nav__link'
                     }

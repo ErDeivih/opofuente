@@ -5726,3 +5726,19 @@ no de estilo**.
 
 **Las otras 23 fallas estan sin identificar una a una**: solo se ha leido la primera. **Y no se ha tocado nada**:
 la puerta 18 sigue en 24 rojos y **no se ha desactivado `axe`**, que seria relajar el juez.
+
+## El arreglo del nombre accesible, hecho, y la cuenta no se movio (ronda 27)
+
+**Cambiado en `AdminShell.tsx`**: el nombre accesible lleva ahora el numero que se ve,
+
+```tsx
+aria-label={count === undefined ? undefined : `${item.label}, ${count.count}: ${count.label}`}
+```
+
+**`tsc` en verde.** **Y la bateria sigue en 24 fallos y 69 pasadas**: **este no era uno de los que fallan**, o
+no es el unico de su clase. **Se commitea igual**, porque el nombre accesible **debe** contener el texto visible
+y antes no lo contenia — **es una mejora aunque no mueva la cuenta**.
+
+**Lo que eso dice**: **las 24 fallas no son una sola causa**. **Hay que leerlas una a una** —que es lo que no se
+ha hecho— en vez de arreglar la primera y suponer que las demas son lo mismo. **Es el mismo error de metodo que
+me costo rondas al principio de la sesion**: suponer en vez de leer.
