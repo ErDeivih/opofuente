@@ -5422,3 +5422,26 @@ para mirarlo con tiempo.
 
 **Y las puertas 8 a 18 no se han ejecutado**: la bateria se para en la primera que falla, asi que el «18/18»
 sigue sin poder afirmarse.
+
+## La ultima prueba en rojo, con lo que ya se sabe (ronda 12)
+
+**`test_student_api.py::test_el_modo_publico_no_sirve_ningun_conjunto_personal`**, en la linea 725:
+
+```
+assert all(bloque["answered"] == 0 for bloque in overview["blocks"])
+```
+
+**Lo comprobado hasta aqui, y sirve para no repetirlo:**
+
+1. **El camino existe y parece correcto**: `_agregado()` calcula `publico = self._publico()` y se lo pasa a
+   `answered_counts(..., public_only=publico)`, que **aplica `_solo_publicos(consulta, public_only)`**.
+2. **La prueba falla igual en aislado**, asi que no es orden ni estado compartido.
+3. **Las otras cinco aserciones de la misma prueba pasan**: el tema del banco privado da 0 disponibles, el
+   publico da 4, el titulo privado no aparece y el id del conjunto tampoco. **Solo falla `answered`.**
+
+**Lo que queda por mirar, y es una consulta**: si `_solo_publicos` filtra por la distribucion del conjunto
+**de la pregunta**, o solo del nodo; y si el `answered` del bloque suma los intentos de una pregunta que
+**no esta catalogada en ningun tema** —el propio docstring de `_agregado` dice que esas cuentan en el total y
+no en ningun nodo—. **Si el bloque suma el total en vez de la suma de sus temas, ahi esta el fallo.**
+
+**No se ha tocado la asercion**: la prueba dice lo que debe pasar en modo publico y tiene razon en pedirlo.
