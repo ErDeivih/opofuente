@@ -127,14 +127,27 @@ def componer_cita(apartado: str, numeros: Sequence[int]) -> str:
 
     **Los números que no existen se ignoran**: no se inventa texto ni se recorta. Si ninguno vale,
     la cita sale vacía y la comprobación la rechaza.
+
+    **Y se cita el tramo, no la lista de elegidas.** Antes se unían las frases elegidas en el orden
+    en que venían, **y eso solo es literal si son contiguas**: si el modelo elige la 3 y la 7, el
+    texto «frase 3 + frase 7» **no existe en el apartado** y la comprobación lo rechaza —con razón—,
+    **aunque el modelo hubiera acertado**. Medido: **20 de 20 rechazadas por eso mismo**.
+
+    **Citar el tramo es lo honesto**: se cita desde la primera frase elegida hasta la última, **que
+    es texto que está literalmente en el apartado**, **y las frases de en medio son las que el
+    modelo no consideró necesarias pero forman parte del mismo pasaje**. Se cita de más, nunca de
+    menos, y nunca algo que no esté.
     """
     disponibles = _trozos(apartado)
-    elegidas = [
-        disponibles[numero - 1]
+    validos = [
+        numero
         for numero in numeros
         if 1 <= numero <= len(disponibles) and disponibles[numero - 1].strip()
     ]
-    return " ".join(elegidas)
+    if not validos:
+        return ""
+    primero, ultimo = min(validos), max(validos)
+    return " ".join(disponibles[primero - 1 : ultimo])
 
 
 def palabras_clave(texto: str) -> frozenset[str]:

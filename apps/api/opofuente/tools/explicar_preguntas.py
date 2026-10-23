@@ -1,11 +1,11 @@
 """El generador de explicaciones (M1 de la fase 3).
 
-**Por defecto no llama a nadie y no escribe nada**: recorre el camino entero —las preguntas
-con ancla y clave servible, el texto de su apartado, los lotes y las comprobaciones— con el
-doble, **a coste cero**, y dice qué habría pasado. Con `--de-verdad` llama al modelo y
+**Por defecto no llama a nadie y no escribe nada**: recorre el camino entero â€”las preguntas
+con ancla y clave servible, el texto de su apartado, los lotes y las comprobacionesâ€” con el
+doble, **a coste cero**, y dice quÃ© habrÃ­a pasado. Con `--de-verdad` llama al modelo y
 gasta; con `--guardar` escribe las aceptadas.
 
-La clave se lee de `DEEPSEEK_API_KEY` y no se escribe en ningún fichero.
+La clave se lee de `DEEPSEEK_API_KEY` y no se escribe en ningÃºn fichero.
 """
 
 from __future__ import annotations
@@ -34,14 +34,21 @@ _CONSULTA = (
     "select a.question_version_id, v.stem, a.expected_letters, s.body_markdown, a.section_id "
     "from question_note_anchors a "
     "join question_versions v on v.id = a.question_version_id "
+    "left join question_sets qs on qs.id = v.question_set_id "
     "join topic_note_sections s on s.id = a.section_id "
     "where a.result = 'covered' and a.expected_letters is not null "
     "and length(a.expected_letters) > 2 and length(trim(s.body_markdown)) > 0 "
-    # **Solo las que NO tienen ya una explicación generada**: sin este filtro no converge,
-    # porque siempre empieza por las mismas y reescribe lo hecho. Con él, cada tanda toma las
+    # **Solo las que NO tienen ya una explicaciÃ³n generada**: sin este filtro no converge,
+    # porque siempre empieza por las mismas y reescribe lo hecho. Con Ã©l, cada tanda toma las
     # siguientes pendientes y se puede relanzar desde cero sin repetir nada.
     "and not exists (select 1 from question_explanations e "
-    "where e.question_version_id = a.question_version_id) "
+    "where e.question_version_id = a.question_version_id "
+    "and e.origin = 'generated') "
+    # **Las de examen oficial primero y después por tema**, que es el orden que pide la fase:
+    # lo que el propietario va a mirar antes tiene que estar hecho antes. **Y el `left join`**:
+    # una pregunta sin conjunto también se explica, **y con `join` se quedaba fuera sin decirlo**.
+    "order by case when qs.set_type = 'official_exam' then 0 else 1 end, "
+    "a.section_id, v.position "
     "limit ?"
 )
 
@@ -99,8 +106,8 @@ def _servicio() -> QuestionService:
 def _guardar(aceptadas: Sequence[object], *, modelo: str) -> int:
     """Escribe las aceptadas en la base, **con su cita y su anclaje**.
 
-    **Devuelve cuántas entraron de verdad**: el servicio puede decir que no si la pregunta
-    desapareció entre la lectura y la escritura, y contarlas como guardadas sería mentir en la
+    **Devuelve cuÃ¡ntas entraron de verdad**: el servicio puede decir que no si la pregunta
+    desapareciÃ³ entre la lectura y la escritura, y contarlas como guardadas serÃ­a mentir en la
     cifra del hito.
     """
     servicio = _servicio()
@@ -121,7 +128,7 @@ def _guardar(aceptadas: Sequence[object], *, modelo: str) -> int:
 
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--limite", type=int, default=20, help="cuántas preguntas, por defecto 20")
+    parser.add_argument("--limite", type=int, default=20, help="cuÃ¡ntas preguntas, por defecto 20")
     parser.add_argument(
         "--desde",
         type=int,
@@ -166,7 +173,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     print(f"sin material: {len(salida.sin_material)}")
     if args.de_verdad:
         entrada, salida_tokens = proposer.ultimos_tokens  # type: ignore[attr-defined]
-        print(f"tokens: entrada {entrada} · salida {salida_tokens}")
+        print(f"tokens: entrada {entrada} Â· salida {salida_tokens}")
     if args.guardar:
         if not args.de_verdad:
             print("sin --de-verdad no se guarda nada: el doble escribe explicaciones de mentira")
