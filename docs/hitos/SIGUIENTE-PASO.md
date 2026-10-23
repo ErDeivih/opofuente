@@ -5839,3 +5839,38 @@ leido el `id` y el `html`, que no dicen **que texto falta**.
 dia) y **volcar el objeto `violations` completo a un fichero**, en vez de leer el recorte del log. **Con eso se
 sabe que texto no coincide, y entonces la correccion es evidente o no es.** **Dos rondas probando a ciegas es
 suficiente.**
+
+## La violacion apunta a UNO: el enlace activo (ronda 31)
+
+**Leido el objeto de la violacion entero, no el recorte:**
+
+```
+"target": Array [ ".nav__link--active" ],
+"html":   "<a aria-current=\"page\" class=\"nav__link nav__link--active\" href=\"/admin/…
+"data":   null
+```
+
+**El objetivo es `.nav__link--active`, no `.nav__link`.** **Solo el enlace de la seccion en la que estas**, no
+los cinco. **Eso explica por que las dos correcciones de la ronda 30 no movieron la cuenta**: cambie el nombre
+accesible de **todos** los enlaces, y **el problema esta en lo que hace distinto el activo**.
+
+**Y `"data": null`**: axe **no da** en este informe el nombre accesible ni el texto visible. **El log no lleva
+ese dato**, asi que **leerlo mas veces no lo va a producir**.
+
+## La hipotesis que queda, y es comprobable en el componente
+
+**El activo es el unico que lleva `aria-current="page"`** y la clase `--active`. **Si el componente añade algo
+visible solo cuando esta activo** —un rotulo, un icono con texto, una marca—, **ese texto es el que no esta en
+el nombre accesible**.
+
+**Y hay una segunda posibilidad que encaja igual de bien**: `aria-current="page"` **no añade texto**, pero
+**algunos lectores y la propia regla tratan el elemento activo distinto**. **Comprobarlo es leer el render del
+`NavLink` activo**, que es donde esta la clase.
+
+## Lo que hay que hacer, concreto
+
+1. **`npm run build`** antes de medir, siempre (ronda 29).
+2. **Leer el `render` del `NavLink` cuando `isActive` es cierto** y ver **si añade texto visible**.
+3. **Si lo añade**, ese texto va al nombre accesible o deja de ser visible. **Si no lo añade**, la regla esta
+   midiendo algo que solo aparece en el arbol accesible, y **entonces se necesita el dato de axe, que este
+   informe no trae**: habria que volcar `violations` con `data` desde una prueba suelta.
