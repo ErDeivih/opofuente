@@ -191,6 +191,7 @@ class _ModeloFalso:
         topic_code: str,
         topic_title: str,
         material: Sequence[MaterialPassage],
+        indicacion: str | None = None,
         es_tabla_de_puertos: bool = False,
     ) -> RedaccionBatch:
         # Cada hecho, su párrafo: es lo que hace el modelo de verdad, y es lo que deja ver la
@@ -429,6 +430,7 @@ class _ModeloQueRepite(_ModeloFalso):
         topic_code: str,
         topic_title: str,
         material: Sequence[MaterialPassage],
+        indicacion: str | None = None,
         es_tabla_de_puertos: bool = False,
     ) -> RedaccionBatch:
         cuerpo = (
@@ -457,6 +459,7 @@ class _ModeloQueEscribeMal(_ModeloFalso):
         topic_code: str,
         topic_title: str,
         material: Sequence[MaterialPassage],
+        indicacion: str | None = None,
         es_tabla_de_puertos: bool = False,
     ) -> RedaccionBatch:
         cuerpo = (
