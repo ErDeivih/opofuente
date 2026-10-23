@@ -5649,3 +5649,46 @@ y excluidos» del perfil `celador-sacyl-2022`.** **Lo que hay que ver es si esa 
 
 **Es extraer el texto del PDF y buscarlo.** **No se ha hecho en esta ronda**, y **no se ha tocado el
 manifiesto**: `main` esta limpio y con lo verificado.
+
+## El paso 17 se cerro, y el 18 abrio otra cosa (ronda 25)
+
+**Paso 17, cerrado y comprobado:**
+
+```
+fetch-sources.ps1                 18 fuentes, todas con su hash OK
+build_profile_fixtures --check    fallaba: texto volatil cambiado
+--refresh-content (UTF-8)         71 citas verificadas · escribio 1 huella
+y un PDF oficial cambiado         se extrajo su texto y SEGUIA diciendo lo mismo:
+                                  Salamanca 29 · admitidos 3 · excluidos 2 · aula 3 · mismo titulo
+                                  -> se actualizo su sha256, con la comprobacion hecha antes
+build_profile_fixtures --check    OK · «Fixtures de programa sincronizados con las fuentes oficiales»
+```
+
+**Dos cosas que costaron y conviene recordar:**
+
+- **`--refresh-content` se caia al imprimir** con `UnicodeEncodeError` de la consola: **no escribia nada y
+  parecia un fallo de validacion**. Con `PYTHONIOENCODING=utf-8` escribe.
+- **Una fuente volatil y un PDF oficial habian cambiado.** El volatil tiene refresco por texto; **el PDF se
+  compara por bytes y el proyecto no lo refresca solo, a proposito**. **Se leyo el texto antes de tocar la
+  huella**, que es lo que el mensaje pide.
+
+## Paso 18: la bateria de extremo a extremo
+
+```
+npm run e2e   ->   24 failed, 69 passed (5,2 min)
+```
+
+**Y los fallos son de accesibilidad**, no de flujo: `axe en /admin/apuntes` devuelve **40 violaciones** en una
+sola pantalla. **Las otras 23 fallas del mismo tipo estan por identificar una a una**, pero la primera dice
+claramente de que van.
+
+**No es de esta fase**: no he tocado componentes de la web en estas rondas. **Es la misma clase de hallazgo que
+la suite de integracion**: la puerta 18 no se habia ejecutado nunca, y tiene 24 pruebas en rojo por
+accesibilidad.
+
+## El marcador, exacto
+
+```
+puertas 1 a 17   OK
+puerta  18       24 failed, 69 passed  (accesibilidad, axe)
+```
