@@ -5382,3 +5382,43 @@ funciones**, **porque el temario de TAI 2025 tiene dos niveles en tres de sus cu
 generador que «asumia tres niveles» · el esquema adivinado cinco veces · el indice creado a mano.**
 
 **Las nueve se comprobaron y se corrigieron antes de convertirse en trabajo para nadie.**
+
+---
+
+# El estado de la bateria de puertas (ronda 11, sobre la base real)
+
+## Lo que se arreglo, y no era del producto
+
+**La suite de integracion no se habia corrido **nunca** entera, y tenia 29 pruebas en rojo.** La causa:
+
+```
+TypeError: _ModeloFalso.redactar() got an unexpected keyword argument 'indicacion'
+```
+
+**Los tres dobles de prueba de `redactar` no aceptaban el parametro que el servicio ya les pasa.**
+**Se les anadio, sin relajar una sola asercion.** `test_topic_notes.py`: **de 29 fallos a 35 verdes.**
+
+**Y una cabeza fijada a mano:** `test_la_cabeza_es_la_migracion_de_la_plataforma` decia
+`0041_explicaciones_cita_ancla`, **y la cabeza real es `0046_invitaciones` desde que se anadieron las
+migraciones 0042 a 0046**. **Actualizada**: el propio comentario de la prueba dice que la cabeza avanza con
+cada migracion y que ahi se fija cual es.
+
+## Lo que queda en rojo, y se dice
+
+```
+7. pruebas de integracion backend   ·   1 failed, 835 passed   (de 29 a 1)
+```
+
+`test_student_api.py::test_el_modo_publico_no_sirve_ningun_conjunto_personal`:
+
+```
+assert all(bloque["answered"] == 0 for bloque in overview["blocks"])
+```
+
+**Falla igual en aislado**, asi que no es orden ni estado compartido entre pruebas. **No lo he tocado yo**:
+esta prueba no pasa por nada que haya cambiado en esta fase —ni las explicaciones, ni las tarjetas, ni los
+supuestos, ni la bandeja—. **Pero no lo doy por arreglado ni lo tapo**: queda escrito con su asercion exacta
+para mirarlo con tiempo.
+
+**Y las puertas 8 a 18 no se han ejecutado**: la bateria se para en la primera que falla, asi que el «18/18»
+sigue sin poder afirmarse.
