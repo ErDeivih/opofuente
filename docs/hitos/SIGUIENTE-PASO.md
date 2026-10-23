@@ -5536,3 +5536,22 @@ defecto.
 
 **`test_classification.py`: 14 pasan** en solitario. **Falta la comprobacion que de verdad importa**: correr la
 suite entera, que es donde fallaba. **Eso son 58 minutos y hay que hacerlo antes de decir que esta.**
+
+## La suite de integracion, entera y en verde (ronda 19)
+
+```
+apps/api/tests/integration  →  836 passed, 0 failed, 0 skipped   (57 min 17 s)
+```
+
+**Los cuatro defectos que encontró la bateria estan cerrados y comprobados:**
+
+1. **29 pruebas de `test_topic_notes`**: los dobles de `redactar` no aceptaban `indicacion`.
+2. **La cabeza fijada a 0041**: actualizada a 0046, que es la real.
+3. **El modo publico servia intentos de un banco privado**: el filtro estaba donde `question_sets` no
+   esta unida, y ahi es un producto cartesiano. **Aplicado dentro de la subconsulta**, donde si esta.
+4. **La prueba del mismo texto cogia el cluster de al lado**: ahora elige el suyo por el rotulo de sus
+   miembros. **`len(members) == 2` sigue igual.**
+
+**Lo que falta para poder decir «18/18»**: volver a correr **la bateria entera** —la que tiene los 18 pasos—
+porque **las puertas 8 a 18 no se han ejecutado nunca**: la bateria se detiene en la primera que falla, y
+hasta ahora el paso 7 no pasaba. **El paso 7 ya esta; los otros once, sin medir.**
