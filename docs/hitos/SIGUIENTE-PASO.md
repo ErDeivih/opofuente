@@ -5480,3 +5480,38 @@ producto: 836 pruebas en un solo proceso, y alguna deja estado que otra no esper
 **Ninguno de los tres se habria encontrado sin ejecutarla entera**, y la bateria completa no se habia
 ejecutado nunca. **Y ahora aparece un cuarto problema, de otra clase**: la suite **no es hermética** para al
 menos una prueba. **Eso no se arregla ajustando la prueba**: hay que encontrar que estado comparte.
+
+## La prueba que falla solo en compania, localizada (ronda 16)
+
+**`test_classification.py::test_el_mismo_texto_pegado`**, linea 345 y siguientes. **Pasa sola; falla en la
+suite entera.** Y la causa se ve leyendo el cuerpo:
+
+```python
+_pegar(seeded_client, mismo_texto, "resumen-a.txt")
+_pegar(seeded_client, mismo_texto.replace(" ", "  "), "resumen-b.txt")
+_clasificar(seeded_client)
+clusters = seeded_client.get("/api/v1/duplicate-clusters").json()
+mismo_texto = [cluster for cluster in clusters if cluster["kind"] == "same_text"]
+assert mismo_texto, ...
+cluster = mismo_texto[0]          # <-- EL PRIMERO DE LA LISTA
+assert len(cluster["members"]) == 2
+```
+
+**Coge el PRIMER cluster `same_text` de la base de pruebas, no el que acaba de crear.** **Con la suite entera
+hay otros clusters de otras pruebas antes que este**, asi que `mismo_texto[0]` **es el de al lado**, y sus
+miembros no son dos.
+
+**El arreglo, que NO es relajar la asercion**: **`_pegar` devuelve el identificador del artefacto**, asi que
+se guardan los dos y se elige **el cluster que los contiene**:
+
+```python
+primero = _pegar(...)      # resumen-a.txt
+segundo = _pegar(...)      # resumen-b.txt
+cluster = next(c for c in mismo_texto if {primero, segundo} <= ids_de(c))
+```
+
+**La asercion `len(cluster["members"]) == 2` se queda igual**: lo que cambia es **de que cluster se habla**.
+
+**Falta comprobar un dato**: **como se llama el campo del identificador dentro de `members`** —no se ha mirado
+aun, y no se adivina—. **Eso es lo primero de la siguiente tanda**: `curl` a `/api/v1/duplicate-clusters` o
+el esquema de la vista, y de ahi el nombre del campo.
