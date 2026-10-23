@@ -5776,3 +5776,40 @@ nombre sale del contenido, que es lo que la regla prefiere—, **o se reescribe 
 
 **Y no se ha hecho**: son 58 sitios y cada uno es una decision de que oye quien usa lector de pantalla. **Lo que
 si esta hecho es dejarlos enumerados**, que es lo que faltaba para poder atacarlo sin volver a empezar.
+
+## La puerta 18 mide un paquete CONSTRUIDO, y eso cambia todo (ronda 29)
+
+**`playwright.config.ts` apunta a `http://127.0.0.1:4173`**, que es **la vista previa de un paquete ya
+construido**, no el servidor de desarrollo. **Asi que `npm run e2e` sin `npm run build` mide codigo viejo.**
+
+**Es lo que paso en la ronda 27**: cambie el `aria-label` de la navegacion, corri la bateria, **la cuenta no se
+movio** —y **no se movio porque la bateria estaba midiendo el paquete anterior**—. **Conclusion que saque
+entonces: «no era uno de los que fallan». Era falsa: la prueba ni siquiera vio el cambio.**
+
+**Con build nuevo, la cuenta es 26 fallos y 67 pasadas.** **Y el cambio del `aria-label`, con el paquete al dia,
+no mejoro la cuenta** (24 con el paquete viejo, 26 con el nuevo; **dos variables a la vez, asi que no es
+comparable**). **Se ha revertido**: `main` queda en el estado que estaba.
+
+## Lo que axe senala, ya con los nodos exactos
+
+```
+24 x <button class="button" disabled aria-label="Aceptar con la correccion...">
+12 x <a class="nav__link" href="/admin/apuntes" aria-label="Apuntes...
+12 x <a class="nav__link" href="/admin/avisos"   aria-label="Avisos: ...
+ 9 x <a class="nav__link" href="/admin/cambios"  aria-label="Cambios...
+ 6 x <a class="nav__link" href="/admin/errores"  aria-label="Errores...
+ 6 x <a class="nav__link" href="/admin/importar" aria-label="Import...
+```
+
+**Dos familias**: **los enlaces de la navegacion** (45 nodos) y **un boton de «Aceptar con la correccion»**
+(24 nodos). **Y los `aria-label` que salen en el registro son los de ANTES de mi cambio** — otra vez el paquete.
+
+## Lo que hay que hacer, y el orden importa
+
+1. **`npm run build` antes de cada `npm run e2e`**, o la medicion es de ayer. **Esto explica una ronda entera
+   perdida.**
+2. **Repetir la medida con el paquete al dia y sin tocar nada**, para tener la linea base de verdad.
+3. **Y entonces** atacar las dos familias.
+
+**El error de metodo de esta ronda es el de siempre, y esta vez me lo he hecho a mi mismo**: **medi sin
+comprobar que lo medido era lo que habia escrito.**
