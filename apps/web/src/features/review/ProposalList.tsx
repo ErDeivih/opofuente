@@ -231,7 +231,11 @@ export function ProposalList({
                       className="button"
                       type="button"
                       disabled={busy || correction === ''}
-                      aria-label={`Aceptar con la corrección: ${sujeto}`}
+                      // **El nombre empieza por el texto que se ve**: el boton dice «Aceptar corregido»
+                        // y el nombre decia «Aceptar con la correccion», **que no lo contiene**, y la
+                        // regla `label-content-name-mismatch` exige que el texto visible aparezca
+                        // dentro del nombre como trozo contiguo.
+                        aria-label={`Aceptar corregido: ${sujeto}`}
                       onClick={() => {
                         onDecide({
                           proposalId: proposal.id,

@@ -6010,3 +6010,35 @@ completo, y eso es lo que hay que dejar de hacer.**
 **Puertas 1 a 17 en verde. La 18 en 26 fallos, una sola regla, dos familias, y la primera descartada por
 medicion.** **El objetivo no esta cumplido** y lo que falta es **una noche de leer componentes**, no de correr
 baterias.
+
+## El patron esta validado: nombre que no contiene el texto visible (ronda 36)
+
+**El boton de la familia grande decia a la vista «Aceptar corregido» y su nombre accesible era «Aceptar con la
+correccion: <sujeto>»** — **el texto visible NO estaba dentro del nombre**, ni como trozo ni como nada.
+
+**Corregido** a `«Aceptar corregido: <sujeto>»`. **Y el nodo desaparecio del informe**:
+
+```
+antes:  24 x <button ... aria-label="Aceptar con la correccion...">
+ahora:   7 x <button ...>   y ya no es ese: son otros dos
+```
+
+**El patron, confirmado por medicion**: **el nombre accesible tiene que empezar por el texto que se ve**. No vale
+una parafrasis, ni el texto con otras palabras, ni el numero por separado.
+
+## Los siguientes, ya identificados con el mismo defecto
+
+```
+<button aria-label="Exportar el banco para Anki">Anki CSV</button>
+    visible: «Anki CSV»   nombre: «Exportar el banco para Anki»    -> NO lo contiene
+<button aria-label="Abrir el error de «El plazo…»">…
+    hay que leer su texto visible
+```
+
+**El arreglo es el mismo en todos**: **`«Anki CSV: exportar el banco para Anki»`** —el texto visible primero—.
+
+## Y la navegacion sigue dando 48 nodos
+
+**Otra vez 48 `nav__link`.** **Con el patron ya validado**, y sabiendo que el `aria-label` de la navegacion
+**si** empieza por el rotulo visible, **lo que queda por mirar es si el texto visible incluye algo mas que el
+rotulo** —la insignia— **en el paquete construido**. **Es lo siguiente despues de los botones.**
