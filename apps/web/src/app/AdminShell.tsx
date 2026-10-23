@@ -68,6 +68,7 @@ export function AdminShell({ children }: AdminShellProps) {
                     }
                   >
                     <span className="nav__label">{item.label}</span>
+                    {count !== undefined && ' '}
                     {count !== undefined && (
                       <span className="nav__count" aria-hidden="true">
                         {count.count}
