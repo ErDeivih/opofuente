@@ -40,6 +40,19 @@ class Reparto:
     explicaciones: int
     automatizables: int
     decisiones: int
+    #: De esas decisiones, **las que son de un examen oficial**: son las unicas que el
+    #: propietario tiene que resolver el (§2.6 del plan: «solo las de examenes oficiales
+    #: llegan al propietario»).
+    del_propietario: int = 0
+    #: Y las que **ya estan resueltas por la cuarentena de su conjunto**: la clave de ese
+    #: conjunto no es fiable, asi que la pregunta no entra en tests ni simulacros, y la
+    #: decision se tomo sobre el conjunto entero, no pregunta a pregunta.
+    por_la_cuarentena: int = 0
+
+    @property
+    def resto(self) -> int:
+        """Las que no son ni del propietario ni de un conjunto en cuarentena."""
+        return self.decisiones - self.del_propietario - self.por_la_cuarentena
 
     @property
     def total(self) -> int:
@@ -50,12 +63,16 @@ class Reparto:
             f"explicaciones en borrador  {self.explicaciones:>6}   (se aprueban en bloque)",
             f"incidencias automatizables  {self.automatizables:>6}   (sin frase, sin clave)",
             f"decisiones de verdad        {self.decisiones:>6}   (apuntes contra clave)",
+            f"  de examen oficial         {self.del_propietario:>6}   <- las que decides tu",
+            f"  ya en cuarentena          {self.por_la_cuarentena:>6}   (fuera de tests)",
+            f"  y el resto                {self.resto:>6}   (privado con clave fiable)",
             f"                            {'-' * 6}",
             f"total                       {self.total:>6}",
             "",
-            # **Y la frase que importa**: el hito pone un tope de 100 y lo que hay
-            # es otra cosa; decir «no se cumple» sin decir cuanto falta no sirve.
-            f"el hito pide menos de 100 decisiones reales; hay {self.decisiones}",
+            # **Y la frase que importa**: el hito pone un tope de 100 **y manda que solo las de
+            # examen oficial lleguen al propietario**. Se cuenta esa cifra, no la suma: sumar las
+            # que el propio plan deja fuera convertiria el hito en imposible por definicion.
+            f"el hito pide menos de 100 decisiones para el propietario; hay {self.del_propietario}",
         )
 
 
@@ -93,10 +110,30 @@ def repartir() -> Reparto:
                 text("select count(*) from notes_incidents where status = 'open'")
             ).scalar_one()
         )
+        # **De las que piden criterio, cuantas son de examen oficial y cuantas ya las
+        # resolvio la cuarentena del conjunto.** Se mira el tipo de conjunto y su
+        # fiabilidad, que es lo que decide si la pregunta entra o no en tests.
+        oficiales, cuarentena = session.execute(
+            text(
+                "select "
+                "coalesce(sum(case when qs.set_type = 'official_exam' then 1 else 0 end), 0), "
+                "coalesce(sum(case when qs.set_type is not null "
+                "and qs.set_type <> 'official_exam' "
+                "and coalesce(qs.key_reliability, '') in ('dudosa', 'no_fiable') "
+                "then 1 else 0 end), 0) "
+                "from notes_incidents i "
+                "left join question_versions v on v.id = i.question_version_id "
+                "left join question_sets qs on qs.id = v.question_set_id "
+                "where i.status = 'open' "
+                "and i.reason not in ('sin_frase_en_los_apuntes', 'clave_sin_definir')"
+            )
+        ).one()
     return Reparto(
         explicaciones=explicaciones,
         automatizables=automatizables,
         decisiones=abiertas - automatizables,
+        del_propietario=int(oficiales),
+        por_la_cuarentena=int(cuarentena),
     )
 
 
