@@ -28,6 +28,7 @@ from dataclasses import dataclass
 from opofuente.domain.practical_case import (
     SupuestoPropuesto,
     Veredicto,
+    recortar_al_numero,
     validar_con_respuestas,
     validar_forma,
 )
@@ -75,6 +76,11 @@ class PracticalCaseService:
             )
 
         propuesto = self._cliente.proponer(block=block, apartado=apartado)
+        # **El numero de preguntas se ajusta, no se descarta** (fase 3, §2.4): pedir
+        # veinticinco y tirar el supuesto entero porque vinieron veintiseis es tirar
+        # un supuesto bueno por un error de contar. Se quitan las sobrantes por el
+        # final —donde el modelo anade lo que le sobra— y se sigue.
+        propuesto = recortar_al_numero(propuesto)
         forma = validar_forma(propuesto)
         if not forma.aceptado:
             # **Sin gastar la segunda llamada**: un supuesto mal formado no se

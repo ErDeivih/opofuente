@@ -98,12 +98,19 @@ def _apartados(limite: int, fabrica: sessionmaker[Session]) -> dict[str, list[tu
         for fila in session.execute(
             text(
                 """
-                select n.official_code, s.body_markdown
+                -- **Se filtra por `path` y no por `official_code`**: en la base real el
+                -- `official_code` de un tema es su numero («1», «2») y la ruta es la que
+                -- dice el bloque («III.1»). **Filtrando por el codigo oficial salian CERO
+                -- apartados y el generador decia que no habia material**, cuando habia
+                -- dieciseis temas con notas.
+                -- **Y se juntan las secciones del tema**: un tema con notas tiene varias,
+                -- y el modelo necesita el texto entero para escribir el caso.
+                select n.path, group_concat(s.body_markdown, char(10) || char(10))
                 from curriculum_nodes n
                 join topic_note_sections s on s.curriculum_node_id = n.id
-                where n.official_code like 'III%' or n.official_code like 'IV%'
-                group by n.official_code
-                order by n.official_code
+                where n.path like 'III%' or n.path like 'IV%'
+                group by n.path
+                order by n.path
                 """
             )
         ):

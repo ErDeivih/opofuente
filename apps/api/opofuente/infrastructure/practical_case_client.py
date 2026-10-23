@@ -95,6 +95,7 @@ class PracticalCaseClient:
                 json={
                     "model": self._model,
                     "temperature": 0,
+                    "max_tokens": 8000,
                     "response_format": {"type": "json_object"},
                     **cuerpo,
                 },
@@ -116,8 +117,10 @@ class PracticalCaseClient:
                     {
                         "role": "user",
                         "content": (
-                            f"Bloque {block}. Escribe un supuesto practico con veinte "
-                            "preguntas y cinco de reserva sobre este apartado:\n\n"
+                            f"Bloque {block}. Escribe un supuesto practico sobre este apartado. "
+                            "Tiene que traer EXACTAMENTE veinticinco preguntas: veinte ordinarias "
+                            "y cinco de reserva, y las de reserva empiezan su enunciado por la "
+                            "palabra RESERVA. Ni mas ni menos.\n\n"
                             f"{apartado}\n\nDevuelve: "
                             '{"statement": "...", "preguntas": ['
                             '{"enunciado": "...", "opciones": {"a": "...", "b": "...", '

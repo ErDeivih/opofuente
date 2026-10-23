@@ -64,6 +64,27 @@ class Veredicto:
     problemas: tuple[str, ...]
 
 
+def recortar_al_numero(supuesto: SupuestoPropuesto) -> SupuestoPropuesto:
+    """Deja el supuesto en ``PREGUNTAS_DEL_SUPUESTO``, **quitando las sobrantes por el final**.
+
+    **Por que no se descarta** (fase 3, §2.4): **pedir veinticinco y tirar el supuesto entero
+    porque vinieron veintiseis es tirar un supuesto bueno por un error de contar**. Se quitan
+    las de mas, que es lo que el documento manda.
+
+    **Por el final y no por el principio**: el modelo anade lo que le sobra al final, y las
+    primeras veinticinco son las que siguen el orden del apartado.
+
+    **Si vienen de menos no se inventa nada**: se deja como esta y ``validar_forma`` lo dice.
+    """
+    if len(supuesto.preguntas) <= PREGUNTAS_DEL_SUPUESTO:
+        return supuesto
+    return SupuestoPropuesto(
+        block=supuesto.block,
+        statement=supuesto.statement,
+        preguntas=supuesto.preguntas[:PREGUNTAS_DEL_SUPUESTO],
+    )
+
+
 def validar_forma(supuesto: SupuestoPropuesto) -> Veredicto:
     """Las dos comprobaciones que no necesitan al segundo modelo.
 
