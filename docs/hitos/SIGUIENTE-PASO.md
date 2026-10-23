@@ -5940,3 +5940,33 @@ current` en otro sitio, o un texto oculto para lectores). **Si sigue en 26, la c
 que volcar los nodos uno a uno con un volcado propio, porque axe no los da.
 
 **Eso es una medicion, no una hipotesis mas**: 8 minutos (build + bateria) contra seguir suponiendo.
+
+## Como funciona la regla por dentro, y la hipotesis que encaja (ronda 34)
+
+**`label-content-name-mismatch` compara de una forma concreta**: saca el **texto visible** del nodo **incluyendo
+lo que lleva `aria-hidden`** —la insignia cuenta— y comprueba que ese texto aparezca **como trozo contiguo**
+dentro del nombre accesible. **No vale que el nombre contenga cada palabra por separado: tiene que contener el
+texto visible tal cual, seguido.**
+
+**Y eso explica que la correccion de la ronda 27 fuera neutra**: puse el nombre como
+`«Apuntes, 3: avisos y errores»`, **que contiene «Apuntes» y contiene «3», pero NO contiene «Apuntes3» ni
+«Apuntes 3» como trozo**. **La comparacion es de una cadena contigua, no de palabras.**
+
+**La hipotesis, entonces, es de espacios**: entre `<span class="nav__label">Apuntes</span>` y
+`<span class="nav__count">3</span>` **puede no haber ni un espacio en el DOM**, y entonces el texto visible es
+`«Apuntes3»`. **Un nombre accesible no puede contener eso** salvo que se escriba igual.
+
+## Como se comprueba, y son tambien ocho minutos
+
+1. **Leer el `render`**: si los dos `<span>` estan pegados sin espacio en el JSX, el texto visible sale pegado.
+2. **Si estan pegados**: **poner un espacio entre ellos** (`{' '}`), **quitar el `aria-label`** —para que el
+   nombre salga del contenido— **y medir**. **Si baja de 26, era eso.**
+
+**Y si sigue en 26, la conclusion es firme**: la regla no se arregla manipulando ese nombre, y hay que mirar
+**el otro nodo** —el boton «Aceptar con la correccion»—, que es la familia grande.
+
+## Lo que hay, sin adornos
+
+**Tres variantes medidas e iguales. Una regla cuyo `data` viene vacio. Un nodo senalado con un atributo que solo
+el tiene.** **Y una noche de intentos que han servido para descartar, que es menos de lo que queria y mas de lo
+que habia al empezar.**
