@@ -5445,3 +5445,38 @@ assert all(bloque["answered"] == 0 for bloque in overview["blocks"])
 no en ningun nodo—. **Si el bloque suma el total en vez de la suma de sus temas, ahi esta el fallo.**
 
 **No se ha tocado la asercion**: la prueba dice lo que debe pasar en modo publico y tiene razon en pedirlo.
+
+## La bateria, medida entera por primera vez (ronda 15)
+
+```
+OK: 1. ruff format --check
+OK: 2. ruff check
+OK: 3. mypy (estricto)
+OK: 4. eslint
+OK: 5. typecheck TypeScript
+OK: 6. pruebas unitarias backend        1.002 passed
+
+7. integracion backend   1 failed, 835 passed   (58 min)
+   test_classification.py::test_el_mismo_texto_pegado
+```
+
+**Y esa prueba PASA en aislado** (`1 passed` en 15 s). **Es dependiente del orden**, no un fallo de
+producto: 836 pruebas en un solo proceso, y alguna deja estado que otra no espera.
+
+**Las puertas 8 a 18 no se ejecutan**: la bateria se para en la primera que falla.
+
+## Lo que se cerro en estas rondas, y eran fallos reales
+
+1. **29 pruebas de `test_topic_notes`**: los tres dobles de `redactar` no aceptaban `indicacion`, que el
+   servicio ya pasa. **Adaptado el doble, ninguna asercion tocada.**
+2. **La cabeza fijada a 0041**: obsoleta desde que existen 0042-0046. Actualizada a 0046, que es lo que la
+   propia prueba dice que hay que hacer.
+3. **El modo publico servia los intentos de un banco privado**: el filtro se aplicaba a la consulta de fuera,
+   donde `question_sets` no esta unida, **y ahi es un producto cartesiano** —«existe algun conjunto publico»,
+   siempre verdadero—. **Aplicado dentro de la subconsulta.**
+
+## Lo que eso dice de la bateria
+
+**Ninguno de los tres se habria encontrado sin ejecutarla entera**, y la bateria completa no se habia
+ejecutado nunca. **Y ahora aparece un cuarto problema, de otra clase**: la suite **no es hermética** para al
+menos una prueba. **Eso no se arregla ajustando la prueba**: hay que encontrar que estado comparte.
