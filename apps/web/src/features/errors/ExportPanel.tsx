@@ -79,7 +79,7 @@ export function ExportPanel({
         <button
           className="button"
           type="button"
-          aria-label="Exportar el banco para Anki"
+          aria-label="Anki CSV: exportar el banco para Anki"
           disabled={busy}
           onClick={() => {
             onExport({

@@ -395,7 +395,7 @@ export function StudyRunner({
                   className="button"
                   type="button"
                   disabled={busy || marcadas.length === 0}
-                  aria-label="Enviar la respuesta"
+                  aria-label="Responder: enviar la respuesta"
                   onClick={() => {
                     onAnswer({
                       question_version_id: question.question_version_id,
@@ -412,7 +412,7 @@ export function StudyRunner({
                   className="button"
                   type="button"
                   disabled={busy}
-                  aria-label="Dejar la pregunta en blanco"
+                  aria-label="Dejarla en blanco: la pregunta"
                   onClick={() => {
                     onAnswer({
                       question_version_id: question.question_version_id,
@@ -476,7 +476,7 @@ export function StudyRunner({
             className="button"
             type="button"
             disabled={busy}
-            aria-label="Terminar la sesión"
+            aria-label="Terminar y corregir: la sesión"
             onClick={onFinish}
           >
             Terminar y corregir

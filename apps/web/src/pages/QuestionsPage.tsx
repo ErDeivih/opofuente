@@ -274,7 +274,7 @@ export function QuestionsPage() {
               className="button"
               type="button"
               disabled={busy || nuevo.title.trim() === '' || activa === null}
-              aria-label="Crear el conjunto de preguntas"
+              aria-label="Crear conjunto: de preguntas"
               onClick={() => {
                 if (activa === null) {
                   return;

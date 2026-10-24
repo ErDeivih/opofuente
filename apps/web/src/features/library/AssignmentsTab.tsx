@@ -289,7 +289,7 @@ export function AssignmentsTab({
               className="button"
               type="button"
               disabled={busy || nodoElegido === ''}
-              aria-label="Asignar el nodo elegido a esta versión"
+              aria-label="Asignar a la versión: el nodo elegido"
               onClick={() => {
                 onAssign(nodoElegido, cobertura);
               }}
