@@ -6113,3 +6113,41 @@ errores son mios y estan escritos.**
 **Lo que hay que hacer distinto la proxima vez**: **volcar el arbol accesible que axe calcula** (no el
 `violations`, que viene sin `data`) **para ver exactamente que cadena compara**. **Eso es un volcado propio con
 `page.evaluate`, no una bateria mas.**
+
+## La puerta 18: de 27 a 11, y el por que de siete rondas (rondas 40 y 41)
+
+**La causa era el espacio entre el rotulo y la insignia en el DOM.** **El nombre accesible compara el texto
+visible como TROZO CONTIGUO**: con `<span>Apuntes</span><span>3</span>` pegados, el texto visible es «Apuntes3»
+y ningun nombre razonable lo contiene. **Con el espacio, «Apuntes 3», y lo contiene.**
+
+```
+27 failed, 66 passed   ->   11 failed, 82 passed
+```
+
+**Y el motivo de que siete rondas no lo encontrasen**: **el cambio del DOM no se aplicaba**. El reemplazo usaba
+una cadena que no coincidia con la indentacion real, **y solo entraba el otro cambio**, el del `aria-label`.
+**El script decia «cambios: True» —era verdad, pero por el otro cambio— y yo lo di por bueno.**
+
+**Lo que lo descubrio fue mirar el paquete construido**, no el resultado del script: `children:[span(nav__label),
+n!==void 0 && span(nav__count)]` — **sin el espacio**. **Verificar el artefacto, no el registro de la herramienta.**
+
+## Los seis botones siguientes
+
+**Mismo patron, arreglados con la misma regla** —el nombre empieza por el texto visible—:
+
+```
+Asignar el nodo elegido a esta version  ->  «Asignar a la version: el nodo elegido»
+Crear el conjunto de preguntas           ->  «Crear conjunto: de preguntas»
+Dejar la pregunta en blanco              ->  «Dejarla en blanco: la pregunta»
+Exportar el banco para Anki              ->  «Anki CSV: exportar el banco para Anki»
+Terminar la sesion                       ->  «Terminar y corregir: la sesion»
+Enviar la respuesta                      ->  «Responder: enviar la respuesta»
+```
+
+**`tsc` y `build` en verde.** **La medicion de estos seis no llego a terminar** —la tanda se quedo en la prueba
+52—, **asi que estan aplicados y sin confirmar por la bateria**. **Es lo primero de la siguiente tanda.**
+
+## La leccion, que ya esta escrita pero hoy tiene nombre y apellidos
+
+**Comprobar el artefacto, no el mensaje de la herramienta que lo produce.** **Siete rondas por no mirar dentro del
+paquete construido.**
