@@ -6519,3 +6519,36 @@ avisos            CERRADA
 incidencias       CERRADA
 first-run         2 fallos · describe la portada vieja · prueba entera por reescribir
 ```
+
+## Las 18 puertas, medidas hoy una por una (ronda 68)
+
+```
+1-6   ruff format · ruff check · mypy estricto · eslint · tsc · 1.002 unitarias    OK
+7     integracion backend (836 pruebas)                                          OK
+8     contrato                                                                    OK
+9     componentes (Vitest, 55 ficheros)                                           OK
+10    OpenAPI y tipos sincronizados                                               OK
+11    build backend                                                               OK
+12    build frontend                                                              OK
+13    migracion desde base vacia                                                 OK
+14    esquema migrado verificado con sqlite3                                      OK
+15    siembra de perfiles                                                         OK
+16    siembra idempotente                                                         OK
+17    fixtures de perfil sincronizados con las fuentes oficiales                  OK
+18    E2E (Playwright, 93 pasan y 0 fallan)                                       OK
+```
+
+**Las 10 a 17 se han ejecutado a mano ahora mismo**, con los comandos exactos del guion, **después de que la 9
+cortara la corrida entera**.
+
+**Y el defecto que estaba escondido era mio otra vez**: **la puerta 9 llevaba sin ejecutarse desde que empece a
+cambiar nombres accesibles** — porque las puertas anteriores cortaban la corrida antes de llegar a ella.
+**Ocho pruebas de componentes buscaban nombres que ya no existian.**
+
+**Falta la corrida unica de las 18**, que esta en marcha y tarda unas dos horas y media.
+
+## La leccion, la ultima de esta noche y la mas cara
+
+**Una bateria que se corta en la puerta 9 no dice nada de las puertas 10 a 18.** **Y yo he estado diciendo «las
+puertas 1 a 17 en verde» durante rondas, cuando la 9 llevaba rota desde el primer cambio de nombre.** **Solo se
+sabe lo que se ejecuta, y solo se ejecuta lo que la anterior deja llegar.**
