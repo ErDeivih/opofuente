@@ -348,3 +348,39 @@ POST /student/tests {"nodes":["IV.7"],"count":3,"timed":true}   ->  time_limit_m
 
 **Un simulacro y un examen oficial siguen llevando el reloj de la convocatoria**, que es lo que pide el
 documento: **el reloj en simulacros, exámenes y tests con «con tiempo» activado, y en ningún sitio más.**
+
+---
+
+## Punto 6 · Los títulos internos: no hay ninguno, y ya no puede volver
+
+### Lo que hay en la base real, medido
+
+```
+apartados con «El apartado que explica» en el título:   0
+apartados con «apartado» o «explica» en el título:      0
+los títulos de IV.7:  ipv6 · arp · icmp · encaminamiento · tcp · udp · puertos · dns · dhcp · web
+                      correo · ficheros · acceso-remoto · directorio-y-gestion · herramientas
+                      otros-protocolos
+```
+
+**La etiqueta que se vio en la captura no está en la base**: **venía del recorrido viejo**, el mismo que
+enseñaba la portada antigua y «Página no encontrada» en el repaso. **No había nada que corregir en los
+datos, y no se ha tocado ninguno.**
+
+### Lo que sí se ha hecho: el guardián
+
+**`notes titulos`**: recorre `topic_note_sections` de la base real y **sale con error si algún título es
+una etiqueta interna** —`%apartado que explica%`, `El apartado%`, `%este apartado%`, `%el apartado de%`—.
+**Los patrones están escritos y con su motivo**: un título que dice dónde está el apartado en vez de de
+qué va **no sirve para lo único que sirve un título**.
+
+**Y va en la puerta 17**, que ya era la de datos:
+
+```
+17. fixtures de perfil y titulos de los apuntes
+    build_profile_fixtures --check      OK
+    notes titulos                       OK   (sin datos no hay nada que mirar y pasa igual)
+```
+
+**Las puertas siguen siendo dieciocho.** **Sin datos también pasa**, así que la batería sigue corriendo
+en una máquina limpia.
