@@ -447,3 +447,26 @@ después: abiertas 364 · resto 0 · tus decisiones 12 · en cuarentena 242
 un tema nuevo cubra su materia.
 
 **La migración 0048 se retiró**: no hacía falta tocar el esquema, **y no se ha tocado**.
+
+### Decisión 3, hecha: el intento acotado, y su cifra
+
+**Lo que se probó, tal como manda el documento**: **400 ppp, enderezado, binarizado, `--psm 4` y
+corte de las dos columnas**. **Sin Pillow ni numpy** —no están en el entorno y añadirlos para medir
+habría sido cambiar el proyecto para hacer una prueba—: **400 ppp y escala de grises con `pymupdf`**,
+**el ángulo elegido por resultado** (el que saca más números de pregunta en la primera página) y
+**las columnas cortadas por recorte, sólo cuando el centro de la página está vacío**.
+
+```
+TAI-2018-libre-cuestionario-1.pdf    12 de 100
+TAI-2018-libre-cuestionario-2.pdf    30 de 100
+TAI-2018-pi-cuestionario-unico.pdf   17 de 100
+                                     -----------
+total                                59 de 300
+```
+
+**El listón era 95 de 100. No se llega ni de lejos**: **los tres cuestionarios quedan fuera con su
+cifra y no se insiste**, que es exactamente lo que decide el documento. **La medición queda en
+`scripts/medidas/medir_ocr_2018.py`** para que se pueda repetir.
+
+**Con esto, el punto 7 queda cerrado**: la decisión 2 hecha (las 423 fuera de tests y repasos, la
+bandeja en 12 decisiones del propietario) **y la decisión 3 intentada con su número y descartada**.
