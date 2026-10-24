@@ -178,3 +178,50 @@ punto 4  diseñado, sin empezar
 puntos 5 a 9  pendientes
 main = 77ea71a · árbol limpio
 ```
+
+---
+
+## Punto 4 · El hallazgo que lo explica todo: **los supuestos no tienen clave**
+
+### Lo medido, en la base real
+
+```
+preguntas de supuesto (18 supuestos × 25)     450
+con entrada de plantilla                         0
+con clave derivada                               0
+key_reliability de sus conjuntos        'dudosa' en todos
+```
+
+**Las 450 preguntas de los 18 supuestos no se pueden corregir**: tienen enunciado y cuatro opciones,
+**y ninguna letra guardada**. Por eso el simulacro «sale con 85 preguntas y sin supuesto»: la
+composición pide el supuesto, **la política de claves lo descarta entero** —con razón: una pregunta
+que no se puede corregir no se pone en un examen— **y la segunda parte se queda en cero**.
+
+### La causa, en el código
+
+`tools/supuestos.py` creaba `QuestionVersionRecord` y sus `OptionVersionRecord`, **y tiraba
+`pregunta.clave`**, que el dominio **sí trae** (`PreguntaPropuesta.clave`). **El generador acertó y el
+guardado no lo apuntó.**
+
+### Lo que se ha hecho
+
+- **`PartSpec.question_version_ids`** y **`_candidatas`** los respeta: **una parte puede traer sus
+  preguntas exactas** (el supuesto), en su orden, sin repartir por nodo. Todo lo demás —política de
+  claves, lectura por lotes, reparto, reservas— sigue igual, y **no hay un segundo camino de
+  composición**.
+- **`practical_case_for_block`**: el supuesto del bloque, **el oficial primero**, con sus preguntas en
+  el orden del enunciado.
+- **`create_mock_exam`**: si hay supuesto con preguntas, la segunda parte son **sus 25**, **sin
+  reservas**; si no, se cae a las 20 del bloque y **la sesión lo declara** (`bloque`).
+- **`tools/supuestos.py` guarda la clave**: una plantilla `active` por supuesto y una entrada por
+  pregunta con su letra. **Las próximas generaciones nacerán corregibles.**
+
+### Lo que falta, y es un dato, no código
+
+**Las 450 preguntas ya guardadas siguen sin letra**, y el dato **no está en la base**. La vía es
+**pedírselas al modelo** —el mismo segundo pase que ya existe, `responder_a_ciegas`, que contesta sin
+ver la clave— y escribir la plantilla con lo que devuelva. **Coste estimado: 18 llamadas, del orden de
+0,05 $.**
+
+**No se ha ejecutado en esta tanda**: se acaba el margen. **Es lo primero de la siguiente**, y hasta
+entonces **el simulacro sigue cayendo a las 20 preguntas del bloque, diciéndolo**.

@@ -18,6 +18,7 @@ herramienta se para si lo alcanza.
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import sys
 import uuid
@@ -30,7 +31,10 @@ from sqlalchemy.orm import Session, sessionmaker
 from opofuente.application.practical_case_service import PracticalCaseService
 from opofuente.config import get_settings
 from opofuente.domain.practical_case import SupuestoPropuesto
+from opofuente.domain.questions import KeyOutcome
 from opofuente.infrastructure.db_models import (
+    AnswerKeyEntryRecord,
+    AnswerKeyVersionRecord,
     OptionVersionRecord,
     QuestionSetRecord,
     QuestionVersionRecord,
@@ -139,6 +143,20 @@ def _dar_de_alta(
     ids: list[str] = []
     with fabrica() as session:
         conjunto_id = str(uuid.uuid4())
+        # **La plantilla del supuesto, con su clave** (remate, punto 4). **Aquí estaba el fallo**:
+        # se guardaban el enunciado y las cuatro opciones **y se tiraba `pregunta.clave`**, así que
+        # las preguntas del supuesto **no se podían corregir** y el simulacro se caía a veinte
+        # preguntas de tema. **Una pregunta que no se corrige no es una pregunta del examen.**
+        plantilla_id = str(uuid.uuid4())
+        session.add(
+            AnswerKeyVersionRecord(
+                id=plantilla_id,
+                question_set_id=conjunto_id,
+                version_no=1,
+                status="active",
+                created_at=ahora,
+            )
+        )
         session.add(
             # **Los cinco valores no son relleno: son la ficha del conjunto.**
             # Un supuesto generado es `generated_batch`, `draft` —nadie lo ha
@@ -188,6 +206,16 @@ def _dar_de_alta(
                         position=orden,
                     )
                 )
+            # **Y la entrada de la plantilla para esta pregunta**: la letra que corrige, tal como la
+            # dijo el segundo modelo que la contestó a ciegas.
+            session.add(
+                AnswerKeyEntryRecord(
+                    answer_key_version_id=plantilla_id,
+                    question_version_id=version_id,
+                    outcome=KeyOutcome.KEYED.value,
+                    correct_option_keys_json=json.dumps([pregunta.clave]),
+                )
+            )
             ids.append(version_id)
         session.commit()
     return tuple(ids)

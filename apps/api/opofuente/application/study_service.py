@@ -209,6 +209,11 @@ class PartSpec:
     reserve: int = 0
     alternative_group: str | None = None
     weights: Mapping[str, float] | None = None
+    #: **Las preguntas exactas de la parte**, cuando la parte no se elige repartiendo por nodo.
+    #: **Es el caso del supuesto práctico** (remate, punto 4): sus 25 preguntas son las que son —las
+    #: del supuesto guardado—, no una muestra de los temas del bloque. **Si viene, `node_ids` solo
+    #: sirve para saber de dónde es la parte** (su bloque) y no se reparte nada.
+    question_version_ids: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -929,15 +934,26 @@ class StudyService:
         # un `set` de Python las saque. El reparto depende de ese orden, así que barajarlo aquí
         # haría que la misma semilla montara sesiones distintas.
         ordenadas: list[str] = []
-        for node_id, del_nodo in self._preguntas_de_los_nodos(
-            parte.node_ids, cache=preguntas_del_nodo
-        ).items():
-            for pregunta_id in del_nodo:
+        if parte.question_version_ids:
+            # **La parte trae sus preguntas** (el supuesto práctico, remate punto 4): se toman en el
+            # orden en que están guardadas, que es el del enunciado, y **no se reparte por nodo**.
+            # Todo lo demás —la política de claves, la lectura por lotes, el reparto— sigue igual.
+            for pregunta_id in parte.question_version_ids:
                 if pregunta_id in vistas_del_tema:
                     continue
                 vistas_del_tema.add(pregunta_id)
-                primer_nodo[pregunta_id] = node_id
+                primer_nodo[pregunta_id] = parte.node_ids[0] if parte.node_ids else ""
                 ordenadas.append(pregunta_id)
+        else:
+            for node_id, del_nodo in self._preguntas_de_los_nodos(
+                parte.node_ids, cache=preguntas_del_nodo
+            ).items():
+                for pregunta_id in del_nodo:
+                    if pregunta_id in vistas_del_tema:
+                        continue
+                    vistas_del_tema.add(pregunta_id)
+                    primer_nodo[pregunta_id] = node_id
+                    ordenadas.append(pregunta_id)
         # La política de claves, una sola: la misma que usan los tests de práctica y el
         # repaso de fallos (`key_policy.clave_servible`). Se pregunta UNA vez por parte,
         # sobre los identificadores que ya se leyeron, no una vez por pregunta.

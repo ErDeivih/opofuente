@@ -34,6 +34,8 @@ from opofuente.infrastructure.db_models import (
     AttemptRecord,
     CurriculumMappingRecord,
     DossierSnapshotRecord,
+    PracticalCaseQuestionRecord,
+    PracticalCaseRecord,
     QuestionCurriculumExclusionRecord,
     QuestionNoteAnchorRecord,
     QuestionSetRecord,
@@ -298,6 +300,48 @@ class SqlAlchemyStudentRepository:
         for nodo, desenlace, total in filas:
             recuentos.setdefault(str(nodo), {})[str(desenlace)] = int(total)
         return recuentos
+
+    def practical_case_for_block(self, block: str) -> tuple[str, str, tuple[str, ...]] | None:
+        """**El supuesto guardado de ese bloque**, con sus preguntas en orden (remate, punto 4).
+
+        Devuelve `(id, enunciado, preguntas)` o `None` si el bloque no tiene ninguno. **El oficial
+        primero**: si hay uno del INAP se monta ese y no el generado, que es lo que pide el hito
+        —un supuesto inventado no es «el supuesto del examen»—.
+
+        **Las preguntas se devuelven ordenadas por su posición**, que es el orden del enunciado:
+        «con los datos del caso, conteste» y después la 1, la 2… Guardarlas sin orden las baraja.
+        """
+        with self._session_factory() as session:
+            caso = (
+                session.execute(
+                    select(PracticalCaseRecord)
+                    .where(PracticalCaseRecord.block == block)
+                    # `False` (0) va antes que `True` (1): el oficial primero.
+                    .order_by(
+                        PracticalCaseRecord.origin != "official",
+                        PracticalCaseRecord.created_at,
+                    )
+                    .limit(1)
+                )
+                .scalars()
+                .first()
+            )
+            if caso is None:
+                return None
+            preguntas = (
+                session.execute(
+                    select(PracticalCaseQuestionRecord.question_version_id)
+                    .where(PracticalCaseQuestionRecord.practical_case_id == caso.id)
+                    .order_by(PracticalCaseQuestionRecord.position)
+                )
+                .scalars()
+                .all()
+            )
+        return (
+            str(caso.id),
+            str(caso.statement),
+            tuple(str(pregunta) for pregunta in preguntas),
+        )
 
     def public_set_ids(self, opposition_id: str) -> frozenset[str]:
         """Los conjuntos **publicables** de esta oposición: con ellos se decide qué sesión se sirve.

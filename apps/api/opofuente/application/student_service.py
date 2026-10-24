@@ -850,6 +850,32 @@ class StudentService:
         completo = request.variant == "full"
         partes: tuple[PartSpec, ...]
         if completo:
+            # **El supuesto guardado del bloque, si lo hay** (remate, punto 4): sus 25 preguntas
+            # son las del caso, en su orden, y **no una muestra de los temas del bloque**. El
+            # supuesto no lleva reservas: el examen real no las tiene en esa parte.
+            supuesto = self._student.practical_case_for_block(request.case_block.upper())
+            if supuesto is not None and supuesto[2]:
+                _, _, preguntas_del_caso = supuesto
+                segunda = PartSpec(
+                    code="segunda_parte",
+                    node_ids=del_supuesto,
+                    count=len(preguntas_del_caso),
+                    reserve=0,
+                    alternative_group="supuesto",
+                    question_version_ids=preguntas_del_caso,
+                )
+                fuente_del_supuesto: str | None = "supuesto"
+            else:
+                # **Sin supuesto guardado** se cae a lo que había: veinte preguntas del bloque, y la
+                # sesión **lo declara** para no llamar «supuesto» a veinte preguntas de tema.
+                segunda = PartSpec(
+                    code="segunda_parte",
+                    node_ids=del_supuesto,
+                    count=20,
+                    reserve=5,
+                    alternative_group="supuesto",
+                )
+                fuente_del_supuesto = "bloque"
             partes = (
                 PartSpec(
                     code="primera_parte",
@@ -857,16 +883,9 @@ class StudentService:
                     count=80,
                     reserve=5,
                 ),
-                PartSpec(
-                    code="segunda_parte",
-                    node_ids=del_supuesto,
-                    count=20,
-                    reserve=5,
-                    alternative_group="supuesto",
-                ),
+                segunda,
             )
             etiqueta = f"Simulacro con supuesto del bloque {request.case_block.upper()}"
-            fuente_del_supuesto: str | None = "bloque"
         else:
             partes = (
                 PartSpec(
