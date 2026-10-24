@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createQueryClient } from '../../src/app/queryClient';
 import { resetApiAvailability } from '../../src/app/apiAvailability';
 import { AppShell } from '../../src/app/AppShell';
-import { StudentHomePage } from '../../src/pages/student/StudentHomePage';
+import { HoyPage } from '../../src/pages/HoyPage';
 
 /**
  * Qué se ve cuando la API no está (5 de octubre de 2026).
@@ -31,12 +31,12 @@ describe('la API caída', () => {
 
   it('enseña un aviso único que dice cómo arrancar la aplicación', async () => {
     // El aviso lo dispara la primera consulta que falla, así que la prueba monta una pantalla que lee
-    // de la API: Inicio del alumno, que desde F13 lee `/student/overview`.
+    // de la API: «Hoy», que es la portada —la antigua Inicio se borró en el remate, punto 3—.
     render(
       <QueryClientProvider client={createQueryClient()}>
         <MemoryRouter>
           <AppShell>
-            <StudentHomePage />
+            <HoyPage />
           </AppShell>
         </MemoryRouter>
       </QueryClientProvider>,
@@ -55,7 +55,9 @@ describe('la API caída', () => {
     // El aviso trae **su** botón de reintentar (la pantalla, además, conserva el suyo).
     expect(within(aviso).getByRole('button', { name: 'Reintentar' })).toBeInTheDocument();
     // El contenido de la pantalla sigue ahí, con lo suyo: el aviso informa, no sustituye a la app.
-    expect(await screen.findByText('No se pudo cargar tu Inicio')).toBeInTheDocument();
+    expect(
+      await screen.findByText('No se pudo leer el plan. Reintenta en un momento.'),
+    ).toBeInTheDocument();
   });
 
   it('con la API levantada no hay ningún aviso', () => {

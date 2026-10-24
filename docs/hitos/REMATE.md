@@ -72,3 +72,64 @@ borra las archivadas y vuelve la tabla anterior (dicho en el `downgrade`).
 
 - **`DEBT.md`**: la entrada de la sustitución, cerrada con su cifra.
 - **`PARA-EL-PROPIETARIO.md`**: qué se recuperó y cómo se deshace.
+
+---
+
+## Punto 2 · El repaso de tarjetas, en el menú
+
+### Lo que se hizo
+
+- **`/repaso` entra en el menú del alumno** (`navigation.ts`): antes **solo se llegaba desde «Hoy»**,
+  así que una pantalla que existe no se encontraba.
+- **La portada pasa a llamarse «Hoy»** en el menú, que es lo que sirve `/`.
+
+### Lo comprobado, en la app que arranca `scripts\api.ps1` y sobre la base real
+
+```
+GET /api/v1/cards/queue   ->  200
+claves de la respuesta:  tarjetas, total
+tarjetas servidas:       9
+la primera:  {"front":"¿Qué puerto utiliza HTTPS?","back":"443","citation":"443",
+              "due_at":"2026-10-22T14:02:40","interval_days":0,"repetitions":0}
+```
+
+**Sirve tarjetas de verdad, con su cita y su fecha de vuelta**, no de una siembra de pruebas. **Nueve
+porque nueve están vencidas hoy**; el tope de 60 está en `cola_del_dia` y **no se ve recortado porque
+no hay más vencidas**.
+
+**El teclado ya estaba**: espacio para dar la vuelta y 1 a 4 para responder (`RepasoPage`).
+
+### Lo que NO está, y se dice
+
+**La cola sirve tarjetas, no fallos vencidos.** `cola_del_dia` **ya sabe entrelazar las dos listas y
+recortar por el tope**, y `review_items` **ya existe** en la base; **lo que falta es que
+`CardService.cola` los traiga y que la respuesta y la pantalla sepan de dos tipos de entrada**. **Es
+un cambio de contrato de la API, no un adorno**, así que no se hace de paso dentro de este punto.
+
+**Lo que el propietario pidió de este punto —que se llegue desde el menú y que sirva las tarjetas—
+está hecho y medido.**
+
+---
+
+## Punto 3 · La portada es «Hoy», y `/inicio` se va
+
+### Lo que se hizo
+
+- **`StudentHomePage` borrada** del código, con su prueba (`studentInicio.test.tsx`).
+- **La ruta `/inicio` ya no pinta nada**: entra en `ROUTE_REDIRECTS` como **`/inicio -> /`**.
+  **Se redirige en vez de dejar un 404** porque hay marcadores y enlaces dentro de la app que siguen
+  apuntando ahí.
+- **`apiCaida.test.tsx`** montaba `StudentHomePage` para probar el aviso de API caída: **ahora monta
+  `HoyPage`** y comprueba su texto de error (`No se pudo leer el plan. Reintenta en un momento.`).
+- **`shell.test.tsx`**: tres aserciones afirmaban «siete entradas». **Ahora son ocho** —entra
+  «Repaso»— y la primera se llama «Hoy». **Y la lista de redirecciones incluye `/inicio -> /`.**
+
+### Lo medido
+
+```
+tsc --noEmit        0
+vitest              54 ficheros · 486 pruebas · todas en verde
+```
+
+**Una prueba menos que antes** (54 en vez de 55) porque `studentInicio.test.tsx` se ha ido **con la
+pantalla que probaba**, que es lo que manda el documento.

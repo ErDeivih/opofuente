@@ -15,11 +15,11 @@ export interface NavItem {
   readonly summary: string;
 }
 
-/** La zona del alumno: siete entradas y ninguna más (rediseño §2). */
+/** La zona del alumno: ocho entradas y ninguna más (remate, punto 2). */
 export const STUDENT_NAV_ITEMS: readonly NavItem[] = [
   {
     path: '/',
-    label: 'Inicio',
+    label: 'Hoy',
     summary: 'Lo que toca hoy y cómo llevas la preparación.',
   },
   {
@@ -42,6 +42,12 @@ export const STUDENT_NAV_ITEMS: readonly NavItem[] = [
     path: '/examenes',
     label: 'Exámenes',
     summary: 'Los exámenes oficiales de años anteriores, hechos como en el examen.',
+  },
+  {
+    path: '/repaso',
+    label: 'Repaso',
+    summary:
+      'Las tarjetas de hoy, con el teclado: espacio para dar la vuelta y 1 a 4 para responder.',
   },
   {
     path: '/fallos',
@@ -154,6 +160,10 @@ export const ADMIN_NAV_ITEMS: readonly NavItem[] = [
  * dentro (`/biblioteca?documento=…` abre la ficha de ese documento).
  */
 export const ROUTE_REDIRECTS: readonly { readonly from: string; readonly to: string }[] = [
+  // **`/inicio` era la portada vieja y ya no existe** (remate, punto 3): la portada es «Hoy».
+  // **Se redirige en vez de borrar la dirección** porque hay marcadores y enlaces dentro de la app
+  // que siguen apuntando ahí, y un 404 no es una respuesta.
+  { from: '/inicio', to: '/' },
   { from: '/bandeja', to: '/admin/importar' },
   { from: '/biblioteca', to: '/admin/biblioteca' },
   { from: '/revision', to: '/admin/revision' },

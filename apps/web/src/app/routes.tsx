@@ -21,7 +21,6 @@ import { ReviewPage } from '../pages/ReviewPage';
 import { SearchPage } from '../pages/SearchPage';
 import { SettingsPage } from '../pages/SettingsPage';
 import { StudyPage } from '../pages/StudyPage';
-import { StudentHomePage } from '../pages/student/StudentHomePage';
 import { MistakesPage } from '../pages/student/MistakesPage';
 import { MockExamPage } from '../pages/student/MockExamPage';
 import { OfficialExamsPage } from '../pages/student/OfficialExamsPage';
@@ -132,12 +131,12 @@ export function AppRoutes() {
       {/* --- Zona del alumno -------------------------------------------------- */}
       <Route element={<StudentZone />}>
         {/*
-          **«Hoy» sustituye a Inicio** (M4 de la fase 3): la pantalla principal enseña lo que toca
-          hacer, no un resumen del progreso. Inicio se queda en `/inicio` porque sus cifras siguen
-          siendo utiles y no es una pantalla que haya que tirar.
+          **«Hoy» es la portada** (M4 de la fase 3, y decisión 1 del remate): la pantalla principal
+          enseña lo que toca hacer, no un resumen del progreso. **`/inicio` y `StudentHomePage` se
+          fueron**: la dirección se redirige a `/` desde `ROUTE_REDIRECTS`, para que un marcador
+          viejo no acabe en un 404.
         */}
         <Route path="/" element={<HoyPage />} />
-        <Route path="/inicio" element={<StudentHomePage />} />
         <Route path="/invitacion" element={<InvitacionPage />} />
         <Route path="/temario" element={<SyllabusPage />} />
         {/*

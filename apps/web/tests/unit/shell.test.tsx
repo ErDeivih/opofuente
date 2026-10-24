@@ -78,13 +78,16 @@ function textoDeLaPantalla() {
 }
 
 describe('los dos mapas de navegación', () => {
-  it('la zona del alumno tiene siete entradas, en orden, y ninguna de la trastienda', () => {
+  it('la zona del alumno tiene ocho entradas, en orden, y ninguna de la trastienda', () => {
+    // **Ocho desde el remate (punto 2)**: «Repaso» entra en el menú —antes solo se llegaba desde
+    // «Hoy»— y la portada pasa a llamarse «Hoy», que es lo que sirve la ruta `/`.
     expect(STUDENT_NAV_ITEMS.map((item) => item.label)).toEqual([
-      'Inicio',
+      'Hoy',
       'Temario',
       'Tests',
       'Simulacros',
       'Exámenes',
+      'Repaso',
       'Fallos',
       'Progreso',
     ]);
@@ -94,6 +97,7 @@ describe('los dos mapas de navegación', () => {
       '/tests',
       '/simulacros',
       '/examenes',
+      '/repaso',
       '/fallos',
       '/progreso',
     ]);
@@ -137,6 +141,9 @@ describe('los dos mapas de navegación', () => {
 
   it('cada dirección vieja tiene su destino nuevo', () => {
     expect(ROUTE_REDIRECTS.map(({ from, to }) => `${from} -> ${to}`)).toEqual([
+      // **La portada vieja** (remate, punto 3): `/inicio` y su pantalla se fueron, y la dirección
+      // lleva a `/`, que es «Hoy». Un marcador viejo no acaba en un 404.
+      '/inicio -> /',
       '/bandeja -> /admin/importar',
       '/biblioteca -> /admin/biblioteca',
       '/revision -> /admin/revision',
@@ -153,16 +160,17 @@ describe('los dos mapas de navegación', () => {
 });
 
 describe('el marco del alumno', () => {
-  it('tiene las siete entradas y nada de la trastienda', () => {
+  it('tiene las ocho entradas y nada de la trastienda', () => {
     renderWithProviders(<AppRoutes />, { route: '/temario' });
 
     const nav = screen.getByRole('navigation', { name: 'Secciones de la aplicación' });
     expect(within(nav).getAllByRole('link').map((enlace) => enlace.textContent)).toEqual([
-      'Inicio',
+      'Hoy',
       'Temario',
       'Tests',
       'Simulacros',
       'Exámenes',
+      'Repaso',
       'Fallos',
       'Progreso',
     ]);
