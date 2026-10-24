@@ -6191,3 +6191,41 @@ main                    c8c1171 · arbol limpio
 2. **si vuelve a atascarse**: mirar si el atranco es una prueba concreta (el log dice en cual) y **no relanzar a
    ciegas** — que es lo que he hecho tres veces;
 3. **y solo entonces** medir los seis botones y seguir con lo que quede.
+
+## El atasco esta en UNA prueba concreta (ronda 45)
+
+**Leido el registro hasta la ultima linea util:**
+
+```
+ok 49  program.spec.ts:334   S01: responsive sin scroll horizontal
+ok 50  promote.spec.ts:103   E2E-20 biblioteca: el material de la…
+ok 51  promote.spec.ts:143   E2E-20 biblioteca: volver a pasar el…
+       <- aqui se acaba. La siguiente no arranca.
+```
+
+**La siguiente es la 52**: `question-practice.spec.ts:68 › E2E-05 practicar`. **Y en una corrida anterior el
+registro se quedo exactamente en la 52** (`x 52 … question-practice.spec.ts:68`). **Dos veces el mismo sitio.**
+
+**Asi que no es «la bateria»: es una prueba que se cuelga.** **Y cuando se cuelga deja los servidores vivos**, que
+es lo que impide la corrida siguiente — **el efecto, no la causa**.
+
+## Lo que hay que hacer, y es una prueba sola
+
+```
+npx playwright test tests/e2e/question-practice.spec.ts -g "E2E-05" --timeout=60000
+```
+
+**Con tope de tiempo**, para que si se cuelga **se corte sola** y diga en que linea. **Y entonces se lee**: o la
+prueba espera algo que ya no llega —**y eso puede ser un fallo real de la aplicacion**—, o se queda en un
+`waitFor` sin tope.
+
+**No se ha ejecutado**: se acaba el margen de esta ronda. **Es lo primero de la siguiente, y es un comando.**
+
+## Lo demas, sin cambios
+
+```
+11 failed, 82 passed    ultima corrida completa
+siete componentes       arreglados y medidos
+seis botones            aplicados, sin confirmar
+main                    b3ffae1 o posterior · arbol limpio
+```
