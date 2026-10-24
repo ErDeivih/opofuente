@@ -270,3 +270,29 @@ pero **no se ha tocado la pantalla del resultado** para destacarla. Se anota com
 ```
 tsc --noEmit  0  ·  vitest  54 ficheros en verde
 ```
+
+### Lo que queda abierto del punto 4, con el síntoma exacto
+
+**El enunciado viaja en la sesión y no llega a la respuesta.** Comprobado con el servidor arrancado de
+cero y el puerto libre:
+
+```
+POST /student/mock-exams  {"variant":"full","case_block":"IV"}
+practical_case_origin:  supuesto
+total_questions:        110
+segunda_parte:          25 (5 de reserva), las 25 del supuesto
+practical_case_statement:  null        <- no llega
+```
+
+**El cableado está puesto y tipado** (`mypy` en verde): `create_mock_exam` línea 871 toma
+`supuesto[1]`, la línea 917 lo pasa a `CompositionSpec`, y `study_service` línea 866 lo pasa a
+`SessionConfiguration`. **El repositorio devuelve el enunciado**: probado en la base real,
+`practical_case_for_block("III")` da 262 caracteres y 25 preguntas.
+
+**Y sin embargo el `configuration_json` de la sesión no lleva la clave**, así que el valor llega `None`
+al construir la configuración. **Lo siguiente es instrumentar `create_mock_exam` y ver qué vale
+`enunciado_del_supuesto` en ese punto** — no suponerlo, que es lo que me ha costado rondas toda la
+noche.
+
+**Lo que sí está hecho y medido del punto 4**: las 450 claves recuperadas, la segunda parte con las 25
+preguntas del caso y sus 5 reservas, y el hueco en la pantalla para el enunciado.
