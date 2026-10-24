@@ -783,7 +783,15 @@ class StudyService:
             if parte.code in {candidata.code for candidata in convocatoria.parts}:
                 contexto_parte = self._parte(convocatoria, parte.code)
                 contexto[contexto_parte.code] = contexto_parte
-                if spec.time_limit_minutes is None and contexto_parte.time_minutes is not None:
+                # **El reloj de la convocatoria solo cuando la sesión es de examen** (remate,
+                # punto 5): **un test de práctica sin «con tiempo» no lleva reloj**, y esto lo
+                # ponía igual —la convocatoria declara 120 minutos para su ejercicio— así que una
+                # práctica de tres preguntas enseñaba «Quedan 1:59:59».
+                if (
+                    spec.exam_like
+                    and spec.time_limit_minutes is None
+                    and contexto_parte.time_minutes is not None
+                ):
                     limite_tiempo = (
                         contexto_parte.time_minutes
                         if limite_tiempo is None
@@ -863,7 +871,7 @@ class StudyService:
             note=spec.note,
             context_label=spec.label,
             practical_case_origin=spec.practical_case_origin,
-    practical_case_statement=spec.practical_case_statement,
+            practical_case_statement=spec.practical_case_statement,
         )
         plan = assign_positions(congeladas, shuffle=spec.shuffle)
         sesion = self._study.create_session(

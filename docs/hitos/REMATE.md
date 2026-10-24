@@ -320,3 +320,31 @@ enunciado junto a las preguntas.
 ```
 14 pruebas de simulacro y supuesto en verde · vitest 54 ficheros · tsc 0
 ```
+
+---
+
+## Punto 5 · El reloj, solo donde se pide
+
+### La causa
+
+`create_test` **ya hacía lo correcto**: `time_limit_minutes = _minutos_de_test(count) if timed else None`.
+**Pero `compose` volvía a ponerlo después**: si la parte de la composición era una parte de la
+convocatoria, **le aplicaba su tiempo igual** —«en TAI los 120 minutos están en el ejercicio único»—.
+**Así que una práctica de tres preguntas sin reloj acababa con 120 minutos y enseñaba «Quedan 1:59:59»**,
+que es lo que se vio en las capturas.
+
+### El arreglo
+
+**El reloj de la convocatoria solo se aplica cuando la sesión es de examen** (`spec.exam_like`). **Un
+test de práctica sin «con tiempo» no lleva reloj**, y uno con el interruptor puesto lleva el suyo —el
+que calcula el plan para su número de preguntas—.
+
+### Lo medido, en la app que arranca `scripts\api.ps1` y sobre la base real
+
+```
+POST /student/tests {"nodes":["IV.7"],"count":3,"timed":false}  ->  time_limit_minutes: null · 3 preguntas
+POST /student/tests {"nodes":["IV.7"],"count":3,"timed":true}   ->  time_limit_minutes: 10   · 3 preguntas
+```
+
+**Un simulacro y un examen oficial siguen llevando el reloj de la convocatoria**, que es lo que pide el
+documento: **el reloj en simulacros, exámenes y tests con «con tiempo» activado, y en ningún sitio más.**
