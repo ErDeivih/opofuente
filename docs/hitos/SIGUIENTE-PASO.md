@@ -6353,3 +6353,31 @@ revertido.**
 segunda es codigo muerto y `first-run` se reescribe contra la primera, **o el cambio de portada fue a medias**.
 
 **Eso es una decision de producto, y no la tomo escribiendo un `name:` en una prueba.**
+
+## La ultima violacion de accesibilidad, cerrada (rondas 51 y 52)
+
+**El nodo que quedaba** era el boton de abrir un error, en `ConceptList.tsx`:
+
+```tsx
+<button aria-label={`Abrir el error de «${error.stem}»`}>
+  {error.stem}{' '}<span className="sample__path">{CAUSE_LABEL[error.cause]}</span>
+</button>
+```
+
+**El texto visible es «enunciado + causa»; el nombre empezaba por «Abrir el error de»** — **no lo contenia**.
+
+**Arreglado**: el nombre empieza por el enunciado y la causa, y acaba en «: abrir el error».
+
+**Y sus dos selectores** (`errors.spec.ts:174` y `:199`, que buscaban el nombre viejo) **siguen al nuevo**:
+`/^.*: abrir el error$/`.
+
+**`errors.spec.ts`: 2 pasan.** **Y las violaciones de `label-content-name-mismatch` en ese fichero: 0.**
+
+## El marcador de la puerta 18
+
+```
+27 -> 11 -> 8 -> y errors.spec.ts ya pasa entero
+```
+
+**Quedan seis pruebas**, y la unica de accesibilidad que sigue en pie es `first-run.spec.ts:202`, **que espera la
+portada vieja y depende de la decision de cual es la portada**.
