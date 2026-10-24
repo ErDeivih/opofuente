@@ -296,3 +296,27 @@ noche.
 
 **Lo que sí está hecho y medido del punto 4**: las 450 claves recuperadas, la segunda parte con las 25
 preguntas del caso y sus 5 reservas, y el hueco en la pantalla para el enunciado.
+
+### El enunciado, arreglado — y era la lista blanca
+
+**`_configuration_json` guarda la sesión con una lista blanca de claves**, y el enunciado **no estaba en
+ella**: se componía, se pasaba a `SessionConfiguration`… **y se tiraba al persistir**. Al releer, el
+campo volvía por defecto a `None`. **Añadido en las dos direcciones** (`_configuration_json` y
+`_configuration_from_json`).
+
+**Medido en la app real, servidor arrancado de cero:**
+
+```
+POST /student/mock-exams {"variant":"full","case_block":"IV"}
+practical_case_origin:       supuesto
+total_questions:             110
+practical_case_statement:    373 caracteres   <- llega
+congelado en configuration_json: sí
+```
+
+**Punto 4 cerrado**: el supuesto con sus 25 preguntas y sus 5 reservas, sus 450 claves recuperadas, y el
+enunciado junto a las preguntas.
+
+```
+14 pruebas de simulacro y supuesto en verde · vitest 54 ficheros · tsc 0
+```

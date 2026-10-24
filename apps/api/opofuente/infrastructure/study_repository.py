@@ -1119,6 +1119,11 @@ class SqlAlchemyStudyRepository:
             # De dónde salió el supuesto práctico cuando no era material de supuesto: se congela con
             # la sesión porque es parte de lo que la composición quiso decir de sí misma.
             "practical_case_origin": configuration.practical_case_origin,
+            # **El enunciado del supuesto** (remate, punto 4): sus preguntas dicen «con los
+            # datos del caso, conteste», así que se congela con la sesión igual que el resto.
+            # **Esto es una lista blanca**: lo que no está aquí no se guarda, y el enunciado
+            # se quedaba fuera sin que nadie lo notara.
+            "practical_case_statement": configuration.practical_case_statement,
             "sources": [
                 {
                     "question_set_id": fuente.question_set_id,
@@ -1167,6 +1172,11 @@ class SqlAlchemyStudyRepository:
             practical_case_origin=(
                 str(datos["practical_case_origin"])
                 if datos.get("practical_case_origin") is not None
+                else None
+            ),
+            practical_case_statement=(
+                str(datos["practical_case_statement"])
+                if datos.get("practical_case_statement") is not None
                 else None
             ),
         )
