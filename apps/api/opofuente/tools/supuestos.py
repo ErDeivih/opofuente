@@ -154,7 +154,9 @@ def _dar_de_alta(
                 question_set_id=conjunto_id,
                 version_no=1,
                 status="active",
+                # **`active` exige `approved_at`** (`ck_key_approved`).
                 created_at=ahora,
+                approved_at=ahora,
             )
         )
         session.add(

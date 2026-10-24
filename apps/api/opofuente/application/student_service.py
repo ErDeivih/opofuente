@@ -851,16 +851,19 @@ class StudentService:
         partes: tuple[PartSpec, ...]
         if completo:
             # **El supuesto guardado del bloque, si lo hay** (remate, punto 4): sus 25 preguntas
-            # son las del caso, en su orden, y **no una muestra de los temas del bloque**. El
-            # supuesto no lleva reservas: el examen real no las tiene en esa parte.
+            # son las del caso, en su orden, y **no una muestra de los temas del bloque**.
             supuesto = self._student.practical_case_for_block(request.case_block.upper())
             if supuesto is not None and supuesto[2]:
                 _, _, preguntas_del_caso = supuesto
+                # **Veinte preguntas y cinco de reserva**, que es el perfil de la convocatoria y
+                # justo lo que trae un supuesto: **sus cinco últimas son las de reserva**. Se pasan
+                # las 25 y la composición separa las cinco; pedir 25 sin reserva dejaba la parte en
+                # veinte y sin ninguna reserva.
                 segunda = PartSpec(
                     code="segunda_parte",
                     node_ids=del_supuesto,
-                    count=len(preguntas_del_caso),
-                    reserve=0,
+                    count=20,
+                    reserve=5,
                     alternative_group="supuesto",
                     question_version_ids=preguntas_del_caso,
                 )

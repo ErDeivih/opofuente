@@ -225,3 +225,33 @@ ver la clave— y escribir la plantilla con lo que devuelva. **Coste estimado: 1
 
 **No se ha ejecutado en esta tanda**: se acaba el margen. **Es lo primero de la siguiente**, y hasta
 entonces **el simulacro sigue cayendo a las 20 preguntas del bloque, diciéndolo**.
+
+### Las 450 claves, recuperadas — y el simulacro ya lleva el supuesto
+
+**`tools/claves_de_supuestos.py`**: a cada supuesto sin plantilla se le piden las letras al modelo con
+**el pase a ciegas que ya existía** (`responder_a_ciegas`), **mandándole los apuntes del bloque como
+material y nunca una clave**. Con lo que contesta se escribe la plantilla: **una versión `active` por
+conjunto —con su `approved_at`, que `ck_key_approved` exige— y una entrada `keyed` por pregunta**.
+
+```
+antes:   0 de 450 con clave
+después: 450 de 450 · 18 plantillas activas
+```
+
+**Y el fallo que salió por el camino**: `status = 'active'` **exige `approved_at`**. **La herramienta
+de los supuestos nuevos habría fallado igual**, así que se arregló en las dos.
+
+**El simulacro, en la app real (`scripts\api.ps1`) y sobre la base real:**
+
+```
+POST /api/v1/student/mock-exams  {"variant":"full","case_block":"IV"}
+
+practical_case_origin: supuesto
+total_questions:       110
+por parte:  primera_parte 85 (5 de reserva)  ·  segunda_parte 25 (5 de reserva)
+de la segunda parte, del supuesto:  25 de 25
+```
+
+**Antes de las claves, la segunda parte se quedaba en cero y el simulacro caía a veinte preguntas de
+tema.** **Ahora son las veinticinco del caso, con sus cinco reservas.** **Queda la pantalla**: el
+enunciado a la izquierda y las 25 preguntas a la derecha.
