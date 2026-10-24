@@ -6381,3 +6381,31 @@ segunda es codigo muerto y `first-run` se reescribe contra la primera, **o el ca
 
 **Quedan seis pruebas**, y la unica de accesibilidad que sigue en pie es `first-run.spec.ts:202`, **que espera la
 portada vieja y depende de la decision de cual es la portada**.
+
+## Estado de las seis que quedan, con su locator (rondas 52 y 53)
+
+**Cerradas en estas dos rondas**: `errors.spec.ts` (2 pasan) y `review.spec.ts` (2 pasan) — **sus selectores
+seguian al nombre viejo de dos botones que cambie por accesibilidad.**
+
+**Y quedan cuatro fallos en tres ficheros**, con el `locator` exacto:
+
+```
+avisos.spec.ts        getByRole('link', { name: /Avisos 1: 1 aviso de los apuntes sin mirar/ })
+                      -> element(s) not found   (incluso despues de alinear el formato)
+                      + violaciones de accesibilidad (escritorio y movil)
+incidencias.spec.ts   getByRole('link', { name: /Incidencias 1: 1 incidencia…/ })
+ficha-pregunta.spec.ts (dos anchuras)
+first-run.spec.ts     la portada vieja: **depende de la decision de producto**
+```
+
+**El nombre del enlace ahora es «Avisos 1: 1 aviso de los apuntes sin mirar»** —se comprobo en el paquete—,
+**y el selector dice exactamente eso y no lo encuentra**: **asi que el texto del contador puede no ser «1 aviso…»
+en ese momento de la prueba**, o el enlace tarda. **Hay que abrir la captura de Playwright para ese fallo, como se
+hizo con `first-run`, en vez de suponer** — que es lo que me ha funcionado cada vez que lo he hecho.
+
+## El marcador
+
+```
+puerta 18: empezó en 27 · errors.spec.ts y review.spec.ts ya pasan enteros
+quedan 4 fallos, uno de ellos bloqueado por una decision de producto
+```
