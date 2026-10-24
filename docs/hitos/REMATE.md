@@ -133,3 +133,48 @@ vitest              54 ficheros · 486 pruebas · todas en verde
 
 **Una prueba menos que antes** (54 en vez de 55) porque `studentInicio.test.tsx` se ha ido **con la
 pantalla que probaba**, que es lo que manda el documento.
+
+---
+
+## Punto 4 · Los supuestos en el simulacro — **diseñado, no hecho**
+
+### Lo que hay hoy, medido
+
+**El simulacro completo monta 80 + 5 de todos los temas y 20 + 5 del bloque elegido** —`create_mock_exam`,
+`student_service.py:810`—, **y las 20 preguntas de la segunda parte salen de los TEMAS del bloque, no
+de un supuesto**. **La sesión lo declara** (`practical_case_origin`), pero **lo que se pinta son 20
+preguntas de tema**: por eso el simulacro «sale con 85 preguntas y sin supuesto».
+
+**Los 18 supuestos están en la base** y **sus 450 preguntas son versiones de pregunta de verdad**
+(`practical_case_questions.question_version_id` → `question_versions`), **con sus opciones y su clave**.
+**9 del bloque III y 9 del IV.**
+
+### Lo que hay que hacer, y por qué no hace falta migración
+
+**El enunciado no hay que guardarlo en la sesión**: se **deduce** de las preguntas de la parte
+—`select practical_case_id from practical_case_questions where question_version_id in (…)`—, así que
+**no hay columna nueva ni migración**.
+
+1. **`PartSpec.question_version_ids`** (opcional), y **`_candidatas`** devuelve exactamente esas cuando
+   viene, en vez de repartir por nodo. **Es el sitio por donde pasan todas las composiciones**, así que
+   no hay un segundo camino que corregir.
+2. **`create_mock_exam`**: para la variante completa, **elegir un supuesto del bloque pedido** y montar
+   la segunda parte con sus **25** preguntas, **sin reservas** (el supuesto no las lleva).
+3. **La vista**: el enunciado del supuesto, deducido como arriba, para que la pantalla lo enseñe.
+4. **La pantalla**: enunciado a la izquierda y sus 25 preguntas a la derecha, **y nota por parte** —la
+   primera y la segunda se puntúan por separado, que ya está en `StudentMockExamPartSchema`—.
+5. **En «Exámenes»**, los supuestos de los oficiales cuando existan.
+
+**Nada de esto se ha escrito**: **se para aquí para no dejar la composición a medias**, que es la que
+corrige todos los modos de sesión.
+
+## Estado al parar esta tanda
+
+```
+punto 1  HECHO y medido en la base real
+punto 2  HECHO y medido en la app que arranca scripts\api.ps1 (9 tarjetas reales)
+punto 3  HECHO (tsc 0 · vitest 54 ficheros, 486 pruebas)
+punto 4  diseñado, sin empezar
+puntos 5 a 9  pendientes
+main = 77ea71a · árbol limpio
+```

@@ -6585,3 +6585,15 @@ alcanzado**:
 
 **La leccion que se lleva esta fase**: **una bateria que se corta en la puerta 9 no dice nada de la 10 a la 18.**
 **Y durante rondas yo afirme «las puertas 1 a 17 en verde» sin que el registro lo respaldara.**
+
+## Dónde se quedó el remate (24 oct, madrugada)
+
+**Hechos y medidos**: **punto 1** (las 5.939 privadas archivadas, 20.322 explicaciones, 11.315
+privadas), **punto 2** (`/repaso` en el menú y **9 tarjetas reales** servidas por `scripts\api.ps1`) y
+**punto 3** (`/inicio` redirige, `StudentHomePage` y su prueba borradas, 486 pruebas en verde).
+
+**Lo siguiente es el punto 4**, y **ya está diseñado en `docs/hitos/REMATE.md`**: `PartSpec` gana
+`question_version_ids`, `_candidatas` los respeta, `create_mock_exam` elige el supuesto del bloque y
+monta la segunda parte con sus 25 preguntas, y el enunciado **se deduce** de
+`practical_case_questions` —**no hace falta migración**—. **El punto 4 no se empezó a propósito**: la
+composición es la que corrige todos los modos de sesión y **dejarla a medias es peor que no tocarla**.
