@@ -6151,3 +6151,43 @@ Enviar la respuesta                      ->  «Responder: enviar la respuesta»
 
 **Comprobar el artefacto, no el mensaje de la herramienta que lo produce.** **Siete rondas por no mirar dentro del
 paquete construido.**
+
+## La bateria de extremo a extremo se atasca, y no es el codigo (rondas 42 a 44)
+
+**El sintoma**: `npm run e2e` arranca, llega a unas 190 lineas y **se queda ahi**. **41 procesos `node` vivos**, el
+log sin crecer.
+
+**Lo que se ha medido, para no culpar a lo que no es:**
+
+```
+node acumulados de corridas colgadas     39 -> 0 (matados)
+puerto 8765 (API)   ocupado por un python huerfano  -> matado
+puerto 4173 (vista previa) libre
+y aun asi, la corrida vuelve a atascarse
+```
+
+**Asi que el problema es del arnes, no de la aplicacion**: **`npm run e2e` no limpia sus servidores cuando una
+corrida se corta, y la siguiente arranca sobre los restos.** **Cada corrida fallida envenena la siguiente**, y
+eso, en una fase que depende de medir, cuesta rondas enteras.
+
+**Lo que necesita el arnes, y no es codigo de producto**: **un paso que mate los servidores antes de empezar** (o
+`reuseExistingServer: false` con limpieza), **y un tope de tiempo por prueba** para que una prueba colgada no
+arrastre a la tanda.
+
+## Lo que queda medido y commiteado
+
+```
+11 failed, 82 passed    ultima corrida completa (con el arreglo del espacio en el DOM)
+siete componentes       nombre accesible alineado con su texto visible
+seis botones mas        aplicados, build y tsc en verde, SIN confirmar por la bateria
+main                    c8c1171 · arbol limpio
+```
+
+**Y la deuda concreta**: **los seis botones estan sin verificar**. **No se dan por buenos.**
+
+## Lo que hay que hacer, en orden, la proxima vez
+
+1. **antes de medir**: matar `node` y el `python` del 8765, y comprobar que los dos puertos estan libres;
+2. **si vuelve a atascarse**: mirar si el atranco es una prueba concreta (el log dice en cual) y **no relanzar a
+   ciegas** — que es lo que he hecho tres veces;
+3. **y solo entonces** medir los seis botones y seguir con lo que quede.
