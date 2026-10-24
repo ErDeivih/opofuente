@@ -61,7 +61,7 @@ export function AdminShell({ children }: AdminShellProps) {
                     // del nombre. Sin el «7», el lector de pantalla oye un nombre que no coincide con lo
                     // que hay en pantalla.
                     aria-label={
-                      count === undefined ? undefined : `${item.label}, ${count.count}: ${count.label}`
+                      count === undefined ? undefined : `${item.label} ${count.count}: ${count.label}`
                     }
                     className={({ isActive }) =>
                       isActive ? 'nav__link nav__link--active' : 'nav__link'
