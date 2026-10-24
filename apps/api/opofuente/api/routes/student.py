@@ -144,6 +144,7 @@ def _session(view: StudentSessionView) -> StudentSessionSchema:
         created_at=view.created_at,
         result=None if view.result is None else _score(view.result),
         practical_case_origin=view.practical_case_origin,
+        practical_case_statement=view.practical_case_statement,
     )
 
 

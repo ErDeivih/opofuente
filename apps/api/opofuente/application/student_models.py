@@ -74,6 +74,8 @@ class StudentSessionView:
     #: De dónde salieron las preguntas del supuesto práctico cuando no eran material de supuesto:
     #: se dice (`"bloque"`), no se calla. `None` cuando no hay supuesto o cuando lo es de verdad.
     practical_case_origin: str | None = None
+    #: El enunciado del supuesto, cuando la sesión lleva uno de verdad (remate, punto 4).
+    practical_case_statement: str | None = None
 
     @property
     def finished(self) -> bool:

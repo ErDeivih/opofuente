@@ -251,6 +251,11 @@ class CompositionSpec:
     #: compone del bloque elegido y la sesión lo declara (`"bloque"`). No se inventa que es un
     #: supuesto si no lo es.
     practical_case_origin: str | None = None
+    #: **El enunciado del supuesto**, cuando la sesión lo lleva de verdad (remate, punto 4). **Sus
+    #: preguntas dicen «con los datos del caso, conteste»**: sin el caso delante, veinticinco
+    #: preguntas no se pueden contestar, así que el enunciado viaja con la sesión y no se busca
+    #: después.
+    practical_case_statement: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -858,6 +863,7 @@ class StudyService:
             note=spec.note,
             context_label=spec.label,
             practical_case_origin=spec.practical_case_origin,
+    practical_case_statement=spec.practical_case_statement,
         )
         plan = assign_positions(congeladas, shuffle=spec.shuffle)
         sesion = self._study.create_session(

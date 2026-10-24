@@ -373,6 +373,17 @@ export function StudentTestRunner() {
             </>
           ) : (
             <>
+              {estado.session.practical_case_statement ? (
+                // **El caso, con la pregunta**: sus veinticinco preguntas dicen «con los datos del
+                // caso, conteste», y sin el enunciado delante no se pueden contestar (remate,
+                // punto 4).
+                <aside className="test-supuesto" aria-label="Enunciado del supuesto práctico">
+                  <h2 className="test-supuesto__titulo">Supuesto práctico</h2>
+                  <p className="test-supuesto__texto" data-contenido>
+                    {estado.session.practical_case_statement}
+                  </p>
+                </aside>
+              ) : null}
               <p className="test-pregunta__numero">
                 {pregunta.is_reserve ? 'Reserva · ' : ''}
                 {pregunta.position}

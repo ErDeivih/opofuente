@@ -124,6 +124,7 @@ export const overviewFixture: StudentOverview = {
     created_at: '2026-10-11T08:59:00Z',
     result: null,
     practical_case_origin: null,
+    practical_case_statement: null,
   },
   due_reviews: 23,
   blocks: syllabusFixture.blocks,
@@ -153,6 +154,7 @@ export const overviewFixture: StudentOverview = {
         passed: null,
       },
       practical_case_origin: null,
+      practical_case_statement: null,
     },
   ],
 };
@@ -331,6 +333,7 @@ export const sessionResultFixture: StudentSessionResult = {
       passed: null,
     },
     practical_case_origin: null,
+    practical_case_statement: null,
   },
   parts: [
     {

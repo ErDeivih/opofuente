@@ -255,3 +255,18 @@ de la segunda parte, del supuesto:  25 de 25
 **Antes de las claves, la segunda parte se quedaba en cero y el simulacro caía a veinte preguntas de
 tema.** **Ahora son las veinticinco del caso, con sus cinco reservas.** **Queda la pantalla**: el
 enunciado a la izquierda y las 25 preguntas a la derecha.
+
+### La pantalla: el caso con sus preguntas
+
+**El enunciado viaja con la sesión** (`SessionConfiguration.practical_case_statement`, congelado como
+todo lo demás) **y no se busca después**: sus veinticinco preguntas dicen «con los datos del caso,
+conteste», y **sin el caso delante no se pueden contestar**. Se sirve en la respuesta y se pinta en el
+runner, antes de la pregunta, en un recuadro con su propio desplazamiento; **en pantalla ancha va a la
+izquierda con la pregunta a la derecha** y en estrecha encima.
+
+**Lo que no se ha hecho**: la nota por parte ya existe en el resultado (`StudentMockExamPartSchema`),
+pero **no se ha tocado la pantalla del resultado** para destacarla. Se anota como pendiente.
+
+```
+tsc --noEmit  0  ·  vitest  54 ficheros en verde
+```

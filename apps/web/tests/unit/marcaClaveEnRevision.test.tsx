@@ -27,6 +27,7 @@ const SESION = {
   created_at: '2026-10-13T10:00:00Z',
   result: null,
   practical_case_origin: null,
+  practical_case_statement: null,
 };
 
 function carrera(keyInReview: boolean) {

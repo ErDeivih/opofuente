@@ -53,6 +53,12 @@ export interface StudentSession {
   created_at: string;
   result: StudentScore | null;
   practical_case_origin: string | null;
+  /**
+   * **El enunciado del supuesto**, cuando la sesión lleva uno de verdad (remate, punto 4).
+   * Sus preguntas dicen «con los datos del caso, conteste»: sin el caso delante no se pueden
+   * contestar, así que viaja con la sesión y no se busca después.
+   */
+  practical_case_statement: string | null;
 }
 
 export interface StudentOption {

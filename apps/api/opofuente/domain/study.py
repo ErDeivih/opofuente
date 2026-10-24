@@ -256,6 +256,10 @@ class SessionConfiguration:
     #: compone del bloque elegido y se dice (`"bloque"`), en lugar de llamar «supuesto práctico» a
     #: veinte preguntas de tema. Es `None` cuando el supuesto es material de supuesto.
     practical_case_origin: str | None = None
+    #: **El enunciado del supuesto**, cuando la sesión lleva uno de verdad (remate, punto 4).
+    #: Sus preguntas dicen «con los datos del caso, conteste»: **sin el caso delante no se pueden
+    #: contestar**, así que viaja con la sesión y se congela con ella como todo lo demás.
+    practical_case_statement: str | None = None
 
     def __post_init__(self) -> None:
         if self.mode in (SessionMode.OFFICIAL_EXAM, SessionMode.MOCK_EXAM) and (

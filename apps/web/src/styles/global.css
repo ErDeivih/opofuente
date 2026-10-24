@@ -3904,3 +3904,35 @@ kbd {
     overflow-wrap: anywhere;
   }
 }
+
+/* El enunciado del supuesto, junto a sus preguntas (remate, punto 4): sus veinticinco preguntas
+   dicen «con los datos del caso, conteste», así que sin el caso delante no se pueden contestar.
+   En pantalla ancha va a la izquierda y la pregunta a la derecha; en estrecha, encima. */
+.test-supuesto {
+  border: 1px solid var(--color-borde);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  max-height: 22rem;
+  overflow-y: auto;
+}
+
+.test-supuesto__titulo {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.test-supuesto__texto {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+@media (min-width: 1100px) {
+  .test-supuesto {
+    float: left;
+    width: 42%;
+    margin-right: 1.5rem;
+  }
+}

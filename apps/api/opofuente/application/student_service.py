@@ -868,6 +868,7 @@ class StudentService:
                     question_version_ids=preguntas_del_caso,
                 )
                 fuente_del_supuesto: str | None = "supuesto"
+                enunciado_del_supuesto: str | None = supuesto[1]
             else:
                 # **Sin supuesto guardado** se cae a lo que había: veinte preguntas del bloque, y la
                 # sesión **lo declara** para no llamar «supuesto» a veinte preguntas de tema.
@@ -879,6 +880,7 @@ class StudentService:
                     alternative_group="supuesto",
                 )
                 fuente_del_supuesto = "bloque"
+                enunciado_del_supuesto = None
             partes = (
                 PartSpec(
                     code="primera_parte",
@@ -899,6 +901,7 @@ class StudentService:
             )
             etiqueta = "Simulacro corto"
             fuente_del_supuesto = None
+            enunciado_del_supuesto = None
 
         resultado = self._study.compose(
             CompositionSpec(
@@ -911,6 +914,7 @@ class StudentService:
                 label=etiqueta,
                 note=StudentService._nota_del_simulacro(completo=completo),
                 practical_case_origin=fuente_del_supuesto,
+                practical_case_statement=enunciado_del_supuesto,
             ),
             opposition_id=oposicion.id,
         )
@@ -1739,6 +1743,7 @@ class StudentService:
             created_at=vista.created_at,
             result=StudentService._resultado(vista.result),
             practical_case_origin=vista.configuration.practical_case_origin,
+            practical_case_statement=vista.configuration.practical_case_statement,
         )
 
     @staticmethod

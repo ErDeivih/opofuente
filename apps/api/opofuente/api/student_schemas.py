@@ -107,6 +107,7 @@ class StudentSessionSchema(BaseModel):
     result: StudentScoreSchema | None = None
     #: De dónde salió el supuesto práctico cuando no era material de supuesto: se dice (`bloque`).
     practical_case_origin: str | None = None
+    practical_case_statement: str | None = None
 
 
 class StudentTopicProgressSchema(BaseModel):

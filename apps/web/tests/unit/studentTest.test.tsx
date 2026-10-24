@@ -80,6 +80,7 @@ function runFixture(overrides: Partial<StudentRun> = {}): StudentRun {
       created_at: '2026-10-11T08:59:00Z',
       result: null,
       practical_case_origin: null,
+      practical_case_statement: null,
     },
     total: 3,
     answered: 2,
