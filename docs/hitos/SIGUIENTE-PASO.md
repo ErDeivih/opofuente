@@ -6597,3 +6597,25 @@ privadas), **punto 2** (`/repaso` en el menú y **9 tarjetas reales** servidas p
 monta la segunda parte con sus 25 preguntas, y el enunciado **se deduce** de
 `practical_case_questions` —**no hace falta migración**—. **El punto 4 no se empezó a propósito**: la
 composición es la que corrige todos los modos de sesión y **dejarla a medias es peor que no tocarla**.
+
+## El remate, al día (24 oct, tanda 2)
+
+**Hechos y medidos**: **punto 1** (5.939 privadas archivadas · 20.322 explicaciones · 11.315 privadas),
+**punto 2** (`/repaso` en el menú · 9 tarjetas reales servidas por `scripts\api.ps1`) y **punto 3**
+(`/inicio` redirige · `StudentHomePage` borrada · 486 pruebas en verde).
+
+**Punto 4, a medias y con la causa encontrada**: la composición **ya usa las 25 preguntas del
+supuesto** (`PartSpec.question_version_ids`), pero **el supuesto no se puede corregir**: **0 de 450
+preguntas tienen clave** —ni plantilla ni derivada—, porque **`tools/supuestos.py` tiraba
+`pregunta.clave` al guardar**. **El guardado ya está arreglado** para las generaciones siguientes.
+
+**Lo siguiente, en orden:**
+
+1. **recuperar las 450 claves** pidiéndoselas al modelo con el segundo pase que ya existe
+   (`responder_a_ciegas`, contesta sin ver la clave) y escribir la plantilla — **unas 18 llamadas, del
+   orden de 0,05 $**;
+2. **la pantalla del simulacro**: enunciado del supuesto a la izquierda y sus 25 preguntas a la
+   derecha, con nota por parte;
+3. **puntos 5 a 9** del documento.
+
+`main = 6ac26d9 · árbol limpio · 14 pruebas de simulacro y supuesto en verde`
