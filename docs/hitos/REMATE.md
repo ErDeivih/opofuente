@@ -384,3 +384,43 @@ qué va **no sirve para lo único que sirve un título**.
 
 **Las puertas siguen siendo dieciocho.** **Sin datos también pasa**, así que la batería sigue corriendo
 en una máquina limpia.
+
+---
+
+## Punto 7 · Las «sin material» y el OCR — **medido, no hecho**
+
+### Lo que hay en la bandeja, contado ahora
+
+```
+abiertas 787
+  clave_sospechosa    457
+  clave_no_fiable     192
+  hueco_sin_material   84
+  pregunta_ambigua     54
+```
+
+### Lo que se ha averiguado, y por qué no se ha tocado
+
+**«Sin material» por tema no es lo que dice el documento**: **7.655 preguntas están mapeadas a un nodo
+sin apuntes escritos** (de 19.978 mapeos, con 28 nodos con apuntes). **Eso es casi la mitad del banco**,
+no 423: **sacar de tests y repasos a 7.655 preguntas no es la decisión 2, es otra cosa.**
+
+**El «sin material» que pide el documento es por pregunta**, y **ya existe en un sitio**: `explicaciones.py`
+calcula `con_material` y manda a `sin_material` las preguntas cuyo apartado no tiene apuntes, **sin
+llamar al modelo**. **Ese es el criterio que hay que reutilizar**, no el del nodo.
+
+### El diseño que queda escrito
+
+1. **`sin_material` por pregunta**, con el mismo criterio de `explicaciones.con_material`;
+2. **fuera de tests y repasos** con ese motivo, **y dentro de la lista del panel** (la categoría
+   `hueco_sin_material` ya existe y ya se pinta);
+3. **`notes verify` las vuelve a mirar**: cuando un tema estrene apuntes, **vuelven solas**.
+
+**No se ha implementado**: toca la consulta que decide qué se practica —la misma que la política de
+claves— y **dejarla a medias es peor que no tocarla**, que es la lección del punto 4.
+
+### El OCR acotado (decisión 3), tampoco
+
+**400 ppp, enderezado, binarizado, `--psm 4` y corte de columnas** no se ha intentado. **Es un intento
+con su cifra**: o llega a **≥ 95 de 100** frente a la plantilla, o **quedan fuera con su número y no se
+insiste**. **Se dice tal cual en vez de darlo por hecho.**
