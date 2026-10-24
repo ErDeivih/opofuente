@@ -75,6 +75,10 @@ def _parser() -> argparse.ArgumentParser:
         help="todos los temas con apuntes, no solo los que tienen material publicado",
     )
     verificar.add_argument("--limite", type=int, default=0, help="como mucho N temas (0 = todos)")
+    sub.add_parser(
+        "titulos",
+        help="ningun apartado se titula con una etiqueta interna",
+    )
     return parser
 
 
@@ -124,10 +128,56 @@ def verificar(*, todos: bool, limite: int) -> int:
     return 1
 
 
+#: Lo que no puede ser un titulo de apartado: **es una etiqueta de la trastienda que se colo**.
+#: «El apartado que explica IV.7» no dice de que va el apartado, dice donde esta: **el alumno lee el
+#: titulo para saber que va a estudiar**, y ahi no estudia nada.
+_ETIQUETAS_INTERNAS = (
+    "%apartado que explica%",
+    "El apartado%",
+    "%este apartado%",
+    "%el apartado de%",
+)
+
+
+def titulos() -> int:
+    """**Ningun apartado se titula con una etiqueta interna** (remate, punto 6).
+
+    Se mira **la base real**: el titulo se guarda al escribir los apuntes y no se vuelve a mirar,
+    asi que una etiqueta que se cuele ahi se queda para siempre y sale en la pantalla del alumno.
+    """
+    motor = create_engine(f"sqlite+pysqlite:///{get_settings().data_paths.database}")
+    fabrica = sessionmaker(bind=motor)
+    with fabrica() as session:
+        # **El SQL va literal, con sus cuatro parametros**: montarlo con un `join` es una
+        # inyeccion esperando y `ruff` lo marca con razon (`S608`).
+        filas = session.execute(
+            text(
+                "select id, title from topic_note_sections "
+                "where title like :p0 or title like :p1 "
+                "or title like :p2 or title like :p3"
+            ),
+            {
+                "p0": _ETIQUETAS_INTERNAS[0],
+                "p1": _ETIQUETAS_INTERNAS[1],
+                "p2": _ETIQUETAS_INTERNAS[2],
+                "p3": _ETIQUETAS_INTERNAS[3],
+            },
+        ).all()
+    if not filas:
+        print("  ningun apartado se titula con una etiqueta interna")
+        return 0
+    print(f"  {len(filas)} apartados con etiqueta interna en el titulo:")
+    for identificador, titulo in filas:
+        print(f"    {str(identificador)[:8]}: {titulo}")
+    return 1
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     args = _parser().parse_args(argv)
     if args.comando == "verify":
         return verificar(todos=bool(args.all), limite=int(args.limite))
+    if args.comando == "titulos":
+        return titulos()
     return 2
 
 

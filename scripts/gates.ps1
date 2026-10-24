@@ -71,8 +71,15 @@ try {
         if (Test-Path $gatesDataDir) { Remove-Item -Recurse -Force $gatesDataDir }
     }
 
-    Invoke-OpoFuenteStep -Name '17. fixtures de perfil sincronizados con las fuentes oficiales' -Action {
+    Invoke-OpoFuenteStep -Name '17. fixtures de perfil y titulos de los apuntes' -Action {
+        # Los fixtures tienen que seguir diciendo lo que dicen las fuentes oficiales.
         uv run python -m opofuente.tools.build_profile_fixtures --check
+        if ($LASTEXITCODE -ne 0) { return }
+        # **Y ningun apartado se titula con una etiqueta interna** (remate, punto 6): «El apartado que
+        # explica IV.7» no dice de que va el apartado, dice donde esta. Se colo una vez y salio en la
+        # pantalla del alumno; con esto no vuelve. Sin datos no hay nada que mirar y pasa igual, asi
+        # que la bateria sigue pudiendo correr en una maquina limpia.
+        uv run python -m opofuente.tools.notes titulos
     }
 
     if ($SkipE2e) {
