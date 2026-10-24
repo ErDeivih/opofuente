@@ -470,3 +470,47 @@ cifra y no se insiste**, que es exactamente lo que decide el documento. **La med
 
 **Con esto, el punto 7 queda cerrado**: la decisión 2 hecha (las 423 fuera de tests y repasos, la
 bandeja en 12 decisiones del propietario) **y la decisión 3 intentada con su número y descartada**.
+
+---
+
+## Punto 8 · El recorrido nuevo — **a medias, y se dice**
+
+### Lo que se hizo, con los datos que manda el documento
+
+```
+copia nueva de la base real:  F:\temp-opofuente\recorrido-2\opofuente.sqlite3
+                              2.656,1 MB · integrity_check ok · 0047
+                              20.322 explicaciones · 5.283 tarjetas · 18 supuestos
+build desde main:             commit 964c862 · 24-oct-2026 23:06:04
+capturas:                     artifacts/recorrido-final-2/ · 80 PNG (1280 y 390)
+herramienta:                  npm run screens --datos <copia>
+```
+
+**Es el paquete construido en ese momento desde `main`**, y **la copia es de la base real ya
+actualizada** — no la siembra de pruebas, que es lo que el documento exige y lo que falló la vez
+anterior.
+
+### Lo que no está bien, y por eso el punto no se cierra
+
+```
+77 pasan · 8 fallan
+  acabado: inicio            1280 y 390
+  acabado: /progreso         1280 y 390
+  contestar: el ciclo entero 1280 y 390
+  lectura: IV.7 por capítulos 1280 y 390
+```
+
+**Los ocho fallan por lo mismo**: `Error: consola en inicio: Failed to load resource: the server
+responded with a status of 404 (Not Found)`. **El mensaje no dice qué recurso**, y **no se ha
+identificado**: no es `/inicio` —las capturas no navegan ahí— y el endpoint `/student/overview`
+sigue existiendo en la API.
+
+**No se da por bueno un recorrido con ocho pantallas sin capturar.** **Lo siguiente es ver qué URL
+da el 404** —con el registro de red de una sola de esas pruebas—, arreglarlo y **volver a hacer el
+recorrido entero**.
+
+### Y queda por comprobar lo que el documento pide de cada captura
+
+**Que su texto no lleve frases de la siembra de pruebas** («Real Decreto 311/2022 · Verdadero/Falso»,
+«Test · 4 preguntas»). **La herramienta escribe un informe con las palabras prohibidas**; **no se ha
+leído todavía**.
