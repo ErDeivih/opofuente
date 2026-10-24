@@ -6265,3 +6265,35 @@ en `apps/web/tests` cada etiqueta cambiada y alinear el selector.
 
 **Cuatro rondas de relanzar la bateria entera no dieron nada; una prueba sola con tope encontro la causa en un
 minuto.**
+
+## Las ocho que fallan, por su nombre (ronda 48)
+
+```
+5   avisos.spec.ts:224          E2E-F16 el ciclo del aviso: el alumno…
+19  errors.spec.ts:147          S10 errores: el fallo entra en la cola
+23  ficha-pregunta.spec.ts:381  E2E-F20 la ficha de pregunta…
+24  ficha-pregunta.spec.ts:381  E2E-F20 (otra anchura)
+25  first-run.spec.ts:53        E2E-00 primera ejecución: la zona de…
+32  first-run.spec.ts:202       E2E-00 accesibilidad: sin violaciones
+34  incidencias.spec.ts:255     E2E-F18 una incidencia del motor…
+64  review.spec.ts:196          E2E-03 revisión en lote: aceptar un gr…
+```
+
+**Ocho, en siete ficheros.** **Dos son de accesibilidad** (una de ellas, `first-run` en la 202, y las de `errors`
+que reportaban violaciones de escritorio y movil). **Las otras seis son de flujo** y **lo mas probable es que
+sean selectores que movi**: cambie seis `aria-label` y hay 14 sitios que los usaban.
+
+**Lo que hay que hacer, con el metodo que funciono:**
+
+```
+npx playwright test tests/e2e/first-run.spec.ts -g "E2E-00" --timeout=60000
+```
+
+**una cada vez**, leyendo el `locator` exacto. **Siete ficheros no se miran de golpe.**
+
+## Y el recordatorio de donde venimos
+
+```
+27 -> 11 -> 8 fallos     y 85 pruebas pasan
+el «atasco del arnes» era mi cambio de etiquetas rompiendo selectores
+```
