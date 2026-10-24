@@ -68,7 +68,10 @@ export function ConceptList({
                   <button
                     className={error.id === selectedId ? 'button button--active' : 'button'}
                     type="button"
-                    aria-label={`Abrir el error de «${error.stem ?? 'una pregunta'}»`}
+                    // **El nombre empieza por el texto que se ve** —el enunciado y la causa—, que es lo que
+                    // exige `label-content-name-mismatch`: el texto visible tiene que estar dentro
+                    // del nombre como trozo contiguo.
+                    aria-label={`${error.stem ?? '(pregunta no disponible)'} ${CAUSE_LABEL[error.cause]}: abrir el error`}
                     onClick={() => {
                       onSelect(error.id === selectedId ? null : error.id);
                     }}

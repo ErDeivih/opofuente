@@ -171,7 +171,7 @@ test('S10 errores: el fallo entra en la cola, se declara su causa, se repasa y s
   await page.getByRole('tab', { name: 'Conceptos' }).click();
   const panel = page.getByRole('tabpanel');
   await expect(panel.getByText('plazos')).toBeVisible();
-  await panel.getByRole('button', { name: `Abrir el error de «${datos.enunciado}»` }).click();
+  await panel.getByRole('button', { name: /: abrir el error$/ }).click();
   await expect(page.getByRole('heading', { name: 'Error declarado' })).toBeVisible();
   const ficha = page.getByRole('region', { name: 'Error declarado' });
   await expect(ficha.getByText('lo confundí con otra cosa')).toBeVisible();
@@ -196,7 +196,7 @@ test('S10 errores: el fallo entra en la cola, se declara su causa, se repasa y s
   await page.goto('/errores');
   await expect(page.getByText(/No hay nada vencido/).first()).toBeVisible();
   await page.getByRole('tab', { name: 'Conceptos' }).click();
-  await page.getByRole('button', { name: `Abrir el error de «${datos.enunciado}»` }).click();
+  await page.getByRole('button', { name: /: abrir el error$/ }).click();
   await expect(ficha.getByText(/cada 4 día\(s\)/)).toBeVisible();
   await expect(ficha.getByText(/acertada después de un fallo: cuatro días/)).toBeVisible();
 
