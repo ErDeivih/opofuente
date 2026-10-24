@@ -557,3 +557,28 @@ los datos reales. **No se han tocado**: hay que decidir cuál de los dos tiene r
 expectativa— y eso no se hace con el contexto justo.
 
 **El punto 8 sigue sin cerrarse.**
+
+### El estado final del recorrido, con las dos correcciones
+
+```
+83 pasan · 2 fallan
+  contestar: el ciclo entero (1280 y 390)   <- la única pantalla que no se ha podido fotografiar
+80 PNG en artifacts/recorrido-final-2/
+```
+
+**Y las dos que se arreglaron por el camino**:
+
+1. **el 404 de las 69 llamadas** —la base del cliente sin `/api/v1`—, que **no era del recorrido sino de
+   la aplicación**;
+2. **`lectura: IV.7`**: esperaba **6** apartados en el primer capítulo y **hoy son 7** —los apuntes se
+   regeneraron durante la fase—. **Es una foto de los datos, no un número de diseño**, y se mueve con
+   ellos; queda escrito el motivo en la prueba.
+
+**`contestar` sigue fallando** por `strict mode violation`: **«Ir a la pregunta 1» resuelve a más de un
+botón**. **No se ha tocado**: hay que ver **por qué hay dos** —si la hoja se pinta dos veces o si la
+navegación y la hoja coinciden— antes de decidir cuál sobra. **Ajustar el selector para que calle
+sería tapar el síntoma.**
+
+**Se ha comprobado que las capturas no llevan frases de la siembra**: el informe de la herramienta
+(`artifacts/screens-datos/report.md`) las marca en su columna de palabras prohibidas y **salen a cero
+en las pantallas capturadas**.

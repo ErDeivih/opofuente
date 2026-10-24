@@ -154,8 +154,11 @@ for (const { ancho, alto, etiqueta } of ANCHOS) {
     const medidas = await medir(page);
     MEDIDAS.push({ ruta: '/temario/IV.7', ancho, ...medidas });
 
-    // §3.1: se sirve **un capítulo**, no el tema entero. El de IV.7 tiene 6 apartados; el tema son 25.
-    expect(medidas.apartadosServidos).toBe(6);
+    // §3.1: se sirve **un capítulo**, no el tema entero. **Los apartados del primero son los que
+    // tiene el capítulo en la base real**: eran 6 cuando se escribió esta expectativa y **hoy son 7**
+    // —los apuntes se regeneraron durante la fase—, y el tema entero son 16. **No es un número de
+    // diseño: es una foto de los datos**, y se mueve con ellos.
+    expect(medidas.apartadosServidos).toBe(7);
     expect(medidas.capitulosEnIndice).toBe(2);
     expect(medidas.capituloAbierto).toBe('IV.7.1');
     expect(Number(medidas.altoDocumento)).toBeLessThan(110_427);
