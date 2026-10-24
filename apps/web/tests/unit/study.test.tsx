@@ -521,7 +521,7 @@ describe('estudiar: la pregunta', () => {
     renderEstudiar();
 
     await userEvent.click(await screen.findByLabelText('A) 1976'));
-    await userEvent.click(screen.getByRole('button', { name: 'Enviar la respuesta' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Responder: enviar la respuesta' }));
 
     expect(await screen.findByText('Respuesta guardada.')).toBeInTheDocument();
     const enviado = cuerpoJson(fetchMock, '/answers');
@@ -564,7 +564,7 @@ describe('estudiar: la pregunta', () => {
     });
     renderEstudiar();
 
-    await userEvent.click(await screen.findByRole('button', { name: 'Dejar la pregunta en blanco' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Dejarla en blanco: la pregunta' }));
 
     await waitFor(() => {
       expect(cuerpoJson(fetchMock, '/answers').chosen_option_keys).toEqual([]);
@@ -588,7 +588,7 @@ describe('estudiar: la pregunta', () => {
     renderEstudiar();
 
     await userEvent.click(await screen.findByLabelText('B) 1978'));
-    await userEvent.click(screen.getByRole('button', { name: 'Enviar la respuesta' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Responder: enviar la respuesta' }));
 
     expect(
       await screen.findByText(/esa pregunta ya está respondida y el intento no se reescribe/),

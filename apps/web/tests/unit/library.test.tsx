@@ -1101,7 +1101,7 @@ describe('biblioteca: asignaciones de programa', () => {
     await userEvent.selectOptions(selector, 'node-tema');
     await userEvent.selectOptions(screen.getByLabelText('Cobertura'), 'complete');
     await userEvent.click(
-      screen.getByRole('button', { name: 'Asignar el nodo elegido a esta versión' }),
+      screen.getByRole('button', { name: 'Asignar a la versión: el nodo elegido' }),
     );
 
     expect(asignadas).toEqual([{ nodeId: 'node-tema', cobertura: 'complete' }]);
@@ -1111,7 +1111,7 @@ describe('biblioteca: asignaciones de programa', () => {
     renderAsignaciones();
 
     expect(
-      screen.getByRole('button', { name: 'Asignar el nodo elegido a esta versión' }),
+      screen.getByRole('button', { name: 'Asignar a la versión: el nodo elegido' }),
     ).toBeDisabled();
   });
 

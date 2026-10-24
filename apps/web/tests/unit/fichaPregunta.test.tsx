@@ -340,7 +340,7 @@ describe('la ficha de pregunta', () => {
     const usuario = userEvent.setup();
 
     expect(await screen.findByText('Quitar la referencia del examen')).toBeDefined();
-    const boton = screen.getByRole('button', { name: 'Reparar el texto de la pregunta' });
+    const boton = screen.getByRole('button', { name: 'Reparar y guardar una vista nueva: reparar el texto de la pregunta' });
     expect(boton).toBeDisabled();
 
     await usuario.type(
@@ -356,7 +356,7 @@ describe('la ficha de pregunta', () => {
     expect(await screen.findByText('Reparar el texto importado')).toBeDefined();
     expect(screen.getByText(/nombra a otra opción/)).toBeDefined();
     expect(
-      screen.queryByRole('button', { name: 'Reparar el texto de la pregunta' }),
+      screen.queryByRole('button', { name: 'Reparar y guardar una vista nueva: reparar el texto de la pregunta' }),
     ).toBeNull();
   });
 

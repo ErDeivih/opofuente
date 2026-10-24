@@ -293,7 +293,7 @@ describe('errores: los conceptos', () => {
     expect(within(panel).getByText('plazos')).toBeInTheDocument();
     expect(within(panel).getByText(/2 fallo\(s\) · 1 pregunta\(s\)/)).toBeInTheDocument();
 
-    await userEvent.click(within(panel).getByRole('button', { name: /Abrir el error de / }));
+    await userEvent.click(within(panel).getByRole('button', { name: /: abrir el error$/ }));
 
     expect(await screen.findByRole('heading', { name: 'Error declarado' })).toBeInTheDocument();
     expect(screen.getByText('lo confundí con otra cosa')).toBeInTheDocument();
@@ -310,7 +310,7 @@ describe('errores: los conceptos', () => {
     renderErrores();
 
     await userEvent.click(await screen.findByRole('tab', { name: 'Conceptos' }));
-    await userEvent.click(screen.getByRole('button', { name: /Abrir el error de / }));
+    await userEvent.click(screen.getByRole('button', { name: /: abrir el error$/ }));
     await screen.findByRole('heading', { name: 'Error declarado' });
 
     await userEvent.click(screen.getByRole('button', { name: 'Marcar resuelto' }));
@@ -333,7 +333,7 @@ describe('errores: exportar', () => {
     renderErrores();
 
     await screen.findByText('El plazo del procedimiento es de diez dias habiles:');
-    await userEvent.click(screen.getByRole('button', { name: 'Exportar el banco para Anki' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Anki CSV: exportar el banco para Anki' }));
 
     expect(await screen.findByText('Última exportación')).toBeInTheDocument();
     expect(screen.getByText('banco-20260918-120000.csv')).toBeInTheDocument();

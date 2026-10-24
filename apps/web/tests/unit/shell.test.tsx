@@ -346,17 +346,17 @@ describe('contadores del panel', () => {
 
     // El nombre del enlace dice el número **y** qué es, así que el contador no es decorativo ni mudo.
     const importaciones = await screen.findByRole('link', {
-      name: 'Importaciones: 7 avisos o errores de importación',
+      name: 'Importaciones 7: 7 avisos o errores de importación',
     });
     expect(importaciones).toHaveTextContent('7');
     expect(
-      screen.getByRole('link', { name: 'Preguntas: 3 preguntas en conflicto' }),
+      screen.getByRole('link', { name: 'Preguntas 3: 3 preguntas en conflicto' }),
     ).toBeInTheDocument();
     expect(
-      await screen.findByRole('link', { name: 'Errores: 5 repasos vencidos' }),
+      await screen.findByRole('link', { name: 'Errores 5: 5 repasos vencidos' }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole('link', { name: 'Cambios: 4 cambios sin confirmar' }),
+      screen.getByRole('link', { name: 'Cambios 4: 4 cambios sin confirmar' }),
     ).toBeInTheDocument();
   });
 

@@ -373,7 +373,7 @@ describe('preguntas: el banco', () => {
 
     await userEvent.click(await screen.findByText('Crear un conjunto'));
     await userEvent.type(screen.getByLabelText('Título'), 'Banco privado');
-    await userEvent.click(screen.getByRole('button', { name: 'Crear el conjunto de preguntas' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Crear conjunto: de preguntas' }));
 
     await waitFor(() => {
       const llamada = fetchMock.mock.calls.find(

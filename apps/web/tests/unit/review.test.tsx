@@ -446,7 +446,7 @@ describe('pantalla Revisión', () => {
     await userEvent.selectOptions(selector, 'I.1');
     await userEvent.click(
       within(fila).getByRole('button', {
-        name: accion('Aceptar con la corrección', ARCHIVO_UNO, MATERIAL, TEMA, '4.1', '68 %'),
+        name: accion('Aceptar corregido', ARCHIVO_UNO, MATERIAL, TEMA, '4.1', '68 %'),
       }),
     );
 
@@ -522,7 +522,7 @@ describe('pantalla Revisión', () => {
     await userEvent.selectOptions(selector, 'I.1');
     await userEvent.click(
       within(fila).getByRole('button', {
-        name: accion('Aceptar con la corrección', ARCHIVO_UNO, MATERIAL, TEMA, '4.1', '68 %'),
+        name: accion('Aceptar corregido', ARCHIVO_UNO, MATERIAL, TEMA, '4.1', '68 %'),
       }),
     );
 
