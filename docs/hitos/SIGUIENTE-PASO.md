@@ -6409,3 +6409,33 @@ hizo con `first-run`, en vez de suponer** — que es lo que me ha funcionado cad
 puerta 18: empezó en 27 · errors.spec.ts y review.spec.ts ya pasan enteros
 quedan 4 fallos, uno de ellos bloqueado por una decision de producto
 ```
+
+## La puerta 18, al final de esta tanda (rondas 52 a 54)
+
+```
+empezaba en 27 fallos
+cerradas enteras:  errors.spec.ts · review.spec.ts · avisos.spec.ts · incidencias.spec.ts
+queda:            ficha-pregunta.spec.ts:381  (la misma prueba a dos anchos)
+                  first-run.spec.ts:53 y :202  (la portada vieja: decision de producto)
+```
+
+## La causa de las ultimas cuatro, y era una sola cosa
+
+**La captura de Playwright lo dijo en una linea**, despues de que yo supusiera dos veces:
+
+```
+link "Avisos, 1: 1 aviso de los apuntes sin mirar"     <- con COMA
+selector:  /Avisos 1: 1 aviso…/                        <- sin coma
+```
+
+**El espacio en el nombre se perdio al revertir la ronda 38; solo quedaba el del DOM.** **Quitando la coma, el
+nombre `«Avisos 1: 1 aviso…»` contiene el texto visible `«Avisos 1»`** — **la regla de accesibilidad se cumple
+y el selector acierta**. **De 4 fallos a 2 en esa tanda.**
+
+## Lo que queda, y no es una incognita de metodo
+
+**`ficha-pregunta.spec.ts:381`** — la ficha de pregunta, con violaciones de accesibilidad **que la captura NO
+incluye**: la prueba llama a axe directamente en la linea 405 y no guarda el detalle. **Hay que correrla sola y
+volcar `violations`**, que es el mismo camino que ya funciono.
+
+**`first-run`** — **espera la portada vieja**. **Decision de producto, en `PARA-EL-PROPIETARIO.md`.**
