@@ -557,7 +557,7 @@ export function QuestionFile({
                 className="button"
                 type="button"
                 disabled={busy || notaReparacion.trim() === ''}
-                aria-label="Reparar el texto de la pregunta"
+                aria-label="Reparar y guardar una vista nueva: reparar el texto de la pregunta"
                 onClick={() => {
                   onRepair({ note: notaReparacion });
                 }}

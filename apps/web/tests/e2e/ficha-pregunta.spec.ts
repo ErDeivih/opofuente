@@ -401,7 +401,11 @@ for (const viewport of [
         .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
         .analyze();
       expect(
-        analisis.violations.map((violacion) => violacion.id),
+        // **Se dice el NODO, no solo la regla**: adivinar cual es ha costado rondas.
+        analisis.violations.map(
+          (v) =>
+            `${v.id} -> ${v.nodes.map((n) => `${n.target.join(' ')} :: ${n.html}`).join(' | ')}`,
+        ),
         `violaciones de accesibilidad (${viewport.name})`,
       ).toEqual([]);
 
