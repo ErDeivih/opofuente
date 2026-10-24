@@ -40,7 +40,7 @@ async function crearConjuntoConClave(page: Page): Promise<string> {
   await page.goto('/preguntas');
   await page.locator('summary').filter({ hasText: 'Crear un conjunto' }).click();
   await page.getByLabel('Título', { exact: true }).fill(titulo);
-  await page.getByRole('button', { name: 'Crear el conjunto de preguntas' }).click();
+  await page.getByRole('button', { name: 'Crear conjunto: de preguntas' }).click();
   await expect(page.getByText(`Conjunto «${titulo}» creado.`)).toBeVisible();
 
   await page.getByRole('tab', { name: 'Importar' }).click();
@@ -80,7 +80,7 @@ async function crearConjuntoDeExamen(
   await page.goto('/preguntas');
   await page.locator('summary').filter({ hasText: 'Crear un conjunto' }).click();
   await page.getByLabel('Título', { exact: true }).fill(titulo);
-  await page.getByRole('button', { name: 'Crear el conjunto de preguntas' }).click();
+  await page.getByRole('button', { name: 'Crear conjunto: de preguntas' }).click();
   await expect(page.getByText(`Conjunto «${titulo}» creado.`)).toBeVisible();
 
   const lineas: string[] = [];
@@ -164,7 +164,7 @@ test('E2E-06 sesión: acertar, fallar, dejar en blanco y ver la puntuación por 
 
   // 1) Acierto: la respuesta correcta del CSV es la B.
   await page.getByLabel('B) Falso').check();
-  await page.getByRole('button', { name: 'Enviar la respuesta' }).click();
+  await page.getByRole('button', { name: 'Responder: enviar la respuesta' }).click();
   await expect(page.getByText('Respuesta guardada.')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Corrección' })).toBeVisible();
   await expect(page.getByText('acertada')).toBeVisible();
@@ -173,7 +173,7 @@ test('E2E-06 sesión: acertar, fallar, dejar en blanco y ver la puntuación por 
   await page.getByRole('button', { name: 'Ir a la pregunta siguiente' }).click();
   await expect(page.getByRole('heading', { name: 'Pregunta 2' })).toBeVisible();
   await page.getByLabel('A) Verdadero').check();
-  await page.getByRole('button', { name: 'Enviar la respuesta' }).click();
+  await page.getByRole('button', { name: 'Responder: enviar la respuesta' }).click();
   await expect(page.getByText('fallada')).toBeVisible();
   // El formato de la nota es **el nuevo** (§2.2 del cierre): coma y dos decimales. Esta aserción
   // esperaba `-0.3333 (-1/3)`, el decimal crudo del servidor —el «0.0000» que el propietario vio en sus
@@ -183,7 +183,7 @@ test('E2E-06 sesión: acertar, fallar, dejar en blanco y ver la puntuación por 
   // 3) En blanco: no puntúa ni a favor ni en contra.
   await page.getByRole('button', { name: 'Ir a la pregunta siguiente' }).click();
   await expect(page.getByRole('heading', { name: 'Pregunta 3' })).toBeVisible();
-  await page.getByRole('button', { name: 'Dejar la pregunta en blanco' }).click();
+  await page.getByRole('button', { name: 'Dejarla en blanco: la pregunta' }).click();
   await expect(page.getByText('en blanco')).toBeVisible();
   // Un blanco vale cero, y el cero de una **nota** también va con dos decimales: `0,00 puntos`. Aquí
   // ponía `0 puntos` y **pasaba por casualidad**: `0,00 puntos` contiene `0 puntos` como trozo, así que
@@ -192,7 +192,7 @@ test('E2E-06 sesión: acertar, fallar, dejar en blanco y ver la puntuación por 
   await expect(page.getByText('0,00 puntos')).toBeVisible();
 
   // Terminar: un acierto menos un tercio es 2/3 exacto.
-  await page.getByRole('button', { name: 'Terminar la sesión' }).click();
+  await page.getByRole('button', { name: 'Terminar y corregir: la sesión' }).click();
   await expect(page.getByRole('heading', { name: 'Resultado' })).toBeVisible();
   // La fracción exacta sigue detrás —`(2/3)`—, y delante va la cifra en español: `0,67`.
   await expect(page.getByText('0,67 (2/3) puntos').first()).toBeVisible();
@@ -218,7 +218,7 @@ test('E2E-06 recargar conserva el intento y retoma la sesión en marcha', async 
   await prepararPractica(page, titulo, '2');
 
   await page.getByLabel('B) Falso').check();
-  await page.getByRole('button', { name: 'Enviar la respuesta' }).click();
+  await page.getByRole('button', { name: 'Responder: enviar la respuesta' }).click();
   await expect(page.getByText('Respuesta guardada.')).toBeVisible();
 
   // Recargar: la sesión vive en el servidor, así que el progreso y el intento siguen ahí.
@@ -250,13 +250,13 @@ test('E2E-06 activar una clave corregida avisa y recalcula lo ya corregido (DEBT
   for (const posicion of [1, 2, 3]) {
     await expect(page.getByRole('heading', { name: `Pregunta ${String(posicion)}` })).toBeVisible();
     await page.getByLabel('A) Verdadero').check();
-    await page.getByRole('button', { name: 'Enviar la respuesta' }).click();
+    await page.getByRole('button', { name: 'Responder: enviar la respuesta' }).click();
     await expect(page.getByText('Respuesta guardada.')).toBeVisible();
     if (posicion < 3) {
       await page.getByRole('button', { name: 'Ir a la pregunta siguiente' }).click();
     }
   }
-  await page.getByRole('button', { name: 'Terminar la sesión' }).click();
+  await page.getByRole('button', { name: 'Terminar y corregir: la sesión' }).click();
   await expect(page.getByRole('heading', { name: 'Resultado' })).toBeVisible();
   // Tres fallos con un tercio de castigo: −1 exacto, y escrito como el §2.2 pide (`-1,00`). La
   // aserción esperaba `-1 puntos`, que es el formato viejo del servidor.
@@ -352,13 +352,13 @@ test('E2E-06 un diagnóstico reparte la muestra por temas y la lee con su interv
       page.getByRole('heading', { name: `Pregunta ${String(posicion)}` }),
     ).toBeVisible();
     await page.getByRole('radio').first().check();
-    await page.getByRole('button', { name: 'Enviar la respuesta' }).click();
+    await page.getByRole('button', { name: 'Responder: enviar la respuesta' }).click();
     await expect(page.getByText('Respuesta guardada.', { exact: true })).toBeVisible();
     if (posicion < 6) {
       await page.getByRole('button', { name: 'Ir a la pregunta siguiente' }).click();
     }
   }
-  await page.getByRole('button', { name: 'Terminar la sesión' }).click();
+  await page.getByRole('button', { name: 'Terminar y corregir: la sesión' }).click();
 
   // La lectura por temas, con su intervalo y su muestra: lo que un diagnóstico tiene que decir.
   await expect(page.getByRole('heading', { name: 'Estimación por tema' })).toBeVisible();
@@ -405,7 +405,7 @@ test('E2E-06 un simulacro monta el perfil exacto y el resultado no se llama ofic
 
   // Se termina sin contestar (la pantalla lo permite y lo dice): el resultado es de un simulacro. Las
   // reservas que no hicieron falta no entran en el cálculo, así que lo pendiente son las 80 ordinarias.
-  await page.getByRole('button', { name: 'Terminar la sesión' }).click();
+  await page.getByRole('button', { name: 'Terminar y corregir: la sesión' }).click();
   await expect(page.getByRole('heading', { name: 'Resultado' })).toBeVisible();
   await expect(page.getByText(/Es un simulacro: el perfil es el del examen/)).toBeVisible();
   await expect(page.getByText('no es un examen oficial')).toBeVisible();
@@ -453,7 +453,7 @@ test('E2E-06 accesibilidad y responsive: la pregunta y la corrección, con tecla
   await page.getByLabel('B) Falso').focus();
   await page.keyboard.press(' ');
   await expect(page.getByLabel('B) Falso')).toBeChecked();
-  await page.getByRole('button', { name: 'Enviar la respuesta' }).focus();
+  await page.getByRole('button', { name: 'Responder: enviar la respuesta' }).focus();
   await page.keyboard.press('Enter');
   await expect(page.getByText('Respuesta guardada.')).toBeVisible();
 

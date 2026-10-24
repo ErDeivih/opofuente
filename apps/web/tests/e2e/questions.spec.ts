@@ -89,7 +89,7 @@ async function crearConjunto(page: import('@playwright/test').Page): Promise<str
 
   await page.locator('summary').filter({ hasText: 'Crear un conjunto' }).click();
   await page.getByLabel('Título', { exact: true }).fill(titulo);
-  await page.getByRole('button', { name: 'Crear el conjunto de preguntas' }).click();
+  await page.getByRole('button', { name: 'Crear conjunto: de preguntas' }).click();
 
   await expect(page.getByText(`Conjunto «${titulo}» creado.`)).toBeVisible();
   return titulo;

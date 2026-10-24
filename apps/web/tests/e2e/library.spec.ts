@@ -530,7 +530,7 @@ test('E2E-04 documento compartido: un artefacto, sus asignaciones y la versión 
   const selectorNodo = page.getByLabel('Nodo del programa');
   await expect(selectorNodo).toBeEnabled();
   await selectorNodo.selectOption({ index: 1 });
-  await page.getByRole('button', { name: 'Asignar el nodo elegido a esta versión' }).click();
+  await page.getByRole('button', { name: 'Asignar a la versión: el nodo elegido' }).click();
   await expect(
     page.getByRole('table', { name: /3 asignaciones de programa de la versión/ }),
   ).toBeVisible();

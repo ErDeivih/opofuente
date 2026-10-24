@@ -80,7 +80,7 @@ async function crearConjuntoConClave(page: Page, material_: Material): Promise<s
   await page.goto('/preguntas');
   await page.locator('summary').filter({ hasText: 'Crear un conjunto' }).click();
   await page.getByLabel('Título', { exact: true }).fill(titulo);
-  await page.getByRole('button', { name: 'Crear el conjunto de preguntas' }).click();
+  await page.getByRole('button', { name: 'Crear conjunto: de preguntas' }).click();
   await expect(page.getByText(`Conjunto «${titulo}» creado.`)).toBeVisible();
 
   await page.getByRole('tab', { name: 'Importar' }).click();
@@ -133,7 +133,7 @@ async function practicarYFallar(page: Page, titulo: string): Promise<void> {
 
   // La clave correcta del CSV es la B: se marca la A y se falla.
   await page.getByLabel('A) Verdadero').check();
-  await page.getByRole('button', { name: 'Enviar la respuesta' }).click();
+  await page.getByRole('button', { name: 'Responder: enviar la respuesta' }).click();
   await expect(page.getByText('fallada')).toBeVisible();
 
   // Y se declara por qué: el fallo entra en el repaso solo, la causa la pone la persona.
@@ -189,7 +189,7 @@ test('S10 errores: el fallo entra en la cola, se declara su causa, se repasa y s
   await page.getByRole('button', { name: 'Empezar la sesión pendiente' }).click();
   await expect(page.getByText(/repaso de errores/).first()).toBeVisible();
   await page.getByLabel('B) Falso').check();
-  await page.getByRole('button', { name: 'Enviar la respuesta' }).click();
+  await page.getByRole('button', { name: 'Responder: enviar la respuesta' }).click();
   await expect(page.getByText('acertada')).toBeVisible();
 
   // --- 4. El repaso reprograma: sale de la cola y el intervalo sube ----------
@@ -202,7 +202,7 @@ test('S10 errores: el fallo entra en la cola, se declara su causa, se repasa y s
 
   // --- 5. Exportar: el fichero con su procedencia y sus avisos ---------------
   await page.getByLabel('Título del fichero').fill(`Errores E2E ${titulo}`);
-  await page.getByRole('button', { name: 'Exportar el banco para Anki' }).click();
+  await page.getByRole('button', { name: 'Anki CSV: exportar el banco para Anki' }).click();
   await expect(page.getByRole('heading', { name: 'Última exportación' })).toBeVisible();
   await expect(page.getByText(/\.csv$/).first()).toBeVisible();
   // Sin documentos de origen no hay cita: se exporta, pero se dice que no se puede comprobar.

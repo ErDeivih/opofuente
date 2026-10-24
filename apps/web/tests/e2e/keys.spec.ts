@@ -27,7 +27,7 @@ async function conjuntoConClave(page: Page): Promise<string> {
   await page.goto('/preguntas');
   await page.locator('summary').filter({ hasText: 'Crear un conjunto' }).click();
   await page.getByLabel('Título', { exact: true }).fill(titulo);
-  await page.getByRole('button', { name: 'Crear el conjunto de preguntas' }).click();
+  await page.getByRole('button', { name: 'Crear conjunto: de preguntas' }).click();
   await expect(page.getByText(`Conjunto «${titulo}» creado.`)).toBeVisible();
 
   await page.getByRole('tab', { name: 'Importar' }).click();
@@ -82,13 +82,13 @@ async function practicarMarcandoA(page: Page, titulo: string, cantidad: number):
   for (let posicion = 1; posicion <= cantidad; posicion += 1) {
     await expect(page.getByRole('heading', { name: `Pregunta ${String(posicion)}` })).toBeVisible();
     await page.getByLabel('A) Verdadero').check();
-    await page.getByRole('button', { name: 'Enviar la respuesta' }).click();
+    await page.getByRole('button', { name: 'Responder: enviar la respuesta' }).click();
     await expect(page.getByText('Respuesta guardada.')).toBeVisible();
     if (posicion < cantidad) {
       await page.getByRole('button', { name: 'Ir a la pregunta siguiente' }).click();
     }
   }
-  await page.getByRole('button', { name: 'Terminar la sesión' }).click();
+  await page.getByRole('button', { name: 'Terminar y corregir: la sesión' }).click();
   await expect(page.getByRole('heading', { name: 'Resultado' })).toBeVisible();
 }
 

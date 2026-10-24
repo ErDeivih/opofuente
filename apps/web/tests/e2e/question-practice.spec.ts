@@ -74,7 +74,7 @@ test('E2E-05 practicar: el JSON importado se activa y se responde en una sesión
   await expect(page.getByRole('heading', { level: 1, name: 'Preguntas' })).toBeVisible();
   await page.locator('summary').filter({ hasText: 'Crear un conjunto' }).click();
   await page.getByLabel('Título', { exact: true }).fill(titulo);
-  await page.getByRole('button', { name: 'Crear el conjunto de preguntas' }).click();
+  await page.getByRole('button', { name: 'Crear conjunto: de preguntas' }).click();
   await expect(page.getByText(`Conjunto «${titulo}» creado.`)).toBeVisible();
 
   // 1. Importación por JSON: lo malo se informa con su causa y lo bueno entra.
@@ -114,7 +114,7 @@ test('E2E-05 practicar: el JSON importado se activa y se responde en una sesión
   ).toBeVisible();
 
   await page.getByLabel('B) Falso').check();
-  await page.getByRole('button', { name: 'Enviar la respuesta' }).click();
+  await page.getByRole('button', { name: 'Responder: enviar la respuesta' }).click();
 
   await expect(page.getByText('Respuesta guardada.')).toBeVisible();
   await expect(page.getByText('acertada')).toBeVisible();
