@@ -6473,3 +6473,49 @@ como se hizo con `first-run` y con `errors` — **en vez de seguir probando cand
 ese volcado resuelve en un intento lo que tres suposiciones no resuelven.**
 
 **Y queda `first-run`**, que espera la portada vieja: **decision de producto**.
+
+## La puerta 18 en 2, y el alcance real de `first-run` (rondas 56 y 57)
+
+```
+27 -> 11 -> 8 -> 2 fallos · 91 pruebas pasan
+```
+
+**La ultima violacion de accesibilidad estaba en `QuestionFile.tsx`**:
+
+```tsx
+<button disabled aria-label="Reparar el texto de la pregunta">Reparar y guardar una vista nueva</button>
+```
+
+**Se encontro gracias a cambiar la prueba para que diga el NODO** (`target` y `html`), no solo el `id` — **que es
+lo que llevaba tres rondas diciendo que habia que hacer y no hacia**.
+
+## `first-run` no es una asercion: describe una pantalla entera
+
+**Intentado arreglar por partes, y cada arreglo destapa la siguiente**:
+
+```
+1. el titulo: «Inicio» -> «Hoy»            ahora pasa
+2. la seccion de la portada                 ahora pasa
+3. «Aun no has hecho ningun test.» …        FALLA  <- textos del estado vacio de la pagina VIEJA
+```
+
+**El cuerpo entero de la prueba describe `StudentHomePage`**: su titulo, sus tres tarjetas («Continuar»,
+«Repasar fallos», «Tu progreso») y sus textos de estado vacio. **La ruta sirve `HoyPage`, que no tiene nada de
+eso.**
+
+**Reescrita a medias no vale**: se ha revertido. **O se reescribe entera contra `HoyPage`, o se decide que la
+portada vuelve a ser `StudentHomePage`.**
+
+**Y eso es lo que esta en `PARA-EL-PROPIETARIO.md`** — con una diferencia: **ahora se sabe que el trabajo es una
+prueba entera, no un `name:`**.
+
+## Lo que queda, exacto
+
+```
+ficha-pregunta   CERRADA (4 pasan)
+errors            CERRADA (2 pasan)
+review            CERRADA (2 pasan)
+avisos            CERRADA
+incidencias       CERRADA
+first-run         2 fallos · describe la portada vieja · prueba entera por reescribir
+```
