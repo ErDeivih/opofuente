@@ -6229,3 +6229,39 @@ siete componentes       arreglados y medidos
 seis botones            aplicados, sin confirmar
 main                    b3ffae1 o posterior · arbol limpio
 ```
+
+## La puerta 18 en 8, y lo que queda identificado (rondas 46 y 47)
+
+```
+27 failed -> 11 (espacio en el DOM) -> 8 (seis botones + selectores al dia)
+85 pruebas pasan
+```
+
+**Y el «atasco de la bateria» de cuatro rondas era mio**: la prueba 52 buscaba
+`getByRole('button', { name: 'Crear el conjunto de preguntas' })` **y yo habia cambiado ese nombre para
+que empezara por el texto visible**. El `locator.click` esperaba sesenta segundos y la tanda se quedaba ahi.
+**El arnes no tenia nada que ver.**
+
+## Lo que queda: dos violaciones y tres pruebas de visibilidad
+
+```
+2 x label-content-name-mismatch     (una sola nodo: <button aria-label="Abrir el error de «…»">
+Error: expect(locator).toBeVisible() failed
+Error: element(s) not found
+```
+
+**Las dos violaciones son UN nodo**: el boton de abrir un error, **cuyo texto visible hay que leer** — la prueba
+corta el html en ese punto.
+
+**Y las de «element(s) not found» son, con toda probabilidad, mis cambios de etiqueta**: seis `aria-label` mas
+que las pruebas pueden estar buscando. **Es el mismo efecto que el de la prueba 52 y se arregla igual**: buscar
+en `apps/web/tests` cada etiqueta cambiada y alinear el selector.
+
+## El metodo que ha funcionado, y que hay que seguir usando
+
+1. **correr la prueba sola con `--timeout=60000`** — no la bateria entera;
+2. **leer el `locator` exacto** que falla;
+3. **decidir cual de los dos tiene razon** —el codigo o la prueba— y arreglar ese.
+
+**Cuatro rondas de relanzar la bateria entera no dieron nada; una prueba sola con tope encontro la causa en un
+minuto.**
