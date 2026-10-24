@@ -6439,3 +6439,37 @@ incluye**: la prueba llama a axe directamente en la linea 405 y no guarda el det
 volcar `violations`**, que es el mismo camino que ya funciono.
 
 **`first-run`** — **espera la portada vieja**. **Decision de producto, en `PARA-EL-PROPIETARIO.md`.**
+
+## Lo que queda de la puerta 18, con el dato dentro (rondas 54 y 55)
+
+**El `id` de la violacion que queda, sacado del diff de la prueba** (`analisis.violations.map(v => v.id)`):
+
+```
+- Expected  - 1
++ Received  + 3
++   "label-content-name-mismatch",
+```
+
+**Una sola regla, otra vez.** **Y en la ficha de pregunta hay un candidato claro**
+(`QuestionDetail.tsx`):
+
+```tsx
+<a aria-label={… ? 'abrir el original de la cita' : `abrir el original de la cita en la página ${n}`}>
+  abrir el original{cita.page ? ` (página ${n})` : ''}
+</a>
+```
+
+**El texto visible es «abrir el original (página N)» y el nombre «abrir el original de la cita en la página N»**
+—**no lo contiene, por el «de la cita» en medio**—. **Probado a quitar el `aria-label` (el nombre saldria del
+contenido, que es el texto visible): la prueba sigue en 2 fallos.** **Asi que ese no es el nodo, o no es el
+unico.**
+
+**Revertido**: `main` sin cambios sin comprobar.
+
+## Lo que hay que hacer, exactamente
+
+**La prueba mapea a `id`, asi que no dice el nodo.** **Hay que volcar `violations` con su `html` y su `target`** —
+como se hizo con `first-run` y con `errors` — **en vez de seguir probando candidatos.** **Es la tercera vez que
+ese volcado resuelve en un intento lo que tres suposiciones no resuelven.**
+
+**Y queda `first-run`**, que espera la portada vieja: **decision de producto**.
