@@ -6552,3 +6552,36 @@ cambiar nombres accesibles** — porque las puertas anteriores cortaban la corri
 **Una bateria que se corta en la puerta 9 no dice nada de las puertas 10 a 18.** **Y yo he estado diciendo «las
 puertas 1 a 17 en verde» durante rondas, cuando la 9 llevaba rota desde el primer cambio de nombre.** **Solo se
 sabe lo que se ejecuta, y solo se ejecuta lo que la anterior deja llegar.**
+
+## LAS 18 PUERTAS, EN UNA SOLA CORRIDA (23-oct 15:03)
+
+```
+1  ruff format        OK      10 contrato OpenAPI          OK
+2  ruff check         OK      11 build backend             OK
+3  mypy estricto      OK      12 build frontend            OK
+4  eslint             OK      13 migracion desde vacia     OK
+5  tsc                OK      14 esquema con sqlite3       OK
+6  unitarias (1.002)  OK      15 siembra de perfiles       OK
+7  integracion (836)  OK      16 siembra idempotente       OK
+8  contrato           OK      17 fixtures                  OK
+9  componentes (494)  OK      18 E2E (93 pasan)            OK
+
+Todas las puertas ejecutadas en 14:16 minutos.
+FALLO: 0
+```
+
+**Cero `FALLO en` en todo el registro.** **Y las cifras de cada puerta: 1.002 unitarias, 836 de integracion,
+494 de componentes, 93 de extremo a extremo.**
+
+## Lo que costo llegar
+
+**Nueve rondas.** **Y cada vez que la bateria avanzaba aparecia un defecto en una puerta que nunca se habia
+alcanzado**:
+
+1. **la 9 en rojo** — ocho pruebas de componentes buscando nombres que cambie por accesibilidad;
+2. **un fichero sin formatear**, que cortaba antes;
+3. **puertos ocupados** por corridas colgadas;
+4. **y la propia 9 tardando** en llegar porque las anteriores cortaban.
+
+**La leccion que se lleva esta fase**: **una bateria que se corta en la puerta 9 no dice nada de la 10 a la 18.**
+**Y durante rondas yo afirme «las puertas 1 a 17 en verde» sin que el registro lo respaldara.**
