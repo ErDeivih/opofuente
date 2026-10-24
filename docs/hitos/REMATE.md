@@ -424,3 +424,26 @@ claves— y **dejarla a medias es peor que no tocarla**, que es la lección del 
 **400 ppp, enderezado, binarizado, `--psm 4` y corte de columnas** no se ha intentado. **Es un intento
 con su cifra**: o llega a **≥ 95 de 100** frente a la plantilla, o **quedan fuera con su número y no se
 insiste**. **Se dice tal cual en vez de darlo por hecho.**
+
+### Decisión 2, hecha — y en la tabla que era
+
+**Lo primero que descubrí es que me había equivocado de tabla.** Escribí el motivo en
+`question_curriculum_exclusions` —que es «no es de esta administración» o «el enunciado está roto», y la
+usan la ficha y el clasificador— **y no servía para nada de lo que hacía falta**: **la política de claves
+no mira esa tabla**. Miré, vi el error, **bajé la migración 0048 y la borré**, devolví las incidencias a
+abiertas y lo hice donde toca.
+
+**La tabla buena es `question_key_gaps`, y su motivo `sin_material` ya existía** —con 678 preguntas
+usándolo—. **Es la que mira `clave_servible`**, así que marcar ahí **es lo que saca la pregunta de tests
+y repasos de verdad**, sin borrar nada.
+
+```
+antes:   abiertas 787 · resto de la bandeja 423
+después: abiertas 364 · resto 0 · tus decisiones 12 · en cuarentena 242
+         huecos sin_material: 678 -> 1.100
+```
+
+**Y las 423 siguen listadas**: su incidencia queda `dismissed` con su nota, **y vuelven solas** en cuanto
+un tema nuevo cubra su materia.
+
+**La migración 0048 se retiró**: no hacía falta tocar el esquema, **y no se ha tocado**.
