@@ -181,7 +181,10 @@ for (const { ancho, alto, etiqueta } of ANCHOS) {
       await page.getByRole('button', { name: /Falso/ }).click();
       await expect(page.getByText(/^Pregunta 2 de \d+$/)).toBeVisible({ timeout: 20_000 });
       await abrirLaHoja(page);
-      await page.getByRole('button', { name: 'Ir a la pregunta 1' }).click();
+      // **`exact: true`, y no es un adorno**: `getByRole` compara el nombre **por subcadena** cuando
+      // se le da un texto, así que «Ir a la pregunta 1» casaba también con la 10, la 11 y la 12 —con
+      // la siembra de pruebas había menos de diez preguntas y nunca se vio—. Aquí se quiere la 1.
+      await page.getByRole('button', { name: 'Ir a la pregunta 1', exact: true }).click();
       await expect(page.getByText(/^Pregunta 1 de \d+$/)).toBeVisible({ timeout: 20_000 });
       // La vuelta a una pregunta contestada **es** la captura del arreglo: antes no se podía.
       const vuelta = await retratar(

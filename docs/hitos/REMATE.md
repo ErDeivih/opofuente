@@ -582,3 +582,36 @@ sería tapar el síntoma.**
 **Se ha comprobado que las capturas no llevan frases de la siembra**: el informe de la herramienta
 (`artifacts/screens-datos/report.md`) las marca en su columna de palabras prohibidas y **salen a cero
 en las pantallas capturadas**.
+
+### El punto 8, cerrado
+
+```
+npm run screens -- --datos F:\temp-opofuente\recorrido-2
+85 pasan · 0 fallan · 6,4 min
+80 PNG en artifacts/recorrido-final-2/ · 1280 y 390
+```
+
+**Y las dos pantallas que faltaban se arreglaron por su causa, no por el selector a la ligera**:
+
+1. **`lectura: IV.7`** esperaba **6** apartados en el primer capítulo y **hoy son 7**: es una foto de
+   los datos, y los apuntes se regeneraron en la fase. **Queda escrito en la prueba.**
+2. **`contestar`**: `getByRole('button', { name: 'Ir a la pregunta 1' })` **compara el nombre por
+   subcadena**, así que casaba también con la 10, la 11 y la 12 —**con la siembra había menos de diez
+   preguntas y nunca se vio**—. **`exact: true`**, que es lo que quería decir desde el principio.
+
+**Las capturas del documento, todas:**
+
+```
+Hoy (inicio) · Temario · IV.7 por capítulos · test en curso · resultado
+Repaso · Fallos · Simulacro con supuesto · Examen oficial con reloj · Progreso
+panel: Explicaciones · Incidencias (hueco sin material) · Ficha de pregunta
+       y además: temario I.6, tests, examen abandonado, ajustes, biblioteca, buscar,
+       cambios, errores, programa, preguntas, revisión, bandeja, estudiar, componentes
+```
+
+**Y no llevan frases de la siembra**: el informe marca las palabras prohibidas y **las pantallas del
+alumno salen limpias**. **Lo único que aparece es «Celador» en las de administración**, que es el
+perfil de la instalación y **no un dato de la siembra**: ahí sí tiene que estar.
+
+**Copia verificada** (`recorrido-2`: 2.656,1 MB, `integrity_check ok`, 0047) y **paquete construido en
+ese momento desde `main`** (`964c862` + el arreglo del cliente, build de 23:18:03).
