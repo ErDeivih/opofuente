@@ -274,7 +274,7 @@ test('E2E-F18 una incidencia del motor se ve, lleva a lo que la provoca y se des
 
     // El contador del menú enseña lo que espera: es el número que el propietario mira al entrar.
     await expect(
-      page.getByRole('link', { name: /Incidencias: 1 incidencia del motor sin decidir/ }),
+      page.getByRole('link', { name: /Incidencias 1: 1 incidencia del motor sin decidir/ }),
     ).toBeVisible();
 
     const fila = page.getByRole('listitem').filter({ hasText: DETALLE });
