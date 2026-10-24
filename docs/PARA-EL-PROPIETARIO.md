@@ -1695,3 +1695,44 @@ distintos.**
 invitación entera, las capturas de los cuatro recorridos y los ocho documentos de hito.**
 
 **Cuando el `tesseract` esté y las 825 estén decididas, la fase se cierra.**
+
+---
+
+# Dos cosas que han salido al medir la batería entera (23-oct, madrugada)
+
+## 1 · Cuál es la portada de la aplicación
+
+**En el código hay dos portadas**:
+
+- **`HoyPage.tsx`** — cinco estados, `h1` «Hoy» — **es la que se pinta en la ruta de inicio**;
+- **`StudentHomePage.tsx`** — tres `h1` «Inicio», **con tres tarjetas** («Continuar», «Repasar fallos», «Tu
+  progreso») — **sigue en el código, pero la ruta no la usa**.
+
+**Y la batería de extremo a extremo tiene una prueba, `first-run.spec.ts`, que describe la segunda**: espera el
+título «Inicio» y las tres tarjetas. **Falla porque prueba una pantalla que ya no se sirve.**
+
+**No la he reescrito**: **cambiar «Inicio» por «Hoy» sube la prueba de dos fallos a uno** —lo medí— **pero deja
+una prueba que dice «Hoy» y después comprueba tres tarjetas que no existen en esa pantalla**. **Eso no es
+arreglarla.**
+
+**Lo que necesito saber de ti**: **¿la portada es «Hoy» y `StudentHomePage` es código muerto que hay que
+retirar?**, **¿o el cambio de portada quedó a medias y hay que volver a la de «Inicio»?** **De eso depende si se
+borra una pantalla o se rehace una prueba.**
+
+## 2 · Las 825 decisiones de la bandeja, que ahora son 12 tuyas y 423 de nadie
+
+**El plan decía que casi todas se podían resolver solas.** **Medido: no.**
+
+```
+538 clave contradice la norma   -> de banco privado, no de examen oficial
+192 la frase y la clave no coinciden -> idem
+ 95 la materia no está en el índice  -> 24 oficiales, 71 privadas
+```
+
+**Y el motivo esta medido**: de **1.103 preguntas en cuarentena**, **solo 16 tienen letra y cita verificada**;
+**derivando, coinciden 3**. **Las demás no se pueden decidir solas porque los apuntes no contestan a esas
+preguntas.**
+
+**Lo que sí está hecho**: **la bandeja separa las tres cosas y tu cola son 12 decisiones** (las de examen
+oficial). **Las 242 de conjuntos en cuarentena están fuera de tests.** **Y 423 quedan abiertas** — necesitan
+apuntes que cubran esas preguntas, **y eso es contenido, no una regla**.
