@@ -6326,3 +6326,30 @@ con una captura:**
 
 **Las otras siete pueden ser selectores mios; esta no.** **`Inicio` no lo he tocado.** **Asi que no vale aplicar
 el mismo remedio a las ocho** — que es exactamente el error que he cometido cuatro veces esta noche.
+
+## `first-run.spec.ts` describe una portada que ya no existe (ronda 50)
+
+**La captura que Playwright deja al fallar lo dice sin ambiguedad:**
+
+```
+- main:
+- heading "Hoy" [level=1]        <- lo que se pinta
+Locator: getByRole('heading', { name: 'Inicio', level: 1 })   <- lo que la prueba busca
+```
+
+**Y el fuente tiene las dos paginas**: `HoyPage.tsx` (cinco `h1` «Hoy») **y** `StudentHomePage.tsx` (tres
+`h1` «Inicio»). **La ruta pinta la primera; la prueba describe la segunda.**
+
+**Y no es solo el titulo**: la prueba espera ademas **tres tarjetas** —«Continuar», «Repasar fallos», «Tu
+progreso»— **que la portada nueva no tiene**: `HoyPage` solo declara `h1` «Hoy».
+
+**Cambiar «Inicio» por «Hoy» sube la prueba de 2 fallos a 1** —lo he probado— **pero deja una prueba que dice
+«Hoy» y despues comprueba tres tarjetas de otra pantalla**. **Eso no es arreglarla, es dejarla a medias**: **se ha
+revertido.**
+
+## Lo que hay que decidir, y no es una asercion
+
+**Cual es la portada.** **`HoyPage` existe con cinco estados y `StudentHomePage` sigue en el fuente**: o la
+segunda es codigo muerto y `first-run` se reescribe contra la primera, **o el cambio de portada fue a medias**.
+
+**Eso es una decision de producto, y no la tomo escribiendo un `name:` en una prueba.**
