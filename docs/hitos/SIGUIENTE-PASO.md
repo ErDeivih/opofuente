@@ -6297,3 +6297,32 @@ npx playwright test tests/e2e/first-run.spec.ts -g "E2E-00" --timeout=60000
 27 -> 11 -> 8 fallos     y 85 pruebas pasan
 el «atasco del arnes» era mi cambio de etiquetas rompiendo selectores
 ```
+
+## La primera de las ocho, mirada sola (ronda 49)
+
+```
+npx playwright test tests/e2e/first-run.spec.ts --timeout=60000
+
+Error: expect(locator).toBeVisible() failed
+Locator: getByRole('heading', { name: 'Inicio', level: 1 })
+> 56 |   await expect(page.getByRole('heading', { level: 1, name: 'Inicio' })).toBeVisible()
+Error: element(s) not found
+```
+
+**No encuentra el `h1` «Inicio».** **Y ese titulo existe en el fuente**: `StudentHomePage.tsx`, **en las tres ramas
+—cargando, error y cargada—**.
+
+**Asi que la pantalla que se pinta no es la portada del alumno.** **Las dos explicaciones posibles, y se distinguen
+con una captura:**
+
+- **la zona esta en modo cuenta** (sin sesion), y entonces se pinta `AccountPages` con su `h1` «Entrar» —
+  **`first-run` es «primera ejecucion» y puede que no haga el paso de entrar**;
+- **o el `h1` esta pero dentro de un `role` distinto**, y `getByRole('heading')` no lo ve.
+
+**Lo que hay que hacer, y es lo mismo que funciono**: **correr esa prueba con `--headed` o mirar su
+`test-results/…`**, que Playwright deja una captura y un trace cuando falla. **Ahi se ve que pantalla se pinto.**
+
+## Y no es la misma causa que las otras
+
+**Las otras siete pueden ser selectores mios; esta no.** **`Inicio` no lo he tocado.** **Asi que no vale aplicar
+el mismo remedio a las ocho** — que es exactamente el error que he cometido cuatro veces esta noche.
