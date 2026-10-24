@@ -1301,7 +1301,8 @@ class QuestionExplanationRecord(Base):
             "origin IN ('official', 'private', 'generated')", name="ck_explanation_origin"
         ),
         CheckConstraint(
-            "status IN ('draft', 'reviewed', 'rejected')", name="ck_explanation_status"
+            "status IN ('draft', 'reviewed', 'rejected', 'archived')",
+            name="ck_explanation_status",
         ),
         CheckConstraint("length(trim(text)) > 0", name="ck_explanation_text"),
         CheckConstraint(
@@ -1312,7 +1313,9 @@ class QuestionExplanationRecord(Base):
             "uq_explanation_question",
             "question_version_id",
             unique=True,
-            sqlite_where=text("option_stable_key IS NULL"),
+            # **Una sola explicación viva por versión**: la archivada convive con la que la
+            # sustituyó, y por eso queda fuera del único (remate, punto 1).
+            sqlite_where=text("option_stable_key IS NULL AND status <> 'archived'"),
         ),
     )
 

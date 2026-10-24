@@ -2076,3 +2076,15 @@ parte que les corresponde— y que la fila y el examen digan la misma cifra. Se 
 cada uno de los seis por `POST /api/v1/student/official-exams/{posicion}/sessions`.
 
 **Estado: abierta (decide el propietario).**
+
+## Las 5.939 explicaciones privadas sustituidas por M1 — **CERRADA** (24 oct 2026)
+
+**Origen:** fase 3, M1. `--sustituir-lo-privado` reemplazó 5.939 explicaciones privadas del
+propietario por otras generadas **en la misma fila**: el texto original se perdió de la base real y
+solo quedaba en `base-real-20261023-112631-antes-de-M1.sqlite3`. **Borrar datos del propietario era
+uno de los casos en los que había que parar.**
+
+**Cerrada con:** migración `0047_explicaciones_archivadas` (estado `archived` + el único por pregunta
+pasa a parcial) y `tools/recuperar_explicaciones_privadas.py`, que las trae de la copia con
+`status = 'archived'`. **5.939 archivadas, 11.315 privadas en total, ninguna pregunta con dos
+explicaciones vivas**, y el importador es idempotente. **Lo que se sirve al alumno no cambia.**

@@ -1736,3 +1736,23 @@ preguntas.**
 **Lo que sí está hecho**: **la bandeja separa las tres cosas y tu cola son 12 decisiones** (las de examen
 oficial). **Las 242 de conjuntos en cuarentena están fuera de tests.** **Y 423 quedan abiertas** — necesitan
 apuntes que cubran esas preguntas, **y eso es contenido, no una regla**.
+
+---
+
+# Las explicaciones privadas del propietario, recuperadas (24 oct 2026)
+
+**En la fase 3, `--sustituir-lo-privado` reemplazó 5.939 de tus explicaciones privadas por otras
+generadas.** **Las generadas son mejores —citan y anclan— y se quedan**, pero **las tuyas no se
+tiran**: **están otra vez en la base, marcadas como archivadas**, y **no se le enseñan al alumno**.
+**Donde antes veías una explicación, sigues viendo una** —la generada—; **la tuya está detrás, para
+que la decisión se pueda deshacer.**
+
+**Lo que hay hoy en la base**: **11.315 privadas** (las mismas que había antes de que M1 empezara),
+**9.007 generadas** y **5.939 archivadas**. **Ninguna pregunta tiene dos explicaciones vivas.**
+
+**Cómo se deshace**: `uv run alembic downgrade 0046_invitaciones` borra las archivadas y deja la
+tabla como estaba. **Y antes de tocarlo hay copia**:
+`base-real-20261024-222022-antes-de-recuperar-privadas.sqlite3`.
+
+**Para volver a mirar las tuyas**: están en `question_explanations` con `status = 'archived'` y
+`origin = 'private'`, con su texto original.

@@ -1049,12 +1049,17 @@ class SqlAlchemyQuestionRepository:
         Se devuelven **todas**, con su `option_stable_key` a la vista: la de la pregunta entera lo
         lleva nulo y la interfaz la coloca bajo el enunciado; las demás, bajo su opción. El orden es
         la pregunta entera primero y después las opciones por su clave.
+
+        **Las archivadas no se devuelven**: son el original que sustituyó una generada, se guardan
+        para poder deshacer la sustitución y **no son lo que se le enseña al alumno** (remate,
+        punto 1).
         """
         with self._session_factory() as session:
             filas = (
                 session.execute(
                     select(QuestionExplanationRecord)
                     .where(QuestionExplanationRecord.question_version_id == question_id)
+                    .where(QuestionExplanationRecord.status != "archived")
                     .order_by(
                         QuestionExplanationRecord.option_stable_key.is_(None).desc(),
                         QuestionExplanationRecord.option_stable_key,
