@@ -94,7 +94,14 @@ export async function apiFetch<T, TProblem = ProblemDetail>(
 ): Promise<T> {
   let response: Response;
   try {
-    response = await fetch(`${apiBaseUrl()}${path}`, {
+    // **La ruta se normaliza aquí, en el único sitio por el que pasan todas las llamadas.**
+    // La base por defecto es `http://127.0.0.1:8765` **sin** `/api/v1`, y el cliente tiene las
+    // dos costumbres: unas llamadas pasan `/api/v1/...` y otras `/plan`, `/explanations/...`.
+    // **Las que no llevaban prefijo acababan en `http://127.0.0.1:8765/plan`, que es un 404** —
+    // y se vio en el recorrido: la portada no cargaba su plan y ocho pantallas no se pudieron
+    // fotografiar. Se acepta la que ya lo trae y se le pone a la que no.
+    const ruta = path.startsWith('/api/') ? path : `/api/v1${path}`;
+    response = await fetch(`${apiBaseUrl()}${ruta}`, {
       ...init,
       credentials: credentialsMode,
       headers: { Accept: 'application/json', ...init?.headers },

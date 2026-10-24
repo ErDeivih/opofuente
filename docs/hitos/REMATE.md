@@ -514,3 +514,46 @@ recorrido entero**.
 **Que su texto no lleve frases de la siembra de pruebas** («Real Decreto 311/2022 · Verdadero/Falso»,
 «Test · 4 preguntas»). **La herramienta escribe un informe con las palabras prohibidas**; **no se ha
 leído todavía**.
+
+### Y el 404 tenía una causa de fondo, ya arreglada
+
+**Con el registro de red puesto en una sola prueba**, el mensaje se quedó corto y apareció la verdad:
+
+```
+FAILURL 404 http://127.0.0.1:8765/plan
+FAILURL 404 http://127.0.0.1:8765/plan/hoy
+```
+
+**La base por defecto del cliente es `http://127.0.0.1:8765` SIN `/api/v1`**, y **el cliente tiene las
+dos costumbres**: unas llamadas pasan `/api/v1/...` y **otras 69 pasan `/plan`, `/explanations/...`**.
+**Esas 69 acababan en un 404 siempre** — no era del recorrido, era de la aplicación.
+
+**Arreglado en el único sitio por el que pasan todas las llamadas** (`apiFetch`): **si la ruta ya trae
+`/api/`, se respeta; si no, se le pone `/api/v1`**. `tsc` en cero y **486 pruebas de componentes en
+verde**.
+
+**Y el paquete hay que reconstruirlo para que se note**: la primera comprobación siguió dando 404
+porque `vite preview` servía el `dist` viejo — **el mismo error de método que ya me costó rondas en la
+fase anterior**.
+
+```
+antes:  8 pantallas sin capturar
+después: 4 · 81 pasan · 80 PNG
+```
+
+### Las cuatro que quedan, con su causa
+
+```
+contestar: el ciclo entero (1280 y 390)
+    strict mode violation: getByRole('button', { name: 'Ir a la pregunta 1' }) resuelve a más de uno
+
+lectura: IV.7 por capítulos (1280 y 390)
+    expected 6, received otro número — expect(medidas.apartadosServidos).toBe(6)
+```
+
+**Las dos son expectativas escritas para otro estado**: en `contestar`, el selector encuentra **más de
+un botón** con ese nombre; en `lectura`, **la partición en capítulos de IV.7 no da 6 apartados** con
+los datos reales. **No se han tocado**: hay que decidir cuál de los dos tiene razón —el código o la
+expectativa— y eso no se hace con el contexto justo.
+
+**El punto 8 sigue sin cerrarse.**
