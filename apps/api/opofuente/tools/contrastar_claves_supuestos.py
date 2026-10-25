@@ -192,6 +192,7 @@ def main(argv: list[str] | None = None) -> int:
         supuestos = _supuestos(conexion)
         print(f"  supuestos: {len(supuestos)}")
         cuarentena: list[str] = []
+        discrepancias: list[list[str]] = []
         for caso, bloque, _enunciado in supuestos:
             aciertos, total, fallos = _contrastar_supuesto(
                 conexion, clave, caso, bloque, modelo=args.modelo
@@ -201,12 +202,34 @@ def main(argv: list[str] | None = None) -> int:
                 f"    {bloque}: {aciertos} de {total} ({porcentaje:.0f} %)"
                 + (f" · {len(fallos)} no coinciden" if fallos else "")
             )
+            discrepancias.append(fallos)
             if porcentaje < _MINIMO:
                 cuarentena.append(bloque)
         fuera = ", ".join(cuarentena) or "ninguno"
         print(f"  por debajo del {_MINIMO} %: {len(cuarentena)} → {fuera}")
         if not args.aplicar:
             print("  (sin --aplicar no se escribe nada)")
+            return 0
+        # **Aplicar: la pregunta que no coincide sale del supuesto.** **No se borra la
+        # pregunta** —su versión, sus opciones y su clave se quedan—: **se quita el enlace**,
+        # que es lo que la pone en la segunda parte del simulacro. **Y se dice cuántas le
+        # quedan a cada supuesto**, porque el documento pide decirlo al no haber reserva.
+        quitadas = 0
+        for versiones in discrepancias:
+            for version in versiones:
+                conexion.execute(
+                    "delete from practical_case_questions where question_version_id = ?",
+                    (version,),
+                )
+                quitadas += 1
+        conexion.commit()
+        print(f"  preguntas fuera de su supuesto: {quitadas}")
+        for caso, bloque, _enunciado in supuestos:
+            quedan = conexion.execute(
+                "select count(*) from practical_case_questions where practical_case_id = ?",
+                (caso,),
+            ).fetchone()
+            print(f"    {bloque}: se queda con {quedan[0] if quedan else 0} preguntas")
         return 0
     finally:
         conexion.close()

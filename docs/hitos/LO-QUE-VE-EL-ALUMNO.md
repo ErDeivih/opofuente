@@ -389,3 +389,18 @@ aplicado**: `--aplicar` todavía no escribe.
 **Y un tropiezo que se apunta**: la primera corrida murió con un **400** porque **el proveedor exige la
 palabra «json» en el prompt** para aceptar la respuesta en JSON, y el error no lo dice. Está en el
 código, con su comentario, para que no vuelva a pasar.
+
+### Aplicado: las que no coinciden salen del supuesto
+
+**Con copia verificada antes** (`base-real-20261025-151827-antes-de-contraste.sqlite3`, 2.656,1 MB,
+`integrity ok`).
+
+- **4 preguntas fuera** de su supuesto (esta pasada encontró 4 discrepancias; la anterior, 5: **el
+  modelo no es determinista en el margen**, y se dice).
+- **Cuatro supuestos se quedan con 24 preguntas** y catorce siguen con 25.
+- **No se ha borrado ninguna pregunta**: se ha quitado **el enlace** que la pone en la segunda parte.
+  **Su versión, sus opciones y su clave siguen en el banco** y se pueden volver a enlazar.
+- **Ninguno por debajo del 90 %**, así que **ninguno va a cuarentena**.
+
+**Y el supuesto no tiene reservas internas**: sus 25 preguntas son todas primarias, así que **no hay
+reserva que entre** y se aplica la otra mitad del documento: **se queda con menos y se dice cuántas**.
