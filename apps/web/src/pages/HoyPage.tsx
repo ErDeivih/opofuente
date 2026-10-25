@@ -16,6 +16,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
+import { getStudentOverview } from '../api/studentStudy';
+
 import {
   fetchHoy,
   fetchPlanGuardado,
@@ -45,6 +47,8 @@ export function HoyPage() {
   const cliente = useQueryClient();
   const guardado = useQuery({ queryKey: ['plan', 'guardado'], queryFn: fetchPlanGuardado });
   const hoy = useQuery({ queryKey: ['plan', 'hoy'], queryFn: fetchHoy, staleTime: 0 });
+  // **El resumen trae el test a medias y los fallos vencidos**: era lo que faltaba arriba.
+  const resumen = useQuery({ queryKey: ['student', 'overview'], queryFn: getStudentOverview });
   const progreso = useQuery({
     queryKey: ['plan', 'progreso'],
     queryFn: fetchProgreso,
@@ -89,6 +93,18 @@ export function HoyPage() {
     return (
       <section className="hoy hoy--sin-plan">
         <h1>Hoy</h1>
+        {/* **Lo que hay para hoy, antes del formulario**: un test a medias y unos fallos que vencen
+            son lo primero que se quiere ver al entrar, y sin plan no se enseñaban. */}
+        {resumen.data?.in_progress != null && (
+          <p className="hoy__cuenta">
+            <Link to="/tests">Continuar: el test que dejaste a medias</Link>
+          </p>
+        )}
+        {(resumen.data?.due_reviews ?? 0) > 0 && (
+          <p className="hoy__cuenta">
+            <Link to="/fallos">Repasar fallos ({resumen.data?.due_reviews})</Link>
+          </p>
+        )}
         <p className="hoy__motivo">
           Para saber qué toca hoy hace falta la fecha del examen. Elige una y el plan reparte los temas
           que quedan.

@@ -233,3 +233,21 @@ trabajo de datos que aún no se piden —el test o la lectura a medias, el núme
 tema por donde iba— y **no se ha empezado**.
 
 **Lo hecho es la mitad visible** —que el formulario se lea como un formulario— y **no la mitad útil**.
+
+### Lo que se ha añadido a «Hoy» sin plan
+
+**El resumen de la API ya traía lo que faltaba** —`in_progress` (el test a medias) y `due_reviews` (los
+fallos que vencen)—: **la página no lo pedía**. Ahora, **antes del formulario**:
+
+- **«Continuar: el test que dejaste a medias»**, si hay uno;
+- **«Repasar fallos (N)»**, con el número real, si hay fallos que vencen.
+
+**Es lo que el documento pedía arriba de todo, y estaba ya en el servidor sin usarse.**
+
+`tsc 0 · eslint 0 · 487 pruebas en verde`.
+
+### Lo que sigue faltando del punto 4
+
+**«Repaso: N para hoy»**, **«Seguir leyendo: tema X»** y **el progreso por bloque con sus cuatro
+barras**. Los dos primeros piden una consulta más (`/cards/pending` y el tema por donde iba la
+lectura); **el progreso ya viene en el resumen** (`blocks`) y solo falta pintarlo.
