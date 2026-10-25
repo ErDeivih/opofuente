@@ -404,3 +404,49 @@ código, con su comentario, para que no vuelva a pasar.
 
 **Y el supuesto no tiene reservas internas**: sus 25 preguntas son todas primarias, así que **no hay
 reserva que entre** y se aplica la otra mitad del documento: **se queda con menos y se dice cuántas**.
+
+---
+
+## Punto 7 · El guardián de las capturas — **hecho y mordiendo**
+
+### Lo que había, y por qué no bastaba
+
+**Las palabras prohibidas se informaban y no bloqueaban nada** —el propio informe lo decía— y la lista
+era **escrita a mano**: rutas, bancos y otras oposiciones. **La siembra no estaba en esa lista**, que es
+justo lo que se coló dos veces.
+
+### Lo que hay ahora
+
+`apps/web/tests/screens/siembra.ts`, con tres piezas:
+
+- **las frases salen solas de los fixtures de la puerta 18**, leídos del código en cada captura: **no
+  hay lista que se quede vieja**; si cambia una pregunta de la siembra, la frase nueva entra sola;
+- **cuenta como frase de la siembra** un texto entrecomillado de **ocho palabras o más** dentro de
+  `tests/e2e` —las cortas son etiquetas de interfaz y **deben** salir en una captura buena—;
+- **la captura que enseñe una, falla**: se lanza `CapturaSembrada` desde `retratar` y **el recorrido no
+  termina en verde**.
+
+### Los tres detalles que hubo que resolver, y por qué
+
+1. **La frase del fixture es más larga que la de la pantalla.** Se compara **el comienzo** de la frase
+   (sus ocho primeras palabras), no la frase entera: exigir el final hacía que el guardián **no viera
+   justo el caso que tiene que ver**.
+2. **En el fixture la opción empieza por «3. »** y en la pantalla no. Se quita la numeración al extraer.
+3. **Sin la carpeta de fixtures no se bloquea nada**: una máquina sin el repo entero no puede inventarse
+   la siembra.
+
+### La prueba, que es de lo que se trataba
+
+`tests/unit/siembra.test.ts`, tres comprobaciones:
+
+```
+✓ saca de los fixtures la frase que se coló dos veces   (137 frases, entre ellas la del ENI)
+✓ la encuentra en una pantalla que la enseña
+✓ NO la encuentra en una pantalla de la base real
+```
+
+**Y en la app**: el recorrido sobre la copia real (`recorrido-3`) **pasa con el guardián puesto** (`2
+passed`), así que **no da falsos positivos**.
+
+**Un guardián que salta siempre no protege, estorba**: por eso la tercera comprobación es tan importante
+como la segunda.

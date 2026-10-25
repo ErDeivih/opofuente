@@ -27,6 +27,7 @@ import { expect, test, type Page } from '@playwright/test';
 
 import { revisarPantalla } from '../palabrasProhibidas';
 import { escribirInforme, guardarFila, nombreDeFichero } from './informe';
+import { CapturaSembrada, frasesDeLaSiembra, frasesSembradasEn } from './siembra';
 
 const SALIDA = process.env.OPOFUENTE_SCREENS_SALIDA
   ? path.resolve(process.env.OPOFUENTE_SCREENS_SALIDA)
@@ -195,6 +196,14 @@ async function retratar(
     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
     .analyze();
   const { interfaz, todo } = await textosDeLaPantalla(page);
+
+  // **El guardián** (punto 7): si la pantalla enseña una frase de la siembra de la puerta 18,
+  // **la captura falla**. Sirve para lo que no se ve mirando: que la copia tenía los datos
+  // reales y el servidor estaba sirviendo los de prueba.
+  const sembradas = frasesSembradasEn(todo, frasesDeLaSiembra());
+  if (sembradas.length > 0) {
+    throw new CapturaSembrada(ruta, `${String(ancho)}×${String(alto)}`, sembradas);
+  }
 
   guardarFila({
     ruta,
