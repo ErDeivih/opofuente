@@ -17223,6 +17223,17 @@
             ],
             "title": "Practical Case Origin"
           },
+          "practical_case_statement": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Practical Case Statement"
+          },
           "result": {
             "anyOf": [
               {
