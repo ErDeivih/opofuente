@@ -38,7 +38,8 @@ export function AnswerSheet({ filas, actual, letras, onIr }: AnswerSheetProps) {
         return (
           <Fragment key={fila.position}>
             {empiezaParte && (
-              <li className="hoja__parte">
+              // **No es una fila**: es un separador, y por eso no cuenta como fila de la hoja.
+              <li className="hoja__parte" role="presentation">
                 {fila.part_code === 'segunda_parte'
                   ? 'Segunda parte · Supuesto'
                   : 'Primera parte'}

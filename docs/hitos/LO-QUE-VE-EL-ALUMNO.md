@@ -317,3 +317,10 @@ regenerados.
 - **La hoja separa** con su cabecera: «Primera parte» y «Segunda parte · Supuesto».
 
 `tsc 0 · eslint 0 · 487 pruebas en verde` · 16 pruebas de integración del alumno en verde.
+
+**Y un fallo mío que conviene apuntar**: **commiteé el cambio con tres pruebas en rojo**. Las pruebas
+contaban un `<li>` por pregunta y **la cabecera de parte añadía otro**. El arreglo: la cabecera se
+declara **`role="presentation"`** —no es una fila— y **la prueba lo dice en su filtro y en su comentario**,
+porque lo que comprueba sigue siendo «una fila por pregunta». **Rojo detectado, causa entendida y
+arreglado en la misma sesión; el commit con las pruebas rotas se queda como lo que fue: un descuido de
+orden, no una decisión.**

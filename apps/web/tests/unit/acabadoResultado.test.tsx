@@ -110,7 +110,12 @@ describe('el resultado: la hoja de respuestas', () => {
     montar();
 
     const hoja = await screen.findByRole('list', { name: /hoja de respuestas/i });
-    const filas = Array.from(hoja.querySelectorAll<HTMLElement>(':scope > li'));
+    // **Las filas, no las cabeceras de parte**: el separador «Segunda parte · Supuesto» es un
+    // `<li>` con `role="presentation"` y **no cuenta como fila**, que es lo que esta prueba
+    // comprueba: una fila por pregunta.
+    const filas = Array.from(
+      hoja.querySelectorAll<HTMLElement>(':scope > li:not([role="presentation"])'),
+    );
     expect(filas).toHaveLength(4);
 
     // Fila 1: se marcó la b y la correcta era la a. La a sale `correcta` y la b, `fallada`.
