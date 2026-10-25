@@ -615,3 +615,25 @@ perfil de la instalación y **no un dato de la siembra**: ahí sí tiene que est
 
 **Copia verificada** (`recorrido-2`: 2.656,1 MB, `integrity_check ok`, 0047) y **paquete construido en
 ese momento desde `main`** (`964c862` + el arreglo del cliente, build de 23:18:03).
+
+---
+
+## Punto 9 · La batería, y los tres fallos que encontró
+
+**Primera corrida**: 6 puertas en verde y **la 7 en rojo: 3 fallos de 836**. **Los tres eran reales y
+ninguno se arregló bajando la exigencia**:
+
+1. **la cabeza fijada a `0046`** en la prueba de migraciones: **hay una 0047** (la de las explicaciones
+   archivadas). **Subida a `0047_explicaciones_archivadas`.**
+2. **el reloj**: el simulacro se quedó **sin tiempo** —`assert None == 120`—. **Mi condición del punto 5
+   se apoyaba solo en `exam_like`, y hay composiciones de examen que no lo marcan.** Ahora se mira **el
+   modo**: simulacro y examen oficial llevan el reloj de la convocatoria; la práctica, solo si lo pide.
+3. **una prueba que afirmaba la regla vieja**: «un test de práctica sin reloj se queda con los 120
+   minutos del ejercicio». **Eso es exactamente lo que el remate prohíbe** (punto 5), así que **la
+   expectativa se cambia a `is None`, con el motivo escrito en la prueba**.
+
+**Los tres ficheros, en verde por separado**: `test_migrations_0040_cuentas` · `test_study_compose` ·
+`test_student_api`.
+
+**Y un tropiezo de método**: lancé dos `pytest` a la vez y se pelearon por los ficheros
+(`PermissionError: WinError 32`). **Los procesos de prueba no se solapan.**

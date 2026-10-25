@@ -648,7 +648,11 @@ def test_el_plan_del_test_dice_los_tamanos_y_los_minutos_que_luego_se_aplican(
     assert cuerpo["convocation_minutes"] is not None, (
         "el perfil sembrado publica el tiempo del ejercicio: si no, esta mitad no probaría nada"
     )
-    assert sin_reloj.json()["time_limit_minutes"] == cuerpo["convocation_minutes"]
+    # **Un test de práctica SIN «con tiempo» no lleva reloj**, aunque la convocatoria publique los
+    # 120 minutos de su ejercicio: el reloj es para el simulacro, el examen oficial y el test que lo
+    # pide (remate, punto 5). Antes heredaba los 120 y una práctica de tres preguntas enseñaba
+    # «Quedan 1:59:59».
+    assert sin_reloj.json()["time_limit_minutes"] is None
 
 
 def test_la_oposicion_configurada_manda_sobre_lo_que_hay(seeded_settings: Settings) -> None:

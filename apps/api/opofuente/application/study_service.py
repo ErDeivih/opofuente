@@ -787,8 +787,15 @@ class StudyService:
                 # punto 5): **un test de práctica sin «con tiempo» no lleva reloj**, y esto lo
                 # ponía igual —la convocatoria declara 120 minutos para su ejercicio— así que una
                 # práctica de tres preguntas enseñaba «Quedan 1:59:59».
+                # **Simulacro y examen oficial llevan el reloj de la convocatoria; la práctica,
+                # solo si se le pide** (`timed`). Se mira el **modo**, no solo `exam_like`: hay
+                # composiciones de examen que no lo marcan y se quedaban sin tiempo.
+                con_reloj = spec.exam_like or spec.mode in (
+                    SessionMode.MOCK_EXAM,
+                    SessionMode.OFFICIAL_EXAM,
+                )
                 if (
-                    spec.exam_like
+                    con_reloj
                     and spec.time_limit_minutes is None
                     and contexto_parte.time_minutes is not None
                 ):
