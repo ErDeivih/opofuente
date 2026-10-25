@@ -11134,6 +11134,8 @@ export interface components {
             mode: "practice" | "error_review" | "official_exam" | "mock_exam" | "diagnostic";
             /** Practical Case Origin */
             practical_case_origin?: string | null;
+            /** Practical Case Statement */
+            practical_case_statement?: string | null;
             result?: components["schemas"]["StudentScoreSchema"] | null;
             /**
              * Server Now
