@@ -4023,3 +4023,63 @@ kbd {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+/* «Hoy», la portada (fase «lo que ve el alumno», punto 4). **No tenía ni una regla**: las clases
+   estaban en el JSX y el formulario salía sin estilo, con las etiquetas pegadas a sus campos.
+   **La etiqueta va encima del campo, no al lado**: es lo que hace que se lea como un formulario. */
+.hoy {
+  max-width: var(--medida-texto);
+}
+
+.hoy__motivo,
+.hoy__vacio,
+.hoy__cuenta {
+  color: var(--tinta-suave);
+}
+
+.hoy__error {
+  color: var(--fallo);
+}
+
+.hoy__formulario {
+  display: grid;
+  gap: 0.9rem;
+  margin: 1rem 0 0;
+  padding: 1.25rem;
+  background: var(--hoja);
+  border: 1px solid var(--linea);
+  border-radius: 0.75rem;
+}
+
+.hoy__formulario label {
+  display: grid;
+  gap: 0.35rem;
+  font-size: var(--t-sm);
+  color: var(--tinta-suave);
+}
+
+.hoy__formulario input,
+.hoy__formulario select {
+  padding: 0.5rem 0.6rem;
+  font: inherit;
+  color: var(--tinta);
+  background: var(--hoja);
+  border: 1px solid var(--linea);
+  border-radius: 0.5rem;
+}
+
+.hoy__formulario button {
+  justify-self: start;
+  padding: 0.55rem 1rem;
+  font: inherit;
+  color: var(--sobre-acento);
+  background: var(--azul);
+  border: 1px solid var(--azul);
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+
+.hoy__formulario button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}

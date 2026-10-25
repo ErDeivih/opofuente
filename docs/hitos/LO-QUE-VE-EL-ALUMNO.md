@@ -205,3 +205,31 @@ clave la dejarían a medias**.
 cuatro sin clave se quedan fuera.**
 
 `tsc 0 · eslint 0 · 487 pruebas en verde`.
+
+---
+
+## Punto 4 · «Hoy», de verdad — **empezado**
+
+### Lo que se ha hecho
+
+**«Hoy» tenía el mismo mal que el repaso**: **cero reglas `.hoy` en el CSS**. Las clases estaban en el
+JSX y ninguna en la hoja, así que el formulario salía **sin estilo y con la etiqueta pegada a su
+campo** —`<label>Fecha del examen<input …>` en línea—, que es exactamente lo que se veía.
+
+**Estilos escritos, con los tokens del diseño**:
+- **la etiqueta encima de su campo** (`display: grid` en el `label`), que es lo que hace que se lea
+  como un formulario;
+- los campos con su borde, su relleno y su radio;
+- **el botón con el azul de la acción principal**, alineado a la izquierda, y **apagado mientras
+  calcula** — antes era un `<button>` del navegador, que es lo que se veía como «sin estilo».
+
+`tsc 0 · eslint 0 · 487 pruebas en verde`.
+
+### Lo que falta del punto 4, y se dice
+
+**El contenido**: «Continuar», «Repaso: N para hoy», «Repasar fallos (N)», «Seguir leyendo» y **el
+progreso por bloque con sus cuatro barras**. **Hoy la página, sin plan, es solo el formulario.** Eso es
+trabajo de datos que aún no se piden —el test o la lectura a medias, el número de fallos que vencen, el
+tema por donde iba— y **no se ha empezado**.
+
+**Lo hecho es la mitad visible** —que el formulario se lea como un formulario— y **no la mitad útil**.
