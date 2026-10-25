@@ -105,6 +105,24 @@ export function HoyPage() {
             <Link to="/fallos">Repasar fallos ({resumen.data?.due_reviews})</Link>
           </p>
         )}
+        {/* **El progreso por bloque, con sus cuatro barras**: ya venía en el resumen y no se pintaba.
+            Con `<progress>` nativo no hace falta inventar un medidor, y el lector de pantalla lo lee. */}
+        {(resumen.data?.blocks.length ?? 0) > 0 && (
+          <section className="hoy__bloques">
+            <h2>Tu progreso</h2>
+            <ul>
+              {resumen.data?.blocks.map((bloque) => (
+                <li key={bloque.code}>
+                  <span className="hoy__cuenta">{bloque.title}</span>
+                  <progress max={bloque.available_questions} value={bloque.answered} />
+                  <span className="hoy__cuenta">
+                    {bloque.answered} de {bloque.available_questions}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
         <p className="hoy__motivo">
           Para saber qué toca hoy hace falta la fecha del examen. Elige una y el plan reparte los temas
           que quedan.

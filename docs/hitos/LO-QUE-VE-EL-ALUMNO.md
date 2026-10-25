@@ -251,3 +251,14 @@ fallos que vencen)—: **la página no lo pedía**. Ahora, **antes del formulari
 **«Repaso: N para hoy»**, **«Seguir leyendo: tema X»** y **el progreso por bloque con sus cuatro
 barras**. Los dos primeros piden una consulta más (`/cards/pending` y el tema por donde iba la
 lectura); **el progreso ya viene en el resumen** (`blocks`) y solo falta pintarlo.
+
+### El progreso por bloque, pintado
+
+**`blocks` ya venía en el resumen** —código, título, contestadas, disponibles— y **no se pintaba**. Ahora
+sale, bajo los atajos, con **`<progress>` nativo**: **no hay que inventar un medidor y el lector de
+pantalla lo lee**, que un `div` con un ancho no hace.
+
+**Así queda «Hoy» sin plan**: «Continuar» y «Repasar fallos (N)» si los hay, **las cuatro barras de
+progreso**, y debajo el formulario con sus etiquetas encima.
+
+`tsc 0 · eslint 0 · 487 pruebas en verde`.
