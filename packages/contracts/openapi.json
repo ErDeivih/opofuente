@@ -2028,8 +2028,16 @@
         "type": "string"
       },
       "CardQueueSchema": {
-        "description": "La cola del dia: **las tarjetas y el total**, que son dos cosas distintas.",
+        "description": "La cola del día: **tarjetas, fallos vencidos y el total**, que son tres cosas distintas.",
         "properties": {
+          "fallos": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/DueFailureSchema"
+            },
+            "title": "Fallos",
+            "type": "array"
+          },
           "tarjetas": {
             "items": {
               "$ref": "#/components/schemas/CardSchema"
@@ -5068,6 +5076,52 @@
           "passages_count"
         ],
         "title": "DossierVersionSchema",
+        "type": "object"
+      },
+      "DueFailureOptionSchema": {
+        "description": "Una opción del fallo, con su letra y su texto.",
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "text"
+        ],
+        "title": "DueFailureOptionSchema",
+        "type": "object"
+      },
+      "DueFailureSchema": {
+        "description": "**Una pregunta fallada que vence hoy** (fase «lo que ve el alumno», punto 3).\n\n**Lleva el enunciado y las opciones y NO la clave**: contestarla es lo que la saca de la cola, y\nla corrección la hace el servidor. **La explicación se sirve al corregir**, no antes.",
+        "properties": {
+          "options": {
+            "items": {
+              "$ref": "#/components/schemas/DueFailureOptionSchema"
+            },
+            "title": "Options",
+            "type": "array"
+          },
+          "question_version_id": {
+            "title": "Question Version Id",
+            "type": "string"
+          },
+          "stem": {
+            "title": "Stem",
+            "type": "string"
+          }
+        },
+        "required": [
+          "question_version_id",
+          "stem",
+          "options"
+        ],
+        "title": "DueFailureSchema",
         "type": "object"
       },
       "DueItemSchema": {

@@ -5153,9 +5153,14 @@ export interface components {
         CapabilityStatus: "enabled" | "disabled" | "unavailable" | "configured_unverified" | "planned";
         /**
          * CardQueueSchema
-         * @description La cola del dia: **las tarjetas y el total**, que son dos cosas distintas.
+         * @description La cola del día: **tarjetas, fallos vencidos y el total**, que son tres cosas distintas.
          */
         CardQueueSchema: {
+            /**
+             * Fallos
+             * @default []
+             */
+            fallos: components["schemas"]["DueFailureSchema"][];
             /** Tarjetas */
             tarjetas: components["schemas"]["CardSchema"][];
             /**
@@ -6310,6 +6315,31 @@ export interface components {
             passages_count: number;
             /** Sources Count */
             sources_count: number;
+        };
+        /**
+         * DueFailureOptionSchema
+         * @description Una opción del fallo, con su letra y su texto.
+         */
+        DueFailureOptionSchema: {
+            /** Key */
+            key: string;
+            /** Text */
+            text: string;
+        };
+        /**
+         * DueFailureSchema
+         * @description **Una pregunta fallada que vence hoy** (fase «lo que ve el alumno», punto 3).
+         *
+         *     **Lleva el enunciado y las opciones y NO la clave**: contestarla es lo que la saca de la cola, y
+         *     la corrección la hace el servidor. **La explicación se sirve al corregir**, no antes.
+         */
+        DueFailureSchema: {
+            /** Options */
+            options: components["schemas"]["DueFailureOptionSchema"][];
+            /** Question Version Id */
+            question_version_id: string;
+            /** Stem */
+            stem: string;
         };
         /**
          * DueItemSchema

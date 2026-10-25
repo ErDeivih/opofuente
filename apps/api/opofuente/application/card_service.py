@@ -15,13 +15,15 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 
-from opofuente.domain.cola_del_dia import cola_del_dia
+from opofuente.application.review_models import DueItemView
+from opofuente.domain.cola_del_dia import TipoDeEntrada, cola_del_dia
 from opofuente.domain.repaso import EstadoDeRepaso, Respuesta, repasar
 from opofuente.domain.tarjetas import tarjeta_estructural
 from opofuente.infrastructure.card_repository import (
     CardView,
     SqlAlchemyCardRepository,
 )
+from opofuente.infrastructure.review_repository import SqlAlchemyReviewRepository
 
 
 @dataclass(frozen=True, slots=True)
@@ -40,8 +42,15 @@ class ResultadoDeGeneracion:
 class CardService:
     """Genera tarjetas, sirve la cola y avanza una tarjeta al responderla."""
 
-    def __init__(self, cards: SqlAlchemyCardRepository) -> None:
+    def __init__(
+        self,
+        cards: SqlAlchemyCardRepository,
+        review: SqlAlchemyReviewRepository | None = None,
+    ) -> None:
         self._cards = cards
+        # **Opcional a propósito**: sin él la cola sirve solo tarjetas, que es lo que hacía antes
+        # de este punto. Con él, entran los fallos vencidos.
+        self._review = review
 
     def generar(self, *, limite: int = 1000) -> ResultadoDeGeneracion:
         """Convierte en tarjeta **los hechos que encajan en una plantilla**.
@@ -75,24 +84,50 @@ class CardService:
         ahora: datetime | None = None,
         tope: int = 60,
     ) -> tuple[CardView, ...]:
-        """Las tarjetas que hay que repasar hoy, **ya ordenadas y con el tope**.
+        """Las tarjetas que hay que repasar hoy, **ya ordenadas y con el tope**."""
+        return self.cola_del_dia(ahora=ahora, tope=tope)[0]
 
-        **Devuelve las tarjetas, no sus identificadores**: la pantalla las necesita
-        enteras, y buscar cada una por su id despues seria una consulta por tarjeta.
+    def cola_del_dia(
+        self,
+        *,
+        ahora: datetime | None = None,
+        tope: int = 60,
+    ) -> tuple[tuple[CardView, ...], tuple[DueItemView, ...]]:
+        """**La cola del día entera**: tarjetas y fallos vencidos, entrelazados y con el tope.
 
-        **Los fallos van vacios todavia**: mezclarlos necesita la tabla de repasos de
-        las preguntas, que no es de este hito. Cuando exista, la mezcla ya esta hecha
-        en `cola_del_dia` y solo hay que traer las entradas por su id.
+        **El tope es de las dos cosas juntas** (fase «lo que ve el alumno», punto 3): sesenta
+        entradas, no sesenta de cada. **Y van alternas**: si primero fueran todas las tarjetas y
+        después todos los fallos, quien se cansa nunca llega a los fallos, **que son lo que más
+        cuesta**.
+
+        **Los fallos se devuelven enteros** —enunciado y opciones—: contestar uno es lo que lo saca
+        de la cola, y el enunciado no está en la tarjeta. **La clave no viaja**: se corrige en el
+        servidor.
         """
         dia = ahora or datetime.now(UTC)
         vencidas = self._cards.due(dia=dia, limit=200)
         por_id = {tarjeta.id: tarjeta for tarjeta in vencidas}
+        pendientes: tuple[DueItemView, ...] = ()
+        if self._review is not None:
+            pendientes = self._review.due(opposition_id=None, now=dia, limit=200)
+        por_pregunta = {str(item.question_version_id): item for item in pendientes}
         entradas = cola_del_dia(
             tarjetas=[tarjeta.id for tarjeta in vencidas],
-            fallos=[],
+            fallos=list(por_pregunta),
             tope=tope,
         )
-        return tuple(por_id[e.id] for e in entradas if e.id in por_id)
+        return (
+            tuple(
+                por_id[entrada.id]
+                for entrada in entradas
+                if entrada.tipo is TipoDeEntrada.TARJETA and entrada.id in por_id
+            ),
+            tuple(
+                por_pregunta[entrada.id]
+                for entrada in entradas
+                if entrada.tipo is TipoDeEntrada.FALLO and entrada.id in por_pregunta
+            ),
+        )
 
     def una(self, card_id: str) -> CardView | None:
         """Una tarjeta por su id. `None` si no existe, para que la ruta diga 404."""

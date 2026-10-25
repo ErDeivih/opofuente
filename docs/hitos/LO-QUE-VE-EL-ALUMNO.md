@@ -111,3 +111,40 @@ tsc --noEmit  0  ·  vitest  486 pruebas + la nueva, todas en verde
 
 **Y en la app**: copia nueva de la base real (`recorrido-3`, 2.656,1 MB, `integrity ok`, 0048) y
 paquete construido a las 14:43:17; **las capturas de `/repaso` pasan** (2, escritorio y móvil).
+
+---
+
+## Punto 3 · Los fallos vencidos en la cola del día — **la mitad del servidor, hecha**
+
+### Lo que se hizo
+
+- **`CardService.cola_del_dia`**: la cola mezcla **las tarjetas vencidas y los fallos vencidos** con
+  `cola_del_dia`, que **ya sabía entrelazarlos y recortar por el tope**. **El tope de 60 es de las dos
+  cosas juntas**, no de cada una.
+- **Los fallos se sirven enteros** —enunciado y opciones, y **la clave no viaja**: se corrige en el
+  servidor—. `DueItemView` ya los traía; solo no se usaban.
+- **La fábrica** pasa el repositorio de repasos al servicio (era opcional a propósito: sin él, la cola
+  sigue sirviendo solo tarjetas, que es lo que hacía antes).
+- **El contrato**: `CardQueueSchema` gana `fallos`, y **`total` cuenta la cola entera** —tarjetas y
+  fallos—: contar solo las tarjetas mentía hacia abajo. `openapi.json` y `openapi.d.ts` regenerados.
+
+### Lo medido, en la app que arranca `scripts\api.ps1` y sobre la base real
+
+```
+GET /api/v1/cards/queue
+  tarjetas: 9  ·  fallos: 5  ·  total: 14
+  primer fallo: «Indique cuál de los siguientes principios se garantiza en el artículo…» · 4 opciones
+```
+
+**Antes de este punto la cola servía 9 y los 5 fallos vencidos no aparecían en ningún sitio.**
+
+### Lo que falta, y por qué no se ha hecho
+
+**La pantalla**: el repaso tiene que enseñar cada fallo **como pregunta de test, con su explicación al
+corregir**. **Contestar una pregunta exige hoy una sesión** —`POST /student/sessions/{id}/answers`—, y
+**no hay una ruta que corrija una pregunta suelta**. Así que el fallo se sirve con su enunciado y sus
+opciones, **pero el repaso todavía no lo pinta**: hacerlo bien pide **una ruta de corrección de una
+pregunta**, que es contrato nuevo y no un adorno.
+
+**Se dice en vez de pintarlo a medias**: un fallo que se enseña y no se puede corregir es peor que un
+fallo que no se enseña.

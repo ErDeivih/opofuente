@@ -564,7 +564,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.library_service = library_service
     app.state.artifact_store = artifact_store
     app.state.question_service = question_service
-    app.state.card_service = CardService(SqlAlchemyCardRepository(session_factory))
+    # **Con el repositorio de repasos**: sin él la cola sirve solo tarjetas y los fallos
+    # vencidos se quedan fuera (fase «lo que ve el alumno», punto 3).
+    app.state.card_service = CardService(
+        SqlAlchemyCardRepository(session_factory),
+        SqlAlchemyReviewRepository(session_factory),
+    )
     app.state.plan_service = PlanService(SqlAlchemyPlanRepository(session_factory))
     app.state.stats_service = StatsService(SqlAlchemyStatsRepository(session_factory))
     app.state.explanation_proposer = _construir_proposer()

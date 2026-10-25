@@ -50,10 +50,31 @@ class CardSchema(BaseModel):
     repetitions: int
 
 
+class DueFailureOptionSchema(BaseModel):
+    """Una opción del fallo, con su letra y su texto."""
+
+    key: str
+    text: str
+
+
+class DueFailureSchema(BaseModel):
+    """**Una pregunta fallada que vence hoy** (fase «lo que ve el alumno», punto 3).
+
+    **Lleva el enunciado y las opciones y NO la clave**: contestarla es lo que la saca de la cola, y
+    la corrección la hace el servidor. **La explicación se sirve al corregir**, no antes.
+    """
+
+    question_version_id: str
+    stem: str
+    options: list[DueFailureOptionSchema]
+
+
 class CardQueueSchema(BaseModel):
-    """La cola del dia: **las tarjetas y el total**, que son dos cosas distintas."""
+    """La cola del día: **tarjetas, fallos vencidos y el total**, que son tres cosas distintas."""
 
     tarjetas: list[CardSchema]
+    #: **Los fallos vencidos**, entrelazados con las tarjetas y dentro del mismo tope.
+    fallos: list[DueFailureSchema] = []
     total: int = Field(description="Cuántas vencen hoy, no cuántas caben en la pantalla")
 
 
@@ -90,9 +111,22 @@ def card_queue(service: CardServiceDep) -> CardQueueSchema:
     **`total` es el de vencidas, no el de la página**: es lo que le queda al alumno,
     y contar solo lo que cabe en la pantalla mentiría hacia abajo.
     """
+    tarjetas, fallos = service.cola_del_dia()
     return CardQueueSchema(
-        tarjetas=[_schema(tarjeta) for tarjeta in service.cola()],
-        total=service.vencen(),
+        tarjetas=[_schema(tarjeta) for tarjeta in tarjetas],
+        fallos=[
+            DueFailureSchema(
+                question_version_id=fail.question_version_id,
+                stem=fail.stem,
+                options=[
+                    DueFailureOptionSchema(key=clave, text=texto) for clave, texto in fail.options
+                ],
+            )
+            for fail in fallos
+        ],
+        # **El total es el de la cola entera**, tarjetas y fallos: es lo que le queda al alumno, y
+        # contar solo las tarjetas mentiría hacia abajo.
+        total=service.vencen() + len(fallos),
     )
 
 
