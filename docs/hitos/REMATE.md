@@ -637,3 +637,36 @@ ninguno se arregló bajando la exigencia**:
 
 **Y un tropiezo de método**: lancé dos `pytest` a la vez y se pelearon por los ficheros
 (`PermissionError: WinError 32`). **Los procesos de prueba no se solapan.**
+
+---
+
+## Punto 9 · 18 de 18, en una sola corrida
+
+```
+1  ruff format            OK     10 contrato OpenAPI y tipos   OK
+2  ruff check             OK     11 build backend               OK
+3  mypy estricto          OK     12 build frontend              OK
+4  eslint                 OK     13 migración desde base vacía  OK
+5  typecheck TypeScript   OK     14 esquema con sqlite3         OK
+6  unitarias backend      OK     15 siembra de perfiles         OK
+7  integración (836)      OK     16 siembra idempotente         OK
+8  pruebas de contrato    OK     17 fixtures y títulos          OK
+9  componentes (486)      OK     18 E2E (93 pasan)              OK
+
+Todas las puertas ejecutadas en 54:12 minutos.
+FALLO: 0   (el único «FALLO en» del registro es el NOMBRE de una prueba que pasa)
+```
+
+**Y la cadena que hubo que recorrer, porque cada puerta destapaba la siguiente**:
+
+1. **la integración, 3 fallos**: la cabeza fijada a `0046`; **el reloj que se quedó sin tiempo** por
+   apoyarse solo en `exam_like`; **una prueba que afirmaba la regla vieja** de los 120 minutos;
+2. **el contrato**: faltaba en `openapi.json` el campo del enunciado del supuesto;
+3. **los tipos derivados**: faltaba el mismo campo en `openapi.d.ts`;
+4. **la puerta 17**: **mi comprobación de títulos petaba sin base** — **el comentario prometía
+   «sin datos pasa igual» y el código no lo cumplía**.
+
+**Cinco correcciones, ninguna bajando la exigencia.** Todas eran defectos reales — cuatro míos y uno
+de la prueba que afirmaba la regla vieja — y **ninguna se habría visto sin recorrer la batería entera**.
+
+**`main = 998f20a` · árbol limpio.**
