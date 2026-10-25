@@ -2620,6 +2620,10 @@ class CardRecord(Base):
     citation: Mapped[str | None] = mapped_column(Text, nullable=True)
     origin: Mapped[str] = mapped_column(String(16), nullable=False, default="structural")
     status: Mapped[str] = mapped_column(String(16), nullable=False, default="active")
+    #: **Por qué una tarjeta generada se queda en borrador** (fase «lo que ve el alumno», punto 1).
+    #: Vacío en las que pasan a `active`. **Una tarjeta que no se sirve sin decir por qué es una
+    #: tarjeta que nadie va a arreglar.**
+    draft_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     ease: Mapped[float] = mapped_column(Float, nullable=False, default=2.5)
     interval_days: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     repetitions: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
