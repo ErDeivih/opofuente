@@ -1838,6 +1838,7 @@ class StudentService:
     def _fila(pregunta: SessionQuestionView) -> StudentSheetRowView:
         return StudentSheetRowView(
             position=pregunta.position,
+            part_code=pregunta.part_code,
             answered=pregunta.answered,
             chosen_option_keys=tuple(pregunta.chosen_option_keys),
             confidence=None if pregunta.confidence is None else pregunta.confidence.value,

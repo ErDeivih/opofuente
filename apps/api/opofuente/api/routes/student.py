@@ -206,6 +206,7 @@ def _run(view: StudentRunView) -> StudentRunSchema:
         sheet=[
             StudentSheetRowSchema(
                 position=fila.position,
+                part_code=fila.part_code,
                 answered=fila.answered,
                 chosen=list(fila.chosen_option_keys),
                 confidence=fila.confidence,  # type: ignore[arg-type]

@@ -4103,3 +4103,13 @@ kbd {
 .hoy__bloques progress {
   width: 100%;
 }
+
+/* La cabecera de cada parte en la hoja de respuestas del simulacro. */
+.hoja__parte {
+  grid-column: 1 / -1;
+  margin: 0.75rem 0 0.25rem;
+  padding: 0.25rem 0;
+  font-size: var(--t-sm);
+  color: var(--tinta-suave);
+  border-bottom: 1px solid var(--linea-suave);
+}

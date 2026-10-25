@@ -305,3 +305,15 @@ evidencia** —el campo existe en la base y no en la API— y sin tocar nada.
 4. **el enunciado, solo en esas preguntas** —plegable en el móvil—;
 5. **en el resultado, la nota por parte y la total**: `StudentScore` ya trae `parts` con `part_code`,
    `part_name`, `correct` y `wrong`.
+
+### Las dos partes, separadas
+
+**La cadena completa**: `session_questions.part_code` **ya estaba en la base**; ahora viaja en
+**`StudentQuestionSchema`** y en **`StudentSheetRowSchema`**, con `openapi.json` y `openapi.d.ts`
+regenerados.
+
+- **El enunciado del supuesto sale solo en la segunda parte**: antes se pintaba al lado de la pregunta
+  1, que es de Constitución, porque la sesión no decía de qué parte era cada pregunta.
+- **La hoja separa** con su cabecera: «Primera parte» y «Segunda parte · Supuesto».
+
+`tsc 0 · eslint 0 · 487 pruebas en verde` · 16 pruebas de integración del alumno en verde.

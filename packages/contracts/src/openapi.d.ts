@@ -11259,6 +11259,8 @@ export interface components {
             correct?: string[];
             /** Outcome */
             outcome?: ("correct" | "wrong" | "blank") | null;
+            /** Part Code */
+            part_code?: string | null;
             /** Position */
             position: number;
         };

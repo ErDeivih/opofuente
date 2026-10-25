@@ -96,6 +96,9 @@ export interface StudentQuestion {
 
 export interface StudentSheetRow {
   position: number;
+  /** **La parte**, para separar «Primera parte» y «Segunda parte · Supuesto» en la hoja.
+   *  Opcional porque las filas que se construyen en el cliente no siempre la traen. */
+  part_code?: string | null;
   answered: boolean;
   chosen: string[];
   confidence: StudentConfidence | null;

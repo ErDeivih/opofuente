@@ -17496,6 +17496,17 @@
             ],
             "title": "Outcome"
           },
+          "part_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Part Code"
+          },
           "position": {
             "minimum": 1.0,
             "title": "Position",

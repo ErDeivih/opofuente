@@ -1,3 +1,5 @@
+import { Fragment } from 'react';
+
 import type { StudentSheetRow } from '../../api/studentTests';
 import { estadoDeCasilla } from './answerSheetModel';
 
@@ -28,7 +30,20 @@ export function AnswerSheet({ filas, actual, letras, onIr }: AnswerSheetProps) {
   }
   return (
     <ol className="hoja" aria-label="Hoja de respuestas">
-      {filas.map((fila) => (
+      {filas.map((fila, indice) => {
+        // **La hoja se parte en dos cuando cambia la parte**: el simulacro es un examen de dos
+        // partes y la hoja las enseñaba seguidas, sin decir dónde acaba una y empieza la otra.
+        const anterior = indice === 0 ? null : (filas[indice - 1]?.part_code ?? null);
+        const empiezaParte = fila.part_code !== null && fila.part_code !== anterior;
+        return (
+          <Fragment key={fila.position}>
+            {empiezaParte && (
+              <li className="hoja__parte">
+                {fila.part_code === 'segunda_parte'
+                  ? 'Segunda parte · Supuesto'
+                  : 'Primera parte'}
+              </li>
+            )}
         <li
           key={fila.position}
           className="hoja__fila"
@@ -59,7 +74,9 @@ export function AnswerSheet({ filas, actual, letras, onIr }: AnswerSheetProps) {
             })}
           </span>
         </li>
-      ))}
+          </Fragment>
+        );
+      })}
     </ol>
   );
 }

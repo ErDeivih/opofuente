@@ -341,6 +341,8 @@ class StudentSheetRowView:
     """Una fila de la hoja de respuestas: qué se marcó en esa posición y cómo quedó."""
 
     position: int
+    #: **La parte**, para que la hoja separe «Primera parte» y «Segunda parte · Supuesto».
+    part_code: str | None
     answered: bool
     chosen_option_keys: tuple[str, ...] = ()
     confidence: str | None = None

@@ -260,6 +260,8 @@ class StudentSheetRowSchema(BaseModel):
     """Una fila de la hoja de respuestas: qué se marcó en esa posición y cómo quedó."""
 
     position: int = Field(ge=1)
+    #: **La parte del examen**, para separar las dos en la hoja.
+    part_code: str | None = None
     answered: bool
     chosen: list[str] = Field(default_factory=list)
     confidence: StudentConfidenceName | None = None
