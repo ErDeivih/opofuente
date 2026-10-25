@@ -27,6 +27,7 @@ import sys
 from collections.abc import Sequence
 
 from sqlalchemy import create_engine, text
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import sessionmaker
 
 from opofuente.config import get_settings
@@ -147,22 +148,29 @@ def titulos() -> int:
     """
     motor = create_engine(f"sqlite+pysqlite:///{get_settings().data_paths.database}")
     fabrica = sessionmaker(bind=motor)
-    with fabrica() as session:
-        # **El SQL va literal, con sus cuatro parametros**: montarlo con un `join` es una
-        # inyeccion esperando y `ruff` lo marca con razon (`S608`).
-        filas = session.execute(
-            text(
-                "select id, title from topic_note_sections "
-                "where title like :p0 or title like :p1 "
-                "or title like :p2 or title like :p3"
-            ),
-            {
-                "p0": _ETIQUETAS_INTERNAS[0],
-                "p1": _ETIQUETAS_INTERNAS[1],
-                "p2": _ETIQUETAS_INTERNAS[2],
-                "p3": _ETIQUETAS_INTERNAS[3],
-            },
-        ).all()
+    try:
+        with fabrica() as session:
+            # **El SQL va literal, con sus cuatro parametros**: montarlo con un `join` es una
+            # inyeccion esperando y `ruff` lo marca con razon (`S608`).
+            filas = session.execute(
+                text(
+                    "select id, title from topic_note_sections "
+                    "where title like :p0 or title like :p1 "
+                    "or title like :p2 or title like :p3"
+                ),
+                {
+                    "p0": _ETIQUETAS_INTERNAS[0],
+                    "p1": _ETIQUETAS_INTERNAS[1],
+                    "p2": _ETIQUETAS_INTERNAS[2],
+                    "p3": _ETIQUETAS_INTERNAS[3],
+                },
+            ).all()
+    except OperationalError:
+        # **Sin base —o con una base sin migrar— no hay nada que mirar y pasa**: la bateria
+        # tiene que poder correr en una maquina limpia. **Costo un fallo de la puerta 17
+        # descubrirlo**: el mensaje decia «sin datos pasa igual» y no lo cumplia.
+        print("  no hay apuntes que mirar en esta base")
+        return 0
     if not filas:
         print("  ningun apartado se titula con una etiqueta interna")
         return 0
