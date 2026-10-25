@@ -1809,6 +1809,7 @@ class StudentService:
     ) -> StudentQuestionView:
         return StudentQuestionView(
             position=pregunta.position,
+            part_code=pregunta.part_code,
             is_reserve=pregunta.is_reserve,
             stem=mostrar_huecos(pregunta.stem),
             question_type=pregunta.question_type,

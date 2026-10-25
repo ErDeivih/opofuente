@@ -91,6 +91,7 @@ function runFixture(overrides: Partial<StudentRun> = {}): StudentRun {
     position: 3,
     question: {
       position: 3,
+      part_code: 'segunda_parte',
       is_reserve: false,
       in_review: false,
       derived_key: false,
@@ -255,6 +256,7 @@ describe('el test en curso', () => {
     const corregida = runFixture({
       question: {
         position: 3,
+        part_code: 'segunda_parte',
         is_reserve: false,
         in_review: false,
       derived_key: false,
@@ -327,6 +329,7 @@ describe('el ciclo de contestar', () => {
       position: posicion,
       question: {
         position: posicion,
+        part_code: 'segunda_parte',
         is_reserve: false,
         in_review: false,
         derived_key: false,

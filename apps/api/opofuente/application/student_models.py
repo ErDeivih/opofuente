@@ -312,6 +312,9 @@ class StudentQuestionView:
     """
 
     position: int
+    #: **A qué parte del examen pertenece** (`primera_parte`, `segunda_parte`). **Sin esto la
+    #: hoja no puede separar las partes ni saber cuándo enseñar el enunciado del supuesto.**
+    part_code: str | None
     is_reserve: bool
     stem: str
     question_type: str

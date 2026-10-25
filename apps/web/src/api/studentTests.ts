@@ -74,6 +74,9 @@ export interface StudentCorrection {
 
 export interface StudentQuestion {
   position: number;
+  /** **La parte del examen** (`primera_parte`, `segunda_parte`): la hoja separa con ella y el
+   *  enunciado del supuesto se enseña solo en la segunda. */
+  part_code: string | null;
   is_reserve: boolean;
   stem: string;
   question_type: string;

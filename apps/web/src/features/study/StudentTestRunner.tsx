@@ -373,10 +373,11 @@ export function StudentTestRunner() {
             </>
           ) : (
             <>
-              {estado.session.practical_case_statement ? (
-                // **El caso, con la pregunta**: sus veinticinco preguntas dicen «con los datos del
-                // caso, conteste», y sin el enunciado delante no se pueden contestar (remate,
-                // punto 4).
+              {estado.session.practical_case_statement !== null &&
+              pregunta.part_code === 'segunda_parte' ? (
+                // **El caso, solo en la segunda parte**: sus veinticinco preguntas dicen «con los
+                // datos del caso, conteste», y sin el enunciado delante no se pueden contestar. En
+                // la primera parte no pinta nada —salía al lado de una pregunta de Constitución—.
                 <aside className="test-supuesto" aria-label="Enunciado del supuesto práctico">
                   <h2 className="test-supuesto__titulo">Supuesto práctico</h2>
                   <p className="test-supuesto__texto" data-contenido>

@@ -228,6 +228,8 @@ class StudentQuestionSchema(BaseModel):
     """La pregunta que se está contestando, por su posición en la hoja."""
 
     position: int = Field(ge=1)
+    #: **La parte del examen** (`primera_parte`, `segunda_parte`): la hoja separa con ella.
+    part_code: str | None = None
     is_reserve: bool
     stem: str
     question_type: str

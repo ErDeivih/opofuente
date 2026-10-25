@@ -10989,6 +10989,8 @@ export interface components {
             is_reserve: boolean;
             /** Options */
             options: components["schemas"]["StudentOptionSchema"][];
+            /** Part Code */
+            part_code?: string | null;
             /** Position */
             position: number;
             /** Question Type */
