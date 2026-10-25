@@ -276,3 +276,32 @@ junto a «Continuar» y «Repasar fallos (N)».
 **«Seguir leyendo: tema X»**. **No es que falte pintarlo: falta el dato.** La lectura de los apuntes no
 registra por dónde va nadie —no hay marca de posición ni última visita por tema—, así que **«seguir
 leyendo» hoy no se puede calcular**. **Se dice en vez de inventar un tema.**
+
+---
+
+## Punto 5 · El simulacro en dos partes — **diagnosticado, no empezado**
+
+### Lo que se midió
+
+**El enunciado del supuesto sale en la primera pregunta porque la sesión no dice a qué parte pertenece
+cada pregunta.** `StudentSession` no expone la parte, y `StudentQuestion` tampoco: **la hoja de la
+pantalla no puede saber cuál es la segunda parte**, así que el `<aside>` que añadí en el remate
+(punto 4) se pinta en todas.
+
+**La base sí lo guarda**: `session_questions` tiene `part_code`. **Falta exponerlo**, y eso es una
+cadena de tres capas —repositorio, vista y esquema— más el contrato y los tipos regenerados.
+
+### Por qué no se ha empezado
+
+**Con el contexto de esta tanda agotado, una cadena a medio aplicar es peor que no empezarla**: deja el
+contrato roto entre dos capas y una pantalla que miente a medias. **Se deja diagnosticado con la
+evidencia** —el campo existe en la base y no en la API— y sin tocar nada.
+
+### Lo que hay que hacer, en orden
+
+1. **`part_code` en `StudentQuestionView`** (ya está en `SessionQuestionRecord`);
+2. **y en `StudentQuestionSchema`**, con `openapi.json` y `openapi.d.ts` regenerados;
+3. **la hoja**: las preguntas de la segunda parte, bajo su cabecera «Segunda parte · Supuesto»;
+4. **el enunciado, solo en esas preguntas** —plegable en el móvil—;
+5. **en el resultado, la nota por parte y la total**: `StudentScore` ya trae `parts` con `part_code`,
+   `part_name`, `correct` y `wrong`.

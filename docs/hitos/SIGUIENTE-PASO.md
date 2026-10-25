@@ -1,47 +1,30 @@
-﻿
-# El remate de la fase 3, terminado — para que Claude lo revise
+﻿# Lo que ve el alumno — estado para Claude
 
-**Estado: los nueve puntos, hechos y medidos.** `main = 998f20a`, árbol limpio, **18/18 en una sola
-corrida** (54:12 minutos, cero fallos).
+**`main = c3b4c6a`** (más el commit de este cierre) · árbol limpio · **487 pruebas en verde** ·
+`tsc 0` · `eslint 0` · **gasto de API de la tanda: ~0,02 $ de 4 $**.
 
-## Los nueve puntos, con su cifra
+## Hecho y medido en la base real
 
-| # | qué era | cómo está |
+| # | punto | estado |
 |---|---|---|
-| 1 | **5.939 privadas borradas por M1** | **archivadas**, no borradas: 20.322 explicaciones, 11.315 privadas, 0 preguntas con dos vivas |
-| 2 | **el repaso no estaba en el menú** | `/repaso` en el menú, y **9 tarjetas reales** servidas por `scripts\api.ps1` |
-| 3 | **la portada y `/inicio`** | «Hoy» es la portada, `/inicio` redirige, `StudentHomePage` **borrada** con su prueba |
-| 4 | **el simulacro sin supuesto** | **el supuesto real**: 25 preguntas, 5 de reserva, **450 claves recuperadas** y el enunciado servido en la sesión |
-| 5 | **el reloj en una práctica de 3** | **solo en simulacros, exámenes y tests con «con tiempo»**: medido, `null` y `10` |
-| 6 | **títulos internos colados** | **cero en la base real**, y un guardián en la puerta 17 |
-| 7 | **las 423 «sin material» y el OCR** | las 423 **fuera de tests y repasos** (bandeja: 12 decisiones); **el OCR intentado y descartado con su cifra: 59 de 300** |
-| 8 | **el recorrido viejo** | **85 de 85 pantallas**, 80 PNG en `artifacts/recorrido-final-2/`, sobre copia verificada y **paquete de `main`** |
-| 9 | **18/18** | **una corrida, cero fallos** |
+| 1 | Tarjetas al alumno | **PARADO por su propio criterio**: el contraste a ciegas da **80 %** (40 de 50) y el documento manda parar por debajo del **90 %**. Hechos: la comprobación de las cuatro condiciones, la columna `draft_reason` (migración **0048**, aplicada) y el contraste. **Nada activado**: 9 tarjetas, 5.274 en borrador. |
+| 2 | Pantalla de repaso | **HECHO**: no tenía **ni una regla de CSS**; la respuesta se daba solo con el espacio; no había resumen. Las tres cosas arregladas y **con prueba** (`tests/unit/repaso.test.tsx`). |
+| 3 | Fallos vencidos en la cola | **TERMINADO**: la cola mezcla tarjetas y fallos con el **tope de 60 compartido** (medido: **9 + 1, total 10**); `POST /cards/queue/failures/{id}` **corrige sin sesión** y devuelve la explicación con su cita; el repaso los pinta. **Los 4 fallos sin clave se quedan fuera.** |
+| 4 | «Hoy», de verdad | **CASI**: cero reglas `.hoy` → escritas; «Continuar», «Repaso: N para hoy», «Repasar fallos (N)» y **las cuatro barras de progreso**. **Falta «Seguir leyendo»**, y **falta el dato**: la lectura no registra posición. |
+| 5 | Simulacro en dos partes | **DIAGNOSTICADO**: la base guarda `part_code` en `session_questions` y **la API no lo expone**; por eso el enunciado sale en la primera pregunta. |
+| 6-9 | | **sin empezar** |
 
-## Lo que el recorrido destapó y no se veía
+## Las dos decisiones que necesitan al propietario
 
-**El cliente de la API tenía la base por defecto sin `/api/v1`**, así que **69 llamadas acababan en
-404** —entre ellas el plan de la portada—. **Estaba roto siempre y solo salió al mirar la aplicación de
-verdad**, con la base del propietario. **Arreglado en `apiFetch`**, el único sitio por el que pasan
-todas.
+1. **El listón de las tarjetas.** El documento fija ≥ 90 %; el modelo da **80 %**. Tres salidas
+   escritas: bajar el listón, regenerar las tarjetas, o activar solo las que el contraste acierta.
+2. **Las cuatro preguntas falladas sin clave.** Están en la cola con explicación pero sin clave con la
+   que corregirse; hoy **no se ofrecen**. ¿Se sacan, o se corrigen sin nota?
 
-## Lo que queda abierto, dicho
+## Los tres hallazgos que explican casi todo
 
-- **`first-run` y la portada**: resuelto en la fase anterior (la prueba describe `HoyPage`).
-- **La «nota por parte» del simulacro** no se ha destacado en la pantalla del resultado: el dato está,
-  la pantalla no lo resalta.
-- **La cola del día sirve tarjetas, no fallos vencidos**: `cola_del_dia` ya sabe entrelazar y
-  `review_items` ya existe, pero la API no los une. **Es un cambio de contrato**, no un adorno.
-- **Los cuestionarios de 2018 quedan fuera**: 59 de 300 con el intento acotado.
-
-## Lo que necesita una decisión del propietario
-
-**Nada bloqueante.** Lo de `docs/PARA-EL-PROPIETARIO.md` sigue en pie: las 423 salen de tests **y
-vuelven solas** si un tema nuevo cubre su materia.
-
-## La lección, para quien siga
-
-**Cada puerta destapa la siguiente.** Este remate ha necesitado **cinco correcciones** que ninguna
-revisión mía vio, y **una de ellas era un comentario que prometía lo que el código no hacía**. **La
-batería de las 18 no es una lista de trámites: es una cadena, y hasta recorrerla entera no se sabe
-dónde está el eslabón flojo.**
+- **`apiFetch` sin `/api/v1`**: **69 llamadas en 404**, entre ellas el plan de la portada. Arreglado.
+- **Clases en el JSX y ninguna regla en el CSS** en `.repaso` y `.hoy`: por eso lo pegado y lo «sin
+  estilo».
+- **Datos que ya estaban en el servidor y la pantalla no pedía**: `in_progress`, `due_reviews`,
+  `blocks`, `vencen`.
