@@ -200,6 +200,36 @@ export function ResultPage() {
             : ` sobre ${formatearEscala(resultado.total.score_max)}`}
           {esExamen && esEstimada ? ' (estimada)' : ''}
         </p>
+        {/*
+          **La nota de cada parte, en su tabla** (fase «lo que ve el alumno», punto 5). Las partes ya
+          venían calculadas y solo se enseñaban como avisos sueltos: **un simulacro es un examen de
+          dos partes y hay que poder ver cuál se aprobó y cuál no**, no deducirlo de una frase.
+        */}
+        {resultado.parts.length > 1 && (
+          <table className="resultado__partes">
+            <caption>La nota de cada parte</caption>
+            <thead>
+              <tr>
+                <th scope="col">Parte</th>
+                <th scope="col">Aciertos</th>
+                <th scope="col">Fallos</th>
+                <th scope="col">En blanco</th>
+                <th scope="col">Nota</th>
+              </tr>
+            </thead>
+            <tbody>
+              {resultado.parts.map((parte) => (
+                <tr key={parte.part_code ?? parte.part_name ?? 'parte'}>
+                  <th scope="row">{parte.part_name ?? 'parte'}</th>
+                  <td>{parte.correct}</td>
+                  <td>{parte.wrong}</td>
+                  <td>{parte.blank}</td>
+                  <td>{notaNegativaExacta(parte.score)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
 
         {/*
           Lo que explica la cifra va **plegado**, y en el mismo sitio para las tres cosas que la

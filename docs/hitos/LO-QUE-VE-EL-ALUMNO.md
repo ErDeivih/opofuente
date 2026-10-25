@@ -324,3 +324,25 @@ declara **`role="presentation"`** —no es una fila— y **la prueba lo dice en 
 porque lo que comprueba sigue siendo «una fila por pregunta». **Rojo detectado, causa entendida y
 arreglado en la misma sesión; el commit con las pruebas rotas se queda como lo que fue: un descuido de
 orden, no una decisión.**
+
+### La nota de cada parte, en una tabla
+
+**Las partes ya venían calculadas** —`StudentResult.parts` con `part_name`, aciertos, fallos, blancos y
+nota—, pero en la pantalla solo salían **como avisos sueltos**. **Un simulacro es un examen de dos
+partes: hay que poder ver cuál se aprobó y cuál no, no deducirlo de una frase.**
+
+Ahora, cuando hay más de una parte, **una tabla con la nota de cada una y su recuento**, debajo de la
+nota total.
+
+**Medido en la app real, creando un simulacro y terminándolo** (y **borrando después la sesión de
+prueba**, que era mía y no del propietario):
+
+```
+simulacro: 110 preguntas
+partes en el resultado: 2
+  Primera parte: cuestionario de conocimientos · aciertos 0 · fallos 0 · blancos 0 · nota 0
+  Segunda parte: supuesto práctico          · aciertos 0 · fallos 0 · blancos 0 · nota 0
+```
+
+**No había ningún simulacro terminado en la base**: por eso el punto no se podía comprobar de otra
+forma. `tsc 0 · eslint 0 · 487 pruebas en verde`.
