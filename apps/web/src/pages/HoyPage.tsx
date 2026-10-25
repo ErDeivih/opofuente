@@ -16,6 +16,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
+import { fetchVencen } from '../api/cards';
 import { getStudentOverview } from '../api/studentStudy';
 
 import {
@@ -49,6 +50,8 @@ export function HoyPage() {
   const hoy = useQuery({ queryKey: ['plan', 'hoy'], queryFn: fetchHoy, staleTime: 0 });
   // **El resumen trae el test a medias y los fallos vencidos**: era lo que faltaba arriba.
   const resumen = useQuery({ queryKey: ['student', 'overview'], queryFn: getStudentOverview });
+  // **Las tarjetas que tocan hoy**: el resumen trae los fallos, no las tarjetas.
+  const vencen = useQuery({ queryKey: ['cards', 'pending'], queryFn: fetchVencen });
   const progreso = useQuery({
     queryKey: ['plan', 'progreso'],
     queryFn: fetchProgreso,
@@ -103,6 +106,11 @@ export function HoyPage() {
         {(resumen.data?.due_reviews ?? 0) > 0 && (
           <p className="hoy__cuenta">
             <Link to="/fallos">Repasar fallos ({resumen.data?.due_reviews})</Link>
+          </p>
+        )}
+        {(vencen.data?.vencen ?? 0) > 0 && (
+          <p className="hoy__cuenta">
+            <Link to="/repaso">Repaso: {vencen.data?.vencen} para hoy</Link>
           </p>
         )}
         {/* **El progreso por bloque, con sus cuatro barras**: ya venía en el resumen y no se pintaba.

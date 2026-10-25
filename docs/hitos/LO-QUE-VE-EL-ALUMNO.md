@@ -262,3 +262,17 @@ pantalla lo lee**, que un `div` con un ancho no hace.
 progreso**, y debajo el formulario con sus etiquetas encima.
 
 `tsc 0 · eslint 0 · 487 pruebas en verde`.
+
+### «Repaso: N para hoy», añadido
+
+**`/cards/pending` da cuántas tarjetas vencen hoy** y no se pedía. Ahora sale con su enlace al repaso,
+junto a «Continuar» y «Repasar fallos (N)».
+
+**Con esto, «Hoy» sin plan ya tiene las cuatro cosas del documento menos una**: «Continuar» ✓,
+«Repaso: N para hoy» ✓, «Repasar fallos (N)» ✓ y **el progreso por bloque** ✓.
+
+### Lo único que falta del punto 4
+
+**«Seguir leyendo: tema X»**. **No es que falte pintarlo: falta el dato.** La lectura de los apuntes no
+registra por dónde va nadie —no hay marca de posición ni última visita por tema—, así que **«seguir
+leyendo» hoy no se puede calcular**. **Se dice en vez de inventar un tema.**
