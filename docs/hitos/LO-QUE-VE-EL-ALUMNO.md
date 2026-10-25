@@ -346,3 +346,46 @@ partes en el resultado: 2
 
 **No había ningún simulacro terminado en la base**: por eso el punto no se podía comprobar de otra
 forma. `tsc 0 · eslint 0 · 487 pruebas en verde`.
+
+---
+
+## Punto 6 · El contraste de las 450 claves de los supuestos — **medido**
+
+### La segunda pasada, hecha
+
+`tools/contrastar_claves_supuestos.py`: **vuelve a preguntar de otra manera** y compara con la clave
+guardada.
+
+- **Otra plantilla de instrucciones**: el segundo modelo no sabe que hay una clave, no la ve y no se le
+  dice qué se espera de él.
+- **Las opciones barajadas**, con vuelta al orden original para comparar letra a letra: **si la correcta
+  fuera siempre la misma posición, dos pasadas coincidirían por el sitio y no por el contenido**.
+- 18 llamadas, una por supuesto, **0,5 minutos y ~0,03 $**.
+
+### El resultado, que es la noticia
+
+```
+18 supuestos · ninguno por debajo del 90 %
+
+  12 supuestos: 25 de 25  (100 %)
+   4 supuestos: 24 de 25  (96 %)
+   1 supuesto : 23 de 25  (92 %)
+```
+
+**Las claves se sostienen**: una segunda pasada independiente, con las opciones barajadas y sin ver la
+primera, coincide en **445 de 450** preguntas. **Cinco discrepancias en 450**, y **ningún supuesto baja
+del 90 %**, así que **ninguno va a cuarentena**.
+
+**Lo que esto cambia respecto a lo que se temía**: el documento daba por hecho que «como la clave de la
+generación se perdió, no hay nada contra lo que comparar». **Ahora sí hay con qué, y las claves aguantan
+el contraste.**
+
+### Lo que falta para cerrar el punto 6
+
+**Las cinco preguntas que no coinciden**: el documento dice que **salen del supuesto y entra una
+reserva**; si no hay reserva, el supuesto **se queda con menos y se dice cuántas**. **Está medido y no
+aplicado**: `--aplicar` todavía no escribe.
+
+**Y un tropiezo que se apunta**: la primera corrida murió con un **400** porque **el proveedor exige la
+palabra «json» en el prompt** para aceptar la respuesta en JSON, y el error no lo dice. Está en el
+código, con su comentario, para que no vuelva a pasar.
