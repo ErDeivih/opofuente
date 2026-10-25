@@ -17,6 +17,7 @@ from datetime import UTC, datetime, timedelta
 
 from opofuente.application.review_models import DueItemView
 from opofuente.domain.cola_del_dia import TipoDeEntrada, cola_del_dia
+from opofuente.domain.errors import NotFoundError
 from opofuente.domain.repaso import EstadoDeRepaso, Respuesta, repasar
 from opofuente.domain.tarjetas import tarjeta_estructural
 from opofuente.infrastructure.card_repository import (
@@ -37,6 +38,20 @@ class ResultadoDeGeneracion:
     def fuera(self) -> int:
         """Los hechos que **no** se convirtieron en tarjeta."""
         return self.hechos - self.tarjetas
+
+
+@dataclass(frozen=True, slots=True)
+class CorreccionDeFallo:
+    """**La corrección de un fallo de la cola**: si está bien, qué valía y por qué.
+
+    `letras` son las que corrigen —una sola, salvo que la pregunta admita más—, y `explicacion`
+    y `cita` llegan **con** la corrección y no antes: antes filtrarían la respuesta.
+    """
+
+    correcto: bool
+    letras: tuple[str, ...]
+    explicacion: str | None
+    cita: str | None
 
 
 class CardService:
@@ -174,3 +189,21 @@ class CardService:
     def tarjetas_de(self, topic_fact_id: str) -> Sequence[CardView]:
         """Las tarjetas de un hecho: **lo que el fallo de una prueba adelanta**."""
         return self._cards.of_fact(topic_fact_id)
+
+    def corregir_fallo(self, *, question_version_id: str, option_key: str) -> CorreccionDeFallo:
+        """**Corrige una pregunta suelta de la cola**, sin montar una sesión (punto 3).
+
+        **La clave no sale de aquí**: se compara en el servidor y solo se devuelve si acertó, cuál
+        valía y el porqué.
+        """
+        datos = self._cards.clave_y_explicacion(question_version_id)
+        if datos is None:
+            raise NotFoundError("clave de la pregunta", question_version_id)
+        letras, explicacion, cita = datos
+        elegida = option_key.strip().lower()
+        return CorreccionDeFallo(
+            correcto=elegida in {letra.strip().lower() for letra in letras},
+            letras=letras,
+            explicacion=explicacion,
+            cita=cita,
+        )

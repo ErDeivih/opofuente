@@ -69,6 +69,25 @@ class DueFailureSchema(BaseModel):
     options: list[DueFailureOptionSchema]
 
 
+class DueFailureAnswerSchema(BaseModel):
+    """Lo que manda la pantalla al contestar un fallo: **solo la letra elegida**."""
+
+    option_key: str = Field(min_length=1, max_length=8)
+
+
+class DueFailureCorrectionSchema(BaseModel):
+    """**La corrección de un fallo**: si está bien, qué letra valía y por qué.
+
+    **La explicación llega ahora, no antes**: hasta que el alumno contesta no se dice nada, que es
+    lo mismo que hace un test.
+    """
+
+    correct: bool
+    correct_option_keys: list[str]
+    explanation: str | None = None
+    citation: str | None = None
+
+
 class CardQueueSchema(BaseModel):
     """La cola del día: **tarjetas, fallos vencidos y el total**, que son tres cosas distintas."""
 
@@ -127,6 +146,35 @@ def card_queue(service: CardServiceDep) -> CardQueueSchema:
         # **El total es el de la cola entera**, tarjetas y fallos: es lo que le queda al alumno, y
         # contar solo las tarjetas mentiría hacia abajo.
         total=service.vencen() + len(fallos),
+    )
+
+
+@router.post(
+    "/cards/queue/failures/{question_version_id}",
+    response_model=DueFailureCorrectionSchema,
+    summary="Corrige un fallo de la cola del día y devuelve su explicación (punto 3)",
+)
+def answer_due_failure(
+    question_version_id: str,
+    request: DueFailureAnswerSchema,
+    service: CardServiceDep,
+) -> DueFailureCorrectionSchema:
+    """**Corrige una pregunta suelta**, sin montar una sesión entera.
+
+    **Por qué existe**: los fallos vencidos entran en la cola del día como preguntas de test, y
+    contestarlas pedía una sesión —`/student/sessions/{id}/answers`— que para una pregunta es un
+    rodeo. **La clave no viaja al cliente**: se compara aquí.
+
+    **La explicación se devuelve con la corrección**, y solo entonces: antes filtraría la respuesta.
+    """
+    correccion = service.corregir_fallo(
+        question_version_id=question_version_id, option_key=request.option_key
+    )
+    return DueFailureCorrectionSchema(
+        correct=correccion.correcto,
+        correct_option_keys=list(correccion.letras),
+        explanation=correccion.explicacion,
+        citation=correccion.cita,
     )
 
 

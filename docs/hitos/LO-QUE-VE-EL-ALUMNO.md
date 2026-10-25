@@ -148,3 +148,46 @@ pregunta**, que es contrato nuevo y no un adorno.
 
 **Se dice en vez de pintarlo a medias**: un fallo que se enseña y no se puede corregir es peor que un
 fallo que no se enseña.
+
+### La corrección de un fallo suelto, hecha y probada
+
+**La ruta nueva**: `POST /api/v1/cards/queue/failures/{question_version_id}` con `{"option_key": "c"}`.
+**Corrige sin montar una sesión**, que era el rodeo: contestar una pregunta de la cola no necesita una
+sesión entera.
+
+- **La clave no viaja al cliente**: se compara en el servidor y **solo se devuelve al corregir**, con la
+  letra que valía, **la explicación y su cita**.
+- **La clave derivada manda**; si no la hay, se usa la entrada de la plantilla activa del conjunto. **La
+  explicación es la viva**: las archivadas del remate no se sirven.
+
+**Probado en la app real, sobre la base real**:
+
+```
+cola: 9 tarjetas + 5 fallos
+fallo 557144f9 (el único de los cinco con clave)
+  con «a» -> correcto: False · clave: c · explicación: sí · cita: sí
+  con «b» -> correcto: False · clave: c · explicación: sí · cita: sí
+```
+
+### Y un hallazgo que importa más que la ruta
+
+**De los 5 fallos vencidos, 4 no tienen ninguna clave** —ni derivada ni entrada de plantilla—:
+
+```
+227597e7: derivada=0 plantilla=0 ·  f1f56b40: 0 0 ·  03a80081: 0 0
+4e689615: 0 0                        ·  557144f9: 0 1
+```
+
+**Los cinco tienen explicación**, pero **cuatro no se pueden corregir**. **La ruta lo dice con un 404 y
+el motivo**: «No existe clave de la pregunta con ese identificador». **Es preferible a corregirlos con
+una letra inventada.**
+
+**Lo que eso significa**: **la cola del día le va a ofrecer al alumno cuatro preguntas que no puede
+corregir**. **Antes de pintarlas hay que decidir qué se hace con ellas** —sacarlas de la cola, o
+corregirlas sin nota—, y **no es una decisión de código**.
+
+### Lo que queda del punto 3
+
+**La pantalla**: el repaso tiene que pintar el fallo con sus opciones y su corrección. **La ruta está y
+funciona**; **lo que falta es la mitad de la interfaz**, y **no se ha hecho porque los cuatro fallos sin
+clave la dejarían a medias**.

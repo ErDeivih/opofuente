@@ -395,6 +395,32 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/cards/queue/failures/{question_version_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Corrige un fallo de la cola del día y devuelve su explicación (punto 3)
+         * @description **Corrige una pregunta suelta**, sin montar una sesión entera.
+         *
+         *     **Por qué existe**: los fallos vencidos entran en la cola del día como preguntas de test, y
+         *     contestarlas pedía una sesión —`/student/sessions/{id}/answers`— que para una pregunta es un
+         *     rodeo. **La clave no viaja al cliente**: se compara aquí.
+         *
+         *     **La explicación se devuelve con la corrección**, y solo entonces: antes filtraría la respuesta.
+         */
+        post: operations["answer_due_failure_api_v1_cards_queue_failures__question_version_id__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/cards/{card_id}/answer": {
         parameters: {
             query?: never;
@@ -6317,6 +6343,31 @@ export interface components {
             sources_count: number;
         };
         /**
+         * DueFailureAnswerSchema
+         * @description Lo que manda la pantalla al contestar un fallo: **solo la letra elegida**.
+         */
+        DueFailureAnswerSchema: {
+            /** Option Key */
+            option_key: string;
+        };
+        /**
+         * DueFailureCorrectionSchema
+         * @description **La corrección de un fallo**: si está bien, qué letra valía y por qué.
+         *
+         *     **La explicación llega ahora, no antes**: hasta que el alumno contesta no se dice nada, que es
+         *     lo mismo que hace un test.
+         */
+        DueFailureCorrectionSchema: {
+            /** Citation */
+            citation?: string | null;
+            /** Correct */
+            correct: boolean;
+            /** Correct Option Keys */
+            correct_option_keys: string[];
+            /** Explanation */
+            explanation?: string | null;
+        };
+        /**
          * DueFailureOptionSchema
          * @description Una opción del fallo, con su letra y su texto.
          */
@@ -6852,6 +6903,11 @@ export interface components {
             hours_per_week: number;
             /** Rest Days */
             rest_days?: number[];
+        };
+        /** HTTPValidationError */
+        HTTPValidationError: {
+            /** Detail */
+            detail?: components["schemas"]["ValidationError"][];
         };
         /**
          * HousekeepingCandidateSchema
@@ -11579,6 +11635,19 @@ export interface components {
             /** Url */
             url: string;
         };
+        /** ValidationError */
+        ValidationError: {
+            /** Context */
+            ctx?: Record<string, never>;
+            /** Input */
+            input?: unknown;
+            /** Location */
+            loc: (string | number)[];
+            /** Message */
+            msg: string;
+            /** Error Type */
+            type: string;
+        };
         /** VerificationSchema */
         VerificationSchema: {
             backup: components["schemas"]["BackupSchema"];
@@ -12756,6 +12825,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CardQueueSchema"];
+                };
+            };
+        };
+    };
+    answer_due_failure_api_v1_cards_queue_failures__question_version_id__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                question_version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DueFailureAnswerSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DueFailureCorrectionSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

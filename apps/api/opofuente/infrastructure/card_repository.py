@@ -13,7 +13,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session, sessionmaker
 
 from opofuente.infrastructure.db_models import CardRecord, TopicFactRecord
@@ -197,3 +197,58 @@ class SqlAlchemyCardRepository:
             fila.updated_at = now
             session.commit()
             return True
+
+    def clave_y_explicacion(
+        self, question_version_id: str
+    ) -> tuple[tuple[str, ...], str | None, str | None] | None:
+        """**La clave que corrige y la explicación** de una pregunta suelta (punto 3).
+
+        Devuelve `(letras, explicación, cita)` o `None` si la pregunta no tiene clave con la que
+        corregirse. **La clave derivada manda** —es la que el motor prefiere— y si no la hay se usa
+        la entrada de la plantilla activa del conjunto.
+
+        **La explicación es la viva**: las archivadas del remate no se sirven, y esa regla ya está
+        escrita en su consulta.
+        """
+        import json as _json
+
+        with self._session_factory() as session:
+            derivada = session.execute(
+                text(
+                    "select correct_option_keys_json from question_derived_keys "
+                    "where question_version_id = :pregunta"
+                ),
+                {"pregunta": question_version_id},
+            ).fetchone()
+            letras: tuple[str, ...] = ()
+            if derivada is not None and derivada[0]:
+                letras = tuple(str(letra) for letra in _json.loads(derivada[0]))
+            if not letras:
+                fila = session.execute(
+                    text(
+                        "select e.correct_option_keys_json from answer_key_entries as e "
+                        "join answer_key_versions as k on k.id = e.answer_key_version_id "
+                        "join question_versions as v on v.question_set_id = k.question_set_id "
+                        "where v.id = :pregunta and k.status = 'active' "
+                        "and e.question_version_id = :pregunta "
+                        "and e.outcome = 'keyed' limit 1"
+                    ),
+                    {"pregunta": question_version_id},
+                ).fetchone()
+                if fila is not None and fila[0]:
+                    letras = tuple(str(letra) for letra in _json.loads(fila[0]))
+            if not letras:
+                return None
+            explicacion = session.execute(
+                text(
+                    "select text, citation from question_explanations "
+                    "where question_version_id = :pregunta and status <> 'archived' "
+                    "order by created_at limit 1"
+                ),
+                {"pregunta": question_version_id},
+            ).fetchone()
+        return (
+            letras,
+            str(explicacion[0]) if explicacion is not None else None,
+            str(explicacion[1]) if explicacion is not None and explicacion[1] else None,
+        )
