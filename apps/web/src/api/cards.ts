@@ -24,6 +24,8 @@ export interface Tarjeta {
 /** La cola del día: **las tarjetas y el total**, que son dos cosas distintas. */
 export interface ColaDeTarjetas {
   tarjetas: Tarjeta[];
+  /** **Los fallos vencidos**, entrelazados con las tarjetas y dentro del mismo tope. */
+  fallos: FalloVencido[];
   total: number;
 }
 
@@ -52,4 +54,36 @@ export async function answerCard(cardId: string, respuesta: Respuesta): Promise<
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ respuesta }),
   });
+}
+
+/**
+ * **Corrige un fallo de la cola del día** y devuelve si estaba bien, qué letra valía y por qué.
+ *
+ * **La explicación llega con la corrección, no antes**: el servidor no la manda hasta que hay una
+ * respuesta elegida, que es lo mismo que hace un test.
+ */
+export async function corregirFallo(
+  questionVersionId: string,
+  optionKey: string,
+): Promise<CorreccionDeFallo> {
+  return apiFetch<CorreccionDeFallo>(`/cards/queue/failures/${questionVersionId}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ option_key: optionKey }),
+  });
+}
+
+/** Un fallo vencido tal como lo sirve la cola: **sin la clave**. */
+export interface FalloVencido {
+  question_version_id: string;
+  stem: string;
+  options: { key: string; text: string }[];
+}
+
+/** La corrección de un fallo. */
+export interface CorreccionDeFallo {
+  correct: boolean;
+  correct_option_keys: string[];
+  explanation: string | null;
+  citation: string | null;
 }

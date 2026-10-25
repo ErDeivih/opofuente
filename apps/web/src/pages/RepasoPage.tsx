@@ -15,7 +15,15 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { answerCard, fetchCola, type Respuesta, type Tarjeta } from '../api/cards';
+import {
+  answerCard,
+  corregirFallo,
+  fetchCola,
+  type CorreccionDeFallo,
+  type FalloVencido,
+  type Respuesta,
+  type Tarjeta,
+} from '../api/cards';
 
 /** Las cuatro respuestas con su tecla, en el orden en que se enseñan. */
 const RESPUESTAS: readonly { tecla: string; respuesta: Respuesta; etiqueta: string; pista: string }[] = [
@@ -31,6 +39,77 @@ function cuandoVuelve(tarjeta: Tarjeta): string {
   if (dias === 0) return 'hoy otra vez';
   if (dias === 1) return 'mañana';
   return `en ${dias} días`;
+}
+
+/**
+ * **Los fallos vencidos del día, como preguntas de test** (fase «lo que ve el alumno», punto 3).
+ *
+ * Se contestan una a una: se elige una opción y **entonces** llegan el acierto, la letra que valía y
+ * la explicación con su cita. **Antes de contestar no se dice nada**, que es lo que hace un test.
+ */
+function FallosDelDia({ fallos }: { fallos: FalloVencido[] }) {
+  const [indice, setIndice] = useState(0);
+  const [elegida, setElegida] = useState<string | null>(null);
+  const corregir = useMutation<CorreccionDeFallo, Error, string>({
+    mutationFn: (letra: string) =>
+      corregirFallo(fallos[indice]?.question_version_id ?? '', letra),
+    onSuccess: () => {
+      setElegida(null);
+    },
+  });
+  const fallo = fallos[indice];
+  if (fallo === undefined) {
+    return null;
+  }
+  const resultado = corregir.data;
+  return (
+    <section className="tarjeta" aria-live="polite">
+      <p className="tarjeta__pista">
+        Fallo {indice + 1} de {fallos.length}
+      </p>
+      <p className="tarjeta__anverso">{fallo.stem}</p>
+      <ul className="repaso__acciones">
+        {fallo.options.map((opcion: { key: string; text: string }) => (
+          <li key={opcion.key}>
+            <button
+              type="button"
+              className="repaso__boton"
+              disabled={corregir.isPending}
+              onClick={() => {
+                setElegida(opcion.key);
+                corregir.mutate(opcion.key);
+              }}
+            >
+              <kbd>{opcion.key}</kbd> {opcion.text}
+            </button>
+          </li>
+        ))}
+      </ul>
+      {resultado != null && (
+        <div className="tarjeta__cita">
+          <p>
+            {resultado.correct ? 'Bien.' : 'No.'} La respuesta era{' '}
+            <strong>{resultado.correct_option_keys.join(', ')}</strong>
+            {elegida !== null && !resultado.correct ? ` y elegiste «${elegida}»` : ''}.
+          </p>
+          {resultado.explanation !== null && <p>{resultado.explanation}</p>}
+          {resultado.citation !== null && <p>{resultado.citation}</p>}
+          {indice + 1 < fallos.length && (
+            <button
+              type="button"
+              className="ui-button"
+              onClick={() => {
+                setIndice((n) => n + 1);
+                corregir.reset();
+              }}
+            >
+              Siguiente fallo
+            </button>
+          )}
+        </div>
+      )}
+    </section>
+  );
 }
 
 export function RepasoPage() {
@@ -118,6 +197,9 @@ export function RepasoPage() {
           <p className="repaso__cuenta">
             No hay tarjetas que repasar hoy. Vuelve mañana o ponte un test.
           </p>
+        )}
+        {cola.data?.fallos !== undefined && cola.data.fallos.length > 0 && (
+          <FallosDelDia fallos={cola.data.fallos} />
         )}
         {aviso !== null && <p className="repaso__aviso">{aviso}</p>}
       </section>

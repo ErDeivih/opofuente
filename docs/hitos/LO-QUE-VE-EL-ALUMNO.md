@@ -191,3 +191,17 @@ corregirlas sin nota—, y **no es una decisión de código**.
 **La pantalla**: el repaso tiene que pintar el fallo con sus opciones y su corrección. **La ruta está y
 funciona**; **lo que falta es la mitad de la interfaz**, y **no se ha hecho porque los cuatro fallos sin
 clave la dejarían a medias**.
+
+### La pantalla, hecha
+
+- **La cola deja fuera los fallos que no se pueden corregir** —4 de los 5 vencidos—, comprobado **en el
+  servidor**, porque **la clave no viaja y la pantalla no puede saberlo**. **Un fallo que se enseña y no
+  se puede dar por bueno es peor que uno que no se enseña.** Decisión reversible, apuntada aquí.
+- **El repaso los pinta como preguntas de test**: el enunciado, sus opciones con su letra, y **al
+  elegir** llegan el acierto, **la letra que valía** y **la explicación con su cita**. Antes de
+  contestar no se dice nada, que es lo que hace un test.
+
+**Medido en la app real**: `tarjetas: 9 · fallos: 1 · total: 10`. **El único fallo con clave entra; los
+cuatro sin clave se quedan fuera.**
+
+`tsc 0 · eslint 0 · 487 pruebas en verde`.

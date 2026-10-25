@@ -125,7 +125,17 @@ class CardService:
         pendientes: tuple[DueItemView, ...] = ()
         if self._review is not None:
             pendientes = self._review.due(opposition_id=None, now=dia, limit=200)
-        por_pregunta = {str(item.question_version_id): item for item in pendientes}
+        # **Solo los que se pueden corregir**: un fallo que se enseña y no se puede dar por bueno es
+        # peor que no enseñarlo. **Se comprueba aquí y no en la pantalla**: la clave no viaja,
+        # así que la pantalla no puede saberlo. Los que no tienen clave se quedan fuera.
+        por_pregunta = {
+            str(item.question_version_id): item
+            for item in pendientes
+            if self._cards.clave_y_explicacion(str(item.question_version_id)) is not None
+        }
+        sin_clave = len(pendientes) - len(por_pregunta)
+        if sin_clave:
+            print(f"  fallos sin clave, fuera de la cola: {sin_clave}")
         entradas = cola_del_dia(
             tarjetas=[tarjeta.id for tarjeta in vencidas],
             fallos=list(por_pregunta),
