@@ -73,3 +73,41 @@ contesta**. Las salidas posibles, para quien decida:
 3. **activar solo las que el contraste acierta**, y dejar el resto en borrador con ese motivo.
 
 **Las tres son decisiones de producto, y la primera y la segunda cuestan dinero de API.**
+
+---
+
+## Punto 2 · La pantalla de repaso
+
+### Lo que estaba mal, y por qué
+
+**Las clases estaban en el JSX y ninguna en el CSS.** `.repaso`, `.tarjeta`, `.tarjeta__anverso`,
+`.tarjeta__reverso`, `.repaso__boton`… **no tenían ni una regla**, así que la nota del botón salía
+pegada a su etiqueta —«Otra vezno me salía»— porque `<kbd>`, el texto y el `<span>` caían en la misma
+línea. **No era un fallo de la tarjeta: era que la pantalla no se había escrito nunca.**
+
+### Lo que se hizo
+
+- **Los estilos, con los tokens del diseño**: la tarjeta con su borde y su relleno, el reverso en
+  verde de acierto, la cita con su filete, y **la pista de cada nota en su propia línea**
+  (`display: block`), que es lo que la pone en dos: «Otra vez» / «no me salía». **Cuatro notas en
+  fila, dos en el móvil.**
+- **El botón «Ver la respuesta»**: la respuesta se daba solo con el espacio, **y en el móvil no hay
+  espacio**. Ahora se da con el botón o con la tecla, y **las cuatro notas siguen deshabilitadas hasta
+  entonces**.
+- **El resumen al terminar**: cuántas has repasado, **cuántas vuelven mañana** y **«Volver a Hoy»**. Antes
+  decía «hecho» y dejaba al alumno sin saber qué había pasado.
+
+### Cómo se comprobó, y por qué así
+
+**Con una prueba, no mirando la captura** (`tests/unit/repaso.test.tsx`): monta la pantalla con un
+`fetch` simulado y comprueba **que la respuesta no está en el documento**, que las cuatro notas están
+deshabilitadas, que **el botón la enseña** y que entonces se habilitan. **Lo que la prueba no puede
+comprobar es que la pista salga en dos líneas** —eso es estilo y se ve en la captura del punto 8—, y se
+dice en el propio fichero.
+
+```
+tsc --noEmit  0  ·  vitest  486 pruebas + la nueva, todas en verde
+```
+
+**Y en la app**: copia nueva de la base real (`recorrido-3`, 2.656,1 MB, `integrity ok`, 0048) y
+paquete construido a las 14:43:17; **las capturas de `/repaso` pasan** (2, escritorio y móvil).

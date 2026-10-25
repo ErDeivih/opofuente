@@ -13,6 +13,7 @@
  */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 
 import { answerCard, fetchCola, type Respuesta, type Tarjeta } from '../api/cards';
 
@@ -36,6 +37,8 @@ export function RepasoPage() {
   const cliente = useQueryClient();
   const [vuelta, setVuelta] = useState(false);
   const [hechas, setHechas] = useState(0);
+  //: Cuántas vuelven mañana: es la mitad útil del resumen.
+  const [manana, setManana] = useState(0);
   const [aviso, setAviso] = useState<string | null>(null);
 
   const cola = useQuery({ queryKey: ['cards', 'queue'], queryFn: fetchCola, staleTime: 0 });
@@ -46,6 +49,9 @@ export function RepasoPage() {
     onSuccess: (tarjeta) => {
       setAviso(`Vuelve ${cuandoVuelve(tarjeta)}`);
       setHechas((n) => n + 1);
+      if (cuandoVuelve(tarjeta) === 'mañana') {
+        setManana((n) => n + 1);
+      }
       setVuelta(false);
       void cliente.invalidateQueries({ queryKey: ['cards'] });
     },
@@ -92,13 +98,25 @@ export function RepasoPage() {
       <section className="repaso repaso--hecho">
         <h1>Repaso</h1>
         {hechas > 0 ? (
-          <p className="repaso__cuenta">
-            Hechas {hechas}. No queda nada más para hoy: <strong>vuelve mañana</strong>.
-          </p>
+          <>
+            {/* **El resumen al terminar**: cuántas han sido, cuántas vuelven mañana y por dónde
+                seguir. Una pantalla que solo dice «hecho» deja al alumno sin saber qué ha pasado. */}
+            <p className="repaso__hecho__total">
+              Has repasado <strong>{hechas}</strong>{' '}
+              {hechas === 1 ? 'tarjeta' : 'tarjetas'}.
+            </p>
+            <p className="repaso__cuenta">
+              {manana === 0
+                ? 'Ninguna vuelve mañana.'
+                : `${String(manana)} ${manana === 1 ? 'vuelve' : 'vuelven'} mañana.`}
+            </p>
+            <p>
+              <Link to="/">Volver a Hoy</Link>
+            </p>
+          </>
         ) : (
           <p className="repaso__cuenta">
-            No hay tarjetas que repasar hoy. Genera las que falten con{' '}
-            <code>uv run python -m opofuente.tools.tarjetas_estructurales</code>.
+            No hay tarjetas que repasar hoy. Vuelve mañana o ponte un test.
           </p>
         )}
         {aviso !== null && <p className="repaso__aviso">{aviso}</p>}
@@ -120,7 +138,21 @@ export function RepasoPage() {
         {vuelta ? (
           <p className="tarjeta__reverso">{actual.back}</p>
         ) : (
-          <p className="tarjeta__pista">Pulsa <kbd>espacio</kbd> para ver la respuesta</p>
+          <>
+            <p className="tarjeta__pista">
+              Pulsa <kbd>espacio</kbd> para ver la respuesta
+            </p>
+            {/* **Y un botón**, no solo el teclado: quien repasa con el móvil no tiene espacio. */}
+            <button
+              type="button"
+              className="ui-button repaso__ver"
+              onClick={() => {
+                setVuelta(true);
+              }}
+            >
+              Ver la respuesta
+            </button>
+          </>
         )}
         {actual.citation !== null && <blockquote className="tarjeta__cita">{actual.citation}</blockquote>}
       </article>

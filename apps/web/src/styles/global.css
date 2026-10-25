@@ -3936,3 +3936,90 @@ kbd {
     margin-right: 1.5rem;
   }
 }
+
+/* La pantalla de repaso (fase «lo que ve el alumno», punto 2). **No tenía ni una regla**: las clases
+   estaban en el JSX y ninguna en el CSS, y por eso las notas salían pegadas —«Otra vezno me salía»—.
+   **La vuelta de la tarjeta no es un truco de vista**: la respuesta se oculta con el estado, y aquí
+   solo se le da forma. */
+.repaso {
+  max-width: var(--medida-texto);
+}
+
+.repaso__cabecera {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.repaso__cuenta {
+  color: var(--tinta-suave);
+  font-size: var(--t-sm);
+}
+
+.tarjeta {
+  display: grid;
+  gap: 0.75rem;
+  margin: 1rem 0 0;
+  padding: 1.25rem;
+  background: var(--hoja);
+  border: 1px solid var(--linea);
+  border-radius: 0.75rem;
+}
+
+.tarjeta__anverso {
+  margin: 0;
+  font-family: var(--fuente-apuntes);
+  font-size: var(--t-enunciado);
+}
+
+.tarjeta__reverso {
+  margin: 0;
+  font-size: var(--t-titulo);
+  color: var(--acierto);
+}
+
+.tarjeta__pista,
+.tarjeta__cita {
+  margin: 0;
+  color: var(--tinta-suave);
+  font-size: var(--t-sm);
+}
+
+.tarjeta__cita {
+  padding-left: 0.75rem;
+  border-left: 3px solid var(--linea-suave);
+}
+
+.repaso__acciones {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.repaso__boton {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.6rem 0.5rem;
+  text-align: left;
+}
+
+/* **La pista va en su línea**: sin esto la nota se lee «Otra vezno me salía». */
+.repaso__pista {
+  display: block;
+  color: var(--tinta-suave);
+  font-size: var(--t-sm);
+}
+
+.repaso__hecho__total {
+  font-size: var(--t-titulo);
+}
+
+@media (max-width: 640px) {
+  .repaso__acciones {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
