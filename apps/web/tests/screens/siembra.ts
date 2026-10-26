@@ -22,6 +22,33 @@ import path from 'node:path';
 /** Palabras mínimas para que una cadena se considere **contenido** y no una etiqueta. */
 const MINIMO_DE_PALABRAS = 8;
 
+/**
+ * **En cuántos ficheros puede aparecer una frase para seguir siendo contenido.**
+ *
+ * El contenido de la siembra se escribe en el fixture que lo necesita: una pregunta inventada sale
+ * en uno o dos ficheros. **La chrome de la aplicación y el nombre de la oposición salen en todos**
+ * —«Cuerpo de Técnicos Auxiliares…» está en cinco— y **también están en la base real**, porque son
+ * de verdad. Buscarlos haría saltar el guardián en todas las capturas: **un guardián que salta
+ * siempre no protege, estorba.**
+ */
+const MAXIMO_DE_FICHEROS = 2;
+
+/**
+ * **Lo que el guardián no puede distinguir, dicho en voz alta.**
+ *
+ * El nombre de una oposición real **es el mismo en la siembra y en la base del propietario**, porque
+ * la siembra usa las oposiciones de verdad. **Buscar «Cuerpo de Técnicos Auxiliares…» haría saltar
+ * el guardián en todas las capturas del temario**, y un guardián que salta siempre estorba.
+ *
+ * **No es una lista de frases de la siembra**: es la lista de lo que **es legítimamente igual** en
+ * las dos. Cada entrada lleva su motivo, y si mañana entra una oposición nueva, se añade aquí.
+ */
+const NOMBRES_REALES: readonly string[] = [
+  'Celador/a del Servicio de Salud de Castilla y León',
+  'Escala de Cabos y Guardias de la Guardia Civil',
+  'Cuerpo de Técnicos Auxiliares de Informática de la Administración del Estado',
+];
+
 /** Minúsculas, sin tildes y con los espacios colapsados: compara lo que se lee, no el byte. */
 export function normalizar(texto: string): string {
   return texto
@@ -44,7 +71,7 @@ function carpetaDeFixtures(): string {
  * palabras o más y no llevan pinta de código (llaves, flechas, paréntesis de llamada).
  */
 export function frasesDeLaSiembra(carpeta: string = carpetaDeFixtures()): string[] {
-  const frases = new Set<string>();
+  const frases = new Map<string, Set<string>>();
   let ficheros: string[];
   try {
     ficheros = readdirSync(carpeta).filter((nombre) => nombre.endsWith('.spec.ts'));
@@ -68,10 +95,19 @@ export function frasesDeLaSiembra(carpeta: string = carpetaDeFixtures()): string
       if (/[{}<>()[\]=;]|=>|\$\{/.test(texto)) {
         continue;
       }
-      frases.add(texto);
+      const donde = frases.get(texto) ?? new Set<string>();
+      donde.add(fichero);
+      frases.set(texto, donde);
     }
   }
-  return [...frases].sort();
+  return [...frases.entries()]
+    .filter(([, donde]) => donde.size <= MAXIMO_DE_FICHEROS)
+    .map(([texto]) => texto)
+    .filter(
+      (texto) =>
+        !NOMBRES_REALES.some((nombre) => normalizar(texto).startsWith(normalizar(nombre))),
+    )
+    .sort();
 }
 
 /**
