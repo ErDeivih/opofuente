@@ -101,6 +101,20 @@ def _is_junk(name: str) -> bool:
     return PurePosixPath(name).name in JUNK_NAMES
 
 
+def _member_name(info: zipfile.ZipInfo) -> str:
+    """Nombre del miembro con `/` como separador, venga del sistema que venga.
+
+    `zipfile` solo sustituye `\\` por `/` cuando el anfitrión es Windows, así que el mismo ZIP se
+    juzgaba de dos formas distintas según dónde corriera la puerta. Se normaliza aquí, una sola vez
+    y al estilo del sistema donde vive el producto: `..\\x.txt` se juzga como `../x.txt` (traversal)
+    y `apuntes\\tema.txt` como `apuntes/tema.txt`, que es lo que Windows escribiría al expandirlo.
+
+    `check_member_name` sigue viendo el nombre tal cual se le pase: su contrato es la cadena cruda
+    y así lo fijan sus pruebas directas.
+    """
+    return info.filename.replace("\\", "/")
+
+
 def check_member_name(name: str) -> None:
     """Rechaza nombres que escapan del destino o que no son rutas normales **en Windows**.
 
@@ -201,15 +215,16 @@ def inspect_zip(path: Path, *, limits: ZipLimits, depth: int = 0) -> ZipInspecti
     total_uncompressed = 0
     total_compressed = 0
     for info in infos:
-        if _is_junk(info.filename):
+        name = _member_name(info)
+        if _is_junk(name):
             skipped += 1
             continue
-        check_member_name(info.filename)
+        check_member_name(name)
         _check_symlink(info)
-        is_directory = info.filename.endswith("/")
+        is_directory = name.endswith("/")
         members.append(
             ZipMember(
-                name=info.filename.rstrip("/") if is_directory else info.filename,
+                name=name.rstrip("/") if is_directory else name,
                 size_bytes=int(info.file_size),
                 compressed_bytes=int(info.compress_size),
                 is_directory=is_directory,
@@ -264,10 +279,11 @@ def extract_zip_safely(
     try:
         with zipfile.ZipFile(path) as archive:
             for info in archive.infolist():
-                if _is_junk(info.filename):
+                name = _member_name(info)
+                if _is_junk(name):
                     continue
-                target = resolve_within(destination, destination / info.filename)
-                if info.filename.endswith("/"):
+                target = resolve_within(destination, destination / name)
+                if name.endswith("/"):
                     target.mkdir(parents=True, exist_ok=True)
                     continue
                 write_single_entry(archive, info, target, max_bytes=allowed)

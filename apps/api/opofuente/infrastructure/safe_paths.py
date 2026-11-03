@@ -91,35 +91,60 @@ def relative_display(root: Path, path: Path) -> str:
         return f"<fuera-de-raiz>/{path.name}"
 
 
+#: Separadores de los dos mundos: el producto vive en Windows y las puertas corren en Linux, y la
+#: abreviatura tiene que decir lo mismo en los dos sitios.
+_PATH_SEPARATORS = re.compile(r"[\\/]+")
+_DRIVE_PREFIX = re.compile(r"^[A-Za-z]:")
+_DOUBLE_SEPARATOR_START = re.compile(r"^[\\/]{2,}")
+
+
 def abbreviate(path: Path, *, keep: int = 2) -> str:
-    """Versión corta de una ruta para logs y para la interfaz («…/padre/hijo»).
+    r"""Versión corta de una ruta para logs y para la interfaz («…/padre/hijo»).
 
     **Nunca** devuelve la ruta completa: se descarta siempre la raíz (letra de unidad, UNC o `/`)
     y se conservan como mucho los últimos `keep` componentes. Si no queda ningún componente
     (una raíz suelta) se devuelve «…».
+
+    Se segmenta el **texto** y no `path.parts`, a propósito: en POSIX `Path("C:/Material")` es un
+    único componente, así que la misma ruta se abreviaba de dos formas según el anfitrión
+    (`…/C:/Material` en Linux, `…/Material` en Windows) y la unidad se colaba en el resultado.
+    Aquí se separa por los dos separadores y se descarta la raíz en todas sus formas: unidad
+    (`C:`), arranque UNC (`\servidor\recurso`) y raíz POSIX.
     """
-    parts = [part for part in path.parts if part != path.anchor]
-    if not parts:
+    text = str(path)
+    segments = [segment for segment in _PATH_SEPARATORS.split(text) if segment]
+    if segments and _DRIVE_PREFIX.match(segments[0]):
+        # `C:` suelto se cae entero; `C:material` conserva lo que va detrás de la unidad.
+        rest = segments[0][2:]
+        segments = segments[1:]
+        if rest:
+            segments.insert(0, rest)
+    elif _DOUBLE_SEPARATOR_START.match(text):
+        # `\\servidor\recurso\…`: el servidor y la compartición son la raíz, no la ruta.
+        segments = segments[2:]
+    if not segments:
         return "…"
-    return "…/" + "/".join(parts[-keep:])
+    return "…/" + "/".join(segments[-keep:])
 
 
-#: Rutas con letra de unidad (`C:\…`, `C:/…`) o UNC (`\\servidor\recurso\…`).
-_WINDOWS_PATH = re.compile(
-    r"(?:[A-Za-z]:[\\/]|\\\\[^\\/\s]+[\\/])[^\s\"'<>|?*\r\n]*",
-)
+#: Rutas absolutas con separador de Windows: letra de unidad (`C:\…`, `C:/…`), UNC
+#: (`\\servidor\recurso\…`) y las que arrancan en la raíz de una unidad (`\carpeta\fichero`), que
+#: es la forma en que Python compone el texto de un `PermissionError`.
+_WINDOWS_PATH = re.compile(r"(?:[A-Za-z]:[\\/]|\\+[^\\/\s]+[\\/])[^\s\"'<>|?*\r\n]*")
 
 
 def redact_paths(text: str, *, keep: int = 1) -> str:
-    """Sustituye las rutas absolutas de un texto por su forma abreviada.
+    r"""Sustituye las rutas absolutas de un texto por su forma abreviada.
 
     Los mensajes de error de terceros (un `PermissionError` de Python, un error de SQLite)
     suelen incluir la ruta completa del fichero. Ese texto acaba en `jobs.error_message` y en la
     interfaz, así que aquí se recorta antes: el nombre del fichero es metadato y puede verse, la
     carpeta del usuario no.
 
-    Se cubren las formas que produce este producto (Windows 11): letra de unidad y UNC. En otras
-    formas de ruta el texto se deja tal cual; quien lo use no debe asumir que ya viene saneado.
+    Se cubren las formas que produce este producto (Windows 11): letra de unidad, UNC y la ruta sin
+    letra de unidad que Python pone en el texto de una excepción (`\carpeta\fichero`). En otras
+    formas de ruta (por ejemplo, una ruta POSIX relativa en prosa) el texto se deja tal cual; quien
+    lo use no debe asumir que ya viene saneado.
     """
 
     def _replace(match: re.Match[str]) -> str:
