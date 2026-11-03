@@ -108,9 +108,14 @@ class QuestionSummary:
 
 @dataclass(frozen=True, slots=True)
 class PendingCounts:
-    """Lo que espera a una persona, contado: incidencias, propuestas, cambios y versiones."""
+    """Lo que espera a una persona, contado: incidencias, decisiones, cambios y versiones.
+
+    `pending_decisions` cuenta **decisiones**, no propuestas: el motor propone lo mismo sobre el
+    material y sobre su texto, y esas dos propuestas son una sola pregunta para quien revisa (ver
+    `reconcile_pending_proposals`). Contar filas aquí sería inflar la cola a ojos del usuario.
+    """
 
     import_issues: int
-    pending_proposals: int
+    pending_decisions: int
     proposed_changes: int
     unaccepted_versions: int

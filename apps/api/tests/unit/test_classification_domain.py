@@ -15,6 +15,7 @@ from opofuente.domain.classification import (
     CoverageType,
     DocumentType,
     MappingStatus,
+    PendingProposal,
     Proposal,
     ProposalStatus,
     RightsStatus,
@@ -23,6 +24,7 @@ from opofuente.domain.classification import (
     coverage_counts_as_accepted,
     decision_allowed,
     group_key,
+    reconcile_pending_proposals,
     value_matches_axis,
 )
 from opofuente.domain.extraction import Quality
@@ -180,3 +182,153 @@ def test_la_clave_de_grupo_es_determinista() -> None:
     assert primera == segunda
     assert primera != otra
     assert CoverageType.PARTIAL.value == "partial"
+
+
+# --- reconciliación artefacto/representación (DEBT-018) ---------------------------------------
+
+
+def _pendiente(
+    *,
+    id: str = "prop-1",
+    subject_type: SubjectType = SubjectType.ARTIFACT,
+    subject_id: str = "art-1",
+    axis: Axis = Axis.DOCUMENT_TYPE,
+    proposed_value: str = DocumentType.PERSONAL_NOTES.value,
+    confidence: float = 0.5,
+    engine_name: str = "determinista",
+    engine_version: str = "1",
+) -> PendingProposal:
+    """Una propuesta pendiente, con lo mínimo para probar la reconciliación."""
+    return PendingProposal(
+        id=id,
+        subject_type=subject_type,
+        subject_id=subject_id,
+        axis=axis,
+        proposed_value=proposed_value,
+        confidence=confidence,
+        engine_name=engine_name,
+        engine_version=engine_version,
+    )
+
+
+def test_la_misma_propuesta_sobre_el_material_y_su_texto_es_una_sola_decision() -> None:
+    """El motor clasifica el artefacto y su representación con el mismo texto, y decide una vez.
+
+    No es una hipótesis: en el material real del propietario (DEBT-018) hay 62 pares de 124
+    propuestas de tipo documental con el mismo valor y la misma confianza, y ninguna discrepancia.
+    """
+    del_material = _pendiente(id="p-material", subject_id="art-1")
+    del_texto = _pendiente(
+        id="p-texto", subject_type=SubjectType.REPRESENTATION, subject_id="rep-1"
+    )
+
+    grupos = reconcile_pending_proposals(
+        [del_material, del_texto], artifact_of_representation={"rep-1": "art-1"}
+    )
+
+    assert len(grupos) == 1
+    clave, miembros = grupos[0]
+    assert clave == group_key(SubjectType.ARTIFACT, Axis.DOCUMENT_TYPE, "personal_notes")
+    assert [miembro.id for miembro in miembros] == ["p-material", "p-texto"], (
+        "las dos viajan en el mismo grupo: se deciden juntas y ninguna se borra"
+    )
+
+
+def test_dos_textos_del_mismo_material_tambien_son_una_decision() -> None:
+    """Un PDF con texto nativo y OCR puede proponer lo mismo: sigue siendo una pregunta."""
+    grupos = reconcile_pending_proposals(
+        [
+            _pendiente(id="p-material", subject_id="art-1"),
+            _pendiente(id="p-nativo", subject_type=SubjectType.REPRESENTATION, subject_id="rep-1"),
+            _pendiente(id="p-ocr", subject_type=SubjectType.REPRESENTATION, subject_id="rep-2"),
+        ],
+        artifact_of_representation={"rep-1": "art-1", "rep-2": "art-1"},
+    )
+
+    assert len(grupos) == 1
+    assert grupos[0][1][0].id == "p-material", "manda el artefacto, que es lo que el usuario ve"
+    assert len(grupos[0][1]) == 3
+
+
+def test_una_discrepancia_del_motor_no_se_reconcilia() -> None:
+    """Mismo eje con otro valor o con otra confianza son **dos** decisiones, no una repetida.
+
+    El motor no se está repitiendo: se está contradiciendo, y eso la cola tiene que enseñarlo.
+    """
+    material = _pendiente(id="p-material", proposed_value="personal_notes", confidence=0.7)
+    texto_otro_valor = _pendiente(
+        id="p-texto",
+        subject_type=SubjectType.REPRESENTATION,
+        subject_id="rep-1",
+        proposed_value="community_material",
+        confidence=0.7,
+    )
+    texto_otra_confianza = _pendiente(
+        id="p-texto-2",
+        subject_type=SubjectType.REPRESENTATION,
+        subject_id="rep-1",
+        proposed_value="personal_notes",
+        confidence=0.4,
+    )
+
+    por_valor = reconcile_pending_proposals(
+        [material, texto_otro_valor], artifact_of_representation={"rep-1": "art-1"}
+    )
+    por_confianza = reconcile_pending_proposals(
+        [material, texto_otra_confianza], artifact_of_representation={"rep-1": "art-1"}
+    )
+
+    assert len(por_valor) == 2
+    assert len(por_confianza) == 2
+
+
+def test_un_motor_distinto_no_se_reconcilia_con_el_otro() -> None:
+    """Que dos motores coincidan no es repetirse: es coincidir, y se ve mejor por separado.
+
+    Hoy solo hay un motor, pero la regla tiene que seguir siendo cierta cuando haya dos: si el
+    motor A propone sobre el artefacto y el B sobre la representación, no son la misma pregunta.
+    """
+    grupos = reconcile_pending_proposals(
+        [
+            _pendiente(id="p-a", engine_name="determinista"),
+            _pendiente(
+                id="p-b",
+                subject_type=SubjectType.REPRESENTATION,
+                subject_id="rep-1",
+                engine_name="otro-motor",
+            ),
+        ],
+        artifact_of_representation={"rep-1": "art-1"},
+    )
+
+    assert len(grupos) == 2
+
+
+def test_una_representacion_de_otro_material_no_se_junta() -> None:
+    """La representación tiene que ser **suya**: si es de otro artefacto, son dos decisiones."""
+    grupos = reconcile_pending_proposals(
+        [
+            _pendiente(id="p-material", subject_id="art-1"),
+            _pendiente(id="p-ajena", subject_type=SubjectType.REPRESENTATION, subject_id="rep-2"),
+        ],
+        artifact_of_representation={"rep-2": "art-2"},
+    )
+
+    assert len(grupos) == 2
+    assert {clave for clave, _ in grupos} == {
+        group_key(SubjectType.ARTIFACT, Axis.DOCUMENT_TYPE, "personal_notes"),
+        group_key(SubjectType.REPRESENTATION, Axis.DOCUMENT_TYPE, "personal_notes"),
+    }
+
+
+def test_sin_mapa_de_representaciones_no_se_reconcilia_nada() -> None:
+    """Sin saber a qué material pertenece cada texto, se enseña la cola como está: no se adivina."""
+    grupos = reconcile_pending_proposals(
+        [
+            _pendiente(id="p-material", subject_id="art-1"),
+            _pendiente(id="p-texto", subject_type=SubjectType.REPRESENTATION, subject_id="rep-1"),
+        ],
+        artifact_of_representation={},
+    )
+
+    assert len(grupos) == 2

@@ -30,6 +30,13 @@ propones ADR antes de codificar.
 - Host por defecto `127.0.0.1`.
 - Integraciones opcionales fallan explícitamente; no se simulan.
 
+## Espacio en disco
+
+El material de oposiciones vive en `F:\OpoFuente` (63 GB) y el disco `F:` está al límite. **Antes de
+mover, archivar o borrar cualquier cosa de ahí, lee [`docs/ESPACIO-EN-DISCO.md`](docs/ESPACIO-EN-DISCO.md)**:
+tiene las cifras medidas, cuál de los dos directorios de datos es el vivo, qué es zona de trabajo en
+uso y qué no se puede tocar nunca (los originales).
+
 ## Puertas
 
 Formato, lint, typecheck, unitarias, integración, build, E2E aplicable, migración desde cero y revisión

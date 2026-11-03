@@ -8,6 +8,13 @@ caso por el motor determinista real y imprime el informe del plan de pruebas (§
 Uso:
     uv run python -m opofuente.tools.classification_metrics
     uv run python -m opofuente.tools.classification_metrics --dataset <ruta.json>
+    uv run python -m opofuente.tools.classification_metrics --engine <nombre>
+
+`--engine` elige qué motor se mide, por su nombre registrado en `ENGINES`. Hoy solo hay uno —el
+determinista—, y ese es el default; el PoC de un motor de decisiones añade el suyo **en su propia
+rama** y lo registra aquí, sin que el producto pase a depender de él. El informe dice siempre qué
+motor y versión produjeron los números, porque dos informes que no dicen de quién son no comparan
+nada: `evaluate` y `build_report` aceptan cualquier `ClassifierPort`.
 
 Sale con código 1 si se incumple la puerta inicial de §7 (cero promociones automáticas erróneas en
 ejes críticos): una puerta que solo se imprime, sin cambiar el código de salida, no es una puerta.
@@ -17,11 +24,12 @@ from __future__ import annotations
 
 import json
 import sys
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from opofuente.application.ports import ClassifierPort
 from opofuente.config import project_root
 from opofuente.domain.artifacts import OriginType
 from opofuente.domain.classification import (
@@ -131,10 +139,35 @@ def load_dataset(path: Path | None = None) -> SyntheticDataset:
     return SyntheticDataset(dataset_version=version, description=description, cases=casos)
 
 
+#: Motores que este arnés puede medir, por nombre. Un motor externo —el del PoC de un motor de
+#: decisiones— se registra aquí **en su propia rama**: el producto no depende de él, y el arnés solo
+#: lo necesita para comparar. Registrar y medir es todo lo que hace falta: `evaluate` no sabe de
+#: motores concretos.
+ENGINES: Mapping[str, Callable[[], ClassifierPort]] = {
+    "determinista": DeterministicClassifier,
+}
+
+#: Motor que se mide si no se dice otro: el que tiene el producto hoy.
+DEFAULT_ENGINE = "determinista"
+
+
+def build_engine(name: str) -> ClassifierPort:
+    """El motor registrado con ese nombre, o un error que dice cuáles hay.
+
+    Un nombre mal escrito **no** puede caer al motor de siempre en silencio: el informe saldría con
+    los números de otro motor y con el nombre del otro motor, y eso no es un informe, es una trampa.
+    """
+    constructor = ENGINES.get(name)
+    if constructor is None:
+        disponibles = ", ".join(sorted(ENGINES))
+        raise ValueError(f"Motor desconocido: «{name}». Disponibles: {disponibles}")
+    return constructor()
+
+
 def build_report(
     dataset: SyntheticDataset,
     *,
-    engine: DeterministicClassifier | None = None,
+    engine: ClassifierPort | None = None,
 ) -> ClassificationReport:
     """Ejecuta el motor sobre cada caso y calcula las métricas del conjunto completo.
 
@@ -142,7 +175,7 @@ def build_report(
     ejecuciones sobre el mismo dataset dan el mismo informe. Es lo que hace que estas métricas
     sirvan como referencia y no como una foto del día.
     """
-    motor = DeterministicClassifier() if engine is None else engine
+    motor: ClassifierPort = DeterministicClassifier() if engine is None else engine
     resultados: list[AxisOutcome] = []
     for caso in dataset.cases:
         propuestas = motor.propose(caso.subject)
@@ -150,12 +183,22 @@ def build_report(
     return evaluate(resultados)
 
 
-def format_report(dataset: SyntheticDataset, report: ClassificationReport) -> str:
-    """Informe en texto: por eje los números, y después los totales y los casos fallados."""
+def format_report(
+    dataset: SyntheticDataset,
+    report: ClassificationReport,
+    *,
+    engine: ClassifierPort | None = None,
+) -> str:
+    """Informe en texto: por eje los números, y después los totales y los casos fallados.
+
+    El motor y su versión se imprimen porque dos informes sin autor no se pueden comparar: el PoC
+    mide tres motores distintos sobre el mismo dataset y el número tiene que decir de quién es.
+    """
+    motor: ClassifierPort = DeterministicClassifier() if engine is None else engine
     lineas = [
         f"Dataset sintético «{dataset.dataset_version}» · {report.case_count} casos · "
         f"{report.slot_count} ranuras (caso, eje)",
-        f"Motor: {DeterministicClassifier.name} {DeterministicClassifier.version}",
+        f"Motor: {motor.name} {motor.version}",
         "Casos por intención: "
         + " · ".join(f"{intencion} {total}" for intencion, total in dataset.intents),
         "",
@@ -170,9 +213,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     """Punto de entrada: imprime el informe y devuelve 1 si la puerta inicial no se cumple."""
     _use_utf8_stdout()
     args = list(sys.argv[1:] if argv is None else argv)
+    engine = build_engine(engine_argument(args))
     dataset = load_dataset(dataset_argument(args))
-    report = build_report(dataset)
-    print(format_report(dataset, report))
+    report = build_report(dataset, engine=engine)
+    print(format_report(dataset, report, engine=engine))
     if report.critical_wrong_automatic_promotions:
         print(
             "Puerta incumplida (10_TEST-PLAN §7): hay promociones automáticas erróneas en un eje "
@@ -196,16 +240,41 @@ def _use_utf8_stdout() -> None:
         reconfigurar(encoding="utf-8")
 
 
+#: Opciones que acepta el arnés. Cualquier otra cosa se rechaza: ver `_option`.
+_OPTIONS = ("--dataset", "--engine")
+
+
+def _option(args: Sequence[str], name: str) -> str | None:
+    """Valor de la opción `--nombre valor`, o `None` si no se indica.
+
+    Se recorren **todas** las opciones antes de devolver nada. Antes esta función volvía en cuanto
+    encontraba `--dataset`, así que un `--engine` escrito detrás de él se ignoraba sin decir nada y
+    el informe salía con los números del motor de siempre: en un arnés que existe para comparar
+    motores, eso no es una comodidad, es un informe falso.
+    """
+    valor: str | None = None
+    indice = 0
+    while indice < len(args):
+        argumento = args[indice]
+        if argumento not in _OPTIONS:
+            raise ValueError(f"Argumento no reconocido: «{argumento}»")
+        if indice + 1 >= len(args):
+            raise ValueError(f"«{argumento}» necesita un valor")
+        if argumento == name:
+            valor = args[indice + 1]
+        indice += 2
+    return valor
+
+
 def dataset_argument(args: Sequence[str]) -> Path | None:
     """Ruta indicada con `--dataset`, o `None` para usar el dataset versionado."""
-    for indice, argumento in enumerate(args):
-        if argumento == "--dataset":
-            if indice + 1 >= len(args):
-                raise ValueError("«--dataset» necesita una ruta")
-            return Path(args[indice + 1])
-        if not argumento.startswith("--"):
-            raise ValueError(f"Argumento no reconocido: «{argumento}»")
-    return None
+    ruta = _option(args, "--dataset")
+    return None if ruta is None else Path(ruta)
+
+
+def engine_argument(args: Sequence[str]) -> str:
+    """Motor indicado con `--engine`, o `None` para el que tiene el producto hoy."""
+    return _option(args, "--engine") or DEFAULT_ENGINE
 
 
 def _axis_lines(metrics: AxisMetrics) -> list[str]:

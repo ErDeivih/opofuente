@@ -4,6 +4,11 @@ Todo son consultas agregadas: `COUNT` y `EXISTS` resueltos en la base. La altern
 documentos, las preguntas y las claves y contarlos en memoria) aguanta con el corpus del propietario
 y deja de aguantar con el doble, sin que nadie se entere hasta que la pantalla de Inicio tarda.
 
+Una excepción, y está razonada: cuántas propuestas de clasificación esperan una decisión **no** es
+un `COUNT` de filas —el motor propone lo mismo sobre el material y sobre su texto, así que contar
+filas cuenta dos veces la misma pregunta—. Esa cuenta la hace `_pending_decisions` con la regla de
+la cola de revisión, para que Inicio y Revisión no digan números distintos.
+
 Dos criterios que se aplican en **todas** las consultas y conviene no perder de vista:
 
 - el material que cuenta como material es el **aceptado** (una versión en estado `candidate` está
@@ -23,6 +28,12 @@ from opofuente.application.readiness_models import (
     PendingCounts,
     QuestionSummary,
 )
+from opofuente.domain.classification import (
+    Axis,
+    PendingProposal,
+    SubjectType,
+    reconcile_pending_proposals,
+)
 from opofuente.infrastructure.db_models import (
     AnswerKeyVersionRecord,
     ChangeSetRecord,
@@ -31,6 +42,7 @@ from opofuente.infrastructure.db_models import (
     CurriculumMappingRecord,
     CurriculumNodeRecord,
     DocumentVersionRecord,
+    ExtractedRepresentationRecord,
     ImportIssueRecord,
     LogicalDocumentRecord,
     OppositionRecord,
@@ -235,13 +247,7 @@ class SqlAlchemyReadinessRepository:
                     )
                 ).scalar_one()
             )
-            propuestas = int(
-                session.execute(
-                    select(func.count())
-                    .select_from(ClassificationProposalRecord)
-                    .where(ClassificationProposalRecord.status == _PENDING_PROPOSAL)
-                ).scalar_one()
-            )
+            decisiones = self._pending_decisions(session)
             cambios = int(
                 session.execute(
                     select(func.count())
@@ -258,10 +264,66 @@ class SqlAlchemyReadinessRepository:
             )
         return PendingCounts(
             import_issues=incidencias,
-            pending_proposals=propuestas,
+            pending_decisions=decisiones,
             proposed_changes=cambios,
             unaccepted_versions=versiones,
         )
+
+    @staticmethod
+    def _pending_decisions(session: Session) -> int:
+        """Cuántas **decisiones** esperan, no cuántas propuestas hay.
+
+        El motor propone lo mismo sobre el material y sobre su texto, así que contar filas cuenta
+        dos veces la misma pregunta: en el material real del propietario (DEBT-018), 348 propuestas
+        pendientes son 174 decisiones. La regla es la misma que usa la cola de revisión
+        (`reconcile_pending_proposals`) porque dos reglas distintas serían dos verdades: la pantalla
+        de Inicio y la de Revisión tienen que decir el mismo número.
+
+        Por eso esta cuenta **no** es un `COUNT` agregado como las demás de este módulo: se traen
+        nueve columnas de las propuestas pendientes —decenas o cientos de filas, no el corpus— y se
+        cuentan las decisiones en memoria. El precio de no tener la regla escrita dos veces vale más
+        que ese `COUNT`.
+        """
+        filas = session.execute(
+            select(
+                ClassificationProposalRecord.id,
+                ClassificationProposalRecord.subject_type,
+                ClassificationProposalRecord.subject_id,
+                ClassificationProposalRecord.axis,
+                ClassificationProposalRecord.proposed_value,
+                ClassificationProposalRecord.confidence,
+                ClassificationProposalRecord.engine_name,
+                ClassificationProposalRecord.engine_version,
+            ).where(ClassificationProposalRecord.status == _PENDING_PROPOSAL)
+        ).all()
+        pendientes = [
+            PendingProposal(
+                id=identificador,
+                subject_type=SubjectType(tipo),
+                subject_id=sujeto,
+                axis=Axis(eje),
+                proposed_value=valor,
+                confidence=confianza,
+                engine_name=motor,
+                engine_version=version,
+            )
+            for identificador, tipo, sujeto, eje, valor, confianza, motor, version in filas
+        ]
+        representaciones = [
+            propuesta.subject_id
+            for propuesta in pendientes
+            if propuesta.subject_type is SubjectType.REPRESENTATION
+        ]
+        artefacto_de: dict[str, str] = {}
+        if representaciones:
+            enlaces = session.execute(
+                select(
+                    ExtractedRepresentationRecord.id,
+                    ExtractedRepresentationRecord.artifact_id,
+                ).where(ExtractedRepresentationRecord.id.in_(representaciones))
+            ).all()
+            artefacto_de = {str(fila[0]): str(fila[1]) for fila in enlaces}
+        return len(reconcile_pending_proposals(pendientes, artifact_of_representation=artefacto_de))
 
 
 def _node_ids_of_opposition(opposition_id: str) -> Select[tuple[str]]:

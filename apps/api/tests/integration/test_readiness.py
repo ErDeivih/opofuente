@@ -266,7 +266,7 @@ def test_lo_que_espera_a_una_persona_se_cuenta_con_la_cifra_de_su_pantalla(
     """La lista de pendientes cuenta lo mismo que las pantallas donde se resuelve.
 
     No es una lista de todo lo que existe: es la de lo que **hoy** espera a alguien. Un material sin
-    aceptar y las propuestas que dejó la clasificación aparecen; lo que no hay, no aparece.
+    aceptar y las decisiones que dejó la clasificación aparecen; lo que no hay, no aparece.
     """
     batch = _pegar(seeded_client, TEMARIO, "temario-pendiente.txt")
     promocion = _promover(seeded_client, batch, titulo="Temario sin aceptar", papel="unknown")
@@ -278,13 +278,18 @@ def test_lo_que_espera_a_una_persona_se_cuenta_con_la_cifra_de_su_pantalla(
     # El material promocionado está importado y sin aceptar: eso espera a una persona.
     assert acciones["versiones"]["count"] == 1
     assert acciones["versiones"]["href"] == "/biblioteca"
-    # Y las propuestas que dejó el pipeline: la cifra es la misma que sirve su propio listado.
+    # Y las propuestas que dejó el pipeline: la cifra es la que sirve la pantalla donde se resuelven
+    # —`/revision`, que enseña grupos de revisión—. Una decisión puede llevar dos propuestas dentro
+    # (el material y su texto, DEBT-018), así que contar propuestas no es contar decisiones.
+    grupos = seeded_client.get("/api/v1/review-groups").json()
+    assert acciones["clasificaciones"]["count"] == len(grupos)
+    assert acciones["clasificaciones"]["count"] > 0, "clasificar tiene que haber propuesto algo"
+    assert acciones["clasificaciones"]["href"] == "/revision"
+    # Y agrupar no borra: las propuestas siguen estando, y son más que las decisiones.
     propuestas = seeded_client.get(
         "/api/v1/classification-proposals", params={"status": "pending", "limit": 1}
     ).json()
-    assert acciones["clasificaciones"]["count"] == propuestas["total"]
-    assert acciones["clasificaciones"]["count"] > 0, "clasificar tiene que haber propuesto algo"
-    assert acciones["clasificaciones"]["href"] == "/revision"
+    assert propuestas["total"] >= len(grupos), "el grupo decide propuestas que existen"
     # Lo que no hay no se enseña: sin cambios de fuente propuestos, esa acción no está.
     assert "cambios" not in acciones
     assert pendientes["total"] == sum(accion["count"] for accion in pendientes["actions"])
