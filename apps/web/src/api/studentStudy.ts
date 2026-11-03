@@ -1,4 +1,4 @@
-import { apiFetch } from './client';
+import { apiFetch, apiFetchBinary } from './client';
 import type { StudentSession } from './studentTests';
 
 /**
@@ -321,6 +321,20 @@ export function getStudentNotes(code: string, capitulo?: string): Promise<Studen
   const ruta = `/api/v1/student/topics/${encodeURIComponent(code)}/notes`;
   const consulta = capitulo === undefined ? '' : `?capitulo=${encodeURIComponent(capitulo)}`;
   return apiFetch<StudentNotes>(`${ruta}${consulta}`);
+}
+
+/**
+ * El tema entero en PDF (O7): el documento que el alumno se lleva para leer sin conexión.
+ *
+ * Lo compone el servidor —texto, índice, cabecera «borrador» si lo es y pie con la versión y la
+ * fecha—, así que aquí no se maqueta nada: se pide y se entrega. El nombre del fichero lo decide el
+ * servidor y llega en `Content-Disposition`; `filename` puede ser `null` y entonces la pantalla pone
+ * uno de reserva a partir del código del tema.
+ */
+export function downloadStudentTopicPdf(
+  code: string,
+): Promise<{ blob: Blob; filename: string | null }> {
+  return apiFetchBinary(`/api/v1/student/topics/${encodeURIComponent(code)}/pdf`);
 }
 
 /**

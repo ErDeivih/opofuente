@@ -15,12 +15,14 @@ Tres reglas gobiernan todo lo de aquí, y las tres vienen de un criterio de acep
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
+import re
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import date, datetime
 from decimal import ROUND_HALF_UP, Decimal
 from enum import StrEnum
 from fractions import Fraction
+from urllib.parse import urlparse
 
 from opofuente.domain.errors import InvariantViolationError, SessionStateError
 from opofuente.domain.numeros import escala, nota
@@ -932,6 +934,181 @@ def unavailable_note(mode: SessionMode) -> str:
     if mode is SessionMode.DIAGNOSTIC:
         return f"{DIAGNOSTIC_NOTE} {OFFICIAL_UNAVAILABLE_NOTE}"
     return OFFICIAL_UNAVAILABLE_NOTE
+
+
+# --- baremos oficiales: primero la procedencia, después el número ---------------------------------
+
+#: Lo que se sirve cuando se pide la calificación oficial y la tabla no está importada. Es un motivo
+#: y no un texto libre: quien consume el dato puede ramificar por él sin leer prosa.
+BAREMO_NO_IMPORTADO = "baremo_no_importado"
+
+#: Los cinco campos que una tabla de baremos importada trae, ni uno menos. El orden es el del
+#: fichero de la convocatoria y se usa para decir en voz alta qué falta.
+BAREMO_FIELDS: tuple[str, ...] = (
+    "url_oficial",
+    "fecha_consulta",
+    "sha256",
+    "cita_literal",
+    "formula_transformacion",
+)
+
+_SHA256 = re.compile(r"\A[0-9a-f]{64}\Z")
+
+
+class BaremoInvalidError(InvariantViolationError):
+    """Una tabla de baremos sin procedencia verificable no entra.
+
+    La regla de producto es que la calificación oficial no se inventa (criterio de aceptación de
+    S07). Un baremo sin URL oficial, sin fecha de consulta, sin hash del documento o sin la cita
+    literal de la tabla no es una fuente: es un número sin procedencia, y eso es justo lo que no
+    puede llegar a `score_part`. Se rechaza **al cargarlo**, donde está el defecto, y no al
+    aplicarlo, donde ya se habría perdido el rastro de quién lo metió.
+    """
+
+
+@dataclass(frozen=True, slots=True)
+class BaremoProcedencia:
+    """De dónde sale una tabla oficial, con lo necesario para volver a comprobarla.
+
+    Los cinco campos son obligatorios y ninguno trae valor por defecto: un baremo sin
+    `cita_literal` no dice qué se importó, y uno sin `sha256` no se puede cotejar con el documento
+    que afirma ser. `formula_transformacion` es la fórmula publicada **tal cual**, no una versión
+    propia: lo que se aplica se cita.
+    """
+
+    url_oficial: str
+    fecha_consulta: date
+    sha256: str
+    cita_literal: str
+    formula_transformacion: str
+
+    def __post_init__(self) -> None:
+        partes = urlparse(self.url_oficial)
+        if partes.scheme not in {"http", "https"} or not partes.netloc:
+            raise BaremoInvalidError(
+                "el baremo necesita la URL oficial del documento (http o https), no "
+                f"«{self.url_oficial}»"
+            )
+        if not _SHA256.match(self.sha256):
+            raise BaremoInvalidError(
+                "el baremo necesita el sha256 del documento oficial (64 dígitos hexadecimales, en "
+                "minúsculas): sin él no se puede comprobar que la tabla es la que se cita"
+            )
+        if not self.cita_literal.strip():
+            raise BaremoInvalidError(
+                "el baremo necesita la cita literal de la tabla publicada: sin ella la procedencia "
+                "no dice qué se importó"
+            )
+        if not self.formula_transformacion.strip():
+            raise BaremoInvalidError(
+                "el baremo necesita declarar la transformación publicada (la fórmula que convierte "
+                "la puntuación directa en la nota oficial): sin ella no hay nada que aplicar"
+            )
+
+
+@dataclass(frozen=True, slots=True)
+class Baremo:
+    """Una tabla oficial importada: su procedencia y la función que aplica la fórmula citada.
+
+    `transformacion` no viaja en ningún JSON porque es código, no un dato de la convocatoria. Tener
+    la procedencia sin ella es útil —se puede enseñar de dónde saldría la nota—, pero no califica:
+    `calificacion_oficial` lo dice con `baremo_no_importado` en lugar de devolver la puntuación
+    directa disfrazada de nota.
+    """
+
+    procedencia: BaremoProcedencia
+    transformacion: Callable[[Fraction], Fraction] | None = None
+
+
+def _texto(valor: object) -> str | None:
+    """Un campo de la procedencia: texto con contenido, o nada. Un número no es una cita."""
+    if isinstance(valor, str) and valor.strip():
+        return valor.strip()
+    return None
+
+
+def cargar_baremo(payload: Mapping[str, object]) -> Baremo:
+    """Lee un baremo importado y **rechaza** el que no pueda demostrar de dónde sale.
+
+    `payload` es lo que trae el perfil de la convocatoria en su clave `baremo`: los cinco campos de
+    `BAREMO_FIELDS`. Cualquier clave de más también se rechaza, porque el cargador no sabría
+    validarla y sería un dato entrando sin control.
+
+    Devuelve un `Baremo` **sin** transformación: la fórmula citada es texto publicado, y convertirla
+    en código exige una decisión por convocatoria que este cambio no toma. Hasta entonces, la
+    calificación oficial sigue sin estar disponible y se dice con su motivo.
+    """
+    desconocidas = sorted(set(payload) - set(BAREMO_FIELDS))
+    if desconocidas:
+        raise BaremoInvalidError(
+            "el baremo trae campos que no se pueden validar: " + ", ".join(desconocidas)
+        )
+    faltan = [campo for campo in BAREMO_FIELDS if _texto(payload.get(campo)) is None]
+    if faltan:
+        raise BaremoInvalidError(
+            "el baremo no se puede importar sin " + ", ".join(faltan) + ": falta la procedencia "
+            "que permite comprobarlo"
+        )
+
+    fecha_texto = _texto(payload["fecha_consulta"]) or ""
+    try:
+        fecha = date.fromisoformat(fecha_texto)
+    except ValueError as error:
+        raise BaremoInvalidError(
+            "la fecha de consulta del baremo tiene que ser una fecha ISO (AAAA-MM-DD), no "
+            f"«{fecha_texto}»"
+        ) from error
+
+    return Baremo(
+        procedencia=BaremoProcedencia(
+            url_oficial=_texto(payload["url_oficial"]) or "",
+            fecha_consulta=fecha,
+            sha256=(_texto(payload["sha256"]) or "").lower(),
+            cita_literal=_texto(payload["cita_literal"]) or "",
+            formula_transformacion=_texto(payload["formula_transformacion"]) or "",
+        )
+    )
+
+
+@dataclass(frozen=True, slots=True)
+class CalificacionOficial:
+    """La calificación oficial de una puntuación directa, o el motivo de que no la haya."""
+
+    available: bool
+    #: `baremo_no_importado` cuando no hay tabla aplicable; `None` cuando sí la hay.
+    reason: str | None
+    note: str
+    score: Fraction | None = None
+
+    @property
+    def score_decimal(self) -> str | None:
+        return None if self.score is None else decimal_text(self.score)
+
+
+def calificacion_oficial(
+    puntuacion_directa: Fraction, *, baremo: Baremo | None = None
+) -> CalificacionOficial:
+    """Convierte la puntuación directa con la tabla importada, o dice que no está.
+
+    Sin baremo —o con uno cuya transformación no se ha podido traer— no hay nota oficial: se
+    responde con el motivo `baremo_no_importado` y la explicación de siempre. La puntuación directa
+    **no** se devuelve como si fuera la calificación: son dos cifras distintas y confundirlas es
+    inventar un aprobado.
+    """
+    if baremo is None or baremo.transformacion is None:
+        return CalificacionOficial(
+            available=False, reason=BAREMO_NO_IMPORTADO, note=OFFICIAL_UNAVAILABLE_NOTE
+        )
+    nota = baremo.transformacion(puntuacion_directa)
+    return CalificacionOficial(
+        available=True,
+        reason=None,
+        note=(
+            "Calificación oficial calculada con la tabla publicada en "
+            f"{baremo.procedencia.url_oficial}."
+        ),
+        score=nota,
+    )
 
 
 # --- estados de la sesión -------------------------------------------------------------------------

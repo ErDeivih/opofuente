@@ -18,7 +18,7 @@ from datetime import UTC, date, datetime
 from sqlalchemy import select, text
 from sqlalchemy.orm import Session, sessionmaker
 
-from opofuente.domain.study_plan import TemaDelPlan
+from opofuente.domain.study_plan import Plan, TemaDelPlan, planificar
 from opofuente.infrastructure.db_models import StudyPlanRecord
 
 
@@ -29,6 +29,17 @@ class PlanGuardado:
     exam_date: date
     hours_per_week: int
     rest_days: frozenset[int]
+
+
+@dataclass(frozen=True, slots=True)
+class AvanceDeBloque:
+    """Lo leido y lo practicado de los temas de un bloque, **contados por bloque**."""
+
+    codigo: str
+    titulo: str
+    leidos: int
+    practicados: int
+    total: int
 
 
 class SqlAlchemyPlanRepository:
@@ -56,14 +67,17 @@ class SqlAlchemyPlanRepository:
                     select n.official_code,
                            n.title,
                            count(distinct a.question_version_id) as preguntas,
-                           count(distinct s.id) as secciones
+                           count(distinct s.id) as secciones,
+                           coalesce(p.official_code, '') as bloque_codigo,
+                           coalesce(p.title, '') as bloque_titulo
                     from curriculum_nodes n
+                    left join curriculum_nodes p on p.id = n.parent_id
                     left join question_note_anchors a
                            on a.curriculum_node_id = n.id
                     left join topic_note_sections s
                            on s.curriculum_node_id = n.id
                     where n.node_type = 'topic'
-                    group by n.official_code, n.title
+                    group by n.official_code, n.title, p.official_code, p.title
                     having count(distinct a.question_version_id) > 0
                     order by n.official_code
                     """
@@ -79,6 +93,59 @@ class SqlAlchemyPlanRepository:
                 titulo=str(fila[1]),
                 preguntas=int(fila[2]),
                 flojo=(fila[3] / fila[2]) <= mediana,
+                bloque_codigo=str(fila[4]),
+                bloque_titulo=str(fila[5]),
+            )
+            for fila in filas
+        )
+
+    def avance_por_bloque(self) -> tuple[AvanceDeBloque, ...]:
+        """Lo leido y lo practicado de cada bloque, **en una sola consulta**.
+
+        **La pantalla no vuelve a decidir el umbral**: compara `leidos` con los
+        que el plan daba por hechos a estas alturas. Aqui solo se cuentan los
+        temas y se agrupan por su bloque padre; un tema sin padre cae en
+        `sin-bloque`, que se pinta como «Sin bloque».
+        """
+        with self._session_factory() as session:
+            filas = session.execute(
+                text(
+                    """
+                    select coalesce(p.official_code, 'sin-bloque') as codigo,
+                           coalesce(p.title, 'Sin bloque') as titulo,
+                           count(distinct n.id) as total,
+                           count(distinct case when exists(
+                               select 1 from topic_note_sections s
+                               where s.curriculum_node_id = n.id
+                           ) then n.id end) as leidos,
+                           count(distinct case when exists(
+                               select 1
+                               from question_note_anchors a
+                               join session_questions sq
+                                    on sq.question_version_id = a.question_version_id
+                               join attempts t on t.session_question_id = sq.id
+                               where a.curriculum_node_id = n.id
+                                 and t.answered_at is not null
+                           ) then n.id end) as practicados
+                    from curriculum_nodes n
+                    left join curriculum_nodes p on p.id = n.parent_id
+                    where n.node_type = 'topic'
+                      and exists(
+                          select 1 from question_note_anchors a
+                          where a.curriculum_node_id = n.id
+                      )
+                    group by p.official_code, p.title
+                    order by codigo
+                    """
+                )
+            ).all()
+        return tuple(
+            AvanceDeBloque(
+                codigo=str(fila[0]),
+                titulo=str(fila[1]),
+                total=int(fila[2]),
+                leidos=int(fila[3]),
+                practicados=int(fila[4]),
             )
             for fila in filas
         )
@@ -108,6 +175,27 @@ class SqlAlchemyPlanRepository:
                 )
             ).scalar_one()
         return int(leidos), int(practicados)
+
+    def plan(self, *, hoy: date | None = None) -> Plan | None:
+        """El plan entero, **o `None` si el alumno no ha puesto la fecha**.
+
+        **Se recalcula en cada llamada**: guardarlo seria guardar una derivacion, y la derivacion
+        miente en cuanto cambia un tema. **La fecha de hoy entra por parametro**, para que el plan
+        sea determinista y se pueda comparar con el de la semana pasada.
+        """
+        guardado = self.guardado()
+        if guardado is None:
+            return None
+        temas = self.temas()
+        if not temas:
+            return None
+        return planificar(
+            temas,
+            hoy=hoy or datetime.now(UTC).date(),
+            fecha_examen=guardado.exam_date,
+            horas_por_semana=guardado.hours_per_week,
+            dias_de_descanso=guardado.rest_days,
+        )
 
     def guardado(self) -> PlanGuardado | None:
         """El plan que hay, **o `None` si nadie ha puesto la fecha**."""

@@ -587,6 +587,34 @@ def test_una_fuente_volatil_se_verifica_por_su_texto(tmp_path) -> None:
         verify_sources([fuente])
 
 
+def test_una_fuente_volatil_con_los_bytes_exactos_no_se_rechaza_por_su_proyeccion(tmp_path) -> None:
+    """La huella de contenido es el respaldo para bytes variables; los bytes exactos bastan.
+
+    Regresión del PDF del BOCYL: sus bytes son exactamente los declarados (`c1cbedf3…`), pero su
+    `content_sha256` se calculó sobre otra descarga. Rechazarlo por la proyección de texto negaba el
+    propio original archivado.
+    """
+    pagina = tmp_path / "pagina.html"
+    pagina.write_text(_pagina("1", "el temario no sufrirá modificaciones"), encoding="utf-8")
+    fuente = Source(
+        id="pagina",
+        local_path=pagina,
+        sha256=hashlib.sha256(pagina.read_bytes()).hexdigest(),
+        role="procedencia del temario",
+        profile_code=None,
+        volatile=True,
+        content_sha256="f" * 64,
+    )
+    assert content_fingerprint(pagina) != fuente.content_sha256
+    verify_sources([fuente])
+
+    # Si además cambian los bytes, la huella de contenido vuelve a ser la que vigila el texto.
+    pagina.write_text(_pagina("2", "el temario se revisa cada año"), encoding="utf-8")
+    assert hashlib.sha256(pagina.read_bytes()).hexdigest() != fuente.sha256
+    with pytest.raises(InvariantViolationError, match="texto de una fuente volátil ha cambiado"):
+        verify_sources([fuente])
+
+
 def test_una_fuente_volatil_sin_huella_no_se_da_por_buena(tmp_path) -> None:
     """Sin huella de contenido no hay comprobación posible: se dice, no se deja pasar."""
     pagina = tmp_path / "pagina.html"
@@ -665,13 +693,19 @@ def test_refrescar_la_huella_no_escribe_si_una_cita_ha_desaparecido(tmp_path) ->
     )
 
 
-def test_las_paginas_que_cambian_en_cada_descarga_se_verifican_por_su_texto() -> None:
-    """Las dos páginas volátiles del manifiesto tienen huella de contenido, y es la del fichero."""
+def test_las_paginas_que_cambian_en_cada_descarga_se_verifican_por_bytes_o_por_texto() -> None:
+    """Volátil significa «bytes cambiantes», no «el texto manda sobre el original».
+
+    Con los bytes exactos del manifiesto la fuente es el documento declarado aunque su proyección de
+    texto no coincida (le pasó al PDF del BOCYL: bytes `c1cbedf3…`, huella de contenido calculada
+    sobre otra descarga). Donde los bytes difieren de verdad, `content_sha256` sigue vigilando que el
+    documento diga lo mismo.
+    """
     manifest = json.loads((FIXTURES / "manifest.json").read_text(encoding="utf-8"))
     sources = {source["id"]: source for source in manifest["sources"]}
     volatiles = {source_id for source_id, source in sources.items() if source.get("volatile")}
     # **Cuatro, no dos** (M2 §3): el 22 de octubre el BOE republicó la convocatoria y el BOCYL la
-    # resolución, así que se marcan volátiles para que se comparen por su TEXTO y no por sus bytes.
+    # resolución, así que se marcan volátiles para que, si sus bytes cambian, se comparen por texto.
     assert volatiles == {
         "gc-pagina-oficial-html",
         "gc-nota-legal-html",
@@ -681,5 +715,10 @@ def test_las_paginas_que_cambian_en_cada_descarga_se_verifican_por_su_texto() ->
     for source_id in volatiles:
         assert len(sources[source_id]["content_sha256"]) == 64
         ruta = project_root() / sources[source_id]["local_path"]
-        if ruta.is_file():  # solo donde se hayan descargado las fuentes
+        if not ruta.is_file():  # solo donde se hayan descargado las fuentes
+            continue
+        bytes_exactos = (
+            hashlib.sha256(ruta.read_bytes()).hexdigest() == sources[source_id]["sha256"]
+        )
+        if not bytes_exactos:
             assert content_fingerprint(ruta) == sources[source_id]["content_sha256"]

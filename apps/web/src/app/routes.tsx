@@ -14,6 +14,7 @@ import { NoSonPreguntasPage } from '../pages/NoSonPreguntasPage';
 import { NoteReportsPage } from '../pages/NoteReportsPage';
 import { NotesReviewPage } from '../pages/NotesReviewPage';
 import { NotesReviewTopicPage } from '../pages/NotesReviewTopicPage';
+import { PlanPage } from '../pages/PlanPage';
 import { ProgramPage } from '../pages/ProgramPage';
 import { QuestionFilePage } from '../pages/QuestionFilePage';
 import { QuestionsPage } from '../pages/QuestionsPage';
@@ -21,6 +22,7 @@ import { ReviewPage } from '../pages/ReviewPage';
 import { SearchPage } from '../pages/SearchPage';
 import { SettingsPage } from '../pages/SettingsPage';
 import { StudyPage } from '../pages/StudyPage';
+import { BodyPage } from '../pages/student/BodyPage';
 import { MistakesPage } from '../pages/student/MistakesPage';
 import { MockExamPage } from '../pages/student/MockExamPage';
 import { OfficialExamsPage } from '../pages/student/OfficialExamsPage';
@@ -137,6 +139,12 @@ export function AppRoutes() {
           viejo no acabe en un 404.
         */}
         <Route path="/" element={<HoyPage />} />
+        {/*
+          El calendario completo (M4): «Hoy» enseña la semana en curso y esta pantalla, todas. No va
+          en la barra porque no es un apartado aparte —se entra desde «Hoy»—, pero tiene dirección
+          propia para que recargar no devuelva al alumno a la portada sin su plan.
+        */}
+        <Route path="/plan" element={<PlanPage />} />
         <Route path="/invitacion" element={<InvitacionPage />} />
         <Route path="/temario" element={<SyllabusPage />} />
         {/*
@@ -144,6 +152,12 @@ export function AppRoutes() {
           la zona del alumno. Nunca un identificador de nodo.
         */}
         <Route path="/temario/:codigo" element={<TopicNotesPage />} />
+        {/*
+          La ficha del cuerpo (O2): el cuerpo por su código legible (`A2`), no por su identificador.
+          Va pegado al temario porque es el mismo asunto —qué se estudia y con qué convocatoria— y
+          desde el índice se entra y se sale sin perder el hilo.
+        */}
+        <Route path="/cuerpo/:code" element={<BodyPage />} />
         {/*
           El cierre del ciclo de estudio (F14): el resultado de un test, el simulacro, los exámenes
           oficiales, los fallos y el progreso. El resultado se abre por el identificador de la sesión

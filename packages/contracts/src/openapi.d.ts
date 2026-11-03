@@ -4079,6 +4079,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/student/topics/{codigo}/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Descarga un tema entero en PDF, con su cabecera de procedencia
+         * @description El tema **completo** en PDF: todos sus capítulos en orden de lectura.
+         *
+         *     Se devuelven los bytes con `Content-Disposition: attachment` y un nombre saneado por el
+         *     servidor. La cabecera del documento dice la oposición, el bloque, el tema, la fecha y el
+         *     estado: un PDF descargado tiene que explicarse solo, también cuando está en borrador (y
+         *     entonces lo dice). Un tema sin apuntes responde 404: no se fabrica un archivo vacío.
+         */
+        get: operations["student_topic_pdf_api_v1_student_topics__codigo__pdf_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/student/topics/{codigo}/reports": {
         parameters: {
             query?: never;
@@ -23072,6 +23097,56 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StudentNotesSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    student_topic_pdf_api_v1_student_topics__codigo__pdf_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Código legible del tema, como `IV.10` (también se acepta `IV-10`). */
+                codigo: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description El tema completo en PDF, como descarga binaria. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": string;
                 };
             };
             /** @description El recurso no existe. */

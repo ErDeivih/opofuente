@@ -201,15 +201,19 @@ def inspect_zip(path: Path, *, limits: ZipLimits, depth: int = 0) -> ZipInspecti
     total_uncompressed = 0
     total_compressed = 0
     for info in infos:
-        if _is_junk(info.filename):
+        # El nombre se normaliza a `/` antes de mirarlo, como hace `zipfile` en Windows: el mismo
+        # ZIP tiene que dar el mismo resultado en el contenedor Linux. Así `..\x` se caza como
+        # traversal (y no como "barra invertida"), que es lo que pasaría al expandirlo.
+        nombre = info.filename.replace("\\", "/")
+        if _is_junk(nombre):
             skipped += 1
             continue
-        check_member_name(info.filename)
+        check_member_name(nombre)
         _check_symlink(info)
-        is_directory = info.filename.endswith("/")
+        is_directory = nombre.endswith("/")
         members.append(
             ZipMember(
-                name=info.filename.rstrip("/") if is_directory else info.filename,
+                name=nombre.rstrip("/") if is_directory else nombre,
                 size_bytes=int(info.file_size),
                 compressed_bytes=int(info.compress_size),
                 is_directory=is_directory,

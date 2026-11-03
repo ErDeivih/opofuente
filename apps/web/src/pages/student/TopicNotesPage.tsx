@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
@@ -16,7 +16,10 @@ import {
   capituloQueContiene,
   useApartadoALaVista,
 } from '../../features/student/capitulos';
+import { DescargarPdf } from '../../features/student/DescargarPdf';
 import { NotesBody } from '../../features/student/NotesBody';
+import { LecturaEnVoz } from '../../features/student/LecturaEnVoz';
+import { fragmentosDelCapitulo } from '../../features/student/lecturaEnVoz';
 import { NotesStateChip } from '../../features/student/NotesStateChip';
 import { ReportMistake } from '../../features/student/ReportMistake';
 import { describeError } from '../../features/system/labels';
@@ -68,6 +71,10 @@ export function TopicNotesPage() {
 
   const ancla = anclaDeLaDireccion(hash);
   const capitulos = apuntes.data?.chapters ?? [];
+  // El texto del capítulo abierto, preparado para oírse (O7). Se prepara una vez por capítulo y no en
+  // cada pintado: el sintetizador recibe trozos, y volver a partirlos mientras se lee no cambia nada.
+  const secciones = useMemo(() => apuntes.data?.sections ?? [], [apuntes.data]);
+  const fragmentosEnVoz = useMemo(() => fragmentosDelCapitulo(secciones), [secciones]);
   const servido = apuntes.data?.chapter ?? null;
   // El capítulo que hay que abrir de verdad: el del anclaje manda, y si el pedido ya no existe se
   // corrige al que el servidor ha servido. Ver `capitulos.ts`.
@@ -164,6 +171,7 @@ export function TopicNotesPage() {
             <span className="tema__preguntas">{`${String(ficha.progress.available_questions)} preguntas`}</span>
           )}
         </p>
+        {notas.state !== 'none' && <DescargarPdf codigo={ficha.code} />}
       </header>
 
       <nav className="pestanas" aria-label="Secciones del tema">
@@ -192,6 +200,13 @@ export function TopicNotesPage() {
                 <span className="apuntes__capitulo-codigo">{actual.code}</span>{' '}
                 <span data-contenido>{actual.title}</span>
               </p>
+            )}
+            {actual !== null && (
+              <LecturaEnVoz
+                key={actual.code}
+                fragmentos={fragmentosEnVoz}
+                totalApartados={secciones.length}
+              />
             )}
             {notas.sections.map((apartado) => (
               <Apartado

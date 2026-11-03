@@ -3,12 +3,19 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 
 import {
+  getStudentMistakes,
   getStudentSyllabus,
   type StudentBlockProgress,
+  type StudentMistakeTopic,
   type StudentTopicProgress,
 } from '../../api/studentStudy';
 import { ErrorState } from '../../components/ErrorState';
 import { EsqueletoDeLista } from '../../components/Esqueleto';
+import {
+  estadoDeEstudio,
+  etiquetaDeEstudio,
+  type EstadoDeEstudio,
+} from '../../features/student/estadoDeEstudio';
 import { NotesStateChip } from '../../features/student/NotesStateChip';
 import { describeError } from '../../features/system/labels';
 import { formatearPorcentaje } from '../../lib/numeros';
@@ -17,8 +24,8 @@ import { formatearPorcentaje } from '../../lib/numeros';
  * El temario del alumno (F13), como el índice de un programa oficial.
  *
  * El número romano del bloque va en el margen y los temas debajo, numerados, con su barra de acierto
- * —fina, con el porcentaje escrito—, el número de preguntas y las dos salidas de cada tema: sus
- * apuntes y su test.
+ * —fina, con el porcentaje escrito—, el número de preguntas, su estado de estudio y las salidas de
+ * cada tema: sus apuntes, su test y, si tiene, sus fallos.
  *
  * **El orden no se toca aquí**: viene en orden numérico de la API (`IV.1` antes de `IV.10`), y
  * reordenar en la pantalla sería tener dos órdenes que pueden divergir.
@@ -33,6 +40,22 @@ import { formatearPorcentaje } from '../../lib/numeros';
 export function SyllabusPage() {
   const [busqueda, setBusqueda] = useState('');
   const consulta = useQuery({ queryKey: ['student-syllabus'], queryFn: getStudentSyllabus });
+  // Los fallos por tema (O2) son una segunda lectura, y **no puede tumbar el índice**: si falla, el
+  // temario se lee igual y solo se deja de ofrecer el atajo a los fallos de cada tema.
+  const fallos = useQuery({
+    queryKey: ['student-mistakes'],
+    queryFn: getStudentMistakes,
+    retry: false,
+    staleTime: 60_000,
+  });
+
+  const fallosPorTema = useMemo(() => {
+    const mapa = new Map<string, StudentMistakeTopic>();
+    for (const tema of fallos.data?.topics ?? []) {
+      mapa.set(tema.code, tema);
+    }
+    return mapa;
+  }, [fallos.data]);
 
   const bloques = useMemo(() => {
     const datos = consulta.data?.blocks ?? [];
@@ -81,7 +104,16 @@ export function SyllabusPage() {
     <>
       <header className="pagina__cabecera">
         <h1 className="pagina__titulo">Temario</h1>
-        <p className="pagina__entrada">{consulta.data.opposition.name}</p>
+        <p className="pagina__entrada">
+          {consulta.data.opposition.name}{' '}
+          <Link
+            className="pagina__enlace"
+            to={`/cuerpo/${consulta.data.opposition.code}`}
+            aria-label={`Ficha del cuerpo ${consulta.data.opposition.code}`}
+          >
+            Ver la ficha del cuerpo
+          </Link>
+        </p>
       </header>
 
       <form className="buscador" role="search" onSubmit={(evento) => evento.preventDefault()}>
@@ -113,7 +145,7 @@ export function SyllabusPage() {
                 </h2>
                 <ul className="temario__temas">
                   {bloque.topics.map((tema) => (
-                    <TemaFila key={tema.code} tema={tema} />
+                    <TemaFila key={tema.code} tema={tema} fallos={fallosPorTema.get(tema.code)} />
                   ))}
                 </ul>
                 <BarraDeBloque bloque={bloque} />
@@ -126,8 +158,15 @@ export function SyllabusPage() {
   );
 }
 
-/** Un tema del índice: título, preguntas, acierto, estado de los apuntes y sus dos salidas. */
-function TemaFila({ tema }: { tema: StudentTopicProgress }) {
+/**
+ * Un tema del índice: título, preguntas, acierto, estado de los apuntes y sus salidas.
+ *
+ * La etiqueta de estado es de interfaz, no una nota: la calcula `estadoDeEstudio` en un solo sitio
+ * para que el índice y cualquier otra pantalla no digan cosas distintas del mismo tema. Los fallos
+ * solo aparecen cuando hay alguno: un cero en cada fila sería ruido.
+ */
+function TemaFila({ tema, fallos }: { tema: StudentTopicProgress; fallos?: StudentMistakeTopic }) {
+  const estado: EstadoDeEstudio = estadoDeEstudio(tema);
   return (
     <li className="tema-fila" data-codigo={tema.code} aria-label={`Tema ${tema.code}`}>
       <p className="tema-fila__titulo">
@@ -137,11 +176,25 @@ function TemaFila({ tema }: { tema: StudentTopicProgress }) {
       <p className="tema-fila__datos">
         <span>{`${String(tema.available_questions)} preguntas`}</span>
         {tema.accuracy === null ? (
-          <span className="tema-fila__sin-datos">Sin empezar</span>
+          <span className="tema-fila__sin-datos">{etiquetaDeEstudio(estado)}</span>
         ) : (
-          <span className="tema-fila__cifra">{formatearPorcentaje(tema.accuracy)}</span>
+          <>
+            <span className="tema-fila__cifra">{formatearPorcentaje(tema.accuracy)}</span>
+            <span className="tema-fila__estado" data-estado={estado}>
+              {etiquetaDeEstudio(estado)}
+            </span>
+          </>
         )}
         <NotesStateChip state={tema.notes_state} />
+        {fallos !== undefined && fallos.failed > 0 && (
+          <Link
+            className="tema-fila__fallos"
+            to={`/fallos?tema=${encodeURIComponent(tema.code)}`}
+            aria-label={`Fallos de ${tema.code}`}
+          >
+            {`${String(fallos.failed)} ${fallos.failed === 1 ? 'fallo' : 'fallos'}`}
+          </Link>
+        )}
       </p>
       <p className="tema-fila__acciones">
         {/* Un tema sin apuntes escritos no ofrece la salida a los apuntes: el estado ya lo dice, y

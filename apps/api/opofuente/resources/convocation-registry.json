@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "note": "Registro de convocatorias TIC publicadas por boletines oficiales. Se versiona a mano: cada cifra se ha leido en el acto oficial que cita 'procedencia'. No se registran plazas que no consten en la fuente ni se deducen del total. Vive dentro del paquete porque la politica de escritura del workspace bloquea fixtures/**.",
+  "retrieved_at": "2026-10-31",
+  "sources": [
+    {
+      "id": "boe-a-2025-25938",
+      "title": "Resolución de 16 de diciembre de 2025, de la Secretaría de Estado de Función Pública, por la que se convoca proceso selectivo para ingreso, por el sistema general de acceso libre y promoción interna, en el Cuerpo Superior de Sistemas y Tecnologías de la Información de la Administración del Estado",
+      "publisher": "Agencia Estatal Boletín Oficial del Estado",
+      "identifier": "BOE-A-2025-25938",
+      "canonical_url": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2025-25938",
+      "retrieved_url": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2025-25938",
+      "published_at": "2025-12-18",
+      "authority_tier": "A",
+      "rights_status": "reuse_with_conditions",
+      "rights_source_url": "https://www.boe.es/informacion/aviso_legal/index.php"
+    },
+    {
+      "id": "boe-a-2025-26262",
+      "title": "Resolución de 18 de diciembre de 2025, de la Secretaría de Estado de Función Pública, por la que se convocan procesos selectivos para el ingreso y acceso en Cuerpos de la Administración General del Estado, y se encarga su realización a la Comisión Permanente de Selección",
+      "publisher": "Agencia Estatal Boletín Oficial del Estado",
+      "identifier": "BOE-A-2025-26262",
+      "canonical_url": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2025-26262",
+      "retrieved_url": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2025-26262",
+      "published_at": "2025-12-22",
+      "authority_tier": "A",
+      "rights_status": "reuse_with_conditions",
+      "rights_source_url": "https://www.boe.es/informacion/aviso_legal/index.php"
+    }
+  ],
+  "convocations": [
+    {
+      "code": "csi-age-2025",
+      "cuerpo": "Cuerpo Superior de Sistemas y Tecnologías de la Información de la Administración del Estado",
+      "grupo": "A1",
+      "administracion": "Administración General del Estado",
+      "sistemas": ["oposicion", "concurso_oposicion"],
+      "plazas_libres": 290,
+      "plazas_promocion_interna": 100,
+      "plazo_dias_habiles": 20,
+      "enlace_oficial": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2025-25938",
+      "published_at": "2025-12-18",
+      "procedencia": {
+        "source_id": "boe-a-2025-25938",
+        "quote": "En concreto, se convoca proceso selectivo para cubrir 290 plazas de acceso libre, y 100 por promoción interna, en el Cuerpo Superior de sistemas y tecnologías de la Información, código 1166."
+      }
+    },
+    {
+      "code": "gsi-age-2025",
+      "cuerpo": "Cuerpo de Gestión de Sistemas e Informática de la Administración del Estado",
+      "grupo": "A2",
+      "administracion": "Administración General del Estado",
+      "sistemas": ["oposicion", "concurso_oposicion"],
+      "plazas_libres": 634,
+      "plazas_promocion_interna": 46,
+      "plazo_dias_habiles": 20,
+      "enlace_oficial": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2025-26262",
+      "published_at": "2025-12-22",
+      "procedencia": {
+        "source_id": "boe-a-2025-26262",
+        "quote": "Las plazas convocadas para los procesos selectivos especificados se ajustan a lo dispuesto en los siguientes cuadros:"
+      }
+    },
+    {
+      "code": "tai-age-2025",
+      "cuerpo": "Cuerpo de Técnicos Auxiliares de Informática de la Administración del Estado",
+      "grupo": "C1",
+      "administracion": "Administración General del Estado",
+      "sistemas": ["oposicion", "concurso_oposicion"],
+      "plazas_libres": 844,
+      "plazas_promocion_interna": 186,
+      "plazo_dias_habiles": 20,
+      "enlace_oficial": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2025-26262",
+      "published_at": "2025-12-22",
+      "procedencia": {
+        "source_id": "boe-a-2025-26262",
+        "quote": "Las plazas convocadas para los procesos selectivos especificados se ajustan a lo dispuesto en los siguientes cuadros:"
+      }
+    }
+  ]
+}

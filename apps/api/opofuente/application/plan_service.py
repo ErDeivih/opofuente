@@ -1,6 +1,6 @@
 """El servicio del plan: junta los temas con el planificador (M4).
 
-**No decide nada**: **lee los temas, llama a `planificar`, y devuelve su
+**No decide nada**: **lee los temas, le pide el plan al repositorio y devuelve su
 resultado**. La decision del reparto esta en el dominio y probada ahi; lo
 que hace este servicio es darle los datos y **recortar la semana en
 curso** para la pantalla «Hoy».
@@ -15,14 +15,49 @@ acordó.**
 
 from __future__ import annotations
 
+from collections import Counter
 from dataclasses import dataclass
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 
-from opofuente.domain.study_plan import Plan, Semana, planificar
+from opofuente.domain.study_plan import (
+    ModoDeEstudio,
+    Plan,
+    Semana,
+    TemaDelPlan,
+)
 from opofuente.infrastructure.plan_repository import (
     PlanGuardado,
     SqlAlchemyPlanRepository,
 )
+
+
+@dataclass(frozen=True, slots=True)
+class ProgresoDeBloque:
+    """Como va el alumno en un bloque, **con su umbral calculado solo aqui**."""
+
+    codigo: str
+    titulo: str
+    leidos: int
+    practicados: int
+    #: Los temas de ese bloque que el plan daba por leidos a estas alturas.
+    esperados: int
+    total: int
+
+    @property
+    def vas_bien(self) -> bool:
+        return self.leidos >= self.esperados
+
+    @property
+    def frase(self) -> str:
+        if self.vas_bien:
+            return (
+                f"Vas bien: {self.leidos} de {self.total} temas leidos, y el plan "
+                f"pedia {self.esperados} a estas alturas."
+            )
+        return (
+            f"Vas {self.esperados - self.leidos} temas por detras en este bloque: "
+            f"{self.leidos} leidos de los {self.esperados} que pedia el plan."
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -31,7 +66,8 @@ class Progreso:
 
     **«Vas bien» no es «has hecho mucho»**: es «llevas lo que el plan pedia
     para esta altura». Por eso se compara con los temas que ya deberian
-    estar leidos, no con el total.
+    estar leidos, no con el total. **El desglose por bloque usa el mismo
+    criterio**, calculado en `ProgresoDeBloque`: la pantalla no lo repite.
     """
 
     leidos: int
@@ -39,6 +75,7 @@ class Progreso:
     #: Los que el plan daba por leidos a estas alturas.
     esperados: int
     total: int
+    bloques: tuple[ProgresoDeBloque, ...] = ()
 
     @property
     def vas_bien(self) -> bool:
@@ -67,6 +104,11 @@ class LoDeHoy:
     semana: Semana | None
     #: Los temas de la semana, con su enunciado, para los botones.
     motivos: tuple[str, ...]
+    #: El ritmo derivado, para que «Hoy» lo enseñe sin recalcularlo.
+    modo: ModoDeEstudio | None = None
+    planificable: bool = True
+    motivo: str | None = None
+    fuera_detalle: tuple[TemaDelPlan, ...] = ()
 
 
 class PlanService:
@@ -90,9 +132,11 @@ class PlanService:
     def progreso(self, *, hoy: date | None = None) -> Progreso | None:
         """Como va respecto al plan, **o `None` si no hay plan que comparar**.
 
-        **Lo esperado se cuenta por semanas**: cada semana de lectura del
-        plan da por leidos los temas que tiene como tareas de `leer`. **No
-        es una prediccion: es lo que el propio plan prometio para hoy.**
+        **Lo esperado se cuenta por semanas ya terminadas**: cada semana de
+        lectura que ya ha pasado da por leidos los temas que tiene como tareas
+        de `leer`. **La semana en curso no penaliza**: el lunes por la manana
+        no se puede deber lo que el plan pide para esa misma semana. **No es
+        una prediccion: es lo que el propio plan prometio para hoy.**
         """
         dia = hoy or datetime.now(UTC).date()
         plan = self.plan(hoy=dia)
@@ -100,36 +144,53 @@ class PlanService:
             return None
         leidos, practicados = self._planes.leido_y_practicado()
         esperados = 0
+        esperados_por_bloque: Counter[str] = Counter()
         for semana in plan.semanas:
-            if semana.empieza > dia:
+            if semana.empieza + timedelta(days=7) > dia:
                 break
-            esperados += sum(1 for tarea in semana.tareas if tarea.tipo.value == "leer")
+            for tarea in semana.tareas:
+                if tarea.tipo.value != "leer":
+                    continue
+                esperados += 1
+                esperados_por_bloque[tarea.bloque_codigo or "sin-bloque"] += 1
+
+        temas = {tema.codigo: tema for tema in self._planes.temas()}
+        dentro_por_bloque: Counter[str] = Counter(
+            (temas[codigo].bloque_codigo or "sin-bloque")
+            for codigo in plan.dentro
+            if codigo in temas
+        )
+        avances = {avance.codigo: avance for avance in self._planes.avance_por_bloque()}
+        bloques: list[ProgresoDeBloque] = []
+        for codigo in sorted(set(esperados_por_bloque) | set(dentro_por_bloque) | set(avances)):
+            avance = avances.get(codigo)
+            if avance is None:
+                continue
+            bloques.append(
+                ProgresoDeBloque(
+                    codigo=codigo,
+                    titulo=avance.titulo,
+                    leidos=avance.leidos,
+                    practicados=avance.practicados,
+                    esperados=esperados_por_bloque.get(codigo, 0),
+                    total=dentro_por_bloque.get(codigo, 0),
+                )
+            )
         return Progreso(
             leidos=leidos,
             practicados=practicados,
             esperados=esperados,
             total=len(plan.dentro),
+            bloques=tuple(bloques),
         )
 
     def plan(self, *, hoy: date | None = None) -> Plan | None:
         """El plan entero, **o `None` si el alumno no ha puesto la fecha**.
 
-        **Se recalcula en cada llamada**: guardarlo seria guardar una
-        derivacion, y la derivacion miente en cuanto cambia un tema.
+        **El repositorio lo recalcula en cada llamada**: guardarlo seria guardar una derivacion, y
+        la derivacion miente en cuanto cambia un tema.
         """
-        guardado = self._planes.guardado()
-        if guardado is None:
-            return None
-        temas = self._planes.temas()
-        if not temas:
-            return None
-        return planificar(
-            temas,
-            hoy=hoy or datetime.now(UTC).date(),
-            fecha_examen=guardado.exam_date,
-            horas_por_semana=guardado.hours_per_week,
-            dias_de_descanso=guardado.rest_days,
-        )
+        return self._planes.plan(hoy=hoy or datetime.now(UTC).date())
 
     def hoy(self, *, hoy: date | None = None) -> LoDeHoy:
         """Las tareas de la semana en curso, **que es lo que enseña «Hoy»**.
@@ -147,25 +208,37 @@ class PlanService:
             (
                 semana
                 for semana in plan.semanas
-                if semana.empieza <= dia < _siguiente(semana.empieza)
+                if semana.empieza <= dia < _siguiente_semana(semana.empieza)
             ),
             None,
         )
         if actual is None:
-            if plan.fuera:
-                return LoDeHoy(
-                    semana=None,
-                    motivos=(
-                        "el examen esta demasiado cerca para cubrir todo: "
-                        f"{len(plan.fuera)} temas se quedan fuera",
-                    ),
+            motivo = (
+                (
+                    "el examen esta demasiado cerca para cubrir todo: "
+                    f"{len(plan.fuera)} temas se quedan fuera"
                 )
-            return LoDeHoy(semana=None, motivos=("el plan no tiene tareas para hoy",))
-        return LoDeHoy(semana=actual, motivos=())
+                if plan.fuera
+                else "el plan no tiene tareas para hoy"
+            )
+            return LoDeHoy(
+                semana=None,
+                motivos=(motivo,),
+                modo=plan.modo,
+                planificable=plan.planificable,
+                motivo=plan.motivo,
+                fuera_detalle=plan.fuera_detalle,
+            )
+        return LoDeHoy(
+            semana=actual,
+            motivos=(),
+            modo=plan.modo,
+            planificable=plan.planificable,
+            motivo=plan.motivo,
+            fuera_detalle=plan.fuera_detalle,
+        )
 
 
-def _siguiente(dia: date) -> date:
-    """El dia siguiente, con `date` y sin `timedelta` a mano en cada uso."""
-    from datetime import timedelta
-
+def _siguiente_semana(dia: date) -> date:
+    """El lunes siguiente."""
     return dia + timedelta(days=7)

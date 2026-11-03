@@ -14,8 +14,10 @@ por
 from __future__ import annotations
 
 from opofuente.domain.diagnostic import (
+    BlockTally,
     DiagnosticTopic,
     order_for_mock,
+    read_blocks,
     read_diagnostic,
     stratified_sample,
     wilson_interval,
@@ -178,3 +180,58 @@ def test_la_lectura_declara_la_muestra_corta_de_cada_tema() -> None:
     assert "no se contestó ninguna pregunta de este tema" in tercera.note
     assert tercera.interval is None, "sin respuestas no se inventa un intervalo"
     assert "no son una nota ni un dominio del tema" in lectura.detail
+
+
+# --- lectura por bloque ---------------------------------------------------------------------------
+
+
+def test_el_bloque_agrega_sus_temas_y_lo_dice_en_la_nota() -> None:
+    """El bloque no se contesta: se contesta por temas, y la suma se declara como suma."""
+    (bloque,) = read_blocks(
+        [
+            BlockTally(node_id="b1", title="Bloque I", topics=2, answered=4, correct=3),
+        ]
+    )
+
+    assert bloque.topics == 2
+    assert bloque.interval is not None
+    assert "3 de 4 en la muestra" in bloque.note
+    assert "agrega 2 temas" in bloque.note
+    assert "no es una nota" in bloque.note
+
+
+def test_agregar_temas_estrecha_el_intervalo_y_eso_no_es_mas_conocimiento() -> None:
+    """El mismo acierto con más muestra da un intervalo más estrecho: es muestra, no dominio."""
+    (bloque,) = read_blocks(
+        [BlockTally(node_id="b1", title="Bloque I", topics=3, answered=60, correct=45)]
+    )
+    (tema,) = read_blocks(
+        [BlockTally(node_id="b1", title="Bloque I", topics=1, answered=4, correct=3)]
+    )
+
+    assert bloque.interval is not None and tema.interval is not None
+    assert bloque.interval.width < tema.interval.width
+
+
+def test_un_bloque_de_un_solo_tema_no_agrega_nada_a_la_lectura_por_tema() -> None:
+    (bloque,) = read_blocks(
+        [BlockTally(node_id="t1", title="Tema 1", topics=1, answered=2, correct=1)]
+    )
+
+    assert "no agrega temas" in bloque.note
+
+
+def test_un_bloque_sin_respuestas_se_declara_sin_intervalo() -> None:
+    (bloque,) = read_blocks(
+        [BlockTally(node_id="b2", title="Bloque II", topics=2, answered=0, correct=0)]
+    )
+
+    assert bloque.interval is None
+    assert "no se contestó ninguna pregunta de este bloque" in bloque.note
+
+
+def test_la_lectura_por_tema_no_trae_bloques_por_su_cuenta() -> None:
+    """Los bloques los agrega el servicio desde el mapeo; el dominio no los inventa."""
+    lectura = read_diagnostic({"t1": ("Tema 1", 2, 1)}, sample_size=2)
+
+    assert lectura.blocks == (), "sin datos de bloque la lectura no finge un agregado"

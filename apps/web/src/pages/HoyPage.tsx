@@ -19,27 +19,8 @@ import { Link } from 'react-router-dom';
 import { fetchVencen } from '../api/cards';
 import { getStudentOverview } from '../api/studentStudy';
 
-import {
-  fetchHoy,
-  fetchPlanGuardado,
-  fetchProgreso,
-  guardarPlan,
-  type Tarea,
-} from '../api/plan';
-
-/** A dónde lleva cada tipo de tarea. */
-function destino(tarea: Tarea): string {
-  switch (tarea.tipo) {
-    case 'leer':
-      return `/temario/${tarea.codigo ?? ''}`;
-    case 'test':
-      return `/tests?tema=${encodeURIComponent(tarea.codigo ?? '')}`;
-    case 'repaso':
-      return '/repaso';
-    case 'simulacro':
-      return '/simulacros';
-  }
-}
+import { fetchHoy, fetchPlanGuardado, fetchProgreso, guardarPlan } from '../api/plan';
+import { destinoDeTarea } from '../features/plan/destino';
 
 /** Los días de la semana, con el índice que usa el servidor (0 es lunes). */
 const DIAS = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
@@ -210,6 +191,17 @@ export function HoyPage() {
         </p>
       </header>
 
+      {/*
+        **Si el plan no cabe, se dice en la portada**: enterarse en la última semana de que tres temas
+        se quedaron fuera no sirve de nada. El detalle, con sus nombres, está en el calendario.
+      */}
+      {(!(hoy.data?.planificable ?? true) || (hoy.data?.fuera_temas.length ?? 0) > 0) && (
+        <p className="hoy__aviso">
+          {hoy.data?.motivo ?? 'Hay temas que no entran antes del examen.'}{' '}
+          <Link to="/plan">Ver qué se queda fuera</Link>
+        </p>
+      )}
+
       {visibles.length === 0 ? (
         <p className="hoy__motivo">
           Esta semana no tiene tareas. Descansa: el plan cuenta con ello.
@@ -218,7 +210,7 @@ export function HoyPage() {
         <ol className="hoy__tareas">
           {visibles.map((tarea) => (
             <li key={`${tarea.tipo}-${tarea.titulo}`} className="hoy__tarea">
-              <Link to={destino(tarea)} className="hoy__enlace">
+              <Link to={destinoDeTarea(tarea)} className="hoy__enlace">
                 {tarea.titulo}
               </Link>
               <span className="hoy__minutos">{tarea.minutos} min</span>
@@ -244,7 +236,7 @@ export function HoyPage() {
 
       {restantes > 0 && (
         <p className="hoy__resto">
-          y {restantes} más esta semana, en el <Link to="/">plan</Link>
+          y {restantes} más esta semana, en el <Link to="/plan">plan</Link>
         </p>
       )}
     </section>

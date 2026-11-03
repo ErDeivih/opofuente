@@ -12,6 +12,7 @@ Lo que se comprueba aquí son los criterios de aceptación del slice, sin base d
 
 from __future__ import annotations
 
+from datetime import date
 from fractions import Fraction
 
 import pytest
@@ -19,8 +20,12 @@ import pytest
 from opofuente.config import project_root
 from opofuente.domain.errors import InvariantViolationError, SessionStateError
 from opofuente.domain.study import (
+    BAREMO_NO_IMPORTADO,
     OFFICIAL_UNAVAILABLE_NOTE,
     AttemptOutcome,
+    Baremo,
+    BaremoInvalidError,
+    BaremoProcedencia,
     Confidence,
     Feedback,
     FrozenQuestion,
@@ -34,6 +39,8 @@ from opofuente.domain.study import (
     Substitution,
     aggregate,
     assign_positions,
+    calificacion_oficial,
+    cargar_baremo,
     decimal_text,
     effective_composition,
     exact_fraction,
@@ -761,3 +768,125 @@ def test_una_parte_de_apto_no_apto_queda_fuera_de_la_suma() -> None:
     assert resultado.total.score == partes["primera_parte"].score, (
         "la parte de apto/no apto no suma puntos"
     )
+
+
+# --- baremos oficiales: la procedencia es lo que se importa --------------------------------------
+
+
+def _baremo_valido() -> dict[str, object]:
+    """Un baremo *sintético* que cumple los cinco requisitos, para probar el cargador.
+
+    La URL y el hash son inventados a propósito: esta prueba no afirma que exista ninguna tabla
+    publicada, solo que el cargador acepta una procedencia completa. Los datos reales de TAI no
+    están importados y no se inventan aquí.
+    """
+    return {
+        "url_oficial": "https://sede.inap.gob.es/ejemplo.pdf",
+        "fecha_consulta": "2026-10-30",
+        "sha256": "a" * 64,
+        "cita_literal": "Nota = (A - E/3) · 50/80",
+        "formula_transformacion": "Nota = (A - E/3) · 50/80",
+    }
+
+
+def test_un_baremo_sin_cita_literal_no_se_importa() -> None:
+    """Sin la cita no se sabe qué se importó: el cargador lo rechaza antes de tocar la base."""
+    payload = _baremo_valido()
+    del payload["cita_literal"]
+
+    with pytest.raises(BaremoInvalidError) as fallo:
+        cargar_baremo(payload)
+    assert "cita_literal" in str(fallo.value)
+
+
+def test_un_baremo_sin_hash_no_se_importa_y_dice_que_falta() -> None:
+    """El hash es lo que permite cotejar la tabla con el documento: sin él no hay procedencia."""
+    payload = _baremo_valido()
+    payload["sha256"] = "   "
+
+    with pytest.raises(BaremoInvalidError) as fallo:
+        cargar_baremo(payload)
+    assert "sha256" in str(fallo.value)
+
+
+def test_un_hash_que_no_es_sha256_se_rechaza() -> None:
+    """Un hash truncado o en otro formato parece procedencia y no lo es."""
+    payload = _baremo_valido()
+    payload["sha256"] = "a" * 63
+
+    with pytest.raises(BaremoInvalidError):
+        cargar_baremo(payload)
+
+
+def test_una_url_que_no_es_http_se_rechaza() -> None:
+    """«memoria local» o un fichero suelto no son una fuente oficial citable."""
+    for url in ("file:///C:/baremo.pdf", "baremo.pdf", "https://"):
+        payload = _baremo_valido()
+        payload["url_oficial"] = url
+        with pytest.raises(BaremoInvalidError):
+            cargar_baremo(payload)
+
+
+def test_una_fecha_que_no_es_iso_se_rechaza() -> None:
+    """La fecha de consulta es un dato de procedencia: se compara entre filas, no se adivina."""
+    payload = _baremo_valido()
+    payload["fecha_consulta"] = "30/10/2026"
+
+    with pytest.raises(BaremoInvalidError):
+        cargar_baremo(payload)
+
+
+def test_un_campo_de_mas_en_el_baremo_se_rechaza() -> None:
+    """Un umbral que el cargador no entiende entraría sin validar: se rechaza la tabla entera."""
+    payload = _baremo_valido()
+    payload["nota_minima"] = 25
+
+    with pytest.raises(BaremoInvalidError) as fallo:
+        cargar_baremo(payload)
+    assert "nota_minima" in str(fallo.value)
+
+
+def test_un_baremo_bien_citado_se_carga_y_no_finge_calificar() -> None:
+    """Con procedencia completa se puede enseñar de dónde saldría la nota, pero no hay nota.
+
+    El cargador no trae la transformación ejecutable, así que la calificación oficial sigue sin
+    estar disponible y se responde con su motivo —no con la puntuación directa disfrazada—.
+    """
+    baremo = cargar_baremo(_baremo_valido())
+
+    assert isinstance(baremo, Baremo)
+    assert baremo.transformacion is None
+    assert baremo.procedencia.sha256 == "a" * 64
+    assert baremo.procedencia.fecha_consulta.year == 2026
+
+    calificacion = calificacion_oficial(Fraction(45))
+    assert calificacion.available is False
+    assert calificacion.reason == BAREMO_NO_IMPORTADO
+    assert calificacion.score is None
+    assert calificacion.note == OFFICIAL_UNAVAILABLE_NOTE
+
+    # Y con el baremo cargado pero sin transformación, tampoco: la procedencia sola no es una nota.
+    assert calificacion_oficial(Fraction(45), baremo=baremo).reason == BAREMO_NO_IMPORTADO
+
+
+def test_una_transformacion_declarada_si_calcula_la_nota() -> None:
+    """La costura existe y funciona: con una transformación declarada, la nota es la transformada.
+
+    La función de la prueba es **sintética** (dobla la puntuación directa): demuestra el mecanismo,
+    no afirma qué tabla publica ninguna convocatoria real.
+    """
+    procedencia = BaremoProcedencia(
+        url_oficial="https://sede.inap.gob.es/ejemplo.pdf",
+        fecha_consulta=date(2026, 10, 30),
+        sha256="b" * 64,
+        cita_literal="Nota = 2 · puntuación directa",
+        formula_transformacion="Nota = 2 · puntuación directa",
+    )
+    baremo = Baremo(procedencia=procedencia, transformacion=lambda directa: directa * 2)
+
+    calificacion = calificacion_oficial(Fraction(45), baremo=baremo)
+
+    assert calificacion.available is True
+    assert calificacion.reason is None
+    assert calificacion.score == Fraction(90)
+    assert calificacion.score_decimal == "90.0000"

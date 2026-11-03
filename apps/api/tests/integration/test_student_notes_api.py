@@ -15,6 +15,9 @@ Y desde F16 (el bloque C del objetivo), la quinta: **el propietario lo despacha*
 su ruta de escritura (`PATCH /notes-reports/{id}`), con su evento de auditoría en la misma
 transacción, la nota de lo que se ha hecho y los cuatro estados que el modelo tiene. Es lo que
 convierte «el propietario lo ve» en «el propietario lo resuelve».
+
+La sexta: **el tema entero se descarga en PDF**, compuesto en el servidor y en memoria, con la
+procedencia en la cabecera; si no hay apuntes, 404 y no un archivo vacío.
 """
 
 from __future__ import annotations
@@ -25,6 +28,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 import pytest
+import pymupdf
 from fastapi.testclient import TestClient
 from sqlalchemy import text
 
@@ -756,3 +760,65 @@ def test_la_bandeja_filtra_por_estado_tema_y_busqueda(
     assert client.get("/api/v1/notes-reports?q=mezcla").json()["total"] == 1
     assert client.get("/api/v1/notes-reports?q=puertos").json()["total"] == 1
     assert client.get("/api/v1/notes-reports?q=no-existe-esta-palabra").json()["total"] == 0
+
+
+# --------------------------------------------------------------------------- PDF del tema
+#
+# La descarga no es una captura de pantalla: el documento se compone en el servidor, entero y en
+# memoria, con su cabecera de procedencia. Estas pruebas miran el PDF de verdad (abriéndolo), no
+# solo el código de estado.
+
+
+def test_el_tema_entero_se_descarga_en_pdf_con_cabecera_y_todos_los_capitulos(
+    alumno: tuple[TestClient, Settings, dict[str, Any]],
+) -> None:
+    """Un solo archivo con el tema completo, la procedencia y sin escribir nada en disco."""
+    client, settings, tema = alumno
+    _archivar_version(settings, str(tema["id"]))
+
+    respuesta = client.get(f"/api/v1/student/topics/{TEMA}/pdf")
+
+    assert respuesta.status_code == 200, respuesta.text
+    assert respuesta.headers["content-type"] == "application/pdf"
+    assert respuesta.headers["cache-control"] == "private, no-store"
+    assert respuesta.headers["content-disposition"].startswith('attachment; filename="tema-iv-1-')
+    assert respuesta.headers["content-disposition"].endswith('.pdf"')
+    assert respuesta.content.startswith(b"%PDF")
+    assert len(respuesta.content) > 1_000
+
+    with pymupdf.open(stream=respuesta.content, filetype="pdf") as documento:
+        assert documento.page_count >= 1
+        texto = "\n".join(pagina.get_text() for pagina in documento)
+        assert "Administración del Sistema" in texto
+        assert "IV.1.1" in texto
+        assert "IV.1.2" in texto
+        assert "Publicado" in texto
+        assert "página 1 de" in texto
+
+
+def test_un_tema_en_borrador_lo_advierte_en_el_pdf(
+    alumno: tuple[TestClient, Settings, dict[str, Any]],
+) -> None:
+    """Quien guarda el PDF debe saber que ese texto todavía no es material oficial."""
+    client, _settings, _tema = alumno
+
+    respuesta = client.get(f"/api/v1/student/topics/{TEMA}/pdf")
+
+    assert respuesta.status_code == 200, respuesta.text
+    with pymupdf.open(stream=respuesta.content, filetype="pdf") as documento:
+        texto = "\n".join(pagina.get_text() for pagina in documento)
+    assert "BORRADOR" in texto
+    assert "no oficial" in texto
+    assert "pendiente de revisión" in texto
+
+
+def test_un_tema_sin_apuntes_no_genera_un_pdf_vacio(
+    alumno: tuple[TestClient, Settings, dict[str, Any]],
+) -> None:
+    """Sin contenido que enseñar se responde 404: un PDF en blanco parecería una avería."""
+    client, _settings, _tema = alumno
+
+    respuesta = client.get("/api/v1/student/topics/IV.10/pdf")
+
+    assert respuesta.status_code == 404
+    assert respuesta.headers["content-type"] != "application/pdf"

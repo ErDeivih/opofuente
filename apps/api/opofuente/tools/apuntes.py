@@ -55,6 +55,7 @@ from opofuente.domain.notes_quality import (
     titulos_que_cambian,
 )
 from opofuente.domain.puertos import limpiar_tabla_de_puertos
+from opofuente.domain.temario_check import revisar_temario
 from opofuente.domain.topic_index import (
     MAX_HECHOS_POR_APARTADO,
     catalogo,
@@ -143,6 +144,17 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
             "mide el tema **guardado** sin llamar a nadie: la cobertura de sus comprobaciones "
             "(con los dos denominadores de la puerta) y las comprobaciones de forma. Es el número "
             "que va al informe, medido y no heredado"
+        ),
+    )
+    parser.add_argument(
+        "--comprobar-temario",
+        dest="comprobar_temario",
+        action="store_true",
+        help=(
+            "comprueba que el tema **guardado** es el tema que pide el enunciado oficial: "
+            "epígrafes con apartado, las seis partes de la estructura y normas con fecha de "
+            "consolidación. Es informativo y no bloquea. No llama al modelo ni necesita clave; "
+            "la vigencia no se evalúa: sin catálogo autorizado del BOE queda `no evaluable`"
         ),
     )
     parser.add_argument(
@@ -411,6 +423,13 @@ def main(argv: Sequence[str] | None = None) -> int:
                 # Medir no cambia los datos del propietario: la puerta se **enseña** pero no se
                 # aplica. Aplicarla es cosa de la corrida y de `--publicar`.
                 print("\n".join(_puerta_de_claves(fiabilidad, ejecutar=False)))
+                print()
+            return 0
+        if args.comprobar_temario:
+            # El chequeo del temario guardado: tampoco llama a nadie ni necesita clave, y no
+            # bloquea nada (las puertas que deciden siguen siendo forma y cobertura).
+            for tema in temas:
+                print("\n".join(_comprobar_temario(notas, tema)))
                 print()
             return 0
         if args.desplazamiento:
@@ -877,6 +896,31 @@ def _limpiar_puertos(notas: SqlAlchemyTopicNotesRepository, code: str) -> tuple[
         for linea in revisar_apuntes(notas.sections(node_id), notas.facts(node_id)).lines()
     )
     return tuple(lineas)
+
+
+def _comprobar_temario(notas: SqlAlchemyTopicNotesRepository, code: str) -> tuple[str, ...]:
+    """Comprueba que el tema **guardado** es el tema que pide el enunciado oficial. No llama a
+    nadie.
+
+    Mide cuatro cosas y las informa sin bloquear: los epígrafes oficiales con apartado, las seis
+    partes de la estructura fija, las 10-20 preguntas de autoevaluación con clave, explicación y
+    evidencia separadas, y las normas citadas con fecha de consolidación. La vigencia no se inventa:
+    sin catálogo autorizado del BOE queda `no evaluable`. Imprime primero el resumen corto y
+    después el detalle en markdown, que es lo que se lleva al informe del slice.
+    """
+    node_id = notas.node_id(code)
+    if node_id is None:
+        return (f"[{code}] no existe ese tema en el programa",)
+    nodo = notas.node(node_id)
+    if nodo is None:
+        return (f"[{code}] el nodo no tiene epígrafes oficiales: no se puede comprobar",)
+    revision = revisar_temario(
+        code=code,
+        title=nodo.title,
+        epigraphs=nodo.epigraphs,
+        apartados=notas.sections(node_id),
+    )
+    return (*revision.lines(), "", *revision.detalle())
 
 
 def _olvidar_apartado(

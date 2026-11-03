@@ -1219,6 +1219,10 @@ def test_la_lectura_del_diagnostico_da_por_tema_un_intervalo(
         assert ficha["interval"]["high"] == 1.0
         assert "el intervalo es ancho" in ficha["note"]
     assert "no son una nota ni un dominio del tema" in lectura["detail"]
+    # El agregado por bloque existe en dominio y servicio, pero el contrato HTTP todavía no lo
+    # publica: añadir el campo exige regenerar OpenAPI y el cliente generado, y eso queda diferido
+    # (O5). Se fija aquí para que el día que se añada sea una decisión, no un cambio silencioso.
+    assert "blocks" not in lectura
 
 
 def test_un_diagnostico_corrige_al_terminar_y_no_deja_elegirlo(

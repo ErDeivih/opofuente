@@ -2987,6 +2987,69 @@ class SqlAlchemyQuestionRepository:
             acumulado.setdefault(str(pregunta_id), []).append((str(node_id), str(titulo)))
         return {pregunta: tuple(temas) for pregunta, temas in acumulado.items()}
 
+    def block_titles_of_questions(self, question_ids: Sequence[str]) -> dict[str, tuple[str, str]]:
+        """El bloque de cada pregunta, por el primer tema **aceptado** de su mapeo.
+
+        El bloque se deduce de la ruta del tema (`I.1` → bloque `I`) dentro de la misma
+        convocatoria, y no de la posición del nodo: la ruta es la que publica el temario. Cuando la
+        convocatoria **no** declara bloques (los temas cuelgan de la raíz, como en celador), la
+        pregunta se agrupa por su propio tema: inventar ahí un bloque sería una jerarquía que el
+        temario no tiene.
+        """
+        if not question_ids:
+            return {}
+        with self._session_factory() as session:
+            filas = session.execute(
+                select(
+                    CurriculumMappingRecord.subject_id,
+                    CurriculumNodeRecord.id,
+                    CurriculumNodeRecord.title,
+                    CurriculumNodeRecord.path,
+                    CurriculumNodeRecord.convocation_version_id,
+                )
+                .join(
+                    CurriculumNodeRecord,
+                    CurriculumNodeRecord.id == CurriculumMappingRecord.curriculum_node_id,
+                )
+                .where(
+                    CurriculumMappingRecord.subject_type == "question_version",
+                    CurriculumMappingRecord.status == "accepted",
+                    CurriculumMappingRecord.subject_id.in_(list(question_ids)),
+                )
+                .order_by(
+                    CurriculumMappingRecord.subject_id,
+                    CurriculumNodeRecord.path,
+                    CurriculumNodeRecord.id,
+                )
+            ).all()
+            versiones = {str(fila[4]) for fila in filas}
+            bloques: dict[tuple[str, str], tuple[str, str]] = {}
+            if versiones:
+                for bloque in session.execute(
+                    select(
+                        CurriculumNodeRecord.id,
+                        CurriculumNodeRecord.title,
+                        CurriculumNodeRecord.path,
+                        CurriculumNodeRecord.convocation_version_id,
+                    ).where(
+                        CurriculumNodeRecord.node_type == "block",
+                        CurriculumNodeRecord.convocation_version_id.in_(sorted(versiones)),
+                    )
+                ).all():
+                    bloque_id, bloque_titulo, bloque_ruta, bloque_version = bloque
+                    bloques[(str(bloque_version), str(bloque_ruta))] = (
+                        str(bloque_id),
+                        str(bloque_titulo),
+                    )
+        por_pregunta: dict[str, tuple[str, str]] = {}
+        for pregunta_id, node_id, titulo, ruta, version in filas:
+            pregunta = str(pregunta_id)
+            if pregunta in por_pregunta:
+                continue
+            raiz = str(ruta).split(".", 1)[0]
+            por_pregunta[pregunta] = bloques.get((str(version), raiz), (str(node_id), str(titulo)))
+        return por_pregunta
+
     # ------------------------------------------------------------------ auxiliares
 
     @staticmethod

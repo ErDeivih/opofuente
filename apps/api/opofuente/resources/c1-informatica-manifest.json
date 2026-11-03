@@ -1,0 +1,266 @@
+{
+  "schema_version": 1,
+  "kind": "opofuente.import-contract",
+  "synthetic": true,
+  "generated_at": "2026-11-02",
+  "statement": "Contrato sintético de importación para la oposición C1 Informática. NO contiene los 40 temas reales, ni títulos legales, ni plazas, ni plazos publicados: son huecos [SINTÉTICO] que el custodio sustituye con fuentes oficiales verificadas. El guion _probar-contrato-c1.mjs comprueba forma, coherencia y rutas; no acredita que la base real esté importada ni que el contenido sea correcto.",
+  "opposition": {
+    "code": "c1-informatica",
+    "name": "[SINTÉTICO] C1 Informática (hueco de catálogo)",
+    "group": "C1",
+    "family": "informatica",
+    "notes": "El nombre real y el cuerpo convocado los fija la convocatoria oficial. Aquí solo se declara el hueco de catálogo y su grupo."
+  },
+  "curriculum": {
+    "blocks": 5,
+    "common_topics": 40,
+    "topics_per_block": 8,
+    "epigraphs_per_topic_min": 1,
+    "structure_parts": [
+      "indice",
+      "normativa",
+      "resumen",
+      "mapa_conceptual",
+      "desarrollo",
+      "preguntas"
+    ],
+    "questions_per_topic": {
+      "min": 10,
+      "max": 20
+    },
+    "code_pattern": "^C1-I-(\\d{2}|L-[A-Z]{2,4}-\\d{2})$",
+    "existing_nodes_observation": {
+      "count": 401,
+      "checked_by_this_gate": false,
+      "action": "El importador compara por (convocation_id, code) y aborta si un código ya existe con otro contenido; no borra ni renumera los 401 nodos observados en la base real."
+    }
+  },
+  "common_blocks": [
+    {
+      "code": "C1-I-B1",
+      "position": 1,
+      "title": "[SINTÉTICO] Bloque 1 (hueco de catálogo)",
+      "topics": [
+        { "code": "C1-I-01", "position": 1, "title": "[SINTÉTICO] Tema común 01", "epigraphs": ["[SINTÉTICO] Epígrafe 01.1"] },
+        { "code": "C1-I-02", "position": 2, "title": "[SINTÉTICO] Tema común 02", "epigraphs": ["[SINTÉTICO] Epígrafe 02.1"] },
+        { "code": "C1-I-03", "position": 3, "title": "[SINTÉTICO] Tema común 03", "epigraphs": ["[SINTÉTICO] Epígrafe 03.1"] },
+        { "code": "C1-I-04", "position": 4, "title": "[SINTÉTICO] Tema común 04", "epigraphs": ["[SINTÉTICO] Epígrafe 04.1"] },
+        { "code": "C1-I-05", "position": 5, "title": "[SINTÉTICO] Tema común 05", "epigraphs": ["[SINTÉTICO] Epígrafe 05.1"] },
+        { "code": "C1-I-06", "position": 6, "title": "[SINTÉTICO] Tema común 06", "epigraphs": ["[SINTÉTICO] Epígrafe 06.1"] },
+        { "code": "C1-I-07", "position": 7, "title": "[SINTÉTICO] Tema común 07", "epigraphs": ["[SINTÉTICO] Epígrafe 07.1"] },
+        { "code": "C1-I-08", "position": 8, "title": "[SINTÉTICO] Tema común 08", "epigraphs": ["[SINTÉTICO] Epígrafe 08.1"] }
+      ]
+    },
+    {
+      "code": "C1-I-B2",
+      "position": 2,
+      "title": "[SINTÉTICO] Bloque 2 (hueco de catálogo)",
+      "topics": [
+        { "code": "C1-I-09", "position": 9, "title": "[SINTÉTICO] Tema común 09", "epigraphs": ["[SINTÉTICO] Epígrafe 09.1"] },
+        { "code": "C1-I-10", "position": 10, "title": "[SINTÉTICO] Tema común 10", "epigraphs": ["[SINTÉTICO] Epígrafe 10.1"] },
+        { "code": "C1-I-11", "position": 11, "title": "[SINTÉTICO] Tema común 11", "epigraphs": ["[SINTÉTICO] Epígrafe 11.1"] },
+        { "code": "C1-I-12", "position": 12, "title": "[SINTÉTICO] Tema común 12", "epigraphs": ["[SINTÉTICO] Epígrafe 12.1"] },
+        { "code": "C1-I-13", "position": 13, "title": "[SINTÉTICO] Tema común 13", "epigraphs": ["[SINTÉTICO] Epígrafe 13.1"] },
+        { "code": "C1-I-14", "position": 14, "title": "[SINTÉTICO] Tema común 14", "epigraphs": ["[SINTÉTICO] Epígrafe 14.1"] },
+        { "code": "C1-I-15", "position": 15, "title": "[SINTÉTICO] Tema común 15", "epigraphs": ["[SINTÉTICO] Epígrafe 15.1"] },
+        { "code": "C1-I-16", "position": 16, "title": "[SINTÉTICO] Tema común 16", "epigraphs": ["[SINTÉTICO] Epígrafe 16.1"] }
+      ]
+    },
+    {
+      "code": "C1-I-B3",
+      "position": 3,
+      "title": "[SINTÉTICO] Bloque 3 (hueco de catálogo)",
+      "topics": [
+        { "code": "C1-I-17", "position": 17, "title": "[SINTÉTICO] Tema común 17", "epigraphs": ["[SINTÉTICO] Epígrafe 17.1"] },
+        { "code": "C1-I-18", "position": 18, "title": "[SINTÉTICO] Tema común 18", "epigraphs": ["[SINTÉTICO] Epígrafe 18.1"] },
+        { "code": "C1-I-19", "position": 19, "title": "[SINTÉTICO] Tema común 19", "epigraphs": ["[SINTÉTICO] Epígrafe 19.1"] },
+        { "code": "C1-I-20", "position": 20, "title": "[SINTÉTICO] Tema común 20", "epigraphs": ["[SINTÉTICO] Epígrafe 20.1"] },
+        { "code": "C1-I-21", "position": 21, "title": "[SINTÉTICO] Tema común 21", "epigraphs": ["[SINTÉTICO] Epígrafe 21.1"] },
+        { "code": "C1-I-22", "position": 22, "title": "[SINTÉTICO] Tema común 22", "epigraphs": ["[SINTÉTICO] Epígrafe 22.1"] },
+        { "code": "C1-I-23", "position": 23, "title": "[SINTÉTICO] Tema común 23", "epigraphs": ["[SINTÉTICO] Epígrafe 23.1"] },
+        { "code": "C1-I-24", "position": 24, "title": "[SINTÉTICO] Tema común 24", "epigraphs": ["[SINTÉTICO] Epígrafe 24.1"] }
+      ]
+    },
+    {
+      "code": "C1-I-B4",
+      "position": 4,
+      "title": "[SINTÉTICO] Bloque 4 (hueco de catálogo)",
+      "topics": [
+        { "code": "C1-I-25", "position": 25, "title": "[SINTÉTICO] Tema común 25", "epigraphs": ["[SINTÉTICO] Epígrafe 25.1"] },
+        { "code": "C1-I-26", "position": 26, "title": "[SINTÉTICO] Tema común 26", "epigraphs": ["[SINTÉTICO] Epígrafe 26.1"] },
+        { "code": "C1-I-27", "position": 27, "title": "[SINTÉTICO] Tema común 27", "epigraphs": ["[SINTÉTICO] Epígrafe 27.1"] },
+        { "code": "C1-I-28", "position": 28, "title": "[SINTÉTICO] Tema común 28", "epigraphs": ["[SINTÉTICO] Epígrafe 28.1"] },
+        { "code": "C1-I-29", "position": 29, "title": "[SINTÉTICO] Tema común 29", "epigraphs": ["[SINTÉTICO] Epígrafe 29.1"] },
+        { "code": "C1-I-30", "position": 30, "title": "[SINTÉTICO] Tema común 30", "epigraphs": ["[SINTÉTICO] Epígrafe 30.1"] },
+        { "code": "C1-I-31", "position": 31, "title": "[SINTÉTICO] Tema común 31", "epigraphs": ["[SINTÉTICO] Epígrafe 31.1"] },
+        { "code": "C1-I-32", "position": 32, "title": "[SINTÉTICO] Tema común 32", "epigraphs": ["[SINTÉTICO] Epígrafe 32.1"] }
+      ]
+    },
+    {
+      "code": "C1-I-B5",
+      "position": 5,
+      "title": "[SINTÉTICO] Bloque 5 (hueco de catálogo)",
+      "topics": [
+        { "code": "C1-I-33", "position": 33, "title": "[SINTÉTICO] Tema común 33", "epigraphs": ["[SINTÉTICO] Epígrafe 33.1"] },
+        { "code": "C1-I-34", "position": 34, "title": "[SINTÉTICO] Tema común 34", "epigraphs": ["[SINTÉTICO] Epígrafe 34.1"] },
+        { "code": "C1-I-35", "position": 35, "title": "[SINTÉTICO] Tema común 35", "epigraphs": ["[SINTÉTICO] Epígrafe 35.1"] },
+        { "code": "C1-I-36", "position": 36, "title": "[SINTÉTICO] Tema común 36", "epigraphs": ["[SINTÉTICO] Epígrafe 36.1"] },
+        { "code": "C1-I-37", "position": 37, "title": "[SINTÉTICO] Tema común 37", "epigraphs": ["[SINTÉTICO] Epígrafe 37.1"] },
+        { "code": "C1-I-38", "position": 38, "title": "[SINTÉTICO] Tema común 38", "epigraphs": ["[SINTÉTICO] Epígrafe 38.1"] },
+        { "code": "C1-I-39", "position": 39, "title": "[SINTÉTICO] Tema común 39", "epigraphs": ["[SINTÉTICO] Epígrafe 39.1"] },
+        { "code": "C1-I-40", "position": 40, "title": "[SINTÉTICO] Tema común 40", "epigraphs": ["[SINTÉTICO] Epígrafe 40.1"] }
+      ]
+    }
+  ],
+  "local_topics": [
+    {
+      "code": "C1-I-L-EST-01",
+      "position": 1,
+      "title": "[SINTÉTICO] Tema local estatal 01",
+      "scope": "estado",
+      "epigraphs": ["[SINTÉTICO] Epígrafe local estatal 01.1"]
+    },
+    {
+      "code": "C1-I-L-CYL-01",
+      "position": 1,
+      "title": "[SINTÉTICO] Tema local de Castilla y León 01",
+      "scope": "cyl",
+      "epigraphs": ["[SINTÉTICO] Epígrafe local de Castilla y León 01.1"]
+    }
+  ],
+  "convocation_scopes": [
+    {
+      "code": "estado",
+      "name": "[SINTÉTICO] Ámbito estatal (AGE)",
+      "administration": "[SINTÉTICO] Administración General del Estado",
+      "bulletin": "boe",
+      "source_ids": ["estado-convocatoria", "estado-temario-comun"],
+      "local_topics": ["C1-I-L-EST-01"],
+      "deadline": {
+        "start": "day_after_publication",
+        "business_days": 20,
+        "holidays": ["nacional"],
+        "label": "estimado",
+        "official_overrides_estimate": true
+      }
+    },
+    {
+      "code": "cyl",
+      "name": "[SINTÉTICO] Ámbito de Castilla y León",
+      "administration": "[SINTÉTICO] Administración de la Comunidad de Castilla y León",
+      "bulletin": "bocyl",
+      "source_ids": ["cyl-convocatoria", "cyl-temario-local", "cyl-calendario-laboral"],
+      "local_topics": ["C1-I-L-CYL-01"],
+      "deadline": {
+        "start": "day_after_publication",
+        "business_days": 20,
+        "holidays": ["nacional", "autonomico"],
+        "label": "estimado",
+        "official_overrides_estimate": true
+      }
+    }
+  ],
+  "sources": [
+    {
+      "id": "estado-convocatoria",
+      "kind": "convocatoria",
+      "bulletin": "boe",
+      "authority_tier": "A",
+      "rights_status": "reuse_with_conditions",
+      "rights_source_url": null,
+      "expected_relative_path": "fuentes/c1/estado-convocatoria.xml",
+      "expected_sha256": null,
+      "required": true,
+      "status": "placeholder",
+      "notes": "Hueco: el custodio pega aquí la URL oficial, descarga el acto y fija su sha256 antes de importar."
+    },
+    {
+      "id": "estado-temario-comun",
+      "kind": "temario_comun",
+      "bulletin": "boe",
+      "authority_tier": "A",
+      "rights_status": "reuse_with_conditions",
+      "rights_source_url": null,
+      "expected_relative_path": "fuentes/c1/estado-temario-comun.xml",
+      "expected_sha256": null,
+      "required": true,
+      "status": "placeholder",
+      "notes": "Hueco: los 40 temas comunes no están en este repositorio. No se inventan títulos."
+    },
+    {
+      "id": "cyl-convocatoria",
+      "kind": "convocatoria",
+      "bulletin": "bocyl",
+      "authority_tier": "A",
+      "rights_status": "reuse_with_conditions",
+      "rights_source_url": null,
+      "expected_relative_path": "fuentes/c1/cyl-convocatoria.xml",
+      "expected_sha256": null,
+      "required": false,
+      "status": "placeholder",
+      "notes": "Hueco opcional: solo se importa si el custodio confirma que existe convocatoria autonómica aplicable."
+    },
+    {
+      "id": "cyl-temario-local",
+      "kind": "temario_local",
+      "bulletin": "bocyl",
+      "authority_tier": "A",
+      "rights_status": "reuse_with_conditions",
+      "rights_source_url": null,
+      "expected_relative_path": "fuentes/c1/cyl-temario-local.xml",
+      "expected_sha256": null,
+      "required": false,
+      "status": "placeholder",
+      "notes": "Hueco opcional: temas locales de Castilla y León, distintos de los 40 comunes."
+    },
+    {
+      "id": "cyl-calendario-laboral",
+      "kind": "calendario_laboral",
+      "bulletin": "bocyl",
+      "authority_tier": "A",
+      "rights_status": "reuse_with_conditions",
+      "rights_source_url": null,
+      "expected_relative_path": "fuentes/c1/cyl-calendario-laboral.json",
+      "expected_sha256": null,
+      "required": false,
+      "status": "placeholder",
+      "notes": "Hueco opcional: festivos para contar días hábiles. Sin él, el panel muestra el plazo como estimado y no lo calcula."
+    }
+  ],
+  "import_rules": {
+    "target_data_dir": "F:/OpoFuente/datos",
+    "write_scope": "data_dir_only",
+    "backup_before_write": true,
+    "integrity_check_before_write": true,
+    "dry_run_default": true,
+    "confirmation_required": true,
+    "never_delete": true,
+    "originals_read_only": true,
+    "idempotency": "upsert_by_code",
+    "abort_on_code_conflict": true,
+    "report_required": true,
+    "notes": "Ningún paso de este contrato se ejecuta desde el workspace del trabajador: la importación real la corre el custodio en el host con acceso a F:/OpoFuente/datos, tras copia verificada con integrity_check."
+  },
+  "panel": {
+    "filters": ["group", "scope", "status", "published_from", "published_to"],
+    "columns": [
+      "code",
+      "body",
+      "group",
+      "scope",
+      "published_at",
+      "deadline_estimate",
+      "authority_tier",
+      "rights_status",
+      "source_url"
+    ],
+    "deadline": {
+      "supported": true,
+      "excludes_weekends": true,
+      "excludes_holidays": true,
+      "holidays_required": true,
+      "label": "estimado",
+      "official_overrides_estimate": true
+    }
+  }
+}

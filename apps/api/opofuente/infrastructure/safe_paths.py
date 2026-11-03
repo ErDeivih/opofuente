@@ -97,16 +97,24 @@ def abbreviate(path: Path, *, keep: int = 2) -> str:
     **Nunca** devuelve la ruta completa: se descarta siempre la raíz (letra de unidad, UNC o `/`)
     y se conservan como mucho los últimos `keep` componentes. Si no queda ningún componente
     (una raíz suelta) se devuelve «…».
+
+    **No depende del sistema donde corre**: los mensajes de error que se sanean aquí son de
+    Windows, también cuando la API corre en el contenedor Linux. Por eso la ruta se parte sobre
+    los dos separadores y la raíz se quita como texto, no con `Path` del anfitrión.
     """
-    parts = [part for part in path.parts if part != path.anchor]
+    texto = str(path).replace("\\", "/")
+    texto = re.sub(r"^[A-Za-z]:", "", texto)
+    parts = [part for part in texto.split("/") if part not in ("", ".")]
     if not parts:
         return "…"
     return "…/" + "/".join(parts[-keep:])
 
 
-#: Rutas con letra de unidad (`C:\…`, `C:/…`) o UNC (`\\servidor\recurso\…`).
+#: Rutas con letra de unidad (`C:\…`, `C:/…`), UNC (`\\servidor\recurso\…`) o arraigadas a la
+#: unidad actual (`\carpeta\…`, que es como se ven al pasar una ruta POSIX a separadores Windows).
 _WINDOWS_PATH = re.compile(
-    r"(?:[A-Za-z]:[\\/]|\\\\[^\\/\s]+[\\/])[^\s\"'<>|?*\r\n]*",
+    r"(?:[A-Za-z]:[\\/]|\\\\[^\\/\s]+[\\/]|\\[^\\/\s]+(?:[\\/][^\s\"'<>|?*]+)+)"
+    r"[^\s\"'<>|?*\r\n]*",
 )
 
 

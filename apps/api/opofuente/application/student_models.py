@@ -489,6 +489,19 @@ class StudentNotesView:
 
 
 @dataclass(frozen=True, slots=True)
+class StudentTopicPdf:
+    """Un tema exportado a PDF: los bytes y el nombre con el que el navegador lo descarga.
+
+    El PDF se compone en el servidor y se devuelve binario, sin pasar por base64 ni escribirlo en
+    disco. `filename` ya viene saneado (ASCII, sin rutas) porque lo elige el servidor y lo repite el
+    cliente: no se acepta un nombre de archivo de la petición.
+    """
+
+    filename: str
+    content: bytes
+
+
+@dataclass(frozen=True, slots=True)
 class StudentReportView:
     """Lo que se guarda cuando el alumno marca un apartado como «esto está mal» (D2).
 

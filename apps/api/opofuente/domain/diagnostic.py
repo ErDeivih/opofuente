@@ -201,13 +201,92 @@ class TopicOutcome:
 
 
 @dataclass(frozen=True, slots=True)
+class BlockTally:
+    """Lo contestado de un bloque, ya agregado: cuántos temas suma y qué se acertó.
+
+    El bloque no se contesta: se contesta por temas. Este recuento es lo que el servicio puede
+    reunir de la muestra, y `topics` viaja para poder decir **a cuántos temas** se está agregando.
+    """
+
+    node_id: str
+    title: str
+    topics: int
+    answered: int
+    correct: int
+
+
+@dataclass(frozen=True, slots=True)
+class BlockOutcome:
+    """La lectura por bloque: la misma muestra, agregada, y dicha como lo que es."""
+
+    node_id: str
+    title: str
+    topics: int
+    answered: int
+    correct: int
+    interval: Interval | None
+    note: str
+
+
+def read_blocks(
+    tallies: Sequence[BlockTally],
+    *,
+    z: float = Z_CONFIANZA,
+) -> tuple[BlockOutcome, ...]:
+    """Agrega los temas por bloque, sin convertir la suma en una nota del bloque.
+
+    Un bloque junta varios temas, así que su intervalo se estrecha aunque no se haya preguntado
+    nada nuevo: eso **no** es más conocimiento, es más muestra. La nota de cada bloque lo dice
+    (cuántos temas agrega) y no se calcula ningún umbral ni calificación: aquí solo se cuenta lo
+    contestado y se da el intervalo de Wilson, igual que por tema.
+    """
+    fichas: list[BlockOutcome] = []
+    for recuento in tallies:
+        intervalo = wilson_interval(recuento.correct, recuento.answered, z=z)
+        if recuento.answered == 0:
+            frase = "no se contestó ninguna pregunta de este bloque en la muestra"
+        else:
+            bajo = nota(intervalo.low) if intervalo else nota(0)
+            alto = nota(intervalo.high) if intervalo else nota(0)
+            frase = (
+                f"{recuento.correct} de {recuento.answered} en la muestra, con un intervalo del "
+                f"95 % que va de {bajo} a {alto}"
+            )
+            if recuento.topics > 1:
+                frase += (
+                    f"; el bloque agrega {recuento.topics} temas en la muestra y no es una nota"
+                )
+            else:
+                frase += "; el bloque no agrega temas en la muestra y no es una nota"
+        fichas.append(
+            BlockOutcome(
+                node_id=recuento.node_id,
+                title=recuento.title,
+                topics=recuento.topics,
+                answered=recuento.answered,
+                correct=recuento.correct,
+                interval=intervalo,
+                note=frase,
+            )
+        )
+    fichas.sort(key=lambda ficha: ficha.title)
+    return tuple(fichas)
+
+
+@dataclass(frozen=True, slots=True)
 class DiagnosticReading:
-    """La lectura de la muestra: por tema, con su intervalo, y el aviso de que es una muestra."""
+    """La lectura de la muestra: por tema, con su intervalo, y el aviso de que es una muestra.
+
+    `blocks` es el agregado por bloque del programa. Va **aparte** de `topics` y se calcula desde
+    los mismos recuentos: no sustituye la lectura por tema ni se expone por HTTP todavía (el
+    contrato de la ruta no tiene el campo y añadirlo exige regenerar OpenAPI con shell).
+    """
 
     sample_size: int
     answered: int
     topics: tuple[TopicOutcome, ...]
     detail: str
+    blocks: tuple[BlockOutcome, ...] = ()
 
 
 def read_diagnostic(
@@ -278,12 +357,15 @@ __all__ = [
     "MINIMO_TEMAS_DIAGNOSTICO",
     "PREGUNTAS_POR_TEMA",
     "Z_CONFIANZA",
+    "BlockOutcome",
+    "BlockTally",
     "DiagnosticReading",
     "DiagnosticSample",
     "DiagnosticTopic",
     "Interval",
     "TopicOutcome",
     "order_for_mock",
+    "read_blocks",
     "read_diagnostic",
     "stratified_sample",
     "wilson_interval",

@@ -22,6 +22,7 @@ import re
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 
+from opofuente import __version__
 from opofuente.application.ports import Clock
 from opofuente.application.read_models import (
     ConvocationDetail,
@@ -68,6 +69,7 @@ from opofuente.application.student_models import (
     StudentTestCountView,
     StudentTestPlanView,
     StudentTestRequest,
+    StudentTopicPdf,
     StudentTopicProgressView,
     StudentTopicRefView,
     StudentTopicView,
@@ -88,6 +90,13 @@ from opofuente.application.study_service import (
     SourceInput,
     StudyService,
 )
+from opofuente.application.topic_pdf import (
+    TopicPdfChapter,
+    TopicPdfDocument,
+    TopicPdfSection,
+    topic_pdf_filename,
+)
+from opofuente.application.topic_reading import ChapterReading, read_by_chapters
 from opofuente.config import Settings
 from opofuente.domain.errors import NotFoundError, UnsupportedError
 from opofuente.domain.key_reliability import KeyReliability
@@ -102,7 +111,7 @@ from opofuente.domain.study import (
     SessionStatus,
     exact_fraction,
 )
-from opofuente.domain.topic_notes import NoteSection, NotesState, SectionNotes
+from opofuente.domain.topic_notes import NoteSection, NotesState
 from opofuente.infrastructure.notes_report_repository import SqlAlchemyNotesReportRepository
 from opofuente.infrastructure.profile_repository import SqlAlchemyProfileRepository
 from opofuente.infrastructure.student_repository import (
@@ -110,6 +119,7 @@ from opofuente.infrastructure.student_repository import (
     SqlAlchemyStudentRepository,
 )
 from opofuente.infrastructure.topic_notes_repository import SqlAlchemyTopicNotesRepository
+from opofuente.infrastructure.topic_pdf import render_topic_pdf
 
 #: Cuántas sesiones se miran para decidir qué está «a medias» y qué entra en el historial. Es una
 #: ventana, no un listado: la pantalla enseña una tarjeta y cinco filas.
@@ -236,98 +246,43 @@ def _normalizar_codigo(codigo: str) -> str:
     return f"{coincidencia.group('bloque').upper()}.{coincidencia.group('tema')}"
 
 
-@dataclass(frozen=True, slots=True)
-class _CapituloLeido:
-    """Un capítulo de los apuntes ya repartido: su identidad y los apartados que le tocan.
+def _secciones_del_capitulo(
+    capitulo: ChapterReading,
+) -> tuple[StudentNoteSectionView, ...]:
+    """Los apartados del capítulo **con su texto**, que es lo que lee la pantalla."""
 
-    `apartados` son las vistas **con su texto** —las del capítulo que se va a leer— y `indice` la
-    misma lista sin él, que es lo que viaja con los demás capítulos para que la pantalla pueda
-    enseñar el índice entero.
-    """
-
-    code: str
-    title: str
-    position: int
-    apartados: tuple[StudentNoteSectionView, ...]
-
-    @property
-    def indice(self) -> StudentNoteChapterView:
-        return StudentNoteChapterView(
-            code=self.code,
-            title=self.title,
-            position=self.position,
-            sections=tuple(
-                StudentNoteChapterSectionView(
-                    key=apartado.key,
-                    number=apartado.number,
-                    title=apartado.title,
-                    anchor=apartado.anchor,
-                    questions_covered=apartado.questions_covered,
-                )
-                for apartado in self.apartados
-            ),
+    return tuple(
+        StudentNoteSectionView(
+            key=seccion.notes.key,
+            number=seccion.number,
+            title=seccion.notes.title,
+            epigraph_code=seccion.notes.epigraph_code,
+            anchor=seccion.notes.anchor,
+            body_markdown=seccion.notes.body_markdown,
+            questions_covered=seccion.notes.covered,
         )
+        for seccion in capitulo.sections
+    )
 
 
-def _leer_por_capitulos(
-    tema: NodeView, apartados: tuple[SectionNotes, ...]
-) -> tuple[_CapituloLeido, ...]:
-    """Reparte los apartados de un tema en sus **epígrafes oficiales**, en orden de lectura.
+def _indice_del_capitulo(capitulo: ChapterReading) -> StudentNoteChapterView:
+    """El capítulo **sin texto**, que es lo que viaja con los demás para el índice."""
 
-    Los capítulos y su orden salen del **programa** (`tema.children`, los epígrafes oficiales); los
-    apartados, de los apuntes, cada uno en el epígrafe que tiene guardado. El número del apartado es
-    su lugar en el tema entero (1..N) y no se reinicia en cada capítulo: es el número con el que se
-    cita un apartado y el que sale en el índice completo, que es el mismo en todas las pantallas.
-
-    Dos casos límite que no pueden perder texto:
-
-    - un apartado cuyo epígrafe **no es** un epígrafe del programa (el programa se reorganizó y los
-      apuntes se quedaron con el código viejo) abre su propio capítulo al final, titulado con su
-      código. Es feo, pero perder el párrafo es peor;
-    - un apartado **sin** código de epígrafe cae en un capítulo que es el tema, con su título. Hoy
-      no hay ninguno de los dos casos (medido sobre los 29 temas con apuntes: 0 apartados fuera de
-      su programa), y por eso el camino está escrito pero no probado con datos: se prueba con los
-      suyos.
-    """
-    if not apartados:
-        return ()
-
-    numeros = {apartado.key: numero for numero, apartado in enumerate(apartados, start=1)}
-    oficiales = [hijo for hijo in tema.children if hijo.node_type is NodeType.EPIGRAPH]
-    titulos = {epigrafe.path: epigrafe.title for epigrafe in oficiales}
-    orden = {epigrafe.path: posicion for posicion, epigrafe in enumerate(oficiales, start=1)}
-
-    por_codigo: dict[str, list[SectionNotes]] = {}
-    for apartado in apartados:
-        por_codigo.setdefault(apartado.epigraph_code, []).append(apartado)
-
-    # El orden es el del programa; lo que no está en el programa va detrás, por orden de aparición.
-    codigos = [epigrafe.path for epigrafe in oficiales if epigrafe.path in por_codigo]
-    codigos.extend(codigo for codigo in por_codigo if codigo not in orden)
-
-    leidos: list[_CapituloLeido] = []
-    for posicion, codigo in enumerate(codigos, start=1):
-        suyos = tuple(
-            StudentNoteSectionView(
-                key=apartado.key,
-                number=numeros[apartado.key],
-                title=apartado.title,
-                epigraph_code=apartado.epigraph_code,
-                anchor=apartado.anchor,
-                body_markdown=apartado.body_markdown,
-                questions_covered=apartado.covered,
+    return StudentNoteChapterView(
+        code=capitulo.code,
+        title=capitulo.title,
+        position=capitulo.position,
+        sections=tuple(
+            StudentNoteChapterSectionView(
+                key=seccion.notes.key,
+                number=seccion.number,
+                title=seccion.notes.title,
+                anchor=seccion.notes.anchor,
+                questions_covered=seccion.notes.covered,
             )
-            for apartado in por_codigo[codigo]
-        )
-        leidos.append(
-            _CapituloLeido(
-                code=codigo,
-                title=titulos.get(codigo) or codigo or tema.title,
-                position=posicion,
-                apartados=suyos,
-            )
-        )
-    return tuple(leidos)
+            for seccion in capitulo.sections
+        ),
+    )
 
 
 class StudentService:
@@ -484,7 +439,7 @@ class StudentService:
         oposicion = self._opposition()
         tema = self._tema_por_codigo(oposicion, codigo)
         apuntes = self._notes.notes_for_node(tema.id)
-        leidos = _leer_por_capitulos(tema, () if apuntes is None else apuntes.sections)
+        leidos = read_by_chapters(tema, () if apuntes is None else apuntes.sections)
         servido = next((leido for leido in leidos if leido.code == capitulo), None)
         if servido is None and leidos:
             servido = leidos[0]
@@ -492,9 +447,61 @@ class StudentService:
             code=_normalizar_codigo(codigo),
             state=self._estado_de(self._student.notes_states(), tema.id),
             generated_at=None if apuntes is None else apuntes.generated_at,
-            sections=() if servido is None else servido.apartados,
+            sections=() if servido is None else _secciones_del_capitulo(servido),
             chapter=None if servido is None else servido.code,
-            chapters=tuple(leido.indice for leido in leidos),
+            chapters=tuple(_indice_del_capitulo(leido) for leido in leidos),
+        )
+
+    def pdf(self, codigo: str) -> StudentTopicPdf:
+        """El tema **entero** en PDF: todos los capítulos en orden de lectura, no uno.
+
+        Se reutiliza el reparto de `notes()` (mismo orden, mismos capítulos) y la autorización de
+        siempre: la oposición sale de la configuración y el tema tiene que existir en su programa.
+        Un tema sin apuntes no produce un PDF vacío: es un 404, porque un archivo sin texto no sirve
+        para estudiar y fingirlo ocultaría que falta el contenido.
+
+        La cabecera lleva de dónde sale el texto y si está en borrador; el PDF va a vivir fuera
+        de la aplicación y tiene que explicarse solo. No se escribe nada en disco: los bytes viajan
+        en la respuesta.
+        """
+        oposicion = self._opposition()
+        tema = self._tema_por_codigo(oposicion, codigo)
+        apuntes = self._notes.notes_for_node(tema.id)
+        leidos = read_by_chapters(tema, () if apuntes is None else apuntes.sections)
+        if not leidos:
+            raise NotFoundError("apuntes del tema", _normalizar_codigo(codigo))
+        bloque = self._bloque_del_tema(oposicion, tema)
+        documento = TopicPdfDocument(
+            topic_code=tema.path,
+            topic_title=tema.title,
+            block_code=bloque.path,
+            block_title=bloque.title,
+            opposition_code=oposicion.code,
+            opposition_name=oposicion.name,
+            state=self._estado_de(self._student.notes_states(), tema.id),
+            generated_at=None if apuntes is None else apuntes.generated_at,
+            downloaded_at=self._clock.now(),
+            app_version=__version__,
+            chapters=tuple(
+                TopicPdfChapter(
+                    code=capitulo.code,
+                    title=capitulo.title,
+                    position=capitulo.position,
+                    sections=tuple(
+                        TopicPdfSection(
+                            number=seccion.number,
+                            title=seccion.notes.title,
+                            body_markdown=seccion.notes.body_markdown,
+                        )
+                        for seccion in capitulo.sections
+                    ),
+                )
+                for capitulo in leidos
+            ),
+        )
+        return StudentTopicPdf(
+            filename=topic_pdf_filename(documento),
+            content=render_topic_pdf(documento),
         )
 
     def report(self, codigo: str, section_key: str, reason: str) -> StudentReportView:
@@ -534,6 +541,14 @@ class StudentService:
         raise NotFoundError("apartado de los apuntes del tema", section_key)
 
     # ------------------------------------------------------------------ ayudas de lectura
+
+    def _bloque_del_tema(self, oposicion: OppositionSummary, tema: NodeView) -> NodeView:
+        """El bloque del programa al que pertenece el tema, para encabezar la exportación."""
+
+        for bloque in self._curriculum(oposicion):
+            if any(hijo.id == tema.id for hijo in bloque.children):
+                return bloque
+        raise NotFoundError("bloque del tema", tema.path)
 
     def _curriculum(self, oposicion: OppositionSummary) -> tuple[NodeView, ...]:
         curriculum = self._profiles.get_curriculum(self._convocation_id(oposicion))

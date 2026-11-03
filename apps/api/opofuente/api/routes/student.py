@@ -1,6 +1,6 @@
 """Rutas de la zona del alumno (F2, `08_API-CONTRACT` §10 ampliado).
 
-Cinco rutas de **lectura** y seis de **escritura**, y ninguna más. Lo que devuelven lo declaran
+Seis rutas de **lectura** y seis de **escritura**, y ninguna más. Lo que devuelven lo declaran
 `student_schemas.py`, que no tiene campo para la evidencia, el conjunto, la clave, la versión ni la
 ruta.
 
@@ -13,7 +13,8 @@ Los **apuntes del tema** sí están desde F13: `GET /student/topics/{codigo}/not
 su estado (publicado, borrador o sin escribir) y **sin** ningún identificador de pregunta —lo que
 viaja es el recuento de preguntas que contesta cada apartado—, y `POST
 /student/topics/{codigo}/reports` guarda el aviso «esto está mal» por la ruta auditada (decisión
-D2).
+D2). `GET /student/topics/{codigo}/pdf` entrega ese mismo tema entero compuesto en el servidor, con
+su cabecera de procedencia, para estudiarlo o imprimirlo fuera de la aplicación.
 
 El test en curso **sí** está: `POST /student/tests` y `POST /student/mock-exams` montan la sesión
 por la composición declarada de `StudyService` (`compose`), y las cuatro rutas de
@@ -562,6 +563,43 @@ def student_topic_notes(
     golpe es lo que hacía que I.1 midiera 314.000 px de alto.
     """
     return _notes(service.notes(codigo, capitulo))
+
+
+@router.get(
+    "/topics/{codigo}/pdf",
+    response_class=Response,
+    responses={
+        200: {
+            "description": "El tema completo en PDF, como descarga binaria.",
+            "content": {"application/pdf": {"schema": {"type": "string", "format": "binary"}}},
+        },
+        **RESOURCE_ERRORS,
+    },
+    summary="Descarga un tema entero en PDF, con su cabecera de procedencia",
+)
+def student_topic_pdf(
+    service: StudentServiceDep,
+    codigo: str = Path(
+        description="Código legible del tema, como `IV.10` (también se acepta `IV-10`).",
+        examples=["IV.10"],
+    ),
+) -> Response:
+    """El tema **completo** en PDF: todos sus capítulos en orden de lectura.
+
+    Se devuelven los bytes con `Content-Disposition: attachment` y un nombre saneado por el
+    servidor. La cabecera del documento dice la oposición, el bloque, el tema, la fecha y el
+    estado: un PDF descargado tiene que explicarse solo, también cuando está en borrador (y
+    entonces lo dice). Un tema sin apuntes responde 404: no se fabrica un archivo vacío.
+    """
+    export = service.pdf(codigo)
+    return Response(
+        content=export.content,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="{export.filename}"',
+            "Cache-Control": "private, no-store",
+        },
+    )
 
 
 @router.post(

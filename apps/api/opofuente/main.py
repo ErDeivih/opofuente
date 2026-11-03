@@ -616,7 +616,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         allow_credentials=resolved.accounts_enabled,
         allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
         allow_headers=["Content-Type", "Idempotency-Key", "X-Correlation-ID"],
-        expose_headers=["X-Correlation-ID"],
+        # `Content-Disposition` viaja para que la web pueda poner al PDF el nombre que el servidor
+        # ya sanea (`tema-IV.10-….pdf`) en vez de inventarse uno. No expone nada que la respuesta no
+        # lleve ya: sin esto, el navegador deja la cabecera fuera del alcance del JavaScript.
+        expose_headers=["X-Correlation-ID", "Content-Disposition"],
     )
     app.add_middleware(SecurityHeadersMiddleware)
     app.add_middleware(OriginCheckMiddleware, allowed_origins=resolved.cors_origins)

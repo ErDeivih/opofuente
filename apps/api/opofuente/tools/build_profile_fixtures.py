@@ -3,10 +3,10 @@
 Por qué existe esta herramienta y no un JSON escrito a mano: el programa oficial y las reglas de
 examen deben poder rastrearse hasta el documento descargado. Aquí se hace así:
 
-1. se verifica que cada fuente es la que `fixtures/profiles/manifest.json` dice: por `sha256` de sus
-   bytes y, en las fuentes que el servidor sirve distintas en cada descarga (marcadas `volatile`),
-   por el `sha256` de su **texto visible** (`content_sha256`); si el documento cambia, no se genera
-   nada;
+1. se verifica que cada fuente es la que `fixtures/profiles/manifest.json` dice: primero por el
+   `sha256` de sus bytes (la prueba más fuerte) y, solo cuando los bytes no coinciden y la fuente
+   está marcada `volatile` porque el servidor la sirve distinta en cada descarga, por el `sha256` de
+   su **texto visible** (`content_sha256`); si el documento cambia, no se genera nada;
 2. el **programa** se extrae automáticamente del documento oficial: en TAI del ANEXO V del BOE, en
    Guardia Civil del PDF oficial del temario;
 3. cada valor de los **perfiles curados** (`*.profile.json`) lleva una cita literal de la fuente, y
@@ -99,10 +99,11 @@ class Source:
     sha256: str
     role: str
     profile_code: str | None
-    #: Fuente cuyo **contenido** se verifica en lugar de sus bytes, porque el servidor la sirve
-    #: distinta en cada descarga (véase `content_fingerprint`).
+    #: Fuente que el servidor puede servir con bytes distintos en cada descarga. Los bytes exactos
+    #: del manifiesto siempre valen; esta marca solo habilita el respaldo por texto (véase
+    #: `verify_sources`).
     volatile: bool = False
-    #: `sha256` del texto visible de la fuente, que es lo que se compara cuando `volatile`.
+    #: `sha256` del texto visible; respaldo cuando los bytes de una fuente volátil no coinciden.
     content_sha256: str | None = None
 
 
@@ -155,9 +156,14 @@ def content_fingerprint(path: Path) -> str:
 def verify_sources(sources: Iterable[Source]) -> None:
     """Comprueba que cada fuente descargada es la que el manifiesto dice.
 
-    Por bytes, salvo las declaradas `volatile`, que se comprueban por el `sha256` de su texto
-    visible (`content_sha256`). Una fuente volátil sin `content_sha256` **no se da por buena**: se
-    dice que falta, en vez de dejar pasar sin comprobar nada.
+    Primero por bytes para todas: si el `sha256` de los bytes coincide con el del manifiesto, la
+    fuente es el documento declarado, sin discusión. Solo si los bytes **no** coinciden y la fuente
+    está marcada `volatile` se recurre al `sha256` de su texto visible (`content_sha256`), que es lo
+    que no cambia cuando el servidor solo altera identificadores de renderizado.
+
+    Que el texto visible de una fuente volátil no coincida con `content_sha256` **no invalida** una
+    descarga cuyos bytes sí son exactamente los declarados: la huella de contenido es un respaldo
+    para bytes inevitablemente variables, no una prueba más fuerte que el documento original.
     """
     missing: list[str] = []
     mismatch: list[str] = []
@@ -166,6 +172,9 @@ def verify_sources(sources: Iterable[Source]) -> None:
     for source in sources:
         if not source.local_path.is_file():
             missing.append(str(source.local_path))
+            continue
+        digest = hashlib.sha256(source.local_path.read_bytes()).hexdigest()
+        if digest == source.sha256:
             continue
         if source.volatile:
             if not source.content_sha256:
@@ -177,9 +186,7 @@ def verify_sources(sources: Iterable[Source]) -> None:
                     f"{source.id} ({huella[:12]}… != {source.content_sha256[:12]}…)"
                 )
             continue
-        digest = hashlib.sha256(source.local_path.read_bytes()).hexdigest()
-        if digest != source.sha256:
-            mismatch.append(f"{source.local_path} ({digest[:12]}… != {source.sha256[:12]}…)")
+        mismatch.append(f"{source.local_path} ({digest[:12]}… != {source.sha256[:12]}…)")
     if missing:
         raise InvariantViolationError(
             "faltan fuentes locales; ejecuta scripts/fetch-sources.ps1: " + ", ".join(missing)
@@ -361,18 +368,34 @@ def tai_epigraphs(topic_title: str) -> list[str]:
     return [chunk.strip() for chunk in _SENTENCE_BREAK.split(topic_title) if chunk.strip()]
 
 
-def tai_curriculum(path: Path) -> list[dict[str, Any]]:
+def annex_program(path: Path, *, annex_heading: str, program_heading: str) -> list[dict[str, Any]]:
+    """Programa de un cuerpo a partir del anexo de temario del XML del BOE.
+
+    El BOE publica los temarios de los cuerpos de informática con la misma forma: un anexo cuyo
+    encabezado marca la clase `anexo_num`, un apartado de programa y, dentro, encabezados de bloque
+    en cursiva (`centro_cursiva`) seguidos de párrafos numerados de tema. Ese es el contrato que
+    comprueba esta función. Los parámetros existen porque el anexo y el nombre del apartado cambian
+    entre convocatorias; el resto de la estructura no se supone: si no aparece, falla.
+
+    `a2_curriculum` usa esta misma función, pero **todavía no se ha ejecutado contra el BOE real**:
+    la fuente de A2 no está descargada ni registrada en el manifiesto y el entorno de este slice no
+    permite leerla. Que la función pase sus pruebas con un XML sintético demuestra el parser, no que
+    el ANEXO IX real tenga esta forma; hasta verificar el documento no se añade a
+    `CURRICULUM_BUILDERS`.
+    """
     paragraphs = xml_paragraphs(path)
-    start, end = annex_range(paragraphs, "ANEXO V")
+    start, end = annex_range(paragraphs, annex_heading)
     section = paragraphs[start:end]
 
     program_start = None
     for index, (_css, text) in enumerate(section):
-        if text.startswith("3. Programa."):
+        if text.startswith(program_heading):
             program_start = index
             break
     if program_start is None:
-        raise InvariantViolationError("no se encontró el apartado «3. Programa.» en el ANEXO V")
+        raise InvariantViolationError(
+            f"no se encontró el apartado «{program_heading}» en el {annex_heading}"
+        )
 
     blocks: list[dict[str, Any]] = []
     for css, text in section[program_start + 1 :]:
@@ -427,6 +450,29 @@ def tai_curriculum(path: Path) -> list[dict[str, Any]]:
                 }
             )
     return blocks
+
+
+#: Anexo y apartado del temario de A2 (Gestión de Sistemas e Informática). Son datos de la
+#: convocatoria, no del parser: si el BOE publica el temario en otro anexo o con otro nombre de
+#: apartado, hay que corregirlos aquí, no relajar `annex_program`.
+A2_ANNEX = "ANEXO IX"
+A2_PROGRAM = "3. Programa."
+
+
+def tai_curriculum(path: Path) -> list[dict[str, Any]]:
+    return annex_program(path, annex_heading="ANEXO V", program_heading="3. Programa.")
+
+
+def a2_curriculum(path: Path) -> list[dict[str, Any]]:
+    """Programa de A2 desde el ANEXO IX del BOE.
+
+    Pendiente de verificación contra el documento oficial: la fuente no está descargada y el
+    entorno del slice no permite leerla, así que este builder no se registra en
+    `CURRICULUM_BUILDERS` ni se genera ningún fixture con él. Cuando la fuente esté verificada,
+    habrá que comprobar de verdad el encabezado del anexo y del apartado (`A2_ANNEX`, `A2_PROGRAM`)
+    antes de cablearlo.
+    """
+    return annex_program(path, annex_heading=A2_ANNEX, program_heading=A2_PROGRAM)
 
 
 def gc_curriculum(path: Path) -> list[dict[str, Any]]:

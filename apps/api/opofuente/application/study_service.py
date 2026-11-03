@@ -52,9 +52,11 @@ from opofuente.application.study_models import (
 from opofuente.domain.diagnostic import (
     DIAS_VISTA_HACE_POCO,
     MINIMO_TEMAS_DIAGNOSTICO,
+    BlockTally,
     DiagnosticReading,
     DiagnosticTopic,
     order_for_mock,
+    read_blocks,
     read_diagnostic,
     stratified_sample,
 )
@@ -1807,6 +1809,10 @@ class StudyService:
         congelado con la sesión es el tema en sí —una pregunta puede pertenecer a varios—, así que
         si alguien reasigna una pregunta a otro tema, la lectura la agrupará donde diga el mapeo
         nuevo. Se dice aquí en lugar de dejar que parezca que el tema se congeló con la sesión.
+
+        Además de la lectura por tema, se agrega la misma muestra por **bloque** (el primer tramo de
+        la ruta del tema), contando cuántos temas distintos junta cada bloque: la suma no se
+        presenta como nota del bloque. Ese agregado todavía no viaja por HTTP.
         """
         session = self._session_or_404(session_id)
         if session.mode is not SessionMode.DIAGNOSTIC:
@@ -1819,7 +1825,14 @@ class StudyService:
         temas_por_pregunta = self._questions.node_titles_of_questions(
             [congelada.question_version_id for congelada in congeladas]
         )
+        bloques_por_pregunta = self._questions.block_titles_of_questions(
+            [congelada.question_version_id for congelada in congeladas]
+        )
         acumulado: dict[str, tuple[str, int, int]] = {}
+        # {bloque_id: (título, temas distintos, respondidas, acertadas)}. Los temas se cuentan
+        # aparte para poder decir a **cuántos** temas se está agregando: un bloque de un solo tema
+        # no añade nada a la lectura por tema, y decirlo evita leerlo como una segunda medición.
+        bloques: dict[str, tuple[str, set[str], int, int]] = {}
         for congelada in congeladas:
             suyos = temas_por_pregunta.get(congelada.question_version_id, ())
             # Sin tema, la pregunta no se puede leer por tema: se agrupa aparte y se dice, en lugar
@@ -1835,7 +1848,34 @@ class StudyService:
                 acertadas = 1 if calificado.outcome is AttemptOutcome.CORRECT else 0
             previo = acumulado.get(node_id, (titulo, 0, 0))
             acumulado[node_id] = (titulo, previo[1] + respondidas, previo[2] + acertadas)
-        return read_diagnostic(acumulado, sample_size=len(congeladas))
+            bloque_id, bloque_titulo = bloques_por_pregunta.get(
+                congelada.question_version_id, (node_id, titulo)
+            )
+            previo_bloque = bloques.get(bloque_id, (bloque_titulo, set(), 0, 0))
+            if node_id != "sin-tema":
+                previo_bloque[1].add(node_id)
+            bloques[bloque_id] = (
+                bloque_titulo,
+                previo_bloque[1],
+                previo_bloque[2] + respondidas,
+                previo_bloque[3] + acertadas,
+            )
+        lectura = read_diagnostic(acumulado, sample_size=len(congeladas))
+        return replace(
+            lectura,
+            blocks=read_blocks(
+                [
+                    BlockTally(
+                        node_id=bloque_id,
+                        title=bloque_titulo,
+                        topics=len(temas),
+                        answered=respondidas,
+                        correct=acertadas,
+                    )
+                    for bloque_id, (bloque_titulo, temas, respondidas, acertadas) in bloques.items()
+                ]
+            ),
+        )
 
     def list_sessions(
         self,

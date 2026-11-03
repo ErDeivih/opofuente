@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 
 import { getStudentMistakes, type StudentMistake } from '../../api/studentStudy';
 import { createStudentTest } from '../../api/studentTests';
@@ -27,6 +27,11 @@ import { fechaLegible } from '../../lib/fechas';
 export function MistakesPage() {
   const navegar = useNavigate();
   const cliente = useQueryClient();
+  // `?tema=IV.7` (O2): el mismo enlace que ofrece el índice del temario. Filtra en el cliente porque
+  // la API ya sirve los fallos con su tema y pedir otra vez lo mismo por tema sería gastar dos
+  // lecturas para pintar una lista más corta.
+  const [parametros, setParametros] = useSearchParams();
+  const filtro = (parametros.get('tema') ?? '').trim();
 
   const consulta = useQuery({ queryKey: ['student-mistakes'], queryFn: getStudentMistakes });
 
@@ -68,12 +73,22 @@ export function MistakesPage() {
   }
 
   const fallos = consulta.data;
-  const temasDeLosFallos = fallos.topics.map((tema) => tema.code);
+  // El filtro se compara sin distinguir mayúsculas: la dirección la escribe una pantalla, pero puede
+  // llegar tecleada a mano y `iv.7` es el mismo tema que `IV.7`.
+  const coincide = (codigo: string) => codigo.toLowerCase() === filtro.toLowerCase();
+  const temasVisibles = filtro.length === 0 ? fallos.topics : fallos.topics.filter((tema) => coincide(tema.code));
+  const preguntasVisibles =
+    filtro.length === 0
+      ? fallos.questions
+      : fallos.questions.filter((fallo) => fallo.topics.some((tema) => coincide(tema.code)));
   // Los temas con los que se puede montar el test: los de los fallos que **se pueden corregir**.
   // Montar el test con un tema cuyas preguntas falladas no tienen clave acaba en un 409, y ofrecer
   // un botón que revienta es peor que decir por qué no hay nada que montar.
   const hayAlgoQueRepasar = fallos.servable_total > 0;
-  const temas = hayAlgoQueRepasar ? temasDeLosFallos : [];
+  const temas = hayAlgoQueRepasar ? temasVisibles.map((tema) => tema.code) : [];
+  // Con filtro y sin fallos de ese tema no hay nada que enseñar: se dice y se ofrece quitarlo, en vez
+  // de dejar una pantalla vacía que parece rota.
+  const vacioPorElFiltro = filtro.length > 0 && temasVisibles.length === 0;
 
   return (
     <>
@@ -84,9 +99,43 @@ export function MistakesPage() {
             ? 'No tienes ninguna pregunta fallada.'
             : `${String(fallos.total)} ${fallos.total === 1 ? 'pregunta fallada' : 'preguntas falladas'} · ${String(fallos.due_total)} ${fallos.due_total === 1 ? 'para repasar hoy' : 'para repasar hoy'}`}
         </p>
+        {filtro.length > 0 && (
+          <p className="acciones">
+            <span className="etiqueta">{`Solo el tema ${filtro}`}</span>{' '}
+            <button
+              type="button"
+              className="ui-button ui-button--secondary"
+              onClick={() => {
+                setParametros({});
+              }}
+            >
+              Quitar el filtro del tema
+            </button>
+          </p>
+        )}
       </header>
 
-      {fallos.total === 0 ? (
+      {vacioPorElFiltro ? (
+        <section className="bloque" aria-labelledby="sin-fallos-en-el-tema">
+          <h2 className="bloque__titulo" id="sin-fallos-en-el-tema">
+            Sin fallos en ese tema
+          </h2>
+          <p className="bloque__texto">
+            {`No tienes ninguna pregunta fallada del tema ${filtro}. Las demás siguen en la lista completa.`}
+          </p>
+          <p className="acciones">
+            <button
+              type="button"
+              className="ui-button ui-button--primary"
+              onClick={() => {
+                setParametros({});
+              }}
+            >
+              Ver todos mis fallos
+            </button>
+          </p>
+        </section>
+      ) : fallos.total === 0 ? (
         <section className="bloque" aria-labelledby="sin-fallos">
           <h2 className="bloque__titulo" id="sin-fallos">
             Sin fallos por ahora
@@ -115,13 +164,13 @@ export function MistakesPage() {
               Test con mis fallos
             </button>
           </p>
-          {temasDeLosFallos.length === 0 && (
+          {temasVisibles.length === 0 && (
             <p className="bloque__texto">
               Ninguna de estas preguntas está catalogada en un tema del programa, así que todavía no se
               puede montar un test con ellas. El propietario las tiene en su bandeja.
             </p>
           )}
-          {temasDeLosFallos.length > 0 && !hayAlgoQueRepasar && (
+          {temasVisibles.length > 0 && !hayAlgoQueRepasar && (
             <p className="bloque__texto">
               {`Todavía no se puede montar un test con ${fallos.total === 1 ? 'esta pregunta' : 'estas preguntas'}: no hay con qué corregirlas. Su conjunto no tiene una plantilla activa que diga la respuesta, o la que tiene no la incluye. Se arregla en el panel, y entonces vuelven.`}
             </p>
@@ -132,7 +181,7 @@ export function MistakesPage() {
               Por tema
             </h2>
             <ul className="fallos__temas" aria-label="Fallos por tema">
-              {fallos.topics.map((tema) => (
+              {temasVisibles.map((tema) => (
                 <li className="fallos__tema" key={tema.code}>
                   <span className="fallos__tema-codigo">{tema.code}</span>
                   <span className="fallos__tema-titulo" data-contenido>
@@ -162,7 +211,7 @@ export function MistakesPage() {
               Las preguntas
             </h2>
             <ul className="fallos__preguntas" aria-label="Preguntas falladas">
-              {fallos.questions.map((fallo) => (
+              {preguntasVisibles.map((fallo) => (
                 <Fallo key={`${fallo.stem}-${fallo.last_failed_at}`} fallo={fallo} />
               ))}
             </ul>

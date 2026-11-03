@@ -2303,6 +2303,44 @@ kbd {
   color: var(--azul);
 }
 
+/* La lectura en voz alta (O7).
+ *
+ * La voz la pone el propio equipo con las voces instaladas: aquí no hay ni reproductor propio ni
+ * carátula, solo tres controles y una frase de estado. El estado **siempre** dice algo —también cuando
+ * el aparato no puede leer—, porque un botón mudo es peor que un aviso. */
+.voz {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s2) var(--s3);
+  margin: 0 0 var(--s5);
+}
+
+.voz__velocidad {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  font-size: var(--t-sm);
+  color: var(--tinta-suave);
+}
+
+.voz__velocidad select {
+  font: inherit;
+  min-height: var(--objetivo-tactil);
+  padding: 0 var(--s2);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  background: var(--hoja);
+  color: var(--tinta);
+}
+
+.voz__estado {
+  flex: 1 1 16rem;
+  margin: 0;
+  font-size: var(--t-sm);
+  color: var(--tinta-suave);
+}
+
 /* «Anterior» y «Siguiente»: los dos del mismo tamaño y separados del texto. */
 .apuntes__paso {
   display: flex;
@@ -4104,6 +4142,155 @@ kbd {
   width: 100%;
 }
 
+/* **El aviso de que algo no cabe también en la portada**: si el plan no llega, «Hoy» no puede
+   callarse hasta que el alumno abra el calendario. */
+.hoy__aviso {
+  padding: 0.75rem 0.9rem;
+  color: var(--tinta);
+  background: var(--hoja);
+  border-left: 3px solid var(--fallo);
+  border-radius: 0.25rem;
+}
+
+/* El calendario completo (M4): las doce semanas con su fase, sus recortes y sus temas fuera. */
+.plan {
+  max-width: 56rem;
+}
+
+.plan__cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.plan__resumen,
+.plan__cuenta,
+.plan__empieza,
+.plan__bloque {
+  color: var(--tinta-suave);
+}
+
+.plan__aviso {
+  margin: 1rem 0;
+  padding: 0.9rem 1rem;
+  background: var(--hoja);
+  border: 1px solid var(--fallo);
+  border-radius: 0.5rem;
+}
+
+.plan__aviso h2,
+.plan__fuera h2 {
+  margin-top: 0;
+  font-size: var(--t-cuerpo);
+}
+
+.plan__fuera {
+  margin: 1rem 0;
+  padding: 0.9rem 1rem;
+  background: var(--hoja);
+  border: 1px solid var(--linea);
+  border-radius: 0.5rem;
+}
+
+.plan__fuera ul {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0.5rem 0 0;
+  padding-left: 1.1rem;
+}
+
+.plan__semanas {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
+.plan__semana {
+  padding: 0.9rem 1rem;
+  background: var(--hoja);
+  border: 1px solid var(--linea);
+  border-radius: 0.6rem;
+}
+
+.plan__semana__cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+
+.plan__semana__cabecera h2 {
+  margin: 0;
+  font-size: var(--t-cuerpo);
+}
+
+.plan__fase {
+  padding: 0.1rem 0.45rem;
+  font-size: var(--t-sm);
+  background: var(--papel);
+  border: 1px solid var(--linea-suave);
+  border-radius: 999px;
+}
+
+.plan__recorte {
+  margin: 0.5rem 0 0;
+  font-size: var(--t-sm);
+  color: var(--tinta-suave);
+}
+
+.plan__tareas {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0.6rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.plan__tarea {
+  display: grid;
+  grid-template-columns: 5.5rem 1fr auto;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+
+.plan__tipo,
+.plan__minutos {
+  font-size: var(--t-sm);
+  color: var(--tinta-suave);
+}
+
+.plan__minutos {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.plan__vacia {
+  margin: 0.5rem 0 0;
+  color: var(--tinta-suave);
+}
+
+.plan__cambiar {
+  margin-top: 1.25rem;
+}
+
+.plan__cambiar summary {
+  cursor: pointer;
+  color: var(--tinta-suave);
+}
+
+@media (max-width: 640px) {
+  .plan__tarea {
+    grid-template-columns: 4.5rem 1fr;
+  }
+
+  .plan__minutos {
+    grid-column: 2;
+    text-align: left;
+  }
+}
+
 /* La cabecera de cada parte en la hoja de respuestas del simulacro. */
 .hoja__parte {
   grid-column: 1 / -1;
@@ -4112,4 +4299,92 @@ kbd {
   font-size: var(--t-sm);
   color: var(--tinta-suave);
   border-bottom: 1px solid var(--linea-suave);
+}
+
+/* La ficha del cuerpo (O2): el código que identifica al cuerpo y la lista de datos de la
+   convocatoria. Se lee como una ficha, no como una tabla: etiqueta fina y valor al lado. */
+.ficha__codigo {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+  font-weight: 700;
+}
+
+.ficha__datos {
+  display: grid;
+  gap: var(--s1);
+  margin: 0 0 var(--s3);
+  padding: 0;
+  list-style: none;
+  max-width: var(--medida-texto);
+}
+
+.ficha__dato {
+  display: grid;
+  grid-template-columns: 10rem minmax(0, 1fr);
+  gap: var(--s2);
+  align-items: baseline;
+}
+
+.ficha__etiqueta {
+  color: var(--tinta-suave);
+  font-size: var(--t-sm);
+}
+
+.ficha__reglas {
+  display: grid;
+  gap: var(--s2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-width: var(--medida-texto);
+}
+
+.ficha__regla {
+  border-top: 1px solid var(--linea-suave);
+  padding-top: var(--s2);
+  overflow-wrap: anywhere;
+}
+
+.ficha__valor {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.ficha__nota {
+  margin: var(--s2) 0 0;
+  color: var(--tinta-suave);
+  font-size: var(--t-sm);
+  max-width: var(--medida-texto);
+}
+
+/* El estado de estudio de un tema, junto a su cifra de acierto. */
+.tema-fila__estado {
+  color: var(--tinta-suave);
+  font-size: var(--t-sm);
+}
+
+/* El atajo a los fallos del tema: solo aparece cuando hay alguno, y se lee como una cifra más. */
+.tema-fila__fallos {
+  color: var(--acento, inherit);
+  font-size: var(--t-sm);
+  font-variant-numeric: tabular-nums;
+  text-decoration: underline;
+}
+
+/* El enlace de la cabecera del temario a la ficha del cuerpo: una salida, no un titular. */
+.pagina__enlace {
+  font-size: var(--t-sm);
+  color: var(--tinta-suave);
+  text-decoration: underline;
+}
+
+/* Una etiqueta corta dentro de un párrafo (un código de tema, un filtro activo). */
+.etiqueta {
+  display: inline-block;
+  padding: 0 0.4rem;
+  border: 1px solid var(--linea-suave);
+  border-radius: 999px;
+  font-size: var(--t-sm);
+  font-variant-numeric: tabular-nums;
+  color: var(--tinta-suave);
 }

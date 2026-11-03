@@ -136,6 +136,71 @@ export async function apiFetch<T, TProblem = ProblemDetail>(
   return (await response.json()) as T;
 }
 
+/**
+ * Un fichero que devuelve la API (hoy, el PDF de los apuntes de un tema).
+ *
+ * Es el hermano binario de `apiFetch` y comparte sus reglas: misma base, mismas credenciales, mismo
+ * `ApiUnavailableError` cuando no hay red y mismo `ApiError` con el problema RFC 9457 cuando la
+ * respuesta es un error. La diferencia es que no interpreta el cuerpo: lo entrega como `Blob`.
+ *
+ * `filename` sale de `Content-Disposition`, que el servidor sanea; el navegador **solo lo ve si la
+ * API lo expone** con `expose_headers` (CORS), así que puede venir `null` y quien llama decide el
+ * nombre de reserva. Se acepta la forma `attachment; filename="…"` y la extendida
+ * `filename*=UTF-8''…`; se prefiere la segunda, que es la que lleva acentos sin romperlos.
+ */
+export async function apiFetchBinary(
+  path: string,
+  init?: RequestInit,
+): Promise<{ blob: Blob; filename: string | null }> {
+  let response: Response;
+  try {
+    const ruta = path.startsWith('/api/') ? path : `/api/v1${path}`;
+    response = await fetch(`${apiBaseUrl()}${ruta}`, {
+      ...init,
+      credentials: credentialsMode,
+      headers: { Accept: 'application/pdf', ...init?.headers },
+    });
+  } catch (error) {
+    throw new ApiUnavailableError(error);
+  }
+
+  if (!response.ok) {
+    const contentType = response.headers.get('content-type') ?? '';
+    let problem: ProblemDetail | null = null;
+    if (contentType.includes('application/problem+json')) {
+      problem = (await response.json()) as ProblemDetail;
+    }
+    throw new ApiError(problemText(problem, 'detail', `La API respondió ${response.status}`), {
+      status: response.status,
+      code: problemText(problem, 'code', 'unknown'),
+      problem,
+    });
+  }
+
+  return {
+    blob: await response.blob(),
+    filename: filenameFromDisposition(response.headers.get('content-disposition')),
+  };
+}
+
+/** El nombre del fichero que anuncia una cabecera `Content-Disposition`, o `null` si no lo dice. */
+export function filenameFromDisposition(header: string | null): string | null {
+  if (header === null) {
+    return null;
+  }
+  const extendida = /filename\*=UTF-8''([^;]+)/i.exec(header);
+  if (extendida?.[1] !== undefined) {
+    try {
+      return decodeURIComponent(extendida[1].trim());
+    } catch {
+      // Una cabecera mal codificada no puede romper la descarga: se prueba con la forma simple.
+    }
+  }
+  const simple = /filename="([^"]+)"/i.exec(header) ?? /filename=([^;]+)/i.exec(header);
+  const nombre = simple?.[1]?.trim();
+  return nombre === undefined || nombre.length === 0 ? null : nombre;
+}
+
 /** Lee un campo de texto del cuerpo de error sin confiar en su forma. */
 function problemText(problem: unknown, key: string, fallback: string): string {
   if (problem !== null && typeof problem === 'object' && key in problem) {

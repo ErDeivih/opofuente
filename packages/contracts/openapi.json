@@ -33763,6 +33763,75 @@
         ]
       }
     },
+    "/api/v1/student/topics/{codigo}/pdf": {
+      "get": {
+        "description": "El tema **completo** en PDF: todos sus capítulos en orden de lectura.\n\nSe devuelven los bytes con `Content-Disposition: attachment` y un nombre saneado por el\nservidor. La cabecera del documento dice la oposición, el bloque, el tema, la fecha y el\nestado: un PDF descargado tiene que explicarse solo, también cuando está en borrador (y\nentonces lo dice). Un tema sin apuntes responde 404: no se fabrica un archivo vacío.",
+        "operationId": "student_topic_pdf_api_v1_student_topics__codigo__pdf_get",
+        "parameters": [
+          {
+            "description": "Código legible del tema, como `IV.10` (también se acepta `IV-10`).",
+            "in": "path",
+            "name": "codigo",
+            "required": true,
+            "schema": {
+              "description": "Código legible del tema, como `IV.10` (también se acepta `IV-10`).",
+              "examples": [
+                "IV.10"
+              ],
+              "title": "Codigo",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "El tema completo en PDF, como descarga binaria."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Descarga un tema entero en PDF, con su cabecera de procedencia",
+        "tags": [
+          "alumno"
+        ]
+      }
+    },
     "/api/v1/student/topics/{codigo}/reports": {
       "post": {
         "description": "Guarda el aviso del alumno sobre un apartado de los apuntes (decisión D2).\n\nNo es un registro de pantalla: entra en `notes_reports` y **en la auditoría**, en la misma\ntransacción, y es lo que el propietario verá en su bandeja. El motivo es obligatorio y de una\nlínea; el apartado se identifica por su clave y el anclaje lo pone el servidor.",
