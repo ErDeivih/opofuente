@@ -101,6 +101,21 @@ def _is_junk(name: str) -> bool:
     return PurePosixPath(name).name in JUNK_NAMES
 
 
+def _normalized_name(name: str) -> str:
+    """Nombre del miembro con el separador que usa el formato ZIP: `/`.
+
+    `zipfile` solo convierte `\\` en `/` cuando corre en Windows (`ZipInfo._sanitize_windows_name`
+    actúa solo si `os.sep != "/"`), así que el mismo ZIP se inspeccionaba de una forma en Windows y
+    de otra en POSIX: aquí `..\\x.txt` no era traversal, solo «una barra invertida», y
+    `apuntes\\tema.txt` se extraía con una barra invertida dentro del nombre. La normalización se
+    hace **antes** de las guardas y antes de construir el destino, con la semántica que ya tenía el
+    producto en Windows: el ZIP es el mismo y la defensa no depende del anfitrión.
+
+    No se toca `check_member_name`, que sigue rechazando la barra invertida en llamadas directas.
+    """
+    return name.replace("\\", "/")
+
+
 def check_member_name(name: str) -> None:
     """Rechaza nombres que escapan del destino o que no son rutas normales **en Windows**.
 
@@ -201,15 +216,16 @@ def inspect_zip(path: Path, *, limits: ZipLimits, depth: int = 0) -> ZipInspecti
     total_uncompressed = 0
     total_compressed = 0
     for info in infos:
-        if _is_junk(info.filename):
+        name = _normalized_name(info.filename)
+        if _is_junk(name):
             skipped += 1
             continue
-        check_member_name(info.filename)
+        check_member_name(name)
         _check_symlink(info)
-        is_directory = info.filename.endswith("/")
+        is_directory = name.endswith("/")
         members.append(
             ZipMember(
-                name=info.filename.rstrip("/") if is_directory else info.filename,
+                name=name.rstrip("/") if is_directory else name,
                 size_bytes=int(info.file_size),
                 compressed_bytes=int(info.compress_size),
                 is_directory=is_directory,
@@ -264,10 +280,11 @@ def extract_zip_safely(
     try:
         with zipfile.ZipFile(path) as archive:
             for info in archive.infolist():
-                if _is_junk(info.filename):
+                name = _normalized_name(info.filename)
+                if _is_junk(name):
                     continue
-                target = resolve_within(destination, destination / info.filename)
-                if info.filename.endswith("/"):
+                target = resolve_within(destination, destination / name)
+                if name.endswith("/"):
                     target.mkdir(parents=True, exist_ok=True)
                     continue
                 write_single_entry(archive, info, target, max_bytes=allowed)

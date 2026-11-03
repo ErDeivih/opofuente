@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import re
 import unicodedata
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 
 from opofuente.domain.errors import InvariantViolationError
 
@@ -91,22 +91,54 @@ def relative_display(root: Path, path: Path) -> str:
         return f"<fuera-de-raiz>/{path.name}"
 
 
+def _is_windows_shape(text: str) -> bool:
+    """¿`text` está escrito con la sintaxis de rutas de Windows?
+
+    Se decide por la cadena y no por el anfitrión: unidad (`C:`), cualquier barra invertida
+    (`\\`, que en POSIX no separa nada) o raíz de unidad actual (`\\Users\\…`).
+    """
+    if "\\" in text:
+        return True
+    return len(text) >= 2 and text[0].isalpha() and text[1] == ":"
+
+
+def _components(text: str) -> tuple[str, ...]:
+    """Componentes de `text` analizados según **su propia** sintaxis, descartando el ancla.
+
+    `pathlib.Path` interpreta la cadena con las reglas del sistema donde corre el proceso: en
+    POSIX, `C:/Material` son dos segmentos (`C:` y `Material`) y `\\` no separa nada. Eso hacía que
+    la misma ruta diera una salida distinta —y filtrara la unidad o el nombre del usuario— según el
+    anfitrión. Aquí la forma se decide por la cadena: una ruta con unidad, UNC, raíz de unidad
+    actual o cualquier barra invertida se lee como ruta de Windows; el resto, como POSIX.
+    """
+    parsed = PureWindowsPath(text) if _is_windows_shape(text) else PurePosixPath(text)
+    anchor = parsed.anchor
+    return tuple(part for part in parsed.parts if part != anchor)
+
+
 def abbreviate(path: Path, *, keep: int = 2) -> str:
     """Versión corta de una ruta para logs y para la interfaz («…/padre/hijo»).
 
-    **Nunca** devuelve la ruta completa: se descarta siempre la raíz (letra de unidad, UNC o `/`)
-    y se conservan como mucho los últimos `keep` componentes. Si no queda ningún componente
-    (una raíz suelta) se devuelve «…».
+    **Nunca** devuelve la ruta completa: se descarta siempre la raíz (letra de unidad, UNC, raíz de
+    unidad actual o `/`) y se conservan como mucho los últimos `keep` componentes. Si no queda
+    ningún componente (una raíz suelta) se devuelve «…».
+
+    La forma de la ruta se decide por la cadena (`_components`), así que la salida es la misma en
+    Windows y en un anfitrión POSIX.
     """
-    parts = [part for part in path.parts if part != path.anchor]
-    if not parts:
+    components = _components(str(path))
+    if not components:
         return "…"
-    return "…/" + "/".join(parts[-keep:])
+    return "…/" + "/".join(components[-keep:])
 
 
-#: Rutas con letra de unidad (`C:\…`, `C:/…`) o UNC (`\\servidor\recurso\…`).
+#: Rutas absolutas de Windows dentro de un texto: unidad (`C:\…`, `C:/…`), UNC
+#: (`\\servidor\recurso\…`) y raíz de la unidad actual (`\Windows\…`). El *lookbehind* exige que
+#: la coincidencia empiece donde empieza la ruta, para no tocar nombres relativos (`carpeta\a.txt`)
+#: ni prosa con `/`; tampoco se confunde con el esquema de una URL (`https://…`) ni con la cola de
+#: otra ruta ya abreviada.
 _WINDOWS_PATH = re.compile(
-    r"(?:[A-Za-z]:[\\/]|\\\\[^\\/\s]+[\\/])[^\s\"'<>|?*\r\n]*",
+    r"(?<![\w:.\\])(?:[A-Za-z]:[\\/]|\\\\[^\\/\s\"'<>|?*]+[\\/]|\\\\)[^\s\"'<>|?*\r\n]*",
 )
 
 
@@ -118,8 +150,10 @@ def redact_paths(text: str, *, keep: int = 1) -> str:
     interfaz, así que aquí se recorta antes: el nombre del fichero es metadato y puede verse, la
     carpeta del usuario no.
 
-    Se cubren las formas que produce este producto (Windows 11): letra de unidad y UNC. En otras
-    formas de ruta el texto se deja tal cual; quien lo use no debe asumir que ya viene saneado.
+    Se cubren las tres formas absolutas que produce este producto (Windows 11): letra de unidad,
+    UNC y raíz de la unidad actual (`\\Users\\…`, la que aparece cuando la ruta se construyó sin
+    unidad). Las rutas POSIX y las relativas se dejan tal cual: no las produce el producto y
+    tocarlas rompería mensajes legítimos; quien lo use no debe asumir que ya viene saneado.
     """
 
     def _replace(match: re.Match[str]) -> str:
