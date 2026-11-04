@@ -60,6 +60,14 @@ Los temas que entran al común por una convocatoria llevan procedencia (`origin_
 `origin_convocation_version_id`). `curriculum_equivalences` une nodo publicado con nodo común y es
 lo que permite re-atribuir el banco de preguntas y los fallos.
 
+## Relación con decisiones anteriores
+
+| Decisión previa | Qué pasa con ella aquí |
+|---|---|
+| ADR-005 (modelo de perfiles) | se sustituye **el papel** de `curriculum_nodes` (deja de colgar de la convocatoria); `exam_parts` y `exam_rules` siguen como ADR-005 los dejó. `curriculum_equivalences`, que ADR-005 difirió «al slice que la use», se crea aquí |
+| ADR-007 y DEBT-005 (nodo con material asignado) | se mantiene intacta su política: la retirada de un nodo con `curriculum_mappings` está bloqueada por `ON DELETE RESTRICT` y la siembra informa el conflicto. ADR-007 aplazó como «decisión de modelo mayor, propia de cuando el temario se reorganice de verdad» el versionado de nodos; **esta es esa reorganización**. También rechazó la reasignación automática: por eso las equivalencias `proposed` no se aplican solas y la re-atribución exige `status='accepted'` |
+| DEBT-003 (temario de Guardia Civil privado) | este cambio **no publica** ese temario: sus nodos se quedan en la base y en su fixture, y no se exponen a la zona del alumno porque esa convocatoria no tiene ref `primary` (§6.4) |
+
 ## Consecuencias
 
 - `curriculum_nodes` cambia de dueño: `convocation_version_id` sale, `curriculum_version_id` entra
