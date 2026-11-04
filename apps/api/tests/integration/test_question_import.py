@@ -25,6 +25,7 @@ from opofuente.infrastructure.document_repository import SqlAlchemyDocumentRepos
 from opofuente.infrastructure.migrations import run_migrations
 from opofuente.infrastructure.question_repository import SqlAlchemyQuestionRepository
 from opofuente.infrastructure.representation_store import RepresentationStore
+from opofuente_testing.programs import insert_published_program
 
 AHORA = datetime(2026, 9, 17, 12, 0, tzinfo=UTC)
 
@@ -94,12 +95,16 @@ def _sembrar(settings: Settings) -> None:
                 ),
                 {"dia": date(2025, 12, 22), "ahora": AHORA},
             )
+            version_id = insert_published_program(
+                conexion, convocation_id="conv-1", convocation_code="tai-age-2025"
+            )
             conexion.execute(
                 text(
-                    "INSERT INTO curriculum_nodes (id, convocation_version_id, parent_id, "
+                    "INSERT INTO curriculum_nodes (id, curriculum_version_id, parent_id, "
                     "node_type, official_code, title, position, path, depth) VALUES "
-                    "('nodo-1', 'conv-1', NULL, 'topic', 'I.1', 'La Constitucion', 1, 'I.1', 1)"
-                )
+                    "('nodo-1', :version, NULL, 'topic', 'I.1', 'La Constitucion', 1, 'I.1', 1)"
+                ),
+                {"version": version_id},
             )
     finally:
         engine.dispose()

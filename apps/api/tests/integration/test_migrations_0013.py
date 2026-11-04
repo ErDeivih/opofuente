@@ -25,6 +25,7 @@ from sqlalchemy.exc import IntegrityError
 from opofuente.config import Settings
 from opofuente.infrastructure.db import build_engine
 from opofuente.infrastructure.migrations import run_migrations
+from opofuente_testing.programs import insert_published_program
 
 AHORA = datetime(2026, 9, 16, 12, 0, tzinfo=UTC)
 SHA_A = "a" * 64
@@ -208,11 +209,21 @@ def test_los_mapeos_de_programa_admiten_documentos_y_rechazan_lo_que_no_existe(
         "'Convocatoria', 'https://example.invalid/c', '2026-01-15', 'active', :ahora, :ahora)",
         ahora=AHORA,
     )
+    # El nodo cuelga de una versión de temario: se crea el envoltorio publicado antes.
+    engine = build_engine(settings.data_paths.database)
+    try:
+        with engine.begin() as conexion:
+            version_id = insert_published_program(
+                conexion, convocation_id="conv-1", convocation_code="conv-2026"
+            )
+    finally:
+        engine.dispose()
     _ejecutar(
         settings,
-        "INSERT INTO curriculum_nodes (id, convocation_version_id, node_type, official_code, "
-        "title, position, path, depth) VALUES ('node-1', 'conv-1', 'topic', '1', 'Tema 1', 1, "
+        "INSERT INTO curriculum_nodes (id, curriculum_version_id, node_type, official_code, "
+        "title, position, path, depth) VALUES ('node-1', :version, 'topic', '1', 'Tema 1', 1, "
         "'tema-1', 0)",
+        version=version_id,
     )
 
     _ejecutar(

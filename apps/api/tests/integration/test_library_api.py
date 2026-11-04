@@ -11,6 +11,7 @@ responde **409 con el motivo** en lugar de decir que sí.
 
 from __future__ import annotations
 
+import time
 from typing import Any
 
 from fastapi.testclient import TestClient
@@ -41,6 +42,40 @@ def _artefacto_de(settings: Settings, titulo: str) -> str:
     return str(fila)
 
 
+def _esperar_extraccion(client: TestClient, titulo: str) -> None:
+    """Espera a que el pegado tenga su representación extraída antes de promocionarlo.
+
+    La aplicación de prueba se construye con la configuración de producción, así que arranca el
+    worker de fondo, y la prueba **además** ejecuta trabajos a mano con `run_one_job`. Con la
+    máquina cargada (por ejemplo, ejecutando las puertas mientras otras suites del equipo corren),
+    el worker puede adelantar el trabajo de clasificación y `run_one_job(attempts=3)` agotarse antes
+    de extraer el segundo pegado: la versión nueva se creaba sin secciones y el diff se medía sobre
+    algo que todavía no existía. Esta espera no cambia lo que se comprueba —sigue comparando dos
+    versiones reales—, solo elimina la carrera. Deuda de fondo: B-011.
+    """
+    settings: Settings = client.app.state.settings
+    engine = build_engine(settings.data_paths.database)
+    limite = time.monotonic() + 30.0
+    try:
+        while True:
+            with engine.connect() as conexion:
+                listas = conexion.execute(
+                    text(
+                        "SELECT COUNT(*) FROM ingestion_items i "
+                        "JOIN extracted_representations r ON r.artifact_id = i.artifact_id "
+                        "WHERE i.original_name = :nombre AND r.status = 'extracted'"
+                    ),
+                    {"nombre": titulo},
+                ).scalar_one()
+            if listas:
+                return
+            if time.monotonic() >= limite:
+                raise AssertionError(f"la extracción de {titulo} no terminó a tiempo")
+            time.sleep(0.05)
+    finally:
+        engine.dispose()
+
+
 def _pegar(client: TestClient, texto: str, titulo: str) -> None:
     respuesta = client.post(
         "/api/v1/ingestion-batches/paste",
@@ -49,6 +84,7 @@ def _pegar(client: TestClient, texto: str, titulo: str) -> None:
     )
     assert respuesta.status_code == 200, respuesta.text
     run_one_job(client, attempts=3)
+    _esperar_extraccion(client, titulo)
 
 
 def _promocionar(client: TestClient, artifact_id: str, titulo: str) -> dict[str, Any]:

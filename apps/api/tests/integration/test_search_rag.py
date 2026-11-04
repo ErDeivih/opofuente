@@ -35,6 +35,7 @@ from opofuente.domain.rag import (
 from opofuente.infrastructure.db import build_engine, build_session_factory
 from opofuente.infrastructure.migrations import run_migrations
 from opofuente.infrastructure.search_repository import SqlAlchemySearchRepository
+from opofuente_testing.programs import insert_published_program
 
 AHORA = datetime(2026, 9, 17, 12, 0, tzinfo=UTC)
 
@@ -225,14 +226,27 @@ def _programa(settings: Settings) -> None:
         ":ahora, :ahora)",
         {"ahora": AHORA},
     )
+    # Cada convocatoria con programa tiene su versión publicada: es el dueño de sus nodos desde
+    # 0021, y la búsqueda resuelve el ámbito por la referencia `official`.
+    engine = build_engine(settings.data_paths.database)
+    try:
+        with engine.begin() as conexion:
+            version_tai = insert_published_program(
+                conexion, convocation_id="conv-1", convocation_code="tai-2025"
+            )
+            version_gc = insert_published_program(
+                conexion, convocation_id="conv-2", convocation_code="gc-2026"
+            )
+    finally:
+        engine.dispose()
     _ejecutar(
         settings,
-        "INSERT INTO curriculum_nodes (id, convocation_version_id, parent_id, node_type, "
+        "INSERT INTO curriculum_nodes (id, curriculum_version_id, parent_id, node_type, "
         "official_code, title, position, path, depth) VALUES "
-        "('nodo-bloque', 'conv-1', NULL, 'block', 'I', 'Bloque I', 1, 'I', 0), "
-        "('nodo-tema', 'conv-1', 'nodo-bloque', 'topic', '1', 'Tema 1', 1, 'I.1', 1), "
-        "('nodo-otro', 'conv-2', NULL, 'block', 'I', 'Bloque I de GC', 1, 'I', 0)",
-        {},
+        "('nodo-bloque', :tai, NULL, 'block', 'I', 'Bloque I', 1, 'I', 0), "
+        "('nodo-tema', :tai, 'nodo-bloque', 'topic', '1', 'Tema 1', 1, 'I.1', 1), "
+        "('nodo-otro', :gc, NULL, 'block', 'I', 'Bloque I de GC', 1, 'I', 0)",
+        {"tai": version_tai, "gc": version_gc},
     )
     _documento(settings, version_id="v-ambito", estado="accepted", titulo="Temario TAI")
     _seccion_y_span(

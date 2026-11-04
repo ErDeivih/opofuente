@@ -67,6 +67,11 @@ from opofuente.domain.classification import (
 )
 from opofuente.domain.duplicates import TextDocument
 from opofuente.domain.extraction import Quality
+from opofuente.infrastructure.curriculum_lookup import (
+    convocation_of_version,
+    official_version_id,
+    official_version_id_by_convocation_code,
+)
 from opofuente.infrastructure.db_models import (
     AuditEventRecord,
     ClassificationProposalRecord,
@@ -297,10 +302,13 @@ class SqlAlchemyClassificationRepository:
 
     @staticmethod
     def _nodes_of(session: Session, convocation_id: str) -> tuple[TopicCandidate, ...]:
+        version_id = official_version_id(session, convocation_id)
+        if version_id is None:
+            return ()
         filas = (
             session.execute(
                 select(CurriculumNodeRecord)
-                .where(CurriculumNodeRecord.convocation_version_id == convocation_id)
+                .where(CurriculumNodeRecord.curriculum_version_id == version_id)
                 .order_by(CurriculumNodeRecord.path)
             )
             .scalars()
@@ -949,18 +957,17 @@ class SqlAlchemyClassificationRepository:
 
     def coverage(self, *, convocation_code: str) -> CoverageView:
         with self._session_factory() as session:
+            version_id = official_version_id_by_convocation_code(session, convocation_code)
             nodos = (
                 session.execute(
                     select(CurriculumNodeRecord)
-                    .join(
-                        ConvocationVersionRecord,
-                        ConvocationVersionRecord.id == CurriculumNodeRecord.convocation_version_id,
-                    )
-                    .where(ConvocationVersionRecord.code == convocation_code)
+                    .where(CurriculumNodeRecord.curriculum_version_id == version_id)
                     .order_by(CurriculumNodeRecord.path)
                 )
                 .scalars()
                 .all()
+                if version_id is not None
+                else []
             )
             ids = [nodo.id for nodo in nodos]
             mapeos = (
@@ -1048,7 +1055,7 @@ class SqlAlchemyClassificationRepository:
             nodo = session.get(CurriculumNodeRecord, node_id)
             if nodo is None:
                 return None
-            convocatoria = session.get(ConvocationVersionRecord, nodo.convocation_version_id)
+            convocatoria = convocation_of_version(session, nodo.curriculum_version_id)
             if convocatoria is None:
                 return None
             vista = self.coverage(convocation_code=convocatoria.code)

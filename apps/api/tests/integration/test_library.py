@@ -31,6 +31,7 @@ from opofuente.infrastructure.document_repository import SqlAlchemyDocumentRepos
 from opofuente.infrastructure.extraction_repository import SqlAlchemyExtractionRepository
 from opofuente.infrastructure.migrations import run_migrations
 from opofuente.infrastructure.representation_store import RepresentationStore
+from opofuente_testing.programs import insert_published_program
 
 AHORA = datetime(2026, 9, 16, 12, 0, tzinfo=UTC)
 TEXTO = (
@@ -299,15 +300,22 @@ def test_una_fuente_compartida_es_un_documento_con_dos_mapeos(tmp_path: Path) ->
                         "ahora": AHORA,
                     },
                 )
+                # Desde 0021 el nodo cuelga de una versión de temario; el envoltorio publicado se
+                # crea antes de insertarlo (igual que lo haría la siembra).
+                version_id = insert_published_program(
+                    conexion,
+                    convocation_id=f"conv-{indice}",
+                    convocation_code=f"conv-{indice}",
+                )
                 conexion.execute(
                     text(
-                        "INSERT INTO curriculum_nodes (id, convocation_version_id, node_type, "
+                        "INSERT INTO curriculum_nodes (id, curriculum_version_id, node_type, "
                         "official_code, title, position, path, depth) VALUES "
-                        "(:id, :conv, 'topic', :code, 'Tema 1', 1, :path, 0)"
+                        "(:id, :version, 'topic', :code, 'Tema 1', 1, :path, 0)"
                     ),
                     {
                         "id": f"node-{indice}",
-                        "conv": f"conv-{indice}",
+                        "version": version_id,
                         "code": str(indice),
                         "path": f"tema-{indice}",
                     },
@@ -495,12 +503,17 @@ def _programa(biblioteca, settings, *, version_id: str, estado: str = "accepted"
                 ),
                 {"ahora": AHORA},
             )
+            # El envoltorio publicado (temario, versión y referencia) es el dueño de los nodos.
+            curriculum_version_id = insert_published_program(
+                conexion, convocation_id="conv-cyl", convocation_code="cyl-2026"
+            )
             conexion.execute(
                 text(
-                    "INSERT INTO curriculum_nodes (id, convocation_version_id, node_type, "
-                    "official_code, title, position, path, depth) VALUES ('node-1', 'conv-cyl', "
+                    "INSERT INTO curriculum_nodes (id, curriculum_version_id, node_type, "
+                    "official_code, title, position, path, depth) VALUES ('node-1', :version, "
                     "'topic', '1', 'Tema 1', 1, 'tema-1', 0)"
-                )
+                ),
+                {"version": curriculum_version_id},
             )
             conexion.execute(
                 text(

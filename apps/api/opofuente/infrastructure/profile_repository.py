@@ -45,10 +45,18 @@ from opofuente.domain.profiles import (
     RuleKind,
     flatten,
 )
+from opofuente.infrastructure.curriculum_lookup import (
+    convocation_of_version,
+    nodes_of_version_query,
+    official_version_id,
+)
 from opofuente.infrastructure.db_models import (
+    ConvocationCurriculumRefRecord,
     ConvocationVersionRecord,
     CurriculumMappingRecord,
     CurriculumNodeRecord,
+    CurriculumRecord,
+    CurriculumVersionRecord,
     ExamPartRecord,
     ExamRuleRecord,
     OppositionRecord,
@@ -148,15 +156,22 @@ class SqlAlchemyProfileRepository:
             if convocation is None:
                 return None
             opposition = session.get(OppositionRecord, convocation.opposition_id)
-            rows = (
-                session.execute(
-                    select(CurriculumNodeRecord)
-                    .where(CurriculumNodeRecord.convocation_version_id == convocation_id)
-                    .order_by(CurriculumNodeRecord.depth, CurriculumNodeRecord.position)
+            # El árbol que enseña la convocatoria sigue siendo el programa que **publica**: el
+            # temario común se enseña por su propia ruta (B-004). Una convocatoria sin programa
+            # publicado devuelve el árbol vacío, que es lo que hacía antes (no es un error).
+            version_id = official_version_id(session, convocation_id)
+            if version_id is None:
+                rows: list[CurriculumNodeRecord] = []
+            else:
+                rows = list(
+                    session.execute(
+                        nodes_of_version_query(version_id).order_by(
+                            CurriculumNodeRecord.depth, CurriculumNodeRecord.position
+                        )
+                    )
+                    .scalars()
+                    .all()
                 )
-                .scalars()
-                .all()
-            )
             nodes = self._tree(rows)
             counts: dict[str, int] = {node_type.value: 0 for node_type in NodeType}
             for row in rows:
@@ -174,9 +189,15 @@ class SqlAlchemyProfileRepository:
             record = session.get(CurriculumNodeRecord, node_id)
             if record is None:
                 return None
-            convocation = session.get(ConvocationVersionRecord, record.convocation_version_id)
-            if convocation is None:  # pragma: no cover - la clave foránea lo impide
-                raise InvariantViolationError("nodo de programa sin convocatoria")
+            version = session.get(CurriculumVersionRecord, record.curriculum_version_id)
+            if version is None:  # pragma: no cover - la clave foránea lo impide
+                raise InvariantViolationError("nodo de programa sin versión de temario")
+            convocation = convocation_of_version(session, version.id)
+            if convocation is None:
+                # Un nodo del temario común no tiene convocatoria. Su ficha (texto, «en qué
+                # convocatorias aparece», avance) es la tarea B-004; mientras tanto no se inventa
+                # una convocatoria para no mentir en el contrato.
+                return None
             opposition = session.get(OppositionRecord, convocation.opposition_id)
 
             ancestors: list[CurriculumNodeRecord] = []
@@ -230,7 +251,7 @@ class SqlAlchemyProfileRepository:
                 session, profile.convocation, opposition, now
             )
             outcomes.append(outcome)
-            outcomes.extend(self._sync_curriculum(session, profile.curriculum, convocation))
+            outcomes.extend(self._sync_curriculum(session, profile.curriculum, convocation, now))
             outcomes.extend(self._sync_parts(session, profile.parts, convocation))
             outcomes.extend(self._sync_rules(session, profile.rules, convocation))
             session.commit()
@@ -320,23 +341,159 @@ class SqlAlchemyProfileRepository:
             record.updated_at = now
         return record, EntityOutcome(code=convocation.code, created=False, updated=changed)
 
+    def _ensure_published_program(
+        self,
+        session: Session,
+        convocation: ConvocationVersionRecord,
+        now: datetime,
+    ) -> tuple[CurriculumVersionRecord, list[EntityOutcome]]:
+        """Envoltorio idempotente del programa publicado: temario, versión y referencia `official`.
+
+        Desde `0021` el programa no cuelga de la convocatoria, así que sembrar una convocatoria
+        nueva exige crear su temario `published` y su versión `active` antes que sus nodos. Los
+        códigos son los mismos que usa la migración (`<convocation>-programa` y
+        `<convocation>-programa-v1`): si se usaran otros, sobre una base migrada se duplicaría el
+        temario o se chocaría con el índice que solo permite una versión activa por temario.
+        """
+        outcomes: list[EntityOutcome] = []
+        code = f"{convocation.code}-programa"
+        curriculum = session.execute(
+            select(CurriculumRecord).where(CurriculumRecord.code == code)
+        ).scalar_one_or_none()
+        if curriculum is None:
+            curriculum = CurriculumRecord(
+                id=_new_id(),
+                code=code,
+                kind="published",
+                name=convocation.title,
+                description=None,
+                group_code=None,
+                family=None,
+                created_at=now,
+                updated_at=now,
+            )
+            session.add(curriculum)
+            session.flush()
+            outcomes.append(EntityOutcome(code=f"curriculum:{code}", created=True, updated=False))
+        else:
+            changed = curriculum.kind != "published" or curriculum.name != convocation.title
+            if changed:
+                curriculum.kind = "published"
+                curriculum.name = convocation.title
+                curriculum.updated_at = now
+            outcomes.append(
+                EntityOutcome(code=f"curriculum:{code}", created=False, updated=changed)
+            )
+
+        version_code = f"{code}-v1"
+        version = session.execute(
+            select(CurriculumVersionRecord).where(CurriculumVersionRecord.code == version_code)
+        ).scalar_one_or_none()
+        if version is None:
+            version = CurriculumVersionRecord(
+                id=_new_id(),
+                curriculum_id=curriculum.id,
+                version_no=1,
+                code=version_code,
+                title=convocation.title,
+                status="active",
+                source_reference=convocation.source_reference,
+                supersedes_id=None,
+                created_at=now,
+                updated_at=now,
+            )
+            session.add(version)
+            session.flush()
+            outcomes.append(
+                EntityOutcome(
+                    code=f"curriculum-version:{version_code}", created=True, updated=False
+                )
+            )
+        elif version.status != "active":
+            # No se resucita una versión sustituida: si el programa publicado tiene una edición
+            # nueva, la v1 está `superseded` y volver a ponerla `active` chocaría con el índice
+            # único parcial (`uq_curriculum_version_single_active`). Reemplazarla o revivirla es una
+            # decisión de publicación, no de siembra: se avisa y no se escribe nada.
+            raise InvariantViolationError(
+                f"{convocation.code}: la versión publicada {version_code} está {version.status}; "
+                "la siembra no la reactiva: publica la edición que toque antes de sembrar"
+            )
+        else:
+            values = {
+                "curriculum_id": curriculum.id,
+                "title": convocation.title,
+                "source_reference": convocation.source_reference,
+            }
+            changed = any(getattr(version, key) != value for key, value in values.items())
+            if changed:
+                for key, value in values.items():
+                    setattr(version, key, value)
+                version.updated_at = now
+            outcomes.append(
+                EntityOutcome(
+                    code=f"curriculum-version:{version_code}", created=False, updated=changed
+                )
+            )
+
+        ref = session.execute(
+            select(ConvocationCurriculumRefRecord).where(
+                ConvocationCurriculumRefRecord.convocation_version_id == convocation.id,
+                ConvocationCurriculumRefRecord.role == "official",
+            )
+        ).scalar_one_or_none()
+        if ref is None:
+            ref = ConvocationCurriculumRefRecord(
+                id=_new_id(),
+                convocation_version_id=convocation.id,
+                curriculum_version_id=version.id,
+                role="official",
+                source_reference=convocation.source_reference,
+                created_at=now,
+                updated_at=now,
+            )
+            session.add(ref)
+            session.flush()
+            outcomes.append(
+                EntityOutcome(code=f"ref:official:{convocation.code}", created=True, updated=False)
+            )
+        elif ref.curriculum_version_id != version.id:
+            # Una referencia `official` dice qué bases publicó la convocatoria: cambiarla es una
+            # decisión de publicación, no un efecto de sembrar el fixture. La siembra no re-apunta
+            # referencias publicadas por su cuenta.
+            raise InvariantViolationError(
+                f"{convocation.code}: su referencia official apunta a otra versión del programa; "
+                "la siembra no re-apunta referencias publicadas"
+            )
+        else:
+            changed = ref.source_reference != convocation.source_reference
+            if changed:
+                ref.source_reference = convocation.source_reference
+                ref.updated_at = now
+            outcomes.append(
+                EntityOutcome(
+                    code=f"ref:official:{convocation.code}", created=False, updated=changed
+                )
+            )
+        return version, outcomes
+
     def _sync_curriculum(
         self,
         session: Session,
         nodes: tuple[CurriculumNode, ...],
         convocation: ConvocationVersionRecord,
+        now: datetime,
     ) -> list[EntityOutcome]:
+        version, outcomes = self._ensure_published_program(session, convocation, now)
         existing = {
             row.path: row
             for row in session.execute(
                 select(CurriculumNodeRecord).where(
-                    CurriculumNodeRecord.convocation_version_id == convocation.id
+                    CurriculumNodeRecord.curriculum_version_id == version.id
                 )
             )
             .scalars()
             .all()
         }
-        outcomes: list[EntityOutcome] = []
         ids_by_path: dict[str, str] = {}
         seen: set[str] = set()
 
@@ -347,7 +504,7 @@ class SqlAlchemyProfileRepository:
             if row is None:
                 row = CurriculumNodeRecord(
                     id=_new_id(),
-                    convocation_version_id=convocation.id,
+                    curriculum_version_id=version.id,
                     parent_id=parent_id,
                     node_type=node.node_type.value,
                     official_code=node.official_code,
@@ -356,6 +513,9 @@ class SqlAlchemyProfileRepository:
                     position=node.position,
                     path=node.path,
                     depth=node.depth,
+                    # Un nodo del programa publicado viene de la base heredada: no es un tema que
+                    # el temario común añada por una convocatoria.
+                    origin_kind="base",
                 )
                 session.add(row)
                 session.flush()
@@ -400,7 +560,7 @@ class SqlAlchemyProfileRepository:
             if retirables:
                 session.execute(
                     delete(CurriculumNodeRecord).where(
-                        CurriculumNodeRecord.convocation_version_id == convocation.id,
+                        CurriculumNodeRecord.curriculum_version_id == version.id,
                         CurriculumNodeRecord.path.in_(retirables),
                     )
                 )

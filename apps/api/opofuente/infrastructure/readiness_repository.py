@@ -34,13 +34,13 @@ from opofuente.domain.classification import (
     SubjectType,
     reconcile_pending_proposals,
 )
+from opofuente.infrastructure.curriculum_lookup import node_ids_of_opposition
 from opofuente.infrastructure.db_models import (
     AnswerKeyVersionRecord,
     ChangeSetRecord,
     ClassificationProposalRecord,
     ConvocationVersionRecord,
     CurriculumMappingRecord,
-    CurriculumNodeRecord,
     DocumentVersionRecord,
     ExtractedRepresentationRecord,
     ImportIssueRecord,
@@ -327,15 +327,8 @@ class SqlAlchemyReadinessRepository:
 
 
 def _node_ids_of_opposition(opposition_id: str) -> Select[tuple[str]]:
-    """Nodos del programa de una oposición, por su convocatoria."""
-    return (
-        select(CurriculumNodeRecord.id)
-        .join(
-            ConvocationVersionRecord,
-            ConvocationVersionRecord.id == CurriculumNodeRecord.convocation_version_id,
-        )
-        .where(ConvocationVersionRecord.opposition_id == opposition_id)
-    )
+    """Nodos de los programas publicados por las convocatorias de una oposición."""
+    return node_ids_of_opposition(opposition_id)
 
 
 __all__ = ["SqlAlchemyReadinessRepository"]

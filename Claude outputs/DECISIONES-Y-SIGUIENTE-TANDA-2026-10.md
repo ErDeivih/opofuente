@@ -40,20 +40,23 @@ Una sola forma de componer, de la que salen todos los casos, para que la clave, 
 ```python
 @dataclass(frozen=True)
 class PartSpec:
-    code: str                      # "primera_parte", "supuesto_III", "test"
-    node_ids: tuple[str, ...]      # temas (un bloque = sus temas; un epígrafe = su nodo)
-    count: int                     # preguntas ordinarias
+    code: str  # "primera_parte", "supuesto_III", "test"
+    node_ids: tuple[str, ...]  # temas (un bloque = sus temas; un epígrafe = su nodo)
+    count: int  # preguntas ordinarias
     reserve: int = 0
-    alternative_group: str | None = None   # las partes con el mismo grupo son excluyentes (III o IV)
-    weights: Mapping[str, float] | None = None  # reparto por nodo; por defecto, proporcional a las disponibles
+    alternative_group: str | None = None  # las partes con el mismo grupo son excluyentes (III o IV)
+    weights: Mapping[str, float] | None = (
+        None  # reparto por nodo; por defecto, proporcional a las disponibles
+    )
+
 
 @dataclass(frozen=True)
 class CompositionSpec:
     parts: tuple[PartSpec, ...]
     filter: Literal["all", "unseen", "failed", "flagged"] = "all"
     owner_id: str = "local"
-    seed: int | None = None        # se guarda en la configuración: la sesión es reproducible
-    exam_like: bool = False        # True en simulacros: excluye origin_scope = otra_administracion
+    seed: int | None = None  # se guarda en la configuración: la sesión es reproducible
+    exam_like: bool = False  # True en simulacros: excluye origin_scope = otra_administracion
 ```
 
 - `StudyService.compose(spec)` elige preguntas y **reutiliza** el congelado que ya hace hoy por conjunto: para cada pregunta elegida congela **la clave activa de su propio conjunto**, sus reservas y la regla de penalización de la parte. Los compositores actuales (por conjunto, por un tema) pasan a ser casos de `compose` o quedan como están si moverlos rompe algo, pero **no** se escribe un tercer congelado.

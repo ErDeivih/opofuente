@@ -23,6 +23,7 @@ from alembic import command
 from opofuente.config import Settings
 from opofuente.infrastructure.db import build_engine
 from opofuente.infrastructure.migrations import alembic_config, run_migrations, script_head
+from opofuente_testing.programs import insert_published_program
 
 AHORA = datetime(2026, 9, 16, 12, 0, tzinfo=UTC)
 
@@ -89,12 +90,16 @@ def _sembrar_nodo_con_material(settings: Settings, *, con_material: bool) -> str
                 ),
                 {"ahora": AHORA},
             )
+            version_id = insert_published_program(
+                conexion, convocation_id="conv-1", convocation_code="conv-2026"
+            )
             conexion.execute(
                 text(
-                    "INSERT INTO curriculum_nodes (id, convocation_version_id, parent_id, "
+                    "INSERT INTO curriculum_nodes (id, curriculum_version_id, parent_id, "
                     "node_type, official_code, title, position, path, depth) VALUES "
-                    "('node-1', 'conv-1', NULL, 'topic', '1', 'Tema 1', 1, 'tema-1', 0)"
-                )
+                    "('node-1', :version, NULL, 'topic', '1', 'Tema 1', 1, 'tema-1', 0)"
+                ),
+                {"version": version_id},
             )
             if con_material:
                 conexion.execute(

@@ -26,8 +26,8 @@ from opofuente.application.read_models import CoverageNodeView, CoverageView
 from opofuente.domain.classification import MappingStatus, coverage_counts_as_accepted
 from opofuente.domain.documents import VersionStatus
 from opofuente.domain.extraction import Quality
+from opofuente.infrastructure.curriculum_lookup import official_version_id_by_convocation_code
 from opofuente.infrastructure.db_models import (
-    ConvocationVersionRecord,
     CurriculumMappingRecord,
     CurriculumNodeRecord,
     DocumentVersionRecord,
@@ -82,18 +82,17 @@ def document_coverage(
 ) -> CoverageView:
     """Cobertura provisional y aceptada de una convocatoria, contando documentos."""
     with session_factory() as session:
+        version_id = official_version_id_by_convocation_code(session, convocation_code)
         nodos = (
             session.execute(
                 select(CurriculumNodeRecord)
-                .join(
-                    ConvocationVersionRecord,
-                    ConvocationVersionRecord.id == CurriculumNodeRecord.convocation_version_id,
-                )
-                .where(ConvocationVersionRecord.code == convocation_code)
+                .where(CurriculumNodeRecord.curriculum_version_id == version_id)
                 .order_by(CurriculumNodeRecord.path)
             )
             .scalars()
             .all()
+            if version_id is not None
+            else []
         )
         ids_nodos = [nodo.id for nodo in nodos]
         mapeos = (

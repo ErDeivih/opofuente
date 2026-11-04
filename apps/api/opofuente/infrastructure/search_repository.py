@@ -42,10 +42,13 @@ from opofuente.domain.rag import (
     corpus_eligible,
     significant_terms,
 )
+from opofuente.infrastructure.curriculum_lookup import (
+    official_version_id,
+    version_ids_of_opposition,
+)
 from opofuente.infrastructure.db_models import (
     AnswerClaimEvidenceRecord,
     AnswerClaimRecord,
-    ConvocationVersionRecord,
     CurriculumNodeRecord,
     DocumentSectionRecord,
     DocumentVersionRecord,
@@ -153,14 +156,17 @@ class SqlAlchemySearchRepository:
                 CurriculumNodeRecord.parent_id.is_(None)
             )
             if filters.convocation_id is not None:
-                consulta = consulta.where(
-                    CurriculumNodeRecord.convocation_version_id == filters.convocation_id
-                )
+                version_id = official_version_id(session, filters.convocation_id)
+                if version_id is None:
+                    # La convocatoria no publica programa: su ámbito no tiene nodos.
+                    return ()
+                consulta = consulta.where(CurriculumNodeRecord.curriculum_version_id == version_id)
             else:
-                consulta = consulta.join(
-                    ConvocationVersionRecord,
-                    ConvocationVersionRecord.id == CurriculumNodeRecord.convocation_version_id,
-                ).where(ConvocationVersionRecord.opposition_id == filters.opposition_id)
+                consulta = consulta.where(
+                    CurriculumNodeRecord.curriculum_version_id.in_(
+                        version_ids_of_opposition(filters.opposition_id or "")
+                    )
+                )
             return tuple(str(nodo) for nodo in session.execute(consulta).scalars())
 
     # ------------------------------------------------------------------ índice

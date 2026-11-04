@@ -47,6 +47,7 @@ from opofuente.domain.questions import (
     can_activate,
     question_fingerprint,
 )
+from opofuente.infrastructure.curriculum_lookup import official_version_id
 from opofuente.infrastructure.db_models import (
     AnswerKeyEntryRecord,
     AnswerKeyVersionRecord,
@@ -757,15 +758,24 @@ class SqlAlchemyQuestionRepository:
     def node_by_reference(
         self, *, convocation_version_id: str, reference: str
     ) -> tuple[str, int] | None:
-        """Nodo del programa por su ruta o su código oficial: lo que trae una columna `topic`."""
+        """Nodo del programa publicado por su ruta o su código oficial: lo que trae una columna
+        `topic`.
+
+        La convocatoria ya no es dueña del árbol: se resuelve su programa publicado y se busca
+        dentro de esa versión. Si la convocatoria no publica temario, la referencia no identifica
+        nada y se devuelve `None` (no es un error de la importación).
+        """
         limpio = reference.strip()
         if not limpio:
             return None
         with self._session_factory() as session:
+            version_id = official_version_id(session, convocation_version_id)
+            if version_id is None:
+                return None
             fila = session.execute(
                 select(CurriculumNodeRecord)
                 .where(
-                    CurriculumNodeRecord.convocation_version_id == convocation_version_id,
+                    CurriculumNodeRecord.curriculum_version_id == version_id,
                     (CurriculumNodeRecord.path == limpio)
                     | (CurriculumNodeRecord.official_code == limpio),
                 )

@@ -39,6 +39,7 @@ Reglas:
 | [DEBT-025](#debt-025--corregir-una-pregunta-infla-el-conjunto-y-puede-volver-a-preguntarse-el-texto-viejo) | S12.6 | La versión sustituida de una pregunta corregida cuenta como pregunta: el conjunto se infla, el banco enseña el enunciado viejo y una sesión nueva puede componerse con él | **cerrada** (22 de septiembre de 2026: las consultas del banco dejan fuera `superseded`, y la historia se sigue leyendo pidiéndola) |
 | [DEBT-026](#debt-026--la-suite-e2e-toma-su-directorio-de-datos-del-entorno-y-escribe-donde-le-digan) | S12.6 | Playwright resuelve su directorio de datos con `OPOFUENTE_DATA_DIR`: con esa variable puesta apuntando a una copia del corpus del propietario, correr la suite a mano escribe las pruebas **dentro de su material** | **cerrada** (22 de septiembre de 2026: la suite usa siempre `.e2e-data` y, para apuntarla a otro sitio, una variable propia) |
 | [DEBT-027](#debt-027--07_ui-ux-no-está-aplicada-entera) | S12.6 | La especificación de interfaz pide cosas que no existen: pausar un lote, tabla de revisión virtualizada, columnas de preguntas y próxima revisión en el Programa, lector sincronizado y explicación por opción | abierta (auditada sección a sección el 22 de septiembre de 2026; lo que faltaba en Inicio y en las comprobaciones de accesibilidad ya está) |
+| [DEBT-028](#debt-028--la-puerta-17-depende-de-fuentes-oficiales-que-cambian) | B-001/gates | La verificación de fixtures contra fuentes oficiales no se puede ejecutar en un worktree sin las descargas originales | abierta (entorno) |
 
 ---
 
@@ -1404,3 +1405,24 @@ cantaba estaba en la primera pantalla, que es donde el propietario mira todos lo
 
 **Estado: abierta.** Lo urgente —lo que se veía en Inicio y lo que no estaba probado— está cerrado y
 verificado; lo que queda son pantallas concretas, con su coste dicho arriba, y ninguna bloquea estudiar.
+
+## DEBT-028 — La puerta 17 depende de fuentes oficiales que cambian
+
+**Qué pasa.** El paso 17 de `scripts/gates.ps1` ejecuta `build_profile_fixtures --check`, que compara
+los fixtures con los documentos de `data/sources`. Esos documentos están ignorados por git y se bajan
+con `scripts/fetch-sources.ps1`. En un worktree nuevo no existen, así que la puerta falla con «faltan
+fuentes locales»; y al descargarlos en noviembre de 2026, cinco de ellos ya no coinciden con el
+manifiesto de octubre (XML y HTML del BOE y del BOCYL que cambian en origen, y una resolución del
+BOCYL reeditada). Es decir: la puerta solo pasa en la máquina que conserva exactamente las descargas
+originales.
+
+**Por qué no se arregla en B-001.** Actualizar el manifiesto y los fixtures exige revisar las fuentes
+oficiales nuevas y regenerar los fixtures: es curación de perfiles y contenido, no del modelo de
+datos, y hacerlo aquí tocaría datos ajenos al slice.
+
+**Cómo se cierra.** O se guardan las fuentes en un almacén estable (con licencia y sin datos
+personales), o `fetch-sources` archiva una copia fechada que la puerta usa, o la puerta distingue
+«falta la fuente» de «la fuente cambió» y solo la primera bloquea. Criterio: un worktree limpio puede
+ejecutar el paso 17 sin depender de descargas previas ni de que el BOE no cambie.
+
+**Estado: abierta** (B-001, 4 de noviembre de 2026).

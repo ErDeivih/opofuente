@@ -30,6 +30,17 @@ from opofuente.infrastructure.migrations import alembic_config, run_migrations, 
 #: desaparecer al hacerlo. El orden es el de la cadena, de la más nueva a la más antigua.
 ESCALONES: tuple[tuple[str, str, tuple[str, ...]], ...] = (
     (
+        "0021_temario_comun_y_referencias",
+        "0020_changes_and_derivatives",
+        (
+            "curricula",
+            "curriculum_versions",
+            "convocation_curriculum_refs",
+            "convocation_curriculum_adjustments",
+            "curriculum_equivalences",
+        ),
+    ),
+    (
         "0020_changes_and_derivatives",
         "0019_errors_and_reviews",
         ("derived_artifacts", "dependency_edges", "change_sets"),
@@ -162,6 +173,7 @@ def test_volver_a_subir_recrea_lo_que_la_bajada_retiro(tmp_path: Path) -> None:
         ("0018_search_and_rag", "retrieval_hits"),
         ("0019_errors_and_reviews", "review_items"),
         ("0020_changes_and_derivatives", "derived_artifacts"),
+        ("0021_temario_comun_y_referencias", "curricula"),
     ],
 )
 def test_cada_migracion_deja_su_tabla_al_llegar_a_ella(

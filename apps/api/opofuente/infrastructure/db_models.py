@@ -31,6 +31,13 @@ from opofuente.infrastructure.db import Base
 
 CONVOCATION_STATUSES = ("draft", "active", "superseded", "archived")
 NODE_TYPES = ("block", "topic", "epigraph")
+NODE_ORIGIN_KINDS = ("base", "enrichment")
+CURRICULUM_KINDS = ("common", "published")
+CURRICULUM_VERSION_STATUSES = ("draft", "active", "superseded", "archived")
+CURRICULUM_ROLES = ("primary", "official", "complementary")
+ADJUSTMENT_KINDS = ("omitted", "weighted", "renumbered", "renamed")
+EQUIVALENCE_RELATIONS = ("equivalent", "subset", "superset", "partial")
+EQUIVALENCE_STATUSES = ("proposed", "accepted", "rejected")
 PART_KINDS = ("group", "test")
 PART_FORMATS = ("single_choice", "multi_mark_error", "psychotechnical")
 RULE_KINDS = ("boolean", "integer", "fraction", "text")
@@ -93,7 +100,7 @@ class ConvocationVersionRecord(Base):
     opposition: Mapped[OppositionRecord] = relationship(back_populates="convocations")
     # `passive_deletes=True`: SQLite ya aplica ON DELETE CASCADE, así que no hay que borrar los
     # hijos dos veces (la base de datos es la que garantiza la integridad).
-    nodes: Mapped[list[CurriculumNodeRecord]] = relationship(
+    curriculum_refs: Mapped[list[ConvocationCurriculumRefRecord]] = relationship(
         back_populates="convocation", cascade="all, delete-orphan", passive_deletes=True
     )
     parts: Mapped[list[ExamPartRecord]] = relationship(
@@ -104,21 +111,255 @@ class ConvocationVersionRecord(Base):
     )
 
 
-class CurriculumNodeRecord(Base):
-    __tablename__ = "curriculum_nodes"
+class CurriculumRecord(Base):
+    """La identidad de un temario: el común o el programa publicado por una convocatoria.
+
+    Una fila por temario, no una por convocatoria: el temario común es **uno** (`kind='common'`)
+    y cada convocatoria que publica programa conserva el suyo como evidencia (`kind='published'`),
+    sin que el alumno lo vea (ESPECIFICACION §5.2).
+    """
+
+    __tablename__ = "curricula"
     __table_args__ = (
-        # La identidad de un nodo es su ruta dentro de la convocatoria. `official_code` guarda la
-        # numeración que publica la convocatoria y, donde no publica ninguna (los subniveles del
-        # temario de Guardia Civil), la secuencia dentro del padre: por eso no puede ser única.
-        UniqueConstraint("convocation_version_id", "path", name="uq_curriculum_path"),
-        CheckConstraint("node_type IN ('block', 'topic', 'epigraph')", name="ck_node_type"),
-        CheckConstraint("depth >= 0", name="ck_node_depth"),
-        CheckConstraint("position >= 1", name="ck_node_position"),
+        CheckConstraint("kind IN ('common', 'published')", name="ck_curriculum_kind"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    code: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
+    kind: Mapped[str] = mapped_column(String(16), nullable=False)
+    name: Mapped[str] = mapped_column(Text, nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    #: Grupo al que sirve el temario (`C1`), cuando el temario es común.
+    group_code: Mapped[str | None] = mapped_column(String(8), nullable=True)
+    #: Familia de la oposición (`informatica`), cuando el temario es común.
+    family: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+    versions: Mapped[list[CurriculumVersionRecord]] = relationship(
+        back_populates="curriculum", order_by="CurriculumVersionRecord.version_no"
+    )
+
+
+class CurriculumVersionRecord(Base):
+    """Una edición del temario: lo que una convocatoria referencia y estudia.
+
+    Una convocatoria ya publicada no ve cambiar su temario sin aviso: se publica una versión nueva
+    y su referencia se actualiza cuando se decide (ESPECIFICACION §5.3). Una versión `active` no se
+    edita; el índice único parcial garantiza que solo haya una por temario.
+    """
+
+    __tablename__ = "curriculum_versions"
+    __table_args__ = (
+        CheckConstraint("version_no >= 1", name="ck_curriculum_version_no"),
+        CheckConstraint(
+            "status IN ('draft', 'active', 'superseded', 'archived')",
+            name="ck_curriculum_version_status",
+        ),
+        CheckConstraint(
+            "supersedes_id IS NULL OR supersedes_id <> id", name="ck_curriculum_version_self"
+        ),
+        UniqueConstraint("curriculum_id", "version_no", name="uq_curriculum_version_no"),
+        # La restricción real de I1: solo una versión activa por temario.
+        Index(
+            "uq_curriculum_version_single_active",
+            "curriculum_id",
+            unique=True,
+            sqlite_where=text("status = 'active'"),
+        ),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    curriculum_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("curricula.id", ondelete="RESTRICT"), nullable=False
+    )
+    version_no: Mapped[int] = mapped_column(Integer, nullable=False)
+    code: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
+    title: Mapped[str] = mapped_column(Text, nullable=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False)
+    #: De dónde sale esta edición (documento y ancla), como en las partes y reglas del examen.
+    source_reference: Mapped[str | None] = mapped_column(Text, nullable=True)
+    supersedes_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("curriculum_versions.id", ondelete="SET NULL"), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+    curriculum: Mapped[CurriculumRecord] = relationship(back_populates="versions")
+
+
+class ConvocationCurriculumRefRecord(Base):
+    """Qué temario referencia una convocatoria, y con qué papel (ESPECIFICACION §5.5).
+
+    `primary` es el temario común que se estudia; `official` es el programa que publica la
+    convocatoria (evidencia); `complementary` es otro temario que también aplica. Una convocatoria
+    sin `primary` existe pero no es estudiable: no se borra ni se le inventa un temario.
+    """
+
+    __tablename__ = "convocation_curriculum_refs"
+    __table_args__ = (
+        CheckConstraint("role IN ('primary', 'official', 'complementary')", name="ck_ref_role"),
+        UniqueConstraint(
+            "convocation_version_id",
+            "curriculum_version_id",
+            name="uq_convocation_curriculum_ref",
+        ),
+        Index(
+            "uq_convocation_primary_ref",
+            "convocation_version_id",
+            unique=True,
+            sqlite_where=text("role = 'primary'"),
+        ),
+        Index(
+            "uq_convocation_official_ref",
+            "convocation_version_id",
+            unique=True,
+            sqlite_where=text("role = 'official'"),
+        ),
+        Index("ix_conv_curriculum_ref_convocation", "convocation_version_id"),
     )
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
     convocation_version_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("convocation_versions.id", ondelete="CASCADE"), nullable=False
+    )
+    curriculum_version_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("curriculum_versions.id", ondelete="RESTRICT"), nullable=False
+    )
+    role: Mapped[str] = mapped_column(String(16), nullable=False)
+    #: Cita de las bases: «Anexo V, apartado 3. Programa».
+    source_reference: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+    convocation: Mapped[ConvocationVersionRecord] = relationship(back_populates="curriculum_refs")
+    curriculum_version: Mapped[CurriculumVersionRecord] = relationship()
+
+
+class ConvocationCurriculumAdjustmentRecord(Base):
+    """Una particularidad de la convocatoria sobre un nodo del temario que referencia.
+
+    No cambia el temario común: dice cómo lo ve esa convocatoria (qué omite, qué pondera, cómo lo
+    renumera o lo renombra). Todo ajuste lleva su cita literal: no se inventa que una convocatoria
+    omite algo (ESPECIFICACION §5.6).
+    """
+
+    __tablename__ = "convocation_curriculum_adjustments"
+    __table_args__ = (
+        CheckConstraint(
+            "kind IN ('omitted', 'weighted', 'renumbered', 'renamed')", name="ck_adjustment_kind"
+        ),
+        CheckConstraint("weight IS NULL OR weight >= 0", name="ck_adjustment_weight_range"),
+        CheckConstraint(
+            "kind <> 'weighted' OR (weight IS NOT NULL AND weight >= 0)",
+            name="ck_adjustment_weighted",
+        ),
+        CheckConstraint(
+            "kind <> 'renumbered' OR official_code_override IS NOT NULL",
+            name="ck_adjustment_renumbered",
+        ),
+        CheckConstraint(
+            "kind <> 'renamed' OR title_override IS NOT NULL", name="ck_adjustment_renamed"
+        ),
+        CheckConstraint("length(trim(evidence_quote)) > 0", name="ck_adjustment_evidence"),
+        UniqueConstraint("ref_id", "curriculum_node_id", "kind", name="uq_adjustment_identity"),
+        Index("ix_conv_curriculum_adjustment_ref", "ref_id"),
+        Index("ix_conv_curriculum_adjustment_node", "curriculum_node_id"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    ref_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("convocation_curriculum_refs.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    curriculum_node_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("curriculum_nodes.id", ondelete="RESTRICT"), nullable=False
+    )
+    kind: Mapped[str] = mapped_column(String(16), nullable=False)
+    #: Proporción de preguntas del examen, solo cuando `kind='weighted'`.
+    weight: Mapped[float | None] = mapped_column(Float, nullable=True)
+    official_code_override: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    title_override: Mapped[str | None] = mapped_column(Text, nullable=True)
+    evidence_quote: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+    ref: Mapped[ConvocationCurriculumRefRecord] = relationship()
+
+
+class CurriculumEquivalenceRecord(Base):
+    """El puente entre un nodo publicado y un nodo del temario común (ESPECIFICACION §5.7).
+
+    Se crea ahora porque ya tiene uso real: los 37 nodos publicados del TAI tienen preguntas
+    mapeadas y el temario común tiene 40 temas. Una equivalencia `proposed` no se aplica sola.
+    """
+
+    __tablename__ = "curriculum_equivalences"
+    __table_args__ = (
+        CheckConstraint(
+            "relation IN ('equivalent', 'subset', 'superset', 'partial')",
+            name="ck_equivalence_relation",
+        ),
+        CheckConstraint(
+            "status IN ('proposed', 'accepted', 'rejected')", name="ck_equivalence_status"
+        ),
+        CheckConstraint("confidence >= 0 AND confidence <= 1", name="ck_equivalence_confidence"),
+        CheckConstraint("source_node_id <> target_node_id", name="ck_equivalence_distinct"),
+        CheckConstraint(
+            "status <> 'accepted' OR decided_at IS NOT NULL", name="ck_equivalence_decided"
+        ),
+        UniqueConstraint("source_node_id", "target_node_id", name="uq_equivalence_pair"),
+        Index("ix_curriculum_equivalence_source", "source_node_id"),
+        Index("ix_curriculum_equivalence_target", "target_node_id"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    #: Nodo del programa publicado.
+    source_node_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("curriculum_nodes.id", ondelete="RESTRICT"), nullable=False
+    )
+    #: Nodo del temario común.
+    target_node_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("curriculum_nodes.id", ondelete="RESTRICT"), nullable=False
+    )
+    relation: Mapped[str] = mapped_column(String(16), nullable=False)
+    confidence: Mapped[float] = mapped_column(Float, nullable=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False)
+    #: Por qué se propone (título, cita): sin esto la revisión no tiene nada que mirar.
+    evidence_note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    #: Obligatoria cuando la equivalencia está aceptada (`ck_equivalence_decided`).
+    decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class CurriculumNodeRecord(Base):
+    """Un nodo del programa: cuelga de una **versión de temario**, no de una convocatoria.
+
+    El `id` sigue siendo la clave estable que referencian `curriculum_mappings` y `learning_errors`
+    (ESPECIFICACION §4.2). Lo que cambia es el dueño: la versión del temario, que puede ser el
+    programa publicado de una convocatoria o el temario común. `origin_kind` dice si el nodo está
+    en la base heredada (`base`) o entró al común porque una convocatoria lo pedía (`enrichment`);
+    en ese segundo caso `origin_convocation_version_id` guarda la procedencia, sin copiar el tema.
+    """
+
+    __tablename__ = "curriculum_nodes"
+    __table_args__ = (
+        # La identidad de un nodo es su ruta dentro de la versión de temario. `official_code`
+        # guarda la numeración que publica la convocatoria y, donde no publica ninguna (los
+        # subniveles del temario de Guardia Civil), la secuencia dentro del padre: por eso no puede
+        # ser única.
+        UniqueConstraint("curriculum_version_id", "path", name="uq_curriculum_node_path"),
+        CheckConstraint("node_type IN ('block', 'topic', 'epigraph')", name="ck_node_type"),
+        CheckConstraint("origin_kind IN ('base', 'enrichment')", name="ck_node_origin_kind"),
+        CheckConstraint("depth >= 0", name="ck_node_depth"),
+        CheckConstraint("position >= 1", name="ck_node_position"),
+        Index("ix_curriculum_node_version", "curriculum_version_id"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    curriculum_version_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("curriculum_versions.id", ondelete="CASCADE"), nullable=False
     )
     parent_id: Mapped[str | None] = mapped_column(
         String(36), ForeignKey("curriculum_nodes.id", ondelete="CASCADE"), nullable=True
@@ -130,8 +371,16 @@ class CurriculumNodeRecord(Base):
     position: Mapped[int] = mapped_column(Integer, nullable=False)
     path: Mapped[str] = mapped_column(String(128), nullable=False)
     depth: Mapped[int] = mapped_column(Integer, nullable=False)
+    origin_kind: Mapped[str] = mapped_column(
+        String(16), nullable=False, server_default=text("'base'"), default="base"
+    )
+    #: La convocatoria que motivó el tema, solo cuando `origin_kind='enrichment'`. Al borrarla, el
+    #: tema **no** se borra: se queda sin procedencia (`SET NULL`), que es la trazabilidad mínima.
+    origin_convocation_version_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("convocation_versions.id", ondelete="SET NULL"), nullable=True
+    )
 
-    convocation: Mapped[ConvocationVersionRecord] = relationship(back_populates="nodes")
+    version: Mapped[CurriculumVersionRecord] = relationship()
 
 
 class ExamPartRecord(Base):
