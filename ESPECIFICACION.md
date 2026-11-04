@@ -1,70 +1,77 @@
-# Especificación — OpoFuente, temario de C1
+# Especificación — OpoFuente, todas las oposiciones
 
-Estado: **borrador para revisar**. Alcance recortado a propósito.
+Estado: **borrador para revisar**. Alcance redefinido el 2026-11-04.
 
 ## Objetivo
 
-Una sola cosa: **el temario de C1**, consultable y con el avance de estudio. Todo lo demás queda fuera de esta tanda.
+Una plataforma de **temario para todas las oposiciones** de David, no solo una. **TAI (C1) es la semilla**: su estructura, sus 134 epígrafes y su forma de organizar el temario son el modelo que se generaliza a las demás.
 
-En el repositorio, C1 es **TAI** (Técnico Auxiliar de Informática). Hay una rama `f3-epigrafes-tai` con **134 epígrafes derivados del título oficial**: esa es la base del índice.
+Debe poder alojar **C1 y C2** y admitir más temas y más oposiciones sin rehacer nada.
+
+## El cambio de alcance respecto al borrador anterior
+
+Antes: «solo C1». Ahora: **un modelo de datos que aguante todas**, con TAI como primera oposición cargada.
+
+Eso cambia lo que hay que decidir primero. Ya no es «qué es un tema» en una oposición, sino:
+
+| Decisión | Por qué manda ahora | Estado |
+|---|---|---|
+| ¿La oposición es una entidad de primer nivel, o un atributo? | decide el modelo entero | **pendiente** |
+| ¿Un tema puede pertenecer a varias oposiciones a la vez? | hay temarios compartidos entre C1 y C2 | **pendiente** |
+| ¿El temario es por convocatoria, por año o estable? | cambia si hay versiones del mismo tema | **pendiente** |
+| ¿Cuántos niveles: oposición → bloque → tema → epígrafe? | define la navegación y el avance | **pendiente** |
+| ¿El avance es por oposición, por tema o por epígrafe? | decide el porcentaje | **pendiente** |
+
+**Lo que ya está, y sirve de molde**: 134 epígrafes de TAI derivados del título oficial (rama `f3-epigrafes-tai`).
 
 ## Familia y recetas
 
-Familias **F (documentación)** para la consulta del temario y **A (panel)** para la administración.
-
-Esto no es una web de marketing ni un chat: es documentación navegable con estado de avance.
+Familias **F (documentación)** para consultar el temario y **A (panel)** para administrarlo. Documentación navegable con estado de avance, no una web de marketing ni un chat.
 
 ## Pantallas de esta tanda
 
-### 1. Índice del temario
-- [ ] Árbol de temas y epígrafes, en el orden oficial
-- [ ] Búsqueda que **perdona tildes** (`buscar` encuentra `Búsqueda`)
+### 1. Selector de oposición
+- [ ] Lista de oposiciones con su temario cargado
+- [ ] Estado vacío: «todavía no hay oposiciones»
+- [ ] Cargando y error
+
+### 2. Índice del temario de una oposición
+- [ ] Árbol bloque → tema → epígrafe, en el orden oficial
+- [ ] Búsqueda que **perdona tildes**
 - [ ] Marca visible de lo estudiado
-- [ ] Estado vacío: «sin tema seleccionado»
+- [ ] Navegación de vuelta al selector
 
-### 2. Ficha de tema
-- [ ] El texto del epígrafe
-- [ ] Los apuntes del tema, si existen
-- [ ] Las preguntas asociadas al tema
-- [ ] Navegación anterior / siguiente dentro del temario
-- [ ] Marcar como estudiado, con la fecha
+### 3. Ficha de tema
+- [ ] Texto del epígrafe
+- [ ] Apuntes del tema, si existen
+- [ ] Preguntas asociadas
+- [ ] Navegación anterior / siguiente
+- [ ] Marcar como estudiado, con fecha
 
-### 3. Avance
-- [ ] Porcentaje por bloque y total
+### 4. Avance
+- [ ] Por bloque y por oposición
 - [ ] Qué queda, ordenado por lo que falta
-- [ ] Última vez que se estudió cada tema
 
 ## Estados obligatorios
 
 - [ ] Vacío · [ ] Cargando · [ ] Error · [ ] Sin permiso
 
-## Decisiones que hay que tomar antes de implementar
+## Fuera de alcance de esta tanda
 
-| Decisión | Por qué importa | Estado |
-|---|---|---|
-| ¿Qué es un «tema»: epígrafe oficial, bloque o capítulo? | define el índice entero | **pendiente** |
-| ¿Cuántos niveles tiene el árbol? | decide la navegación | **pendiente** |
-| ¿El avance es por epígrafe o por tema? | decide el porcentaje | **pendiente** |
-| ¿Qué se hace con el material de otras oposiciones del banco? | hay `GUARDIA-CIVIL`, `celador` y más en `E:\OpoFuente-datos` | **pendiente** |
-| ¿Se usa `main` como rama de trabajo? | hay **85 ramas**; abrir más es perder el hilo | **recomendado: sí** |
+- **Batería de preguntas y simulacros**: no todavía.
+- **Ciclo de estudio del alumno** (resultado, repaso, fallos): no.
+- **Panel de administración completo**: solo lo mínimo para cargar un temario.
 
-## Fuera de alcance (a propósito, y esto es importante que quede escrito)
-
-- **Batería de preguntas y simulacros**: no en esta tanda.
-- **Ciclo de estudio del alumno** (resultado, repaso, fallos, progreso): no.
-- **Panel de administración completo**: solo lo mínimo para cargar el temario.
-- **Cualquier otra oposición que no sea C1/TAI.**
-
-Si un agente propone meter alguno de estos, se rechaza: ya existen en otras ramas y volverán cuando el temario esté cerrado.
+Meter contenido multi-oposición **no** es meter todo el producto: primero el modelo y el temario, después el resto.
 
 ## Riesgos
 
-- **85 ramas locales.** La de trabajo es `main` (`6483111`). Las demás son historia. No se abren ramas nuevas por tarea.
-- El banco de datos vive en E: con junction desde `F:\OpoFuente`. **No mover ni copiar el banco** mientras haya un servidor usándolo.
-- `DEBT.md` (100 KB) tiene deuda acumulada: leerla antes de tocar el modelo de datos.
+- **85 ramas locales.** La de trabajo es `main` (`6483111`), que está activa en el worktree `F:\temp-opofuente\opofuente-restaurado`. No abrir ramas por tarea.
+- El banco de datos (53,7 GB) vive en `E:\OpoFuente-datos` con junction desde `F:\OpoFuente`. **Y no es solo informática**: tiene `GUARDIA-CIVIL`, `celador` y `apuntes-tai-copia`, que ahora sí son material relevante porque el producto pasa a ser multi-oposición.
+- `DEBT.md` (100 KB): leerla antes de tocar el modelo de datos.
 
 ## Puertas antes de dar una pantalla por buena
 
-1. Pruebas en verde (`python -m pytest -q`).
-2. `ai-design-check` o la lista de diez.
-3. Ojos frescos con este fichero y una captura.
+1. `python -m pytest -q` en verde.
+2. `ai-design-check` o la lista de diez de las recetas.
+3. Ojos frescos: subagente sin historial con este fichero y una captura.
