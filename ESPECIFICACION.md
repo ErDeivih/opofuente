@@ -684,3 +684,17 @@ Recomendación por defecto, que se aplica si no se dice lo contrario:
 5. Contrato: `export_openapi --check` y `npm run contracts:check` en verde.
 6. `ai-design-check` o la lista de diez de las recetas, para interfaz.
 7. Ojos frescos: subagente sin historial con este fichero y una captura.
+
+## Aprobación de David (2026-11-04)
+
+Aprobado **tal cual**, sin cambios:
+
+- **§5** — modelo de datos: temario común versionado y convocatorias que lo referencian.
+- **§6** — migración `0021` con su downgrade.
+- **O1** sí: el temario común v1 es `temario-c1.md` (5 bloques, 40 temas) y el TAI 2025 queda como programa publicado con equivalencias.
+- **O2** sí: el alumno ve solo el temario común; el programa publicado queda en administración.
+- **O3** re-atribuir: las preguntas y fallos existentes se re-apuntan al común con equivalencias aceptadas, informe por fila y copia previa.
+- **O4** no todavía: primero el temario común; las convocatorias nuevas son su propia tarea.
+
+La siguiente sesión empieza por **B-001**. No hay que esperar nada más.
+
