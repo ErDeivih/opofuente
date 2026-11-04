@@ -1,56 +1,75 @@
-# Especificación — OpoFuente, todas las oposiciones
+# Especificación — OpoFuente, oposiciones de informática C1
 
-Estado: **borrador para revisar**. Alcance redefinido el 2026-11-04.
+Estado: **borrador para revisar**. Alcance corregido el 2026-11-04.
 
-## Objetivo
+## Qué es y qué no es
 
-Una plataforma de **temario para todas las oposiciones** de David, no solo una. **TAI (C1) es la semilla**: su estructura, sus 134 epígrafes y su forma de organizar el temario son el modelo que se generaliza a las demás.
+**Es**: una plataforma de temario para **oposiciones de informática de España de cualquier administración** — ayuntamientos, diputaciones, comunidades, sanidad, Estado. Grupo **C1** (y su escalón C2 si comparte temario).
 
-Debe poder alojar **C1 y C2** y admitir más temas y más oposiciones sin rehacer nada.
+**No es**: celador, Guardia Civil ni ninguna oposición que no sea de informática. Ese material existe en el banco pero **no entra en el producto**.
 
-## El cambio de alcance respecto al borrador anterior
+## El problema real que resuelve
 
-Antes: «solo C1». Ahora: **un modelo de datos que aguante todas**, con TAI como primera oposición cargada.
+Las distintas oposiciones C1 de informática **no comparten temario entre sí**. Cada convocatoria publica el suyo. La solución no es copiar uno: es hacer **un temario general basado en el de TAI**, y enriquecerlo con lo que aparece en las demás convocatorias.
 
-Eso cambia lo que hay que decidir primero. Ya no es «qué es un tema» en una oposición, sino:
+Eso ya está empezado, y bien, en:
 
-| Decisión | Por qué manda ahora | Estado |
+```
+F:\aprendizaje\empleo-informatica\
+```
+
+| Fichero | Qué es |
+|---|---|
+| `minicerebro\temario-c1.md` (9,1 KB) | **el temario único**: construido desde bases reales de 2026 y del TAI del Estado, con bloques y temas numerados |
+| `fuentes\oposicionesinformatica\c1.txt` (y a1, a2, c2) | convocatorias de informática de toda España con su enlace |
+| `fuentes\sacyl\C1 Tecnico Especialista en Informatica\` | **convocatorias y plantillas de examen reales** de Ávila, León, Palencia, Salamanca, Soria, Valladolid y Zamora |
+| `fuentes\sacil\...`, `cyl_*.md`, `jcyl_*.html` | bases de Castilla y León, A1/A2/C1 |
+| `minicerebro\convocatorias.csv`, `oposiciones-web.md`, `bolsas.md` | inventario de convocatorias y bolsas |
+| `alertas\` | vigía de nuevas oposiciones de informática |
+
+Datos que ese temario ya deja escritos y que el producto debe respetar:
+
+- Las C1 que publican temario tienen **unos 40 temas**.
+- Hay materias que **se repiten en todas**: régimen local, redes, sistemas operativos y servidores, copias de seguridad y continuidad.
+- **Formato típico del examen**: test de **50 preguntas** (a veces 40–90), con penalización de **1/3 o 1/4** por error, **más un supuesto práctico**. Hay que sacar **5 sobre 10** en cada parte.
+
+## El modelo de datos: es lo primero que hay que decidir
+
+| Decisión | Por qué manda | Estado |
 |---|---|---|
-| ¿La oposición es una entidad de primer nivel, o un atributo? | decide el modelo entero | **pendiente** |
-| ¿Un tema puede pertenecer a varias oposiciones a la vez? | hay temarios compartidos entre C1 y C2 | **pendiente** |
-| ¿El temario es por convocatoria, por año o estable? | cambia si hay versiones del mismo tema | **pendiente** |
-| ¿Cuántos niveles: oposición → bloque → tema → epígrafe? | define la navegación y el avance | **pendiente** |
-| ¿El avance es por oposición, por tema o por epígrafe? | decide el porcentaje | **pendiente** |
+| ¿Una **convocatoria** (ayuntamiento, año) es entidad propia, o solo una etiqueta sobre el tema? | decide si el temario es único o hay N versiones | **pendiente** |
+| ¿Un tema puede pertenecer a **varias convocatorias** a la vez? | el temario único se solapa con todos | **pendiente** |
+| ¿El temario general es **una** entidad y las convocatorias lo *referencian*, o cada convocatoria tiene su copia? | es la decisión que evita duplicar 40 temas por convocatoria | **pendiente** |
+| ¿Niveles: bloque → tema → epígrafe, o hay uno más? | define la navegación y el avance | **pendiente** |
+| ¿El avance es por tema, por bloque o por convocatoria? | decide el porcentaje | **pendiente** |
 
-**Lo que ya está, y sirve de molde**: 134 epígrafes de TAI derivados del título oficial (rama `f3-epigrafes-tai`).
+Recomendación: **un temario general único, y cada convocatoria lo referencia** con sus particularidades (temas añadidos, suprimidos, ponderación). Copiar el temario por convocatoria es el camino a 40 temas × 50 convocatorias.
 
 ## Familia y recetas
 
-Familias **F (documentación)** para consultar el temario y **A (panel)** para administrarlo. Documentación navegable con estado de avance, no una web de marketing ni un chat.
+Familias **F (documentación)** para consultar el temario y **A (panel)** para administrarlo. Documentación navegable con estado de avance; no es una web de marketing ni un chat.
 
 ## Pantallas de esta tanda
 
-### 1. Selector de oposición
-- [ ] Lista de oposiciones con su temario cargado
-- [ ] Estado vacío: «todavía no hay oposiciones»
-- [ ] Cargando y error
-
-### 2. Índice del temario de una oposición
-- [ ] Árbol bloque → tema → epígrafe, en el orden oficial
+### 1. Índice del temario general
+- [ ] Árbol bloque → tema, en el orden oficial
 - [ ] Búsqueda que **perdona tildes**
 - [ ] Marca visible de lo estudiado
-- [ ] Navegación de vuelta al selector
 
-### 3. Ficha de tema
-- [ ] Texto del epígrafe
-- [ ] Apuntes del tema, si existen
-- [ ] Preguntas asociadas
+### 2. Ficha de tema
+- [ ] Texto del tema
+- [ ] Apuntes, si existen
+- [ ] **En qué convocatorias aparece** (esto es lo que hace útil el temario único)
 - [ ] Navegación anterior / siguiente
 - [ ] Marcar como estudiado, con fecha
 
-### 4. Avance
-- [ ] Por bloque y por oposición
+### 3. Avance
+- [ ] Por bloque y total
 - [ ] Qué queda, ordenado por lo que falta
+
+### 4. Convocatorias (solo lectura)
+- [ ] Lista con administración, año y grupo
+- [ ] Ficha con sus bases y sus particularidades de temario
 
 ## Estados obligatorios
 
@@ -58,17 +77,17 @@ Familias **F (documentación)** para consultar el temario y **A (panel)** para a
 
 ## Fuera de alcance de esta tanda
 
-- **Batería de preguntas y simulacros**: no todavía.
-- **Ciclo de estudio del alumno** (resultado, repaso, fallos): no.
-- **Panel de administración completo**: solo lo mínimo para cargar un temario.
-
-Meter contenido multi-oposición **no** es meter todo el producto: primero el modelo y el temario, después el resto.
+- **Test y simulacros con penalización**: no todavía, aunque el formato ya está documentado.
+- **Supuesto práctico**: no.
+- **Ciclo del alumno** (resultado, repaso, fallos): no.
+- **Cualquier oposición que no sea de informática**.
+- **El banco de 53,7 GB**: no es la fuente de este producto. La fuente es `F:\aprendizaje\empleo-informatica\`.
 
 ## Riesgos
 
-- **85 ramas locales.** La de trabajo es `main` (`6483111`), que está activa en el worktree `F:\temp-opofuente\opofuente-restaurado`. No abrir ramas por tarea.
-- El banco de datos (53,7 GB) vive en `E:\OpoFuente-datos` con junction desde `F:\OpoFuente`. **Y no es solo informática**: tiene `GUARDIA-CIVIL`, `celador` y `apuntes-tai-copia`, que ahora sí son material relevante porque el producto pasa a ser multi-oposición.
+- **85 ramas locales.** La de trabajo es `main` (`6483111`), activa en el worktree `F:\temp-opofuente\opofuente-restaurado`. No abrir ramas por tarea.
 - `DEBT.md` (100 KB): leerla antes de tocar el modelo de datos.
+- **No confundir fuentes**: el banco `E:\OpoFuente-datos` tiene material de otras oposiciones (celador, Guardia Civil) que **no** entra aquí.
 
 ## Puertas antes de dar una pantalla por buena
 
