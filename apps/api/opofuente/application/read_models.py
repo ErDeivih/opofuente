@@ -181,6 +181,47 @@ class SeedReport:
         return texto
 
 
+#: Resultado de sembrar el temario común (B-002). Se informa aparte del de perfiles porque el
+#: temario tiene su propio ciclo: se sincroniza en borrador y solo se publica cuando está completo.
+@dataclass(frozen=True, slots=True)
+class CurriculumSeedReport:
+    entities: tuple[EntityOutcome, ...] = ()
+    published: bool = False
+    counts: dict[str, int] = field(default_factory=dict)
+
+    @property
+    def created(self) -> int:
+        return sum(1 for entity in self.entities if entity.created)
+
+    @property
+    def updated(self) -> int:
+        return sum(1 for entity in self.entities if entity.updated)
+
+    @property
+    def unchanged(self) -> int:
+        return sum(1 for entity in self.entities if entity.unchanged)
+
+    @property
+    def blocked(self) -> int:
+        return sum(1 for entity in self.entities if entity.blocked)
+
+    @property
+    def changed(self) -> bool:
+        return self.created > 0 or self.updated > 0 or self.blocked > 0
+
+    def summary(self) -> str:
+        estado = "publicado" if self.published else "en borrador"
+        texto = (
+            f"temario común: {self.counts.get('blocks', 0)} bloques, "
+            f"{self.counts.get('topics', 0)} temas, {self.counts.get('nodes', 0)} nodos "
+            f"({estado}): {self.created} nuevas, {self.updated} actualizadas, "
+            f"{self.unchanged} sin cambios"
+        )
+        if self.blocked:
+            texto += f", {self.blocked} sin retirar (temas con material asignado; ver ADR-007)"
+        return texto
+
+
 # ------------------------------------------------------------------ S02: ingesta y trabajos
 
 
@@ -618,6 +659,7 @@ __all__ = [
     "ConvocationSummary",
     "CoverageNodeView",
     "CoverageView",
+    "CurriculumSeedReport",
     "CurriculumView",
     "DecisionOutcome",
     "DuplicateClusterDraft",

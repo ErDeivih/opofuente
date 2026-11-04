@@ -1408,10 +1408,12 @@ verificado; lo que queda son pantallas concretas, con su coste dicho arriba, y n
 
 ## DEBT-028 — La puerta 17 depende de fuentes oficiales que cambian
 
-**Qué pasa.** El paso 17 de `scripts/gates.ps1` ejecuta `build_profile_fixtures --check`, que compara
-los fixtures con los documentos de `data/sources`. Esos documentos están ignorados por git y se bajan
-con `scripts/fetch-sources.ps1`. En un worktree nuevo no existen, así que la puerta falla con «faltan
-fuentes locales»; y al descargarlos en noviembre de 2026, cinco de ellos ya no coinciden con el
+**Qué pasa.** El paso 17 de `scripts/gates.ps1` ejecuta `build_profile_fixtures --check` y
+`build_curriculum_fixtures --check`, que comparan los fixtures con documentos locales: las fuentes
+oficiales de los perfiles (`data/sources`, bajadas con `scripts/fetch-sources.ps1`) y el temario
+fuente del común (`data/sources/temario-c1.md`, o `OPOFUENTE_TEMARIO_C1`). Esos documentos están
+ignorados por git y no existen en un worktree nuevo, así que la puerta falla con «faltan fuentes
+locales»; y al descargar las oficiales en noviembre de 2026, cinco de ellas ya no coinciden con el
 manifiesto de octubre (XML y HTML del BOE y del BOCYL que cambian en origen, y una resolución del
 BOCYL reeditada). Es decir: la puerta solo pasa en la máquina que conserva exactamente las descargas
 originales.

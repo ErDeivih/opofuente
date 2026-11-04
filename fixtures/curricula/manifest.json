@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "generated_by": "apps/api/opofuente/tools/build_curriculum_fixtures.py",
+  "note": "El temario común v1 sale de un documento de trabajo del espacio de contenido (ESPECIFICACION §2). No es una publicación oficial: es la fuente revisada que agrupa 5 bloques y 40 temas. El fixture es rastreable hasta él por sha256, y la siembra no publica una edición que no case con el recuento aprobado.",
+  "sources": [
+    {
+      "id": "temario-c1-md",
+      "role": "temario de trabajo del que sale la v1 del temario común",
+      "document": "minicerebro/temario-c1.md",
+      "origin": "espacio de contenido de ESPECIFICACION §2; se copia a data/sources (ignorado por git) o se apunta con OPOFUENTE_TEMARIO_C1",
+      "local_path": "data/sources/temario-c1.md",
+      "sha256": "50d8fa7f39e06c3409228010852bafebde87f31dcbb33758492fe5b0be10dcea"
+    }
+  ]
+}

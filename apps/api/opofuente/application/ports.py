@@ -19,6 +19,7 @@ from opofuente.application.read_models import (
     ConvocationDetail,
     ConvocationSummary,
     CoverageView,
+    CurriculumSeedReport,
     CurriculumView,
     DecisionOutcome,
     DuplicateClusterDraft,
@@ -49,6 +50,7 @@ from opofuente.domain.classification import (
     Proposal,
     ProposalStatus,
 )
+from opofuente.domain.curricula import CommonCurriculum
 from opofuente.domain.duplicates import TextDocument
 from opofuente.domain.ingestion import (
     BatchKind,
@@ -114,6 +116,17 @@ class ProfileRepository(Protocol):
 
     def upsert_profile(self, profile: Profile, *, now: datetime) -> SeedOutcome:
         """Siembra idempotente: repetirla no duplica ni deja datos a medias."""
+        ...
+
+
+@runtime_checkable
+class CurriculumRepository(Protocol):
+    """Persistencia del temario común y de las referencias de las convocatorias."""
+
+    def upsert_common_curriculum(
+        self, curriculum: CommonCurriculum, *, now: datetime
+    ) -> CurriculumSeedReport:
+        """Siembra idempotente: repetirla no duplica ni deja el temario a medias."""
         ...
 
 

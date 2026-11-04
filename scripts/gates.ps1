@@ -6,8 +6,10 @@
     migración desde cero -> siembra idempotente -> fixtures frente a las fuentes -> E2E.
     Un código distinto de cero bloquea. No se relaja ninguna configuración para que pase.
 
-    Las puertas 17 y 18 necesitan las fuentes oficiales descargadas (`scripts/fetch-sources.ps1`)
-    y el navegador de Playwright instalado (`npx playwright install chromium`).
+    Las puertas 17 y 18 necesitan las fuentes oficiales descargadas (`scripts/fetch-sources.ps1`),
+    el temario fuente del temario común (copia `minicerebro/temario-c1.md` a
+    `data/sources/temario-c1.md` o define `OPOFUENTE_TEMARIO_C1`) y el navegador de Playwright
+    instalado (`npx playwright install chromium`).
 .PARAMETER SkipE2e
     Omite las pruebas end-to-end (útiles cuando no hay navegador de Playwright instalado).
 .EXAMPLE
@@ -69,7 +71,12 @@ try {
         if (Test-Path $gatesDataDir) { Remove-Item -Recurse -Force $gatesDataDir }
     }
 
-    Invoke-OpoFuenteStep -Name '17. fixtures de perfil sincronizados con las fuentes oficiales' -Action {
+    Invoke-OpoFuenteStep -Name '17. fixtures sincronizados con sus fuentes' -Action {
+        # El temario común va primero: su fuente es local (data/sources/temario-c1.md) y no depende
+        # de las descargas del BOE. Si después fallan las de los perfiles, el motivo está en
+        # DEBT-028 y así se ve que el temario sí estaba sincronizado.
+        uv run python -m opofuente.tools.build_curriculum_fixtures --check
+        if ($LASTEXITCODE -ne 0) { return }
         uv run python -m opofuente.tools.build_profile_fixtures --check
     }
 

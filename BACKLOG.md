@@ -9,15 +9,16 @@ Estado de partida (2026-11-04, sesión 2): la propuesta de modelo está escrita 
 [`ESPECIFICACION.md`](ESPECIFICACION.md) §5–§6, con su ADR-018 en propuesta. **Nada implementado**, a
 propósito: el encargo pedía escribirla antes de codificar.
 
-Estado (sesión 3, 2026-11-04): David aprobó §5, §6 y O1–O4 tal cual; **B-001 está hecha** (modelos,
-migración `0021` y `downgrade` probado). La siguiente es B-002.
+Estado (sesión 3, 2026-11-04): David aprobó §5, §6 y O1–O4 tal cual; **B-001 y B-002 están hechas**
+(modelos, migración `0021` con `downgrade`, temario común v1 con su generador y siembra idempotente).
+La siguiente es B-003.
 
 ## Lista
 
 | ID | Tarea | Nivel | Estado | Depende de |
 |---|---|---|---|---|
 | [B-001](#b-001) | Modelos + migración `0021_temario_comun_y_referencias` | 2 | **hecha** (2026-11-04) | — |
-| [B-002](#b-002) | Fixture del temario común v1, generador y siembra idempotente | 2 | lista | B-001 |
+| [B-002](#b-002) | Fixture del temario común v1, generador y siembra idempotente | 2 | **hecha** (2026-11-04) | B-001 |
 | [B-003](#b-003) | Equivalencias TAI publicado → común y re-atribución del banco | 2 | lista | B-002 |
 | [B-004](#b-004) | API y contrato del temario común y de las particularidades | 2 | lista | B-002 |
 | [B-005](#b-005) | Interfaz: índice del temario, ficha de tema y avance | 2 | lista | B-004 |
@@ -30,9 +31,9 @@ migración `0021` y `downgrade` probado). La siguiente es B-002.
 
 ## Detalle
 
-### B-001 — HECHA (2026-11-04)
+### B-001
 
-**Modelos y migración `0021_temario_comun_y_referencias`.** Cinco tablas nuevas (`curricula`,
+**HECHA (2026-11-04).** Modelos y migración `0021_temario_comun_y_referencias`. Cinco tablas nuevas (`curricula`,
 `curriculum_versions`, `convocation_curriculum_refs`, `convocation_curriculum_adjustments`,
 `curriculum_equivalences`), `curriculum_nodes` cambia de dueño (`convocation_version_id` →
 `curriculum_version_id`, unicidad `(curriculum_version_id, path)`) y backfill no destructivo, según
@@ -63,17 +64,31 @@ migración `0021` y `downgrade` probado). La siguiente es B-002.
 
 ### B-002
 
-**Fixture del temario común v1** desde `F:\aprendizaje\empleo-informatica\minicerebro\temario-c1.md`
-(5 bloques, 40 temas), generador con verificación de sha256 y siembra idempotente en la puerta que ya
-existe.
+**HECHA (2026-11-04).** Fixture del temario común v1 desde `temario-c1.md` (5 bloques, 40 temas),
+generador con verificación de sha256 y siembra idempotente en la puerta que ya existe.
 
-- **Ficheros:** `fixtures/curricula/informatica-c1.v1.json`,
-  `apps/api/opofuente/tools/build_curriculum_fixtures.py`,
-  `apps/api/opofuente/tools/seed_profiles.py` (o `seed_curricula.py`), `scripts/gates.ps1` (sin pasos
-  nuevos si se engancha a la siembra existente), pruebas de siembra.
-- **Criterio de cierre:** siembra dos veces sin cambios (`--check` en verde); 5 bloques / 40 temas /
-  45 nodos con `path` `I.1`…`V.40`; la ref `primary` de `tai-age-2025` al temario común queda creada
-  con su cita; `build_curriculum_fixtures --check` no detecta diferencias.
+- **Entregado:** `fixtures/curricula/informatica-c1.v1.json` (45 nodos, rutas `I.1`…`V.40`,
+  `official_code` 1–40, cita por bloque y `referenced_by` con la `primary` del TAI);
+  `fixtures/curricula/manifest.json` con la huella de la fuente;
+  `apps/api/opofuente/tools/build_curriculum_fixtures.py` (genera, `--check` y verifica sha256);
+  dominio `opofuente/domain/curricula.py`, cargador `infrastructure/curriculum_fixture_loader.py`,
+  repositorio `infrastructure/curriculum_repository.py` y servicio
+  `application/curriculum_service.py`; `tools/seed_profiles.py` siembra ahora perfil + temario y
+  `--check` cubre los dos; la puerta 17 ejecuta también `build_curriculum_fixtures --check`.
+- **Pruebas:** `test_temario_comun.py` (7 pruebas: forma del fixture, idempotencia explícita,
+  recuentos y rutas en la base, `primary` del TAI con su cita, un temario incompleto no se publica, una
+  versión activa no se edita, un solo común) y `tests/unit/test_build_curriculum_fixtures.py`
+  (5 pruebas herméticas del parser y la verificación por hash).
+- **Evidencia ejecutada:** suite completa **988 pruebas en verde** (las 976 previas + 12 nuevas);
+  sobre una base recién migrada, primera siembra publica el temario (5/40/45, ref `primary` con
+  «ANEXO V, apartado 3», `PRAGMA foreign_key_check` vacío) y la segunda pasada con `--check` termina
+  con **0 creadas, 0 actualizadas, 0 fallos**; `build_curriculum_fixtures --check` verde contra la
+  fuente real (sha256 `50d8fa7f…dcea`). Puertas 1–16 en verde; en la 17 el fixture del temario queda
+  sincronizado y es la verificación de los **perfiles** la que sigue bloqueada por las fuentes
+  oficiales descargadas (DEBT-028, previo). E2E no ejecutada.
+- **Decisiones:** D-011 (fuente por manifiesto y huella), D-012 (publicar solo con el recuento y no
+  editar una versión activa), D-013 (referencias se confirman, no se re-apuntan).
+- **Criterio de cierre:** cumplido.
 
 ### B-003
 

@@ -153,3 +153,46 @@ Aquí queda el resumen con el motivo y la reversión.
 - **Alternativa descartada:** dejar que la siembra «converja» la versión y la referencia al fixture
   (dos verdades sobre qué edición está vigente y riesgo de `IntegrityError` a medias).
 - **Reversión:** el `downgrade` no se ve afectado; revertir es volver a permitir la reactivación.
+
+## D-011 — La fuente del temario común entra por manifiesto y huella, no por una ruta fija
+
+- **Fecha:** 2026-11-04 · **Nivel:** 2 · **Estado:** aplicada (B-002)
+- **Decisión:** `fixtures/curricula/manifest.json` declara la fuente del temario común (`id`,
+  `document`, `sha256`, `local_path` relativa al repositorio), y el generador la busca por este orden:
+  `--source <ruta>`, variable `OPOFUENTE_TEMARIO_C1`, o `data/sources/temario-c1.md` (ignorada por
+  git). Antes de leerla comprueba su `sha256`; si no coincide, no genera nada.
+- **Motivo:** la fuente vive fuera del repositorio, en el espacio de contenido de `ESPECIFICACION.md`
+  §2, y una ruta absoluta del equipo no debe quedar a fuego en el código (se rompe en otra máquina y
+  no es trazable). El patrón es el mismo que ya usan los perfiles oficiales (ADR-006): manifiesto con
+  huella + generador + `--check` en la puerta. El fixture queda rastreable hasta el documento.
+- **Alternativa descartada:** escribir el JSON a mano (nadie podría verificar de dónde sale cada
+  tema) o embeber la ruta `F:\…` en el código (se rompe fuera de este equipo).
+- **Reversión:** cambiar el manifiesto y el `local_path`; el formato del fixture no cambia.
+
+## D-012 — La v1 se publica solo con el recuento del contrato, y una versión activa no se edita
+
+- **Fecha:** 2026-11-04 · **Nivel:** 2 · **Estado:** aplicada (B-002)
+- **Decisión:** la siembra del común sincroniza los nodos de su edición y solo pone `active` cuando
+  el recuento real es exactamente 5 bloques / 40 temas / 45 nodos (`ESPECIFICACION.md` §6.7). Si la
+  edición ya está `active`, cualquier diferencia con el fixture **falla en voz alta** en lugar de
+  reescribirla (I9). Un fixture incompleto se siembra en `draft` y no se publica.
+- **Motivo:** publicar es afirmar que el temario está completo; y una convocatoria no puede ver
+  cambiar el temario que estudia sin una edición nueva. El error temprano evita dos verdades y un
+  `IntegrityError` del índice parcial de versión activa a mitad de la siembra.
+- **Alternativa descartada:** publicar si el fixture «parece completo» (el propio fixture incompleto
+  es coherente consigo mismo y pasaría esa comprobación).
+- **Reversión:** volver a permitir ediciones sobre `active`; el `downgrade` de `0021` no cambia.
+
+## D-013 — Las referencias del fixture se crean o confirman, no se re-apuntan solas
+
+- **Fecha:** 2026-11-04 · **Nivel:** 2 · **Estado:** aplicada (B-002)
+- **Decisión:** la siembra del común crea la referencia `primary` que declara el fixture (TAI 2025 →
+  temario común, con la cita «ANEXO V, apartado 3») o actualiza su cita; si ya existe y apunta a
+  **otra** versión, falla y no la re-apunta. Tampoco duplica una referencia al mismo par con otro
+  papel.
+- **Motivo:** qué edición estudia una convocatoria es una decisión de producto (O1), no un efecto de
+  sembrar un fixture. Cambiarla en silencio dejaría a la convocatoria estudiando otra edición sin que
+  nadie lo haya decidido; la cita, en cambio, sí debe converger con la fuente.
+- **Alternativa descartada:** re-apuntar la referencia al valor del fixture (mismo problema que D-010
+  con las `official`: dos verdades sobre la edición vigente).
+- **Reversión:** el `downgrade` de `0021` borra las referencias del común; volver a sembrar las crea.
