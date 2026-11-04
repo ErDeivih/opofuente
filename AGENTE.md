@@ -1,7 +1,7 @@
 # Ficha del agente — OpoFuente — temario comun de oposiciones de informatica C1
 
 **Id en el panel**: `opofuente`
-**Ruta**: `F:\EspacioCodigo\opofuente`
+**Ruta**: `F:\Proyectos\opofuente`
 **Rama de trabajo**: `main`
 **Familia de interfaz**: F (documentacion) + A (panel) — ver `F:\Inforepositorios\indice\RECETAS-UI.md`
 
