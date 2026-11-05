@@ -1,0 +1,278 @@
+{
+  "source": {
+    "curriculum_version_code": "tai-age-2025-programa-v1",
+    "name": "Programa publicado del TAI 2025 (ANEXO V del BOE)"
+  },
+  "target": {
+    "curriculum_version_code": "informatica-c1-v1",
+    "name": "Temario común de informática C1 (v1)"
+  },
+  "generated_by": "Curaduría manual para B-003 (2026-11-05), comparando título y contenido de cada tema publicado con el temario común.",
+  "note": "Las equivalencias accepted se aplican a curriculum_mappings y learning_errors. Las proposed se guardan para revisión humana y NO se aplican solas: son temas del programa publicado que reparten su contenido entre varios temas del común o cuya correspondencia no es inequívoca.",
+  "equivalences": [
+    {
+      "source_path": "I.1",
+      "target_path": "I.1",
+      "relation": "equivalent",
+      "confidence": 0.99,
+      "status": "accepted",
+      "evidence_note": "Mismo tema: Constitución de 1978, derechos y deberes, Corona y organización del Estado."
+    },
+    {
+      "source_path": "I.2",
+      "target_path": "I.1",
+      "relation": "subset",
+      "confidence": 0.92,
+      "status": "accepted",
+      "evidence_note": "Las Cortes, el Tribunal Constitucional y el Defensor del Pueblo están dentro del tema constitucional del común."
+    },
+    {
+      "source_path": "I.3",
+      "target_path": "I.1",
+      "relation": "subset",
+      "confidence": 0.92,
+      "status": "accepted",
+      "evidence_note": "El Gobierno y sus relaciones con las Cortes están dentro del tema constitucional del común."
+    },
+    {
+      "source_path": "I.4",
+      "target_path": "I.7",
+      "relation": "partial",
+      "confidence": 0.55,
+      "status": "proposed",
+      "evidence_note": "Reparte su contenido entre I.7 (TREBEP y empleo público) e I.12 (transparencia); la Agenda 2030 no tiene tema propio. Se revisa a mano."
+    },
+    {
+      "source_path": "I.5",
+      "target_path": "I.11",
+      "relation": "partial",
+      "confidence": 0.82,
+      "status": "accepted",
+      "evidence_note": "Igualdad y violencia de género coinciden; el material LGTBI y de discapacidad no tiene tema propio y queda como contenido adicional."
+    },
+    {
+      "source_path": "I.6",
+      "target_path": "V.36",
+      "relation": "partial",
+      "confidence": 0.5,
+      "status": "proposed",
+      "evidence_note": "Identidad y firma electrónica encajan en V.36, pero la sociedad de la información y la Agenda Digital no tienen equivalente claro. Se revisa."
+    },
+    {
+      "source_path": "I.7",
+      "target_path": "V.37",
+      "relation": "subset",
+      "confidence": 0.9,
+      "status": "accepted",
+      "evidence_note": "Principios, derechos y obligaciones en protección de datos están dentro de la protección de datos aplicada del común."
+    },
+    {
+      "source_path": "I.8",
+      "target_path": "V.39",
+      "relation": "partial",
+      "confidence": 0.55,
+      "status": "proposed",
+      "evidence_note": "La gestión electrónica de procedimientos encaja en V.39, pero el ENS de este tema está en V.35. Contenido repartido: se revisa."
+    },
+    {
+      "source_path": "I.9",
+      "target_path": "V.39",
+      "relation": "partial",
+      "confidence": 0.6,
+      "status": "proposed",
+      "evidence_note": "Sedes y canales encajan en V.39, pero identificación y autenticación (Cl@ve) están en V.36. Se revisa el reparto antes de aplicarlo."
+    },
+    {
+      "source_path": "II.1",
+      "target_path": "II.13",
+      "relation": "partial",
+      "confidence": 0.8,
+      "status": "accepted",
+      "evidence_note": "Arquitectura y componentes internos coinciden con el tema de arquitectura del común; la representación de la información es contenido adicional."
+    },
+    {
+      "source_path": "II.2",
+      "target_path": "II.13",
+      "relation": "subset",
+      "confidence": 0.9,
+      "status": "accepted",
+      "evidence_note": "Periféricos, impresión, almacenamiento y visualización están dentro del tema de arquitectura del común."
+    },
+    {
+      "source_path": "II.3",
+      "target_path": "IV.30",
+      "relation": "partial",
+      "confidence": 0.55,
+      "status": "proposed",
+      "evidence_note": "Estructuras de datos y algoritmos se tocan en programación (IV.30), pero organizaciones de ficheros y formatos no tienen tema propio. Se revisa."
+    },
+    {
+      "source_path": "II.4",
+      "target_path": "II.14",
+      "relation": "partial",
+      "confidence": 0.8,
+      "status": "accepted",
+      "evidence_note": "Sistemas operativos de usuario y sus elementos; el sistema operativo de servidor está en III.18 y los móviles no tienen tema propio."
+    },
+    {
+      "source_path": "II.5",
+      "target_path": "IV.29",
+      "relation": "partial",
+      "confidence": 0.5,
+      "status": "proposed",
+      "evidence_note": "Los gestores de bases de datos están en IV.29 y el modelo relacional en IV.27; el tema publicado mezcla ambos. Se revisa."
+    },
+    {
+      "source_path": "III.1",
+      "target_path": "IV.27",
+      "relation": "subset",
+      "confidence": 0.92,
+      "status": "accepted",
+      "evidence_note": "Modelado de datos, diseño lógico y normalización están dentro del tema de bases de datos relacionales del común."
+    },
+    {
+      "source_path": "III.2",
+      "target_path": "IV.30",
+      "relation": "subset",
+      "confidence": 0.9,
+      "status": "accepted",
+      "evidence_note": "Tipos, operadores, control de flujo, funciones y estructuras de un programa están dentro del tema de programación."
+    },
+    {
+      "source_path": "III.3",
+      "target_path": "IV.28",
+      "relation": "subset",
+      "confidence": 0.95,
+      "status": "accepted",
+      "evidence_note": "ANSI SQL, procedimientos almacenados y disparadores están dentro del tema de SQL."
+    },
+    {
+      "source_path": "III.4",
+      "target_path": "IV.30",
+      "relation": "subset",
+      "confidence": 0.88,
+      "status": "accepted",
+      "evidence_note": "Programación orientada a objetos, patrones y UML son el contenido de POO del tema de programación; UML es contenido adicional."
+    },
+    {
+      "source_path": "III.5",
+      "target_path": "IV.31",
+      "relation": "partial",
+      "confidence": 0.55,
+      "status": "proposed",
+      "evidence_note": "Java EE/Jakarta EE y .NET se mencionan en desarrollo web (IV.31), pero el tema publicado es de arquitecturas empresariales. Se revisa."
+    },
+    {
+      "source_path": "III.6",
+      "target_path": "IV.32",
+      "relation": "partial",
+      "confidence": 0.8,
+      "status": "accepted",
+      "evidence_note": "Cliente/servidor, multicapas y servicios web encajan en interoperabilidad e integración del común."
+    },
+    {
+      "source_path": "III.7",
+      "target_path": "IV.31",
+      "relation": "subset",
+      "confidence": 0.92,
+      "status": "accepted",
+      "evidence_note": "Aplicaciones web, HTML/XML, navegadores y lenguajes de script están dentro del tema de desarrollo web."
+    },
+    {
+      "source_path": "III.8",
+      "target_path": "V.40",
+      "relation": "partial",
+      "confidence": 0.8,
+      "status": "accepted",
+      "evidence_note": "Accesibilidad, diseño universal y usabilidad coinciden con V.40; la parte de confidencialidad y seguridad es contenido adicional."
+    },
+    {
+      "source_path": "III.9",
+      "target_path": "IV.30",
+      "relation": "partial",
+      "confidence": 0.55,
+      "status": "proposed",
+      "evidence_note": "El control de versiones y las buenas prácticas están en IV.30, pero repositorios, metodologías y pruebas no tienen tema propio. Se revisa."
+    },
+    {
+      "source_path": "IV.1",
+      "target_path": "III.18",
+      "relation": "subset",
+      "confidence": 0.9,
+      "status": "accepted",
+      "evidence_note": "Administración y mantenimiento del sistema operativo están dentro del tema de sistemas operativos de servidor."
+    },
+    {
+      "source_path": "IV.2",
+      "target_path": "III.20",
+      "relation": "partial",
+      "confidence": 0.5,
+      "status": "proposed",
+      "evidence_note": "El tema publicado reparte administración de bases de datos (IV.29), virtualización (III.19), almacenamiento y backup (III.20). Se revisa."
+    },
+    {
+      "source_path": "IV.3",
+      "target_path": "II.16",
+      "relation": "partial",
+      "confidence": 0.5,
+      "status": "proposed",
+      "evidence_note": "El correo electrónico está en II.16 y los contenedores y microservicios en III.19. Contenido repartido: se revisa."
+    },
+    {
+      "source_path": "IV.4",
+      "target_path": "III.21",
+      "relation": "partial",
+      "confidence": 0.85,
+      "status": "accepted",
+      "evidence_note": "Redes de área local, dispositivos y monitorización del tráfico encajan en el tema de redes del común."
+    },
+    {
+      "source_path": "IV.5",
+      "target_path": "V.34",
+      "relation": "partial",
+      "confidence": 0.5,
+      "status": "proposed",
+      "evidence_note": "El tema publicado es transversal: seguridad (V.34, V.38), criptografía y firma (V.36), CPD (III.25) e incidencias (III.24). Se revisa."
+    },
+    {
+      "source_path": "IV.6",
+      "target_path": "III.22",
+      "relation": "subset",
+      "confidence": 0.9,
+      "status": "accepted",
+      "evidence_note": "Medios de transmisión, conmutación, redes y comunicaciones inalámbricas están dentro del tema de comunicaciones."
+    },
+    {
+      "source_path": "IV.7",
+      "target_path": "III.21",
+      "relation": "subset",
+      "confidence": 0.93,
+      "status": "accepted",
+      "evidence_note": "OSI, TCP/IP y sus protocolos están dentro del tema de redes del común."
+    },
+    {
+      "source_path": "IV.8",
+      "target_path": "III.21",
+      "relation": "partial",
+      "confidence": 0.5,
+      "status": "proposed",
+      "evidence_note": "La arquitectura de Internet y sus protocolos se tocan en III.21, pero los servicios y HTTP/HTTPS/SSL se reparten con III.23 y IV.31. Se revisa."
+    },
+    {
+      "source_path": "IV.9",
+      "target_path": "V.38",
+      "relation": "partial",
+      "confidence": 0.55,
+      "status": "proposed",
+      "evidence_note": "Seguridad perimetral y VPN se tocan en III.22 y V.38; el tema publicado no tiene una correspondencia única. Se revisa."
+    },
+    {
+      "source_path": "IV.10",
+      "target_path": "III.21",
+      "relation": "subset",
+      "confidence": 0.92,
+      "status": "accepted",
+      "evidence_note": "Redes locales, tipologías, transmisión, acceso y dispositivos están dentro del tema de redes del común."
+    }
+  ]
+}

@@ -1,8 +1,8 @@
 titulo: OpoFuente — temario comun de oposiciones de informatica C1
-resumen: B-002 cerrada. El temario comun v1 tiene 5 bloques y 40 temas, se genera desde su fuente con huella y la siembra repetida no cambia nada.
+resumen: B-003 cerrada. El banco publicado del TAI se re-atribuye al temario comun con 20 equivalencias aceptadas, 13 propuestas para revisar, informe por fila e inverso probado.
 estado: en-curso
-tarea: B-002 cerrada: fixture v1, generador con sha256 y siembra idempotente que publica la version
+tarea: B-003 cerrada: equivalencias TAI -> comun y re-atribucion de mapeos y fallos con copia e inverso
 nivel: 2
-siguiente: B-003 equivalencias TAI publicado -> comun y re-atribucion del banco con informe por fila
+siguiente: B-004 API y contrato del temario comun, particularidades y "en que convocatorias aparece"
 bloqueado: 
-fecha: 2026-11-04
+fecha: 2026-11-05

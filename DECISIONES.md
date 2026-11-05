@@ -196,3 +196,51 @@ Aquí queda el resumen con el motivo y la reversión.
 - **Alternativa descartada:** re-apuntar la referencia al valor del fixture (mismo problema que D-010
   con las `official`: dos verdades sobre la edición vigente).
 - **Reversión:** el `downgrade` de `0021` borra las referencias del común; volver a sembrar las crea.
+
+## D-014 — Solo se aplican las equivalencias aceptadas; lo dudoso se guarda y se revisa
+
+- **Fecha:** 2026-11-05 · **Nivel:** 2 · **Estado:** aplicada (B-003)
+- **Decisión:** el fixture de equivalencias (33 temas publicados del TAI → temas del común) lleva por
+  fila relación, confianza, estado y motivo. Las `accepted` se guardan con fecha de decisión y son las
+  únicas que re-apuntan material; las `proposed` se guardan para revisión humana y **no se aplican**.
+  Los temas del programa publicado que reparten su contenido entre varios temas del común (por
+  ejemplo I.4 entre TREBEP y transparencia, o IV.5 entre seguridad, criptografía y CPD) son
+  precisamente los `proposed`: aplicarlos elegiría uno de los destinos por el alumno.
+- **Motivo:** es la respuesta a O3 («lo dudoso se queda como está y se revisa»). Un emparejamiento
+  heurístico habría movido preguntas a un tema que no les corresponde sin que nadie lo revisara.
+  Además, el fixture se valida contra la base: tiene que cubrir **todos** los temas publicados, para
+  que no quede banco a medio re-atribuir en silencio.
+- **Alternativa descartada:** aplicar también las `proposed` con la confianza como criterio (la ficha
+  del común saldría más llena, pero con temas mal atribuidos y sin revisión).
+- **Reversión:** el tool deja la lista de cambios en el informe; el inverso devuelve el material.
+
+## D-015 — La re-atribución se hace con copia previa, informe por fila e inverso probado
+
+- **Fecha:** 2026-11-05 · **Nivel:** 2 · **Estado:** aplicada (B-003)
+- **Decisión:** `tools/remap_curriculum.py` trabaja en tres modos: `--check` (plan sin escribir),
+  `--apply` (copia la base con sus `-wal`/`-shm` en `data/backups/remap-curriculum-<marca>/`, aplica
+  en una transacción y escribe `informe.json` allí) y `--inverse <informe>` (copia previa otra vez y
+  deshace desde el informe). El informe tiene una fila por equivalencia y una entrada por cada mapeo
+  o fallo movido, con ids y antes/después; re-ejecutar la misma operación no duplica ni cambia nada.
+- **Motivo:** la re-atribución toca datos del alumno (qué pregunta se estudia bajo qué tema) y una
+  operación de datos sin copia ni inverso es irreversible. El inverso se calcula desde el informe
+  (`changes` y `created_equivalence_ids`), no desde una suposición del estado anterior, así que
+  también funciona si entre medias se han movido otras cosas: lo que ya no coincide se cuenta como
+  omitido en vez de corromperse.
+- **Alternativa descartada:** una migración Alembic de datos. El temario común y las equivalencias son
+  datos de trabajo que pueden cambiar con la curación; una migración los congelaría y no tendría el
+  ensayo `--check` ni el inverso por informe.
+- **Reversión:** el propio `--inverse` con el informe de la ejecución que aplicó los cambios.
+
+## D-016 — Se re-apuntan mapeos y fallos; las propuestas de clasificación no se reescriben
+
+- **Fecha:** 2026-11-05 · **Nivel:** 2 · **Estado:** aplicada (B-003)
+- **Decisión:** la re-atribución mueve `curriculum_mappings` (cualquier sujeto: pregunta, documento,
+  sección, cita) y `learning_errors` del nodo publicado al común. No toca
+  `classification_proposals`: sus valores propuestos son la foto de lo que un motor propuso en su
+  momento y reescribirlos falsearía la auditoría.
+- **Motivo:** el material clasificado es el que tiene que verse bajo el tema común; las propuestas ya
+  decididas conservan su traza. La ambigüedad de resolver un nodo por `path` sin acotar la versión
+  (clasificación de material nuevo) queda como deuda aparte (B-012): no afecta a esta re-atribución,
+  que va por `id`.
+- **Reversión:** el inverso de D-015; las propuestas nunca se tocaron.

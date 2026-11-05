@@ -19,7 +19,7 @@ La siguiente es B-003.
 |---|---|---|---|---|
 | [B-001](#b-001) | Modelos + migración `0021_temario_comun_y_referencias` | 2 | **hecha** (2026-11-04) | — |
 | [B-002](#b-002) | Fixture del temario común v1, generador y siembra idempotente | 2 | **hecha** (2026-11-04) | B-001 |
-| [B-003](#b-003) | Equivalencias TAI publicado → común y re-atribución del banco | 2 | lista | B-002 |
+| [B-003](#b-003) | Equivalencias TAI publicado → común y re-atribución del banco | 2 | **hecha** (2026-11-05) | B-002 |
 | [B-004](#b-004) | API y contrato del temario común y de las particularidades | 2 | lista | B-002 |
 | [B-005](#b-005) | Interfaz: índice del temario, ficha de tema y avance | 2 | lista | B-004 |
 | [B-006](#b-006) | Importar las convocatorias C1 de `c1.txt` como referencias | 2 | lista | B-004 |
@@ -28,6 +28,7 @@ La siguiente es B-003.
 | [B-009](#b-009) | Investigación encomendada: cómo organizan el temario las academias C1 | 1 | lista | — |
 | [B-010](#b-010) | Decidir la bajada de `0021` después de sembrar el temario común | 2 | lista | B-002 |
 | [B-011](#b-011) | Estabilizar las pruebas de API que compiten con el worker de fondo | 1 | lista | — |
+| [B-012](#b-012) | Acotar por versión la resolución de nodo por `path` en clasificación | 2 | lista | B-004 |
 
 ## Detalle
 
@@ -92,18 +93,29 @@ generador con verificación de sha256 y siembra idempotente en la puerta que ya 
 
 ### B-003
 
-**Equivalencias nodo publicado → nodo común y re-atribución.** Propuesta de las 33→40 equivalencias,
-revisión humana de las dudosas y re-apuntado de `curriculum_mappings` y `learning_errors` al nodo
-común, con informe por fila.
+**HECHA (2026-11-05).** Equivalencias nodo publicado → nodo común y re-atribución. Propuesta de las
+33→40 equivalencias, revisión humana de las dudosas y re-apuntado de `curriculum_mappings` y
+`learning_errors` al nodo común, con informe por fila.
 
-- **Ficheros:** migración de datos o herramienta `tools/remap_curriculum.py` (con inverso probado),
-  `fixtures/curricula/tai-age-2025.equivalences.json`, pruebas.
-- **Ojo:** la resolución de nodo por `path` sin ámbito (`classification_repository.py`, en `decide` y
-  `_value_labels`) ya es ambigua entre convocatorias y se volverá peor con los nodos comunes: hay que
-  acotarla por versión antes de re-atribuir el banco.
-- **Criterio de cierre:** ninguna pregunta pierde su tema (informe con antes/después); las
-  equivalencias `proposed` no se aplican solas; re-ejecutar no duplica; el inverso devuelve el banco a
-  los nodos publicados y una prueba lo comprueba.
+- **Entregado:** `fixtures/curricula/tai-age-2025.equivalences.json` (33 filas: 20 `accepted` y 13
+  `proposed`, con relación, confianza y motivo); dominio `opofuente/domain/equivalences.py`; cargador
+  y repositorio (`infrastructure/equivalence_fixture_loader.py`, `remap_repository.py`); modelos del
+  informe (`application/remap_models.py`); herramienta `tools/remap_curriculum.py` con `--check`,
+  `--apply` (copia previa de la base + `informe.json`) y `--inverse <informe>`.
+- **Pruebas:** `test_equivalencias.py` (5 pruebas: plan sin escribir, solo se mueve lo aceptado, lo
+  dudoso se queda, conflicto de unicidad informado, idempotencia, inverso completo) y
+  `tests/unit/test_remap_curriculum.py` (4: cobertura de los 33 temas, 20/13 por estado, copia previa
+  y fallo sin base).
+- **Evidencia ejecutada:** `--check` calcula el plan sin escribir; `--apply` crea 33 equivalencias
+  (20 con `decided_at`), mueve 2 mapeos y 1 fallo, informa 1 conflicto y deja 1 mapeo dudoso en su
+  sitio; segunda pasada = 0 cambios; `--inverse` con el informe de la ejecución devuelve el material
+  y retira las 33 equivalencias; `PRAGMA foreign_key_check` vacío. Informe por fila con ids y
+  antes/después en `data/backups/remap-curriculum-<marca>/informe.json`.
+- **Decisiones:** D-014 (solo se aplican las aceptadas), D-015 (copia previa, informe por fila e
+  inverso), D-016 (se re-apuntan mapeos y fallos; las propuestas no se reescriben).
+- **Queda para B-012:** la clasificación de material nuevo resuelve el nodo por `path` sin acotar la
+  versión; no afecta a esta re-atribución (va por `id`) pero sí a lo que se clasifique después.
+- **Criterio de cierre:** cumplido.
 
 ### B-004
 
@@ -127,8 +139,9 @@ total. Sin nombres de fuentes, rutas de Windows ni versiones en la zona del alum
 - **Ficheros:** `apps/web/src/pages/ProgramPage.tsx`, `apps/web/src/features/profiles/*`,
   `apps/web/src/features/study/*`, pruebas de interfaz.
 - **Criterio de cierre:** checklist de `ESPECIFICACION.md` §9 con estados vacío/cargando/error/sin
-  permiso; `ai-design-check` o la lista de diez de las recetas; ojos frescos de un subagente sin
-  historial.
+  permiso; **sin textos de desarrollador ni explicaciones de cómo se calcula nada**
+  (`DOCTRINA-CALIDAD.md` §8: la app no habla de tokens, endpoints, «últimas temporadas» ni fórmulas);
+  `ai-design-check` o la lista de diez de las recetas; ojos frescos de un subagente sin historial.
 
 ### B-006
 
@@ -190,6 +203,21 @@ worker en los fixtures que controlan la cola.
 
 - **Criterio de cierre:** ejecutar la suite de integración varias veces con carga externa y sin ella
   sin fallos intermitentes; ninguna prueba depende del orden en que dos consumidores reclaman la cola.
+
+### B-012
+
+**Acotar por versión la resolución de nodo por `path` en clasificación.** `classification_repository`
+resuelve un nodo candidato con `WHERE path = :valor LIMIT 1` (aceptar una propuesta de eje `topic`) y
+etiqueta valores por `path` (`_value_labels`). Hoy ya es ambiguo entre el TAI, Guardia Civil y
+Celador; con el temario común sembrado, un `I.1` puede resolver al nodo publicado o al común sin
+criterio. Afecta al material que se clasifique **después** de B-003; la re-atribución hecha en B-003 va
+por `id` y no le afecta.
+
+- **Ficheros:** `apps/api/opofuente/infrastructure/classification_repository.py` (resolución de nodo y
+  etiquetas).
+- **Criterio de cierre:** la resolución y el etiquetado reciben el ámbito de versión (convocatoria o
+  común) y no eligen entre versiones distintas; prueba con el mismo `path` en dos versiones.
+- **Depende de:** B-004 (es quien decide qué árbol enseña la API).
 
 ## Fuentes para generar tareas nuevas
 

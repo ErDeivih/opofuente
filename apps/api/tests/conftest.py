@@ -14,10 +14,16 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
+from opofuente.application.curriculum_service import CurriculaService
 from opofuente.application.profiles_service import ProfilesService
-from opofuente.application.read_models import SeedReport
+from opofuente.application.read_models import CurriculumSeedReport, SeedReport
 from opofuente.config import Settings, project_root
 from opofuente.infrastructure.clock import SystemClock
+from opofuente.infrastructure.curriculum_fixture_loader import (
+    COMMON_CURRICULUM_FIXTURE,
+    load_common_curriculum,
+)
+from opofuente.infrastructure.curriculum_repository import SqlAlchemyCurriculumRepository
 from opofuente.infrastructure.db import build_engine, build_session_factory
 from opofuente.infrastructure.fixture_loader import load_profiles
 from opofuente.infrastructure.migrations import run_migrations
@@ -72,6 +78,17 @@ def seed_official_profiles(settings: Settings) -> SeedReport:
         repository = SqlAlchemyProfileRepository(build_session_factory(engine))
         service = ProfilesService(repository, SystemClock())
         return service.seed(load_profiles(project_root() / "fixtures" / "profiles"))
+    finally:
+        engine.dispose()
+
+
+def seed_common_curriculum(settings: Settings) -> CurriculumSeedReport:
+    """Siembra el temario común v1 y sus referencias en el directorio de datos de la prueba."""
+    engine = build_engine(settings.data_paths.database)
+    try:
+        sesiones = build_session_factory(engine)
+        servicio = CurriculaService(SqlAlchemyCurriculumRepository(sesiones), SystemClock())
+        return servicio.seed(load_common_curriculum(project_root() / COMMON_CURRICULUM_FIXTURE))
     finally:
         engine.dispose()
 
