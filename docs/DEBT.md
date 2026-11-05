@@ -1408,15 +1408,17 @@ verificado; lo que queda son pantallas concretas, con su coste dicho arriba, y n
 
 ## DEBT-028 — La puerta 17 depende de fuentes oficiales que cambian
 
-**Qué pasa.** El paso 17 de `scripts/gates.ps1` ejecuta `build_profile_fixtures --check` y
-`build_curriculum_fixtures --check`, que comparan los fixtures con documentos locales: las fuentes
-oficiales de los perfiles (`data/sources`, bajadas con `scripts/fetch-sources.ps1`) y el temario
-fuente del común (`data/sources/temario-c1.md`, o `OPOFUENTE_TEMARIO_C1`). Esos documentos están
-ignorados por git y no existen en un worktree nuevo, así que la puerta falla con «faltan fuentes
-locales»; y al descargar las oficiales en noviembre de 2026, cinco de ellas ya no coinciden con el
-manifiesto de octubre (XML y HTML del BOE y del BOCYL que cambian en origen, y una resolución del
-BOCYL reeditada). Es decir: la puerta solo pasa en la máquina que conserva exactamente las descargas
-originales.
+**Qué pasa.** El paso 17 de `scripts/gates.ps1` ejecuta `build_profile_fixtures --check`,
+`build_curriculum_fixtures --check` y `build_c1_convocatorias_fixtures --check`, que comparan los
+fixtures con documentos locales: las fuentes oficiales de los perfiles (`data/sources`, bajadas con
+`scripts/fetch-sources.ps1`), el temario fuente del común (`data/sources/temario-c1.md`, o
+`OPOFUENTE_TEMARIO_C1`) y las fuentes de las convocatorias C1 (`data/sources/c1.txt` y
+`data/sources/convocatorias.csv`, o `OPOFUENTE_C1_LISTADO` y `OPOFUENTE_CONVOCATORIAS_CSV`). Esos
+documentos están ignorados por git y no existen en un worktree nuevo, así que la puerta falla con
+«faltan fuentes locales»; y al descargar las oficiales en noviembre de 2026, cinco de ellas ya no
+coinciden con el manifiesto de octubre (XML y HTML del BOE y del BOCYL que cambian en origen, y una
+resolución del BOCYL reeditada). Es decir: la puerta solo pasa en la máquina que conserva exactamente
+las descargas originales.
 
 **Por qué no se arregla en B-001.** Actualizar el manifiesto y los fixtures exige revisar las fuentes
 oficiales nuevas y regenerar los fixtures: es curación de perfiles y contenido, no del modelo de

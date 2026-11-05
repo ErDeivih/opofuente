@@ -22,7 +22,7 @@ La siguiente es B-003.
 | [B-003](#b-003) | Equivalencias TAI publicado → común y re-atribución del banco | 2 | **hecha** (2026-11-05) | B-002 |
 | [B-004](#b-004) | API y contrato del temario común y de las particularidades | 2 | **hecha** (2026-11-05) | B-002 |
 | [B-005](#b-005) | Interfaz: índice del temario, ficha de tema y avance | 2 | **hecha** (2026-11-05) | B-004 |
-| [B-006](#b-006) | Importar las convocatorias C1 de `c1.txt` como referencias | 2 | lista | B-004 |
+| [B-006](#b-006) | Importar las convocatorias C1 de `c1.txt` y del inventario como referencias | 2 | **hecha** (2026-11-05) | B-004 |
 | [B-007](#b-007) | Entrega del slice `docs/slices/S13.md` | 1 | lista | B-005 |
 | [B-008](#b-008) | Poner al día `docs/product-spec/03_DATA-MODEL.md` y el índice de ADR | 1 | lista | B-001 |
 | [B-009](#b-009) | Investigación encomendada: cómo organizan el temario las academias C1 | 1 | lista | — |
@@ -168,12 +168,30 @@ alumno.
 
 ### B-006
 
-**Importar convocatorias C1** de `fuentes\oposicionesinformatica\c1.txt` (10) y
-`minicerebro\convocatorias.csv` (23) como convocatorias con su ref `primary` al temario común y su
-cita de bases. Sin copiar temario: solo referencia y particularidades cuando las bases las digan.
+**HECHA (2026-11-05).** Importar convocatorias de informática C1 de `c1.txt` (10) y del inventario
+`convocatorias.csv` (las filas de grupo C1 con enlace oficial) como convocatorias que **referencian**
+el temario común, sin copiarlo.
 
-- **Criterio de cierre:** cada convocatoria importada tiene `official_url` y `source_reference`; las
-  que no publican temario no inventan particularidades; prueba de idempotencia.
+- **Entregado:** `domain/convocatorias_c1.py`, `infrastructure/convocatorias_fixture_loader.py`,
+  `infrastructure/convocatorias_repository.py`, `application/convocatorias_service.py`, fixture
+  `fixtures/curricula/convocatorias-c1.json` generado por
+  `tools/build_c1_convocatorias_fixtures.py`, dos fuentes nuevas en el manifiesto (con sha256 y fecha
+  de observación), siembra en `tools/seed_profiles.py` y puerta 17. `AppearanceSchema` añade
+  `convocation_status` y la ficha marca «Por confirmar» (contrato y tipos regenerados).
+- **Datos:** 12 convocatorias C1 (10 del agregador en `draft`, 2 del inventario en `archived`) bajo
+  la oposición inactiva `informatica-c1`, cada una con su ref `primary` a `informatica-c1-v1` y su
+  cita; 21 filas del inventario descartadas con motivo escrito (A1/A2/bolsas/portales y el TAI 2025,
+  que ya estaba sembrado). No se inventan fechas: si la fuente no la publica se usa la de
+  observación y se dice.
+- **Pruebas:** unitarias del generador (criterio de importación, descartes, fixture real) e
+  integración de la siembra (12 + 2 estados, refs a la versión activa, TAI sin duplicar,
+  idempotencia, ficha con estados). Contrato regenerado.
+- **Evidencia ejecutada:** puertas 1–16 en verde (511 unitarias + 480 integración + 23 contrato =
+  **1014 backend**, 207 Vitest, contrato, builds, migración desde vacío a `0022` y doble siembra
+  idempotente con las 12 convocatorias). En la 17 pasan el temario común y las convocatorias C1; solo
+  falla la verificación de fuentes oficiales de los perfiles (DEBT-028, previo). E2E no ejecutada.
+- **Decisiones:** D-021 y D-022.
+- **Criterio de cierre:** cumplido; `build_c1_convocatorias_fixtures --check` sincronizado.
 
 ### B-007
 

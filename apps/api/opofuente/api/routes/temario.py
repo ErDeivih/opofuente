@@ -126,6 +126,7 @@ def _appearance(appearance: AppearanceView) -> AppearanceSchema:
         convocation_id=appearance.convocation_id,
         convocation_code=appearance.convocation_code,
         convocation_title=appearance.convocation_title,
+        convocation_status=appearance.convocation_status,
         role=appearance.role,
         source_reference=appearance.source_reference,
         omitted=appearance.omitted,

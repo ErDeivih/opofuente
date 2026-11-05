@@ -14,11 +14,23 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
+from opofuente.application.convocatorias_service import ConvocatoriasService
 from opofuente.application.curriculum_service import CurriculaService
 from opofuente.application.profiles_service import ProfilesService
-from opofuente.application.read_models import CurriculumSeedReport, SeedReport
+from opofuente.application.read_models import (
+    ConvocatoriasSeedReport,
+    CurriculumSeedReport,
+    SeedReport,
+)
 from opofuente.config import Settings, project_root
 from opofuente.infrastructure.clock import SystemClock
+from opofuente.infrastructure.convocatorias_fixture_loader import (
+    C1_CONVOCATORIAS_FIXTURE,
+    load_c1_convocatorias,
+)
+from opofuente.infrastructure.convocatorias_repository import (
+    SqlAlchemyConvocatoriasRepository,
+)
 from opofuente.infrastructure.curriculum_fixture_loader import (
     COMMON_CURRICULUM_FIXTURE,
     load_common_curriculum,
@@ -89,6 +101,17 @@ def seed_common_curriculum(settings: Settings) -> CurriculumSeedReport:
         sesiones = build_session_factory(engine)
         servicio = CurriculaService(SqlAlchemyCurriculumRepository(sesiones), SystemClock())
         return servicio.seed(load_common_curriculum(project_root() / COMMON_CURRICULUM_FIXTURE))
+    finally:
+        engine.dispose()
+
+
+def seed_c1_convocatorias(settings: Settings) -> ConvocatoriasSeedReport:
+    """Siembra las convocatorias C1 que referencian el temario común (B-006)."""
+    engine = build_engine(settings.data_paths.database)
+    try:
+        sesiones = build_session_factory(engine)
+        servicio = ConvocatoriasService(SqlAlchemyConvocatoriasRepository(sesiones), SystemClock())
+        return servicio.seed(load_c1_convocatorias(project_root() / C1_CONVOCATORIAS_FIXTURE))
     finally:
         engine.dispose()
 

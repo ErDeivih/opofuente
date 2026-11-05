@@ -151,6 +151,8 @@ describe('ficha de tema', () => {
     expect(screen.getByText(/ANEXO V, apartado 3/)).toBeInTheDocument();
     expect(screen.getByText('Temario que se estudia')).toBeInTheDocument();
     expect(screen.getByText('Temario complementario')).toBeInTheDocument();
+    // Una convocatoria de un listado sin bases verificadas se distingue de las confirmadas.
+    expect(screen.getByText('Por confirmar')).toBeInTheDocument();
     // Navegación anterior/siguiente dentro del temario: el siguiente tema del bloque I.
     expect(
       await screen.findByRole('link', { name: /Las Cortes Generales/ }),

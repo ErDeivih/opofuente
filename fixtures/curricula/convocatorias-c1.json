@@ -1,0 +1,316 @@
+{
+  "opposition": {
+    "code": "informatica-c1",
+    "name": "Informática C1",
+    "description": "Convocatorias de informática C1 que estudian el temario común. Las entradas en draft están pendientes de confirmar sus bases."
+  },
+  "generated_from": {
+    "criteria": [
+      "Solo se importan convocatorias de informática C1: grupo C1 explícito en el inventario o listado de informática C1 en el agregador.",
+      "Las filas de bolsas de empleo, portales o grupos distintos de C1 no se convierten en convocatorias: se descartan con su motivo.",
+      "La convocatoria del TAI 2025 del inventario se descarta porque ya está sembrada como perfil propio (B-002) y su referencia primary ya existe.",
+      "Si la fuente no publica la fecha oficial se usa la fecha de observación y se dice en el fixture; no se inventa una fecha de bases.",
+      "Las entradas del agregador entran en draft (por confirmar) y su cita declara que no se han verificado bases oficiales; las del inventario con enlace oficial entran en archived (cerradas)."
+    ],
+    "sources": [
+      {
+        "id": "c1-agregador",
+        "document": "fuentes/oposicionesinformatica/c1.txt",
+        "sha256": "95ed3ef7f9e5cfb04b8bb4d7d62158c139313171b4d6f2159bd7b5039311dc5d",
+        "observed_at": "2026-11-02"
+      },
+      {
+        "id": "convocatorias-csv",
+        "document": "minicerebro/convocatorias.csv",
+        "sha256": "75143df2289c84ec0d4baf76a8500458606733ffa107d3913e04f8048b1c755e",
+        "observed_at": "2026-10-29"
+      }
+    ]
+  },
+  "convocatorias": [
+    {
+      "code": "c1-1-plaza-de-tecnico-a-informatico-a-y-telecomunicac",
+      "title": "1 Plaza De Técnico/A Informático/A Y Telecomunicaciones, Consejo Comarcal De La Selva, Gerona",
+      "administration": "Consejo Comarcal De La Selva",
+      "territory": "Gerona",
+      "group_code": "C1",
+      "official_url": "https://oposicionesinformatica.com/1-plaza-de-tecnico-a-informatico-a-y-telecomunicaciones-consejo-comarcal-de-la-selva-gerona/",
+      "published_at": "2026-11-02",
+      "published_at_note": "fecha de observación del listado; la fuente no publica la fecha oficial",
+      "status": "draft",
+      "source_reference": "Listado de oposicionesinformatica.com observado el 2026-11-02; sin bases oficiales verificadas",
+      "source_id": "c1-agregador"
+    },
+    {
+      "code": "c1-1-plaza-de-tecnico-a-especialista-en-aplicaciones-",
+      "title": "1 Plaza De Técnico/A Especialista En Aplicaciones Informáticas, Ayuntamiento De Sallent, Barcelona",
+      "administration": "Ayuntamiento De Sallent",
+      "territory": "Barcelona",
+      "group_code": "C1",
+      "official_url": "https://oposicionesinformatica.com/1-plaza-de-tecnico-a-especialista-en-aplicaciones-informaticas-ayuntamiento-de-sallent-barcelona/",
+      "published_at": "2026-11-02",
+      "published_at_note": "fecha de observación del listado; la fuente no publica la fecha oficial",
+      "status": "draft",
+      "source_reference": "Listado de oposicionesinformatica.com observado el 2026-11-02; sin bases oficiales verificadas",
+      "source_id": "c1-agregador"
+    },
+    {
+      "code": "c1-1-plaza-de-tecnico-a-auxiliar-de-informatica-ayunt",
+      "title": "1 Plaza De Técnico/A Auxiliar De Informática, Ayuntamiento De Sentmenat, Barcelona",
+      "administration": "Ayuntamiento De Sentmenat",
+      "territory": "Barcelona",
+      "group_code": "C1",
+      "official_url": "https://oposicionesinformatica.com/1-plaza-de-tecnico-a-auxiliar-de-informatica-ayuntamiento-de-sentmenat-barcelona/",
+      "published_at": "2026-11-02",
+      "published_at_note": "fecha de observación del listado; la fuente no publica la fecha oficial",
+      "status": "draft",
+      "source_reference": "Listado de oposicionesinformatica.com observado el 2026-11-02; sin bases oficiales verificadas",
+      "source_id": "c1-agregador"
+    },
+    {
+      "code": "c1-1-plaza-de-tecnico-a-auxiliar-informatico-a-y-bols",
+      "title": "1 Plaza De Técnico/A Auxiliar Informático/A Y Bolsa De Trabajo — Ayuntamiento De Matadepera (C1)",
+      "administration": null,
+      "territory": null,
+      "group_code": "C1",
+      "official_url": "https://oposicionesinformatica.com/1-plaza-de-tecnico-a-auxiliar-informatico-a-y-bolsa-de-trabajo-ayuntamiento-de-matadepera-c1/",
+      "published_at": "2026-11-02",
+      "published_at_note": "fecha de observación del listado; la fuente no publica la fecha oficial",
+      "status": "draft",
+      "source_reference": "Listado de oposicionesinformatica.com observado el 2026-11-02; sin bases oficiales verificadas",
+      "source_id": "c1-agregador"
+    },
+    {
+      "code": "c1-1-plaza-de-auxiliar-tecnico-a-informatico-a-ayunta",
+      "title": "1 Plaza De Auxiliar Técnico/A Informático/A, Ayuntamiento De Sarria, Galicia",
+      "administration": "Ayuntamiento De Sarria",
+      "territory": "Galicia",
+      "group_code": "C1",
+      "official_url": "https://oposicionesinformatica.com/1-plaza-de-auxiliar-tecnico-a-informatico-a-ayuntamiento-de-sarria-galicia/",
+      "published_at": "2026-11-02",
+      "published_at_note": "fecha de observación del listado; la fuente no publica la fecha oficial",
+      "status": "draft",
+      "source_reference": "Listado de oposicionesinformatica.com observado el 2026-11-02; sin bases oficiales verificadas",
+      "source_id": "c1-agregador"
+    },
+    {
+      "code": "c1-1-plaza-de-tecnico-a-auxiliar-de-informatica-ayunt-2",
+      "title": "1 Plaza De Técnico/A Auxiliar De Informática, Ayuntamiento De Lloret De Mar, Girona",
+      "administration": "Ayuntamiento De Lloret De Mar",
+      "territory": "Girona",
+      "group_code": "C1",
+      "official_url": "https://oposicionesinformatica.com/1-plaza-de-tecnico-a-auxiliar-de-informatica-ayuntamiento-de-lloret-de-mar-girona/",
+      "published_at": "2026-11-02",
+      "published_at_note": "fecha de observación del listado; la fuente no publica la fecha oficial",
+      "status": "draft",
+      "source_reference": "Listado de oposicionesinformatica.com observado el 2026-11-02; sin bases oficiales verificadas",
+      "source_id": "c1-agregador"
+    },
+    {
+      "code": "c1-1-plaza-de-tecnico-a-auxiliar-de-informatica-bolsa",
+      "title": "1 Plaza De Técnico/A Auxiliar De Informática + Bolsa De Empleo, Ayuntamiento De Castelló D’Empúries, Girona",
+      "administration": "Ayuntamiento De Castelló D’Empúries",
+      "territory": "Girona",
+      "group_code": "C1",
+      "official_url": "https://oposicionesinformatica.com/1-plaza-de-tecnico-a-auxiliar-de-informatica-bolsa-de-empleo-ayuntamiento-de-castello-dempuries-girona/",
+      "published_at": "2026-11-02",
+      "published_at_note": "fecha de observación del listado; la fuente no publica la fecha oficial",
+      "status": "draft",
+      "source_reference": "Listado de oposicionesinformatica.com observado el 2026-11-02; sin bases oficiales verificadas",
+      "source_id": "c1-agregador"
+    },
+    {
+      "code": "c1-bolsa-de-empleo-de-informatico-ayuntamiento-de-zam",
+      "title": "Bolsa De Empleo De Informático, Ayuntamiento De Zamora, Castilla Y León",
+      "administration": "Ayuntamiento De Zamora",
+      "territory": "Castilla Y León",
+      "group_code": "C1",
+      "official_url": "https://oposicionesinformatica.com/bolsa-de-empleo-de-informatico-ayuntamiento-de-zamora-castilla-y-leon/",
+      "published_at": "2026-11-02",
+      "published_at_note": "fecha de observación del listado; la fuente no publica la fecha oficial",
+      "status": "draft",
+      "source_reference": "Listado de oposicionesinformatica.com observado el 2026-11-02; sin bases oficiales verificadas",
+      "source_id": "c1-agregador"
+    },
+    {
+      "code": "c1-1-plaza-de-tecnico-auxiliar-de-informatica-bolsa-d",
+      "title": "1 Plaza De Técnico Auxiliar De Informática + Bolsa De Trabajo, Ayuntamiento De Rubí, Catalunya",
+      "administration": "Ayuntamiento De Rubí",
+      "territory": "Catalunya",
+      "group_code": "C1",
+      "official_url": "https://oposicionesinformatica.com/1-plaza-de-tecnico-auxiliar-de-informatica-bolsa-de-trabajo-ayuntamiento-de-rubi-catalunya/",
+      "published_at": "2026-11-02",
+      "published_at_note": "fecha de observación del listado; la fuente no publica la fecha oficial",
+      "status": "draft",
+      "source_reference": "Listado de oposicionesinformatica.com observado el 2026-11-02; sin bases oficiales verificadas",
+      "source_id": "c1-agregador"
+    },
+    {
+      "code": "c1-2-plazas-de-tecnicos-as-auxiliares-de-informatica-",
+      "title": "2 Plazas De Técnicos/As Auxiliares De Informática, Ayuntamiento De Aldaia, Valencia",
+      "administration": "Ayuntamiento De Aldaia",
+      "territory": "Valencia",
+      "group_code": "C1",
+      "official_url": "https://oposicionesinformatica.com/2-plazas-de-tecnicos-as-auxiliares-de-informatica-ayuntamiento-de-aldaia-valencia/",
+      "published_at": "2026-11-02",
+      "published_at_note": "fecha de observación del listado; la fuente no publica la fecha oficial",
+      "status": "draft",
+      "source_reference": "Listado de oposicionesinformatica.com observado el 2026-11-02; sin bases oficiales verificadas",
+      "source_id": "c1-agregador"
+    },
+    {
+      "code": "c1-sacyl-sanidad-cyl-salamanca",
+      "title": "Técnico Especialista en Informática (C1) - SALAMANCA",
+      "administration": "SACYL (Sanidad CyL)",
+      "territory": "SALAMANCA",
+      "group_code": "C1",
+      "official_url": "https://www.saludcastillayleon.es/profesionales/es/recursos-humanos/convocatorias-especificas/tecnico-especialista-informatica-c1/salamanca",
+      "published_at": "2026-01-15",
+      "published_at_note": "fecha conocida según el inventario (columna de plazo/publicación); no consta la de las bases",
+      "status": "archived",
+      "source_reference": "BOP CyL; estado en la fuente: CERRADO (baremo provisional 15/01/2026)",
+      "source_id": "convocatorias-csv"
+    },
+    {
+      "code": "c1-sacyl-sanidad-cyl-resto-provincias",
+      "title": "Técnico Especialista en Informática (C1) - resto provincias",
+      "administration": "SACYL (Sanidad CyL)",
+      "territory": "Resto provincias",
+      "group_code": "C1",
+      "official_url": "https://www.saludcastillayleon.es/profesionales/es/recursos-humanos/convocatorias-especificas/tecnico-especialista-informatica-c1",
+      "published_at": "2026-10-29",
+      "published_at_note": "fecha de observación del inventario (2026-10-29); la fuente no publica la fecha en esta fila",
+      "status": "archived",
+      "source_reference": "BOP CyL; estado en la fuente: VIGILAR (recurrente)",
+      "source_id": "convocatorias-csv"
+    }
+  ],
+  "discarded": [
+    {
+      "source_id": "convocatorias-csv",
+      "row": 2,
+      "title": "Técnico-a de Soporte Informático (libre) 2023/2024",
+      "reason": "no es C1 (grupo=Ver bases)"
+    },
+    {
+      "source_id": "convocatorias-csv",
+      "row": 3,
+      "title": "Técnico-a de Gestión Informática (libre) 2022/2023/2024",
+      "reason": "no es C1 (grupo=Ver bases)"
+    },
+    {
+      "source_id": "convocatorias-csv",
+      "row": 4,
+      "title": "Técnico-a Superior de Informática (libre) 2022/2024",
+      "reason": "no es C1 (grupo=A1 probable)"
+    },
+    {
+      "source_id": "convocatorias-csv",
+      "row": 5,
+      "title": "Bolsas de empleo (personal laboral) Anexo III Convenio",
+      "reason": "no es C1 (grupo=Varios)"
+    },
+    {
+      "source_id": "convocatorias-csv",
+      "row": 6,
+      "title": "Bolsas de empleo por cuerpo (Empleo Temporal)",
+      "reason": "no es C1 (grupo=Varios)"
+    },
+    {
+      "source_id": "convocatorias-csv",
+      "row": 7,
+      "title": "Analista Programador (libre)",
+      "reason": "no es C1 (grupo=A2)"
+    },
+    {
+      "source_id": "convocatorias-csv",
+      "row": 8,
+      "title": "Bolsas y procesos varios (Bolsa de Empleo Semanal)",
+      "reason": "no es C1 (grupo=Varios)"
+    },
+    {
+      "source_id": "convocatorias-csv",
+      "row": 9,
+      "title": "Técnica de Gestión de Sistemas e Informática (libre)",
+      "reason": "no es C1 (grupo=Ver bases)"
+    },
+    {
+      "source_id": "convocatorias-csv",
+      "row": 10,
+      "title": "Técnico Especialista Operador - Servicios Informáticos CPD",
+      "reason": "no es C1 (grupo=Grupo III)"
+    },
+    {
+      "source_id": "convocatorias-csv",
+      "row": 11,
+      "title": "Bolsas PTGAS y contratación temporal",
+      "reason": "no es C1 (grupo=Varios)"
+    },
+    {
+      "source_id": "convocatorias-csv",
+      "row": 12,
+      "title": "Bolsas y procesos TIC",
+      "reason": "no es C1 (grupo=Varios)"
+    },
+    {
+      "source_id": "convocatorias-csv",
+      "row": 13,
+      "title": "Cuerpo Superior de Sistemas y Tecnologías de la Información",
+      "reason": "no es C1 (grupo=A1)"
+    },
+    {
+      "source_id": "convocatorias-csv",
+      "row": 14,
+      "title": "Cuerpo de Gestión de Sistemas e Informática",
+      "reason": "no es C1 (grupo=A2)"
+    },
+    {
+      "source_id": "convocatorias-csv",
+      "row": 15,
+      "title": "Técnico Superior de Tecnologías de la Información",
+      "reason": "no es C1 (grupo=A1 equiv.)"
+    },
+    {
+      "source_id": "convocatorias-csv",
+      "row": 16,
+      "title": "Técnico/a Superior (informática)",
+      "reason": "no es C1 (grupo=A1 equiv.)"
+    },
+    {
+      "source_id": "convocatorias-csv",
+      "row": 17,
+      "title": "Titulado Superior de Informática (A1)",
+      "reason": "no es C1 (grupo=A1)"
+    },
+    {
+      "source_id": "convocatorias-csv",
+      "row": 18,
+      "title": "Gestión Informática (A2)",
+      "reason": "no es C1 (grupo=A2)"
+    },
+    {
+      "source_id": "convocatorias-csv",
+      "row": 21,
+      "title": "Cuerpo de Gestión de Sistemas e Informática",
+      "reason": "no es C1 (grupo=A2)"
+    },
+    {
+      "source_id": "convocatorias-csv",
+      "row": 22,
+      "title": "Cuerpo de Técnicos Auxiliares de Informática",
+      "reason": "ya está sembrada como convocatoria del perfil TAI 2025"
+    },
+    {
+      "source_id": "convocatorias-csv",
+      "row": 23,
+      "title": "Cuerpo Superior de Sistemas y Tecnologías de la Información",
+      "reason": "no es C1 (grupo=A1)"
+    },
+    {
+      "source_id": "convocatorias-csv",
+      "row": 24,
+      "title": "Técnico/a Informático (concurso-oposición)",
+      "reason": "no es C1 (grupo=A2)"
+    }
+  ]
+}

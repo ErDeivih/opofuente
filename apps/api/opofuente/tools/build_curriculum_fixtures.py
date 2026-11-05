@@ -85,12 +85,16 @@ def _load_manifest(root: Path) -> Source:
     if not ruta.is_file():
         raise InvariantViolationError(f"falta el manifiesto de fuentes: {MANIFEST}")
     data = json.loads(ruta.read_text(encoding="utf-8"))
-    sources = data["sources"]
-    if len(sources) != 1:
+    # El manifiesto de curricula comparte fuentes con otros fixtures (B-006); aquí se busca la del
+    # temario común por su id, no por posición.
+    entrada = next(
+        (item for item in data["sources"] if item.get("id") == "temario-c1-md"),
+        None,
+    )
+    if entrada is None:
         raise InvariantViolationError(
-            f"{MANIFEST}: se esperaba una fuente para el temario común y hay {len(sources)}"
+            f"{MANIFEST}: falta la fuente del temario común (id temario-c1-md)"
         )
-    entrada = sources[0]
     return Source(
         id=entrada["id"],
         document=entrada["document"],

@@ -34,6 +34,9 @@ function AppearanceItem({ appearance, nodeId, selectedConvocationId }: Appearanc
       <div className="appearance__header">
         <span className="appearance__title">{appearance.convocation_title}</span>
         <span className="tag">{roleLabel(appearance.role)}</span>
+        {appearance.convocation_status === 'draft' && (
+          <StatusBadge tone="warning">Por confirmar</StatusBadge>
+        )}
         {appearance.omitted && <StatusBadge tone="warning">No incluido</StatusBadge>}
       </div>
       {appearance.source_reference !== null && appearance.source_reference !== undefined && (

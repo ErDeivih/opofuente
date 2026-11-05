@@ -565,6 +565,7 @@ class SqlAlchemyCurriculumReadRepository:
                     convocation_id=convocation.id,
                     convocation_code=convocation.code,
                     convocation_title=convocation.title,
+                    convocation_status=convocation.status,
                     role=referencia.role,
                     source_reference=referencia.source_reference,
                     omitted=node.id in excluidos,

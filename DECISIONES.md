@@ -305,3 +305,38 @@ Aquí queda el resumen con el motivo y la reversión.
   conceptos y deja la ficha del tema sin sitio propio) o una búsqueda con acentos exactos (el alumno
   escribe sin tildes).
 - **Reversión:** quitar la sección y las dos rutas; la API no cambia.
+
+## D-021 — Las convocatorias C1 importadas referencian el común y declaran su confianza
+
+- **Fecha:** 2026-11-05 · **Nivel:** 2 · **Estado:** aplicada (B-006)
+- **Decisión:** se importan las convocatorias de informática C1 de `c1.txt` (10) y del inventario
+  `convocatorias.csv` (las 2 filas de **grupo C1** con enlace oficial). Cuelgan de una oposición
+  propia `informatica-c1` (inactiva) y cada una referencia la **versión activa del temario común**
+  con papel `primary` y su cita. No se copia el temario. Lo que la fuente no da, no se inventa: las
+  10 entradas del agregador entran en `draft` («por confirmar», sin bases verificadas) y las 2 del
+  inventario en `archived` (cerradas); si no hay fecha oficial se guarda la fecha de observación y se
+  dice en `published_at_note`. Las filas no C1, las bolsas/portales y el TAI 2025 (ya sembrado como
+  perfil propio) se descartan y quedan escritas con su motivo en el fixture.
+- **Motivo:** el MAPA pide que la ficha diga «en qué convocatorias aparece» sin convertir la
+  importación en una copia del temario. El inventario mezcla convocatorias de A1/A2, bolsas y
+  portales: importarlas todas como C1 sería afirmar algo falso. El estado `draft` evita presentar un
+  listado sin bases como una convocatoria confirmada y la ficha lo distingue (D-022).
+- **Alternativa descartada:** importar las 23 filas sin filtrar (datos falsos), una oposición por
+  administración (23 oposiciones inactivas sin dueño claro) o no importar el inventario (se perdían
+  las dos únicas convocatorias C1 oficiales que no estaban ya sembradas).
+- **Reversión:** borrar las convocatorias importadas por la oposición `informatica-c1` y sus refs;
+  el temario común no cambia.
+
+## D-022 — La ficha distingue una convocatoria «por confirmar»
+
+- **Fecha:** 2026-11-05 · **Nivel:** 2 · **Estado:** aplicada (B-006)
+- **Decisión:** `AppearanceSchema` añade `convocation_status`; la ficha del tema enseña el estado y
+  marca con «Por confirmar» las convocatorias en `draft`, sin ocultarlas. El contrato y los tipos se
+  regeneran en el mismo cambio.
+- **Motivo:** quien decide con la ficha necesita saber si una convocatoria está confirmada o sale de
+  un listado sin bases; ocultarlas dejaría la lista incompleta y mezclarlas sin distintivo haría
+  pasar por oficial lo que no lo es (regla dura de procedencia).
+- **Alternativa descartada:** no enseñar las `draft` (se perdía el propósito de importarlas) o
+  enseñarlas sin distintivo (confunde confianza con oficialidad).
+- **Reversión:** quitar el campo del esquema y el distintivo de la ficha; las convocatorias y sus
+  referencias siguen en la base.

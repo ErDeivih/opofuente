@@ -85,6 +85,7 @@ class AppearanceView:
     convocation_id: str
     convocation_code: str
     convocation_title: str
+    convocation_status: str
     role: str
     source_reference: str | None
     omitted: bool

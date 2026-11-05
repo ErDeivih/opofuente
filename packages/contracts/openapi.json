@@ -564,6 +564,10 @@
             "title": "Convocation Id",
             "type": "string"
           },
+          "convocation_status": {
+            "title": "Convocation Status",
+            "type": "string"
+          },
           "convocation_title": {
             "title": "Convocation Title",
             "type": "string"
@@ -592,6 +596,7 @@
           "convocation_id",
           "convocation_code",
           "convocation_title",
+          "convocation_status",
           "role",
           "omitted",
           "adjustments"

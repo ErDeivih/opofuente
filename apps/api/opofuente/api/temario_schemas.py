@@ -78,6 +78,8 @@ class AppearanceSchema(BaseModel):
     convocation_id: str
     convocation_code: str
     convocation_title: str
+    #: Estado de la convocatoria: `draft` son entradas por confirmar (listados sin bases).
+    convocation_status: str
     role: str
     source_reference: str | None = None
     omitted: bool

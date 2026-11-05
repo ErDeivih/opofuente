@@ -2659,6 +2659,8 @@ export interface components {
             convocation_code: string;
             /** Convocation Id */
             convocation_id: string;
+            /** Convocation Status */
+            convocation_status: string;
             /** Convocation Title */
             convocation_title: string;
             /** Omitted */

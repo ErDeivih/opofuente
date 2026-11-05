@@ -8,8 +8,10 @@
 
     Las puertas 17 y 18 necesitan las fuentes oficiales descargadas (`scripts/fetch-sources.ps1`),
     el temario fuente del temario común (copia `minicerebro/temario-c1.md` a
-    `data/sources/temario-c1.md` o define `OPOFUENTE_TEMARIO_C1`) y el navegador de Playwright
-    instalado (`npx playwright install chromium`).
+    `data/sources/temario-c1.md` o define `OPOFUENTE_TEMARIO_C1`), las fuentes de las convocatorias
+    C1 (`data/sources/c1.txt` y `data/sources/convocatorias.csv`, o `OPOFUENTE_C1_LISTADO` y
+    `OPOFUENTE_CONVOCATORIAS_CSV`) y el navegador de Playwright instalado
+    (`npx playwright install chromium`).
 .PARAMETER SkipE2e
     Omite las pruebas end-to-end (útiles cuando no hay navegador de Playwright instalado).
 .EXAMPLE
@@ -72,10 +74,12 @@ try {
     }
 
     Invoke-OpoFuenteStep -Name '17. fixtures sincronizados con sus fuentes' -Action {
-        # El temario común va primero: su fuente es local (data/sources/temario-c1.md) y no depende
-        # de las descargas del BOE. Si después fallan las de los perfiles, el motivo está en
-        # DEBT-028 y así se ve que el temario sí estaba sincronizado.
+        # Primero el temario común y las convocatorias C1: sus fuentes son locales y no dependen de
+        # las descargas del BOE. Si después fallan las de los perfiles, el motivo está en DEBT-028 y
+        # así se ve que el temario y las convocatorias sí estaban sincronizados.
         uv run python -m opofuente.tools.build_curriculum_fixtures --check
+        if ($LASTEXITCODE -ne 0) { return }
+        uv run python -m opofuente.tools.build_c1_convocatorias_fixtures --check
         if ($LASTEXITCODE -ne 0) { return }
         uv run python -m opofuente.tools.build_profile_fixtures --check
     }

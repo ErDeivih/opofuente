@@ -224,6 +224,43 @@ class CurriculumSeedReport:
         return texto
 
 
+@dataclass(frozen=True, slots=True)
+class ConvocatoriasSeedReport:
+    """Resultado de importar convocatorias C1 que referencian el temario común (B-006)."""
+
+    entities: tuple[EntityOutcome, ...] = ()
+    imported: int = 0
+    unverified: int = 0
+    discarded: int = 0
+
+    @property
+    def created(self) -> int:
+        return sum(1 for entity in self.entities if entity.created)
+
+    @property
+    def updated(self) -> int:
+        return sum(1 for entity in self.entities if entity.updated)
+
+    @property
+    def unchanged(self) -> int:
+        return sum(1 for entity in self.entities if entity.unchanged)
+
+    @property
+    def blocked(self) -> int:
+        return sum(1 for entity in self.entities if entity.blocked)
+
+    @property
+    def changed(self) -> bool:
+        return self.created > 0 or self.updated > 0 or self.blocked > 0
+
+    def summary(self) -> str:
+        return (
+            f"convocatorias C1: {self.imported} importadas "
+            f"({self.unverified} por confirmar), {self.discarded} filas descartadas con motivo; "
+            f"{self.created} nuevas, {self.updated} actualizadas, {self.unchanged} sin cambios"
+        )
+
+
 # ------------------------------------------------------------------ S02: ingesta y trabajos
 
 
@@ -659,6 +696,7 @@ __all__ = [
     "ClassificationRunReport",
     "ConvocationDetail",
     "ConvocationSummary",
+    "ConvocatoriasSeedReport",
     "CoverageNodeView",
     "CoverageView",
     "CurriculumSeedReport",

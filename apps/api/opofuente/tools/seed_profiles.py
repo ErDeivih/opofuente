@@ -1,9 +1,10 @@
-"""Siembra los perfiles oficiales y el temario común desde los fixtures versionados.
+"""Siembra los perfiles oficiales, el temario común y las convocatorias C1 que lo referencian.
 
-Es idempotente: ejecutarlo dos veces deja el mismo estado y el informe dice cuántas entidades se
+Son idempotentes: ejecutarlo dos veces deja el mismo estado y el informe dice cuántas entidades se
 crearon, cuántas se actualizaron y cuántas no cambiaron. El temario común se siembra en su edición y
 solo se publica cuando el recuento cuadra con el contrato (5 bloques / 40 temas / 45 nodos); sus
-referencias (`primary` del TAI 2025) se crean o se confirman con su cita.
+referencias (`primary` del TAI 2025 y de las convocatorias C1 importadas) se crean o se confirman
+con su cita.
 
 Uso:
     uv run python -m opofuente.tools.seed_profiles
@@ -15,10 +16,16 @@ from __future__ import annotations
 import sys
 from collections.abc import Sequence
 
+from opofuente.application.convocatorias_service import ConvocatoriasService
 from opofuente.application.curriculum_service import CurriculaService
 from opofuente.application.profiles_service import ProfilesService
 from opofuente.config import get_settings, project_root
 from opofuente.infrastructure.clock import SystemClock
+from opofuente.infrastructure.convocatorias_fixture_loader import (
+    C1_CONVOCATORIAS_FIXTURE,
+    load_c1_convocatorias,
+)
+from opofuente.infrastructure.convocatorias_repository import SqlAlchemyConvocatoriasRepository
 from opofuente.infrastructure.curriculum_fixture_loader import (
     COMMON_CURRICULUM_FIXTURE,
     load_common_curriculum,
@@ -45,6 +52,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         curriculum = curricula.seed(
             load_common_curriculum(project_root() / COMMON_CURRICULUM_FIXTURE)
         )
+
+        convocatorias = ConvocatoriasService(
+            SqlAlchemyConvocatoriasRepository(sesiones), SystemClock()
+        )
+        convocatorias_c1 = convocatorias.seed(
+            load_c1_convocatorias(project_root() / C1_CONVOCATORIAS_FIXTURE)
+        )
     finally:
         engine.dispose()
 
@@ -58,8 +72,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(linea)
     print(report.summary())
     print(f"  {curriculum.summary()}")
+    print(f"  {convocatorias_c1.summary()}")
 
-    if check_only and (report.changed or curriculum.changed):
+    if check_only and (report.changed or curriculum.changed or convocatorias_c1.changed):
         print(
             "Los datos sembrados no coinciden con los fixtures: había cambios pendientes.",
             file=sys.stderr,

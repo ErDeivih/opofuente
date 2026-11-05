@@ -28,6 +28,7 @@ from opofuente.application.read_models import (
     BatchView,
     ConvocationDetail,
     ConvocationSummary,
+    ConvocatoriasSeedReport,
     CoverageView,
     CurriculumSeedReport,
     CurriculumView,
@@ -60,6 +61,7 @@ from opofuente.domain.classification import (
     Proposal,
     ProposalStatus,
 )
+from opofuente.domain.convocatorias_c1 import C1ConvocatoriasFixture
 from opofuente.domain.curricula import CommonCurriculum
 from opofuente.domain.duplicates import TextDocument
 from opofuente.domain.ingestion import (
@@ -137,6 +139,17 @@ class CurriculumRepository(Protocol):
         self, curriculum: CommonCurriculum, *, now: datetime
     ) -> CurriculumSeedReport:
         """Siembra idempotente: repetirla no duplica ni deja el temario a medias."""
+        ...
+
+
+@runtime_checkable
+class ConvocatoriasRepository(Protocol):
+    """Siembra de convocatorias C1 que referencian el temario común (B-006)."""
+
+    def upsert_c1_convocatorias(
+        self, fixture: C1ConvocatoriasFixture, *, now: datetime
+    ) -> ConvocatoriasSeedReport:
+        """Importa o actualiza; repetirla no duplica ni deja referencias a medias."""
         ...
 
 

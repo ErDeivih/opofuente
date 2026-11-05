@@ -10,6 +10,24 @@
       "origin": "espacio de contenido de ESPECIFICACION §2; se copia a data/sources (ignorado por git) o se apunta con OPOFUENTE_TEMARIO_C1",
       "local_path": "data/sources/temario-c1.md",
       "sha256": "50d8fa7f39e06c3409228010852bafebde87f31dcbb33758492fe5b0be10dcea"
+    },
+    {
+      "id": "c1-agregador",
+      "role": "listado de convocatorias de informática C1 (10 entradas con su enlace)",
+      "document": "fuentes/oposicionesinformatica/c1.txt",
+      "origin": "espacio de contenido de ESPECIFICACION §2; listado de agregador, sin bases oficiales verificadas",
+      "local_path": "data/sources/c1.txt",
+      "observed_at": "2026-11-02",
+      "sha256": "95ed3ef7f9e5cfb04b8bb4d7d62158c139313171b4d6f2159bd7b5039311dc5d"
+    },
+    {
+      "id": "convocatorias-csv",
+      "role": "inventario de convocatorias de informática por administración, grupo y enlace",
+      "document": "minicerebro/convocatorias.csv",
+      "origin": "espacio de contenido de ESPECIFICACION §2; las filas con grupo C1 y enlace oficial son las que se importan",
+      "local_path": "data/sources/convocatorias.csv",
+      "observed_at": "2026-10-29",
+      "sha256": "75143df2289c84ec0d4baf76a8500458606733ffa107d3913e04f8048b1c755e"
     }
   ]
 }
