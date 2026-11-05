@@ -14,6 +14,7 @@ from opofuente.application.auto_study_service import AutoStudyService
 from opofuente.application.backup_service import BackupService
 from opofuente.application.change_service import ChangeService
 from opofuente.application.classification_service import ClassificationService
+from opofuente.application.curriculum_read_service import CurriculumReadService
 from opofuente.application.diagnostic_service import DiagnosticService
 from opofuente.application.export_service import ExportService
 from opofuente.application.extraction_service import ExtractionService
@@ -45,6 +46,11 @@ def get_system_service(request: Request) -> SystemService:
 
 def get_profiles_service(request: Request) -> ProfilesService:
     service: ProfilesService = request.app.state.profiles_service
+    return service
+
+
+def get_curriculum_service(request: Request) -> CurriculumReadService:
+    service: CurriculumReadService = request.app.state.curriculum_service
     return service
 
 
@@ -142,6 +148,7 @@ def get_readiness_service(request: Request) -> ReadinessService:
 AppSettingsDep = Annotated[Settings, Depends(get_app_settings)]
 SystemServiceDep = Annotated[SystemService, Depends(get_system_service)]
 ProfilesServiceDep = Annotated[ProfilesService, Depends(get_profiles_service)]
+CurriculumServiceDep = Annotated[CurriculumReadService, Depends(get_curriculum_service)]
 IngestionServiceDep = Annotated[IngestionService, Depends(get_ingestion_service)]
 ExtractionServiceDep = Annotated[ExtractionService, Depends(get_extraction_service)]
 IntakeServiceDep = Annotated[IntakeService, Depends(get_intake_service)]

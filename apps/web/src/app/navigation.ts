@@ -26,6 +26,12 @@ export const NAV_ITEMS: readonly NavItem[] = [
     summary: 'Inventario en lectura, importación de una copia, incidencias e informe.',
   },
   {
+    path: '/temario',
+    label: 'Temario',
+    slice: null,
+    summary: 'Temario común: busca un tema, lee sus apuntes y marca lo estudiado.',
+  },
+  {
     path: '/programa',
     label: 'Programa',
     slice: null,

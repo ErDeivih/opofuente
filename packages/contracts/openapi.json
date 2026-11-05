@@ -133,6 +133,57 @@
         "title": "ActiveConvocationSchema",
         "type": "object"
       },
+      "AdjustmentSchema": {
+        "properties": {
+          "evidence_quote": {
+            "title": "Evidence Quote",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "official_code_override": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Official Code Override"
+          },
+          "title_override": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title Override"
+          },
+          "weight": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Weight"
+          }
+        },
+        "required": [
+          "kind",
+          "evidence_quote"
+        ],
+        "title": "AdjustmentSchema",
+        "type": "object"
+      },
       "AffectedSchema": {
         "description": "Un dependiente afectado por el cambio, con su motivo.",
         "properties": {
@@ -494,6 +545,58 @@
           "provider"
         ],
         "title": "AnswerSchema",
+        "type": "object"
+      },
+      "AppearanceSchema": {
+        "properties": {
+          "adjustments": {
+            "items": {
+              "$ref": "#/components/schemas/AdjustmentSchema"
+            },
+            "title": "Adjustments",
+            "type": "array"
+          },
+          "convocation_code": {
+            "title": "Convocation Code",
+            "type": "string"
+          },
+          "convocation_id": {
+            "title": "Convocation Id",
+            "type": "string"
+          },
+          "convocation_title": {
+            "title": "Convocation Title",
+            "type": "string"
+          },
+          "omitted": {
+            "title": "Omitted",
+            "type": "boolean"
+          },
+          "role": {
+            "title": "Role",
+            "type": "string"
+          },
+          "source_reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Reference"
+          }
+        },
+        "required": [
+          "convocation_id",
+          "convocation_code",
+          "convocation_title",
+          "role",
+          "omitted",
+          "adjustments"
+        ],
+        "title": "AppearanceSchema",
         "type": "object"
       },
       "AreaUsageSchema": {
@@ -1041,6 +1144,54 @@
         ],
         "title": "BatchStatus",
         "type": "string"
+      },
+      "BlockProgressSchema": {
+        "properties": {
+          "block_id": {
+            "title": "Block Id",
+            "type": "string"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "percent": {
+            "title": "Percent",
+            "type": "number"
+          },
+          "position": {
+            "title": "Position",
+            "type": "integer"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "topics_studied": {
+            "title": "Topics Studied",
+            "type": "integer"
+          },
+          "topics_total": {
+            "title": "Topics Total",
+            "type": "integer"
+          },
+          "topics_with_activity": {
+            "title": "Topics With Activity",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "block_id",
+          "path",
+          "title",
+          "position",
+          "topics_total",
+          "topics_studied",
+          "topics_with_activity",
+          "percent"
+        ],
+        "title": "BlockProgressSchema",
+        "type": "object"
       },
       "Body_ingest_files_api_v1_ingestion_batches_files_post": {
         "properties": {
@@ -1851,6 +2002,61 @@
         "title": "ConvocationDetailSchema",
         "type": "object"
       },
+      "ConvocationIdentitySchema": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "official_url": {
+            "title": "Official Url",
+            "type": "string"
+          },
+          "opposition_code": {
+            "title": "Opposition Code",
+            "type": "string"
+          },
+          "opposition_name": {
+            "title": "Opposition Name",
+            "type": "string"
+          },
+          "published_at": {
+            "format": "date",
+            "title": "Published At",
+            "type": "string"
+          },
+          "source_reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Reference"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "title",
+          "official_url",
+          "published_at",
+          "opposition_code",
+          "opposition_name"
+        ],
+        "title": "ConvocationIdentitySchema",
+        "type": "object"
+      },
       "ConvocationReferenceSchema": {
         "properties": {
           "code": {
@@ -2505,6 +2711,128 @@
         "title": "CurrentQuestionSchema",
         "type": "object"
       },
+      "CurriculumDetailSchema": {
+        "properties": {
+          "active_version": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CurriculumVersionSchema"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Counts",
+            "type": "object"
+          },
+          "family": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Family"
+          },
+          "group_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Code"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "nodes": {
+            "items": {
+              "$ref": "#/components/schemas/CurriculumNodeSchema"
+            },
+            "title": "Nodes",
+            "type": "array"
+          },
+          "progress": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProgressSchema"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "versions": {
+            "items": {
+              "$ref": "#/components/schemas/CurriculumVersionSchema"
+            },
+            "title": "Versions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "code",
+          "name",
+          "kind",
+          "versions",
+          "counts",
+          "nodes"
+        ],
+        "title": "CurriculumDetailSchema",
+        "type": "object"
+      },
+      "CurriculumIdentitySchema": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "version_code": {
+            "title": "Version Code",
+            "type": "string"
+          },
+          "version_title": {
+            "title": "Version Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "name",
+          "kind",
+          "version_code",
+          "version_title"
+        ],
+        "title": "CurriculumIdentitySchema",
+        "type": "object"
+      },
       "CurriculumNodeDetailSchema": {
         "properties": {
           "ancestors": {
@@ -2514,64 +2842,56 @@
             "title": "Ancestors",
             "type": "array"
           },
-          "convocation_code": {
-            "title": "Convocation Code",
-            "type": "string"
+          "appears_in": {
+            "items": {
+              "$ref": "#/components/schemas/AppearanceSchema"
+            },
+            "title": "Appears In",
+            "type": "array"
           },
-          "convocation_id": {
-            "title": "Convocation Id",
-            "type": "string"
-          },
-          "convocation_title": {
-            "title": "Convocation Title",
-            "type": "string"
+          "convocation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConvocationIdentitySchema"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "coverage": {
             "title": "Coverage",
             "type": "null"
           },
+          "curriculum": {
+            "$ref": "#/components/schemas/CurriculumIdentitySchema"
+          },
           "node": {
             "$ref": "#/components/schemas/CurriculumNodeSchema"
           },
-          "official_url": {
-            "title": "Official Url",
-            "type": "string"
+          "particularities": {
+            "items": {
+              "$ref": "#/components/schemas/AdjustmentSchema"
+            },
+            "title": "Particularities",
+            "type": "array"
           },
-          "opposition_code": {
-            "title": "Opposition Code",
-            "type": "string"
-          },
-          "opposition_name": {
-            "title": "Opposition Name",
-            "type": "string"
-          },
-          "published_at": {
-            "format": "date",
-            "title": "Published At",
-            "type": "string"
-          },
-          "source_reference": {
+          "studied_at": {
             "anyOf": [
               {
+                "format": "date-time",
                 "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Source Reference"
+            "title": "Studied At"
           }
         },
         "required": [
           "node",
-          "convocation_id",
-          "convocation_code",
-          "convocation_title",
-          "official_url",
-          "published_at",
-          "opposition_code",
-          "opposition_name",
-          "ancestors"
+          "curriculum"
         ],
         "title": "CurriculumNodeDetailSchema",
         "type": "object"
@@ -2619,6 +2939,18 @@
             "title": "Position",
             "type": "integer"
           },
+          "studied_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Studied At"
+          },
           "title": {
             "title": "Title",
             "type": "string"
@@ -2635,6 +2967,60 @@
           "children"
         ],
         "title": "CurriculumNodeSchema",
+        "type": "object"
+      },
+      "CurriculumReferenceSchema": {
+        "properties": {
+          "curriculum_code": {
+            "title": "Curriculum Code",
+            "type": "string"
+          },
+          "curriculum_kind": {
+            "title": "Curriculum Kind",
+            "type": "string"
+          },
+          "curriculum_name": {
+            "title": "Curriculum Name",
+            "type": "string"
+          },
+          "role": {
+            "title": "Role",
+            "type": "string"
+          },
+          "source_reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Reference"
+          },
+          "version_code": {
+            "title": "Version Code",
+            "type": "string"
+          },
+          "version_no": {
+            "title": "Version No",
+            "type": "integer"
+          },
+          "version_title": {
+            "title": "Version Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "role",
+          "curriculum_code",
+          "curriculum_name",
+          "curriculum_kind",
+          "version_code",
+          "version_no",
+          "version_title"
+        ],
+        "title": "CurriculumReferenceSchema",
         "type": "object"
       },
       "CurriculumSchema": {
@@ -2674,6 +3060,97 @@
           "nodes"
         ],
         "title": "CurriculumSchema",
+        "type": "object"
+      },
+      "CurriculumSummarySchema": {
+        "properties": {
+          "active_version": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CurriculumVersionSchema"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "family": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Family"
+          },
+          "group_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Code"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "versions": {
+            "items": {
+              "$ref": "#/components/schemas/CurriculumVersionSchema"
+            },
+            "title": "Versions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "code",
+          "name",
+          "kind",
+          "versions"
+        ],
+        "title": "CurriculumSummarySchema",
+        "type": "object"
+      },
+      "CurriculumVersionSchema": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "version_no": {
+            "title": "Version No",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "code",
+          "version_no",
+          "title",
+          "status"
+        ],
+        "title": "CurriculumVersionSchema",
         "type": "object"
       },
       "DecisionOutcomeSchema": {
@@ -6385,6 +6862,52 @@
         "title": "ProblemDetail",
         "type": "object"
       },
+      "ProgressSchema": {
+        "properties": {
+          "blocks": {
+            "items": {
+              "$ref": "#/components/schemas/BlockProgressSchema"
+            },
+            "title": "Blocks",
+            "type": "array"
+          },
+          "curriculum_code": {
+            "title": "Curriculum Code",
+            "type": "string"
+          },
+          "percent": {
+            "title": "Percent",
+            "type": "number"
+          },
+          "topics_studied": {
+            "title": "Topics Studied",
+            "type": "integer"
+          },
+          "topics_total": {
+            "title": "Topics Total",
+            "type": "integer"
+          },
+          "topics_with_activity": {
+            "title": "Topics With Activity",
+            "type": "integer"
+          },
+          "version_code": {
+            "title": "Version Code",
+            "type": "string"
+          }
+        },
+        "required": [
+          "curriculum_code",
+          "version_code",
+          "blocks",
+          "topics_total",
+          "topics_studied",
+          "topics_with_activity",
+          "percent"
+        ],
+        "title": "ProgressSchema",
+        "type": "object"
+      },
       "PromoteRequestSchema": {
         "description": "Promociona un artefacto. `document_id` añade una versión a un documento que ya existe.",
         "properties": {
@@ -9768,6 +10291,25 @@
         "title": "SnoozeReviewSchema",
         "type": "object"
       },
+      "StudyMarkSchema": {
+        "properties": {
+          "node_id": {
+            "title": "Node Id",
+            "type": "string"
+          },
+          "studied_at": {
+            "format": "date-time",
+            "title": "Studied At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "node_id",
+          "studied_at"
+        ],
+        "title": "StudyMarkSchema",
+        "type": "object"
+      },
       "StudyReadinessSchema": {
         "description": "Si esta oposición se puede estudiar ya, paso a paso, y qué falta si falta algo.",
         "properties": {
@@ -9893,6 +10435,47 @@
           "annulled_question_version_id"
         ],
         "title": "SubstitutionSchema",
+        "type": "object"
+      },
+      "TemarioSchema": {
+        "properties": {
+          "convocation": {
+            "$ref": "#/components/schemas/ConvocationIdentitySchema"
+          },
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Counts",
+            "type": "object"
+          },
+          "curriculum": {
+            "$ref": "#/components/schemas/CurriculumIdentitySchema"
+          },
+          "nodes": {
+            "items": {
+              "$ref": "#/components/schemas/CurriculumNodeSchema"
+            },
+            "title": "Nodes",
+            "type": "array"
+          },
+          "omitted_topics": {
+            "title": "Omitted Topics",
+            "type": "integer"
+          },
+          "version": {
+            "$ref": "#/components/schemas/CurriculumVersionSchema"
+          }
+        },
+        "required": [
+          "convocation",
+          "curriculum",
+          "version",
+          "counts",
+          "nodes",
+          "omitted_topics"
+        ],
+        "title": "TemarioSchema",
         "type": "object"
       },
       "UrlRequest": {
@@ -12237,6 +12820,380 @@
         "summary": "Árbol del programa oficial"
       }
     },
+    "/api/v1/convocations/{convocation_id}/references": {
+      "get": {
+        "operationId": "list_references_api_v1_convocations__convocation_id__references_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "convocation_id",
+            "required": true,
+            "schema": {
+              "title": "Convocation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CurriculumReferenceSchema"
+                  },
+                  "title": "Response List References Api V1 Convocations  Convocation Id  References Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Temarios que referencia una convocatoria, con su papel y su cita"
+      }
+    },
+    "/api/v1/convocations/{convocation_id}/temario": {
+      "get": {
+        "operationId": "get_temario_api_v1_convocations__convocation_id__temario_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "convocation_id",
+            "required": true,
+            "schema": {
+              "title": "Convocation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemarioSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Temario efectivo de la convocatoria, con sus particularidades"
+      }
+    },
+    "/api/v1/curricula": {
+      "get": {
+        "operationId": "list_curricula_api_v1_curricula_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "pattern": "^(common|published)$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CurriculumSummarySchema"
+                  },
+                  "title": "Response List Curricula Api V1 Curricula Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Temarios disponibles (común y programas publicados)"
+      }
+    },
+    "/api/v1/curricula/{curriculum_code}": {
+      "get": {
+        "operationId": "get_curriculum_api_v1_curricula__curriculum_code__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "curriculum_code",
+            "required": true,
+            "schema": {
+              "title": "Curriculum Code",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CurriculumDetailSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Temario con sus versiones y su árbol"
+      }
+    },
+    "/api/v1/curricula/{curriculum_code}/progress": {
+      "get": {
+        "operationId": "get_curriculum_progress_api_v1_curricula__curriculum_code__progress_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "curriculum_code",
+            "required": true,
+            "schema": {
+              "title": "Curriculum Code",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProgressSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Avance por bloque y total sobre el temario común"
+      }
+    },
+    "/api/v1/curricula/{curriculum_code}/versions": {
+      "get": {
+        "operationId": "list_curriculum_versions_api_v1_curricula__curriculum_code__versions_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "curriculum_code",
+            "required": true,
+            "schema": {
+              "title": "Curriculum Code",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CurriculumVersionSchema"
+                  },
+                  "title": "Response List Curriculum Versions Api V1 Curricula  Curriculum Code  Versions Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Versiones de un temario"
+      }
+    },
     "/api/v1/curriculum-mappings/{mapping_id}": {
       "delete": {
         "operationId": "delete_mapping_api_v1_curriculum_mappings__mapping_id__delete",
@@ -12324,6 +13281,22 @@
               "title": "Node Id",
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "convocation_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Convocation Id"
+            }
           }
         ],
         "responses": {
@@ -12368,7 +13341,7 @@
             "description": "Error interno inesperado (RFC 9457)."
           }
         },
-        "summary": "Nodo del programa con su procedencia"
+        "summary": "Nodo del temario con su ficha, sus convocatorias y sus particularidades"
       }
     },
     "/api/v1/curriculum-nodes/{node_id}/coverage": {
@@ -12431,6 +13404,135 @@
         "tags": [
           "clasificación"
         ]
+      }
+    },
+    "/api/v1/curriculum-nodes/{node_id}/studied": {
+      "delete": {
+        "operationId": "unmark_node_studied_api_v1_curriculum_nodes__node_id__studied_delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "node_id",
+            "required": true,
+            "schema": {
+              "title": "Node Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Retira la marca de estudiado"
+      },
+      "post": {
+        "operationId": "mark_node_studied_api_v1_curriculum_nodes__node_id__studied_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "node_id",
+            "required": true,
+            "schema": {
+              "title": "Node Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudyMarkSchema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "El recurso no existe."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error interno inesperado (RFC 9457)."
+          }
+        },
+        "summary": "Marca un tema como estudiado (con su fecha)"
       }
     },
     "/api/v1/derived-artifacts": {

@@ -176,7 +176,10 @@ def test_detalle_de_nodo_con_ancestros_y_procedencia(seeded_client: TestClient) 
     body = response.json()
     assert body["node"]["path"] == tema["path"]
     assert [ancestor["official_code"] for ancestor in body["ancestors"]] == ["I"]
-    assert body["official_url"] == "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2025-26262"
+    assert (
+        body["convocation"]["official_url"]
+        == "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2025-26262"
+    )
     # La cobertura todavía no se calcula: se declara nula, no cero.
     assert body["coverage"] is None
 

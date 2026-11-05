@@ -22,11 +22,13 @@ from opofuente.api.routes import (
     search,
     study,
     system,
+    temario,
 )
 
 api_router = APIRouter()
 api_router.include_router(system.router)
 api_router.include_router(profiles.router)
+api_router.include_router(temario.router)
 api_router.include_router(ingestion.router)
 api_router.include_router(classification.router)
 api_router.include_router(library.router)

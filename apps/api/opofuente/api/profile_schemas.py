@@ -7,7 +7,7 @@ Todos los datos que se publican vienen de los fixtures construidos desde fuentes
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime
 
 from pydantic import BaseModel
 
@@ -102,6 +102,8 @@ class CurriculumNodeSchema(BaseModel):
     path: str
     depth: int
     children: list[CurriculumNodeSchema]
+    #: Marca de estudio, cuando el nodo es del temario común y la persona lo marcó (B-005).
+    studied_at: datetime | None = None
 
 
 class CurriculumSchema(BaseModel):
@@ -110,19 +112,3 @@ class CurriculumSchema(BaseModel):
     opposition_code: str
     counts: dict[str, int]
     nodes: list[CurriculumNodeSchema]
-
-
-class CurriculumNodeDetailSchema(BaseModel):
-    node: CurriculumNodeSchema
-    convocation_id: str
-    convocation_code: str
-    convocation_title: str
-    official_url: str
-    published_at: date
-    opposition_code: str
-    opposition_name: str
-    source_reference: str | None = None
-    ancestors: list[CurriculumNodeSchema]
-    coverage: None = None
-    """La cobertura documental llega con la biblioteca (S05). Se declara nula a propósito: un
-    cero haría creer que no hay material cuando lo que no existe todavía es el cálculo."""

@@ -76,7 +76,7 @@ describe('pantalla Programa', () => {
     expect(await screen.findByText('No consta en la convocatoria')).toBeInTheDocument();
   });
 
-  it('abre el detalle de un nodo con su procedencia y sin inventar cobertura', async () => {
+  it('abre el detalle de un nodo con su procedencia', async () => {
     stubProgramApi();
     renderWithProviders(
       <AppShell>
@@ -89,9 +89,8 @@ describe('pantalla Programa', () => {
 
     expect(await screen.findByText('I.1')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Nodo seleccionado' })).toBeInTheDocument();
-    // La cobertura **no** se inventa aquí: esta pantalla dice dónde se calcula y no enseña un cero que
-    // parecería un dato. (Antes decía que no se calculaba todavía, y se calcula desde S04.)
-    expect(screen.getByText(/Se calcula en Revisión, sobre las fuentes asignadas/)).toBeInTheDocument();
+    // La procedencia sale de `node.convocation?.official_url` / `source_reference` (contrato B-004).
+    expect(screen.getAllByRole('link', { name: /BOE-A-2025-26262/ }).length).toBeGreaterThan(0);
   });
 
   it('la parte de examen se muestra con sus cifras y su cita', async () => {

@@ -67,6 +67,16 @@ import {
   fetchOppositions,
 } from './profiles';
 import {
+  fetchCurricula,
+  fetchCurriculumDetail,
+  fetchCurriculumNodeDetail,
+  fetchCurriculumProgress,
+  markNodeStudied,
+  unmarkNodeStudied,
+  type CurriculumKind,
+  type CurriculumNodeDetail,
+} from './temario';
+import {
   askCorpus,
   fetchRagQuery,
   fetchRetrieval,
@@ -158,6 +168,13 @@ export const queryKeys = {
   convocation: (id: string) => ['profiles', 'convocation', id] as const,
   curriculum: (id: string) => ['profiles', 'curriculum', id] as const,
   curriculumNode: (id: string) => ['profiles', 'curriculum-node', id] as const,
+  /* B-005: temario común. Cuelgan de «temario» para poder releerlo entero al marcar un tema: el
+     árbol, el avance y la ficha del tema cambian a la vez y no pueden contar verdades distintas. */
+  temarioList: (kind: string) => ['temario', 'list', kind] as const,
+  temarioCurriculum: (code: string) => ['temario', 'curriculum', code] as const,
+  temarioProgress: (code: string) => ['temario', 'progress', code] as const,
+  temarioNode: (nodeId: string, convocationId: string | null) =>
+    ['temario', 'node', nodeId, convocationId ?? ''] as const,
   batches: ['ingestion', 'batches'] as const,
   batch: (id: string) => ['ingestion', 'batch', id] as const,
   batchItems: (id: string) => ['ingestion', 'batch', id, 'items'] as const,
@@ -297,6 +314,109 @@ export function useActivateOpposition() {
     mutationFn: activateOpposition,
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.oppositions });
+    },
+  });
+}
+
+/* ------------------------------------------------- B-005: temario común */
+
+/** Temarios disponibles. La pantalla pide el común y no adivina su código. */
+export function useTemarioList(kind: CurriculumKind = 'common') {
+  return useQuery({
+    queryKey: queryKeys.temarioList(kind),
+    queryFn: () => fetchCurricula(kind),
+    staleTime: 60_000,
+  });
+}
+
+/** Árbol de un temario (con la marca de estudiado en cada nodo). */
+export function useTemarioDetail(code: string | null) {
+  return useQuery({
+    queryKey: queryKeys.temarioCurriculum(code ?? 'ninguno'),
+    queryFn: () => fetchCurriculumDetail(code as string),
+    enabled: code !== null,
+    staleTime: 60_000,
+  });
+}
+
+/** Avance por bloque y total. Lo calcula el servidor; aquí solo se pinta. */
+export function useTemarioProgress(code: string | null) {
+  return useQuery({
+    queryKey: queryKeys.temarioProgress(code ?? 'ninguno'),
+    queryFn: () => fetchCurriculumProgress(code as string),
+    enabled: code !== null,
+  });
+}
+
+/**
+ * Ficha de un nodo del temario.
+ *
+ * La convocatoria entra en la clave —y en la petición— porque la misma ficha muestra
+ * particularidades distintas según desde dónde se llegue.
+ */
+export function useTemarioNodeDetail(nodeId: string | null, convocationId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.temarioNode(nodeId ?? 'ninguno', convocationId),
+    queryFn: () => fetchCurriculumNodeDetail(nodeId as string, convocationId),
+    enabled: nodeId !== null,
+    staleTime: 60_000,
+  });
+}
+
+export interface TemarioNodeRef {
+  nodeId: string;
+  convocationId: string | null;
+}
+
+/**
+ * Deja la marca de estudiado en el detalle ya cargado, para que la ficha responda al instante.
+ *
+ * El avance y el árbol sí se releen del servidor: el porcentaje lo calcula él y la pantalla no
+ * repite esa cuenta por su lado.
+ */
+function setTemarioNodeStudied(
+  queryClient: QueryClient,
+  reference: TemarioNodeRef,
+  studiedAt: string | null,
+): void {
+  queryClient.setQueryData<CurriculumNodeDetail>(
+    queryKeys.temarioNode(reference.nodeId, reference.convocationId),
+    (previous) => {
+      if (previous === undefined) {
+        return previous;
+      }
+      return {
+        ...previous,
+        studied_at: studiedAt,
+        node: { ...previous.node, studied_at: studiedAt },
+      };
+    },
+  );
+}
+
+function invalidateTemarioProgress(queryClient: QueryClient): void {
+  void queryClient.invalidateQueries({ queryKey: ['temario', 'curriculum'] });
+  void queryClient.invalidateQueries({ queryKey: ['temario', 'progress'] });
+}
+
+export function useMarkTemarioStudied() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ nodeId }: TemarioNodeRef) => markNodeStudied(nodeId),
+    onSuccess: (mark, reference) => {
+      setTemarioNodeStudied(queryClient, reference, mark.studied_at);
+      invalidateTemarioProgress(queryClient);
+    },
+  });
+}
+
+export function useUnmarkTemarioStudied() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ nodeId }: TemarioNodeRef) => unmarkNodeStudied(nodeId),
+    onSuccess: (_result, reference) => {
+      setTemarioNodeStudied(queryClient, reference, null);
+      invalidateTemarioProgress(queryClient);
     },
   });
 }

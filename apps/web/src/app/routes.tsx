@@ -12,6 +12,8 @@ import { ReviewPage } from '../pages/ReviewPage';
 import { SearchPage } from '../pages/SearchPage';
 import { SettingsPage } from '../pages/SettingsPage';
 import { StudyPage } from '../pages/StudyPage';
+import { TemarioNodePage } from '../pages/TemarioNodePage';
+import { TemarioPage } from '../pages/TemarioPage';
 import { TrayPage } from '../pages/TrayPage';
 import { NAV_ITEMS } from './navigation';
 
@@ -19,6 +21,10 @@ export function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
+      {/* B-005: el temario que se estudia y la ficha de cada tema. La ficha acepta
+          `?convocatoria=<id>` para enseñar las particularidades de esa convocatoria. */}
+      <Route path="/temario" element={<TemarioPage />} />
+      <Route path="/temario/:nodeId" element={<TemarioNodePage />} />
       <Route path="/programa" element={<ProgramPage />} />
       <Route path="/bandeja" element={<TrayPage />} />
       <Route path="/biblioteca" element={<LibraryPage />} />

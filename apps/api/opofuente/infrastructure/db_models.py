@@ -383,6 +383,28 @@ class CurriculumNodeRecord(Base):
     version: Mapped[CurriculumVersionRecord] = relationship()
 
 
+class CurriculumStudyMarkRecord(Base):
+    """Marca de «estudiado» de un nodo del temario común (MAPA de objetivos, bloque 3).
+
+    Una fila por nodo: la aplicación es de un solo usuario, así que no hay `user_id`. La fecha se
+    guarda para poder decir cuándo se marcó; el avance se calcula al leer, no se guarda.
+    """
+
+    __tablename__ = "curriculum_study_marks"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    curriculum_node_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("curriculum_nodes.id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
+    )
+    marked_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    note: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    node: Mapped[CurriculumNodeRecord] = relationship()
+
+
 class ExamPartRecord(Base):
     __tablename__ = "exam_parts"
     __table_args__ = (

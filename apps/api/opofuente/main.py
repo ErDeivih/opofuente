@@ -32,6 +32,7 @@ from opofuente.application.auto_study_service import AutoStudyService
 from opofuente.application.backup_service import BackupService
 from opofuente.application.change_service import ChangeService
 from opofuente.application.classification_service import ClassificationService
+from opofuente.application.curriculum_read_service import CurriculumReadService
 from opofuente.application.diagnostic_service import DiagnosticService
 from opofuente.application.export_service import ExportService
 from opofuente.application.extraction_service import ExtractionService
@@ -60,6 +61,7 @@ from opofuente.infrastructure.change_repository import SqlAlchemyChangeRepositor
 from opofuente.infrastructure.classification_repository import SqlAlchemyClassificationRepository
 from opofuente.infrastructure.classifiers import DeterministicClassifier
 from opofuente.infrastructure.clock import SystemClock
+from opofuente.infrastructure.curriculum_read_repository import SqlAlchemyCurriculumReadRepository
 from opofuente.infrastructure.db import build_engine, build_session_factory
 from opofuente.infrastructure.document_repository import SqlAlchemyDocumentRepository
 from opofuente.infrastructure.extraction_repository import SqlAlchemyExtractionRepository
@@ -162,6 +164,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     clock = SystemClock()
     profiles_service = ProfilesService(
         SqlAlchemyProfileRepository(session_factory),
+        clock,
+    )
+    # B-004/B-005: temario común, referencias, particularidades y avance. Solo lectura salvo la
+    # marca de «estudiado», que es del alumno y no toca el temario.
+    curriculum_service = CurriculumReadService(
+        SqlAlchemyCurriculumReadRepository(session_factory),
         clock,
     )
     job_queue = SqlAlchemyJobRepository(session_factory)
@@ -376,6 +384,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.session_factory = session_factory
     app.state.system_service = system_service
     app.state.profiles_service = profiles_service
+    app.state.curriculum_service = curriculum_service
     app.state.ingestion_service = ingestion_service
     app.state.extraction_service = extraction_service
     app.state.intake_service = intake_service

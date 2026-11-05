@@ -74,6 +74,8 @@ class NodeView:
     path: str
     depth: int
     children: tuple[NodeView, ...] = ()
+    #: Fecha en la que la persona marcó el tema como estudiado, si lo marcó (B-005).
+    studied_at: datetime | None = None
 
 
 @dataclass(frozen=True, slots=True)

@@ -12,6 +12,16 @@ from datetime import datetime
 from pathlib import Path
 from typing import Protocol, runtime_checkable
 
+from opofuente.application.curriculum_models import (
+    CurriculumDetailView,
+    CurriculumNodeDetailView,
+    CurriculumSummaryView,
+    CurriculumVersionView,
+    ProgressView,
+    ReferenceView,
+    StudyMarkView,
+    TemarioView,
+)
 from opofuente.application.read_models import (
     AuditEventView,
     BatchDetail,
@@ -128,6 +138,31 @@ class CurriculumRepository(Protocol):
     ) -> CurriculumSeedReport:
         """Siembra idempotente: repetirla no duplica ni deja el temario a medias."""
         ...
+
+
+@runtime_checkable
+class CurriculumReadRepository(Protocol):
+    """Lecturas del temario común, sus referencias, particularidades y avance."""
+
+    def list_curricula(self, *, kind: str | None) -> tuple[CurriculumSummaryView, ...]: ...
+
+    def get_curriculum(self, code: str) -> CurriculumDetailView | None: ...
+
+    def list_versions(self, code: str) -> tuple[CurriculumVersionView, ...] | None: ...
+
+    def get_progress(self, code: str) -> ProgressView | None: ...
+
+    def list_references(self, convocation_id: str) -> tuple[ReferenceView, ...] | None: ...
+
+    def get_temario(self, convocation_id: str) -> TemarioView | None: ...
+
+    def get_node(
+        self, node_id: str, *, convocation_id: str | None = ...
+    ) -> CurriculumNodeDetailView | None: ...
+
+    def mark_studied(self, node_id: str, *, now: datetime) -> StudyMarkView | None: ...
+
+    def unmark_studied(self, node_id: str) -> bool | None: ...
 
 
 @runtime_checkable

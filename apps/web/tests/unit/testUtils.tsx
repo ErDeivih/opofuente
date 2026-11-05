@@ -16,6 +16,13 @@ import type {
   Opposition,
 } from '../../src/api/profiles';
 import type { PendingActions, StudyReadiness } from '../../src/api/readiness';
+import type {
+  CurriculumDetail as TemarioDetail,
+  CurriculumNode,
+  CurriculumNodeDetail as TemarioNodeDetail,
+  CurriculumSummary,
+  Progress,
+} from '../../src/api/temario';
 
 export function createTestQueryClient(): QueryClient {
   return new QueryClient({
@@ -446,14 +453,191 @@ export const curriculumFixture: Curriculum = {
 
 export const nodeDetailFixture: CurriculumNodeDetail = {
   node: curriculumFixture.nodes[0]!.children[0]!,
-  convocation_id: TAI_CONVOCATION_ID,
-  convocation_code: 'tai-age-2025',
-  convocation_title: convocationFixture.title,
-  official_url: convocationFixture.official_url,
-  published_at: '2025-12-22',
-  opposition_code: 'tai-age',
-  opposition_name: convocationFixture.opposition_name,
-  source_reference: 'BOE-A-2025-26262 · ANEXO V',
+  curriculum: {
+    code: 'informatica-c1',
+    name: 'Temario común de informática C1',
+    kind: 'common',
+    version_code: 'informatica-c1-v1',
+    version_title: 'Temario común de informática C1',
+  },
+  convocation: {
+    id: TAI_CONVOCATION_ID,
+    code: 'tai-age-2025',
+    title: convocationFixture.title,
+    official_url: convocationFixture.official_url,
+    published_at: '2025-12-22',
+    opposition_code: 'tai-age',
+    opposition_name: convocationFixture.opposition_name,
+    source_reference: 'BOE-A-2025-26262 · ANEXO V',
+  },
+  appears_in: [],
+  particularities: [],
+  studied_at: null,
   ancestors: [curriculumFixture.nodes[0]!],
+  coverage: null,
+};
+
+/* ------------------------------------------- B-005: temario común y ficha de tema */
+
+export const TEMARIO_CODE = 'informatica-c1';
+export const TEMARIO_VERSION_CODE = 'informatica-c1-v1';
+
+const TEMARIO_BLOCK_TITLES = [
+  'Organización del Estado y Administración electrónica',
+  'Tecnología básica',
+  'Desarrollo de aplicaciones',
+  'Sistemas y comunicaciones',
+  'Seguridad y protección de datos',
+] as const;
+
+const TEMARIO_BLOCK_PATHS = ['I', 'II', 'III', 'IV', 'V'] as const;
+
+/* Los ocho títulos del bloque I existen; el resto son sintéticos y solo rellenan el árbol. */
+const TEMARIO_FIRST_TOPICS = [
+  'La Constitución Española de 1978',
+  'Las Cortes Generales',
+  'El Gobierno y la Administración',
+  'La Unión Europea',
+  'El régimen local',
+  'La Administración electrónica',
+  'Protección de datos personales',
+  'Transparencia y buen gobierno',
+];
+
+/**
+ * El árbol del temario común: 5 bloques y 40 temas, en orden oficial.
+ *
+ * Es el mismo recuento que sirve el servidor (`counts: {block: 5, topic: 40}`); si la pantalla
+ * pintara solo algunos, la prueba de «5 bloques y 40 temas» fallaría.
+ */
+export function buildTemarioNodes(): CurriculumNode[] {
+  let numeroDeTema = 0;
+  return TEMARIO_BLOCK_TITLES.map((title, blockIndex) => {
+    const path = TEMARIO_BLOCK_PATHS[blockIndex]!;
+    const children = Array.from({ length: 8 }, (_unused, topicIndex) => {
+      numeroDeTema += 1;
+      const codigo = topicIndex + 1;
+      return {
+        id: `tema-${String(numeroDeTema)}`,
+        node_type: 'topic' as const,
+        official_code: String(codigo),
+        title:
+          blockIndex === 0
+            ? (TEMARIO_FIRST_TOPICS[topicIndex] ?? `Tema ${String(numeroDeTema)}`)
+            : `Tema ${String(numeroDeTema)} del bloque ${path}`,
+        description: null,
+        position: codigo,
+        path: `${path}.${String(codigo)}`,
+        depth: 1,
+        children: [],
+        studied_at: null,
+      };
+    });
+    return {
+      id: `bloque-${path}`,
+      node_type: 'block' as const,
+      official_code: path,
+      title,
+      description: null,
+      position: blockIndex + 1,
+      path,
+      depth: 0,
+      children,
+      studied_at: null,
+    };
+  });
+}
+
+const TEMARIO_VERSIONS = [
+  {
+    code: TEMARIO_VERSION_CODE,
+    version_no: 1,
+    title: 'Temario común de informática C1',
+    status: 'active',
+  },
+];
+
+export const temarioSummaryFixture: CurriculumSummary = {
+  code: TEMARIO_CODE,
+  name: 'Temario común de informática C1',
+  kind: 'common',
+  group_code: 'C1',
+  family: 'informatica',
+  versions: TEMARIO_VERSIONS,
+  active_version: TEMARIO_VERSIONS[0]!,
+};
+
+export const temarioDetailFixture: TemarioDetail = {
+  code: TEMARIO_CODE,
+  name: 'Temario común de informática C1',
+  kind: 'common',
+  group_code: 'C1',
+  family: 'informatica',
+  versions: TEMARIO_VERSIONS,
+  active_version: TEMARIO_VERSIONS[0]!,
+  counts: { block: 5, topic: 40, epigraph: 0 },
+  nodes: buildTemarioNodes(),
+  progress: null,
+};
+
+/** Temas marcados por bloque: 4 + 2 + 6 = 12 de 40 (30 %), como en el avance real. */
+const TEMARIO_STUDIED_BY_BLOCK = [4, 2, 6, 0, 0] as const;
+
+export const temarioProgressFixture: Progress = {
+  curriculum_code: TEMARIO_CODE,
+  version_code: TEMARIO_VERSION_CODE,
+  blocks: temarioDetailFixture.nodes.map((block, index) => {
+    const estudiados = TEMARIO_STUDIED_BY_BLOCK[index] ?? 0;
+    const total = block.children.length;
+    return {
+      block_id: block.id,
+      path: block.path,
+      title: block.title,
+      position: block.position,
+      topics_total: total,
+      topics_studied: estudiados,
+      topics_with_activity: 0,
+      percent: total === 0 ? 0 : Math.round((estudiados * 1000) / total) / 10,
+    };
+  }),
+  topics_total: 40,
+  topics_studied: 12,
+  topics_with_activity: 0,
+  percent: 30,
+};
+
+export const temarioNodeFixture: TemarioNodeDetail = {
+  node: temarioDetailFixture.nodes[0]!.children[0]!,
+  curriculum: {
+    code: TEMARIO_CODE,
+    name: 'Temario común de informática C1',
+    kind: 'common',
+    version_code: TEMARIO_VERSION_CODE,
+    version_title: 'Temario común de informática C1',
+  },
+  convocation: null,
+  appears_in: [
+    {
+      convocation_id: TAI_CONVOCATION_ID,
+      convocation_code: 'tai-age-2025',
+      convocation_title: convocationFixture.title,
+      role: 'primary',
+      source_reference: 'ANEXO V, apartado 3',
+      omitted: false,
+      adjustments: [],
+    },
+    {
+      convocation_id: 'conv-diputacion',
+      convocation_code: 'diputacion-2026',
+      convocation_title: 'Convocatoria de Técnico de Informática de la Diputación',
+      role: 'complementary',
+      source_reference: null,
+      omitted: false,
+      adjustments: [],
+    },
+  ],
+  particularities: [],
+  studied_at: null,
+  ancestors: [temarioDetailFixture.nodes[0]!],
   coverage: null,
 };

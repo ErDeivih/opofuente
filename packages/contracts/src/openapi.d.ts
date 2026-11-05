@@ -423,6 +423,108 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/convocations/{convocation_id}/references": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Temarios que referencia una convocatoria, con su papel y su cita */
+        get: operations["list_references_api_v1_convocations__convocation_id__references_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/convocations/{convocation_id}/temario": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Temario efectivo de la convocatoria, con sus particularidades */
+        get: operations["get_temario_api_v1_convocations__convocation_id__temario_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/curricula": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Temarios disponibles (común y programas publicados) */
+        get: operations["list_curricula_api_v1_curricula_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/curricula/{curriculum_code}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Temario con sus versiones y su árbol */
+        get: operations["get_curriculum_api_v1_curricula__curriculum_code__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/curricula/{curriculum_code}/progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Avance por bloque y total sobre el temario común */
+        get: operations["get_curriculum_progress_api_v1_curricula__curriculum_code__progress_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/curricula/{curriculum_code}/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Versiones de un temario */
+        get: operations["list_curriculum_versions_api_v1_curricula__curriculum_code__versions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/curriculum-mappings/{mapping_id}": {
         parameters: {
             query?: never;
@@ -447,7 +549,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Nodo del programa con su procedencia */
+        /** Nodo del temario con su ficha, sus convocatorias y sus particularidades */
         get: operations["get_curriculum_node_api_v1_curriculum_nodes__node_id__get"];
         put?: never;
         post?: never;
@@ -469,6 +571,24 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/curriculum-nodes/{node_id}/studied": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Marca un tema como estudiado (con su fecha) */
+        post: operations["mark_node_studied_api_v1_curriculum_nodes__node_id__studied_post"];
+        /** Retira la marca de estudiado */
+        delete: operations["unmark_node_studied_api_v1_curriculum_nodes__node_id__studied_delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2395,6 +2515,19 @@ export interface components {
             published_at: string;
             status: components["schemas"]["ConvocationStatus"];
         };
+        /** AdjustmentSchema */
+        AdjustmentSchema: {
+            /** Evidence Quote */
+            evidence_quote: string;
+            /** Kind */
+            kind: string;
+            /** Official Code Override */
+            official_code_override?: string | null;
+            /** Title Override */
+            title_override?: string | null;
+            /** Weight */
+            weight?: number | null;
+        };
         /**
          * AffectedSchema
          * @description Un dependiente afectado por el cambio, con su motivo.
@@ -2517,6 +2650,23 @@ export interface components {
             suggested_followups: string[];
             /** Uncertainties */
             uncertainties: string[];
+        };
+        /** AppearanceSchema */
+        AppearanceSchema: {
+            /** Adjustments */
+            adjustments: components["schemas"]["AdjustmentSchema"][];
+            /** Convocation Code */
+            convocation_code: string;
+            /** Convocation Id */
+            convocation_id: string;
+            /** Convocation Title */
+            convocation_title: string;
+            /** Omitted */
+            omitted: boolean;
+            /** Role */
+            role: string;
+            /** Source Reference */
+            source_reference?: string | null;
         };
         /**
          * AreaUsageSchema
@@ -2714,6 +2864,25 @@ export interface components {
          * @enum {string}
          */
         BatchStatus: "queued" | "running" | "succeeded" | "failed" | "cancel_requested" | "cancelled";
+        /** BlockProgressSchema */
+        BlockProgressSchema: {
+            /** Block Id */
+            block_id: string;
+            /** Path */
+            path: string;
+            /** Percent */
+            percent: number;
+            /** Position */
+            position: number;
+            /** Title */
+            title: string;
+            /** Topics Studied */
+            topics_studied: number;
+            /** Topics Total */
+            topics_total: number;
+            /** Topics With Activity */
+            topics_with_activity: number;
+        };
         /** Body_ingest_files_api_v1_ingestion_batches_files_post */
         Body_ingest_files_api_v1_ingestion_batches_files_post: {
             /**
@@ -3006,6 +3175,28 @@ export interface components {
             /** Title */
             title: string;
         };
+        /** ConvocationIdentitySchema */
+        ConvocationIdentitySchema: {
+            /** Code */
+            code: string;
+            /** Id */
+            id: string;
+            /** Official Url */
+            official_url: string;
+            /** Opposition Code */
+            opposition_code: string;
+            /** Opposition Name */
+            opposition_name: string;
+            /**
+             * Published At
+             * Format: date
+             */
+            published_at: string;
+            /** Source Reference */
+            source_reference?: string | null;
+            /** Title */
+            title: string;
+        };
         /** ConvocationReferenceSchema */
         ConvocationReferenceSchema: {
             /** Code */
@@ -3233,32 +3424,57 @@ export interface components {
             /** Total */
             total: number;
         };
+        /** CurriculumDetailSchema */
+        CurriculumDetailSchema: {
+            active_version?: components["schemas"]["CurriculumVersionSchema"] | null;
+            /** Code */
+            code: string;
+            /** Counts */
+            counts: {
+                [key: string]: number;
+            };
+            /** Family */
+            family?: string | null;
+            /** Group Code */
+            group_code?: string | null;
+            /** Kind */
+            kind: string;
+            /** Name */
+            name: string;
+            /** Nodes */
+            nodes: components["schemas"]["CurriculumNodeSchema"][];
+            progress?: components["schemas"]["ProgressSchema"] | null;
+            /** Versions */
+            versions: components["schemas"]["CurriculumVersionSchema"][];
+        };
+        /** CurriculumIdentitySchema */
+        CurriculumIdentitySchema: {
+            /** Code */
+            code: string;
+            /** Kind */
+            kind: string;
+            /** Name */
+            name: string;
+            /** Version Code */
+            version_code: string;
+            /** Version Title */
+            version_title: string;
+        };
         /** CurriculumNodeDetailSchema */
         CurriculumNodeDetailSchema: {
             /** Ancestors */
-            ancestors: components["schemas"]["CurriculumNodeSchema"][];
-            /** Convocation Code */
-            convocation_code: string;
-            /** Convocation Id */
-            convocation_id: string;
-            /** Convocation Title */
-            convocation_title: string;
+            ancestors?: components["schemas"]["CurriculumNodeSchema"][];
+            /** Appears In */
+            appears_in?: components["schemas"]["AppearanceSchema"][];
+            convocation?: components["schemas"]["ConvocationIdentitySchema"] | null;
             /** Coverage */
             coverage?: null;
+            curriculum: components["schemas"]["CurriculumIdentitySchema"];
             node: components["schemas"]["CurriculumNodeSchema"];
-            /** Official Url */
-            official_url: string;
-            /** Opposition Code */
-            opposition_code: string;
-            /** Opposition Name */
-            opposition_name: string;
-            /**
-             * Published At
-             * Format: date
-             */
-            published_at: string;
-            /** Source Reference */
-            source_reference?: string | null;
+            /** Particularities */
+            particularities?: components["schemas"]["AdjustmentSchema"][];
+            /** Studied At */
+            studied_at?: string | null;
         };
         /** CurriculumNodeSchema */
         CurriculumNodeSchema: {
@@ -3277,8 +3493,29 @@ export interface components {
             path: string;
             /** Position */
             position: number;
+            /** Studied At */
+            studied_at?: string | null;
             /** Title */
             title: string;
+        };
+        /** CurriculumReferenceSchema */
+        CurriculumReferenceSchema: {
+            /** Curriculum Code */
+            curriculum_code: string;
+            /** Curriculum Kind */
+            curriculum_kind: string;
+            /** Curriculum Name */
+            curriculum_name: string;
+            /** Role */
+            role: string;
+            /** Source Reference */
+            source_reference?: string | null;
+            /** Version Code */
+            version_code: string;
+            /** Version No */
+            version_no: number;
+            /** Version Title */
+            version_title: string;
         };
         /** CurriculumSchema */
         CurriculumSchema: {
@@ -3294,6 +3531,33 @@ export interface components {
             nodes: components["schemas"]["CurriculumNodeSchema"][];
             /** Opposition Code */
             opposition_code: string;
+        };
+        /** CurriculumSummarySchema */
+        CurriculumSummarySchema: {
+            active_version?: components["schemas"]["CurriculumVersionSchema"] | null;
+            /** Code */
+            code: string;
+            /** Family */
+            family?: string | null;
+            /** Group Code */
+            group_code?: string | null;
+            /** Kind */
+            kind: string;
+            /** Name */
+            name: string;
+            /** Versions */
+            versions: components["schemas"]["CurriculumVersionSchema"][];
+        };
+        /** CurriculumVersionSchema */
+        CurriculumVersionSchema: {
+            /** Code */
+            code: string;
+            /** Status */
+            status: string;
+            /** Title */
+            title: string;
+            /** Version No */
+            version_no: number;
         };
         /** DecisionOutcomeSchema */
         DecisionOutcomeSchema: {
@@ -4648,6 +4912,23 @@ export interface components {
              */
             type: string;
         };
+        /** ProgressSchema */
+        ProgressSchema: {
+            /** Blocks */
+            blocks: components["schemas"]["BlockProgressSchema"][];
+            /** Curriculum Code */
+            curriculum_code: string;
+            /** Percent */
+            percent: number;
+            /** Topics Studied */
+            topics_studied: number;
+            /** Topics Total */
+            topics_total: number;
+            /** Topics With Activity */
+            topics_with_activity: number;
+            /** Version Code */
+            version_code: string;
+        };
         /**
          * PromoteRequestSchema
          * @description Promociona un artefacto. `document_id` añade una versión a un documento que ya existe.
@@ -5928,6 +6209,16 @@ export interface components {
             /** Days */
             days: number;
         };
+        /** StudyMarkSchema */
+        StudyMarkSchema: {
+            /** Node Id */
+            node_id: string;
+            /**
+             * Studied At
+             * Format: date-time
+             */
+            studied_at: string;
+        };
         /**
          * StudyReadinessSchema
          * @description Si esta oposición se puede estudiar ya, paso a paso, y qué falta si falta algo.
@@ -5981,6 +6272,20 @@ export interface components {
             annulled_question_version_id: string;
             /** Reserve Question Version Id */
             reserve_question_version_id?: string | null;
+        };
+        /** TemarioSchema */
+        TemarioSchema: {
+            convocation: components["schemas"]["ConvocationIdentitySchema"];
+            /** Counts */
+            counts: {
+                [key: string]: number;
+            };
+            curriculum: components["schemas"]["CurriculumIdentitySchema"];
+            /** Nodes */
+            nodes: components["schemas"]["CurriculumNodeSchema"][];
+            /** Omitted Topics */
+            omitted_topics: number;
+            version: components["schemas"]["CurriculumVersionSchema"];
         };
         /**
          * UrlRequest
@@ -7603,6 +7908,300 @@ export interface operations {
             };
         };
     };
+    list_references_api_v1_convocations__convocation_id__references_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                convocation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CurriculumReferenceSchema"][];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    get_temario_api_v1_convocations__convocation_id__temario_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                convocation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TemarioSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    list_curricula_api_v1_curricula_get: {
+        parameters: {
+            query?: {
+                kind?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CurriculumSummarySchema"][];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    get_curriculum_api_v1_curricula__curriculum_code__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                curriculum_code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CurriculumDetailSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    get_curriculum_progress_api_v1_curricula__curriculum_code__progress_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                curriculum_code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProgressSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    list_curriculum_versions_api_v1_curricula__curriculum_code__versions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                curriculum_code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CurriculumVersionSchema"][];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
     delete_mapping_api_v1_curriculum_mappings__mapping_id__delete: {
         parameters: {
             query?: never;
@@ -7670,7 +8269,9 @@ export interface operations {
     };
     get_curriculum_node_api_v1_curriculum_nodes__node_id__get: {
         parameters: {
-            query?: never;
+            query?: {
+                convocation_id?: string | null;
+            };
             header?: never;
             path: {
                 node_id: string;
@@ -7735,6 +8336,120 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CoverageSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    mark_node_studied_api_v1_curriculum_nodes__node_id__studied_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                node_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudyMarkSchema"];
+                };
+            };
+            /** @description Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    unmark_node_studied_api_v1_curriculum_nodes__node_id__studied_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                node_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
                 };
             };
             /** @description El recurso no existe. */

@@ -1,8 +1,8 @@
 titulo: OpoFuente — temario comun de oposiciones de informatica C1
-resumen: B-003 cerrada. El banco publicado del TAI se re-atribuye al temario comun con 20 equivalencias aceptadas, 13 propuestas para revisar, informe por fila e inverso probado.
+resumen: Bloque 3 del MAPA completo. API del temario comun con particularidades y "en que convocatorias aparece", pagina del temario con busqueda que perdona tildes, ficha de tema con marca de estudiado y avance por bloque y total.
 estado: en-curso
-tarea: B-003 cerrada: equivalencias TAI -> comun y re-atribucion de mapeos y fallos con copia e inverso
+tarea: cerrado el bloque 3 (B-004, B-005 y avance por bloque y total)
 nivel: 2
-siguiente: B-004 API y contrato del temario comun, particularidades y "en que convocatorias aparece"
+siguiente: B-006 importar las convocatorias C1 como referencias; despues B-007 slice doc S13
 bloqueado: 
 fecha: 2026-11-05

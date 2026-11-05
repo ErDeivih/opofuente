@@ -18,7 +18,6 @@ from opofuente.api.profile_schemas import (
     ActiveConvocationSchema,
     ConvocationDetailSchema,
     ConvocationReferenceSchema,
-    CurriculumNodeDetailSchema,
     CurriculumNodeSchema,
     CurriculumSchema,
     ExamPartSchema,
@@ -30,7 +29,6 @@ from opofuente.application.read_models import (
     ConvocationDetail,
     ConvocationSummary,
     CurriculumView,
-    NodeDetail,
     NodeView,
     OppositionSummary,
 )
@@ -204,26 +202,4 @@ def get_curriculum(convocation_id: str, service: ProfilesServiceDep) -> Curricul
         opposition_code=view.opposition_code,
         counts=view.counts,
         nodes=[_node(node) for node in view.nodes],
-    )
-
-
-@router.get(
-    "/curriculum-nodes/{node_id}",
-    response_model=CurriculumNodeDetailSchema,
-    responses=RESOURCE_ERRORS,
-    summary="Nodo del programa con su procedencia",
-)
-def get_curriculum_node(node_id: str, service: ProfilesServiceDep) -> CurriculumNodeDetailSchema:
-    detail: NodeDetail = service.get_node(node_id)
-    return CurriculumNodeDetailSchema(
-        node=_node(detail.node),
-        convocation_id=detail.convocation_id,
-        convocation_code=detail.convocation_code,
-        convocation_title=detail.convocation_title,
-        official_url=detail.official_url,
-        published_at=detail.published_at,
-        opposition_code=detail.opposition_code,
-        opposition_name=detail.opposition_name,
-        source_reference=detail.source_reference,
-        ancestors=[_node(ancestor) for ancestor in detail.ancestors],
     )

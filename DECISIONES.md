@@ -244,3 +244,64 @@ Aquí queda el resumen con el motivo y la reversión.
   (clasificación de material nuevo) queda como deuda aparte (B-012): no afecta a esta re-atribución,
   que va por `id`.
 - **Reversión:** el inverso de D-015; las propuestas nunca se tocaron.
+
+## D-017 — La marca de «estudiado» es una tabla propia y el avance se calcula al leer
+
+- **Fecha:** 2026-11-05 · **Nivel:** 2 · **Estado:** aplicada (B-004)
+- **Decisión:** la migración `0022_study_marks` crea `curriculum_study_marks` (una fila por nodo, con
+  fecha; `ON DELETE CASCADE`). El avance por bloque y total se **calcula** al leer a partir de las
+  marcas y de la actividad real (preguntas mapeadas aceptadas y fallos declarados); no se guarda
+  ningún porcentaje.
+- **Motivo:** el MAPA de objetivos pide «marco lo estudiado» con fecha, y §5.9 pide que el avance se
+  agregue sobre los nodos comunes y que el porcentaje se calcule, no se guarde (dos verdades). La
+  marca es del alumno, no del temario: borrar un nodo con material está bloqueado (ADR-007), así que
+  el `CASCADE` solo actúa cuando el nodo no tiene nada apuntándole.
+- **Alternativa descartada:** deducir «estudiado» solo de intentos y fallos (no permite marcar un
+  tema leído sin preguntas) o guardar un porcentaje (envejece y miente).
+- **Reversión:** el `downgrade` de `0022` retira la tabla; no se pierde nada más.
+
+## D-018 — El contrato del temario añade rutas y reestructura la ficha de nodo
+
+- **Fecha:** 2026-11-05 · **Nivel:** 2 · **Estado:** aplicada (B-004)
+- **Decisión:** se añaden `GET /curricula`, `/curricula/{code}`, `/curricula/{code}/versions`,
+  `/curricula/{code}/progress`, `/convocations/{id}/temario`, `/convocations/{id}/references`,
+  `POST/DELETE /curriculum-nodes/{id}/studied`, y la ficha `/curriculum-nodes/{id}` pasa a responder
+  con `curriculum`, `convocation` (nulo para nodos comunes), `appears_in`, `particularities`,
+  `studied_at` y `ancestors`. `/convocations/{id}/curriculum` **no cambia**: sigue devolviendo el
+  programa publicado.
+- **Motivo:** el alumno estudia el común y la administración conserva el publicado. Cambiar la ficha
+  era inevitable para que un nodo común tenga ficha (B-001 la dejaba en 404); se regenera el
+  contrato y los tipos en el mismo cambio, como exige `AGENTS.md`.
+- **Alternativa descartada:** una ruta nueva solo para el nodo común (dos fichas para el mismo
+  concepto y dos formas de responder «qué es este tema»).
+- **Reversión:** retirar el router y volver al contrato anterior; la tabla de marcas es independiente.
+
+## D-019 — Las particularidades se aplican al componer el temario efectivo, sin copiar
+
+- **Fecha:** 2026-11-05 · **Nivel:** 2 · **Estado:** aplicada (B-004)
+- **Decisión:** `/convocations/{id}/temario` toma la referencia `primary`, carga la versión y aplica
+  sus ajustes al vuelo: `omitted` excluye el nodo **y su subárbol**, `renamed` cambia el título
+  mostrado y `renumbered` el código. `weighted` no cambia el árbol (se usará al componer simulacros).
+  La ficha de nodo devuelve las particularidades del nodo cuando se pide con `convocation_id`.
+- **Motivo:** §5.6 regla 2: un ajuste no cambia el temario común, solo cómo lo ve esa convocatoria;
+  copiar el árbol por convocatoria reintroduciría el problema que el modelo aprobado resuelve.
+  Aplicar la omisión heredada evita filas duplicadas por cada tema de un bloque omitido.
+- **Alternativa descartada:** materializar un árbol efectivo por convocatoria (copia y dos verdades).
+- **Reversión:** los ajustes son filas de datos; borrarlas devuelve el temario completo.
+
+## D-020 — El temario es una sección propia y la pantalla no explica cómo se calcula nada
+
+- **Fecha:** 2026-11-05 · **Nivel:** 2 · **Estado:** aplicada (B-005)
+- **Decisión:** la web añade una sección «Temario» (antes de «Programa») con el árbol del común, una
+  búsqueda **local** que normaliza tildes (`NFD` + diacríticos), la ficha del tema y una tarjeta de
+  «Avance». La pantalla no pide ni enseña datos de administración (fuentes, versiones, rutas del
+  disco) y **no explica cálculos**: el porcentaje y el reparto por bloque los calcula el servidor y
+  aquí solo se pintan (DOCTRINA-CALIDAD §8). «Programa» sigue siendo el programa publicado de la
+  convocatoria.
+- **Motivo:** el alumno estudia el común (O2) y necesita una entrada propia, no un modo dentro del
+  programa publicado. La búsqueda en cliente es sobre los 40 temas ya cargados: no hay paginación ni
+  otra consulta que justifique ir al servidor, y así responde al escribir.
+- **Alternativa descartada:** meter el común dentro de «Programa» con un selector (mezcla dos
+  conceptos y deja la ficha del tema sin sitio propio) o una búsqueda con acentos exactos (el alumno
+  escribe sin tildes).
+- **Reversión:** quitar la sección y las dos rutas; la API no cambia.

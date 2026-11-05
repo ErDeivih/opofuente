@@ -79,6 +79,7 @@ describe('navegación', () => {
     expect(NAV_ITEMS.map((item) => item.label)).toEqual([
       'Inicio',
       'Bandeja',
+      'Temario',
       'Programa',
       'Biblioteca',
       'Preguntas',
@@ -94,6 +95,7 @@ describe('navegación', () => {
     expect(implementadas).toEqual([
       'Inicio',
       'Bandeja',
+      'Temario',
       'Programa',
       'Biblioteca',
       'Preguntas',

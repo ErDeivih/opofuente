@@ -20,8 +20,8 @@ La siguiente es B-003.
 | [B-001](#b-001) | Modelos + migración `0021_temario_comun_y_referencias` | 2 | **hecha** (2026-11-04) | — |
 | [B-002](#b-002) | Fixture del temario común v1, generador y siembra idempotente | 2 | **hecha** (2026-11-04) | B-001 |
 | [B-003](#b-003) | Equivalencias TAI publicado → común y re-atribución del banco | 2 | **hecha** (2026-11-05) | B-002 |
-| [B-004](#b-004) | API y contrato del temario común y de las particularidades | 2 | lista | B-002 |
-| [B-005](#b-005) | Interfaz: índice del temario, ficha de tema y avance | 2 | lista | B-004 |
+| [B-004](#b-004) | API y contrato del temario común y de las particularidades | 2 | **hecha** (2026-11-05) | B-002 |
+| [B-005](#b-005) | Interfaz: índice del temario, ficha de tema y avance | 2 | **hecha** (2026-11-05) | B-004 |
 | [B-006](#b-006) | Importar las convocatorias C1 de `c1.txt` como referencias | 2 | lista | B-004 |
 | [B-007](#b-007) | Entrega del slice `docs/slices/S13.md` | 1 | lista | B-005 |
 | [B-008](#b-008) | Poner al día `docs/product-spec/03_DATA-MODEL.md` y el índice de ADR | 1 | lista | B-001 |
@@ -119,29 +119,52 @@ generador con verificación de sha256 y siembra idempotente en la puerta que ya 
 
 ### B-004
 
-**API y contrato.** Rutas del temario común (`/curricula`, `/curricula/{code}/versions`,
-`/convocations/{id}/temario`, `/convocation/{id}/references`), campos `appears_in` y particularidades
-en la ficha de nodo; `export_openapi` y tipos TS regenerados. `/convocations/{id}/curriculum` sigue
-devolviendo el programa **publicado** para no romper lo que ya llama.
+**HECHA (2026-11-05).** API y contrato del temario común: rutas `/curricula`,
+`/curricula/{code}`, `/curricula/{code}/versions`, `/curricula/{code}/progress`,
+`/convocations/{id}/temario`, `/convocations/{id}/references`, ficha de nodo con `appears_in` y
+particularidades, y marca de estudiado (`POST/DELETE /curriculum-nodes/{id}/studied`).
+`/convocations/{id}/curriculum` sigue devolviendo el programa **publicado**.
 
-- **Ficheros:** `api/routes/profiles.py`, `api/profiles_schemas.py`,
-  `application/profiles_service.py`, `read_models.py`, `infrastructure/profile_repository.py`,
-  `packages/contracts/openapi.json`, `packages/contracts/src/openapi.d.ts`.
-- **Criterio de cierre:** pruebas de contrato y de integración verdes; `export-openapi -Check` y
-  `npm run contracts:check` en verde; una convocatoria sin ref `primary` no aparece como estudiable.
+- **Entregado:** migración `0022_study_marks`; modelos de lectura
+  (`application/curriculum_models.py`), repositorio (`infrastructure/curriculum_read_repository.py`),
+  servicio (`application/curriculum_read_service.py`), router (`api/routes/temario.py`), DTO
+  (`api/temario_schemas.py`), cableado en `main.py`/`deps.py`; contrato OpenAPI y tipos TS
+  regenerados.
+- **Pruebas:** `test_temario_api.py` (7: índice, particularidades, referencias, ficha con
+  `appears_in`, nodo publicado, marca y avance, 404), `test_migrations_0022.py` (3) y contrato
+  (23 en verde, con las rutas nuevas incluidas).
+- **Evidencia ejecutada:** `ruff`, `mypy` y las pruebas anteriores en verde; contrato sincronizado;
+  el temario efectivo aplica `omitted` (y su subárbol), `renamed` y `renumbered`; una convocatoria
+  sin `primary` responde 404. Decisiones D-017, D-018 y D-019.
+- **Criterio de cierre:** cumplido.
 
 ### B-005
 
-**Interfaz del alumno y de administración.** Índice del temario común (5 bloques, búsqueda que perdona
-tildes, marca de estudiado), ficha de tema con «en qué convocatorias aparece», avance por bloque y
-total. Sin nombres de fuentes, rutas de Windows ni versiones en la zona del alumno.
+**HECHA (2026-11-05).** Interfaz del alumno: índice del temario común (5 bloques, búsqueda que
+perdona tildes, marca de estudiado), ficha de tema con apuntes y «en qué convocatorias aparece», y
+avance por bloque y total. Sin nombres de fuentes, rutas de Windows ni versiones en la zona del
+alumno.
 
-- **Ficheros:** `apps/web/src/pages/ProgramPage.tsx`, `apps/web/src/features/profiles/*`,
-  `apps/web/src/features/study/*`, pruebas de interfaz.
-- **Criterio de cierre:** checklist de `ESPECIFICACION.md` §9 con estados vacío/cargando/error/sin
-  permiso; **sin textos de desarrollador ni explicaciones de cómo se calcula nada**
-  (`DOCTRINA-CALIDAD.md` §8: la app no habla de tokens, endpoints, «últimas temporadas» ni fórmulas);
-  `ai-design-check` o la lista de diez de las recetas; ojos frescos de un subagente sin historial.
+- **Entregado:** `pages/TemarioPage.tsx` y `pages/TemarioNodePage.tsx`; `features/temario/`
+  (`search.ts`, `labels.ts`, `TemarioTree.tsx`, `ProgressPanel.tsx`); `api/temario.ts` y los hooks de
+  `api/queries.ts`; sección «Temario» en `app/navigation.ts` y rutas en `app/routes.tsx`; estilos en
+  `styles/global.css`; `ProgramPage` adaptado al contrato nuevo (procedencia bajo `convocation`) y
+  limpio de textos de desarrollador (§8).
+- **Pruebas:** `tests/unit/temario.test.tsx` (10: árbol 5/40, búsqueda sin tildes, sin resultados,
+  avance total/por bloque/qué queda, estados vacío y error, ficha con convocatorias, navegación
+  anterior/siguiente, particularidades con `?convocatoria=`, marcar/retirar, apuntes vacíos) y ajuste
+  de `program.test.tsx`/`shell.test.tsx`. Vitest: **17 ficheros, 207 pruebas**.
+- **Evidencia ejecutada:** `npm run typecheck:web`, `npm run lint:web`, `npm run test:web` y
+  `npm run build:web` en verde; `export_openapi --check` y `contracts:check` verdes; suite backend
+  completa **1008 pruebas** en verde. Puertas 1–16 en verde (`./scripts/gates.ps1 -SkipE2e`: 508
+  unitarias + 477 integración + 23 contrato, 207 de componentes, contrato, builds, migración desde
+  vacío a `0022` y siembra idempotente). La 17 deja el temario común sincronizado y solo falla por
+  las fuentes oficiales de los perfiles (DEBT-028, previo); la 18 (E2E) no se ejecuta.
+- **DOCTRINA-CALIDAD §8 aplicada:** fuera los textos de desarrollador y las explicaciones de cómo se
+  calcula (dominio, avance, cobertura); solo lo que el alumno necesita para decidir o actuar.
+- **Decisiones:** D-020.
+- **Criterio de cierre:** cumplido (estados vacío/cargando/error; teclado y foco visibles; 400 px sin
+  scroll horizontal por el diseño existente; E2E no ejecutada).
 
 ### B-006
 

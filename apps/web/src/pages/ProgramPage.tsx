@@ -39,7 +39,7 @@ export function ProgramPage() {
     return (
       <ErrorState
         title="No se pudieron cargar las oposiciones"
-        message="Comprueba que la API está en marcha y que los perfiles se han sembrado."
+        message="Inténtalo de nuevo."
         onRetry={() => {
           void oppositions.refetch();
         }}
@@ -55,9 +55,8 @@ export function ProgramPage() {
         </header>
         <section className="card">
           <EmptyState
-            title="No hay ninguna oposición activa con convocatoria"
-            description="Los perfiles oficiales se siembran desde los fixtures versionados."
-            hint="Ejecuta scripts/seed.ps1 (o ./scripts/install.ps1 en una instalación nueva) para sembrar TAI 2025 y Guardia Civil 2026."
+            title="No hay ninguna oposición activa"
+            description="Elige una oposición en el selector de la cabecera."
           />
         </section>
       </>
@@ -91,7 +90,7 @@ export function ProgramPage() {
         {curriculum.isError && (
           <ErrorState
             title="No se pudo cargar el programa"
-            message="La convocatoria activa no tiene programa sembrado."
+            message="Inténtalo de nuevo."
             onRetry={() => {
               void curriculum.refetch();
             }}
@@ -107,13 +106,6 @@ export function ProgramPage() {
             }}
           />
         )}
-        {mastery.data !== undefined && (
-          <p className="hint">
-            Dominio estimado por tema: {mastery.data.nodes_with_estimate} de {mastery.data.nodes_total}{' '}
-            con datos suficientes · {mastery.data.nodes_insufficient} con evidencia insuficiente ·{' '}
-            {mastery.data.nodes_without_data} sin datos. {mastery.data.note}
-          </p>
-        )}
       </section>
 
       {selectedId !== null && (
@@ -123,7 +115,7 @@ export function ProgramPage() {
           {node.isError && (
             <ErrorState
               title="No se pudo cargar el nodo"
-              message="El nodo ya no existe o la API no responde."
+              message="El nodo ya no está disponible."
               onRetry={() => {
                 void node.refetch();
               }}
@@ -133,24 +125,27 @@ export function ProgramPage() {
             <>
               <p className="node__path">{node.data.node.path}</p>
               <p className="node__title">{node.data.node.title}</p>
-              {node.data.ancestors.length > 0 && (
+              {(node.data.ancestors ?? []).length > 0 && (
                 <p className="hint">
-                  {node.data.ancestors.map((ancestor) => ancestor.title).join(' › ')}
+                  {(node.data.ancestors ?? [])
+                    .map((ancestor) => ancestor.title)
+                    .join(' › ')}
                 </p>
               )}
               <dl className="facts">
-                <dt>Cobertura</dt>
-                <dd>
-                  <span className="hint">
-                    Se calcula en Revisión, sobre las fuentes asignadas a este nodo (provisional y
-                    aceptada por separado).
-                  </span>
-                </dd>
                 <dt>Procedencia</dt>
                 <dd>
-                  <a href={node.data.official_url} target="_blank" rel="noreferrer noopener">
-                    {node.data.source_reference ?? node.data.convocation_code}
-                  </a>
+                  {node.data.convocation === null || node.data.convocation === undefined ? (
+                    <span className="hint">Sin convocatoria asociada</span>
+                  ) : (
+                    <a
+                      href={node.data.convocation.official_url}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                    >
+                      {node.data.convocation.source_reference ?? node.data.convocation.code}
+                    </a>
+                  )}
                 </dd>
               </dl>
             </>
