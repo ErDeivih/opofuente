@@ -21,6 +21,8 @@ import type {
   CurriculumNode,
   CurriculumNodeDetail as TemarioNodeDetail,
   CurriculumSummary,
+  NodeMaterialPage,
+  NodeQuestionPage,
   Progress,
 } from '../../src/api/temario';
 
@@ -642,4 +644,68 @@ export const temarioNodeFixture: TemarioNodeDetail = {
   studied_at: null,
   ancestors: [temarioDetailFixture.nodes[0]!],
   coverage: null,
+};
+
+/* ------------------------------------------- B-007: preguntas y material del tema */
+
+export const temarioQuestionPageFixture: NodeQuestionPage = {
+  node_id: 'tema-1',
+  total: 2,
+  limit: 100,
+  offset: 0,
+  questions: [
+    {
+      id: 'preg-1',
+      question_set_id: 'set-1',
+      set_title: 'Banco TAI',
+      stable_key: 'q-1',
+      stem: '¿Cuál es la norma suprema del ordenamiento jurídico?',
+      question_type: 'single_choice',
+      origin_type: 'official',
+      position: 1,
+      is_reserve: false,
+    },
+    {
+      id: 'preg-2',
+      question_set_id: 'set-1',
+      set_title: 'Banco TAI',
+      stable_key: 'q-2',
+      stem: 'La Constitución Española de 1978 entró en vigor el 29 de diciembre.',
+      question_type: 'true_false',
+      origin_type: 'official',
+      position: 2,
+      is_reserve: true,
+    },
+  ],
+};
+
+export const temarioMaterialPageFixture: NodeMaterialPage = {
+  node_id: 'tema-1',
+  total: 2,
+  materials: [
+    {
+      subject_type: 'document_version',
+      subject_id: 'doc-ver-1',
+      document_id: 'doc-1',
+      document_version_id: 'doc-ver-1',
+      title: 'Apuntes de Constitución',
+      section_title: null,
+      page: null,
+      citation_label: null,
+      excerpt: null,
+      coverage_type: 'complete',
+    },
+    {
+      subject_type: 'evidence',
+      subject_id: 'span-1',
+      document_id: 'doc-1',
+      document_version_id: 'doc-ver-1',
+      title: 'Apuntes de Constitución',
+      section_title: null,
+      page: 3,
+      citation_label: 'pág. 3',
+      excerpt: 'La Constitución es la norma suprema del ordenamiento jurídico.',
+      coverage_type: 'complete',
+    },
+  ],
 };

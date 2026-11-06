@@ -17,6 +17,8 @@ from opofuente.application.curriculum_models import (
     CurriculumNodeDetailView,
     CurriculumSummaryView,
     CurriculumVersionView,
+    NodeMaterialPage,
+    NodeQuestionPage,
     ProgressView,
     ReferenceView,
     StudyMarkView,
@@ -176,6 +178,12 @@ class CurriculumReadRepository(Protocol):
     def mark_studied(self, node_id: str, *, now: datetime) -> StudyMarkView | None: ...
 
     def unmark_studied(self, node_id: str) -> bool | None: ...
+
+    def node_questions(
+        self, node_id: str, *, limit: int, offset: int
+    ) -> NodeQuestionPage | None: ...
+
+    def node_materials(self, node_id: str, *, limit: int) -> NodeMaterialPage | None: ...
 
 
 @runtime_checkable

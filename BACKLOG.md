@@ -29,6 +29,7 @@ La siguiente es B-003.
 | [B-010](#b-010) | Decidir la bajada de `0021` después de sembrar el temario común | 2 | lista | B-002 |
 | [B-011](#b-011) | Estabilizar las pruebas de API que compiten con el worker de fondo | 1 | lista | — |
 | [B-012](#b-012) | Acotar por versión la resolución de nodo por `path` en clasificación | 2 | lista | B-004 |
+| [B-013](#b-013) | Contenido de la ficha de tema: preguntas del banco y material del tema | 2 | **hecha** (2026-11-06) | B-005 |
 
 ## Detalle
 
@@ -259,6 +260,27 @@ por `id` y no le afecta.
 - **Criterio de cierre:** la resolución y el etiquetado reciben el ámbito de versión (convocatoria o
   común) y no eligen entre versiones distintas; prueba con el mismo `path` en dos versiones.
 - **Depende de:** B-004 (es quien decide qué árbol enseña la API).
+
+### B-013
+
+**HECHA (2026-11-06).** La ficha de tema enseña su **contenido**, no solo sus datos: las preguntas
+del banco catalogadas en el tema y el material de la biblioteca que apunta a él.
+
+- **Entregado:** rutas de lectura `GET /curriculum-nodes/{id}/questions` (preguntas sin clave, solo
+  mapeos aceptados y versiones no sustituidas) y `GET /curriculum-nodes/{id}/materials` (documento,
+  sección o cita aceptados, con su cita y su cobertura). Vistas y DTO en `curriculum_models.py` /
+  `temario_schemas.py`, lectura en `curriculum_read_repository.py`, servicio y router; en la web,
+  hooks `useTemarioNodeQuestions` / `useTemarioNodeMaterials` y las tarjetas «Material del tema» y
+  «Preguntas» de la ficha. Contrato y tipos regenerados.
+- **Pruebas:** `test_temario_contenido_api.py` (3: solo aceptadas y sin clave; material con sección y
+  cita; 404) y 3 pruebas Vitest de la ficha (preguntas con tipo y reserva, material con cita, estado
+  vacío). Vitest **17 ficheros / 210 pruebas**.
+- **Evidencia ejecutada:** puertas 1–16 en verde (511 unitarias + 483 integración + 23 contrato =
+  **1017 backend**, 210 Vitest, contrato, builds, migración desde vacío a `0022`, doble siembra). En
+  la 17 pasan el temario común y las convocatorias C1; solo falla la verificación de fuentes
+  oficiales de los perfiles (DEBT-028, previo). E2E no ejecutada.
+- **Decisión:** D-023.
+- **Criterio de cierre:** cumplido; la ficha sigue sin enseñar la clave.
 
 ## Fuentes para generar tareas nuevas
 

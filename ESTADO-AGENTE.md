@@ -1,8 +1,8 @@
 titulo: OpoFuente — temario comun de oposiciones de informatica C1
-resumen: Bloque 3 del MAPA completo (B-004, B-005 y avance por bloque y total) y B-006 hecha: 12 convocatorias C1 importadas que referencian el temario comun, con su cita y su estado de confianza.
+resumen: Bloque 3 del MAPA completo, B-006 de convocatorias C1 cerrada y B-013 hecha: la ficha de tema ya enseña preguntas del banco sin clave y material de la biblioteca con su cita, ademas de apuntes, convocatorias y avance.
 estado: en-curso
-tarea: bloque 3 cerrado y B-006 importacion de convocatorias C1 cerrada
+tarea: B-013 contenido de la ficha (preguntas y material) cerrada
 nivel: 2
-siguiente: B-007 slice doc S13 y checklist final; despues B-008 poner al dia el modelo de datos y el indice de ADR
+siguiente: B-007 slice doc S13; despues B-008 modelo de datos e indice de ADR y B-012 acotar por version el path de clasificacion
 bloqueado: 
-fecha: 2026-11-05
+fecha: 2026-11-06

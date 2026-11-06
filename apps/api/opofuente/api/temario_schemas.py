@@ -142,5 +142,48 @@ class StudyMarkSchema(BaseModel):
     studied_at: datetime
 
 
+class NodeQuestionSchema(BaseModel):
+    """Pregunta del banco catalogada en el tema; la ficha no trae la clave."""
+
+    id: str
+    question_set_id: str
+    set_title: str
+    stable_key: str
+    stem: str
+    question_type: str
+    origin_type: str
+    position: int
+    is_reserve: bool
+
+
+class NodeQuestionPageSchema(BaseModel):
+    node_id: str
+    total: int
+    limit: int
+    offset: int
+    questions: list[NodeQuestionSchema]
+
+
+class NodeMaterialSchema(BaseModel):
+    """Material de la biblioteca catalogado en el tema (documento, sección o cita)."""
+
+    subject_type: str
+    subject_id: str
+    document_id: str | None = None
+    document_version_id: str | None = None
+    title: str
+    section_title: str | None = None
+    page: int | None = None
+    citation_label: str | None = None
+    excerpt: str | None = None
+    coverage_type: str
+
+
+class NodeMaterialPageSchema(BaseModel):
+    node_id: str
+    total: int
+    materials: list[NodeMaterialSchema]
+
+
 #: Re-exporta el tipo de nodo para que el esquema OpenAPI lo documente junto al temario.
 __all__ = ["CurriculumNodeSchema", "NodeType"]

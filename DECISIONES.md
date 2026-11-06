@@ -340,3 +340,18 @@ Aquí queda el resumen con el motivo y la reversión.
   enseñarlas sin distintivo (confunde confianza con oficialidad).
 - **Reversión:** quitar el campo del esquema y el distintivo de la ficha; las convocatorias y sus
   referencias siguen en la base.
+
+## D-023 — La ficha enseña preguntas sin clave y solo el material aceptado
+
+- **Fecha:** 2026-11-06 · **Nivel:** 2 · **Estado:** aplicada (B-013)
+- **Decisión:** la ficha de tema añade dos lecturas: las **preguntas del banco** catalogadas en el
+  nodo (sin opciones ni clave, solo enunciado, tipo y conjunto) y el **material de la biblioteca**
+  catalogado en el nodo (documento, sección o cita, con su cita y su tipo de cobertura). En ambas
+  solo cuentan los mapeos `accepted`; en preguntas, además, las versiones no `superseded`.
+- **Motivo:** el alumno abre un tema para estudiar, no para revisar metadatos: necesita saber qué
+  material hay y qué preguntas puede practicar. La clave no viaja a la ficha porque la ficha no
+  corrige; la corrección es de la sesión y su clave activa (regla dura de S06). Lo provisional o
+  rechazado no se presenta como apunte del tema (regla de procedencia).
+- **Alternativa descartada:** reutilizar `/questions` con su clave y filtrar en el cliente (la clave
+  saldría antes de corregir) o enseñar también material provisional (mezcla confianza con contenido).
+- **Reversión:** retirar las dos rutas y las dos tarjetas; no cambia ningún dato.

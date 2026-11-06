@@ -17,6 +17,10 @@ export type CurriculumNodeDetail = components['schemas']['CurriculumNodeDetailSc
 export type Appearance = components['schemas']['AppearanceSchema'];
 export type Adjustment = components['schemas']['AdjustmentSchema'];
 export type StudyMark = components['schemas']['StudyMarkSchema'];
+export type NodeQuestionPage = components['schemas']['NodeQuestionPageSchema'];
+export type NodeQuestion = components['schemas']['NodeQuestionSchema'];
+export type NodeMaterialPage = components['schemas']['NodeMaterialPageSchema'];
+export type NodeMaterial = components['schemas']['NodeMaterialSchema'];
 
 export type CurriculumKind = 'common' | 'published';
 
@@ -65,4 +69,23 @@ export function unmarkNodeStudied(nodeId: string): Promise<void> {
   return apiFetch<void>(`/api/v1/curriculum-nodes/${encodeURIComponent(nodeId)}/studied`, {
     method: 'DELETE',
   });
+}
+
+/** Preguntas del banco catalogadas en el tema; la ficha no recibe la clave. */
+export function fetchNodeQuestions(
+  nodeId: string,
+  limit = 100,
+  offset = 0,
+): Promise<NodeQuestionPage> {
+  const query = `?limit=${String(limit)}&offset=${String(offset)}`;
+  return apiFetch<NodeQuestionPage>(
+    `/api/v1/curriculum-nodes/${encodeURIComponent(nodeId)}/questions${query}`,
+  );
+}
+
+/** Material de la biblioteca catalogado en el tema (documento, sección o cita). */
+export function fetchNodeMaterials(nodeId: string, limit = 20): Promise<NodeMaterialPage> {
+  return apiFetch<NodeMaterialPage>(
+    `/api/v1/curriculum-nodes/${encodeURIComponent(nodeId)}/materials?limit=${String(limit)}`,
+  );
 }

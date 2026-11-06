@@ -11,6 +11,8 @@ from opofuente.application.curriculum_models import (
     CurriculumNodeDetailView,
     CurriculumSummaryView,
     CurriculumVersionView,
+    NodeMaterialPage,
+    NodeQuestionPage,
     ProgressView,
     ReferenceView,
     StudyMarkView,
@@ -77,3 +79,17 @@ class CurriculumReadService:
         if resultado is None:
             raise NotFoundError("nodo del temario", node_id)
         return resultado
+
+    def node_questions(self, node_id: str, *, limit: int, offset: int) -> NodeQuestionPage:
+        """Preguntas del banco catalogadas en el tema (solo las aceptadas y vigentes)."""
+        pagina = self._repository.node_questions(node_id, limit=limit, offset=offset)
+        if pagina is None:
+            raise NotFoundError("nodo del temario", node_id)
+        return pagina
+
+    def node_materials(self, node_id: str, *, limit: int) -> NodeMaterialPage:
+        """Material de la biblioteca catalogado en el tema, con su cita y su cobertura."""
+        pagina = self._repository.node_materials(node_id, limit=limit)
+        if pagina is None:
+            raise NotFoundError("nodo del temario", node_id)
+        return pagina

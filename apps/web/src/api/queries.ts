@@ -71,6 +71,8 @@ import {
   fetchCurriculumDetail,
   fetchCurriculumNodeDetail,
   fetchCurriculumProgress,
+  fetchNodeMaterials,
+  fetchNodeQuestions,
   markNodeStudied,
   unmarkNodeStudied,
   type CurriculumKind,
@@ -175,6 +177,8 @@ export const queryKeys = {
   temarioProgress: (code: string) => ['temario', 'progress', code] as const,
   temarioNode: (nodeId: string, convocationId: string | null) =>
     ['temario', 'node', nodeId, convocationId ?? ''] as const,
+  temarioNodeQuestions: (nodeId: string) => ['temario', 'node-questions', nodeId] as const,
+  temarioNodeMaterials: (nodeId: string) => ['temario', 'node-materials', nodeId] as const,
   batches: ['ingestion', 'batches'] as const,
   batch: (id: string) => ['ingestion', 'batch', id] as const,
   batchItems: (id: string) => ['ingestion', 'batch', id, 'items'] as const,
@@ -358,6 +362,29 @@ export function useTemarioNodeDetail(nodeId: string | null, convocationId: strin
   return useQuery({
     queryKey: queryKeys.temarioNode(nodeId ?? 'ninguno', convocationId),
     queryFn: () => fetchCurriculumNodeDetail(nodeId as string, convocationId),
+    enabled: nodeId !== null,
+    staleTime: 60_000,
+  });
+}
+
+/**
+ * Preguntas del banco catalogadas en el tema. La ficha no trae la clave: aquí se estudia.
+ * `staleTime` corto: el banco cambia cuando se importa material, y no queremos una lista rancia.
+ */
+export function useTemarioNodeQuestions(nodeId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.temarioNodeQuestions(nodeId ?? 'ninguno'),
+    queryFn: () => fetchNodeQuestions(nodeId as string),
+    enabled: nodeId !== null,
+    staleTime: 30_000,
+  });
+}
+
+/** Material de la biblioteca catalogado en el tema (documento, sección o cita). */
+export function useTemarioNodeMaterials(nodeId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.temarioNodeMaterials(nodeId ?? 'ninguno'),
+    queryFn: () => fetchNodeMaterials(nodeId as string),
     enabled: nodeId !== null,
     staleTime: 60_000,
   });

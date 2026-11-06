@@ -37,3 +37,6 @@ calcula en el servidor y se pinta en la misma pantalla.
 - [x] B-006 — convocatorias C1 que referencian el temario común (12 importadas: 10 por confirmar y 2
   cerradas; 21 filas del inventario descartadas con motivo; TAI sin duplicar; ref `primary` a la
   versión activa del común). La ficha las enseña con su estado (D-021 y D-022).
+- [x] B-013 — contenido de la ficha: preguntas del banco (sin clave) y material de la biblioteca
+  catalogado en el tema, con su cita. La ficha ya no enseña solo metadatos: también lo que hay para
+  estudiar (D-023).

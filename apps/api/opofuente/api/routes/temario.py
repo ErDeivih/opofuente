@@ -23,6 +23,10 @@ from opofuente.api.temario_schemas import (
     CurriculumReferenceSchema,
     CurriculumSummarySchema,
     CurriculumVersionSchema,
+    NodeMaterialPageSchema,
+    NodeMaterialSchema,
+    NodeQuestionPageSchema,
+    NodeQuestionSchema,
     ProgressSchema,
     StudyMarkSchema,
     TemarioSchema,
@@ -37,6 +41,8 @@ from opofuente.application.curriculum_models import (
     CurriculumNodeDetailView,
     CurriculumSummaryView,
     CurriculumVersionView,
+    NodeMaterialPage,
+    NodeQuestionPage,
     ProgressView,
     StudyMarkView,
     TemarioView,
@@ -279,6 +285,74 @@ def get_curriculum_node(
         particularities=[_adjustment(particularity) for particularity in detail.particularities],
         studied_at=detail.studied_at,
         ancestors=[_node(ancestor) for ancestor in detail.ancestors],
+    )
+
+
+@router.get(
+    "/curriculum-nodes/{node_id}/questions",
+    response_model=NodeQuestionPageSchema,
+    responses=RESOURCE_ERRORS,
+    summary="Preguntas del banco catalogadas en el tema (sin clave)",
+)
+def get_node_questions(
+    node_id: str,
+    service: CurriculumServiceDep,
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+) -> NodeQuestionPageSchema:
+    pagina: NodeQuestionPage = service.node_questions(node_id, limit=limit, offset=offset)
+    return NodeQuestionPageSchema(
+        node_id=pagina.node_id,
+        total=pagina.total,
+        limit=pagina.limit,
+        offset=pagina.offset,
+        questions=[
+            NodeQuestionSchema(
+                id=pregunta.id,
+                question_set_id=pregunta.question_set_id,
+                set_title=pregunta.set_title,
+                stable_key=pregunta.stable_key,
+                stem=pregunta.stem,
+                question_type=pregunta.question_type,
+                origin_type=pregunta.origin_type,
+                position=pregunta.position,
+                is_reserve=pregunta.is_reserve,
+            )
+            for pregunta in pagina.questions
+        ],
+    )
+
+
+@router.get(
+    "/curriculum-nodes/{node_id}/materials",
+    response_model=NodeMaterialPageSchema,
+    responses=RESOURCE_ERRORS,
+    summary="Material de la biblioteca catalogado en el tema, con su cita",
+)
+def get_node_materials(
+    node_id: str,
+    service: CurriculumServiceDep,
+    limit: int = Query(default=20, ge=1, le=100),
+) -> NodeMaterialPageSchema:
+    pagina: NodeMaterialPage = service.node_materials(node_id, limit=limit)
+    return NodeMaterialPageSchema(
+        node_id=pagina.node_id,
+        total=pagina.total,
+        materials=[
+            NodeMaterialSchema(
+                subject_type=material.subject_type,
+                subject_id=material.subject_id,
+                document_id=material.document_id,
+                document_version_id=material.document_version_id,
+                title=material.title,
+                section_title=material.section_title,
+                page=material.page,
+                citation_label=material.citation_label,
+                excerpt=material.excerpt,
+                coverage_type=material.coverage_type,
+            )
+            for material in pagina.materials
+        ],
     )
 
 

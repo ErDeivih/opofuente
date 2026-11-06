@@ -576,6 +576,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/curriculum-nodes/{node_id}/materials": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Material de la biblioteca catalogado en el tema, con su cita */
+        get: operations["get_node_materials_api_v1_curriculum_nodes__node_id__materials_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/curriculum-nodes/{node_id}/questions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Preguntas del banco catalogadas en el tema (sin clave) */
+        get: operations["get_node_questions_api_v1_curriculum_nodes__node_id__questions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/curriculum-nodes/{node_id}/studied": {
         parameters: {
             query?: never;
@@ -4655,6 +4689,78 @@ export interface components {
             /** Recent Attempts */
             recent_attempts: number;
         };
+        /** NodeMaterialPageSchema */
+        NodeMaterialPageSchema: {
+            /** Materials */
+            materials: components["schemas"]["NodeMaterialSchema"][];
+            /** Node Id */
+            node_id: string;
+            /** Total */
+            total: number;
+        };
+        /**
+         * NodeMaterialSchema
+         * @description Material de la biblioteca catalogado en el tema (documento, sección o cita).
+         */
+        NodeMaterialSchema: {
+            /** Citation Label */
+            citation_label?: string | null;
+            /** Coverage Type */
+            coverage_type: string;
+            /** Document Id */
+            document_id?: string | null;
+            /** Document Version Id */
+            document_version_id?: string | null;
+            /** Excerpt */
+            excerpt?: string | null;
+            /** Page */
+            page?: number | null;
+            /** Section Title */
+            section_title?: string | null;
+            /** Subject Id */
+            subject_id: string;
+            /** Subject Type */
+            subject_type: string;
+            /** Title */
+            title: string;
+        };
+        /** NodeQuestionPageSchema */
+        NodeQuestionPageSchema: {
+            /** Limit */
+            limit: number;
+            /** Node Id */
+            node_id: string;
+            /** Offset */
+            offset: number;
+            /** Questions */
+            questions: components["schemas"]["NodeQuestionSchema"][];
+            /** Total */
+            total: number;
+        };
+        /**
+         * NodeQuestionSchema
+         * @description Pregunta del banco catalogada en el tema; la ficha no trae la clave.
+         */
+        NodeQuestionSchema: {
+            /** Id */
+            id: string;
+            /** Is Reserve */
+            is_reserve: boolean;
+            /** Origin Type */
+            origin_type: string;
+            /** Position */
+            position: number;
+            /** Question Set Id */
+            question_set_id: string;
+            /** Question Type */
+            question_type: string;
+            /** Set Title */
+            set_title: string;
+            /** Stable Key */
+            stable_key: string;
+            /** Stem */
+            stem: string;
+        };
         /**
          * NodeType
          * @description Nivel estructural del programa dentro de una convocatoria.
@@ -8338,6 +8444,109 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CoverageSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    get_node_materials_api_v1_curriculum_nodes__node_id__materials_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                node_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NodeMaterialPageSchema"];
+                };
+            };
+            /** @description El recurso no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    get_node_questions_api_v1_curriculum_nodes__node_id__questions_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                node_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NodeQuestionPageSchema"];
                 };
             };
             /** @description El recurso no existe. */

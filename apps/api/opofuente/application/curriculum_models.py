@@ -154,6 +154,53 @@ class StudyMarkView:
     studied_at: datetime
 
 
+@dataclass(frozen=True, slots=True)
+class NodeQuestionView:
+    """Pregunta del banco catalogada en el tema, en la versión que se mapeó."""
+
+    id: str
+    question_set_id: str
+    set_title: str
+    stable_key: str
+    stem: str
+    question_type: str
+    origin_type: str
+    position: int
+    is_reserve: bool
+
+
+@dataclass(frozen=True, slots=True)
+class NodeQuestionPage:
+    node_id: str
+    total: int
+    limit: int
+    offset: int
+    questions: tuple[NodeQuestionView, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class NodeMaterialView:
+    """Material de la biblioteca catalogado en el tema: documento, sección o cita."""
+
+    subject_type: str
+    subject_id: str
+    document_id: str | None
+    document_version_id: str | None
+    title: str
+    section_title: str | None
+    page: int | None
+    citation_label: str | None
+    excerpt: str | None
+    coverage_type: str
+
+
+@dataclass(frozen=True, slots=True)
+class NodeMaterialPage:
+    node_id: str
+    total: int
+    materials: tuple[NodeMaterialView, ...]
+
+
 def percent(studied: int, total: int) -> float:
     """Porcentaje con un decimal; cero cuando todavía no hay temas."""
     if total <= 0:

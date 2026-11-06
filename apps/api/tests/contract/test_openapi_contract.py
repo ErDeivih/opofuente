@@ -44,6 +44,8 @@ REQUIRED_PATHS = (
     "/api/v1/curricula/{curriculum_code}/progress",
     "/api/v1/curriculum-nodes/{node_id}",
     "/api/v1/curriculum-nodes/{node_id}/studied",
+    "/api/v1/curriculum-nodes/{node_id}/questions",
+    "/api/v1/curriculum-nodes/{node_id}/materials",
     "/api/v1/inventories",
     "/api/v1/inventories/{inventory_id}",
     "/api/v1/inventories/{inventory_id}/confirm-import",

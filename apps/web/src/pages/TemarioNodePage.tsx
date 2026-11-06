@@ -4,6 +4,8 @@ import {
   useMarkTemarioStudied,
   useTemarioDetail,
   useTemarioNodeDetail,
+  useTemarioNodeMaterials,
+  useTemarioNodeQuestions,
   useUnmarkTemarioStudied,
 } from '../api/queries';
 import type { Adjustment, Appearance } from '../api/temario';
@@ -15,6 +17,8 @@ import {
   adjustmentDetail,
   adjustmentLabel,
   formatDate,
+  materialTypeLabel,
+  questionTypeLabel,
   roleLabel,
   temarioHref,
 } from '../features/temario/labels';
@@ -76,6 +80,93 @@ function AdjustmentItem({ adjustment }: { adjustment: Adjustment }) {
       )}
       <blockquote className="quote">{adjustment.evidence_quote}</blockquote>
     </li>
+  );
+}
+
+/** Material de la biblioteca catalogado en este tema. Si no hay, no ocupa sitio. */
+function ApuntesMateriales({ nodeId }: { nodeId: string }) {
+  const materiales = useTemarioNodeMaterials(nodeId);
+
+  if (materiales.isPending) {
+    return <p className="hint">Cargando el material del tema…</p>;
+  }
+  if (materiales.isError) {
+    return <p className="hint">No se pudo cargar el material del tema.</p>;
+  }
+  if (materiales.data.total === 0) {
+    return null;
+  }
+
+  return (
+    <>
+      <h3>Material del tema</h3>
+      <ul className="material-list">
+        {materiales.data.materials.map((material) => (
+          <li key={`${material.subject_type}-${material.subject_id}`} className="material">
+            <div className="material__header">
+              <span className="material__title">{material.title}</span>
+              <span className="tag">{materialTypeLabel(material.subject_type)}</span>
+            </div>
+            {material.section_title !== null && material.section_title !== undefined && (
+              <p className="material__section">{material.section_title}</p>
+            )}
+            {((material.page !== null && material.page !== undefined) ||
+              (material.citation_label !== null && material.citation_label !== undefined)) && (
+              <p className="hint">
+                {material.page !== null && material.page !== undefined && (
+                  <>Página {material.page}</>
+                )}
+                {material.citation_label !== null &&
+                  material.citation_label !== undefined && <> {material.citation_label}</>}
+              </p>
+            )}
+            {material.excerpt !== null && material.excerpt !== undefined && (
+              <blockquote className="quote">{material.excerpt}</blockquote>
+            )}
+          </li>
+        ))}
+      </ul>
+    </>
+  );
+}
+
+/** Preguntas del banco catalogadas en el tema. Sin clave: la ficha no examina. */
+function PreguntasDelTema({ nodeId }: { nodeId: string }) {
+  const preguntas = useTemarioNodeQuestions(nodeId);
+
+  return (
+    <section className="card" aria-labelledby="tema-preguntas">
+      <h2 id="tema-preguntas">Preguntas</h2>
+      {preguntas.isPending && <p className="hint">Cargando las preguntas del tema…</p>}
+      {preguntas.isError && <p className="hint">No se pudieron cargar las preguntas del tema.</p>}
+      {preguntas.isSuccess &&
+        (preguntas.data.total === 0 ? (
+          <EmptyState
+            title="Este tema aún no tiene preguntas"
+            description="Cuando el banco tenga preguntas de este tema aparecerán aquí."
+          />
+        ) : (
+          <>
+            <p className="hint">
+              {preguntas.data.total === 1
+                ? '1 pregunta'
+                : `${String(preguntas.data.total)} preguntas`}{' '}
+              en el banco
+            </p>
+            <ul className="question-list">
+              {preguntas.data.questions.map((pregunta) => (
+                <li key={pregunta.id} className="question">
+                  <div className="question__header">
+                    <span className="tag">{questionTypeLabel(pregunta.question_type)}</span>
+                    {pregunta.is_reserve && <StatusBadge tone="info">Reserva</StatusBadge>}
+                  </div>
+                  <p className="question__stem">{pregunta.stem}</p>
+                </li>
+              ))}
+            </ul>
+          </>
+        ))}
+    </section>
   );
 }
 
@@ -203,6 +294,8 @@ export function TemarioNodePage() {
           />
         )}
 
+        <ApuntesMateriales nodeId={nodo.id} />
+
         {esTema && (
           <div className="study-mark">
             {estudiadoEn !== null && estudiadoEn !== undefined ? (
@@ -239,6 +332,8 @@ export function TemarioNodePage() {
           <ErrorState title="No se pudo actualizar la marca" message="Inténtalo de nuevo." />
         )}
       </section>
+
+      <PreguntasDelTema nodeId={nodo.id} />
 
       <section className="card" aria-labelledby="aparece-en">
         <h2 id="aparece-en">En qué convocatorias aparece</h2>

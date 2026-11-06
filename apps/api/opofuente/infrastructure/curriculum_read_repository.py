@@ -29,6 +29,10 @@ from opofuente.application.curriculum_models import (
     CurriculumNodeDetailView,
     CurriculumSummaryView,
     CurriculumVersionView,
+    NodeMaterialPage,
+    NodeMaterialView,
+    NodeQuestionPage,
+    NodeQuestionView,
     ProgressView,
     ReferenceView,
     StudyMarkView,
@@ -46,8 +50,14 @@ from opofuente.infrastructure.db_models import (
     CurriculumRecord,
     CurriculumStudyMarkRecord,
     CurriculumVersionRecord,
+    DocumentSectionRecord,
+    DocumentVersionRecord,
+    EvidenceSpanRecord,
     LearningErrorRecord,
+    LogicalDocumentRecord,
     OppositionRecord,
+    QuestionSetRecord,
+    QuestionVersionRecord,
 )
 
 
@@ -298,6 +308,214 @@ class SqlAlchemyCurriculumReadRepository:
             session.delete(marca)
             session.commit()
             return True
+
+    # ------------------------------------------------------------------ contenido del tema
+
+    def node_questions(self, node_id: str, *, limit: int, offset: int) -> NodeQuestionPage | None:
+        """Preguntas del banco catalogadas en el tema, sin clave: la ficha no examina.
+
+        Solo cuentan los mapeos **aceptados** y las versiones no sustituidas: una pregunta rechazada
+        o corregida no debe seguir colgando del tema.
+        """
+        with self._session_factory() as session:
+            if session.get(CurriculumNodeRecord, node_id) is None:
+                return None
+            condiciones = (
+                CurriculumMappingRecord.curriculum_node_id == node_id,
+                CurriculumMappingRecord.subject_type == "question_version",
+                CurriculumMappingRecord.status == "accepted",
+                QuestionVersionRecord.status != "superseded",
+            )
+            total = session.execute(
+                select(func.count())
+                .select_from(CurriculumMappingRecord)
+                .join(
+                    QuestionVersionRecord,
+                    QuestionVersionRecord.id == CurriculumMappingRecord.subject_id,
+                )
+                .where(*condiciones)
+            ).scalar_one()
+            filas = session.execute(
+                select(QuestionVersionRecord, QuestionSetRecord)
+                .join(
+                    CurriculumMappingRecord,
+                    CurriculumMappingRecord.subject_id == QuestionVersionRecord.id,
+                )
+                .join(
+                    QuestionSetRecord,
+                    QuestionSetRecord.id == QuestionVersionRecord.question_set_id,
+                )
+                .where(*condiciones)
+                .order_by(
+                    QuestionSetRecord.title,
+                    QuestionVersionRecord.position,
+                    QuestionVersionRecord.stable_key,
+                )
+                .limit(limit)
+                .offset(offset)
+            ).all()
+            return NodeQuestionPage(
+                node_id=node_id,
+                total=int(total),
+                limit=limit,
+                offset=offset,
+                questions=tuple(
+                    NodeQuestionView(
+                        id=pregunta.id,
+                        question_set_id=pregunta.question_set_id,
+                        set_title=conjunto.title,
+                        stable_key=pregunta.stable_key,
+                        stem=pregunta.stem,
+                        question_type=pregunta.question_type,
+                        origin_type=pregunta.origin_type,
+                        position=pregunta.position,
+                        is_reserve=pregunta.is_reserve,
+                    )
+                    for pregunta, conjunto in filas
+                ),
+            )
+
+    def node_materials(self, node_id: str, *, limit: int) -> NodeMaterialPage | None:
+        """Material de la biblioteca catalogado en el tema: documento, sección o cita."""
+        with self._session_factory() as session:
+            if session.get(CurriculumNodeRecord, node_id) is None:
+                return None
+            materiales: list[NodeMaterialView] = []
+            total = 0
+
+            documentos = session.execute(
+                select(
+                    CurriculumMappingRecord,
+                    DocumentVersionRecord,
+                    LogicalDocumentRecord,
+                )
+                .join(
+                    DocumentVersionRecord,
+                    DocumentVersionRecord.id == CurriculumMappingRecord.subject_id,
+                )
+                .join(
+                    LogicalDocumentRecord,
+                    LogicalDocumentRecord.id == DocumentVersionRecord.logical_document_id,
+                )
+                .where(
+                    CurriculumMappingRecord.curriculum_node_id == node_id,
+                    CurriculumMappingRecord.subject_type == "document_version",
+                    CurriculumMappingRecord.status == "accepted",
+                )
+            ).all()
+            total += len(documentos)
+            materiales.extend(
+                NodeMaterialView(
+                    subject_type="document_version",
+                    subject_id=version.id,
+                    document_id=obra.id,
+                    document_version_id=version.id,
+                    title=obra.canonical_title,
+                    section_title=None,
+                    page=None,
+                    citation_label=None,
+                    excerpt=None,
+                    coverage_type=mapeo.coverage_type,
+                )
+                for mapeo, version, obra in documentos
+            )
+
+            secciones = session.execute(
+                select(
+                    CurriculumMappingRecord,
+                    DocumentSectionRecord,
+                    DocumentVersionRecord,
+                    LogicalDocumentRecord,
+                )
+                .join(
+                    DocumentSectionRecord,
+                    DocumentSectionRecord.id == CurriculumMappingRecord.subject_id,
+                )
+                .join(
+                    DocumentVersionRecord,
+                    DocumentVersionRecord.id == DocumentSectionRecord.document_version_id,
+                )
+                .join(
+                    LogicalDocumentRecord,
+                    LogicalDocumentRecord.id == DocumentVersionRecord.logical_document_id,
+                )
+                .where(
+                    CurriculumMappingRecord.curriculum_node_id == node_id,
+                    CurriculumMappingRecord.subject_type == "section",
+                    CurriculumMappingRecord.status == "accepted",
+                )
+            ).all()
+            total += len(secciones)
+            materiales.extend(
+                NodeMaterialView(
+                    subject_type="section",
+                    subject_id=seccion.id,
+                    document_id=obra.id,
+                    document_version_id=version.id,
+                    title=obra.canonical_title,
+                    section_title=seccion.title or seccion.label,
+                    page=seccion.page_start,
+                    citation_label=None,
+                    excerpt=None,
+                    coverage_type=mapeo.coverage_type,
+                )
+                for mapeo, seccion, version, obra in secciones
+            )
+
+            citas = session.execute(
+                select(
+                    CurriculumMappingRecord,
+                    EvidenceSpanRecord,
+                    DocumentVersionRecord,
+                    LogicalDocumentRecord,
+                )
+                .join(
+                    EvidenceSpanRecord,
+                    EvidenceSpanRecord.id == CurriculumMappingRecord.subject_id,
+                )
+                .join(
+                    DocumentVersionRecord,
+                    DocumentVersionRecord.id == EvidenceSpanRecord.document_version_id,
+                )
+                .join(
+                    LogicalDocumentRecord,
+                    LogicalDocumentRecord.id == DocumentVersionRecord.logical_document_id,
+                )
+                .where(
+                    CurriculumMappingRecord.curriculum_node_id == node_id,
+                    CurriculumMappingRecord.subject_type == "evidence",
+                    CurriculumMappingRecord.status == "accepted",
+                )
+            ).all()
+            total += len(citas)
+            materiales.extend(
+                NodeMaterialView(
+                    subject_type="evidence",
+                    subject_id=cita.id,
+                    document_id=obra.id,
+                    document_version_id=version.id,
+                    title=obra.canonical_title,
+                    section_title=None,
+                    page=cita.page,
+                    citation_label=cita.citation_label,
+                    excerpt=cita.text[:280],
+                    coverage_type=mapeo.coverage_type,
+                )
+                for mapeo, cita, version, obra in citas
+            )
+
+            materiales.sort(
+                key=lambda material: (
+                    material.title.casefold(),
+                    (material.section_title or "").casefold(),
+                    material.page or 0,
+                    material.subject_type,
+                    material.subject_id,
+                )
+            )
+            return NodeMaterialPage(
+                node_id=node_id, total=total, materials=tuple(materiales[:limit])
+            )
 
     # ------------------------------------------------------------------ composición
 

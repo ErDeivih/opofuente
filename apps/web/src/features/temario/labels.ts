@@ -55,3 +55,24 @@ export function temarioHref(nodeId: string, convocationId: string | null): strin
     ? `/temario/${encodeURIComponent(nodeId)}`
     : `/temario/${encodeURIComponent(nodeId)}?convocatoria=${encodeURIComponent(convocationId)}`;
 }
+
+const QUESTION_TYPE_LABEL: Record<string, string> = {
+  single_choice: 'Una respuesta',
+  multi_mark_error: 'Marcar los errores',
+  true_false: 'Verdadero o falso',
+  free_text_reference: 'Respuesta abierta',
+};
+
+export function questionTypeLabel(questionType: string): string {
+  return QUESTION_TYPE_LABEL[questionType] ?? 'Pregunta';
+}
+
+const MATERIAL_TYPE_LABEL: Record<string, string> = {
+  document_version: 'Documento',
+  section: 'Sección',
+  evidence: 'Cita',
+};
+
+export function materialTypeLabel(subjectType: string): string {
+  return MATERIAL_TYPE_LABEL[subjectType] ?? 'Material';
+}
