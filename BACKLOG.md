@@ -31,6 +31,7 @@ La siguiente es B-003.
 | [B-012](#b-012) | Acotar por versión la resolución de nodo por `path` en clasificación | 2 | lista | B-004 |
 | [B-013](#b-013) | Contenido de la ficha de tema: preguntas del banco y material del tema | 2 | **hecha** (2026-11-06) | B-005 |
 | [B-014](#b-014) | Apuntes del temario común: separar título y descripción en la v1 | 2 | **hecha** (2026-11-06) | B-002 |
+| [B-015](#b-015) | Revisión visual del temario en móvil y PC y textos §8 | 2 | **hecha** (2026-11-06) | B-005 |
 
 ## Detalle
 
@@ -302,6 +303,28 @@ tema de su descripción.
 - **Decisión:** D-024 (corrección de representación antes de que la v1 esté en una base duradera;
   I9 sigue impidiendo reescribir una versión ya activa).
 - **Criterio de cierre:** cumplido; `build_curriculum_fixtures --check` sincronizado.
+
+### B-015
+
+**HECHA (2026-11-06).** Revisión visual real del temario y la ficha a 400 px y 1280 px, y limpieza de
+textos según `DOCTRINA-CALIDAD.md` §8.
+
+- **Revisado:** seis vistas con Playwright sobre una base temporal sembrada (temario, convocatorias C1,
+  preguntas, material y marcas): `/temario` y ficha del tema en escritorio y móvil, y ficha con
+  `?convocatoria=`. Sin desbordes horizontales (`scrollWidth == innerWidth` en 400 y 1280) ni
+  solapamientos; sin errores de consola (solo el aviso de CSP del propio Vite).
+- **Cambios:** fuera el pie con la descripción del producto y el estado interno del worker/IA de la
+  cabecera (§8); fuera las etiquetas «BLOQUE/TEMA» del árbol; la ficha agrupa las convocatorias `draft`
+  en un desplegable con una nota de procedencia (sin repetir la cita en 10 filas) y solo enlaza a
+  «Ver particularidades» cuando hay algo que ver; el material se agrupa por obra.
+- **Pruebas:** 2 pruebas nuevas (agrupación de `draft` y ausencia de pie/indicadores) y ajuste de la
+  prueba de material; Vitest **17 ficheros / 212 pruebas**.
+- **Decisión:** D-025.
+- **Evidencia:** capturas revisadas con la aplicación en marcha (API 8765 y web 4173, ambos cerrados
+  al terminar); puertas 1–16 en verde (511 unitarias + 484 integración + 23 contrato = **1018
+  backend**, 212 Vitest, contrato, builds, migración y doble siembra). En la 17 pasan el temario
+  común y las convocatorias C1; solo falla la verificación de fuentes oficiales de los perfiles
+  (DEBT-028, previo). E2E no ejecutada.
 
 ## Fuentes para generar tareas nuevas
 

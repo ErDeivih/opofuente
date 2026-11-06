@@ -375,3 +375,20 @@ Aquí queda el resumen con el motivo y la reversión.
 - **Alternativa descartada:** derivar los apuntes del título en la interfaz (hechizo de presentación
   con dos verdades) o crear una v2 para una corrección que aún no ha visto ninguna convocatoria real.
 - **Reversión:** volver al generador anterior y regenerar el fixture; no hay migración de esquema.
+
+## D-025 — Revisión visual del temario: fuera lo que no ayuda a decidir
+
+- **Fecha:** 2026-11-06 · **Nivel:** 2 · **Estado:** aplicada (B-015)
+- **Decisión:** en el temario y su ficha se retira lo que §8 prohíbe y se agrupa lo que solo añadía
+  ruido: fuera el **pie de página con la descripción del producto** y el **estado interno del worker
+  e IA** de la cabecera; fuera las etiquetas «BLOQUE/TEMA» del árbol (la estructura ya lo dice); la
+  ficha **agrupa las convocatorias `draft`** en un desplegable con una sola nota de procedencia en
+  vez de repetir la cita en cada fila, y solo ofrece «Ver particularidades» cuando hay algo que ver;
+  el material se agrupa por obra. Las convocatorias confirmadas conservan su cita.
+- **Motivo:** revisión a 400 px y 1280 px con el temario sembrado y contenido de prueba: no había
+  desbordes ni solapamientos, pero la ficha medía 4 586 px en móvil y 3 088 px en escritorio, y la
+  cabecera enseñaba estado de sincronizador y descripción del producto. Con los cambios, la misma
+  ficha mide 2 453 px y 1 721 px y sigue conteniendo todo lo que el alumno necesita.
+- **Alternativa descartada:** mantener la lista completa de convocatorias (ruido y ficha
+  interminable) u ocultar las `draft` (se perdería la lista de lo que está por confirmar).
+- **Reversión:** volver a renderizar el pie, los indicadores y la lista plana; no cambia ningún dato.

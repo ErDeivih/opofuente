@@ -181,11 +181,27 @@ describe('ficha de tema', () => {
     renderFicha('/temario/tema-1');
 
     expect(await screen.findByText('Material del tema')).toBeInTheDocument();
-    expect(screen.getAllByText('Apuntes de Constitución').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Apuntes de Constitución')).toHaveLength(1);
     expect(screen.getByText(/pág\. 3/)).toBeInTheDocument();
     expect(
       screen.getByText('La Constitución es la norma suprema del ordenamiento jurídico.'),
     ).toBeInTheDocument();
+  });
+
+  it('agrupa las convocatorias por confirmar para no llenar la ficha de ruido', async () => {
+    stubFichaApi();
+    renderFicha('/temario/tema-1');
+
+    const resumen = await screen.findByText('1 convocatoria por confirmar');
+    expect(resumen.closest('details')).not.toHaveAttribute('open');
+    expect(
+      screen.getByText('Vienen de un listado de convocatorias; faltan sus bases oficiales.'),
+    ).toBeInTheDocument();
+    // Las confirmadas sí llevan su enlace; la de un listado sin bases, no.
+    expect(screen.getAllByRole('link', { name: 'Ver particularidades' })).toHaveLength(1);
+
+    await userEvent.click(resumen);
+    expect(resumen.closest('details')).toHaveAttribute('open');
   });
 
   it('dice que no hay preguntas cuando el tema no tiene ninguna', async () => {

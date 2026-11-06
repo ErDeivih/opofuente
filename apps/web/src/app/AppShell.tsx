@@ -2,7 +2,6 @@ import { NavLink } from 'react-router-dom';
 
 import { OppositionSelector } from '../features/profiles/OppositionSelector';
 import { GlobalSearch } from '../features/search/GlobalSearch';
-import { SystemIndicators } from '../features/system/SystemIndicators';
 import { NAV_ITEMS } from './navigation';
 import { useSectionCounts } from './sectionCounts';
 import type { ReactNode } from 'react';
@@ -28,7 +27,6 @@ export function AppShell({ children }: AppShellProps) {
         </div>
         <GlobalSearch />
         <OppositionSelector />
-        <SystemIndicators />
       </header>
       <div className="app__body">
         <nav className="app__nav" aria-label="Secciones de la aplicación">
@@ -68,12 +66,6 @@ export function AppShell({ children }: AppShellProps) {
           {children}
         </main>
       </div>
-      <footer className="app__footer">
-        <p>
-          Aplicación local de un solo usuario. Los originales nunca se mueven ni se borran: OpoFuente
-          trabaja siempre sobre copias.
-        </p>
-      </footer>
     </div>
   );
 }

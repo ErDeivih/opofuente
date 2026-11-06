@@ -42,3 +42,5 @@ calcula en el servidor y se pinta en la misma pantalla.
   estudiar (D-023).
 - [x] B-014 — apuntes del tema: el generador separa título y descripción de la fuente, así la ficha
   enseña apuntes reales y no un titular con toda la descripción pegada (D-024).
+- [x] B-015 — revisión visual a 400 px y 1280 px y limpieza §8: fuera pie de producto y estado del
+  worker, árbol más limpio y ficha que agrupa las convocatorias por confirmar (D-025).

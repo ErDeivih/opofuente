@@ -8,7 +8,7 @@ import {
   useTemarioNodeQuestions,
   useUnmarkTemarioStudied,
 } from '../api/queries';
-import type { Adjustment, Appearance } from '../api/temario';
+import type { Adjustment, Appearance, NodeMaterial } from '../api/temario';
 import { EmptyState } from '../components/EmptyState';
 import { ErrorState } from '../components/ErrorState';
 import { LoadingState } from '../components/LoadingState';
@@ -28,10 +28,22 @@ interface AppearanceItemProps {
   appearance: Appearance;
   nodeId: string;
   selectedConvocationId: string | null;
+  /** En el grupo de «por confirmar» la cita se da una vez, no en cada fila. */
+  showSource?: boolean;
 }
 
-function AppearanceItem({ appearance, nodeId, selectedConvocationId }: AppearanceItemProps) {
+function AppearanceItem({
+  appearance,
+  nodeId,
+  selectedConvocationId,
+  showSource = true,
+}: AppearanceItemProps) {
   const selected = appearance.convocation_id === selectedConvocationId;
+  // Sin particularidades no hay nada más que ver: el enlace solo lleva a una ficha vacía.
+  const tieneDetalle =
+    appearance.convocation_status !== 'draft' ||
+    appearance.omitted ||
+    appearance.adjustments.length > 0;
 
   return (
     <li className="appearance">
@@ -43,25 +55,36 @@ function AppearanceItem({ appearance, nodeId, selectedConvocationId }: Appearanc
         )}
         {appearance.omitted && <StatusBadge tone="warning">No incluido</StatusBadge>}
       </div>
-      {appearance.source_reference !== null && appearance.source_reference !== undefined && (
-        <p className="quote">{appearance.source_reference}</p>
-      )}
-      {appearance.adjustments.length > 0 && (
-        <p className="hint">
-          {appearance.adjustments
-            .map((adjustment) => adjustmentLabel(adjustment.kind))
-            .join(' · ')}
+      {showSource &&
+        appearance.source_reference !== null &&
+        appearance.source_reference !== undefined && (
+          <p className="quote">{appearance.source_reference}</p>
+        )}
+      {tieneDetalle && (
+        <p className="appearance__action">
+          {selected ? (
+            <span className="hint">Convocatoria elegida</span>
+          ) : (
+            <Link to={temarioHref(nodeId, appearance.convocation_id)}>Ver particularidades</Link>
+          )}
         </p>
       )}
-      <p className="appearance__action">
-        {selected ? (
-          <span className="hint">Convocatoria elegida</span>
-        ) : (
-          <Link to={temarioHref(nodeId, appearance.convocation_id)}>Ver particularidades</Link>
-        )}
-      </p>
     </li>
   );
+}
+
+/** Junta el material de la misma obra: tres filas con el mismo título no aportan nada. */
+function agruparMateriales(materials: NodeMaterial[]): { title: string; items: NodeMaterial[] }[] {
+  const grupos: { title: string; items: NodeMaterial[] }[] = [];
+  for (const material of materials) {
+    const ultimo = grupos[grupos.length - 1];
+    if (ultimo !== undefined && ultimo.title === material.title) {
+      ultimo.items.push(material);
+    } else {
+      grupos.push({ title: material.title, items: [material] });
+    }
+  }
+  return grupos;
 }
 
 function AdjustmentItem({ adjustment }: { adjustment: Adjustment }) {
@@ -101,28 +124,33 @@ function ApuntesMateriales({ nodeId }: { nodeId: string }) {
     <>
       <h3>Material del tema</h3>
       <ul className="material-list">
-        {materiales.data.materials.map((material) => (
-          <li key={`${material.subject_type}-${material.subject_id}`} className="material">
-            <div className="material__header">
-              <span className="material__title">{material.title}</span>
-              <span className="tag">{materialTypeLabel(material.subject_type)}</span>
-            </div>
-            {material.section_title !== null && material.section_title !== undefined && (
-              <p className="material__section">{material.section_title}</p>
-            )}
-            {((material.page !== null && material.page !== undefined) ||
-              (material.citation_label !== null && material.citation_label !== undefined)) && (
-              <p className="hint">
-                {material.page !== null && material.page !== undefined && (
-                  <>Página {material.page}</>
-                )}
-                {material.citation_label !== null &&
-                  material.citation_label !== undefined && <> {material.citation_label}</>}
-              </p>
-            )}
-            {material.excerpt !== null && material.excerpt !== undefined && (
-              <blockquote className="quote">{material.excerpt}</blockquote>
-            )}
+        {agruparMateriales(materiales.data.materials).map((grupo) => (
+          <li key={grupo.title} className="material">
+            <h4 className="material__title">{grupo.title}</h4>
+            <ul className="material__pieces">
+              {grupo.items.map((material) => (
+                <li key={`${material.subject_type}-${material.subject_id}`} className="material__piece">
+                  <span className="tag">{materialTypeLabel(material.subject_type)}</span>
+                  {material.section_title !== null && material.section_title !== undefined && (
+                    <p className="material__section">{material.section_title}</p>
+                  )}
+                  {((material.page !== null && material.page !== undefined) ||
+                    (material.citation_label !== null &&
+                      material.citation_label !== undefined)) && (
+                    <p className="hint">
+                      {material.page !== null && material.page !== undefined && (
+                        <>Página {material.page}</>
+                      )}
+                      {material.citation_label !== null &&
+                        material.citation_label !== undefined && <> {material.citation_label}</>}
+                    </p>
+                  )}
+                  {material.excerpt !== null && material.excerpt !== undefined && (
+                    <blockquote className="quote">{material.excerpt}</blockquote>
+                  )}
+                </li>
+              ))}
+            </ul>
           </li>
         ))}
       </ul>
@@ -245,6 +273,8 @@ export function TemarioNodePage() {
   const nodo = detalle.data.node;
   const curriculum = detalle.data.curriculum;
   const aparece = detalle.data.appears_in ?? [];
+  const confirmadas = aparece.filter((appearance) => appearance.convocation_status !== 'draft');
+  const porConfirmar = aparece.filter((appearance) => appearance.convocation_status === 'draft');
   const particularidades = detalle.data.particularities ?? [];
   const ancestros = detalle.data.ancestors ?? [];
   const estudiadoEn = detalle.data.studied_at ?? nodo.studied_at ?? null;
@@ -365,16 +395,46 @@ export function TemarioNodePage() {
         ) : aparece.length === 0 ? (
           <p className="hint">Este tema no aparece en ninguna convocatoria.</p>
         ) : (
-          <ul className="appearances">
-            {aparece.map((appearance) => (
-              <AppearanceItem
-                key={appearance.convocation_id}
-                appearance={appearance}
-                nodeId={nodo.id}
-                selectedConvocationId={convocatoriaId}
-              />
-            ))}
-          </ul>
+          <>
+            {confirmadas.length > 0 && (
+              <ul className="appearances">
+                {confirmadas.map((appearance) => (
+                  <AppearanceItem
+                    key={appearance.convocation_id}
+                    appearance={appearance}
+                    nodeId={nodo.id}
+                    selectedConvocationId={convocatoriaId}
+                  />
+                ))}
+              </ul>
+            )}
+            {porConfirmar.length > 0 && (
+              <details
+                className="appearances__pending"
+                open={seleccionada?.convocation_status === 'draft'}
+              >
+                <summary>
+                  {porConfirmar.length === 1
+                    ? '1 convocatoria por confirmar'
+                    : `${String(porConfirmar.length)} convocatorias por confirmar`}
+                </summary>
+                <p className="hint">
+                  Vienen de un listado de convocatorias; faltan sus bases oficiales.
+                </p>
+                <ul className="appearances">
+                  {porConfirmar.map((appearance) => (
+                    <AppearanceItem
+                      key={appearance.convocation_id}
+                      appearance={appearance}
+                      nodeId={nodo.id}
+                      selectedConvocationId={convocatoriaId}
+                      showSource={false}
+                    />
+                  ))}
+                </ul>
+              </details>
+            )}
+          </>
         )}
       </section>
 

@@ -123,13 +123,6 @@ button:focus-visible,
   min-width: 0;
 }
 
-.app__footer {
-  border-top: 1px solid var(--color-borde);
-  padding: 1rem 1.25rem;
-  color: var(--color-texto-suave);
-  font-size: 0.85rem;
-}
-
 /* --- Navegación ------------------------------------------------------------ */
 
 .nav {
@@ -533,13 +526,6 @@ button:focus-visible,
 
 .tree__title {
   flex: 1;
-}
-
-.tree__level {
-  color: var(--color-texto-suave);
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
 }
 
 /* --- Detalle de nodo y examen --------------------------------------------- */
@@ -1126,8 +1112,23 @@ button:focus-visible,
   gap: 0.4rem;
 }
 
-.material__title {
+.material .material__title {
+  margin: 0;
+  font-size: 1rem;
   font-weight: 600;
+}
+
+.material__pieces {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.material__piece {
+  border-top: 1px solid var(--color-borde);
+  padding-top: 0.5rem;
 }
 
 .material__section {
@@ -1138,6 +1139,24 @@ button:focus-visible,
 .material .hint,
 .material .quote {
   margin: 0.35rem 0 0;
+}
+
+.appearances__pending {
+  margin-top: 0.75rem;
+}
+
+.appearances__pending > summary {
+  cursor: pointer;
+  color: var(--color-acento);
+  font-weight: 600;
+}
+
+.appearances__pending > summary:hover {
+  text-decoration: underline;
+}
+
+.appearances__pending[open] > summary {
+  margin-bottom: 0.5rem;
 }
 
 .question__stem {

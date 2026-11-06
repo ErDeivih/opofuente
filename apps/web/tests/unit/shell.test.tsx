@@ -244,8 +244,21 @@ describe('shell de la aplicación', () => {
     expect(within(tabla).getAllByText('operativo', { selector: '.badge__text' })).toHaveLength(3);
     expect(within(tabla).getAllByText('no disponible', { selector: '.badge__text' })).toHaveLength(1);
     expect(within(tabla).getAllByText('desactivado', { selector: '.badge__text' })).toHaveLength(3);
-    // El indicador de cabecera resume el estado del worker.
-    expect(screen.getByLabelText('Estado de capacidades clave')).toBeInTheDocument();
+  });
+
+  it('no enseña el pie de producto ni el estado interno del worker', async () => {
+    stubSystemApi();
+    renderWithProviders(
+      <AppShell>
+        <HomePage />
+      </AppShell>,
+      { route: '/' },
+    );
+
+    await screen.findByRole('heading', { level: 1, name: 'Inicio' });
+    // DOCTRINA-CALIDAD §8: fuera la descripción del producto y el estado del sincronizador.
+    expect(screen.queryByText(/Aplicación local de un solo usuario/)).toBeNull();
+    expect(screen.queryByLabelText('Estado de capacidades clave')).toBeNull();
   });
 
   it('el enlace de salto al contenido existe y apunta al main', () => {

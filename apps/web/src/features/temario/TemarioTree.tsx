@@ -10,12 +10,6 @@ export interface TemarioTreeProps {
   searching: boolean;
 }
 
-const LEVEL_LABEL: Record<CurriculumNode['node_type'], string> = {
-  block: 'bloque',
-  topic: 'tema',
-  epigraph: 'epígrafe',
-};
-
 /**
  * Árbol bloque → tema del temario común, en orden oficial.
  *
@@ -58,7 +52,6 @@ export function TemarioTree({ nodes, searching }: TemarioTreeProps) {
                 </span>
                 <span className="tree__code">{node.official_code}</span>
                 <span className="tree__title">{node.title}</span>
-                <span className="tree__level">{LEVEL_LABEL[node.node_type]}</span>
               </button>
             ) : (
               <Link className="tree__label" to={`/temario/${node.id}`}>
@@ -67,7 +60,6 @@ export function TemarioTree({ nodes, searching }: TemarioTreeProps) {
                 {node.studied_at !== null && node.studied_at !== undefined && (
                   <StatusBadge tone="ok">Estudiado</StatusBadge>
                 )}
-                <span className="tree__level">{LEVEL_LABEL[node.node_type]}</span>
               </Link>
             )}
             {hasChildren && isExpanded && renderNodes(node.children, false)}
