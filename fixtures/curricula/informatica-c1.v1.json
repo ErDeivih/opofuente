@@ -14,7 +14,7 @@
     "transformations": [
       "El temario fuente es un documento de trabajo: agrupa 5 bloques y 40 temas numerados 1-40.",
       "Los bloques son los encabezados «## BLOQUE <romano> — <título> (temas a-b)»: el título del nodo es el nombre del bloque y el sufijo del rango se usa para comprobar su contenido.",
-      "Los temas son los párrafos numerados que cuelgan de cada bloque; se une el texto partido en varias líneas y se quita la marca de énfasis de Markdown (**). No se resume ni se recorta ninguna palabra.",
+      "Los temas son los párrafos numerados que cuelgan de cada bloque; se une el texto partido en varias líneas y se quita la marca de énfasis de Markdown (**). No se resume ni se recorta ninguna palabra: el título del tema es el texto hasta el primer «: » y su descripción —los apuntes de la ficha— es el resto.",
       "El número que publica la fuente es el official_code del tema y la ruta es <bloque>.<número> (I.1 … V.40), como fija ESPECIFICACION §5.4.",
       "La referencia primary del TAI 2025 es la decisión de producto O1, no se deduce del documento; se guarda con su cita de las bases."
     ]
@@ -37,7 +37,8 @@
         {
           "node_type": "topic",
           "official_code": "1",
-          "title": "La Constitución Española de 1978: estructura, derechos y deberes, principios rectores, organización del Estado, las Cortes, el Gobierno, el Poder Judicial, el Tribunal Constitucional y las CCAA.",
+          "title": "La Constitución Española de 1978",
+          "description": "estructura, derechos y deberes, principios rectores, organización del Estado, las Cortes, el Gobierno, el Poder Judicial, el Tribunal Constitucional y las CCAA.",
           "position": 1,
           "path": "I.1",
           "depth": 1,
@@ -46,7 +47,8 @@
         {
           "node_type": "topic",
           "official_code": "2",
-          "title": "La Unión Europea: instituciones y ordenamiento; el Derecho comunitario y su aplicación.",
+          "title": "La Unión Europea",
+          "description": "instituciones y ordenamiento; el Derecho comunitario y su aplicación.",
           "position": 2,
           "path": "I.2",
           "depth": 1,
@@ -55,7 +57,8 @@
         {
           "node_type": "topic",
           "official_code": "3",
-          "title": "El régimen local: el municipio (elementos, competencias), la provincia, la comarca; la Ley 7/1985 reguladora de las Bases del Régimen Local.",
+          "title": "El régimen local",
+          "description": "el municipio (elementos, competencias), la provincia, la comarca; la Ley 7/1985 reguladora de las Bases del Régimen Local.",
           "position": 3,
           "path": "I.3",
           "depth": 1,
@@ -64,7 +67,8 @@
         {
           "node_type": "topic",
           "official_code": "4",
-          "title": "Organización municipal: el Pleno, el Alcalde, la Junta de Gobierno Local, los concejales y las comisiones; el Reglamento Orgánico; los órganos desconcentrados y los entes dependientes.",
+          "title": "Organización municipal",
+          "description": "el Pleno, el Alcalde, la Junta de Gobierno Local, los concejales y las comisiones; el Reglamento Orgánico; los órganos desconcentrados y los entes dependientes.",
           "position": 4,
           "path": "I.4",
           "depth": 1,
@@ -73,7 +77,8 @@
         {
           "node_type": "topic",
           "official_code": "5",
-          "title": "El procedimiento administrativo (Ley 39/2015): interesados, plazos, fases, silencio, recursos, notificaciones y registro.",
+          "title": "El procedimiento administrativo (Ley 39/2015)",
+          "description": "interesados, plazos, fases, silencio, recursos, notificaciones y registro.",
           "position": 5,
           "path": "I.5",
           "depth": 1,
@@ -82,7 +87,8 @@
         {
           "node_type": "topic",
           "official_code": "6",
-          "title": "El régimen jurídico del sector público (Ley 40/2015): órganos, competencias, delegación, convenios, consorcios y administración electrónica.",
+          "title": "El régimen jurídico del sector público (Ley 40/2015)",
+          "description": "órganos, competencias, delegación, convenios, consorcios y administración electrónica.",
           "position": 6,
           "path": "I.6",
           "depth": 1,
@@ -91,7 +97,8 @@
         {
           "node_type": "topic",
           "official_code": "7",
-          "title": "El personal al servicio de las administraciones (TREBEP): clases de empleados públicos, acceso, provisión, situaciones, derechos y deberes, régimen disciplinario.",
+          "title": "El personal al servicio de las administraciones (TREBEP)",
+          "description": "clases de empleados públicos, acceso, provisión, situaciones, derechos y deberes, régimen disciplinario.",
           "position": 7,
           "path": "I.7",
           "depth": 1,
@@ -100,7 +107,8 @@
         {
           "node_type": "topic",
           "official_code": "8",
-          "title": "La función pública local: plantilla, RPT, selección, carrera, retribuciones y negociación colectiva.",
+          "title": "La función pública local",
+          "description": "plantilla, RPT, selección, carrera, retribuciones y negociación colectiva.",
           "position": 8,
           "path": "I.8",
           "depth": 1,
@@ -109,7 +117,8 @@
         {
           "node_type": "topic",
           "official_code": "9",
-          "title": "Las haciendas locales y el presupuesto: ingresos, tasas y precios públicos, presupuesto municipal, fases del gasto y control.",
+          "title": "Las haciendas locales y el presupuesto",
+          "description": "ingresos, tasas y precios públicos, presupuesto municipal, fases del gasto y control.",
           "position": 9,
           "path": "I.9",
           "depth": 1,
@@ -118,7 +127,8 @@
         {
           "node_type": "topic",
           "official_code": "10",
-          "title": "La contratación del sector público (Ley 9/2017): tipos de contratos, procedimientos, mesas de contratación y plataformas.",
+          "title": "La contratación del sector público (Ley 9/2017)",
+          "description": "tipos de contratos, procedimientos, mesas de contratación y plataformas.",
           "position": 10,
           "path": "I.10",
           "depth": 1,
@@ -127,7 +137,8 @@
         {
           "node_type": "topic",
           "official_code": "11",
-          "title": "Igualdad y violencia de género: LO 3/2007 y normativa autonómica; planes de igualdad; protocolo de acoso.",
+          "title": "Igualdad y violencia de género",
+          "description": "LO 3/2007 y normativa autonómica; planes de igualdad; protocolo de acoso.",
           "position": 11,
           "path": "I.11",
           "depth": 1,
@@ -136,7 +147,8 @@
         {
           "node_type": "topic",
           "official_code": "12",
-          "title": "Transparencia y protección de datos en la Administración: Ley 19/2013, derecho de acceso, LOPDGDD y RGPD; el delegado de protección de datos.",
+          "title": "Transparencia y protección de datos en la Administración",
+          "description": "Ley 19/2013, derecho de acceso, LOPDGDD y RGPD; el delegado de protección de datos.",
           "position": 12,
           "path": "I.12",
           "depth": 1,
@@ -156,7 +168,8 @@
         {
           "node_type": "topic",
           "official_code": "13",
-          "title": "Arquitectura de ordenadores: CPU, memoria, buses, placa base, periféricos, dispositivos de almacenamiento; tipos de equipos y su mantenimiento.",
+          "title": "Arquitectura de ordenadores",
+          "description": "CPU, memoria, buses, placa base, periféricos, dispositivos de almacenamiento; tipos de equipos y su mantenimiento.",
           "position": 1,
           "path": "II.13",
           "depth": 1,
@@ -165,7 +178,8 @@
         {
           "node_type": "topic",
           "official_code": "14",
-          "title": "Sistemas operativos de usuario: Windows 10/11 y Linux de escritorio; gestión de usuarios, permisos, actualizaciones y resolución de problemas.",
+          "title": "Sistemas operativos de usuario",
+          "description": "Windows 10/11 y Linux de escritorio; gestión de usuarios, permisos, actualizaciones y resolución de problemas.",
           "position": 2,
           "path": "II.14",
           "depth": 1,
@@ -174,7 +188,8 @@
         {
           "node_type": "topic",
           "official_code": "15",
-          "title": "Ofimática: procesador de textos, hoja de cálculo (fórmulas, funciones, gráficos, tablas dinámicas), presentaciones y bases de datos de escritorio; LibreOffice.",
+          "title": "Ofimática",
+          "description": "procesador de textos, hoja de cálculo (fórmulas, funciones, gráficos, tablas dinámicas), presentaciones y bases de datos de escritorio; LibreOffice.",
           "position": 3,
           "path": "II.15",
           "depth": 1,
@@ -183,7 +198,8 @@
         {
           "node_type": "topic",
           "official_code": "16",
-          "title": "Correo electrónico y colaboración: protocolos (SMTP, POP3, IMAP), clientes, calendarios, almacenamiento en la nube y herramientas colaborativas.",
+          "title": "Correo electrónico y colaboración",
+          "description": "protocolos (SMTP, POP3, IMAP), clientes, calendarios, almacenamiento en la nube y herramientas colaborativas.",
           "position": 4,
           "path": "II.16",
           "depth": 1,
@@ -192,7 +208,8 @@
         {
           "node_type": "topic",
           "official_code": "17",
-          "title": "Licencias y software libre: tipos de licencia, software libre vs. propietario, reutilización y buenas prácticas en la administración.",
+          "title": "Licencias y software libre",
+          "description": "tipos de licencia, software libre vs. propietario, reutilización y buenas prácticas en la administración.",
           "position": 5,
           "path": "II.17",
           "depth": 1,
@@ -212,7 +229,8 @@
         {
           "node_type": "topic",
           "official_code": "18",
-          "title": "Sistemas operativos de servidor: Windows Server (AD, DNS, DHCP, GPO) y Linux (usuarios, permisos, servicios, systemd); instalación y administración básica.",
+          "title": "Sistemas operativos de servidor",
+          "description": "Windows Server (AD, DNS, DHCP, GPO) y Linux (usuarios, permisos, servicios, systemd); instalación y administración básica.",
           "position": 1,
           "path": "III.18",
           "depth": 1,
@@ -221,7 +239,8 @@
         {
           "node_type": "topic",
           "official_code": "19",
-          "title": "Virtualización y contenedores: hipervisores (VMware, Hyper-V, Proxmox), máquinas virtuales, Docker, ventajas y buenas prácticas.",
+          "title": "Virtualización y contenedores",
+          "description": "hipervisores (VMware, Hyper-V, Proxmox), máquinas virtuales, Docker, ventajas y buenas prácticas.",
           "position": 2,
           "path": "III.19",
           "depth": 1,
@@ -230,7 +249,8 @@
         {
           "node_type": "topic",
           "official_code": "20",
-          "title": "Almacenamiento y copias de seguridad: RAID, NAS/SAN, backup completo/incremental/diferencial, regla 3-2-1, planes de continuidad y recuperación (PGD/DRP).",
+          "title": "Almacenamiento y copias de seguridad",
+          "description": "RAID, NAS/SAN, backup completo/incremental/diferencial, regla 3-2-1, planes de continuidad y recuperación (PGD/DRP).",
           "position": 3,
           "path": "III.20",
           "depth": 1,
@@ -239,7 +259,8 @@
         {
           "node_type": "topic",
           "official_code": "21",
-          "title": "Redes: modelo OSI y TCP/IP, direccionamiento IPv4/IPv6, subredes, VLAN, enrutamiento, conmutación, cableado y fibra.",
+          "title": "Redes",
+          "description": "modelo OSI y TCP/IP, direccionamiento IPv4/IPv6, subredes, VLAN, enrutamiento, conmutación, cableado y fibra.",
           "position": 4,
           "path": "III.21",
           "depth": 1,
@@ -248,7 +269,8 @@
         {
           "node_type": "topic",
           "official_code": "22",
-          "title": "Comunicaciones: Wi-Fi (estándares y seguridad), VPN, MPLS, telefonía IP, líneas y proveedores.",
+          "title": "Comunicaciones",
+          "description": "Wi-Fi (estándares y seguridad), VPN, MPLS, telefonía IP, líneas y proveedores.",
           "position": 5,
           "path": "III.22",
           "depth": 1,
@@ -257,7 +279,8 @@
         {
           "node_type": "topic",
           "official_code": "23",
-          "title": "Servicios de red: DNS, DHCP, NTP, proxy, LDAP y Active Directory, servidores web y de correo; alta disponibilidad.",
+          "title": "Servicios de red",
+          "description": "DNS, DHCP, NTP, proxy, LDAP y Active Directory, servidores web y de correo; alta disponibilidad.",
           "position": 6,
           "path": "III.23",
           "depth": 1,
@@ -266,7 +289,8 @@
         {
           "node_type": "topic",
           "official_code": "24",
-          "title": "Monitorización y gestión de incidencias: herramientas (Zabbix, Nagios, Glances), ITIL, ticketing, prioridades, SLA y escalado.",
+          "title": "Monitorización y gestión de incidencias",
+          "description": "herramientas (Zabbix, Nagios, Glances), ITIL, ticketing, prioridades, SLA y escalado.",
           "position": 7,
           "path": "III.24",
           "depth": 1,
@@ -275,7 +299,8 @@
         {
           "node_type": "topic",
           "official_code": "25",
-          "title": "Cloud y centros de datos: IaaS/PaaS/SaaS, nubes públicas y privadas, réplica y servicios gestionados; la nube en la administración.",
+          "title": "Cloud y centros de datos",
+          "description": "IaaS/PaaS/SaaS, nubes públicas y privadas, réplica y servicios gestionados; la nube en la administración.",
           "position": 8,
           "path": "III.25",
           "depth": 1,
@@ -284,7 +309,8 @@
         {
           "node_type": "topic",
           "official_code": "26",
-          "title": "Soporte al puesto de trabajo: atención al usuario, inventario, imágenes de equipo, escritorios remotos, impresión y dispositivos móviles.",
+          "title": "Soporte al puesto de trabajo",
+          "description": "atención al usuario, inventario, imágenes de equipo, escritorios remotos, impresión y dispositivos móviles.",
           "position": 9,
           "path": "III.26",
           "depth": 1,
@@ -304,7 +330,8 @@
         {
           "node_type": "topic",
           "official_code": "27",
-          "title": "Bases de datos relacionales: modelo relacional, claves, integridad, normalización y diseño.",
+          "title": "Bases de datos relacionales",
+          "description": "modelo relacional, claves, integridad, normalización y diseño.",
           "position": 1,
           "path": "IV.27",
           "depth": 1,
@@ -313,7 +340,8 @@
         {
           "node_type": "topic",
           "official_code": "28",
-          "title": "SQL: DDL, DML, consultas, joins, subconsultas, vistas, procedimientos y funciones.",
+          "title": "SQL",
+          "description": "DDL, DML, consultas, joins, subconsultas, vistas, procedimientos y funciones.",
           "position": 2,
           "path": "IV.28",
           "depth": 1,
@@ -322,7 +350,8 @@
         {
           "node_type": "topic",
           "official_code": "29",
-          "title": "Gestores de bases de datos: Oracle, SQL Server, PostgreSQL y MySQL; usuarios, permisos, copias y recuperación (RMAN, pg_dump).",
+          "title": "Gestores de bases de datos",
+          "description": "Oracle, SQL Server, PostgreSQL y MySQL; usuarios, permisos, copias y recuperación (RMAN, pg_dump).",
           "position": 3,
           "path": "IV.29",
           "depth": 1,
@@ -331,7 +360,8 @@
         {
           "node_type": "topic",
           "official_code": "30",
-          "title": "Programación: tipos de datos, estructuras de control, funciones, modularidad, POO y buenas prácticas; control de versiones (Git).",
+          "title": "Programación",
+          "description": "tipos de datos, estructuras de control, funciones, modularidad, POO y buenas prácticas; control de versiones (Git).",
           "position": 4,
           "path": "IV.30",
           "depth": 1,
@@ -340,7 +370,8 @@
         {
           "node_type": "topic",
           "official_code": "31",
-          "title": "Desarrollo web: HTML, CSS, JavaScript, frameworks; PHP, Java/.NET, APIs REST y autenticación.",
+          "title": "Desarrollo web",
+          "description": "HTML, CSS, JavaScript, frameworks; PHP, Java/.NET, APIs REST y autenticación.",
           "position": 5,
           "path": "IV.31",
           "depth": 1,
@@ -349,7 +380,8 @@
         {
           "node_type": "topic",
           "official_code": "32",
-          "title": "Interoperabilidad e integración: intercambio de datos (XML, JSON, CSV), servicios web, colas y automatización de procesos (scripts, cron).",
+          "title": "Interoperabilidad e integración",
+          "description": "intercambio de datos (XML, JSON, CSV), servicios web, colas y automatización de procesos (scripts, cron).",
           "position": 6,
           "path": "IV.32",
           "depth": 1,
@@ -358,7 +390,8 @@
         {
           "node_type": "topic",
           "official_code": "33",
-          "title": "Informes y explotación de datos: hojas de cálculo y herramientas de BI; cuadros de mando y criterios de calidad del dato.",
+          "title": "Informes y explotación de datos",
+          "description": "hojas de cálculo y herramientas de BI; cuadros de mando y criterios de calidad del dato.",
           "position": 7,
           "path": "IV.33",
           "depth": 1,
@@ -378,7 +411,8 @@
         {
           "node_type": "topic",
           "official_code": "34",
-          "title": "Seguridad de la información: confidencialidad, integridad y disponibilidad; riesgos, análisis y gestión (MAGERIT); ISO 27001/27002.",
+          "title": "Seguridad de la información",
+          "description": "confidencialidad, integridad y disponibilidad; riesgos, análisis y gestión (MAGERIT); ISO 27001/27002.",
           "position": 1,
           "path": "V.34",
           "depth": 1,
@@ -387,7 +421,8 @@
         {
           "node_type": "topic",
           "official_code": "35",
-          "title": "El Esquema Nacional de Seguridad (ENS, RD 311/2022): ámbito, principios, categorías, medidas y auditoría.",
+          "title": "El Esquema Nacional de Seguridad (ENS, RD 311/2022)",
+          "description": "ámbito, principios, categorías, medidas y auditoría.",
           "position": 2,
           "path": "V.35",
           "depth": 1,
@@ -396,7 +431,8 @@
         {
           "node_type": "topic",
           "official_code": "36",
-          "title": "Criptografía y firma electrónica: cifrado simétrico/asimétrico, hash, certificados digitales, DNIe, Cl@ve, sellos de tiempo y firma de documentos.",
+          "title": "Criptografía y firma electrónica",
+          "description": "cifrado simétrico/asimétrico, hash, certificados digitales, DNIe, Cl@ve, sellos de tiempo y firma de documentos.",
           "position": 3,
           "path": "V.36",
           "depth": 1,
@@ -405,7 +441,8 @@
         {
           "node_type": "topic",
           "official_code": "37",
-          "title": "Protección de datos aplicada: bases de tratamiento, derechos, seguridad y brechas; el DPD y el registro de actividades.",
+          "title": "Protección de datos aplicada",
+          "description": "bases de tratamiento, derechos, seguridad y brechas; el DPD y el registro de actividades.",
           "position": 4,
           "path": "V.37",
           "depth": 1,
@@ -414,7 +451,8 @@
         {
           "node_type": "topic",
           "official_code": "38",
-          "title": "Ciberseguridad: amenazas (phishing, ransomware, ingeniería social), respuesta a incidentes, CCN-CERT e INCIBE.",
+          "title": "Ciberseguridad",
+          "description": "amenazas (phishing, ransomware, ingeniería social), respuesta a incidentes, CCN-CERT e INCIBE.",
           "position": 5,
           "path": "V.38",
           "depth": 1,
@@ -423,7 +461,8 @@
         {
           "node_type": "topic",
           "official_code": "39",
-          "title": "Administración electrónica práctica: sede electrónica, registro electrónico, notificaciones, expediente electrónico, tramitación y firma; Ley 39/2015 y ENS.",
+          "title": "Administración electrónica práctica",
+          "description": "sede electrónica, registro electrónico, notificaciones, expediente electrónico, tramitación y firma; Ley 39/2015 y ENS.",
           "position": 6,
           "path": "V.39",
           "depth": 1,
@@ -432,7 +471,8 @@
         {
           "node_type": "topic",
           "official_code": "40",
-          "title": "Accesibilidad y usabilidad: WCAG, diseño para todos, documentos accesibles y usabilidad de servicios públicos.",
+          "title": "Accesibilidad y usabilidad",
+          "description": "WCAG, diseño para todos, documentos accesibles y usabilidad de servicios públicos.",
           "position": 7,
           "path": "V.40",
           "depth": 1,

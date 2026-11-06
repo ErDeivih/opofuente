@@ -114,6 +114,22 @@ def test_el_fixture_declara_el_origen_los_recuentos_y_la_referencia_del_tai() ->
     assert "ANEXO V" in referencia.source_reference
 
 
+def test_cada_tema_tiene_titulo_y_apuntes_separados() -> None:
+    """La ficha necesita apuntes: la fuente trae «**Título**: descripción» y se separan.
+
+    El texto no se resume: título + descripción tienen la línea completa del temario fuente.
+    """
+    curriculum = _curriculum()
+    temas = [tema for bloque in curriculum.nodes for tema in bloque.children]
+
+    assert len(temas) == 40
+    assert all(tema.description and tema.description.strip() for tema in temas)
+    constitucion = next(tema for tema in temas if tema.path == "I.1")
+    assert constitucion.title == "La Constitución Española de 1978"
+    assert "estructura, derechos y deberes" in (constitucion.description or "")
+    assert ":" not in constitucion.title, "el título termina donde empieza la descripción"
+
+
 def test_la_siembra_del_temario_comun_es_idempotente(seeded_settings: Settings) -> None:
     """Dos ejecuciones no duplican nada: es la aceptación explícita de B-002."""
     primera = _sembrar(seeded_settings)

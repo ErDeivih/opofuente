@@ -30,6 +30,7 @@ La siguiente es B-003.
 | [B-011](#b-011) | Estabilizar las pruebas de API que compiten con el worker de fondo | 1 | lista | — |
 | [B-012](#b-012) | Acotar por versión la resolución de nodo por `path` en clasificación | 2 | lista | B-004 |
 | [B-013](#b-013) | Contenido de la ficha de tema: preguntas del banco y material del tema | 2 | **hecha** (2026-11-06) | B-005 |
+| [B-014](#b-014) | Apuntes del temario común: separar título y descripción en la v1 | 2 | **hecha** (2026-11-06) | B-002 |
 
 ## Detalle
 
@@ -281,6 +282,26 @@ del banco catalogadas en el tema y el material de la biblioteca que apunta a él
   oficiales de los perfiles (DEBT-028, previo). E2E no ejecutada.
 - **Decisión:** D-023.
 - **Criterio de cierre:** cumplido; la ficha sigue sin enseñar la clave.
+
+### B-014
+
+**HECHA (2026-11-06).** La ficha de cada tema ya tiene **apuntes**: el generador separa el título del
+tema de su descripción.
+
+- **Entregado:** `build_curriculum_fixtures.py` separa por el primer «: » y guarda el resto en
+  `description`; fixture `informatica-c1.v1.json` regenerado (5 bloques / 40 temas / 45 nodos, mismas
+  rutas y códigos); la ficha enseña título corto y apuntes reales, y la búsqueda del temario mejora
+  al no arrastrar la descripción en el título.
+- **Pruebas:** `test_cada_tema_tiene_titulo_y_apuntes_separados` (40 temas con descripción; I.1 con
+  su título y sus apuntes) y la ficha de API comprueba que llega `description`; el resto de pruebas
+  del temario y de equivalencias siguen verdes.
+- **Evidencia ejecutada:** puertas 1–16 en verde (511 unitarias + 484 integración + 23 contrato =
+  **1018 backend**, 210 Vitest, contrato, builds, migración desde vacío a `0022`, doble siembra con
+  los apuntes nuevos). En la 17 pasan el temario común y las convocatorias C1; solo falla la
+  verificación de fuentes oficiales de los perfiles (DEBT-028, previo). E2E no ejecutada.
+- **Decisión:** D-024 (corrección de representación antes de que la v1 esté en una base duradera;
+  I9 sigue impidiendo reescribir una versión ya activa).
+- **Criterio de cierre:** cumplido; `build_curriculum_fixtures --check` sincronizado.
 
 ## Fuentes para generar tareas nuevas
 

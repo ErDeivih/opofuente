@@ -8,7 +8,8 @@ Por qué existe esta herramienta y no un JSON escrito a mano (mismo criterio que
    documento cambia, la herramienta falla y **no genera nada**;
 3. el árbol se extrae del propio documento: los 5 bloques (`## BLOQUE <romano> — …`) y sus 40 temas
    numerados; el texto de cada tema se conserva íntegro (solo se quita la marca de énfasis de
-   Markdown y se unen las líneas partidas);
+   Markdown y se unen las líneas partidas), y el título y su descripción se separan por el primer
+   «: » para que la ficha del tema tenga apuntes;
 4. se comprueban los recuentos aprobados (5 bloques / 40 temas / 45 nodos), que la numeración sea
    1-40 y que las rutas sean `I.1`…`V.40`, sin perder ni inventar ningún tema.
 
@@ -56,7 +57,8 @@ TRANSFORMATIONS = (
     "nodo es el nombre del bloque y el sufijo del rango se usa para comprobar su contenido.",
     "Los temas son los párrafos numerados que cuelgan de cada bloque; se une el texto partido en "
     "varias líneas y se quita la marca de énfasis de Markdown (**). No se resume ni se recorta "
-    "ninguna palabra.",
+    "ninguna palabra: el título del tema es el texto hasta el primer «: » y su descripción —los "
+    "apuntes de la ficha— es el resto.",
     "El número que publica la fuente es el official_code del tema y la ruta es <bloque>.<número> "
     "(I.1 … V.40), como fija ESPECIFICACION §5.4.",
     "La referencia primary del TAI 2025 es la decisión de producto O1, no se deduce del documento; "
@@ -213,11 +215,15 @@ def build_nodes(
             )
         hijos: list[dict[str, Any]] = []
         for posicion_tema, (numero, texto) in enumerate(temas, start=1):
+            # La fuente escribe cada tema como «**Título**: descripción». Se separan para que la
+            # ficha tenga apuntes: el texto no se resume ni se recorta, solo cambia de campo.
+            titulo, separador, descripcion = texto.partition(": ")
             hijos.append(
                 {
                     "node_type": "topic",
                     "official_code": str(numero),
-                    "title": texto,
+                    "title": titulo.strip(),
+                    "description": descripcion.strip() if separador else None,
                     "position": posicion_tema,
                     "path": f"{bloque.roman}.{numero}",
                     "depth": 1,

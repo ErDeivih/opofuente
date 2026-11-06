@@ -40,3 +40,5 @@ calcula en el servidor y se pinta en la misma pantalla.
 - [x] B-013 — contenido de la ficha: preguntas del banco (sin clave) y material de la biblioteca
   catalogado en el tema, con su cita. La ficha ya no enseña solo metadatos: también lo que hay para
   estudiar (D-023).
+- [x] B-014 — apuntes del tema: el generador separa título y descripción de la fuente, así la ficha
+  enseña apuntes reales y no un titular con toda la descripción pegada (D-024).

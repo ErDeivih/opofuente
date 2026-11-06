@@ -188,6 +188,8 @@ def test_la_ficha_de_un_tema_dice_en_que_convocatorias_aparece(cliente) -> None:
     assert ficha["curriculum"]["version_code"] == "informatica-c1-v1"
     assert ficha["convocation"] is None
     assert ficha["studied_at"] is None
+    # La ficha trae apuntes reales, no solo el título.
+    assert ficha["node"]["description"], "el tema debe llegar con sus apuntes"
     assert [aparicion["convocation_code"] for aparicion in ficha["appears_in"]] == ["tai-age-2025"]
     assert ficha["appears_in"][0]["role"] == "primary"
 

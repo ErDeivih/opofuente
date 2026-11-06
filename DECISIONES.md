@@ -355,3 +355,23 @@ Aquí queda el resumen con el motivo y la reversión.
 - **Alternativa descartada:** reutilizar `/questions` con su clave y filtrar en el cliente (la clave
   saldría antes de corregir) o enseñar también material provisional (mezcla confianza con contenido).
 - **Reversión:** retirar las dos rutas y las dos tarjetas; no cambia ningún dato.
+
+## D-024 — El título del tema y sus apuntes se separan en el fixture (corrección de la v1)
+
+- **Fecha:** 2026-11-06 · **Nivel:** 2 · **Estado:** aplicada (B-014)
+- **Decisión:** la fuente escribe cada tema como «**Título**: descripción». El generador separa el
+  título (hasta el primer «: ») de la descripción (el resto) y la guarda en `node.description`, que
+  es lo que la ficha enseña como apuntes. El texto no se resume ni se recorta: título + descripción
+  contienen la línea completa. La identidad del nodo (ruta `I.1`…`V.40` y `official_code`) no cambia,
+  y la versión sigue siendo `informatica-c1-v1`.
+- **Motivo:** la ficha se abría sin apuntes en todos los temas porque la descripción quedó dentro
+  del título; el alumno veía un titular larguísimo y «Este tema aún no tiene apuntes» aunque la
+  fuente sí trae texto. Es una corrección de representación en la v1 **antes de que exista una base
+  duradera con ella**: la siembra de esta rama solo se ha ejecutado en bases temporales de pruebas y
+  puertas.
+- **Límite explícito:** I9 sigue mandando. Si una base ya sembró la v1 anterior, la siembra se
+  negará a reescribirla («una versión activa no se edita»); en ese caso hay que publicar una v2 y
+  decidir el re-apuntado de referencias, no forzar el fixture.
+- **Alternativa descartada:** derivar los apuntes del título en la interfaz (hechizo de presentación
+  con dos verdades) o crear una v2 para una corrección que aún no ha visto ninguna convocatoria real.
+- **Reversión:** volver al generador anterior y regenerar el fixture; no hay migración de esquema.
