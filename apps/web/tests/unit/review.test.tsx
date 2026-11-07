@@ -465,7 +465,11 @@ describe('pantalla Revisión', () => {
     expect(lote.getByRole('button', { name: 'Aceptar 2 propuestas' })).toBeInTheDocument();
     expect(lote.getByText(/El lote decide/)).toBeInTheDocument();
 
-    await userEvent.click(lote.getByRole('checkbox', { name: `Dejar fuera del lote: ${ARCHIVO_DOS}` }));
+    await userEvent.click(
+      lote.getByRole('checkbox', {
+        name: new RegExp(`Dejar fuera del lote: .*${ARCHIVO_DOS}`),
+      }),
+    );
 
     const aceptar = lote.getByRole('button', { name: 'Aceptar 1 propuesta' });
     await userEvent.click(aceptar);

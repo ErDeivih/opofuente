@@ -312,6 +312,7 @@ class ClassificationService:
         note: str | None = None,
         override_value: str | None = None,
         coverage_type: CoverageType = CoverageType.PARTIAL,
+        curriculum_version_id: str | None = None,
     ) -> DecisionOutcome:
         return self._repository.decide(
             proposal_id,
@@ -320,6 +321,7 @@ class ClassificationService:
             override_value=override_value,
             coverage_type=coverage_type,
             now=self._clock.now(),
+            curriculum_version_id=curriculum_version_id,
         )
 
     def bulk_decide(
@@ -330,6 +332,7 @@ class ClassificationService:
         note: str | None = None,
         overrides: Mapping[str, str] | None = None,
         excluded: Sequence[str] = (),
+        curriculum_version_id: str | None = None,
     ) -> BulkDecisionResult:
         """Decide en lote respetando excepciones: lo excluido no se toca y se informa aparte."""
         excluidas = tuple(excluded)
@@ -344,6 +347,7 @@ class ClassificationService:
                     decision=decision,
                     note=note,
                     override_value=override,
+                    curriculum_version_id=curriculum_version_id,
                 )
             )
         return BulkDecisionResult(outcomes=tuple(resultados), excluded=excluidas)

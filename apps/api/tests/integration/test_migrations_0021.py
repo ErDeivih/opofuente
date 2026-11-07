@@ -447,7 +447,7 @@ def test_un_mapeo_de_material_sobrevive_a_la_subida_y_a_la_bajada(tmp_path: Path
 
 
 def test_la_bajada_falla_si_un_nodo_no_tiene_programa_publicado(tmp_path: Path) -> None:
-    """No se inventa una convocatoria: si un nodo es del temario común, la bajada se detiene."""
+    """No se inventa una convocatoria: si el nodo es del común, la bajada se niega (B-010)."""
     settings = _settings(tmp_path)
     run_migrations(settings, revision="head")
     engine = build_engine(settings.data_paths.database)
@@ -468,8 +468,21 @@ def test_la_bajada_falla_si_un_nodo_no_tiene_programa_publicado(tmp_path: Path) 
     finally:
         engine.dispose()
 
-    with pytest.raises(RuntimeError, match="no tienen programa publicado"):
+    with pytest.raises(RuntimeError, match="nodos del temario común"):
         _bajar_a(settings, REVISION_ANTERIOR)
+
+    # La bajada de 0021 no se ejecuta: se quedó en 0021 (0022 sí se puede deshacer) y el temario
+    # común sigue ahí.
+    assert _revision(settings) == "0021_temario_comun_y_referencias"
+    engine = build_engine(settings.data_paths.database)
+    try:
+        with engine.connect() as conexion:
+            nodos_comunes = conexion.execute(
+                text("SELECT count(*) FROM curriculum_nodes WHERE id = 'nodo-comun'")
+            ).scalar_one()
+    finally:
+        engine.dispose()
+    assert nodos_comunes == 1
 
 
 def test_una_convocatoria_no_puede_tener_dos_temarios_primarios(tmp_path: Path) -> None:

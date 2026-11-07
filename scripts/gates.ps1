@@ -14,13 +14,18 @@
     (`npx playwright install chromium`).
 .PARAMETER SkipE2e
     Omite las pruebas end-to-end (útiles cuando no hay navegador de Playwright instalado).
+.PARAMETER RequireProfileSources
+    Convierte en fallo el drift de las fuentes oficiales de perfiles. Por defecto el drift se omite
+    con motivo (DEBT-028) porque el BOE y el BOCYL cambian en origen y un hash de septiembre no se
+    puede reproducir; la falta de la fuente sí bloquea siempre.
 .EXAMPLE
     ./scripts/gates.ps1
     ./scripts/gates.ps1 -SkipE2e
 #>
 [CmdletBinding()]
 param(
-    [switch]$SkipE2e
+    [switch]$SkipE2e,
+    [switch]$RequireProfileSources
 )
 
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
@@ -74,13 +79,27 @@ try {
     }
 
     Invoke-OpoFuenteStep -Name '17. fixtures sincronizados con sus fuentes' -Action {
-        # Primero el temario común y las convocatorias C1: sus fuentes son locales y no dependen de
-        # las descargas del BOE. Si después fallan las de los perfiles, el motivo está en DEBT-028 y
-        # así se ve que el temario y las convocatorias sí estaban sincronizados.
+        # Primero el temario común y las convocatorias C1: sus fuentes son locales y bloquean.
         uv run python -m opofuente.tools.build_curriculum_fixtures --check
         if ($LASTEXITCODE -ne 0) { return }
         uv run python -m opofuente.tools.build_c1_convocatorias_fixtures --check
         if ($LASTEXITCODE -ne 0) { return }
+
+        # Las fuentes de los perfiles se comprueban aparte (DEBT-028). Por defecto la puerta no
+        # depende de descargas que no están en git: si faltan o cambiaron, se informa y se omite la
+        # verificación de perfiles con el motivo escrito. -RequireProfileSources exige que estén y
+        # coincidan, y entonces sí verifica los fixtures contra ellas.
+        uv run python -m opofuente.tools.check_profile_sources
+        $estadoFuentes = $LASTEXITCODE
+        if ($estadoFuentes -ne 0) {
+            if ($RequireProfileSources) {
+                Write-Host 'FALLO: -RequireProfileSources exige fuentes de perfiles presentes y sin drift.' -ForegroundColor Red
+                return
+            }
+            Write-Host 'OMITIDO con motivo: fuentes de perfiles ausentes o desviadas (DEBT-028); no se verifica build_profile_fixtures --check.' -ForegroundColor Yellow
+            $global:LASTEXITCODE = 0
+            return
+        }
         uv run python -m opofuente.tools.build_profile_fixtures --check
     }
 

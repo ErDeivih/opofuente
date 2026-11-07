@@ -409,3 +409,35 @@ Aquí queda el resumen con el motivo y la reversión.
   navegación y multiplica pestañas) o enlazar las `draft` como si fueran bases (confunde confianza
   con oficialidad).
 - **Reversión:** quitar los enlaces y el campo `official_url` del esquema; no cambia ningún dato.
+
+## D-027 — El tema de una propuesta se resuelve dentro de una versión (B-012)
+
+- **Fecha:** 2026-11-07 · **Nivel:** 2 · **Estado:** aplicada (B-012)
+- **Decisión:** aceptar una propuesta de eje `topic` ya no hace `WHERE path = valor LIMIT 1`. La
+  resolución sigue este orden: (1) la versión indicada en la decisión (`curriculum_version_id`
+  opcional en la petición, también en lote); (2) la versión donde el sujeto ya está mapeado; (3) la
+  versión **activa del temario común**; (4) la única versión que tenga ese `path`. Si hay varias y
+  ninguna es el común, la decisión se rechaza con 409 y pide el ámbito. El etiquetado de los grupos
+  prefiere el título del común activo y, si no, una versión determinista.
+- **Motivo:** con el común y los programas publicados conviviendo, `I.1` existía en dos versiones y
+  la decisión elegía una por orden de fila. El material nuevo se estudia en el común, no en la copia
+  publicada; el histórico se conserva donde estaba.
+- **Alternativa descartada:** añadir la versión a cada propuesta en la migración (más fiel, pero es
+  un cambio de esquema que no hacía falta para cerrar la ambigüedad) o elegir la primera coincidencia
+  (el defecto que se corrige).
+- **Reversión:** quitar el parámetro y volver al `LIMIT 1`; las decisiones ya tomadas no se tocan.
+
+## D-028 — La bajada de `0021` se niega si hay temario común sembrado (B-010)
+
+- **Fecha:** 2026-11-07 · **Nivel:** 2 · **Estado:** aplicada (B-010)
+- **Decisión:** el `downgrade` de `0021` comprueba primero si hay nodos de un `curriculum` de tipo
+  `common`. Si los hay, falla con un mensaje propio y **no** continúa; no los descarta ni los
+  convierte en nodos de una convocatoria inventada. Si el común está vacío, la bajada sigue como
+  antes (y se lleva las tablas nuevas). La especificación §6.5 queda con esta precisión.
+- **Motivo:** una bajada no puede destruir en silencio el temario que ya se estudia. El caso «común
+  vacío» es el de una migración recién aplicada y ahí la bajada es segura; el caso «común con nodos»
+  es el de una instalación en uso y la recuperación correcta es archivar/exportar, no bajar.
+- **Alternativa descartada:** descartar los nodos comunes (pierde contenido y, con material asignado,
+  deja marcas y mapeos huérfanos) o dejar de ofrecer la bajada siempre (impide deshacer una migración
+  recién aplicada).
+- **Reversión:** quitar la comprobación y volver al comportamiento anterior; no hay migración nueva.

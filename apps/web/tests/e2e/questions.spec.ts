@@ -127,7 +127,9 @@ test('E2E-05 importación: las preguntas de un documento entran con su cita y se
   const temporal = fs.mkdtempSync(path.join(os.tmpdir(), 'opofuente-e2e-05-'));
   const sufijo = Date.now().toString(36);
   const fichero = path.join(temporal, `temario-${sufijo}.txt`);
-  fs.writeFileSync(fichero, TEXTO_DEL_DOCUMENTO, 'utf8');
+  // El marcador hace el contenido único en cada pasada: el directorio E2E se conserva y con el
+  // mismo texto el almacén reutilizaría el artefacto y la versión ya aceptada (409 al aceptar).
+  fs.writeFileSync(fichero, `${TEXTO_DEL_DOCUMENTO}\n\nMarcador de la pasada: ${sufijo}\n`, 'utf8');
 
   await page.goto('/bandeja');
   await page.getByLabel(/Suelta aquí ficheros o carpetas/).setInputFiles(fichero);

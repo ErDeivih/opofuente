@@ -2934,6 +2934,8 @@ export interface components {
          * @description Decisión en lote con excepciones explícitas (11_IMPLEMENTATION-SLICES S04).
          */
         BulkDecisionRequestSchema: {
+            /** Curriculum Version Id */
+            curriculum_version_id?: string | null;
             /**
              * Decision
              * @enum {string}
@@ -3615,6 +3617,9 @@ export interface components {
         /**
          * DecisionRequestSchema
          * @description Decisión explícita sobre una propuesta. `override_value` corrige el valor propuesto.
+         *
+         *     `curriculum_version_id` acota el tema a una versión concreta cuando el mismo `path` existe en
+         *     varias (por ejemplo, en el temario común y en el programa publicado de la convocatoria).
          */
         DecisionRequestSchema: {
             /**
@@ -3623,6 +3628,8 @@ export interface components {
              * @enum {string}
              */
             coverage_type: "mention" | "partial" | "complete";
+            /** Curriculum Version Id */
+            curriculum_version_id?: string | null;
             /** Note */
             note?: string | null;
             /** Override Value */

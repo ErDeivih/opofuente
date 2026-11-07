@@ -1429,4 +1429,25 @@ personales), o `fetch-sources` archiva una copia fechada que la puerta usa, o la
 «falta la fuente» de «la fuente cambió» y solo la primera bloquea. Criterio: un worktree limpio puede
 ejecutar el paso 17 sin depender de descargas previas ni de que el BOE no cambie.
 
-**Estado: abierta** (B-001, 4 de noviembre de 2026).
+**Resolución (7 de noviembre de 2026).** Se eligió la tercera vía, con una vuelta: la puerta 17 ya no
+depende de las fuentes de perfiles para pasar.
+
+- `opofuente.tools.check_profile_sources` informa del estado de cada fuente: `ok`, `desviada` o
+  `falta`. Su código de salida es 0 (todo coincide), 2 (hay drift) o 1 (falta alguna).
+- `scripts/gates.ps1` ejecuta primero las comprobaciones **deterministas** (temario común y
+  convocatorias C1) y después este comprobador. Si las fuentes de perfiles no están o cambiaron,
+  imprime el motivo y **omite** `build_profile_fixtures --check` con el aviso `DEBT-028`; la puerta
+  pasa, porque un worktree limpio no puede depender de documentos que están gitignored y cambian en
+  origen. Si están todas y coinciden, ejecuta la verificación completa y esa sí bloquea.
+- El interruptor `-RequireProfileSources` convierte el drift en fallo para quien tenga las fuentes
+  archivadas y quiera exigirlas.
+- **Por qué no se regeneran los fixtures de perfiles:** las descargas de octubre no se conservaron y
+  las de noviembre no coinciden; regenerar cambiaría datos oficiales de los perfiles y exige curación
+  y aprobación, no es una tarea de esta deuda.
+- **Limitación declarada:** con drift, los fixtures de perfiles no se verifican contra su fuente en la
+  puerta. El temario común y las C1 sí se verifican siempre, porque sus fuentes son locales y
+  deterministas.
+- **Pruebas:** `tests/unit/test_check_profile_sources.py` (4) fija la tabla ok/drift/falta y el orden
+  de bloqueo cuando falta alguna.
+
+**Estado: cerrada** (B-001 la abrió, 7 de noviembre de 2026 la cierra).

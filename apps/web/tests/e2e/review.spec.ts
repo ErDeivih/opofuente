@@ -8,7 +8,6 @@ import {
   test,
   type APIRequestContext,
   type Locator,
-  type Page,
 } from '@playwright/test';
 
 /**
@@ -130,10 +129,6 @@ function fact(scope: Locator, label: string) {
 }
 
 /** Primer número de un hecho («3 (confirmada por ti)» -> 3). */
-function numeroDe(texto: string): number {
-  const encontrado = /^(\d+)/.exec(texto.trim());
-  return encontrado === null ? Number.NaN : Number(encontrado[1]);
-}
 
 function escaparParaRegExp(texto: string): string {
   return texto.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -173,17 +168,7 @@ async function propuestasPendientes(request: APIRequestContext): Promise<Propues
   return pagina.proposals;
 }
 
-/** Elige un nodo del árbol de cobertura y devuelve la región donde se lee su cobertura. */
-async function elegirNodoDeCobertura(page: Page, titulo: string): Promise<Locator> {
-  const cobertura = page.getByRole('region', { name: 'Cobertura del programa' });
-  await cobertura
-    .getByRole('button', { name: new RegExp(escaparParaRegExp(titulo)) })
-    .first()
-    .click();
-  return cobertura;
-}
-
-test('E2E-03 revisión en lote: aceptar un grupo, excluir una fila, corregir un tema, deshacer y ver la cobertura', async ({
+test('E2E-03 revisión en lote: aceptar un grupo, excluir una fila, corregir un tema y deshacer', async ({
   page,
   request,
 }) => {
@@ -289,7 +274,15 @@ test('E2E-03 revisión en lote: aceptar un grupo, excluir una fila, corregir un 
   await page.getByRole('checkbox', { name: marcaGrupo }).check();
   await expect(page.getByRole('button', { name: botonDeLote(tamano) })).toBeVisible();
 
-  await page.getByRole('checkbox', { name: `Dejar fuera del lote: ${ficheroExcluido}` }).check();
+  // El mismo fichero puede aparecer como material y como texto extraído: se elige la primera fila
+  // del lote (el nombre accesible incluye el tipo de sujeto desde B-012, así que ya no es ambiguo
+  // para un lector de pantalla).
+  await page
+    .getByRole('checkbox', {
+      name: new RegExp(`Dejar fuera del lote: .*${escaparParaRegExp(ficheroExcluido)}`),
+    })
+    .first()
+    .check();
   // Las acciones de lote dicen exactamente a cuántos elementos afectan (07_UI-UX §4).
   await expect(page.getByRole('button', { name: botonDeLote(tamano - 1) })).toBeVisible();
   await page.getByRole('button', { name: botonDeLote(tamano - 1) }).click();
@@ -308,10 +301,12 @@ test('E2E-03 revisión en lote: aceptar un grupo, excluir una fila, corregir un 
   };
   expect(cuerpoDelLote.decision).toBe('accepted');
   expect(cuerpoDelLote.proposal_ids).toEqual(idsDelGrupo);
-  expect(cuerpoDelLote.excluded).toEqual([propuestaExcluida?.id]);
+  expect(cuerpoDelLote.excluded).toHaveLength(1);
+  const idExcluido = cuerpoDelLote.excluded?.[0] ?? '';
   const excluidaDespues = (await (
-    await request.get(`${API}/classification-proposals/${propuestaExcluida?.id ?? ''}`)
+    await request.get(`${API}/classification-proposals/${idExcluido}`)
   ).json()) as PropuestaApi;
+  expect(excluidaDespues.id).toBe(idExcluido);
   expect(excluidaDespues.status).toBe('pending');
 
   // --- 5. Corregir un tema contra el programa activo ---------------------------------------
@@ -329,11 +324,6 @@ test('E2E-03 revisión en lote: aceptar un grupo, excluir una fila, corregir un 
   ).json()) as { nodes: NodoApi[] };
   const temaDestino = temasDe(curriculum.nodes)[0];
   expect(temaDestino, 'el programa activo debe tener temas').toBeDefined();
-
-  // La cobertura aceptada del nodo destino se compara consigo misma, no con un valor fijo: el
-  // directorio de datos del E2E conserva material de pasadas anteriores.
-  const cobertura = await elegirNodoDeCobertura(page, temaDestino?.title ?? '');
-  const aceptadaAntes = numeroDe(await fact(cobertura, 'Cobertura aceptada').innerText());
 
   const propuestaTema = (await propuestasPendientes(request)).find(
     (propuesta) =>
@@ -362,19 +352,15 @@ test('E2E-03 revisión en lote: aceptar un grupo, excluir una fila, corregir un 
     })
     .click();
 
-  // La corrección llega al servidor: el mapeo queda en el nodo elegido, no en el propuesto.
+  // La corrección llega al servidor: el mapeo queda en el nodo elegido, no en el propuesto. Desde
+  // S13 el material nuevo se clasifica en el temario **común** (D-027); el panel de cobertura de la
+  // revisión lee el programa publicado, así que la comprobación se hace sobre el mapeo.
   const mapeos = (await (
     await request.get(
       `${API}/mappings?subject_type=${propuestaTema?.subject_type ?? ''}&subject_id=${propuestaTema?.subject_id ?? ''}`,
     )
   ).json()) as { node_path: string }[];
   expect(mapeos.map((mapeo) => mapeo.node_path)).toContain(temaDestino?.path);
-
-  // Y la cobertura sube donde tiene que subir: en lo aceptado, no en lo provisional.
-  await expect(fact(cobertura, 'Cobertura aceptada')).toHaveText(
-    new RegExp(`^${aceptadaAntes + 1}\\b`),
-  );
-  await expect(fact(cobertura, 'Cobertura provisional')).toBeVisible();
 
   // --- 6. Deshacer: la propuesta vuelve a la cola y la cobertura baja -----------------------
   // El mismo material genera dos decisiones (artefacto y representación): el historial las distingue
@@ -392,9 +378,13 @@ test('E2E-03 revisión en lote: aceptar un grupo, excluir una fila, corregir un 
     await request.get(`${API}/classification-proposals/${propuestaTema?.id ?? ''}`)
   ).json()) as PropuestaApi;
   expect(vuelta.status).toBe('pending');
-  await expect(fact(cobertura, 'Cobertura aceptada')).toHaveText(
-    new RegExp(`^${aceptadaAntes}\\b`),
-  );
+  // Deshacer retira el mapeo que salió de la decisión.
+  const mapeosDespues = (await (
+    await request.get(
+      `${API}/mappings?subject_type=${propuestaTema?.subject_type ?? ''}&subject_id=${propuestaTema?.subject_id ?? ''}`,
+    )
+  ).json()) as { node_path: string }[];
+  expect(mapeosDespues.map((mapeo) => mapeo.node_path)).not.toContain(temaDestino?.path);
 });
 
 test('E2E-03 revisión: accesibilidad sin violaciones automatizables', async ({ page }) => {

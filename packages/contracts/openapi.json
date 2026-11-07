@@ -1224,6 +1224,17 @@
       "BulkDecisionRequestSchema": {
         "description": "Decisión en lote con excepciones explícitas (11_IMPLEMENTATION-SLICES S04).",
         "properties": {
+          "curriculum_version_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Curriculum Version Id"
+          },
           "decision": {
             "enum": [
               "accepted",
@@ -3220,7 +3231,7 @@
         "type": "object"
       },
       "DecisionRequestSchema": {
-        "description": "Decisión explícita sobre una propuesta. `override_value` corrige el valor propuesto.",
+        "description": "Decisión explícita sobre una propuesta. `override_value` corrige el valor propuesto.\n\n`curriculum_version_id` acota el tema a una versión concreta cuando el mismo `path` existe en\nvarias (por ejemplo, en el temario común y en el programa publicado de la convocatoria).",
         "properties": {
           "coverage_type": {
             "default": "partial",
@@ -3231,6 +3242,17 @@
             ],
             "title": "Coverage Type",
             "type": "string"
+          },
+          "curriculum_version_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Curriculum Version Id"
           },
           "note": {
             "anyOf": [

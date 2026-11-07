@@ -528,7 +528,10 @@ equivalencias y re-atribución del banco (§5.7).
 2. Rellenarla desde `convocation_curriculum_refs` con `role='official'` →
    `curriculum_versions` → nodos (`UPDATE … SET convocation_version_id = r.convocation_version_id`).
 3. Comprobar que no queda ningún NULL; si queda, **fallar**: significa que un nodo no tenía programa
-   publicado y no se puede devolver a una convocatoria sin inventarla.
+   publicado y no se puede devolver a una convocatoria sin inventarla. **Decisión B-010:** si los
+   nodos sin convocatoria son del **temario común** (el único caso que aparece tras B-002), la bajada
+   **no se ejecuta** y el error lo dice con su motivo; no se destruye temario que ya se estudia. Para
+   bajar de verdad hay que archivar o exportar el común antes, y eso no se automatiza aquí.
 4. Volver a `NOT NULL`, recrear `uq_curriculum_path` e `ix_curriculum_convocation` y, **antes** de
    quitar la columna nueva, quitar su FK (`fk_curriculum_node_version`), su índice
    (`ix_curriculum_node_version`) y su unicidad (`uq_curriculum_node_path`); después, `drop_column`
@@ -537,9 +540,10 @@ equivalencias y re-atribución del banco (§5.7).
    `convocation_curriculum_refs`, `curriculum_versions`, `curricula`.
 
 Consecuencia honesta: **el `downgrade` se lleva por delante el temario común y sus referencias** (son
-datos de esta funcionalidad). No puede deshacer la re-atribución de preguntas: esa operación va en su
-propia tarea, con su informe y su inverso probado (§5.7), y solo puede ejecutarse **después** de que
-`0021` esté estable.
+datos de esta funcionalidad) **cuando el común está vacío**; en cuanto tiene nodos sembrados, la
+bajada se niega (decisión B-010). No puede deshacer la re-atribución de preguntas: esa operación va en
+su propia tarea, con su informe y su inverso probado (§5.7), y solo puede ejecutarse **después** de
+que `0021` esté estable.
 
 ### 6.6 Notas de SQLite (lo que ya dolió en este repositorio)
 

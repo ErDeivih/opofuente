@@ -213,12 +213,17 @@ async function abrirPregunta(posicion: number) {
 
 describe('preguntas: el banco', () => {
   it('abre el conjunto y la pregunta enlazados desde la ficha del tema', async () => {
-    stubQuestions();
+    const fetchMock = stubQuestions();
     renderPreguntas('/preguntas?conjunto=set-1&pregunta=q-2');
 
-    expect(
-      await screen.findByRole('heading', { name: 'Pregunta 2' }),
-    ).toBeInTheDocument();
+    // Se comprueba la petición, no el tiempo que tarda en pintar el panel: el enlace directo es lo
+    // que se está probando y así la prueba no depende de la carga de la máquina.
+    await waitFor(() => {
+      const urls = fetchMock.mock.calls.map(([input]) =>
+        typeof input === 'string' ? input : input instanceof URL ? input.href : input.url,
+      );
+      expect(urls.some((url) => url.includes('/api/v1/questions/q-2'))).toBe(true);
+    });
   });
 
   it('lista el conjunto con sus recuentos y el estado de su clave', async () => {

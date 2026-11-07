@@ -62,11 +62,16 @@ class ReviewGroupSchema(BaseModel):
 
 
 class DecisionRequestSchema(BaseModel):
-    """Decisión explícita sobre una propuesta. `override_value` corrige el valor propuesto."""
+    """Decisión explícita sobre una propuesta. `override_value` corrige el valor propuesto.
+
+    `curriculum_version_id` acota el tema a una versión concreta cuando el mismo `path` existe en
+    varias (por ejemplo, en el temario común y en el programa publicado de la convocatoria).
+    """
 
     note: str | None = None
     override_value: str | None = None
     coverage_type: Literal["mention", "partial", "complete"] = "partial"
+    curriculum_version_id: str | None = None
 
 
 class BulkDecisionRequestSchema(BaseModel):
@@ -77,6 +82,7 @@ class BulkDecisionRequestSchema(BaseModel):
     note: str | None = None
     overrides: dict[str, str] = Field(default_factory=dict)
     excluded: list[str] = Field(default_factory=list)
+    curriculum_version_id: str | None = None
 
 
 class DecisionOutcomeSchema(BaseModel):

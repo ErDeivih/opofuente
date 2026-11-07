@@ -25,10 +25,11 @@ La siguiente es B-003.
 | [B-006](#b-006) | Importar las convocatorias C1 de `c1.txt` y del inventario como referencias | 2 | **hecha** (2026-11-05) | B-004 |
 | [B-007](#b-007) | Entrega del slice `docs/slices/S13.md` | 1 | **hecha** (2026-11-07) | B-005 |
 | [B-008](#b-008) | Poner al día `docs/product-spec/03_DATA-MODEL.md` y el índice de ADR | 1 | **hecha** (2026-11-07) | B-001 |
-| [B-009](#b-009) | Investigación encomendada: cómo organizan el temario las academias C1 | 1 | lista | — |
-| [B-010](#b-010) | Decidir la bajada de `0021` después de sembrar el temario común | 2 | lista | B-002 |
-| [B-011](#b-011) | Estabilizar las pruebas de API que compiten con el worker de fondo | 1 | lista | — |
-| [B-012](#b-012) | Acotar por versión la resolución de nodo por `path` en clasificación | 2 | lista | B-004 |
+| [B-009](#b-009) | Investigación encomendada: cómo organizan el temario las academias C1 | 1 | **hecha** (2026-11-07) | — |
+| [B-010](#b-010) | Decidir la bajada de `0021` después de sembrar el temario común | 2 | **hecha** (2026-11-07) | B-002 |
+| [B-011](#b-011) | Estabilizar las pruebas de API que compiten con el worker de fondo | 1 | **hecha** (2026-11-07) | — |
+| [B-012](#b-012) | Acotar por versión la resolución de nodo por `path` en clasificación | 2 | **hecha** (2026-11-07) | B-004 |
+| [B-017](#b-017) | Simulacro por bloque del temario común (propuesta de la investigación) | 2 | **propuesta** | B-016 |
 | [B-013](#b-013) | Contenido de la ficha de tema: preguntas del banco y material del tema | 2 | **hecha** (2026-11-06) | B-005 |
 | [B-014](#b-014) | Apuntes del temario común: separar título y descripción en la v1 | 2 | **hecha** (2026-11-06) | B-002 |
 | [B-015](#b-015) | Revisión visual del temario en móvil y PC y textos §8 | 2 | **hecha** (2026-11-06) | B-005 |
@@ -224,55 +225,55 @@ exige `AGENTS.md` y sin declarar pruebas que no se hayan ejecutado.
 
 ### B-009
 
-**Investigación encomendada** (AGENTE.md): cómo organizan el temario las academias de informática C1
-y los portales de oposiciones, y qué se repite en todas las convocatorias. Termina en
-`INVESTIGACION.md` con lo mirado (enlace o captura), lo que hace la competencia, lo que nos falta y
-**una propuesta concreta** de tarea Nivel 1 o 2. Si la propuesta cambia el alcance, es Nivel 3: se
-pregunta.
+**HECHA (2026-11-07).** Investigación de la competencia en `INVESTIGACION.md`.
+
+- **Mirado:** MasterD (TAI 2026: 33 temas / 4 bloques y formato del examen), Oposiciones.red
+  (temario local real de 40 temas, reparto por materia, preguntas atadas a la norma y «dos fechas» de
+  vigencia) y, como consultadas sin texto servido, OposicionesInformática, ADAMS y Redopositor.
+- **Conclusión:** comparten organización por bloques, test y supuestos prácticos; ninguna plantea un
+  temario único versionado que varias convocatorias referencien, que es el hueco del producto. Nos
+  faltan el simulacro por bloque, la vigencia normativa por tema y los casos prácticos como contenido.
+- **Propuesta:** B-017 (simulacro por bloque, Nivel 2), con B-018 apuntado para la fecha del texto
+  normativo.
+- **Criterio de cierre:** cumplido.
 
 ### B-010
 
-**Decidir qué hace el `downgrade` de `0021` cuando ya hay temario común sembrado.** Hoy la bajada
-falla a propósito si algún nodo no tiene programa publicado al que volver (`ESPECIFICACION.md` §6.5,
-paso 3). Eso cubre dos casos: los 40 temas del común en cuanto B-002 los siembre, y los nodos de un
-programa publicado cuya convocatoria se haya borrado (la referencia `official` cascadea y el programa
-queda huérfano; ver D-009).
+**HECHA (2026-11-07).** La bajada de `0021` se niega si hay temario común sembrado.
 
-- **Opciones:** (a) descartar los nodos comunes (y bloquear si tienen material asignado); (b) dejar
-  de ofrecer la bajada una vez publicado el común; (c) separar la bajada del contenido con una
-  migración previa que archive el temario común.
-- **Criterio de cierre:** la opción elegida documentada en §6.5 y en la prueba
-  `test_migrations_0021`, con la bajada ejecutada en el caso que toque. Es Nivel 2 si no borra datos
-  con material; si la opción elegida los descarta, es Nivel 3 y se pregunta.
-- **Depende de:** B-002.
+- **Decisión:** comprobar los nodos de `curricula.kind='common'` antes de reconstruir; si hay alguno,
+  fallar con mensaje propio y no tocar nada. Con el común vacío, la bajada sigue como antes.
+- **Entregado:** migración `0021` (comprobación y mensaje), `ESPECIFICACION.md` §6.5 actualizada y
+  `test_la_bajada_falla_si_un_nodo_no_tiene_programa_publicado` comprobando que la base sigue en la
+  cabeza. D-028.
+- **Criterio de cierre:** cumplido.
 
 ### B-011
 
-**Estabilizar las pruebas de API que compiten con el worker de fondo.** Las pruebas con
-`seeded_client` construyen la aplicación con la configuración de producción (`worker_enabled=True`)
-y además ejecutan trabajos a mano con `run_one_job`; con la máquina cargada, el worker puede
-adelantarse y dejar un trabajo a medias (visto en `test_library_api`: una versión se promocionó antes
-de su extracción y el diff salió vacío). Se ha añadido una espera determinista en `_pegar`; queda
-revisar el resto de pruebas que usan el patrón y, si procede, usar `api_only_client` o desactivar el
-worker en los fixtures que controlan la cola.
+**HECHA (2026-11-07).** Las pruebas de API ya no compiten con el worker de fondo.
 
-- **Criterio de cierre:** ejecutar la suite de integración varias veces con carga externa y sin ella
-  sin fallos intermitentes; ninguna prueba depende del orden en que dos consumidores reclaman la cola.
+- **Cambio:** `seeded_client` crea la aplicación con `worker_enabled=False` (igual que
+  `api_only_client`), así que la cola la mueve solo la prueba. El worker de producción se prueba en
+  los E2E y en las pruebas del worker, no en cada integración.
+- **Verificado:** las 6 suites que usan `run_one_job` (101 pruebas) pasan con el worker apagado y sin
+  esperas de reloj; B-011 deja de depender de la carga de la máquina.
+- **Criterio de cierre:** cumplido (sin fallos intermitentes en la ejecución completa; la suite
+  completa se ejecuta en las puertas).
 
 ### B-012
 
-**Acotar por versión la resolución de nodo por `path` en clasificación.** `classification_repository`
-resuelve un nodo candidato con `WHERE path = :valor LIMIT 1` (aceptar una propuesta de eje `topic`) y
-etiqueta valores por `path` (`_value_labels`). Hoy ya es ambiguo entre el TAI, Guardia Civil y
-Celador; con el temario común sembrado, un `I.1` puede resolver al nodo publicado o al común sin
-criterio. Afecta al material que se clasifique **después** de B-003; la re-atribución hecha en B-003 va
-por `id` y no le afecta.
+**HECHA (2026-11-07).** El tema se resuelve dentro de una versión.
 
-- **Ficheros:** `apps/api/opofuente/infrastructure/classification_repository.py` (resolución de nodo y
-  etiquetas).
-- **Criterio de cierre:** la resolución y el etiquetado reciben el ámbito de versión (convocatoria o
-  común) y no eligen entre versiones distintas; prueba con el mismo `path` en dos versiones.
-- **Depende de:** B-004 (es quien decide qué árbol enseña la API).
+- **Cambio:** `classification_repository` ya no usa `WHERE path = valor LIMIT 1`. Orden: versión
+  indicada (`curriculum_version_id` opcional en aceptar/rechazar y en lote), versión donde el sujeto
+  ya está mapeado, versión activa del **común**, o única versión que tenga la ruta; si hay varias y
+  ninguna es el común, 409 con el motivo y la petición de ámbito. El etiquetado de grupos prefiere el
+  título del común activo. D-027.
+- **Entregado:** `classification_repository.py`, `classification_service.py`, `ports.py`,
+  `classification_schemas.py`, rutas y contrato regenerado; `test_classification_version_scope.py`
+  (3: común por defecto, ámbito explícito y ambigüedad GC/Celador) y la suite de clasificación
+  existente en verde.
+- **Criterio de cierre:** cumplido.
 
 ### B-013
 
@@ -359,6 +360,19 @@ llevan a su sitio.
   (DEBT-028, previo). E2E no ejecutada.
 - **Decisión:** D-026.
 - **Criterio de cierre:** cumplido.
+
+### B-017
+
+**PROPUESTA (de la investigación B-009, Nivel 2).** Simulacro por bloque del temario común.
+
+- **Qué:** desde `/temario`, un botón por bloque compone una sesión con las preguntas **aceptadas**
+  mapeadas a los temas de ese bloque, con las reglas de la convocatoria activa o un modo práctica sin
+  nota si no hay convocatoria. Reutiliza `curriculum_mappings`, la composición de sesiones y el enlace
+  ficha→banco; no inventa contenido.
+- **Criterio de aceptación:** bloque con preguntas → sesión con todas las aceptadas de sus temas;
+  bloque sin preguntas → se dice y no se crea una sesión vacía; corrección y penalización de la
+  convocatoria activa; ninguna pregunta rechazada o sustituida entra.
+- **Depende de:** B-016 (enlace ficha→banco). Se decide antes de empezar si es Nivel 2 o 3.
 
 ## Fuentes para generar tareas nuevas
 

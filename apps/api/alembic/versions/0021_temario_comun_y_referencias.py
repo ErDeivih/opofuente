@@ -489,6 +489,19 @@ def downgrade() -> None:
     # La convocatoria de cada nodo se recupera de la referencia `official`: es el mismo dato que la
     # migración escribió al subir, no una suposición nueva.
     conexion = op.get_bind()
+    nodos_comunes = conexion.execute(
+        sa.text(
+            "SELECT count(*) FROM curriculum_nodes n "
+            "JOIN curriculum_versions v ON v.id = n.curriculum_version_id "
+            "JOIN curricula c ON c.id = v.curriculum_id WHERE c.kind = 'common'"
+        )
+    ).scalar_one()
+    if nodos_comunes:
+        raise RuntimeError(
+            f"0021 (downgrade): hay {nodos_comunes} nodos del temario común; la bajada no se "
+            "ejecuta para no destruir temario que ya se estudia (decisión B-010). Archiva o "
+            "exporta el temario común antes de bajar, y no fuerces la migración."
+        )
     conexion.execute(
         sa.text(
             "UPDATE curriculum_nodes SET convocation_version_id = ("

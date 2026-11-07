@@ -78,6 +78,8 @@ from opofuente.infrastructure.db_models import (
     ConvocationVersionRecord,
     CurriculumMappingRecord,
     CurriculumNodeRecord,
+    CurriculumRecord,
+    CurriculumVersionRecord,
     DuplicateClusterMemberRecord,
     DuplicateClusterRecord,
     ExtractedRepresentationRecord,
@@ -580,6 +582,7 @@ class SqlAlchemyClassificationRepository:
         override_value: str | None = None,
         coverage_type: CoverageType = CoverageType.PARTIAL,
         actor: str = "local",
+        curriculum_version_id: str | None = None,
     ) -> DecisionOutcome:
         with self._session_factory() as session:
             fila = session.get(ClassificationProposalRecord, proposal_id)
@@ -611,20 +614,25 @@ class SqlAlchemyClassificationRepository:
                 )
 
             nodo: CurriculumNodeRecord | None = None
+            motivo_nodo: str | None = None
             aplica_mapeo = Axis(fila.axis) is Axis.TOPIC and status in {
                 ProposalStatus.ACCEPTED,
                 ProposalStatus.AUTO_APPLIED_PROVISIONAL,
             }
             if aplica_mapeo:
-                nodo = session.execute(
-                    select(CurriculumNodeRecord).where(CurriculumNodeRecord.path == valor).limit(1)
-                ).scalar_one_or_none()
+                nodo, motivo_nodo = self._resolve_topic_node(
+                    session,
+                    valor,
+                    subject_type=fila.subject_type,
+                    subject_id=fila.subject_id,
+                    curriculum_version_id=curriculum_version_id,
+                )
                 if nodo is None:
                     return DecisionOutcome(
                         proposal_id=proposal_id,
                         status=fila.status,
                         applied=False,
-                        reason=f"El nodo «{valor}» no está en el programa sembrado",
+                        reason=motivo_nodo or f"El nodo «{valor}» no está en el programa sembrado",
                     )
 
             anterior = self._estado_previo(session, fila, nodo)
@@ -807,6 +815,123 @@ class SqlAlchemyClassificationRepository:
         existente.source_proposal_id = fila.id
         existente.approved_at = now if estado is MappingStatus.ACCEPTED else None
         return existente
+
+    def _resolve_topic_node(
+        self,
+        session: Session,
+        valor: str,
+        *,
+        subject_type: str,
+        subject_id: str,
+        curriculum_version_id: str | None,
+    ) -> tuple[CurriculumNodeRecord | None, str | None]:
+        """Resuelve un tema **dentro de una versión**, sin elegir a ciegas entre versiones (B-012).
+
+        Orden de decisión, de más a menos específico:
+
+        1. la versión que indique quien decide, si la indicó;
+        2. la versión donde el sujeto ya está mapeado (una re-clasificación no cambia de temario);
+        3. la versión **activa del temario común** (es el temario que se estudia: O2);
+        4. la única versión que tenga ese `path`; si hay varias, se pide el ámbito en vez de elegir.
+
+        Devuelve `(nodo, None)` o `(None, motivo)`; nunca cae en un `LIMIT 1` que escoja una versión
+        por orden de fila.
+        """
+        if curriculum_version_id is not None:
+            version = session.get(CurriculumVersionRecord, curriculum_version_id)
+            if version is None:
+                return None, "La versión del temario indicada no existe"
+            nodo = session.execute(
+                select(CurriculumNodeRecord).where(
+                    CurriculumNodeRecord.curriculum_version_id == version.id,
+                    CurriculumNodeRecord.path == valor,
+                )
+            ).scalar_one_or_none()
+            if nodo is None:
+                return None, f"El tema «{valor}» no está en la versión indicada del temario"
+            return nodo, None
+
+        versiones_sujeto = (
+            session.execute(
+                select(CurriculumNodeRecord.curriculum_version_id)
+                .join(
+                    CurriculumMappingRecord,
+                    CurriculumMappingRecord.curriculum_node_id == CurriculumNodeRecord.id,
+                )
+                .where(
+                    CurriculumMappingRecord.subject_type == subject_type,
+                    CurriculumMappingRecord.subject_id == subject_id,
+                    CurriculumNodeRecord.path == valor,
+                )
+                .distinct()
+            )
+            .scalars()
+            .all()
+        )
+        if len(versiones_sujeto) == 1:
+            nodo = session.execute(
+                select(CurriculumNodeRecord).where(
+                    CurriculumNodeRecord.curriculum_version_id == versiones_sujeto[0],
+                    CurriculumNodeRecord.path == valor,
+                )
+            ).scalar_one_or_none()
+            if nodo is not None:
+                return nodo, None
+        elif len(versiones_sujeto) > 1:
+            return None, self._ambiguous_topic_reason(session, valor)
+
+        comun = session.execute(
+            select(CurriculumVersionRecord)
+            .join(
+                CurriculumRecord,
+                CurriculumRecord.id == CurriculumVersionRecord.curriculum_id,
+            )
+            .where(
+                CurriculumRecord.kind == "common",
+                CurriculumVersionRecord.status == "active",
+            )
+            .limit(1)
+        ).scalar_one_or_none()
+        if comun is not None:
+            nodo = session.execute(
+                select(CurriculumNodeRecord).where(
+                    CurriculumNodeRecord.curriculum_version_id == comun.id,
+                    CurriculumNodeRecord.path == valor,
+                )
+            ).scalar_one_or_none()
+            if nodo is not None:
+                return nodo, None
+
+        nodos = (
+            session.execute(select(CurriculumNodeRecord).where(CurriculumNodeRecord.path == valor))
+            .scalars()
+            .all()
+        )
+        if len(nodos) == 1:
+            return nodos[0], None
+        if len(nodos) > 1:
+            return None, self._ambiguous_topic_reason(session, valor)
+        return None, f"El nodo «{valor}» no está en el programa sembrado"
+
+    @staticmethod
+    def _ambiguous_topic_reason(session: Session, valor: str) -> str:
+        codigos = (
+            session.execute(
+                select(CurriculumVersionRecord.code)
+                .join(
+                    CurriculumNodeRecord,
+                    CurriculumNodeRecord.curriculum_version_id == CurriculumVersionRecord.id,
+                )
+                .where(CurriculumNodeRecord.path == valor)
+            )
+            .scalars()
+            .all()
+        )
+        opciones = ", ".join(sorted({str(codigo) for codigo in codigos}))
+        return (
+            f"El tema «{valor}» existe en varias versiones ({opciones}); "
+            "indica el ámbito con curriculum_version_id"
+        )
 
     @staticmethod
     def _estado_previo(
@@ -1289,13 +1414,50 @@ class SqlAlchemyClassificationRepository:
         etiquetas: dict[tuple[str, str], str] = {}
         temas = [fila.proposed_value for fila in filas if fila.axis == Axis.TOPIC.value]
         if temas:
-            nodos = session.execute(
-                select(CurriculumNodeRecord.path, CurriculumNodeRecord.title).where(
-                    CurriculumNodeRecord.path.in_(temas)
+            # El mismo `path` puede existir en el común y en un programa publicado. La etiqueta
+            # prefiere el común activo (el temario que se estudia) y, si no, una sola versión
+            # determinista; nunca mezcla títulos de dos versiones en la misma clave.
+            filas_nodo = session.execute(
+                select(
+                    CurriculumNodeRecord.path,
+                    CurriculumNodeRecord.title,
+                    CurriculumRecord.kind,
+                    CurriculumVersionRecord.status,
+                    CurriculumVersionRecord.code,
                 )
+                .join(
+                    CurriculumVersionRecord,
+                    CurriculumVersionRecord.id == CurriculumNodeRecord.curriculum_version_id,
+                )
+                .join(
+                    CurriculumRecord,
+                    CurriculumRecord.id == CurriculumVersionRecord.curriculum_id,
+                )
+                .where(CurriculumNodeRecord.path.in_(temas))
             ).all()
-            for path, title in nodos:
-                etiquetas[(Axis.TOPIC.value, str(path))] = str(title)
+
+            def prioridad(fila: tuple[str, str, str, str, str]) -> tuple[int, str]:
+                _path, _title, kind, estado, codigo = fila
+                if kind == "common" and estado == "active":
+                    return (0, codigo)
+                if kind == "common":
+                    return (1, codigo)
+                return (2, codigo)
+
+            elegidos: dict[str, tuple[str, str, str, str, str]] = {}
+            for fila_nodo in filas_nodo:
+                datos = (
+                    str(fila_nodo[0]),
+                    str(fila_nodo[1]),
+                    str(fila_nodo[2]),
+                    str(fila_nodo[3]),
+                    str(fila_nodo[4]),
+                )
+                actual = elegidos.get(datos[0])
+                if actual is None or prioridad(datos) < prioridad(actual):
+                    elegidos[datos[0]] = datos
+            for path, elegido in elegidos.items():
+                etiquetas[(Axis.TOPIC.value, path)] = elegido[1]
         oposiciones = [fila.proposed_value for fila in filas if fila.axis == Axis.OPPOSITION.value]
         if oposiciones:
             nombres = session.execute(

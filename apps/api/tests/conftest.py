@@ -124,7 +124,15 @@ def seeded_settings(migrated_settings: Settings) -> Settings:
 
 @pytest.fixture
 def seeded_client(seeded_settings: Settings) -> Iterator[TestClient]:
-    app = create_app(seeded_settings)
+    """Aplicación sembrada **sin worker**: la cola la mueve la prueba (B-011).
+
+    Con el worker de fondo encendido, una prueba que también llamaba a `run_one_job` competía con
+    él por el mismo trabajo: con la máquina cargada podía adelantarse a la extracción y dejar el
+    diff vacío (visto en `test_library_api`). El worker de producción no se prueba aquí; para eso
+    están los E2E y las pruebas del propio worker.
+    """
+    settings = Settings(data_dir=seeded_settings.data_dir, worker_enabled=False, _env_file=None)
+    app = create_app(settings)
     with TestClient(app) as test_client:
         yield test_client
 

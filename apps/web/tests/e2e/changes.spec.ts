@@ -137,8 +137,9 @@ test('E2E-09 cambio: versionar, confirmar el diff y revisar el derivado afectado
 
   await page.goto('/cambios');
   await expect(page.getByRole('heading', { level: 1, name: 'Cambios' })).toBeVisible();
-  // La propuesta está sin aplicar y se puede mirar entera.
-  await expect(page.getByText('propuesto, sin aplicar')).toBeVisible();
+  // La propuesta está sin aplicar y se puede mirar entera. El directorio E2E conserva cambios de
+  // pasadas anteriores; se toma el más reciente (el de esta pasada).
+  await expect(page.getByText('propuesto, sin aplicar').first()).toBeVisible();
   const tabla = page.getByRole('table', { name: 'Diff por sección' });
   await expect(tabla.getByText('con el texto cambiado')).toBeVisible();
   await expect(tabla.getByText(/veinte dias habiles/)).toBeVisible();

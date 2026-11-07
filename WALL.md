@@ -50,3 +50,11 @@ calcula en el servidor y se pinta en la misma pantalla.
   ejecutada y DEBT-028 declaradas, sin maquillar).
 - [x] B-008 — modelo de datos al día (`03_DATA-MODEL.md`), decisiones D015–D017 y ADR-018 ratificada e
   implementada en el índice.
+- [x] B-009 — investigación de la competencia en `INVESTIGACION.md`, con la propuesta B-017 (simulacro
+  por bloque) sobre la mesa.
+- [x] B-010 — la bajada de `0021` se niega si hay temario común sembrado, con mensaje propio (D-028).
+- [x] B-011 — las pruebas de API controlan la cola: `seeded_client` con el worker apagado.
+- [x] B-012 — el tema de una propuesta se resuelve dentro de una versión; el común activo por defecto
+  y 409 si hay ambigüedad (D-027).
+- [x] DEBT-028 — política de fuentes: falta/drift/ok, omisión con motivo y puerta 17 en verde.
+- [x] E2E pendiente ejecutada: **49/49** en la puerta 18.

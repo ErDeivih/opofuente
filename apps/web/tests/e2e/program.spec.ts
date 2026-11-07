@@ -79,11 +79,12 @@ test('S01: abrir un tema muestra su ruta y su procedencia sin inventar cobertura
 
   await expect(page.getByRole('heading', { name: 'Nodo seleccionado' })).toBeVisible();
   await expect(page.getByText('I.1', { exact: true })).toBeVisible();
-  // Esta pantalla **no** inventa la cobertura: dice dónde se calcula en lugar de enseñar un cero que
-  // parecería un dato. (Antes decía que no se calculaba todavía, y se calcula desde S04.)
+  // La procedencia se enseña con su enlace; la cobertura no se inventa ni se explica cómo se
+  // calcula (DOCTRINA-CALIDAD §8).
   await expect(
-    page.getByText(/Se calcula en Revisión, sobre las fuentes asignadas/),
+    page.getByRole('link', { name: /BOE-A-2025-26262|ANEXO V/ }).first(),
   ).toBeVisible();
+  await expect(page.getByText(/cobertura/i)).toHaveCount(0);
 });
 
 test('S01: accesibilidad del Programa sin violaciones automatizables', async ({ page }) => {

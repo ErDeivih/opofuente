@@ -452,6 +452,7 @@ class ClassificationRepository(Protocol):
         override_value: str | None = ...,
         coverage_type: CoverageType = ...,
         actor: str = ...,
+        curriculum_version_id: str | None = ...,
     ) -> DecisionOutcome:
         """Aplica la decisión, su efecto (mapeo, cobertura) y la audita: un ítem por transacción."""
         ...

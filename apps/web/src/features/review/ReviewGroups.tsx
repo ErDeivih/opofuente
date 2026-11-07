@@ -143,7 +143,9 @@ export function ReviewGroups({
                     <input
                       type="checkbox"
                       checked={excluded.includes(id)}
-                      aria-label={`Dejar fuera del lote: ${proposal === undefined ? id : subjectLabel(proposal)}`}
+                      aria-label={`Dejar fuera del lote: ${subjectTypeLabel(
+                        proposal?.subject_type ?? '',
+                      )} ${proposal === undefined ? id : subjectLabel(proposal)}`}
                       onChange={(event) => {
                         const fuera = event.target.checked;
                         setExcluded((previous) =>
@@ -155,6 +157,7 @@ export function ReviewGroups({
                       <span className="hint">propuesta {id}</span>
                     ) : (
                       <>
+                        <span className="hint">{subjectTypeLabel(proposal.subject_type)}</span>{' '}
                         {subjectLabel(proposal)}{' '}
                         <span className="hint">· {valueLabel(proposal)}</span>
                       </>

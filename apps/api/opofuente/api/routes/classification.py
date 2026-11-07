@@ -203,6 +203,7 @@ def accept_proposal(
         note=request.note,
         override_value=request.override_value,
         coverage_type=CoverageType(request.coverage_type),
+        curriculum_version_id=request.curriculum_version_id,
     )
     return _outcome(_assert_applied(resultado))
 
@@ -222,6 +223,7 @@ def reject_proposal(
         note=request.note,
         override_value=request.override_value,
         coverage_type=CoverageType(request.coverage_type),
+        curriculum_version_id=request.curriculum_version_id,
     )
     return _outcome(_assert_applied(resultado))
 
@@ -241,6 +243,7 @@ def bulk_decision(
         note=request.note,
         overrides=request.overrides,
         excluded=request.excluded,
+        curriculum_version_id=request.curriculum_version_id,
     )
     return BulkDecisionResponseSchema(
         outcomes=[_outcome(outcome) for outcome in resultado.outcomes],
