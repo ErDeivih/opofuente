@@ -44,3 +44,5 @@ calcula en el servidor y se pinta en la misma pantalla.
   enseña apuntes reales y no un titular con toda la descripción pegada (D-024).
 - [x] B-015 — revisión visual a 400 px y 1280 px y limpieza §8: fuera pie de producto y estado del
   worker, árbol más limpio y ficha que agrupa las convocatorias por confirmar (D-025).
+- [x] B-016 — ficha enlazada: material → biblioteca, preguntas → banco, convocatorias → bases
+  oficiales o anuncio (D-026). Revisada de nuevo a 400 y 1280 px.

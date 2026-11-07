@@ -572,6 +572,10 @@
             "title": "Convocation Title",
             "type": "string"
           },
+          "official_url": {
+            "title": "Official Url",
+            "type": "string"
+          },
           "omitted": {
             "title": "Omitted",
             "type": "boolean"
@@ -597,6 +601,7 @@
           "convocation_code",
           "convocation_title",
           "convocation_status",
+          "official_url",
           "role",
           "omitted",
           "adjustments"

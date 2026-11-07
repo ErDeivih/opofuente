@@ -991,6 +991,14 @@ button:focus-visible,
   font-size: 0.9rem;
 }
 
+.appearance__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.75rem;
+  margin: 0.35rem 0 0;
+  font-size: 0.9rem;
+}
+
 .adjustment__label {
   margin: 0;
   font-weight: 600;
@@ -1161,4 +1169,9 @@ button:focus-visible,
 
 .question__stem {
   margin: 0.35rem 0 0;
+}
+
+.question__action {
+  margin: 0.35rem 0 0;
+  font-size: 0.9rem;
 }

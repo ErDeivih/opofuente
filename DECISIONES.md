@@ -392,3 +392,20 @@ Aquí queda el resumen con el motivo y la reversión.
 - **Alternativa descartada:** mantener la lista completa de convocatorias (ruido y ficha
   interminable) u ocultar las `draft` (se perdería la lista de lo que está por confirmar).
 - **Reversión:** volver a renderizar el pie, los indicadores y la lista plana; no cambia ningún dato.
+
+## D-026 — La ficha enlaza a la biblioteca, al banco y a las bases oficiales
+
+- **Fecha:** 2026-11-07 · **Nivel:** 2 · **Estado:** aplicada (B-016)
+- **Decisión:** la ficha del tema enlaza cada pieza con su origen: el **material** abre la biblioteca
+  en su documento (`/biblioteca?documento=<id>`, que ya existía), cada **pregunta** abre el banco
+  con su conjunto y su pregunta (`/preguntas?conjunto=<id>&pregunta=<id>`, estado inicial de la
+  pantalla) y cada **convocatoria** enlaza su `official_url`: «Bases oficiales» en las confirmadas y
+  «Ver el anuncio» en las `draft`, porque en esas el enlace no son unas bases verificadas. Los
+  enlaces externos abren en pestaña nueva con `rel="noreferrer noopener"`.
+- **Motivo:** la ficha reunía el contenido pero no dejaba actuar sobre él; el alumno tenía que
+  buscar el documento, el banco o las bases a mano. El enlace no inventa procedencia: la etiqueta
+  distingue bases oficiales de anuncio sin confirmar.
+- **Alternativa descartada:** abrir la biblioteca o el banco en una ventana nueva (rompe la
+  navegación y multiplica pestañas) o enlazar las `draft` como si fueran bases (confunde confianza
+  con oficialidad).
+- **Reversión:** quitar los enlaces y el campo `official_url` del esquema; no cambia ningún dato.

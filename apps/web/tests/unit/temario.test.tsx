@@ -153,6 +153,11 @@ describe('ficha de tema', () => {
       screen.getByRole('heading', { name: 'En qué convocatorias aparece' }),
     ).toBeInTheDocument();
     expect(screen.getByText(/ANEXO V, apartado 3/)).toBeInTheDocument();
+    // Cada convocatoria confirmada enlaza a sus bases oficiales.
+    expect(screen.getByRole('link', { name: 'Bases oficiales' })).toHaveAttribute(
+      'href',
+      'https://www.boe.es/diario_boe/txt.php?id=BOE-A-2025-26262',
+    );
     expect(screen.getByText('Temario que se estudia')).toBeInTheDocument();
     expect(screen.getByText('Temario complementario')).toBeInTheDocument();
     // Una convocatoria de un listado sin bases verificadas se distingue de las confirmadas.
@@ -172,6 +177,11 @@ describe('ficha de tema', () => {
     expect(
       screen.getByText('¿Cuál es la norma suprema del ordenamiento jurídico?'),
     ).toBeInTheDocument();
+    // Cada pregunta lleva al banco con su conjunto y su pregunta ya abiertos.
+    expect(screen.getAllByRole('link', { name: 'Ver en el banco' })[0]).toHaveAttribute(
+      'href',
+      '/preguntas?conjunto=set-1&pregunta=preg-1',
+    );
     expect(screen.getByText('Una respuesta')).toBeInTheDocument();
     expect(screen.getByText('Reserva')).toBeInTheDocument();
   });
@@ -182,6 +192,11 @@ describe('ficha de tema', () => {
 
     expect(await screen.findByText('Material del tema')).toBeInTheDocument();
     expect(screen.getAllByText('Apuntes de Constitución')).toHaveLength(1);
+    // El material abre la biblioteca en el documento del que sale.
+    expect(screen.getByRole('link', { name: 'Apuntes de Constitución' })).toHaveAttribute(
+      'href',
+      '/biblioteca?documento=doc-1',
+    );
     expect(screen.getByText(/pág\. 3/)).toBeInTheDocument();
     expect(
       screen.getByText('La Constitución es la norma suprema del ordenamiento jurídico.'),

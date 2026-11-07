@@ -176,12 +176,12 @@ function stubQuestions(overrides: Record<string, StubbedRoute> = {}) {
   });
 }
 
-function renderPreguntas() {
+function renderPreguntas(route = '/preguntas') {
   return renderWithProviders(
     <AppShell>
       <QuestionsPage />
     </AppShell>,
-    { route: '/preguntas' },
+    { route },
   );
 }
 
@@ -212,6 +212,15 @@ async function abrirPregunta(posicion: number) {
 }
 
 describe('preguntas: el banco', () => {
+  it('abre el conjunto y la pregunta enlazados desde la ficha del tema', async () => {
+    stubQuestions();
+    renderPreguntas('/preguntas?conjunto=set-1&pregunta=q-2');
+
+    expect(
+      await screen.findByRole('heading', { name: 'Pregunta 2' }),
+    ).toBeInTheDocument();
+  });
+
   it('lista el conjunto con sus recuentos y el estado de su clave', async () => {
     stubQuestions();
     renderPreguntas();

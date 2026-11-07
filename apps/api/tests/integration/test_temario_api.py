@@ -192,6 +192,8 @@ def test_la_ficha_de_un_tema_dice_en_que_convocatorias_aparece(cliente) -> None:
     assert ficha["node"]["description"], "el tema debe llegar con sus apuntes"
     assert [aparicion["convocation_code"] for aparicion in ficha["appears_in"]] == ["tai-age-2025"]
     assert ficha["appears_in"][0]["role"] == "primary"
+    # La ficha puede enlazar a las bases: el enlace viaja con la convocatoria.
+    assert ficha["appears_in"][0]["official_url"].startswith("https://www.boe.es/")
 
     # Llegando desde la convocatoria, la ficha trae sus particularidades.
     con_contexto = test_client.get(

@@ -86,6 +86,8 @@ class AppearanceView:
     convocation_code: str
     convocation_title: str
     convocation_status: str
+    #: Enlace oficial (o del listado, si la convocatoria está por confirmar).
+    official_url: str
     role: str
     source_reference: str | None
     omitted: bool

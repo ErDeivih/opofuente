@@ -60,28 +60,40 @@ function AppearanceItem({
         appearance.source_reference !== undefined && (
           <p className="quote">{appearance.source_reference}</p>
         )}
-      {tieneDetalle && (
-        <p className="appearance__action">
-          {selected ? (
-            <span className="hint">Convocatoria elegida</span>
-          ) : (
-            <Link to={temarioHref(nodeId, appearance.convocation_id)}>Ver particularidades</Link>
-          )}
-        </p>
-      )}
+      <p className="appearance__links">
+        <a href={appearance.official_url} target="_blank" rel="noreferrer noopener">
+          {appearance.convocation_status === 'draft' ? 'Ver el anuncio' : 'Bases oficiales'}
+        </a>
+        {tieneDetalle && (
+          <>
+            {' · '}
+            {selected ? (
+              <span className="hint">Convocatoria elegida</span>
+            ) : (
+              <Link to={temarioHref(nodeId, appearance.convocation_id)}>Ver particularidades</Link>
+            )}
+          </>
+        )}
+      </p>
     </li>
   );
 }
 
 /** Junta el material de la misma obra: tres filas con el mismo título no aportan nada. */
-function agruparMateriales(materials: NodeMaterial[]): { title: string; items: NodeMaterial[] }[] {
-  const grupos: { title: string; items: NodeMaterial[] }[] = [];
+function agruparMateriales(
+  materials: NodeMaterial[],
+): { title: string; documentId: string | null; items: NodeMaterial[] }[] {
+  const grupos: { title: string; documentId: string | null; items: NodeMaterial[] }[] = [];
   for (const material of materials) {
     const ultimo = grupos[grupos.length - 1];
     if (ultimo !== undefined && ultimo.title === material.title) {
       ultimo.items.push(material);
     } else {
-      grupos.push({ title: material.title, items: [material] });
+      grupos.push({
+        title: material.title,
+        documentId: material.document_id ?? null,
+        items: [material],
+      });
     }
   }
   return grupos;
@@ -126,7 +138,17 @@ function ApuntesMateriales({ nodeId }: { nodeId: string }) {
       <ul className="material-list">
         {agruparMateriales(materiales.data.materials).map((grupo) => (
           <li key={grupo.title} className="material">
-            <h4 className="material__title">{grupo.title}</h4>
+            <h4 className="material__title">
+              {grupo.documentId === null ? (
+                grupo.title
+              ) : (
+                <Link
+                  to={`/biblioteca?documento=${encodeURIComponent(grupo.documentId)}`}
+                >
+                  {grupo.title}
+                </Link>
+              )}
+            </h4>
             <ul className="material__pieces">
               {grupo.items.map((material) => (
                 <li key={`${material.subject_type}-${material.subject_id}`} className="material__piece">
@@ -189,6 +211,15 @@ function PreguntasDelTema({ nodeId }: { nodeId: string }) {
                     {pregunta.is_reserve && <StatusBadge tone="info">Reserva</StatusBadge>}
                   </div>
                   <p className="question__stem">{pregunta.stem}</p>
+                  <p className="question__action">
+                    <Link
+                      to={`/preguntas?conjunto=${encodeURIComponent(
+                        pregunta.question_set_id,
+                      )}&pregunta=${encodeURIComponent(pregunta.id)}`}
+                    >
+                      Ver en el banco
+                    </Link>
+                  </p>
                 </li>
               ))}
             </ul>

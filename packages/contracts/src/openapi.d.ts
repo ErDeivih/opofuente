@@ -2697,6 +2697,8 @@ export interface components {
             convocation_status: string;
             /** Convocation Title */
             convocation_title: string;
+            /** Official Url */
+            official_url: string;
             /** Omitted */
             omitted: boolean;
             /** Role */

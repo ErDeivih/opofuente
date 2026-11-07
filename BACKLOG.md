@@ -32,6 +32,7 @@ La siguiente es B-003.
 | [B-013](#b-013) | Contenido de la ficha de tema: preguntas del banco y material del tema | 2 | **hecha** (2026-11-06) | B-005 |
 | [B-014](#b-014) | Apuntes del temario común: separar título y descripción en la v1 | 2 | **hecha** (2026-11-06) | B-002 |
 | [B-015](#b-015) | Revisión visual del temario en móvil y PC y textos §8 | 2 | **hecha** (2026-11-06) | B-005 |
+| [B-016](#b-016) | Enlazar la ficha del tema con biblioteca, banco y bases oficiales | 2 | **hecha** (2026-11-07) | B-013 |
 
 ## Detalle
 
@@ -325,6 +326,29 @@ textos según `DOCTRINA-CALIDAD.md` §8.
   backend**, 212 Vitest, contrato, builds, migración y doble siembra). En la 17 pasan el temario
   común y las convocatorias C1; solo falla la verificación de fuentes oficiales de los perfiles
   (DEBT-028, previo). E2E no ejecutada.
+
+### B-016
+
+**HECHA (2026-11-07).** La ficha de tema ya no es un callejón: apuntes, preguntas y convocatorias
+llevan a su sitio.
+
+- **Entregado:** `AppearanceSchema` incluye `official_url` (bases oficiales o anuncio del listado) y
+  la ficha enlaza cada convocatoria («Bases oficiales» para confirmadas, «Ver el anuncio» para las
+  `draft`); el material abre la biblioteca en su documento (`/biblioteca?documento=<id>`); cada
+  pregunta abre el banco con su conjunto y su pregunta (`/preguntas?conjunto=<id>&pregunta=<id>`), y
+  `QuestionsPage` acepta ese estado inicial. Contrato y tipos regenerados.
+- **Pruebas:** API comprueba que la apariencia trae el enlace; Vitest: enlaces de bases, de
+  biblioteca y de banco, y apertura del banco por enlace directo (deep link). **17 ficheros / 213
+  pruebas**.
+- **Revisión visual:** ficha a 400 y 1280 px con API+web temporales (sin desbordes ni errores de
+  consola); servidores y temporales cerrados al terminar. **No se dejan servidores ni navegadores
+  abiertos.**
+- **Evidencia:** puertas 1–16 en verde (511 unitarias + 484 integración + 23 contrato = **1018
+  backend**, 213 Vitest, contrato, builds, migración y doble siembra). En la 17 pasan el temario
+  común y las convocatorias C1; solo falla la verificación de fuentes oficiales de los perfiles
+  (DEBT-028, previo). E2E no ejecutada.
+- **Decisión:** D-026.
+- **Criterio de cierre:** cumplido.
 
 ## Fuentes para generar tareas nuevas
 

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 
 import { isApiError } from '../api/client';
 import type { CsvMapping, ImportKind, IssueKind, QuestionImportReport } from '../api/questions';
@@ -60,9 +61,15 @@ function plural(cantidad: number, singular: string, plurales: string): string {
  *    pueden descargar para arreglarlas, en lugar de desaparecer en silencio.
  */
 export function QuestionsPage() {
+  const [searchParams] = useSearchParams();
+  // La ficha del tema enlaza aquí con `?conjunto=…&pregunta=…`: abrir el banco donde está la
+  // pregunta evita que el alumno tenga que buscarla. Es un estado **inicial**, no una atadura: en
+  // cuanto elige otra cosa, manda la pantalla.
+  const conjuntoEnlazado = searchParams.get('conjunto');
+  const preguntaEnlazada = searchParams.get('pregunta');
   const [tab, setTab] = useState<TabId>('preguntas');
-  const [setIdElegido, setSetIdElegido] = useState<string | null>(null);
-  const [questionId, setQuestionId] = useState<string | null>(null);
+  const [setIdElegido, setSetIdElegido] = useState<string | null>(conjuntoEnlazado);
+  const [questionId, setQuestionId] = useState<string | null>(preguntaEnlazada);
   const [filters, setFilters] = useState({
     status: '',
     originType: '',

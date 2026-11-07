@@ -80,6 +80,8 @@ class AppearanceSchema(BaseModel):
     convocation_title: str
     #: Estado de la convocatoria: `draft` son entradas por confirmar (listados sin bases).
     convocation_status: str
+    #: Enlace oficial; en las `draft` apunta al anuncio, no a unas bases verificadas.
+    official_url: str
     role: str
     source_reference: str | None = None
     omitted: bool
