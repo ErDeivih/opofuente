@@ -23,8 +23,8 @@ La siguiente es B-003.
 | [B-004](#b-004) | API y contrato del temario común y de las particularidades | 2 | **hecha** (2026-11-05) | B-002 |
 | [B-005](#b-005) | Interfaz: índice del temario, ficha de tema y avance | 2 | **hecha** (2026-11-05) | B-004 |
 | [B-006](#b-006) | Importar las convocatorias C1 de `c1.txt` y del inventario como referencias | 2 | **hecha** (2026-11-05) | B-004 |
-| [B-007](#b-007) | Entrega del slice `docs/slices/S13.md` | 1 | lista | B-005 |
-| [B-008](#b-008) | Poner al día `docs/product-spec/03_DATA-MODEL.md` y el índice de ADR | 1 | lista | B-001 |
+| [B-007](#b-007) | Entrega del slice `docs/slices/S13.md` | 1 | **hecha** (2026-11-07) | B-005 |
+| [B-008](#b-008) | Poner al día `docs/product-spec/03_DATA-MODEL.md` y el índice de ADR | 1 | **hecha** (2026-11-07) | B-001 |
 | [B-009](#b-009) | Investigación encomendada: cómo organizan el temario las academias C1 | 1 | lista | — |
 | [B-010](#b-010) | Decidir la bajada de `0021` después de sembrar el temario común | 2 | lista | B-002 |
 | [B-011](#b-011) | Estabilizar las pruebas de API que compiten con el worker de fondo | 1 | lista | — |
@@ -199,18 +199,28 @@ el temario común, sin copiarlo.
 
 ### B-007
 
-**Entrega del slice** con el formato obligatorio de `AGENTS.md`
-(`docs/slices/S13.md`): qué se construyó, cómo fluye la información, ficheros y migraciones,
-patrones, seguridad, puertas ejecutadas, prueba manual, limitaciones, qué se rompe si cambias X, qué
-criticaría un revisor senior. Sin declarar pruebas no ejecutadas.
+**HECHA (2026-11-07).** Entrega del slice S13 en `docs/slices/S13.md`, con las diez secciones que
+exige `AGENTS.md` y sin declarar pruebas que no se hayan ejecutado.
+
+- **Contenido:** qué se construyó (B-001…B-016), flujo de la información, ficheros y migraciones
+  (`0021`/`0022`), patrones y decisiones (D-001…D-026, ADR-018), seguridad y privacidad, puertas
+  ejecutadas con sus cifras reales, prueba manual (Playwright a 400/1280 px), limitaciones conocidas,
+  qué se rompe si se cambia cada pieza y qué criticaría un revisor senior.
+- **Honestidad:** E2E no ejecutada, DEBT-028 abierta (puerta 17 de perfiles), B-012 pendiente,
+  actualización de versión no construida y ficha vacía sin mapeos reales.
+- **Criterio de cierre:** cumplido.
 
 ### B-008
 
-**Documentación al día:** `docs/product-spec/03_DATA-MODEL.md` §2 (sustituir el modelo
-convocatoria→nodos por el de temario común + refs, y `curriculum_equivalences` creada),
-`13_DECISIONS-AND-OPEN-QUESTIONS.md` (preguntas O1–O4 de `ESPECIFICACION.md` §7) y el índice de ADR.
-ADR-018 ya está ratificada en esta sesión (aprobación de David registrada en `ESPECIFICACION.md`);
-queda enlazarla en el índice y reflejar O1–O4.
+**HECHA (2026-11-07).** Documentación al día con el modelo del temario común.
+
+- **Entregado:** `docs/product-spec/03_DATA-MODEL.md` §2 reescrito (curricula, versiones, nodos por
+  versión, refs con papeles, ajustes, equivalencias, marcas de estudio y su relación con
+  `curriculum_mappings`); `13_DECISIONS-AND-OPEN-QUESTIONS.md` registra las decisiones D015–D017
+  (O1/O2: temario único referenciado; O3: re-atribución con equivalencias aceptadas; O4:
+  convocatorias C1 como tarea propia con confianza explícita); `docs/decisions/README.md` marca
+  ADR-018 como ratificada e implementada, y el encabezado de ADR-018 refleja el alcance real de S13.
+- **Criterio de cierre:** cumplido.
 
 ### B-009
 

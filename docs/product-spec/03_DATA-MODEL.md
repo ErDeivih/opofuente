@@ -10,7 +10,7 @@
 - JSON solo para payloads variables no consultados; relaciones importantes son tablas.
 - No usar cascadas destructivas desde oposición a documentos compartidos.
 
-## 2. Oposiciones y programa
+## 2. Oposiciones y convocatorias
 
 ### `oppositions`
 
@@ -23,18 +23,76 @@
 
 Estados: `draft`, `active`, `superseded`, `archived`. Solo una activa por oposición.
 
+## 2 bis. Temario común versionado (S13)
+
+La decisión es de ADR-018: **un solo temario común** y convocatorias que lo **referencian**, sin
+copiar sus nodos. El programa publicado de cada convocatoria se conserva como evidencia, pero el
+alumno estudia el común.
+
+### `curricula`
+
+`id`, `code` único (`informatica-c1`), `kind` (`common` / `published`), `name`, `group_code`,
+`family`, `created_at`, `updated_at`.
+
+- `common`: el temario único que estudian las convocatorias de informática C1.
+- `published`: el programa publicado de una convocatoria concreta, conservado tal cual (B-001). No se
+  copia al común: se enlaza con una referencia.
+
+### `curriculum_versions`
+
+`id`, `curriculum_id`, `version_no`, `code` único, `title`, `status` (`draft` / `active` /
+`superseded`), `source_reference`, `created_at`.
+
+Una versión **activa no se edita** (I9): un cambio de contenido es otra versión. La v1 se publica
+desde un fixture con huella sha256 y solo si los recuentos coinciden (5 bloques / 40 temas / 45
+nodos).
+
 ### `curriculum_nodes`
 
-Árbol mediante `parent_id`: bloque, tema, epígrafe. Campos: `id`, `convocation_version_id`,
-`parent_id`, `node_type`, `official_code`, `title`, `description`, `position`, `path`, `depth`.
+Árbol por `parent_id`: bloque, tema y epígrafe. Campos: `id`, `curriculum_version_id`, `parent_id`,
+`node_type`, `official_code`, `title`, `description` (los apuntes de la ficha), `position`, `path`,
+`depth`, `origin_kind`, `origin_convocation_version_id`.
 
-El `path` materializado acelera lectura pero se recalcula desde la jerarquía. La identidad de un nodo
-pertenece a una convocatoria; las equivalencias entre convocatorias se expresan aparte.
+`UNIQUE(curriculum_version_id, path)`. El `path` materializado acelera la lectura, pero la identidad
+del nodo pertenece a **su versión**; una convocatoria no tiene nodos propios, tiene una referencia.
+
+### `convocation_curriculum_refs`
+
+`id`, `convocation_version_id`, `curriculum_version_id`, `role`, `source_reference`, `created_at`.
+
+Papeles: `primary` (el temario que estudia), `official` (el programa publicado de esa convocatoria)
+y `complementary` (temario adicional). Una convocatoria tiene como mucho una referencia `primary`.
+La convocatoria **referencia** la versión y su cita; no la copia.
+
+### `convocation_curriculum_adjustments`
+
+`id`, `ref_id`, `curriculum_node_id`, `kind` (`omitted` / `renamed` / `renumbered` / `weighted`),
+`official_code_override`, `title_override`, `weight`, `evidence_quote`, `created_at`.
+
+`UNIQUE(ref_id, curriculum_node_id, kind)`. Se aplican **al componer** el temario efectivo de esa
+convocatoria: `omitted` excluye el nodo y su subárbol; `renamed` y `renumbered` solo cambian lo que
+se muestra; `weighted` no toca el árbol y se usará en simulacros. Borrar el ajuste devuelve el
+temario completo sin tocar la versión.
 
 ### `curriculum_equivalences`
 
-Relaciona nodos parecidos entre convocatorias/oposiciones con `relation_type` y confirmación humana.
-Nunca implica automáticamente mismo nivel o preguntas intercambiables.
+`id`, `source_node_id` (nodo del programa publicado), `target_node_id` (nodo del común),
+`relation_type` (`equivalent` / `subset` / `superset` / `partial`), `confidence`, `status`
+(`proposed` / `accepted` / `rejected`), `evidence_note`, `created_at`, `decided_at`.
+
+`UNIQUE(source_node_id, target_node_id)`. Solo las `accepted` se aplican al material; una equivalencia
+no implica automáticamente el mismo nivel ni preguntas intercambiables.
+
+### `curriculum_study_marks`
+
+`id`, `curriculum_node_id` único, `marked_at`, `note`.
+
+Marca local del alumno (una por nodo). La FK es `CASCADE`: un nodo sin material se puede borrar y su
+marca se va con él. El **avance** por bloque y total se calcula al leer a partir de las marcas y de la
+actividad real (preguntas mapeadas y fallos); no se guarda ningún porcentaje.
+
+El material se sigue asignando a nodos con `curriculum_mappings` (§9), que es `RESTRICT`: un nodo con
+material asignado no se retira sin decidir antes qué pasa con ese material (ADR-007).
 
 ## 3. Ingestión y archivos
 

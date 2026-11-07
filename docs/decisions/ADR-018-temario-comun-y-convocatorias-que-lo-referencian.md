@@ -1,9 +1,9 @@
 # ADR-018 — Temario común único y convocatorias que lo referencian
 
 - **Estado:** aceptada (4 de noviembre de 2026) por el propietario, que aprobó `ESPECIFICACION.md` §5,
-  §6 y las recomendaciones O1–O4 tal cual. Implementada la parte de esquema en la migración `0021`
-  (tarea B-001); el contenido del temario común, la API y la interfaz van en B-002/B-004/B-005. Las
-  decisiones operativas tomadas al implementarla están en `DECISIONES.md` (D-006 a D-009).
+  §6 y las recomendaciones O1–O4 tal cual. Implementada en S13: esquema (`0021`), marca de estudio
+  (`0022`), contenido v1, API, interfaz y convocatorias C1 que referencian el común (B-001 a B-016).
+  Las decisiones operativas tomadas al implementarla están en `DECISIONES.md` (D-006 a D-026).
 - **Fecha:** 4 de noviembre de 2026
 - **Ámbito:** modelo de datos del temario; sustituye el papel de `curriculum_nodes` de ADR-005
 - **Motivo:** decisión ya tomada por el propietario (2026-11-04): **un solo temario común** para todas

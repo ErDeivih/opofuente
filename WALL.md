@@ -46,3 +46,7 @@ calcula en el servidor y se pinta en la misma pantalla.
   worker, árbol más limpio y ficha que agrupa las convocatorias por confirmar (D-025).
 - [x] B-016 — ficha enlazada: material → biblioteca, preguntas → banco, convocatorias → bases
   oficiales o anuncio (D-026). Revisada de nuevo a 400 y 1280 px.
+- [x] B-007 — slice doc `docs/slices/S13.md` con las diez secciones y la evidencia real (E2E no
+  ejecutada y DEBT-028 declaradas, sin maquillar).
+- [x] B-008 — modelo de datos al día (`03_DATA-MODEL.md`), decisiones D015–D017 y ADR-018 ratificada e
+  implementada en el índice.

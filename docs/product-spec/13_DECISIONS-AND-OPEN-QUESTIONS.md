@@ -18,6 +18,9 @@
 | D012 | Perfiles TAI-2025 y GC-2026 versionados | no convertir convocatorias en constantes |
 | D013 | No cubrir psicofísico GC | seguridad, alcance y profesionales |
 | D014 | Exportar a Obsidian/Anki | portabilidad y herramientas maduras |
+| D015 | Un solo temario común versionado; las convocatorias lo **referencian** (O1/O2) | evitar 40 temas copiados por convocatoria y dos verdades del mismo temario |
+| D016 | Re-atribuir al común preguntas y fallos con equivalencias **aceptadas**, informe por fila e inverso (O3) | lo dudoso se queda donde estaba y se revisa; nada se mueve a ciegas |
+| D017 | Las convocatorias C1 se importan como tarea propia, con ref `primary` y estado de confianza (O4) | un listado sin bases no puede parecer una convocatoria confirmada |
 
 ## Incógnitas con default no bloqueante
 

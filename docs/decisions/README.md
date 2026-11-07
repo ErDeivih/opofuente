@@ -22,7 +22,7 @@ Formato: `ADR-NNN-titulo.md` con contexto, opciones, datos, decisión, consecuen
 | [ADR-015](ADR-015-tercera-oposicion-celador.md) | Tercera oposición: Celador/a del SACYL | aceptada (22/09/2026) por decisión del propietario |
 | [ADR-016](ADR-016-anki-y-markdown-como-material.md) | Anki y Markdown entran como material, y con qué se lee una baraja | aceptada (S12.3) |
 | [ADR-017](ADR-017-que-hace-la-aplicacion-sola.md) | Qué hace la aplicación sola y qué sigue pidiendo una persona | aceptada (S12.5) |
-| [ADR-018](ADR-018-temario-comun-y-convocatorias-que-lo-referencian.md) | Temario común único, versionado, y convocatorias que lo referencian | propuesta (04/11/2026), pendiente de ratificación |
+| [ADR-018](ADR-018-temario-comun-y-convocatorias-que-lo-referencian.md) | Temario común único, versionado, y convocatorias que lo referencian | aceptada y ratificada por el propietario (04/11/2026); implementada en S13 (migraciones `0021` y `0022`) |
 
 La deuda técnica obligatoria (con su slice y su criterio de cierre) se registra aparte en
 [`docs/DEBT.md`](../DEBT.md).
