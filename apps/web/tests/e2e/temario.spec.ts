@@ -1,7 +1,16 @@
+import path from 'node:path';
+
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
 
 const API = 'http://127.0.0.1:8765/api/v1';
+
+/**
+ * Dónde se guardan las capturas de esta prueba. Por defecto, en `test-results` (efímero). Para
+ * dejar evidencia en el repositorio se pasa `OPOFUENTE_CAPTURAS_DIR=docs/capturas` al ejecutar la
+ * suite; así las capturas de la revisión visual no se pierden con la limpieza de Playwright.
+ */
+const CAPTURAS = process.env.OPOFUENTE_CAPTURAS_DIR ?? path.join('test-results');
 
 interface NodoApi {
   id: string;
@@ -74,7 +83,7 @@ test('S13: el temario común enseña sus cinco bloques y cuarenta temas', async 
     await expect(page.getByRole('list', { name: 'Temario común' })).toBeVisible();
     await sinDesborde(page);
     await page.screenshot({
-      path: `test-results/temario-indice-${String(ancho)}.png`,
+      path: path.join(CAPTURAS, `temario-indice-${String(ancho)}.png`),
       fullPage: true,
     });
   }
@@ -123,7 +132,7 @@ test('S13: la ficha del tema enlaza las convocatorias C1 que lo estudian', async
     ).toBeVisible();
     await sinDesborde(page);
     await page.screenshot({
-      path: `test-results/temario-ficha-${String(ancho)}.png`,
+      path: path.join(CAPTURAS, `temario-ficha-${String(ancho)}.png`),
       fullPage: true,
     });
   }

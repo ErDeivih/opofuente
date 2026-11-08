@@ -61,3 +61,5 @@ calcula en el servidor y se pinta en la misma pantalla.
 - [x] E2E del temario (2026-11-08): **3 pruebas nuevas** (índice 5/40 + búsqueda, ficha con las
   convocatorias C1 enlazadas y accesibilidad), con capturas a 390 y 1280 px; puerta 18 en **52/52**.
 - [ ] B-017 (simulacro por bloque): **bloqueada** a propósito (Nivel 3, alcance de S07); ver D-029.
+- [x] Capturas de la revisión visual (2026-11-08): índice y ficha a 390/1280 px en
+  `docs/capturas/`, con su `LEEME.md` y enlazadas desde `S13.md`.
