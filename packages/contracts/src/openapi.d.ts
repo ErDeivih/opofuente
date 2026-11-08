@@ -3371,6 +3371,11 @@ export interface components {
          * @description Lo que se manda para montar una sesión.
          */
         CreateSessionSchema: {
+            /**
+             * Block Node Id
+             * @description Solo en `block_practice`: bloque del temario común del que salen las preguntas aceptadas de sus temas.
+             */
+            block_node_id?: string | null;
             /** Convocation Version Id */
             convocation_version_id?: string | null;
             /** Feedback */
@@ -3379,7 +3384,7 @@ export interface components {
              * Mode
              * @enum {string}
              */
-            mode: "practice" | "error_review" | "official_exam" | "mock_exam" | "diagnostic";
+            mode: "practice" | "error_review" | "official_exam" | "mock_exam" | "diagnostic" | "block_practice";
             /** Opposition Id */
             opposition_id: string;
             /**
@@ -3713,7 +3718,7 @@ export interface components {
              * Mode
              * @enum {string}
              */
-            mode: "practice" | "error_review" | "official_exam" | "mock_exam" | "diagnostic";
+            mode: "practice" | "error_review" | "official_exam" | "mock_exam" | "diagnostic" | "block_practice";
             /** Sample Size */
             sample_size: number;
             /** Session Id */
@@ -6108,7 +6113,7 @@ export interface components {
              * Mode
              * @enum {string}
              */
-            mode: "practice" | "error_review" | "official_exam" | "mock_exam" | "diagnostic";
+            mode: "practice" | "error_review" | "official_exam" | "mock_exam" | "diagnostic" | "block_practice";
             /** Note */
             note?: string | null;
             /** Shuffle */
@@ -6199,7 +6204,7 @@ export interface components {
              * Mode
              * @enum {string}
              */
-            mode: "practice" | "error_review" | "official_exam" | "mock_exam" | "diagnostic";
+            mode: "practice" | "error_review" | "official_exam" | "mock_exam" | "diagnostic" | "block_practice";
             /** Official Available */
             official_available: boolean;
             /** Official Note */
@@ -6247,7 +6252,7 @@ export interface components {
              * Mode
              * @enum {string}
              */
-            mode: "practice" | "error_review" | "official_exam" | "mock_exam" | "diagnostic";
+            mode: "practice" | "error_review" | "official_exam" | "mock_exam" | "diagnostic" | "block_practice";
             /** Opposition Id */
             opposition_id: string;
             /** Question Set Id */

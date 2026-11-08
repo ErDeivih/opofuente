@@ -2466,6 +2466,18 @@
       "CreateSessionSchema": {
         "description": "Lo que se manda para montar una sesión.",
         "properties": {
+          "block_node_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Solo en `block_practice`: bloque del temario común del que salen las preguntas aceptadas de sus temas.",
+            "title": "Block Node Id"
+          },
           "convocation_version_id": {
             "anyOf": [
               {
@@ -2498,7 +2510,8 @@
               "error_review",
               "official_exam",
               "mock_exam",
-              "diagnostic"
+              "diagnostic",
+              "block_practice"
             ],
             "title": "Mode",
             "type": "string"
@@ -3457,7 +3470,8 @@
               "error_review",
               "official_exam",
               "mock_exam",
-              "diagnostic"
+              "diagnostic",
+              "block_practice"
             ],
             "title": "Mode",
             "type": "string"
@@ -9883,7 +9897,8 @@
               "error_review",
               "official_exam",
               "mock_exam",
-              "diagnostic"
+              "diagnostic",
+              "block_practice"
             ],
             "title": "Mode",
             "type": "string"
@@ -10173,7 +10188,8 @@
               "error_review",
               "official_exam",
               "mock_exam",
-              "diagnostic"
+              "diagnostic",
+              "block_practice"
             ],
             "title": "Mode",
             "type": "string"
@@ -10319,7 +10335,8 @@
               "error_review",
               "official_exam",
               "mock_exam",
-              "diagnostic"
+              "diagnostic",
+              "block_practice"
             ],
             "title": "Mode",
             "type": "string"

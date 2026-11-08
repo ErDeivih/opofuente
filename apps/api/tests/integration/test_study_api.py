@@ -9,11 +9,16 @@ lleve la clave por ninguna parte mientras no se pueda enseñar.
 from __future__ import annotations
 
 import json
+from datetime import UTC, datetime
 from typing import Any
+from uuid import uuid4
 
 from fastapi.testclient import TestClient
+from sqlalchemy import text
 
 from opofuente.config import Settings
+from opofuente.infrastructure.db import build_engine
+from tests.conftest import seed_common_curriculum
 
 ALLOWED_ORIGIN = {"Origin": "http://127.0.0.1:5173"}
 
@@ -219,19 +224,20 @@ def test_un_modo_que_no_existe_no_entra_por_el_contrato(
     assert respuesta.json()["code"] == "validation_error"
 
 
-def test_los_cinco_modos_del_vocabulario_se_pueden_pedir(
+def test_los_seis_modos_del_vocabulario_se_pueden_pedir(
     seeded_settings: Settings, seeded_client: TestClient
 ) -> None:
-    """Ningún modo del contrato responde «no implementado»: era el criterio 3 de DEBT-012.
-
-    Se piden los cinco con un conjunto preparado para el que más exige (práctica y examen oficial) y
-    se
-    comprueba que el que falla, si falla, falla por **falta de material** y no por no estar
-    construido.
-    """
+    """Ningún modo del contrato responde «no implementado»: era el criterio 3 de DEBT-012."""
     set_id = _conjunto(seeded_client, preguntas=80, reservas=5, texto=_texto_largo(80, reservas=5))
     oposicion = _oposicion_activa(seeded_client)
-    modos = ["practice", "official_exam", "mock_exam", "diagnostic", "error_review"]
+    modos = [
+        "practice",
+        "official_exam",
+        "mock_exam",
+        "diagnostic",
+        "error_review",
+        "block_practice",
+    ]
 
     for modo in modos:
         respuesta = seeded_client.post(
@@ -241,7 +247,7 @@ def test_los_cinco_modos_del_vocabulario_se_pueden_pedir(
                 "mode": modo,
                 "sources": (
                     []
-                    if modo in ("diagnostic", "error_review")
+                    if modo in ("diagnostic", "error_review", "block_practice")
                     else [
                         {
                             "question_set_id": set_id,
@@ -265,8 +271,80 @@ def test_los_cinco_modos_del_vocabulario_se_pueden_pedir(
             assert respuesta.status_code == 409, respuesta.text
             assert "no hay nada vencido" in respuesta.json()["detail"]
             continue
+        if modo == "block_practice":
+            # La práctica por bloque exige el bloque; sin él se niega con el motivo, no por no
+            # existir el modo.
+            assert respuesta.status_code == 409, respuesta.text
+            assert "necesita el bloque" in respuesta.json()["detail"]
+            continue
         assert respuesta.status_code == 201, f"{modo}: {respuesta.text}"
         assert respuesta.json()["mode"] == modo
+
+
+def test_la_practica_por_bloque_compone_la_sesion_con_las_preguntas_del_bloque(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """B-017: el bloque compone una sesión real con las preguntas aceptadas de sus temas."""
+    seed_common_curriculum(seeded_settings)
+    set_id = _conjunto(seeded_client, preguntas=1)
+    arbol = seeded_client.get("/api/v1/curricula/informatica-c1").json()
+    bloque = arbol["nodes"][0]
+    tema = bloque["children"][0]
+    oposicion = _oposicion_activa(seeded_client)
+
+    engine = build_engine(seeded_settings.data_paths.database)
+    try:
+        with engine.begin() as conexion:
+            pregunta_id = conexion.execute(
+                text(
+                    "SELECT id FROM question_versions "
+                    "WHERE question_set_id = :set AND status != 'superseded' LIMIT 1"
+                ),
+                {"set": set_id},
+            ).scalar_one()
+            ahora = datetime.now(UTC)
+            conexion.execute(
+                text(
+                    "INSERT INTO curriculum_mappings "
+                    "(id, curriculum_node_id, subject_type, subject_id, coverage_type, depth, "
+                    "confidence, status, created_at, approved_at) VALUES "
+                    "(:id, :nodo, 'question_version', :pregunta, 'complete', 0, 1.0, 'accepted', "
+                    ":ahora, :ahora)"
+                ),
+                {
+                    "id": str(uuid4()),
+                    "nodo": tema["id"],
+                    "pregunta": pregunta_id,
+                    "ahora": ahora,
+                },
+            )
+    finally:
+        engine.dispose()
+
+    creada = seeded_client.post(
+        "/api/v1/study-sessions",
+        json={
+            "opposition_id": oposicion["id"],
+            "mode": "block_practice",
+            "sources": [],
+            "block_node_id": bloque["id"],
+            "feedback": "immediate",
+        },
+        headers=ALLOWED_ORIGIN,
+    )
+    assert creada.status_code == 201, creada.text
+    sesion = creada.json()
+    assert sesion["mode"] == "block_practice"
+    assert "Práctica libre del bloque" in (sesion["configuration"]["note"] or ""), (
+        "la nota dice qué es"
+    )
+
+    arrancada = seeded_client.post(
+        f"/api/v1/study-sessions/{sesion['id']}/start", headers=ALLOWED_ORIGIN
+    )
+    assert arrancada.status_code == 200, arrancada.text
+    actual = seeded_client.get(f"/api/v1/study-sessions/{sesion['id']}/current-question").json()
+    assert actual["question"]["stem"].startswith("El plazo del procedimiento"), "es la del tema"
 
 
 # --- la solución no se filtra -------------------------------------------------------------------

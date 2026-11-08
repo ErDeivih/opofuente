@@ -29,7 +29,7 @@ La siguiente es B-003.
 | [B-010](#b-010) | Decidir la bajada de `0021` después de sembrar el temario común | 2 | **hecha** (2026-11-07) | B-002 |
 | [B-011](#b-011) | Estabilizar las pruebas de API que compiten con el worker de fondo | 1 | **hecha** (2026-11-07) | — |
 | [B-012](#b-012) | Acotar por versión la resolución de nodo por `path` en clasificación | 2 | **hecha** (2026-11-07) | B-004 |
-| [B-017](#b-017) | Práctica libre por bloque del temario común (vista del banco) | 2 | **hecha** (2026-11-08) | B-016 |
+| [B-017](#b-017) | Práctica por bloque del temario común (modo de sesión `block_practice`) | 2 | **hecha** (2026-11-08) | B-016 |
 | [B-013](#b-013) | Contenido de la ficha de tema: preguntas del banco y material del tema | 2 | **hecha** (2026-11-06) | B-005 |
 | [B-014](#b-014) | Apuntes del temario común: separar título y descripción en la v1 | 2 | **hecha** (2026-11-06) | B-002 |
 | [B-015](#b-015) | Revisión visual del temario en móvil y PC y textos §8 | 2 | **hecha** (2026-11-06) | B-005 |
@@ -363,17 +363,18 @@ llevan a su sitio.
 
 ### B-017
 
-**HECHA (2026-11-08, alcance: vista del banco).** Práctica libre por bloque: las preguntas
-**aceptadas** de los temas del bloque en una sola lectura, con enlace a su ficha del banco.
+**HECHA (2026-11-08).** Práctica por bloque con el modo de sesión `block_practice`: las preguntas
+**aceptadas** de los temas del bloque, con clave activa, composición congelada y corrección de S07.
 
-- **Qué se entrega:** `GET /curriculum-nodes/{id}/questions?include_descendants=true` (subárbol del
-  bloque en una consulta), página `/temario/:id/practicar` y un enlace «Practicar este bloque» en cada
-  fila del avance. No crea sesión, no cronometra y no puntúa; la sesión por bloque con reglas de S07
-  queda aparte (D-029).
-- **Criterio de aceptación cumplido:** bloque con preguntas → las aceptadas de sus temas; bloque sin
-  preguntas → estado vacío, sin lista fingida; el tema sigue devolviendo solo lo suyo; ninguna
-  pregunta rechazada o sustituida entra. Prueba de integración y E2E.
-- **Depende de:** B-016 (enlace ficha→banco). D-029 recoge el alcance elegido y su reversión.
+- **Qué se entrega:** modo `block_practice`; `block_node_id` en `POST /study-sessions`; migración
+  `0023_block_practice`; botón «Empezar la práctica del bloque» en `/temario/:id/practicar`; etiqueta
+  de modo en la pantalla. Una sola parte de la convocatoria → su regla; varias → sin penalización y
+  con la nota de la sesión explicándolo; sin reservas ni tiempo.
+- **Criterio de aceptación cumplido:** bloque con preguntas → sesión con las aceptadas de sus temas;
+  bloque sin preguntas → 409, no sesión vacía; sin clave activa → 409; la pregunta servida es la del
+  tema; prueba de integración que crea y arranca la sesión. D-030.
+- **Depende de:** B-016 (enlace ficha→banco). D-029 recoge la primera versión (vista del banco),
+  superada por D-030 al cerrar el alcance de S07.
 
 ## Fuentes para generar tareas nuevas
 

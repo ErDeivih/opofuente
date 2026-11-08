@@ -44,6 +44,8 @@ class SessionMode(StrEnum):
     OFFICIAL_EXAM = "official_exam"
     MOCK_EXAM = "mock_exam"
     DIAGNOSTIC = "diagnostic"
+    #: B-017: práctica de un bloque del temario común, con las preguntas aceptadas de sus temas.
+    BLOCK_PRACTICE = "block_practice"
 
 
 #: Modos que este slice sabe construir y corregir de verdad.
@@ -53,6 +55,7 @@ SUPPORTED_MODES: tuple[SessionMode, ...] = (
     SessionMode.OFFICIAL_EXAM,
     SessionMode.MOCK_EXAM,
     SessionMode.DIAGNOSTIC,
+    SessionMode.BLOCK_PRACTICE,
 )
 
 

@@ -282,6 +282,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         profiles=SqlAlchemyProfileRepository(session_factory),
         clock=clock,
         review=review_service,
+        curriculum=curriculum_service,
     )
     # S12: copia, verificación y restauración. La migración y la comprobación van como funciones: al
     # restaurar hay que migrar la base recién colocada y comprobar que quedó sana.

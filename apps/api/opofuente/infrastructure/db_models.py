@@ -1517,7 +1517,8 @@ class StudySessionRecord(Base):
     __tablename__ = "study_sessions"
     __table_args__ = (
         CheckConstraint(
-            "mode IN ('practice', 'error_review', 'official_exam', 'mock_exam', 'diagnostic')",
+            "mode IN ('practice', 'error_review', 'official_exam', 'mock_exam', 'diagnostic', "
+            "'block_practice')",
             name="ck_session_mode",
         ),
         CheckConstraint(

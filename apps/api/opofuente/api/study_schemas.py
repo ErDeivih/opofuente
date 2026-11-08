@@ -21,7 +21,9 @@ from opofuente.api.question_schemas import OptionSchema, QuestionEvidenceSchema
 #: cerrar
 #: DEBT-012: `mock_exam` monta el perfil exacto sin llamarse oficial y `diagnostic` compone una
 #: muestra estratificada por tema y la lee con su intervalo.
-SessionModeName = Literal["practice", "error_review", "official_exam", "mock_exam", "diagnostic"]
+SessionModeName = Literal[
+    "practice", "error_review", "official_exam", "mock_exam", "diagnostic", "block_practice"
+]
 SessionStatusName = Literal["draft", "running", "finished", "abandoned"]
 FeedbackName = Literal["immediate", "at_end"]
 ConfidenceName = Literal["low", "medium", "high"]
@@ -72,6 +74,13 @@ class CreateSessionSchema(BaseModel):
         ge=1,
         le=50,
         description="Solo en `error_review`: cuántas preguntas vencidas entran como mucho.",
+    )
+    block_node_id: str | None = Field(
+        default=None,
+        description=(
+            "Solo en `block_practice`: bloque del temario común del que salen las preguntas "
+            "aceptadas de sus temas."
+        ),
     )
 
 

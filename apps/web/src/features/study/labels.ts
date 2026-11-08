@@ -14,6 +14,7 @@ export const MODE_LABEL: Record<StudySession['mode'], string> = {
   official_exam: 'examen oficial',
   mock_exam: 'simulacro',
   diagnostic: 'diagnóstico',
+  block_practice: 'práctica por bloque',
 };
 
 export const MODE_TONE: Record<StudySession['mode'], StatusTone> = {
@@ -23,6 +24,7 @@ export const MODE_TONE: Record<StudySession['mode'], StatusTone> = {
   // Un simulacro no es un examen oficial (06_QUESTIONS §5): mismo tono de aviso, palabra distinta.
   mock_exam: 'warning',
   diagnostic: 'info',
+  block_practice: 'info',
 };
 
 export const STATUS_LABEL: Record<StudySession['status'], string> = {

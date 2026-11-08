@@ -17,7 +17,7 @@ $env:OPOFUENTE_CAPTURAS_DIR = (Join-Path (Get-Location) 'docs/capturas')
 | `temario-indice-1280.png` | el mismo índice en escritorio a 1280×900 |
 | `temario-ficha-390.png` | ficha del tema 1 a 390×844: apuntes, preguntas, las 12 convocatorias C1 y la referencia del TAI, con sus enlaces oficiales |
 | `temario-ficha-1280.png` | la misma ficha en escritorio a 1280×900 |
-| `temario-practica-390.png` | práctica libre del bloque a 390×844: junta las preguntas aceptadas de sus temas (o dice que no hay) |
+| `temario-practica-390.png` | práctica por bloque a 390×844: junta las preguntas aceptadas de sus temas (o dice que no hay) y ofrece empezar la sesión |
 | `temario-practica-1280.png` | la misma práctica en escritorio a 1280×900 |
 
 La prueba comprueba, con esas mismas vistas, que `scrollWidth` no supera el ancho de la ventana

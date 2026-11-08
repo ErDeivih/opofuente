@@ -1,6 +1,6 @@
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 
-import { useTemarioBlockQuestions, useTemarioNodeDetail } from '../api/queries';
+import { useCreateStudySession, useOppositions, useTemarioBlockQuestions, useTemarioNodeDetail } from '../api/queries';
 import { EmptyState } from '../components/EmptyState';
 import { ErrorState } from '../components/ErrorState';
 import { LoadingState } from '../components/LoadingState';
@@ -17,6 +17,35 @@ export function TemarioBlockPracticePage() {
   const { nodeId } = useParams<{ nodeId: string }>();
   const detalle = useTemarioNodeDetail(nodeId ?? null, null);
   const preguntas = useTemarioBlockQuestions(nodeId ?? null);
+  const crear = useCreateStudySession();
+  const oposiciones = useOppositions();
+  const navigate = useNavigate();
+  const activa = oposiciones.data?.find((oposicion) => oposicion.active) ?? null;
+  const puedeEmpezar =
+    activa !== null &&
+    preguntas.data !== undefined &&
+    preguntas.data.total > 0 &&
+    !crear.isPending;
+  const empezar = () => {
+    if (activa === null || nodeId === undefined) {
+      return;
+    }
+    crear.mutate(
+      {
+        opposition_id: activa.id,
+        mode: 'block_practice',
+        sources: [],
+        block_node_id: nodeId,
+        feedback: 'immediate',
+        shuffle: false,
+      },
+      {
+        onSuccess: () => {
+          void navigate('/estudiar');
+        },
+      },
+    );
+  };
   const volver = (
     <p className="hint">
       <Link to="/temario">Volver al temario</Link>
@@ -73,9 +102,24 @@ export function TemarioBlockPracticePage() {
       <section className="card" aria-labelledby="practica-libre">
         <h2 id="practica-libre">Preguntas del bloque</h2>
         <p className="hint">
-          Preguntas aceptadas del banco catalogadas en los temas de este bloque. Se abren en su
-          ficha para repasarlas; no es una sesión ni tiene nota.
+          Preguntas aceptadas del banco catalogadas en los temas de este bloque. Puedes abrirlas en
+          su ficha o empezar una práctica del bloque: sin reservas ni tiempo y con la corrección de
+          la convocatoria.
         </p>
+
+        {puedeEmpezar && (
+          <p>
+            <button type="button" className="button" onClick={empezar} disabled={crear.isPending}>
+              {crear.isPending ? 'Preparando…' : 'Empezar la práctica del bloque'}
+            </button>
+          </p>
+        )}
+        {crear.isError && (
+          <ErrorState
+            title="No se pudo empezar la práctica"
+            message="El bloque no tiene preguntas con clave activa o no hay una oposición activa."
+          />
+        )}
 
         {preguntas.isPending && <LoadingState label="Cargando las preguntas del bloque…" />}
         {preguntas.isError && (

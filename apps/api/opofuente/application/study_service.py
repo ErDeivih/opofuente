@@ -22,6 +22,8 @@ from dataclasses import dataclass, replace
 from datetime import datetime, timedelta
 from fractions import Fraction
 
+from opofuente.application.curriculum_models import NodeQuestionPage, NodeQuestionView
+from opofuente.application.curriculum_read_service import CurriculumReadService
 from opofuente.application.ports import Clock
 from opofuente.application.question_models import AnswerKeyView, KeyEntryView, QuestionView
 from opofuente.application.read_models import ConvocationDetail, OppositionDetail
@@ -127,6 +129,9 @@ class CreateSessionInput:
     #: Solo para el repaso de errores: cuántas preguntas vencidas entran como mucho (el material lo
     #: pone la cola de repaso, no quien pide la sesión).
     review_limit: int | None = None
+    #: Solo para la práctica de un bloque (B-017): el bloque del temario común del que salen las
+    #: preguntas aceptadas de sus temas.
+    block_node_id: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -174,6 +179,7 @@ class StudyService:
         profiles: SqlAlchemyProfileRepository,
         clock: Clock,
         review: ReviewService | None = None,
+        curriculum: CurriculumReadService | None = None,
     ) -> None:
         self._study = study
         self._questions = questions
@@ -182,6 +188,9 @@ class StudyService:
         #: El repaso es opcional para que las pruebas de sesiones sigan siendo de sesiones: si no
         #: está, no se registra ningún repaso, pero nada de lo demás cambia.
         self._review = review
+        #: B-017: sin el lector del temario no se puede componer una práctica por bloque; las demás
+        #: sesiones no dependen de él.
+        self._curriculum = curriculum
 
     # ------------------------------------------------------------------ crear y leer
 
@@ -201,6 +210,8 @@ class StudyService:
             return self._create_review_session(request, convocatoria)
         if request.mode is SessionMode.DIAGNOSTIC:
             return self._create_diagnostic_session(request, convocatoria)
+        if request.mode is SessionMode.BLOCK_PRACTICE:
+            return self._create_block_session(request, convocatoria)
         if not request.sources:
             raise UnsupportedError("una sesión necesita al menos un conjunto de preguntas")
 
@@ -316,6 +327,115 @@ class StudyService:
             question_set_id=conjunto_unico,
             answer_key_version_id=next(iter(claves)) if len(claves) == 1 else None,
             time_limit_minutes=limite_tiempo,
+            key_label=" · ".join(etiquetas),
+        )
+
+    def _create_block_session(
+        self, request: CreateSessionInput, convocatoria: ConvocationDetail
+    ) -> SessionView:
+        """Práctica de un bloque del temario común (B-017).
+
+        La composición no se elige pregunta a pregunta: entra **todo lo aceptado** de los temas del
+        bloque, con la clave activa de cada conjunto. Si hay una sola parte en la convocatoria se
+        corrige con su regla; si hay varias, no se inventa una mezcla: se corrige sin penalización y
+        se dice en la nota. Un bloque sin preguntas no crea una sesión vacía.
+        """
+        if request.block_node_id is None:
+            raise UnsupportedError(
+                "la práctica por bloque necesita el bloque del temario (block_node_id)"
+            )
+        if request.sources:
+            raise UnsupportedError(
+                "la práctica por bloque compone las preguntas del bloque: "
+                "no se eligen conjuntos a mano"
+            )
+        if self._curriculum is None:
+            raise UnsupportedError("este proceso no tiene el lector del temario disponible")
+
+        preguntas: list[NodeQuestionView] = []
+        offset = 0
+        while True:
+            pagina: NodeQuestionPage = self._curriculum.node_questions(
+                request.block_node_id,
+                limit=100,
+                offset=offset,
+                include_descendants=True,
+            )
+            preguntas.extend(pagina.questions)
+            offset += len(pagina.questions)
+            if len(pagina.questions) == 0 or offset >= pagina.total:
+                break
+        if not preguntas:
+            raise UnsupportedError(
+                "el bloque no tiene preguntas aceptadas en el banco: no se crea una sesión vacía"
+            )
+
+        parte = (
+            self._parte(convocatoria, convocatoria.parts[0].code)
+            if len(convocatoria.parts) == 1
+            else None
+        )
+        congeladas: list[FrozenQuestion] = []
+        claves: set[str] = set()
+        etiquetas: list[str] = []
+        conjuntos: set[str] = set()
+        for posicion, pregunta in enumerate(preguntas, start=1):
+            clave = self._clave_activa(pregunta.question_set_id)
+            entrada = next(
+                (
+                    candidata
+                    for candidata in clave.entries
+                    if candidata.question_version_id == pregunta.id
+                ),
+                None,
+            )
+            if entrada is None:
+                continue
+            claves.add(clave.id)
+            conjuntos.add(pregunta.question_set_id)
+            etiqueta = f"plantilla v{clave.version_no}"
+            if etiqueta not in etiquetas:
+                etiquetas.append(etiqueta)
+            congeladas.append(
+                FrozenQuestion(
+                    question_version_id=pregunta.id,
+                    stable_key=pregunta.stable_key,
+                    position=posicion,
+                    part_code=None if parte is None else parte.code,
+                    is_reserve=False,
+                    reserve_order=None,
+                    key_outcome=entrada.outcome,
+                    correct_option_keys=entrada.correct_option_keys,
+                )
+            )
+        if not congeladas:
+            raise UnsupportedError(
+                "las preguntas del bloque no tienen clave activa: no se puede corregir la práctica"
+            )
+
+        nota = (
+            "Práctica libre del bloque: preguntas aceptadas de sus temas, sin reservas ni tiempo."
+            if parte is not None
+            else "Práctica libre del bloque: preguntas aceptadas de sus temas, sin reservas, "
+            "tiempo ni penalización (la convocatoria tiene varias partes y no se mezclan sus "
+            "reglas)."
+        )
+        configuracion = SessionConfiguration(
+            mode=SessionMode.BLOCK_PRACTICE,
+            feedback=request.feedback or Feedback.IMMEDIATE,
+            sources=(),
+            shuffle=request.shuffle,
+            note=nota,
+        )
+        return self._study.create_session(
+            opposition_id=request.opposition_id,
+            configuration=configuracion,
+            questions=assign_positions(congeladas, shuffle=request.shuffle),
+            now=self._clock.now(),
+            convocation_version_id=convocatoria.summary.id,
+            question_set_id=next(iter(conjuntos)) if len(conjuntos) == 1 else None,
+            answer_key_version_id=next(iter(claves)) if len(claves) == 1 else None,
+            time_limit_minutes=None,
             key_label=" · ".join(etiquetas),
         )
 

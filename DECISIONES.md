@@ -444,19 +444,39 @@ Aquí queda el resumen con el motivo y la reversión.
 
 ## D-029 — B-017 se entrega como práctica libre del banco, no como modo de sesión (2026-11-08)
 
-- **Fecha:** 2026-11-08 · **Nivel:** 2 (alcance acotado y reversible) · **Estado:** aplicada (B-017)
-- **Decisión:** B-017 se implementa como **vista del banco por bloque**: un enlace por bloque en el
-  avance lleva a una página que junta las preguntas **aceptadas** de sus temas (subárbol) y enlaza
-  cada una con su ficha del banco. **No** crea una sesión, no cronometra y no puntúa. La sesión por
-  bloque con reglas de examen queda fuera, como decisión aparte de S07.
-- **Motivo:** el valor inmediato es poder repasar un bloque entero sin montar un examen y sin tocar
-  la composición de sesiones; la alternativa (un modo nuevo) cambia el alcance de S07, exige decidir
-  partes, penalización y repaso, y no es reversible en una tarde. El usuario delegó el alcance; se
-  elige el más pequeño que entrega algo real y verificable.
+- **Fecha:** 2026-11-08 · **Nivel:** 2 (alcance acotado y reversible) · **Estado:** superada por
+  D-030 ese mismo día, cuando David pidió cerrar el alcance de S07.
+- **Decisión:** B-017 se implementó primero como **vista del banco por bloque**: un enlace por bloque
+  en el avance lleva a una página que junta las preguntas **aceptadas** de sus temas (subárbol) y
+  enlaza cada una con su ficha del banco. **No** crea una sesión, no cronometra y no puntúa. La
+  sesión por bloque con reglas de examen quedó fuera.
+- **Motivo:** el valor inmediato era poder repasar un bloque entero sin montar un examen y sin tocar
+  la composición de sesiones; un modo nuevo cambia el alcance de S07 y exige decidir partes,
+  penalización y repaso. Fue el alcance más pequeño que entregaba algo real y verificable.
 - **Entregado:** `GET /curriculum-nodes/{id}/questions?include_descendants=true` (subárbol en una
   consulta, sin 40 viajes), página `/temario/:id/practicar`, enlace por bloque en el avance, prueba
   de integración y E2E.
-- **Lo que no se toca:** S07, `session_modes`, la composición de sesiones ni la puntuación. La
-  práctica libre no se llama «simulacro» en la pantalla.
 - **Reversión:** quitar el enlace, la página y el parámetro `include_descendants`; no hay migración
   ni dato nuevo.
+
+## D-030 — B-017 se cierra como modo de sesión `block_practice` (2026-11-08)
+
+- **Fecha:** 2026-11-08 · **Nivel:** 3 resuelto por delegación expresa del usuario · **Estado:**
+  aplicada (migración 0023).
+- **Decisión:** se añade el sexto modo de sesión **`block_practice`**. Compone una sesión con las
+  preguntas **aceptadas** de todos los temas del bloque, con la clave activa de cada conjunto, la
+  composición congelada y la corrección normal de S07. Si la convocatoria tiene **una sola parte**,
+  se corrige con su regla; si tiene varias, no se mezclan: se corrige sin penalización y la nota de
+  la sesión lo dice. No hay reservas ni tiempo.
+- **Motivo:** con el alcance delegado, la sesión por bloque es lo que convierte el repaso en algo
+  medible y reutiliza el motor ya probado (congelación, corrección exacta, resultado), en vez de
+  dejar una vista sin puntuación. El vocabulario de la base se amplía con una migración pequeña y
+  reversible.
+- **Entregado:** modo en dominio/contrato, `block_node_id` en `POST /study-sessions`, migración
+  `0023_block_practice` (CHECK de `mode`, con bajada que se niega si ya hay sesiones de ese modo),
+  botón «Empezar la práctica del bloque» en `/temario/:id/practicar`, prueba de integración que crea
+  y arranca la sesión con una pregunta mapeada, y etiqueta de modo en la pantalla.
+- **Límites declarados:** el bloque debe tener preguntas con clave activa; no hay reservas, tiempo ni
+  mezcla de reglas de varias partes; el tamaño lo pone el material disponible, no un perfil.
+- **Reversión:** bajar la migración solo si no hay sesiones `block_practice`; quitar el botón y el
+  campo. Las sesiones ya creadas se conservan como historia.
