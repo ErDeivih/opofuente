@@ -58,3 +58,6 @@ calcula en el servidor y se pinta en la misma pantalla.
   y 409 si hay ambigüedad (D-027).
 - [x] DEBT-028 — política de fuentes: falta/drift/ok, omisión con motivo y puerta 17 en verde.
 - [x] E2E pendiente ejecutada: **49/49** en la puerta 18.
+- [x] E2E del temario (2026-11-08): **3 pruebas nuevas** (índice 5/40 + búsqueda, ficha con las
+  convocatorias C1 enlazadas y accesibilidad), con capturas a 390 y 1280 px; puerta 18 en **52/52**.
+- [ ] B-017 (simulacro por bloque): **bloqueada** a propósito (Nivel 3, alcance de S07); ver D-029.

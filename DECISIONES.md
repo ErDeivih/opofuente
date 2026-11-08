@@ -441,3 +441,15 @@ Aquí queda el resumen con el motivo y la reversión.
   deja marcas y mapeos huérfanos) o dejar de ofrecer la bajada siempre (impide deshacer una migración
   recién aplicada).
 - **Reversión:** quitar la comprobación y volver al comportamiento anterior; no hay migración nueva.
+
+## D-029 — B-017 se bloquea hasta decidir si es un modo de estudio (2026-11-08)
+
+- **Fecha:** 2026-11-08 · **Nivel:** 3 (alcance de S07) · **Estado:** bloqueada, no implementada.
+- **Decisión:** no se construye el «simulacro por bloque» todavía. La propuesta de la investigación
+  (B-009) exige decidir si una sesión por bloque es **un modo de estudio nuevo** —con su composición,
+  reglas, puntuación y repaso— o **una vista del banco** filtrada por bloque. La primera toca el
+  alcance de S07 y la segunda no da una sesión corregida; elegir sin David sería cambiar el producto
+  de paso.
+- **Lo que no se toca:** B-016 (ficha→banco) y las convocatorias enlazadas siguen siendo la base; la
+  deuda E2E del temario se cierra aparte con pruebas de extremo a extremo.
+- **Reversión:** ninguna; no hay código nuevo de esta decisión.

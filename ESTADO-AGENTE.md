@@ -1,8 +1,8 @@
 titulo: OpoFuente — temario comun de oposiciones de informatica C1
-resumen: DEBT-028 cerrada con politica de fuentes, B-012 resuelve el path por version, B-011 pruebas sin worker de fondo, B-010 bajada protegida y B-009 investigacion con propuesta B-017. Puertas completas 1-18 en verde: 515 unitarias, 487 integracion, 23 contrato, 213 Vitest y 49 E2E.
+resumen: Bloque 3 cerrado con E2E del temario en 52/52: indice de 5 bloques y 40 temas, ficha con las 12 convocatorias C1 enlazadas y revisada a 390/1280 px. B-017 queda bloqueada a proposito (alcance de S07) con D-029.
 estado: en-curso
-tarea: DEBT-028, B-009, B-010, B-011 y B-012 cerradas; E2E 49/49 y puertas completas 1-18 en verde
+tarea: E2E y revision visual del temario (indice y ficha con convocatorias C1); B-017 bloqueada por alcance
 nivel: 2
-siguiente: decidir B-017 simulacro por bloque; despues la deuda de E2E del temario
-bloqueado: 
-fecha: 2026-11-07
+siguiente: decidir con David si B-017 es modo de estudio o vista del banco; mientras, actualizacion de version del temario y confirmacion de bases C1
+bloqueado: B-017 (simulacro por bloque) a la espera de decidir el alcance de S07; ver D-029
+fecha: 2026-11-08
