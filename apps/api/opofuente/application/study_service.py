@@ -433,6 +433,8 @@ class StudyService:
         )
         if len(congeladas) < total_disponible:
             nota = f"{nota} Entran {len(congeladas)} de {total_disponible} preguntas."
+        if request.time_limit_minutes is not None:
+            nota = f"{nota} Tiempo máximo: {request.time_limit_minutes} minutos."
         configuracion = SessionConfiguration(
             mode=SessionMode.BLOCK_PRACTICE,
             feedback=request.feedback or Feedback.IMMEDIATE,
@@ -448,7 +450,7 @@ class StudyService:
             convocation_version_id=convocatoria.summary.id,
             question_set_id=next(iter(conjuntos)) if len(conjuntos) == 1 else None,
             answer_key_version_id=next(iter(claves)) if len(claves) == 1 else None,
-            time_limit_minutes=None,
+            time_limit_minutes=request.time_limit_minutes,
             key_label=" · ".join(etiquetas),
         )
 

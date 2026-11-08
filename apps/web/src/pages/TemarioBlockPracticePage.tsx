@@ -22,6 +22,7 @@ export function TemarioBlockPracticePage() {
   const oposiciones = useOppositions();
   const navigate = useNavigate();
   const [cantidad, setCantidad] = useState('todas');
+  const [tiempo, setTiempo] = useState('sin');
   const activa = oposiciones.data?.find((oposicion) => oposicion.active) ?? null;
   const puedeEmpezar =
     activa !== null &&
@@ -39,6 +40,7 @@ export function TemarioBlockPracticePage() {
         sources: [],
         block_node_id: nodeId,
         block_limit: cantidad === 'todas' ? null : Number(cantidad),
+        time_limit_minutes: tiempo === 'sin' ? null : Number(tiempo),
         feedback: 'immediate',
         shuffle: false,
       },
@@ -127,6 +129,22 @@ export function TemarioBlockPracticePage() {
               <option value="20">20</option>
               <option value="50">50</option>
               <option value="todas">Todas</option>
+            </select>
+            <label className="form__label" htmlFor="practica-tiempo">
+              Tiempo máximo
+            </label>
+            <select
+              id="practica-tiempo"
+              className="form__input"
+              value={tiempo}
+              onChange={(event) => {
+                setTiempo(event.target.value);
+              }}
+            >
+              <option value="sin">Sin tiempo</option>
+              <option value="15">15 minutos</option>
+              <option value="30">30 minutos</option>
+              <option value="60">60 minutos</option>
             </select>
             <button type="button" className="button" onClick={empezar} disabled={crear.isPending}>
               {crear.isPending ? 'Preparando…' : 'Empezar la práctica del bloque'}

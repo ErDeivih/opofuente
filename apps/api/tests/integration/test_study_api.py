@@ -334,6 +334,7 @@ def test_la_practica_por_bloque_compone_la_sesion_con_las_preguntas_del_bloque(
             "sources": [],
             "block_node_id": bloque["id"],
             "block_limit": 1,
+            "time_limit_minutes": 5,
             "feedback": "immediate",
         },
         headers=ALLOWED_ORIGIN,
@@ -341,11 +342,13 @@ def test_la_practica_por_bloque_compone_la_sesion_con_las_preguntas_del_bloque(
     assert creada.status_code == 201, creada.text
     sesion = creada.json()
     assert sesion["mode"] == "block_practice"
+    assert sesion["time_limit_minutes"] == 5, "la práctica por bloque admite tiempo límite"
     assert sesion["total_questions"] == 1, "el tope deja una de las dos preguntas"
     assert "Práctica libre del bloque" in (sesion["configuration"]["note"] or ""), (
         "la nota dice qué es"
     )
     assert "1 de 2" in (sesion["configuration"]["note"] or ""), "la nota dice cuántas entraron"
+    assert "5 minutos" in (sesion["configuration"]["note"] or ""), "la nota dice el tiempo"
 
     arrancada = seeded_client.post(
         f"/api/v1/study-sessions/{sesion['id']}/start", headers=ALLOWED_ORIGIN

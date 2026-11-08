@@ -370,8 +370,8 @@ llevan a su sitio.
   `POST /study-sessions`; migración `0023_block_practice`; botón «Empezar la práctica del bloque» con
   selector 10/20/50/todas en `/temario/:id/practicar`; etiqueta de modo en la pantalla. Una sola
   parte de la convocatoria → su regla; varias → sin penalización y con la nota de la sesión
-  explicándolo; sin reservas ni tiempo. D-031: el tope elige en orden estable y la nota dice cuántas
-  entraron.
+  explicándolo; sin reservas. D-031: el tope elige en orden estable y la nota dice cuántas entraron.
+  D-032: tiempo límite opcional (sin tiempo, 15, 30 o 60 minutos), reutilizando el campo del contrato.
 - **Criterio de aceptación cumplido:** bloque con preguntas → sesión con las aceptadas de sus temas;
   bloque sin preguntas → 409, no sesión vacía; sin clave activa → 409; la pregunta servida es la del
   tema; prueba de integración que crea y arranca la sesión. D-030.

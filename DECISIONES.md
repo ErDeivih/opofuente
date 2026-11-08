@@ -493,3 +493,16 @@ Aquí queda el resumen con el motivo y la reversión.
 - **Alternativa descartada:** elegir al azar (dos peticiones iguales darían sesiones distintas y no se
   podría reproducir una práctica) y un tope fijo por bloque (el tamaño útil depende del banco).
 - **Reversión:** quitar el campo y el selector; la nota deja de decir cuántas entraron.
+
+## D-032 — La práctica por bloque puede llevar tiempo límite (2026-11-08)
+
+- **Fecha:** 2026-11-08 · **Nivel:** 2 · **Estado:** aplicada (B-017, tercera entrega).
+- **Decisión:** `block_practice` usa el `time_limit_minutes` que ya existe en el contrato. Sin valor no
+  hay reloj; con valor, la sesión se cierra por tiempo como cualquier otra y la nota dice el límite.
+  La pantalla ofrece sin tiempo, 15, 30 o 60 minutos.
+- **Motivo:** el tope de preguntas ya existía, pero una práctica de bloque puede alargarse sin fin; un
+  límite opcional la convierte en un ensayo cronometrado sin inventar reservas ni cambiar la
+  corrección. Reutiliza S07 en vez de añadir un campo nuevo al contrato.
+- **No se añaden reservas**: no hay preguntas de reserva en el bloque y fabricarlas cambiaría la
+  composición; si se quieren, es otro alcance.
+- **Reversión:** quitar el selector y el paso del límite; el campo ya existía para los demás modos.
