@@ -8540,6 +8540,8 @@ export interface operations {
             query?: {
                 limit?: number;
                 offset?: number;
+                /** @description En un bloque, incluir también las preguntas de sus temas (práctica libre). */
+                include_descendants?: boolean;
             };
             header?: never;
             path: {

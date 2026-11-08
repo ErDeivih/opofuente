@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom';
+
 import type { Progress } from '../../api/temario';
 
 export interface ProgressPanelProps {
@@ -61,6 +63,12 @@ export function ProgressPanel({ progress }: ProgressPanelProps) {
               <span className="hint">
                 {block.topics_studied} de {block.topics_total}
               </span>
+              <Link
+                className="progress-list__practice"
+                to={`/temario/${encodeURIComponent(block.block_id)}/practicar`}
+              >
+                Practicar este bloque
+              </Link>
             </div>
             <div
               className="progress__track progress__track--small"

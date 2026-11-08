@@ -29,7 +29,7 @@ La siguiente es B-003.
 | [B-010](#b-010) | Decidir la bajada de `0021` después de sembrar el temario común | 2 | **hecha** (2026-11-07) | B-002 |
 | [B-011](#b-011) | Estabilizar las pruebas de API que compiten con el worker de fondo | 1 | **hecha** (2026-11-07) | — |
 | [B-012](#b-012) | Acotar por versión la resolución de nodo por `path` en clasificación | 2 | **hecha** (2026-11-07) | B-004 |
-| [B-017](#b-017) | Simulacro por bloque del temario común (propuesta de la investigación) | 2 | **bloqueada** (2026-11-08: alcance de S07) | B-016 |
+| [B-017](#b-017) | Práctica libre por bloque del temario común (vista del banco) | 2 | **hecha** (2026-11-08) | B-016 |
 | [B-013](#b-013) | Contenido de la ficha de tema: preguntas del banco y material del tema | 2 | **hecha** (2026-11-06) | B-005 |
 | [B-014](#b-014) | Apuntes del temario común: separar título y descripción en la v1 | 2 | **hecha** (2026-11-06) | B-002 |
 | [B-015](#b-015) | Revisión visual del temario en móvil y PC y textos §8 | 2 | **hecha** (2026-11-06) | B-005 |
@@ -363,21 +363,17 @@ llevan a su sitio.
 
 ### B-017
 
-**BLOQUEADA (2026-11-08, Nivel 3 por alcance).** Simulacro por bloque del temario común. No se
-implementa todavía: exige decidir si una sesión por bloque es **un modo de estudio nuevo** (S07:
-composición, reglas de examen, puntuación y repaso) o **una vista del banco** filtrada por bloque.
-Esa decisión cambia el alcance del producto y la forma del dato; se pregunta antes de tocar sesiones.
-Lo que sí queda hecho y probado es el enlace ficha→banco y las convocatorias enlazadas (B-016), que
-es de donde saldría el material.
+**HECHA (2026-11-08, alcance: vista del banco).** Práctica libre por bloque: las preguntas
+**aceptadas** de los temas del bloque en una sola lectura, con enlace a su ficha del banco.
 
-- **Qué:** desde `/temario`, un botón por bloque compone una sesión con las preguntas **aceptadas**
-  mapeadas a los temas de ese bloque, con las reglas de la convocatoria activa o un modo práctica sin
-  nota si no hay convocatoria. Reutiliza `curriculum_mappings`, la composición de sesiones y el enlace
-  ficha→banco; no inventa contenido.
-- **Criterio de aceptación:** bloque con preguntas → sesión con todas las aceptadas de sus temas;
-  bloque sin preguntas → se dice y no se crea una sesión vacía; corrección y penalización de la
-  convocatoria activa; ninguna pregunta rechazada o sustituida entra.
-- **Depende de:** B-016 (enlace ficha→banco). Se decide antes de empezar si es Nivel 2 o 3.
+- **Qué se entrega:** `GET /curriculum-nodes/{id}/questions?include_descendants=true` (subárbol del
+  bloque en una consulta), página `/temario/:id/practicar` y un enlace «Practicar este bloque» en cada
+  fila del avance. No crea sesión, no cronometra y no puntúa; la sesión por bloque con reglas de S07
+  queda aparte (D-029).
+- **Criterio de aceptación cumplido:** bloque con preguntas → las aceptadas de sus temas; bloque sin
+  preguntas → estado vacío, sin lista fingida; el tema sigue devolviendo solo lo suyo; ninguna
+  pregunta rechazada o sustituida entra. Prueba de integración y E2E.
+- **Depende de:** B-016 (enlace ficha→banco). D-029 recoge el alcance elegido y su reversión.
 
 ## Fuentes para generar tareas nuevas
 

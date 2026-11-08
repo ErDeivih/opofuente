@@ -212,6 +212,31 @@ def test_la_ficha_devuelve_el_material_aceptado_con_su_cita(cliente: TestClient)
     assert cita["excerpt"] == "La Constitución Española de 1978."
 
 
+def test_la_practica_libre_de_un_bloque_junta_las_preguntas_de_sus_temas(
+    cliente: TestClient,
+) -> None:
+    """B-017: el bloque no pide una consulta por tema; incluye el subárbol de una vez."""
+    arbol = cliente.get("/api/v1/curricula/informatica-c1").json()
+    bloque = arbol["nodes"][0]
+    tema = bloque["children"][0]
+
+    solo_bloque = cliente.get(f"/api/v1/curriculum-nodes/{bloque['id']}/questions")
+    assert solo_bloque.status_code == 200
+    assert solo_bloque.json()["total"] == 0, "la pregunta cuelga del tema, no del bloque"
+
+    con_temas = cliente.get(
+        f"/api/v1/curriculum-nodes/{bloque['id']}/questions?include_descendants=true"
+    )
+    assert con_temas.status_code == 200
+    assert con_temas.json()["total"] == 1, "incluye la pregunta del tema del bloque"
+    assert con_temas.json()["node_id"] == bloque["id"]
+
+    # El tema sigue devolviendo solo lo suyo: el parámetro no cambia la lectura normal.
+    solo_tema = cliente.get(f"/api/v1/curriculum-nodes/{tema['id']}/questions")
+    assert solo_tema.status_code == 200
+    assert solo_tema.json()["total"] == 1
+
+
 def test_el_contenido_de_un_nodo_inexistente_da_404(cliente: TestClient) -> None:
     assert cliente.get("/api/v1/curriculum-nodes/no-existe/questions").status_code == 404
     assert cliente.get("/api/v1/curriculum-nodes/no-existe/materials").status_code == 404

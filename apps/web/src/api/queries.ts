@@ -73,6 +73,7 @@ import {
   fetchCurriculumProgress,
   fetchNodeMaterials,
   fetchNodeQuestions,
+  fetchBlockQuestions,
   markNodeStudied,
   unmarkNodeStudied,
   type CurriculumKind,
@@ -178,6 +179,7 @@ export const queryKeys = {
   temarioNode: (nodeId: string, convocationId: string | null) =>
     ['temario', 'node', nodeId, convocationId ?? ''] as const,
   temarioNodeQuestions: (nodeId: string) => ['temario', 'node-questions', nodeId] as const,
+  temarioBlockQuestions: (nodeId: string) => ['temario', 'block-questions', nodeId] as const,
   temarioNodeMaterials: (nodeId: string) => ['temario', 'node-materials', nodeId] as const,
   batches: ['ingestion', 'batches'] as const,
   batch: (id: string) => ['ingestion', 'batch', id] as const,
@@ -375,6 +377,16 @@ export function useTemarioNodeQuestions(nodeId: string | null) {
   return useQuery({
     queryKey: queryKeys.temarioNodeQuestions(nodeId ?? 'ninguno'),
     queryFn: () => fetchNodeQuestions(nodeId as string),
+    enabled: nodeId !== null,
+    staleTime: 30_000,
+  });
+}
+
+/** Preguntas aceptadas de todo un bloque, para la práctica libre (B-017). */
+export function useTemarioBlockQuestions(nodeId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.temarioBlockQuestions(nodeId ?? 'ninguno'),
+    queryFn: () => fetchBlockQuestions(nodeId as string),
     enabled: nodeId !== null,
     staleTime: 30_000,
   });

@@ -300,8 +300,14 @@ def get_node_questions(
     service: CurriculumServiceDep,
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
+    include_descendants: bool = Query(
+        default=False,
+        description="En un bloque, incluir también las preguntas de sus temas (práctica libre).",
+    ),
 ) -> NodeQuestionPageSchema:
-    pagina: NodeQuestionPage = service.node_questions(node_id, limit=limit, offset=offset)
+    pagina: NodeQuestionPage = service.node_questions(
+        node_id, limit=limit, offset=offset, include_descendants=include_descendants
+    )
     return NodeQuestionPageSchema(
         node_id=pagina.node_id,
         total=pagina.total,

@@ -83,6 +83,13 @@ export function fetchNodeQuestions(
   );
 }
 
+/** Preguntas aceptadas de un bloque entero: sus temas, sin clave. Práctica libre de B-017. */
+export function fetchBlockQuestions(nodeId: string): Promise<NodeQuestionPage> {
+  return apiFetch<NodeQuestionPage>(
+    `/api/v1/curriculum-nodes/${encodeURIComponent(nodeId)}/questions?limit=100&offset=0&include_descendants=true`,
+  );
+}
+
 /** Material de la biblioteca catalogado en el tema (documento, sección o cita). */
 export function fetchNodeMaterials(nodeId: string, limit = 20): Promise<NodeMaterialPage> {
   return apiFetch<NodeMaterialPage>(

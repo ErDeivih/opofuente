@@ -12,6 +12,7 @@ import { ReviewPage } from '../pages/ReviewPage';
 import { SearchPage } from '../pages/SearchPage';
 import { SettingsPage } from '../pages/SettingsPage';
 import { StudyPage } from '../pages/StudyPage';
+import { TemarioBlockPracticePage } from '../pages/TemarioBlockPracticePage';
 import { TemarioNodePage } from '../pages/TemarioNodePage';
 import { TemarioPage } from '../pages/TemarioPage';
 import { TrayPage } from '../pages/TrayPage';
@@ -25,6 +26,7 @@ export function AppRoutes() {
           `?convocatoria=<id>` para enseñar las particularidades de esa convocatoria. */}
       <Route path="/temario" element={<TemarioPage />} />
       <Route path="/temario/:nodeId" element={<TemarioNodePage />} />
+      <Route path="/temario/:nodeId/practicar" element={<TemarioBlockPracticePage />} />
       <Route path="/programa" element={<ProgramPage />} />
       <Route path="/bandeja" element={<TrayPage />} />
       <Route path="/biblioteca" element={<LibraryPage />} />

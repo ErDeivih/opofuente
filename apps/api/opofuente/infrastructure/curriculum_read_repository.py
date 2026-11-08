@@ -311,21 +311,41 @@ class SqlAlchemyCurriculumReadRepository:
 
     # ------------------------------------------------------------------ contenido del tema
 
-    def node_questions(self, node_id: str, *, limit: int, offset: int) -> NodeQuestionPage | None:
+    def node_questions(
+        self, node_id: str, *, limit: int, offset: int, include_descendants: bool = False
+    ) -> NodeQuestionPage | None:
         """Preguntas del banco catalogadas en el tema, sin clave: la ficha no examina.
 
         Solo cuentan los mapeos **aceptados** y las versiones no sustituidas: una pregunta rechazada
-        o corregida no debe seguir colgando del tema.
+        o corregida no debe seguir colgando del tema. Con `include_descendants`, un bloque devuelve
+        también las preguntas de sus temas: es la lectura de la práctica libre por bloque de B-017.
         """
         with self._session_factory() as session:
             if session.get(CurriculumNodeRecord, node_id) is None:
                 return None
-            condiciones = (
-                CurriculumMappingRecord.curriculum_node_id == node_id,
+            condiciones = [
                 CurriculumMappingRecord.subject_type == "question_version",
                 CurriculumMappingRecord.status == "accepted",
                 QuestionVersionRecord.status != "superseded",
-            )
+            ]
+            if include_descendants:
+                # Subárbol del nodo por la relación padre-hijo: no se hardcodean los 40 temas ni se
+                # pide una consulta por tema (serían cuarenta viajes para pintar un bloque).
+                subarbol = (
+                    select(CurriculumNodeRecord.id)
+                    .where(CurriculumNodeRecord.id == node_id)
+                    .cte(name="subarbol_del_bloque", recursive=True)
+                )
+                subarbol = subarbol.union_all(
+                    select(CurriculumNodeRecord.id).where(
+                        CurriculumNodeRecord.parent_id == subarbol.c.id
+                    )
+                )
+                condiciones.append(
+                    CurriculumMappingRecord.curriculum_node_id.in_(select(subarbol.c.id))
+                )
+            else:
+                condiciones.append(CurriculumMappingRecord.curriculum_node_id == node_id)
             total = session.execute(
                 select(func.count())
                 .select_from(CurriculumMappingRecord)

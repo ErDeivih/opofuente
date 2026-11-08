@@ -13755,6 +13755,18 @@
               "title": "Offset",
               "type": "integer"
             }
+          },
+          {
+            "description": "En un bloque, incluir también las preguntas de sus temas (práctica libre).",
+            "in": "query",
+            "name": "include_descendants",
+            "required": false,
+            "schema": {
+              "default": false,
+              "description": "En un bloque, incluir también las preguntas de sus temas (práctica libre).",
+              "title": "Include Descendants",
+              "type": "boolean"
+            }
           }
         ],
         "responses": {

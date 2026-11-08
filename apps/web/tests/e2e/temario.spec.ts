@@ -146,6 +146,36 @@ test('S13: la ficha del tema enlaza las convocatorias C1 que lo estudian', async
   await expect(page.getByText(/se calcula|cobertura/i)).toHaveCount(0);
 });
 
+test('S13/B-017: la práctica libre de un bloque junta sus preguntas sin montar sesión', async ({
+  page,
+}) => {
+  await page.goto('/temario');
+  await expect(page.getByRole('list', { name: 'Temario común' })).toBeVisible();
+  await page.getByRole('link', { name: 'Practicar este bloque' }).first().click();
+
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'Práctica libre del bloque' }),
+  ).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Preguntas del bloque' })).toBeVisible();
+  // O hay preguntas aceptadas del bloque o se dice que no hay: nunca una lista fingida.
+  await expect(
+    page.getByText(/preguntas aceptadas del banco|catalogadas en los temas/i).first(),
+  ).toBeVisible();
+
+  for (const ancho of [1280, 390]) {
+    await page.setViewportSize({ width: ancho, height: ancho === 390 ? 844 : 900 });
+    await page.reload();
+    await expect(
+      page.getByRole('heading', { level: 1, name: 'Práctica libre del bloque' }),
+    ).toBeVisible();
+    await sinDesborde(page);
+    await page.screenshot({
+      path: path.join(CAPTURAS, `temario-practica-${String(ancho)}.png`),
+      fullPage: true,
+    });
+  }
+});
+
 test('S13: el temario no tiene violaciones automatizables', async ({ page }) => {
   await page.goto('/temario');
   await expect(page.getByRole('list', { name: 'Temario común' })).toBeVisible();

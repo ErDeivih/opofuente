@@ -80,9 +80,17 @@ class CurriculumReadService:
             raise NotFoundError("nodo del temario", node_id)
         return resultado
 
-    def node_questions(self, node_id: str, *, limit: int, offset: int) -> NodeQuestionPage:
-        """Preguntas del banco catalogadas en el tema (solo las aceptadas y vigentes)."""
-        pagina = self._repository.node_questions(node_id, limit=limit, offset=offset)
+    def node_questions(
+        self, node_id: str, *, limit: int, offset: int, include_descendants: bool = False
+    ) -> NodeQuestionPage:
+        """Preguntas del banco catalogadas en el tema (solo las aceptadas y vigentes).
+
+        Con `include_descendants`, un bloque incluye las de sus temas; es la lectura de la práctica
+        libre por bloque de B-017.
+        """
+        pagina = self._repository.node_questions(
+            node_id, limit=limit, offset=offset, include_descendants=include_descendants
+        )
         if pagina is None:
             raise NotFoundError("nodo del temario", node_id)
         return pagina

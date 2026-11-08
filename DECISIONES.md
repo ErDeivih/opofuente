@@ -442,14 +442,21 @@ Aquí queda el resumen con el motivo y la reversión.
   recién aplicada).
 - **Reversión:** quitar la comprobación y volver al comportamiento anterior; no hay migración nueva.
 
-## D-029 — B-017 se bloquea hasta decidir si es un modo de estudio (2026-11-08)
+## D-029 — B-017 se entrega como práctica libre del banco, no como modo de sesión (2026-11-08)
 
-- **Fecha:** 2026-11-08 · **Nivel:** 3 (alcance de S07) · **Estado:** bloqueada, no implementada.
-- **Decisión:** no se construye el «simulacro por bloque» todavía. La propuesta de la investigación
-  (B-009) exige decidir si una sesión por bloque es **un modo de estudio nuevo** —con su composición,
-  reglas, puntuación y repaso— o **una vista del banco** filtrada por bloque. La primera toca el
-  alcance de S07 y la segunda no da una sesión corregida; elegir sin David sería cambiar el producto
-  de paso.
-- **Lo que no se toca:** B-016 (ficha→banco) y las convocatorias enlazadas siguen siendo la base; la
-  deuda E2E del temario se cierra aparte con pruebas de extremo a extremo.
-- **Reversión:** ninguna; no hay código nuevo de esta decisión.
+- **Fecha:** 2026-11-08 · **Nivel:** 2 (alcance acotado y reversible) · **Estado:** aplicada (B-017)
+- **Decisión:** B-017 se implementa como **vista del banco por bloque**: un enlace por bloque en el
+  avance lleva a una página que junta las preguntas **aceptadas** de sus temas (subárbol) y enlaza
+  cada una con su ficha del banco. **No** crea una sesión, no cronometra y no puntúa. La sesión por
+  bloque con reglas de examen queda fuera, como decisión aparte de S07.
+- **Motivo:** el valor inmediato es poder repasar un bloque entero sin montar un examen y sin tocar
+  la composición de sesiones; la alternativa (un modo nuevo) cambia el alcance de S07, exige decidir
+  partes, penalización y repaso, y no es reversible en una tarde. El usuario delegó el alcance; se
+  elige el más pequeño que entrega algo real y verificable.
+- **Entregado:** `GET /curriculum-nodes/{id}/questions?include_descendants=true` (subárbol en una
+  consulta, sin 40 viajes), página `/temario/:id/practicar`, enlace por bloque en el avance, prueba
+  de integración y E2E.
+- **Lo que no se toca:** S07, `session_modes`, la composición de sesiones ni la puntuación. La
+  práctica libre no se llama «simulacro» en la pantalla.
+- **Reversión:** quitar el enlace, la página y el parámetro `include_descendants`; no hay migración
+  ni dato nuevo.
