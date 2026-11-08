@@ -294,15 +294,15 @@ def test_un_examen_oficial_completo_se_monta_con_el_tiempo_del_grupo(
 
 
 def test_todo_modo_del_vocabulario_esta_construido(seeded_settings: Settings) -> None:
-    """Los cinco modos de 06_QUESTIONS §5 están implementados (DEBT-012, cerrada).
+    """Los seis modos de 06_QUESTIONS §5 y B-017 están implementados (DEBT-012, cerrada).
 
     Esta prueba sustituye a la que comprobaba que un modo sin implementar se rechazaba: ya no hay
     ninguno sin implementar. Lo que se comprueba ahora es que el conjunto de modos construidos es el
-    vocabulario **entero**; si alguien declara un sexto modo y no lo construye, esta prueba falla en
-    vez de dejar que el guardia de `create_session` tenga que rechazarlo con un 409.
+    vocabulario **entero**; si alguien declara un séptimo modo sin construirlo, esta prueba falla
+    en vez de dejar que el guardia de `create_session` tenga que rechazarlo con un 409.
     """
     assert set(SUPPORTED_MODES) == set(SessionMode)
-    assert len(SUPPORTED_MODES) == 5
+    assert len(SUPPORTED_MODES) == 6
 
 
 def test_las_partes_que_no_son_una_parte_se_rechazan(seeded_settings: Settings) -> None:
