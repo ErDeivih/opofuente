@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 
 import { useCreateStudySession, useOppositions, useTemarioBlockQuestions, useTemarioNodeDetail } from '../api/queries';
@@ -20,6 +21,7 @@ export function TemarioBlockPracticePage() {
   const crear = useCreateStudySession();
   const oposiciones = useOppositions();
   const navigate = useNavigate();
+  const [cantidad, setCantidad] = useState('todas');
   const activa = oposiciones.data?.find((oposicion) => oposicion.active) ?? null;
   const puedeEmpezar =
     activa !== null &&
@@ -36,6 +38,7 @@ export function TemarioBlockPracticePage() {
         mode: 'block_practice',
         sources: [],
         block_node_id: nodeId,
+        block_limit: cantidad === 'todas' ? null : Number(cantidad),
         feedback: 'immediate',
         shuffle: false,
       },
@@ -108,11 +111,27 @@ export function TemarioBlockPracticePage() {
         </p>
 
         {puedeEmpezar && (
-          <p>
+          <div className="form__row">
+            <label className="form__label" htmlFor="practica-cantidad">
+              Cuántas preguntas
+            </label>
+            <select
+              id="practica-cantidad"
+              className="form__input"
+              value={cantidad}
+              onChange={(event) => {
+                setCantidad(event.target.value);
+              }}
+            >
+              <option value="10">10</option>
+              <option value="20">20</option>
+              <option value="50">50</option>
+              <option value="todas">Todas</option>
+            </select>
             <button type="button" className="button" onClick={empezar} disabled={crear.isPending}>
               {crear.isPending ? 'Preparando…' : 'Empezar la práctica del bloque'}
             </button>
-          </p>
+          </div>
         )}
         {crear.isError && (
           <ErrorState

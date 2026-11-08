@@ -295,6 +295,7 @@ def _create_input(request: CreateSessionSchema) -> CreateSessionInput:
         time_limit_minutes=request.time_limit_minutes,
         review_limit=request.review_limit,
         block_node_id=request.block_node_id,
+        block_limit=request.block_limit,
     )
 
 

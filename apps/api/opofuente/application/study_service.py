@@ -132,6 +132,9 @@ class CreateSessionInput:
     #: Solo para la práctica de un bloque (B-017): el bloque del temario común del que salen las
     #: preguntas aceptadas de sus temas.
     block_node_id: str | None = None
+    #: Tope de preguntas de la práctica por bloque. Sin tope se usan todas las aceptadas; con tope
+    #: se eligen en orden estable (no por azar) para que la misma petición dé la misma sesión.
+    block_limit: int | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -413,6 +416,14 @@ class StudyService:
                 "las preguntas del bloque no tienen clave activa: no se puede corregir la práctica"
             )
 
+        total_disponible = len(congeladas)
+        if request.block_limit is not None and total_disponible > request.block_limit:
+            # Orden estable por clave: el tope no convierte la práctica en una lotería entre
+            # peticiones iguales. Barajar cambia el orden de presentación, no qué entra.
+            congeladas = sorted(congeladas, key=lambda pregunta: pregunta.stable_key)[
+                : request.block_limit
+            ]
+
         nota = (
             "Práctica libre del bloque: preguntas aceptadas de sus temas, sin reservas ni tiempo."
             if parte is not None
@@ -420,6 +431,8 @@ class StudyService:
             "tiempo ni penalización (la convocatoria tiene varias partes y no se mezclan sus "
             "reglas)."
         )
+        if len(congeladas) < total_disponible:
+            nota = f"{nota} Entran {len(congeladas)} de {total_disponible} preguntas."
         configuracion = SessionConfiguration(
             mode=SessionMode.BLOCK_PRACTICE,
             feedback=request.feedback or Feedback.IMMEDIATE,

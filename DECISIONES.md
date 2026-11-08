@@ -480,3 +480,16 @@ Aquí queda el resumen con el motivo y la reversión.
   mezcla de reglas de varias partes; el tamaño lo pone el material disponible, no un perfil.
 - **Reversión:** bajar la migración solo si no hay sesiones `block_practice`; quitar el botón y el
   campo. Las sesiones ya creadas se conservan como historia.
+
+## D-031 — La práctica por bloque acota cuántas preguntas entran (2026-11-08)
+
+- **Fecha:** 2026-11-08 · **Nivel:** 2 · **Estado:** aplicada (B-017, segunda entrega).
+- **Decisión:** `block_practice` acepta `block_limit` (1–200). Sin valor entran todas las preguntas
+  aceptadas del bloque; con valor se eligen en orden estable por clave y la nota de la sesión dice
+  «Entran N de M». La pantalla ofrece 10, 20, 50 o todas.
+- **Motivo:** un bloque puede tener decenas o cientos de preguntas; sin tope, la práctica deja de ser
+  una práctica y se convierte en un examen improvisado. El tope no cambia qué preguntas están
+  disponibles ni cómo se corrigen.
+- **Alternativa descartada:** elegir al azar (dos peticiones iguales darían sesiones distintas y no se
+  podría reproducir una práctica) y un tope fijo por bloque (el tamaño útil depende del banco).
+- **Reversión:** quitar el campo y el selector; la nota deja de decir cuántas entraron.

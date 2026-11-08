@@ -3372,6 +3372,11 @@ export interface components {
          */
         CreateSessionSchema: {
             /**
+             * Block Limit
+             * @description Solo en `block_practice`: cuántas preguntas entran como mucho. Sin valor, todas las aceptadas del bloque.
+             */
+            block_limit?: number | null;
+            /**
              * Block Node Id
              * @description Solo en `block_practice`: bloque del temario común del que salen las preguntas aceptadas de sus temas.
              */

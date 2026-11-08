@@ -366,10 +366,12 @@ llevan a su sitio.
 **HECHA (2026-11-08).** Práctica por bloque con el modo de sesión `block_practice`: las preguntas
 **aceptadas** de los temas del bloque, con clave activa, composición congelada y corrección de S07.
 
-- **Qué se entrega:** modo `block_practice`; `block_node_id` en `POST /study-sessions`; migración
-  `0023_block_practice`; botón «Empezar la práctica del bloque» en `/temario/:id/practicar`; etiqueta
-  de modo en la pantalla. Una sola parte de la convocatoria → su regla; varias → sin penalización y
-  con la nota de la sesión explicándolo; sin reservas ni tiempo.
+- **Qué se entrega:** modo `block_practice`; `block_node_id` y `block_limit` (1–200, opcional) en
+  `POST /study-sessions`; migración `0023_block_practice`; botón «Empezar la práctica del bloque» con
+  selector 10/20/50/todas en `/temario/:id/practicar`; etiqueta de modo en la pantalla. Una sola
+  parte de la convocatoria → su regla; varias → sin penalización y con la nota de la sesión
+  explicándolo; sin reservas ni tiempo. D-031: el tope elige en orden estable y la nota dice cuántas
+  entraron.
 - **Criterio de aceptación cumplido:** bloque con preguntas → sesión con las aceptadas de sus temas;
   bloque sin preguntas → 409, no sesión vacía; sin clave activa → 409; la pregunta servida es la del
   tema; prueba de integración que crea y arranca la sesión. D-030.

@@ -82,6 +82,15 @@ class CreateSessionSchema(BaseModel):
             "aceptadas de sus temas."
         ),
     )
+    block_limit: int | None = Field(
+        default=None,
+        ge=1,
+        le=200,
+        description=(
+            "Solo en `block_practice`: cuántas preguntas entran como mucho. Sin valor, todas las "
+            "aceptadas del bloque."
+        ),
+    )
 
 
 class ScoreSchema(BaseModel):

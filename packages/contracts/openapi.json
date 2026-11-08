@@ -2466,6 +2466,20 @@
       "CreateSessionSchema": {
         "description": "Lo que se manda para montar una sesión.",
         "properties": {
+          "block_limit": {
+            "anyOf": [
+              {
+                "maximum": 200.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Solo en `block_practice`: cuántas preguntas entran como mucho. Sin valor, todas las aceptadas del bloque.",
+            "title": "Block Limit"
+          },
           "block_node_id": {
             "anyOf": [
               {

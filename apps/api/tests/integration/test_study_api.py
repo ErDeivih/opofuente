@@ -286,7 +286,7 @@ def test_la_practica_por_bloque_compone_la_sesion_con_las_preguntas_del_bloque(
 ) -> None:
     """B-017: el bloque compone una sesión real con las preguntas aceptadas de sus temas."""
     seed_common_curriculum(seeded_settings)
-    set_id = _conjunto(seeded_client, preguntas=1)
+    set_id = _conjunto(seeded_client, preguntas=2)
     arbol = seeded_client.get("/api/v1/curricula/informatica-c1").json()
     bloque = arbol["nodes"][0]
     tema = bloque["children"][0]
@@ -295,29 +295,34 @@ def test_la_practica_por_bloque_compone_la_sesion_con_las_preguntas_del_bloque(
     engine = build_engine(seeded_settings.data_paths.database)
     try:
         with engine.begin() as conexion:
-            pregunta_id = conexion.execute(
-                text(
-                    "SELECT id FROM question_versions "
-                    "WHERE question_set_id = :set AND status != 'superseded' LIMIT 1"
-                ),
-                {"set": set_id},
-            ).scalar_one()
-            ahora = datetime.now(UTC)
-            conexion.execute(
-                text(
-                    "INSERT INTO curriculum_mappings "
-                    "(id, curriculum_node_id, subject_type, subject_id, coverage_type, depth, "
-                    "confidence, status, created_at, approved_at) VALUES "
-                    "(:id, :nodo, 'question_version', :pregunta, 'complete', 0, 1.0, 'accepted', "
-                    ":ahora, :ahora)"
-                ),
-                {
-                    "id": str(uuid4()),
-                    "nodo": tema["id"],
-                    "pregunta": pregunta_id,
-                    "ahora": ahora,
-                },
+            preguntas = (
+                conexion.execute(
+                    text(
+                        "SELECT id FROM question_versions "
+                        "WHERE question_set_id = :set AND status != 'superseded'"
+                    ),
+                    {"set": set_id},
+                )
+                .scalars()
+                .all()
             )
+            ahora = datetime.now(UTC)
+            for pregunta_id in preguntas:
+                conexion.execute(
+                    text(
+                        "INSERT INTO curriculum_mappings "
+                        "(id, curriculum_node_id, subject_type, subject_id, coverage_type, "
+                        "depth, confidence, status, created_at, approved_at) VALUES "
+                        "(:id, :nodo, 'question_version', :pregunta, 'complete', 0, 1.0, "
+                        "'accepted', :ahora, :ahora)"
+                    ),
+                    {
+                        "id": str(uuid4()),
+                        "nodo": tema["id"],
+                        "pregunta": pregunta_id,
+                        "ahora": ahora,
+                    },
+                )
     finally:
         engine.dispose()
 
@@ -328,6 +333,7 @@ def test_la_practica_por_bloque_compone_la_sesion_con_las_preguntas_del_bloque(
             "mode": "block_practice",
             "sources": [],
             "block_node_id": bloque["id"],
+            "block_limit": 1,
             "feedback": "immediate",
         },
         headers=ALLOWED_ORIGIN,
@@ -335,9 +341,11 @@ def test_la_practica_por_bloque_compone_la_sesion_con_las_preguntas_del_bloque(
     assert creada.status_code == 201, creada.text
     sesion = creada.json()
     assert sesion["mode"] == "block_practice"
+    assert sesion["total_questions"] == 1, "el tope deja una de las dos preguntas"
     assert "Práctica libre del bloque" in (sesion["configuration"]["note"] or ""), (
         "la nota dice qué es"
     )
+    assert "1 de 2" in (sesion["configuration"]["note"] or ""), "la nota dice cuántas entraron"
 
     arrancada = seeded_client.post(
         f"/api/v1/study-sessions/{sesion['id']}/start", headers=ALLOWED_ORIGIN
