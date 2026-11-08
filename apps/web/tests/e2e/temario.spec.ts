@@ -107,6 +107,11 @@ test('S13: la ficha del tema enlaza las convocatorias C1 que lo estudian', async
     page.getByRole('heading', { level: 1, name: primerTema?.title ?? '' }),
   ).toBeVisible();
   await expect(page.getByText(primerTema?.path ?? '', { exact: true }).first()).toBeVisible();
+  // La cabecera lleva a las convocatorias sin bajar la ficha entera, con el número real.
+  const enlaceConvocatorias = page
+    .locator('.page__lead')
+    .getByRole('link', { name: `${String(detalle.appears_in.length)} convocatorias` });
+  await expect(enlaceConvocatorias).toHaveAttribute('href', '#aparece-en');
 
   const aparece = page.locator('section[aria-labelledby="aparece-en"]');
   await expect(aparece.getByRole('heading', { name: 'En qué convocatorias aparece' })).toBeVisible();

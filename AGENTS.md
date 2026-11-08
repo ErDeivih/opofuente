@@ -92,3 +92,13 @@ No declarar ejecutada una prueba que no se ejecutó ni integración real si se u
 raíz de temporales del sistema en este equipo no es accesible para su limpieza. No ejecutar dos
 sesiones de pytest en paralelo.
 
+
+## Consultar el catálogo de repositorios (no busques a mano)
+
+Antes de buscar una librería, una herramienta o una referencia, pregunta al catálogo personal de David: más de 500 fichas documentales y ~1.400 repositorios dentro de recopilaciones, con licencia real, límite y recomendación.
+
+```powershell
+python F:\Inforepositorios\consultar.py "<lo que necesitas>" -n 5 --json
+```
+
+Puedes hacer **varias consultas seguidas** en la misma tarea, una por necesidad (OCR, scraping, PDF, agentes…); cada consulta es independiente y tarda 2-4 s. Devuelve los mejores candidatos con su licencia y la ruta de su ficha; abre solo esas fichas y mira la sección 9 (cuándo no elegirlo) y la 6 (licencia). Si solo quieres repositorios del catálogo, añade `--tipo ficha`. Es evidencia documental: nada se ha clonado, instalado ni ejecutado, así que da **candidatos que merecen revisión, no la garantía de que algo funcione**. Guía: `F:\Inforepositorios\RAG.md`. Para una palabra exacta: `& F:\Inforepositorios\scripts\Buscar-Todo.ps1 -Texto <término>`.

@@ -339,6 +339,16 @@ export function TemarioNodePage() {
           <span className="node__path">{nodo.path}</span>
           {' · '}
           {curriculum.name}
+          {aparece.length > 0 && (
+            <>
+              {' · '}
+              <a href="#aparece-en">
+                {aparece.length === 1
+                  ? '1 convocatoria'
+                  : `${String(aparece.length)} convocatorias`}
+              </a>
+            </>
+          )}
         </p>
       </header>
 
