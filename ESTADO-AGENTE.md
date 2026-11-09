@@ -1,8 +1,8 @@
 titulo: OpoFuente — temario comun de oposiciones de informatica C1
-resumen: B-017 cerrada con el modo block_practice, tope (D-031), tiempo opcional (D-032) y reservas con tope (D-033), migracion 0023 y prueba de integracion real. Puertas 1-17 verdes y E2E 53/53.
+resumen: Sesion 9/11 sin cambios de codigo: plan de despliegue fase 2 (gratis verificado, huecos SQLite->Postgres, decisiones D1-D3), inventario de 20 pantallas con 64 capturas y hallazgo del 404 de /reviews/mastery, y objetivo EstudiaTAI para REA.
 estado: en-curso
-tarea: S07 block_practice con composicion por bloque, tope, tiempo y reservas
-nivel: 2
-siguiente: decidir si la practica por bloque necesita mezcla de reglas de varias partes; mientras, actualizacion de version del temario y confirmacion de bases C1
-bloqueado: 
-fecha: 2026-11-08
+tarea: revision de interfaz y preparacion del despliegue (fase 2)
+nivel: 1
+siguiente: decidir D1/D2/D3 del plan de despliegue y arreglar el 404 de /reviews/mastery (mover la ruta estatica y anadir prueba); despues, estudiar EstudiaTAI con REA
+bloqueado:
+fecha: 2026-11-09
