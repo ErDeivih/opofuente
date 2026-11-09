@@ -91,6 +91,14 @@ class CreateSessionSchema(BaseModel):
             "aceptadas del bloque."
         ),
     )
+    block_reserves: int | None = Field(
+        default=None,
+        ge=0,
+        le=10,
+        description=(
+            "Solo en `block_practice`: cuántas preguntas de reserva entran. Necesita `block_limit`."
+        ),
+    )
 
 
 class ScoreSchema(BaseModel):

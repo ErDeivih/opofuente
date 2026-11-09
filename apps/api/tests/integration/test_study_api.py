@@ -334,6 +334,7 @@ def test_la_practica_por_bloque_compone_la_sesion_con_las_preguntas_del_bloque(
             "sources": [],
             "block_node_id": bloque["id"],
             "block_limit": 1,
+            "block_reserves": 1,
             "time_limit_minutes": 5,
             "feedback": "immediate",
         },
@@ -343,7 +344,8 @@ def test_la_practica_por_bloque_compone_la_sesion_con_las_preguntas_del_bloque(
     sesion = creada.json()
     assert sesion["mode"] == "block_practice"
     assert sesion["time_limit_minutes"] == 5, "la práctica por bloque admite tiempo límite"
-    assert sesion["total_questions"] == 1, "el tope deja una de las dos preguntas"
+    assert sesion["total_questions"] == 2, "una ordinaria y una de reserva"
+    assert "1 de reserva" in (sesion["configuration"]["note"] or ""), "la nota dice la reserva"
     assert "Práctica libre del bloque" in (sesion["configuration"]["note"] or ""), (
         "la nota dice qué es"
     )

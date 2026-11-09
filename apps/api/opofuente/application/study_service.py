@@ -135,6 +135,9 @@ class CreateSessionInput:
     #: Tope de preguntas de la práctica por bloque. Sin tope se usan todas las aceptadas; con tope
     #: se eligen en orden estable (no por azar) para que la misma petición dé la misma sesión.
     block_limit: int | None = None
+    #: Preguntas de reserva de la práctica por bloque. Necesitan un tope: salen de las que no
+    #: entraron como ordinarias. El motor de S07 las sustituye por orden si faltan ordinarias.
+    block_reserves: int | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -417,12 +420,22 @@ class StudyService:
             )
 
         total_disponible = len(congeladas)
-        if request.block_limit is not None and total_disponible > request.block_limit:
-            # Orden estable por clave: el tope no convierte la práctica en una lotería entre
-            # peticiones iguales. Barajar cambia el orden de presentación, no qué entra.
-            congeladas = sorted(congeladas, key=lambda pregunta: pregunta.stable_key)[
-                : request.block_limit
+        disponibles = sorted(congeladas, key=lambda pregunta: pregunta.stable_key)
+        limite = request.block_limit if request.block_limit is not None else total_disponible
+        ordinarias = disponibles[:limite]
+        reservas: list[FrozenQuestion] = []
+        if request.block_reserves:
+            if request.block_limit is None:
+                raise UnsupportedError(
+                    "las reservas de la práctica por bloque necesitan un tope de preguntas: "
+                    "si entran todas, no queda ninguna para reserva"
+                )
+            candidatas = disponibles[limite : limite + request.block_reserves]
+            reservas = [
+                replace(pregunta, is_reserve=True, reserve_order=orden)
+                for orden, pregunta in enumerate(candidatas, start=1)
             ]
+        congeladas = ordinarias + reservas
 
         nota = (
             "Práctica libre del bloque: preguntas aceptadas de sus temas, sin reservas ni tiempo."
@@ -431,8 +444,10 @@ class StudyService:
             "tiempo ni penalización (la convocatoria tiene varias partes y no se mezclan sus "
             "reglas)."
         )
-        if len(congeladas) < total_disponible:
-            nota = f"{nota} Entran {len(congeladas)} de {total_disponible} preguntas."
+        if len(ordinarias) < total_disponible:
+            nota = f"{nota} Entran {len(ordinarias)} de {total_disponible} preguntas."
+        if reservas:
+            nota = f"{nota} {len(reservas)} de reserva."
         if request.time_limit_minutes is not None:
             nota = f"{nota} Tiempo máximo: {request.time_limit_minutes} minutos."
         configuracion = SessionConfiguration(

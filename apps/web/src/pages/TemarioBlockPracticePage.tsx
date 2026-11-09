@@ -22,6 +22,7 @@ export function TemarioBlockPracticePage() {
   const oposiciones = useOppositions();
   const navigate = useNavigate();
   const [cantidad, setCantidad] = useState('todas');
+  const [reservas, setReservas] = useState('0');
   const [tiempo, setTiempo] = useState('sin');
   const activa = oposiciones.data?.find((oposicion) => oposicion.active) ?? null;
   const puedeEmpezar =
@@ -40,6 +41,7 @@ export function TemarioBlockPracticePage() {
         sources: [],
         block_node_id: nodeId,
         block_limit: cantidad === 'todas' ? null : Number(cantidad),
+        block_reserves: Number(reservas),
         time_limit_minutes: tiempo === 'sin' ? null : Number(tiempo),
         feedback: 'immediate',
         shuffle: false,
@@ -129,6 +131,22 @@ export function TemarioBlockPracticePage() {
               <option value="20">20</option>
               <option value="50">50</option>
               <option value="todas">Todas</option>
+            </select>
+            <label className="form__label" htmlFor="practica-reservas">
+              Reservas
+            </label>
+            <select
+              id="practica-reservas"
+              className="form__input"
+              value={reservas}
+              disabled={cantidad === 'todas'}
+              onChange={(event) => {
+                setReservas(event.target.value);
+              }}
+            >
+              <option value="0">Ninguna</option>
+              <option value="1">1</option>
+              <option value="2">2</option>
             </select>
             <label className="form__label" htmlFor="practica-tiempo">
               Tiempo máximo

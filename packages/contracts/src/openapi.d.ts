@@ -3381,6 +3381,11 @@ export interface components {
              * @description Solo en `block_practice`: bloque del temario común del que salen las preguntas aceptadas de sus temas.
              */
             block_node_id?: string | null;
+            /**
+             * Block Reserves
+             * @description Solo en `block_practice`: cuántas preguntas de reserva entran. Necesita `block_limit`.
+             */
+            block_reserves?: number | null;
             /** Convocation Version Id */
             convocation_version_id?: string | null;
             /** Feedback */

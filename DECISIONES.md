@@ -506,3 +506,17 @@ Aquí queda el resumen con el motivo y la reversión.
 - **No se añaden reservas**: no hay preguntas de reserva en el bloque y fabricarlas cambiaría la
   composición; si se quieren, es otro alcance.
 - **Reversión:** quitar el selector y el paso del límite; el campo ya existía para los demás modos.
+
+## D-033 — La práctica por bloque admite reservas si hay tope (2026-11-08)
+
+- **Fecha:** 2026-11-08 · **Nivel:** 2 · **Estado:** aplicada (B-017, cuarta entrega).
+- **Decisión:** `block_practice` acepta `block_reserves` (0–10), pero **solo junto a `block_limit`**:
+  las reservas se toman de las preguntas aceptadas que no entraron como ordinarias, en orden estable,
+  y se congelan con su número de reserva. El motor de S07 las usa por orden si faltan ordinarias. La
+  nota de la sesión dice cuántas entraron y cuántas son de reserva.
+- **Motivo:** el motor de reservas ya existía y no había forma de usarlo en una práctica de bloque;
+  se reutiliza sin inventar preguntas ni alterar la corrección. Sin tope no hay reserva posible
+  (entrarían todas), así que se rechaza con 409 en vez de fingir una.
+- **Alternativa descartada:** reservas fijas por bloque (no todas las convocatorias las usan) y
+  reservas sin tope (no queda material fuera de la sesión).
+- **Reversión:** quitar el campo y el selector; no hay migración (las columnas de reserva ya existen).

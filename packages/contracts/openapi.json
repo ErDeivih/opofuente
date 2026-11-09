@@ -2492,6 +2492,20 @@
             "description": "Solo en `block_practice`: bloque del temario común del que salen las preguntas aceptadas de sus temas.",
             "title": "Block Node Id"
           },
+          "block_reserves": {
+            "anyOf": [
+              {
+                "maximum": 10.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Solo en `block_practice`: cuántas preguntas de reserva entran. Necesita `block_limit`.",
+            "title": "Block Reserves"
+          },
           "convocation_version_id": {
             "anyOf": [
               {
