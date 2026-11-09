@@ -108,10 +108,11 @@ export function VersionsTab({
         </>
       )}
 
-      <table className="table">
-        <caption className="table__caption">
-          {versions.length} versiones del documento (la antigua no se borra)
-        </caption>
+      <div className="table-wrap">
+        <table className="table">
+          <caption className="table__caption">
+            {versions.length} versiones del documento (la antigua no se borra)
+          </caption>
         <thead>
           <tr>
             <th scope="col">Versión</th>
@@ -285,7 +286,8 @@ export function VersionsTab({
             );
           })}
         </tbody>
-      </table>
+        </table>
+      </div>
 
       <h3>Comparar dos versiones (diff)</h3>
       {versions.length < 2 ? (
@@ -361,11 +363,12 @@ export function VersionsTab({
                 secciones comparadas, de la más antigua a la más nueva). Comparar no fusiona nada: no
                 se ha modificado ninguna versión.
               </p>
-              <table className="table">
-                <caption className="table__caption">
-                  Comparación de «{etiquetaDe(versions, fromVersionId)}» con «
-                  {etiquetaDe(versions, toVersionId)}», sección a sección
-                </caption>
+              <div className="table-wrap">
+                <table className="table">
+                  <caption className="table__caption">
+                    Comparación de «{etiquetaDe(versions, fromVersionId)}» con «
+                    {etiquetaDe(versions, toVersionId)}», sección a sección
+                  </caption>
                 <thead>
                   <tr>
                     <th scope="col">Sección</th>
@@ -396,7 +399,8 @@ export function VersionsTab({
                     </tr>
                   ))}
                 </tbody>
-              </table>
+                </table>
+              </div>
               {diff.sections.some(
                 (seccion) => seccion.left_truncated || seccion.right_truncated,
               ) && (

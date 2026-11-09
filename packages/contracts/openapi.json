@@ -20419,7 +20419,7 @@
     },
     "/api/v1/reviews/mastery": {
       "get": {
-        "description": "Lo que la aplicación puede decir del dominio de cada tema, sin inventar un porcentaje.\n\nLos nodos sin intentos se declaran «sin datos» y los que tienen pocos, «evidencia insuficiente»:\n07_UI-UX §5 pide enseñar esa columna, y aquí se calcula con la misma regla para todos.",
+        "description": "Lo que la aplicación puede decir del dominio de cada tema, sin inventar un porcentaje.\n\nLos nodos sin intentos se declaran «sin datos» y los que tienen pocos, «evidencia insuficiente»:\n07_UI-UX §5 pide enseñar esa columna, y aquí se calcula con la misma regla para todos.\n\nEsta ruta va **antes** de `/reviews/{review_id}` a propósito: FastAPI resuelve por orden de\ndeclaración y, si estuviera después, «mastery» se tomaría como id de repaso (404 silencioso en\nInicio y Programa; regresión del 9/11/2026).",
         "operationId": "program_mastery_api_v1_reviews_mastery_get",
         "parameters": [
           {

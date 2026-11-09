@@ -60,22 +60,25 @@ export function ProposalList({ proposals, curriculumNodes, busy, onDecide }: Pro
   }
 
   return (
-    <table className="table">
-      <caption className="table__caption">
-        {proposals.length} propuestas esperando tu decisión
-      </caption>
-      <thead>
-        <tr>
-          <th scope="col">Material</th>
-          <th scope="col">Eje</th>
-          <th scope="col">Valor propuesto</th>
-          <th scope="col">Confianza</th>
-          <th scope="col">Evidencia</th>
-          <th scope="col">Alternativas</th>
-          <th scope="col">Estado</th>
-          <th scope="col">Decisión</th>
-        </tr>
-      </thead>
+    <div className="table-wrap">
+      <table className="table">
+        <caption className="table__caption">
+          {proposals.length} propuestas esperando tu decisión
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Material</th>
+            <th scope="col">Eje</th>
+            <th scope="col">Valor propuesto</th>
+            <th scope="col">Confianza</th>
+            <th scope="col">Evidencia</th>
+            <th scope="col">Alternativas</th>
+            <th scope="col">Estado</th>
+            <th scope="col" className="table__actions">
+              Decisión
+            </th>
+          </tr>
+        </thead>
       <tbody>
         {proposals.map((proposal) => {
           const label = subjectLabel(proposal);
@@ -145,7 +148,7 @@ export function ProposalList({ proposals, curriculumNodes, busy, onDecide }: Pro
                   <span className="hint"> sigue siendo reversible: recházala o deshazla.</span>
                 )}
               </td>
-              <td>
+              <td className="table__actions">
                 <div className="form__row">
                   <button
                     className="button"
@@ -217,6 +220,7 @@ export function ProposalList({ proposals, curriculumNodes, busy, onDecide }: Pro
           );
         })}
       </tbody>
-    </table>
+      </table>
+    </div>
   );
 }

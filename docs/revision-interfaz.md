@@ -375,6 +375,35 @@ vacío real: la siembra de perfiles deja el temario de 40 temas.
 
 ---
 
+## Estado de corrección (sesión del 9/11/2026, tarde)
+
+Lo corregido en el árbol después de esta revisión. No cambia el diagnóstico: los problemas 2, 4, 5 y 6
+siguen abiertos y son los que más valor tienen.
+
+| # | Estado | Qué se cambió |
+|---|---|---|
+| 1 | **corregido el síntoma principal** | Las tablas anchas van en `.table-wrap` (la tarjeta desplaza en horizontal, la página ya no desborda) y la columna «Decisión» es `position: sticky` a la derecha: Aceptar/Rechazar deja de quedar fuera de la vista. La densidad (51 filas, `select` de 33 temas) sigue pendiente. |
+| 2 | pendiente | Inicio sigue siendo un panel de operaciones; el rediseño de portada es una tarea propia. |
+| 3 | pendiente | UUID, fechas ISO y enums en inglés siguen en pantalla; falta el componente de versión legible y la localización de fechas. |
+| 4 | pendiente | Bandeja sigue pidiendo la ruta absoluta como acción principal. |
+| 5 | pendiente | El aviso largo de Revisión en móvil no se colapsa; el `.table-wrap` no reduce sus 29.644 px. |
+| 6 | pendiente | La tabla de 85 preguntas sigue sin paginar ni filtrar por texto. |
+| 7 | **corregido** | Los vacíos de Biblioteca, Cambios y Errores enlazan a Bandeja, Biblioteca y Estudiar. |
+| 8 | **corregido** | El texto de la práctica ya no promete «sin reservas ni tiempo»: dice que se eligen cantidad, reservas y tiempo. |
+| 9 | **corregido el bug** | `/reviews/mastery` se declara antes de `/reviews/{review_id}` y tiene prueba de regresión; el dominio estimado vuelve a llegar a Inicio y Programa. El botón «Reintentar» en los 3 errores sin él sigue pendiente. |
+| 10 | **corregido** | El buscador de la cabecera tiene placeholder («Busca un tema, una ley, un concepto…») y botón «Buscar». |
+
+Puertas de esta corrección: `tsc`, `eslint`, 219 pruebas web, 53 E2E y la suite de backend en verde
+(ver el resumen de la sesión). Las capturas de este documento son anteriores a los cambios: se
+conservan como evidencia del estado revisado, no como estado actual.
+
+> **Efecto secundario detectado al corregir el 9:** con `/reviews/mastery` respondiendo, la insignia
+> de dominio por nodo desbordaba **Programa a 390 px** (459 px de ancho). Se corrigió en
+> `.tree__label` (`flex-wrap: wrap`) y `.tree__title` (`min-width: 0; overflow-wrap: anywhere`), y la
+> prueba E2E de responsive de Programa vuelve a verde.
+
+---
+
 ## Anexo: qué captura enseña cada problema
 
 | # | Problema | Severidad | Captura(s) | Pantalla y ruta |

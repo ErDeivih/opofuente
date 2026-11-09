@@ -149,6 +149,7 @@ node deploy/verificar-demo.mjs http://127.0.0.1:8099   # 7 comprobaciones y capt
 
 - **Publicar**: [`docs/CUENTAS-Y-ACCESOS.md`](CUENTAS-Y-ACCESOS.md) tiene la cuenta que hay que crear
   (Render o Hugging Face), las variables exactas y el paso a paso. **No hay URL pública todavía.**
+- **Redesplegar**: [`docs/REDESPLIEGUE.md`](REDESPLIEGUE.md), en 5 líneas.
 - **Observabilidad**: [`docs/OBSERVABILIDAD.md`](OBSERVABILIDAD.md) (contadores de pantallas y errores
   en la propia API, sin terceros).
 - **Carga**: [`docs/CARGA.md`](CARGA.md) (k6, 50 usuarios concurrentes).

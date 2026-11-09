@@ -490,3 +490,20 @@ def _primer_tema(client: TestClient) -> dict[str, Any]:
         return [nodo for nodo in nodos for nodo in [nodo, *aplanar(nodo["children"])]]
 
     return next(nodo for nodo in aplanar(curriculum["nodes"]) if nodo["node_type"] == "topic")
+
+# --- la ruta estática no se la come la dinámica --------------------------------------------------
+
+
+def test_el_dominio_del_programa_responde_por_su_ruta_estatica(
+    seeded_settings: Settings, seeded_client: TestClient
+) -> None:
+    """/reviews/mastery no puede acabar en /reviews/{review_id} por orden de declaración.
+
+    Regresión del 9/11/2026: la ruta dinámica estaba antes y FastAPI tomaba «mastery» como id de
+    repaso; la pantalla de Inicio perdía el dominio estimado con un 404 silencioso.
+    """
+    respuesta = seeded_client.get("/api/v1/reviews/mastery")
+    assert respuesta.status_code == 200, respuesta.text
+    cuerpo = respuesta.json()
+    assert cuerpo["nodes_total"] >= 0
+    assert "nodes" in cuerpo and "opposition_id" in cuerpo

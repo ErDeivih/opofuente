@@ -340,6 +340,24 @@ button:focus-visible,
   padding-bottom: 0.35rem;
 }
 
+/* Tablas anchas: la tarjeta desplaza en horizontal en vez de desbordar la página (Revisión,
+   Biblioteca). La columna de decisión se queda pegada al borde derecho para no perder la acción
+   cuando hay que desplazar. */
+.table-wrap {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.table-wrap .table {
+  margin-bottom: 0;
+}
+
+.table__actions {
+  position: sticky;
+  right: 0;
+  background: var(--color-superficie);
+}
+
 .table th,
 .table td {
   text-align: left;
@@ -497,6 +515,9 @@ button:focus-visible,
   align-items: baseline;
   gap: 0.5rem;
   width: 100%;
+  /* El dominio añade una insignia por nodo (S10); sin envolver, un título largo y su insignia
+     empujan la página más allá del ancho del móvil. */
+  flex-wrap: wrap;
   text-align: left;
   background: none;
   border: none;
@@ -526,6 +547,8 @@ button:focus-visible,
 
 .tree__title {
   flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 /* --- Detalle de nodo y examen --------------------------------------------- */

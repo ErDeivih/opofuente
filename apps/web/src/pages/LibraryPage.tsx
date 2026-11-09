@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 
 import { isRestricted, DOCUMENT_PAGE_LIMIT } from '../api/library';
 import {
@@ -181,6 +181,7 @@ export function LibraryPage() {
                 title="Todavía no hay ningún documento"
                 description="Un documento nace al promocionar material ya copiado: la biblioteca no crea obras."
                 hint="Copia el material en la Bandeja y promociónalo: aparecerá aquí con su versión."
+                action={<Link to="/bandeja">Ir a la Bandeja</Link>}
               />
             ) : (
               <p className="hint">

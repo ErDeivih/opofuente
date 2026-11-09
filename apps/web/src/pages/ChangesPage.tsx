@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 import { isApiError } from '../api/client';
 import { CHANGE_STATUS_LABEL, SECTION_KIND_LABEL, changeSummary } from '../api/changes';
@@ -82,6 +83,9 @@ export function ChangesPage() {
             No hay ninguna versión nueva pendiente de revisar. Un cambio aparece cuando promocionas
             una segunda versión de un documento que ya tenía una aceptada: entonces se compara y se
             dice qué derivados dependen de lo que cambió.
+          </p>
+          <p>
+            <Link to="/biblioteca">Abrir la Biblioteca</Link>
           </p>
         </section>
       )}

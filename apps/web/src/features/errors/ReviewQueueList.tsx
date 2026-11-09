@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom';
+
 import type { DueItem, ErrorCause } from '../../api/reviews';
 import { StatusBadge } from '../../components/StatusBadge';
 
@@ -39,10 +41,15 @@ export function ReviewQueueList({
 }: ReviewQueueListProps) {
   if (items.length === 0) {
     return (
-      <p className="hint">
-        No hay nada vencido. La cola se llena sola cuando fallas una pregunta en una sesión; si
-        quieres repasar antes de que toque, puedes declarar el resultado de un repaso hecho fuera.
-      </p>
+      <div>
+        <p className="hint">
+          No hay nada vencido. La cola se llena sola cuando fallas una pregunta en una sesión; si
+          quieres repasar antes de que toque, puedes declarar el resultado de un repaso hecho fuera.
+        </p>
+        <p>
+          <Link to="/estudiar">Ir a Estudiar</Link>
+        </p>
+      </div>
     );
   }
 

@@ -42,19 +42,22 @@ export function GlobalSearch() {
         id="busqueda-global"
         className="app__search-input"
         type="search"
+        placeholder="Busca un tema, una ley, un concepto…"
         value={texto}
         onChange={(event) => {
           setBorrador({ texto: event.target.value, para: q });
         }}
         onKeyDown={(event) => {
-          // El formulario no lleva botón: la búsqueda se lanza con Intro y el resultado se ve en su
-          // sección, que es donde están los filtros, las citas y la recuperación completa.
+          // El formulario también se envía con Intro; el botón deja ver que hay una acción.
           if (event.key === 'Enter') {
             event.preventDefault();
             ir();
           }
         }}
       />
+      <button className="button" type="submit" aria-label="Ejecutar la búsqueda">
+        Buscar
+      </button>
     </form>
   );
 }

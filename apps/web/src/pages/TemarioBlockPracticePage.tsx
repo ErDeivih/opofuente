@@ -110,8 +110,8 @@ export function TemarioBlockPracticePage() {
         <h2 id="practica-libre">Preguntas del bloque</h2>
         <p className="hint">
           Preguntas aceptadas del banco catalogadas en los temas de este bloque. Puedes abrirlas en
-          su ficha o empezar una práctica del bloque: sin reservas ni tiempo y con la corrección de
-          la convocatoria.
+          su ficha o empezar una práctica del bloque: eliges cuántas entran, si llevan reservas y si
+          tiene tiempo máximo, y se corrige con la regla de la convocatoria.
         </p>
 
         {puedeEmpezar && (

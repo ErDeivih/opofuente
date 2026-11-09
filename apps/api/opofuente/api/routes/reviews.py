@@ -250,6 +250,53 @@ def snooze_review(
 
 
 @router.get(
+    "/reviews/mastery",
+    response_model=MasteryProgramSchema,
+    responses=RESOURCE_ERRORS,
+    summary="El dominio estimado de cada nodo del programa (ruta añadida a §10)",
+)
+def program_mastery(
+    service: ReviewServiceDep,
+    profiles: ProfilesServiceDep,
+    opposition_id: Annotated[str | None, Query()] = None,
+) -> MasteryProgramSchema:
+    """Lo que la aplicación puede decir del dominio de cada tema, sin inventar un porcentaje.
+
+    Los nodos sin intentos se declaran «sin datos» y los que tienen pocos, «evidencia insuficiente»:
+    07_UI-UX §5 pide enseñar esa columna, y aquí se calcula con la misma regla para todos.
+
+    Esta ruta va **antes** de `/reviews/{review_id}` a propósito: FastAPI resuelve por orden de
+    declaración y, si estuviera después, «mastery» se tomaría como id de repaso (404 silencioso en
+    Inicio y Programa; regresión del 9/11/2026).
+    """
+    oposicion = _oposicion(profiles, opposition_id)
+    convocatoria_id = oposicion.opposition.convocation_id
+    if convocatoria_id is None:
+        raise NotFoundError("convocatoria activa", oposicion.opposition.code)
+    curriculum = profiles.get_curriculum(convocatoria_id)
+    nodos = _aplanar(curriculum.nodes)
+    estimaciones = service.mastery([nodo.id for nodo in nodos])
+    fichas = [_mastery(nodo.id, estimaciones[nodo.id]) for nodo in nodos]
+    con_estimacion = sum(1 for ficha in fichas if ficha.has_estimate)
+    sin_datos = sum(1 for ficha in fichas if ficha.attempts == 0)
+    return MasteryProgramSchema(
+        opposition_id=oposicion.opposition.id,
+        convocation_id=convocatoria_id,
+        nodes=fichas,
+        nodes_total=len(fichas),
+        nodes_with_estimate=con_estimacion,
+        nodes_insufficient=len(fichas) - con_estimacion - sin_datos,
+        nodes_without_data=sin_datos,
+        note=(
+            "El dominio se estima por tema con los intentos de las preguntas **asignadas** a ese "
+            "tema. Un tema sin preguntas asignadas no tiene datos, y con menos de "
+            f"{MIN_INTENTOS_DOMINIO} intentos recientes se dice «evidencia insuficiente» en lugar "
+            "de un porcentaje."
+        ),
+    )
+
+
+@router.get(
     "/reviews/{review_id}",
     response_model=ReviewItemSchema,
     responses=RESOURCE_ERRORS,
@@ -291,49 +338,6 @@ def list_learning_errors(
 )
 def get_learning_error(error_id: str, service: ReviewServiceDep) -> ErrorDetailSchema:
     return _detail(service.error(error_id))
-
-
-@router.get(
-    "/reviews/mastery",
-    response_model=MasteryProgramSchema,
-    responses=RESOURCE_ERRORS,
-    summary="El dominio estimado de cada nodo del programa (ruta añadida a §10)",
-)
-def program_mastery(
-    service: ReviewServiceDep,
-    profiles: ProfilesServiceDep,
-    opposition_id: Annotated[str | None, Query()] = None,
-) -> MasteryProgramSchema:
-    """Lo que la aplicación puede decir del dominio de cada tema, sin inventar un porcentaje.
-
-    Los nodos sin intentos se declaran «sin datos» y los que tienen pocos, «evidencia insuficiente»:
-    07_UI-UX §5 pide enseñar esa columna, y aquí se calcula con la misma regla para todos.
-    """
-    oposicion = _oposicion(profiles, opposition_id)
-    convocatoria_id = oposicion.opposition.convocation_id
-    if convocatoria_id is None:
-        raise NotFoundError("convocatoria activa", oposicion.opposition.code)
-    curriculum = profiles.get_curriculum(convocatoria_id)
-    nodos = _aplanar(curriculum.nodes)
-    estimaciones = service.mastery([nodo.id for nodo in nodos])
-    fichas = [_mastery(nodo.id, estimaciones[nodo.id]) for nodo in nodos]
-    con_estimacion = sum(1 for ficha in fichas if ficha.has_estimate)
-    sin_datos = sum(1 for ficha in fichas if ficha.attempts == 0)
-    return MasteryProgramSchema(
-        opposition_id=oposicion.opposition.id,
-        convocation_id=convocatoria_id,
-        nodes=fichas,
-        nodes_total=len(fichas),
-        nodes_with_estimate=con_estimacion,
-        nodes_insufficient=len(fichas) - con_estimacion - sin_datos,
-        nodes_without_data=sin_datos,
-        note=(
-            "El dominio se estima por tema con los intentos de las preguntas **asignadas** a ese "
-            "tema. Un tema sin preguntas asignadas no tiene datos, y con menos de "
-            f"{MIN_INTENTOS_DOMINIO} intentos recientes se dice «evidencia insuficiente» en lugar "
-            "de un porcentaje."
-        ),
-    )
 
 
 def _oposicion(profiles: ProfilesService, opposition_id: str | None) -> OppositionDetail:

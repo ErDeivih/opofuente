@@ -3,6 +3,24 @@
 **Fecha:** 9 de noviembre de 2026 · **Estado:** **no se ha creado ninguna cuenta y no hay URL
 pública todavía**. Este documento es el paso que falta, con los nombres exactos.
 
+## Estado verificado el 9/11/2026 a las 20:28 (la URL documentada no es un servicio vivo)
+
+`https://opofuente-demo.onrender.com` responde **404** con `x-render-routing: no-server` y cuerpo
+`Not Found`. Eso no es una demo dormida ni un servicio borrado: **Render no tiene ningún servicio con
+ese nombre**. La URL de este documento es la *esperada* si el servicio se llama `opofuente-demo`; se
+escribió como destino, no como dirección viva. No hay sesión ni token de Render/HF en la máquina
+(comprobado otra vez), así que no puedo listar el dashboard ni redesplegar.
+
+Qué hacer ahora, en orden:
+
+1. **Si ya creaste el servicio en Render con otro nombre**, copia la URL real del dashboard. Será
+   `https://<nombre-del-servicio>.onrender.com` y es la que hay que poner en `PUBLIC_ORIGIN`.
+2. **Si no existe**, crea el blueprint con los pasos de abajo. No hace falta dominio ni tarjeta para
+   el plan Free.
+3. **Si quieres que el siguiente agente lo verifique sin ti**, pega aquí (o en una variable
+   `RENDER_API_KEY` de la sesión) una API key de Render con permiso de lectura: con ella se listan
+   servicios y se comprueba el estado real. No la subas al repositorio.
+
 ## Por qué no hay URL todavía (y por qué no la puedo crear yo)
 
 El encargo pedía desplegar en un proveedor gratuito y, si algo requería una cuenta o un pago, **no

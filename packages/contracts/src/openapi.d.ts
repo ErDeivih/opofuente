@@ -2119,6 +2119,10 @@ export interface paths {
          *
          *     Los nodos sin intentos se declaran «sin datos» y los que tienen pocos, «evidencia insuficiente»:
          *     07_UI-UX §5 pide enseñar esa columna, y aquí se calcula con la misma regla para todos.
+         *
+         *     Esta ruta va **antes** de `/reviews/{review_id}` a propósito: FastAPI resuelve por orden de
+         *     declaración y, si estuviera después, «mastery» se tomaría como id de repaso (404 silencioso en
+         *     Inicio y Programa; regresión del 9/11/2026).
          */
         get: operations["program_mastery_api_v1_reviews_mastery_get"];
         put?: never;

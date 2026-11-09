@@ -70,8 +70,9 @@ export function ReviewGroups({
         juntos: el lote se puede completar o dejar fuera filas concretas antes de confirmarlo.
       </p>
 
-      <table className="table">
-        <caption className="table__caption">Grupos de revisión</caption>
+      <div className="table-wrap">
+        <table className="table">
+          <caption className="table__caption">Grupos de revisión</caption>
         <thead>
           <tr>
             <th scope="col">Grupo</th>
@@ -124,7 +125,8 @@ export function ReviewGroups({
             </tr>
           ))}
         </tbody>
-      </table>
+        </table>
+      </div>
 
       {markedGroups.length > 0 && (
         <>
