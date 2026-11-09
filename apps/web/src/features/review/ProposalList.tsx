@@ -105,9 +105,6 @@ export function ProposalList({ proposals, curriculumNodes, busy, onDecide }: Pro
               </td>
               <td>
                 {valueLabel(proposal)}
-                {proposal.value_label !== null && proposal.value_label !== undefined && (
-                  <span className="hint sample__path"> {proposal.proposed_value}</span>
-                )}
               </td>
               <td>
                 {percent(proposal.confidence)}{' '}

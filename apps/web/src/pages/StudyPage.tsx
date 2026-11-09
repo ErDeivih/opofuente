@@ -28,6 +28,7 @@ import { StudyResultPanel } from '../features/study/StudyResultPanel';
 import { StudyRunner } from '../features/study/StudyRunner';
 import { StudySetup } from '../features/study/StudySetup';
 import { modeLabel, statusLabel } from '../features/study/labels';
+import { formatDateTime } from '../lib/format';
 
 function describeError(error: unknown): string {
   return error instanceof Error ? error.message : 'Error desconocido';
@@ -185,7 +186,7 @@ export function StudyPage() {
           {session.started_at !== null && session.started_at !== undefined && (
             <>
               {' '}
-              y empezó el <time dateTime={session.started_at}>{session.started_at}</time>
+              y empezó el <time dateTime={session.started_at}>{formatDateTime(session.started_at)}</time>
             </>
           )}
           .
@@ -410,12 +411,18 @@ export function StudyPage() {
                   <td className="hint">
                     {candidata.answered_questions} de {candidata.total_questions}
                   </td>
-                  <td className="hint">{candidata.started_at ?? 'sin empezar'}</td>
+                  <td className="hint">
+                    {candidata.started_at ? formatDateTime(candidata.started_at) : 'sin empezar'}
+                  </td>
                   <td>
                     <button
                       className="button"
                       type="button"
-                      aria-label={`Abrir la sesión empezada el ${candidata.started_at ?? candidata.created_at}`}
+                      aria-label={`Abrir la sesión empezada el ${
+                        candidata.started_at
+                          ? formatDateTime(candidata.started_at)
+                          : formatDateTime(candidata.created_at)
+                      }`}
                       onClick={() => {
                         setPreparandoOtra(false);
                         setSessionIdElegida(candidata.id);

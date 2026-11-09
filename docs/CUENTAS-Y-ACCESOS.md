@@ -50,10 +50,15 @@ correcto es **un contenedor con SQLite dentro** y datos sintéticos empaquetados
 - La **web se sirve desde el mismo origen** (`VITE_API_BASE_URL=same-origin`), sin CSP rota ni URL
   de API horneada a la máquina de desarrollo.
 - La base es la **demo empaquetada** en la imagen: temario común (5 bloques / 40 temas), perfil TAI
-  2025 y 40 preguntas sintéticas con su clave activa. No incluye Guardia Civil ni Celador (DEBT-003)
-  ni el corpus real de David.
+  2025, **el tema I.1 con apuntes propios (citados del BOE)** y una **práctica de 10 preguntas sobre
+  ese tema**, además de 40 preguntas sintéticas de banco. No incluye Guardia Civil ni Celador
+  (DEBT-003) ni el corpus real de David.
+- **Acceso sin cuenta:** la demo se puede visitar y **practicar sin registrarse** (lectura y
+  `study-sessions` son públicos). La administración (importar, copias, ajustes) queda detrás de
+  autenticación básica: si no defines `DEMO_PASSWORD`, el entrypoint genera una aleatoria y la escribe
+  en el log del servicio. No hay login de usuario ni cuentas de alumno.
 - El plan Free **no tiene disco persistente**: cada reinicio vuelve al estado inicial de la demo.
-  Es una demo de lectura, no un servicio con datos.
+  Es una demo de lectura y práctica, no un servicio con datos.
 
 ## Paso a paso (lo que tiene que hacer David)
 
@@ -141,23 +146,25 @@ escritura en <https://huggingface.co/settings/tokens>. Instrucciones completas e
   (ver [`OBSERVABILIDAD.md`](OBSERVABILIDAD.md)).
 - Carga: `load/k6-50vu.js` con 50 usuarios concurrentes (ver [`CARGA.md`](CARGA.md)).
 
-## Prueba local (ejecutada el 9/11/2026)
+## Prueba local (ejecutada el 9/11/2026, noche)
 
-Contenedor arrancado en el puerto 8099 con `PUBLIC_ORIGIN=http://127.0.0.1:8099`,
-`DEMO_USER=demo` y `DEMO_PASSWORD=demo`:
+Contenedor arrancado en el puerto 8099 con `PUBLIC_ORIGIN=http://127.0.0.1:8099` y **sin
+`DEMO_PASSWORD`** (administración con contraseña aleatoria escrita en el log):
 
 | Comprobación | Resultado |
 |---|---|
 | `GET /healthz` (proxy a la salud real de la API) | **200** |
-| `GET /` sin credenciales | **401** (la autenticación de borde está activa) |
-| `GET /api/v1/curricula` con credenciales | **200**: temario común `informatica-c1-v1` activo + programa publicado del TAI |
-| `GET /api/v1/question-sets` | **1** conjunto «Banco de demostración (datos sintéticos)», `confirmed`, 40 preguntas, clave activa |
-| `POST /api/v1/telemetry/events` con `Origin` de la demo | **202**; el resumen cuenta la pantalla |
-| `deploy/verificar-demo.mjs` (Playwright, 1280 y 390) | **7/7**: portada, temario 5 bloques/40 temas, banco con 40 preguntas, API en el mismo origen, sin 4xx/5xx inesperadas, sin errores de consola |
-| k6, 50 VUs, 60 s | 7 565 peticiones, **0 fallos**, p95 **453 ms** |
+| `GET /` y `/temario` sin credenciales | **200**: la demo se visita sin cuenta |
+| `GET /api/v1/curricula` | **200**: temario común `informatica-c1-v1` activo + programa del TAI |
+| `GET /api/v1/question-sets` | **2** conjuntos: banco de 40 preguntas y práctica del tema I.1 (10 preguntas) |
+| Ficha del tema I.1 | **3.141 caracteres de apuntes** propios (BOE) |
+| **Práctica completa sin cuenta** | sesión creada (201), 10 respuestas, `finish` y resultado **200** |
+| `POST /api/v1/backups` sin credenciales | **401**: la administración sigue protegida |
+| `deploy/verificar-demo.mjs` | **17/17**: portada, temario, ficha con apuntes, práctica terminada, admin 401, sin errores |
+| k6, 50 VUs, 60 s | 7 565 peticiones, **0 fallos**, p95 **453 ms** (medido antes del cambio de acceso) |
 
 **Capturas de la prueba local:** [`docs/capturas/deploy-local/`](capturas/deploy-local/) (inicio,
-temario y preguntas a 1280 y 390, servidas por el contenedor).
+temario, banco y ficha del tema I.1 a 1280 y 390, servidas por el contenedor).
 
 **Lo que no se pudo probar:** la URL pública real (falta la cuenta, sección de arriba) y el
 comportamiento del plan Free de Render (0,1 CPU, siesta por inactividad): los números de carga son de

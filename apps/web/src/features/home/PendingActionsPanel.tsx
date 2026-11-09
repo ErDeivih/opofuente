@@ -44,8 +44,8 @@ export function PendingActionsPanel() {
       {pendientes.isSuccess && pendientes.data.actions.length > 0 && (
         <>
           <p className="hint">
-            La aplicación ya ha hecho lo que puede hacer sola. Esto es lo que no puede decidir por ti
-            (ADR-017): cada línea lleva a la pantalla donde se resuelve.
+            La aplicación ya ha hecho lo que puede hacer sola. Esto es lo que no puede decidir por ti:
+            cada línea lleva a la pantalla donde se resuelve.
           </p>
           <ul className="check-list">
             {pendientes.data.actions.map((accion) => (

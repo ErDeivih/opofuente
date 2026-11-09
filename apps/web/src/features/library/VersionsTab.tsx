@@ -349,7 +349,7 @@ export function VersionsTab({
             <p className="hint">
               El servidor compara <strong>secciones</strong>, y estas dos versiones no tienen ninguna
               con la que comparar. Le pasa al material que entró como texto plano o pegado: el
-              extractor de texto plano todavía no parte secciones (deuda registrada, DEBT-009). No
+              extractor de texto plano todavía no parte secciones (limitación conocida). No
               significa que los textos sean iguales: significa que no hay nada que enfrentar sección
               a sección, y la comparación no se rellena con suposiciones.
             </p>

@@ -219,7 +219,7 @@ export function ReviewPage() {
           confianza alta: requieren tu confirmación.
         </p>
         <p className="hint">
-          Aceptar no convierte el material en oficial: solo lo aprueba para tu corpus (07_UI-UX §12).
+          Aceptar no convierte el material en oficial: solo lo aprueba para tu corpus.
         </p>
       </section>
 

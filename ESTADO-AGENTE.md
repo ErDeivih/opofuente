@@ -1,8 +1,8 @@
 titulo: OpoFuente — temario comun de oposiciones de informatica C1
-resumen: Sesion 9/11 (noche): la URL documentada de la demo devuelve 404 con x-render-routing no-server (no existe servicio; no hay cuenta de proveedor), asi que no hay URL que dar. Corregidos 6 de los 10 problemas de interfaz, incluido el 404 de /reviews/mastery, con 1033 pruebas backend, 219 web y 53 E2E en verde; demo reconstruida y verificada 7/7 en local.
+resumen: Sesion 9/11 (noche 2): sin URL publica porque Render no tiene el servicio (404 x-render-routing no-server) y no hay cuenta ni token en la maquina. Demo con el tema I.1 completo (apuntes propios) y una practica de 10 preguntas terminable sin cuenta, verificada 17/17 en local; corregidos 6 problemas de interfaz y la parte mecanica del 3, con capturas antes/despues; 2, 4, 5 y 6 y la etiqueta de version quedan con opciones A/B. 1033 backend, 222 web y 53 E2E en verde.
 estado: en-curso
-tarea: publicar la demo (falta la cuenta) y cerrar los 4 problemas de interfaz que quedan
+tarea: publicar la demo (falta la cuenta) y decidir los 5 puntos A/B de interfaz
 nivel: 2
-siguiente: crear la cuenta de Render o Hugging Face y desplegar segun docs/CUENTAS-Y-ACCESOS.md y docs/REDESPLIEGUE.md; si ya existe un servicio, pegar su URL real (o una RENDER_API_KEY de lectura) para verificarlo; quedan Inicio, jerga, Bandeja, movil y paginacion de Preguntas
-bloqueado: sin URL: no existe cuenta de proveedor en la maquina y opofuente-demo.onrender.com responde 404 no-server (no es un servicio dormido)
+siguiente: crear la cuenta de Render o Hugging Face y desplegar segun docs/CUENTAS-Y-ACCESOS.md y docs/REDESPLIEGUE.md; o pegar la URL real / una RENDER_API_KEY de lectura si el servicio ya existe con otro nombre. Despues, decidir Inicio, Bandeja, movil, paginacion y nombre de version con la tabla A/B de docs/revision-interfaz.md
+bloqueado: sin URL: opofuente-demo.onrender.com responde 404 no-server (no es un servicio dormido) y no hay cuenta de proveedor en la maquina; crear cuentas o pagos queda fuera del encargo
 fecha: 2026-11-09

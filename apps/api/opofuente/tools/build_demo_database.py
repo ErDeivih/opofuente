@@ -59,6 +59,11 @@ DEMO_PROFILE_CODE = "tai-age"
 #: Conjunto de preguntas de la demo (el título lo dice para que nadie lo confunda con un examen).
 DEMO_SET_TITLE = "Banco de demostración (datos sintéticos)"
 
+#: Tema que la demo enseña completo: apuntes propios y una práctica que se puede terminar.
+DEMO_TOPIC_PATH = "I.1"
+DEMO_TOPIC_SET_TITLE = "Práctica de demostración · Tema I.1"
+DEMO_TOPIC_FIXTURE = Path("fixtures") / "demo" / "tema-i1.json"
+
 DEMO_DB_NAME = "opofuente-demo.sqlite3"
 
 
@@ -94,6 +99,32 @@ def _demo_csv(curriculum_json: Path) -> str:
     return "\n".join(lines) + "\n"
 
 
+def _tema_csv(fixture_path: Path) -> tuple[str, str]:
+    """Apuntes y preguntas del tema de demo (contenido propio, citado del BOE)."""
+    data = json.loads(fixture_path.read_text(encoding="utf-8"))
+    preguntas = data["questions"]
+    if len(preguntas) < 8:
+        raise RuntimeError(f"el tema de demo necesita al menos 8 preguntas, tiene {len(preguntas)}")
+    lines = ["stem;option_a;option_b;option_c;option_d;correct;explanation;topic"]
+    for pregunta in preguntas:
+        opciones = pregunta["options"]
+        if len(opciones) != 4:
+            raise RuntimeError(f"la pregunta «{pregunta['stem']}» no tiene 4 opciones")
+        limpio = [str(valor).replace(";", ",") for valor in opciones]
+        lines.append(
+            ";".join(
+                [
+                    str(pregunta["stem"]).replace(";", ","),
+                    *limpio,
+                    str(pregunta["correct"]),
+                    str(pregunta["explanation"]).replace(";", ","),
+                    DEMO_TOPIC_PATH,
+                ]
+            )
+        )
+    return "\n".join(lines) + "\n", str(data["apuntes"])
+
+
 def build_demo_database(*, out: Path, workdir: Path) -> dict[str, int]:
     """Genera la base de demo y devuelve los recuentos que se pueden comprobar en el log."""
     if workdir.exists():
@@ -125,6 +156,20 @@ def build_demo_database(*, out: Path, workdir: Path) -> dict[str, int]:
             load_c1_convocatorias(root / C1_CONVOCATORIAS_FIXTURE)
         )
 
+        tema_csv, apuntes = _tema_csv(root / DEMO_TOPIC_FIXTURE)
+        with sessions() as session:
+            # Los apuntes del tema de demo son propios (resumen citado del BOE), no se copian de
+            # ninguna academia. Se escriben solo en la base de demostración, no en el fixture.
+            session.execute(
+                text(
+                    "UPDATE curriculum_nodes SET description = :apuntes "
+                    "WHERE path = :path AND curriculum_version_id = ("
+                    "SELECT id FROM curriculum_versions WHERE code = 'informatica-c1-v1')"
+                ),
+                {"apuntes": apuntes, "path": DEMO_TOPIC_PATH},
+            )
+            session.commit()
+
         with sessions() as session:
             opposition_id = session.execute(
                 text("SELECT id FROM oppositions WHERE code = :code"),
@@ -151,6 +196,20 @@ def build_demo_database(*, out: Path, workdir: Path) -> dict[str, int]:
         # Un banco de demo que se queda en «borrador» da la impresión de estar a medias; se
         # confirma en el propio fixture de demostración (no es una decisión sobre datos reales).
         repositorio.set_status(conjunto.id, "confirmed", now=SystemClock().now(), actor="demo")
+
+        # Práctica del tema completo: es la que un visitante puede empezar y terminar sin cuenta.
+        conjunto_tema = servicio.create_set(
+            DEMO_TOPIC_SET_TITLE,
+            opposition_id=opposition_id,
+            set_type="practice",
+            model_code="A",
+        )
+        informe_tema = servicio.import_from_csv(conjunto_tema.id, tema_csv)
+        claves_tema = servicio.keys(conjunto_tema.id)
+        if not claves_tema:
+            raise RuntimeError("la práctica del tema de demo no creó ninguna clave")
+        servicio.activate_key(claves_tema[0].id)
+        repositorio.set_status(conjunto_tema.id, "confirmed", now=SystemClock().now(), actor="demo")
     finally:
         engine.dispose()
 
@@ -176,7 +235,9 @@ def build_demo_database(*, out: Path, workdir: Path) -> dict[str, int]:
             "question_sets": cuenta("SELECT count(*) FROM question_sets"),
             "questions": cuenta("SELECT count(*) FROM question_versions"),
             "answer_keys": cuenta("SELECT count(*) FROM answer_key_entries"),
-            "imported": int(informe.created),
+            "imported": int(informe.created) + int(informe_tema.created),
+            "tema_questions": int(informe_tema.created),
+            "apuntes_chars": len(apuntes),
         }
     finally:
         comprobacion.close()
@@ -202,7 +263,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(list(argv) if argv is not None else None)
     counts = build_demo_database(out=args.out, workdir=args.workdir)
     print(json.dumps({"out": str(args.out), **counts}, ensure_ascii=False))
-    if counts["curriculum_nodes"] < 45 or counts["questions"] < 40:
+    if (
+        counts["curriculum_nodes"] < 45
+        or counts["questions"] < 50
+        or counts["tema_questions"] < 8
+        or counts["apuntes_chars"] < 1000
+    ):
         print("La base de demo no tiene el temario y las preguntas esperadas.", file=sys.stderr)
         return 1
     return 0

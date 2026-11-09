@@ -4,7 +4,8 @@
 # - Copia la base de demo empaquetada al volumen efímero si no existe (cada reinicio vuelve al
 #   estado inicial: es una demo, no un servicio con datos).
 # - Traduce PUBLIC_ORIGIN a la lista de orígenes que exige la API para aceptar escrituras.
-# - Opcionalmente activa autenticación básica de borde (DEMO_USER/DEMO_PASSWORD).
+# - Protege la administración con autenticación básica: si no hay DEMO_PASSWORD, genera una
+#   aleatoria y la escribe en el log (la demo se puede visitar y practicar sin cuenta).
 # - Genera la configuración de nginx con $PORT y arranca API + nginx bajo supervisor.
 set -eu
 
@@ -19,25 +20,22 @@ if [ ! -f "$DATA_DIR/opofuente.sqlite3" ]; then
     cp /opt/demo/opofuente-demo.sqlite3 "$DATA_DIR/opofuente.sqlite3"
 fi
 
-# La API exige que el Origin de las escrituras esté autorizado. En el despliegue, la web y la API
-# comparten origen, así que basta con declarar ese origen una vez.
+# La API exige que el Origin de las escrituras esté autorizado. La web y la API comparten origen,
+# así que basta con declarar ese origen una vez (necesario también para la práctica pública).
 if [ -n "${PUBLIC_ORIGIN:-}" ] && [ -z "${OPOFUENTE_CORS_ORIGINS:-}" ]; then
     export OPOFUENTE_CORS_ORIGINS="[\"$PUBLIC_ORIGIN\"]"
 fi
 
-# Autenticación de borde: sin login propio en la app, una URL pública no debe quedar abierta.
-: > /etc/nginx/conf.d/auth.inc
-if [ -n "${DEMO_PASSWORD:-}" ]; then
-    DEMO_USER="${DEMO_USER:-demo}"
-    printf '%s:%s\n' "$DEMO_USER" "$(openssl passwd -apr1 "$DEMO_PASSWORD")" > /etc/nginx/.htpasswd
-    # nginx lee el fichero como www-data: el hash no debe quedar solo para root.
-    chown root:www-data /etc/nginx/.htpasswd
-    chmod 0640 /etc/nginx/.htpasswd
-    {
-        printf 'auth_basic "OpoFuente (demo)";\n'
-        printf 'auth_basic_user_file /etc/nginx/.htpasswd;\n'
-    } > /etc/nginx/conf.d/auth.inc
+# Administración con contraseña: si no se define, se genera una y se deja en el log del servicio.
+DEMO_USER="${DEMO_USER:-demo}"
+if [ -z "${DEMO_PASSWORD:-}" ]; then
+    DEMO_PASSWORD="$(openssl rand -hex 12)"
+    printf '[demo] DEMO_PASSWORD no definida: administración protegida con contraseña aleatoria: %s\n' \
+        "$DEMO_PASSWORD" >&2
 fi
+printf '%s:%s\n' "$DEMO_USER" "$(openssl passwd -apr1 "$DEMO_PASSWORD")" > /etc/nginx/.htpasswd
+chown root:www-data /etc/nginx/.htpasswd
+chmod 0640 /etc/nginx/.htpasswd
 
 sed "s/__PORT__/${PORT}/g" /etc/nginx/templates/opofuente.conf.template > /etc/nginx/conf.d/opofuente.conf
 

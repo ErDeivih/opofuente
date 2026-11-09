@@ -5,6 +5,7 @@ import { ErrorState } from '../../components/ErrorState';
 import { LoadingState } from '../../components/LoadingState';
 import { modeLabel, statusLabel } from '../study/labels';
 import { batchKindLabel, batchStatusLabel } from '../ingestion/labels';
+import { formatDateTime } from '../../lib/format';
 
 function describeError(error: unknown): string {
   return error instanceof Error ? error.message : 'Error desconocido';
@@ -57,7 +58,7 @@ export function ActivityPanel({ oppositionId }: { oppositionId: string | null })
                 <span className="check-list__detail">
                   <strong>{batchKindLabel(lote.kind)}</strong>: {batchStatusLabel(lote.status)} ·{' '}
                   {lote.total_items} entrada(s) ·{' '}
-                  <time dateTime={lote.created_at}>{lote.created_at}</time>
+                  <time dateTime={lote.created_at}>{formatDateTime(lote.created_at)}</time>
                 </span>
                 <Link to="/bandeja">Ver en la bandeja</Link>
               </li>

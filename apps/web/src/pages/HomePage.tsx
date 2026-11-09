@@ -9,6 +9,7 @@ import { SystemStatus } from '../features/system/SystemStatus';
 import { useOppositions, useMastery, useReviewQueue, useStudySessions } from '../api/queries';
 import { queueSummary } from '../api/reviews';
 import { modeLabel, statusLabel } from '../features/study/labels';
+import { formatDateTime } from '../lib/format';
 
 /**
  * Inicio (07_UI-UX §3).
@@ -117,7 +118,7 @@ export function HomePage() {
               {ultima.answered_questions} de {ultima.total_questions} preguntas
             </dd>
             <dt>Empezó</dt>
-            <dd>{ultima.started_at ?? 'sin empezar'}</dd>
+            <dd>{ultima.started_at ? formatDateTime(ultima.started_at) : 'sin empezar'}</dd>
             <dt>Sesiones</dt>
             <dd>{sessions.data?.total ?? 0}</dd>
           </dl>
@@ -132,7 +133,7 @@ export function HomePage() {
             <dt>Empezó</dt>
             <dd>
               {enMarcha.started_at !== null && enMarcha.started_at !== undefined ? (
-                <time dateTime={enMarcha.started_at}>{enMarcha.started_at}</time>
+                <time dateTime={enMarcha.started_at}>{formatDateTime(enMarcha.started_at)}</time>
               ) : (
                 'sin empezar'
               )}
@@ -189,7 +190,7 @@ export function HomePage() {
         )}
         {oppositions.isSuccess && active !== null && (
           <p className="hint">
-            Dominio estimado por tema (07_UI-UX §3, §5):{' '}
+            Dominio estimado por tema:{' '}
             {mastery.data === undefined
               ? 'contando lo que has practicado…'
               : `${mastery.data.nodes_with_estimate} de ${mastery.data.nodes_total} temas con datos suficientes`}

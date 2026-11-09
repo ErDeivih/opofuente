@@ -237,10 +237,10 @@ describe('preguntar: respuesta con citas', () => {
     ).toBeInTheDocument();
     expect(screen.getByText('Lo que no se ha podido sostener')).toBeInTheDocument();
     expect(screen.getByText(/no se ha recuperado nada del corpus sobre: diputados, congreso/)).toBeInTheDocument();
-    // La respuesta viene con su procedencia: quién la redactó y con qué revisión del corpus.
+    // La respuesta viene con su procedencia: quién la redactó y con qué recuperación.
     const respuesta = screen.getByRole('region', { name: 'Respuesta' });
     expect(within(respuesta).getByText('extractive')).toBeInTheDocument();
-    expect(within(respuesta).getByText('rev-3-12')).toBeInTheDocument();
+    expect(within(respuesta).getByText('léxica')).toBeInTheDocument();
 
     expect(cuerpoJson(fetchMock, '/api/v1/rag/queries', 'POST')).toMatchObject({
       query: 'diputados tiene el Congreso',

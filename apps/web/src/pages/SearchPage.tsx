@@ -252,16 +252,25 @@ export function SearchPage() {
   );
 }
 
+const STRATEGY_LABELS: Readonly<Record<string, string>> = {
+  lexical: 'léxica',
+  semantic: 'semántica',
+  hybrid: 'híbrida',
+};
+
+/** La estrategia de recuperación, en español; un valor nuevo se enseña tal cual, no se inventa. */
+function strategyLabel(strategy: string): string {
+  return STRATEGY_LABELS[strategy] ?? strategy;
+}
+
 function SearchResults({ results }: { results: SearchResult }) {
-  return (
-    <section className="card" aria-labelledby="resultados-busqueda">
+  return (    <section className="card" aria-labelledby="resultados-busqueda">
       <h2 id="resultados-busqueda">Resultados</h2>
       <p className="hint">
         {results.total} fragmentos · {results.version_mode === 'explicit_historical'
           ? 'con el histórico incluido'
           : 'solo versiones vigentes'}{' '}
-        · recuperación <span className="sample__path">{results.strategy}</span> · corpus{' '}
-        <span className="sample__path">{results.corpus_revision}</span>
+        · recuperación <span className="sample__path">{strategyLabel(results.strategy)}</span>
       </p>
 
       {results.degradations.length > 0 && (
@@ -329,9 +338,7 @@ function AnswerPanel({ query }: { query: RagQuery }) {
         «{query.question}» · {query.version_mode === 'explicit_historical'
           ? 'con el histórico incluido'
           : 'solo versiones vigentes'}{' '}
-        · recuperación <span className="sample__path">{query.strategy}</span> · corpus{' '}
-        <span className="sample__path">{query.corpus_revision}</span> · consulta{' '}
-        <span className="sample__path">{query.id}</span>
+        · recuperación <span className="sample__path">{strategyLabel(query.strategy)}</span>
       </p>
 
       {answer === null ? (

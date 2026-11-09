@@ -383,15 +383,39 @@ siguen abiertos y son los que más valor tienen.
 | # | Estado | Qué se cambió |
 |---|---|---|
 | 1 | **corregido el síntoma principal** | Las tablas anchas van en `.table-wrap` (la tarjeta desplaza en horizontal, la página ya no desborda) y la columna «Decisión» es `position: sticky` a la derecha: Aceptar/Rechazar deja de quedar fuera de la vista. La densidad (51 filas, `select` de 33 temas) sigue pendiente. |
-| 2 | pendiente | Inicio sigue siendo un panel de operaciones; el rediseño de portada es una tarea propia. |
-| 3 | pendiente | UUID, fechas ISO y enums en inglés siguen en pantalla; falta el componente de versión legible y la localización de fechas. |
-| 4 | pendiente | Bandeja sigue pidiendo la ruta absoluta como acción principal. |
-| 5 | pendiente | El aviso largo de Revisión en móvil no se colapsa; el `.table-wrap` no reduce sus 29.644 px. |
-| 6 | pendiente | La tabla de 85 preguntas sigue sin paginar ni filtrar por texto. |
+| 2 | pendiente (decisión) | Inicio sigue siendo un panel de operaciones; el rediseño de portada es una decisión de producto (tabla de decisiones abajo). |
+| 3 | **corregido en lo mecánico** | Fechas localizadas con `Intl.DateTimeFormat('es-ES')` (helper en `src/lib/format.ts`), fuera las referencias internas visibles (ADR/DEBT/§) en Inicio, Revisión, Biblioteca y Buscar, estrategia de búsqueda traducida («léxica», no «lexical») y oculto el valor crudo del eje. Queda la **etiqueta de versión legible** (UUID/hash), que es una decisión de nombres. |
+| 4 | pendiente (decisión) | Bandeja sigue pidiendo la ruta absoluta como acción principal. |
+| 5 | pendiente (decisión) | El aviso largo de Revisión en móvil no se colapsa; el `.table-wrap` no reduce sus 29.644 px. |
+| 6 | pendiente (decisión) | La tabla de 85 preguntas sigue sin paginar ni filtrar por texto. |
 | 7 | **corregido** | Los vacíos de Biblioteca, Cambios y Errores enlazan a Bandeja, Biblioteca y Estudiar. |
 | 8 | **corregido** | El texto de la práctica ya no promete «sin reservas ni tiempo»: dice que se eligen cantidad, reservas y tiempo. |
 | 9 | **corregido el bug** | `/reviews/mastery` se declara antes de `/reviews/{review_id}` y tiene prueba de regresión; el dominio estimado vuelve a llegar a Inicio y Programa. El botón «Reintentar» en los 3 errores sin él sigue pendiente. |
 | 10 | **corregido** | El buscador de la cabecera tiene placeholder («Busca un tema, una ley, un concepto…») y botón «Buscar». |
+
+### Antes / después (capturas)
+
+| # | Antes | Después |
+|---|---|---|
+| 1 | [`revision-1280.png`](capturas/revision-2026-11/revision-1280.png) (1635 px de ancho, decisión fuera) | [`revision-1280.png`](capturas/despues-2026-11/revision-1280.png) (1280 px, decisión visible) |
+| 3 | [`inicio-1280.png`](capturas/revision-2026-11/inicio-1280.png) (fecha `2026-11-08T22:43:07.294168`, «(ADR-017)») y [`buscar-1280.png`](capturas/revision-2026-11/buscar-1280.png) («recuperación lexical», `corpus 18-…`) | [`inicio-1280.png`](capturas/despues-2026-11/inicio-1280.png) (fecha `8/11/26, 22:43`, sin referencia interna) y [`buscar-1280.png`](capturas/despues-2026-11/buscar-1280.png) («recuperación léxica», sin id de corpus) |
+| 10 | [`inicio-1280.png`](capturas/revision-2026-11/inicio-1280.png) (campo vacío sin pista) | [`inicio-1280.png`](capturas/despues-2026-11/inicio-1280.png) (placeholder y botón «Buscar») |
+
+Capturas «después»: `docs/capturas/despues-2026-11/` (Inicio, Estudiar, Buscar, Revisión, Cambios y Preguntas, a 1280 y 390), generadas con
+`node docs/interfaz/capturar-despues.mjs` sobre la base sintética de la suite.
+
+### Decisiones pendientes: problema → opción A/B → coste
+
+| Problema | Opción A | Opción B | Coste estimado [A] |
+|---|---|---|---|
+| **2** Inicio sin foco | Portada de estudio: una acción primaria (siguiente tarea), avance y repaso; el estado técnico se muda a Ajustes/Estado | Mantener el panel actual y solo plegar «Estado del sistema» y capacidades | A: 1 slice (~2-3 días) · B: ~0,5 día |
+| **3** Nombre de versión | «v2 · 7 nov 2026» calculado de `version_no` + fecha, con el UUID solo en detalle | Dejar el UUID y añadir tooltip con fecha | A: ~0,5 día · B: ~0,2 día |
+| **4** Bandeja | Zona única de arrastrar/elegir carpeta; texto pegado y URL como opciones plegadas | Pestañas: Carpeta / Ficheros / Texto / URL | A: ~1 día · B: ~0,5 día |
+| **5** Aviso móvil | Convertirlo en `<details>` con resumen «Esto son propuestas, no hechos» | Banner descartable que recuerda la elección | A: ~0,5 día · B: ~0,5 día |
+| **6** Preguntas | Paginar a 25 y abrir la ficha en panel lateral | Scroll infinito con ficha fija a la derecha | A: ~1,5 días · B: ~1 día |
+
+Hasta que se decidan, no se ha tocado el comportamiento: son cambios de jerarquía que afectan a la
+primera pantalla y al flujo de decisión, y el producto tiene dueño.
 
 Puertas de esta corrección: `tsc`, `eslint`, 219 pruebas web, 53 E2E y la suite de backend en verde
 (ver el resumen de la sesión). Las capturas de este documento son anteriores a los cambios: se

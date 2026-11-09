@@ -5,6 +5,7 @@ import { ErrorState } from '../../components/ErrorState';
 import { LoadingState } from '../../components/LoadingState';
 import { StatusBadge } from '../../components/StatusBadge';
 import { keyStatusLabel, keyStatusTone } from './labels';
+import { formatDateTime } from '../../lib/format';
 
 export interface AnswerKeysPanelProps {
   keys: AnswerKey[];
@@ -120,7 +121,7 @@ export function AnswerKeysPanel({
                   <td className="hint">
                     {clave.approved_at === null || clave.approved_at === undefined
                       ? 'sin aprobar'
-                      : clave.approved_at}
+                      : formatDateTime(clave.approved_at)}
                   </td>
                   <td className="hint">{clave.supersedes_id ?? 'a ninguna'}</td>
                   <td>

@@ -1,5 +1,14 @@
 # Fachada pública de la demo: sirve el build de la web y hace de proxy de /api/ hacia la API
 # local del contenedor. __PORT__ lo sustituye deploy/entrypoint.sh.
+#
+# Política de acceso:
+# - GET/HEAD de lectura: público (temario, fichas, banco, resultados).
+# - Práctica: `study-sessions` completo es público, para que se pueda empezar y terminar sin cuenta.
+# - Telemetría propia: POST público (con límite de frecuencia).
+# - Resto de escrituras y administración (importar, copias, ajustes): autenticación básica.
+limit_req_zone $binary_remote_addr zone=telemetry:10m rate=5r/s;
+limit_req_zone $binary_remote_addr zone=practice:10m rate=10r/s;
+
 server {
     listen __PORT__;
     server_name _;
@@ -10,19 +19,14 @@ server {
     access_log /dev/stdout;
     error_log /dev/stderr;
 
-    # La demo no sube ficheros grandes: la API admite más, pero la fachada acota el cuerpo.
-    client_max_body_size 32m;
+    # La demo no necesita subidas grandes: práctica y lectura van sobradas con esto.
+    client_max_body_size 2m;
 
     add_header X-Content-Type-Options "nosniff" always;
     add_header Referrer-Policy "no-referrer" always;
     add_header X-Frame-Options "DENY" always;
 
-    # Autenticación de borde opcional: el entrypoint escribe aquí las directivas si hay
-    # DEMO_PASSWORD. La app no tiene login propio y no debe quedar abierta en una URL pública.
-    include /etc/nginx/conf.d/auth.inc;
-
-    # Healthcheck de la plataforma: refleja la salud de la API, no solo la de nginx. Va sin
-    # autenticación para que el proveedor pueda consultarlo, y no revela estado interno.
+    # Healthcheck de la plataforma: refleja la salud de la API, no solo la de nginx.
     location = /healthz {
         auth_basic off;
         access_log off;
@@ -30,9 +34,30 @@ server {
         proxy_set_header Host $host;
     }
 
-    # Todo lo que va a la API. El Host y el Origin llegan tal cual: la API comprueba Origin en
-    # las escrituras y CORS se configura con PUBLIC_ORIGIN en el arranque.
+    # Práctica de la demo: pública y completa (crear sesión, responder y terminar).
+    location ^~ /api/v1/study-sessions {
+        limit_req zone=practice burst=20 nodelay;
+        proxy_pass http://127.0.0.1:8765;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # Telemetría propia: pública pero limitada; el cuerpo sigue acotado por la API.
+    location = /api/v1/telemetry/events {
+        limit_req zone=telemetry burst=10 nodelay;
+        proxy_pass http://127.0.0.1:8765;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+    }
+
+    # Resto de la API: lectura pública; escrituras y administración con autenticación básica.
     location /api/ {
+        limit_except GET {
+            auth_basic "OpoFuente demo (administración)";
+            auth_basic_user_file /etc/nginx/.htpasswd;
+        }
         proxy_pass http://127.0.0.1:8765;
         proxy_http_version 1.1;
         proxy_set_header Host $host;

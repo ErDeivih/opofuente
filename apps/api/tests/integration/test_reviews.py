@@ -491,6 +491,7 @@ def _primer_tema(client: TestClient) -> dict[str, Any]:
 
     return next(nodo for nodo in aplanar(curriculum["nodes"]) if nodo["node_type"] == "topic")
 
+
 # --- la ruta estática no se la come la dinámica --------------------------------------------------
 
 

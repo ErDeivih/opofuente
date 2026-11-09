@@ -1030,7 +1030,7 @@ describe('biblioteca: comparación de versiones', () => {
     renderVersiones({ diff: DIFF_SIN_SECCIONES });
 
     expect(screen.getByText(/no tienen ninguna\s+con la que comparar/)).toBeInTheDocument();
-    expect(screen.getByText(/DEBT-009/)).toBeInTheDocument();
+    expect(screen.getByText(/limitación conocida/)).toBeInTheDocument();
     expect(screen.queryByRole('table', { name: /Comparación de/ })).not.toBeInTheDocument();
   });
 
