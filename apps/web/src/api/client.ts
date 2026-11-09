@@ -37,7 +37,17 @@ export function isApiError<TProblem = ProblemDetail>(
 
 export function apiBaseUrl(): string {
   const configured = import.meta.env.VITE_API_BASE_URL;
-  return typeof configured === 'string' && configured.length > 0 ? configured : DEFAULT_BASE_URL;
+  if (typeof configured === 'string') {
+    // Un despliegue que sirve la web y la API desde el mismo origen usa rutas relativas:
+    // `same-origin` evita hornear en el build una URL que solo existe en la máquina de desarrollo.
+    if (configured.trim() === 'same-origin') {
+      return '';
+    }
+    if (configured.length > 0) {
+      return configured;
+    }
+  }
+  return DEFAULT_BASE_URL;
 }
 
 /**

@@ -133,3 +133,24 @@ rutas absolutas ni las claves: el formateador solo copia una lista blanca de cam
 La release local incluye los artefactos construidos y un `RELEASE.md` con la versión, la revisión de
 esquema y la lista de comprobaciones ejecutadas. No se publica nada a ningún sitio: el repositorio es
 privado mientras el temario de Guardia Civil siga dentro (DEBT-003).
+
+## 8. Demo pública (despliegue)
+
+La demo es **una imagen Docker** con la web, nginx y la API (la API sigue en `127.0.0.1` dentro del
+contenedor). La base que sirve es sintética: temario común, perfil TAI y 40 preguntas de demostración,
+sin Guardia Civil ni el corpus real.
+
+```powershell
+docker build -t opofuente-demo:local .
+docker run --rm -p 8099:8099 -e PORT=8099 -e PUBLIC_ORIGIN=http://127.0.0.1:8099 `
+  -e DEMO_USER=demo -e DEMO_PASSWORD=demo opofuente-demo:local
+node deploy/verificar-demo.mjs http://127.0.0.1:8099   # 7 comprobaciones y capturas
+```
+
+- **Publicar**: [`docs/CUENTAS-Y-ACCESOS.md`](CUENTAS-Y-ACCESOS.md) tiene la cuenta que hay que crear
+  (Render o Hugging Face), las variables exactas y el paso a paso. **No hay URL pública todavía.**
+- **Observabilidad**: [`docs/OBSERVABILIDAD.md`](OBSERVABILIDAD.md) (contadores de pantallas y errores
+  en la propia API, sin terceros).
+- **Carga**: [`docs/CARGA.md`](CARGA.md) (k6, 50 usuarios concurrentes).
+- La demo no tiene login propio: se protege con autenticación básica de borde
+  (`DEMO_USER`/`DEMO_PASSWORD`). Sin ella, la URL quedaría abierta a cualquiera.

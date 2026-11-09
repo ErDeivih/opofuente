@@ -22,6 +22,7 @@ from opofuente.api.routes import (
     search,
     study,
     system,
+    telemetry,
     temario,
 )
 
@@ -41,5 +42,6 @@ api_router.include_router(changes.router)
 api_router.include_router(backups.router)
 api_router.include_router(housekeeping.router)
 api_router.include_router(readiness.router)
+api_router.include_router(telemetry.router)
 
 __all__ = ["api_router"]

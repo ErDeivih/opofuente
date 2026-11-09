@@ -28,6 +28,7 @@ from opofuente.api.middleware import (
     SecurityHeadersMiddleware,
 )
 from opofuente.api.openapi import apply_problem_media_type
+from opofuente.api.telemetry_store import TelemetryStore
 from opofuente.application.auto_study_service import AutoStudyService
 from opofuente.application.backup_service import BackupService
 from opofuente.application.change_service import ChangeService
@@ -144,6 +145,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     session_factory = build_session_factory(engine)
 
     worker_liveness = WorkerLiveness()
+    # Telemetría de demo: contadores en memoria del proceso, sin tabla ni servicio externo. Se
+    # pierden al reiniciar y no guardan IP, `User-Agent`, URL ni contenido
+    # (api/routes/telemetry.py).
+    telemetry_store = TelemetryStore()
     system_service = SystemService(
         version=__version__,
         probes=(
@@ -404,6 +409,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.housekeeping_service = housekeeping_service
     app.state.diagnostic_service = diagnostic_service
     app.state.readiness_service = readiness_service
+    app.state.telemetry_store = telemetry_store
 
     # El orden importa: el último añadido es el más externo, así que el identificador de
     # correlación envuelve también los rechazos por Origin.

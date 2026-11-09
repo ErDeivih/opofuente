@@ -2490,6 +2490,56 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/telemetry/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Acepta un evento de telemetría (pantalla vista o error)
+         * @description Cuenta un `page_view` o un `error`.
+         *
+         *     `screen` tiene que estar en la lista blanca (`TelemetryScreen`): una pantalla desconocida se
+         *     rechaza con 422 y no crea ninguna entrada nueva. El mensaje de un error se sanea (sin rutas
+         *     absolutas) y se recorta a 200 caracteres antes de guardarse; el cuerpo de la petición está
+         *     acotado a 4096 bytes.
+         *
+         *     Responder 202 significa «aceptado y contado», no «guardado»: no hay persistencia.
+         */
+        post: operations["record_event_api_v1_telemetry_events_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/telemetry/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Resumen de la telemetría en memoria (se pierde al reiniciar)
+         * @description Totales por tipo y por pantalla, y hasta 20 errores recientes ya saneados.
+         *
+         *     Es una foto del proceso actual: arranca a cero en cada reinicio. No incluye IP, `User-Agent`,
+         *     URL, contenido ni nada que no sea pantalla, mensaje corto y hora.
+         */
+        get: operations["read_summary_api_v1_telemetry_summary_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -6404,6 +6454,63 @@ export interface components {
             annulled_question_version_id: string;
             /** Reserve Question Version Id */
             reserve_question_version_id?: string | null;
+        };
+        /**
+         * TelemetryEventType
+         * @description Tipos de evento admitidos. Añadir uno obliga a decidir qué cuenta el resumen.
+         * @enum {string}
+         */
+        TelemetryEventType: "page_view" | "error";
+        /**
+         * TelemetryRecentErrorSchema
+         * @description Un error reciente, ya saneado y sin contenido: solo pantalla, mensaje corto y hora.
+         */
+        TelemetryRecentErrorSchema: {
+            /**
+             * At
+             * Format: date-time
+             * @description Instante en que se recibió el evento (UTC).
+             */
+            at: string;
+            /** Message */
+            message: string | null;
+            screen: components["schemas"]["TelemetryScreen"];
+        };
+        /**
+         * TelemetryScreen
+         * @description Nombre estable de cada pantalla de la web (nunca la URL con identificadores).
+         * @enum {string}
+         */
+        TelemetryScreen: "inicio" | "bandeja" | "temario" | "tema" | "practica" | "programa" | "biblioteca" | "preguntas" | "estudiar" | "errores" | "cambios" | "ajustes" | "revision" | "buscar" | "no_encontrada";
+        /**
+         * TelemetrySummarySchema
+         * @description Foto de los contadores en memoria del proceso en este instante.
+         */
+        TelemetrySummarySchema: {
+            /**
+             * By Screen
+             * @description Conteo por pantalla de la lista blanca (todas, también las que están a 0).
+             */
+            by_screen: {
+                [key: string]: number;
+            };
+            /**
+             * By Type
+             * @description Conteo por tipo de evento; los dos tipos aparecen siempre.
+             */
+            by_type: {
+                [key: string]: number;
+            };
+            /**
+             * Recent Errors
+             * @description Como mucho 20 errores, del más antiguo al más reciente. No se guarda nada más.
+             */
+            recent_errors: components["schemas"]["TelemetryRecentErrorSchema"][];
+            /**
+             * Total
+             * @description Eventos aceptados desde que arrancó el proceso.
+             */
+            total: number;
         };
         /** TemarioSchema */
         TemarioSchema: {
@@ -14574,6 +14681,89 @@ export interface operations {
                 };
                 content: {
                     "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    record_event_api_v1_telemetry_events_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Origen no autorizado para modificar datos (`forbidden_origin`). Lo produce el middleware de comprobación de Origin en métodos de escritura. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description El cuerpo supera el límite de 4096 bytes y se rechaza sin contar (`payload_too_large`). */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Parámetros inválidos. Cuerpo RFC 9457 (`ProblemDetail`) con `field_errors`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Error interno inesperado (RFC 9457). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    read_summary_api_v1_telemetry_summary_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TelemetrySummarySchema"];
                 };
             };
             /** @description Error interno inesperado (RFC 9457). */

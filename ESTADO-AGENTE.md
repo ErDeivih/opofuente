@@ -1,8 +1,8 @@
 titulo: OpoFuente — temario comun de oposiciones de informatica C1
-resumen: Sesion 9/11 sin cambios de codigo: plan de despliegue fase 2 (gratis verificado, huecos SQLite->Postgres, decisiones D1-D3), inventario de 20 pantallas con 64 capturas y hallazgo del 404 de /reviews/mastery, y objetivo EstudiaTAI para REA.
+resumen: Sesion 9/11 (2a): despliegue preparado y probado en local con Docker+nginx+SQLite (7/7 Playwright, k6 50 VUs sin fallos, telemetria propia), sin URL publica porque no hay cuenta de proveedor; revision de interfaz con 10 problemas; 1032 pytest y 219 web en verde.
 estado: en-curso
-tarea: revision de interfaz y preparacion del despliegue (fase 2)
-nivel: 1
-siguiente: decidir D1/D2/D3 del plan de despliegue y arreglar el 404 de /reviews/mastery (mover la ruta estatica y anadir prueba); despues, estudiar EstudiaTAI con REA
-bloqueado:
+tarea: publicar la demo (falta la cuenta) y cerrar los 10 problemas de interfaz
+nivel: 2
+siguiente: crear la cuenta de Render o Hugging Face segun docs/CUENTAS-Y-ACCESOS.md, pegar PUBLIC_ORIGIN y DEMO_PASSWORD, verificar con deploy/verificar-demo.mjs; despues, decidir los 10 problemas de docs/revision-interfaz.md y el 404 de /reviews/mastery
+bloqueado: sin URL publica: no existe cuenta de proveedor en la maquina y crear cuentas o pagos esta fuera del encargo
 fecha: 2026-11-09

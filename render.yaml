@@ -1,0 +1,29 @@
+# Despliegue de demostración en Render (plan Free) — ver docs/CUENTAS-Y-ACCESOS.md.
+#
+# Un único servicio web Docker: nginx sirve la web y hace de proxy de /api/ hacia la API, que sigue
+# escuchando en 127.0.0.1 dentro del contenedor. La base es la demo empaquetada en la imagen
+# (temario común + perfil TAI + 40 preguntas sintéticas); el plan Free no tiene disco persistente,
+# así que cada reinicio vuelve al estado inicial de la demo.
+services:
+  - type: web
+    name: opofuente-demo
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /healthz
+    autoDeploy: false
+    envVars:
+      # URL pública del servicio (https://opofuente-demo.onrender.com). Se pega después del
+      # primer despliegue; sin ella, las escrituras de la web fallan por Origin no autorizado.
+      - key: PUBLIC_ORIGIN
+        sync: false
+      # Autenticación básica de borde: la app no tiene login propio y no debe quedar abierta.
+      - key: DEMO_USER
+        value: demo
+      - key: DEMO_PASSWORD
+        sync: false
+      - key: OPOFUENTE_WORKER_ENABLED
+        value: "false"
+      - key: OPOFUENTE_LOG_LEVEL
+        value: INFO

@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { AppShell } from './AppShell';
 import { createQueryClient } from './queryClient';
 import { AppRoutes } from './routes';
+import { TelemetryRouteTracker } from './TelemetryRouteTracker';
 
 const defaultQueryClient = createQueryClient();
 
@@ -16,6 +17,8 @@ export function App({ queryClient }: AppProps = {}) {
   return (
     <QueryClientProvider client={queryClient ?? defaultQueryClient}>
       <BrowserRouter>
+        {/* Cuenta la pantalla abierta en cada cambio de ruta (apagado fuera de producción). */}
+        <TelemetryRouteTracker />
         <AppShell>
           <AppRoutes />
         </AppShell>

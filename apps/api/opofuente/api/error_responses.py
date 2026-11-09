@@ -74,6 +74,13 @@ BASE_ERRORS: dict[int | str, dict[str, Any]] = {**_INTERNAL}
 #: Errores de una ruta que busca un recurso por identificador.
 RESOURCE_ERRORS: dict[int | str, dict[str, Any]] = {**_INTERNAL, **_NOT_FOUND, **_VALIDATION}
 
+#: Errores de una ruta de escritura **sin** identificador: no hay 404 que documentar.
+WRITE_WITHOUT_RESOURCE_ERRORS: dict[int | str, dict[str, Any]] = {
+    **_INTERNAL,
+    **_VALIDATION,
+    **_FORBIDDEN_ORIGIN,
+}
+
 #: Errores de una ruta de escritura con identificador: añade el rechazo por Origin.
 WRITE_ERRORS: dict[int | str, dict[str, Any]] = {
     **_INTERNAL,

@@ -1,0 +1,55 @@
+# Fachada pública de la demo: sirve el build de la web y hace de proxy de /api/ hacia la API
+# local del contenedor. __PORT__ lo sustituye deploy/entrypoint.sh.
+server {
+    listen __PORT__;
+    server_name _;
+
+    root /srv/www;
+    index index.html;
+
+    access_log /dev/stdout;
+    error_log /dev/stderr;
+
+    # La demo no sube ficheros grandes: la API admite más, pero la fachada acota el cuerpo.
+    client_max_body_size 32m;
+
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "no-referrer" always;
+    add_header X-Frame-Options "DENY" always;
+
+    # Autenticación de borde opcional: el entrypoint escribe aquí las directivas si hay
+    # DEMO_PASSWORD. La app no tiene login propio y no debe quedar abierta en una URL pública.
+    include /etc/nginx/conf.d/auth.inc;
+
+    # Healthcheck de la plataforma: refleja la salud de la API, no solo la de nginx. Va sin
+    # autenticación para que el proveedor pueda consultarlo, y no revela estado interno.
+    location = /healthz {
+        auth_basic off;
+        access_log off;
+        proxy_pass http://127.0.0.1:8765/api/v1/health/live;
+        proxy_set_header Host $host;
+    }
+
+    # Todo lo que va a la API. El Host y el Origin llegan tal cual: la API comprueba Origin en
+    # las escrituras y CORS se configura con PUBLIC_ORIGIN en el arranque.
+    location /api/ {
+        proxy_pass http://127.0.0.1:8765;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 300s;
+        proxy_send_timeout 300s;
+    }
+
+    # Assets con hash: caché larga. El resto de la SPA siempre vuelve al index.
+    location /assets/ {
+        try_files $uri =404;
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}

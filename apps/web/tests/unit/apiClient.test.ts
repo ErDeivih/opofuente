@@ -1,12 +1,26 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { ApiError, apiBaseUrl, apiFetch } from '../../src/api/client';
 import { fetchReadiness } from '../../src/api/system';
 import { readinessDegraded, readinessReady, stubApi } from './testUtils';
 
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
+
 describe('cliente de la API', () => {
   it('usa la URL local por defecto', () => {
     expect(apiBaseUrl()).toBe('http://127.0.0.1:8765');
+  });
+
+  it('con same-origin usa rutas relativas aunque el build viva en otro dominio', () => {
+    vi.stubEnv('VITE_API_BASE_URL', 'same-origin');
+    expect(apiBaseUrl()).toBe('');
+  });
+
+  it('con una URL absoluta configurada la respeta', () => {
+    vi.stubEnv('VITE_API_BASE_URL', 'https://api.example.test');
+    expect(apiBaseUrl()).toBe('https://api.example.test');
   });
 
   it('devuelve el cuerpo JSON cuando la respuesta es correcta', async () => {

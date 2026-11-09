@@ -10,6 +10,7 @@ from typing import Annotated
 
 from fastapi import Depends, Request
 
+from opofuente.api.telemetry_store import TelemetryStore
 from opofuente.application.auto_study_service import AutoStudyService
 from opofuente.application.backup_service import BackupService
 from opofuente.application.change_service import ChangeService
@@ -144,6 +145,11 @@ def get_readiness_service(request: Request) -> ReadinessService:
     return service
 
 
+def get_telemetry_store(request: Request) -> TelemetryStore:
+    store: TelemetryStore = request.app.state.telemetry_store
+    return store
+
+
 #: Dependencias anotadas (estilo moderno de FastAPI: sin llamadas en valores por defecto).
 AppSettingsDep = Annotated[Settings, Depends(get_app_settings)]
 SystemServiceDep = Annotated[SystemService, Depends(get_system_service)]
@@ -167,3 +173,4 @@ BackupServiceDep = Annotated[BackupService, Depends(get_backup_service)]
 HousekeepingServiceDep = Annotated[HousekeepingService, Depends(get_housekeeping_service)]
 DiagnosticServiceDep = Annotated[DiagnosticService, Depends(get_diagnostic_service)]
 ReadinessServiceDep = Annotated[ReadinessService, Depends(get_readiness_service)]
+TelemetryStoreDep = Annotated[TelemetryStore, Depends(get_telemetry_store)]
