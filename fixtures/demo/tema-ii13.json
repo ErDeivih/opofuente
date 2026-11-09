@@ -1,0 +1,67 @@
+{
+  "node_path": "II.13",
+  "title": "Arquitectura de ordenadores",
+  "apuntes": "**Arquitectura de ordenadores**\n\nUn ordenador es una máquina programable que ejecuta instrucciones sobre datos. La arquitectura clásica es la de **von Neumann**: una unidad central de proceso (CPU), una memoria principal y unidades de entrada/salida, unidas por un conjunto de buses. Su rasgo definitorio es que **instrucciones y datos comparten el mismo espacio de memoria**, lo que simplifica el diseño pero crea el llamado *cuello de botella de von Neumann*: la CPU no puede leer una instrucción y un dato en el mismo ciclo. Las arquitecturas **Harvard** separan memorias de instrucciones y de datos (habituales en microcontroladores y en cachés internas).\n\n**La CPU** consta de unidad de control, unidad aritmético-lógica (ALU), registros y, en los procesadores modernos, memoria caché. El ciclo de instrucción es *captar* (fetch), *decodificar*, *ejecutar* y *escribir el resultado* (write-back). La frecuencia del reloj indica ciclos por segundo, pero el rendimiento real depende también del número de instrucciones por ciclo (IPC) y de las esperas de memoria. Técnicas como la **segmentación** (pipeline), la **ejecución fuera de orden**, la **predicción de saltos** y el **multihilo** (SMT/hyperthreading) aumentan el paralelismo a nivel de instrucción.\n\n**La jerarquía de memoria** busca dar la velocidad de la caché con el tamaño del disco: registros, cachés L1/L2/L3, memoria principal (RAM) y almacenamiento secundario (SSD/HDD). Cada nivel es más grande y más lento que el anterior; la localidad temporal y espacial de los accesos hace que la jerarquía funcione. La memoria principal es volátil; el almacenamiento secundario es no volátil. La **memoria virtual** da a cada proceso un espacio de direcciones propio y traduce direcciones virtuales a físicas mediante la MMU y la tabla de páginas, con la TLB como caché de traducciones.\n\n**Los buses** transportan datos, direcciones y señales de control. El bus del sistema conecta CPU y memoria; los buses de E/S conectan periféricos (PCI Express, USB, SATA/NVMe). El **chipset** organiza esos enlaces. La E/S puede ser programada, por interrupciones o por **DMA** (acceso directo a memoria), que libera a la CPU de copiar bloques enteros.\n\n**Almacenamiento y rendimiento.** Un SSD no tiene partes móviles: ofrece latencias de microsegundos y acceso aleatorio rápido, pero tiene desgaste por escritura y conviene alinearlo y no llenarlo. Un HDD tiene latencias de milisegundos y mayor capacidad por euro; es adecuado para archivo. El **RAID** combina discos para ganar tolerancia a fallos (espejo, paridad) o rendimiento (striping); no sustituye a una copia de seguridad. Para medir rendimiento se usan benchmarks, pero hay que leerlos con cuidado: la carga, la caché y el sistema operativo cambian el resultado.\n\n**Fuente.** Material de estudio propio para esta demo; los conceptos son de arquitectura de computadores y no reproducen texto de ninguna academia.",
+  "questions": [
+    {
+      "stem": "¿Qué comparten instrucciones y datos en la arquitectura de von Neumann?",
+      "options": ["El mismo espacio de memoria", "La misma caché L1", "El mismo bus de E/S", "El mismo registro de instrucción"],
+      "correct": "a",
+      "explanation": "En von Neumann instrucciones y datos comparten memoria; por eso aparecen el cuello de botella y los ataques de escritura de código."
+    },
+    {
+      "stem": "¿Qué unidad de la CPU realiza las operaciones aritméticas y lógicas?",
+      "options": ["La unidad de control", "La ALU", "La MMU", "La TLB"],
+      "correct": "b",
+      "explanation": "La unidad aritmético-lógica (ALU) ejecuta sumas, restas y operaciones lógicas."
+    },
+    {
+      "stem": "¿Cuál es el orden correcto del ciclo de instrucción?",
+      "options": ["Decodificar, captar, ejecutar, escribir", "Captar, decodificar, ejecutar, escribir", "Captar, ejecutar, decodificar, escribir", "Ejecutar, captar, escribir, decodificar"],
+      "correct": "b",
+      "explanation": "El ciclo básico es fetch (captar), decode (decodificar), execute (ejecutar) y write-back (escribir el resultado)."
+    },
+    {
+      "stem": "¿Qué técnica solapa la ejecución de varias instrucciones en etapas?",
+      "options": ["La segmentación (pipeline)", "El DMA", "La memoria virtual", "El RAID"],
+      "correct": "a",
+      "explanation": "El pipeline divide la ejecución en etapas y mantiene varias instrucciones en vuelo a la vez."
+    },
+    {
+      "stem": "¿Qué nivel de la jerarquía de memoria es el más rápido y pequeño?",
+      "options": ["La memoria principal", "La caché L3", "Los registros", "El SSD"],
+      "correct": "c",
+      "explanation": "Los registros están dentro de la CPU y son el nivel más rápido y de menor capacidad."
+    },
+    {
+      "stem": "¿Qué memoria es volátil?",
+      "options": ["La memoria RAM", "El SSD", "El HDD", "La memoria flash"],
+      "correct": "a",
+      "explanation": "La RAM pierde su contenido al cortar la alimentación; el almacenamiento secundario es no volátil."
+    },
+    {
+      "stem": "¿Qué componente traduce direcciones virtuales a físicas?",
+      "options": ["La ALU", "La MMU", "El chipset", "El bus de datos"],
+      "correct": "b",
+      "explanation": "La unidad de gestión de memoria (MMU) traduce direcciones virtuales a físicas usando la tabla de páginas."
+    },
+    {
+      "stem": "¿Qué ventaja principal aporta el DMA?",
+      "options": ["Aumenta la frecuencia del reloj", "Libera a la CPU de copiar bloques de datos", "Duplica la caché L1", "Sustituye a la memoria virtual"],
+      "correct": "b",
+      "explanation": "El acceso directo a memoria permite a un periférico transferir bloques sin que la CPU los copie uno a uno."
+    },
+    {
+      "stem": "¿Qué tecnología de almacenamiento tiene acceso aleatorio sin partes móviles?",
+      "options": ["El HDD", "El SSD", "La cinta magnética", "El DVD-ROM"],
+      "correct": "b",
+      "explanation": "El SSD usa memoria flash: no tiene partes móviles y su acceso aleatorio es mucho más rápido que el de un HDD."
+    },
+    {
+      "stem": "¿Qué significa RAID 1?",
+      "options": ["Striping sin paridad", "Espejo de dos discos", "Paridad distribuida", "Copia de seguridad automática"],
+      "correct": "b",
+      "explanation": "RAID 1 duplica los datos en dos discos (espejo); protege ante el fallo de uno, pero no sustituye a una copia de seguridad."
+    }
+  ]
+}

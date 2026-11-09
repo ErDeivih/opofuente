@@ -1,11 +1,11 @@
-# --- Secretos y configuración local -----------------------------------------
+﻿# --- Secretos y configuraciÃ³n local -----------------------------------------
 .env
 .env.*
 !.env.example
 
 # --- Datos locales: nunca en git ---------------------------------------------
 # DB SQLite, artefactos por hash, representaciones, Qdrant, logs, backups,
-# exportaciones y temporales. Ver docs/product-spec/02_ARCHITECTURE.md §5.
+# exportaciones y temporales. Ver docs/product-spec/02_ARCHITECTURE.md Â§5.
 /data/
 /.e2e-data/
 /.gates-data/
@@ -35,6 +35,7 @@ htmlcov/
 # --- Node ---------------------------------------------------------------------
 node_modules/
 dist/
+dist-demo/
 .vite/
 *.tsbuildinfo
 
@@ -58,3 +59,4 @@ Desktop.ini
 
 # Volcados de memoria de Node cuando una prueba se queda sin memoria: nunca son fuente.
 Heap.*.heapsnapshot
+

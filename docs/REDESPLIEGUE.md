@@ -13,3 +13,6 @@
 5. Si falla: **Render → Logs** (busca `Traceback`, `[crit]` o `502`) y `/healthz`. Si la URL responde
    **404 con `x-render-routing: no-server`**, no hay servicio con ese nombre: mira el nombre real en el
    dashboard o crea el blueprint del paso 1.
+
+> **Demo estática ya publicada:** <https://erdeivih.github.io/opofuente-demo/>. Su redespliegue
+> (build estático, repo público y verificación 8/8) está en [`DEMO-PAGES.md`](DEMO-PAGES.md).

@@ -13,6 +13,7 @@
   "scripts": {
     "dev:web": "npm run dev --workspace @opofuente/web",
     "build:web": "npm run build --workspace @opofuente/web",
+    "build:demo": "npm run build:demo --workspace @opofuente/web",
     "lint:web": "npm run lint --workspace @opofuente/web",
     "typecheck:web": "npm run typecheck --workspace @opofuente/web",
     "test:web": "npm run test --workspace @opofuente/web",

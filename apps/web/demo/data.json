@@ -1,0 +1,756 @@
+{
+  "title": "OpoFuente — demo estática",
+  "warning": "Demo estática: los datos están empaquetados y tus respuestas se guardan solo en este navegador. No hay servidor, no se envía nada y no hay cuenta.",
+  "curriculum": {
+    "code": "informatica-c1",
+    "name": "Temario común de informática C1",
+    "blocks": [
+      {
+        "path": "I",
+        "title": "Administración y normativa",
+        "temas": [
+          {
+            "path": "I.1",
+            "title": "La Constitución Española de 1978",
+            "apuntes": "**La Constitución Española de 1978**\n\nLa Constitución fue aprobada por las Cortes Generales el 31 de octubre de 1978, ratificada en referéndum el 6 de diciembre, sancionada por el Rey el 27 de diciembre y publicada en el BOE el 29 de diciembre de 1978. Entró en vigor ese mismo día, 29 de diciembre, y con ella quedaron derogadas las Leyes Fundamentales del franquismo y la Ley para la Reforma Política (disposición derogatoria).\n\n**Estructura.** Consta de un preámbulo, 169 artículos distribuidos en un título preliminar y diez títulos, cuatro disposiciones adicionales, nueve transitorias, una derogatoria y una final. Los títulos son: preliminar (artículos 1-9); I, derechos y deberes fundamentales (10-55); II, la Corona (56-65); III, las Cortes Generales (66-96); IV, el Gobierno y la Administración (97-107); V, relaciones entre el Gobierno y las Cortes (108-116); VI, el Poder Judicial (117-127); VII, economía y hacienda (128-136); VIII, organización territorial del Estado (137-158); IX, el Tribunal Constitucional (159-165); y X, la reforma constitucional (166-169).\n\n**Principios y valores.** El artículo 1 define España como un Estado social y democrático de Derecho que propugna como valores superiores de su ordenamiento la libertad, la justicia, la igualdad y el pluralismo político. La soberanía nacional reside en el pueblo español, del que emanan los poderes del Estado, y la forma política es la monarquía parlamentaria. El artículo 2 proclama la indisoluble unidad de la Nación española y el derecho a la autonomía de las nacionalidades y regiones. El castellano es la lengua oficial del Estado (artículo 3), la capital es Madrid (artículo 5) y los partidos políticos, los sindicatos y las asociaciones empresariales son cauces de participación (artículos 6 y 7).\n\n**Derechos y garantías.** El Título I abre con la dignidad de la persona y los derechos inviolables (artículo 10). El capítulo II regula los derechos y libertades (artículos 14-38), entre ellos la igualdad ante la ley, la vida, la libertad ideológica y religiosa, la libertad de expresión, la tutela judicial efectiva, la educación y la libertad de empresa. El artículo 53 establece las garantías: reserva de ley, tutela judicial y recurso de amparo ante el Tribunal Constitucional. El Defensor del Pueblo (artículo 54) supervisa la Administración. Los derechos pueden suspenderse en los estados de excepción y de sitio en los términos del artículo 55.\n\n**La reforma.** El artículo 167 regula el procedimiento ordinario: aprobación por tres quintos de cada Cámara y, si no hay acuerdo, comisión paritaria y mayoría de dos tercios del Congreso; el referéndum es preceptivo si lo solicita una décima parte de los miembros de cualquiera de las Cámaras. El artículo 168 reserva el procedimiento agravado a la revisión total o a la que afecte al título preliminar, al Título I, al Título II o al Título IX: exige mayoría de dos tercios de cada Cámara, disolución de las Cortes, ratificación por las nuevas Cámaras por dos tercios y referéndum obligatorio.\n\n**Fuente.** Constitución Española, BOE núm. 311, de 29 de diciembre de 1978 (texto consolidado del BOE).",
+            "practica": true
+          },
+          {
+            "path": "I.2",
+            "title": "La Unión Europea",
+            "apuntes": "instituciones y ordenamiento; el Derecho comunitario y su aplicación.",
+            "practica": false
+          },
+          {
+            "path": "I.3",
+            "title": "El régimen local",
+            "apuntes": "el municipio (elementos, competencias), la provincia, la comarca; la Ley 7/1985 reguladora de las Bases del Régimen Local.",
+            "practica": false
+          },
+          {
+            "path": "I.4",
+            "title": "Organización municipal",
+            "apuntes": "el Pleno, el Alcalde, la Junta de Gobierno Local, los concejales y las comisiones; el Reglamento Orgánico; los órganos desconcentrados y los entes dependientes.",
+            "practica": false
+          },
+          {
+            "path": "I.5",
+            "title": "El procedimiento administrativo (Ley 39/2015)",
+            "apuntes": "interesados, plazos, fases, silencio, recursos, notificaciones y registro.",
+            "practica": false
+          },
+          {
+            "path": "I.6",
+            "title": "El régimen jurídico del sector público (Ley 40/2015)",
+            "apuntes": "órganos, competencias, delegación, convenios, consorcios y administración electrónica.",
+            "practica": false
+          },
+          {
+            "path": "I.7",
+            "title": "El personal al servicio de las administraciones (TREBEP)",
+            "apuntes": "clases de empleados públicos, acceso, provisión, situaciones, derechos y deberes, régimen disciplinario.",
+            "practica": false
+          },
+          {
+            "path": "I.8",
+            "title": "La función pública local",
+            "apuntes": "plantilla, RPT, selección, carrera, retribuciones y negociación colectiva.",
+            "practica": false
+          },
+          {
+            "path": "I.9",
+            "title": "Las haciendas locales y el presupuesto",
+            "apuntes": "ingresos, tasas y precios públicos, presupuesto municipal, fases del gasto y control.",
+            "practica": false
+          },
+          {
+            "path": "I.10",
+            "title": "La contratación del sector público (Ley 9/2017)",
+            "apuntes": "tipos de contratos, procedimientos, mesas de contratación y plataformas.",
+            "practica": false
+          },
+          {
+            "path": "I.11",
+            "title": "Igualdad y violencia de género",
+            "apuntes": "LO 3/2007 y normativa autonómica; planes de igualdad; protocolo de acoso.",
+            "practica": false
+          },
+          {
+            "path": "I.12",
+            "title": "Transparencia y protección de datos en la Administración",
+            "apuntes": "Ley 19/2013, derecho de acceso, LOPDGDD y RGPD; el delegado de protección de datos.",
+            "practica": false
+          }
+        ]
+      },
+      {
+        "path": "II",
+        "title": "Informática básica y ofimática",
+        "temas": [
+          {
+            "path": "II.13",
+            "title": "Arquitectura de ordenadores",
+            "apuntes": "**Arquitectura de ordenadores**\n\nUn ordenador es una máquina programable que ejecuta instrucciones sobre datos. La arquitectura clásica es la de **von Neumann**: una unidad central de proceso (CPU), una memoria principal y unidades de entrada/salida, unidas por un conjunto de buses. Su rasgo definitorio es que **instrucciones y datos comparten el mismo espacio de memoria**, lo que simplifica el diseño pero crea el llamado *cuello de botella de von Neumann*: la CPU no puede leer una instrucción y un dato en el mismo ciclo. Las arquitecturas **Harvard** separan memorias de instrucciones y de datos (habituales en microcontroladores y en cachés internas).\n\n**La CPU** consta de unidad de control, unidad aritmético-lógica (ALU), registros y, en los procesadores modernos, memoria caché. El ciclo de instrucción es *captar* (fetch), *decodificar*, *ejecutar* y *escribir el resultado* (write-back). La frecuencia del reloj indica ciclos por segundo, pero el rendimiento real depende también del número de instrucciones por ciclo (IPC) y de las esperas de memoria. Técnicas como la **segmentación** (pipeline), la **ejecución fuera de orden**, la **predicción de saltos** y el **multihilo** (SMT/hyperthreading) aumentan el paralelismo a nivel de instrucción.\n\n**La jerarquía de memoria** busca dar la velocidad de la caché con el tamaño del disco: registros, cachés L1/L2/L3, memoria principal (RAM) y almacenamiento secundario (SSD/HDD). Cada nivel es más grande y más lento que el anterior; la localidad temporal y espacial de los accesos hace que la jerarquía funcione. La memoria principal es volátil; el almacenamiento secundario es no volátil. La **memoria virtual** da a cada proceso un espacio de direcciones propio y traduce direcciones virtuales a físicas mediante la MMU y la tabla de páginas, con la TLB como caché de traducciones.\n\n**Los buses** transportan datos, direcciones y señales de control. El bus del sistema conecta CPU y memoria; los buses de E/S conectan periféricos (PCI Express, USB, SATA/NVMe). El **chipset** organiza esos enlaces. La E/S puede ser programada, por interrupciones o por **DMA** (acceso directo a memoria), que libera a la CPU de copiar bloques enteros.\n\n**Almacenamiento y rendimiento.** Un SSD no tiene partes móviles: ofrece latencias de microsegundos y acceso aleatorio rápido, pero tiene desgaste por escritura y conviene alinearlo y no llenarlo. Un HDD tiene latencias de milisegundos y mayor capacidad por euro; es adecuado para archivo. El **RAID** combina discos para ganar tolerancia a fallos (espejo, paridad) o rendimiento (striping); no sustituye a una copia de seguridad. Para medir rendimiento se usan benchmarks, pero hay que leerlos con cuidado: la carga, la caché y el sistema operativo cambian el resultado.\n\n**Fuente.** Material de estudio propio para esta demo; los conceptos son de arquitectura de computadores y no reproducen texto de ninguna academia.",
+            "practica": true
+          },
+          {
+            "path": "II.14",
+            "title": "Sistemas operativos de usuario",
+            "apuntes": "Windows 10/11 y Linux de escritorio; gestión de usuarios, permisos, actualizaciones y resolución de problemas.",
+            "practica": false
+          },
+          {
+            "path": "II.15",
+            "title": "Ofimática",
+            "apuntes": "procesador de textos, hoja de cálculo (fórmulas, funciones, gráficos, tablas dinámicas), presentaciones y bases de datos de escritorio; LibreOffice.",
+            "practica": false
+          },
+          {
+            "path": "II.16",
+            "title": "Correo electrónico y colaboración",
+            "apuntes": "protocolos (SMTP, POP3, IMAP), clientes, calendarios, almacenamiento en la nube y herramientas colaborativas.",
+            "practica": false
+          },
+          {
+            "path": "II.17",
+            "title": "Licencias y software libre",
+            "apuntes": "tipos de licencia, software libre vs. propietario, reutilización y buenas prácticas en la administración.",
+            "practica": false
+          }
+        ]
+      },
+      {
+        "path": "III",
+        "title": "Sistemas, redes y comunicaciones",
+        "temas": [
+          {
+            "path": "III.18",
+            "title": "Sistemas operativos de servidor",
+            "apuntes": "Windows Server (AD, DNS, DHCP, GPO) y Linux (usuarios, permisos, servicios, systemd); instalación y administración básica.",
+            "practica": false
+          },
+          {
+            "path": "III.19",
+            "title": "Virtualización y contenedores",
+            "apuntes": "hipervisores (VMware, Hyper-V, Proxmox), máquinas virtuales, Docker, ventajas y buenas prácticas.",
+            "practica": false
+          },
+          {
+            "path": "III.20",
+            "title": "Almacenamiento y copias de seguridad",
+            "apuntes": "RAID, NAS/SAN, backup completo/incremental/diferencial, regla 3-2-1, planes de continuidad y recuperación (PGD/DRP).",
+            "practica": false
+          },
+          {
+            "path": "III.21",
+            "title": "Redes",
+            "apuntes": "modelo OSI y TCP/IP, direccionamiento IPv4/IPv6, subredes, VLAN, enrutamiento, conmutación, cableado y fibra.",
+            "practica": false
+          },
+          {
+            "path": "III.22",
+            "title": "Comunicaciones",
+            "apuntes": "Wi-Fi (estándares y seguridad), VPN, MPLS, telefonía IP, líneas y proveedores.",
+            "practica": false
+          },
+          {
+            "path": "III.23",
+            "title": "Servicios de red",
+            "apuntes": "DNS, DHCP, NTP, proxy, LDAP y Active Directory, servidores web y de correo; alta disponibilidad.",
+            "practica": false
+          },
+          {
+            "path": "III.24",
+            "title": "Monitorización y gestión de incidencias",
+            "apuntes": "herramientas (Zabbix, Nagios, Glances), ITIL, ticketing, prioridades, SLA y escalado.",
+            "practica": false
+          },
+          {
+            "path": "III.25",
+            "title": "Cloud y centros de datos",
+            "apuntes": "IaaS/PaaS/SaaS, nubes públicas y privadas, réplica y servicios gestionados; la nube en la administración.",
+            "practica": false
+          },
+          {
+            "path": "III.26",
+            "title": "Soporte al puesto de trabajo",
+            "apuntes": "atención al usuario, inventario, imágenes de equipo, escritorios remotos, impresión y dispositivos móviles.",
+            "practica": false
+          }
+        ]
+      },
+      {
+        "path": "IV",
+        "title": "Datos y desarrollo",
+        "temas": [
+          {
+            "path": "IV.27",
+            "title": "Bases de datos relacionales",
+            "apuntes": "modelo relacional, claves, integridad, normalización y diseño.",
+            "practica": false
+          },
+          {
+            "path": "IV.28",
+            "title": "SQL",
+            "apuntes": "DDL, DML, consultas, joins, subconsultas, vistas, procedimientos y funciones.",
+            "practica": false
+          },
+          {
+            "path": "IV.29",
+            "title": "Gestores de bases de datos",
+            "apuntes": "Oracle, SQL Server, PostgreSQL y MySQL; usuarios, permisos, copias y recuperación (RMAN, pg_dump).",
+            "practica": false
+          },
+          {
+            "path": "IV.30",
+            "title": "Programación",
+            "apuntes": "tipos de datos, estructuras de control, funciones, modularidad, POO y buenas prácticas; control de versiones (Git).",
+            "practica": false
+          },
+          {
+            "path": "IV.31",
+            "title": "Desarrollo web",
+            "apuntes": "HTML, CSS, JavaScript, frameworks; PHP, Java/.NET, APIs REST y autenticación.",
+            "practica": false
+          },
+          {
+            "path": "IV.32",
+            "title": "Interoperabilidad e integración",
+            "apuntes": "intercambio de datos (XML, JSON, CSV), servicios web, colas y automatización de procesos (scripts, cron).",
+            "practica": false
+          },
+          {
+            "path": "IV.33",
+            "title": "Informes y explotación de datos",
+            "apuntes": "hojas de cálculo y herramientas de BI; cuadros de mando y criterios de calidad del dato.",
+            "practica": false
+          }
+        ]
+      },
+      {
+        "path": "V",
+        "title": "Seguridad y administración electrónica",
+        "temas": [
+          {
+            "path": "V.34",
+            "title": "Seguridad de la información",
+            "apuntes": "confidencialidad, integridad y disponibilidad; riesgos, análisis y gestión (MAGERIT); ISO 27001/27002.",
+            "practica": false
+          },
+          {
+            "path": "V.35",
+            "title": "El Esquema Nacional de Seguridad (ENS, RD 311/2022)",
+            "apuntes": "ámbito, principios, categorías, medidas y auditoría.",
+            "practica": false
+          },
+          {
+            "path": "V.36",
+            "title": "Criptografía y firma electrónica",
+            "apuntes": "cifrado simétrico/asimétrico, hash, certificados digitales, DNIe, Cl@ve, sellos de tiempo y firma de documentos.",
+            "practica": false
+          },
+          {
+            "path": "V.37",
+            "title": "Protección de datos aplicada",
+            "apuntes": "bases de tratamiento, derechos, seguridad y brechas; el DPD y el registro de actividades.",
+            "practica": false
+          },
+          {
+            "path": "V.38",
+            "title": "Ciberseguridad",
+            "apuntes": "amenazas (phishing, ransomware, ingeniería social), respuesta a incidentes, CCN-CERT e INCIBE.",
+            "practica": false
+          },
+          {
+            "path": "V.39",
+            "title": "Administración electrónica práctica",
+            "apuntes": "sede electrónica, registro electrónico, notificaciones, expediente electrónico, tramitación y firma; Ley 39/2015 y ENS.",
+            "practica": false
+          },
+          {
+            "path": "V.40",
+            "title": "Accesibilidad y usabilidad",
+            "apuntes": "WCAG, diseño para todos, documentos accesibles y usabilidad de servicios públicos.",
+            "practica": false
+          }
+        ]
+      }
+    ]
+  },
+  "practices": [
+    {
+      "slug": "i-1",
+      "tema_path": "I.1",
+      "title": "Práctica · La Constitución Española de 1978",
+      "questions": [
+        {
+          "stem": "¿Cuándo entró en vigor la Constitución Española de 1978?",
+          "options": [
+            {
+              "key": "a",
+              "text": "El 6 de diciembre de 1978"
+            },
+            {
+              "key": "b",
+              "text": "El 29 de diciembre de 1978"
+            },
+            {
+              "key": "c",
+              "text": "El 27 de diciembre de 1978"
+            },
+            {
+              "key": "d",
+              "text": "El 31 de octubre de 1978"
+            }
+          ],
+          "correct": "b",
+          "explanation": "Se publicó en el BOE el 29 de diciembre de 1978 y entró en vigor ese mismo día (disposición final)."
+        },
+        {
+          "stem": "¿Cuántos artículos tiene la Constitución Española de 1978?",
+          "options": [
+            {
+              "key": "a",
+              "text": "167"
+            },
+            {
+              "key": "b",
+              "text": "168"
+            },
+            {
+              "key": "c",
+              "text": "169"
+            },
+            {
+              "key": "d",
+              "text": "170"
+            }
+          ],
+          "correct": "c",
+          "explanation": "Tiene 169 artículos, además de preámbulo y disposiciones adicionales, transitorias, derogatoria y final."
+        },
+        {
+          "stem": "¿Qué materia regula el Título I de la Constitución?",
+          "options": [
+            {
+              "key": "a",
+              "text": "La Corona"
+            },
+            {
+              "key": "b",
+              "text": "Las Cortes Generales"
+            },
+            {
+              "key": "c",
+              "text": "Los derechos y deberes fundamentales"
+            },
+            {
+              "key": "d",
+              "text": "La organización territorial del Estado"
+            }
+          ],
+          "correct": "c",
+          "explanation": "El Título I (artículos 10-55) regula los derechos y deberes fundamentales."
+        },
+        {
+          "stem": "Según el artículo 1.1, ¿cuáles son los valores superiores del ordenamiento jurídico?",
+          "options": [
+            {
+              "key": "a",
+              "text": "La libertad, la justicia, la igualdad y el pluralismo político"
+            },
+            {
+              "key": "b",
+              "text": "La unidad, la autonomía y la solidaridad"
+            },
+            {
+              "key": "c",
+              "text": "La dignidad, la seguridad y la legalidad"
+            },
+            {
+              "key": "d",
+              "text": "La democracia, la monarquía y la participación"
+            }
+          ],
+          "correct": "a",
+          "explanation": "El artículo 1.1 propugna como valores superiores la libertad, la justicia, la igualdad y el pluralismo político."
+        },
+        {
+          "stem": "¿En quién reside la soberanía nacional?",
+          "options": [
+            {
+              "key": "a",
+              "text": "En las Cortes Generales"
+            },
+            {
+              "key": "b",
+              "text": "En el pueblo español"
+            },
+            {
+              "key": "c",
+              "text": "En el Rey"
+            },
+            {
+              "key": "d",
+              "text": "En el Gobierno"
+            }
+          ],
+          "correct": "b",
+          "explanation": "El artículo 1.2 establece que la soberanía nacional reside en el pueblo español, del que emanan los poderes del Estado."
+        },
+        {
+          "stem": "¿Cuál es la forma política del Estado según el artículo 1.3?",
+          "options": [
+            {
+              "key": "a",
+              "text": "La República parlamentaria"
+            },
+            {
+              "key": "b",
+              "text": "La monarquía parlamentaria"
+            },
+            {
+              "key": "c",
+              "text": "La monarquía absoluta"
+            },
+            {
+              "key": "d",
+              "text": "El Estado federal"
+            }
+          ],
+          "correct": "b",
+          "explanation": "El artículo 1.3 define la forma política del Estado español como monarquía parlamentaria."
+        },
+        {
+          "stem": "¿Qué reformas exigen el procedimiento agravado del artículo 168?",
+          "options": [
+            {
+              "key": "a",
+              "text": "Cualquier reforma constitucional"
+            },
+            {
+              "key": "b",
+              "text": "La revisión total o la que afecte al título preliminar, al Título I, al Título II o al Título IX"
+            },
+            {
+              "key": "c",
+              "text": "Solo las que afecten al Título I"
+            },
+            {
+              "key": "d",
+              "text": "Solo las que afecten a los artículos 1 a 9"
+            }
+          ],
+          "correct": "b",
+          "explanation": "El artículo 168 se aplica a la revisión total y a la que afecte al título preliminar, al Título I, al Título II o al Título IX."
+        },
+        {
+          "stem": "¿Cuál es la lengua oficial del Estado?",
+          "options": [
+            {
+              "key": "a",
+              "text": "El castellano"
+            },
+            {
+              "key": "b",
+              "text": "El catalán"
+            },
+            {
+              "key": "c",
+              "text": "El inglés"
+            },
+            {
+              "key": "d",
+              "text": "Ninguna lengua tiene carácter oficial"
+            }
+          ],
+          "correct": "a",
+          "explanation": "El artículo 3.1 establece que el castellano es la lengua española oficial del Estado."
+        },
+        {
+          "stem": "¿En qué Título se regula el Tribunal Constitucional?",
+          "options": [
+            {
+              "key": "a",
+              "text": "Título VIII"
+            },
+            {
+              "key": "b",
+              "text": "Título IX"
+            },
+            {
+              "key": "c",
+              "text": "Título X"
+            },
+            {
+              "key": "d",
+              "text": "Título II"
+            }
+          ],
+          "correct": "b",
+          "explanation": "El Título IX (artículos 159-165) regula el Tribunal Constitucional."
+        },
+        {
+          "stem": "¿Cuál es la capital del Estado según el artículo 5?",
+          "options": [
+            {
+              "key": "a",
+              "text": "Madrid"
+            },
+            {
+              "key": "b",
+              "text": "Toledo"
+            },
+            {
+              "key": "c",
+              "text": "Barcelona"
+            },
+            {
+              "key": "d",
+              "text": "Sevilla"
+            }
+          ],
+          "correct": "a",
+          "explanation": "El artículo 5 declara que la capital del Estado es la villa de Madrid."
+        }
+      ]
+    },
+    {
+      "slug": "ii-13",
+      "tema_path": "II.13",
+      "title": "Práctica · Arquitectura de ordenadores",
+      "questions": [
+        {
+          "stem": "¿Qué comparten instrucciones y datos en la arquitectura de von Neumann?",
+          "options": [
+            {
+              "key": "a",
+              "text": "El mismo espacio de memoria"
+            },
+            {
+              "key": "b",
+              "text": "La misma caché L1"
+            },
+            {
+              "key": "c",
+              "text": "El mismo bus de E/S"
+            },
+            {
+              "key": "d",
+              "text": "El mismo registro de instrucción"
+            }
+          ],
+          "correct": "a",
+          "explanation": "En von Neumann instrucciones y datos comparten memoria; por eso aparecen el cuello de botella y los ataques de escritura de código."
+        },
+        {
+          "stem": "¿Qué unidad de la CPU realiza las operaciones aritméticas y lógicas?",
+          "options": [
+            {
+              "key": "a",
+              "text": "La unidad de control"
+            },
+            {
+              "key": "b",
+              "text": "La ALU"
+            },
+            {
+              "key": "c",
+              "text": "La MMU"
+            },
+            {
+              "key": "d",
+              "text": "La TLB"
+            }
+          ],
+          "correct": "b",
+          "explanation": "La unidad aritmético-lógica (ALU) ejecuta sumas, restas y operaciones lógicas."
+        },
+        {
+          "stem": "¿Cuál es el orden correcto del ciclo de instrucción?",
+          "options": [
+            {
+              "key": "a",
+              "text": "Decodificar, captar, ejecutar, escribir"
+            },
+            {
+              "key": "b",
+              "text": "Captar, decodificar, ejecutar, escribir"
+            },
+            {
+              "key": "c",
+              "text": "Captar, ejecutar, decodificar, escribir"
+            },
+            {
+              "key": "d",
+              "text": "Ejecutar, captar, escribir, decodificar"
+            }
+          ],
+          "correct": "b",
+          "explanation": "El ciclo básico es fetch (captar), decode (decodificar), execute (ejecutar) y write-back (escribir el resultado)."
+        },
+        {
+          "stem": "¿Qué técnica solapa la ejecución de varias instrucciones en etapas?",
+          "options": [
+            {
+              "key": "a",
+              "text": "La segmentación (pipeline)"
+            },
+            {
+              "key": "b",
+              "text": "El DMA"
+            },
+            {
+              "key": "c",
+              "text": "La memoria virtual"
+            },
+            {
+              "key": "d",
+              "text": "El RAID"
+            }
+          ],
+          "correct": "a",
+          "explanation": "El pipeline divide la ejecución en etapas y mantiene varias instrucciones en vuelo a la vez."
+        },
+        {
+          "stem": "¿Qué nivel de la jerarquía de memoria es el más rápido y pequeño?",
+          "options": [
+            {
+              "key": "a",
+              "text": "La memoria principal"
+            },
+            {
+              "key": "b",
+              "text": "La caché L3"
+            },
+            {
+              "key": "c",
+              "text": "Los registros"
+            },
+            {
+              "key": "d",
+              "text": "El SSD"
+            }
+          ],
+          "correct": "c",
+          "explanation": "Los registros están dentro de la CPU y son el nivel más rápido y de menor capacidad."
+        },
+        {
+          "stem": "¿Qué memoria es volátil?",
+          "options": [
+            {
+              "key": "a",
+              "text": "La memoria RAM"
+            },
+            {
+              "key": "b",
+              "text": "El SSD"
+            },
+            {
+              "key": "c",
+              "text": "El HDD"
+            },
+            {
+              "key": "d",
+              "text": "La memoria flash"
+            }
+          ],
+          "correct": "a",
+          "explanation": "La RAM pierde su contenido al cortar la alimentación; el almacenamiento secundario es no volátil."
+        },
+        {
+          "stem": "¿Qué componente traduce direcciones virtuales a físicas?",
+          "options": [
+            {
+              "key": "a",
+              "text": "La ALU"
+            },
+            {
+              "key": "b",
+              "text": "La MMU"
+            },
+            {
+              "key": "c",
+              "text": "El chipset"
+            },
+            {
+              "key": "d",
+              "text": "El bus de datos"
+            }
+          ],
+          "correct": "b",
+          "explanation": "La unidad de gestión de memoria (MMU) traduce direcciones virtuales a físicas usando la tabla de páginas."
+        },
+        {
+          "stem": "¿Qué ventaja principal aporta el DMA?",
+          "options": [
+            {
+              "key": "a",
+              "text": "Aumenta la frecuencia del reloj"
+            },
+            {
+              "key": "b",
+              "text": "Libera a la CPU de copiar bloques de datos"
+            },
+            {
+              "key": "c",
+              "text": "Duplica la caché L1"
+            },
+            {
+              "key": "d",
+              "text": "Sustituye a la memoria virtual"
+            }
+          ],
+          "correct": "b",
+          "explanation": "El acceso directo a memoria permite a un periférico transferir bloques sin que la CPU los copie uno a uno."
+        },
+        {
+          "stem": "¿Qué tecnología de almacenamiento tiene acceso aleatorio sin partes móviles?",
+          "options": [
+            {
+              "key": "a",
+              "text": "El HDD"
+            },
+            {
+              "key": "b",
+              "text": "El SSD"
+            },
+            {
+              "key": "c",
+              "text": "La cinta magnética"
+            },
+            {
+              "key": "d",
+              "text": "El DVD-ROM"
+            }
+          ],
+          "correct": "b",
+          "explanation": "El SSD usa memoria flash: no tiene partes móviles y su acceso aleatorio es mucho más rápido que el de un HDD."
+        },
+        {
+          "stem": "¿Qué significa RAID 1?",
+          "options": [
+            {
+              "key": "a",
+              "text": "Striping sin paridad"
+            },
+            {
+              "key": "b",
+              "text": "Espejo de dos discos"
+            },
+            {
+              "key": "c",
+              "text": "Paridad distribuida"
+            },
+            {
+              "key": "d",
+              "text": "Copia de seguridad automática"
+            }
+          ],
+          "correct": "b",
+          "explanation": "RAID 1 duplica los datos en dos discos (espejo); protege ante el fallo de uno, pero no sustituye a una copia de seguridad."
+        }
+      ]
+    }
+  ]
+}

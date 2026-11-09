@@ -1,9 +1,20 @@
-# Cuentas y accesos para publicar OpoFuente (demo)
+# Cuentas y accesos para publicar OpoFuente
 
-**Fecha:** 9 de noviembre de 2026 · **Estado:** **no se ha creado ninguna cuenta y no hay URL
-pública todavía**. Este documento es el paso que falta, con los nombres exactos.
+**Fecha:** 9 de noviembre de 2026 · **Estado:** la **demo estática ya está publicada y verificada**
+en <https://erdeivih.github.io/opofuente-demo/> (GitHub Pages, 8/8 comprobaciones; ver
+[`DEMO-PAGES.md`](DEMO-PAGES.md)). La **app completa con backend** sigue sin URL: Render no tiene
+ningún servicio con el nombre documentado (`404 x-render-routing: no-server`) y en esta máquina no hay
+cuenta ni token de proveedor. Este documento cubre esa vía y las cuentas que hacen falta.
 
-## Estado verificado el 9/11/2026 a las 20:28 (la URL documentada no es un servicio vivo)
+## Demo estática ya publicada (no necesita cuenta)
+
+- URL: <https://erdeivih.github.io/opofuente-demo/>.
+- Qué enseña: temario 5/40, apuntes completos de I.1 y II.13, dos prácticas de 10 preguntas y ficha
+  de pregunta; progreso en `localStorage`.
+- Cómo se regenera y publica: [`DEMO-PAGES.md`](DEMO-PAGES.md).
+- No incluye Guardia Civil, corpus real ni material de academias.
+
+## Por qué la app con backend sigue sin URL
 
 `https://opofuente-demo.onrender.com` responde **404** con `x-render-routing: no-server` y cuerpo
 `Not Found`. Eso no es una demo dormida ni un servicio borrado: **Render no tiene ningún servicio con
@@ -21,10 +32,11 @@ Qué hacer ahora, en orden:
    `RENDER_API_KEY` de la sesión) una API key de Render con permiso de lectura: con ella se listan
    servicios y se comprueba el estado real. No la subas al repositorio.
 
-## Por qué no hay URL todavía (y por qué no la puedo crear yo)
+## Por qué la app con backend todavía no se ha desplegado (y por qué no la puedo crear yo)
 
 El encargo pedía desplegar en un proveedor gratuito y, si algo requería una cuenta o un pago, **no
-hacerlo** y dejarlo escrito. En esta máquina **no hay ninguna sesión de proveedor cloud**:
+hacerlo** y dejarlo escrito. En esta máquina **no hay ninguna sesión de proveedor cloud** (la demo
+estática sí se ha publicado porque GitHub ya estaba autenticado y no hace falta servidor):
 
 | Proveedor | Estado comprobado el 9/11/2026 |
 |---|---|

@@ -6,7 +6,7 @@ import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-  { ignores: ['dist', 'node_modules', 'playwright-report', 'test-results', 'src/openapi.d.ts'] },
+  { ignores: ['dist', 'dist-demo', 'node_modules', 'playwright-report', 'test-results', 'src/openapi.d.ts'] },
   js.configs.recommended,
   // El análisis con información de tipos solo se aplica a TypeScript.
   ...tseslint.configs.recommendedTypeChecked.map((config) => ({
@@ -37,5 +37,10 @@ export default tseslint.config(
   {
     files: ['tests/**/*.{ts,tsx}', '*.config.ts'],
     languageOptions: { globals: { ...globals.node } },
+  },
+  {
+    // La demo estática es una entrada única de Vite: el aviso de fast-refresh no aplica.
+    files: ['demo/**/*.{ts,tsx}'],
+    rules: { 'react-refresh/only-export-components': 'off' },
   },
 );
