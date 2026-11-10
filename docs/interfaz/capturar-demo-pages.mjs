@@ -315,8 +315,15 @@ check(
   /Temas más flojos/.test(estadisticas) && estadisticas.includes(practice?.tema_path ?? ''),
 );
 
-// Modo examen por bloque: sin corrección hasta el final y revisión de fallos.
+// Examen completo: mezcla de bloques, tiempo total y penalización.
 await page.setViewportSize({ width: 390, height: 844 });
+await page.goto(`${BASE}/#/examen/TODOS`, { waitUntil: 'networkidle' });
+await page.waitForSelector('h1');
+const completoSetup = await page.locator('main').innerText();
+check('el examen completo mezcla todos los bloques', /Examen completo/.test(completoSetup) && /Todos · 40\/40/.test(completoSetup) && /400 preguntas disponibles/.test(completoSetup));
+await page.screenshot({ path: path.join(OUT_DIR, 'examen-completo-390.png'), fullPage: true });
+
+// Modo examen por bloque: sin corrección hasta el final y revisión de fallos.
 await page.goto(`${BASE}/#/examen/III`, { waitUntil: 'networkidle' });
 await page.waitForSelector('h1');
 const examenSetup = await page.locator('main').innerText();
@@ -350,6 +357,7 @@ await page.waitForSelector('h1');
 const historial = await page.locator('main').innerText();
 check('las estadísticas separan prácticas e historial', /Estadísticas de prácticas/.test(historial) && /Historial de intentos/.test(historial));
 check('el historial incluye práctica y examen', /Práctica/.test(historial) && /Examen/.test(historial));
+check('el historial muestra el tiempo', /Historial de intentos/.test(historial) && /\d{2}:\d{2}/.test(historial));
 await page.screenshot({ path: path.join(OUT_DIR, 'estadisticas-390.png'), fullPage: true });
 
 check('sin errores de página', consoleErrors.length === 0, consoleErrors.slice(0, 3).join(' | '));

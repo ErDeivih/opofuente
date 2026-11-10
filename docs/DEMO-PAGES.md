@@ -1,6 +1,6 @@
 # Demo estática publicada en GitHub Pages
 
-**URL verificada:** <https://erdeivih.github.io/opofuente-demo/> · **estado:** HTTP 200 y **61/61**
+**URL verificada:** <https://erdeivih.github.io/opofuente-demo/> · **estado:** HTTP 200 y **63/63**
 comprobaciones con Playwright contra la URL pública (10/11/2026). Publicada desde el repositorio
 público `ErDeivih/opofuente-demo`, que contiene **solo el build** (sin código fuente, sin fixtures y
 sin material privado).
@@ -24,7 +24,8 @@ guarda en `localStorage`. **No hay cuenta, no hay servidor y no se envía nada.*
 - **Historial unificado** de prácticas y exámenes: tipo, bloque, fecha, aciertos y nota en Estadísticas.
 - **Examen con formato real**: tiempo límite y penalización por fallo según convocatoria (TAI oficial;
   C1 local marcado como estimación).
-- **Modo examen** en `#/examen`: N preguntas aleatorias por bloque, sin corrección hasta el final, nota y revisión de fallos.
+- **Examen por bloque** y **examen completo** (`#/examen`): N preguntas aleatorias, sin corrección
+  hasta el final, tiempo/penalización, nota y revisión de fallos.
 - **Estadísticas** en `#/estadisticas`: acierto por tema y bloque, y los 5 temas más flojos con enlace directo.
 - **Portada corta**: cobertura, «Continuar donde lo dejé» y 3 prácticas siguientes; el resto está
   en la pestaña Prácticas. Las pestañas miden 44 px y la ficha lleva migas «Temario › I.1».
@@ -67,7 +68,7 @@ Cada uno cita su fuente (BOE consolidado, TUE/TFUE, RFC o ISO según el tema).
 4. Copia `dist-demo` al clon del repo público `ErDeivih/opofuente-demo` (rama `main`, junto a
    `.nojekyll`), `git add -A && git commit -m "demo" && git push origin main`.
 5. Verifica: `node docs/interfaz/capturar-demo-pages.mjs https://erdeivih.github.io/opofuente-demo/`
-   → **61/61** y capturas.
+   → **63/63** y capturas.
 
 ## Verificación y capturas
 
@@ -99,6 +100,7 @@ Revisión final móvil en [`REVISION-FINAL-2026-11-10.md`](REVISION-FINAL-2026-1
 | Guía de estudio | — | `guia-390.png` |
 | Tema V.40 | — | `tema-v-40-390.png` |
 | Examen (ajustes) | — | `examen-390.png` |
+| Examen completo | — | `examen-completo-390.png` |
 | Resultado del examen | — | `examen-resultado-390.png` |
 | Estadísticas | — | `estadisticas-390.png` |
 | Corrección con BOE | `correccion-1280.png` | — |

@@ -51,13 +51,15 @@ servidor.
   pendiente) y práctica (con práctica / pendiente).
 - **Guía de estudio** (`#/guia`): orden de bloques y temas flojos detectados desde las prácticas
   hechas; enlaces a repasar el tema y repetir la práctica.
-- **Modo examen por bloque** (`#/examen`): N preguntas aleatorias, sin corrección hasta el final,
-  nota y revisión de fallos con explicación y fuente.
+- **Examen por bloque** (`#/examen`): N preguntas aleatorias, sin corrección hasta el final, nota y
+  revisión de fallos con explicación y fuente.
+- **Examen completo**: mezcla de los cinco bloques, 100 preguntas por defecto, 120 min y −1/3,
+  nota final y revisión de fallos.
 - **Formato de examen real**: selector de convocatoria, tiempo límite y penalización por fallo. El
   perfil TAI usa 120 min y −1/3 (ANEXO V); las C1 locales se marcan como estimación porque sus bases
   draft no publican reglas verificadas.
 - **Historial unificado de intentos**: prácticas y exámenes con tipo, bloque, detalle, fecha,
-  aciertos y nota, en `#/estadisticas`.
+  aciertos, tiempo y nota, en `#/estadisticas`.
 - **Fecha y fuente de revisión** en cada ficha: última actualización y norma citada.
 - **Cabeceras de seguridad** en la demo pública: CSP por `<meta>`, `referrer: no-referrer` y
   `connect-src 'none'`; el examen lleva la etiqueta **«Simulación»**. Límites en
@@ -103,6 +105,7 @@ servidor.
 | Tema V.40 | — | [tema-v-40-390](docs/capturas/demo-pages/tema-v-40-390.png) |
 | Guía de estudio | — | [guia-390](docs/capturas/demo-pages/guia-390.png) |
 | Examen | — | [examen-390](docs/capturas/demo-pages/examen-390.png) |
+| Examen completo | — | [examen-completo-390](docs/capturas/demo-pages/examen-completo-390.png) |
 | Resultado del examen | — | [examen-resultado-390](docs/capturas/demo-pages/examen-resultado-390.png) |
 | Estadísticas | — | [estadisticas-390](docs/capturas/demo-pages/estadisticas-390.png) |
 | Corrección con BOE | [correccion-1280](docs/capturas/demo-pages/correccion-1280.png) | — |
@@ -112,7 +115,7 @@ servidor.
 ## 4. Estado y evidencia
 
 - **Publicada:** HTTP 200 en la URL pública; GitHub Pages reconstruye desde el build.
-- **Verificación:** **61/61** comprobaciones con Playwright contra la URL pública y **12/12 enlaces**
+- **Verificación:** **63/63** comprobaciones con Playwright contra la URL pública y **12/12 enlaces**
   de convocatoria abren (HTTP 200): portada,
   convocatorias, aviso único, 40 temas, cobertura de 40 filas, sellos, búsqueda por II.13, filtro
   «Con práctica», tema completo, tema pendiente, corrección con enlace al BOE, práctica completa y
@@ -143,8 +146,8 @@ servidor.
   distingue lo publicado de lo pendiente.
 - **Datos y reglas:** 12 convocatorias, 40 temas y estados; derechos y privacidad tratados de forma
   explícita (D-034).
-- **Comunicación:** demo navegable, capturas a dos anchos y documentación de límites sin prometer de
-  más.
+- **Comunicación:** demo navegable, capturas a dos anchos, caso de portfolio en
+  [CASO-OPOFUENTE.md](docs/CASO-OPOFUENTE.md) y límites sin prometer de más.
 - **Calidad de contenido:** auditoría de los 40 temas, refuerzo de los 5 más delgados y equilibrio de
   la letra correcta; evidencias en `CALIDAD-TEMARIO.md`.
 - **Seguridad y transparencia:** CSP/referrer, etiqueta de simulación y reporte de erratas con
@@ -169,7 +172,7 @@ servidor.
 
 ## 9. Revisión final y qué queda
 
-- **61/61** comprobaciones, también a **390 px**; capturas nuevas en
+- **63/63** comprobaciones, también a **390 px**; capturas nuevas en
   [docs/capturas/demo-pages](docs/capturas/demo-pages/) y checklist en
   [REVISION-FINAL-2026-11-10.md](docs/REVISION-FINAL-2026-11-10.md).
 - **40/40** temas completos: I 12/12 · II 5/5 · III 9/9 · IV 7/7 · V 7/7.
@@ -177,4 +180,4 @@ servidor.
   apuntes propios, tabla, ejemplo, fuente, 10 preguntas y su fila/sello en el mapa.
 
 `resumen:` OpoFuente entra en el portfolio como proyecto **funcional y demostrable**: demo pública,
-40/40 temas con apuntes y práctica, 400 preguntas, 12 convocatorias, 61/61 comprobaciones y 12/12 enlaces de convocatoria abren; límites y derechos documentados.
+40/40 temas con apuntes y práctica, 400 preguntas, 12 convocatorias, 63/63 comprobaciones y 12/12 enlaces de convocatoria abren; límites y derechos documentados.

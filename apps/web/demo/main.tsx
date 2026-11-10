@@ -640,18 +640,22 @@ function fechaCorta(iso: string): string {
   return new Date(iso).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
+const BLOQUE_TODOS = 'TODOS';
+
 function preguntasDelBloque(path: string): ExamQuestion[] {
-  return data.practices
-    .filter((practice) => blockForTopic(practice.tema_path)?.path === path)
-    .flatMap((practice) =>
-      practice.questions.map((question) => ({ ...question, topic: practice.tema_path })),
-    );
+  const practices =
+    path === BLOQUE_TODOS
+      ? data.practices
+      : data.practices.filter((practice) => blockForTopic(practice.tema_path)?.path === path);
+  return practices.flatMap((practice) =>
+    practice.questions.map((question) => ({ ...question, topic: practice.tema_path })),
+  );
 }
 
 function Examen({ initialBlock }: { readonly initialBlock?: string | undefined }) {
   const [block, setBlock] = useState(initialBlock ?? data.curriculum.blocks[0]?.path ?? 'I');
   const [convocatoria, setConvocatoria] = useState('tai');
-  const [count, setCount] = useState(10);
+  const [count, setCount] = useState(initialBlock === BLOQUE_TODOS ? 100 : 10);
   const [phase, setPhase] = useState<ExamPhase>('setup');
   const [questions, setQuestions] = useState<ExamQuestion[]>([]);
   const [index, setIndex] = useState(0);
@@ -664,6 +668,7 @@ function Examen({ initialBlock }: { readonly initialBlock?: string | undefined }
     convocatoria === 'tai'
       ? data.examRules.tai.name
       : data.convocatorias.items.find((item) => item.code === convocatoria)?.title ?? 'C1 local';
+  const esCompleto = block === BLOQUE_TODOS;
   const pool = preguntasDelBloque(block);
   const disponibles = Math.min(count, pool.length);
 
@@ -696,15 +701,16 @@ function Examen({ initialBlock }: { readonly initialBlock?: string | undefined }
     const porcentaje = questions.length === 0 ? 0 : Math.max(0, Math.round((neto / questions.length) * 100));
     saveAttempt({
       type: 'exam',
-      block,
+      block: esCompleto ? BLOQUE_TODOS : block,
       topic: block,
-      label: `Examen ${block}`,
+      label: esCompleto ? 'Examen completo' : `Examen ${block}`,
       correct: aciertos,
       total: questions.length,
       percent: porcentaje,
+      timeSeconds: Math.max(1, rule.minutes * 60 - timeLeft),
       convocatoria: convocatoriaName,
     });
-  }, [answers, block, convocatoriaName, phase, questions, rule.penalty]);
+  }, [answers, block, convocatoriaName, esCompleto, phase, questions, rule.minutes, rule.penalty, timeLeft]);
 
   function empezar(): void {
     const elegidas = shuffle(pool).slice(0, disponibles);
@@ -727,7 +733,7 @@ function Examen({ initialBlock }: { readonly initialBlock?: string | undefined }
     return (
       <>
         <section className="page__header">
-          <h1>Examen · Bloque {block}</h1>
+          <h1>{esCompleto ? 'Examen completo' : `Examen · Bloque ${block}`}</h1>
           <p className="page__lead">
             {convocatoriaName} · pregunta {index + 1} de {questions.length} · sin corrección hasta el final
           </p>
@@ -799,9 +805,9 @@ function Examen({ initialBlock }: { readonly initialBlock?: string | undefined }
     return (
       <>
         <section className="page__header">
-          <h1>Resultado del examen</h1>
+          <h1>{esCompleto ? 'Resultado del examen completo' : 'Resultado del examen'}</h1>
           <p className="page__lead">
-            Bloque {block} · {convocatoriaName} · {aciertos} aciertos · {fallos} fallos · {blancos} en blanco
+            {esCompleto ? 'Todos los bloques' : `Bloque ${block}`} · {convocatoriaName} · {aciertos} aciertos · {fallos} fallos · {blancos} en blanco
           </p>
         </section>
         <section className="card">
@@ -850,10 +856,11 @@ function Examen({ initialBlock }: { readonly initialBlock?: string | undefined }
   return (
     <>
       <section className="page__header">
-        <h1>Examen por bloque <span className="demo-status demo-status--apuntes-pendiente">Simulación</span></h1>
+        <h1>{esCompleto ? 'Examen completo' : 'Examen por bloque'} <span className="demo-status demo-status--apuntes-pendiente">Simulación</span></h1>
         <p className="page__lead">
           Formato de examen real: tiempo límite y penalización por fallo según la convocatoria. Sin
           corrección hasta el final. <strong>Simulación no oficial:</strong> no sustituye a la convocatoria.
+          {esCompleto ? ' Mezcla preguntas de los cinco bloques.' : ''}
         </p>
       </section>
       <section className="card">
@@ -876,6 +883,14 @@ function Examen({ initialBlock }: { readonly initialBlock?: string | undefined }
       <section className="card">
         <h2>Bloque y número de preguntas</h2>
         <div className="demo-filter-buttons">
+          <button
+            type="button"
+            className={esCompleto ? 'button demo-filter--active' : 'button'}
+            aria-pressed={esCompleto}
+            onClick={() => { setBlock(BLOQUE_TODOS); setCount(100); }}
+          >
+            Todos · 40/40
+          </button>
           {data.curriculum.blocks.map((item) => (
             <button
               key={item.path}
@@ -889,10 +904,11 @@ function Examen({ initialBlock }: { readonly initialBlock?: string | undefined }
           ))}
         </div>
         <p className="hint">
-          Bloque {block}: {pool.length} preguntas disponibles. Entrarán {disponibles}.
+          {esCompleto ? 'Todos los bloques' : `Bloque ${block}`}: {pool.length} preguntas disponibles.
+          Entrarán {disponibles}.
         </p>
         <div className="demo-filter-buttons">
-          {[10, 20, 999].map((numero) => (
+          {[10, 20, 100, 999].map((numero) => (
             <button
               key={numero}
               type="button"
@@ -1009,18 +1025,20 @@ function Estadisticas() {
                   <th scope="col">Detalle</th>
                   <th scope="col">Fecha</th>
                   <th scope="col">Aciertos</th>
+                  <th scope="col">Tiempo</th>
                   <th scope="col">Nota</th>
                 </tr>
               </thead>
               <tbody>
                 {attempts.map((attempt) => (
                   <tr key={attempt.id}>
-                    <td>{attempt.type === 'exam' ? 'Examen' : 'Práctica'}</td>
-                    <td>{attempt.block}</td>
-                    <td>{attempt.convocatoria ?? attempt.topic}</td>
-                    <td>{fechaCorta(attempt.date)}</td>
-                    <td>{attempt.correct} / {attempt.total}</td>
-                    <td>{attempt.percent} %</td>
+                    <td data-label="Tipo">{attempt.type === 'exam' ? 'Examen' : 'Práctica'}</td>
+                    <td data-label="Bloque">{attempt.block === 'TODOS' ? 'Todos' : attempt.block}</td>
+                    <td data-label="Detalle">{attempt.convocatoria ?? attempt.topic}</td>
+                    <td data-label="Fecha">{fechaCorta(attempt.date)}</td>
+                    <td data-label="Aciertos">{attempt.correct} / {attempt.total}</td>
+                    <td data-label="Tiempo">{attempt.timeSeconds === undefined ? '—' : formatoTiempo(attempt.timeSeconds)}</td>
+                    <td data-label="Nota">{attempt.percent} %</td>
                   </tr>
                 ))}
               </tbody>
@@ -1567,6 +1585,10 @@ function Pregunta({ slug, index }: { slug: string; index: number }) {
 }
 
 function PracticeRunner({ practice }: { practice: Practice }) {
+  const startedAt = useRef(0);
+  useEffect(() => {
+    startedAt.current = Date.now();
+  }, []);
   const resumed = loadResume();
   const initialIndex =
     resumed !== null && resumed.slug === practice.slug
@@ -1656,6 +1678,7 @@ function PracticeRunner({ practice }: { practice: Practice }) {
       correct: score.correct,
       total: score.total,
       percent: porcentaje,
+      timeSeconds: Math.max(1, Math.round((Date.now() - startedAt.current) / 1000)),
     });
     setResult(saveResult(practice.slug, score.correct, score.total));
   }
@@ -1756,7 +1779,7 @@ function App() {
   } else if (parts[0] === 'guia') {
     content = <Guia />;
   } else if (parts[0] === 'examen') {
-    content = <Examen initialBlock={parts[1]} />;
+    content = <Examen key={parts[1] ?? 'inicio'} initialBlock={parts[1]} />;
   } else if (parts[0] === 'estadisticas') {
     content = <Estadisticas />;
   } else if (parts[0] === 'cobertura') {

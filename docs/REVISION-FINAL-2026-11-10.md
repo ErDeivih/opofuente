@@ -1,6 +1,6 @@
 # Revisión final de la demo — 10/11/2026
 
-**URL:** <https://erdeivih.github.io/opofuente-demo/> · **Verificación:** **61/61** comprobaciones con
+**URL:** <https://erdeivih.github.io/opofuente-demo/> · **Verificación:** **63/63** comprobaciones con
 Playwright contra la URL pública, a 1280 y **390 px**. Sin errores de página.
 
 ## Qué se ha revisado
@@ -33,6 +33,7 @@ Playwright contra la URL pública, a 1280 y **390 px**. Sin errores de página.
 | Tema IV.30 | [tema-iv-30-390](capturas/demo-pages/tema-iv-30-390.png) |
 | Guía de estudio | [guia-390](capturas/demo-pages/guia-390.png) |
 | Examen | [examen-390](capturas/demo-pages/examen-390.png) |
+| Examen completo | [examen-completo-390](capturas/demo-pages/examen-completo-390.png) |
 | Resultado del examen | [examen-resultado-390](capturas/demo-pages/examen-resultado-390.png) |
 | Estadísticas | [estadisticas-390](capturas/demo-pages/estadisticas-390.png) |
 | Tema V.40 | [tema-v-40-390](capturas/demo-pages/tema-v-40-390.png) |

@@ -1,8 +1,8 @@
 titulo: OpoFuente — temario comun de oposiciones de informatica C1
-resumen: Sesion 10/11 (tarde): demo con CSP por meta y referrer no-referrer, etiqueta Simulacion en el examen, fecha y fuente de revision en cada tema, y reporte de erratas por tema que guarda la constancia y descarga un JSON. 40/40 temas, 400 preguntas, 61/61 comprobaciones y 12/12 enlaces; PORTFOLIO y SEGURIDAD-DEMO al dia.
+resumen: Sesion 10/11 (noche): examen completo con mezcla de los cinco bloques, 100 preguntas por defecto, 120 min, penalizacion -1/3 y nota final; historial de intentos con fecha, tipo, bloque, aciertos, tiempo y nota; CASO-OPOFUENTE.md para portfolio con 40/40, 400 preguntas, metricas y capturas. 63/63 comprobaciones y 12/12 enlaces.
 estado: completado
-tarea: demo completa con seguridad, revision y erratas
+tarea: demo completa con examen completo, historial y caso de portfolio
 nivel: 2
-siguiente: mantener la demo; las cabeceras HTTP completas (HSTS, X-Frame-Options) requieren backend; TAI recuperado privado (derechos)
+siguiente: mantener la demo y actualizar reglas de C1 locales cuando se publiquen; TAI recuperado privado (derechos)
 bloqueado: ninguno
 fecha: 2026-11-10

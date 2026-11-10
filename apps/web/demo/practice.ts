@@ -75,6 +75,7 @@ export interface Attempt {
   readonly correct: number;
   readonly total: number;
   readonly percent: number;
+  readonly timeSeconds?: number;
   readonly convocatoria?: string;
 }
 
