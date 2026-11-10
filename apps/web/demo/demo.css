@@ -80,6 +80,19 @@
   line-height: 1.5;
 }
 
+.demo-fallos,
+.demo-weak {
+  display: grid;
+  gap: 0.9rem;
+  margin: 0.4rem 0;
+  padding-left: 1.2rem;
+}
+
+.demo-fallos li,
+.demo-weak li {
+  line-height: 1.5;
+}
+
 .demo-continue {
   border-left: 4px solid var(--color-acento);
 }

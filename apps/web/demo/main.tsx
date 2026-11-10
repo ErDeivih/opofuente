@@ -46,6 +46,10 @@ interface Question {
   readonly source?: DemoSource;
 }
 
+interface ExamQuestion extends Question {
+  readonly topic: string;
+}
+
 interface Practice {
   readonly slug: string;
   readonly tema_path: string;
@@ -140,6 +144,23 @@ const data = demoData as DemoData;
 const TOPIC_LIST = data.curriculum.blocks.flatMap((block) => block.topics);
 const TOPIC_BY_PATH = new Map(TOPIC_LIST.map((topic) => [topic.path, topic]));
 const PRACTICE_BY_SLUG = new Map(data.practices.map((practice) => [practice.slug, practice]));
+
+function blockForTopic(path: string): Block | undefined {
+  return data.curriculum.blocks.find((block) =>
+    block.topics.some((topic) => topic.path === path),
+  );
+}
+
+function shuffle<T>(items: readonly T[]): T[] {
+  const copy = [...items];
+  for (let i = copy.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const temporal = copy[i] as T;
+    copy[i] = copy[j] as T;
+    copy[j] = temporal;
+  }
+  return copy;
+}
 
 const APUNTES_LABEL: Readonly<Record<ApuntesStatus, string>> = {
   completos: 'Apuntes completos',
@@ -347,6 +368,12 @@ function Header() {
         </button>
         <button className="button" type="button" onClick={() => { go('guia'); }}>
           Guía
+        </button>
+        <button className="button" type="button" onClick={() => { go('examen'); }}>
+          Examen
+        </button>
+        <button className="button" type="button" onClick={() => { go('estadisticas'); }}>
+          Estadísticas
         </button>
       </nav>
     </header>
@@ -570,6 +597,297 @@ function Guia() {
           </button>
         </div>
       </section>
+    </>
+  );
+}
+
+type ExamPhase = 'setup' | 'running' | 'result';
+
+function preguntasDelBloque(path: string): ExamQuestion[] {
+  return data.practices
+    .filter((practice) => blockForTopic(practice.tema_path)?.path === path)
+    .flatMap((practice) =>
+      practice.questions.map((question) => ({ ...question, topic: practice.tema_path })),
+    );
+}
+
+function Examen({ initialBlock }: { readonly initialBlock?: string | undefined }) {
+  const [block, setBlock] = useState(initialBlock ?? data.curriculum.blocks[0]?.path ?? 'I');
+  const [count, setCount] = useState(10);
+  const [phase, setPhase] = useState<ExamPhase>('setup');
+  const [questions, setQuestions] = useState<ExamQuestion[]>([]);
+  const [index, setIndex] = useState(0);
+  const [answers, setAnswers] = useState<Record<number, string>>({});
+  const [selected, setSelected] = useState<string | null>(null);
+  const pool = preguntasDelBloque(block);
+  const disponibles = Math.min(count, pool.length);
+
+  function empezar(): void {
+    const elegidas = shuffle(pool).slice(0, disponibles);
+    setQuestions(elegidas);
+    setAnswers({});
+    setIndex(0);
+    setSelected(null);
+    setPhase('running');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  if (phase === 'running') {
+    const question = questions[index];
+    if (question === undefined) {
+      return <p className="hint">Este bloque no tiene preguntas.</p>;
+    }
+    const esUltima = index + 1 === questions.length;
+    return (
+      <>
+        <section className="page__header">
+          <h1>Examen · Bloque {block}</h1>
+          <p className="page__lead">
+            Pregunta {index + 1} de {questions.length} · sin corrección hasta el final
+          </p>
+        </section>
+        <section className="card">
+          <h2>{question.stem}</h2>
+          <ul className="demo-options">
+            {question.options.map((option) => (
+              <li key={option.key}>
+                <label className="demo-option">
+                  <input
+                    type="radio"
+                    name="examen"
+                    value={option.key}
+                    checked={selected === option.key}
+                    onChange={() => {
+                      setSelected(option.key);
+                      setAnswers((previous) => ({ ...previous, [index]: option.key }));
+                    }}
+                  />{' '}
+                  <span className="demo-option__key">{option.key})</span> {option.text}
+                </label>
+              </li>
+            ))}
+          </ul>
+          <p className="hint">Elige una opción. La explicación aparece al terminar el examen.</p>
+          <div className="demo-actions">
+            <button
+              className="button"
+              type="button"
+              disabled={selected === null}
+              onClick={() => {
+                if (esUltima) {
+                  setPhase('result');
+                  return;
+                }
+                setIndex(index + 1);
+                setSelected(answers[index + 1] ?? null);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+            >
+              {esUltima ? 'Ver resultado' : 'Siguiente pregunta'}
+            </button>
+            <button
+              className="button button--link"
+              type="button"
+              onClick={() => {
+                setPhase('setup');
+              }}
+            >
+              Abandonar
+            </button>
+          </div>
+        </section>
+      </>
+    );
+  }
+
+  if (phase === 'result') {
+    const aciertos = questions.filter(
+      (question, posicion) => answers[posicion] === question.correct,
+    ).length;
+    const nota = questions.length === 0 ? 0 : Math.round((aciertos / questions.length) * 100);
+    const fallos = questions
+      .map((question, posicion) => ({ question, elegida: answers[posicion] }))
+      .filter((item) => item.elegida !== item.question.correct);
+    return (
+      <>
+        <section className="page__header">
+          <h1>Resultado del examen</h1>
+          <p className="page__lead">
+            Bloque {block} · {aciertos} de {questions.length} correctas · nota {nota} %
+          </p>
+        </section>
+        <section className="card">
+          <h2>{nota >= 50 ? 'Aprobado' : 'Suspendido'}</h2>
+          <p className="hint">La nota de corte de la demo es 50 %. Revisa los fallos antes de repetir.</p>
+          <div className="demo-actions">
+            <button className="button" type="button" onClick={empezar}>
+              Repetir examen
+            </button>
+            <button className="button button--link" type="button" onClick={() => { setPhase('setup'); }}>
+              Cambiar de bloque
+            </button>
+          </div>
+        </section>
+        <section className="card">
+          <h2>Revisión de fallos</h2>
+          {fallos.length === 0 ? (
+            <p>Sin fallos. Puedes subir el número de preguntas o cambiar de bloque.</p>
+          ) : (
+            <ol className="demo-fallos">
+              {fallos.map(({ question, elegida }) => (
+                <li key={question.stem}>
+                  <p><strong>{question.stem}</strong></p>
+                  <p className="hint">Tema {question.topic} · tu respuesta: {elegida ?? 'sin responder'} · correcta: {question.correct}</p>
+                  <p>{question.explanation}</p>
+                  {question.source !== undefined && <SourceLine source={question.source} official />}
+                  <button className="button button--link" type="button" onClick={() => { go(`tema/${question.topic}`); }}>
+                    Repasar tema {question.topic}
+                  </button>
+                </li>
+              ))}
+            </ol>
+          )}
+        </section>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <section className="page__header">
+        <h1>Examen por bloque</h1>
+        <p className="page__lead">
+          Preguntas aleatorias del bloque, sin corrección hasta el final. Al terminar ves la nota y
+          la revisión de fallos.
+        </p>
+      </section>
+      <section className="card">
+        <h2>Elige bloque y número de preguntas</h2>
+        <div className="demo-filter-buttons">
+          {data.curriculum.blocks.map((item) => (
+            <button
+              key={item.path}
+              type="button"
+              className={block === item.path ? 'button demo-filter--active' : 'button'}
+              aria-pressed={block === item.path}
+              onClick={() => { setBlock(item.path); }}
+            >
+              {item.path} · {item.coverage.conApuntes}/{item.coverage.total}
+            </button>
+          ))}
+        </div>
+        <p className="hint">
+          Bloque {block}: {pool.length} preguntas disponibles. Entrarán {disponibles}.
+        </p>
+        <div className="demo-filter-buttons">
+          {[10, 20, 999].map((numero) => (
+            <button
+              key={numero}
+              type="button"
+              className={count === numero ? 'button demo-filter--active' : 'button'}
+              onClick={() => { setCount(numero); }}
+            >
+              {numero === 999 ? 'Todas' : String(numero)}
+            </button>
+          ))}
+        </div>
+        <div className="demo-actions">
+          <button className="button" type="button" onClick={empezar} disabled={pool.length === 0}>
+            Empezar examen
+          </button>
+          <button className="button button--link" type="button" onClick={() => { go('estadisticas'); }}>
+            Ver estadísticas
+          </button>
+        </div>
+      </section>
+    </>
+  );
+}
+
+function Estadisticas() {
+  const progress = loadProgress();
+  const hechas = data.practices
+    .map((practice) => {
+      const resultado = progress[practice.slug];
+      if (resultado === undefined) {
+        return null;
+      }
+      const porcentaje = resultado.lastTotal === 0
+        ? 0
+        : Math.round((resultado.lastScore / resultado.lastTotal) * 100);
+      return { practice, resultado, porcentaje };
+    })
+    .filter((item): item is NonNullable<typeof item> => item !== null);
+  const porBloque = data.curriculum.blocks.map((block) => {
+    const items = hechas.filter((item) => blockForTopic(item.practice.tema_path)?.path === block.path);
+    const totalCorrect = items.reduce((sum, item) => sum + item.resultado.lastScore, 0);
+    const totalPreguntas = items.reduce((sum, item) => sum + item.resultado.lastTotal, 0);
+    const porcentaje = totalPreguntas === 0 ? 0 : Math.round((totalCorrect / totalPreguntas) * 100);
+    return { block, items, porcentaje };
+  });
+  const flojos = [...hechas].sort((a, b) => a.porcentaje - b.porcentaje).slice(0, 5);
+
+  return (
+    <>
+      <section className="page__header">
+        <h1>Estadísticas</h1>
+        <p className="page__lead">Aciertos por tema y por bloque según tus prácticas hechas.</p>
+      </section>
+      {hechas.length === 0 ? (
+        <section className="card">
+          <p>Todavía no hay prácticas hechas. Haz una y aquí verás tus estadísticas.</p>
+          <button className="button" type="button" onClick={() => { go('practicas'); }}>
+            Ir a prácticas
+          </button>
+        </section>
+      ) : (
+        <>
+          <section className="card">
+            <h2>Acierto por bloque</h2>
+            {porBloque.map(({ block, items, porcentaje }) => (
+              <p key={block.path} className="demo-block-line">
+                {block.path}: <strong>{porcentaje} %</strong> ({items.length} tema(s) practicado(s))
+              </p>
+            ))}
+          </section>
+          <section className="card">
+            <h2>Temas más flojos</h2>
+            <ol className="demo-weak">
+              {flojos.map(({ practice, porcentaje }) => (
+                <li key={practice.slug}>
+                  <strong>{practice.tema_path}</strong> · {porcentaje} % ·{' '}
+                  <button className="button button--link" type="button" onClick={() => { go(`practica/${practice.slug}`); }}>
+                    Practicar
+                  </button>{' '}
+                  <button className="button button--link" type="button" onClick={() => { go(`tema/${practice.tema_path}`); }}>
+                    Repasar
+                  </button>
+                </li>
+              ))}
+            </ol>
+          </section>
+          <section className="card">
+            <h2>Acierto por tema</h2>
+            <div className="table-wrap">
+              <table className="table">
+                <thead>
+                  <tr><th scope="col">Tema</th><th scope="col">Último</th><th scope="col">Mejor</th><th scope="col">Intentos</th></tr>
+                </thead>
+                <tbody>
+                  {[...hechas].sort((a, b) => a.porcentaje - b.porcentaje).map(({ practice, resultado, porcentaje }) => (
+                    <tr key={practice.slug}>
+                      <td>{practice.tema_path}</td>
+                      <td>{porcentaje} %</td>
+                      <td>{resultado.best} %</td>
+                      <td>{resultado.attempts}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </>
+      )}
     </>
   );
 }
@@ -1217,6 +1535,10 @@ function App() {
     content = <ComoFunciona />;
   } else if (parts[0] === 'guia') {
     content = <Guia />;
+  } else if (parts[0] === 'examen') {
+    content = <Examen initialBlock={parts[1]} />;
+  } else if (parts[0] === 'estadisticas') {
+    content = <Estadisticas />;
   } else if (parts[0] === 'cobertura') {
     content = <Cobertura />;
   } else if (parts[0] === 'tema' && parts[1] !== undefined) {

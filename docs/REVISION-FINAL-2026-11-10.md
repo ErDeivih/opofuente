@@ -1,6 +1,6 @@
 # Revisión final de la demo — 10/11/2026
 
-**URL:** <https://erdeivih.github.io/opofuente-demo/> · **Verificación:** **46/46** comprobaciones con
+**URL:** <https://erdeivih.github.io/opofuente-demo/> · **Verificación:** **52/52** comprobaciones con
 Playwright contra la URL pública, a 1280 y **390 px**. Sin errores de página.
 
 ## Qué se ha revisado
@@ -32,6 +32,9 @@ Playwright contra la URL pública, a 1280 y **390 px**. Sin errores de página.
 | Tema III.26 | [tema-iii-26-390](capturas/demo-pages/tema-iii-26-390.png) |
 | Tema IV.30 | [tema-iv-30-390](capturas/demo-pages/tema-iv-30-390.png) |
 | Guía de estudio | [guia-390](capturas/demo-pages/guia-390.png) |
+| Examen | [examen-390](capturas/demo-pages/examen-390.png) |
+| Resultado del examen | [examen-resultado-390](capturas/demo-pages/examen-resultado-390.png) |
+| Estadísticas | [estadisticas-390](capturas/demo-pages/estadisticas-390.png) |
 | Tema V.40 | [tema-v-40-390](capturas/demo-pages/tema-v-40-390.png) |
 | Tema completo (I.1) | [tema-completo-390](capturas/demo-pages/tema-completo-390.png) |
 | Tema pendiente (III.23) | [tema-pendiente-390](capturas/demo-pages/tema-pendiente-390.png) |
@@ -43,6 +46,7 @@ Playwright contra la URL pública, a 1280 y **390 px**. Sin errores de página.
 - **40/40** apuntes completos; **0 pendientes**; **0 solo resumen**; **40 prácticas**; **400 preguntas**.
 - Cobertura por bloque: **I 12/12 · II 5/5 · III 9/9 · IV 7/7 · V 7/7**.
 - **12/12** enlaces de convocatoria abren (HTTP 200).
+- **Examen por bloque** y **estadísticas** con 5 temas flojos verificados.
 - Pruebas: 517 unitarias de backend, 225 de web, typecheck, eslint, ruff, mypy y build.
 
 ## Temario completo

@@ -48,6 +48,10 @@ servidor.
   pendiente) y práctica (con práctica / pendiente).
 - **Guía de estudio** (`#/guia`): orden de bloques y temas flojos detectados desde las prácticas
   hechas; enlaces a repasar el tema y repetir la práctica.
+- **Modo examen por bloque** (`#/examen`): N preguntas aleatorias, sin corrección hasta el final,
+  nota y revisión de fallos con explicación y fuente.
+- **Estadísticas** (`#/estadisticas`): acierto por tema y bloque, 5 temas más flojos y enlace directo
+  a practicar o repasar.
 - Portada corta con **«Continuar donde lo dejé»** y 3 prácticas siguientes.
 - Índice con **avance por bloque** («I: 11/12 con apuntes»), **búsqueda por código o título** y
   filtros «Con apuntes» / «Con práctica».
@@ -82,8 +86,11 @@ servidor.
 | Tema III.20 | — | [tema-iii-20-390](docs/capturas/demo-pages/tema-iii-20-390.png) |
 | Tema III.26 | — | [tema-iii-26-390](docs/capturas/demo-pages/tema-iii-26-390.png) |
 | Tema IV.30 | — | [tema-iv-30-390](docs/capturas/demo-pages/tema-iv-30-390.png) |
-| Guía de estudio | — | [guia-390](docs/capturas/demo-pages/guia-390.png) |
 | Tema V.40 | — | [tema-v-40-390](docs/capturas/demo-pages/tema-v-40-390.png) |
+| Guía de estudio | — | [guia-390](docs/capturas/demo-pages/guia-390.png) |
+| Examen | — | [examen-390](docs/capturas/demo-pages/examen-390.png) |
+| Resultado del examen | — | [examen-resultado-390](docs/capturas/demo-pages/examen-resultado-390.png) |
+| Estadísticas | — | [estadisticas-390](docs/capturas/demo-pages/estadisticas-390.png) |
 | Corrección con BOE | [correccion-1280](docs/capturas/demo-pages/correccion-1280.png) | — |
 
 ![Portada de la demo](docs/capturas/demo-pages/portada-1280.png)
@@ -91,7 +98,7 @@ servidor.
 ## 4. Estado y evidencia
 
 - **Publicada:** HTTP 200 en la URL pública; GitHub Pages reconstruye desde el build.
-- **Verificación:** **46/46** comprobaciones con Playwright contra la URL pública y **12/12 enlaces**
+- **Verificación:** **52/52** comprobaciones con Playwright contra la URL pública y **12/12 enlaces**
   de convocatoria abren (HTTP 200): portada,
   convocatorias, aviso único, 40 temas, cobertura de 40 filas, sellos, búsqueda por II.13, filtro
   «Con práctica», tema completo, tema pendiente, corrección con enlace al BOE, práctica completa y
@@ -144,7 +151,7 @@ servidor.
 
 ## 9. Revisión final y qué queda
 
-- **46/46** comprobaciones, también a **390 px**; capturas nuevas en
+- **52/52** comprobaciones, también a **390 px**; capturas nuevas en
   [docs/capturas/demo-pages](docs/capturas/demo-pages/) y checklist en
   [REVISION-FINAL-2026-11-10.md](docs/REVISION-FINAL-2026-11-10.md).
 - **40/40** temas completos: I 12/12 · II 5/5 · III 9/9 · IV 7/7 · V 7/7.
@@ -152,4 +159,4 @@ servidor.
   apuntes propios, tabla, ejemplo, fuente, 10 preguntas y su fila/sello en el mapa.
 
 `resumen:` OpoFuente entra en el portfolio como proyecto **funcional y demostrable**: demo pública,
-40/40 temas con apuntes y práctica, 400 preguntas, 12 convocatorias, 46/46 comprobaciones y 12/12 enlaces de convocatoria abren; límites y derechos documentados.
+40/40 temas con apuntes y práctica, 400 preguntas, 12 convocatorias, 52/52 comprobaciones y 12/12 enlaces de convocatoria abren; límites y derechos documentados.

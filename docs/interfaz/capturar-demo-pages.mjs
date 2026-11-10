@@ -100,7 +100,7 @@ check('hay al menos 5 temas con apuntes', data.progress.apuntesCompletos >= 5, `
 await captura('temario', 'temario', 390);
 check(
   'las pestañas se ven a 390 px y miden 44 px',
-  (await page.locator('.demo-nav .button').count()) === 4 &&
+  (await page.locator('.demo-nav .button').count()) === 6 &&
     (await page.locator('.demo-nav .button').evaluateAll((botones) =>
       botones.every((boton) => boton.getBoundingClientRect().height >= 44),
     )),
@@ -277,6 +277,40 @@ check(
   'la guía detecta el tema flojo de la práctica',
   /Tus temas flojos/.test(guia) && /Repasar tema/.test(guia) && guia.includes(practice?.tema_path ?? ''),
 );
+
+// Estadísticas por tema y bloque.
+await captura('estadisticas', 'estadisticas', 390);
+const estadisticas = await page.locator('main').innerText();
+check('las estadísticas muestran el acierto por bloque', /Acierto por bloque/.test(estadisticas));
+check(
+  'las estadísticas listan los temas más flojos',
+  /Temas más flojos/.test(estadisticas) && estadisticas.includes(practice?.tema_path ?? ''),
+);
+
+// Modo examen por bloque: sin corrección hasta el final y revisión de fallos.
+await page.setViewportSize({ width: 390, height: 844 });
+await page.goto(`${BASE}/#/examen/III`, { waitUntil: 'networkidle' });
+await page.waitForSelector('h1');
+check('el examen permite elegir bloque y preguntas', /Examen por bloque/.test(await page.locator('main').innerText()));
+await page.screenshot({ path: path.join(OUT_DIR, 'examen-390.png'), fullPage: true });
+await page.getByRole('button', { name: 'Empezar examen' }).click();
+await page.waitForSelector('input[type=radio]');
+for (let i = 0; i < 10; i += 1) {
+  await page.locator('input[type=radio]').first().check();
+  if (i === 0) {
+    const durante = await page.locator('main').innerText();
+    check(
+      'el examen no corrige durante las preguntas',
+      (await page.locator('.demo-feedback').count()) === 0 && !/Incorrecto: era/.test(durante),
+    );
+  }
+  const esUltima = i === 9;
+  await page.getByRole('button', { name: esUltima ? 'Ver resultado' : 'Siguiente pregunta' }).click();
+}
+const examen = await page.locator('main').innerText();
+check('el examen da nota al terminar', /Resultado del examen/.test(examen) && /nota/.test(examen));
+check('el examen revisa los fallos', /Revisión de fallos/.test(examen));
+await page.screenshot({ path: path.join(OUT_DIR, 'examen-resultado-390.png'), fullPage: true });
 
 check('sin errores de página', consoleErrors.length === 0, consoleErrors.slice(0, 3).join(' | '));
 
