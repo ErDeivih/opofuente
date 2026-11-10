@@ -1,0 +1,154 @@
+{
+  "node_path": "IV.30",
+  "title": "Programación",
+  "source": {
+    "label": "Python 3 — Tutorial oficial",
+    "url": "https://docs.python.org/3/tutorial/"
+  },
+  "sections": [
+    {
+      "heading": "Lenguajes, paradigmas y ejecución",
+      "body": "Un **lenguaje de programación** permite expresar instrucciones que un ordenador ejecuta. Se clasifican por su nivel de abstracción y por su paradigma: **imperativo**, **orientado a objetos**, **funcional** o **declarativo**.\n\nEn los lenguajes **compilados** el código se traduce antes de ejecutarse (C, Go); en los **interpretados** se ejecuta mediante un intérprete o una máquina virtual (Python, JavaScript). Algunos usan un proceso mixto (Java: bytecode y JVM).\n\nLa elección depende del problema, el rendimiento, el ecosistema y el equipo, no solo de la sintaxis."
+    },
+    {
+      "heading": "Variables, tipos y estructuras",
+      "body": "Una **variable** es un nombre que referencia un valor. Los **tipos** definen qué operaciones se pueden hacer: números, cadenas, booleanos, fechas.\n\nLas **estructuras de datos** organizan varios valores: listas/arrays (ordenadas por índice), diccionarios/mapas (clave-valor), conjuntos (sin duplicados) y registros/objetos. Elegir bien la estructura cambia el rendimiento y la claridad.\n\nLos lenguajes con **tipado dinámico** comprueban tipos en ejecución; los de **tipado estático** los comprueban al compilar. Las anotaciones de tipo ayudan aunque el lenguaje no las exija."
+    },
+    {
+      "heading": "Control de flujo y funciones",
+      "body": "El control de flujo incluye **condicionales** (`if`/`else`), **bucles** (`for`, `while`) y **saltos** (`break`, `continue`). Un bucle debe tener una condición de salida clara para evitar bucles infinitos.\n\nUna **función** agrupa código reutilizable con parámetros y un valor de retorno. Las funciones deben hacer una cosa, tener un nombre claro y evitar efectos secundarios ocultos. La **modularidad** divide el programa en piezas pequeñas y testeables.\n\nEl manejo de **excepciones** permite tratar errores previstos sin detener el programa de forma brusca."
+    },
+    {
+      "heading": "Programación orientada a objetos",
+      "body": "La **POO** organiza el código en **clases** (plantillas) y **objetos** (instancias). Una clase define atributos (datos) y métodos (comportamiento).\n\nSus pilares son **encapsulación** (ocultar detalles internos), **herencia** (reutilizar comportamiento) y **polimorfismo** (mismo mensaje, comportamientos distintos). La composición (tener un objeto) suele ser preferible a la herencia excesiva.\n\nLos principios SOLID y los patrones de diseño ayudan, pero no sustituyen el criterio: no se aplican por moda."
+    },
+    {
+      "heading": "Control de versiones y calidad",
+      "body": "**Git** registra la historia del código. Un **commit** guarda un cambio con un mensaje; una **rama** permite trabajar aislado; un **merge** integra; un **conflicto** se resuelve manualmente.\n\nLa calidad incluye **pruebas automatizadas** (unitarias, integración), revisión de código, análisis estático y documentación. Un cambio sin prueba es una apuesta; una prueba que no se ejecuta, una falsa seguridad.\n\nLos mensajes de commit y los nombres claros son documentación para el futuro."
+    },
+    {
+      "heading": "Tabla de conceptos",
+      "table": {
+        "columns": ["Concepto", "Qué es", "Ejemplo"],
+        "rows": [
+          ["Variable", "Nombre que referencia un valor", "`total = 0`"],
+          ["Lista", "Secuencia ordenada por índice", "`[10, 20, 30]`"],
+          ["Diccionario", "Pares clave-valor", "`{\"a\": 1, \"b\": 2}`"],
+          ["Función", "Bloque reutilizable con parámetros", "`def suma(a, b): ...`"],
+          ["Clase", "Plantilla de objetos", "`class Expediente: ...`"]
+        ]
+      }
+    },
+    {
+      "heading": "Ejemplo resuelto",
+      "body": "**Supuesto.** Se quiere contar cuántos expedientes de 2026 superan un importe y agruparlos por tipo.\n\n**Resolución.**\n\n- Se leen los expedientes en una **lista** de diccionarios.\n- Se recorre con un bucle y se filtra con un condicional por año e importe.\n- Se agrupa en un **diccionario** cuya clave es el tipo y cuyo valor es el contador.\n- Se extrae la lógica a una **función** `contar_por_tipo(expedientes)` para poder probarla.\n- Se escribe una **prueba** con datos de ejemplo y se versiona con Git.\n\n**Conclusión.** Un programa claro separa datos, lógica y presentación; las funciones pequeñas y las pruebas permiten cambiarlo sin miedo."
+    }
+  ],
+  "questions": [
+    {
+      "stem": "¿Qué es una variable?",
+      "options": [
+        "Un nombre que referencia un valor",
+        "Un tipo de bucle",
+        "Un archivo de configuración",
+        "Una función del sistema"
+      ],
+      "correct": "a",
+      "explanation": "La variable asocia un nombre a un valor en memoria; su tipo determina las operaciones posibles."
+    },
+    {
+      "stem": "¿Qué estructura guarda pares clave-valor?",
+      "options": ["Diccionario o mapa", "Lista", "Pila", "Cola"],
+      "correct": "a",
+      "explanation": "El diccionario/mapa asocia cada clave con un valor y permite acceso rápido por clave."
+    },
+    {
+      "stem": "¿Para qué sirve un bucle?",
+      "options": [
+        "Para repetir instrucciones mientras se cumpla una condición",
+        "Para declarar una variable",
+        "Para definir una clase",
+        "Para compilar el programa"
+      ],
+      "correct": "a",
+      "explanation": "Los bucles repiten un bloque; deben tener una condición de salida para no quedar infinitos."
+    },
+    {
+      "stem": "¿Qué caracteriza a una función?",
+      "options": [
+        "Agrupa código reutilizable con parámetros y puede devolver un valor",
+        "Solo puede ejecutarse una vez",
+        "No puede recibir datos",
+        "Siempre imprime en pantalla"
+      ],
+      "correct": "a",
+      "explanation": "La función encapsula lógica, recibe parámetros y puede retornar un resultado; facilita pruebas y reutilización."
+    },
+    {
+      "stem": "¿Qué es una clase en POO?",
+      "options": [
+        "Una plantilla que define atributos y métodos de los objetos",
+        "Una variable global",
+        "Un bucle",
+        "Un archivo de texto"
+      ],
+      "correct": "a",
+      "explanation": "La clase describe el estado y el comportamiento; los objetos son instancias de esa plantilla."
+    },
+    {
+      "stem": "¿Qué permite la encapsulación?",
+      "options": [
+        "Ocultar los detalles internos y exponer una interfaz controlada",
+        "Heredar de varias clases a la vez siempre",
+        "Eliminar los tipos",
+        "Compilar más rápido"
+      ],
+      "correct": "a",
+      "explanation": "La encapsulación protege el estado interno y obliga a usar los métodos previstos."
+    },
+    {
+      "stem": "¿Qué es un commit en Git?",
+      "options": [
+        "Un registro de cambios con su mensaje",
+        "Una rama remota",
+        "Un conflicto",
+        "Un archivo ignorado"
+      ],
+      "correct": "a",
+      "explanation": "El commit guarda un conjunto de cambios y su mensaje en la historia del repositorio."
+    },
+    {
+      "stem": "¿Para qué sirve una rama en Git?",
+      "options": [
+        "Para trabajar de forma aislada y luego integrar los cambios",
+        "Para borrar el historial",
+        "Para compilar el código",
+        "Para subir el código a producción sin revisar"
+      ],
+      "correct": "a",
+      "explanation": "La rama permite desarrollar una funcionalidad o corrección sin afectar a la rama principal hasta integrarla."
+    },
+    {
+      "stem": "¿Qué es una excepción?",
+      "options": [
+        "Un error previsto que se puede capturar y tratar",
+        "Un tipo de variable",
+        "Una función matemática",
+        "Una rama de Git"
+      ],
+      "correct": "a",
+      "explanation": "Las excepciones permiten separar el flujo normal del tratamiento de errores."
+    },
+    {
+      "stem": "¿Por qué es útil una prueba automatizada?",
+      "options": [
+        "Porque comprueba el comportamiento y evita regresiones al cambiar el código",
+        "Porque sustituye la revisión de código",
+        "Porque hace el programa más rápido",
+        "Porque elimina la necesidad de documentar"
+      ],
+      "correct": "a",
+      "explanation": "Las pruebas detectan regresiones y documentan el comportamiento esperado; no sustituyen la revisión ni el diseño."
+    }
+  ]
+}

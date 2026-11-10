@@ -1,0 +1,144 @@
+{
+  "node_path": "IV.32",
+  "title": "Interoperabilidad e integración",
+  "source": {
+    "label": "IETF RFC 8259 — The JavaScript Object Notation (JSON) Data Interchange Format",
+    "url": "https://datatracker.ietf.org/doc/html/rfc8259"
+  },
+  "sections": [
+    {
+      "heading": "Qué es la interoperabilidad",
+      "body": "La **interoperabilidad** es la capacidad de dos sistemas para intercambiar información y usarla de forma útil. No basta con que los datos viajen: deben tener un **formato** y un **significado** acordados.\n\nSe distinguen niveles: técnico (protocolos y formatos), semántico (mismo significado de los datos) y organizativo (procesos y responsabilidades). Sin acuerdo semántico, dos sistemas pueden “hablar” y no entenderse.\n\nEn el sector público, la interoperabilidad es un requisito legal y técnico: los ciudadanos no deberían aportar datos que la Administración ya tiene."
+    },
+    {
+      "heading": "Patrones de integración",
+      "body": "Los patrones habituales son:\n\n- **Punto a punto**: cada sistema se conecta directamente con otro; sencillo al principio, difícil de mantener con muchos sistemas.\n- **Bus de servicios (ESB)**: intermediario que enruta, transforma y media entre sistemas.\n- **API gateway**: punto único de entrada para APIs, con autenticación, límites y monitorización.\n- **ETL/ELT**: extraer, transformar y cargar datos para analítica o sincronización.\n\nLa elección depende del número de sistemas, la criticidad y el acoplamiento que se quiera tolerar."
+    },
+    {
+      "heading": "Formatos e intercambio",
+      "body": "**JSON** es ligero y legible, habitual en APIs REST. **XML** es más verboso pero permite esquemas (XSD) y namespaces; se usa en SOAP y en muchos estándares administrativos.\n\n**CSV** sirve para datos tabulares, pero no define tipos ni jerarquía; hay que acordar separador, codificación y cabeceras. Los **esquemas** (JSON Schema, XSD) validan la estructura y evitan errores.\n\nLa codificación debe ser explícita (UTF-8 recomendado) y las fechas, con formato y zona horaria acordados."
+    },
+    {
+      "heading": "APIs, autenticación y errores",
+      "body": "Una **API** debe documentar recursos, parámetros, códigos de error, paginación y versionado. En REST, las operaciones idempotentes (GET, PUT, DELETE) pueden repetirse sin efectos adicionales; POST no es idempotente por defecto.\n\nLa autenticación puede usar **API keys**, **OAuth 2.0** o certificados mutuos. Los permisos se aplican por alcance y por recurso. Los límites de peticiones (rate limiting) protegen el servicio.\n\nLos errores deben ser explícitos y consistentes: código, mensaje y, si procede, detalle; nunca exponer trazas internas o secretos."
+    },
+    {
+      "heading": "Calidad y gobierno de la integración",
+      "body": "La integración se monitoriza: disponibilidad, latencia, errores, reintentos y colas. Los **reintentos** deben ser controlados y, en operaciones sensibles, **idempotentes**.\n\nLa **trazabilidad** (identificador de correlación) permite seguir una operación entre sistemas. Los contratos se versionan y los cambios incompatibles se anuncian.\n\nLa gobernanza define quién puede publicar una API, qué datos comparte y con qué base jurídica."
+    },
+    {
+      "heading": "Tabla de elementos",
+      "table": {
+        "columns": ["Elemento", "Uso", "Riesgo si falta"],
+        "rows": [
+          ["JSON/XML", "Formato de intercambio", "Datos ilegibles o mal interpretados"],
+          ["Esquema", "Validar estructura", "Errores silenciosos"],
+          ["API documentada", "Consumo por terceros", "Integraciones frágiles"],
+          ["Autenticación", "Identificar al cliente", "Acceso no autorizado"],
+          ["Idempotencia", "Repetir sin duplicar", "Duplicados y cobros dobles"]
+        ]
+      }
+    },
+    {
+      "heading": "Ejemplo resuelto",
+      "body": "**Supuesto.** El sistema de expedientes debe enviar un expediente al sistema de registro de otra administración.\n\n**Resolución.**\n\n- Se acuerda un **contrato**: JSON con campos obligatorios, tipos y esquema; fechas en ISO 8601 y UTF-8.\n- Se expone una **API REST** con `POST /expedientes` y un identificador de correlación; si se repite la petición, se trata como idempotente mediante una clave.\n- Autenticación con **OAuth 2.0** o certificado; permisos por alcance.\n- Se definen errores (`400`, `401`, `403`, `409`, `422`, `500`) y una cola de reintentos.\n- Se monitoriza y se audita cada intercambio.\n\n**Conclusión.** Integrar es acordar contrato, seguridad y errores; el transporte es la parte fácil."
+    }
+  ],
+  "questions": [
+    {
+      "stem": "¿Qué es la interoperabilidad?",
+      "options": [
+        "La capacidad de dos sistemas de intercambiar información y usarla de forma útil",
+        "La velocidad de la red",
+        "Un tipo de base de datos",
+        "Un lenguaje de programación"
+      ],
+      "correct": "a",
+      "explanation": "La interoperabilidad combina acuerdo técnico, semántico y organizativo para que la información sea usable."
+    },
+    {
+      "stem": "¿Qué formato es habitual en APIs REST?",
+      "options": ["JSON", "PDF", "DOCX", "ZIP"],
+      "correct": "a",
+      "explanation": "JSON es ligero y legible y se usa habitualmente en APIs REST; XML es común en SOAP."
+    },
+    {
+      "stem": "¿Qué añade un esquema como JSON Schema?",
+      "options": [
+        "Valida la estructura y los tipos del JSON",
+        "Cifra el JSON",
+        "Comprime el JSON",
+        "Convierte el JSON en PDF"
+      ],
+      "correct": "a",
+      "explanation": "El esquema define campos, tipos y obligatoriedad, y permite rechazar mensajes mal formados."
+    },
+    {
+      "stem": "¿Qué es una operación idempotente?",
+      "options": [
+        "Una que puede repetirse sin producir efectos adicionales",
+        "Una que siempre falla",
+        "Una que solo se ejecuta una vez al día",
+        "Una que no necesita autenticación"
+      ],
+      "correct": "a",
+      "explanation": "Repetir una operación idempotente deja el mismo estado; es clave para reintentos seguros."
+    },
+    {
+      "stem": "¿Qué método HTTP es idempotente por definición?",
+      "options": ["GET", "POST", "CONNECT", "NINGUNO"],
+      "correct": "a",
+      "explanation": "GET no modifica el recurso y puede repetirse; POST no es idempotente por defecto."
+    },
+    {
+      "stem": "¿Qué hace un API gateway?",
+      "options": [
+        "Centraliza el acceso a APIs con autenticación, límites y monitorización",
+        "Sustituye la base de datos",
+        "Compila el front-end",
+        "Cifra los discos"
+      ],
+      "correct": "a",
+      "explanation": "El gateway es un punto único de entrada que aplica políticas y facilita la observabilidad."
+    },
+    {
+      "stem": "¿Qué protocolo de autorización se usa habitualmente para APIs?",
+      "options": ["OAuth 2.0", "SMTP", "DHCP", "NTP"],
+      "correct": "a",
+      "explanation": "OAuth 2.0 permite autorizar el acceso con alcances y tokens; no es un protocolo de correo ni de red."
+    },
+    {
+      "stem": "¿Qué es un ETL?",
+      "options": [
+        "Extraer, transformar y cargar datos entre sistemas",
+        "Un tipo de firewall",
+        "Un formato de imagen",
+        "Un protocolo de correo"
+      ],
+      "correct": "a",
+      "explanation": "ETL (Extract, Transform, Load) mueve y transforma datos para sincronización o analítica."
+    },
+    {
+      "stem": "¿Qué debe incluir una respuesta de error de API?",
+      "options": [
+        "Código, mensaje claro y detalle útil sin exponer secretos",
+        "La traza completa del servidor",
+        "La contraseña de la base de datos",
+        "Solo un código 200"
+      ],
+      "correct": "a",
+      "explanation": "Los errores deben ser consistentes y accionables, sin filtrar información interna."
+    },
+    {
+      "stem": "¿Para qué sirve un identificador de correlación?",
+      "options": [
+        "Para seguir una operación entre sistemas en los registros",
+        "Para cifrar la petición",
+        "Para comprimir la respuesta",
+        "Para cambiar el formato"
+      ],
+      "correct": "a",
+      "explanation": "El correlation ID permite rastrear una misma operación a través de varios servicios y logs."
+    }
+  ]
+}

@@ -1,0 +1,144 @@
+{
+  "node_path": "IV.31",
+  "title": "Desarrollo web",
+  "source": {
+    "label": "MDN Web Docs — Documentación web",
+    "url": "https://developer.mozilla.org/es/docs/Web"
+  },
+  "sections": [
+    {
+      "heading": "Cómo funciona la web",
+      "body": "El navegador envía una **petición HTTP** a un servidor y recibe una **respuesta**. La petición incluye método, URL, cabeceras y, a veces, cuerpo; la respuesta incluye código de estado, cabeceras y contenido.\n\nLos métodos habituales son **GET** (obtener), **POST** (crear), **PUT/PATCH** (actualizar) y **DELETE** (eliminar). Los códigos de estado se agrupan: **2xx** éxito, **3xx** redirección, **4xx** error del cliente y **5xx** error del servidor.\n\nHTTPS cifra la comunicación y autentica el servidor mediante certificados; hoy es obligatorio para cualquier servicio con datos personales."
+    },
+    {
+      "heading": "Front-end: estructura, estilo y comportamiento",
+      "body": "El **front-end** es la parte que se ejecuta en el navegador:\n\n- **HTML** define la estructura y el significado (encabezados, listas, formularios).\n- **CSS** define la presentación y el diseño responsive.\n- **JavaScript** añade comportamiento e interactividad.\n\nUn desarrollo accesible usa HTML semántico, contraste suficiente, foco visible, texto alternativo y navegación por teclado. El diseño **responsive** adapta la interfaz a móvil, tableta y escritorio; no es solo “que quepa”, sino que sea usable."
+    },
+    {
+      "heading": "Back-end y APIs",
+      "body": "El **back-end** ejecuta la lógica en el servidor: valida datos, aplica reglas, accede a la base de datos y devuelve respuestas. Puede ser un monolito o varios servicios.\n\nUna **API** expone operaciones para que otros clientes las usen. En **REST** se usan recursos, métodos HTTP y representaciones como **JSON**; cada operación debe ser predecible y documentada. SOAP es otro estilo, basado en XML y contratos WSDL.\n\nLa validación se hace en servidor aunque también se haga en cliente: el navegador no es de confianza."
+    },
+    {
+      "heading": "Seguridad y sesiones",
+      "body": "Los riesgos clásicos son:\n\n- **XSS**: inyectar script en una página; se mitiga escapando la salida y con CSP.\n- **CSRF**: forzar acciones autenticadas; se mitiga con tokens y SameSite.\n- **Inyección SQL**: se evita con consultas parametrizadas.\n- **Sesiones**: cookies `HttpOnly`, `Secure` y `SameSite`, o tokens bien protegidos.\n\nLa autenticación puede ser por sesión o por token; la autorización decide qué puede hacer cada usuario. HTTPS, cabeceras de seguridad y registro de accesos completan la base."
+    },
+    {
+      "heading": "Rendimiento y despliegue",
+      "body": "El rendimiento se mide: tamaño de recursos, número de peticiones, caché, compresión, imágenes optimizadas y tiempo de respuesta del servidor. Las **cachés** (navegador, CDN, servidor) reducen latencia, pero hay que invalidarlas correctamente.\n\nEl despliegue puede ser estático (HTML/CSS/JS servidos desde CDN) o dinámico (servidor y base de datos). Los entornos de desarrollo, pruebas y producción deben estar separados, y los cambios se despliegan con un proceso reproducible.\n\nLa monitorización y los registros permiten detectar errores y ataques después de publicar."
+    },
+    {
+      "heading": "Tabla front-end / back-end",
+      "table": {
+        "columns": ["Capa", "Tecnologías", "Responsabilidad"],
+        "rows": [
+          ["Front-end", "HTML, CSS, JavaScript, React", "Interfaz y experiencia de usuario"],
+          ["Back-end", "Python, Java, Node.js, PHP", "Lógica, validación y acceso a datos"],
+          ["API", "REST/JSON, SOAP/XML", "Comunicación entre sistemas"],
+          ["Datos", "SQL, NoSQL", "Persistencia"],
+          ["Entrega", "CDN, servidor web, contenedores", "Publicación y escalado"]
+        ]
+      }
+    },
+    {
+      "heading": "Ejemplo resuelto",
+      "body": "**Supuesto.** El ayuntamiento quiere una web para consultar el estado de un expediente por número.\n\n**Resolución.**\n\n- **Front-end** accesible con un formulario; validación en cliente para ayudar, pero no como única defensa.\n- **API REST** `GET /expedientes/{numero}` que devuelve JSON; si no existe, `404`; si el usuario no está autorizado, `401/403`.\n- **Back-end** valida el número, consulta con consulta parametrizada y registra el acceso.\n- **Seguridad**: HTTPS, cookie de sesión `HttpOnly`/`Secure`, protección XSS/CSRF y límites de peticiones.\n- **Rendimiento**: caché de recursos estáticos y respuestas JSON ligeras.\n\n**Conclusión.** Una web no es solo HTML: es una cadena de capas donde la seguridad y la validación deben estar en el servidor."
+    }
+  ],
+  "questions": [
+    {
+      "stem": "¿Qué método HTTP se usa normalmente para obtener un recurso?",
+      "options": ["GET", "POST", "DELETE", "PATCH"],
+      "correct": "a",
+      "explanation": "GET recupera un recurso sin modificarlo; POST crea, PUT/PATCH actualizan y DELETE elimina."
+    },
+    {
+      "stem": "¿Qué significa un código de estado 404?",
+      "options": [
+        "El recurso no existe o no se encuentra",
+        "El servidor ha fallado",
+        "La petición se ha creado",
+        "El usuario no está autenticado"
+      ],
+      "correct": "a",
+      "explanation": "404 es error del cliente: el recurso solicitado no existe; 401 es no autenticado y 500 error del servidor."
+    },
+    {
+      "stem": "¿Qué lenguaje define la estructura de una página web?",
+      "options": ["HTML", "CSS", "JavaScript", "SQL"],
+      "correct": "a",
+      "explanation": "HTML aporta estructura y significado; CSS la presentación y JavaScript el comportamiento."
+    },
+    {
+      "stem": "¿Qué es un diseño responsive?",
+      "options": [
+        "Un diseño que se adapta y sigue siendo usable en distintos tamaños de pantalla",
+        "Un diseño que solo funciona en escritorio",
+        "Una base de datos distribuida",
+        "Un protocolo de red"
+      ],
+      "correct": "a",
+      "explanation": "El diseño responsive adapta la interfaz y la experiencia a móvil, tableta y escritorio."
+    },
+    {
+      "stem": "¿Qué formato es habitual en una API REST?",
+      "options": ["JSON", "PDF", "DOCX", "CSV siempre"],
+      "correct": "a",
+      "explanation": "JSON es el formato más habitual en APIs REST, aunque también puede usarse XML."
+    },
+    {
+      "stem": "¿Qué es XSS?",
+      "options": [
+        "Inyección de scripts en una página que ejecuta el navegador",
+        "Un ataque de fuerza bruta al servidor",
+        "Un error de base de datos",
+        "Un protocolo de correo"
+      ],
+      "correct": "a",
+      "explanation": "XSS (Cross-Site Scripting) inyecta código en la página; se mitiga escapando la salida y aplicando CSP."
+    },
+    {
+      "stem": "¿Cómo se evita la inyección SQL en el back-end?",
+      "options": [
+        "Con consultas parametrizadas y validación",
+        "Concatenando la entrada del usuario",
+        "Desactivando HTTPS",
+        "Ocultando los errores"
+      ],
+      "correct": "a",
+      "explanation": "Las consultas parametrizadas separan datos y código; concatenar entrada permite inyección."
+    },
+    {
+      "stem": "¿Para qué sirve una cookie HttpOnly?",
+      "options": [
+        "Para que JavaScript no pueda leerla y reducir el robo de sesión",
+        "Para cifrar la base de datos",
+        "Para acelerar la web",
+        "Para bloquear el correo"
+      ],
+      "correct": "a",
+      "explanation": "HttpOnly impide el acceso desde JavaScript, lo que limita el impacto de un XSS sobre la cookie de sesión."
+    },
+    {
+      "stem": "¿Qué ventaja ofrece una CDN?",
+      "options": [
+        "Serve recursos estáticos desde ubicaciones cercanas y reduce latencia",
+        "Sustituye la base de datos",
+        "Elimina la necesidad de HTTPS",
+        "Compila el back-end"
+      ],
+      "correct": "a",
+      "explanation": "La CDN cachea y distribuye contenido estático geográficamente, mejorando tiempos de carga."
+    },
+    {
+      "stem": "¿Dónde debe validarse de forma obligatoria una entrada del usuario?",
+      "options": [
+        "En el servidor, aunque también se valide en el cliente",
+        "Solo en el cliente",
+        "Solo en la base de datos",
+        "En la CDN"
+      ],
+      "correct": "a",
+      "explanation": "El cliente puede omitirse o manipularse; la validación definitiva debe hacerse en el servidor."
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 # Mapa de cobertura del temario
 
 **Publicado en la demo:** <https://erdeivih.github.io/opofuente-demo/#/cobertura> · **Verificado:**
-45/45 comprobaciones (10/11/2026), con **12/12 enlaces de convocatoria** abriendo (HTTP 200). La tabla
+46/46 comprobaciones (10/11/2026), con **12/12 enlaces de convocatoria** abriendo (HTTP 200). La tabla
 cuenta **solo el contenido propio publicado**; el material de academia o de terceros es referencia
 interna y no suma cobertura (decisión D-034).
 
@@ -12,12 +12,12 @@ interna y no suma cobertura (decisión D-034).
 | I · Administración y normativa | 12 | 12 | 100% | 0 | 0 | 12 |
 | II · Informática básica y ofimática | 5 | 5 | 100% | 0 | 0 | 5 |
 | III · Sistemas, redes y comunicaciones | 9 | 9 | 100% | 0 | 0 | 9 |
-| IV · Datos y desarrollo | 7 | 3 | 43% | 0 | 4 | 3 |
+| IV · Datos y desarrollo | 7 | 6 | 86% | 0 | 1 | 6 |
 | V · Seguridad y administración electrónica | 7 | 2 | 29% | 0 | 5 | 2 |
-| **Total** | **40** | **31** | **78%** | **0** | **9** | **31** |
+| **Total** | **40** | **34** | **85%** | **0** | **6** | **34** |
 
-Temas completos: I.1, I.2, I.3, I.4, I.5, I.6, I.7, I.8, I.9, I.10, I.11, I.12, II.13, II.14, II.15, II.16, II.17, III.18, III.19, III.20, III.21, III.22, III.23, III.24, III.25, III.26, IV.27, IV.28, IV.29, V.34, V.35. En esta tanda se han añadido **III.26 Soporte al puesto**,
-**IV.28 SQL** y **IV.29 Gestores de bases de datos**. El bloque III queda completo (9/9).
+Temas completos: I.1, I.2, I.3, I.4, I.5, I.6, I.7, I.8, I.9, I.10, I.11, I.12, II.13, II.14, II.15, II.16, II.17, III.18, III.19, III.20, III.21, III.22, III.23, III.24, III.25, III.26, IV.27, IV.28, IV.29, IV.30, IV.31, IV.32, V.34, V.35. En esta tanda se han añadido **IV.30 Programación**,
+**IV.31 Desarrollo web** y **IV.32 Interoperabilidad e integración**.
 
 ## Los 40 temas
 
@@ -52,9 +52,9 @@ Temas completos: I.1, I.2, I.3, I.4, I.5, I.6, I.7, I.8, I.9, I.10, I.11, I.12, 
 | IV.27 | Bases de datos relacionales | Completos | Con práctica |
 | IV.28 | SQL | Completos | Con práctica |
 | IV.29 | Gestores de bases de datos | Completos | Con práctica |
-| IV.30 | Programación | Pendiente | Pendiente |
-| IV.31 | Desarrollo web | Pendiente | Pendiente |
-| IV.32 | Interoperabilidad e integración | Pendiente | Pendiente |
+| IV.30 | Programación | Completos | Con práctica |
+| IV.31 | Desarrollo web | Completos | Con práctica |
+| IV.32 | Interoperabilidad e integración | Completos | Con práctica |
 | IV.33 | Informes y explotación de datos | Pendiente | Pendiente |
 | V.34 | Seguridad de la información | Completos | Con práctica |
 | V.35 | El Esquema Nacional de Seguridad (ENS, RD 311/2022) | Completos | Con práctica |
@@ -82,10 +82,10 @@ distinto (no hay otro tema del índice que trate procesadores) ni se publican.
 
 ## Coherencia del mapa y los sellos
 
-Comprobado con el build y con Playwright sobre la URL pública (45/45): los 40 temas de la tabla
-coinciden con los sellos de apuntes y práctica; los 31 completos tienen 3+ apartados, tabla, fuente y
-10 preguntas; los 9 pendientes no tienen contenido publicado. La suma por bloque cuadra con el
-total (31 + 9 = 40) y no hay temas «solo resumen» hoy. Los **12 enlaces de convocatoria** abren
+Comprobado con el build y con Playwright sobre la URL pública (46/46): los 40 temas de la tabla
+coinciden con los sellos de apuntes y práctica; los 34 completos tienen 3+ apartados, tabla, fuente y
+10 preguntas; los 6 pendientes no tienen contenido publicado. La suma por bloque cuadra con el
+total (34 + 6 = 40) y no hay temas «solo resumen» hoy. Los **12 enlaces de convocatoria** abren
 (HTTP 200) y su texto empieza por «Bases de»; verificado con `verificar-convocatorias.mjs`.
 
 ## Regla de derechos
