@@ -372,6 +372,20 @@ function ComoFunciona() {
   );
 }
 
+function BlockSummary() {
+  return (
+    <section className="card demo-block-summary">
+      <h2>Avance por bloque</h2>
+      <p className="demo-block-line">
+        {data.curriculum.blocks
+          .map((block) => `${block.path}: ${String(block.coverage.conApuntes)}/${String(block.coverage.total)}`)
+          .join(' · ')}
+      </p>
+      <p className="hint">Temas con apuntes completos sobre el total de cada bloque.</p>
+    </section>
+  );
+}
+
 function Home() {
   const progress = loadProgress();
   const resume = loadResume();
@@ -402,6 +416,7 @@ function Home() {
         </p>
       </section>
       <ProgressCard />
+      <BlockSummary />
       {continuePractice !== undefined && (
         <section className="card demo-continue">
           <h2>Continuar</h2>

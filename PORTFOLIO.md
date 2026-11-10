@@ -31,13 +31,13 @@ servidor.
 
 ### Contenido
 
-- **23 de 40 temas** con apuntes completos de redacción propia: apartados, definiciones, tablas,
+- **26 de 40 temas** con apuntes completos de redacción propia: apartados, definiciones, tablas,
   ejemplos resueltos y fuente oficial (BOE, TUE/TFUE, RFC, ISO, NIST).
-- **23 prácticas de 10 preguntas** (230 preguntas) con respuesta razonada y enlace al texto oficial
+- **26 prácticas de 10 preguntas** (260 preguntas) con respuesta razonada y enlace al texto oficial
   cuando se cita un artículo.
-- **17 temas pendientes** señalados como tales; **0 solo resumen** en la cobertura publicada.
+- **14 temas pendientes** señalados como tales; **0 solo resumen** en la cobertura publicada.
 - Temas completos: I.1, I.2, I.3, I.4, I.5, I.6, I.7, I.8, I.9, I.10, I.11, I.12, II.13, II.14,
-  II.15, II.16, III.19, III.20, III.21, III.24, IV.27, V.34 y V.35.
+  II.15, II.16, II.17, III.18, III.19, III.20, III.21, III.22, III.24, IV.27, V.34 y V.35.
 
 ### Producto
 
@@ -80,7 +80,7 @@ servidor.
 ## 4. Estado y evidencia
 
 - **Publicada:** HTTP 200 en la URL pública; GitHub Pages reconstruye desde el build.
-- **Verificación:** **37/37** comprobaciones con Playwright contra la URL pública y **12/12 enlaces**
+- **Verificación:** **38/38** comprobaciones con Playwright contra la URL pública y **12/12 enlaces**
   de convocatoria abren (HTTP 200): portada,
   convocatorias, aviso único, 40 temas, cobertura de 40 filas, sellos, búsqueda por II.13, filtro
   «Con práctica», tema completo, tema pendiente, corrección con enlace al BOE, práctica completa y
@@ -105,7 +105,7 @@ servidor.
 
 - **Problema y alcance definidos:** un temario común, no una app genérica; decisiones de alcance
   documentadas (D-005, D-021).
-- **Métricas de cobertura:** 23/40 completos, 0 solo resumen, 17 pendientes; el estado se calcula,
+- **Métricas de cobertura:** 26/40 completos, 0 solo resumen, 14 pendientes; el estado se calcula,
   no se inventa.
 - **Requisitos y trazabilidad:** cada tema tiene fuente, cada pregunta tiene respuesta y el mapa
   distingue lo publicado de lo pendiente.
@@ -132,4 +132,4 @@ servidor.
 4. Abre **Portada** y revisa las 12 convocatorias y el aviso único.
 
 `resumen:` OpoFuente entra en el portfolio como proyecto **funcional y demostrable**: demo pública,
-23/40 temas con apuntes y práctica, 230 preguntas, 12 convocatorias, 37/37 comprobaciones y 12/12 enlaces de convocatoria abren; límites y derechos documentados.
+26/40 temas con apuntes y práctica, 260 preguntas, 12 convocatorias, 38/38 comprobaciones y 12/12 enlaces de convocatoria abren; límites y derechos documentados.

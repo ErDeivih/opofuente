@@ -1,0 +1,137 @@
+{
+  "node_path": "III.18",
+  "title": "Sistemas operativos de servidor",
+  "source": {
+    "label": "Microsoft Learn — Documentación de Windows Server",
+    "url": "https://learn.microsoft.com/es-es/windows-server/"
+  },
+  "sections": [
+    {
+      "heading": "Qué distingue a un servidor",
+      "body": "Un **sistema operativo de servidor** está pensado para prestar servicios a otros equipos: autenticación, ficheros, impresión, web, correo, bases de datos o virtualización. No es solo un escritorio con más memoria.\n\nSus prioridades son la **disponibilidad**, la **seguridad**, la **gestión centralizada** y el **rendimiento sostenido**. Por eso se administra de forma remota, se actualiza con cuidado y se monitoriza.\n\nWindows Server y Linux son los dos entornos habituales en la administración pública. Muchos servicios son equivalentes con nombres distintos."
+    },
+    {
+      "heading": "Windows Server: roles y servicios",
+      "body": "Los roles más habituales son:\n\n- **Active Directory Domain Services (AD DS)**: directorio centralizado de usuarios, equipos y grupos; base de la autenticación del dominio.\n- **DNS**: resolución de nombres, integrada con AD.\n- **DHCP**: asignación automática de direcciones IP.\n- **Directivas de grupo (GPO)**: configuración centralizada de equipos y usuarios.\n- **Servidor de archivos e impresión**: compartición de recursos con permisos NTFS.\n- **IIS**: servidor web.\n- **Hyper-V**: virtualización.\n\nLa administración se apoya en **PowerShell**, la consola de administración y herramientas remotas. Las licencias y el número de usuarios son parte del diseño."
+    },
+    {
+      "heading": "Linux: servicios y administración",
+      "body": "En Linux los servicios se gestionan con **systemd** (`systemctl`). El acceso remoto habitual es **SSH**; el cortafuegos, `nftables`/`ufw`; los paquetes, `apt` o `dnf`.\n\nServicios equivalentes:\n\n- **DNS**: BIND o Unbound.\n- **DHCP**: ISC DHCP o Kea.\n- **Ficheros**: Samba para compartir con Windows o NFS para red Unix.\n- **Web**: Apache o Nginx.\n- **Directorio**: OpenLDAP o Samba AD.\n- **Contenedores**: Docker/Podman y Kubernetes.\n\nLa configuración se guarda en ficheros de texto y se automatiza con Ansible u otras herramientas."
+    },
+    {
+      "heading": "Identidad, permisos y hardening",
+      "body": "La **identidad** es el eje: usuarios, grupos, roles y autenticación. En Windows se usa **AD/Kerberos**; en Linux, **LDAP/Kerberos** o Samba AD. El principio de **mínimo privilegio** evita cuentas de administrador para tareas diarias.\n\nEl **hardening** incluye actualizaciones, servicios innecesarios desactivados, contraseñas robustas, MFA, registro de auditoría y copias. La monitorización detecta caídas, errores y accesos anómalos antes de que escalen.\n\nUn servidor sin copias ni monitorización no está «terminado»: está a la espera de un incidente."
+    },
+    {
+      "heading": "Tabla de roles equivalentes",
+      "table": {
+        "columns": ["Servicio", "Windows Server", "Linux"],
+        "rows": [
+          ["Directorio", "AD DS", "OpenLDAP / Samba AD"],
+          ["DNS", "Rol DNS", "BIND / Unbound"],
+          ["DHCP", "Rol DHCP", "ISC DHCP / Kea"],
+          ["Ficheros", "Servidor de archivos", "Samba / NFS"],
+          ["Web", "IIS", "Apache / Nginx"],
+          ["Virtualización", "Hyper-V", "KVM / Proxmox"],
+          ["Acceso remoto", "RDP / WinRM", "SSH"]
+        ]
+      }
+    },
+    {
+      "heading": "Ejemplo resuelto",
+      "body": "**Supuesto.** Un ayuntamiento necesita autenticación centralizada, una carpeta compartida para 80 usuarios y una web municipal.\n\n**Resolución.**\n\n- Se implanta **AD DS** con DNS integrado y dos controladores de dominio para tolerar fallos.\n- La carpeta compartida usa permisos **NTFS** por grupos, no por usuario individual.\n- La web se publica en un servidor separado (IIS o Nginx) para no mezclar el rol de directorio con el servicio expuesto a internet.\n- Se configuran **copias**, **monitorización** y actualizaciones programadas; las cuentas de administrador son nominativas y con MFA.\n\n**Conclusión.** El diseño separa roles, aplica mínimo privilegio y prevé fallos; instalar todo en un solo servidor es cómodo hasta que falla."
+    }
+  ],
+  "questions": [
+    {
+      "stem": "¿Qué servicio de Windows Server proporciona un directorio centralizado de usuarios y equipos?",
+      "options": ["Active Directory Domain Services", "IIS", "Hyper-V", "DHCP"],
+      "correct": "a",
+      "explanation": "AD DS es el servicio de directorio que almacena usuarios, equipos y grupos y sirve de base a la autenticación del dominio."
+    },
+    {
+      "stem": "¿Qué protocolo usa AD para autenticar en el dominio?",
+      "options": ["Kerberos", "SMTP", "SNMP", "FTP"],
+      "correct": "a",
+      "explanation": "Kerberos es el protocolo de autenticación usado por Active Directory."
+    },
+    {
+      "stem": "¿Para qué sirve DHCP en un servidor?",
+      "options": [
+        "Asignar direcciones IP y parámetros de red automáticamente",
+        "Resolver nombres de dominio",
+        "Cifrar discos",
+        "Servir páginas web"
+      ],
+      "correct": "a",
+      "explanation": "DHCP entrega configuración de red (IP, máscara, puerta de enlace, DNS) a los clientes."
+    },
+    {
+      "stem": "¿Qué permite una directiva de grupo (GPO)?",
+      "options": [
+        "Aplicar configuración de forma centralizada a equipos y usuarios",
+        "Cambiar la contraseña de root",
+        "Crear copias de seguridad",
+        "Comprimir la base de datos"
+      ],
+      "correct": "a",
+      "explanation": "Las GPO permiten configurar de forma centralizada el entorno de equipos y usuarios del dominio."
+    },
+    {
+      "stem": "¿Qué servicio se usa en Linux para gestionar servicios y unidades?",
+      "options": ["systemd", "IIS", "AD DS", "PowerShell"],
+      "correct": "a",
+      "explanation": "systemd gestiona servicios, unidades y el arranque; se administra con systemctl."
+    },
+    {
+      "stem": "¿Qué protocolo se usa habitualmente para administrar un servidor Linux de forma remota?",
+      "options": ["SSH", "RDP", "SMTP", "SNMP"],
+      "correct": "a",
+      "explanation": "SSH permite acceder a la shell remota de forma cifrada y autenticada."
+    },
+    {
+      "stem": "¿Qué permite Samba en Linux?",
+      "options": [
+        "Compartir ficheros e imprimir con clientes Windows",
+        "Compilar el kernel",
+        "Gestionar contenedores",
+        "Servir correo"
+      ],
+      "correct": "a",
+      "explanation": "Samba implementa SMB/CIFS y permite compartir recursos con redes Windows, además de poder actuar como controlador de dominio."
+    },
+    {
+      "stem": "¿Qué es Hyper-V?",
+      "options": [
+        "Un hipervisor de Microsoft para virtualización",
+        "Un servidor web",
+        "Un protocolo de correo",
+        "Un sistema de ficheros"
+      ],
+      "correct": "a",
+      "explanation": "Hyper-V es el hipervisor de Microsoft; permite crear y gestionar máquinas virtuales."
+    },
+    {
+      "stem": "¿Qué principio de seguridad debe aplicarse a las cuentas de administrador?",
+      "options": [
+        "Mínimo privilegio y uso separado de la cuenta diaria",
+        "Compartir una única cuenta para todo el equipo",
+        "Usar la misma contraseña siempre",
+        "Desactivar la auditoría"
+      ],
+      "correct": "a",
+      "explanation": "El mínimo privilegio reduce el impacto de un error o robo de credenciales; las cuentas de administrador no deben usarse para tareas diarias."
+    },
+    {
+      "stem": "¿Qué debe acompañar a un servidor en producción además de instalarlo?",
+      "options": [
+        "Copias, monitorización y actualizaciones programadas",
+        "Solo un fondo de escritorio",
+        "Un segundo teclado",
+        "Desactivar los registros"
+      ],
+      "correct": "a",
+      "explanation": "La operación incluye copias, monitorización, actualizaciones y revisión de logs; sin ello la disponibilidad no está garantizada."
+    }
+  ]
+}

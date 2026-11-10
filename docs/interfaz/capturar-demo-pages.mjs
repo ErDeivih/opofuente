@@ -81,6 +81,12 @@ check(
   'la portada muestra la cobertura',
   /apuntes completos/.test(portada) && /con práctica/.test(portada),
 );
+check(
+  'la portada resume el avance por bloque',
+  data.curriculum.blocks.every((block) =>
+    portada.includes(`${block.path}: ${block.coverage.conApuntes}/${block.coverage.total}`),
+  ),
+);
 
 const temario = await captura('temario', 'temario', 1280);
 check('el temario enseña 5 bloques y 40 temas', /5 bloques/.test(temario) && /40 temas/.test(temario));

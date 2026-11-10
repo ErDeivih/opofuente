@@ -1,0 +1,146 @@
+{
+  "node_path": "II.17",
+  "title": "Licencias y software libre",
+  "source": {
+    "label": "Open Source Initiative — Licencias aprobadas por la OSI",
+    "url": "https://opensource.org/licenses"
+  },
+  "sections": [
+    {
+      "heading": "Derecho de autor y licencia",
+      "body": "El software está protegido por el **derecho de autor**. Sin una licencia, nadie puede copiarlo, modificarlo ni redistribuirlo más allá de lo que permita la ley.\n\nUna **licencia** es el contrato o permiso mediante el cual el titular autoriza determinados usos. El **software propietario** suele usar una licencia de usuario final (EULA) restrictiva: permite usar el programa, pero no acceder al código ni redistribuirlo.\n\nEl **software libre** no significa «gratis»: significa que su licencia garantiza libertades sobre el código."
+    },
+    {
+      "heading": "Las cuatro libertades",
+      "body": "El software libre se define por cuatro libertades:\n\n- **Libertad 0**: usar el programa con cualquier propósito.\n- **Libertad 1**: estudiar cómo funciona y modificarlo; para ello hace falta el **código fuente**.\n- **Libertad 2**: redistribuir copias.\n- **Libertad 3**: distribuir versiones modificadas.\n\nEl **open source** comparte la disponibilidad del código, aunque su énfasis es el desarrollo colaborativo. En la práctica, las licencias aprobadas por la OSI cumplen estas libertades."
+    },
+    {
+      "heading": "Permisivas y copyleft",
+      "body": "Las licencias **permisivas** (MIT, BSD, Apache 2.0) permiten usar, modificar y redistribuir el código, incluso en productos propietarios, con obligaciones mínimas de atribución y aviso.\n\nLas licencias **copyleft** (GPL, LGPL, AGPL) exigen que las obras derivadas se distribuyan con la misma licencia, de modo que el código siga siendo libre. La **LGPL** permite enlazar con software propietario bajo condiciones; la **AGPL** extiende la obligación a quien usa el software como servicio en red.\n\nLa **compatibilidad** entre licencias es clave: no se pueden mezclar componentes si sus condiciones son incompatibles."
+    },
+    {
+      "heading": "Contenido y datos abiertos",
+      "body": "Para textos, imágenes, datos o música se usan licencias como **Creative Commons**:\n\n- **CC BY**: atribución.\n- **CC BY-SA**: atribución y compartir igual.\n- **CC0**: renuncia a derechos, equivalente a dominio público.\n\nEn datos abiertos, la atribución y la interoperabilidad son esenciales. Una licencia mal elegida puede impedir que otros reutilicen el conjunto de datos."
+    },
+    {
+      "heading": "Tabla de licencias",
+      "table": {
+        "columns": ["Licencia", "Tipo", "Obligación principal"],
+        "rows": [
+          ["MIT / BSD", "Permisiva", "Mantener aviso de copyright"],
+          ["Apache 2.0", "Permisiva", "Aviso, licencia y patentes"],
+          ["GPL", "Copyleft fuerte", "Distribuir derivados con GPL"],
+          ["LGPL", "Copyleft débil", "Compartir cambios de la biblioteca"],
+          ["CC BY", "Contenido", "Atribuir la autoría"],
+          ["CC0", "Dominio público", "Sin condiciones de atribución"]
+        ]
+      }
+    },
+    {
+      "heading": "Ejemplo resuelto",
+      "body": "**Supuesto.** Un ayuntamiento publica una aplicación web y quiere que otras administraciones puedan reutilizarla, pero sin permitir que una empresa la cierre y la venda como propietaria.\n\n**Resolución.**\n\n- Se elige una licencia **copyleft** compatible con el ecosistema, como la **EUPL** o la **GPL**, y se revisan las dependencias.\n- Se comprueba que las bibliotecas incluidas permiten la combinación; una dependencia propietaria puede impedir publicar el conjunto como libre.\n- Se conservan avisos de copyright y se documenta la licencia en el repositorio y en la aplicación.\n- Si se usan datos o imágenes de terceros, se revisa su licencia (CC BY, CC0, etc.) y se atribuye correctamente.\n\n**Conclusión.** Publicar el código no basta: hay que elegir una licencia compatible, cumplir sus obligaciones y revisar la cadena de dependencias."
+    }
+  ],
+  "questions": [
+    {
+      "stem": "¿Qué significa que un programa sea software libre?",
+      "options": [
+        "Que su licencia garantiza libertades para usar, estudiar, modificar y redistribuir",
+        "Que siempre es gratuito",
+        "Que no tiene derechos de autor",
+        "Que no puede usarse en empresas"
+      ],
+      "correct": "a",
+      "explanation": "El software libre se define por las libertades sobre el programa y su código fuente; no implica necesariamente precio cero."
+    },
+    {
+      "stem": "¿Qué se necesita para ejercer la libertad de estudiar y modificar un programa?",
+      "options": [
+        "El código fuente",
+        "Una conexión a internet",
+        "Una cuenta de correo",
+        "Una licencia de pago"
+      ],
+      "correct": "a",
+      "explanation": "Sin código fuente no se puede estudiar ni modificar el programa, por eso es esencial en el software libre."
+    },
+    {
+      "stem": "¿Qué caracteriza a una licencia copyleft como la GPL?",
+      "options": [
+        "Exige distribuir las obras derivadas con la misma licencia",
+        "Permite cerrar el código derivado",
+        "Prohíbe el uso comercial",
+        "Solo se aplica a datos"
+      ],
+      "correct": "a",
+      "explanation": "El copyleft busca que las versiones derivadas sigan siendo libres, exigiendo la misma licencia al distribuir."
+    },
+    {
+      "stem": "¿Qué licencia es permisiva y permite usar el código en un producto propietario?",
+      "options": ["MIT", "GPL", "AGPL", "CC BY-SA"],
+      "correct": "a",
+      "explanation": "MIT es permisiva: permite reutilizar el código en productos propietarios manteniendo el aviso de copyright."
+    },
+    {
+      "stem": "¿Qué diferencia a la AGPL de la GPL?",
+      "options": [
+        "La AGPL extiende la obligación a quien ofrece el software como servicio en red",
+        "La AGPL prohíbe modificarlo",
+        "La AGPL es propietaria",
+        "No hay diferencias"
+      ],
+      "correct": "a",
+      "explanation": "La AGPL cubre el uso en red: si se ofrece como servicio, también hay que facilitar el código fuente."
+    },
+    {
+      "stem": "¿Qué exige una licencia CC BY?",
+      "options": [
+        "Atribuir la autoría",
+        "Prohibir el uso comercial",
+        "Ceder todos los derechos",
+        "Cifrar la obra"
+      ],
+      "correct": "a",
+      "explanation": "CC BY permite usar y adaptar la obra con atribución; otras variantes añaden condiciones como compartir igual."
+    },
+    {
+      "stem": "¿Qué licencia se acerca más al dominio público?",
+      "options": ["CC0", "CC BY-SA", "GPL", "EULA"],
+      "correct": "a",
+      "explanation": "CC0 renuncia a los derechos en la medida permitida por la ley, facilitando el uso sin condiciones de atribución."
+    },
+    {
+      "stem": "¿Qué es una EULA?",
+      "options": [
+        "Una licencia de usuario final de software propietario",
+        "Una licencia de datos abiertos",
+        "Un estándar de red",
+        "Un tipo de copia de seguridad"
+      ],
+      "correct": "a",
+      "explanation": "La EULA es el contrato de licencia de usuario final que establece los usos permitidos del software propietario."
+    },
+    {
+      "stem": "¿Por qué es importante la compatibilidad de licencias?",
+      "options": [
+        "Porque mezclar componentes con condiciones incompatibles puede impedir distribuir el conjunto",
+        "Porque cambia el color de la interfaz",
+        "Porque acelera el compilador",
+        "Porque elimina la necesidad de atribución"
+      ],
+      "correct": "a",
+      "explanation": "Las obligaciones de cada licencia deben poder cumplirse a la vez; si no, el conjunto no se puede distribuir legalmente."
+    },
+    {
+      "stem": "¿Qué documento ayuda a conocer las dependencias y sus licencias en un proyecto?",
+      "options": [
+        "El inventario de componentes o SBOM",
+        "El manual de usuario",
+        "El cortafuegos",
+        "La política de contraseñas"
+      ],
+      "correct": "a",
+      "explanation": "Un SBOM (Software Bill of Materials) inventaría componentes y versiones, y facilita revisar licencias y vulnerabilidades."
+    }
+  ]
+}

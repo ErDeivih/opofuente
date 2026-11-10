@@ -1,0 +1,120 @@
+{
+  "node_path": "III.22",
+  "title": "Comunicaciones",
+  "source": {
+    "label": "IEEE 802.11 — Wireless LAN Working Group",
+    "url": "https://www.ieee802.org/11/"
+  },
+  "sections": [
+    {
+      "heading": "Conceptos básicos de transmisión",
+      "body": "Una comunicación transporta datos entre dos puntos a través de un **medio**: cobre (par trenzado, coaxial), **fibra óptica** o **radio** (Wi-Fi, móvil).\n\nTres magnitudes explican la calidad:\n\n- **Ancho de banda**: capacidad máxima del enlace.\n- **Latencia**: retardo de ida y vuelta.\n- **Jitter**: variación de la latencia, crítica para voz y vídeo.\n\nUna red de área local (LAN) cubre un edificio o campus; una red de área amplia (WAN) conecta sedes o accede a internet."
+    },
+    {
+      "heading": "Wi-Fi: estándares y seguridad",
+      "body": "Wi-Fi se basa en la familia **IEEE 802.11**. Las generaciones habituales son 802.11n (Wi-Fi 4), 802.11ac (Wi-Fi 5) y 802.11ax (Wi-Fi 6/6E); cada una mejora velocidad, eficiencia y capacidad. Los equipos deben ser compatibles con el estándar del punto de acceso.\n\nLa seguridad evolucionó de WEP (obsoleta e insegura) a **WPA2** y **WPA3**, que cifran el tráfico y autentican a los clientes. Las redes abiertas deben usar portales cautivos y aislamiento de clientes; para empresas se usan redes separadas por perfil (invitados, empleados, dispositivos).\n\nCanales, interferencias y cobertura determinan la calidad real, no solo la velocidad anunciada."
+    },
+    {
+      "heading": "VPN y redes de operador",
+      "body": "Una **VPN** crea un túnel cifrado sobre una red no confiable. Puede ser de **acceso remoto** (un usuario se conecta a la organización) o **site-to-site** (une dos sedes). Se implementa con **IPsec** o con TLS/SSL.\n\nEn redes de operador, **MPLS** etiqueta y conmuta paquetes para ofrecer rutas gestionadas con calidad de servicio. La **QoS** prioriza tráfico sensible (voz, vídeo) frente a descargas.\n\nLa VPN no sustituye una buena segmentación ni el control de acceso: cifra el transporte, pero no corrige permisos mal configurados."
+    },
+    {
+      "heading": "VoIP y servicios de comunicación",
+      "body": "La **voz sobre IP (VoIP)** envía llamadas como paquetes. **SIP** establece, modifica y termina la sesión; **RTP** transporta el audio/vídeo en tiempo real. Los **códecs** comprimen la voz y afectan a calidad y ancho de banda.\n\nLa telefonía IP exige baja latencia y jitter controlado, QoS de extremo a extremo, plan de numeración y dispositivos con alimentación adecuada. En emergencias, hay que garantizar la continuidad y la localización de las llamadas."
+    },
+    {
+      "heading": "Tabla de tecnologías",
+      "table": {
+        "columns": ["Tecnología", "Uso principal", "Clave"],
+        "rows": [
+          ["Wi-Fi 802.11ax", "Acceso local inalámbrico", "WPA2/WPA3, canales y cobertura"],
+          ["VPN IPsec", "Túnel site-to-site o remoto", "Cifrado y autenticación mutua"],
+          ["MPLS", "Red gestionada de operador", "Etiquetas y QoS"],
+          ["SIP/RTP", "Telefonía IP", "Señalización y transporte de voz"],
+          ["Fibra óptica", "Enlaces troncales y WAN", "Alta capacidad y baja latencia"]
+        ]
+      }
+    },
+    {
+      "heading": "Ejemplo resuelto",
+      "body": "**Supuesto.** Un ayuntamiento quiere Wi-Fi para el público, teletrabajo seguro para el personal y telefonía IP en dos sedes.\n\n**Resolución.**\n\n- **Wi-Fi**: red de invitados separada de la red corporativa, con portal cautivo y WPA3/WPA2; los empleados usan otra SSID con autenticación.\n- **Teletrabajo**: VPN de acceso remoto con MFA y segmentación; solo se publica lo necesario.\n- **Telefonía**: SIP para señalización y RTP para voz, con QoS que prioriza la voz; enlace entre sedes con capacidad y latencia medidas.\n- **Monitorización**: latencia, jitter, pérdida de paquetes y disponibilidad de enlaces.\n\n**Conclusión.** Cada servicio tiene requisitos distintos; la seguridad y la QoS se diseñan por separado, no se improvisan al final."
+    }
+  ],
+  "questions": [
+    {
+      "stem": "¿Qué magnitud mide la variación de la latencia y afecta especialmente a la voz?",
+      "options": ["Jitter", "Ancho de banda", "MTU", "TTL"],
+      "correct": "a",
+      "explanation": "El jitter es la variación del retardo; una voz con jitter alto suena entrecortada aunque el ancho de banda sea suficiente."
+    },
+    {
+      "stem": "¿Qué estándar corresponde a Wi-Fi 6?",
+      "options": ["802.11ax", "802.11ac", "802.11n", "802.11g"],
+      "correct": "a",
+      "explanation": "Wi-Fi 6 se basa en IEEE 802.11ax; Wi-Fi 5 es 802.11ac y Wi-Fi 4 es 802.11n."
+    },
+    {
+      "stem": "¿Qué protocolo de seguridad Wi-Fi sustituye a WPA2 y mejora la autenticación?",
+      "options": ["WPA3", "WEP", "WPS", "SSL"],
+      "correct": "a",
+      "explanation": "WPA3 es la evolución de WPA2; WEP está obsoleto y WPS no es un protocolo de cifrado moderno."
+    },
+    {
+      "stem": "¿Para qué sirve una VPN?",
+      "options": [
+        "Crear un túnel cifrado sobre una red no confiable",
+        "Aumentar la velocidad de la CPU",
+        "Sustituir el cortafuegos",
+        "Eliminar la necesidad de autenticación"
+      ],
+      "correct": "a",
+      "explanation": "La VPN cifra y autentica el transporte entre el cliente y la red, pero no corrige permisos ni sustituye otros controles."
+    },
+    {
+      "stem": "¿Qué protocolo se usa habitualmente para túneles VPN de sitio a sitio?",
+      "options": ["IPsec", "SMTP", "DHCP", "DNS"],
+      "correct": "a",
+      "explanation": "IPsec es un conjunto de protocolos para proteger el tráfico IP y se usa en VPN site-to-site y de acceso remoto."
+    },
+    {
+      "stem": "¿Qué tecnología de operador usa etiquetas para conmutar y aplicar QoS?",
+      "options": ["MPLS", "NAT", "VLAN", "STP"],
+      "correct": "a",
+      "explanation": "MPLS conmuta paquetes mediante etiquetas y permite ingeniería de tráfico y calidad de servicio."
+    },
+    {
+      "stem": "¿Qué protocolo señaliza las llamadas VoIP?",
+      "options": ["SIP", "RTP", "FTP", "ICMP"],
+      "correct": "a",
+      "explanation": "SIP establece y termina sesiones; RTP transporta el audio y vídeo en tiempo real."
+    },
+    {
+      "stem": "¿Qué protocolo transporta el audio en una llamada VoIP?",
+      "options": ["RTP", "SIP", "SSH", "SNMP"],
+      "correct": "a",
+      "explanation": "RTP (Real-time Transport Protocol) transporta los medios en tiempo real; SIP se usa para la señalización."
+    },
+    {
+      "stem": "¿Por qué la fibra óptica es habitual en enlaces troncales?",
+      "options": [
+        "Por su alta capacidad y baja atenuación",
+        "Porque no necesita mantenimiento",
+        "Porque es inalámbrica",
+        "Porque sustituye a la VPN"
+      ],
+      "correct": "a",
+      "explanation": "La fibra ofrece gran ancho de banda y baja atenuación, lo que la hace adecuada para troncales y WAN."
+    },
+    {
+      "stem": "¿Qué red separa el Wi-Fi de invitados de la red corporativa?",
+      "options": [
+        "Una red o SSID separada con aislamiento y políticas propias",
+        "La misma red con la misma contraseña",
+        "Una VPN obligatoria para todos",
+        "Un cambio de canal"
+      ],
+      "correct": "a",
+      "explanation": "Segmentar invitados en su propia red limita el acceso a recursos internos y reduce el riesgo."
+    }
+  ]
+}
