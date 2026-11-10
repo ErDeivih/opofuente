@@ -1,0 +1,144 @@
+{
+  "node_path": "IV.29",
+  "title": "Gestores de bases de datos",
+  "source": {
+    "label": "PostgreSQL Documentation — Backup and Restore",
+    "url": "https://www.postgresql.org/docs/current/backup.html"
+  },
+  "sections": [
+    {
+      "heading": "Qué hace un gestor de bases de datos",
+      "body": "Un **SGBD** (sistema gestor de bases de datos) almacena, organiza y protege los datos, y ofrece un lenguaje para consultarlos. Además de ejecutar SQL, gestiona usuarios, permisos, transacciones, copias, rendimiento y concurrencia.\n\nLos gestores relacionales más habituales son **Oracle Database**, **Microsoft SQL Server**, **PostgreSQL** y **MySQL/MariaDB**. Todos comparten el modelo relacional, pero difieren en arquitectura, herramientas, licencias y coste.\n\nLa elección depende del ecosistema, el soporte, el volumen, la seguridad y el equipo disponible, no solo de una comparativa de velocidad."
+    },
+    {
+      "heading": "Usuarios, roles y permisos",
+      "body": "Cada gestor tiene su modelo de identidades. En PostgreSQL se usan **roles** (que pueden ser usuarios o grupos) y **privilegios** sobre bases, esquemas, tablas y columnas. En SQL Server se combinan **logins**, usuarios de base de datos y roles; en Oracle, usuarios y roles con privilegios del sistema y de objeto.\n\nEl principio de **mínimo privilegio** exige cuentas separadas para administración, aplicación y lectura. Las aplicaciones no deben conectarse como administrador.\n\nLos **esquemas** agrupan objetos y ayudan a separar módulos o inquilinos; no son lo mismo que una base de datos."
+    },
+    {
+      "heading": "Copias y recuperación",
+      "body": "Cada gestor ofrece herramientas propias:\n\n- **Oracle**: RMAN y Data Pump.\n- **SQL Server**: copias completas, diferenciales y de registro de transacciones.\n- **PostgreSQL**: `pg_dump`/`pg_dumpall` para volcados lógicos y `pg_basebackup` para copias físicas; archivado WAL para recuperación a un punto en el tiempo.\n- **MySQL/MariaDB**: `mysqldump` y copias físicas con herramientas como Percona XtraBackup.\n\nLa copia debe ser **externa**, cifrada, con retención y **probada**. La recuperación a un punto en el tiempo (PITR) permite volver justo antes de un error, pero requiere registrar los cambios."
+    },
+    {
+      "heading": "Alta disponibilidad y rendimiento",
+      "body": "La **replicación** mantiene copias en otro servidor: primario/réplica, síncrona o asíncrona. La **alta disponibilidad** añade conmutación automática y comprobaciones de salud; el **failover** debe probarse.\n\nEl rendimiento se analiza con planes de ejecución, índices, estadísticas y monitorización de consultas lentas. No se optimiza «a ojo»: se mide, se identifica la consulta y se prueba el cambio.\n\nLas **migraciones** de esquema se versionan y se aplican de forma controlada; un cambio manual no documentado es una bomba de relojería."
+    },
+    {
+      "heading": "Tabla comparativa",
+      "table": {
+        "columns": ["Gestor", "Herramienta de copia", "Rasgo distintivo"],
+        "rows": [
+          ["Oracle", "RMAN / Data Pump", "Amplio ecosistema empresarial"],
+          ["SQL Server", "Backup / restore, log de transacciones", "Integración con Windows y AD"],
+          ["PostgreSQL", "pg_dump, pg_basebackup, WAL", "Código abierto y extensiones"],
+          ["MySQL/MariaDB", "mysqldump, XtraBackup", "Despliegue sencillo y extendido"]
+        ]
+      }
+    },
+    {
+      "heading": "Ejemplo resuelto",
+      "body": "**Supuesto.** Una aplicación municipal usará PostgreSQL y debe sobrevivir a un borrado accidental y a la caída del servidor.\n\n**Resolución.**\n\n- Copia **lógica** diaria con `pg_dump` para poder restaurar una tabla o migrar.\n- Copia **física** y archivado **WAL** para recuperación a un punto en el tiempo.\n- Réplica en otro servidor y prueba de **failover**; monitorización de retraso de réplica.\n- Copias cifradas y fuera del servidor principal; restauración de prueba trimestral.\n- Migraciones versionadas y aplicadas con la herramienta del proyecto, no con SQL suelto.\n\n**Conclusión.** El gestor ofrece mecanismos, pero la garantía está en la estrategia: copia, réplica, prueba y documentación."
+    }
+  ],
+  "questions": [
+    {
+      "stem": "¿Qué es un SGBD?",
+      "options": [
+        "Un sistema que almacena, organiza y protege datos y ofrece acceso mediante un lenguaje",
+        "Un lenguaje de programación",
+        "Un protocolo de red",
+        "Un tipo de copia de seguridad"
+      ],
+      "correct": "a",
+      "explanation": "El SGBD gestiona datos, usuarios, transacciones, copias y rendimiento, además de ejecutar consultas."
+    },
+    {
+      "stem": "¿Qué herramienta se usa en PostgreSQL para un volcado lógico?",
+      "options": ["pg_dump", "RMAN", "mysqldump", "XtraBackup"],
+      "correct": "a",
+      "explanation": "pg_dump genera un volcado lógico de una base; pg_dumpall incluye roles y bases."
+    },
+    {
+      "stem": "¿Qué herramienta es característica de Oracle para copias y recuperación?",
+      "options": ["RMAN", "pg_dump", "mysqldump", "SQL Server Backup"],
+      "correct": "a",
+      "explanation": "RMAN (Recovery Manager) es la herramienta de Oracle para copias y recuperación."
+    },
+    {
+      "stem": "¿Qué permite la recuperación a un punto en el tiempo (PITR)?",
+      "options": [
+        "Volver a un instante concreto usando copias y registros de cambios",
+        "Eliminar los índices",
+        "Cambiar el gestor de base de datos",
+        "Crear un usuario nuevo"
+      ],
+      "correct": "a",
+      "explanation": "PITR combina una copia base con registros de transacciones (WAL en PostgreSQL) para restaurar hasta un momento."
+    },
+    {
+      "stem": "¿Qué es un esquema en una base de datos?",
+      "options": [
+        "Un espacio que agrupa objetos como tablas, vistas y funciones",
+        "Una copia de seguridad",
+        "Un tipo de índice",
+        "Un usuario administrador"
+      ],
+      "correct": "a",
+      "explanation": "El esquema organiza objetos dentro de la base; no es lo mismo que la base de datos."
+    },
+    {
+      "stem": "¿Qué principio debe aplicarse a las cuentas de la aplicación?",
+      "options": [
+        "Mínimo privilegio: solo los permisos necesarios",
+        "Usar el usuario administrador para todo",
+        "Compartir una cuenta entre aplicaciones",
+        "Desactivar la autenticación"
+      ],
+      "correct": "a",
+      "explanation": "La aplicación debe tener permisos limitados; el administrador se reserva para tareas de administración."
+    },
+    {
+      "stem": "¿Qué es una réplica de base de datos?",
+      "options": [
+        "Una copia mantenida en otro servidor para disponibilidad o lectura",
+        "Un índice temporal",
+        "Un procedimiento almacenado",
+        "Un tipo de tabla"
+      ],
+      "correct": "a",
+      "explanation": "La réplica recibe cambios del primario y puede usarse para alta disponibilidad o para repartir lecturas."
+    },
+    {
+      "stem": "¿Qué hay que probar en una estrategia de alta disponibilidad?",
+      "options": [
+        "El failover o conmutación ante la caída del primario",
+        "Solo el color del panel",
+        "La velocidad de la impresora",
+        "El tamaño del disco"
+      ],
+      "correct": "a",
+      "explanation": "Una conmutación no probada es una hipótesis; hay que medir tiempo y comprobar que la aplicación se recupera."
+    },
+    {
+      "stem": "¿Por qué las migraciones deben estar versionadas?",
+      "options": [
+        "Para aplicar cambios de forma reproducible y poder revertirlos",
+        "Para que la base ocupe más",
+        "Para eliminar las copias",
+        "Para que el usuario no vea los datos"
+      ],
+      "correct": "a",
+      "explanation": "Las migraciones versionadas permiten revisar, reproducir y revertir cambios de esquema."
+    },
+    {
+      "stem": "¿Qué debe cumplir una copia de seguridad de base de datos?",
+      "options": [
+        "Ser externa, cifrada, con retención y probada con restauraciones",
+        "Estar solo en el mismo disco",
+        "No documentarse",
+        "No cifrarse nunca"
+      ],
+      "correct": "a",
+      "explanation": "La copia solo es útil si se puede restaurar; debe estar protegida, fuera del servidor y probada."
+    }
+  ]
+}

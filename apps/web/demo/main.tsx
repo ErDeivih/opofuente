@@ -156,6 +156,10 @@ function pendientesTexto(n: number): string {
   return `${String(n)} ${n === 1 ? 'pendiente' : 'pendientes'}`;
 }
 
+function porcentaje(parte: number, total: number): number {
+  return total === 0 ? 0 : Math.round((parte / total) * 100);
+}
+
 function go(path: string): void {
   window.location.hash = `#/${path}`;
 }
@@ -378,7 +382,12 @@ function BlockSummary() {
       <h2>Avance por bloque</h2>
       <p className="demo-block-line">
         {data.curriculum.blocks
-          .map((block) => `${block.path}: ${String(block.coverage.conApuntes)}/${String(block.coverage.total)}`)
+          .map(
+            (block) =>
+              `${block.path}: ${String(block.coverage.conApuntes)}/${String(block.coverage.total)} (${String(
+                porcentaje(block.coverage.conApuntes, block.coverage.total),
+              )}%)`,
+          )
           .join(' · ')}
       </p>
       <p className="hint">Temas con apuntes completos sobre el total de cada bloque.</p>
@@ -479,7 +488,8 @@ function Cobertura() {
             {block.path} · {block.title}
           </h2>
           <p className="demo-block-progress">
-            {block.path}: {block.coverage.conApuntes}/{block.coverage.total} con apuntes ·{' '}
+            {block.path}: {block.coverage.conApuntes}/{block.coverage.total} (
+            {porcentaje(block.coverage.conApuntes, block.coverage.total)}%) con apuntes ·{' '}
             {block.coverage.conPractica}/{block.coverage.total} con práctica
             {block.coverage.pendientes > 0 ? ` · ${pendientesTexto(block.coverage.pendientes)}` : ''}
           </p>
@@ -600,7 +610,8 @@ function Temario({ initialFiltro = 'todos' }: { readonly initialFiltro?: Filtro 
             {block.path} · {block.title}
           </h2>
           <p className="demo-block-progress">
-            {block.path}: {block.coverage.conApuntes}/{block.coverage.total} con apuntes ·{' '}
+            {block.path}: {block.coverage.conApuntes}/{block.coverage.total} (
+            {porcentaje(block.coverage.conApuntes, block.coverage.total)}%) con apuntes ·{' '}
             {block.coverage.conPractica}/{block.coverage.total} con práctica
             {block.coverage.pendientes > 0 ? ` · ${pendientesTexto(block.coverage.pendientes)}` : ''}
           </p>

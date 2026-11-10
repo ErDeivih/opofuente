@@ -1,0 +1,138 @@
+{
+  "node_path": "IV.28",
+  "title": "SQL",
+  "source": {
+    "label": "PostgreSQL Documentation — SQL Commands",
+    "url": "https://www.postgresql.org/docs/current/sql.html"
+  },
+  "sections": [
+    {
+      "heading": "Lenguaje SQL y sus categorías",
+      "body": "**SQL** (Structured Query Language) es el lenguaje estándar para consultar y modificar bases de datos relacionales. Sus órdenes se agrupan en:\n\n- **DDL** (definición): `CREATE`, `ALTER`, `DROP`; crean y modifican estructuras.\n- **DML** (manipulación): `SELECT`, `INSERT`, `UPDATE`, `DELETE`; trabajan con datos.\n- **DCL** (control): `GRANT`, `REVOKE`; gestionan permisos.\n- **TCL** (transacciones): `BEGIN`, `COMMIT`, `ROLLBACK`.\n\nCada gestor añade extensiones, pero el núcleo es común. Conocer las categorías ayuda a saber qué se puede deshacer y qué no."
+    },
+    {
+      "heading": "Definición de datos",
+      "body": "Una tabla se crea con `CREATE TABLE`, indicando columnas, tipos y **restricciones**: `PRIMARY KEY`, `FOREIGN KEY`, `UNIQUE`, `NOT NULL` y `CHECK`.\n\n`ALTER TABLE` añade o modifica columnas y restricciones; `DROP TABLE` elimina la tabla y sus datos. Los **índices** (`CREATE INDEX`) aceleran búsquedas y uniones, pero consumen espacio y penalizan las escrituras.\n\nEl diseño debe evitar duplicidades y garantizar la integridad; la base de datos no debe depender solo de las validaciones del formulario."
+    },
+    {
+      "heading": "Consulta y manipulación",
+      "body": "`SELECT` recupera datos. Sus cláusulas principales son `WHERE` (filas), `ORDER BY` (orden), `GROUP BY` (agrupación) y `HAVING` (filtro de grupos).\n\n`INSERT` añade filas, `UPDATE` modifica las existentes y `DELETE` las elimina. Siempre que se actualiza o borra conviene filtrar con una condición y probar antes con `SELECT`; un `UPDATE` sin `WHERE` afecta a toda la tabla.\n\nLas **funciones de agregación** (`COUNT`, `SUM`, `AVG`, `MIN`, `MAX`) resumen grupos y se combinan con `GROUP BY`."
+    },
+    {
+      "heading": "Uniones, subconsultas y vistas",
+      "body": "Los **JOIN** combinan tablas:\n\n- `INNER JOIN`: solo filas que coinciden en ambas.\n- `LEFT JOIN`: todas las de la izquierda y las coincidencias de la derecha.\n- `RIGHT JOIN`: al contrario.\n- `FULL JOIN`: todas las filas de ambas.\n\nUna **subconsulta** es una consulta dentro de otra; sirve para filtrar por un conjunto calculado. Una **vista** es una consulta guardada que se comporta como una tabla virtual: simplifica el acceso y puede ocultar columnas sensibles."
+    },
+    {
+      "heading": "Transacciones y seguridad",
+      "body": "Una **transacción** agrupa operaciones: si algo falla, `ROLLBACK` deshace lo hecho; `COMMIT` confirma. Esto evita estados parciales.\n\nLas **consultas parametrizadas** o preparadas evitan la **inyección SQL**: nunca se concatena texto del usuario en la consulta. Los permisos se conceden con `GRANT` y se retiran con `REVOKE`, aplicando mínimo privilegio.\n\nEn producción, las migraciones se versionan y se prueban; no se ejecutan cambios manuales sin control."
+    },
+    {
+      "heading": "Tabla de órdenes",
+      "table": {
+        "columns": ["Categoría", "Órdenes", "Uso"],
+        "rows": [
+          ["DDL", "CREATE, ALTER, DROP", "Estructuras"],
+          ["DML", "SELECT, INSERT, UPDATE, DELETE", "Datos"],
+          ["DCL", "GRANT, REVOKE", "Permisos"],
+          ["TCL", "BEGIN, COMMIT, ROLLBACK", "Transacciones"]
+        ]
+      }
+    },
+    {
+      "heading": "Ejemplo resuelto",
+      "body": "**Supuesto.** El ayuntamiento quiere listar los expedientes de 2026 con su ciudadano y contar cuántos hay por tipo.\n\n**Resolución.**\n\n```sql\nSELECT c.nombre, e.numero, e.tipo\nFROM expedientes e\nINNER JOIN ciudadanos c ON c.id = e.ciudadano_id\nWHERE e.anio = 2026\nORDER BY c.nombre;\n```\n\nPara contar por tipo:\n\n```sql\nSELECT tipo, COUNT(*) AS total\nFROM expedientes\nWHERE anio = 2026\nGROUP BY tipo\nORDER BY total DESC;\n```\n\nSi se actualiza un expediente, se hace con `WHERE numero = ...` y dentro de una transacción; si algo falla, `ROLLBACK`. La aplicación usa consultas parametrizadas.\n\n**Conclusión.** SQL permite desde una consulta puntual hasta una migración; el riesgo está en olvidar el filtro, la transacción o los permisos."
+    }
+  ],
+  "questions": [
+    {
+      "stem": "¿Qué órdenes pertenecen al DDL?",
+      "options": ["CREATE, ALTER y DROP", "SELECT, INSERT y UPDATE", "GRANT y REVOKE", "COMMIT y ROLLBACK"],
+      "correct": "a",
+      "explanation": "El DDL define estructuras: crear, modificar y eliminar tablas, índices y otros objetos."
+    },
+    {
+      "stem": "¿Qué orden se usa para recuperar datos?",
+      "options": ["SELECT", "INSERT", "UPDATE", "DELETE"],
+      "correct": "a",
+      "explanation": "SELECT consulta datos; INSERT, UPDATE y DELETE los modifican."
+    },
+    {
+      "stem": "¿Qué cláusula filtra filas antes de agrupar?",
+      "options": ["WHERE", "HAVING", "ORDER BY", "GROUP BY"],
+      "correct": "a",
+      "explanation": "WHERE filtra filas; HAVING filtra grupos después de agrupar."
+    },
+    {
+      "stem": "¿Qué diferencia hay entre WHERE y HAVING?",
+      "options": [
+        "WHERE filtra filas y HAVING filtra grupos",
+        "Son sinónimos",
+        "WHERE filtra grupos y HAVING filas",
+        "HAVING solo se usa con INSERT"
+      ],
+      "correct": "a",
+      "explanation": "WHERE actúa antes de la agrupación; HAVING se aplica a los grupos ya formados."
+    },
+    {
+      "stem": "¿Qué devuelve un INNER JOIN?",
+      "options": [
+        "Solo las filas que coinciden en ambas tablas",
+        "Todas las filas de la izquierda",
+        "Todas las filas de ambas tablas",
+        "Ninguna fila"
+      ],
+      "correct": "a",
+      "explanation": "INNER JOIN descarta las filas sin coincidencia; LEFT JOIN conserva todas las de la izquierda."
+    },
+    {
+      "stem": "¿Qué hace un LEFT JOIN?",
+      "options": [
+        "Conserva todas las filas de la tabla izquierda y añade las coincidencias de la derecha",
+        "Conserva solo las coincidencias",
+        "Conserva solo la tabla derecha",
+        "Elimina las filas duplicadas"
+      ],
+      "correct": "a",
+      "explanation": "LEFT JOIN mantiene las filas de la izquierda aunque no tengan pareja, con nulos en las columnas de la derecha."
+    },
+    {
+      "stem": "¿Qué es una vista?",
+      "options": [
+        "Una consulta guardada que se comporta como una tabla virtual",
+        "Una copia física de la base de datos",
+        "Un índice",
+        "Una transacción"
+      ],
+      "correct": "a",
+      "explanation": "La vista guarda una consulta y se puede usar como tabla; no almacena necesariamente los datos."
+    },
+    {
+      "stem": "¿Qué orden confirma una transacción?",
+      "options": ["COMMIT", "ROLLBACK", "BEGIN", "GRANT"],
+      "correct": "a",
+      "explanation": "COMMIT confirma los cambios; ROLLBACK los deshace y BEGIN inicia la transacción."
+    },
+    {
+      "stem": "¿Cómo se evita la inyección SQL?",
+      "options": [
+        "Usando consultas parametrizadas o preparadas",
+        "Concatenando el texto del usuario",
+        "Desactivando los permisos",
+        "Ejecutando SQL dinámico sin validar"
+      ],
+      "correct": "a",
+      "explanation": "Las consultas parametrizadas separan el código de los datos y evitan que la entrada se interprete como SQL."
+    },
+    {
+      "stem": "¿Qué hace GRANT?",
+      "options": [
+        "Concede permisos a un usuario o rol",
+        "Crea una tabla",
+        "Elimina una fila",
+        "Confirma una transacción"
+      ],
+      "correct": "a",
+      "explanation": "GRANT concede privilegios; REVOKE los retira. Forman parte del DCL."
+    }
+  ]
+}

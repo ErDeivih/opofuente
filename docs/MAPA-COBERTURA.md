@@ -1,23 +1,23 @@
 # Mapa de cobertura del temario
 
 **Publicado en la demo:** <https://erdeivih.github.io/opofuente-demo/#/cobertura> · **Verificado:**
-44/44 comprobaciones (10/11/2026), con **12/12 enlaces de convocatoria** abriendo (HTTP 200). La tabla
+45/45 comprobaciones (10/11/2026), con **12/12 enlaces de convocatoria** abriendo (HTTP 200). La tabla
 cuenta **solo el contenido propio publicado**; el material de academia o de terceros es referencia
 interna y no suma cobertura (decisión D-034).
 
-## Resumen
+## Resumen por bloque
 
-| Bloque | Temas | Apuntes completos | Solo resumen | Pendientes | Con práctica |
-|---|---|---|---|---|---|
-| I · Administración y normativa | 12 | 12 | 0 | 0 | 12 |
-| II · Informática básica y ofimática | 5 | 5 | 0 | 0 | 5 |
-| III · Sistemas, redes y comunicaciones | 9 | 8 | 0 | 1 | 8 |
-| IV · Datos y desarrollo | 7 | 1 | 0 | 6 | 1 |
-| V · Seguridad y administración electrónica | 7 | 2 | 0 | 5 | 2 |
-| **Total** | **40** | **28** | **0** | **12** | **28** |
+| Bloque | Temas | Apuntes | Cobertura | Solo resumen | Pendientes | Con práctica |
+|---|---|---|---|---|---|---|
+| I · Administración y normativa | 12 | 12 | 100% | 0 | 0 | 12 |
+| II · Informática básica y ofimática | 5 | 5 | 100% | 0 | 0 | 5 |
+| III · Sistemas, redes y comunicaciones | 9 | 9 | 100% | 0 | 0 | 9 |
+| IV · Datos y desarrollo | 7 | 3 | 43% | 0 | 4 | 3 |
+| V · Seguridad y administración electrónica | 7 | 2 | 29% | 0 | 5 | 2 |
+| **Total** | **40** | **31** | **78%** | **0** | **9** | **31** |
 
-Temas completos: I.1, I.2, I.3, I.4, I.5, I.6, I.7, I.8, I.9, I.10, I.11, I.12, II.13, II.14, II.15, II.16, II.17, III.18, III.19, III.20, III.21, III.22, III.23, III.24, III.25, IV.27, V.34, V.35. En esta tanda se han añadido **III.23 Servicios de red** y
-**III.25 Cloud y centros de datos**.
+Temas completos: I.1, I.2, I.3, I.4, I.5, I.6, I.7, I.8, I.9, I.10, I.11, I.12, II.13, II.14, II.15, II.16, II.17, III.18, III.19, III.20, III.21, III.22, III.23, III.24, III.25, III.26, IV.27, IV.28, IV.29, V.34, V.35. En esta tanda se han añadido **III.26 Soporte al puesto**,
+**IV.28 SQL** y **IV.29 Gestores de bases de datos**. El bloque III queda completo (9/9).
 
 ## Los 40 temas
 
@@ -48,10 +48,10 @@ Temas completos: I.1, I.2, I.3, I.4, I.5, I.6, I.7, I.8, I.9, I.10, I.11, I.12, 
 | III.23 | Servicios de red | Completos | Con práctica |
 | III.24 | Monitorización y gestión de incidencias | Completos | Con práctica |
 | III.25 | Cloud y centros de datos | Completos | Con práctica |
-| III.26 | Soporte al puesto de trabajo | Pendiente | Pendiente |
+| III.26 | Soporte al puesto de trabajo | Completos | Con práctica |
 | IV.27 | Bases de datos relacionales | Completos | Con práctica |
-| IV.28 | SQL | Pendiente | Pendiente |
-| IV.29 | Gestores de bases de datos | Pendiente | Pendiente |
+| IV.28 | SQL | Completos | Con práctica |
+| IV.29 | Gestores de bases de datos | Completos | Con práctica |
 | IV.30 | Programación | Pendiente | Pendiente |
 | IV.31 | Desarrollo web | Pendiente | Pendiente |
 | IV.32 | Interoperabilidad e integración | Pendiente | Pendiente |
@@ -82,10 +82,10 @@ distinto (no hay otro tema del índice que trate procesadores) ni se publican.
 
 ## Coherencia del mapa y los sellos
 
-Comprobado con el build y con Playwright sobre la URL pública (44/44): los 40 temas de la tabla
-coinciden con los sellos de apuntes y práctica; los 28 completos tienen 3+ apartados, tabla, fuente y
-10 preguntas; los 12 pendientes no tienen contenido publicado. La suma por bloque cuadra con el
-total (28 + 12 = 40) y no hay temas «solo resumen» hoy. Los **12 enlaces de convocatoria** abren
+Comprobado con el build y con Playwright sobre la URL pública (45/45): los 40 temas de la tabla
+coinciden con los sellos de apuntes y práctica; los 31 completos tienen 3+ apartados, tabla, fuente y
+10 preguntas; los 9 pendientes no tienen contenido publicado. La suma por bloque cuadra con el
+total (31 + 9 = 40) y no hay temas «solo resumen» hoy. Los **12 enlaces de convocatoria** abren
 (HTTP 200) y su texto empieza por «Bases de»; verificado con `verificar-convocatorias.mjs`.
 
 ## Regla de derechos

@@ -1,6 +1,6 @@
 # Revisión final de la demo — 10/11/2026
 
-**URL:** <https://erdeivih.github.io/opofuente-demo/> · **Verificación:** **44/44** comprobaciones con
+**URL:** <https://erdeivih.github.io/opofuente-demo/> · **Verificación:** **45/45** comprobaciones con
 Playwright contra la URL pública, a 1280 y **390 px**. Sin errores de página.
 
 ## Qué se ha revisado
@@ -29,6 +29,7 @@ Playwright contra la URL pública, a 1280 y **390 px**. Sin errores de página.
 | Buscador con `III.20` | [buscador-390](capturas/demo-pages/buscador-390.png) |
 | Tema III.19 | [tema-iii-19-390](capturas/demo-pages/tema-iii-19-390.png) |
 | Tema III.20 | [tema-iii-20-390](capturas/demo-pages/tema-iii-20-390.png) |
+| Tema III.26 | [tema-iii-26-390](capturas/demo-pages/tema-iii-26-390.png) |
 | Tema completo (I.1) | [tema-completo-390](capturas/demo-pages/tema-completo-390.png) |
 | Tema pendiente (III.23) | [tema-pendiente-390](capturas/demo-pages/tema-pendiente-390.png) |
 | Práctica | [practica-390](capturas/demo-pages/practica-390.png) |
@@ -36,15 +37,15 @@ Playwright contra la URL pública, a 1280 y **390 px**. Sin errores de página.
 
 ## Estado final
 
-- **28/40** apuntes completos; **12 pendientes**; **0 solo resumen**; **26 prácticas**; **260 preguntas**.
-- Cobertura por bloque: **I 12/12 · II 5/5 · III 8/9 · IV 1/7 · V 2/7**.
+- **31/40** apuntes completos; **9 pendientes**; **0 solo resumen**; **26 prácticas**; **260 preguntas**.
+- Cobertura por bloque: **I 12/12 · II 5/5 · III 9/9 · IV 3/7 · V 2/7**.
 - **12/12** enlaces de convocatoria abren (HTTP 200).
 - Pruebas: 517 unitarias de backend, 225 de web, typecheck, eslint, ruff, mypy y build.
 
 ## Lo que queda para mañana
 
-- **III.26** Soporte al puesto.
-- **IV.28** SQL, **IV.29** Gestores de BD, **IV.30** Programación, **IV.31** Desarrollo web,
+- Bloque III completo; no quedan temas de III.
+- **IV.30** Programación, **IV.31** Desarrollo web,
   **IV.32** Interoperabilidad, **IV.33** Informes.
 - **V.36** Criptografía y firma, **V.37** Protección de datos aplicada, **V.38** Ciberseguridad,
   **V.39** Administración electrónica, **V.40** Accesibilidad y usabilidad.

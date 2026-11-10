@@ -1,0 +1,155 @@
+{
+  "node_path": "III.26",
+  "title": "Soporte al puesto de trabajo",
+  "source": {
+    "label": "ISO/IEC 20000-1:2018 — Gestión del servicio de TI (página oficial ISO)",
+    "url": "https://www.iso.org/standard/70636.html"
+  },
+  "sections": [
+    {
+      "heading": "El servicio de soporte y sus niveles",
+      "body": "El **soporte al puesto de trabajo** atiende a las personas que usan la tecnología: incidencias, peticiones, dudas y altas de equipos. El **service desk** es el punto único de contacto y registra cada caso con su prioridad, responsable y estado.\n\nLos niveles de soporte suelen ser:\n\n- **Nivel 1**: atención inicial, diagnóstico básico y resolución de casos conocidos.\n- **Nivel 2**: especialistas que profundizan en el problema.\n- **Nivel 3**: fabricante, desarrollo o proveedor externo.\n\nUna buena derivación incluye toda la información recogida; si el usuario tiene que repetir el problema a cada nivel, el soporte falla."
+    },
+    {
+      "heading": "Inventario y ciclo de vida del equipo",
+      "body": "El **inventario** identifica cada equipo, su usuario, ubicación, garantía, licencias y software instalado. Sin inventario no hay control de activos ni de licencias.\n\nEl ciclo de vida incluye **alta** (compra, configuración, entrega), **uso** (soporte, actualizaciones), **cambio** (reemplazo o reasignación) y **baja** (borrado seguro, recuperación de licencias y retirada).\n\nEn la administración pública, el inventario se relaciona con el **inventario de servicios** y con la protección de datos: un equipo con disco sin borrar puede filtrar información."
+    },
+    {
+      "heading": "Imagen de equipo y despliegue",
+      "body": "Una **imagen** es una plantilla del sistema operativo y del software base. Permite instalar un puesto de forma reproducible y reducir errores.\n\nEl despliegue puede ser **manual**, con medios de instalación, o **automatizado** con herramientas de gestión. Conviene separar:\n\n- Sistema operativo y controladores.\n- Aplicaciones corporativas.\n- Configuración de usuario y políticas.\n\nLas actualizaciones y el software se prueban antes de desplegarlos de forma masiva; una imagen sin mantenimiento envejece y acumula vulnerabilidades."
+    },
+    {
+      "heading": "Soporte remoto, impresión y movilidad",
+      "body": "El **soporte remoto** permite resolver incidencias sin desplazarse. Herramientas como RDP, VNC o soluciones corporativas deben usarse con autenticación, registro y consentimiento del usuario; no se abre una sesión sin avisar.\n\nLa **impresión** se centraliza en servidores de impresión con colas y controladores; los problemas típicos son controladores incorrectos, atascos y permisos.\n\nLos **dispositivos móviles** se gestionan con **MDM** (matrícula, políticas, aplicaciones, borrado remoto). El **BYOD** exige separar datos personales y corporativos y establecer condiciones claras."
+    },
+    {
+      "heading": "Tabla de soporte",
+      "table": {
+        "columns": ["Ámbito", "Herramienta o práctica", "Objetivo"],
+        "rows": [
+          ["Incidencias", "Service desk y colas", "Registrar, priorizar y resolver"],
+          ["Inventario", "CMDB / hoja de activos", "Conocer equipos y licencias"],
+          ["Despliegue", "Imagen y gestión de software", "Puestos reproducibles"],
+          ["Remoto", "RDP, VNC, herramientas corporativas", "Resolver sin desplazamiento"],
+          ["Móvil", "MDM", "Políticas y borrado remoto"]
+        ]
+      }
+    },
+    {
+      "heading": "Ejemplo resuelto",
+      "body": "**Supuesto.** Un ayuntamiento incorpora a una técnica nueva y debe preparar su puesto; a la semana, el equipo no arranca.\n\n**Resolución.**\n\n- **Alta**: se registra el equipo y la licencia, se aplica la imagen corporativa y se configuran correo, impresoras y acceso a la aplicación municipal.\n- **Incidencia**: se abre un ticket, se recogen síntomas y se prueba el diagnóstico básico; si no arranca, se deriva a nivel 2 con el historial.\n- **Continuidad**: se entrega un equipo de sustitución para no bloquear el trabajo.\n- **Baja o reparación**: se recuperan datos, se borra el disco si se retira y se actualiza el inventario.\n\n**Conclusión.** El soporte no es solo «arreglar ordenadores»: es un proceso con registro, prioridades, inventario y continuidad."
+    }
+  ],
+  "questions": [
+    {
+      "stem": "¿Qué es el service desk?",
+      "options": [
+        "El punto único de contacto para incidencias y peticiones de soporte",
+        "El servidor de correo",
+        "El cortafuegos perimetral",
+        "El sistema de copias"
+      ],
+      "correct": "a",
+      "explanation": "El service desk centraliza la atención, registra los casos y coordina su resolución."
+    },
+    {
+      "stem": "¿Qué caracteriza al soporte de nivel 1?",
+      "options": [
+        "Atención inicial, diagnóstico básico y resolución de casos conocidos",
+        "El desarrollo de la aplicación",
+        "La administración de la base de datos",
+        "La compra de hardware"
+      ],
+      "correct": "a",
+      "explanation": "El nivel 1 filtra y resuelve incidencias sencillas; si no puede, deriva con la información recogida."
+    },
+    {
+      "stem": "¿Para qué sirve el inventario de equipos?",
+      "options": [
+        "Para conocer equipos, usuarios, garantías, licencias y software",
+        "Para sustituir las copias de seguridad",
+        "Para cifrar el disco",
+        "Para asignar direcciones IP"
+      ],
+      "correct": "a",
+      "explanation": "El inventario permite controlar activos y licencias y planificar el ciclo de vida."
+    },
+    {
+      "stem": "¿Qué es una imagen de equipo?",
+      "options": [
+        "Una plantilla del sistema y el software base para desplegar puestos",
+        "Una copia de los datos del usuario",
+        "Un tipo de monitor",
+        "Un protocolo de red"
+      ],
+      "correct": "a",
+      "explanation": "La imagen estandariza la instalación y reduce errores; después se aplican configuraciones y políticas."
+    },
+    {
+      "stem": "¿Qué debe acompañar al soporte remoto?",
+      "options": [
+        "Autenticación, registro y consentimiento del usuario",
+        "Desactivar el cortafuegos",
+        "Compartir la contraseña del administrador",
+        "Abrir la sesión sin avisar"
+      ],
+      "correct": "a",
+      "explanation": "El acceso remoto debe ser seguro, trazable y autorizado; abrir sesiones sin consentimiento vulnera la privacidad."
+    },
+    {
+      "stem": "¿Qué problema típico de impresión se resuelve revisando el controlador?",
+      "options": [
+        "Que la impresora no interprete bien el trabajo o falle al imprimir",
+        "Que la red no tenga DNS",
+        "Que el equipo no arranque",
+        "Que el correo no envíe"
+      ],
+      "correct": "a",
+      "explanation": "Un controlador incorrecto o desactualizado provoca errores de impresión y trabajos atascados."
+    },
+    {
+      "stem": "¿Qué permite un MDM en dispositivos móviles?",
+      "options": [
+        "Aplicar políticas, instalar aplicaciones y borrar el dispositivo de forma remota",
+        "Aumentar la memoria RAM",
+        "Sustituir la VPN",
+        "Gestionar la impresora de red"
+      ],
+      "correct": "a",
+      "explanation": "El MDM (Mobile Device Management) permite matricular, configurar y proteger dispositivos corporativos."
+    },
+    {
+      "stem": "¿Qué precaución hay que tomar al dar de baja un equipo?",
+      "options": [
+        "Borrar de forma segura los datos y recuperar licencias",
+        "Entregarlo sin borrar el disco",
+        "Mantener las cuentas activas",
+        "Guardar la contraseña en el teclado"
+      ],
+      "correct": "a",
+      "explanation": "La baja debe incluir borrado seguro, recuperación de licencias y actualización del inventario para evitar fugas."
+    },
+    {
+      "stem": "¿Por qué hay que derivar con toda la información al siguiente nivel?",
+      "options": [
+        "Para que el usuario no repita el problema y se resuelva antes",
+        "Para cerrar el ticket sin resolverlo",
+        "Para que el usuario aprenda a arreglarlo",
+        "Para eliminar el historial"
+      ],
+      "correct": "a",
+      "explanation": "Una derivación completa evita duplicar diagnóstico y mejora el tiempo de resolución."
+    },
+    {
+      "stem": "¿Qué relación tiene el inventario con la seguridad?",
+      "options": [
+        "Un equipo sin borrar puede filtrar datos; el inventario permite controlar su retirada",
+        "El inventario sustituye al antivirus",
+        "El inventario cifra los discos",
+        "No tiene relación"
+      ],
+      "correct": "a",
+      "explanation": "Saber qué equipos existen y cuándo se retiran permite aplicar borrado seguro y evitar fugas de información."
+    }
+  ]
+}

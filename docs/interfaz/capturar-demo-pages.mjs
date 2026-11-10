@@ -84,13 +84,17 @@ check(
 check(
   'la portada resume el avance por bloque',
   data.curriculum.blocks.every((block) =>
-    portada.includes(`${block.path}: ${block.coverage.conApuntes}/${block.coverage.total}`),
+    portada.includes(
+      `${block.path}: ${block.coverage.conApuntes}/${block.coverage.total} (${Math.round(
+        (block.coverage.conApuntes / block.coverage.total) * 100,
+      )}%)`,
+    ),
   ),
 );
 
 const temario = await captura('temario', 'temario', 1280);
 check('el temario enseña 5 bloques y 40 temas', /5 bloques/.test(temario) && /40 temas/.test(temario));
-check('hay avance por bloque', /I: \d+\/12 con apuntes/.test(temario));
+check('hay avance por bloque con porcentaje', /I: \d+\/12 \(\d+%\) con apuntes/.test(temario));
 check('los sellos de apuntes y práctica están visibles', /Apuntes completos/.test(temario) && /Con práctica/.test(temario));
 check('hay al menos 5 temas con apuntes', data.progress.apuntesCompletos >= 5, `${data.progress.apuntesCompletos}`);
 await captura('temario', 'temario', 390);
@@ -131,7 +135,7 @@ check(
 );
 
 // Revisión de los dos temas de la tanda: contenido, tabla y 10 preguntas.
-for (const temaId of ['III.19', 'III.20']) {
+for (const temaId of ['III.19', 'III.20', 'III.26']) {
   const nombre = temaId.toLowerCase().replace('.', '-');
   const texto = await captura(`tema/${temaId}`, `tema-${nombre}`, 390);
   check(
